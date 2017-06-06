@@ -1,7 +1,7 @@
 import pytest
 import mock
 
-from website.models import ApiOAuth2Application, User
+from osf.models import ApiOAuth2Application
 from website.util import api_v2_url
 from tests.base import ApiTestCase
 from osf_tests.factories import ApiOAuth2ApplicationFactory, AuthUserFactory
@@ -66,7 +66,7 @@ class TestApplicationReset:
         user_app.reload()
         assert old_secret != user_app.client_secret
 
-    @mock.patch('website.oauth.models.ApiOAuth2Application.reset_secret')
+    @mock.patch('osf.models.ApiOAuth2Application.reset_secret')
     def test_other_user_cannot_reset(self, mock_method, app, user_app, user_reset_url, correct):
         mock_method.return_value(True)
         old_secret = user_app.client_secret
@@ -77,7 +77,7 @@ class TestApplicationReset:
         user_app.reload()
         assert old_secret == user_app.client_secret
 
-    @mock.patch('website.oauth.models.ApiOAuth2Application.reset_secret')
+    @mock.patch('osf.models.ApiOAuth2Application.reset_secret')
     def test_unauth_user_cannot_reset(self, mock_method, app, user_app, user_reset_url, correct):
         mock_method.return_value(True)
         old_secret = user_app.client_secret

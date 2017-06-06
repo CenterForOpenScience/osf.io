@@ -16,7 +16,7 @@ from addons.dataverse.models import DataverseProvider
 from addons.dataverse.settings import DEFAULT_HOSTS
 from addons.dataverse.serializer import DataverseSerializer
 from dataverse.exceptions import VersionJsonNotFoundError, OperationFailedError
-from website.oauth.models import ExternalAccount
+from osf.models import ExternalAccount
 from website.project.decorators import (
     must_have_addon, must_be_addon_authorizer,
     must_have_permission, must_not_be_registration,

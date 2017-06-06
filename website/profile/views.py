@@ -10,7 +10,7 @@ import markupsafe
 import mailchimp
 from modularodm.exceptions import ValidationError, NoResultsFound, MultipleResultsFound
 from modularodm import Q
-from osf.models import Node, NodeRelation
+from osf.models import Node, NodeRelation, OSFUser as User
 
 from framework import sentry
 from framework.auth import Auth
@@ -25,11 +25,11 @@ from framework.exceptions import HTTPError, PermissionsError
 from framework.flask import redirect  # VOL-aware redirect
 from framework.status import push_status_message
 
+from osf.models import ApiOAuth2Application, ApiOAuth2PersonalToken
 from website import mails
 from website import mailchimp_utils
 from website import settings
 from website.project.utils import PROJECT_QUERY
-from website.models import ApiOAuth2Application, ApiOAuth2PersonalToken, User
 from website.oauth.utils import get_available_scopes
 from website.profile import utils as profile_utils
 from website.util.time import throttle_period_expired
@@ -91,15 +91,6 @@ def get_public_components(uid=None, user=None):
         serialize_node_summary(node=node, auth=Auth(user), show_path=True)
         for node in nodes
     ]
-
-@must_be_logged_in
-def current_user_gravatar(size=None, **kwargs):
-    user_id = kwargs['auth'].user._id
-    return get_gravatar(user_id, size=size)
-
-
-def get_gravatar(uid, size=None):
-    return {'gravatar_url': profile_utils.get_gravatar(User.load(uid), size=size)}
 
 
 def date_or_none(date):
@@ -175,7 +166,7 @@ def update_user(auth):
 
         available_emails = [
             each.strip().lower() for each in
-            user.emails + user.unconfirmed_emails
+            list(user.emails.values_list('address', flat=True)) + user.unconfirmed_emails
         ]
         # removals
         removed_emails = [
@@ -188,7 +179,7 @@ def update_user(auth):
             raise HTTPError(httplib.FORBIDDEN)
 
         for address in removed_emails:
-            if address in user.emails:
+            if user.emails.filter(address=address):
                 try:
                     user.remove_email(address)
                 except PermissionsError as e:
@@ -231,12 +222,12 @@ def update_user(auth):
 
         if primary_email:
             primary_email_address = primary_email['address'].strip().lower()
-            if primary_email_address not in [each.strip().lower() for each in user.emails]:
+            if primary_email_address not in [each.strip().lower() for each in user.emails.values_list('address', flat=True)]:
                 raise HTTPError(httplib.FORBIDDEN)
             username = primary_email_address
 
         # make sure the new username has already been confirmed
-        if username and username in user.emails and username != user.username:
+        if username and username != user.username and user.emails.filter(address=username).exists():
             mails.send_mail(user.username,
                             mails.PRIMARY_EMAIL_CHANGED,
                             user=user,

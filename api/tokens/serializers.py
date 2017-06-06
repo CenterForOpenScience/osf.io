@@ -2,7 +2,7 @@ from rest_framework import serializers as ser
 from rest_framework import exceptions
 
 from framework.auth.oauth_scopes import public_scopes
-from website.models import ApiOAuth2PersonalToken
+from osf.models import ApiOAuth2PersonalToken
 
 from api.base.serializers import JSONAPISerializer, LinksField, IDField, TypeField
 

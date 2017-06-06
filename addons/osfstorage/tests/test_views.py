@@ -19,8 +19,8 @@ from addons.osfstorage.tests import factories
 from framework.auth import signing
 from website.util import rubeus
 
-from website.models import Tag
-from website.files import models
+from osf.models import Tag
+from osf.models import files as models
 from addons.osfstorage.apps import osf_storage_root
 from addons.osfstorage import utils
 from addons.base.views import make_auth
@@ -586,7 +586,8 @@ class TestDeleteHook(HookTestCase):
         assert_equal(resp.json, {'status': 'success'})
         fid = file._id
         del file
-        assert_is(models.OsfStorageFileNode.load(fid), None)
+        # models.StoredFileNode._clear_object_cache()
+        assert_is(OsfStorageFileNode.load(fid), None)
         assert_true(models.TrashedFileNode.load(fid))
 
     def test_delete_deleted(self):

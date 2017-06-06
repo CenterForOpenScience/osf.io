@@ -1,13 +1,11 @@
 # -*- coding: utf-8 -*-
 from __future__ import absolute_import
-import datetime as dt
 import os
 import httplib as http
 
 from flask import request
 from flask import send_from_directory
 
-import pytz
 from geoip import geolite2
 
 from framework import status
@@ -27,6 +25,7 @@ from framework.auth.core import _get_current_user
 from modularodm import Q
 from modularodm.exceptions import QueryException, NoResultsFound
 
+from osf.models import Institution
 from website import util
 from website import prereg
 from website import settings
@@ -34,12 +33,13 @@ from website import language
 from website.util import metrics
 from website.util import paths
 from website.util import sanitize
-from website.models import Institution
+from website import maintenance
 from website import landing_pages as landing_page_views
 from website import views as website_views
 from website.citations import views as citation_views
 from website.search import views as search_views
 from website.oauth import views as oauth_views
+from website.profile.utils import get_gravatar
 from website.profile import views as profile_views
 from website.project import views as project_views
 from addons.base import views as addon_views
@@ -74,7 +74,7 @@ def get_globals():
         'user_locale': user.locale if user and user.locale else '',
         'user_timezone': user.timezone if user and user.timezone else '',
         'user_url': user.url if user else '',
-        'user_gravatar': profile_views.current_user_gravatar(size=25)['gravatar_url'] if user else '',
+        'user_gravatar': get_gravatar(user=user, size=25) if user else '',
         'user_email_verifications': user.unconfirmed_email_info if user else [],
         'user_api_url': user.api_url if user else '',
         'user_entry_point': metrics.get_entry_point(user) if user else '',
@@ -119,10 +119,7 @@ def get_globals():
                 'write_key': settings.KEEN['private']['write_key'],
             },
         },
-        'maintenance': {
-            'start': dt.datetime(2017, 6, 6, 1, tzinfo=pytz.utc).isoformat(),
-            'end': dt.datetime(2017, 6, 6, 2, tzinfo=pytz.utc).isoformat(),
-        },
+        'maintenance': maintenance.get_maintenance(),
         'recaptcha_site_key': settings.RECAPTCHA_SITE_KEY,
         'custom_citations': settings.CUSTOM_CITATIONS
     }
@@ -851,31 +848,6 @@ def make_url_map(app):
             json_renderer,
         ),
 
-        Rule(
-            [
-                '/profile/gravatar/',
-                '/users/gravatar/',
-                '/profile/gravatar/<size>',
-                '/users/gravatar/<size>',
-            ],
-            'get',
-            profile_views.current_user_gravatar,
-            json_renderer,
-        ),
-
-        Rule(
-            [
-                '/profile/<uid>/gravatar/',
-                '/users/<uid>/gravatar/',
-                '/profile/<uid>/gravatar/<size>',
-                '/users/<uid>/gravatar/<size>',
-            ],
-            'get',
-            profile_views.get_gravatar,
-            json_renderer,
-        ),
-
-
         # Rules for user profile configuration
         Rule('/settings/names/', 'get', profile_views.serialize_names, json_renderer),
         Rule('/settings/names/', 'put', profile_views.unserialize_names, json_renderer),
@@ -1564,22 +1536,6 @@ def make_url_map(app):
             '/project/<pid>/permissions/beforepublic/',
             '/project/<pid>/node/<nid>/permissions/beforepublic/',
         ], 'get', project_views.node.project_before_set_public, json_renderer),
-
-        ### Watching ###
-        Rule([
-            '/project/<pid>/watch/',
-            '/project/<pid>/node/<nid>/watch/'
-        ], 'post', project_views.node.watch_post, json_renderer),
-
-        Rule([
-            '/project/<pid>/unwatch/',
-            '/project/<pid>/node/<nid>/unwatch/'
-        ], 'post', project_views.node.unwatch_post, json_renderer),
-
-        Rule([
-            '/project/<pid>/togglewatch/',
-            '/project/<pid>/node/<nid>/togglewatch/'
-        ], 'post', project_views.node.togglewatch_post, json_renderer),
 
         # Combined files
         Rule(

@@ -82,7 +82,7 @@ class TestOSFUser:
         )
         assert user.is_registered is False
         assert len(user.email_verifications.keys()) == 1
-        assert len(user.emails) == 0, 'primary email has not been added to emails list'
+        assert user.emails.count() == 0, 'primary email has not been added to emails list'
 
     def test_create_unconfirmed_with_campaign(self):
         name, email = fake.name(), fake.email()
@@ -109,7 +109,7 @@ class TestOSFUser:
         assert user.is_registered is False
         assert len(user.email_verifications.keys()) == 1
         assert user.email_verifications.popitem()[1]['external_identity'] == external_identity
-        assert len(user.emails) == 0, 'primary email has not been added to emails list'
+        assert user.emails.count() == 0, 'primary email has not been added to emails list'
 
     def test_create_confirmed(self):
         name, email = fake.name(), fake.email()
@@ -144,7 +144,7 @@ class TestOSFUser:
         assert u.is_registered is False
         assert u.is_claimed is False
         assert u.is_invited is True
-        assert email not in u.emails
+        assert not u.emails.filter(address=email).exists()
         parsed = impute_names_model(name)
         assert u.given_name == parsed['given_name']
 
@@ -333,7 +333,7 @@ class TestOSFUser:
         u.save()
         assert bool(confirmed) is True
         assert len(u.email_verifications.keys()) == 0
-        assert u.username in u.emails
+        assert u.emails.filter(address=u.username).exists()
         assert bool(u.is_registered) is True
         assert bool(u.is_claimed) is True
 
@@ -342,7 +342,7 @@ class TestOSFUser:
         user.confirm_email(token)
 
         assert 'foo@bar.com' not in user.unconfirmed_emails
-        assert 'foo@bar.com' in user.emails
+        assert user.emails.filter(address='foo@bar.com').exists()
 
     def test_confirm_email_comparison_is_case_insensitive(self):
         u = UnconfirmedUserFactory.build(
@@ -747,6 +747,7 @@ class TestIsActive:
 
     def test_is_active_is_false_if_disabled(self, make_user):
         user = make_user(date_disabled=timezone.now())
+        user.save()
         assert user.is_active is False
 
 
@@ -866,7 +867,7 @@ class TestUnregisteredUser:
         assert user.has_usable_password() is False  # sanity check
         email = fake.email()
         user.register(username=email, password='killerqueen')
-        assert email in user.emails
+        assert user.emails.filter(address=email).exists()
 
     def test_verify_claim_token(self, unreg_user, project):
         valid = unreg_user.get_unclaimed_record(project._primary_key)['token']
@@ -1029,7 +1030,7 @@ class TestMergingUsers:
 
     def test_dupe_email_is_appended(self, master, merge_dupe):
         merge_dupe()
-        assert 'joseph123@hotmail.com' in master.emails
+        assert master.emails.filter(address='joseph123@hotmail.com').exists()
 
     @mock.patch('website.mailchimp_utils.get_mailchimp_api')
     def test_send_user_merged_signal(self, mock_get_mailchimp_api, dupe, merge_dupe):
@@ -1262,7 +1263,7 @@ class TestUser(OsfTestCase):
         self.user.confirm_email(token)
 
         assert 'foo@bar.com' not in self.user.unconfirmed_emails
-        assert 'foo@bar.com' in self.user.emails
+        assert self.user.emails.filter(address='foo@bar.com').exists()
 
     def test_confirm_email_comparison_is_case_insensitive(self):
         u = UnconfirmedUserFactory.build(
@@ -1378,7 +1379,7 @@ class TestUserMerging(OsfTestCase):
     @mock.patch('website.mailchimp_utils.get_mailchimp_api')
     def test_merge(self, mock_get_mailchimp_api):
         def is_mrm_field(value):
-            return 'ManyRelatedManager' in str(value.__class__)
+            return 'RelatedManager' in str(value.__class__)
 
         other_user = UserFactory()
         other_user.save()
@@ -1451,7 +1452,6 @@ class TestUserMerging(OsfTestCase):
             'merged_by',
             'middle_names',
             'password',
-            'recently_added',
             'schools',
             'social',
             'suffix',
@@ -1478,14 +1478,15 @@ class TestUserMerging(OsfTestCase):
             'notifications_configured': {
                 '123ab': True, 'abc12': True,
             },
-            'emails': [
-                self.user.username,
-                other_user.username,
-            ],
-            'external_accounts': [
+            'emails': set([
+                other_user.emails.first().id,
+                self.user.emails.first().id,
+            ]),
+            'external_accounts': set([
                 self.user.external_accounts.first().id,
                 other_user.external_accounts.first().id,
-            ],
+            ]),
+            'recently_added': set(),
             'mailchimp_mailing_lists': {
                 'user': True,
                 'other': True,
@@ -1508,7 +1509,7 @@ class TestUserMerging(OsfTestCase):
         expected.update(calculated_fields)
         for key in default_to_master_user_fields:
             if is_mrm_field(getattr(self.user, key)):
-                expected[key] = list(getattr(self.user, key).all().values_list('id', flat=True))
+                expected[key] = set(list(getattr(self.user, key).all().values_list('id', flat=True)))
             else:
                 expected[key] = getattr(self.user, key)
 
@@ -1531,7 +1532,7 @@ class TestUserMerging(OsfTestCase):
         # check each field/value pair
         for k, v in expected.iteritems():
             if is_mrm_field(getattr(self.user, k)):
-                assert list(getattr(self.user, k).all().values_list('id', flat=True)) == v, '{} doesn\'t match expectations'.format(k)
+                assert set(list(getattr(self.user, k).all().values_list('id', flat=True))) == v, '{} doesn\'t match expectations'.format(k)
             else:
                 assert getattr(self.user, k) == v, '{} doesn\'t match expectation'.format(k)
 

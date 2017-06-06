@@ -14,7 +14,7 @@ from modularodm import Q
 
 from framework.exceptions import HTTPError
 
-from website.models import Node, MetaSchema, DraftRegistration
+from osf.models import MetaSchema, DraftRegistration
 from website.project.metadata.schemas import ACTIVE_META_SCHEMAS, _name_to_id
 from website.util import permissions, api_url_for
 from website.project.views import drafts as draft_views
@@ -144,7 +144,7 @@ class TestDraftRegistrationViews(RegistrationsTestBase):
         )
         assert_equal(res.status_code, http.FORBIDDEN)
 
-    @mock.patch('website.project.model.DraftRegistration.register', autospec=True)
+    @mock.patch('osf.models.DraftRegistration.register', autospec=True)
     def test_register_draft_registration(self, mock_register_draft):
 
         url = self.node.api_url_for('register_draft_registration', draft_id=self.draft._id)
@@ -550,7 +550,7 @@ class TestDraftRegistrationViews(RegistrationsTestBase):
         reg.is_deleted = True
         reg.save()
 
-        with mock.patch('website.project.model.DraftRegistration.is_approved', mock.PropertyMock(return_value=True)):
+        with mock.patch('osf.models.DraftRegistration.is_approved', mock.PropertyMock(return_value=True)):
             try:
                 draft_views.check_draft_state(self.draft)
             except HTTPError:

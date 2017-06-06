@@ -24,10 +24,9 @@ from website.project.decorators import (
     http_error_if_disk_saving_mode
 )
 from website import language, settings
-from website.models import NodeLog
 from website.prereg import utils as prereg_utils
 from website.project import utils as project_utils
-from osf.models import MetaSchema, DraftRegistration, Sanction
+from osf.models import NodeLog, MetaSchema, DraftRegistration, Sanction
 from website.project.metadata.schemas import ACTIVE_META_SCHEMAS
 from website.project.metadata.utils import serialize_meta_schema, serialize_draft_registration
 from website.project.utils import serialize_node

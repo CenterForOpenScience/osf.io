@@ -6,7 +6,7 @@ from flask import redirect
 
 from framework.auth.decorators import must_be_logged_in
 from framework.exceptions import HTTPError
-from website.oauth.models import ExternalAccount
+from osf.models import ExternalAccount
 from website.oauth.utils import get_service
 from website.oauth.signals import oauth_complete
 

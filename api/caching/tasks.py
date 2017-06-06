@@ -2,7 +2,6 @@ import urlparse
 
 import requests
 import logging
-from website.project.model import Comment
 
 from website import settings
 
@@ -15,6 +14,7 @@ def get_varnish_servers():
 
 
 def get_bannable_urls(instance):
+    from osf.models import Comment
     bannable_urls = []
     parsed_absolute_url = {}
 

@@ -4,11 +4,11 @@ from django.db import transaction
 from django.utils import timezone
 from modularodm import Q
 
-from framework.auth import User
 from framework.celery_tasks import app as celery_app
-
+from osf.models import OSFUser as User
+from osf.models.queued_mail import NO_LOGIN_TYPE, NO_LOGIN, QueuedMail, queue_mail
 from website.app import init_app
-from website import mails, settings
+from website import settings
 
 from scripts.utils import add_file_logger
 
@@ -23,9 +23,9 @@ def main(dry_run=True):
         logger.warn('Email of type no_login queued to {0}'.format(user.username))
         if not dry_run:
             with transaction.atomic():
-                mails.queue_mail(
+                queue_mail(
                     to_addr=user.username,
-                    mail=mails.NO_LOGIN,
+                    mail=NO_LOGIN,
                     send_at=timezone.now(),
                     user=user,
                     fullname=user.fullname,
@@ -37,7 +37,7 @@ def find_inactive_users_with_no_inactivity_email_sent_or_queued():
         (Q('date_last_login', 'lt', timezone.now() - settings.NO_LOGIN_WAIT_TIME) & Q('tags__name', 'ne', 'osf4m')) |
         (Q('date_last_login', 'lt', timezone.now() - settings.NO_LOGIN_OSF4M_WAIT_TIME) & Q('tags__name', 'eq', 'osf4m'))
     )
-    inactive_emails = mails.QueuedMail.find(Q('email_type', 'eq', mails.NO_LOGIN_TYPE))
+    inactive_emails = QueuedMail.find(Q('email_type', 'eq', NO_LOGIN_TYPE))
 
     #This is done to prevent User query returns comparison to User, as equality fails
     #on datetime fields due to pymongo rounding. Instead here _id is compared.
@@ -53,4 +53,3 @@ def run_main(dry_run=True):
     if not dry_run:
         add_file_logger(logger, __file__)
     main(dry_run=dry_run)
-

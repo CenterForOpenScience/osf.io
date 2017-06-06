@@ -1,6 +1,5 @@
 import mock
 import csv
-import os
 import furl
 import pytz
 import pytest
@@ -97,7 +96,7 @@ class TestResetPasswordView(AdminTestCase):
         view = setup_view(view, request, guid=guid)
         res = view.get_context_data()
         nt.assert_is_instance(res, dict)
-        nt.assert_in((user.emails[0], user.emails[0]), view.initial['emails'])
+        nt.assert_in((user.emails.first().address, user.emails.first().address), view.initial['emails'])
 
     def test_no_user_permissions_raises_error(self):
         user = UserFactory()
@@ -400,14 +399,19 @@ class TestUserWorkshopFormView(AdminTestCase):
             [None, self.workshop_date.strftime('%m/%d/%y'), None, None, None, 'fake@example.com', None],
         ]
 
-    def _create_and_parse_test_file(self, data):
-        with open('test.csv', 'w') as fp:
-            writer = csv.writer(fp)
-            for row in data:
-                writer.writerow(row)
+        self.mock_data = mock.patch.object(
+            csv,
+            'reader',
+            # parse data into the proper format handling None values as csv reader would
+            side_effect=(lambda values: [[item or '' for item in value] for value in values])
+        )
+        self.mock_data.start()
 
-        with file('test.csv') as fp:
-            result_csv = self.view.parse(fp)
+    def tearDown(self):
+        self.mock_data.stop()
+
+    def _create_and_parse_test_file(self, data):
+        result_csv = self.view.parse(data)
 
         return result_csv
 
@@ -537,22 +541,12 @@ class TestUserWorkshopFormView(AdminTestCase):
             [None, '9/1/16', None, None, None, self.user_1.username, None],
         ]
 
-        with open('test.csv', 'w') as fp:
-            writer = csv.writer(fp)
-            for row in data:
-                writer.writerow(row)
-
-        with file('test.csv', mode='rb') as fp:
-            uploaded = SimpleUploadedFile(fp.name, fp.read(), content_type='text/csv')
+        uploaded = SimpleUploadedFile('test_name', bytes(csv.reader(data)), content_type='text/csv')
 
         form = WorkshopForm(data={'document': uploaded})
         form.is_valid()
         form.cleaned_data['document'] = uploaded
         setup_form_view(self.view, request, form)
-
-    def tearDown(self):
-        if os.path.isfile('test.csv'):
-            os.remove('test.csv')
 
 
 class TestUserSearchView(AdminTestCase):
@@ -564,7 +558,7 @@ class TestUserSearchView(AdminTestCase):
         self.user_4 = AuthUserFactory(fullname='King Maxel Hardy')
 
         self.user_2_alternate_email = 'brothernero@delapidatedboat.com'
-        self.user_2.emails.append(self.user_2_alternate_email)
+        self.user_2.emails.create(address=self.user_2_alternate_email)
         self.user_2.save()
 
         self.request = RequestFactory().get('/fake_path')

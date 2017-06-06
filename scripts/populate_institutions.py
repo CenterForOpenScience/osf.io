@@ -13,7 +13,7 @@ django.setup()
 
 from website import settings
 from website.app import init_app
-from website.models import Institution, Node
+from osf.models import Institution, Node
 from website.search.search import update_institution, update_node
 
 logger = logging.getLogger(__name__)
