@@ -12,7 +12,8 @@ In order to make additional changes to a preprint provider
 you should run the admin app which will allow you to edit a preprint provider.
 
 Before running this command, you should run the update_taxonomies script
-to populate subjects (if you haven't already).
+to populate subjects (if you haven't already). The update_taxonomies script
+will create the OSF preprint provider.
 '''
 
 from __future__ import unicode_literals
@@ -33,7 +34,7 @@ from modularodm.exceptions import NoResultsFound
 
 from osf.models import NodeLicense, Subject, PreprintProvider
 from scripts import utils as script_utils
-from website.settings import PREPRINT_PROVIDER_DOMAINS, DOMAIN
+from website.settings import PREPRINT_PROVIDER_DOMAINS
 
 logger = logging.getLogger(__name__)
 
@@ -44,14 +45,6 @@ def format_domain_url(domain):
 
 SUBJECTS_CACHE = {}
 PREPRINT_PROVIDERS = [
-    {
-        '_id': 'osf',
-        'name': 'Open Science Framework',
-        'domain': DOMAIN,
-        'domain_redirect_enabled': False,
-        'default_license': 'CC0 1.0 Universal',
-        'licenses_acceptable': ['CC0 1.0 Universal', 'CC-By Attribution 4.0 International', 'No license'],
-    },
     {
         '_id': 'lawarxiv',
         'name': '[TEST] LawArXiv',
