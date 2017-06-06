@@ -337,20 +337,14 @@ class OsfStorageFolder(OsfStorageFileNode, Folder):
 
     @property
     def is_checked_out(self):
-        try:
-            if self.checkout:
-                return True
-        except AttributeError:
-            return False
-        if self.children.filter(checkout=True).exists():
-            return True
-        return False
+        return self.children.filter(checkout__isnull=False).exists()
 
     @property
     def is_preprint_primary(self):
         if self.node.preprint_file:
-            if self.children.filter(node__preprint_file__isnull=False).filter(node___has_abandoned_preprint=False).exists():
-                return True
+            for child in self.children.filter(node__preprint_file=self.node.preprint_file).select_related('node'):
+                if child.is_preprint_primary:
+                    return True
         return False
 
     def serialize(self, include_full=False, version=None):
