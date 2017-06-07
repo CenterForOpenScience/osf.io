@@ -7,8 +7,8 @@ from admin.base.utils import get_subject_rules, get_toplevel_subjects, get_nodel
 
 
 class PreprintProviderForm(ModelForm):
-    toplevel_subjects = MultipleChoiceField(widget=CheckboxSelectMultiple())
-    subjects_chosen = CharField(widget=HiddenInput())
+    toplevel_subjects = MultipleChoiceField(widget=CheckboxSelectMultiple(), required=False)
+    subjects_chosen = CharField(widget=HiddenInput(), required=False)
 
     class Meta:
         model = PreprintProvider
