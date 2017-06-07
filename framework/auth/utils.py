@@ -128,7 +128,7 @@ def validate_recaptcha(response, remote_ip=None):
     return resp.status_code == httplib.OK and resp.json().get('success')
 
 
-def generate_csl_given_name(given_name, middle_names, suffix):
+def generate_csl_given_name(given_name, middle_names='', suffix=''):
     parts = [given_name]
     if middle_names:
         parts.extend(each[0] for each in re.split(r'\s+', middle_names))

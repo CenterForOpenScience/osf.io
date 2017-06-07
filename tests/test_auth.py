@@ -43,7 +43,7 @@ class TestAuthUtils(OsfTestCase):
 
     def test_citation_with_only_fullname(self):
         user = UserFactory()
-        user.fullname = 'Martin Luther King Jr.'
+        user.fullname = 'Martin Luther King, Jr.'
         user.family_name = ''
         user.given_name = ''
         user.middle_names = ''

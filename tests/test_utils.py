@@ -464,11 +464,35 @@ class TestSignalUtils(unittest.TestCase):
             self.signal_.send()
         assert_false(self.mock_listener.called)
 
+
 class TestUserUtils(unittest.TestCase):
 
-    def test_generate_csl_given_name(self):
+    def test_generate_csl_given_name_with_given_middle_suffix(self):
         given_name = 'Cause'
         middle_names = 'Awesome'
         suffix = 'Jr.'
-        csl_given_name = generate_csl_given_name(given_name, middle_names, suffix)
+        csl_given_name = generate_csl_given_name(
+            given_name=given_name, middle_name=middle_names, suffix=suffix
+        )
         assert_equal(csl_given_name, 'Cause A, Jr.')
+
+    def test_generate_csl_given_name_with_given_middle(self):
+        given_name = 'Cause'
+        middle_names = 'Awesome'
+        csl_given_name = generate_csl_given_name(
+            given_name=given_name, middle_name=middle_names
+        )
+        assert_equal(csl_given_name, 'Cause A')
+
+    def test_generate_csl_given_name_with_given_suffix(self):
+        given_name = 'Cause'
+        suffix = 'Jr.'
+        csl_given_name = generate_csl_given_name(
+            given_name=given_name, suffix=suffix
+        )
+        assert_equal(csl_given_name, 'Cause A')
+
+    def test_generate_csl_given_name_with_given(self):
+        given_name = 'Cause'
+        csl_given_name = generate_csl_given_name(given_name)
+        assert_equal(csl_given_name, 'Cause')
