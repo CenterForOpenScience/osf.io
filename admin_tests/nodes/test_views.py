@@ -247,6 +247,7 @@ class TestNodeReindex(AdminTestCase):
         self.patcher_share_token.stop()
         self.patcher_mock_reindex_node.stop()
         self.patcher_mock_reindex_registration.stop()
+        self.patcher_mock_reindex_elastic.stop()
 
     def test_reindex_node_share(self):
         count = AdminLogEntry.objects.count()
