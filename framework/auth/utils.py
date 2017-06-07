@@ -134,5 +134,5 @@ def generate_csl_given_name(given_name, middle_names, suffix):
         parts.extend(each[0] for each in re.split(r'\s+', middle_names))
     given = ' '.join(parts)
     if suffix:
-        given = '%s ,%s' % (given, suffix)
+        given = '%s, %s' % (given, suffix)
     return given

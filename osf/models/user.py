@@ -467,10 +467,22 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
 
     @property
     def csl_name(self):
-        return {
-            'family': self.family_name,
-            'given': self.csl_given_name,
-        }
+        if self.family_name and self.given_name:
+            return {
+                'family': self.family_name,
+                'given': self.csl_given_name,
+            }
+        else:
+            parsed = utils.impute_names(self.fullname)
+            given_name = parsed['given']
+            middle_names = parsed['middle']
+            family_name = parsed['family']
+            suffix = parsed['suffix']
+            csl_given_name = utils.generate_csl_given_name(given_name, middle_names, suffix)
+            return {
+                'family': family_name,
+                'given': csl_given_name,
+            }
 
     @property
     def contributor_to(self):
