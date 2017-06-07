@@ -4,7 +4,6 @@ from api.base.settings.defaults import API_BASE
 from framework.auth.core import Auth
 from website.util import disconnected_from_listeners
 from website.project.signals import contributor_removed
-from tests.base import ApiTestCase
 from osf_tests.factories import (
     NodeFactory,
     AuthUserFactory,

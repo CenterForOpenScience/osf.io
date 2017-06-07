@@ -6,7 +6,6 @@ from rest_framework import exceptions
 from api.base.settings.defaults import API_BASE
 from website.util import permissions
 from osf.models import Registration
-from tests.base import ApiTestCase
 from api.registrations.serializers import RegistrationSerializer, RegistrationDetailSerializer
 from osf_tests.factories import (
     ProjectFactory,
@@ -55,7 +54,7 @@ class TestRegistrationDetail:
         assert res.status_code == 200
         data = res.json['data']
         registered_from = urlparse(data['relationships']['registered_from']['links']['related']['href']).path
-        assert data['attributes']['registration'] == True
+        assert data['attributes']['registration'] is True
         assert registered_from == '/{}nodes/{}/'.format(API_BASE, public_project._id)
 
     #   test_return_public_registration_details_logged_in
@@ -64,7 +63,7 @@ class TestRegistrationDetail:
         assert res.content_type == 'application/vnd.api+json'
         data = res.json['data']
         registered_from = urlparse(data['relationships']['registered_from']['links']['related']['href']).path
-        assert data['attributes']['registration'] == True
+        assert data['attributes']['registration'] is True
         assert registered_from == '/{}nodes/{}/'.format(API_BASE, public_project._id)
 
     #   test_return_private_registration_details_logged_out
@@ -78,7 +77,7 @@ class TestRegistrationDetail:
         assert res.content_type == 'application/vnd.api+json'
         data = res.json['data']
         registered_from = urlparse(data['relationships']['registered_from']['links']['related']['href']).path
-        assert data['attributes']['registration'] == True
+        assert data['attributes']['registration'] is True
         assert registered_from == '/{}nodes/{}/'.format(API_BASE, private_project._id)
 
     #   test_return_private_registration_details_logged_in_non_contributor
@@ -196,7 +195,7 @@ class TestRegistrationUpdate:
     #   test_update_private_registration_logged_in_admin
         res = app.put_json_api(private_url, private_registration_payload, auth=user.auth)
         assert res.status_code == 200
-        assert res.json['data']['attributes']['public'] == True
+        assert res.json['data']['attributes']['public'] is True
 
     #   test_update_private_registration_logged_in_read_only_contributor
         res = app.put_json_api(private_url, private_registration_payload, auth=read_only_contributor.auth, expect_errors=True)
@@ -233,7 +232,7 @@ class TestRegistrationUpdate:
 
         res = app.put_json_api(private_url, verbose_private_payload, auth=user.auth)
         assert res.status_code == 200
-        assert res.json['data']['attributes']['public'] == True
+        assert res.json['data']['attributes']['public'] is True
         assert res.json['data']['attributes']['category'] == 'project'
         assert res.json['data']['attributes']['description'] == private_registration.description
         assert res.json['data']['attributes']['title'] == private_registration.title
@@ -258,7 +257,7 @@ class TestRegistrationUpdate:
 
         url = '/{}registrations/{}/'.format(API_BASE, private_registration._id)
         res = app.put_json_api(url, private_to_public_payload, auth=user.auth)
-        assert res.json['data']['attributes']['public'] == True
+        assert res.json['data']['attributes']['public'] is True
         private_registration.reload()
         assert private_registration.is_public
 
@@ -267,7 +266,7 @@ class TestRegistrationUpdate:
         for field in RegistrationSerializer._declared_fields:
             reg_field = RegistrationSerializer._declared_fields[field]
             if field not in writeable_fields:
-                assert getattr(reg_field, 'read_only', False) == True
+                assert getattr(reg_field, 'read_only', False) is True
 
     def test_registration_detail_fields_are_read_only(self):
         writeable_fields = ['type', 'public', 'draft_registration', 'registration_choice', 'lift_embargo' ]
@@ -275,7 +274,7 @@ class TestRegistrationUpdate:
         for field in RegistrationDetailSerializer._declared_fields:
             reg_field = RegistrationSerializer._declared_fields[field]
             if field not in writeable_fields:
-                assert getattr(reg_field, 'read_only', False) == True
+                assert getattr(reg_field, 'read_only', False) is True
 
     def test_user_cannot_delete_registration(self, app, user, private_url):
         res = app.delete_json_api(private_url, expect_errors=True, auth=user.auth)

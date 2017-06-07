@@ -5,7 +5,6 @@ from framework.auth.core import Auth
 from osf.models import AbstractNode as Node
 from website.util import permissions
 from api.base.settings.defaults import API_BASE
-from tests.base import ApiTestCase
 from rest_framework import exceptions
 from osf_tests.factories import (
     NodeFactory,
@@ -81,12 +80,12 @@ class TestRegistrationForksList:
         res = app.get(public_registration_url)
         assert res.status_code == 200
         assert len(res.json['data']) == 1
-        assert public_fork.is_public == True
+        assert public_fork.is_public is True
         data = res.json['data'][0]
         assert data['attributes']['title'] == 'Fork of ' + public_registration.title
         assert data['id'] == public_fork._id
         assert data['attributes']['registration'] == False
-        assert data['attributes']['fork'] == True
+        assert data['attributes']['fork'] is True
 
     def test_can_access_public_registration_forks_list_authenticated_contributor(self, app, user, public_project, public_registration_url, public_fork):
         res = app.get(public_registration_url, auth=user.auth)
@@ -98,7 +97,7 @@ class TestRegistrationForksList:
         assert data['attributes']['title'] == 'Fork of ' + public_project.title
         assert data['id'] == public_fork._id
         assert data['attributes']['registration'] == False
-        assert data['attributes']['fork'] == True
+        assert data['attributes']['fork'] is True
 
     def test_can_access_public_registration_forks_list_authenticated_non_contributor(self, app, public_project, public_registration_url, public_fork):
         non_contributor = AuthUserFactory()
@@ -115,12 +114,12 @@ class TestRegistrationForksList:
 
         res = app.get(public_registration_url)
         assert len(res.json['data']) == 1
-        assert public_fork.is_public == True
+        assert public_fork.is_public is True
         data = res.json['data'][0]
         assert data['attributes']['title'] == 'Fork of ' + public_project.title
         assert data['id'] == public_fork._id
         assert data['attributes']['registration'] == False
-        assert data['attributes']['fork'] == True
+        assert data['attributes']['fork'] is True
 
     def test_authentication(self, app, user, private_project, pointer, private_registration, private_registration_url, private_fork, private_component):
 
@@ -149,7 +148,7 @@ class TestRegistrationForksList:
         assert forked_node_links['id'] == pointer._id
         assert forked_node_links['attributes']['title'] == pointer.title
         assert data['attributes']['registration'] == False
-        assert data['attributes']['fork'] == True
+        assert data['attributes']['fork'] is True
 
         expected_logs = list(private_registration.logs.values_list('action', flat=True))
         expected_logs.append(private_registration.nodes[0].logs.latest().action)
@@ -237,7 +236,7 @@ class TestRegistrationForkCreate:
         assert data['id'] == public_registration.forks.first()._id
         assert data['attributes']['title'] == fork_data_with_title['data']['attributes']['title']
         assert data['attributes']['registration'] == False
-        assert data['attributes']['fork'] == True
+        assert data['attributes']['fork'] is True
 
     def test_create_fork_from_private_registration_with_new_title(self, app, user, private_registration, private_registration_url, fork_data_with_title):
         res = app.post_json_api(private_registration_url, fork_data_with_title, auth=user.auth)
@@ -246,7 +245,7 @@ class TestRegistrationForkCreate:
         assert data['id'] == private_registration.forks.first()._id
         assert data['attributes']['title'] == fork_data_with_title['data']['attributes']['title']
         assert data['attributes']['registration'] == False
-        assert data['attributes']['fork'] == True
+        assert data['attributes']['fork'] is True
 
     def test_can_fork_public_registration_logged_in(self, app, user_two, public_registration, public_registration_url, fork_data):
         res = app.post_json_api(public_registration_url, fork_data, auth=user_two.auth)
@@ -255,7 +254,7 @@ class TestRegistrationForkCreate:
         assert data['id'] == public_registration.forks.first()._id
         assert data['attributes']['title'] == 'Fork of ' + public_registration.title
         assert data['attributes']['registration'] == False
-        assert data['attributes']['fork'] == True
+        assert data['attributes']['fork'] is True
 
     def test_cannot_fork_public_registration_logged_out(self, app, public_registration_url, fork_data):
         res = app.post_json_api(public_registration_url, fork_data, expect_errors=True)
@@ -269,7 +268,7 @@ class TestRegistrationForkCreate:
         assert data['id'] == public_registration.forks.first()._id
         assert data['attributes']['title'] == 'Fork of ' + public_registration.title
         assert data['attributes']['registration'] == False
-        assert data['attributes']['fork'] == True
+        assert data['attributes']['fork'] is True
 
     def test_cannot_fork_private_registration_logged_out(self, app, private_registration_url, fork_data):
         res = app.post_json_api(private_registration_url, fork_data, expect_errors=True)
@@ -288,7 +287,7 @@ class TestRegistrationForkCreate:
         data = res.json['data']
         assert data['attributes']['title'] == 'Fork of ' + private_registration.title
         assert data['attributes']['registration'] == False
-        assert data['attributes']['fork'] == True
+        assert data['attributes']['fork'] is True
 
         fork_contributors = data['embeds']['contributors']['data'][0]['embeds']['users']['data']
         assert fork_contributors['attributes']['family_name'] == user.family_name
