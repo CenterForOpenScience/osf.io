@@ -467,7 +467,7 @@ class TestWikiViews(OsfTestCase):
             auth=self.user.auth
         )
         assert_equal(res.status_code, 200)
-        assert_not_in('Wiki', res.text)
+        assert_not_in('Add important information, links, or images here to describe your project.', res.text)
 
 
 class TestViewHelpers(OsfTestCase):
