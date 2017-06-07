@@ -187,6 +187,7 @@ var AddProject = {
                                     var val = ev.target.value;
                                     ctrl.newProjectName(val);
                                     ctrl.isValid(val.trim().length > 0);
+                                    ctrl.isValid(val.length < 189);
                                 },
                                 onchange: function(ev) {
                                     //  This will not be reliably running!
