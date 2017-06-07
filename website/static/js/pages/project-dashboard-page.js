@@ -201,13 +201,17 @@ $(document).ready(function () {
             var filebrowser = new Fangorn(fangornOpts);
             var newComponentElem = document.getElementById('newComponent');
             if (window.contextVars.node.isPublic) {
-                m.mount(document.getElementById('shareButtonsPopover'),
-                        m.component(SocialShare.ShareButtonsPopover,
-                            {title: window.contextVars.node.title, url: window.location.href}));
+                m.mount(
+                    document.getElementById('shareButtonsPopover'),
+                    m.component(
+                        SocialShare.ShareButtonsPopover,
+                        {title: window.contextVars.node.title, url: window.location.href}
+                    )
+                );
             }
             if (newComponentElem) {
                 m.mount(newComponentElem, AddComponentButton);
-            };
+            }
             m.endComputation();
         });
 
