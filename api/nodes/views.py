@@ -1,5 +1,6 @@
 import re
 
+import django_filters
 from django.apps import apps
 from django.db.models import Q, OuterRef, Exists
 from django.utils import timezone
@@ -7,6 +8,7 @@ from rest_framework import generics, permissions as drf_permissions
 from rest_framework.exceptions import PermissionDenied, ValidationError, NotFound, MethodNotAllowed, NotAuthenticated
 from rest_framework.response import Response
 from rest_framework.status import HTTP_204_NO_CONTENT
+from rest_framework.filters import OrderingFilter
 
 from addons.osfstorage.models import OsfStorageFolder
 from api.addons.serializers import NodeAddonFolderSerializer
@@ -59,7 +61,7 @@ from api.identifiers.serializers import NodeIdentifierSerializer
 from api.identifiers.views import IdentifierList
 from api.institutions.serializers import InstitutionSerializer
 from api.logs.serializers import NodeLogSerializer
-from api.nodes.filters import NodesFilterMixin
+from api.nodes.filters import NodeFilterSet, NodesFilterMixin
 from api.nodes.permissions import (
     IsAdmin,
     IsPublic,
@@ -172,7 +174,7 @@ class DraftMixin(object):
         return draft
 
 
-class NodeList(JSONAPIBaseView, bulk_views.BulkUpdateJSONAPIView, bulk_views.BulkDestroyJSONAPIView, bulk_views.ListBulkCreateJSONAPIView, NodesFilterMixin, WaterButlerMixin):
+class NodeList(JSONAPIBaseView, bulk_views.BulkUpdateJSONAPIView, bulk_views.BulkDestroyJSONAPIView, bulk_views.ListBulkCreateJSONAPIView, WaterButlerMixin):
     """Nodes that represent projects and components. *Writeable*.
 
     Paginated list of nodes ordered by their `modified`.  Each resource contains the full representation of the
@@ -275,6 +277,9 @@ class NodeList(JSONAPIBaseView, bulk_views.BulkUpdateJSONAPIView, bulk_views.Bul
     view_category = 'nodes'
     view_name = 'node-list'
 
+    filter_backends = (django_filters.rest_framework.DjangoFilterBackend, OrderingFilter)
+    filter_class = NodeFilterSet
+
     ordering = ('-modified', )  # default ordering
 
     # overrides NodesFilterMixin
@@ -299,7 +304,7 @@ class NodeList(JSONAPIBaseView, bulk_views.BulkUpdateJSONAPIView, bulk_views.Bul
                     raise PermissionDenied
             return nodes
         else:
-            return self.get_queryset_from_request()
+            return self.get_default_queryset()
 
     # overrides ListBulkCreateJSONAPIView, BulkUpdateJSONAPIView, BulkDestroyJSONAPIView
     def get_serializer_class(self):
