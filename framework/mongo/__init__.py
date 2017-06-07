@@ -6,7 +6,7 @@ from modularodm.storedobject import StoredObject as GenericStoredObject
 from modularodm.ext.concurrency import with_proxies, proxied_members
 
 from bson import ObjectId
-from .handlers import client, database, set_up_storage
+from .handlers import client, database
 
 
 from api.base.api_globals import api_globals
@@ -61,5 +61,4 @@ __all__ = [
     'ObjectId',
     'client',
     'database',
-    'set_up_storage',
 ]

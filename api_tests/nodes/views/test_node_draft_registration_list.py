@@ -188,6 +188,20 @@ class TestDraftRegistrationCreate(DraftRegistrationTestCase):
         assert_equal(res.status_code, 404)
 
     def test_registration_supplement_must_be_active_metaschema(self):
+        schema =  MetaSchema.objects.get(name='Election Research Preacceptance Competition', active=False)
+        draft_data = {
+            "data": {
+                "type": "draft_registrations",
+                "attributes": {
+                    "registration_supplement": schema._id
+                }
+            }
+        }
+        res = self.app.post_json_api(self.url, draft_data, auth=self.user.auth, expect_errors=True)
+        assert_equal(res.status_code, 400)
+        assert_equal(res.json['errors'][0]['detail'], 'Registration supplement must be an active schema.')
+
+    def test_registration_supplement_must_be_most_recent_metaschema(self):
         schema =  MetaSchema.find_one(
             Q('name', 'eq', 'Open-Ended Registration') &
             Q('schema_version', 'eq', 1)

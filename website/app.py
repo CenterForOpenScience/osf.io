@@ -18,7 +18,6 @@ from framework.django import handlers as django_handlers
 from framework.flask import add_handlers, app
 # Import necessary to initialize the root logger
 from framework.logging import logger as root_logger  # noqa
-from framework.mongo import handlers as mongo_handlers
 from framework.postcommit_tasks import handlers as postcommit_handlers
 from framework.sentry import sentry
 from framework.transactions import handlers as transaction_handlers
@@ -56,11 +55,7 @@ def init_addons(settings, routes=True):
 def attach_handlers(app, settings):
     """Add callback handlers to ``app`` in the correct order."""
     # Add callback handlers to application
-    if settings.USE_POSTGRES:
-        add_handlers(app, django_handlers.handlers)
-    else:
-        add_handlers(app, mongo_handlers.handlers)
-
+    add_handlers(app, django_handlers.handlers)
     add_handlers(app, celery_task_handlers.handlers)
     add_handlers(app, transaction_handlers.handlers)
     add_handlers(app, postcommit_handlers.handlers)

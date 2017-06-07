@@ -15,26 +15,14 @@ from website import settings
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO)
 
-# Stolen from scripts.populate_preprint_providers for initial subject creation
+# OSF preprint provider used for initial subject creation
 OSF_PROVIDER_DATA = {
     '_id': 'osf',
     'name': 'Open Science Framework',
-    'logo_name': 'cos-logo.png',
-    'description': 'A scholarly commons to connect the entire research cycle',
-    'banner_name': 'cos-banner.png',
     'domain': settings.DOMAIN,
-    'domain_redirect_enabled': False,  # Never change this
-    'external_url': 'https://osf.io/preprints/',
-    'example': 'khbvy',
-    'advisory_board': '',
-    'email_contact': '',
-    'email_support': '',
-    'social_twitter': '',
-    'social_facebook': '',
-    'social_instagram': '',
+    'domain_redirect_enabled': False,
+    'default_license': 'CC0 1.0 Universal',
     'licenses_acceptable': ['CC0 1.0 Universal', 'CC-By Attribution 4.0 International', 'No license'],
-    'header_text': '',
-    'subjects_acceptable': [],
 }
 
 def update_taxonomies(filename):

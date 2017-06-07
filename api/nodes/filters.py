@@ -11,24 +11,6 @@ from api.base import utils
 from osf.models import NodeRelation, AbstractNode as Node
 
 
-class NodesListFilterMixin(ODMFilterMixin):
-
-    # TODO: This mixin should be replaced with NodesFilterMixin on all views.
-
-    def _operation_to_query(self, operation):
-        if operation['source_field_name'] == 'root':
-            if None in operation['value']:
-                raise InvalidFilterValue()
-            return MQ('root__guids___id', 'in', operation['value'])
-        if operation['source_field_name'] == 'parent_node':
-            if operation['value']:
-                parent = utils.get_object_or_error(Node, operation['value'], display_name='parent')
-                return MQ('_id', 'in', [node._id for node in parent.get_nodes(is_node_link=False)])
-            else:
-                return MQ('parent_nodes__guids___id', 'eq', None)
-        return super(NodesListFilterMixin, self)._operation_to_query(operation)
-
-
 class NodeODMFilterMixin(ODMFilterMixin):
 
     def should_parse_special_query_params(self, field_name):
@@ -75,9 +57,6 @@ class NodeODMFilterMixin(ODMFilterMixin):
 
 
 class NodesFilterMixin(ListFilterMixin):
-
-    def postprocess_query_param(self, key, field_name, operation):
-        pass
 
     def filter_by_field(self, queryset, field_name, operation):
         if field_name == 'parent':

@@ -20,6 +20,7 @@ def create_test_file(node, user, filename='test_file', create_guid=True):
     }).save()
     return test_file
 
+
 def urlparse_drop_netloc(url):
     url = urlparse(url)
     if url[4]:
