@@ -1,43 +1,48 @@
-from nose.tools import *  # flake8: noqa
+import pytest
 
 from api.base.settings.defaults import API_BASE
-
 from tests.base import ApiTestCase
 from osf_tests.factories import PreprintProviderFactory
 
-
-class TestPreprintProviderExists(ApiTestCase):
+@pytest.mark.django_db
+class TestPreprintProviderExists:
 
     # Regression for https://openscience.atlassian.net/browse/OSF-7621
 
-    def setUp(self):
-        super(TestPreprintProviderExists, self).setUp()
-        self.preprint_provider = PreprintProviderFactory()
-        self.fake_url = '/{}preprint_providers/fake/'.format(API_BASE)
-        self.provider_url = '/{}preprint_providers/{}/'.format(API_BASE, self.preprint_provider._id)
+    @pytest.fixture()
+    def preprint_provider(self):
+        return PreprintProviderFactory()
 
-    def test_preprint_provider(self):
-        detail_res = self.app.get(self.provider_url)
-        assert_equals(detail_res.status_code, 200)
+    @pytest.fixture()
+    def fake_url(self):
+        return '/{}preprint_providers/fake/'.format(API_BASE)
 
-        licenses_res = self.app.get('{}licenses/'.format(self.provider_url))
-        assert_equals(licenses_res.status_code, 200)
+    @pytest.fixture()
+    def provider_url(self, preprint_provider):
+        return '/{}preprint_providers/{}/'.format(API_BASE, preprint_provider._id)
 
-        preprints_res = self.app.get('{}preprints/'.format(self.provider_url))
-        assert_equals(preprints_res.status_code, 200)
+    def test_preprint_provider_exists(self, app, provider_url, fake_url):
+        detail_res = app.get(provider_url)
+        assert detail_res.status_code == 200
 
-        taxonomies_res = self.app.get('{}taxonomies/'.format(self.provider_url))
-        assert_equals(taxonomies_res.status_code, 200)
+        licenses_res = app.get('{}licenses/'.format(provider_url))
+        assert licenses_res.status_code == 200
 
-    def test_preprint_provider_does_not_exist_returns_404(self):
-        detail_res = self.app.get(self.fake_url, expect_errors=True)
-        assert_equals(detail_res.status_code, 404)
+        preprints_res = app.get('{}preprints/'.format(provider_url))
+        assert preprints_res.status_code == 200
 
-        licenses_res = self.app.get('{}licenses/'.format(self.fake_url), expect_errors=True)
-        assert_equals(licenses_res.status_code, 404)
+        taxonomies_res = app.get('{}taxonomies/'.format(provider_url))
+        assert taxonomies_res.status_code == 200
 
-        preprints_res = self.app.get('{}preprints/'.format(self.fake_url), expect_errors=True)
-        assert_equals(preprints_res.status_code, 404)
+    #   test_preprint_provider_does_not_exist_returns_404
+        detail_res = app.get(fake_url, expect_errors=True)
+        assert detail_res.status_code == 404
 
-        taxonomies_res = self.app.get('{}taxonomies/'.format(self.fake_url), expect_errors=True)
-        assert_equals(taxonomies_res.status_code, 404)
+        licenses_res = app.get('{}licenses/'.format(fake_url), expect_errors=True)
+        assert licenses_res.status_code == 404
+
+        preprints_res = app.get('{}preprints/'.format(fake_url), expect_errors=True)
+        assert preprints_res.status_code == 404
+
+        taxonomies_res = app.get('{}taxonomies/'.format(fake_url), expect_errors=True)
+        assert taxonomies_res.status_code == 404
