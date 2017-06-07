@@ -1,16 +1,12 @@
 import functools
 import mock
-import pytest
 from modularodm import Q
+import pytest
 
 from api.base.settings.defaults import API_BASE
 from api_tests import utils as test_utils
 from framework.auth.core import Auth
 from osf.models import PreprintService, NodeLicense
-from website.project.licenses import ensure_licenses
-from website.project.signals import contributor_added
-from website.identifiers.utils import build_ezid_metadata
-from tests.base import ApiTestCase, fake, capture_signals
 from osf_tests.factories import (
     PreprintFactory, 
     AuthUserFactory, 
@@ -18,15 +14,20 @@ from osf_tests.factories import (
     SubjectFactory, 
     PreprintProviderFactory
 )
+from rest_framework import exceptions
+from tests.base import fake, capture_signals
+from website.project.licenses import ensure_licenses
+from website.project.signals import contributor_added
+from website.identifiers.utils import build_ezid_metadata
 
 ensure_licenses = functools.partial(ensure_licenses, warn=False)
 
 def build_preprint_update_payload(node_id, attributes=None, relationships=None):
     payload = {
-        "data": {
-            "id": node_id,
-            "attributes": attributes,
-            "relationships": relationships
+        'data': {
+            'id': node_id,
+            'attributes': attributes,
+            'relationships': relationships
         }
     }
     return payload
@@ -142,7 +143,7 @@ class TestPreprintUpdate:
 
     def test_update_subjects(self, app, user, preprint, subject, url):
         assert not preprint.subjects.filter(_id=subject._id).exists()
-        update_subjects_payload = build_preprint_update_payload(preprint._id, attributes={"subjects": [[subject._id]]})
+        update_subjects_payload = build_preprint_update_payload(preprint._id, attributes={'subjects': [[subject._id]]})
 
         res = app.patch_json_api(url, update_subjects_payload, auth=user.auth)
         assert res.status_code == 200
@@ -152,7 +153,7 @@ class TestPreprintUpdate:
 
     def test_update_invalid_subjects(self, app, user, preprint, url):
         subjects = preprint.subjects
-        update_subjects_payload = build_preprint_update_payload(preprint._id, attributes={"subjects": [['wwe']]})
+        update_subjects_payload = build_preprint_update_payload(preprint._id, attributes={'subjects': [['wwe']]})
 
         res = app.patch_json_api(url, update_subjects_payload, auth=user.auth, expect_errors=True)
         assert res.status_code == 400
@@ -163,10 +164,10 @@ class TestPreprintUpdate:
     def test_update_primary_file(self, app, user, preprint, url):
         new_file = test_utils.create_test_file(preprint.node, user,  filename='shook_that_mans_hand.pdf')
         relationships = {
-            "primary_file": {
-                "data": {
-                    "type": "file",
-                    "id": new_file._id
+            'primary_file': {
+                'data': {
+                    'type': 'file',
+                    'id': new_file._id
                 }
             }
         }
@@ -179,7 +180,6 @@ class TestPreprintUpdate:
         preprint.node.reload()
         assert preprint.primary_file == new_file
 
-        # check logs
         log = preprint.node.logs.latest()
         assert log.action == 'preprint_file_updated'
         assert log.params.get('preprint') == preprint._id
@@ -189,10 +189,10 @@ class TestPreprintUpdate:
         file_for_project = test_utils.create_test_file(project, user, filename='six_pack_novak.pdf')
 
         relationships = {
-            "primary_file": {
-                "data": {
-                    "type": "file",
-                    "id": file_for_project._id
+            'primary_file': {
+                'data': {
+                    'type': 'file',
+                    'id': file_for_project._id
                 }
             }
         }
@@ -208,7 +208,7 @@ class TestPreprintUpdate:
     def test_update_article_doi(self, app, user, preprint, url):
         new_doi = '10.1234/ASDFASDF'
         assert preprint.article_doi != new_doi
-        update_subjects_payload = build_preprint_update_payload(preprint._id, attributes={"doi": new_doi})
+        update_subjects_payload = build_preprint_update_payload(preprint._id, attributes={'doi': new_doi})
 
         res = app.patch_json_api(url, update_subjects_payload, auth=user.auth)
         assert res.status_code == 200
@@ -275,7 +275,7 @@ class TestPreprintUpdate:
         preprint.node.add_contributor(write_contrib, permissions=['read', 'write'], auth=Auth(user), save=True)
 
         assert not preprint.subjects.filter(_id=subject._id).exists()
-        update_subjects_payload = build_preprint_update_payload(preprint._id, attributes={"subjects": [[subject._id]]})
+        update_subjects_payload = build_preprint_update_payload(preprint._id, attributes={'subjects': [[subject._id]]})
 
         res = app.patch_json_api(url, update_subjects_payload, auth=write_contrib.auth, expect_errors=True)
         assert res.status_code == 403
@@ -287,7 +287,7 @@ class TestPreprintUpdate:
 
         assert not preprint.subjects.filter(_id=subject._id).exists()
 
-        update_subjects_payload = build_preprint_update_payload(preprint._id, attributes={"subjects": [[subject._id]]})
+        update_subjects_payload = build_preprint_update_payload(preprint._id, attributes={'subjects': [[subject._id]]})
 
         res = app.patch_json_api(url, update_subjects_payload, auth=non_contrib.auth, expect_errors=True)
         assert res.status_code == 403
@@ -491,7 +491,7 @@ class TestPreprintUpdateLicense:
 
         res = make_request(url, data, auth=read_contributor.auth, expect_errors=True)
         assert res.status_code == 403
-        assert res.json['errors'][0]['detail'] == 'You do not have permission to perform this action.'
+        assert res.json['errors'][0]['detail'] == exceptions.PermissionDenied.default_detail
 
     #   test_non_contributor_cannot_update_license
         data = make_payload(
@@ -501,7 +501,7 @@ class TestPreprintUpdateLicense:
 
         res = make_request(url, data, auth=non_contributor.auth, expect_errors=True)
         assert res.status_code == 403
-        assert res.json['errors'][0]['detail'] == 'You do not have permission to perform this action.'
+        assert res.json['errors'][0]['detail'] == exceptions.PermissionDenied.default_detail
 
     #   test_unauthenticated_user_cannot_update_license
         data = make_payload(
@@ -511,7 +511,7 @@ class TestPreprintUpdateLicense:
 
         res = make_request(url, data, expect_errors=True)
         assert res.status_code == 401
-        assert res.json['errors'][0]['detail'] == 'Authentication credentials were not provided.'
+        assert res.json['errors'][0]['detail'] == exceptions.NotAuthenticated.default_detail
 
     def test_update_error(self, admin_contributor, preprint, preprint_provider, mit_license, no_license, url, make_payload, make_request):
 

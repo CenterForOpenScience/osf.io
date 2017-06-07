@@ -1,7 +1,6 @@
 import pytest
 
 from api.base.settings.defaults import API_BASE
-from tests.base import ApiTestCase
 from osf_tests.factories import PreprintProviderFactory
 
 @pytest.mark.django_db
