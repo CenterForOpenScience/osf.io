@@ -3,7 +3,7 @@ from nose.tools import *  # flake8: noqa
 from tests.base import ApiTestCase
 from osf_tests.factories import InstitutionFactory
 
-from website.models import Node
+from osf.models import AbstractNode as Node
 from api.base.settings.defaults import API_BASE
 
 class TestInstitutionList(ApiTestCase):

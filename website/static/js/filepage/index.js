@@ -309,11 +309,6 @@ var FileViewPage = {
 
             });
         });
-        $(document).on('fileviewpage:download', function() {
-            //replace mode=render with action=download for download count incrementation
-            window.location = self.file.urls.content.replace('mode=render', 'action=download');
-            return false;
-        });
 
         self.shareJSObservables = {
             activeUsers: m.prop([]),
@@ -532,7 +527,7 @@ var FileViewPage = {
                 m.component(SharePopover, {link: link, height: height})
             ]) : '',
             m('.btn-group.m-t-xs', [
-                ctrl.isLatestVersion ? m('button.btn.btn-sm.btn-primary.file-download', {onclick: $(document).trigger.bind($(document), 'fileviewpage:download')}, 'Download') : null
+                ctrl.isLatestVersion ? m('a.btn.btn-sm.btn-primary.file-download', {href: 'download'}, 'Download') : null
             ]),
             m('.btn-group.btn-group-sm.m-t-xs', [
                ctrl.editor ? m( '.btn.btn-default.disabled', 'Toggle view: ') : null

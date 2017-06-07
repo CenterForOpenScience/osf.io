@@ -88,9 +88,9 @@ def privacy_info_handle(info, anonymous, name=False):
 
 
 def ensure_external_identity_uniqueness(provider, identity, user=None):
-    from framework.auth.core import User  # avoid circular import
+    from osf.models import OSFUser
 
-    users_with_identity = User.find(Q('external_identity.{}.{}'.format(provider, identity), 'ne', None))
+    users_with_identity = OSFUser.find(Q('external_identity.{}.{}'.format(provider, identity), 'ne', None))
     for existing_user in users_with_identity:
         if user and user._id == existing_user._id:
             continue

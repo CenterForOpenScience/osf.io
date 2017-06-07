@@ -2,40 +2,15 @@
 
 import datetime as dt
 
-import framework
-import itertools
 import logging
-import re
-import urllib
-import urlparse
-from copy import deepcopy
-from framework import analytics
 
-import bson
-import itsdangerous
-import pytz
 from django.utils import timezone
-from flask import Request as FlaskRequest
-from framework.addons import AddonModelMixin
-from framework.auth import signals, utils
-from framework.auth.exceptions import (ChangePasswordError, ExpiredTokenError,
-                                       InvalidTokenError,
-                                       MergeConfirmedRequiredError,
-                                       MergeConflictError)
-from framework.bcrypt import check_password_hash, generate_password_hash
-from framework.exceptions import PermissionsError
-from framework.guid.model import GuidStoredObject
-from framework.mongo import get_cache_key
 from framework.mongo.validators import string_required
-from framework.sentry import log_exception
 from framework.sessions import session
-from framework.sessions.model import Session
-from framework.sessions.utils import remove_sessions_for_user
-from modularodm import Q, fields
-from modularodm.exceptions import (NoResultsFound, QueryException,
-                                   ValidationError, ValidationValueError)
+from modularodm import Q
+from modularodm.exceptions import QueryException, ValidationError, ValidationValueError
 from modularodm.validators import URLValidator
-from website import filters, mails, security, settings
+from website import security, settings
 
 name_formatters = {
     'long': lambda user: user.fullname,
@@ -118,9 +93,10 @@ def get_current_user_id():
 
 # TODO - rename to _get_current_user_from_session /HRYBACKI
 def _get_current_user():
+    from osf.models import OSFUser
     current_user_id = get_current_user_id()
     if current_user_id:
-        return User.load(current_user_id)
+        return OSFUser.load(current_user_id)
     else:
         return None
 
@@ -142,6 +118,7 @@ def get_user(email=None, password=None, token=None, external_id_provider=None, e
     :param external_id: the external id
     :rtype User or None
     """
+    from osf.models import OSFUser
 
     if password and not email:
         raise AssertionError('If a password is provided, an email must also be provided.')
@@ -150,7 +127,7 @@ def get_user(email=None, password=None, token=None, external_id_provider=None, e
 
     if email:
         email = email.strip().lower()
-        query_list.append(Q('emails', 'eq', email) | Q('username', 'eq', email))
+        query_list.append(Q('emails__address', 'eq', email) | Q('username', 'eq', email))
 
     if password:
         password = password.strip()
@@ -158,7 +135,7 @@ def get_user(email=None, password=None, token=None, external_id_provider=None, e
             query = query_list[0]
             for query_part in query_list[1:]:
                 query = query & query_part
-            user = User.find_one(query)
+            user = OSFUser.find_one(query)
         except Exception as err:
             logger.error(err)
             user = None
@@ -176,7 +153,7 @@ def get_user(email=None, password=None, token=None, external_id_provider=None, e
         query = query_list[0]
         for query_part in query_list[1:]:
             query = query & query_part
-        user = User.find_one(query)
+        user = OSFUser.find_one(query)
         return user
     except Exception as err:
         logger.error(err)
@@ -205,7 +182,7 @@ class Auth(object):
             return None
         try:
             # Avoid circular import
-            from website.project.model import PrivateLink
+            from osf.models import PrivateLink
             private_link = PrivateLink.find_one(
                 Q('key', 'eq', self.private_key)
             )
@@ -226,6 +203,7 @@ class Auth(object):
             user=user,
             private_key=private_key,
         )
+<<<<<<< HEAD
 
 
 class User(GuidStoredObject, AddonModelMixin):
@@ -1643,3 +1621,5 @@ def _merge_into_reversed(*iterables):
     '''Merge multiple sorted inputs into a single output in reverse order.
     '''
     return sorted(itertools.chain(*iterables), reverse=True)
+=======
+>>>>>>> fbde375a06680a8364b48f032ec7ccb6e5c1db5d

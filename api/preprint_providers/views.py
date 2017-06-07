@@ -6,7 +6,7 @@ from django.db.models import Q
 
 from framework.auth.oauth_scopes import CoreScopes
 
-from website.models import Node, Subject, PreprintService, PreprintProvider
+from osf.models import AbstractNode as Node, Subject, PreprintService, PreprintProvider
 
 from api.base import permissions as base_permissions
 from api.base.filters import PreprintFilterMixin, ODMFilterMixin
