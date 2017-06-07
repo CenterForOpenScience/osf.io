@@ -118,6 +118,7 @@ class PreprintProviderDisplay(PermissionRequiredMixin, DetailView):
         kwargs['show_taxonomies'] = False if preprint_provider.subjects.exists() else True
         kwargs['form'] = PreprintProviderForm(initial=fields)
         kwargs['import_form'] = ImportFileForm()
+        kwargs['tinymce_apikey'] = settings.TINYMCE_APIKEY
         return kwargs
 
 
@@ -255,4 +256,5 @@ class CreatePreprintProvider(PermissionRequiredMixin, CreateView):
     def get_context_data(self, *args, **kwargs):
         kwargs['import_form'] = ImportFileForm()
         kwargs['show_taxonomies'] = SHOW_TAXONOMIES_IN_PREPRINT_PROVIDER_CREATE
+        kwargs['tinymce_apikey'] = settings.TINYMCE_APIKEY
         return super(CreatePreprintProvider, self).get_context_data(*args, **kwargs)
