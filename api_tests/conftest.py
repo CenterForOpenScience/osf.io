@@ -29,6 +29,8 @@ SILENT_LOGGERS = [
 for logger_name in SILENT_LOGGERS:
     logging.getLogger(logger_name).setLevel(logging.CRITICAL)
 
+logging.disable(logging.CRITICAL)
+
 @pytest.fixture()
 def app():
     return JSONAPITestApp()
