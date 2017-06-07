@@ -31,7 +31,7 @@ def recent_public_registrations(n=10):
     ).filter(
         DQ(DQ(embargo__isnull=True) | ~DQ(embargo__state='unapproved')) &
         DQ(DQ(retraction__isnull=True) | ~DQ(retraction__state='approved'))
-    ).get_roots().order_by('-registered_date').limit(n)
+    ).get_roots().order_by('-registered_date')[:n]
 
 
 def get_keen_activity():

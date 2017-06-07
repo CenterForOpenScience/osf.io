@@ -818,7 +818,7 @@ class RegistrationEmbargoViewsTestCase(OsfTestCase):
         )
         assert_equal(res.status_code, 202)
 
-        registration = Registration.find().sort('-registered_date').first()
+        registration = Registration.find().order_by('-registered_date').first()
         assert_not_equal(registration.registration_approval, None)
 
     # Regression test for https://openscience.atlassian.net/browse/OSF-5039
@@ -857,7 +857,7 @@ class RegistrationEmbargoViewsTestCase(OsfTestCase):
         # Last node directly registered from self.project
         registration = Node.find(
             Q('registered_from', 'eq', self.project)
-        ).sort('-registered_date')[0]
+        ).order_by('-registered_date')[0]
 
         assert_true(registration.is_registration)
         assert_false(registration.is_public)
@@ -908,7 +908,7 @@ class RegistrationEmbargoViewsTestCase(OsfTestCase):
 
         assert_equal(res.status_code, 202)
 
-        registration = Registration.find().sort('-registered_date').first()
+        registration = Registration.find().order_by('-registered_date').first()
 
         assert_false(registration.is_public)
         assert_true(registration.is_pending_embargo_for_existing_registration)
@@ -950,7 +950,7 @@ class RegistrationEmbargoViewsTestCase(OsfTestCase):
         # Last node directly registered from self.project
         registration = Node.find(
             Q('registered_from', 'eq', self.project)
-        ).sort('-registered_date')[0]
+        ).order_by('-registered_date')[0]
 
         assert_true(registration.is_registration)
         assert_false(registration.is_public)

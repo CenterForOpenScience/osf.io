@@ -128,7 +128,7 @@ def node_register_template_page(auth, node, metaschema_id, **kwargs):
             try:
                 meta_schema = MetaSchema.find(
                     Q('name', 'eq', _id_to_name(metaschema_id))
-                ).sort('-schema_version')[0]
+                ).order_by('-schema_version').first()
             except IndexError:
                 raise HTTPError(http.NOT_FOUND, data={
                     'message_short': 'Invalid schema name',
