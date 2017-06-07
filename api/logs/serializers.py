@@ -106,8 +106,9 @@ class NodeLogParamsSerializer(RestrictedDictSerializer):
         if urls:
             view = urls.get('view', None)
             if view:
-                file_id = view.split('/')[-2]
-                provider = view.split('/')[-3]
+                view = view.rstrip('\/')
+                file_id = view.split('/')[-1]
+                provider = view.split('/')[-2]
                 try:
                     file_node = BaseFileNode.resolve_class(provider, BaseFileNode.ANY).find_one(Q('_id', 'eq', file_id))
                 except NoResultsFound:
