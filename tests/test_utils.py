@@ -13,6 +13,7 @@ import blinker
 from tests.base import OsfTestCase
 from osf_tests.factories import RegistrationFactory
 
+from framework.auth.utils import generate_csl_given_name
 from framework.routing import Rule, json_renderer
 from framework.utils import secure_filename
 from website.routes import process_rules, OsfWebRenderer
@@ -447,3 +448,12 @@ class TestSignalUtils(unittest.TestCase):
         with util.disconnected_from(self.signal_, self.listener):
             self.signal_.send()
         assert_false(self.mock_listener.called)
+
+class TestUserUtils(unittest.TestCase):
+
+    def test_generate_csl_given_name(self):
+        given_name = 'Cause'
+        middle_names = 'Awesome'
+        suffix = 'Jr.'
+        csl_given_name = generate_csl_given_name(given_name, middle_names, suffix)
+        assert_equal(csl_given_name, 'Cause A, Jr.')

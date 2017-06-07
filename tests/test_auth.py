@@ -13,7 +13,7 @@ from werkzeug.wrappers import BaseResponse
 
 from framework import auth
 from framework.auth import cas
-from framework.auth.utils import validate_recaptcha, generate_csl_given_name
+from framework.auth.utils import validate_recaptcha
 from framework.sessions import Session
 from framework.exceptions import HTTPError
 from tests.base import OsfTestCase, assert_is_redirect, fake
@@ -42,12 +42,19 @@ from tests.test_cas_authentication import generate_external_user_with_resp
 
 class TestAuthUtils(OsfTestCase):
 
-    def test_generate_csl_given_name(self):
-        given_name = 'Cause'
-        middle_names = 'Awesome'
-        suffix = 'Jr.'
-        csl_given_name = generate_csl_given_name(given_name, middle_names, suffix)
-        assert_equal(csl_given_name, 'Cause A ,Jr.')
+    def test_citation_with_only_fullname(self):
+        user = UserFactory()
+        user.fullname = 'Martin Luther King Jr.'
+        user.family_name = None
+        user.given_name = None
+        user.middle_names = None
+        user.suffix = None
+        user.save()
+        resp = user.csl_name
+        family_name = resp['family']
+        given_name = resp['given']
+        assert_equal(family_name, 'King')
+        assert_equal(given_name, 'Martin L, Jr.')
 
     def test_unreg_user_can_register(self):
         user = UnregUserFactory()
