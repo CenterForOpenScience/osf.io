@@ -16,7 +16,7 @@ import logging
 
 from framework import sentry
 from framework.celery_tasks import app as celery_app
-from osf.models import OSFUser, AbstractNode, PreprintService
+from osf.models import OSFUser, AbstractNode, PreprintService, PreprintProvider
 from scripts import utils as script_utils
 from website import settings
 from website.app import init_app
@@ -206,11 +206,15 @@ class Sitemap(object):
         # Preprint urls
         objs = PreprintService.objects.filter(node__isnull=False, node__is_deleted=False, node__is_public=True, is_published=True)
         progress.start(objs.count() * 2, 'PREP: ')
+        osf = PreprintProvider.load('osf')
         for obj in objs.iterator():
             try:
                 preprint_date = obj.date_modified.strftime('%Y-%m-%d')
                 config = settings.SITEMAP_PREPRINT_CONFIG
-                config['loc'] = urlparse.urljoin(settings.DOMAIN, obj.url)
+                preprint_url = obj.url
+                if obj.provider == osf:
+                    preprint_url = '/preprints/{}/'.format(obj._id)
+                config['loc'] = urlparse.urljoin(settings.DOMAIN, preprint_url)
                 config['lastmod'] = preprint_date
                 self.add_url(config)
 
