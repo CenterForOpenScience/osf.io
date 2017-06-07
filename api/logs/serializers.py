@@ -110,7 +110,7 @@ class NodeLogParamsSerializer(RestrictedDictSerializer):
                 file_id = view.split('/')[-1]
                 provider = view.split('/')[-2]
                 try:
-                    file_node = BaseFileNode.resolve_class(provider, BaseFileNode.ANY).find_one(Q('_id', 'eq', file_id))
+                    file_node = BaseFileNode.resolve_class(provider, BaseFileNode.FILE).find_one(Q('_id', 'eq', file_id))
                 except NoResultsFound:
                     file_node = None
                 if file_node:
