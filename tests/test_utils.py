@@ -472,7 +472,7 @@ class TestUserUtils(unittest.TestCase):
         middle_names = 'Awesome'
         suffix = 'Jr.'
         csl_given_name = generate_csl_given_name(
-            given_name=given_name, middle_name=middle_names, suffix=suffix
+            given_name=given_name, middle_names=middle_names, suffix=suffix
         )
         assert_equal(csl_given_name, 'Cause A, Jr.')
 
@@ -480,7 +480,7 @@ class TestUserUtils(unittest.TestCase):
         given_name = 'Cause'
         middle_names = 'Awesome'
         csl_given_name = generate_csl_given_name(
-            given_name=given_name, middle_name=middle_names
+            given_name=given_name, middle_names=middle_names
         )
         assert_equal(csl_given_name, 'Cause A')
 
@@ -490,7 +490,7 @@ class TestUserUtils(unittest.TestCase):
         csl_given_name = generate_csl_given_name(
             given_name=given_name, suffix=suffix
         )
-        assert_equal(csl_given_name, 'Cause A')
+        assert_equal(csl_given_name, 'Cause, Jr.')
 
     def test_generate_csl_given_name_with_given(self):
         given_name = 'Cause'
