@@ -105,7 +105,8 @@ class NodeLogParamsSerializer(RestrictedDictSerializer):
         urls = obj.get('urls', None)
         if urls:
             view = urls.get('view', None)
-            if view:
+            #TODO: remove the check for '//' when the urls for folder is removed from api
+            if view and not view.endswith('//'):
                 view = view.rstrip('\/')
                 file_id = view.split('/')[-1]
                 provider = view.split('/')[-2]
