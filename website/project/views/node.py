@@ -570,10 +570,10 @@ def _should_show_wiki_widget(node, user):
 
     has_wiki = bool(node.get_addon('wiki'))
     wiki_page = node.get_wiki_page('home', None)
-    if not node.has_permission(user, 'write'):
-        if not node.is_registration:
-            return has_wiki and wiki_page and wiki_page.html(node)
-    return has_wiki
+    if node.has_permission(user, 'write') and not node.is_regitration:
+        return has_wiki
+    else:
+        return has_wiki and wiki_page and wiki_page.html(node)
 
 
 def _view_project(node, auth, primary=False,
