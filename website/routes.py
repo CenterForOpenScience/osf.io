@@ -1283,27 +1283,10 @@ def make_url_map(app):
         ),
         Rule(
             [
-                '/project/<pid>/pointer/',
-                '/project/<pid>/node/<nid>/pointer/',
-            ],
-            'post',
-            project_views.node.add_pointers,
-            json_renderer,
-        ),
-        Rule(
-            [
                 '/pointer/',
             ],
             'post',
             project_views.node.add_pointer,
-            json_renderer,
-        ),
-        Rule(
-            [
-                '/pointers/move/',
-            ],
-            'post',
-            project_views.node.move_pointers,
             json_renderer,
         ),
         Rule(
@@ -1313,14 +1296,6 @@ def make_url_map(app):
             ],
             'delete',
             project_views.node.remove_pointer,
-            json_renderer,
-        ),
-        Rule(
-            [
-                '/folder/<pid>/pointer/<pointer_id>',
-            ],
-            'delete',
-            project_views.node.remove_pointer_from_folder,
             json_renderer,
         ),
 

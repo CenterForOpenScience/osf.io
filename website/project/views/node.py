@@ -1048,46 +1048,6 @@ def _add_pointers(node, pointers, auth):
 
 
 @collect_auth
-def move_pointers(auth):
-    """Move pointer from one node to another node.
-
-    """
-    NodeRelation = apps.get_model('osf.NodeRelation')
-
-    from_node_id = request.json.get('fromNodeId')
-    to_node_id = request.json.get('toNodeId')
-    pointers_to_move = request.json.get('pointerIds')
-
-    if from_node_id is None or to_node_id is None or pointers_to_move is None:
-        raise HTTPError(http.BAD_REQUEST)
-
-    from_node = Node.load(from_node_id)
-    to_node = Node.load(to_node_id)
-
-    if to_node is None or from_node is None:
-        raise HTTPError(http.BAD_REQUEST)
-
-    for pointer_to_move in pointers_to_move:
-        try:
-            node_relation = NodeRelation.objects.get(_id=pointer_to_move)
-        except NodeRelation.DoesNotExist:
-            raise HTTPError(http.BAD_REQUEST)
-
-        try:
-            from_node.rm_pointer(node_relation, auth=auth)
-        except ValueError:
-            raise HTTPError(http.BAD_REQUEST)
-
-        from_node.save()
-        try:
-            _add_pointers(to_node, [node_relation.node], auth)
-        except ValueError:
-            raise HTTPError(http.BAD_REQUEST)
-
-    return {}, 200, None
-
-
-@collect_auth
 def add_pointer(auth):
     """Add a single pointer to a node using only JSON parameters
 
@@ -1108,30 +1068,6 @@ def add_pointer(auth):
 
 @must_have_permission(WRITE)
 @must_not_be_registration
-def add_pointers(auth, node, **kwargs):
-    """Add pointers to a node.
-
-    """
-    node_ids = request.json.get('nodeIds')
-
-    if not node_ids:
-        raise HTTPError(http.BAD_REQUEST)
-
-    nodes = [
-        Node.load(node_id)
-        for node_id in node_ids
-    ]
-
-    try:
-        _add_pointers(node, nodes, auth)
-    except ValueError:
-        raise HTTPError(http.BAD_REQUEST)
-
-    return {}
-
-
-@must_have_permission(WRITE)
-@must_not_be_registration
 def remove_pointer(auth, node, **kwargs):
     """Remove a pointer from a node, raising a 400 if the pointer is not
     in `node.nodes`.
@@ -1144,32 +1080,6 @@ def remove_pointer(auth, node, **kwargs):
         raise HTTPError(http.BAD_REQUEST)
 
     pointer = Node.load(pointer_id)
-    if pointer is None:
-        raise HTTPError(http.BAD_REQUEST)
-
-    try:
-        node.rm_pointer(pointer, auth=auth)
-    except ValueError:
-        raise HTTPError(http.BAD_REQUEST)
-
-    node.save()
-
-
-@must_be_valid_project  # injects project
-@must_have_permission(WRITE)
-@must_not_be_registration
-def remove_pointer_from_folder(auth, node, pointer_id, **kwargs):
-    """Remove a pointer from a node, raising a 400 if the pointer is not
-    in `node.nodes`.
-
-    """
-    if pointer_id is None:
-        raise HTTPError(http.BAD_REQUEST)
-
-    pointer_id = node.pointing_at(pointer_id)
-
-    pointer = Node.load(pointer_id)
-
     if pointer is None:
         raise HTTPError(http.BAD_REQUEST)
 
