@@ -3,7 +3,7 @@ from nose.tools import *  # flake8: noqa
 from modularodm import Q
 from tests.base import ApiTestCase
 from osf_tests.factories import SubjectFactory
-from website.project.taxonomies import Subject
+from osf.models import Subject
 from api.base.settings.defaults import API_BASE
 
 

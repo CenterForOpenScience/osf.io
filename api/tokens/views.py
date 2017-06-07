@@ -17,7 +17,7 @@ from api.base.views import JSONAPIBaseView
 from api.base import permissions as base_permissions
 from api.tokens.serializers import ApiOAuth2PersonalTokenSerializer
 
-from website.models import ApiOAuth2PersonalToken
+from osf.models import ApiOAuth2PersonalToken
 
 
 class TokenList(JSONAPIBaseView, generics.ListCreateAPIView, ODMFilterMixin):

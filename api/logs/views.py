@@ -3,7 +3,7 @@ from rest_framework.exceptions import NotFound
 
 from framework.auth.oauth_scopes import CoreScopes
 
-from website.models import NodeLog
+from osf.models import NodeLog
 from api.logs.permissions import (
     ContributorOrPublicForLogs
 )

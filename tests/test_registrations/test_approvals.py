@@ -6,15 +6,10 @@ from django.utils import timezone
 from nose.tools import *  # noqa
 from tests.base import OsfTestCase
 from osf_tests.factories import (
-    AuthUserFactory, EmbargoFactory, NodeFactory, ProjectFactory,
-    RegistrationFactory, UserFactory, UnconfirmedUserFactory, DraftRegistrationFactory
+    EmbargoFactory, ProjectFactory,
+    RegistrationFactory, UserFactory, DraftRegistrationFactory
 )
 
-from framework.exceptions import PermissionsError
-from modularodm.exceptions import ValidationValueError
-from website.exceptions import (
-    InvalidSanctionRejectionToken, InvalidSanctionApprovalToken, NodeStateError,
-)
 from website import tokens
 
 

@@ -534,8 +534,12 @@ class GuidMixin(BaseIDMixin):
 
     @classmethod
     def load(cls, q):
+        # Minor optimization--no need to query if q is None or ''
+        if not q:
+            return None
         try:
-            queryset = cls.objects.filter(guids___id=q)
+            # guids___id__isnull=False forces an INNER JOIN
+            queryset = cls.objects.filter(guids___id__isnull=False, guids___id=q)
             if hasattr(queryset, 'remove_guid_annotations'):
                 # Remove annotation then re-annotate
                 # doing annotations AFTER the filter allows the

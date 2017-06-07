@@ -232,6 +232,8 @@ ENTRY_POINTS = {'osf4m': 'osf4m', 'prereg_challenge_campaign': 'prereg',
 DESK_KEY = ''
 DESK_KEY_SECRET = ''
 
+TINYMCE_APIKEY = ''
+
 if DEBUG:
     INSTALLED_APPS += ('debug_toolbar', )
     MIDDLEWARE_CLASSES += ('debug_toolbar.middleware.DebugToolbarMiddleware', )

@@ -15,10 +15,10 @@ from osf_tests.factories import (AuthUserFactory, NodeLicenseRecordFactory,
 from tests.base import OsfTestCase
 from tests.utils import assert_logs, assert_not_logs
 from website import settings
-from website.project.licenses import (NodeLicense, ensure_licenses,
-                                      serialize_node_license,
-                                      serialize_node_license_record)
-from website.project.model import NodeLog, NodeStateError
+from osf.models.licenses import NodeLicense, serialize_node_license_record, serialize_node_license
+from website.project.licenses import ensure_licenses
+from osf.models import NodeLog
+from website.exceptions import NodeStateError
 
 ensure_licenses = functools.partial(ensure_licenses, warn=False)
 

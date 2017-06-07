@@ -16,7 +16,7 @@ class TestUserSerializers(AdminTestCase):
         nt.assert_is_instance(info, dict)
         nt.assert_equal(info['name'], user.fullname)
         nt.assert_equal(info['id'], user._id)
-        nt.assert_equal(info['emails'], user.emails)
+        nt.assert_equal(list(info['emails']), list(user.emails.values_list('address', flat=True)))
         nt.assert_equal(info['last_login'], user.date_last_login)
         nt.assert_equal(len(info['nodes']), 0)
 
@@ -28,7 +28,7 @@ class TestUserSerializers(AdminTestCase):
         info = serialize_user(user)
         nt.assert_is_instance(info, dict)
         nt.assert_equal(info['name'], user.fullname)
-        nt.assert_equal(info['emails'], user.emails)
+        nt.assert_equal(list(info['emails']), list(user.emails.values_list('address', flat=True)))
         nt.assert_equal(info['last_login'], user.date_last_login)
         nt.assert_equal(len(info['nodes']), 0)
         nt.assert_true(info['two_factor'])
