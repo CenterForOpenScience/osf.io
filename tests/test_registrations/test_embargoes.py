@@ -1002,11 +1002,7 @@ class RegistrationEmbargoViewsTestCase(OsfTestCase):
             self.registration.embargo.approve_embargo(User.load(user_id), approval_token)
         self.registration.save()
 
-        res = self.app.post(
-            self.registration.api_url_for('project_set_privacy', permissions='public'),
-            auth=self.user.auth,
-        )
-        assert_equal(res.status_code, 200)
+        self.registration.set_privacy('public', Auth(self.registration.creator))
         for reg in self.registration.node_and_primary_descendants():
             reg.reload()
             assert_false(reg.is_public)
@@ -1040,11 +1036,7 @@ class RegistrationEmbargoViewsTestCase(OsfTestCase):
             self.registration.embargo.approve_embargo(User.load(user_id), approval_token)
         self.registration.save()
 
-        res = self.app.post(
-            self.registration.api_url_for('project_set_privacy', permissions='public'),
-            auth=self.user.auth,
-        )
-        assert_equal(res.status_code, 200)
+        self.registration.set_privacy('public', Auth(self.registration.creator))
         for admin in self.registration.admin_contributors:
             assert_true(any([each[0][0] == admin.username for each in mock_send_mail.call_args_list]))
 
@@ -1067,11 +1059,7 @@ class RegistrationEmbargoViewsTestCase(OsfTestCase):
             registration.embargo.approve_embargo(User.load(user_id), approval_token)
         self.registration.save()
 
-        res = self.app.post(
-            registration.api_url_for('project_set_privacy', permissions='public'),
-            auth=self.user.auth
-        )
-        assert_equal(res.status_code, 200)
+        registration.set_privacy('public', Auth(self.registration.creator))
         asked_admins = [(admin._id, n._id) for admin, n in mock_ask.call_args[0][0]]
         for admin, node in registration.get_admin_contributors_recursive():
             assert_in((admin._id, node._id), asked_admins)
