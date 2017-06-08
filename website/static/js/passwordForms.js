@@ -256,19 +256,26 @@ var SignUpViewModel = oop.extend(BaseViewModel, {
         );
         self.submitted(true);
     },
-
     submitError: function(xhr) {
         var self = this;
+
         /* jshint ignore: start */
-        if (typeof grecaptcha !== 'undefined') {
+        if(xhr.responseText.indexOf('UnicodeEncodeError') !== -1){
+            self.changeMessage(
+                'Email address or password contains invalid characters',
+                'text-danger p-xs',
+                5000
+            );
+        }else if(typeof grecaptcha !== 'undefined'){
             grecaptcha.reset();
+        }else{
+            self.changeMessage(
+                'An error has occured',
+                'text-danger p-xs',
+                5000
+            );
         }
         /* jshint ignore: end */
-        self.changeMessage(
-            xhr.responseJSON.message_long,
-            'text-danger p-xs',
-            5000
-        );
     },
     submit: function() {
         var self = this;
