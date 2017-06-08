@@ -8,12 +8,10 @@ from api_tests import utils as test_utils
 from framework.auth.core import Auth
 from osf_tests.factories import PreprintFactory, AuthUserFactory, ProjectFactory, SubjectFactory, PreprintProviderFactory
 from osf.models import PreprintService, NodeLicense
-from website.project.licenses import ensure_licenses
 from website.project.signals import contributor_added
 from website.identifiers.utils import build_ezid_metadata
 from tests.base import ApiTestCase, fake, capture_signals
 
-ensure_licenses = functools.partial(ensure_licenses, warn=False)
 
 def build_preprint_update_payload(node_id, attributes=None, relationships=None):
     payload = {
@@ -281,8 +279,6 @@ class TestPreprintUpdateLicense(ApiTestCase):
 
     def setUp(self):
         super(TestPreprintUpdateLicense, self).setUp()
-
-        ensure_licenses()
 
         self.admin_contributor = AuthUserFactory()
         self.rw_contributor = AuthUserFactory()

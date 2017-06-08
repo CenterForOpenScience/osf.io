@@ -14,7 +14,6 @@ from framework.transactions.context import TokuTransaction
 
 from website.models import MetaSchema
 from website.app import init_app
-from website.project.model import ensure_schemas
 from website.project.metadata.schemas import _id_to_name
 
 from scripts import utils as scripts_utils
@@ -55,7 +54,6 @@ def main(dev=False, _db=None):
 
     # convert registered_schema to list field
     prepare_nodes()
-    ensure_schemas()
 
     node_documents = _db['node'].find({'is_registration': True})
     for node in node_documents:

@@ -1,7 +1,7 @@
 from nose.tools import *  # flake8: noqa
 
 from website.project.metadata.schemas import LATEST_SCHEMA_VERSION
-from website.project.model import ensure_schemas, Q
+from website.project.model import Q
 from osf.models import MetaSchema
 
 from api.base.settings.defaults import API_BASE
@@ -14,7 +14,6 @@ class TestMetaSchemaDetail(ApiTestCase):
     def setUp(self):
         super(TestMetaSchemaDetail, self).setUp()
         self.user = AuthUserFactory()
-        ensure_schemas()
         self.schema = MetaSchema.find_one(Q('name', 'eq', 'Prereg Challenge') & Q('schema_version', 'eq', LATEST_SCHEMA_VERSION))
         self.url = '/{}metaschemas/{}/'.format(API_BASE, self.schema._id)
 
