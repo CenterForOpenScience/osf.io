@@ -25,7 +25,6 @@ from website.exceptions import (
 )
 from website import tokens
 from osf.models import AbstractNode as Node
-from website.project.model import ensure_schemas
 from osf.models.sanctions import PreregCallbackMixin, Embargo
 from website.util import permissions
 from osf.models import Registration, Contributor, OSFUser as User, SpamStatus
@@ -776,7 +775,6 @@ class RegistrationEmbargoApprovalDisapprovalViewsTestCase(OsfTestCase):
 class RegistrationEmbargoViewsTestCase(OsfTestCase):
     def setUp(self):
         super(RegistrationEmbargoViewsTestCase, self).setUp()
-        ensure_schemas()
         self.user = AuthUserFactory()
         self.project = ProjectFactory(creator=self.user)
         self.draft = DraftRegistrationFactory(branched_from=self.project)
