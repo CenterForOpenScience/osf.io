@@ -514,17 +514,26 @@ class ResetPasswordView(PermissionRequiredMixin, FormView):
     permission_required = 'osf.change_osfuser'
     raise_exception = True
 
-    def get_context_data(self, **kwargs):
-        user = OSFUser.load(self.kwargs.get('guid'))
-        try:
-            self.initial.setdefault('emails', [(r, r) for r in user.emails.values_list('address', flat=True)])
-        except AttributeError:
+    def dispatch(self, request, *args, **kwargs):
+        self.user = OSFUser.load(self.kwargs.get('guid'))
+        if self.user is None:
             raise Http404(
                 '{} with id "{}" not found.'.format(
                     self.context_object_name.title(),
                     self.kwargs.get('guid')
                 ))
-        kwargs.setdefault('guid', user._id)
+        return super(ResetPasswordView, self).dispatch(request, *args, **kwargs)
+
+    def get_initial(self):
+        user = self.user
+        self.initial = {
+            'emails': [(r, r) for r in user.emails.values_list('address', flat=True)],
+        }
+        return super(ResetPasswordView, self).get_initial()
+
+    def get_context_data(self, **kwargs):
+        kwargs.setdefault('guid', self.user._id)
+        kwargs.setdefault('emails', self.user.emails)
         return super(ResetPasswordView, self).get_context_data(**kwargs)
 
     def form_valid(self, form):
