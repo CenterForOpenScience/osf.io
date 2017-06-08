@@ -129,7 +129,7 @@ class TestRegisterNode:
         # Registered node has all logs except for registration approval initiated
         assert project.logs.count() - 1 == registration.logs.count()
         assert project.logs.first().action == 'registration_initiated'
-        project_second_log = project.logs.limit(2)[1]
+        project_second_log = project.logs.all()[:2][1]
         assert registration.logs.first().action == project_second_log.action
 
     def test_tags(self, registration, project):
