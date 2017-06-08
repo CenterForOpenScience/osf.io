@@ -6,11 +6,10 @@ from modularodm import Q
 import furl
 import pytz
 
-from framework.auth.core import Auth, User
-from osf.models import BaseFileNode
+from framework.auth.core import Auth
+from osf.models import BaseFileNode, OSFUser, Comment
 from rest_framework import serializers as ser
 from website import settings
-from website.project.model import Comment
 from website.util import api_v2_url
 
 from api.base.serializers import (
@@ -87,7 +86,7 @@ class CheckoutField(ser.HyperlinkedRelatedField):
         ])
 
     def get_queryset(self):
-        return User.find(Q('_id', 'eq', self.context['request'].user._id))
+        return OSFUser.find(Q('_id', 'eq', self.context['request'].user._id))
 
     def get_url(self, obj, view_name, request, format):
         if obj is None:

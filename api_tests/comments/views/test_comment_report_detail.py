@@ -4,7 +4,7 @@ from django.utils import timezone
 from nose.tools import *  # flake8: noqa
 from datetime import datetime
 
-from framework.guid.model import Guid
+from osf.models import Guid
 
 from api.base.settings.defaults import API_BASE
 from api_tests import utils as test_utils

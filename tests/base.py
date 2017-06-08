@@ -4,10 +4,7 @@ import abc
 import datetime as dt
 import functools
 import logging
-import os
 import re
-import shutil
-import tempfile
 import unittest
 import uuid
 
@@ -16,27 +13,19 @@ import httpretty
 import mock
 import pytest
 
-from addons.wiki.models import NodeWikiPage
 from django.test.utils import override_settings
 from django.test import TestCase as DjangoTestCase
 from faker import Factory
-from framework.auth import User
 from framework.auth.core import Auth
 from framework.celery_tasks.handlers import celery_before_request
 from framework.django.handlers import handlers as django_handlers
 from framework.flask import rm_handlers
-from framework.guid.model import Guid
-from framework.mongo import client as client_proxy
-from framework.mongo import database as database_proxy
-from framework.sessions.model import Session
-from framework.transactions import commands, messages, utils
-from pymongo.errors import OperationFailure
+from osf.models import MetaSchema
 from website import settings
 from website.app import init_app
 from website.notifications.listeners import (subscribe_contributor,
                                              subscribe_creator)
-from website.project.model import (MetaSchema, Node, NodeLog, Tag, WatchConfig,
-                                   ensure_schemas)
+from website.project.model import ensure_schemas
 from website.project.signals import contributor_added, project_created
 from website.project.views.contributor import notify_added_contributor
 from website.signals import ALL_SIGNALS
@@ -92,57 +81,24 @@ for logger_name in SILENT_LOGGERS:
 # Fake factory
 fake = Factory.create()
 
-# All Models
-MODELS = (User, Node, NodeLog, NodeWikiPage,
-          Tag, WatchConfig, Session, Guid)
-
-
-def teardown_database(client=None, database=None):
-    client = client or client_proxy
-    database = database or database_proxy
-    try:
-        commands.rollback(database)
-    except OperationFailure as error:
-        message = utils.get_error_message(error)
-        if messages.NO_TRANSACTION_ERROR not in message:
-            raise
-    client.drop_database(database)
-
 
 @pytest.mark.django_db
 class DbTestCase(unittest.TestCase):
     """Base `TestCase` for tests that require a scratch database.
     """
-    DB_NAME = getattr(settings, 'TEST_DB_NAME', 'osf_test')
-
     @classmethod
     def setUpClass(cls):
         super(DbTestCase, cls).setUpClass()
 
-        # cls._original_db_name = settings.DB_NAME
-        # settings.DB_NAME = cls.DB_NAME
         cls._original_enable_email_subscriptions = settings.ENABLE_EMAIL_SUBSCRIPTIONS
         settings.ENABLE_EMAIL_SUBSCRIPTIONS = False
 
         cls._original_bcrypt_log_rounds = settings.BCRYPT_LOG_ROUNDS
         settings.BCRYPT_LOG_ROUNDS = 4
 
-        # teardown_database(database=database_proxy._get_current_object())
-
-        # TODO: With `database` as a `LocalProxy`, we should be able to simply
-        # this logic
-        # set_up_storage(
-        #     website.models.MODELS,
-        #     storage.MongoStorage,
-        #     addons=settings.ADDONS_AVAILABLE,
-        # )
-        # cls.db = database_proxy
-
     @classmethod
     def tearDownClass(cls):
         super(DbTestCase, cls).tearDownClass()
-        # teardown_database(database=database_proxy._get_current_object())
-        # settings.DB_NAME = cls._original_db_name
         settings.ENABLE_EMAIL_SUBSCRIPTIONS = cls._original_enable_email_subscriptions
         settings.BCRYPT_LOG_ROUNDS = cls._original_bcrypt_log_rounds
 
@@ -438,6 +394,8 @@ def capture_signals():
     """Factory method that creates a ``CaptureSignals`` with all OSF signals."""
     return CaptureSignals(ALL_SIGNALS)
 
+def assert_dict_contains_subset(a, b):
+    assert set(a.items()).issubset(set(b.items()))
 
 def assert_is_redirect(response, msg='Response is a redirect.'):
     assert 300 <= response.status_code < 400, msg

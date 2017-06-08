@@ -25,7 +25,7 @@ def build_preprint_create_payload(node_id=None, provider_id=None, file_id=None, 
     payload = {
         "data": {
             "attributes": attrs,
-            "relationships": {},            
+            "relationships": {},
             "type": "preprints"
         }
     }
@@ -79,6 +79,8 @@ class TestPreprintList(ApiTestCase):
 class TestPreprintsListFiltering(PreprintsListFilteringMixin):
     @pytest.fixture(autouse=True)
     def setUp(self):
+        self.mock_change_identifier = mock.patch('website.identifiers.client.EzidClient.change_status_identifier')
+        self.mock_change_identifier.start()
         self.user = AuthUserFactory()
         self.provider_one = PreprintProviderFactory(name='Sockarxiv')
         self.provider_two = PreprintProviderFactory(name='Piratearxiv')
@@ -286,10 +288,11 @@ class TestPreprintIsPublishedList(PreprintIsPublishedListMixin, ApiTestCase):
         self.url = '/{}preprints/?version=2.2&'.format(API_BASE)
         super(TestPreprintIsPublishedList, self).setUp()
 
-class TestPreprintIsValidList(PreprintIsValidListMixin, ApiTestCase):
+class TestPreprintIsValidList(PreprintIsValidListMixin):
+    @pytest.fixture(autouse=True)
     def setUp(self):
         self.admin = AuthUserFactory()
-        self.provider = PreprintProviderFactory()
         self.project = ProjectFactory(creator=self.admin, is_public=True)
+        self.provider = PreprintProviderFactory()
         self.url = '/{}preprints/?version=2.2&'.format(API_BASE)
         super(TestPreprintIsValidList, self).setUp()

@@ -1,5 +1,4 @@
 from __future__ import absolute_import
-from datetime import datetime
 
 from django.utils import timezone
 from nose.tools import *  # noqa PEP8 asserts
@@ -9,7 +8,7 @@ from framework.auth import Auth
 
 from tests.base import OsfTestCase
 from osf_tests.factories import UserFactory, CommentFactory
-from website.project.spam.model import SpamStatus
+from osf.models import SpamStatus
 
 
 class TestSpamMixin(OsfTestCase):
@@ -23,7 +22,7 @@ class TestSpamMixin(OsfTestCase):
         user = UserFactory()
         time = timezone.now()
         self.comment.report_abuse(
-                user, date=time, category='spam', text='ads', save=True)
+            user, date=time, category='spam', text='ads', save=True)
         assert_equal(self.comment.spam_status, SpamStatus.FLAGGED)
         equivalent = dict(
             date=time,
@@ -47,7 +46,7 @@ class TestSpamMixin(OsfTestCase):
         user = UserFactory()
         time = timezone.now()
         self.comment.report_abuse(
-                user, date=time, category='spam', text='ads', save=True
+            user, date=time, category='spam', text='ads', save=True
         )
         assert_equal(self.comment.spam_status, SpamStatus.FLAGGED)
         self.comment.retract_report(user, save=True)
@@ -65,7 +64,7 @@ class TestSpamMixin(OsfTestCase):
         reporter = UserFactory()
         non_reporter = UserFactory()
         self.comment.report_abuse(
-                reporter, category='spam', text='ads', save=True
+            reporter, category='spam', text='ads', save=True
         )
         with assert_raises(ValueError):
             self.comment.retract_report(non_reporter, save=True)
@@ -76,11 +75,11 @@ class TestSpamMixin(OsfTestCase):
         user_2 = UserFactory()
         time = timezone.now()
         self.comment.report_abuse(
-                user_1, date=time, category='spam', text='ads', save=True
+            user_1, date=time, category='spam', text='ads', save=True
         )
         assert_equal(self.comment.spam_status, SpamStatus.FLAGGED)
         self.comment.report_abuse(
-                user_2, date=time, category='spam', text='all', save=True
+            user_2, date=time, category='spam', text='all', save=True
         )
         self.comment.retract_report(user_1, save=True)
         equivalent = {
@@ -101,7 +100,7 @@ class TestSpamMixin(OsfTestCase):
     def test_cannot_remove_flag_not_retracted(self):
         user = UserFactory()
         self.comment.report_abuse(
-                user, category='spam', text='ads', save=True
+            user, category='spam', text='ads', save=True
         )
         self.comment.remove_flag(save=True)
         assert_equal(self.comment.spam_status, SpamStatus.FLAGGED)

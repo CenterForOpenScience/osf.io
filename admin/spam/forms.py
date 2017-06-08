@@ -1,6 +1,6 @@
 from django import forms
 
-from website.project.spam.model import SpamStatus
+from osf.models import SpamStatus
 
 
 class ConfirmForm(forms.Form):

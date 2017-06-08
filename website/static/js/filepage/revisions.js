@@ -139,7 +139,7 @@ var FileRevisionsTable = {
                     m('a.btn.btn-primary.btn-sm.file-download', {
                         href: revision.osfDownloadUrl,
                         onclick: function() {
-                            window.location = revision.waterbutlerDownloadUrl;
+                            window.location = revision.osfDownloadUrl;
                             return false;
                         }
                     }, m('i.fa.fa-download'))
@@ -228,8 +228,7 @@ var FileRevisionsTable = {
         }
 
         revision.osfViewUrl = '?' + $.param(options);
-        revision.osfDownloadUrl = '?' + $.param($.extend({action: 'download'}, options));
-        revision.waterbutlerDownloadUrl = waterbutler.buildDownloadUrl(file.path, file.provider, node.id, options);
+        revision.osfDownloadUrl = 'download?' + $.param(options);
 
         return revision;
     }

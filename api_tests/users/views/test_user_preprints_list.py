@@ -101,16 +101,16 @@ class TestUserPreprintIsPublishedList(PreprintIsPublishedListMixin, ApiTestCase)
         self.url = '/{}users/{}/preprints/?version=2.2&'.format(API_BASE, self.admin._id)
         super(TestUserPreprintIsPublishedList, self).setUp()
 
-
-class TestUserPreprintIsValidList(PreprintIsValidListMixin, ApiTestCase):
+class TestUserPreprintIsValidList(PreprintIsValidListMixin):
+    @pytest.fixture(autouse=True)
     def setUp(self):
         self.admin = AuthUserFactory()
-        self.provider = PreprintProviderFactory()
         self.project = ProjectFactory(creator=self.admin, is_public=True)
+        self.provider = PreprintProviderFactory()
         self.url = '/{}users/{}/preprints/?version=2.2&'.format(API_BASE, self.admin._id)
         super(TestUserPreprintIsValidList, self).setUp()
 
-    # User nodes/preprints routes do not show private nodes to anyone but the self
+    # test override: user nodes/preprints routes do not show private nodes to anyone but the self
     def test_preprint_private_visible_write(self):
         res = self.app.get(self.url, auth=self.write_contrib.auth)
         assert len(res.json['data']) == 1

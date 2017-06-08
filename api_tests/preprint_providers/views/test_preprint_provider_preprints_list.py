@@ -46,10 +46,11 @@ class TestPreprintProviderPreprintIsPublishedList(PreprintIsPublishedListMixin, 
         self.url = '/{}preprint_providers/{}/preprints/?version=2.2&'.format(API_BASE, self.provider_one._id)
         super(TestPreprintProviderPreprintIsPublishedList, self).setUp()
 
-class TestPreprintProviderPreprintIsValidList(PreprintIsValidListMixin, ApiTestCase):
+class TestPreprintProviderPreprintIsValidList(PreprintIsValidListMixin):
+    @pytest.fixture(autouse=True)
     def setUp(self):
         self.admin = AuthUserFactory()
-        self.provider = PreprintProviderFactory()
         self.project = ProjectFactory(creator=self.admin, is_public=True)
+        self.provider = PreprintProviderFactory()
         self.url = '/{}preprint_providers/{}/preprints/?version=2.2&'.format(API_BASE, self.provider._id)
         super(TestPreprintProviderPreprintIsValidList, self).setUp()

@@ -4,8 +4,7 @@ from rest_framework.exceptions import PermissionDenied, NotFound
 from rest_framework.status import is_server_error
 import requests
 
-from website.files.models import OsfStorageFile
-from website.files.models import OsfStorageFolder
+from addons.osfstorage.models import OsfStorageFile, OsfStorageFolder
 from website.util import waterbutler_api_url_for
 
 from api.base.exceptions import ServiceUnavailableError

@@ -3,7 +3,7 @@ from rest_framework import permissions
 from rest_framework import exceptions
 
 from api.base.utils import get_user_auth
-from website.models import PreprintService
+from osf.models import PreprintService
 from website.util import permissions as osf_permissions
 
 
