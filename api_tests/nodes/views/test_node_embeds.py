@@ -67,8 +67,8 @@ class TestNodeEmbeds:
         embeds = res.json['data']['embeds']
         ids = [child_one._id, child_two._id]
         assert len(embeds['children']['data']) == len(ids)
-        children = [child._id for child in res.json['data']['embeds']['children']['data']]
-        assert set(child_one._id, child_two._id) == set(children)
+        children = [child['id'] for child in res.json['data']['embeds']['children']['data']]
+        assert set([child_one._id, child_two._id]) == set(children)
 
     #   test_embed_parent
         url = '/{}nodes/{}/?embed=parent'.format(API_BASE, child_one._id)
