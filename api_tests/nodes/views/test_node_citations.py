@@ -1,8 +1,8 @@
 import pytest
 
-from framework.auth.core import Auth
 from api.base.settings.defaults import API_BASE
-from tests.base import ApiTestCase
+from framework.auth.core import Auth
+from rest_framework import exceptions
 from tests.factories import (
     ProjectFactory,
     AuthUserFactory,
@@ -10,18 +10,18 @@ from tests.factories import (
 
 @pytest.fixture()
 def admin_contributor():
+    return AuthUserFactory()
+
+@pytest.fixture()
+def write_contrib():
 	return AuthUserFactory()
 
 @pytest.fixture()
-def rw_contributor():
+def read_contrib():
 	return AuthUserFactory()
 
 @pytest.fixture()
-def read_contributor():
-	return AuthUserFactory()
-
-@pytest.fixture()
-def non_contributor():
+def non_contrib():
 	return AuthUserFactory()
 
 @pytest.fixture()
@@ -29,39 +29,39 @@ def public_project(admin_contributor):
 	return ProjectFactory(creator=admin_contributor, is_public=True)
 
 @pytest.fixture()
-def private_project(admin_contributor, rw_contributor, read_contributor):
+def private_project(admin_contributor, write_contrib, read_contrib):
 	private_project = ProjectFactory(creator=admin_contributor)
-	private_project.add_contributor(rw_contributor, auth=Auth(admin_contributor))
-	private_project.add_contributor(read_contributor, permissions=['read'], auth=Auth(admin_contributor))
+	private_project.add_contributor(write_contrib, permissions=['read','write'], auth=Auth(admin_contributor))
+	private_project.add_contributor(read_contrib, permissions=['read'], auth=Auth(admin_contributor))
 	private_project.save()
 	return private_project
 
 @pytest.mark.django_db
 class NodeCitationsMixin:
 
-	def test_node_citations(self, app, admin_contributor, rw_contributor, read_contributor, non_contributor, private_url, public_url):
+    def test_node_citations(self, app, admin_contributor, write_contrib, read_contrib, non_contrib, private_url, public_url):
 
-	# 	test_admin_can_view_private_project_citations
+	#   test_admin_can_view_private_project_citations
 		res = app.get(private_url, auth=admin_contributor.auth)
 		assert res.status_code == 200
 
-	# 	test_rw_contributor_can_view_private_project_citations
-		res = app.get(private_url, auth=rw_contributor.auth)
+	#   test_write_contrib_can_view_private_project_citations
+		res = app.get(private_url, auth=write_contrib.auth)
 		assert res.status_code == 200
 
-	# 	test_read_contributor_can_view_private_project_citations
-		res = app.get(private_url, auth=read_contributor.auth)
+	#   test_read_contrib_can_view_private_project_citations
+		res = app.get(private_url, auth=read_contrib.auth)
 		assert res.status_code == 200
 
-	#   test_non_contributor_cannot_view_private_project_citations
-		res = app.get(private_url, auth=non_contributor.auth, expect_errors=True)
+	#   test_non_contrib_cannot_view_private_project_citations
+		res = app.get(private_url, auth=non_contrib.auth, expect_errors=True)
 		assert res.status_code == 403
-		assert res.json['errors'][0]['detail'] == 'You do not have permission to perform this action.'
+		assert res.json['errors'][0]['detail'] == exceptions.PermissionDenied.default_detail
 
 	#   test_unauthenticated_cannot_view_private_project_citations
 		res = app.get(private_url, expect_errors=True)
 		assert res.status_code == 401
-		assert res.json['errors'][0]['detail'] == 'Authentication credentials were not provided.'
+		assert res.json['errors'][0]['detail'] == exceptions.NotAuthenticated.default_detail
 
 	#   test_unauthenticated_can_view_public_project_citations
 		res = app.get(public_url)

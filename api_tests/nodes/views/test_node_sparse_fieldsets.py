@@ -1,13 +1,13 @@
 import pytest
 
 from api.base.settings.defaults import API_BASE
-from tests.base import ApiTestCase
-from website.util import permissions
 from osf_tests.factories import (
     ProjectFactory,
     AuthUserFactory,
     PrivateLinkFactory,
 )
+from tests.base import ApiTestCase
+from website.util import permissions
 
 @pytest.fixture()
 def user():
@@ -51,15 +51,15 @@ class TestNodeSparseFieldsList:
 
     #   test_returns_expected_nodes
         res = app.get(url + 'title')
-        node_json = res.json['data']
+        data = res.json['data']
 
-        ids = [each['id'] for each in node_json]
+        ids = [each['id'] for each in data]
         assert public_project._id in ids
         assert deleted_project._id not in ids
         assert private_project._id not in ids
 
-        assert len(node_json) == 1
-        node_json = node_json[0]
+        assert len(data) == 1
+        node_json = data[0]
         assert node_json['attributes']['title'] == public_project.title
         assert len(node_json['attributes']) == 1
         assert set(node_json.keys()) == set(['links', 'type', 'id', 'attributes'])
@@ -180,6 +180,7 @@ class TestNodeSparseFieldsDetail:
         assert res.json['data']['attributes'] == {}
         node.reload()
         assert node.title != old_title
+        assert node.title == 'new title'
 
 @pytest.mark.django_db
 class TestSparseViewOnlyLinks:
@@ -204,7 +205,7 @@ class TestSparseViewOnlyLinks:
     def private_node_one(self, creation_user, contributing_read_user, contributing_write_user):
         private_node_one = ProjectFactory(is_public=False, creator=creation_user, title='Private One')
         private_node_one.add_contributor(contributing_read_user, permissions=[permissions.READ], save=True)
-        private_node_one.add_contributor(contributing_write_user, permissions=[permissions.WRITE], save=True)
+        private_node_one.add_contributor(contributing_write_user, permissions=[permissions.READ, permissions.WRITE], save=True)
         return private_node_one
 
     @pytest.fixture()

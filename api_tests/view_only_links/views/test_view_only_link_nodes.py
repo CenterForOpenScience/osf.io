@@ -1,34 +1,32 @@
 import pytest
-from nose.tools import *  # flake8: noqa
 
-from website.util import permissions
 from api.base.settings.defaults import API_BASE
-from tests.base import ApiTestCase
 from osf_tests.factories import (
     ProjectFactory,
     AuthUserFactory,
     PrivateLinkFactory,
-    NodeFactory
+    NodeFactory,
 )
+from website.util import permissions
 
 
-@pytest.fixture(scope='function')
+@pytest.fixture()
 def user():
     return AuthUserFactory()
 
-@pytest.fixture(scope='function')
+@pytest.fixture()
 def read_only_user():
     return AuthUserFactory()
 
-@pytest.fixture(scope='function')
+@pytest.fixture()
 def read_write_user():
     return AuthUserFactory()
 
-@pytest.fixture(scope='function')
+@pytest.fixture()
 def non_contributor():
     return AuthUserFactory()
 
-@pytest.fixture(scope='function')
+@pytest.fixture()
 def public_project(user, read_only_user, read_write_user):
     public_project = ProjectFactory(is_public=True, creator=user)
     public_project.add_contributor(read_only_user, permissions=[permissions.READ])
@@ -36,7 +34,7 @@ def public_project(user, read_only_user, read_write_user):
     public_project.save()
     return public_project
 
-@pytest.fixture(scope='function')
+@pytest.fixture()
 def view_only_link(public_project):
     view_only_link = PrivateLinkFactory(name='testlink')
     view_only_link.nodes.add(public_project)

@@ -1,20 +1,20 @@
-import pytest
-import urlparse
-import pytz
 import datetime
+import pytest
+import pytz
+import urlparse
 
 from dateutil.parser import parse as parse_date
 
+from api.base.settings.defaults import API_BASE
 from framework.auth.core import Auth
 from osf.models import NodeLog
-from website.util import disconnected_from_listeners
-from website.project.signals import contributor_removed
-from api.base.settings.defaults import API_BASE
-from tests.base import ApiTestCase, assert_datetime_equal
 from osf_tests.factories import (
     ProjectFactory,
     AuthUserFactory,
 )
+from tests.base import assert_datetime_equal
+from website.util import disconnected_from_listeners
+from website.project.signals import contributor_removed
 
 API_LATEST = 0
 API_FIRST = -1
@@ -64,7 +64,7 @@ class TestNodeLogList:
 
     def test_add_tag(self, app, user, user_auth, public_project, public_url):
         public_project.add_tag('Rheisen', auth=user_auth)
-        assert 'tag_added' == public_project.logs.latest().action
+        assert public_project.logs.latest().action == 'tag_added'
         res = app.get(public_url, auth=user.auth)
         assert res.status_code == 200
         assert len(res.json['data']) == public_project.logs.count()
@@ -73,14 +73,14 @@ class TestNodeLogList:
 
     def test_remove_tag(self, app, user, user_auth, public_project, public_url):
         public_project.add_tag('Rheisen', auth=user_auth)
-        assert 'tag_added' == public_project.logs.latest().action
+        assert public_project.logs.latest().action == 'tag_added'
         public_project.remove_tag('Rheisen', auth=user_auth)
-        assert 'tag_removed' == public_project.logs.latest().action
+        assert public_project.logs.latest().action == 'tag_removed'
         res = app.get(public_url, auth=user)
         assert res.status_code == 200
         assert len(res.json['data']) == public_project.logs.count()
         assert res.json['data'][API_LATEST]['attributes']['action'] == 'tag_removed'
-        assert 'Rheisen' == public_project.logs.latest().params['tag']
+        assert public_project.logs.latest().params['tag'] == 'Rheisen'
 
     def test_project_creation(self, app, user, public_project, private_project, public_url, private_url):
 
@@ -109,7 +109,7 @@ class TestNodeLogList:
 
     def test_add_addon(self, app, user, user_auth, public_project, public_url):
         public_project.add_addon('github', auth=user_auth)
-        assert 'addon_added' == public_project.logs.latest().action
+        assert public_project.logs.latest().action == 'addon_added'
         res = app.get(public_url, auth=user.auth)
         assert res.status_code == 200
         assert len(res.json['data']) == public_project.logs.count()
@@ -117,12 +117,12 @@ class TestNodeLogList:
 
     def test_project_add_remove_contributor(self, app, user, contrib, user_auth, public_project, public_url):
         public_project.add_contributor(contrib, auth=user_auth)
-        assert 'contributor_added' == public_project.logs.latest().action
+        assert public_project.logs.latest().action == 'contributor_added'
         # Disconnect contributor_removed so that we don't check in files
         # We can remove this when StoredFileNode is implemented in osf-models
         with disconnected_from_listeners(contributor_removed):
             public_project.remove_contributor(contrib, auth=user_auth)
-        assert 'contributor_removed' == public_project.logs.latest().action
+        assert public_project.logs.latest().action == 'contributor_removed'
         res = app.get(public_url, auth=user.auth)
         assert res.status_code == 200
         assert len(res.json['data']) == public_project.logs.count()
@@ -131,10 +131,10 @@ class TestNodeLogList:
 
     def test_remove_addon(self, app, user, user_auth, public_project, public_url):
         public_project.add_addon('github', auth=user_auth)
-        assert 'addon_added' == public_project.logs.latest().action
+        assert public_project.logs.latest().action == 'addon_added'
         old_log_length = len(list(public_project.logs.all()))
         public_project.delete_addon('github', auth=user_auth)
-        assert 'addon_removed' == public_project.logs.latest().action
+        assert public_project.logs.latest().action == 'addon_removed'
         assert (public_project.logs.count() - 1) == old_log_length
         res = app.get(public_url, auth=user.auth)
         assert res.status_code == 200
@@ -143,7 +143,7 @@ class TestNodeLogList:
 
     def test_add_pointer(self, app, user_auth, public_project, pointer, public_url):
         public_project.add_pointer(pointer, auth=user_auth, save=True)
-        assert 'pointer_created' == public_project.logs.latest().action
+        assert public_project.logs.latest().action == 'pointer_created'
         res = app.get(public_url, auth=user_auth)
         assert res.status_code == 200
         assert len(res.json['data']) == public_project.logs.count()
@@ -154,15 +154,15 @@ class TestNodeLogFiltering(TestNodeLogList):
 
     def test_filter_action_not_equal(self, app, user, user_auth, public_project):
         public_project.add_tag('Rheisen', auth=user_auth)
-        assert 'tag_added' == public_project.logs.latest().action
+        assert public_project.logs.latest().action == 'tag_added'
         url = '/{}nodes/{}/logs/?filter[action][ne]=tag_added'.format(API_BASE, public_project._id)
         res = app.get(url, auth=user.auth)
         assert len(res.json['data']) == 1
-        assert res.json['data'][0]['attributes']['action'] == 'project_created'
+        assert res.json['data'][API_LATEST]['attributes']['action'] == 'project_created'
 
     def test_filter_date_not_equal(self, app, user, public_project, pointer):
         public_project.add_pointer(pointer, auth=Auth(user), save=True)
-        assert 'pointer_created' == public_project.logs.latest().action
+        assert public_project.logs.latest().action == 'pointer_created'
         assert public_project.logs.count() == 2
 
         pointer_added_log = public_project.logs.get(action='pointer_created')
@@ -172,4 +172,4 @@ class TestNodeLogFiltering(TestNodeLogList):
         res = app.get(url, auth=user.auth)
         assert res.status_code == 200
         assert len(res.json['data']) == 1
-        assert res.json['data'][0]['attributes']['action'] == 'project_created'
+        assert res.json['data'][API_LATEST]['attributes']['action'] == 'project_created'

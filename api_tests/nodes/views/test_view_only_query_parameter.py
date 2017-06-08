@@ -1,44 +1,39 @@
 import pytest
 
-from website.util import permissions
 from api.base.settings.defaults import API_BASE
-from tests.base import ApiTestCase
 from osf.models import AbstractNode as Node
 from osf_tests.factories import (
     ProjectFactory,
     AuthUserFactory,
     PrivateLinkFactory,
 )
+from website.util import permissions
 
 @pytest.fixture()
-def creation_user():
+def admin():
     return AuthUserFactory()
 
 @pytest.fixture()
-def viewing_user():
+def read_contrib():
     return AuthUserFactory()
 
 @pytest.fixture()
-def contributing_read_user():
+def write_contrib():
     return AuthUserFactory()
 
 @pytest.fixture()
-def contributing_write_user():
-    return AuthUserFactory()
-
-@pytest.fixture()
-def valid_contributors(creation_user, contributing_read_user, contributing_write_user):
+def valid_contributors(admin, read_contrib, write_contrib):
     return [
-        creation_user._id,
-        contributing_read_user._id,
-        contributing_write_user._id,
+        admin._id,
+        read_contrib._id,
+        write_contrib._id,
     ]
 
 @pytest.fixture()
-def private_node_one(creation_user, contributing_read_user, contributing_write_user):
-    private_node_one = ProjectFactory(is_public=False, creator=creation_user, title='Private One')
-    private_node_one.add_contributor(contributing_read_user, permissions=[permissions.READ], save=True)
-    private_node_one.add_contributor(contributing_write_user, permissions=[permissions.WRITE], save=True)
+def private_node_one(admin, read_contrib, write_contrib):
+    private_node_one = ProjectFactory(is_public=False, creator=admin, title='Private One')
+    private_node_one.add_contributor(read_contrib, permissions=[permissions.READ], save=True)
+    private_node_one.add_contributor(write_contrib, permissions=[permissions.READ, permissions.WRITE], save=True)
     return private_node_one
 
 @pytest.fixture()
@@ -60,10 +55,10 @@ def private_node_one_url(private_node_one):
     return '/{}nodes/{}/'.format(API_BASE, private_node_one._id)
 
 @pytest.fixture()
-def private_node_two(creation_user, contributing_read_user, contributing_write_user):
-    private_node_two = ProjectFactory(is_public=False, creator=creation_user, title='Private Two')
-    private_node_two.add_contributor(contributing_read_user, permissions=[permissions.READ], save=True)
-    private_node_two.add_contributor(contributing_write_user, permissions=[permissions.WRITE], save=True)
+def private_node_two(admin, read_contrib, write_contrib):
+    private_node_two = ProjectFactory(is_public=False, creator=admin, title='Private Two')
+    private_node_two.add_contributor(read_contrib, permissions=[permissions.READ], save=True)
+    private_node_two.add_contributor(write_contrib, permissions=[permissions.READ, permissions.WRITE], save=True)
     return private_node_two
 
 @pytest.fixture()
@@ -71,10 +66,10 @@ def private_node_two_url(private_node_two):
     return '/{}nodes/{}/'.format(API_BASE, private_node_two._id)
 
 @pytest.fixture()
-def public_node_one(creation_user, contributing_read_user, contributing_write_user):
-    public_node_one = ProjectFactory(is_public=True, creator=creation_user, title='Public One')
-    public_node_one.add_contributor(contributing_read_user, permissions=[permissions.READ], save=True)
-    public_node_one.add_contributor(contributing_write_user, permissions=[permissions.WRITE], save=True)
+def public_node_one(admin, read_contrib, write_contrib):
+    public_node_one = ProjectFactory(is_public=True, creator=admin, title='Public One')
+    public_node_one.add_contributor(read_contrib, permissions=[permissions.READ], save=True)
+    public_node_one.add_contributor(write_contrib, permissions=[permissions.READ, permissions.WRITE], save=True)
     return public_node_one
 
 @pytest.fixture()
@@ -96,10 +91,10 @@ def public_node_one_url(public_node_one):
     return '/{}nodes/{}/'.format(API_BASE, public_node_one._id)
 
 @pytest.fixture()
-def public_node_two(creation_user, contributing_read_user, contributing_write_user):
-    public_node_two = ProjectFactory(is_public=True, creator=creation_user, title='Public Two')
-    public_node_two.add_contributor(contributing_read_user, permissions=[permissions.READ], save=True)
-    public_node_two.add_contributor(contributing_write_user, permissions=[permissions.WRITE], save=True)
+def public_node_two(admin, read_contrib, write_contrib):
+    public_node_two = ProjectFactory(is_public=True, creator=admin, title='Public Two')
+    public_node_two.add_contributor(read_contrib, permissions=[permissions.READ], save=True)
+    public_node_two.add_contributor(write_contrib, permissions=[permissions.READ, permissions.WRITE], save=True)
     return public_node_two
 
 @pytest.fixture()
@@ -107,16 +102,16 @@ def public_node_two_url(public_node_two):
     return '/{}nodes/{}/'.format(API_BASE, public_node_two._id)
 
 @pytest.mark.django_db
-@pytest.mark.usefixtures('creation_user', 'viewing_user', 'contributing_read_user', 'contributing_write_user', 'valid_contributors', 
+@pytest.mark.usefixtures('admin', 'read_contrib', 'write_contrib', 'valid_contributors', 
     'private_node_one', 'private_node_one_anonymous_link', 'private_node_one_private_link', 'private_node_one_url',
     'private_node_two', 'private_node_two_url', 'public_node_one', 'public_node_one_anonymous_link',
     'public_node_one_private_link', 'public_node_one_url', 'public_node_two', 'public_node_two_url')
 class TestNodeDetailViewOnlyLinks:
 
-    def test_private_node(self, app, creation_user, contributing_read_user, valid_contributors, private_node_one, private_node_one_url, private_node_one_private_link, private_node_one_anonymous_link, public_node_one_url, public_node_one_private_link, public_node_one_anonymous_link):
+    def test_private_node(self, app, admin, read_contrib, valid_contributors, private_node_one, private_node_one_url, private_node_one_private_link, private_node_one_anonymous_link, public_node_one_url, public_node_one_private_link, public_node_one_anonymous_link):
 
     #   test_private_node_with_link_works_when_using_link
-        res_normal = app.get(private_node_one_url, auth=contributing_read_user.auth)
+        res_normal = app.get(private_node_one_url, auth=read_contrib.auth)
         assert res_normal.status_code == 200
         res_linked = app.get(private_node_one_url, {'view_only': private_node_one_private_link.key})
         assert res_linked.status_code == 200
@@ -159,7 +154,7 @@ class TestNodeDetailViewOnlyLinks:
         res = app.get(private_node_one_url, {
             'view_only': private_node_one_private_link.key,
             'embed': 'contributors',
-        }, auth=creation_user.auth)
+        }, auth=admin.auth)
         assert res.status_code == 200
         contributors = res.json['data']['embeds']['contributors']['data']
         for contributor in contributors:
@@ -245,7 +240,7 @@ class TestNodeDetailViewOnlyLinks:
         assert res.status_code == 401
         res = app.get(private_node_one_url+'logs/', {
             'view_only': 'thisisnotarealprivatekey',
-        }, auth=creation_user.auth)
+        }, auth=admin.auth)
         assert res.status_code == 200
 
     #   test_view_only_key_in_relationships_links
@@ -266,7 +261,7 @@ class TestNodeDetailViewOnlyLinks:
         assert private_node_one_private_link.key in links['html']
 
 @pytest.mark.django_db
-@pytest.mark.usefixtures('creation_user', 'viewing_user', 'contributing_read_user', 'contributing_write_user', 'valid_contributors', 
+@pytest.mark.usefixtures('admin', 'read_contrib', 'write_contrib', 'valid_contributors', 
     'private_node_one', 'private_node_one_anonymous_link', 'private_node_one_private_link', 'private_node_one_url',
     'private_node_two', 'private_node_two_url', 'public_node_one', 'public_node_one_anonymous_link',
     'public_node_one_private_link', 'public_node_one_url', 'public_node_two', 'public_node_two_url')

@@ -2,7 +2,6 @@ import pytest
 from urlparse import urlparse
 
 from api.base.settings.defaults import API_BASE
-from tests.base import ApiTestCase
 from osf_tests.factories import (
     ProjectFactory,
     RegistrationFactory,
@@ -48,7 +47,7 @@ class TestNodeRegistrationList:
         res = app.get(public_url)
         assert res.status_code == 200
         assert res.content_type == 'application/vnd.api+json'
-        assert res.json['data'][0]['attributes']['registration'] == True
+        assert res.json['data'][0]['attributes']['registration'] is True
         url = res.json['data'][0]['relationships']['registered_from']['links']['related']['href']
         assert urlparse(url).path == '/{}nodes/{}/'.format(API_BASE, public_project._id)
         assert res.json['data'][0]['type'] == 'registrations'
@@ -56,7 +55,7 @@ class TestNodeRegistrationList:
     #   test_return_public_registrations_logged_in
         res = app.get(public_url, auth=user.auth)
         assert res.status_code == 200
-        assert res.json['data'][0]['attributes']['registration'] == True
+        assert res.json['data'][0]['attributes']['registration'] is True
         url = res.json['data'][0]['relationships']['registered_from']['links']['related']['href']
         assert urlparse(url).path == '/{}nodes/{}/'.format(API_BASE, public_project._id)
         assert res.content_type == 'application/vnd.api+json'
@@ -70,7 +69,7 @@ class TestNodeRegistrationList:
     #   test_return_private_registrations_logged_in_contributor
         res = app.get(private_url, auth=user.auth)
         assert res.status_code == 200
-        assert res.json['data'][0]['attributes']['registration'] == True
+        assert res.json['data'][0]['attributes']['registration'] is True
         url = res.json['data'][0]['relationships']['registered_from']['links']['related']['href']
         assert urlparse(url).path == '/{}nodes/{}/'.format(API_BASE, private_project._id)
         assert res.content_type == 'application/vnd.api+json'

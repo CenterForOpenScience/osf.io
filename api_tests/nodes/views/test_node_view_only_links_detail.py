@@ -1,39 +1,38 @@
 import pytest
 
 from api.base.settings.defaults import API_BASE
-from tests.base import ApiTestCase
-from website.util import permissions
 from osf_tests.factories import (
     ProjectFactory,
     AuthUserFactory,
-    PrivateLinkFactory
+    PrivateLinkFactory,
 )
+from website.util import permissions
 
-@pytest.fixture(scope='function')
+@pytest.fixture()
 def user():
     return AuthUserFactory()
 
-@pytest.fixture(scope='function')
-def read_only_user():
+@pytest.fixture()
+def read_contrib():
     return AuthUserFactory()
 
-@pytest.fixture(scope='function')
-def read_write_user():
+@pytest.fixture()
+def write_contrib():
     return AuthUserFactory()
 
-@pytest.fixture(scope='function')
-def non_contributor():
+@pytest.fixture()
+def non_contrib():
     return AuthUserFactory()
 
-@pytest.fixture(scope='function')
-def public_project(user, read_only_user, read_write_user):
+@pytest.fixture()
+def public_project(user, read_contrib, write_contrib):
     public_project = ProjectFactory(is_public=True, creator=user)
-    public_project.add_contributor(read_only_user, permissions=[permissions.READ])
-    public_project.add_contributor(read_write_user, permissions=[permissions.WRITE])
+    public_project.add_contributor(read_contrib, permissions=[permissions.READ])
+    public_project.add_contributor(write_contrib, permissions=[permissions.READ, permissions.WRITE])
     public_project.save()
     return public_project
 
-@pytest.fixture(scope='function')
+@pytest.fixture()
 def view_only_link(public_project):
     view_only_link = PrivateLinkFactory(name='testlink')
     view_only_link.nodes.add(public_project)
@@ -41,14 +40,13 @@ def view_only_link(public_project):
     return view_only_link
 
 @pytest.mark.django_db
-@pytest.mark.usefixtures('user', 'read_only_user', 'read_write_user', 'non_contributor', 'public_project', 'view_only_link')
 class TestViewOnlyLinksDetail:
 
     @pytest.fixture()
     def url(self, public_project, view_only_link):
         return '/{}nodes/{}/view_only_links/{}/'.format(API_BASE, public_project._id, view_only_link._id)
 
-    def test_non_mutating_view_only_links_detail_tests(self, app, user, read_write_user, read_only_user, non_contributor, url, public_project, view_only_link):
+    def test_non_mutating_view_only_links_detail_tests(self, app, user, write_contrib, read_contrib, non_contrib, url, public_project, view_only_link):
 
     #   test_admin_can_view_vol_detail
         res = app.get(url, auth=user.auth)
@@ -56,15 +54,15 @@ class TestViewOnlyLinksDetail:
         assert res.json['data']['attributes']['name'] == 'testlink'
 
     #   test_read_write_cannot_view_vol_detail
-        res = app.get(url, auth=read_write_user.auth, expect_errors=True)
+        res = app.get(url, auth=write_contrib.auth, expect_errors=True)
         assert res.status_code == 403
 
     #   test_read_only_cannot_view_vol_detail
-        res = app.get(url, auth=read_only_user.auth, expect_errors=True)
+        res = app.get(url, auth=read_contrib.auth, expect_errors=True)
         assert res.status_code == 403
 
     #   test_logged_in_user_cannot_view_vol_detail
-        res = app.get(url, auth=non_contributor.auth, expect_errors=True)
+        res = app.get(url, auth=non_contrib.auth, expect_errors=True)
         assert res.status_code == 403
 
     #   test_unauthenticated_user_cannot_view_vol_detail
@@ -83,7 +81,6 @@ class TestViewOnlyLinksDetail:
         assert res.status_code == 404
 
 @pytest.mark.django_db
-@pytest.mark.usefixtures('user', 'read_only_user', 'read_write_user', 'non_contributor', 'public_project', 'view_only_link')
 class TestViewOnlyLinksUpdate:
 
     @pytest.fixture()
@@ -133,7 +130,7 @@ class TestViewOnlyLinksUpdate:
         assert res.json['data']['attributes']['name'] == 'testlink'
         assert res.json['data']['attributes']['anonymous'] == True
 
-    def test_cannot_update_vol(self, app, read_write_user, read_only_user, non_contributor, url):
+    def test_cannot_update_vol(self, app, write_contrib, read_contrib, non_contrib, url):
 
     #   test_read_write_cannot_update_vol
         payload = {
@@ -142,7 +139,7 @@ class TestViewOnlyLinksUpdate:
                 'anonymous': True,
             }
         }
-        res = app.put_json_api(url, {'data': payload}, auth=read_write_user.auth, expect_errors=True)
+        res = app.put_json_api(url, {'data': payload}, auth=write_contrib.auth, expect_errors=True)
         assert res.status_code == 403
 
     #   test_read_only_cannot_update_vol
@@ -152,7 +149,7 @@ class TestViewOnlyLinksUpdate:
                 'anonymous': True,
             }
         }
-        res = app.put_json_api(url, {'data': payload}, auth=read_only_user.auth, expect_errors=True)
+        res = app.put_json_api(url, {'data': payload}, auth=read_contrib.auth, expect_errors=True)
         assert res.status_code == 403
 
     #   test_logged_in_user_cannot_update_vol
@@ -162,7 +159,7 @@ class TestViewOnlyLinksUpdate:
                 'anonymous': True,
             }
         }
-        res = app.put_json_api(url, {'data': payload}, auth=non_contributor.auth, expect_errors=True)
+        res = app.put_json_api(url, {'data': payload}, auth=non_contrib.auth, expect_errors=True)
         assert res.status_code == 403
 
     #   test_unauthenticated_user_cannot_update_vol
@@ -176,7 +173,6 @@ class TestViewOnlyLinksUpdate:
         assert res.status_code == 401
 
 @pytest.mark.django_db
-@pytest.mark.usefixtures('user', 'read_only_user', 'read_write_user', 'non_contributor', 'public_project', 'view_only_link')
 class TestViewOnlyLinksDelete:
 
     @pytest.fixture()
@@ -189,18 +185,18 @@ class TestViewOnlyLinksDelete:
         assert res.status_code == 204
         assert view_only_link.is_deleted == True
 
-    def test_vol_delete(self, app, read_write_user, read_only_user, non_contributor, url):
+    def test_vol_delete(self, app, write_contrib, read_contrib, non_contrib, url):
 
     #   test_read_write_cannot_delete_vol
-        res = app.delete(url, auth=read_write_user.auth, expect_errors=True)
+        res = app.delete(url, auth=write_contrib.auth, expect_errors=True)
         assert res.status_code == 403
 
     #   test_read_only_cannot_delete_vol
-        res = app.delete(url, auth=read_only_user.auth, expect_errors=True)
+        res = app.delete(url, auth=read_contrib.auth, expect_errors=True)
         assert res.status_code == 403
 
     #   test_logged_in_user_cannot_delete_vol
-        res = app.delete(url, auth=non_contributor.auth, expect_errors=True)
+        res = app.delete(url, auth=non_contrib.auth, expect_errors=True)
         assert res.status_code == 403
 
     #   test_unauthenticated_user_cannot_delete_vol

@@ -1,16 +1,16 @@
 import pytest
 from urlparse import urlparse
 
+from api.base.settings.defaults import API_BASE
 from framework.auth.core import Auth
 from osf.models import NodeLog
-from api.base.settings.defaults import API_BASE
-from tests.base import ApiTestCase
-from tests.utils import assert_latest_log
 from osf_tests.factories import (
     ProjectFactory,
     RegistrationFactory,
     AuthUserFactory
 )
+from rest_framework import exceptions
+from tests.utils import assert_latest_log
 
 node_url_for = lambda n_id: '/{}nodes/{}/'.format(API_BASE, n_id)
 
@@ -187,7 +187,7 @@ class TestNodeLinkCreate:
         }
         res = app.post_json_api(public_url, data, auth=user.auth, expect_errors=True)
         assert res.status_code == 400
-        assert res.json['errors'][0]['detail'] == 'Malformed request.'
+        assert res.json['errors'][0]['detail'] == exceptions.ParseError.default_detail
 
     #   test_add_node_link_no_relationships
         data = {
@@ -226,7 +226,7 @@ class TestNodeLinkCreate:
         }
         res = app.post_json_api(public_url, data, auth=user.auth, expect_errors=True)
         assert res.status_code == 400
-        assert res.json['errors'][0]['detail'] == 'Malformed request.'
+        assert res.json['errors'][0]['detail'] == exceptions.ParseError.default_detail
 
     #   test_add_node_links_no_data_in_relationships
         data = {
@@ -315,7 +315,7 @@ class TestNodeLinkCreate:
     def test_create_node_link_invalid_data(self, app, user, public_url):
         res = app.post_json_api(public_url, 'Incorrect data', auth=user.auth, expect_errors=True)
         assert res.status_code == 400
-        assert res.json['errors'][0]['detail'] == 'Malformed request.'
+        assert res.json['errors'][0]['detail'] == exceptions.ParseError.default_detail
 
     def test_creates_node_link_target_not_nested(self, app, user_two, private_pointer_project, public_url):
         payload = {
@@ -633,8 +633,7 @@ class TestNodeLinksBulkCreate:
         assert res.json['data'] == []
 
     #   test_bulk_creates_public_node_pointer_logged_in_non_contrib
-        res = app.post_json_api(public_url, public_payload,
-                                     auth=user_two.auth, expect_errors=True, bulk=True)
+        res = app.post_json_api(public_url, public_payload, auth=user_two.auth, expect_errors=True, bulk=True)
         assert res.status_code == 403
 
     #   test_bulk_creates_private_node_pointers_logged_out
@@ -646,8 +645,7 @@ class TestNodeLinksBulkCreate:
         assert res.json['data'] == []
 
     #   test_bulk_creates_private_node_pointers_logged_in_non_contributor
-        res = app.post_json_api(private_url, private_payload,
-                                     auth=user_two.auth, expect_errors=True, bulk=True)
+        res = app.post_json_api(private_url, private_payload, auth=user_two.auth, expect_errors=True, bulk=True)
         assert res.status_code == 403
         assert 'detail' in res.json['errors'][0]
 
@@ -663,16 +661,14 @@ class TestNodeLinksBulkCreate:
     #   test_bulk_creates_pointers_non_contributing_node_to_fake_node
         fake_payload = {'data': [{'type': 'node_links', 'relationships': {'nodes': {'data': {'id': 'rheis', 'type': 'nodes'}}}}]}
 
-        res = app.post_json_api(private_url, fake_payload,
-                                     auth=user_two.auth, expect_errors=True, bulk=True)
+        res = app.post_json_api(private_url, fake_payload, auth=user_two.auth, expect_errors=True, bulk=True)
         assert res.status_code == 403
         assert 'detail' in res.json['errors'][0]
 
     #   test_bulk_creates_pointers_contributing_node_to_fake_node
         fake_payload = {'data': [{'type': 'node_links', 'relationships': {'nodes': {'data': {'id': 'rheis', 'type': 'nodes'}}}}]}
 
-        res = app.post_json_api(private_url, fake_payload,
-                                     auth=user.auth, expect_errors=True, bulk=True)
+        res = app.post_json_api(private_url, fake_payload, auth=user.auth, expect_errors=True, bulk=True)
         assert res.status_code == 400
         assert 'detail' in res.json['errors'][0]
 
@@ -690,8 +686,7 @@ class TestNodeLinksBulkCreate:
     #   test_bulk_creates_node_pointer_to_itself_unauthorized
         point_to_itself_payload = {'data': [{'type': 'node_links', 'relationships': {'nodes': {'data': {'type': 'nodes', 'id': public_project._id}}}}]}
 
-        res = app.post_json_api(public_url, point_to_itself_payload, bulk=True, auth=user_two.auth,
-                                     expect_errors=True)
+        res = app.post_json_api(public_url, point_to_itself_payload, bulk=True, auth=user_two.auth, expect_errors=True)
         assert res.status_code == 403
         assert 'detail' in res.json['errors'][0]
 
@@ -861,15 +856,13 @@ class TestBulkDeleteNodeLinks:
         assert res.status_code == 400
 
     #   test_bulk_delete_pointer_limits
-        res = app.delete_json_api(public_url, {'data': [public_payload['data'][0]] * 101},
-                                       auth=user.auth, expect_errors=True, bulk=True)
+        res = app.delete_json_api(public_url, {'data': [public_payload['data'][0]] * 101}, auth=user.auth, expect_errors=True, bulk=True)
         assert res.status_code == 400
         assert res.json['errors'][0]['detail'] == 'Bulk operation limit is 100, got 101.'
         assert res.json['errors'][0]['source']['pointer'] == '/data'
 
     #   test_bulk_delete_dict_inside_data
-        res = app.delete_json_api(public_url, {'data': {'id': public_project._id, 'type': 'node_links'}},
-                                       auth=user.auth, expect_errors=True, bulk=True)
+        res = app.delete_json_api(public_url, {'data': {'id': public_project._id, 'type': 'node_links'}}, auth=user.auth, expect_errors=True, bulk=True)
         assert res.status_code == 400
         assert res.json['errors'][0]['detail'] == 'Expected a list of items but got type "dict".'
 
@@ -916,8 +909,7 @@ class TestBulkDeleteNodeLinks:
 
     #   test_bulk_deletes_public_node_pointers_fails_if_bad_auth
         node_count_before = len(public_project.nodes_pointer)
-        res = app.delete_json_api(public_url, public_payload,
-                                       auth=non_contrib.auth, expect_errors=True, bulk=True)
+        res = app.delete_json_api(public_url, public_payload, auth=non_contrib.auth, expect_errors=True, bulk=True)
         # This is could arguably be a 405, but we don't need to go crazy with status codes
         assert res.status_code == 403
         assert 'detail' in res.json['errors'][0]
@@ -925,8 +917,7 @@ class TestBulkDeleteNodeLinks:
         assert node_count_before == len(public_project.nodes_pointer)
 
     #   test_bulk_deletes_private_node_pointers_logged_in_non_contributor
-        res = app.delete_json_api(private_url, private_payload,
-                                       auth=non_contrib.auth, expect_errors=True, bulk=True)
+        res = app.delete_json_api(private_url, private_payload, auth=non_contrib.auth, expect_errors=True, bulk=True)
         assert res.status_code == 403
         assert 'detail' in res.json['errors'][0]
 

@@ -1,16 +1,16 @@
 import pytest
 from urlparse import urlparse
 
+from api.base.settings.defaults import API_BASE
 from framework.auth.core import Auth 
 from osf.models import NodeLog
-from api.base.settings.defaults import API_BASE
-from tests.base import ApiTestCase
-from tests.utils import assert_latest_log
 from osf_tests.factories import (
     ProjectFactory,
     RegistrationFactory,
     AuthUserFactory,
 )
+from rest_framework import exceptions
+from tests.utils import assert_latest_log
 
 node_url_for = lambda n_id: '/{}nodes/{}/'.format(API_BASE, n_id)
 
@@ -22,7 +22,7 @@ def user():
 class TestNodeLinkDetail:
 
     @pytest.fixture()
-    def non_contributor(self):
+    def non_contrib(self):
         return AuthUserFactory()
 
     @pytest.fixture()
@@ -57,7 +57,7 @@ class TestNodeLinkDetail:
     def public_url(self, public_project, public_pointer):
         return '/{}nodes/{}/node_links/{}/'.format(API_BASE, public_project._id, public_pointer._id)
 
-    def test_node_link_detail(self, app, user, non_contributor, private_pointer_project, public_pointer_project, public_url, private_url):
+    def test_node_link_detail(self, app, user, non_contrib, private_pointer_project, public_pointer_project, public_url, private_url):
 
     #   test_returns_embedded_public_node_pointer_detail_logged_out
         res = app.get(public_url)
@@ -80,7 +80,7 @@ class TestNodeLinkDetail:
         assert res.status_code == 200
         target_node = res.json['data']['embeds']['target_node']
         assert 'errors' in target_node
-        assert target_node['errors'][0]['detail'] == 'You do not have permission to perform this action.'
+        assert target_node['errors'][0]['detail'] == exceptions.PermissionDenied.default_detail
 
     #   test_returns_private_node_pointer_detail_logged_in_contributor
         res = app.get(private_url, auth=user.auth)
@@ -90,12 +90,12 @@ class TestNodeLinkDetail:
         embedded = res_json['embeds']['target_node']['data']['id']
         assert embedded == private_pointer_project._id
 
-    #   test_returns_private_node_pointer_detail_logged_in_non_contributor
-        res = app.get(private_url, auth=non_contributor.auth, expect_errors=True)
+    #   test_returns_private_node_pointer_detail_logged_in_non_contrib
+        res = app.get(private_url, auth=non_contrib.auth, expect_errors=True)
         assert res.status_code == 200
         target_node = res.json['data']['embeds']['target_node']
         assert 'errors' in target_node
-        assert target_node['errors'][0]['detail'] == 'You do not have permission to perform this action.'
+        assert target_node['errors'][0]['detail'] == exceptions.PermissionDenied.default_detail
 
     #   test_self_link_points_to_node_link_detail_url
         res = app.get(public_url, auth=user.auth)
@@ -212,7 +212,7 @@ class TestDeleteNodeLink:
             assert res.status_code == 204
             assert len(private_project.nodes_pointer) == 0
 
-    def test_deletes_private_node_pointer_logged_in_non_contributor(self, app, user_two, private_url):
+    def test_deletes_private_node_pointer_logged_in_non_contrib(self, app, user_two, private_url):
         res = app.delete(private_url, auth=user_two.auth, expect_errors=True)
         assert res.status_code == 403
         assert 'detail' in res.json['errors'][0]
@@ -249,4 +249,4 @@ class TestDeleteNodeLink:
         assert res.status_code == 404
         errors = res.json['errors']
         assert len(errors) == 1
-        assert errors[0]['detail'] == 'Not found.'
+        assert errors[0]['detail'] == exceptions.NotFound.default_detail
