@@ -653,7 +653,8 @@ class FileVersion(ObjectIDMixin, BaseModel):
         self.size = self.metadata.get('size', self.size)
         self.content_type = self.metadata.get('contentType', self.content_type)
         if self.metadata.get('modified'):
-            self.date_modified = parse_date(self.metadata['modified'], ignoretz=False)
+            self.metadata['modified'] = timezone.now().isoformat()
+            self.date_modified = parse_date(timezone.now().isoformat(), ignoretz=False)
 
         if save:
             self.save()
