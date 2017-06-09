@@ -6,10 +6,13 @@ does not already exist.
 import logging
 import sys
 
+from website.app import setup_django
+setup_django()
+
 from django.apps import apps
 from django.db import transaction
 from website.app import init_app
-from website.notifications.model import NotificationSubscription
+from osf.models import NotificationSubscription
 from website.notifications import constants
 from website.notifications.utils import to_subscription_key
 
