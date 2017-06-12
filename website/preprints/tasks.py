@@ -3,7 +3,9 @@ import urlparse
 
 import requests
 
+from framework.exceptions import HTTPError
 from framework.celery_tasks import app as celery_app
+from framework import sentry
 
 from website import settings
 from website.util.share import GraphNode, format_contributor
@@ -22,7 +24,11 @@ def on_preprint_updated(preprint_id, update_share=False):
 
     if preprint.node:
         status = 'public' if preprint.node.is_public else 'unavailable'
-        update_ezid_metadata_on_change(preprint, status=status)
+        try:
+            update_ezid_metadata_on_change(preprint, status=status)
+        except HTTPError as err:
+            sentry.log_exception()
+            sentry.log_message(err.args[0])
 
     if settings.SHARE_URL and update_share:
         if not preprint.provider.access_token:
