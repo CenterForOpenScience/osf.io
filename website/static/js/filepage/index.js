@@ -114,7 +114,6 @@ var FileViewPage = {
         self.file = self.context.file;
         self.node = self.context.node;
         self.editorMeta = self.context.editor;
-        self.requestDone = false;
         self.isLatestVersion = false;
 
         self.selectLatest = function() {
@@ -138,7 +137,6 @@ var FileViewPage = {
                 ])));
             }
         } else {
-            self.requestDone = true;
             self.canEdit = function() {
                 return self.context.currentUser.canEdit;
             };
@@ -365,7 +363,6 @@ var FileViewPage = {
             }
             m.redraw(true);
         };
-        self.enableEditing();
 
         //Hack to polyfill the Panel interface
         //Ran into problems with mithrils caching messing up with multiple "Panels"
@@ -421,6 +418,7 @@ var FileViewPage = {
             changeVersionHeader();
         }
 
+        self.enableEditing()
     },
     view: function(ctrl) {
         //This code was abstracted into a panel toggler at one point
@@ -497,18 +495,17 @@ var FileViewPage = {
                 (ctrl.node.preprintFileId !== ctrl.file.id) &&
                     !(ctrl.file.provider === 'figshare' && ctrl.file.extra.status === 'public') &&
                 (ctrl.file.provider !== 'osfstorage' || !ctrl.file.checkoutUser) &&
-                ctrl.requestDone &&
                 ($(document).context.URL.indexOf('version=latest-published') < 0)
             ) ? m('.btn-group.m-l-xs.m-t-xs', [
                         ctrl.isLatestVersion ? m('button.btn.btn-sm.btn-danger.file-delete', {onclick: $(document).trigger.bind($(document), 'fileviewpage:delete') }, 'Delete') : null
             ]) : '',
-            ctrl.context.currentUser.canEdit && (!ctrl.canEdit()) && ctrl.requestDone && (ctrl.context.currentUser.isAdmin) ? m('.btn-group.m-l-xs.m-t-xs', [
+            ctrl.context.currentUser.canEdit && (!ctrl.canEdit()) && (ctrl.context.currentUser.isAdmin) ? m('.btn-group.m-l-xs.m-t-xs', [
                 ctrl.isLatestVersion ? m('.btn.btn-sm.btn-danger', {onclick: $(document).trigger.bind($(document), 'fileviewpage:force_checkin')}, 'Force check in') : null
             ]) : '',
-            ctrl.canEdit() && (!ctrl.file.checkoutUser) && ctrl.requestDone && (ctrl.file.provider === 'osfstorage') ? m('.btn-group.m-l-xs.m-t-xs', [
+            ctrl.canEdit() && (!ctrl.file.checkoutUser) && (ctrl.file.provider === 'osfstorage') ? m('.btn-group.m-l-xs.m-t-xs', [
                 ctrl.isLatestVersion ? m('.btn.btn-sm.btn-warning', {onclick: $(document).trigger.bind($(document), 'fileviewpage:checkout')}, 'Check out') : null
             ]) : '',
-            (ctrl.canEdit() && (ctrl.file.checkoutUser === ctrl.context.currentUser.id) && ctrl.requestDone) ? m('.btn-group.m-l-xs.m-t-xs', [
+            (ctrl.canEdit() && (ctrl.file.checkoutUser === ctrl.context.currentUser.id) ) ? m('.btn-group.m-l-xs.m-t-xs', [
                 ctrl.isLatestVersion ? m('.btn.btn-sm.btn-warning', {onclick: $(document).trigger.bind($(document), 'fileviewpage:checkin')}, 'Check in') : null
             ]) : '',
             window.contextVars.node.isPublic? m('.btn-group.m-t-xs', [
