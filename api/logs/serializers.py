@@ -108,6 +108,8 @@ class NodeLogParamsSerializer(RestrictedDictSerializer):
             #TODO: remove the check for '//' when the urls for folder is removed from api
             if view and not view.endswith('//'):
                 view = view.rstrip('\/')
+                if view.endswith('?action=view'):
+                    view = view.rstrip('\/?action=view')
                 file_id = view.split('/')[-1]
                 provider = view.split('/')[-2]
                 try:
@@ -115,6 +117,8 @@ class NodeLogParamsSerializer(RestrictedDictSerializer):
                 except NoResultsFound:
                     file_node = None
                 if file_node:
+                    if provider == 'box':
+                        return '/project/{}/files/{}/{}/?action=view'.format(file_node.node._id, provider, file_id)
                     return '/project/{}/files/{}/{}/'.format(file_node.node._id, provider, file_id)
         return None
 
