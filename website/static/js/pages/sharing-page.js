@@ -15,7 +15,12 @@ var ctx = window.contextVars;
 
 var nodeApiUrl = ctx.node.urls.api;
 
-var cm = new ContribManager('#manageContributors', ctx.contributors, ctx.adminContributors, ctx.user, ctx.isRegistration, '#manageContributorsTable', '#adminContributorsTable');
+var isContribPage = $('#manageContributors').length;
+var cm = undefined;
+
+if (isContribPage) {
+    cm = new ContribManager('#manageContributors', ctx.contributors, ctx.adminContributors, ctx.user, ctx.isRegistration, '#manageContributorsTable', '#adminContributorsTable');
+}
 
 if ($.inArray('admin', ctx.user.permissions) !== -1) {
     // Controls the modal
@@ -33,7 +38,9 @@ $(function() {
 });
 
 $(window).load(function() {
-    cm.viewModel.onWindowResize();
+    if (typeof cm !== 'undefined') {
+      cm.viewModel.onWindowResize();
+    }
     if (!!privateLinkTable){
         privateLinkTable.viewModel.onWindowResize();
         rt.responsiveTable(linkTable[0]);
@@ -48,5 +55,7 @@ $(window).resize(function() {
     if (!!privateLinkTable) {
         privateLinkTable.viewModel.onWindowResize();
     }
-    cm.viewModel.onWindowResize();
+    if (typeof cm !== 'undefined') {
+      cm.viewModel.onWindowResize();
+    }
 });
