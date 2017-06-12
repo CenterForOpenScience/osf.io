@@ -1,8 +1,5 @@
 from rest_framework import serializers as ser
 
-from modularodm import Q
-from modularodm.exceptions import NoResultsFound
-
 from api.base.serializers import (
     JSONAPISerializer,
     RelationshipField,
@@ -13,7 +10,6 @@ from api.base.serializers import (
 )
 
 from osf.models import OSFUser, AbstractNode as Node, PreprintService
-from osf.models.files import BaseFileNode
 from website.util import permissions as osf_permissions
 
 
@@ -71,7 +67,6 @@ class NodeLogParamsSerializer(RestrictedDictSerializer):
     page_id = ser.CharField(read_only=True)
     params_node = ser.SerializerMethodField(read_only=True)
     params_project = ser.SerializerMethodField(read_only=True)
-    params_file = ser.SerializerMethodField(read_only=True)
     path = ser.CharField(read_only=True)
     pointer = ser.DictField(read_only=True)
     preprint = ser.CharField(read_only=True)
@@ -99,27 +94,6 @@ class NodeLogParamsSerializer(RestrictedDictSerializer):
             view = urls.get('view', None)
             if view:
                 return view
-        return None
-
-    def get_params_file(self, obj):
-        urls = obj.get('urls', None)
-        if urls:
-            view = urls.get('view', None)
-            #TODO: remove the check for '//' when the urls for folder is removed from api
-            if view and not view.endswith('//'):
-                view = view.rstrip('\/')
-                if view.endswith('?action=view'):
-                    view = view.rstrip('\/?action=view')
-                file_id = view.split('/')[-1]
-                provider = view.split('/')[-2]
-                try:
-                    file_node = BaseFileNode.resolve_class(provider, BaseFileNode.FILE).find_one(Q('_id', 'eq', file_id))
-                except NoResultsFound:
-                    file_node = None
-                if file_node:
-                    if provider == 'box':
-                        return '/project/{}/files/{}/{}/?action=view'.format(file_node.node._id, provider, file_id)
-                    return '/project/{}/files/{}/{}/'.format(file_node.node._id, provider, file_id)
         return None
 
     def get_params_node(self, obj):
