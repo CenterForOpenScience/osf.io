@@ -510,6 +510,9 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
     def is_anonymous(self):
         return False
 
+    def get_absolute_url(self):
+        return self.absolute_api_v2_url
+
     def get_addon_names(self):
         return []
 
