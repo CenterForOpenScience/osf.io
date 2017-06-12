@@ -418,7 +418,7 @@ var FileViewPage = {
             changeVersionHeader();
         }
 
-        self.enableEditing()
+        self.enableEditing();
     },
     view: function(ctrl) {
         //This code was abstracted into a panel toggler at one point
