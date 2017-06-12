@@ -23,6 +23,9 @@
                             <li><a href="#configureAddonsAnchor">Configure Add-ons</a></li>
                         % endif
 
+                        % if 'admin' in user['permissions']:
+                            <li><a href="#createVolsAnchor">View-Only Links</a></li>
+                        % endif
                         <li><a href="#configureWikiAnchor">Wiki</a></li>
 
                         % if 'admin' in user['permissions']:
@@ -185,6 +188,26 @@
             % endif
 
         % endif  ## End Select Addons
+
+        % if 'admin' in user['permissions']:  ## Begin create VOLS
+            % if not node['is_registration']:
+            <div class="panel panel-default">
+                <span id="createVolsAnchor" class="anchor"></span>
+                <div class="panel-heading clearfix">
+                    <h3 class="panel-title">View-Only Links</h3>
+                </div>
+                <div class="panel-body">
+                    <p>
+                        Create a link to share this project so those who have the link can view&mdash;but not edit&mdash;the project.
+                    </p>
+                    <a href="#addPrivateLink" data-toggle="modal" class="btn btn-success btn-sm">
+                      <i class="fa fa-plus"></i> Add
+                    </a>
+                    <%include file="project/private_links.mako"/>
+                </div>
+            </div>
+            % endif
+        % endif ## End create vols
 
         % if 'write' in user['permissions']:  ## Begin Wiki Config
             % if not node['is_registration']:
@@ -457,8 +480,8 @@
 
 <%def name="stylesheets()">
     ${parent.stylesheets()}
-
     <link rel="stylesheet" href="/static/css/pages/project-page.css">
+    <link rel="stylesheet" href="/static/css/responsive-tables.css">
 </%def>
 
 <%def name="javascript_bottom()">
@@ -474,6 +497,7 @@
       window.contextVars.wiki.isEnabled = ${wiki.short_name in addons_enabled | sjson, n };
       window.contextVars.currentUser = window.contextVars.currentUser || {};
       window.contextVars.currentUser.institutions = ${ user['institutions'] | sjson, n };
+      window.contextVars.user = ${ user | sjson, n };
       window.contextVars.analyticsMeta = $.extend(true, {}, window.contextVars.analyticsMeta, {
           pageMeta: {
               title: 'Settings',
@@ -483,6 +507,7 @@
     </script>
 
     <script type="text/javascript" src=${"/static/public/js/project-settings-page.js" | webpack_asset}></script>
+    <script src=${"/static/public/js/sharing-page.js" | webpack_asset}></script>
 
     % for js_asset in addon_js:
     <script src="${js_asset | webpack_asset}"></script>
