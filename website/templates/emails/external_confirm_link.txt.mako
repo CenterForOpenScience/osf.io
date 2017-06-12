@@ -1,11 +1,14 @@
-Hello ${user.fullname},
+Dear ${user.fullname},
 
-Thank you for linking your ${external_id_provider} account to the Open Science Framework. We will add ${external_id_provider} to your OSF profile.
+Thank you for linking your ${external_id_provider} account to the Open Science Framework. To finish the process, you must verify this email.
 
-Please verify your email address by visiting this link:
+If you initiated this process, it is asking you to enter the verification code that appears below.
 
-${confirmation_url}
+If you did not initiate this process, it is possible that someone else is trying to use this email to link their ${external_id_provider} account. Do not forward or give this code to anyone and the account will not be linked.
 
-The OSF Team
+OSF Verification Code: ${verification_code}
+
+Sincerely,
+The Open Science Framework Team
 
 Center for Open Science

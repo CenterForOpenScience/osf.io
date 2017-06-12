@@ -99,6 +99,24 @@ class AuthExternal(JSONAPIBaseView, generics.CreateAPIView):
         return Response(data=content, status=status.HTTP_200_OK)
 
 
+class AuthExternalCreateOrLinkOsfAccount(JSONAPIBaseView, generics.CreateAPIView):
+
+    view_category = 'cas'
+    view_name = 'auth-external-create-or-link'
+    permission_classes = (IsCasJweAuthentication,)
+    authentication_classes = (CasJweAuthentication,)
+    required_read_scopes = [CoreScopes.NULL]
+    required_write_scopes = [CoreScopes.NULL]
+
+    def post(self, request, *args, **kwargs):
+
+        content = {
+            'createOrLink': request.auth
+        }
+
+        return Response(data=content, status=status.HTTP_200_OK)
+
+
 class AuthVerifyEmail(JSONAPIBaseView, generics.CreateAPIView):
     """ Verify the primary email for a new osf account.
     """

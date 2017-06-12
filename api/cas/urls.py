@@ -8,6 +8,7 @@ urlpatterns = [
     url(r'^auth/register/$', views.AuthRegister.as_view(), name=views.AuthRegister.view_name),
     url(r'^auth/institution/$', views.AuthInstitution.as_view(), name=views.AuthInstitution.view_name),
     url(r'^auth/external/$', views.AuthExternal.as_view(), name=views.AuthExternal.view_name),
+    url(r'^auth/external/createOrLink/$', views.AuthExternalCreateOrLinkOsfAccount.as_view(), name=views.AuthExternalCreateOrLinkOsfAccount.view_name),
     url(r'^auth/verifyEmail/$', views.AuthVerifyEmail.as_view(), name=views.AuthVerifyEmail.view_name),
     url(r'^auth/resetPassword/$', views.AuthResetPassword.as_view(), name=views.AuthResetPassword.view_name),
     # service

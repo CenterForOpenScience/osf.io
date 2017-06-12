@@ -5,7 +5,7 @@ from rest_framework.authentication import BaseAuthentication
 
 from django.db.models import Q
 
-from api.cas import util, messages
+from api.cas import util, messages, cas_errors
 
 from framework import sentry
 from framework.auth import register_unconfirmed, get_or_create_user
@@ -135,9 +135,13 @@ class CasJweAuthentication(BaseAuthentication):
         if auth_type == 'INSTITUTION_AUTHENTICATE':
             return handle_institution_authenticate(data.get('provider'))
 
-        # non-institution external login
-        if auth_type == 'NON_INSTITUTION_EXTERNAL_AUTHENTICATE':
+        # non-institution external authentication: login
+        if auth_type == 'EXTERNAL_AUTHENTICATE':
             return handle_non_institution_external_authenticate(data.get('user'))
+
+        # non-institution external authentication: create or link OSF account
+        if auth_type == 'CREATE_OR_LINK_OSF_ACCOUNT':
+            return handle_create_or_link_osf_account(data.get('user'))
 
         # reset password
         if auth_type == 'RESET_PASSWORD':
@@ -187,7 +191,7 @@ def handle_login(data_user):
     # retrieve the user
     user = OSFUser.objects.filter(Q(username=email) | Q(emails__icontains=email)).first()
     if not user:
-        return None, messages.ACCOUNT_NOT_FOUND, None
+        return None, cas_errors.ACCOUNT_NOT_FOUND, None
 
     # authenticated by remote authentication
     if remote_authenticated:
@@ -197,13 +201,13 @@ def handle_login(data_user):
     if verification_key:
         if verification_key == user.verification_key:
             return user, util.verify_two_factor(user, one_time_password), util.is_user_inactive(user)
-        return None, messages.INVALID_KEY, None
+        return None, cas_errors.INVALID_KEY, None
 
     # authenticated by password
     if password:
         if user.check_password(password):
             return user, util.verify_two_factor(user, one_time_password), util.is_user_inactive(user)
-        return None, messages.INVALID_PASSWORD, None
+        return None, cas_errors.INVALID_PASSWORD, None
 
 
 def handle_register(data_user):
@@ -320,7 +324,7 @@ def handle_non_institution_external_authenticate(data_user):
 
     external_credential = validate_external_credential(data_user.get('externalIdWithProvider'))
     if not external_credential:
-        return None, messages.REQUEST_FAILED
+        raise PermissionDenied(detail=cas_errors.INVALID_EXTERNAL_IDENTITY)
 
     user = OSFUser.objects.filter(
         external_identity__contains={
@@ -331,10 +335,95 @@ def handle_non_institution_external_authenticate(data_user):
     ).first()
 
     if not user:
-        raise PermissionDenied(messages.ACCOUNT_NOT_FOUND)
+        raise PermissionDenied(cas_errors.ACCOUNT_NOT_FOUND)
     # no need to handle invalid user status in this view
     # the final step of login is still handled by the login view
     return user, None
+
+
+def handle_create_or_link_osf_account(data_user):
+    """ Handle creating  or linking external identity with OSF
+    """
+
+    email = data_user.get('email')
+    external_id_provider = data_user.get('externalIdProvider')
+    external_id = data_user.get('externalId')
+    campaign = data_user.get('campaign')
+    fullname = '{} {}'.format(
+        data_user.get('attributes').get('given-names', ''),
+        data_user.get('attributes').get('family-name', '')
+    ).strip()
+    if not fullname:
+        fullname = external_id
+    if not email or not fullname or not external_id_provider or not external_id:
+        raise ValidationError(detail=messages.INVALID_REQUEST)
+
+    if campaign and campaign not in campaigns.get_campaigns():
+        campaign = None
+
+    user = OSFUser.objects.filter(Q(username=email) | Q(emails__icontains=email)).first()
+
+    external_identity = {
+        external_id_provider: {
+            external_id: None,
+        },
+    }
+
+    util.ensure_external_identity_uniqueness(external_id_provider, external_id, user)
+
+    if user:
+        user_status = util.is_user_inactive(user)
+        if user_status:
+            if user_status == cas_errors.ACCOUNT_NOT_VERIFIED or user_status == cas_errors.ACCOUNT_NOT_CLAIMED:
+                external_identity[external_id_provider][external_id] = 'CREATE'
+            else:
+                raise PermissionDenied(detail=user_status)
+        else:
+            external_identity[external_id_provider][external_id] = 'LINK'
+        if external_id_provider in user.external_identity:
+            user.external_identity[external_id_provider].update(external_identity[external_id_provider])
+        else:
+            user.external_identity.update(external_identity)
+        user.add_unconfirmed_email(email, external_identity=external_identity)
+        user.save()
+        try:
+            send_confirm_email(
+                user,
+                email,
+                renew=True,
+                external_id_provider=external_id_provider,
+                external_id=external_id,
+                destination=None
+            )
+        except KeyError:
+            # TODO: inform Sentry
+            # something is wrong with OSF, raise 500
+            raise APIException(detail=messages.REQUEST_FAILED)
+    else:
+        external_identity[external_id_provider][external_id] = 'CREATE'
+        user = OSFUser.create_unconfirmed(
+            username=email,
+            password=None,
+            fullname=fullname,
+            external_identity=external_identity,
+            campaign=campaign
+        )
+        user.save()
+        try:
+            send_confirm_email(
+                user,
+                user.username,
+                renew=True,
+                external_id_provider=external_id_provider,
+                external_id=external_id,
+                destination=None
+            )
+        except KeyError:
+            # TODO: inform Sentry
+            # something is wrong with OSF, raise 500
+            raise APIException(detail=messages.REQUEST_FAILED)
+
+    return user, external_identity[external_id_provider][external_id]
 
 
 def handle_reset_password(data_user):

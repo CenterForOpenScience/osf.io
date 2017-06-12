@@ -1,35 +1,38 @@
-# login exception messages
-# must match io.cos.cas.api.util.AbstractApiEndpointUtils in CAS
-ACCOUNT_NOT_FOUND = 'ACCOUNT_NOT_FOUND'
-ACCOUNT_NOT_VERIFIED = 'ACCOUNT_NOT_VERIFIED'
-ACCOUNT_DISABLED = 'ACCOUNT_DISABLED'
-INVALID_PASSWORD = 'INVALID_PASSWORD'
-INVALID_KEY = 'INVALID_VERIFICATION_KEY'
-INVALID_TOTP = 'INVALID_TIME_BASED_ONE_TIME_PASSWORD'
-INVALID_ACCOUNT_STATUS = 'INVALID_ACCOUNT_STATUS'
-TFA_REQUIRED = 'TWO_FACTOR_AUTHENTICATION_REQUIRED'
+# Error messages that will be used in log or displayed to the user on the page.
 
+# cas log: oauth exception messages
 
-# oauth exception messages
-SCOPE_NOT_FOUND = 'Scope not found.'
-SCOPE_NOT_ACTIVE = 'Scope not active.'
-TOKEN_NOT_FOUND = 'PAT not found.'
-TOKEN_OWNER_NOT_FOUND = 'PAT owner not found.'
+SCOPE_NOT_FOUND = 'The scope is not found.'
 
+SCOPE_NOT_ACTIVE = 'The scope is not active.'
 
-# general server or client side exception messages
-INVALID_REQUEST = 'The API server cannot understand the CAS request.'
-REQUEST_FAILED = 'The API server understands the CAS request but fails to handle it.'
+TOKEN_NOT_FOUND = 'The personal access token is not found.'
 
+TOKEN_OWNER_NOT_FOUND = 'The personal access token\'s owner is not found.'
 
-# external messages: messages that will be displayed to user on CAS page
+# cas log: general server (API) or client (CAS) side exception messages
+
+INVALID_REQUEST =\
+    'The API server fails to understand the CAS request. Please check if CAS or API CAS endpoint have changed.'
+
+REQUEST_FAILED =\
+    'The API server fails to complete the CAS request. Please check if CAS or related API CAS endpoint have changed.'
+
+# cas account messages that will be shown to the user on CAS pages
+
 ALREADY_REGISTERED = 'This email has already been registered.'
-EMAIL_NOT_FOUND = 'Email not found.'
-INVALID_CODE = 'Invalid verification code.'
-RESEND_VERIFICATION_THROTTLE_ACTIVE =\
-    'You have recently requested to resend your verification email. Please wait a few minutes before trying again.'
-EMAIL_ALREADY_VERIFIED = 'Email already verified.'
-RESET_PASSWORD_THROTTLE_ACTIVE =\
-    'You have recently requested to reset your password. Please wait a few minutes before trying again.'
+
+EMAIL_NOT_FOUND = 'The email is not found.'
+
+INVALID_CODE = 'The verification code is invalid.'
+
+ALREADY_VERIFIED = 'This email has already been verified.'
+
 RESET_PASSWORD_NOT_ELIGIBLE =\
     'You cannot reset password on this account. Please contact OSF Support.'
+
+RESEND_VERIFICATION_THROTTLE_ACTIVE =\
+    'You have recently requested to resend your verification email. Please wait a few minutes before trying again.'
+
+RESET_PASSWORD_THROTTLE_ACTIVE =\
+    'You have recently requested to reset your password. Please wait a few minutes before trying again.'

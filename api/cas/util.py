@@ -10,7 +10,7 @@ from api.base import settings
 from api.base.authentication.drf import check_user
 from api.base.exceptions import (UnconfirmedAccountError, UnclaimedAccountError, DeactivatedAccountError,
                                  MergedAccountError, InvalidAccountError)
-from api.cas import messages
+from api.cas import messages, cas_errors
 
 from addons.twofactor.models import UserSettings as TwoFactorUserSettings
 
@@ -57,11 +57,13 @@ def is_user_inactive(user):
     try:
         check_user(user)
     except UnconfirmedAccountError:
-        return messages.ACCOUNT_NOT_VERIFIED
+        return cas_errors.ACCOUNT_NOT_VERIFIED
     except DeactivatedAccountError:
-        return messages.ACCOUNT_DISABLED
-    except MergedAccountError or UnclaimedAccountError or InvalidAccountError:
-        return messages.INVALID_ACCOUNT_STATUS
+        return cas_errors.ACCOUNT_DISABLED
+    except UnclaimedAccountError:
+        return cas_errors.ACCOUNT_NOT_CLAIMED
+    except (MergedAccountError, InvalidAccountError):
+        return cas_errors.INVALID_ACCOUNT_STATUS
     return None
 
 
@@ -88,12 +90,12 @@ def verify_two_factor(user, one_time_password):
 
     # two factor required
     if not one_time_password:
-        return messages.TFA_REQUIRED
+        return cas_errors.TFA_REQUIRED
 
     # verify two factor
     if two_factor.verify_code(one_time_password):
         return None
-    return messages.INVALID_TOTP
+    return cas_errors.INVALID_TOTP
 
 
 def find_account_for_verify_email(data_user):
@@ -119,7 +121,7 @@ def find_account_for_verify_email(data_user):
     try:
         send_confirm_email(user, email, renew=True, external_id_provider=None, external_id=None, destination=None)
     except KeyError:
-        return None, messages.EMAIL_ALREADY_VERIFIED
+        return None, messages.ALREADY_VERIFIED
 
     user.email_last_sent = timezone.now()
     user.save()
@@ -159,3 +161,20 @@ def find_account_for_reset_password(data_user):
     user.email_last_sent = timezone.now()
     user.save()
     return user, None
+
+
+def ensure_external_identity_uniqueness(provider, identity, user=None):
+    """
+    Ensure the uniqueness of external identity. User A is the user that tries to link or create an OSF account.
+    1. If there is an existing user B with this identity as "VERIFIED", remove the pending identity from the user A.
+       Do not raise 400s or 500s because it rolls back transactions. What's the best practice?
+    2. If there is any existing user B with this identity as "CREATE" or "LINK", remove this pending identity from the
+       user B and remove the provider if there is no other identity for it.
+    
+    :param provider: the external identity provider
+    :param identity: the external identity of the user
+    :param user: the user
+    :return: 
+    """
+
+    return None
