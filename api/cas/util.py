@@ -1,7 +1,7 @@
 from django.db.models import Q
 from django.utils import timezone
 
-from rest_framework.exceptions import ParseError, ValidationError
+from rest_framework.exceptions import ParseError, ValidationError, PermissionDenied
 
 import jwe
 import jwt
@@ -163,7 +163,7 @@ def find_account_for_reset_password(data_user):
     return user, None
 
 
-def ensure_external_identity_uniqueness(provider, identity, user=None):
+def ensure_external_identity_uniqueness(provider, identity, user):
     """
     Ensure the uniqueness of external identity. User A is the user that tries to link or create an OSF account.
     1. If there is an existing user B with this identity as "VERIFIED", remove the pending identity from the user A.
@@ -177,4 +177,23 @@ def ensure_external_identity_uniqueness(provider, identity, user=None):
     :return: 
     """
 
-    return None
+    users_with_identity = OSFUser.objects.filter(**{
+        'external_identity__{}__{}__isnull'.format(provider, identity): False
+    })
+
+    for existing_user in users_with_identity:
+
+        if user and user._id == existing_user._id:
+            continue
+
+        if existing_user.external_identity[provider][identity] == 'VERIFIED':
+            # clear user's pending identity won't work since API rolls back transactions when status >= 400
+            # TODO: CAS will do another request to clear the pending identity on this user
+            raise PermissionDenied(detail=cas_errors.EXTERNAL_IDENTITY_CLAIMED)
+
+        existing_user.external_identity[provider].pop(identity)
+        if existing_user.external_identity[provider] == {}:
+            existing_user.external_identity.pop(provider)
+        existing_user.save()
+
+    return

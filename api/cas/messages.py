@@ -13,7 +13,7 @@ TOKEN_OWNER_NOT_FOUND = 'The personal access token\'s owner is not found.'
 # cas log: general server (API) or client (CAS) side exception messages
 
 INVALID_REQUEST =\
-    'The API server fails to understand the CAS request. Please check if CAS or API CAS endpoint have changed.'
+    'The API server fails to understand the CAS request. Please check if CAS or API endpoints have changed.'
 
 REQUEST_FAILED =\
     'The API server fails to complete the CAS request. Please check if CAS or related API CAS endpoint have changed.'
@@ -29,7 +29,9 @@ INVALID_CODE = 'The verification code is invalid.'
 ALREADY_VERIFIED = 'This email has already been verified.'
 
 RESET_PASSWORD_NOT_ELIGIBLE =\
-    'You cannot reset password on this account. Please contact OSF Support.'
+    'You cannot reset password on this account. Please contact OSF support.'
+
+EXTERNAL_IDENTITY_NOT_ELIGIBLE = 'The OSF account associated with this email is not eligible. Please contact OSF support.'
 
 RESEND_VERIFICATION_THROTTLE_ACTIVE =\
     'You have recently requested to resend your verification email. Please wait a few minutes before trying again.'

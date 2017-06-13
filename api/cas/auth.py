@@ -4,6 +4,7 @@ from rest_framework.exceptions import APIException, ValidationError, Authenticat
 from rest_framework.authentication import BaseAuthentication
 
 from django.db.models import Q
+from django.utils import timezone
 
 from api.cas import util, messages, cas_errors
 
@@ -18,7 +19,7 @@ from framework.auth.views import send_confirm_email
 
 from osf.models import Institution, OSFUser
 
-from website.mails import send_mail, WELCOME, WELCOME_OSF4I
+from website.mails import send_mail, WELCOME, WELCOME_OSF4I, EXTERNAL_LOGIN_LINK_SUCCESS
 
 
 class CasJweAuthentication(BaseAuthentication):
@@ -105,6 +106,15 @@ class CasJweAuthentication(BaseAuthentication):
                     },
                 },
 
+            2.7 Verify Email (ORCiD)
+                "data": {
+                    "type": "VERIFY_EMAIL_EXTERNAL",
+                    "user": {
+                        "emailToVerify": "testuser@example.com",
+                        "verificationCode": "K3ISQVqZP82BX6QCt1SW2Em4bN2GHC",
+                    },
+                },
+
 
         :param request: the POST request
         :return: (user, None) or (None, error_message)
@@ -150,6 +160,10 @@ class CasJweAuthentication(BaseAuthentication):
         # verify email
         if auth_type == 'VERIFY_EMAIL':
             return handle_verify_email(data.get('user'))
+
+        # verify email external
+        if auth_type == 'VERIFY_EMAIL_EXTERNAL':
+            return handle_verify_email_external(data.get('user'))
 
         # TODO: inform Sentry
         # something is wrong with CAS, raise 400
@@ -346,61 +360,67 @@ def handle_create_or_link_osf_account(data_user):
     """
 
     email = data_user.get('email')
-    external_id_provider = data_user.get('externalIdProvider')
-    external_id = data_user.get('externalId')
+    provider = data_user.get('externalIdProvider')
+    identity = data_user.get('externalId')
     campaign = data_user.get('campaign')
     fullname = '{} {}'.format(
         data_user.get('attributes').get('given-names', ''),
         data_user.get('attributes').get('family-name', '')
     ).strip()
-    if not fullname:
-        fullname = external_id
-    if not email or not fullname or not external_id_provider or not external_id:
-        raise ValidationError(detail=messages.INVALID_REQUEST)
 
+    # privacy settings on ORCiD may not release names, use identity instead
+    if not fullname:
+        fullname = identity
+    # raise validation error if CAS fails to make a valid request
+    if not email or not fullname or not provider or not identity:
+        raise ValidationError(detail=messages.INVALID_REQUEST)
+    # campaign is used for new accout creation
     if campaign and campaign not in campaigns.get_campaigns():
         campaign = None
 
     user = OSFUser.objects.filter(Q(username=email) | Q(emails__icontains=email)).first()
-
-    external_identity = {
-        external_id_provider: {
-            external_id: None,
-        },
-    }
-
-    util.ensure_external_identity_uniqueness(external_id_provider, external_id, user)
+    external_identity = {provider: {identity: None}}
+    util.ensure_external_identity_uniqueness(provider, identity, user)
 
     if user:
-        user_status = util.is_user_inactive(user)
-        if user_status:
-            if user_status == cas_errors.ACCOUNT_NOT_VERIFIED or user_status == cas_errors.ACCOUNT_NOT_CLAIMED:
-                external_identity[external_id_provider][external_id] = 'CREATE'
+        inactive_status = util.is_user_inactive(user)
+        if inactive_status:
+            # accounts that are not claimed/verified is eligible and considered as new user
+            # TODO: should we clear other pending email verifications and unclaimed records? Yes
+            # TODO: should we update user's profile? Yes
+            if inactive_status == cas_errors.ACCOUNT_NOT_VERIFIED or inactive_status == cas_errors.ACCOUNT_NOT_CLAIMED:
+                external_identity[provider][identity] = 'CREATE'
+            # accounts that are disabled or of other inactive status is not eligible
             else:
-                raise PermissionDenied(detail=user_status)
+                raise PermissionDenied(detail=messages.EXTERNAL_IDENTITY_NOT_ELIGIBLE)
         else:
-            external_identity[external_id_provider][external_id] = 'LINK'
-        if external_id_provider in user.external_identity:
-            user.external_identity[external_id_provider].update(external_identity[external_id_provider])
+            # existing user
+            external_identity[provider][identity] = 'LINK'
+
+        if provider in user.external_identity:
+            user.external_identity[provider].update(external_identity[provider])
         else:
             user.external_identity.update(external_identity)
-        user.add_unconfirmed_email(email, external_identity=external_identity)
+
+        user.add_unconfirmed_email(email, expiration=None, external_identity=external_identity)
         user.save()
+
         try:
+            # renew is not compatible with external account verification, must be set to False
+            # TODO: fix renew for external identity
             send_confirm_email(
                 user,
                 email,
-                renew=True,
-                external_id_provider=external_id_provider,
-                external_id=external_id,
-                destination=None
+                renew=False,
+                external_id_provider=provider,
+                external_id=identity
             )
         except KeyError:
-            # TODO: inform Sentry
-            # something is wrong with OSF, raise 500
+            # TODO: something is wrong, inform Sentry
             raise APIException(detail=messages.REQUEST_FAILED)
     else:
-        external_identity[external_id_provider][external_id] = 'CREATE'
+        # new user
+        external_identity[provider][identity] = 'CREATE'
         user = OSFUser.create_unconfirmed(
             username=email,
             password=None,
@@ -409,21 +429,75 @@ def handle_create_or_link_osf_account(data_user):
             campaign=campaign
         )
         user.save()
+
         try:
+            # renew is not compatible with external account verification, must be set to False
+            # TODO: fix renew for external identity
             send_confirm_email(
                 user,
                 user.username,
-                renew=True,
-                external_id_provider=external_id_provider,
-                external_id=external_id,
-                destination=None
+                renew=False,
+                external_id_provider=provider,
+                external_id=identity
             )
         except KeyError:
-            # TODO: inform Sentry
-            # something is wrong with OSF, raise 500
+            # TODO: something is wrong, inform Sentry
             raise APIException(detail=messages.REQUEST_FAILED)
 
-    return user, external_identity[external_id_provider][external_id]
+    return user, external_identity[provider][identity]
+
+
+def handle_verify_email_external(data_user):
+
+    email = data_user.get('email')
+    token = data_user.get('verificationCode')
+
+    if not email or not token:
+        # raise validation error if CAS fails to make a valid request
+        raise ValidationError(detail=messages.INVALID_REQUEST)
+    user = OSFUser.objects.filter(Q(username=email) | Q(emails__icontains=email)).first()
+    if not user:
+        # raise validation error if CAS fails to make a valid request
+        raise ValidationError(detail=messages.EMAIL_NOT_FOUND)
+    if token not in user.email_verifications:
+        # token is invalid
+        raise PermissionDenied(detail=messages.INVALID_CODE)
+
+    verification = user.email_verifications[token]
+    email = verification['email']
+    provider = verification['external_identity'].keys()[0]
+    identity = verification['external_identity'][provider].keys()[0]
+
+    if provider not in user.external_identity:
+        # wrong provider
+        raise PermissionDenied(detail=messages.INVALID_CODE)
+
+    external_identity_status = user.external_identity[provider][identity]
+    util.ensure_external_identity_uniqueness(provider, identity, user)
+
+    if not user.is_registered:
+        # register user
+        user.register(email)
+    if email.lower() not in user.emails:
+        # update email
+        user.emails.append(email.lower())
+
+    user.date_last_logged_in = timezone.now()
+    user.external_identity[provider][identity] = 'VERIFIED'
+    user.social[provider.lower()] = identity
+    del user.email_verifications[token]
+
+    # generate verification key v1 for CAS login
+    user.verification_key = generate_verification_key(verification_type=None)
+
+    if external_identity_status == 'CREATE':
+        send_mail(to_addr=user.username, mail=WELCOME, mimetype='html', user=user)
+        user.last_cas_action = "verify-new-account"
+    elif external_identity_status == 'LINK':
+        send_mail(user=user, to_addr=user.username, mail=EXTERNAL_LOGIN_LINK_SUCCESS, external_id_provider=provider)
+        user.last_cas_action = "verify-existing-account"
+    user.save()
+    return user, None
 
 
 def handle_reset_password(data_user):
@@ -495,11 +569,9 @@ def handle_verify_email(data_user):
     # send welcome email
     send_mail(to_addr=user.username, mail=WELCOME, mimetype='html', user=user)
 
-    # clear unclaimed_records and email_verifications for this new user
+    # clear unclaimed_records, email_verifications and verification key v2
     user.email_verifications = {}
     user.unclaimed_records = {}
-
-    # clear verification key v2 for password reset
     user.verification_key_v2 = {}
 
     # generate verification key v1 for CAS login

@@ -320,7 +320,8 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
     # last auth action
     CAS_ACTIONS = (
         ('reset-password', 'Reset Password'),
-        ('verify-new-account', 'Verify Email for New Account'),
+        ('verify-new-account', 'Verify Email for a New Account'),
+        ('verify-existing-account', 'Verify Email for an Existing Account'),
         (None, 'No Pending Actions'),
     )
     last_cas_action = models.CharField(
@@ -944,7 +945,7 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
         Add an email verification token for a given email.
 
         :param email: the email to confirm
-        :param email: overwrite default expiration time
+        :param expiration: overwrite default expiration time
         :param external_identity: the user's external identity
         :return: a token
         :raises: ValueError if email already confirmed, except for login through external idp.
