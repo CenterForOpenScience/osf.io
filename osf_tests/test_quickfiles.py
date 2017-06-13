@@ -1,0 +1,88 @@
+import pytest
+
+from framework.auth.core import Auth
+from osf.models.quickfiles import QuickFiles
+
+from . import factories
+from website.exceptions import NodeStateError
+
+pytestmark = pytest.mark.django_db
+
+
+@pytest.fixture()
+def user():
+    return factories.UserFactory()
+
+
+@pytest.fixture()
+def project(user, auth, fake):
+    ret = factories.ProjectFactory(creator=user)
+    ret.add_tag(fake.word(), auth=auth)
+    return ret
+
+
+@pytest.fixture()
+def auth(user):
+    return Auth(user)
+
+
+class TestQuickFiles:
+
+    @pytest.fixture()
+    def quickfiles(self, user):
+        return QuickFiles.objects.get(creator=user)
+
+    def test_new_user_has_quickfiles(self):
+        user = factories.UserFactory()
+        quickfiles_node = QuickFiles.objects.filter(creator=user)
+        assert quickfiles_node.exists()
+
+    def test_quickfiles_is_public(self, quickfiles):
+        assert quickfiles.is_public
+
+    def test_quickfiles_has_creator_as_contributor(self, quickfiles, user):
+        assert quickfiles.creator == user
+        assert quickfiles.is_contributor(user)
+
+    def test_quickfiles_cannot_have_other_contributors(self, quickfiles, auth):
+        another_user = factories.UserFactory()
+        with pytest.raises(NodeStateError):
+            quickfiles.add_contributor(contributor=another_user, auth=auth)
+
+    def test_quickfiles_cannot_be_private(self, quickfiles):
+        with pytest.raises(NodeStateError):
+            quickfiles.set_privacy('private')
+        assert quickfiles.is_public
+
+    def test_quickfiles_cannot_be_deleted(self, quickfiles, auth):
+        with pytest.raises(NodeStateError):
+            quickfiles.remove_node(auth=auth)
+        assert not quickfiles.is_deleted
+
+    def test_quickfiles_cannot_be_registered(self, quickfiles, auth):
+        with pytest.raises(NodeStateError):
+            quickfiles.register_node(auth=auth)
+
+    def test_quickfiles_cannot_be_forked(self, quickfiles, auth):
+        with pytest.raises(NodeStateError):
+            quickfiles.fork_node(auth=auth)
+
+    def test_quickfiles_title_has_users_fullname(self, quickfiles, user):
+        plain_user = factories.UserFactory(fullname='Kenny Omega')
+        s_user = factories.UserFactory(fullname='Cody Runnels')
+
+        plain_user_quickfiles = QuickFiles.objects.get(creator=plain_user)
+        s_user_quickfiles = QuickFiles.objects.get(creator=s_user)
+
+        assert plain_user_quickfiles.title == "Kenny Omega's Quick Files"
+        assert s_user_quickfiles.title == "Cody Runnels' Quick Files"
+
+    def test_quickfiles_title_updates_when_fullname_updated(self, quickfiles, user):
+        assert user.fullname in quickfiles.title
+
+        new_name = 'Hiroshi Tanahashi'
+        user.fullname = new_name
+        user.save()
+
+        quickfiles.refresh_from_db()
+        assert new_name in quickfiles.title
