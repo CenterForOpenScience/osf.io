@@ -16,7 +16,7 @@ var ctx = window.contextVars;
 var nodeApiUrl = ctx.node.urls.api;
 
 var isContribPage = $('#manageContributors').length;
-var cm = undefined;
+var cm;
 
 if (isContribPage) {
     cm = new ContribManager('#manageContributors', ctx.contributors, ctx.adminContributors, ctx.user, ctx.isRegistration, '#manageContributorsTable', '#adminContributorsTable');
