@@ -57,10 +57,10 @@ $(document).ready(function() {
     });
 
     // Section for adding and removing checked items
-    $("body").on("click", "input[type='checkbox']", function() {
+    $("body").on("click", "#subjects input[type='checkbox']", function() {
         var subjectsToRemove = [];
         var elem = $(this);
-        if (elem.prop('checked') && elem.prop("name") !== "licenses_acceptable") {
+        if (elem.prop('checked')) {
             addSubject(elem[0].value);
 
             // Also make sure to select parents and grandparents!
@@ -68,16 +68,12 @@ $(document).ready(function() {
             if (parentId) {
                 addSubject(parentId);
                 var parentElem = $("input[value=" + parentId + "]");
-                if (parentElem.prop("name") !== "licenses_acceptable") {
-                    parentElem.prop("checked", true);
-                    grandparentId = parentElem[0].getAttribute("parent");
-                    if (grandparentId) {
-                        addSubject(grandparentId);
-                        grandparentElem = $("input[value=" + grandparentId + "]");
-                        if (grandparentElem.prop("name") !== "licenses_acceptable") {
-                            grandparentElem.prop("checked", true);
-                        }
-                    }
+                parentElem.prop("checked", true);
+                grandparentId = parentElem[0].getAttribute("parent");
+                if (grandparentId) {
+                    addSubject(grandparentId);
+                    grandparentElem = $("input[value=" + grandparentId + "]");
+                    grandparentElem.prop("checked", true);
                 }
             }
         } else {
@@ -88,10 +84,8 @@ $(document).ready(function() {
                 var descendants = data["all_descendants"];
                 for (j=0; j < descendants.length; j++) {
                     var input = $("input[value=" + descendants[j] + "]");
+                    input.prop("checked", false);
 
-                    if (input.prop("name") !== "licenses_acceptable") {
-                        input.prop("checked", false);
-                    }
                     var descendant_index = selected_subjects.indexOf(parseInt(descendants[j]));
                     if (descendant_index > -1) {
                         subjectsToRemove.push(descendants[j]);
