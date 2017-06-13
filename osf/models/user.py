@@ -497,11 +497,11 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
 
     @property
     def contributor_to(self):
-        return self.nodes.filter(is_deleted=False).exclude(type='osf.collection')
+        return self.nodes.filter(is_deleted=False, type__in=['osf.node', 'osf.registration'])
 
     @property
     def visible_contributor_to(self):
-        return self.nodes.filter(is_deleted=False, contributor__visible=True).exclude(type='osf.collection')
+        return self.nodes.filter(is_deleted=False, contributor__visible=True, type__in=['osf.node', 'osf.registration'])
 
     def set_unusable_username(self):
         """Sets username to an unusable value. Used for, e.g. for invited contributors
@@ -763,6 +763,13 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
         if self.SEARCH_UPDATE_FIELDS.intersection(dirty_fields) and self.is_confirmed:
             self.update_search()
             self.update_search_nodes_contributors()
+        if 'fullname' in dirty_fields:
+            from osf.models.quickfiles import get_quickfiles_project_title, QuickFiles
+
+            quickfiles = QuickFiles.objects.filter(creator=self).first()
+            if quickfiles:
+                quickfiles.title = get_quickfiles_project_title(self)
+                quickfiles.save()
         return ret
 
     # Legacy methods
@@ -1152,7 +1159,7 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
         registration or claiming.
 
         """
-        for node in self.contributed:
+        for node in self.contributor_to:
             node.update_search()
 
     def update_date_last_login(self):
@@ -1434,3 +1441,11 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
 def create_bookmark_collection(sender, instance, created, **kwargs):
     if created:
         new_bookmark_collection(instance)
+
+
+@receiver(post_save, sender=OSFUser)
+def create_quickfiles_project(sender, instance, created, **kwargs):
+    from osf.models.quickfiles import QuickFiles
+
+    if created:
+        QuickFiles.objects.create_for_user(instance)
