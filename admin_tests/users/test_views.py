@@ -87,14 +87,28 @@ class TestUserView(AdminTestCase):
 
 
 class TestResetPasswordView(AdminTestCase):
-    def test_reset_password_context(self):
-        user = UserFactory()
+    def setUp(self):
+        super(TestResetPasswordView, self).setUp()
+        self.user = UserFactory()
+        user = self.user
+        self.request = RequestFactory().get('/fake_path')
+        self.request.user = self.user
+        self.plain_view = views.ResetPasswordView
+        self.view = setup_view(self.plain_view(), self.request, guid=user._id)
 
-        guid = user._id
-        request = RequestFactory().get('/fake_path')
-        view = views.ResetPasswordView(initial={})
-        view = setup_view(view, request, guid=guid)
-        res = view.get_context_data()
+    def test_get_initial(self):
+        self.view.user = self.user
+        self.view.get_initial()
+        res = self.view.initial
+        nt.assert_is_instance(res, dict)
+        nt.assert_equal(res['guid'], self.user._id)
+        nt.assert_equal(res['emails'], self.user.emails)
+
+    def test_reset_password_context(self):
+        self.view.user = self.user
+        res = self.view.get_context_data()
+        user = self.user
+        view = self.view
         nt.assert_is_instance(res, dict)
         nt.assert_in((user.emails.first().address, user.emails.first().address), view.initial['emails'])
 
