@@ -39,7 +39,7 @@ from website.project.views.contributor import notify_added_contributor
 # for logger_name in SILENT_LOGGERS:
 #     logging.getLogger(logger_name).setLevel(logging.CRITICAL)
 
-logging.getLogger().setLevel(logging.CRITICAL)
+logging.disable(logging.WARNING)
 
 # NOTE: autouse so that ADDONS_REQUESTED gets set on website.settings
 @pytest.fixture(autouse=True, scope='session')

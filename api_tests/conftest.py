@@ -30,7 +30,7 @@ from tests.json_api_test_app import JSONAPITestApp
 # for logger_name in SILENT_LOGGERS:
 #     logging.getLogger(logger_name).setLevel(logging.CRITICAL)
 
-logging.getLogger().setLevel(logging.CRITICAL)
+logging.disable(logging.WARNING)
 
 @pytest.fixture()
 def app():
