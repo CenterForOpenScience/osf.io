@@ -133,7 +133,7 @@ class TestPreprintProviderChangeForm(AdminTestCase):
         self.view = views.PreprintProviderChangeForm()
         self.view = setup_form_view(self.view, self.request, form=PreprintProviderForm())
 
-        self.parent_1 = SubjectFactory()
+        self.parent_1 = SubjectFactory(provider=PreprintProviderFactory(_id='osf'))
         self.child_1 = SubjectFactory(parent=self.parent_1)
         self.child_2 = SubjectFactory(parent=self.parent_1)
         self.grandchild_1 = SubjectFactory(parent=self.child_1)

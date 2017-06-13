@@ -17,7 +17,6 @@ will create the OSF preprint provider.
 '''
 
 from __future__ import unicode_literals
-from datetime import timedelta
 import json
 import logging
 
