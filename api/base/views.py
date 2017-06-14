@@ -26,7 +26,6 @@ from api.nodes.permissions import ReadOnlyIfRegistration
 from api.users.serializers import UserSerializer
 from framework.auth.oauth_scopes import CoreScopes
 from osf.models.contributor import Contributor
-from website.models import Pointer
 from website import maintenance
 
 
@@ -856,7 +855,8 @@ class BaseLinkedList(JSONAPIBaseView, generics.ListAPIView):
     view_category = None
     view_name = None
 
-    model_class = Pointer
+    # TODO: This class no longer exists
+    # model_class = Pointer
 
     def get_queryset(self):
         auth = get_user_auth(self.request)

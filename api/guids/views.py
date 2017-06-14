@@ -4,13 +4,13 @@ from rest_framework.exceptions import NotFound
 from rest_framework import permissions as drf_permissions
 from rest_framework import generics
 
-from framework.guid.model import Guid
 from framework.auth.oauth_scopes import CoreScopes
 from api.base.exceptions import EndpointNotImplementedError
 from api.base import permissions as base_permissions
 from api.base.views import JSONAPIBaseView
 from api.base.utils import get_object_or_error, is_truthy
 from api.guids.serializers import GuidSerializer
+from osf.models import Guid
 
 
 class GuidDetail(JSONAPIBaseView, generics.RetrieveAPIView):

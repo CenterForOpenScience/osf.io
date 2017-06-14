@@ -20,16 +20,14 @@ from framework.celery_tasks import app as celery_app
 from osf.models import TrashedFile
 
 from website import mails
-from website.models import User
 from website.app import init_app
-from website.project.model import Node
 
 from scripts import utils as scripts_utils
 
 # App must be init'd before django models are imported
 init_app(set_backends=True, routes=False)
 
-from osf.models import BaseFileNode, FileVersion
+from osf.models import BaseFileNode, FileVersion, OSFUser as User, AbstractNode as Node
 
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO)

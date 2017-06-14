@@ -8,6 +8,7 @@ import datetime
 import os
 import json
 import hashlib
+import logging
 from datetime import timedelta
 from collections import OrderedDict
 
@@ -27,6 +28,8 @@ STATIC_URL_PATH = '/static'
 ASSET_HASH_PATH = os.path.join(APP_PATH, 'webpack-assets.json')
 ROOT = os.path.join(BASE_PATH, '..')
 BCRYPT_LOG_ROUNDS = 12
+# Logging level to use when DEBUG is False
+LOG_LEVEL = logging.INFO
 
 with open(os.path.join(APP_PATH, 'package.json'), 'r') as fobj:
     VERSION = json.load(fobj)['version']

@@ -7,7 +7,7 @@ from flask import request
 from framework.exceptions import HTTPError, PermissionsError
 from framework.auth.decorators import must_be_logged_in
 
-from website.oauth.models import ExternalAccount
+from osf.models import ExternalAccount
 
 from website.util import permissions
 from website.project.decorators import (

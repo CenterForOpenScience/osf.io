@@ -4,7 +4,7 @@ from modularodm import Q
 from nose.tools import *  # flake8: noqa
 
 from api.base.settings.defaults import API_BASE
-from website.identifiers.model import Identifier
+from osf.models import Identifier
 
 from tests.base import ApiTestCase
 from osf_tests.factories import (

@@ -20,9 +20,9 @@ from api.base.exceptions import RelationshipPostMakesNoChanges
 from api.base.settings import BULK_SETTINGS
 from api.base.utils import absolute_reverse, extend_querystring_params, get_user_auth, extend_querystring_if_key_exists
 from framework.auth import core as auth_core
+from osf.models import AbstractNode as Node
 from website import settings
 from website import util as website_utils
-from website.models import Node
 from website.util.sanitize import strip_html
 from website.project.model import has_anonymous_link
 
@@ -76,6 +76,7 @@ class ShowIfVersion(ser.Field):
         self.read_only = field.read_only
         self.min_version = min_version
         self.max_version = max_version
+        self.help_text = 'This field is deprecated as of version {}'.format(self.max_version) or kwargs.get('help_text')
 
     def get_attribute(self, instance):
         request = self.context.get('request')

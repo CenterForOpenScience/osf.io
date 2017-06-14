@@ -992,7 +992,9 @@ def usage(ctx):
 
 @task
 def set_maintenance(ctx, start=None, end=None):
-    from website.maintenance import set_maintenance, get_maintenance
+    from website.app import setup_django
+    setup_django()
+    from website.maintenance import set_maintenance
     """Set the time period for the maintenance notice to be displayed.
     If no start or end values are displayed, default to starting now
     and ending 24 hours from now. If no timezone info is passed along,
@@ -1002,17 +1004,18 @@ def set_maintenance(ctx, start=None, end=None):
     will be changed to be 24 hours before the end time.
 
     Examples:
-        invoke set_maintenance_state
-        invoke set_maintenance_state --start 2016-03-16T15:41:00-04:00
-        invoke set_maintenance_state --end 2016-03-16T15:41:00-04:00
+        invoke set_maintenance
+        invoke set_maintenance --start 2016-03-16T15:41:00-04:00
+        invoke set_maintenance --end 2016-03-16T15:41:00-04:00
     """
-    set_maintenance(start, end)
-    state = get_maintenance()
+    state = set_maintenance(start, end)
     print('Maintenance notice up for {} to {}.'.format(state['start'], state['end']))
 
 
 @task
 def unset_maintenance(ctx):
+    from website.app import setup_django
+    setup_django()
     from website.maintenance import unset_maintenance
     print('Taking down maintenance notice...')
     unset_maintenance()

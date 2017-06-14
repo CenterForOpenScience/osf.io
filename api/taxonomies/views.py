@@ -6,7 +6,7 @@ from api.base.filters import ODMFilterMixin
 from api.base.pagination import NoMaxPageSizePagination
 from api.base import permissions as base_permissions
 from api.taxonomies.serializers import TaxonomySerializer
-from website.project.taxonomies import Subject
+from osf.models import Subject
 from framework.auth.oauth_scopes import CoreScopes
 
 

@@ -9,7 +9,7 @@ from osf_tests.factories import (
     AuthUserFactory,
     PrivateLinkFactory,
 )
-from website.models import Node
+from osf.models import AbstractNode as Node
 
 
 class ViewOnlyTestCase(ApiTestCase):

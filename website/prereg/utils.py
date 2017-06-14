@@ -8,21 +8,21 @@ PREREG_CAMPAIGNS = {
 
 
 def drafts_for_user(user, campaign):
-    from website import models  # noqa
+    from osf.models import DraftRegistration, Node
 
     PREREG_CHALLENGE_METASCHEMA = get_prereg_schema(campaign)
-    return models.DraftRegistration.objects.filter(
+    return DraftRegistration.objects.filter(
         registration_schema=PREREG_CHALLENGE_METASCHEMA,
         approval=None,
         registered_node=None,
-        branched_from__in=models.Node.objects.filter(
+        branched_from__in=Node.objects.filter(
             is_deleted=False,
             contributor__admin=True,
             contributor__user=user).values_list('id', flat=True))
 
 
 def get_prereg_schema(campaign='prereg'):
-    from website.models import MetaSchema  # noqa
+    from osf.models import MetaSchema
     if campaign not in PREREG_CAMPAIGNS:
         raise ValueError('campaign must be one of: {}'.format(', '.join(PREREG_CAMPAIGNS.keys())))
     schema_name = PREREG_CAMPAIGNS[campaign]

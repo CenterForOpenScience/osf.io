@@ -21,9 +21,7 @@ from framework.routing import proxy_url
 from framework.auth.core import get_current_user_id
 from website.institutions.views import serialize_institution
 
-from osf.models import BaseFileNode
-from website.models import Guid
-from website.models import Institution, PreprintService
+from osf.models import BaseFileNode, Guid, Institution, PreprintService
 from website.settings import EXTERNAL_EMBER_APPS, INSTITUTION_DISPLAY_NODE_THRESHOLD
 from website.project.model import has_anonymous_link
 from website.util import permissions
@@ -313,6 +311,8 @@ def redirect_about(**kwargs):
 def redirect_help(**kwargs):
     return redirect('/faq/')
 
+def redirect_faq(**kwargs):
+    return redirect('http://help.osf.io/m/faqs/')
 
 # redirect osf.io/howosfworks to osf.io/getting-started/
 def redirect_howosfworks(**kwargs):
