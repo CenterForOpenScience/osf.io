@@ -62,14 +62,16 @@
                             <span class="glyphicon glyphicon-option-horizontal"></span>
                         </button>
                         <ul class="dropdown-menu dropdown-menu-right">
-                            <li><a tabindex="-1" href="${domain}${summary['id']}/settings/">Settings</a></li>
                             <li><a tabindex="-1" href="${domain}${summary['id']}/contributors/">Manage Contributors</a></li>
-                            % if summary['is_admin']:
-                            <li>
-                                <a tabindex="-1" onclick="ComponentActions.deleteNode(${summary['childExists'] | sjson, n}, '${summary['node_type']}', ${summary['isPreprint'] | sjson, n},'${summary['api_url']}')" type="button">
-                                    Delete
-                                </a>
-                            </li>
+                            % if not node['is_registration']:
+                                <li><a tabindex="-1" href="${domain}${summary['id']}/settings/">Settings</a></li>
+                                % if summary['is_admin']:
+                                <li>
+                                    <a tabindex="-1" onclick="ComponentActions.deleteNode(${summary['childExists'] | sjson, n}, '${summary['node_type']}', ${summary['isPreprint'] | sjson, n},'${summary['api_url']}')" type="button">
+                                        Delete
+                                    </a>
+                                </li>
+                                % endif
                             % endif
                         </ul>
                   </div>
