@@ -45,11 +45,8 @@ ComponentActions.deleteNode = function(childExists, nodeType, isPreprint, nodeAp
                 }
             }
         });
-
     }
-
 };
-
 
 window.ComponentActions = ComponentActions;
 module.exports = ComponentActions;
