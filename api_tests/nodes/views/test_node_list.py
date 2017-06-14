@@ -12,7 +12,7 @@ from website.util.sanitize import strip_html
 from website.views import find_bookmark_collection
 
 from api.base.settings.defaults import API_BASE, MAX_PAGE_SIZE
-from api_tests.nodes.filters.test_filters import NodesListFilteringMixin
+from api_tests.nodes.filters.test_filters import NodesListFilteringMixin, NodesListDateFilteringMixin
 
 from tests.base import ApiTestCase
 from osf_tests.factories import (
@@ -2124,5 +2124,10 @@ class TestNodeListPagination(ApiTestCase):
 
 
 class TestNodeListFiltering(NodesListFilteringMixin, ApiTestCase):
+
+    url = '/{}nodes/?'.format(API_BASE)
+
+
+class TestNodeListDateFiltering(NodesListDateFilteringMixin, ApiTestCase):
 
     url = '/{}nodes/?'.format(API_BASE)
