@@ -51,6 +51,7 @@
             % endif
             </span>
 
+            % if not summary['archiving']:
             <div class="pull-right">
                 % if not summary['primary'] and 'write' in user['permissions'] and not node['is_registration']:
                     <i class="fa fa-times remove-pointer" data-id="${summary['id']}" data-toggle="tooltip" title="Remove link"></i>
@@ -77,6 +78,7 @@
                   </div>
                 % endif
             </div>
+            % endif
         </h4>
 
         % if show_path and summary['node_type'] == 'component':
