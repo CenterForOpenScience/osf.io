@@ -92,4 +92,4 @@ def get_nodelicense_choices():
 
 
 def get_toplevel_subjects():
-    return Subject.objects.filter(parent__isnull=True).values_list('id', 'text')
+    return Subject.objects.filter(parent__isnull=True, provider___id='osf').values_list('id', 'text')

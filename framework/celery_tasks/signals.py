@@ -6,8 +6,8 @@ import logging
 
 from celery import signals
 
-from framework.mongo import storage, set_up_storage, StoredObject
-from website import models, settings
+from framework.mongo import StoredObject
+from website import settings
 
 logger = logging.getLogger(__name__)
 
@@ -25,6 +25,5 @@ def attach_models(*args, **kwargs):
     """Attach models to database collections on worker initialization.
     """
     if settings.USE_POSTGRES:
-        logger.debug('Not setting storage backends because USE_POSTGRES = True')
         return
-    set_up_storage(models.MODELS, storage.MongoStorage)
+    logger.error('USE_POSTGRES must be set to True')

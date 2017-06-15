@@ -6,6 +6,7 @@ import datetime
 
 import pytest
 from nose.tools import *  # noqa
+from dateutil.parser import parse as parse_datetime
 
 from addons.osfstorage.models import OsfStorageFileNode
 from framework.auth.core import Auth
@@ -18,13 +19,14 @@ from addons.osfstorage.tests import factories
 from framework.auth import signing
 from website.util import rubeus
 
-from website.models import Tag
-from website.files import models
+from osf.models import Tag
+from osf.models import files as models
 from addons.osfstorage.apps import osf_storage_root
 from addons.osfstorage import utils
 from addons.base.views import make_auth
 from addons.osfstorage import settings as storage_settings
 
+from tests.factories import ProjectFactory
 
 def create_record_with_version(path, node_settings, **kwargs):
     version = factories.FileVersionFactory(**kwargs)
@@ -84,10 +86,24 @@ class TestGetMetadataHook(HookTestCase):
             {},
         )
         assert_equal(len(res.json), 1)
-        assert_equal(
-            res.json[0],
-            record.serialize()
-        )
+        res_data = res.json[0]
+        expected_data = record.serialize()
+
+        # Datetimes in response might not be exactly the same as in record.serialize
+        # because of the way Postgres serializes dates. For example,
+        # '2017-06-05T17:32:20.964950+00:00' will be
+        # serialized as '2017-06-05T17:32:20.96495+00:00' by postgres
+        # Therefore, we parse the dates then compare them
+        expected_date_modified = parse_datetime(expected_data.pop('modified'))
+        expected_date_created = parse_datetime(expected_data.pop('created'))
+
+        res_date_modified = parse_datetime(res_data.pop('modified'))
+        res_date_created = parse_datetime(res_data.pop('created'))
+
+        assert_equal(res_date_modified, expected_date_modified)
+        assert_equal(res_date_created, expected_date_created)
+        assert_equal(res_data, expected_data)
+
 
     def test_osf_storage_root(self):
         auth = Auth(self.project.creator)
@@ -571,7 +587,8 @@ class TestDeleteHook(HookTestCase):
         assert_equal(resp.json, {'status': 'success'})
         fid = file._id
         del file
-        assert_is(models.OsfStorageFileNode.load(fid), None)
+        # models.StoredFileNode._clear_object_cache()
+        assert_is(OsfStorageFileNode.load(fid), None)
         assert_true(models.TrashedFileNode.load(fid))
 
     def test_delete_deleted(self):
@@ -612,6 +629,48 @@ class TestDeleteHook(HookTestCase):
         res = self.delete(folder, expect_errors=True)
 
         assert_equal(res.status_code, 403)
+
+    def test_delete_folder_while_preprint(self):
+        folder = self.root_node.append_folder('Mr. Yuck')
+        preprint_file = self.root_node.append_file('Thyme Out')
+        self.node.preprint_file = preprint_file
+        self.node.save()
+        res = self.delete(folder)
+
+        assert_equal(res.status_code, 200)
+
+    def test_delete_folder_on_preprint_with_non_preprint_file_inside(self):
+        folder = self.root_node.append_folder('Herbal Crooners')
+        file = folder.append_file('Frank Cilantro')
+        # project having a preprint should not block other moves
+        preprint_file = self.root_node.append_file('Thyme Out')
+        self.node.preprint_file = preprint_file
+        self.node.save()
+        res = self.delete(folder)
+
+        assert_equal(res.status_code, 200)
+
+    def test_attempt_delete_folder_with_rented_file(self):
+        folder = self.root_node.append_folder('Hotel Events')
+        user = factories.AuthUserFactory()
+        file_checked = folder.append_file('Checkout time')
+        file_checked.checkout = user
+        file_checked.save()
+
+        res = self.delete(folder, expect_errors=True)
+        assert_equal(res.status_code, 403)
+
+    def test_attempt_delete_double_nested_folder_rented_file(self):
+        folder = self.root_node.append_folder('One is not enough')
+        folder_two = folder.append_folder('Two might be doe')
+        user = factories.AuthUserFactory()
+        file_checked = folder_two.append_file('We shall see')
+        file_checked.checkout = user
+        file_checked.save()
+
+        res = self.delete(folder, expect_errors=True)
+        assert_equal(res.status_code, 403)
+
 
 @pytest.mark.django_db
 class TestMoveHook(HookTestCase):
@@ -663,6 +722,120 @@ class TestMoveHook(HookTestCase):
             expect_errors=True,
         )
         assert_equal(res.status_code, 405)
+
+    def test_move_checkedout_file_in_folder(self):
+        folder = self.root_node.append_folder('From Here')
+        file = folder.append_file('No I don\'t wanna go')
+        file.checkout = self.user
+        file.save()
+        
+        folder_two = self.root_node.append_folder('To There')
+        res = self.send_hook(
+            'osfstorage_move_hook',
+            {'nid': self.root_node.node._id},
+            payload={
+                'source': folder._id,
+                'node': self.root_node._id,
+                'user': self.user._id,
+                'destination': {
+                    'parent': folder_two._id,
+                    'node': folder_two.node._id,
+                    'name': folder_two.name,
+                }
+            },
+            method='post_json',
+            expect_errors=True,
+        )
+        assert_equal(res.status_code, 405)
+
+    def test_move_checkedout_file_two_deep_in_folder(self):
+        folder = self.root_node.append_folder('From Here')
+        folder_nested = folder.append_folder('Inbetween')
+        file = folder_nested.append_file('No I don\'t wanna go')
+        file.checkout = self.user
+        file.save()
+        
+        folder_two = self.root_node.append_folder('To There')
+        res = self.send_hook(
+            'osfstorage_move_hook',
+            {'nid': self.root_node.node._id},
+            payload={
+                'source': folder._id,
+                'node': self.root_node._id,
+                'user': self.user._id,
+                'destination': {
+                    'parent': folder_two._id,
+                    'node': folder_two.node._id,
+                    'name': folder_two.name,
+                }
+            },
+            method='post_json',
+            expect_errors=True,
+        )
+        assert_equal(res.status_code, 405)
+
+
+    def test_move_preprint_file_out_of_node(self):
+        folder = self.root_node.append_folder('From Here')
+        file = folder.append_file('No I don\'t wanna go')
+        self.node.preprint_file = file
+        self.node.save()
+
+        project = ProjectFactory(creator=self.user)
+        project_settings = project.get_addon('osfstorage')
+        project_root_node = project_settings.get_root()
+
+        folder_two = project_root_node.append_folder('To There')
+        res = self.send_hook(
+            'osfstorage_move_hook',
+            {'nid': self.root_node.node._id},
+            payload={
+                'source': folder._id,
+                'node': self.root_node._id,
+                'user': self.user._id,
+                'destination': {
+                    'parent': folder_two._id,
+                    'node': folder_two.node._id,
+                    'name': folder_two.name,
+                }
+            },
+            method='post_json',
+            expect_errors=True,
+        )
+        assert_equal(res.status_code, 403)
+
+
+    def test_move_file_out_of_node(self):
+        folder = self.root_node.append_folder('A long time ago')
+        file = folder.append_file('in a galaxy')
+        # project having a preprint should not block other moves
+        preprint_file = self.root_node.append_file('far')
+        self.node.preprint_file = preprint_file
+        self.node.save()
+
+        project = ProjectFactory(creator=self.user)
+        project_settings = project.get_addon('osfstorage')
+        project_root_node = project_settings.get_root()
+
+        folder_two = project_root_node.append_folder('far away')
+        res = self.send_hook(
+            'osfstorage_move_hook',
+            {'nid': self.root_node.node._id},
+            payload={
+                'source': folder._id,
+                'node': self.root_node._id,
+                'user': self.user._id,
+                'destination': {
+                    'parent': folder_two._id,
+                    'node': folder_two.node._id,
+                    'name': folder_two.name,
+                }
+            },
+            method='post_json',
+            expect_errors=True,
+        )
+        assert_equal(res.status_code, 200)
+
 
     def test_within_node_move_while_preprint(self):
 

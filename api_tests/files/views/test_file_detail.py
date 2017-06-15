@@ -10,12 +10,11 @@ from addons.osfstorage import settings as osfstorage_settings
 from api.base.settings.defaults import API_BASE
 from api_tests import utils as api_utils
 from framework.auth.core import Auth
-from framework.sessions.model import Session
 from osf_tests.factories import (AuthUserFactory, CommentFactory,
                                  ProjectFactory, UserFactory)
 from tests.base import ApiTestCase, capture_signals
 from website import settings as website_settings
-from website.project.model import NodeLog
+from osf.models import NodeLog, Session
 from website.project.signals import contributor_removed
 
 

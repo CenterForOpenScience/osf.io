@@ -6,7 +6,6 @@ from api_tests import utils as api_utils
 from tests.base import ApiTestCase
 from osf_tests.factories import (
     ProjectFactory,
-    UserFactory,
     AuthUserFactory,
 )
 
