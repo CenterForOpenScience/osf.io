@@ -203,7 +203,7 @@ def handle_login(data_user):
         raise ValidationError(detail=messages.INVALID_REQUEST)
 
     # retrieve the user
-    user = OSFUser.objects.filter(Q(username=email) | Q(emails__icontains=email)).first()
+    user = util.find_user_by_email(email, username_only=False)
     if not user:
         return None, cas_errors.ACCOUNT_NOT_FOUND, None
 
@@ -374,11 +374,11 @@ def handle_create_or_link_osf_account(data_user):
     # raise validation error if CAS fails to make a valid request
     if not email or not fullname or not provider or not identity:
         raise ValidationError(detail=messages.INVALID_REQUEST)
-    # campaign is used for new accout creation
+    # campaign is used for new account creation
     if campaign and campaign not in campaigns.get_campaigns():
         campaign = None
 
-    user = OSFUser.objects.filter(Q(username=email) | Q(emails__icontains=email)).first()
+    user = util.find_user_by_email(email, username_only=False)
     external_identity = {provider: {identity: None}}
     util.ensure_external_identity_uniqueness(provider, identity, user)
 
@@ -455,7 +455,7 @@ def handle_verify_email_external(data_user):
     if not email or not token:
         # raise validation error if CAS fails to make a valid request
         raise ValidationError(detail=messages.INVALID_REQUEST)
-    user = OSFUser.objects.filter(Q(username=email) | Q(emails__icontains=email)).first()
+    user = util.find_user_by_email(email, username_only=False)
     if not user:
         # raise validation error if CAS fails to make a valid request
         raise ValidationError(detail=messages.EMAIL_NOT_FOUND)
@@ -513,7 +513,7 @@ def handle_reset_password(data_user):
         raise ValidationError(detail=messages.INVALID_REQUEST)
 
     # retrieve the user
-    user = OSFUser.objects.filter(Q(username=email) | Q(emails__icontains=email)).first()
+    user = util.find_user_by_email(email, username_only=False)
 
     # invalid token
     if not user and user.verify_password_token(token):
@@ -551,7 +551,7 @@ def handle_verify_email(data_user):
         raise ValidationError(detail=messages.INVALID_REQUEST)
 
     # retrieve the user, the email must be primary
-    user = OSFUser.objects.filter(username=email).first()
+    user = util.find_user_by_email(email, username_only=True)
     if not user or user.date_confirmed:
         # something is wrong with CAS, raise 400
         raise ValidationError(detail=messages.EMAIL_NOT_FOUND)

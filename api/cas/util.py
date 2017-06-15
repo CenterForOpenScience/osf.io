@@ -111,7 +111,7 @@ def find_account_for_verify_email(data_user):
     if not email:
         raise ValidationError(detail=messages.INVALID_REQUEST)
 
-    user = OSFUser.objects.filter(Q(username=email) | Q(emails__icontains=email)).first()
+    user = find_user_by_email(email, username_only=False)
     if not user:
         return None, messages.EMAIL_NOT_FOUND
 
@@ -141,7 +141,7 @@ def find_account_for_reset_password(data_user):
     if not email:
         raise ValidationError(detail=messages.INVALID_REQUEST)
 
-    user = OSFUser.objects.filter(Q(username=email) | Q(emails__icontains=email)).first()
+    user = find_user_by_email(email, username_only=False)
     if not user:
         return None, messages.EMAIL_NOT_FOUND
 
@@ -197,3 +197,27 @@ def ensure_external_identity_uniqueness(provider, identity, user):
         existing_user.save()
 
     return
+
+
+def find_user_by_email(email, username_only=False):
+    """
+    Find the OSF user by email or by username only.
+    For performance concern, query on username first, and do not combine both queries.
+    
+    :param email: the email
+    :param username_only: the flag for username only lookup
+    :return: the user or None
+    """
+
+    try:
+        user = OSFUser.objects.filter(username=email).get()
+    except OSFUser.DoesNotExist:
+        user = None
+
+    if not username_only and not user:
+        try:
+            user = OSFUser.objects.filter(emails__address__contains=email).get()
+        except OSFUser.DoesNotExist:
+            user = None
+
+    return user
