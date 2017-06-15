@@ -90,11 +90,10 @@ class TestResetPasswordView(AdminTestCase):
     def setUp(self):
         super(TestResetPasswordView, self).setUp()
         self.user = UserFactory()
-        user = self.user
         self.request = RequestFactory().get('/fake_path')
         self.request.user = self.user
         self.plain_view = views.ResetPasswordView
-        self.view = setup_view(self.plain_view(), self.request, guid=user._id)
+        self.view = setup_view(self.plain_view(), self.request, guid=self.user._id)
 
     def test_get_initial(self):
         self.view.user = self.user
@@ -102,15 +101,13 @@ class TestResetPasswordView(AdminTestCase):
         res = self.view.initial
         nt.assert_is_instance(res, dict)
         nt.assert_equal(res['guid'], self.user._id)
-        nt.assert_equal(res['emails'], self.user.emails)
+        nt.assert_equal(res['emails'], [(r, r) for r in self.user.emails.values_list('address', flat=True)])
 
     def test_reset_password_context(self):
         self.view.user = self.user
         res = self.view.get_context_data()
-        user = self.user
-        view = self.view
         nt.assert_is_instance(res, dict)
-        nt.assert_in((user.emails.first().address, user.emails.first().address), view.initial['emails'])
+        nt.assert_in((self.user.emails.first().address, self.user.emails.first().address), self.view.initial['emails'])
 
     def test_no_user_permissions_raises_error(self):
         user = UserFactory()
@@ -300,7 +297,6 @@ class SpamUserListMixin(object):
 
         response = self.plain_view.as_view()(request, guid=guid)
         self.assertEqual(response.status_code, 200)
-
 
 class TestFlaggedSpamUserList(SpamUserListMixin, AdminTestCase):
     def setUp(self):

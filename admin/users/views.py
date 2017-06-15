@@ -525,9 +525,9 @@ class ResetPasswordView(PermissionRequiredMixin, FormView):
         return super(ResetPasswordView, self).dispatch(request, *args, **kwargs)
 
     def get_initial(self):
-        user = self.user
         self.initial = {
-            'emails': [(r, r) for r in user.emails.values_list('address', flat=True)],
+            'guid': self.user._id,
+            'emails': [(r, r) for r in self.user.emails.values_list('address', flat=True)],
         }
         return super(ResetPasswordView, self).get_initial()
 
