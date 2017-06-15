@@ -17,7 +17,6 @@ import lxml.etree
 
 from website import settings
 from website.identifiers.utils import to_anvl
-from website.project.licenses import ensure_licenses
 from website.identifiers import metadata
 from osf.models import Identifier, Subject, NodeLicense
 
@@ -68,8 +67,6 @@ class TestMetadataGeneration(OsfTestCase):
         assert_equal(pub_year.text, str(self.node.registered_date.year))
 
     def test_metadata_for_preprint_has_correct_structure(self):
-        ensure_licenses()
-
         provider = PreprintProviderFactory()
         license = NodeLicense.objects.get(name="CC-By Attribution 4.0 International")
         license_details = {

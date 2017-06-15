@@ -6,7 +6,6 @@ from osf.models import MetaSchema
 from website.project.metadata.schemas import LATEST_SCHEMA_VERSION
 from api.base.settings.defaults import API_BASE
 from website.settings import PREREG_ADMIN_TAG
-from website.project.model import ensure_schemas
 from test_node_draft_registration_list import DraftRegistrationTestCase
 
 from osf_tests.factories import (
@@ -21,7 +20,6 @@ class TestDraftRegistrationDetail(DraftRegistrationTestCase):
 
     def setUp(self):
         super(TestDraftRegistrationDetail, self).setUp()
-        ensure_schemas()
 
         self.schema = MetaSchema.find_one(
             Q('name', 'eq', 'OSF-Standard Pre-Data Collection Registration') &
@@ -83,7 +81,6 @@ class TestDraftRegistrationUpdate(DraftRegistrationTestCase):
 
     def setUp(self):
         super(TestDraftRegistrationUpdate, self).setUp()
-        ensure_schemas()
 
         self.schema = MetaSchema.find_one(
             Q('name', 'eq', 'OSF-Standard Pre-Data Collection Registration') &
@@ -381,7 +378,6 @@ class TestDraftRegistrationPatch(DraftRegistrationTestCase):
 
     def setUp(self):
         super(TestDraftRegistrationPatch, self).setUp()
-        ensure_schemas()
 
         self.schema = MetaSchema.find_one(
             Q('name', 'eq', 'OSF-Standard Pre-Data Collection Registration') &
@@ -457,7 +453,6 @@ class TestDraftRegistrationPatch(DraftRegistrationTestCase):
 class TestDraftRegistrationDelete(DraftRegistrationTestCase):
     def setUp(self):
         super(TestDraftRegistrationDelete, self).setUp()
-        ensure_schemas()
 
         schema = MetaSchema.find_one(
             Q('name', 'eq', 'OSF-Standard Pre-Data Collection Registration') &
@@ -514,7 +509,6 @@ class TestDraftPreregChallengeRegistrationMetadataValidation(DraftRegistrationTe
 
     def setUp(self):
         super(TestDraftPreregChallengeRegistrationMetadataValidation, self).setUp()
-        ensure_schemas()
 
         self.prereg_schema = MetaSchema.find_one(
             Q('name', 'eq', 'Prereg Challenge') &

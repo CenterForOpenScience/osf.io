@@ -13,7 +13,6 @@ from osf_tests.factories import (
 from tests.utils import make_drf_request_with_version, mock_archive
 
 from osf.models import MetaSchema
-from website.project.model import ensure_schemas
 from website.project.metadata.schemas import LATEST_SCHEMA_VERSION
 from website.search import search
 
@@ -28,7 +27,6 @@ class TestSearchSerializer(DbTestCase):
         self.component = NodeFactory(parent=self.project, creator=self.user, is_public=True)
         self.file = utils.create_test_file(self.component, self.user)
 
-        ensure_schemas()
         self.schema = MetaSchema.find_one(
             Q('name', 'eq', 'Replication Recipe (Brandt et al., 2013): Post-Completion') &
             Q('schema_version', 'eq', LATEST_SCHEMA_VERSION)

@@ -60,7 +60,6 @@ urllib3==1.10.4
 oauthlib==1.1.2
 requests-oauthlib==0.5.0
 raven==5.32.0
-webcolors==1.4
 
 # API requirements
 Django==1.11.2

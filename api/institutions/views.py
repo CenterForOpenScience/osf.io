@@ -167,10 +167,10 @@ class InstitutionNodeList(JSONAPIBaseView, generics.ListAPIView, InstitutionMixi
     # overrides RetrieveAPIView
     def get_queryset(self):
         inst = self.get_institution()
-        nodes = inst.nodes.filter(id__in=set(self.get_queryset_from_request().values_list('id', flat=True)))
+        qs = self.get_queryset_from_request()
         if self.request.version < '2.2':
-            return nodes.get_roots()
-        return nodes
+            return qs.filter(affiliated_institutions__id=inst.id).get_roots()
+        return qs.filter(affiliated_institutions__id=inst.id)
 
 
 class InstitutionUserList(JSONAPIBaseView, ODMFilterMixin, generics.ListAPIView, InstitutionMixin):
@@ -237,7 +237,8 @@ class InstitutionRegistrationList(InstitutionNodeList):
 
     def get_queryset(self):
         inst = self.get_institution()
-        nodes = inst.nodes.filter(id__in=set(self.get_queryset_from_request().values_list('id', flat=True)))
+        qs = self.get_queryset_from_request()
+        nodes = qs.filter(affiliated_institutions__id=inst.id)
         return [node for node in nodes if not node.is_retracted]
 
 class InstitutionNodesRelationship(JSONAPIBaseView, generics.RetrieveDestroyAPIView, generics.CreateAPIView, InstitutionMixin):
