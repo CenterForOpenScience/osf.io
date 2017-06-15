@@ -44,38 +44,6 @@ def generate_object_id():
     return str(bson.ObjectId())
 
 
-class MODMCompatibilityQuerySet(models.QuerySet):
-
-    def eager(self, *fields):
-        qs = self._clone()
-        field_set = set(fields)
-        fk_fields = set(qs.model.get_fk_field_names()) & field_set
-        m2m_fields = set(qs.model.get_m2m_field_names()) & field_set
-        if 'contributors' in field_set:
-            m2m_fields.add('_contributors')
-        qs = qs.select_related(*fk_fields).prefetch_related(*m2m_fields)
-        return qs
-
-    def sort(self, *fields):
-        # Fields are passed in as e.g. [('title', 1), ('date_created', -1)]
-        if isinstance(fields[0], list):
-            fields = fields[0]
-
-        def sort_key(item):
-            if isinstance(item, basestring):
-                return item
-            elif isinstance(item, tuple):
-                field_name, direction = item
-                prefix = '-' if direction == -1 else ''
-                return ''.join([prefix, field_name])
-
-        sort_keys = [sort_key(each) for each in fields]
-        return self.order_by(*sort_keys)
-
-    def limit(self, n):
-        return self[:n]
-
-
 class BaseModel(models.Model):
     """Base model that acts makes subclasses mostly compatible with the
     modular-odm ``StoredObject`` interface.
@@ -83,7 +51,7 @@ class BaseModel(models.Model):
 
     migration_page_size = 50000
 
-    objects = MODMCompatibilityQuerySet.as_manager()
+    objects = models.QuerySet.as_manager()
 
     class Meta:
         abstract = True
@@ -307,7 +275,8 @@ class OptionalGuidMixin(BaseIDMixin):
         abstract = True
 
 
-class GuidMixinQuerySet(MODMCompatibilityQuerySet):
+class GuidMixinQuerySet(models.QuerySet):
+
     tables = ['osf_guid', 'django_content_type']
 
     GUID_FIELDS = [

@@ -16,11 +16,9 @@ from osf_tests.factories import (
 )
 from rest_framework import exceptions
 from tests.base import fake, capture_signals
-from website.project.licenses import ensure_licenses
 from website.project.signals import contributor_added
 from website.identifiers.utils import build_ezid_metadata
 
-ensure_licenses = functools.partial(ensure_licenses, warn=False)
 
 def build_preprint_update_payload(node_id, attributes=None, relationships=None):
     payload = {
@@ -315,34 +313,31 @@ class TestPreprintUpdate:
 class TestPreprintUpdateLicense:
 
     @pytest.fixture()
-    def admin_contributor(self):
+    def admin_contrib(self):
         return AuthUserFactory()
 
     @pytest.fixture()
-    def rw_contributor(self):
+    def write_contrib(self):
         return AuthUserFactory()
 
     @pytest.fixture()
-    def read_contributor(self):
+    def read_contrib(self):
         return AuthUserFactory()
 
     @pytest.fixture()
-    def non_contributor(self):
+    def non_contrib(self):
         return AuthUserFactory()
 
     @pytest.fixture()
     def cc0_license(self):
-        ensure_licenses()
         return NodeLicense.find_one(Q('name', 'eq', 'CC0 1.0 Universal'))
 
     @pytest.fixture()
     def mit_license(self):
-        ensure_licenses()
         return NodeLicense.find_one(Q('name', 'eq', 'MIT License'))
 
     @pytest.fixture()
     def no_license(self):
-        ensure_licenses()
         return NodeLicense.find_one(Q('name', 'eq', 'No license'))
 
     @pytest.fixture()
@@ -353,10 +348,10 @@ class TestPreprintUpdateLicense:
         return preprint_provider
 
     @pytest.fixture()
-    def preprint(self, admin_contributor, rw_contributor, read_contributor, preprint_provider):
-        preprint = PreprintFactory(creator=admin_contributor, provider=preprint_provider)
-        preprint.node.add_contributor(rw_contributor, auth=Auth(admin_contributor))
-        preprint.node.add_contributor(read_contributor, auth=Auth(admin_contributor), permissions=['read'])
+    def preprint(self, admin_contrib, write_contrib, read_contrib, preprint_provider):
+        preprint = PreprintFactory(creator=admin_contrib, provider=preprint_provider)
+        preprint.node.add_contributor(write_contrib, auth=Auth(admin_contrib))
+        preprint.node.add_contributor(read_contrib, auth=Auth(admin_contrib), permissions=['read'])
         preprint.node.save()
         return preprint
 
@@ -417,7 +412,7 @@ class TestPreprintUpdateLicense:
             return app.patch_json_api(url, data, auth=auth, expect_errors=expect_errors)
         return request
 
-    def test_admin_update_license_with_invalid_id(self, admin_contributor, preprint, url, make_payload, make_request):
+    def test_admin_update_license_with_invalid_id(self, admin_contrib, preprint, url, make_payload, make_request):
         data = make_payload(
             node_id=preprint._id,
             license_id='thisisafakelicenseid'
@@ -425,14 +420,14 @@ class TestPreprintUpdateLicense:
 
         assert preprint.license == None
 
-        res = make_request(url, data, auth=admin_contributor.auth, expect_errors=True)
+        res = make_request(url, data, auth=admin_contrib.auth, expect_errors=True)
         assert res.status_code == 404
         assert res.json['errors'][0]['detail'] == 'Unable to find specified license.'
 
         preprint.reload()
         assert preprint.license == None
 
-    def test_admin_can_update_license(self, admin_contributor, preprint, cc0_license, url, make_payload, make_request):
+    def test_admin_can_update_license(self, admin_contrib, preprint, cc0_license, url, make_payload, make_request):
         data = make_payload(
             node_id=preprint._id,
             license_id=cc0_license._id
@@ -440,7 +435,7 @@ class TestPreprintUpdateLicense:
 
         assert preprint.license == None
 
-        res = make_request(url, data, auth=admin_contributor.auth)
+        res = make_request(url, data, auth=admin_contrib.auth)
         assert res.status_code == 200
         preprint.reload()
 
@@ -453,7 +448,7 @@ class TestPreprintUpdateLicense:
         assert log.action == 'preprint_license_updated'
         assert log.params.get('preprint') == preprint._id
 
-    def test_admin_can_update_license_record(self, admin_contributor, preprint, no_license, url, make_payload, make_request):
+    def test_admin_can_update_license_record(self, admin_contrib, preprint, no_license, url, make_payload, make_request):
         data = make_payload(
             node_id=preprint._id,
             license_id=no_license._id,
@@ -463,7 +458,7 @@ class TestPreprintUpdateLicense:
 
         assert preprint.license == None
 
-        res = make_request(url, data, auth=admin_contributor.auth)
+        res = make_request(url, data, auth=admin_contrib.auth)
         assert res.status_code == 200
         preprint.reload()
 
@@ -471,35 +466,35 @@ class TestPreprintUpdateLicense:
         assert preprint.license.year == '2015'
         assert preprint.license.copyright_holders == ['Tonya Shepoly, Lucas Pucas']
 
-    def test_cannot_update_license(self, rw_contributor, read_contributor, non_contributor, preprint, cc0_license, url, make_payload, make_request):
+    def test_cannot_update_license(self, write_contrib, read_contrib, non_contrib, preprint, cc0_license, url, make_payload, make_request):
 
-    #   test_rw_contributor_cannot_update_license
+    #   test_write_contrib_cannot_update_license
         data = make_payload(
             node_id=preprint._id,
             license_id=cc0_license._id
         )
 
-        res = make_request(url, data, auth=rw_contributor.auth, expect_errors=True)
+        res = make_request(url, data, auth=write_contrib.auth, expect_errors=True)
         assert res.status_code == 403
         assert res.json['errors'][0]['detail'] == 'User must be an admin to update a preprint.'
 
-    #   test_read_contributor_cannot_update_license
+    #   test_read_contrib_cannot_update_license
         data = make_payload(
             node_id=preprint._id,
             license_id=cc0_license._id
         )
 
-        res = make_request(url, data, auth=read_contributor.auth, expect_errors=True)
+        res = make_request(url, data, auth=read_contrib.auth, expect_errors=True)
         assert res.status_code == 403
         assert res.json['errors'][0]['detail'] == exceptions.PermissionDenied.default_detail
 
-    #   test_non_contributor_cannot_update_license
+    #   test_non_contrib_cannot_update_license
         data = make_payload(
             node_id=preprint._id,
             license_id=cc0_license._id
         )
 
-        res = make_request(url, data, auth=non_contributor.auth, expect_errors=True)
+        res = make_request(url, data, auth=non_contrib.auth, expect_errors=True)
         assert res.status_code == 403
         assert res.json['errors'][0]['detail'] == exceptions.PermissionDenied.default_detail
 
@@ -513,7 +508,7 @@ class TestPreprintUpdateLicense:
         assert res.status_code == 401
         assert res.json['errors'][0]['detail'] == exceptions.NotAuthenticated.default_detail
 
-    def test_update_error(self, admin_contributor, preprint, preprint_provider, mit_license, no_license, url, make_payload, make_request):
+    def test_update_error(self, admin_contrib, preprint, preprint_provider, mit_license, no_license, url, make_payload, make_request):
 
     #   test_update_preprint_with_invalid_license_for_provider
         data = make_payload(
@@ -523,7 +518,7 @@ class TestPreprintUpdateLicense:
 
         assert preprint.license == None
 
-        res = make_request(url, data, auth=admin_contributor.auth, expect_errors=True)
+        res = make_request(url, data, auth=admin_contrib.auth, expect_errors=True)
         assert res.status_code == 403
         assert res.json['errors'][0]['detail'] == 'Invalid license chosen for {}'.format(preprint_provider.name)
 
@@ -534,7 +529,7 @@ class TestPreprintUpdateLicense:
             copyright_holders=['Rachel', 'Rheisen']
         )
 
-        res = make_request(url, data, auth=admin_contributor.auth, expect_errors=True)
+        res = make_request(url, data, auth=admin_contrib.auth, expect_errors=True)
         assert res.status_code == 400
         assert res.json['errors'][0]['detail'] == 'year must be specified for this license'
 
@@ -545,18 +540,18 @@ class TestPreprintUpdateLicense:
             license_year='1994'
         )
 
-        res = make_request(url, data, auth=admin_contributor.auth, expect_errors=True)
+        res = make_request(url, data, auth=admin_contrib.auth, expect_errors=True)
         assert res.status_code == 400
         assert res.json['errors'][0]['detail'] == 'copyrightHolders must be specified for this license'
 
-    def test_update_preprint_with_existing_license_year_attribute_only(self, admin_contributor, preprint, no_license, url, make_payload, make_request):
+    def test_update_preprint_with_existing_license_year_attribute_only(self, admin_contrib, preprint, no_license, url, make_payload, make_request):
         preprint.set_preprint_license(
             {
                 'id': no_license.license_id,
                 'year': '2014',
                 'copyrightHolders': ['Daniel FromBrazil', 'Queen Jaedyn']
             },
-            Auth(admin_contributor),
+            Auth(admin_contrib),
         )
         preprint.save()
 
@@ -569,7 +564,7 @@ class TestPreprintUpdateLicense:
             license_year='2015'
         )
 
-        res = make_request(url, data, auth=admin_contributor.auth)
+        res = make_request(url, data, auth=admin_contrib.auth)
         assert res.status_code == 200
         preprint.license.reload()
 
@@ -577,14 +572,14 @@ class TestPreprintUpdateLicense:
         assert preprint.license.year == '2015'
         assert preprint.license.copyright_holders == ['Daniel FromBrazil', 'Queen Jaedyn']
 
-    def test_update_preprint_with_existing_license_copyright_holders_attribute_only(self, admin_contributor, preprint, no_license, url, make_payload, make_request):
+    def test_update_preprint_with_existing_license_copyright_holders_attribute_only(self, admin_contrib, preprint, no_license, url, make_payload, make_request):
         preprint.set_preprint_license(
             {
                 'id': no_license.license_id,
                 'year': '2014',
                 'copyrightHolders': ['Captain Haley', 'Keegor Cannoli']
             },
-            Auth(admin_contributor),
+            Auth(admin_contrib),
         )
         preprint.save()
 
@@ -597,7 +592,7 @@ class TestPreprintUpdateLicense:
             copyright_holders=['Reason Danish', 'Ben the NJB']
         )
 
-        res = make_request(url, data, auth=admin_contributor.auth)
+        res = make_request(url, data, auth=admin_contrib.auth)
         assert res.status_code == 200
         preprint.license.reload()
 
@@ -605,14 +600,14 @@ class TestPreprintUpdateLicense:
         assert preprint.license.year == '2014'
         assert preprint.license.copyright_holders == ['Reason Danish', 'Ben the NJB']
 
-    def test_update_preprint_with_existing_license_relationship_only(self, admin_contributor, preprint, cc0_license, no_license, url, make_payload, make_request):
+    def test_update_preprint_with_existing_license_relationship_only(self, admin_contrib, preprint, cc0_license, no_license, url, make_payload, make_request):
         preprint.set_preprint_license(
             {
                 'id': no_license.license_id,
                 'year': '2014',
                 'copyrightHolders': ['Reason', 'Mr. Lulu']
             },
-            Auth(admin_contributor),
+            Auth(admin_contrib),
         )
         preprint.save()
 
@@ -625,7 +620,7 @@ class TestPreprintUpdateLicense:
             license_id=cc0_license._id
         )
 
-        res = make_request(url, data, auth=admin_contributor.auth)
+        res = make_request(url, data, auth=admin_contrib.auth)
         assert res.status_code == 200
         preprint.license.reload()
 
@@ -633,14 +628,14 @@ class TestPreprintUpdateLicense:
         assert preprint.license.year == '2014'
         assert preprint.license.copyright_holders == ['Reason', 'Mr. Lulu']
 
-    def test_update_preprint_with_existing_license_relationship_and_attributes(self, admin_contributor, preprint, cc0_license, no_license, url, make_payload, make_request):
+    def test_update_preprint_with_existing_license_relationship_and_attributes(self, admin_contrib, preprint, cc0_license, no_license, url, make_payload, make_request):
         preprint.set_preprint_license(
             {
                 'id': no_license.license_id,
                 'year': '2014',
                 'copyrightHolders': ['Reason', 'Mr. Cosgrove']
             },
-            Auth(admin_contributor),
+            Auth(admin_contrib),
             save=True
         )
 
@@ -655,7 +650,7 @@ class TestPreprintUpdateLicense:
             copyright_holders=['Rheisen', 'Princess Tyler']
         )
 
-        res = make_request(url, data, auth=admin_contributor.auth)
+        res = make_request(url, data, auth=admin_contrib.auth)
         assert res.status_code == 200
         preprint.license.reload()
 
@@ -663,14 +658,14 @@ class TestPreprintUpdateLicense:
         assert preprint.license.year == '2015'
         assert preprint.license.copyright_holders == ['Rheisen', 'Princess Tyler']
 
-    def test_update_preprint_license_does_not_change_project_license(self, admin_contributor, preprint, cc0_license, no_license, url, make_payload, make_request):
+    def test_update_preprint_license_does_not_change_project_license(self, admin_contrib, preprint, cc0_license, no_license, url, make_payload, make_request):
         preprint.node.set_node_license(
             {
                 'id': no_license.license_id,
                 'year': '2015',
                 'copyrightHolders': ['Simba', 'Mufasa']
             },
-            auth=Auth(admin_contributor)
+            auth=Auth(admin_contrib)
         )
         preprint.node.save()
         assert preprint.node.node_license.node_license == no_license
@@ -680,21 +675,21 @@ class TestPreprintUpdateLicense:
             license_id=cc0_license._id
         )
 
-        res = make_request(url, data, auth=admin_contributor.auth)
+        res = make_request(url, data, auth=admin_contrib.auth)
         assert res.status_code == 200
         preprint.reload()
 
         assert preprint.license.node_license == cc0_license
         assert preprint.node.node_license.node_license == no_license
 
-    def test_update_preprint_license_without_change_does_not_add_log(self, admin_contributor, preprint, no_license, url, make_payload, make_request):
+    def test_update_preprint_license_without_change_does_not_add_log(self, admin_contrib, preprint, no_license, url, make_payload, make_request):
         preprint.set_preprint_license(
             {
                 'id': no_license.license_id,
                 'year': '2015',
                 'copyrightHolders': ['Kim', 'Kanye']
             },
-            auth=Auth(admin_contributor),
+            auth=Auth(admin_contrib),
             save=True
         )
 
@@ -707,7 +702,7 @@ class TestPreprintUpdateLicense:
             license_year='2015',
             copyright_holders=['Kanye', 'Kim']
         )
-        res = make_request(url, data, auth=admin_contributor.auth)
+        res = make_request(url, data, auth=admin_contrib.auth)
         preprint.node.reload()
 
         after_num_logs = preprint.node.logs.count()

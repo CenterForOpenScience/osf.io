@@ -1,6 +1,5 @@
 from nose.tools import *  # flake8: noqa
 
-from website.project.model import ensure_schemas
 from osf.models import MetaSchema
 from website.project.metadata.schemas import LATEST_SCHEMA_VERSION
 from website.project.metadata.utils import create_jsonschema_from_metaschema
@@ -53,7 +52,6 @@ class TestDraftRegistrationList(DraftRegistrationTestCase):
 
     def setUp(self):
         super(TestDraftRegistrationList, self).setUp()
-        ensure_schemas()
         self.schema = MetaSchema.find_one(
             Q('name', 'eq', 'Open-Ended Registration') &
             Q('schema_version', 'eq', LATEST_SCHEMA_VERSION)
@@ -120,7 +118,6 @@ class TestDraftRegistrationCreate(DraftRegistrationTestCase):
     def setUp(self):
         super(TestDraftRegistrationCreate, self).setUp()
         self.url = '/{}nodes/{}/draft_registrations/'.format(API_BASE, self.public_project._id)
-        ensure_schemas()
         self.open_ended_metaschema = MetaSchema.find_one(
             Q('name', 'eq', 'Open-Ended Registration') &
             Q('schema_version', 'eq', LATEST_SCHEMA_VERSION)
@@ -297,7 +294,6 @@ class TestDraftRegistrationCreate(DraftRegistrationTestCase):
         assert_equal(errors['detail'], 'Expected a dictionary of items but got type "unicode".')
 
     def test_registration_metadata_question_values_must_be_dictionaries(self):
-        ensure_schemas()
         self.schema = MetaSchema.find_one(
             Q('name', 'eq', 'OSF-Standard Pre-Data Collection Registration') &
             Q('schema_version', 'eq', LATEST_SCHEMA_VERSION)
@@ -312,7 +308,6 @@ class TestDraftRegistrationCreate(DraftRegistrationTestCase):
         assert_equal(errors['detail'], "u'No, data collection has not begun' is not of type 'object'")
 
     def test_registration_metadata_question_keys_must_be_value(self):
-        ensure_schemas()
         self.schema = MetaSchema.find_one(
             Q('name', 'eq', 'OSF-Standard Pre-Data Collection Registration') &
             Q('schema_version', 'eq', LATEST_SCHEMA_VERSION)
@@ -329,7 +324,6 @@ class TestDraftRegistrationCreate(DraftRegistrationTestCase):
         assert_equal(errors['detail'], "Additional properties are not allowed (u'incorrect_key' was unexpected)")
 
     def test_question_in_registration_metadata_must_be_in_schema(self):
-        ensure_schemas()
         self.schema = MetaSchema.find_one(
             Q('name', 'eq', 'OSF-Standard Pre-Data Collection Registration') &
             Q('schema_version', 'eq', LATEST_SCHEMA_VERSION)
@@ -346,7 +340,6 @@ class TestDraftRegistrationCreate(DraftRegistrationTestCase):
         assert_equal(errors['detail'], "Additional properties are not allowed (u'q11' was unexpected)")
 
     def test_multiple_choice_question_value_must_match_value_in_schema(self):
-        ensure_schemas()
         self.schema = MetaSchema.find_one(
             Q('name', 'eq', 'OSF-Standard Pre-Data Collection Registration') &
             Q('schema_version', 'eq', LATEST_SCHEMA_VERSION)

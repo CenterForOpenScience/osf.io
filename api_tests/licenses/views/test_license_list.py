@@ -1,18 +1,13 @@
 from nose.tools import *  # flake8: noqa
-import functools
 
 from tests.base import ApiTestCase
 from osf.models.licenses import NodeLicense
-from website.project.licenses import ensure_licenses
 from api.base.settings.defaults import API_BASE
-
-ensure_licenses = functools.partial(ensure_licenses, warn=False)
 
 
 class TestLicenseList(ApiTestCase):
     def setUp(self):
         super(TestLicenseList, self).setUp()
-        ensure_licenses()
         self.licenses = NodeLicense.find()
 
     def test_license_list_success(self):
