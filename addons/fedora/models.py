@@ -16,7 +16,7 @@ logger = logging.getLogger(__name__)
 
 
 class FedoraFileNode(BaseFileNode):
-    provider = 'fedora'
+    _provider = 'fedora'
 
 
 class FedoraFolder(FedoraFileNode, Folder):
