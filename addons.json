@@ -26,6 +26,7 @@
         "googledrive": "partial",
         "github": "partial",
         "owncloud": "partial",
+        "fedora": "partial",
         "s3": "partial",
         "wiki": "full"
     },
