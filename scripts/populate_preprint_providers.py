@@ -9,11 +9,11 @@ from django.db import transaction
 from modularodm import Q
 from modularodm.exceptions import NoResultsFound
 from website.app import init_app
-from website.settings import PREPRINT_PROVIDER_DOMAINS, DOMAIN
+from website.settings import PREPRINT_PROVIDER_DOMAINS, DOMAIN, PROTOCOL
 import django
 django.setup()
 
-from website.models import Subject, PreprintProvider, NodeLicense
+from osf.models import Subject, PreprintProvider, NodeLicense
 
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO)
@@ -28,8 +28,8 @@ def get_subject_id(name):
     if name not in SUBJECTS_CACHE:
         subject = None
         try:
-            subject = Subject.find_one(Q('text', 'eq', name))
-        except NoResultsFound:
+            subject = Subject.objects.get(provider___id='osf', text=name)
+        except Subject.DoesNotExist:
             raise Exception('Subject: "{}" not found'.format(name))
         else:
             SUBJECTS_CACHE[name] = subject._id
@@ -47,8 +47,10 @@ def get_license(name):
 
 def update_or_create(provider_data):
     provider = PreprintProvider.load(provider_data['_id'])
+    provider_data['domain_redirect_enabled'] &= PREPRINT_PROVIDER_DOMAINS['enabled'] and bool(provider_data['domain'])
     licenses = [get_license(name) for name in provider_data.pop('licenses_acceptable', [])]
     default_license = provider_data.pop('default_license', False)
+
     if provider:
         provider_data['subjects_acceptable'] = map(
             lambda rule: (map(get_subject_id, rule[0]), rule[1]),
@@ -78,8 +80,10 @@ def update_or_create(provider_data):
 
 
 def format_domain_url(domain):
-    return ''.join((PREPRINT_PROVIDER_DOMAINS['prefix'], str(domain), PREPRINT_PROVIDER_DOMAINS['suffix'])) if \
-        PREPRINT_PROVIDER_DOMAINS['enabled'] else ''
+    prefix = PREPRINT_PROVIDER_DOMAINS['prefix'] or PROTOCOL
+    suffix = PREPRINT_PROVIDER_DOMAINS['suffix'] or '/'
+
+    return '{}{}{}'.format(prefix, str(domain), suffix)
 
 
 def main(env):
@@ -87,9 +91,7 @@ def main(env):
         'osf': {
             '_id': 'osf',
             'name': 'Open Science Framework',
-            'logo_name': 'cos-logo.png',
             'description': 'A scholarly commons to connect the entire research cycle',
-            'banner_name': 'cos-banner.png',
             'domain': DOMAIN,
             'domain_redirect_enabled': False,  # Never change this
             'external_url': 'https://osf.io/preprints/',
@@ -102,15 +104,12 @@ def main(env):
             'social_instagram': '',
             'default_license': 'CC0 1.0 Universal',
             'licenses_acceptable': ['CC0 1.0 Universal', 'CC-By Attribution 4.0 International', 'No license'],
-            'header_text': '',
             'subjects_acceptable': [],
         },
         'engrxiv': {
             '_id': 'engrxiv',
             'name': 'engrXiv',
-            'logo_name': 'engrxiv-logo.png',
             'description': 'The open archive of engineering.',
-            'banner_name': 'engrxiv-banner.png',
             'domain': format_domain_url('engrxiv.org'),
             'domain_redirect_enabled': False,
             'external_url': 'http://engrxiv.com',
@@ -144,7 +143,6 @@ def main(env):
             'social_instagram': 'engrxiv',
             'default_license': 'CC0 1.0 Universal',
             'licenses_acceptable': ['CC0 1.0 Universal', 'CC-By Attribution 4.0 International', 'No license'],
-            'header_text': '',
             'subjects_acceptable': [
                 (['Architecture', 'Architectural Engineering'], True),
                 (['Engineering', 'Aerospace Engineering', 'Aerodynamics and Fluid Mechanics'], False),
@@ -250,9 +248,7 @@ def main(env):
         'psyarxiv': {
             '_id': 'psyarxiv',
             'name': 'PsyArXiv',
-            'logo_name': 'psyarxiv-logo.png',
             'description': 'A free preprint service for the psychological sciences.',
-            'banner_name': 'psyarxiv-banner.png',
             'domain': format_domain_url('psyarxiv.com'),
             'domain_redirect_enabled': False,
             'external_url': 'http://psyarxiv.org',
@@ -289,7 +285,6 @@ def main(env):
             'social_instagram': 'psyarxiv',
             'default_license': 'CC0 1.0 Universal',
             'licenses_acceptable': ['CC0 1.0 Universal', 'CC-By Attribution 4.0 International', 'No license'],
-            'header_text': '',
             'subjects_acceptable': [
                 (['Engineering', 'Operations Research, Systems Engineering and Industrial Engineering', 'Ergonomics'], False),
                 (['Life Sciences', 'Neuroscience and Neurobiology', 'Behavioral Neurobiology'], False),
@@ -338,9 +333,7 @@ def main(env):
         'socarxiv': {
             '_id': 'socarxiv',
             'name': 'SocArXiv',
-            'logo_name': 'socarxiv-logo.png',
             'description': 'Open archive of the social sciences',
-            'banner_name': 'socarxiv-banner.png',
             'domain': format_domain_url('socarxiv.org'),
             'domain_redirect_enabled': False,
             'external_url': 'http://socarxiv.org',
@@ -375,7 +368,6 @@ def main(env):
             'social_instagram': 'socarxiv',
             'default_license': 'CC0 1.0 Universal',
             'licenses_acceptable': ['CC0 1.0 Universal', 'CC-By Attribution 4.0 International', 'No license'],
-            'header_text': '',
             'subjects_acceptable': [
                 (['Arts and Humanities'], True),
                 (['Education'], True),
@@ -386,9 +378,7 @@ def main(env):
         'scielo': {
             '_id': 'scielo',
             'name': 'SciELO',
-            'logo_name': 'scielo-logo.png',
             'description': 'Advancing Research Communication',
-            'banner_name': 'scielo-logo.png',
             'domain': format_domain_url('scielo.org'),
             'domain_redirect_enabled': False,
             'external_url': 'http://scielo.org',
@@ -399,7 +389,6 @@ def main(env):
             'email_support': 'support+scielo@osf.io',
             'social_twitter': 'RedeSciELO',  # optional
             'social_facebook': 'SciELONetwork',
-            'header_text': '',
             'default_license': 'CC-By Attribution 4.0 International',
             'licenses_acceptable': ['CC-By Attribution 4.0 International'],
             'subjects_acceptable': []
@@ -407,9 +396,7 @@ def main(env):
         'lawarxiv': {
             '_id': 'lawarxiv',
             'name': 'LawArXiv',
-            'logo_name': 'lawarxiv-logo.png',
             'description': 'Legal Scholarship in the Open',
-            'banner_name': 'lawarxiv-logo.png',
             'domain': '',  # No domain information yet
             'domain_redirect_enabled': False,
             'external_url': '',
@@ -445,7 +432,6 @@ def main(env):
             'email_support': 'support+lawarxiv@osf.io',
             'social_twitter': 'lawarxiv',
             'social_facebook': '',
-            'header_text': '',
             'default_license': 'No license',
             'licenses_acceptable': ['CC0 1.0 Universal', 'CC-By Attribution 4.0 International', 'No license'],
             'subjects_acceptable': [
@@ -460,9 +446,7 @@ def main(env):
         'agrixiv': {
             '_id': 'agrixiv',
             'name': 'AgriXiv',
-            'logo_name': 'agrixiv-logo.svg',
             'description': 'Preprints for Agriculture and Allied Sciences',
-            'banner_name': 'agrixiv-banner.svg',
             'domain': format_domain_url('agrixiv.org'),
             'domain_redirect_enabled': False,
             'external_url': '',
@@ -510,7 +494,6 @@ def main(env):
             'social_instagram': 'agrixiv',
             'default_license': 'CC0 1.0 Universal',
             'licenses_acceptable': ['CC0 1.0 Universal', 'CC-By Attribution 4.0 International'],
-            'header_text': '',
             'subjects_acceptable': [
                 (['Business', 'Business Administration, Management, and Operations'], False),
                 (['Business', 'Business and Corporate Communications'], False),
@@ -1086,9 +1069,7 @@ def main(env):
         'bitss': {
             '_id': 'bitss',
             'name': 'BITSS',
-            'logo_name': 'bitss-logo.png',
             'description': 'An interdisciplinary archive of articles focused on improving research transparency and reproducibility',
-            'banner_name': 'bitss-banner.png',
             'domain': '',  # Not using domain
             'domain_redirect_enabled': False,
             'external_url': 'http://www.bitss.org',
@@ -1116,7 +1097,6 @@ def main(env):
             'social_twitter': 'UCBITSS',
             'default_license': 'CC-By Attribution 4.0 International',
             'licenses_acceptable': ['CC-By Attribution 4.0 International', 'CC0 1.0 Universal'],
-            'header_text': '',
             'subjects_acceptable': [
                 (['Medicine and Health Sciences', 'Health Information Technology'], False),
                 (['Medicine and Health Sciences', 'Mental and Social Health'], False),

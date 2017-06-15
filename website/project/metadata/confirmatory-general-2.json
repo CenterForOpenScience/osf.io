@@ -1,5 +1,6 @@
 {
     "name": "Confirmatory - General",
+    "active": false,
     "version": 2,
     "pages": [{
         "id": "page1",

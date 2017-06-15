@@ -3,16 +3,13 @@ from __future__ import absolute_import
 
 import framework
 import importlib
-import itertools
 import json
 import logging
 import os
-import sys
 import thread
 from collections import OrderedDict
 
 import django
-import modularodm
 from api.caching import listeners  # noqa
 from django.apps import apps
 from framework.addons.utils import render_addon_capabilities
@@ -21,17 +18,14 @@ from framework.django import handlers as django_handlers
 from framework.flask import add_handlers, app
 # Import necessary to initialize the root logger
 from framework.logging import logger as root_logger  # noqa
-from framework.mongo import handlers as mongo_handlers
 from framework.postcommit_tasks import handlers as postcommit_handlers
 from framework.sentry import sentry
 from framework.transactions import handlers as transaction_handlers
 # Imports necessary to connect signals
 from website.archiver import listeners  # noqa
-from website.files.models import FileNode
 from website.mails import listeners  # noqa
 from website.notifications import listeners  # noqa
-from website.project.licenses import ensure_licenses
-from website.project.model import ensure_schemas
+from website.identifiers import listeners  # noqa
 from werkzeug.contrib.fixers import ProxyFix
 
 logger = logging.getLogger(__name__)
@@ -59,11 +53,7 @@ def init_addons(settings, routes=True):
 def attach_handlers(app, settings):
     """Add callback handlers to ``app`` in the correct order."""
     # Add callback handlers to application
-    if settings.USE_POSTGRES:
-        add_handlers(app, django_handlers.handlers)
-    else:
-        add_handlers(app, mongo_handlers.handlers)
-
+    add_handlers(app, django_handlers.handlers)
     add_handlers(app, celery_task_handlers.handlers)
     add_handlers(app, transaction_handlers.handlers)
     add_handlers(app, postcommit_handlers.handlers)
@@ -88,7 +78,7 @@ def setup_django():
 
 
 def init_app(settings_module='website.settings', set_backends=True, routes=True,
-             attach_request_handlers=True, fixtures=True):
+             attach_request_handlers=True):
     """Initializes the OSF. A sort of pseudo-app factory that allows you to
     bind settings, set up routing, and set storage backends, but only acts on
     a single app instance (rather than creating multiple instances).
@@ -114,8 +104,6 @@ def init_app(settings_module='website.settings', set_backends=True, routes=True,
     with open(os.path.join(settings.STATIC_FOLDER, 'built', 'nodeCategories.json'), 'wb') as fp:
         json.dump(settings.NODE_CATEGORY_MAP, fp)
 
-    patch_models(settings)
-
     app.debug = settings.DEBUG_MODE
 
     # default config for flask app, however, this does not affect setting cookie using set_cookie()
@@ -138,9 +126,6 @@ def init_app(settings_module='website.settings', set_backends=True, routes=True,
         sentry.init_app(app)
         logger.info("Sentry enabled; Flask's debug mode disabled")
 
-    if set_backends and fixtures:
-        ensure_schemas()
-        ensure_licenses()
     apply_middlewares(app, settings)
 
     app.config['IS_INITIALIZED'] = True
@@ -154,41 +139,3 @@ def apply_middlewares(flask_app, settings):
         flask_app.wsgi_app = ProxyFix(flask_app.wsgi_app)
 
     return flask_app
-
-def _get_models_to_patch():
-    """Return all models from OSF and addons."""
-    return list(
-        itertools.chain(
-            *[
-                app_config.get_models(include_auto_created=False)
-                for app_config in apps.get_app_configs()
-                if app_config.label == 'osf' or app_config.label.startswith('addons_')
-            ]
-        )
-    )
-
-# TODO: This won't work for modules that do e.g. `from website import models`. Rethink.
-def patch_models(settings):
-    if not settings.USE_POSTGRES:
-        return
-    from osf import models
-    model_map = {
-        models.OSFUser: 'User',
-        models.AbstractNode: 'Node',
-        models.NodeRelation: 'Pointer',
-        models.BaseFileNode: 'StoredFileNode',
-    }
-    for module in sys.modules.values():
-        if not module:
-            continue
-        for model_cls in _get_models_to_patch():
-            model_name = model_map.get(model_cls, model_cls._meta.model.__name__)
-            if (
-                hasattr(module, model_name) and
-                isinstance(getattr(module, model_name), type) and
-                (issubclass(getattr(module, model_name), modularodm.StoredObject) or issubclass(getattr(module, model_name), FileNode))
-            ):
-                setattr(module, model_name, model_cls)
-            # Institution is a special case because it isn't a StoredObject
-            if hasattr(module, 'Institution') and getattr(module, 'Institution') is not models.Institution:
-                setattr(module, 'Institution', models.Institution)

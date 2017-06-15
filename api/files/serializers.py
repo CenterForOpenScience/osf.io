@@ -1,15 +1,15 @@
 from datetime import datetime
+from collections import OrderedDict
 
 from django.core.urlresolvers import resolve, reverse
 from modularodm import Q
 import furl
 import pytz
 
-from framework.auth.core import Auth, User
-from osf.models import BaseFileNode
+from framework.auth.core import Auth
+from osf.models import BaseFileNode, OSFUser, Comment
 from rest_framework import serializers as ser
 from website import settings
-from website.project.model import Comment
 from website.util import api_v2_url
 
 from api.base.serializers import (
@@ -63,8 +63,30 @@ class CheckoutField(ser.HyperlinkedRelatedField):
             )
         )
 
+    def get_choices(self, cutoff=None):
+        """Most of this was copied and pasted from rest_framework's RelatedField -- we needed to pass the
+        correct value of a user's pk as a choice, while avoiding our custom implementation of `to_representation`
+        which returns a dict for JSON API purposes.
+        """
+        queryset = self.get_queryset()
+        if queryset is None:
+            # Ensure that field.choices returns something sensible
+            # even when accessed with a read-only field.
+            return {}
+
+        if cutoff is not None:
+            queryset = queryset[:cutoff]
+
+        return OrderedDict([
+            (
+                item.pk,
+                self.display_value(item)
+            )
+            for item in queryset
+        ])
+
     def get_queryset(self):
-        return User.find(Q('_id', 'eq', self.context['request'].user._id))
+        return OSFUser.find(Q('_id', 'eq', self.context['request'].user._id))
 
     def get_url(self, obj, view_name, request, format):
         if obj is None:

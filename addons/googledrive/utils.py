@@ -2,7 +2,6 @@
 """Utility functions for the Google Drive add-on.
 """
 import os
-from urllib import quote
 
 from website.util import api_v2_url
 
@@ -17,16 +16,13 @@ def to_hgrid(item, node, path):
     :param item: contents returned from Google Drive API
     :return: results formatted as required for Hgrid display
     """
-    # quote fails on unicode objects with unicode characters
-    # covert to str with .encode('utf-8')
-    safe_name = quote(item['title'].encode('utf-8'), safe='')
-    path = os.path.join(path, safe_name)
+    path = os.path.join(path, item['title'])
 
     serialized = {
         'path': path,
         'id': item['id'],
         'kind': 'folder',
-        'name': safe_name,
+        'name': item['title'],
         'addon': 'googledrive',
         'urls': build_googledrive_urls(item, node, path=path)
     }

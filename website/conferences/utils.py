@@ -9,7 +9,7 @@ from framework.auth import Auth
 from website import util
 from website import settings
 from website.project import new_node
-from website.models import Node, MailRecord
+from osf.models import AbstractNode as Node, MailRecord
 
 
 def record_message(message, nodes_created, users_created):

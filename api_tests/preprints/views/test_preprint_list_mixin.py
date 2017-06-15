@@ -1,17 +1,18 @@
+import pytest
+
 from nose.tools import *  # flake8: noqa
+import mock
 
 from api.base.settings.defaults import API_BASE
-
+from tests.json_api_test_app import JSONAPITestApp
 from website.util import permissions
-
+from api_tests import utils as test_utils
 from osf_tests.factories import (
     ProjectFactory,
     PreprintFactory,
     AuthUserFactory,
     SubjectFactory,
 )
-
-from api_tests import utils as test_utils
 
 class PreprintIsPublishedListMixin(object):
 
@@ -73,24 +74,22 @@ class PreprintIsPublishedListMixin(object):
         res = self.app.get('{}filter[is_published]=false'.format(self.url))
         assert len(res.json['data']) == 0
 
+@pytest.mark.django_db
 class PreprintIsValidListMixin(object):
-
     def setUp(self):
-        super(PreprintIsValidListMixin, self).setUp()
         assert self.admin, 'Subclasses of PreprintIsValidListMixin must define self.admin'
         assert self.project, 'Subclasses of PreprintIsValidListMixin must define self.project'
         assert self.provider, 'Subclasses of PreprintIsValidListMixin must define self.provider'
         assert self.url, 'Subclasses of PreprintIsValidListMixin must define self.url'
-
+        self.app = JSONAPITestApp()
         self.write_contrib = AuthUserFactory()
         self.non_contrib = AuthUserFactory()
-
         self.subject = SubjectFactory()
-        self.file_one_project = test_utils.create_test_file(self.project, self.admin, 'saor.pdf')
+
         self.project.add_contributor(self.write_contrib, permissions=permissions.DEFAULT_CONTRIBUTOR_PERMISSIONS, save=True)
+        test_utils.create_test_file(self.project, self.admin, 'saor.pdf')
         self.preprint = PreprintFactory(creator=self.admin, filename='saor.pdf', provider=self.provider, subjects=[[self.subject._id]], project=self.project, is_published=True)
 
-    # Test private
     def test_preprint_private_invisible_no_auth(self):
         res = self.app.get(self.url)
         assert len(res.json['data']) == 1
@@ -126,10 +125,10 @@ class PreprintIsValidListMixin(object):
     def test_preprint_node_deleted_invisible(self):
         self.project.is_deleted = True
         self.project.save()
-        # no auth
+        # unauth
         res = self.app.get(self.url)
         assert len(res.json['data']) == 0
-        # contrib
+        # non_contrib
         res = self.app.get(self.url, auth=self.non_contrib.auth)
         assert len(res.json['data']) == 0
         # write_contrib
@@ -139,13 +138,14 @@ class PreprintIsValidListMixin(object):
         res = self.app.get(self.url, auth=self.admin.auth)
         assert len(res.json['data']) == 0
 
-    def test_preprint_node_null_invisible(self):
+    @mock.patch('website.preprints.tasks.on_preprint_updated.s')
+    def test_preprint_node_null_invisible(self, mock_preprint_updated):
         self.preprint.node = None
         self.preprint.save()
-        # no auth
+        # unauth
         res = self.app.get(self.url)
         assert len(res.json['data']) == 0
-        # contrib
+        # non_contrib
         res = self.app.get(self.url, auth=self.non_contrib.auth)
         assert len(res.json['data']) == 0
         # write_contrib

@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+import mock
 from urlparse import urlparse
 from nose.tools import *  # flake8: noqa
 import functools
@@ -7,7 +8,7 @@ from framework.auth.core import Auth
 from modularodm import Q
 import pytest
 
-from website.models import NodeLog
+from osf.models import NodeLog
 from website.views import find_bookmark_collection
 from website.util import permissions
 from website.util.sanitize import strip_html
@@ -23,13 +24,11 @@ from osf_tests.factories import (
     CollectionFactory,
     CommentFactory,
     NodeLicenseRecordFactory,
-    PrivateLinkFactory
+    PrivateLinkFactory,
+    PreprintFactory
 )
 
-from website.project.licenses import ensure_licenses
-from website.project.licenses import NodeLicense
-
-ensure_licenses = functools.partial(ensure_licenses, warn=False)
+from osf.models.licenses import NodeLicense
 
 from tests.utils import assert_logs, assert_not_logs
 
@@ -846,6 +845,14 @@ class TestNodeDelete(NodeCRUDTestCase):
         # Bookmark collections are collections, so a 404 is returned
         assert_equal(res.status_code, 404)
 
+    @mock.patch('website.preprints.tasks.update_ezid_metadata_on_change.s')
+    def test_delete_node_with_preprint_calls_preprint_update_status(self, mock_update_ezid_metadata_on_change):
+        PreprintFactory(project=self.public_project)
+        self.app.delete_json_api(self.public_url, auth=self.user.auth, expect_errors=True)
+        self.public_project.reload()
+
+        assert mock_update_ezid_metadata_on_change.called
+
 
 class TestReturnDeletedNode(ApiTestCase):
     def setUp(self):
@@ -1080,7 +1087,6 @@ class TestNodeLicense(ApiTestCase):
         self.private_project.add_contributor(self.user, permissions=permissions.DEFAULT_CONTRIBUTOR_PERMISSIONS, save=True)
         self.public_url = '/{}nodes/{}/'.format(API_BASE, self.public_project._id)
         self.private_url = '/{}nodes/{}/'.format(API_BASE, self.private_project._id)
-        ensure_licenses()
         self.LICENSE_NAME = 'MIT License'
         self.node_license = NodeLicense.find_one(
             Q('name', 'eq', self.LICENSE_NAME)
@@ -1135,8 +1141,6 @@ class TestNodeUpdateLicense(ApiTestCase):
 
     def setUp(self):
         super(TestNodeUpdateLicense, self).setUp()
-
-        ensure_licenses()
 
         self.admin_contributor = AuthUserFactory()
         self.rw_contributor = AuthUserFactory()

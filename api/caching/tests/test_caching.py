@@ -10,7 +10,7 @@ import requests
 from django.conf import settings as django_settings
 from requests.auth import HTTPBasicAuth
 
-from framework.auth import User
+from osf.models import OSFUser as User
 from tests.factories import create_fake_project
 from tests.base import DbTestCase
 

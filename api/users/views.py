@@ -1,7 +1,7 @@
 
 from api.addons.views import AddonSettingsMixin
 from api.base import permissions as base_permissions
-from api.base.exceptions import Conflict
+from api.base.exceptions import Conflict, UserGone
 from api.base.filters import ListFilterMixin, ODMFilterMixin, PreprintFilterMixin
 from api.base.parsers import (JSONAPIRelationshipParser,
                               JSONAPIRelationshipParserForRegularJSON)
@@ -12,7 +12,7 @@ from api.base.utils import (default_node_list_query,
                             get_user_auth)
 from api.base.views import JSONAPIBaseView
 from api.institutions.serializers import InstitutionSerializer
-from api.nodes.filters import NodeODMFilterMixin, NodesListFilterMixin
+from api.nodes.filters import NodesFilterMixin
 from api.nodes.serializers import NodeSerializer
 from api.preprints.serializers import PreprintSerializer
 from api.registrations.serializers import RegistrationSerializer
@@ -29,8 +29,7 @@ from django.db.models import Q
 from rest_framework import permissions as drf_permissions
 from rest_framework import generics
 from rest_framework.exceptions import NotAuthenticated, NotFound
-from website.models import ExternalAccount, Node, User
-from osf.models import PreprintService
+from osf.models import Contributor, ExternalAccount, AbstractNode as Node, PreprintService, OSFUser as User
 
 
 class UserMixin(object):
@@ -43,6 +42,21 @@ class UserMixin(object):
 
     def get_user(self, check_permissions=True):
         key = self.kwargs[self.user_lookup_url_kwarg]
+        # If Contributor is in self.request.parents,
+        # then this view is getting called due to an embedded request (contributor embedding user)
+        # We prefer to access the user from the contributor object and take advantage
+        # of the query cache
+        if hasattr(self.request, 'parents') and len(self.request.parents.get(Contributor, {})) == 1:
+            # We expect one parent contributor view, so index into the first item
+            contrib_id, contrib = self.request.parents[Contributor].items()[0]
+            user = contrib.user
+            if user.is_disabled:
+                raise UserGone(user=user)
+            # Make sure that the contributor ID is correct
+            if user._id == key:
+                if check_permissions:
+                    self.check_object_permissions(self.request, user)
+                return user
 
         if self.kwargs.get('is_embedded') is True:
             if key in self.request.parents[User]:
@@ -433,7 +447,7 @@ class UserAddonAccountDetail(JSONAPIBaseView, generics.RetrieveAPIView, UserMixi
         return account
 
 
-class UserNodes(JSONAPIBaseView, generics.ListAPIView, UserMixin, NodeODMFilterMixin, NodesListFilterMixin):
+class UserNodes(JSONAPIBaseView, generics.ListAPIView, UserMixin, NodesFilterMixin):
     """List of nodes that the user contributes to. *Read-only*.
 
     Paginated list of nodes that the user contributes to ordered by `date_modified`.  User registrations are not available
@@ -500,19 +514,22 @@ class UserNodes(JSONAPIBaseView, generics.ListAPIView, UserMixin, NodeODMFilterM
     view_category = 'users'
     view_name = 'user-nodes'
 
-    ordering = ('-date_modified',)
-
-    # overrides ODMFilterMixin
-    def get_default_odm_query(self):
+    # overrides NodesFilterMixin
+    def get_default_queryset(self):
         user = self.get_user()
         query = MQ('contributors', 'eq', user) & default_node_list_query()
         if user != self.request.user:
             query &= default_node_permission_query(self.request.user)
-        return query
+        return Node.find(query)
 
     # overrides ListAPIView
     def get_queryset(self):
-        return Node.find(self.get_query_from_request()).select_related('node_license').include('guids', 'contributor__user__guids', 'root__guids', limit_includes=10)
+        return (
+            Node.objects.filter(id__in=set(self.get_queryset_from_request().values_list('id', flat=True)))
+            .select_related('node_license')
+            .order_by('-date_modified', )
+            .include('guids', 'contributor__user__guids', 'root__guids', limit_includes=10)
+        )
 
 
 class UserPreprints(JSONAPIBaseView, generics.ListAPIView, UserMixin, PreprintFilterMixin):
@@ -575,7 +592,8 @@ class UserInstitutions(JSONAPIBaseView, generics.ListAPIView, UserMixin):
         return user.affiliated_institutions.all()
 
 
-class UserRegistrations(UserNodes):
+# TODO: This view should be a subclass of UserNodes (i.e. NodeODMFilterMixin and NodesListFilterMixin replaced with NodesFilterMixin)
+class UserRegistrations(JSONAPIBaseView, generics.ListAPIView, UserMixin, NodesFilterMixin):
     """List of registrations that the user contributes to. *Read-only*.
 
     Paginated list of registrations that the user contributes to.  Each resource contains the full representation of the
@@ -658,6 +676,11 @@ class UserRegistrations(UserNodes):
     #This Request/Response
 
     """
+    permission_classes = (
+        drf_permissions.IsAuthenticatedOrReadOnly,
+        base_permissions.TokenHasScope,
+    )
+
     required_read_scopes = [CoreScopes.USERS_READ, CoreScopes.NODE_REGISTRATIONS_READ]
     required_write_scopes = [CoreScopes.USERS_WRITE, CoreScopes.NODE_REGISTRATIONS_WRITE]
 
@@ -665,8 +688,8 @@ class UserRegistrations(UserNodes):
     view_category = 'users'
     view_name = 'user-registrations'
 
-    # overrides ODMFilterMixin
-    def get_default_odm_query(self):
+    # overrides NodesFilterMixin
+    def get_default_queryset(self):
         user = self.get_user()
         current_user = self.request.user
 
@@ -679,7 +702,11 @@ class UserRegistrations(UserNodes):
         if not current_user.is_anonymous:
             permission_query = (permission_query | MQ('contributors', 'eq', current_user))
         query = query & permission_query
-        return query
+        return Node.find(query)
+
+    # overrides ListAPIView
+    def get_queryset(self):
+        return self.get_queryset_from_request().select_related('node_license').include('guids', 'contributor__user__guids', 'root__guids', limit_includes=10)
 
 
 class UserInstitutionsRelationship(JSONAPIBaseView, generics.RetrieveDestroyAPIView, UserMixin):

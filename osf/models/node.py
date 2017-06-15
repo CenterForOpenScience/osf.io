@@ -62,13 +62,13 @@ from website.util.permissions import (ADMIN, CREATOR_PERMISSIONS,
                                       DEFAULT_CONTRIBUTOR_PERMISSIONS, READ,
                                       WRITE, expand_permissions,
                                       reduce_permissions)
-from .base import BaseModel, Guid, GuidMixin, MODMCompatibilityQuerySet
+from .base import BaseModel, Guid, GuidMixin
 
 
 logger = logging.getLogger(__name__)
 
 
-class AbstractNodeQuerySet(MODMCompatibilityQuerySet, IncludeQuerySet):
+class AbstractNodeQuerySet(IncludeQuerySet):
 
     def get_roots(self):
         return self.filter(id__in=self.exclude(type='osf.collection').values_list('root_id', flat=True))
@@ -159,17 +159,6 @@ class AbstractNodeManager(TypedModelManager, IncludeManager):
         qs = AbstractNodeQuerySet(self.model, using=self._db)
         # Filter by typedmodels type
         return self._filter_by_type(qs)
-
-    # MODMCompatibilityQuerySet methods
-
-    def eager(self, *fields):
-        return self.get_queryset().eager(*fields)
-
-    def sort(self, *fields):
-        return self.get_queryset().sort(*fields)
-
-    def limit(self, n):
-        return self.get_queryset().limit(n)
 
     # AbstractNodeQuerySet methods
 
@@ -455,6 +444,8 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         """For v1 compat"""
         if (not self.is_preprint) and self._is_preprint_orphan:
             return True
+        if self.preprint_file:
+            return self.preprint_file.is_deleted
         return False
 
     @property
@@ -795,7 +786,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
 
     def get_aggregate_logs_queryset(self, auth):
         query = self.get_aggregate_logs_query(auth)
-        return NodeLog.find(query).sort('-date')
+        return NodeLog.find(query).order_by('-date')
 
     def get_absolute_url(self):
         return self.absolute_api_v2_url
@@ -1102,6 +1093,9 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
 
         # If user is merged into another account, use master account
         contrib_to_add = contributor.merged_by if contributor.is_merged else contributor
+        if contrib_to_add.is_disabled:
+            raise ValidationValueError('Deactivated users cannot be added as contributors.')
+
         if not self.is_contributor(contrib_to_add):
 
             contributor_obj, created = Contributor.objects.get_or_create(user=contrib_to_add, node=self)
@@ -1237,8 +1231,6 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
             contributor = OSFUser.load(user_id)
             if not contributor:
                 raise ValueError('User with id {} was not found.'.format(user_id))
-            if contributor.is_disabled:
-                raise ValidationValueError('Deactivated users cannot be added as contributors.')
             if self.contributor_set.filter(user=contributor).exists():
                 raise ValidationValueError('{} is already a contributor.'.format(contributor.fullname))
             contributor, _ = self.add_contributor(contributor=contributor, auth=auth, visible=bibliographic,
@@ -2309,13 +2301,14 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
             }
         enqueue_task(node_tasks.on_node_updated.s(self._id, user_id, first_save, saved_fields, request_headers))
 
-        if self.preprint_file and bool(self.SEARCH_UPDATE_FIELDS.intersection(saved_fields)):
+        if self.preprint_file:
             # avoid circular imports
             from website.preprints.tasks import on_preprint_updated
             PreprintService = apps.get_model('osf.PreprintService')
+            update_share = bool(self.SEARCH_UPDATE_FIELDS.intersection(saved_fields))
             # .preprints wouldn't return a single deleted preprint
             for preprint in PreprintService.objects.filter(node_id=self.id, is_published=True):
-                enqueue_task(on_preprint_updated.s(preprint._id))
+                enqueue_task(on_preprint_updated.s(preprint._id, update_share=update_share))
 
         user = User.load(user_id)
         if user and self.check_spam(user, saved_fields, request_headers):

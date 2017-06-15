@@ -18,11 +18,11 @@ from django.conf import settings
 from django.contrib.auth.base_user import AbstractBaseUser, BaseUserManager
 from django.contrib.auth.hashers import check_password
 from django.contrib.auth.models import PermissionsMixin
-from django.contrib.postgres import fields
 from django.dispatch import receiver
 from django.db.models.signals import post_save
 from django.db import models
 from django.utils import timezone
+from django_extensions.db.models import TimeStampedModel
 from framework.auth import Auth, signals
 from framework.auth.core import generate_verification_key
 from framework.auth.exceptions import (ChangePasswordError, ExpiredTokenError,
@@ -43,7 +43,7 @@ from osf.models.tag import Tag
 from osf.models.validators import validate_email, validate_social, validate_history_item
 from osf.modm_compat import Q
 from osf.utils.datetime_aware_jsonfield import DateTimeAwareJSONField
-from osf.utils.fields import NonNaiveDateTimeField
+from osf.utils.fields import NonNaiveDateTimeField, LowercaseEmailField
 from osf.utils.names import impute_names
 from website import settings as website_settings
 from website import filters, mails
@@ -102,6 +102,14 @@ class OSFUserManager(BaseUserManager):
         return user
 
 
+class Email(BaseModel, TimeStampedModel):
+    address = LowercaseEmailField(unique=True, db_index=True, validators=[validate_email])
+    user = models.ForeignKey('OSFUser', related_name='emails', on_delete=models.CASCADE)
+
+    def __unicode__(self):
+        return self.address
+
+
 class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, PermissionsMixin, AddonModelMixin):
     FIELD_ALIASES = {
         '_id': 'guids___id',
@@ -149,6 +157,9 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
     # This value is unique, but multiple "None" records exist for:
     #   * unregistered contributors where an email address was not provided.
     # TODO: Update mailchimp subscription on username change in user.save()
+    # TODO: Consider making this a FK to Email with to_field='address'
+    #   Django supports this (https://docs.djangoproject.com/en/1.11/topics/auth/customizing/#django.contrib.auth.models.CustomUser.USERNAME_FIELD)
+    #   but some third-party apps may not.
     username = models.CharField(max_length=255, db_index=True, unique=True)
 
     # Hashed. Use `User.set_password` and `User.check_password`
@@ -219,13 +230,6 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
     # }
 
     email_last_sent = NonNaiveDateTimeField(null=True, blank=True)
-
-    # confirmed emails
-    #   emails should be stripped of whitespace and lower-cased before appending
-    # TODO: Add validator to ensure an email address only exists once across
-    # TODO: Change to m2m field per @sloria
-    # all User's email lists
-    emails = fields.ArrayField(models.CharField(max_length=255), default=list, blank=True)
 
     # email verification tokens
     #   see also ``unconfirmed_emails``
@@ -521,6 +525,9 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
     def is_anonymous(self):
         return False
 
+    def get_absolute_url(self):
+        return self.absolute_api_v2_url
+
     def get_addon_names(self):
         return []
 
@@ -605,8 +612,8 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
             elif timestamp > self.comments_viewed_timestamp[target_id]:
                 self.comments_viewed_timestamp[target_id] = timestamp
 
-        self.emails.extend(user.emails)
-        user.emails = []
+        # Give old user's emails to self
+        user.emails.update(user=self)
 
         for k, v in user.email_verifications.iteritems():
             email_to_confirm = v['email']
@@ -821,7 +828,7 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
         user.is_claimed = True
         user.save()  # Must save before using auto_now_add field
         user.date_confirmed = user.date_registered
-        user.emails.append(username)
+        user.emails.create(address=username.lower().strip())
         return user
 
     def get_unconfirmed_email_for_token(self, token):
@@ -865,7 +872,7 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
             if self.email_verifications[token].get('confirmed', False):
                 try:
                     user_merge = OSFUser.find_one(
-                        Q('emails', 'contains', [self.email_verifications[token]['email'].lower()])
+                        Q('emails__address', 'eq', self.email_verifications[token]['email'].lower())
                     )
                 except NoResultsFound:
                     user_merge = False
@@ -951,14 +958,14 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
         :raises: ValueError if email already confirmed, except for login through external idp.
         """
 
-        # TODO: This is technically not compliant with RFC 822, which requires
+        # Note: This is technically not compliant with RFC 822, which requires
         #       that case be preserved in the "local-part" of an address. From
         #       a practical standpoint, the vast majority of email servers do
         #       not preserve case.
         #       ref: https://tools.ietf.org/html/rfc822#section-6
         email = email.lower().strip()
 
-        if not external_identity and email in self.emails:
+        if not external_identity and self.emails.filter(address=email).exists():
             raise ValueError('Email already confirmed to this user.')
 
         with reraise_django_validation_errors():
@@ -996,8 +1003,8 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
         """Remove a confirmed email"""
         if email == self.username:
             raise PermissionsError("Can't remove primary email")
-        if email in self.emails:
-            self.emails.remove(email)
+        if self.emails.filter(address=email):
+            self.emails.filter(address=email).delete()
             signals.user_email_removed.send(self, email=email)
 
     def get_confirmation_token(self, email, force=False, renew=False):
@@ -1061,8 +1068,8 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
         self.username = username
         if password:
             self.set_password(password)
-        if username not in self.emails:
-            self.emails.append(username)
+        if not self.emails.filter(address=username):
+            self.emails.create(address=username)
         self.is_registered = True
         self.is_claimed = True
         self.date_confirmed = timezone.now()
@@ -1080,7 +1087,7 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
 
         # If this email is confirmed on another account, abort
         try:
-            user_to_merge = OSFUser.find_one(Q('emails', 'contains', [email]))
+            user_to_merge = OSFUser.find_one(Q('emails__address', 'eq', email))
         except NoResultsFound:
             user_to_merge = None
 
@@ -1105,8 +1112,8 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
             self.save()
             unregistered_user.username = None
 
-        if email not in self.emails:
-            self.emails.append(email)
+        if not self.emails.filter(address=email).exists():
+            self.emails.create(address=email)
 
         # Complete registration if primary email
         if email.lower() == self.username.lower():
@@ -1338,7 +1345,7 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
         :return:
         """
         try:
-            email_domains = [email.split('@')[1].lower() for email in self.emails]
+            email_domains = [email.split('@')[1].lower() for email in self.emails.values_list('address', flat=True)]
             insts = Institution.objects.filter(email_domains__overlap=email_domains)
             if insts.exists():
                 self.affiliated_institutions.add(*insts)
@@ -1366,15 +1373,13 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
         :returns: The signed cookie
         """
         secret = secret or settings.SECRET_KEY
-        sessions = Session.find(
+        user_session = Session.find(
             Q('data.auth_user_id', 'eq', self._id)
-        ).sort(
+        ).order_by(
             '-date_modified'
-        ).limit(1)
+        ).first()
 
-        if sessions.exists():
-            user_session = sessions[0]
-        else:
+        if not user_session:
             user_session = Session(data={
                 'auth_user_id': self._id,
                 'auth_user_username': self.username,

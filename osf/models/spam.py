@@ -8,7 +8,6 @@ from osf.utils.datetime_aware_jsonfield import DateTimeAwareJSONField
 from osf.utils.fields import NonNaiveDateTimeField
 
 from website import settings
-from website.project.model import User
 from website.util import akismet
 from website.util.akismet import AkismetClientError
 
@@ -24,8 +23,9 @@ def _get_client():
 
 
 def _validate_reports(value, *args, **kwargs):
+    from osf.models import OSFUser
     for key, val in value.iteritems():
-        if not User.load(key):
+        if not OSFUser.load(key):
             raise ValidationValueError('Keys must be user IDs')
         if not isinstance(val, dict):
             raise ValidationTypeError('Values must be dictionaries')

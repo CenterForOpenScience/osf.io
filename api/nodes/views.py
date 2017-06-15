@@ -57,7 +57,7 @@ from api.identifiers.serializers import NodeIdentifierSerializer
 from api.identifiers.views import IdentifierList
 from api.institutions.serializers import InstitutionSerializer
 from api.logs.serializers import NodeLogSerializer
-from api.nodes.filters import NodeODMFilterMixin, NodesListFilterMixin
+from api.nodes.filters import NodeODMFilterMixin, NodesFilterMixin
 from api.nodes.permissions import (
     IsAdmin,
     IsPublic,
@@ -203,7 +203,7 @@ class WaterButlerMixin(object):
         return obj
 
 
-class NodeList(JSONAPIBaseView, bulk_views.BulkUpdateJSONAPIView, bulk_views.BulkDestroyJSONAPIView, bulk_views.ListBulkCreateJSONAPIView, NodeODMFilterMixin, NodesListFilterMixin, WaterButlerMixin):
+class NodeList(JSONAPIBaseView, bulk_views.BulkUpdateJSONAPIView, bulk_views.BulkDestroyJSONAPIView, bulk_views.ListBulkCreateJSONAPIView, NodesFilterMixin, WaterButlerMixin):
     """Nodes that represent projects and components. *Writeable*.
 
     Paginated list of nodes ordered by their `date_modified`.  Each resource contains the full representation of the
@@ -308,29 +308,12 @@ class NodeList(JSONAPIBaseView, bulk_views.BulkUpdateJSONAPIView, bulk_views.Bul
 
     ordering = ('-date_modified', )  # default ordering
 
-    # overrides FilterMixin
-    def postprocess_query_param(self, key, field_name, operation):
-        # tag queries will usually be on Tag.name,
-        # ?filter[tags]=foo should be translated to MQ('tags__name', 'eq', 'foo')
-        # But queries on lists should be tags, e.g.
-        # ?filter[tags]=foo,bar should be translated to MQ('tags', 'isnull', True)
-        # ?filter[tags]=[] should be translated to MQ('tags', 'isnull', True)
-        if field_name == 'tags':
-            if operation['value'] not in (list(), tuple()):
-                operation['source_field_name'] = 'tags__name'
-                operation['op'] = 'iexact'
-        # contributors iexact because guid matching
-        if field_name == 'contributors':
-            if operation['value'] not in (list(), tuple()):
-                operation['source_field_name'] = '_contributors__guids___id'
-                operation['op'] = 'iexact'
-
-    # overrides ODMFilterMixin
-    def get_default_odm_query(self):
+    # overrides NodesFilterMixin
+    def get_default_queryset(self):
         user = self.request.user
         base_query = default_node_list_query()
         permissions_query = default_node_permission_query(user)
-        return base_query & permissions_query
+        return Node.find(base_query & permissions_query)
 
     # overrides ListBulkCreateJSONAPIView, BulkUpdateJSONAPIView
     def get_queryset(self):
@@ -357,8 +340,7 @@ class NodeList(JSONAPIBaseView, bulk_views.BulkUpdateJSONAPIView, bulk_views.Bul
                     raise PermissionDenied
             return nodes
         else:
-            query = self.get_query_from_request()
-            return AbstractNode.find(query).distinct()
+            return self.get_queryset_from_request().distinct()
 
     # overrides ListBulkCreateJSONAPIView, BulkUpdateJSONAPIView, BulkDestroyJSONAPIView
     def get_serializer_class(self):
@@ -1662,7 +1644,7 @@ class NodeForksList(JSONAPIBaseView, generics.ListCreateAPIView, NodeMixin, Node
 
     # overrides ListCreateAPIView
     def get_queryset(self):
-        all_forks = self.get_node().forks.sort('-forked_date')
+        all_forks = self.get_node().forks.order_by('-forked_date')
         auth = get_user_auth(self.request)
 
         node_pks = [node.pk for node in all_forks if node.can_view(auth)]
@@ -2428,7 +2410,7 @@ class NodeProviderDetail(JSONAPIBaseView, generics.RetrieveAPIView, NodeMixin):
     view_name = 'node-provider-detail'
 
     def get_object(self):
-        return NodeProvider(self.kwargs['provider'], Node.load(self.kwargs['node_id']))
+        return NodeProvider(self.kwargs['provider'], self.get_node())
 
 
 class NodeAlternativeCitationsList(JSONAPIBaseView, generics.ListCreateAPIView, NodeMixin):
@@ -3494,6 +3476,26 @@ class NodeIdentifierList(NodeMixin, IdentifierList):
     """
 
     serializer_class = NodeIdentifierSerializer
+    node_lookup_url_kwarg = 'node_id'
+
+    # overrides IdentifierList
+    def get_object(self, check_object_permissions=True):
+        return self.get_node(check_object_permissions=check_object_permissions)
+
+    def get_node(self, check_object_permissions=True):
+        node = get_object_or_error(
+            Node,
+            self.kwargs[self.node_lookup_url_kwarg],
+            display_name='node'
+        )
+        # Nodes that are folders/collections are treated as a separate resource, so if the client
+        # requests a collection through a node endpoint, we return a 404
+        if node.is_collection:
+            raise NotFound
+        # May raise a permission denied
+        if check_object_permissions:
+            self.check_object_permissions(self.request, node)
+        return node
 
 
 class NodePreprintsList(JSONAPIBaseView, generics.ListAPIView, NodeMixin, PreprintFilterMixin):
@@ -3516,7 +3518,7 @@ class NodePreprintsList(JSONAPIBaseView, generics.ListAPIView, NodeMixin, Prepri
         date_published                  iso8601 timestamp                   timestamp when the preprint was published
         is_published                    boolean                             whether or not this preprint is published
         is_preprint_orphan              boolean                             whether or not this preprint is orphaned
-        subjects                        list of lists of dictionaries       ids of Subject in the PLOS taxonomy. Dictrionary, containing the subject text and subject ID
+        subjects                        list of lists of dictionaries       ids of Subject in the BePress taxonomy. Dictrionary, containing the subject text and subject ID
         provider                        string                              original source of the preprint
         doi                             string                              bare DOI for the manuscript, as entered by the user
 

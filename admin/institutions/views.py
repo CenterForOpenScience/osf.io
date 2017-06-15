@@ -25,7 +25,7 @@ class InstitutionList(PermissionRequiredMixin, ListView):
     model = Institution
 
     def get_queryset(self):
-        return Institution.objects.all().sort(self.ordering)
+        return Institution.objects.all().order_by(self.ordering)
 
     def get_context_data(self, **kwargs):
         query_set = kwargs.pop('object_list', self.object_list)
@@ -147,7 +147,7 @@ class InstitutionNodeList(PermissionRequiredMixin, ListView):
 
     def get_queryset(self):
         inst = self.kwargs['institution_id']
-        return Node.objects.filter(affiliated_institutions=inst).sort(self.ordering)
+        return Node.objects.filter(affiliated_institutions=inst).order_by(self.ordering)
 
     def get_context_data(self, **kwargs):
         query_set = kwargs.pop('object_list', self.object_list)
