@@ -1068,6 +1068,30 @@ def add_pointer(auth):
 
 @must_have_permission(WRITE)
 @must_not_be_registration
+def add_pointers(auth, node, **kwargs):
+    """Add pointers to a node.
+
+    """
+    node_ids = request.json.get('nodeIds')
+
+    if not node_ids:
+        raise HTTPError(http.BAD_REQUEST)
+
+    nodes = [
+        Node.load(node_id)
+        for node_id in node_ids
+    ]
+
+    try:
+        _add_pointers(node, nodes, auth)
+    except ValueError:
+        raise HTTPError(http.BAD_REQUEST)
+
+    return {}
+
+
+@must_have_permission(WRITE)
+@must_not_be_registration
 def remove_pointer(auth, node, **kwargs):
     """Remove a pointer from a node, raising a 400 if the pointer is not
     in `node.nodes`.
