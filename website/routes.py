@@ -1283,6 +1283,15 @@ def make_url_map(app):
         ),
         Rule(
             [
+                '/project/<pid>/pointer/',
+                '/project/<pid>/node/<nid>/pointer/',
+            ],
+            'post',
+            project_views.node.add_pointers,
+            json_renderer,
+        ),
+        Rule(
+            [
                 '/pointer/',
             ],
             'post',
