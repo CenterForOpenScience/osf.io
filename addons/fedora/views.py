@@ -13,6 +13,8 @@ from osf.models.external import ExternalAccount
 from website.project.decorators import (
     must_have_addon)
 
+import requests
+
 SHORT_NAME = 'fedora'
 FULL_NAME = 'Fedora'
 
@@ -44,6 +46,13 @@ def fedora_add_user_account(auth, **kwargs):
     host = furl(request.json.get('host'))
     username = request.json.get('username')
     password = request.json.get('password')
+
+    # Check that this is a LDP container by issuing a HEAD request and checking Link header
+    resp = requests.head(host.url)
+
+    if '<http://www.w3.org/ns/ldp#Container>;rel="type"' not in resp.headers['Link']:
+        raise ValidationError(host.url + ' is not a Fedora container.')
+
 
     provider = FedoraProvider(account=None, host=host.url,
                             username=username, password=password)
