@@ -261,6 +261,25 @@ class PreprintProviderTaxonomies(JSONAPIBaseView, generics.ListAPIView):
         return provider.all_subjects
 
 
+class PreprintProviderHighlightedSubjectList(JSONAPIBaseView, generics.ListAPIView):
+    permission_classes = (
+        drf_permissions.IsAuthenticatedOrReadOnly,
+        base_permissions.TokenHasScope,
+    )
+
+    view_category = 'preprint_providers'
+    view_name = 'highlighted-taxonomy-list'
+
+    required_read_scopes = [CoreScopes.ALWAYS_PUBLIC]
+    required_write_scopes = [CoreScopes.NULL]
+
+    serializer_class = TaxonomySerializer
+
+    def get_queryset(self):
+        provider = get_object_or_error(PreprintProvider, self.kwargs['provider_id'], display_name='PreprintProvider')
+        return provider.highlighted_subjects
+
+
 class PreprintProviderLicenseList(LicenseList):
     ordering = ()
     view_category = 'preprint_providers'
