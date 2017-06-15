@@ -1,4 +1,3 @@
-from nose.tools import *  # flake8: noqa
 import pytest
 
 from addons.osfstorage.models import OsfStorageFile
@@ -13,7 +12,7 @@ from osf_tests.factories import (
     AuthUserFactory, 
     ProjectFactory, 
     SubjectFactory, 
-    PreprintProviderFactory
+    PreprintProviderFactory,
 )
 from tests.base import ApiTestCase
 
