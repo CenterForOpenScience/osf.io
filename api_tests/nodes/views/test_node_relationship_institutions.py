@@ -8,6 +8,7 @@ from osf_tests.factories import (
 )
 from website.util import permissions
 
+
 @pytest.mark.django_db
 class TestNodeRelationshipInstitutions:
 

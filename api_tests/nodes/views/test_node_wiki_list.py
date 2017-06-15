@@ -10,9 +10,11 @@ from osf_tests.factories import (
 )
 from rest_framework import exceptions
 
+
 @pytest.fixture()
 def user():
     return AuthUserFactory()
+
 
 @pytest.mark.django_db
 class TestNodeWikiList:

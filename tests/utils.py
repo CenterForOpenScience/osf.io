@@ -72,6 +72,12 @@ def assert_not_logs(log_action, node_key, index=-1):
         return wrapper
     return outer_wrapper
 
+def assert_items_equal(first_item, *item_list):
+    first_item.sort()
+    for item in item_list:
+        item.sort()
+        assert item == first_item
+
 @contextlib.contextmanager
 def mock_archive(project, schema=None, auth=None, data=None, parent=None,
                  embargo=False, embargo_end_date=None,
