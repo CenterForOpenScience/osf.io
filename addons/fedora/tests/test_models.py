@@ -4,7 +4,7 @@ import unittest
 
 from addons.base.tests import models
 
-from addons.fedora.model import NodeSettings
+from addons.fedora.models import NodeSettings
 from addons.fedora.tests.factories import (
     FedoraAccountFactory, FedoraNodeSettingsFactory,
     FedoraUserSettingsFactory

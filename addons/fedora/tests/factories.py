@@ -4,7 +4,7 @@ from factory import SubFactory, Sequence
 from factory.django import DjangoModelFactory
 from osf_tests.factories import UserFactory, ProjectFactory, ExternalAccountFactory
 
-from addons.fedora.model import UserSettings, NodeSettings
+from addons.fedora.models import UserSettings, NodeSettings
 
 
 class FedoraAccountFactory(ExternalAccountFactory):

@@ -1,6 +1,6 @@
 from addons.base.tests.base import OAuthAddonTestCaseMixin, AddonTestCase
-from addons.fedora.model import FedoraProvider
-from addons.fedora.model import NodeSettings
+from addons.fedora.models import FedoraProvider
+from addons.fedora.models import NodeSettings
 from addons.fedora.tests.factories import (
     FedoraAccountFactory, FedoraNodeSettingsFactory,
     FedoraUserSettingsFactory

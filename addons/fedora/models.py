@@ -10,7 +10,7 @@ from addons.fedora.serializer import FedoraSerializer
 from addons.fedora.settings import DEFAULT_HOSTS, USE_SSL
 from framework.auth import Auth
 from osf.models.files import File, Folder, BaseFileNode
-from website.oauth.models import BasicAuthProviderMixin
+from osf.models.external import BasicAuthProviderMixin
 
 logger = logging.getLogger(__name__)
 

@@ -6,7 +6,7 @@ from furl import furl
 from flask import request
 
 from addons.base import generic_views
-from addons.fedora.model import FedoraProvider
+from addons.fedora.models import FedoraProvider
 from addons.fedora.serializer import FedoraSerializer
 from framework.auth.decorators import must_be_logged_in
 from osf.models.external import ExternalAccount
@@ -53,18 +53,19 @@ def fedora_add_user_account(auth, **kwargs):
 
     provider = FedoraProvider(account=None, host=host.url,
                             username=username, password=password)
+
     try:
         provider.account.save()
     except ValidationError:
         # ... or get the old one
         provider.account = ExternalAccount.objects.get(
             provider=provider.short_name,
-            provider_id=username
+            provider_id='{}:{}'.format(host.url, username).lower()
         )
 
     user = auth.user
-    if provider.account not in user.external_accounts:
-        user.external_accounts.append(provider.account)
+    if not user.external_accounts.filter(id=provider.account.id).exists():
+        user.external_accounts.add(provider.account)
 
     user.get_or_add_addon('fedora', auth=auth)
     user.save()

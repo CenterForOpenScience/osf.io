@@ -7,7 +7,7 @@ import httplib as http
 from addons.base.tests.views import (
     OAuthAddonAuthViewsTestCaseMixin, OAuthAddonConfigViewsTestCaseMixin
 )
-from addons.fedora.model import FedoraProvider
+from addons.fedora.models import FedoraProvider
 from addons.fedora.serializer import FedoraSerializer
 from addons.fedora.tests.utils import (FedoraAddonTestCase)
 from tests.base import OsfTestCase
@@ -41,7 +41,7 @@ class TestConfigViews(FedoraAddonTestCase, OAuthAddonConfigViewsTestCaseMixin, O
     def tearDown(self):
         super(TestConfigViews, self).tearDown()
 
-    @mock.patch('addons.fedora.model.NodeSettings.get_folders')
+    @mock.patch('addons.fedora.models.NodeSettings.get_folders')
     def test_folder_list(self, mock_connection):
         #test_get_datasets
         mock_connection.return_value = ['/Documents/', '/Pictures/', '/Videos/']
