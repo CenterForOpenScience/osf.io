@@ -37,6 +37,7 @@ def user():
 
 @pytest.mark.django_db
 class TestFileView:
+
     @pytest.fixture()
     def node(self, user):
         return ProjectFactory(creator=user, comment_level='public')
@@ -347,13 +348,13 @@ class TestFileView:
 
     def test_noncontrib_and_read_contrib_cannot_checkout(self, app, file, node, file_url):
         # test_noncontrib_cannot_checkout
-        user = AuthUserFactory()
+        non_contrib = AuthUserFactory()
         assert file.checkout == None
-        assert not node.has_permission(user, 'read')
+        assert not node.has_permission(non_contrib, 'read')
         res = app.put_json_api(
             file_url,
-            {'data': {'id': file._id, 'type': 'files', 'attributes': {'checkout': user._id}}},
-            auth=user.auth,
+            {'data': {'id': file._id, 'type': 'files', 'attributes': {'checkout': non_contrib._id}}},
+            auth=non_contrib.auth,
             expect_errors=True,
         )
         file.reload()
@@ -363,14 +364,14 @@ class TestFileView:
         assert node.logs.latest().action != NodeLog.CHECKED_OUT
 
         # test_read_contrib_cannot_checkout
-        user = AuthUserFactory()
-        node.add_contributor(user, permissions=['read'])
+        read_contrib = AuthUserFactory()
+        node.add_contributor(read_contrib, permissions=['read'])
         node.save()
-        assert not node.can_edit(user=user)
+        assert not node.can_edit(user=read_contrib)
         res = app.put_json_api(
             file_url,
             {'data': {'id': file._id, 'type': 'files', 'attributes': {'checkout': None}}},
-            auth=user.auth,
+            auth=read_contrib.auth,
             expect_errors=True
         )
         file.reload()
@@ -378,32 +379,32 @@ class TestFileView:
         assert file.checkout == None
         assert node.logs.latest().action != NodeLog.CHECKED_OUT
 
-    def test_user_can_checkin(self, app, node, file, file_url):
-        user = AuthUserFactory()
-        node.add_contributor(user, permissions=['read', 'write'])
+    def test_write_contrib_can_checkin(self, app, node, file, file_url):
+        write_contrib = AuthUserFactory()
+        node.add_contributor(write_contrib, permissions=['read', 'write'])
         node.save()
-        assert node.can_edit(user=user)
-        file.checkout = user
+        assert node.can_edit(user=write_contrib)
+        file.checkout = write_contrib
         file.save()
         res = app.put_json_api(
             file_url,
             {'data': {'id': file._id, 'type': 'files', 'attributes': {'checkout': None}}},
-            auth=user.auth,
+            auth=write_contrib.auth,
         )
         file.reload()
         assert res.status_code == 200
         assert file.checkout == None
 
     def test_removed_contrib_files_checked_in(self, app, node, file):
-        user = AuthUserFactory()
-        node.add_contributor(user, permissions=['read', 'write'])
+        write_contrib = AuthUserFactory()
+        node.add_contributor(write_contrib, permissions=['read', 'write'])
         node.save()
-        assert node.can_edit(user=user)
-        file.checkout = user
+        assert node.can_edit(user=write_contrib)
+        file.checkout = write_contrib
         file.save()
         assert file.is_checked_out
         with capture_signals() as mock_signals:
-            node.remove_contributor(user, auth=Auth(user))
+            node.remove_contributor(write_contrib, auth=Auth(write_contrib))
         assert mock_signals.signals_sent() == set([contributor_removed])
         file.reload()
         assert not file.is_checked_out

@@ -1,13 +1,13 @@
 import pytest
 
-from framework.auth.core import Auth
 from api.base.settings.defaults import API_BASE
 from api_tests import utils as api_utils
-from tests.base import ApiTestCase
+from framework.auth.core import Auth
 from osf_tests.factories import (
     ProjectFactory,
     AuthUserFactory,
 )
+
 
 @pytest.fixture()
 def user():
@@ -39,6 +39,7 @@ class TestNodeFileList:
         )
         data = res.json.get('data')
         assert len(data) == 1
+
 
 @pytest.mark.django_db
 class TestFileFiltering:
