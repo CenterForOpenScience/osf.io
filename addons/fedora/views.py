@@ -41,13 +41,7 @@ def fedora_add_user_account(auth, **kwargs):
         body of the request.
     """
 
-    host_url = request.json.get('host')
-    host = furl()
-    host.host = host_url.rstrip('/').replace('https://', '').replace('http://', '')
-
-    # TODO
-    host.scheme = 'http'
-
+    host = furl(request.json.get('host'))
     username = request.json.get('username')
     password = request.json.get('password')
 

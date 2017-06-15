@@ -2,7 +2,7 @@
 import logging
 
 from django.db import models
-
+from furl import furl
 from addons.base import exceptions
 from addons.base.models import (BaseOAuthNodeSettings, BaseOAuthUserSettings,
                                 BaseStorageAddon)
@@ -71,15 +71,11 @@ class NodeSettings(BaseStorageAddon, BaseOAuthNodeSettings):
         return self.folder_id
 
     def set_folder(self, folder, auth=None):
-        if folder == '/ (Full fedora)':
-            folder = '/'
         self.folder_id = folder
         self.save()
         self.nodelogger.log(action='folder_selected', save=True)
 
     def fetch_folder_name(self):
-        if self.folder_id == '/':
-            return '/ (Full fedora)'
         return self.folder_id.strip('/').split('/')[-1]
 
     def clear_settings(self):
@@ -137,12 +133,20 @@ class NodeSettings(BaseStorageAddon, BaseOAuthNodeSettings):
         self.save()
 
     def get_folders(self, **kwargs):
+        provider = FedoraProvider(account=self.external_account)
+        path = kwargs.get('path')
+        url = furl(provider.host)
+
+        # For the moment just show the path into the Fedora repository specified
+        # in the account settings. In the future this could be updated to retrieve
+        # subfolders from Fedora.
+
         return [{
             'addon': 'fedora',
-            'path': '/',
+            'path': str(url.path),
             'kind': 'folder',
-            'id': '/',
-            'name': '/ (Full fedora)',
+            'id': str(url.path),
+            'name': str(url.path),
             'urls': {
                 'folders': ''}
         }]
