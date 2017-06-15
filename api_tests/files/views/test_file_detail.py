@@ -1,8 +1,8 @@
 from __future__ import unicode_literals
 
-import pytest
 import itsdangerous
 import mock
+import pytest
 import pytz
 
 from addons.github.models import GithubFileNode
@@ -10,11 +10,15 @@ from addons.osfstorage import settings as osfstorage_settings
 from api.base.settings.defaults import API_BASE
 from api_tests import utils as api_utils
 from framework.auth.core import Auth
-from osf_tests.factories import (AuthUserFactory, CommentFactory,
-                                 ProjectFactory, UserFactory)
-from tests.base import ApiTestCase, capture_signals
-from website import settings as website_settings
 from osf.models import NodeLog, Session
+from osf_tests.factories import (
+    AuthUserFactory,
+    CommentFactory,
+    ProjectFactory,
+    UserFactory,
+)
+from tests.base import capture_signals
+from website import settings as website_settings
 from website.project.signals import contributor_removed
 
 
@@ -29,6 +33,7 @@ def _dt_to_iso8601(value):
 @pytest.fixture()
 def user():
     return AuthUserFactory()
+
 
 @pytest.mark.django_db
 class TestFileView:
@@ -457,6 +462,7 @@ class TestFileView:
         assert node._id in split_href
         assert node.id not in split_href
 
+
 @pytest.mark.django_db
 class TestFileVersionView:
 
@@ -532,8 +538,10 @@ class TestFileVersionView:
             auth=user.auth,
         ).status_code == 405
 
+
 @pytest.mark.django_db
 class TestFileTagging:
+
     @pytest.fixture()
     def node(self, user):
         return ProjectFactory(creator=user)

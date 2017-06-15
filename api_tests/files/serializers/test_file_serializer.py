@@ -1,13 +1,15 @@
-# -*- coding: utf-8 -*-
-import pytest
 from datetime import datetime
+
+import pytest
 from pytz import utc
 
-from osf_tests.factories import UserFactory, NodeFactory
-from tests.base import DbTestCase
-from tests.utils import make_drf_request_with_version
 from api.files.serializers import FileSerializer
 from api_tests import utils
+from osf_tests.factories import (
+    UserFactory, 
+    NodeFactory,
+)
+from tests.utils import make_drf_request_with_version
 
 @pytest.fixture()
 def user():
