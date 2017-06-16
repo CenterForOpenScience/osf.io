@@ -23,14 +23,13 @@ from rest_framework import serializers as ser
 from rest_framework import exceptions
 from addons.base.exceptions import InvalidAuthError, InvalidFolderError
 from website.exceptions import NodeStateError
-from website.models import (Comment, DraftRegistration, Institution,
-                            MetaSchema, Node, PrivateLink)
-from website.oauth.models import ExternalAccount
-from website.preprints.model import PreprintService
+from osf.models import (Comment, DraftRegistration, Institution,
+                        MetaSchema, AbstractNode as Node, PrivateLink)
+from osf.models.external import ExternalAccount
+from osf.models.licenses import NodeLicense
+from osf.models.preprint_service import PreprintService
 from website.project import new_private_link
-from website.project.licenses import NodeLicense
-from website.project.metadata.schemas import (ACTIVE_META_SCHEMAS,
-                                              LATEST_SCHEMA_VERSION)
+from website.project.metadata.schemas import LATEST_SCHEMA_VERSION
 from website.project.metadata.utils import is_prereg_admin_not_project_admin
 from website.project.model import NodeUpdateError
 from website.util import permissions as osf_permissions
@@ -1167,7 +1166,7 @@ class DraftRegistrationSerializer(JSONAPISerializer):
 
         schema_id = validated_data.pop('registration_schema').get('_id')
         schema = get_object_or_error(MetaSchema, schema_id)
-        if schema.schema_version != LATEST_SCHEMA_VERSION or schema.name not in ACTIVE_META_SCHEMAS:
+        if schema.schema_version != LATEST_SCHEMA_VERSION or not schema.active:
             raise exceptions.ValidationError('Registration supplement must be an active schema.')
 
         draft = DraftRegistration.create_from_node(node=node, user=initiator, schema=schema)

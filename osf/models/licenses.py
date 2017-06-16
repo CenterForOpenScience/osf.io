@@ -8,11 +8,11 @@ from osf.models.base import BaseModel, ObjectIDMixin
 
 def _serialize(fields, instance):
     return {
-        field: getattr(instance, field)
+        field: getattr(instance, field if field != 'id' else 'license_id')
         for field in fields
     }
 
-serialize_node_license = functools.partial(_serialize, ('_id', 'name', 'text'))
+serialize_node_license = functools.partial(_serialize, ('id', 'name', 'text'))
 
 def serialize_node_license_record(node_license_record):
     if node_license_record is None:

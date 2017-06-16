@@ -17,7 +17,6 @@ from website.exceptions import NodeStateError
 from website.util import permissions, disconnected_from_listeners, api_url_for, web_url_for
 from website.citations.utils import datetime_to_csl
 from website import language, settings
-from website.project.model import ensure_schemas
 from website.project.tasks import on_node_updated
 
 from osf.models import (
@@ -1646,7 +1645,6 @@ class TestRegisterNode:
         c1 = ProjectFactory(creator=user, parent=root)
         ProjectFactory(creator=user, parent=c1)
 
-        ensure_schemas()
         meta_schema = MetaSchema.find_one(
             Q('name', 'eq', 'Open-Ended Registration') &
             Q('schema_version', 'eq', 1)
@@ -1805,13 +1803,13 @@ class TestSetPrivacy:
         assert node.logs.first().action == NodeLog.MADE_PRIVATE
         assert node.keenio_read_key == ''
 
-    @mock.patch('website.mails.queue_mail')
+    @mock.patch('osf.models.queued_mail.queue_mail')
     def test_set_privacy_sends_mail_default(self, mock_queue, node, auth):
         node.set_privacy('private', auth=auth)
         node.set_privacy('public', auth=auth)
         assert mock_queue.call_count == 1
 
-    @mock.patch('website.mails.queue_mail')
+    @mock.patch('osf.models.queued_mail.queue_mail')
     def test_set_privacy_sends_mail(self, mock_queue, node, auth):
         node.set_privacy('private', auth=auth)
         node.set_privacy('public', auth=auth, meeting_creation=False)
@@ -1884,8 +1882,8 @@ class TestNodeSpam:
 
     @mock.patch.object(settings, 'SPAM_CHECK_ENABLED', True)
     def test_check_spam_skips_ham_user(self, project, user):
-        with mock.patch('website.project.model.Node._get_spam_content', mock.Mock(return_value='some content!')):
-            with mock.patch('website.project.model.Node.do_check_spam', mock.Mock(side_effect=Exception('should not get here'))):
+        with mock.patch('osf.models.AbstractNode._get_spam_content', mock.Mock(return_value='some content!')):
+            with mock.patch('osf.models.AbstractNode.do_check_spam', mock.Mock(side_effect=Exception('should not get here'))):
                 user.add_system_tag('ham_confirmed')
                 project.set_privacy('public')
                 assert project.check_spam(user, None, None) is False
@@ -1900,14 +1898,14 @@ class TestNodeSpam:
                 project.set_privacy('private')
                 assert project.check_spam(user, None, None) is True
 
-    @mock.patch('website.project.model.mails.send_mail')
+    @mock.patch('osf.models.node.mails.send_mail')
     @mock.patch.object(settings, 'SPAM_CHECK_ENABLED', True)
     @mock.patch.object(settings, 'SPAM_ACCOUNT_SUSPENSION_ENABLED', True)
     def test_check_spam_on_private_node_bans_new_spam_user(self, mock_send_mail, project, user):
         project.is_public = False
         project.save()
-        with mock.patch('website.project.model.Node._get_spam_content', mock.Mock(return_value='some content!')):
-            with mock.patch('website.project.model.Node.do_check_spam', mock.Mock(return_value=True)):
+        with mock.patch('osf.models.AbstractNode._get_spam_content', mock.Mock(return_value='some content!')):
+            with mock.patch('osf.models.AbstractNode.do_check_spam', mock.Mock(return_value=True)):
                 user.date_confirmed = timezone.now()
                 project.set_privacy('public')
                 user2 = UserFactory()
@@ -1928,14 +1926,14 @@ class TestNodeSpam:
                 project3.reload()
                 assert project3.is_public is True
 
-    @mock.patch('website.project.model.mails.send_mail')
+    @mock.patch('osf.models.node.mails.send_mail')
     @mock.patch.object(settings, 'SPAM_CHECK_ENABLED', True)
     @mock.patch.object(settings, 'SPAM_ACCOUNT_SUSPENSION_ENABLED', True)
     def test_check_spam_on_private_node_does_not_ban_existing_user(self, mock_send_mail, project, user):
         project.is_public = False
         project.save()
-        with mock.patch('website.project.model.Node._get_spam_content', mock.Mock(return_value='some content!')):
-            with mock.patch('website.project.model.Node.do_check_spam', mock.Mock(return_value=True)):
+        with mock.patch('osf.models.AbstractNode._get_spam_content', mock.Mock(return_value='some content!')):
+            with mock.patch('osf.models.AbstractNode.do_check_spam', mock.Mock(return_value=True)):
                 project.creator.date_confirmed = timezone.now() - datetime.timedelta(days=9001)
                 project.set_privacy('public')
                 assert project.check_spam(user, None, None) is True
@@ -2031,7 +2029,6 @@ class TestPrivateLinks:
 
     # TODO: This seems like it should go elsewhere, but was in tests/test_models.py::TestPrivateLink
     def test_create_from_node(self):
-        ensure_schemas()
         proj = ProjectFactory()
         user = proj.creator
         schema = MetaSchema.find()[0]
@@ -2306,7 +2303,6 @@ class TestNodeTraversals:
         assert mock_update_search.call_count == orig_call_count + len(reg_ids)
 
     def test_delete_registration_tree_sets_draft_registration_approvals_to_none(self, user):
-        ensure_schemas()
         reg = RegistrationFactory()
 
         dr = DraftRegistrationFactory(initiator=user)

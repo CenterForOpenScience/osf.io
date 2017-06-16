@@ -143,9 +143,9 @@
                 <tr>
                     <td>Emails</td>
                     <td>
-                        {% for email in user.emails %}
+                        {% for email in emails %}
                             <li>
-                                {% if forloop.first %}
+                                {% if email == user.username %}
                                     <strong>Primary: </strong>
                                     {{ email }}
                                     <a href=""

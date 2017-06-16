@@ -11,7 +11,7 @@ from osf_tests.factories import (
 
 from framework.auth.core import Auth
 
-from website.models import NodeLog
+from osf.models import NodeLog
 from website.util import permissions as osf_permissions
 from api.base.settings.defaults import API_BASE
 from api_tests import utils as api_utils
@@ -97,7 +97,6 @@ class TestNodeFileLogDetail(ApiTestCase):
         self.component = NodeFactory(parent=self.node, creator=self.user_one)
 
         self.file = api_utils.create_test_file(node=self.component, user=self.user_one)
-
         self.node.add_log(
             'osf_storage_file_moved',
             auth=Auth(self.user_one),

@@ -298,7 +298,7 @@ CitationGrid.prototype.initTreebeard = function() {
         // TODO remove special case for Zotero
         if (self.provider === 'Zotero') {
             if (data.length >= 200) {
-        data.push({
+                data.push({
                     name: 'Only 200 citations may be displayed',
                     kind: 'message'
                 });
@@ -413,9 +413,13 @@ CitationGrid.prototype.resolveRowAux = function(item) {
                 return item.data.name;
             }
             else {
-                return m('span', {id: item.data.csl.id}, [
-                    m.trust(self.getCitation(item))
-                        ]);
+                var citationContent;
+                try {
+                    citationContent = self.getCitation(item);
+                } catch(err) {
+                    citationContent = '<em>Could not render entry. Please check the contents of your citations for correctness.</em>';
+                }
+                return m('span', {id: item.data.csl.id}, [m.trust(citationContent)]);
             }
         }
     }, {

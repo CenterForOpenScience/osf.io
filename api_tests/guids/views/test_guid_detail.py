@@ -2,7 +2,7 @@ from nose.tools import *  # flake8: noqa
 from api.base.settings.defaults import API_BASE
 import pytest
 
-from website.files.models.osfstorage import OsfStorageFile
+from addons.osfstorage.models import OsfStorageFile
 from website.settings import API_DOMAIN
 
 from tests.base import ApiTestCase

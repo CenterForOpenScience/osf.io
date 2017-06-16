@@ -1,11 +1,10 @@
 from modularodm import Q
 
-from website.project.model import DraftRegistration, ensure_schemas, MetaSchema
+from osf.models import DraftRegistration, MetaSchema
 
 
 def draft_reg_util():
     DraftRegistration.remove()
-    ensure_schemas()
     return MetaSchema.find_one(
         Q('name', 'eq', 'Prereg Challenge') &
         Q('schema_version', 'eq', 2)

@@ -279,7 +279,7 @@ class UserFormView(PermissionRequiredMixin, FormView):
         if guid or email:
             if email:
                 try:
-                    user = OSFUser.objects.filter(Q(username=email) | Q(emails__contains=[email])).get()
+                    user = OSFUser.objects.filter(Q(username=email) | Q(emails__address=email)).get()
                     guid = user.guids.first()._id
                 except OSFUser.DoesNotExist:
                     return page_not_found(self.request, AttributeError('User with email address {} not found.'.format(email)))
@@ -358,8 +358,8 @@ class UserWorkshopFormView(PermissionRequiredMixin, FormView):
 
     @staticmethod
     def find_user_by_email(email):
-        user_list = OSFUser.objects.filter(emails__contains=[email])
-        return user_list[0] if user_list else None
+        user_list = OSFUser.objects.filter(emails__address=email)
+        return user_list[0] if user_list.exists() else None
 
     @staticmethod
     def find_user_by_full_name(full_name):
@@ -518,7 +518,7 @@ class ResetPasswordView(PermissionRequiredMixin, FormView):
     def get_context_data(self, **kwargs):
         user = OSFUser.load(self.kwargs.get('guid'))
         try:
-            self.initial.setdefault('emails', [(r, r) for r in user.emails])
+            self.initial.setdefault('emails', [(r, r) for r in user.emails.values_list('address', flat=True)])
         except AttributeError:
             raise Http404(
                 '{} with id "{}" not found.'.format(
