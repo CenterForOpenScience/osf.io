@@ -3,7 +3,6 @@ import json
 from rest_framework.exceptions import APIException, ValidationError, AuthenticationFailed, PermissionDenied
 from rest_framework.authentication import BaseAuthentication
 
-from django.db.models import Q
 from django.utils import timezone
 
 from api.cas import util, messages, cas_errors
@@ -120,8 +119,7 @@ class CasJweAuthentication(BaseAuthentication):
         :return: (user, None) or (None, error_message)
         """
 
-        # decrypt the payload and load data
-        payload = util.decrypt_payload(request.body)
+        payload = request.body
         data = json.loads(payload['data'])
         auth_type = data.get('type')
 
@@ -476,11 +474,12 @@ def handle_verify_email_external(data_user):
     util.ensure_external_identity_uniqueness(provider, identity, user)
 
     if not user.is_registered:
-        # register user
+        # register user and update email
         user.register(email)
-    if email.lower() not in user.emails:
+
+    if not user.emails.filter(address=email.lower()):
         # update email
-        user.emails.append(email.lower())
+        user.emails.create(address=email.lower())
 
     user.date_last_logged_in = timezone.now()
     user.external_identity[provider][identity] = 'VERIFIED'

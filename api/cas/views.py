@@ -168,7 +168,7 @@ class ServiceFindAccount(JSONAPIBaseView, generics.CreateAPIView):
 
     def post(self, request, *args, **kwargs):
 
-        payload = util.decrypt_payload(request.body)
+        payload = request.body
         data = json.loads(payload['data'])
 
         service_type = data.get('type')
@@ -204,7 +204,7 @@ class ServiceCheckPersonalAccessToken(JSONAPIBaseView, generics.CreateAPIView):
 
     def post(self, request, *args, **kwargs):
 
-        payload = util.decrypt_payload(request.body)
+        payload = request.body
         data = json.loads(payload['data'])
 
         token_id = data.get('tokenId')
@@ -241,7 +241,7 @@ class ServiceCheckOauthScope(JSONAPIBaseView, generics.CreateAPIView):
 
     def post(self, request, *args, **kwargs):
 
-        payload = util.decrypt_payload(request.body)
+        payload = request.body
         data = json.loads(payload['data'])
 
         scope_name = data.get('scopeName')
@@ -273,7 +273,7 @@ class ServiceLoadDeveloperApps(JSONAPIBaseView, generics.CreateAPIView):
 
     def post(self, request, *args, **kwargs):
 
-        payload = util.decrypt_payload(request.body)
+        payload = request.body
         data = json.loads(payload['data'])
 
         service_type = data.get('serviceType')
@@ -308,7 +308,7 @@ class ServiceLoadInstitutions(JSONAPIBaseView, generics.CreateAPIView):
 
     def post(self, request, *args, **kwargs):
 
-        payload = util.decrypt_payload(request.body)
+        payload = request.body
         data = json.loads(payload['data'])
 
         service_type = data.get('serviceType')

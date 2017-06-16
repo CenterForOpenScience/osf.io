@@ -1,12 +1,7 @@
-from django.db.models import Q
 from django.utils import timezone
 
-from rest_framework.exceptions import ParseError, ValidationError, PermissionDenied
+from rest_framework.exceptions import ValidationError, PermissionDenied
 
-import jwe
-import jwt
-
-from api.base import settings
 from api.base.authentication.drf import check_user
 from api.base.exceptions import (UnconfirmedAccountError, UnclaimedAccountError, DeactivatedAccountError,
                                  MergedAccountError, InvalidAccountError)
@@ -22,28 +17,6 @@ from osf.models import OSFUser
 from website.util.time import throttle_period_expired
 from website.mails import send_mail, FORGOT_PASSWORD
 from website import settings as web_settings
-
-
-def decrypt_payload(body):
-    """
-    Decrypt the payload.
-
-    :param body: the JWE/JwT encrypted payload body
-    :return: the decrypted json payload
-    """
-
-    try:
-        payload = jwt.decode(
-            jwe.decrypt(body, settings.JWE_SECRET),
-            settings.JWT_SECRET,
-            options={'verify_exp': False},
-            algorithm='HS256'
-        )
-    except (TypeError, jwt.exceptions.InvalidTokenError,
-            jwt.exceptions.InvalidKeyError, jwe.exceptions.PyJWEException):
-        # TODO: inform Sentry, something is wrong with CAS or someone is trying to hack us
-        raise ParseError(detail=messages.INVALID_REQUEST)
-    return payload
 
 
 def is_user_inactive(user):
