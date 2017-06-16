@@ -676,6 +676,19 @@ var SocialViewModel = function(urls, modes, preventUnsaved) {
         return false;
     });
 
+    self.unmatchedUrls = ko.computed(function() {
+        var values = self.values();
+        var unmatched = [];
+        for (var i=0; i<self.values().length; i++) {
+            if (values[i].value) {
+                if (urlIsValid(values[i].text)) {
+                    unmatched.push(values[i].label);
+                }
+            }
+        }
+        return unmatched;
+    });
+
     self.addWebsiteInput = function() {
         this.profileWebsites.push(ko.observable().extend({
             ensureHttp: true
@@ -759,6 +772,16 @@ SocialViewModel.prototype.submit = function() {
             'Please update your website',
             'text-danger',
             5000
+        );
+    }
+    else if (this.unmatchedUrls().length) {
+        var plural = this.unmatchedUrls().length > 1 ? 's' : '';
+        var message = 'Please check invalid profile url' + plural + ': <br>';
+        message += this.unmatchedUrls().join('<br>');
+        this.changeMessage(
+            message,
+            'text-danger',
+            8000
         );
     }
     else if (this.hasValidProperty() && this.isValid()) {
