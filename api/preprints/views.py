@@ -45,7 +45,7 @@ class PreprintMixin(NodeMixin):
             self.kwargs[self.preprint_lookup_url_kwarg],
             display_name='preprint'
         )
-        if not preprint:
+        if not preprint or preprint.node.is_deleted:
             raise NotFound
         # May raise a permission denied
         if check_object_permissions:

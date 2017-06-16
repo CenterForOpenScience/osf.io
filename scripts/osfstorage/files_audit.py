@@ -18,14 +18,13 @@ import logging
 
 import pyrax
 
-from modularodm import Q
 from boto.glacier.layer2 import Layer2
 from pyrax.exceptions import NoSuchObject
 
 from framework.celery_tasks import app as celery_app
 
 from website.app import init_app
-from website.files import models
+from osf.models import FileVersion
 
 from scripts import utils as scripts_utils
 from scripts.osfstorage import utils as storage_utils
@@ -122,12 +121,12 @@ def ensure_backups(version, dry_run):
 
 
 def glacier_targets():
-    return models.FileVersion.objects.filter(location__has_key='object', metadata__archive__isnull=True)
+    return FileVersion.objects.filter(location__has_key='object', metadata__archive__isnull=True)
 
 
 def parity_targets():
     # TODO: Add metadata.parity information from wb so we do not need to check remote services
-    return models.FileVersion.objects.filter(location__has_key='object')
+    return FileVersion.objects.filter(location__has_key='object')
         # & metadata__parity__isnull=True
 
 

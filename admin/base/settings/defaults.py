@@ -120,6 +120,7 @@ MIGRATION_MODULES = {
 }
 
 USE_TZ = True
+TIME_ZONE = 'UTC'
 
 # local development using https
 if osf_settings.SECURE_MODE and osf_settings.DEBUG_MODE:
@@ -231,6 +232,8 @@ ENTRY_POINTS = {'osf4m': 'osf4m', 'prereg_challenge_campaign': 'prereg',
 # Set in local.py
 DESK_KEY = ''
 DESK_KEY_SECRET = ''
+
+TINYMCE_APIKEY = ''
 
 if DEBUG:
     INSTALLED_APPS += ('debug_toolbar', )

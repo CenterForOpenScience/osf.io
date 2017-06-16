@@ -8,12 +8,10 @@ from api_tests import utils as test_utils
 from framework.auth.core import Auth
 from osf_tests.factories import PreprintFactory, AuthUserFactory, ProjectFactory, SubjectFactory, PreprintProviderFactory
 from osf.models import PreprintService, NodeLicense
-from website.project.licenses import ensure_licenses
 from website.project.signals import contributor_added
 from website.identifiers.utils import build_ezid_metadata
 from tests.base import ApiTestCase, fake, capture_signals
 
-ensure_licenses = functools.partial(ensure_licenses, warn=False)
 
 def build_preprint_update_payload(node_id, attributes=None, relationships=None):
     payload = {
@@ -43,6 +41,16 @@ class TestPreprintDetail(ApiTestCase):
     def test_preprint_top_level(self):
         assert_equal(self.data['type'], 'preprints')
         assert_equal(self.data['id'], self.preprint._id)
+
+    def test_preprint_node_deleted_detail_failure(self):
+        deleted_node = ProjectFactory(creator=self.user, is_deleted=True)
+        deleted_preprint = PreprintFactory(project=deleted_node, creator=self.user)
+
+        url = '/{}preprints/{}/'.format(API_BASE, deleted_preprint._id)
+        res = self.app.get(url, expect_errors=True)
+        assert_equal(res.status_code, 404)
+        assert_equal(self.res.content_type, 'application/vnd.api+json')
+
 
 class TestPreprintDelete(ApiTestCase):
     def setUp(self):
@@ -271,8 +279,6 @@ class TestPreprintUpdateLicense(ApiTestCase):
 
     def setUp(self):
         super(TestPreprintUpdateLicense, self).setUp()
-
-        ensure_licenses()
 
         self.admin_contributor = AuthUserFactory()
         self.rw_contributor = AuthUserFactory()

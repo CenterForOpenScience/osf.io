@@ -3,7 +3,7 @@ from rest_framework import serializers as ser
 
 from modularodm import Q
 
-from website.models import ApiOAuth2Application
+from osf.models import ApiOAuth2Application
 
 from api.base.serializers import JSONAPISerializer, LinksField, IDField, TypeField, DateByVersion
 from api.base.utils import absolute_reverse

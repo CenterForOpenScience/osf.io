@@ -9,7 +9,7 @@ from tests.base import OsfTestCase
 from osf_tests.factories import AuthUserFactory
 from osf_tests.factories import IdentifierFactory
 from osf_tests.factories import RegistrationFactory
-from osf_tests.factories import PreprintFactory, SubjectFactory, PreprintProviderFactory, NodeLicenseRecordFactory
+from osf_tests.factories import PreprintFactory, SubjectFactory, PreprintProviderFactory
 from tests.test_addons import assert_urls_equal
 
 import furl
@@ -17,10 +17,8 @@ import lxml.etree
 
 from website import settings
 from website.identifiers.utils import to_anvl
-from website.identifiers.model import Identifier
-from website.project.licenses import ensure_licenses
 from website.identifiers import metadata
-from osf.models import Subject, NodeLicense
+from osf.models import Identifier, Subject, NodeLicense
 
 
 class TestMetadataGeneration(OsfTestCase):
@@ -69,8 +67,6 @@ class TestMetadataGeneration(OsfTestCase):
         assert_equal(pub_year.text, str(self.node.registered_date.year))
 
     def test_metadata_for_preprint_has_correct_structure(self):
-        ensure_licenses()
-
         provider = PreprintProviderFactory()
         license = NodeLicense.objects.get(name="CC-By Attribution 4.0 International")
         license_details = {

@@ -8,7 +8,6 @@ from modularodm.exceptions import KeyExistsException
 
 from framework.auth import campaigns, views as auth_views, cas
 from website.util import web_url_for
-from website.project.model import ensure_schemas
 from osf_tests import factories
 from tests.base import OsfTestCase
 from tests.utils import mock_auth
@@ -211,7 +210,6 @@ class TestCampaignsAuthViews(OsfTestCase):
             assert_in(value['url_register'], resp.headers['Location'])
 
     def test_campaign_landing_logged_in(self):
-        ensure_schemas()
         for key, value in self.campaigns.items():
             resp = self.app.get(value['url_landing'], auth=self.user.auth)
             assert_equal(resp.status_code, http.OK)

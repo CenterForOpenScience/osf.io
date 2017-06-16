@@ -4,7 +4,7 @@ from django import forms
 from django.core.validators import validate_email
 
 from framework.auth.core import get_user
-from website.models import Conference
+from osf.models import Conference
 from website.conferences.exceptions import ConferenceError
 
 

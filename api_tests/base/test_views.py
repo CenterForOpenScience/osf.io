@@ -85,7 +85,7 @@ class TestApiBaseViews(ApiTestCase):
             has_serializer_class = getattr(view, 'serializer_class', None) or getattr(view, 'get_serializer_class', None)
             assert_true(has_serializer_class, "{0} should include serializer class or override get_serializer_class()".format(view))
 
-    @mock.patch('framework.auth.core.User.is_confirmed', mock.PropertyMock(return_value=False))
+    @mock.patch('osf.models.OSFUser.is_confirmed', mock.PropertyMock(return_value=False))
     def test_unconfirmed_user_gets_error(self):
 
         user = factories.AuthUserFactory()
@@ -93,7 +93,7 @@ class TestApiBaseViews(ApiTestCase):
         res = self.app.get('/{}nodes/'.format(API_BASE), auth=user.auth, expect_errors=True)
         assert_equal(res.status_code, http.BAD_REQUEST)
 
-    @mock.patch('framework.auth.core.User.is_disabled', mock.PropertyMock(return_value=True))
+    @mock.patch('osf.models.OSFUser.is_disabled', mock.PropertyMock(return_value=True))
     def test_disabled_user_gets_error(self):
 
         user = factories.AuthUserFactory()

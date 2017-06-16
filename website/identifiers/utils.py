@@ -5,9 +5,7 @@ import logging
 
 from framework.exceptions import HTTPError
 from website import settings
-from website.project import signals
 from website.identifiers.metadata import datacite_metadata_for_node, datacite_metadata_for_preprint
-from framework.celery_tasks.handlers import enqueue_task
 
 logger = logging.getLogger(__name__)
 
@@ -157,10 +155,3 @@ def get_or_create_identifiers(target_object):
                 [each.strip('/') for each in pair.strip().split(':')]
                 for pair in resp['success'].split('|')
             )
-
-@signals.node_deleted.connect
-def update_status_on_delete(node):
-    from website.preprints.tasks import update_ezid_metadata_on_change
-
-    for preprint in node.preprints.all():
-        enqueue_task(update_ezid_metadata_on_change.s(preprint, status='unavailable'))

@@ -491,7 +491,7 @@ class Embargo(PreregCallbackMixin, EmailApprovableSanction):
         return context
 
     def _on_reject(self, user):
-        from website.project.model import NodeLog
+        NodeLog = apps.get_model('osf.NodeLog')
 
         parent_registration = self._get_registration()
         parent_registration.registered_from.add_log(
@@ -811,7 +811,7 @@ class RegistrationApproval(PreregCallbackMixin, EmailApprovableSanction):
         self.save()
 
     def _on_reject(self, user):
-        from website.project.model import NodeLog
+        NodeLog = apps.get_model('osf.NodeLog')
 
         register = self._get_registration()
         registered_from = register.registered_from

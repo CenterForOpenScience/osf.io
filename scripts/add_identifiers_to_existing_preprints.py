@@ -2,7 +2,6 @@ import sys
 import time
 import logging
 from scripts import utils as script_utils
-from django.db import transaction
 
 from website.app import setup_django
 from website.identifiers.utils import request_identifiers_from_ezid, parse_identifiers
@@ -14,7 +13,7 @@ logger = logging.getLogger(__name__)
 def main(dry=True):
     from osf.models import PreprintService
 
-    preprints_without_identifiers = PreprintService.objects.filter(identifiers__isnull=True, is_published=True)
+    preprints_without_identifiers = PreprintService.objects.filter(identifiers__isnull=True, is_published=True, node__is_deleted=False)
     logger.info('About to add identifiers to {} preprints.'.format(preprints_without_identifiers.count()))
 
     for preprint in preprints_without_identifiers:

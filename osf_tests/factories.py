@@ -18,8 +18,6 @@ from modularodm.exceptions import NoResultsFound
 from website import settings
 from website.notifications.constants import NOTIFICATION_TYPES
 from website.util import permissions
-from website.project.licenses import ensure_licenses
-from website.project.model import ensure_schemas
 from website.archiver import ARCHIVER_SUCCESS
 from website.identifiers.utils import parse_identifiers
 from framework.auth.core import Auth
@@ -31,15 +29,10 @@ from osf.modm_compat import Q
 from addons.osfstorage.models import OsfStorageFile
 
 fake = Factory.create()
-ensure_licenses = functools.partial(ensure_licenses, warn=False)
 
 def get_default_metaschema():
     """This needs to be a method so it gets called after the test database is set up"""
-    try:
-        return models.MetaSchema.find()[0]
-    except IndexError:
-        ensure_schemas()
-        return models.MetaSchema.find()[0]
+    return models.MetaSchema.objects.first()
 
 def FakeList(provider, n, *args, **kwargs):
     func = getattr(fake, provider)
@@ -61,6 +54,30 @@ class UserFactory(DjangoModelFactory):
     class Meta:
         model = models.OSFUser
 
+    @classmethod
+    def _build(cls, target_class, *args, **kwargs):
+        emails = kwargs.pop('emails', [])
+        instance = super(DjangoModelFactory, cls)._build(target_class, *args, **kwargs)
+        if emails:
+            # Save for M2M population
+            instance.set_unusable_password()
+            instance.save()
+        for email in emails:
+            instance.emails.create(address=email)
+        return instance
+
+    @classmethod
+    def _create(cls, target_class, *args, **kwargs):
+        emails = kwargs.pop('emails', [])
+        instance = super(DjangoModelFactory, cls)._create(target_class, *args, **kwargs)
+        if emails and not instance.pk:
+            # Save for M2M population
+            instance.set_unusable_password()
+            instance.save()
+        for email in emails:
+            instance.emails.create(address=email)
+        return instance
+
     @factory.post_generation
     def set_names(self, create, extracted):
         parsed = impute_names_model(self.fullname)
@@ -71,8 +88,15 @@ class UserFactory(DjangoModelFactory):
 
     @factory.post_generation
     def set_emails(self, create, extracted):
-        if self.username not in self.emails:
-            self.emails.append(str(self.username))
+        if not self.emails.filter(address=self.username).exists():
+            if not self.id:
+                if create:
+                    # Perform implicit save to populate M2M
+                    self.save()
+                else:
+                    # This might lead to strange behavior
+                    return
+            self.emails.create(address=str(self.username).lower())
 
 class AuthUserFactory(UserFactory):
     """A user that automatically has an api key, for quick authentication.
@@ -216,12 +240,6 @@ class NodeLicenseRecordFactory(DjangoModelFactory):
 
     @classmethod
     def _create(cls, *args, **kwargs):
-        try:
-            models.NodeLicense.find_one(
-                Q('name', 'eq', 'No license')
-            )
-        except NoResultsFound:
-            ensure_licenses()
         kwargs['node_license'] = kwargs.get(
             'node_license',
             models.NodeLicense.find_one(
@@ -421,10 +439,7 @@ class DraftRegistrationFactory(DjangoModelFactory):
                 project_params['creator'] = initiator
             branched_from = ProjectFactory(**project_params)
         initiator = branched_from.creator
-        try:
-            registration_schema = registration_schema or models.MetaSchema.find()[0]
-        except IndexError:
-            ensure_schemas()
+        registration_schema = registration_schema or models.MetaSchema.objects.first()
         registration_metadata = registration_metadata or {}
         draft = models.DraftRegistration.create_from_node(
             branched_from,
@@ -505,8 +520,6 @@ class PreprintProviderFactory(DjangoModelFactory):
     name = factory.Faker('company')
     description = factory.Faker('bs')
     external_url = factory.Faker('url')
-    logo_name = factory.Faker('file_name', category='image')
-    banner_name = factory.Faker('file_name', category='image')
 
     class Meta:
         model = models.PreprintProvider

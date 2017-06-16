@@ -45,8 +45,8 @@ def retraction_handler(action, registration, registered_from):
 
 @must_be_logged_in
 def sanction_handler(kind, action, payload, encoded_token, auth, **kwargs):
-    from website.models import (
-        Node,
+    from osf.models import (
+        AbstractNode,
         Embargo,
         EmbargoTerminationApproval,
         RegistrationApproval,
@@ -85,7 +85,7 @@ def sanction_handler(kind, action, payload, encoded_token, auth, **kwargs):
 
     do_action = getattr(sanction, action, None)
     if do_action:
-        registration = Node.find_one(Q(sanction.SHORT_NAME, 'eq', sanction))
+        registration = AbstractNode.find_one(Q(sanction.SHORT_NAME, 'eq', sanction))
         registered_from = registration.registered_from
         try:
             do_action(auth.user, encoded_token)

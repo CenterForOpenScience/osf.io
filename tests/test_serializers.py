@@ -11,13 +11,11 @@ from osf_tests.factories import (
     RegistrationFactory,
     NodeFactory,
     CollectionFactory,
-    BookmarkCollectionFactory,
 )
 from osf.models import NodeRelation
 from tests.base import OsfTestCase, get_default_metaschema
 
 from framework.auth import Auth
-from framework import utils as framework_utils
 from website.project.views.node import _view_project, _serialize_node_search, _get_children, _get_readable_descendants
 from website.profile.views import get_public_projects, get_public_components
 from website.views import serialize_node_summary

@@ -2,9 +2,9 @@ from nose.tools import *  # noqa
 
 from modularodm import Q
 
+from osf.models import MetaSchema
 from website.prereg import prereg_landing_page as landing_page
 from website.prereg.utils import drafts_for_user, get_prereg_schema
-from website.project.model import ensure_schemas, MetaSchema
 
 from tests.base import OsfTestCase
 from osf_tests import factories
@@ -13,7 +13,6 @@ from osf_tests import factories
 class TestPreregLandingPage(OsfTestCase):
     def setUp(self):
         super(TestPreregLandingPage, self).setUp()
-        ensure_schemas()
         self.user = factories.UserFactory()
 
     def test_no_projects(self):
@@ -89,7 +88,6 @@ class TestPreregUtils(OsfTestCase):
 
     def setUp(self):
         super(TestPreregUtils, self).setUp()
-        ensure_schemas()
 
     def test_get_prereg_schema_returns_prereg_metaschema(self):
         schema = get_prereg_schema()

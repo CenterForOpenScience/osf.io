@@ -7,7 +7,7 @@ from nose.tools import *  # noqa
 from framework import sessions
 from framework.flask import request
 
-from website.models import Session
+from osf.models import Session
 from addons.osfstorage.tests import factories
 from addons.osfstorage import utils
 
