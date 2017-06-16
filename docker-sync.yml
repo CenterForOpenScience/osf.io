@@ -53,9 +53,8 @@ syncs:
 #    sync_excludes: ['.DS_Store', '*.map', '*.pyc', '*.tmp', '.git', '.idea', 'bower_components', 'node_modules', 'tmp', 'dist']
 #    watch_excludes: ['.*\.DS_Store', '.*\.map', '.*\.pyc', '.*\.tmp', '.*/\.git', '.*/\.idea', '.*/bower_components', '.*/node_modules', '.*/tmp', '.*/dist']
 
-  osf-sync:
+  code:
     src: './'
-    dest: '/code'
     sync_strategy: 'unison'
     sync_args: [ '-prefer newer' ]
     sync_excludes_type: 'Name'
