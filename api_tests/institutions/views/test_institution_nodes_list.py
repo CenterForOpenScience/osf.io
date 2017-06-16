@@ -1,7 +1,7 @@
 import pytest
 
 from api.base.settings.defaults import API_BASE
-from api_tests.nodes.filters.test_filters import NodesListFilteringMixin
+from api_tests.nodes.filters.test_filters import NodesListFilteringMixin, NodesListDateFilteringMixin
 from osf_tests.factories import (
     InstitutionFactory,
     AuthUserFactory,
@@ -168,3 +168,39 @@ class TestNodeListFiltering(NodesListFilteringMixin):
         great_grandchild_node_two.affiliated_institutions.add(institution)
         great_grandchild_node_two.save()
         return great_grandchild_node_two
+
+
+@pytest.mark.django_db
+class TestNodeListDateFiltering(NodesListDateFilteringMixin):
+
+    @pytest.fixture()
+    def institution(self):
+        return InstitutionFactory()
+
+    @pytest.fixture()
+    def url(self, institution):
+        return '/{}institutions/{}/nodes/?'.format(API_BASE, institution._id)
+
+    @pytest.fixture()
+    def node_may(self, user, institution):
+        node_may = ProjectFactory(creator=user, is_public = True)
+        node_may.date_created = '2016-05-01 00:00:00.000000+00:00'
+        node_may.affiliated_institutions.add(institution)
+        node_may.save()
+        return node_may
+
+    @pytest.fixture()
+    def node_june(self, user, institution):
+        node_june = ProjectFactory(creator=user, is_public = True)
+        node_june.date_created = '2016-06-01 00:00:00.000000+00:00'
+        node_june.affiliated_institutions.add(institution)
+        node_june.save()
+        return node_june
+
+    @pytest.fixture()
+    def node_july(self, user, institution):
+        node_july = ProjectFactory(creator=user, is_public = True)
+        node_july.date_created = '2016-07-01 00:00:00.000000+00:00'
+        node_july.affiliated_institutions.add(institution)
+        node_july.save()
+        return node_july

@@ -13,7 +13,6 @@ from tests import utils
 from website.files import models
 from tests.test_addons import TestFile
 from website.models import MetaSchema
-from website.project.model import ensure_schemas
 from website.prereg.utils import get_prereg_schema
 
 from scripts.migration.migrate_registration_extra import migrate
@@ -23,7 +22,6 @@ class TestMigrateRegistrationExtra(OsfTestCase):
         super(TestMigrateRegistrationExtra, self).setUp()
         self.user = UserFactory()
         self.node = ProjectFactory(creator=self.user)
-        ensure_schemas()
         self.prereg_schema = get_prereg_schema()
         self.file = self._get_test_file()
         self.data = {

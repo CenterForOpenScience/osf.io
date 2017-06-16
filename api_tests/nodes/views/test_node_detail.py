@@ -28,10 +28,7 @@ from osf_tests.factories import (
     PreprintFactory
 )
 
-from website.project.licenses import ensure_licenses
 from osf.models.licenses import NodeLicense
-
-ensure_licenses = functools.partial(ensure_licenses, warn=False)
 
 from tests.utils import assert_logs, assert_not_logs
 
@@ -1090,7 +1087,6 @@ class TestNodeLicense(ApiTestCase):
         self.private_project.add_contributor(self.user, permissions=permissions.DEFAULT_CONTRIBUTOR_PERMISSIONS, save=True)
         self.public_url = '/{}nodes/{}/'.format(API_BASE, self.public_project._id)
         self.private_url = '/{}nodes/{}/'.format(API_BASE, self.private_project._id)
-        ensure_licenses()
         self.LICENSE_NAME = 'MIT License'
         self.node_license = NodeLicense.find_one(
             Q('name', 'eq', self.LICENSE_NAME)
@@ -1145,8 +1141,6 @@ class TestNodeUpdateLicense(ApiTestCase):
 
     def setUp(self):
         super(TestNodeUpdateLicense, self).setUp()
-
-        ensure_licenses()
 
         self.admin_contributor = AuthUserFactory()
         self.rw_contributor = AuthUserFactory()

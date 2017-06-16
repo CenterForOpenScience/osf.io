@@ -97,9 +97,9 @@ class TestAuthUtils(OsfTestCase):
         assert_equal(len(mock_mail.call_args_list), 1)
         session = Session.find(
             Q('data.auth_user_id', 'eq', user._id)
-        ).sort(
+        ).order_by(
             '-date_modified'
-        ).limit(1)[0]
+        ).first()
         assert_equal(len(session.data['status']), 1)
 
     def test_get_user_by_id(self):

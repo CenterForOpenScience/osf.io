@@ -231,7 +231,7 @@ class TestDraftRegistrationViews(RegistrationsTestBase):
 
         assert_equal(res.status_code, http.ACCEPTED)
 
-        registration = Registration.find().sort('-registered_date').first()
+        registration = Registration.find().order_by('-registered_date').first()
 
         assert_false(registration.is_public)
         assert_true(registration.is_pending_embargo)

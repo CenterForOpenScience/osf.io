@@ -1,7 +1,7 @@
 import pytest
 
 from api.base.settings.defaults import API_BASE
-from api_tests.nodes.filters.test_filters import NodesListFilteringMixin
+from api_tests.nodes.filters.test_filters import NodesListFilteringMixin, NodesListDateFilteringMixin
 from osf_tests.factories import (
     AuthUserFactory,
     BookmarkCollectionFactory,
@@ -164,21 +164,6 @@ class TestUserNodesPreprintsFiltering:
     def url_base(self):
         return '/{}users/me/nodes/?filter[preprint]='.format(API_BASE)
 
-    # def setUp(self):
-    #     super(TestUserNodesPreprintsFiltering, self).setUp()
-    #     self.user = AuthUserFactory()
-    #     self.no_preprints_node = ProjectFactory(creator=self.user)
-    #     self.valid_preprint_node = ProjectFactory(creator=self.user)
-    #     self.orphaned_preprint_node = ProjectFactory(creator=self.user)
-    #     self.abandoned_preprint_node = ProjectFactory(creator=self.user)
-
-    #     self.valid_preprint = PreprintFactory(project=self.valid_preprint_node)
-    #     self.abandoned_preprint = PreprintFactory(project=self.abandoned_preprint_node, is_published=False)
-    #     self.orphaned_preprint = PreprintFactory(project=self.orphaned_preprint_node)
-    #     self.orphaned_preprint.node.preprint_file = None
-    #     self.orphaned_preprint.node.save()
-    #     self.url_base = '/{}users/me/nodes/?filter[preprint]='.format(API_BASE)
-
     def test_filter_false(self, app, user, abandoned_preprint_node, no_preprints_node, orphaned_preprint_node, url_base):
         expected_ids = [abandoned_preprint_node._id, no_preprints_node._id, orphaned_preprint_node._id]
         res = app.get('{}false'.format(url_base), auth=user.auth)
@@ -196,6 +181,14 @@ class TestUserNodesPreprintsFiltering:
 
 @pytest.mark.django_db
 class TestNodeListFiltering(NodesListFilteringMixin):
+
+    @pytest.fixture()
+    def url(self):
+        return '/{}users/me/nodes/?'.format(API_BASE)
+
+
+@pytest.mark.django_db
+class TestNodeListDateFiltering(NodesListDateFilteringMixin):
 
     @pytest.fixture()
     def url(self):

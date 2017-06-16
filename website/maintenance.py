@@ -1,20 +1,11 @@
 from datetime import timedelta
 
+import pytz
 from dateutil.parser import parse
 from django.utils import timezone
 
-from pymongo.errors import CollectionInvalid
-import pytz
+from osf.models.maintenance_state import MaintenanceState
 
-from framework.mongo import database
-
-def ensure_maintenance_collection():
-    if not database:
-        return None
-    try:
-        database.create_collection('maintenance')
-    except CollectionInvalid:
-        pass
 
 def set_maintenance(start=None, end=None):
     """Set the time period for the maintenance notice to be displayed.
@@ -25,8 +16,6 @@ def set_maintenance(start=None, end=None):
 
     If you give just an end date, start will default to 24 hours before.
     """
-    if not database:
-        return None
     start = parse(start) if start else timezone.now()
     end = parse(end) if end else start + timedelta(1)
 
@@ -40,27 +29,29 @@ def set_maintenance(start=None, end=None):
         start = end - timedelta(1)
 
     unset_maintenance()
-    # NOTE: We store isoformatted dates in order to preserve timezone information (pymongo retrieves naive datetimes)
-    database.maintenance.insert({'maintenance': True, 'start': start.isoformat(), 'end': end.isoformat()})
+
+    state = MaintenanceState.objects.create(
+        start=start,
+        end=end
+    )
+
+    return {'start': state.start, 'end': state.end}
 
 
 def get_maintenance():
     """Get the current start and end times for the maintenance state.
-    Return None for start and end if there is no maintenance state
+    Return None if there is no current maintenance state.
     """
-    if not database:
-        return None
-    maintenance_state = database.maintenance.find_one({'maintenance': True})
+    maintenance_state = MaintenanceState.objects.first()
+
     if maintenance_state:
         return {
-            'start': maintenance_state.get('start'),
-            'end': maintenance_state.get('end'),
+            'start': maintenance_state.start.isoformat(),
+            'end': maintenance_state.end.isoformat(),
         }
     else:
         return None
 
 
 def unset_maintenance():
-    if not database:
-        return None
-    database['maintenance'].remove()
+    MaintenanceState.objects.all().delete()

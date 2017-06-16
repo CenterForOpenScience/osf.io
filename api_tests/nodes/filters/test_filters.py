@@ -127,3 +127,119 @@ class NodesListFilteringMixin(object):
         res = app.get('{}bird'.format(tags_url), auth=user.auth)
         actual = [node['id'] for node in res.json['data']]
         assert [] == actual
+
+
+@pytest.mark.django_db
+class NodesListDateFilteringMixin(object):
+
+    @pytest.fixture()
+    def url(self):
+        raise NotImplementedError
+
+    @pytest.fixture()
+    def user(self):
+        return AuthUserFactory()
+
+    @pytest.fixture()
+    def node_may(self, user):
+        node_may = ProjectFactory(creator=user)
+        node_may.date_created = '2016-05-01 00:00:00.000000+00:00'
+        node_may.save()
+        return node_may
+
+    @pytest.fixture()
+    def node_june(self, user):
+        node_june = ProjectFactory(creator=user)
+        node_june.date_created = '2016-06-01 00:00:00.000000+00:00'
+        node_june.save()
+        return node_june
+
+    @pytest.fixture()
+    def node_july(self, user):
+        node_july = ProjectFactory(creator=user)
+        node_july.date_created = '2016-07-01 00:00:00.000000+00:00'
+        node_july.save()
+        return node_july
+
+    @pytest.fixture()
+    def date_created_url(self, url):
+        return '{}filter[date_created]='.format(url)
+
+    def test_node_list_date_filter(self, app, user, node_may, node_june, node_july, url, date_created_url):
+
+    #   test_date_filter_equals(self):
+        expected = []
+        res = app.get('{}{}'.format(date_created_url, '2016-04-01'), auth=user.auth)
+        actual = [node['id'] for node in res.json['data']]
+        assert expected == actual
+
+        expected = [node_may._id]
+        res = app.get('{}{}'.format(date_created_url, node_may.date_created), auth=user.auth)
+        actual = [node['id'] for node in res.json['data']]
+        assert expected == actual
+
+    #   test_date_filter_gt(self):
+        res_url = '{}filter[date_created][gt]='.format(url)
+
+        expected = []
+        res = app.get('{}{}'.format(res_url, '2016-08-01'), auth=user.auth)
+        actual = [node['id'] for node in res.json['data']]
+        assert expected == actual
+
+        expected = [node_june._id, node_july._id]
+        res = app.get('{}{}'.format(res_url, '2016-05-01'), auth=user.auth)
+        actual = [node['id'] for node in res.json['data']]
+        assert set(expected) == set(actual)
+
+    #   test_date_filter_gte(self):
+        res_url = '{}filter[date_created][gte]='.format(url)
+
+        expected = []
+        res = app.get('{}{}'.format(res_url, '2016-08-01'), auth=user.auth)
+        actual = [node['id'] for node in res.json['data']]
+        assert expected == actual
+
+        expected = [node_may._id, node_june._id, node_july._id]
+        res = app.get('{}{}'.format(res_url, '2016-05-01'), auth=user.auth)
+        actual = [node['id'] for node in res.json['data']]
+        assert set(expected) == set(actual)
+
+    #   test_date_fitler_lt(self):
+        res_url = '{}filter[date_created][lt]='.format(url)
+
+        expected = []
+        res = app.get('{}{}'.format(res_url, '2016-05-01'), auth=user.auth)
+        actual = [node['id'] for node in res.json['data']]
+        assert expected == actual
+
+        expected = [node_may._id, node_june._id]
+        res = app.get('{}{}'.format(res_url, '2016-07-01'), auth=user.auth)
+        actual = [node['id'] for node in res.json['data']]
+        assert set(expected) == set(actual)
+
+    #   test_date_filter_lte(self):
+        res_url = '{}filter[date_created][lte]='.format(url)
+
+        expected = []
+        res = app.get('{}{}'.format(res_url, '2016-04-01'), auth=user.auth)
+        actual = [node['id'] for node in res.json['data']]
+        assert expected == actual
+
+        expected = [node_may._id, node_june._id, node_july._id]
+        res = app.get('{}{}'.format(res_url, '2016-07-01'), auth=user.auth)
+        actual = [node['id'] for node in res.json['data']]
+        assert set(expected) == set(actual)
+
+    #   test_date_filter_eq(self):
+        res_url = '{}filter[date_created][eq]='.format(url)
+
+        expected = []
+        res = app.get('{}{}'.format(res_url, '2016-04-01'), auth=user.auth)
+        actual = [node['id'] for node in res.json['data']]
+        assert expected == actual
+
+        expected = [node_may._id]
+        res = app.get('{}{}'.format(res_url, node_may.date_created), auth=user.auth)
+        actual = [node['id'] for node in res.json['data']]
+        assert expected == actual
+
