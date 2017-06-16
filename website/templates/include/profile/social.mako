@@ -157,13 +157,12 @@
     </div>
 
     <div data-bind="if: mode() === 'view'">
-
         <table class="table" data-bind="if: hasValues()">
             <tbody>
                 <tr data-bind="if: hasProfileWebsites()">
                     <td data-bind="visible: profileWebsites().length > 1">Personal websites</td>
                     <td data-bind="visible: profileWebsites().length === 1">Personal website</td>
-                    <td data-bind="foreach: profileWebsites"><a data-bind="attr: {href: $data}, text: $data"></a><br></td>
+                    <td colspan="2" data-bind="foreach: profileWebsites"><a data-bind="attr: {href: $data}, text: $data"></a><br></td>
                 </tr>
             </tbody>
 
