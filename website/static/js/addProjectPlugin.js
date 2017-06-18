@@ -82,6 +82,9 @@ var AddProject = {
             if (self.isAdding()) {
                 return;
             }
+            if (self.newProjectName().length === 0) {
+                return;
+            }
             self.isAdding(true);
             var url;
             var data;
