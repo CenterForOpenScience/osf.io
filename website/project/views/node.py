@@ -1124,8 +1124,9 @@ def fork_pointer(auth, node, **kwargs):
     """
     NodeRelation = apps.get_model('osf.NodeRelation')
 
-    pointer_id = request.json.get('pointerId')
-    pointer = NodeRelation.load(pointer_id)
+    linked_node_id = request.json.get('pointerId')
+    linked_node = Node.load(linked_node_id)
+    pointer = NodeRelation.objects.filter(child=linked_node, is_node_link=True, parent=node).first()
 
     if pointer is None:
         # TODO: Change this to 404?
