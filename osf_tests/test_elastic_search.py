@@ -981,3 +981,16 @@ class TestSearchFiles(OsfTestCase):
         quickfiles_root.append_file('GreenLight.mp3')
         find = query_file('GreenLight.mp3')['results']
         assert_equal(len(find), 1)
+
+    def test_quickfiles_spam_user_files_do_not_appear_in_search(self):
+        quickfiles = QuickFiles.objects.get(creator=self.node.creator)
+        quickfiles_osf_storage = quickfiles.get_addon('osfstorage')
+        quickfiles_root = quickfiles_osf_storage.get_root()
+        quickfiles_root.append_file('GreenLight.mp3')
+
+        self.node.creator.disable_account()
+        self.node.creator.add_system_tag('spam_confirmed')
+        self.node.creator.save()
+
+        find = query_file('GreenLight.mp3')['results']
+        assert_equal(len(find), 0)
