@@ -218,6 +218,9 @@ $(document).ready(function () {
             var url = nodeApiUrl + 'tags/';
             var data = {tag: tag};
             var request = $osf.postJSON(url, data);
+            request.success(function() {
+                window.contextVars.node.tags.push(tag);
+            });
             request.fail(function(xhr, textStatus, error) {
                 Raven.captureMessage('Failed to add tag', {
                     extra: {
@@ -233,6 +236,9 @@ $(document).ready(function () {
                 return false;
             }
             var request = $osf.ajaxJSON('DELETE', url, {'data': {'tag': tag}});
+            request.success(function() {
+                window.contextVars.node.tags.splice(window.contextVars.node.tags.indexOf(tag), 1);
+            });
             request.fail(function(xhr, textStatus, error) {
                 // Suppress "tag not found" errors, as the end result is what the user wanted (tag is gone)- eg could be because two people were working at same time
                 if (xhr.status !== 409) {
