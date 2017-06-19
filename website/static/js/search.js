@@ -280,11 +280,18 @@ var ViewModel = function(params) {
 
     self.filter = function(alias) {
         self.searchStarted(false);
-        self.results([]);
         self.currentPage(1);
         self.category(alias);
+        var win = null;
         if (alias.name === 'SHARE') {
-            var win = window.open(window.contextVars.shareUrl + 'discover?' + $.param({q: self.query()}), '_blank');
+            win = window.open(window.contextVars.shareUrl + 'discover?' + $.param({q: self.query()}), '_blank');
+            win.opener = null;
+            win.focus();
+        } else if (alias.name === 'preprint') {
+            win = window.open(
+                window.location.origin + '/preprints/discover?' + $.param(
+                    {q: self.query(), provider: 'OSF'}
+                ), '_blank');
             win.opener = null;
             win.focus();
         } else {
@@ -398,22 +405,23 @@ var ViewModel = function(params) {
             self.licenses(licenseCounts);
 
             data.results.forEach(function(result){
-                if(result.category === 'user'){
+                if (result.category === 'user') {
                     if ($.inArray(result.url, self.urlLists()) === -1) {
                         self.results.push(new User(result));
                         self.urlLists.push(result.url);
                     }
                 }
                 else {
-                    if(typeof result.url !== 'undefined'){
+                    if (typeof result.url !== 'undefined') {
                         result.wikiUrl = result.url+'wiki/';
                         result.filesUrl = result.url+'files/';
                     }
-
                     self.results.push(result);
                 }
-                if(result.category === 'registration'){
+                if (result.category === 'registration') {
                     result.dateRegistered = new $osf.FormattableDate(result.date_registered);
+                } else if (result.category == 'preprint') {
+                    result.preprintUrl = result.preprint_url;
                 }
             });
 
