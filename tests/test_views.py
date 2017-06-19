@@ -2880,7 +2880,7 @@ class TestPointerViews(OsfTestCase):
         self.project.add_pointer(node, auth=self.consolidate_auth)
         self.app.post_json(
             url,
-            {'pointerId': node._id},
+            {'nodeId': node._id},
             auth=self.user.auth
         )
 
@@ -2894,7 +2894,7 @@ class TestPointerViews(OsfTestCase):
         url = self.project.api_url + 'pointer/fork/'
         res = self.app.post_json(
             url,
-            {'pointerId': None},
+            {'nodeId': None},
             auth=self.user.auth,
             expect_errors=True
         )
@@ -2904,7 +2904,7 @@ class TestPointerViews(OsfTestCase):
         url = self.project.api_url + 'pointer/fork/'
         res = self.app.post_json(
             url,
-            {'pointerId': 'somefakeid'},
+            {'nodeId': 'somefakeid'},
             auth=self.user.auth,
             expect_errors=True
         )
