@@ -2877,10 +2877,10 @@ class TestPointerViews(OsfTestCase):
     def test_fork_pointer(self):
         url = self.project.api_url + 'pointer/fork/'
         node = NodeFactory(creator=self.user)
-        pointer = self.project.add_pointer(node, auth=self.consolidate_auth)
+        self.project.add_pointer(node, auth=self.consolidate_auth)
         self.app.post_json(
             url,
-            {'pointerId': pointer._id},
+            {'pointerId': node._id},
             auth=self.user.auth
         )
 
