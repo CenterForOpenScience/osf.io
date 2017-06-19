@@ -7,6 +7,7 @@ import uuid
 from copy import deepcopy
 from flask import Request as FlaskRequest
 from framework import analytics
+from os.path import splitext
 
 # OSF imports
 import itsdangerous
@@ -679,13 +680,44 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
             node.save()
 
         # - projects where the user was the creator
-        user.created.filter(is_bookmark_collection=False).update(creator=self)
+        user.created.filter(is_bookmark_collection=False).exclude(type='osf.quickfiles').update(creator=self)
 
         # - file that the user has checked_out, import done here to prevent import error
         from osf.models import BaseFileNode
         for file_node in BaseFileNode.files_checked_out(user=user):
             file_node.checkout = self
             file_node.save()
+
+        # - move files in the merged user's quickfiles node, checking for name conflicts
+        from osf.models import QuickFiles
+        primary_quickfiles = QuickFiles.objects.get(creator=self)
+        merging_user_quickfiles = QuickFiles.objects.get(creator=user)
+
+        files_in_merging_user_quickfiles = merging_user_quickfiles.files.filter(type='osf.osfstoragefile')
+        for merging_user_file in files_in_merging_user_quickfiles:
+            if BaseFileNode.objects.filter(node=primary_quickfiles, name=merging_user_file.name, type='osf.osfstoragefile').exists():
+                digit = 1
+                split_filename = splitext(merging_user_file.name)
+                name_without_extension = split_filename[0]
+                extension = split_filename[1]
+                found_digit_in_parens = re.findall('(?<=\()(\d)(?=\))', name_without_extension)
+                if found_digit_in_parens:
+                    found_digit = int(found_digit_in_parens[0])
+                    digit = found_digit + 1
+                    name_without_extension = name_without_extension.replace('({})'.format(found_digit), '').strip()
+                new_name_format = '{} ({}){}'
+                new_name = new_name_format.format(name_without_extension, digit, extension)
+
+                # check if new name conflicts, update til it does not
+                while BaseFileNode.objects.filter(node=primary_quickfiles, name=new_name, type='osf.osfstoragefile').exists():
+                    digit += 1
+                    new_name = new_name_format.format(name_without_extension, digit, extension)
+
+                merging_user_file.name = new_name
+                merging_user_file.save()
+
+            merging_user_file.node = primary_quickfiles
+            merging_user_file.save()
 
         # finalize the merge
 
