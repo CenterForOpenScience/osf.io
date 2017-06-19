@@ -3,6 +3,7 @@ import pytest
 from framework.auth.core import Auth
 from osf.models import QuickFiles, BaseFileNode
 from api_tests.utils import create_test_file
+from tests.utils import assert_items_equal
 
 from . import factories
 from website.exceptions import NodeStateError
@@ -118,13 +119,13 @@ class TestQuickFiles:
         user.save()
 
         stored_files = BaseFileNode.objects.filter(type='osf.osfstoragefile')
-        ideal_filenames = ['Woo.pdf', 'Woo(1).pdf', 'Woo(2).pdf']
+        expected_filenames = ['Woo.pdf', 'Woo (1).pdf', 'Woo (2).pdf']
         actual_filenames = [stored_file.name for stored_file in stored_files]
 
-        assert sorted(actual_filenames) == sorted(ideal_filenames)
+        assert_items_equal(actual_filenames, expected_filenames)
 
     def test_quickfiles_moves_files_on_triple_merge_with_name_conflict_with_digit(self, user, quickfiles):
-        name = 'Woo(1).pdf'
+        name = 'Woo (1).pdf'
         other_user = factories.UserFactory()
         third_user = factories.UserFactory()
 
@@ -139,17 +140,16 @@ class TestQuickFiles:
         user.save()
 
         stored_files = BaseFileNode.objects.filter(type='osf.osfstoragefile')
-        ideal_filenames = ['Woo(1).pdf', 'Woo(2).pdf', 'Woo(3).pdf']
+        expected_filenames = ['Woo (1).pdf', 'Woo (2).pdf', 'Woo (3).pdf']
         actual_filenames = [stored_file.name for stored_file in stored_files]
-
-        assert sorted(actual_filenames) == sorted(ideal_filenames)
+        assert_items_equal(actual_filenames, expected_filenames)
 
     def test_quickfiles_moves_destination_quickfiles_has_weird_numbers(self, user, quickfiles):
         other_user = factories.UserFactory()
         third_user = factories.UserFactory()
 
-        create_test_file(quickfiles, user, filename='Woo(1).pdf')
-        create_test_file(quickfiles, user, filename='Woo(3).pdf')
+        create_test_file(quickfiles, user, filename='Woo (1).pdf')
+        create_test_file(quickfiles, user, filename='Woo (3).pdf')
 
         create_test_file(QuickFiles.objects.get(creator=other_user), other_user, filename='Woo.pdf')
         create_test_file(QuickFiles.objects.get(creator=third_user), other_user, filename='Woo.pdf')
@@ -161,7 +161,7 @@ class TestQuickFiles:
         user.save()
 
         stored_files = BaseFileNode.objects.filter(type='osf.osfstoragefile', node=quickfiles)
-        ideal_filenames = ['Woo.pdf', 'Woo(1).pdf', 'Woo(2).pdf', 'Woo(3).pdf']
+        expected_filenames = ['Woo.pdf', 'Woo (1).pdf', 'Woo (2).pdf', 'Woo (3).pdf']
         actual_filenames = [stored_file.name for stored_file in stored_files]
 
-        assert sorted(actual_filenames) == sorted(ideal_filenames)
+        assert_items_equal(actual_filenames, expected_filenames)
