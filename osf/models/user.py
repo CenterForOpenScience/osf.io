@@ -9,7 +9,6 @@ from flask import Request as FlaskRequest
 from framework import analytics
 
 # OSF imports
-import framework.mongo
 import itsdangerous
 import pytz
 from dirtyfields import DirtyFieldsMixin
@@ -1363,9 +1362,8 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
             self.affiliated_institutions.remove(inst)
             return True
 
-    def get_activity_points(self, db=None):
-        db = db or framework.mongo.database
-        return analytics.get_total_activity_count(self._primary_key, db=db)
+    def get_activity_points(self):
+        return analytics.get_total_activity_count(self._id)
 
     def get_or_create_cookie(self, secret=None):
         """Find the cookie for the given user

@@ -6,7 +6,7 @@ from django.utils import timezone
 from framework.auth import Auth
 from framework.exceptions import HTTPError
 from nose.tools import *  # noqa (PEP8 asserts)
-from tests.factories import ProjectFactory, UserFactory
+from osf_tests.factories import ProjectFactory, UserFactory
 from tests.utils import mock_auth
 from addons.base import exceptions
 from addons.base.testing.utils import MockFolder

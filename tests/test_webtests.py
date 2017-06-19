@@ -12,7 +12,7 @@ import mock
 from nose.tools import *  # flake8: noqa (PEP8 asserts)
 import re
 
-from framework.mongo.utils import to_mongo_key
+from addons.wiki.utils import to_mongo_key
 from framework.auth import exceptions as auth_exc
 from framework.auth.core import Auth
 from tests.base import OsfTestCase

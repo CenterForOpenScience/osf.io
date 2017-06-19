@@ -2,13 +2,6 @@
 
 from flask import Request as FlaskRequest
 from flask import request
-from modularodm.storedobject import StoredObject as GenericStoredObject
-from modularodm.ext.concurrency import with_proxies, proxied_members
-
-from bson import ObjectId
-from .handlers import client, database
-
-
 from api.base.api_globals import api_globals
 
 
@@ -49,16 +42,3 @@ def get_request_and_user_id():
         # admin module can return a user w/o an id
         user_id = getattr(req.user, '_id', None)
     return req, user_id
-
-
-@with_proxies(proxied_members, get_cache_key)
-class StoredObject(GenericStoredObject):
-    pass
-
-
-__all__ = [
-    'StoredObject',
-    'ObjectId',
-    'client',
-    'database',
-]

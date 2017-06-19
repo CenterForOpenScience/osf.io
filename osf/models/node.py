@@ -25,8 +25,8 @@ from framework import status
 from framework.celery_tasks.handlers import enqueue_task
 from framework.exceptions import PermissionsError
 from framework.mongo import DummyRequest, get_request_and_user_id
-from framework.mongo.utils import to_mongo_key
 from framework.sentry import log_exception
+from addons.wiki.utils import to_mongo_key
 from osf.exceptions import ValidationValueError
 from osf.models.citation import AlternativeCitation
 from osf.models.contributor import (Contributor, RecentlyAddedContributor,
