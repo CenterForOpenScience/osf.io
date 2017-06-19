@@ -6,7 +6,7 @@ from osf_tests.factories import (
     ProjectFactory,
     RegistrationFactory,
     AuthUserFactory,
-    AlternativeCitationFactory
+    AlternativeCitationFactory,
 )
 from rest_framework import exceptions
 from website.util import permissions
