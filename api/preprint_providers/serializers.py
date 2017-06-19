@@ -24,6 +24,7 @@ class PreprintProviderSerializer(JSONAPISerializer):
     subjects_acceptable = ser.JSONField(required=False, allow_null=True)
     footer_links = ser.CharField(required=False)
     share_source = ser.CharField(read_only=True)
+    email_support = ser.CharField(required=False, allow_null=True)
     allow_submissions = DevOnly(ser.BooleanField(read_only=True))
     additional_providers = DevOnly(ser.ListField(child=ser.CharField(), read_only=True))
 
@@ -62,10 +63,6 @@ class PreprintProviderSerializer(JSONAPISerializer):
         min_version='2.0', max_version='2.3'
     )
     email_contact = ShowIfVersion(
-        ser.CharField(required=False, allow_null=True),
-        min_version='2.0', max_version='2.3'
-    )
-    email_support = ShowIfVersion(
         ser.CharField(required=False, allow_null=True),
         min_version='2.0', max_version='2.3'
     )
