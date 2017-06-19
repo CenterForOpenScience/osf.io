@@ -143,7 +143,7 @@
                 <tr>
                     <td>Emails</td>
                     <td>
-                        {% for email in emails %}
+                        {% for email in user.emails %}
                             <li>
                                 {% if email == user.username %}
                                     <strong>Primary: </strong>
