@@ -1,7 +1,8 @@
 import pytest
 
 from framework.auth.core import Auth
-from osf.models.quickfiles import QuickFiles
+from osf.models import QuickFiles, BaseFileNode
+from api_tests.utils import create_test_file
 
 from . import factories
 from website.exceptions import NodeStateError
@@ -86,3 +87,81 @@ class TestQuickFiles:
 
         quickfiles.refresh_from_db()
         assert new_name in quickfiles.title
+
+    def test_quickfiles_moves_files_on_merge(self, user, quickfiles):
+        create_test_file(quickfiles, user, filename='Guerrillas_of_Destiny.pdf')
+        other_user = factories.UserFactory()
+        other_quickfiles = QuickFiles.objects.get(creator=other_user)
+        create_test_file(other_quickfiles, user, filename='Young_Bucks.pdf')
+
+        user.merge_user(other_user)
+        user.save()
+
+        stored_files = BaseFileNode.objects.filter(type='osf.osfstoragefile')
+        assert stored_files.count() == 2
+        for stored_file in stored_files:
+            assert stored_file.node == quickfiles
+
+    def test_quickfiles_moves_files_on_triple_merge_with_name_conflict(self, user, quickfiles):
+        name = 'Woo.pdf'
+        other_user = factories.UserFactory()
+        third_user = factories.UserFactory()
+
+        create_test_file(quickfiles, user, filename=name)
+        create_test_file(QuickFiles.objects.get(creator=other_user), other_user, filename=name)
+        create_test_file(QuickFiles.objects.get(creator=third_user), third_user, filename=name)
+
+        user.merge_user(other_user)
+        user.save()
+
+        user.merge_user(third_user)
+        user.save()
+
+        stored_files = BaseFileNode.objects.filter(type='osf.osfstoragefile')
+        ideal_filenames = ['Woo.pdf', 'Woo(1).pdf', 'Woo(2).pdf']
+        actual_filenames = [stored_file.name for stored_file in stored_files]
+
+        assert sorted(actual_filenames) == sorted(ideal_filenames)
+
+    def test_quickfiles_moves_files_on_triple_merge_with_name_conflict_with_digit(self, user, quickfiles):
+        name = 'Woo(1).pdf'
+        other_user = factories.UserFactory()
+        third_user = factories.UserFactory()
+
+        create_test_file(quickfiles, user, filename=name)
+        create_test_file(QuickFiles.objects.get(creator=other_user), other_user, filename=name)
+        create_test_file(QuickFiles.objects.get(creator=third_user), third_user, filename=name)
+
+        user.merge_user(other_user)
+        user.save()
+
+        user.merge_user(third_user)
+        user.save()
+
+        stored_files = BaseFileNode.objects.filter(type='osf.osfstoragefile')
+        ideal_filenames = ['Woo(1).pdf', 'Woo(2).pdf', 'Woo(3).pdf']
+        actual_filenames = [stored_file.name for stored_file in stored_files]
+
+        assert sorted(actual_filenames) == sorted(ideal_filenames)
+
+    def test_quickfiles_moves_destination_quickfiles_has_weird_numbers(self, user, quickfiles):
+        other_user = factories.UserFactory()
+        third_user = factories.UserFactory()
+
+        create_test_file(quickfiles, user, filename='Woo(1).pdf')
+        create_test_file(quickfiles, user, filename='Woo(3).pdf')
+
+        create_test_file(QuickFiles.objects.get(creator=other_user), other_user, filename='Woo.pdf')
+        create_test_file(QuickFiles.objects.get(creator=third_user), other_user, filename='Woo.pdf')
+
+        user.merge_user(other_user)
+        user.save()
+
+        user.merge_user(third_user)
+        user.save()
+
+        stored_files = BaseFileNode.objects.filter(type='osf.osfstoragefile', node=quickfiles)
+        ideal_filenames = ['Woo.pdf', 'Woo(1).pdf', 'Woo(2).pdf', 'Woo(3).pdf']
+        actual_filenames = [stored_file.name for stored_file in stored_files]
+
+        assert sorted(actual_filenames) == sorted(ideal_filenames)

@@ -5,9 +5,10 @@ import urllib
 import urlparse
 import uuid
 from copy import deepcopy
+from os.path import splitext
+
 from flask import Request as FlaskRequest
 from framework import analytics
-from os.path import splitext
 
 # OSF imports
 import itsdangerous
