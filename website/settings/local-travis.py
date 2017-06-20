@@ -20,6 +20,20 @@ DOMAIN = PROTOCOL + 'localhost:5000/'
 API_DOMAIN = PROTOCOL + 'localhost:8000/'
 ENABLE_INSTITUTIONS = True
 
+PREPRINT_PROVIDER_DOMAINS = {
+    'enabled': False,
+    'prefix': 'http://local.',
+    'suffix': ':4200/'
+}
+USE_EXTERNAL_EMBER = True
+EXTERNAL_EMBER_APPS = {
+    'preprints': {
+        'url': '/preprints/',
+        'server': 'http://localhost:4200',
+        'path': os.environ.get('HOME') + '/preprints/'
+    }
+}
+
 SEARCH_ENGINE = 'elastic'
 
 USE_EMAIL = False
@@ -73,3 +87,6 @@ KEEN = {
 NEW_AND_NOTEWORTHY_LINKS_NODE = 'helloo'
 POPULAR_LINKS_NODE = 'hiyah'
 POPULAR_LINKS_REGISTRATIONS = 'woooo'
+
+EZID_USERNAME = 'testfortravisnotreal'
+EZID_PASSWORD = 'testfortravisnotreal'

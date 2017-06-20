@@ -22,11 +22,12 @@ from api.base.utils import get_user_auth, is_deprecated
 class ContributorOrPublic(permissions.BasePermission):
 
     def has_object_permission(self, request, view, obj):
+        from api.nodes.views import NodeProvider
         if isinstance(obj, BaseAddonSettings):
             obj = obj.owner
-        if isinstance(obj, PreprintService):
+        if isinstance(obj, (NodeProvider, PreprintService)):
             obj = obj.node
-        assert isinstance(obj, (AbstractNode, NodeRelation)), 'obj must be an Node, NodeRelation, PreprintService, or AddonSettings; got {}'.format(obj)
+        assert isinstance(obj, (AbstractNode, NodeRelation)), 'obj must be an Node, NodeProvider, NodeRelation, PreprintService, or AddonSettings; got {}'.format(obj)
         auth = get_user_auth(request)
         if request.method in permissions.SAFE_METHODS:
             return obj.is_public or obj.can_view(auth)

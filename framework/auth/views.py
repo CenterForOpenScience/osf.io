@@ -1,20 +1,18 @@
 # -*- coding: utf-8 -*-
 import furl
 import httplib as http
-import re
 import urllib
 
 import markupsafe
 from django.utils import timezone
 from flask import request
-import uuid
 
 from modularodm import Q
 from modularodm.exceptions import NoResultsFound
 from modularodm.exceptions import ValidationError
 from modularodm.exceptions import ValidationValueError
 
-from framework import forms, status
+from framework import forms, sentry, status
 from framework import auth as framework_auth
 from framework.auth import exceptions
 from framework.auth import cas, campaigns
@@ -29,13 +27,12 @@ from framework.exceptions import HTTPError
 from framework.flask import redirect  # VOL-aware redirect
 from framework.sessions.utils import remove_sessions_for_user, remove_session
 from framework.sessions import get_session
+from osf.models import OSFUser as User
 from website import settings, mails, language
-
-from website.util.time import throttle_period_expired
-from website.models import User
 from website.util import web_url_for
+from website.util.time import throttle_period_expired
 from website.util.sanitize import strip_html
-
+from osf.models.preprint_provider import PreprintProvider
 
 @block_bing_preview
 @collect_auth
@@ -262,8 +259,14 @@ def login_and_register_handler(auth, login=True, campaign=None, next_url=None, l
                         else:
                             data['next_url'] = destination
         else:
-            # invalid campaign
-            raise HTTPError(http.BAD_REQUEST)
+            # invalid campaign, inform sentry and redirect to non-campaign sign up or sign in
+            redirect_view = 'auth_login' if login else 'auth_register'
+            data['status_code'] = http.FOUND
+            data['next_url'] = web_url_for(redirect_view, campaigns=None, next=next_url)
+            data['campaign'] = None
+            sentry.log_message(
+                '{} is not a valid campaign. Please add it if this is a new one'.format(campaign)
+            )
     # login or register with next parameter
     elif next_url:
         if logout:
@@ -368,6 +371,11 @@ def auth_register(auth):
         context['login_url'] = destination
         # "Login through your institution" link
         context['institution_login_url'] = cas.get_login_url(data['next_url'], campaign='institution')
+        context['preprint_campaigns'] = {k._id + '-preprints': {
+            'id': k._id,
+            'name': k.name,
+            'logo_path': settings.PREPRINTS_ASSETS + k._id + '/square_color_no_transparent.png'
+        } for k in PreprintProvider.objects.all() if k._id != 'osf'}
         context['campaign'] = data['campaign']
         return context, http.OK
     # redirect to url
@@ -379,30 +387,58 @@ def auth_register(auth):
 
     raise HTTPError(http.BAD_REQUEST)
 
-
-def auth_logout(redirect_url=None):
+@collect_auth
+def auth_logout(auth, redirect_url=None, next_url=None):
     """
     Log out, delete current session and remove OSF cookie.
-    Redirect to CAS logout which clears sessions and cookies for CAS and Shibboleth (if any).
-    Final landing page may vary.
+    If next url is valid and auth is logged in, redirect to CAS logout endpoint with the current request url as service.
+    If next url is valid and auth is logged out, redirect directly to the next url.
+    Otherwise, redirect to CAS logout or login endpoint with redirect url as service.
+    The CAS logout endpoint which clears sessions and cookies for CAS and Shibboleth.
     HTTP Method: GET
 
-    :param redirect_url: url to redirect user after CAS logout, default is 'goodbye'
-    :return:
+    Note 1: OSF tells CAS where it wants to be redirected back after successful logout. However, CAS logout flow may not
+    respect this url if user is authenticated through remote identity provider.
+    Note 2: The name of the query parameter is `next`, `next_url` is used to avoid python reserved word.
+
+    :param auth: the authentication context
+    :param redirect_url: url to DIRECTLY redirect after CAS logout, default is `OSF/goodbye`
+    :param next_url: url to redirect after OSF logout, which is after CAS logout
+    :return: the response
     """
 
-    # OSF tells CAS where it wants to be redirected back after successful logout.
-    # However, CAS logout flow may not respect this url if user is authenticated through remote identity provider.
-    redirect_url = redirect_url or request.args.get('redirect_url') or web_url_for('goodbye', _absolute=True)
-    # OSF log out, remove current OSF session
-    osf_logout()
-    # set redirection to CAS log out (or log in if `reauth` is present)
-    if 'reauth' in request.args:
-        cas_endpoint = cas.get_login_url(redirect_url)
+    # For `?next=`:
+    #   takes priority
+    #   the url must be a valid OSF next url,
+    #   the full request url is set to CAS service url,
+    #   does not support `reauth`
+    # For `?redirect_url=`:
+    #   the url must be valid CAS service url
+    #   the redirect url is set to CAS service url.
+    #   support `reauth`
+
+    # logout/?next=<an OSF verified next url>
+    next_url = next_url or request.args.get('next', None)
+    if next_url and validate_next_url(next_url):
+        cas_logout_endpoint = cas.get_logout_url(request.url)
+        if auth.logged_in:
+            resp = redirect(cas_logout_endpoint)
+        else:
+            resp = redirect(next_url)
+    # logout/ or logout/?redirect_url=<a CAS verified redirect url>
     else:
-        cas_endpoint = cas.get_logout_url(redirect_url)
-    resp = redirect(cas_endpoint)
-    # delete OSF cookie
+        redirect_url = redirect_url or request.args.get('redirect_url') or web_url_for('goodbye', _absolute=True)
+        # set redirection to CAS log out (or log in if `reauth` is present)
+        if 'reauth' in request.args:
+            cas_endpoint = cas.get_login_url(redirect_url)
+        else:
+            cas_endpoint = cas.get_logout_url(redirect_url)
+        resp = redirect(cas_endpoint)
+
+    # perform OSF logout
+    osf_logout()
+
+    # set response to delete OSF cookie
     resp.delete_cookie(settings.COOKIE_NAME, domain=settings.OSF_COOKIE_DOMAIN)
 
     return resp
@@ -428,7 +464,7 @@ def auth_email_logout(token, user):
             'message_long': 'The private link you used is expired.'
         })
     try:
-        user_merge = User.find_one(Q('emails', 'eq', unconfirmed_email))
+        user_merge = User.find_one(Q('emails__address', 'eq', unconfirmed_email))
     except NoResultsFound:
         user_merge = False
     if user_merge:
@@ -473,7 +509,11 @@ def external_login_confirm_email_get(auth, uid, token):
         # if it is the expected user
         new = request.args.get('new', None)
         if destination in campaigns.get_campaigns():
-            return redirect(campaigns.campaign_url_for(destination))
+            # external domain takes priority
+            campaign_url = campaigns.external_campaign_url_for(destination)
+            if not campaign_url:
+                campaign_url = campaigns.campaign_url_for(destination)
+            return redirect(campaign_url)
         if new:
             status.push_status_message(language.WELCOME_MESSAGE, kind='default', jumbotron=True, trust=True)
         return redirect(web_url_for('dashboard'))
@@ -498,8 +538,8 @@ def external_login_confirm_email_get(auth, uid, token):
     if not user.is_registered:
         user.register(email)
 
-    if email.lower() not in user.emails:
-        user.emails.append(email.lower())
+    if not user.emails.filter(address=email.lower()):
+        user.emails.create(address=email.lower())
 
     user.date_last_logged_in = timezone.now()
     user.external_identity[provider][provider_id] = 'VERIFIED'
@@ -563,7 +603,7 @@ def confirm_email_get(token, auth=None, **kwargs):
                 return redirect(campaigns.campaign_url_for(campaign))
 
             # go to home page with push notification
-            if len(auth.user.emails) == 1 and len(auth.user.email_verifications) == 0:
+            if auth.user.emails.count() == 1 and len(auth.user.email_verifications) == 0:
                 status.push_status_message(language.WELCOME_MESSAGE, kind='default', jumbotron=True, trust=True)
             if token in auth.user.email_verifications:
                 status.push_status_message(language.CONFIRM_ALTERNATE_EMAIL_ERROR, kind='danger', trust=True)
@@ -687,7 +727,7 @@ def send_confirm_email(user, email, renew=False, external_id_provider=None, exte
     )
 
     try:
-        merge_target = User.find_one(Q('emails', 'eq', email))
+        merge_target = User.find_one(Q('emails__address', 'eq', email))
     except NoResultsFound:
         merge_target = None
 
@@ -894,6 +934,7 @@ def external_login_email_post():
     fullname = session.data['auth_user_fullname']
     service_url = session.data['service_url']
 
+    # TODO: @cslzchen use user tags instead of destination
     destination = 'dashboard'
     for campaign in campaigns.get_campaigns():
         if campaign != 'institution':
@@ -902,9 +943,10 @@ def external_login_email_post():
             # `urlparse/urllib` to generate service url. `furl` handles `urlparser/urllib` generated urls while ` but
             # not vice versa.
             campaign_url = furl.furl(campaigns.campaign_url_for(campaign)).url
+            external_campaign_url = furl.furl(campaigns.external_campaign_url_for(campaign)).url
             if campaigns.is_proxy_login(campaign):
                 # proxy campaigns: OSF Preprints and branded ones
-                if check_service_url_with_proxy_campaign(service_url, campaign_url):
+                if check_service_url_with_proxy_campaign(str(service_url), campaign_url, external_campaign_url):
                     destination = campaign
                     # continue to check branded preprints even service url matches osf preprints
                     if campaign != 'osf-preprints':
@@ -956,7 +998,7 @@ def external_login_email_post():
             external_identity[external_id_provider][external_id] = 'CREATE'
             user = User.create_unconfirmed(
                 username=clean_email,
-                password=str(uuid.uuid4()),
+                password=None,
                 fullname=fullname,
                 external_identity=external_identity,
                 campaign=None
@@ -1015,23 +1057,42 @@ def validate_next_url(next_url):
     # like http:// or https:// depending on the use of SSL on the page already.
     if next_url.startswith('//'):
         return False
-    # only OSF, MFR and CAS domains are allowed
-    if not (next_url[0] == '/' or
-            next_url.startswith(settings.DOMAIN) or
-            next_url.startswith(settings.CAS_SERVER_URL) or
-            next_url.startswith(settings.MFR_SERVER_URL)):
-        return False
-    return True
+
+    # only OSF, MFR, CAS and Branded Preprints domains are allowed
+    if next_url[0] == '/' or next_url.startswith(settings.DOMAIN):
+        # OSF
+        return True
+    if next_url.startswith(settings.CAS_SERVER_URL) or next_url.startswith(settings.MFR_SERVER_URL):
+        # CAS or MFR
+        return True
+    for url in campaigns.get_external_domains():
+        # Branded Preprints Phase 2
+        if next_url.startswith(url):
+            return True
+
+    return False
 
 
-def check_service_url_with_proxy_campaign(service_url, campaign_url):
+def check_service_url_with_proxy_campaign(service_url, campaign_url, external_campaign_url=None):
     """
     Check if service url belongs to proxy campaigns: OSF Preprints and branded ones.
     Both service_url and campaign_url are parsed using `furl` encoding scheme.
 
     :param service_url: the `furl` formatted service url
     :param campaign_url: the `furl` formatted campaign url
+    :param external_campaign_url: the `furl` formatted external campaign url
     :return: the matched object or None
     """
-    regex = '^' + settings.DOMAIN + 'login/?\\?next=' + campaign_url
-    return re.match(regex, service_url)
+
+    prefix_1 = settings.DOMAIN + 'login/?next=' + campaign_url
+    prefix_2 = settings.DOMAIN + 'login?next=' + campaign_url
+
+    valid = service_url.startswith(prefix_1) or service_url.startswith(prefix_2)
+    valid_external = False
+
+    if external_campaign_url:
+        prefix_3 = settings.DOMAIN + 'login/?next=' + external_campaign_url
+        prefix_4 = settings.DOMAIN + 'login?next=' + external_campaign_url
+        valid_external = service_url.startswith(prefix_3) or service_url.startswith(prefix_4)
+
+    return valid or valid_external

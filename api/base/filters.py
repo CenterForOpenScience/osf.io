@@ -9,7 +9,7 @@ from api.base.exceptions import (InvalidFilterComparisonType,
                                  InvalidFilterError, InvalidFilterFieldError,
                                  InvalidFilterMatchType, InvalidFilterOperator,
                                  InvalidFilterValue)
-from api.base.serializers import RelationshipField, TargetField
+from api.base.serializers import RelationshipField, ShowIfVersion, TargetField
 from dateutil import parser as date_parser
 from django.core.exceptions import ValidationError
 from django.db.models import QuerySet as DjangoQuerySet
@@ -18,6 +18,7 @@ from modularodm import Q as MQ
 from modularodm.query import queryset as modularodm_queryset
 from rest_framework import serializers as ser
 from rest_framework.filters import OrderingFilter
+from osf.models import Subject
 
 
 def lowercase(lower):
@@ -269,6 +270,8 @@ class FilterMixin(object):
         :param rest_framework.fields.Field field: Field instance
         """
         field = utils.decompose_field(field)
+        if isinstance(field, ShowIfVersion):
+            field = field.field
         if isinstance(field, ser.BooleanField):
             if utils.is_truthy(value):
                 return True
@@ -447,8 +450,7 @@ class DjangoFilterMixin(FilterMixin):
         return query
 
     def _operation_to_query(self, operation):
-        print operation
-        if operation['op'] in ['lt', 'lte', 'gt', 'gte', 'in']:
+        if operation['op'] in ['lt', 'lte', 'gt', 'gte', 'in', 'iexact', 'exact']:
             operation['source_field_name'] = '{}__{}'.format(operation['source_field_name'], operation['op'])
         return Q(**{operation['source_field_name']: operation['value']})
 
@@ -539,10 +541,12 @@ class ListFilterMixin(FilterMixin):
         if filters:
             for key, field_names in filters.iteritems():
                 for field_name, data in field_names.iteritems():
-                    if isinstance(queryset, list):
-                        queryset = self.get_filtered_queryset(field_name, data, queryset)
-                    else:
-                        queryset = self.filter_by_field(queryset, field_name=field_name, operation=data)
+                    operations = data if isinstance(data, list) else [data]
+                    for operation in operations:
+                        if isinstance(queryset, list):
+                            queryset = self.get_filtered_queryset(field_name, operation, queryset)
+                        else:
+                            queryset = self.filter_by_field(queryset, field_name, operation)
         return queryset
 
     def filter_by_field(self, queryset, field_name, operation):
@@ -555,7 +559,9 @@ class ListFilterMixin(FilterMixin):
             }
         """
         query_field_name = operation['source_field_name']
-        if operation['op'] != 'eq':
+        if operation['op'] == 'ne':
+            return queryset.exclude(**{query_field_name: operation['value']})
+        elif operation['op'] != 'eq':
             query_field_name = '{}__{}'.format(query_field_name, operation['op'])
         return queryset.filter(**{query_field_name: operation['value']})
 
@@ -569,12 +575,15 @@ class ListFilterMixin(FilterMixin):
             if operation['value'] not in (list(), tuple()):
                 operation['source_field_name'] = 'tags__name'
                 operation['op'] = 'iexact'
+            elif operation['value'] == []:
+                operation['source_field_name'] = 'tags__isnull'
+                operation['value'] = True
         # contributors iexact because guid matching
         if field_name == 'contributors':
             if operation['value'] not in (list(), tuple()):
                 operation['source_field_name'] = '_contributors__guids___id'
                 operation['op'] = 'iexact'
-        if operation['source_field_name'] == 'kind':
+        if field_name == 'kind':
             operation['source_field_name'] = 'is_file'
             # The value should be boolean
             operation['value'] = operation['value'] == 'file'
@@ -582,6 +591,9 @@ class ListFilterMixin(FilterMixin):
             operation['op'] = 'exact'
         if field_name == 'permission':
             operation['op'] = 'exact'
+        if field_name == 'id':
+            operation['source_field_name'] = 'guids___id'
+            operation['op'] = 'in'
 
     def get_filtered_queryset(self, field_name, params, default_queryset):
         """filters default queryset based on the serializer field type"""
@@ -634,3 +646,25 @@ class ListFilterMixin(FilterMixin):
         serializer = self.get_serializer()
         serializer_method_name = 'get_' + field_name
         return getattr(serializer, serializer_method_name)
+
+
+class PreprintFilterMixin(DjangoFilterMixin):
+    """View mixin that uses DjangoFilterMixin, adding postprocessing for preprint querying
+
+       Subclasses must define `get_default_django_query()`.
+
+    """
+    def postprocess_query_param(self, key, field_name, operation):
+        if field_name == 'provider':
+            operation['source_field_name'] = 'provider___id'
+
+        if field_name == 'id':
+            operation['source_field_name'] = 'guids___id'
+
+        if field_name == 'subjects':
+            try:
+                Subject.objects.get(_id=operation['value'])
+                operation['source_field_name'] = 'subjects___id'
+            except Subject.DoesNotExist:
+                operation['source_field_name'] = 'subjects__text'
+                operation['op'] = 'iexact'

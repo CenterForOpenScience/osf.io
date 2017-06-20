@@ -24,12 +24,10 @@ from website.exceptions import (
     InvalidSanctionRejectionToken, InvalidSanctionApprovalToken, NodeStateError,
 )
 from website import tokens
-from website.models import Embargo, Node, User
-from website.project.model import ensure_schemas
+from osf.models import AbstractNode as Node
 from osf.models.sanctions import PreregCallbackMixin, Embargo
 from website.util import permissions
-from website.project.spam.model import SpamStatus
-from osf.models import Registration, Contributor
+from osf.models import Registration, Contributor, OSFUser as User, SpamStatus
 
 DUMMY_TOKEN = tokens.encode({
     'dummy': 'token'
@@ -503,17 +501,8 @@ class RegistrationEmbargoApprovalDisapprovalViewsTestCase(OsfTestCase):
     def setUp(self):
         super(RegistrationEmbargoApprovalDisapprovalViewsTestCase, self).setUp()
         self.user = AuthUserFactory()
-        self.registration = RegistrationFactory(creator=self.user)
-
-    # node_registration_embargo_approve tests
-    def test_GET_from_unauthorized_user_raises_HTTPForbidden(self):
-        unauthorized_user = AuthUserFactory()
-        res = self.app.get(
-            self.registration.web_url_for('view_project', token=DUMMY_TOKEN),
-            auth=unauthorized_user.auth,
-            expect_errors=True
-        )
-        assert_equal(res.status_code, 403)
+        self.project = ProjectFactory(creator=self.user)
+        self.registration = RegistrationFactory(creator=self.user, project=self.project)
 
     def test_GET_approve_registration_without_embargo_raises_HTTPBad_Request(self):
         assert_false(self.registration.is_pending_embargo)
@@ -596,15 +585,6 @@ class RegistrationEmbargoApprovalDisapprovalViewsTestCase(OsfTestCase):
         assert_true(self.registration.embargo_end_date)
         assert_false(self.registration.is_pending_embargo)
         assert_true(mock_redirect.called_with(self.registration.web_url_for('view_project')))
-
-    def test_GET_from_unauthorized_user_returns_HTTPForbidden(self):
-        unauthorized_user = AuthUserFactory()
-        res = self.app.get(
-            self.registration.web_url_for('view_project', token=DUMMY_TOKEN),
-            auth=unauthorized_user.auth,
-            expect_errors=True
-        )
-        assert_equal(res.status_code, 403)
 
     def test_GET_disapprove_registration_without_embargo_HTTPBad_Request(self):
         assert_false(self.registration.is_pending_embargo)
@@ -694,11 +674,107 @@ class RegistrationEmbargoApprovalDisapprovalViewsTestCase(OsfTestCase):
         assert_equal(res.status_code, 200)
         assert_equal(res.request.path, self.registration.web_url_for('view_project'))
 
+    def test_GET_from_unauthorized_user_with_registration_token(self):
+        unauthorized_user = AuthUserFactory()
+
+        self.registration.require_approval(self.user)
+        self.registration.save()
+
+        app_token = self.registration.registration_approval.approval_state[self.user._id]['approval_token']
+        rej_token = self.registration.registration_approval.approval_state[self.user._id]['rejection_token']
+
+        # Test unauth user cannot approve
+        res = self.app.get(
+            # approval token goes through registration
+            self.registration.web_url_for('view_project', token=app_token),
+            auth=unauthorized_user.auth,
+            expect_errors=True,
+        )
+        assert_equal(res.status_code, 401)
+
+        # Test unauth user cannot reject
+        res = self.app.get(
+            # rejection token goes through registration parent
+            self.project.web_url_for('view_project', token=rej_token),
+            auth=unauthorized_user.auth,
+            expect_errors=True,
+        )
+        assert_equal(res.status_code, 401)
+
+        # Delete Node and try again
+        self.project.is_deleted = True
+        self.project.save()
+
+        # Test unauth user cannot approve deleted node
+        res = self.app.get(
+            self.registration.web_url_for('view_project', token=app_token),
+            auth=unauthorized_user.auth,
+            expect_errors=True,
+        )
+        assert_equal(res.status_code, 401)
+
+        # Test unauth user cannot reject
+        res = self.app.get(
+            self.project.web_url_for('view_project', token=rej_token),
+            auth=unauthorized_user.auth,
+            expect_errors=True,
+        )
+        assert_equal(res.status_code, 401)
+
+        # Test auth user can approve registration with deleted parent
+        res = self.app.get(
+            self.registration.web_url_for('view_project', token=app_token),
+            auth=self.user.auth,
+        )
+        assert_equal(res.status_code, 200)
+
+    def test_GET_from_authorized_user_with_registration_app_token(self):
+        self.registration.require_approval(self.user)
+        self.registration.save()
+        app_token = self.registration.registration_approval.approval_state[self.user._id]['approval_token']
+
+        res = self.app.get(
+            self.registration.web_url_for('view_project', token=app_token),
+            auth=self.user.auth,
+        )
+        assert_equal(res.status_code, 200)
+
+    def test_GET_from_authorized_user_with_registration_rej_token(self):
+        self.registration.require_approval(self.user)
+        self.registration.save()
+        rej_token = self.registration.registration_approval.approval_state[self.user._id]['rejection_token']
+
+        res = self.app.get(
+            self.project.web_url_for('view_project', token=rej_token),
+            auth=self.user.auth,
+        )
+        assert_equal(res.status_code, 200)
+
+    def test_GET_from_authorized_user_with_registration_rej_token_deleted_node(self):
+        self.registration.require_approval(self.user)
+        self.registration.save()
+        rej_token = self.registration.registration_approval.approval_state[self.user._id]['rejection_token']
+
+        self.project.is_deleted = True
+        self.project.save()
+
+        res = self.app.get(
+            self.project.web_url_for('view_project', token=rej_token),
+            auth=self.user.auth,
+            expect_errors=True,
+        )
+        assert_equal(res.status_code, 410)
+        res = self.app.get(
+            self.registration.web_url_for('view_project'),
+            auth=self.user.auth,
+            expect_errors=True,
+        )
+        assert_equal(res.status_code, 410)
+
 
 class RegistrationEmbargoViewsTestCase(OsfTestCase):
     def setUp(self):
         super(RegistrationEmbargoViewsTestCase, self).setUp()
-        ensure_schemas()
         self.user = AuthUserFactory()
         self.project = ProjectFactory(creator=self.user)
         self.draft = DraftRegistrationFactory(branched_from=self.project)
@@ -740,7 +816,7 @@ class RegistrationEmbargoViewsTestCase(OsfTestCase):
         )
         assert_equal(res.status_code, 202)
 
-        registration = Registration.find().sort('-registered_date').first()
+        registration = Registration.find().order_by('-registered_date').first()
         assert_not_equal(registration.registration_approval, None)
 
     # Regression test for https://openscience.atlassian.net/browse/OSF-5039
@@ -779,7 +855,7 @@ class RegistrationEmbargoViewsTestCase(OsfTestCase):
         # Last node directly registered from self.project
         registration = Node.find(
             Q('registered_from', 'eq', self.project)
-        ).sort('-registered_date')[0]
+        ).order_by('-registered_date')[0]
 
         assert_true(registration.is_registration)
         assert_false(registration.is_public)
@@ -830,7 +906,7 @@ class RegistrationEmbargoViewsTestCase(OsfTestCase):
 
         assert_equal(res.status_code, 202)
 
-        registration = Registration.find().sort('-registered_date').first()
+        registration = Registration.find().order_by('-registered_date').first()
 
         assert_false(registration.is_public)
         assert_true(registration.is_pending_embargo_for_existing_registration)
@@ -872,7 +948,7 @@ class RegistrationEmbargoViewsTestCase(OsfTestCase):
         # Last node directly registered from self.project
         registration = Node.find(
             Q('registered_from', 'eq', self.project)
-        ).sort('-registered_date')[0]
+        ).order_by('-registered_date')[0]
 
         assert_true(registration.is_registration)
         assert_false(registration.is_public)
@@ -1012,7 +1088,7 @@ class RegistrationEmbargoViewsTestCase(OsfTestCase):
 
         res = self.app.get(approval_url, auth=non_contributor.auth, expect_errors=True)
         self.registration.reload()
-        assert_equal(http.FORBIDDEN, res.status_code)
+        assert_equal(http.UNAUTHORIZED, res.status_code)
         assert_true(self.registration.is_pending_embargo)
         assert_equal(self.registration.embargo.state, Embargo.UNAPPROVED)
 
@@ -1029,6 +1105,6 @@ class RegistrationEmbargoViewsTestCase(OsfTestCase):
         approval_url = self.registration.web_url_for('view_project', token=rejection_token)
 
         res = self.app.get(approval_url, auth=non_contributor.auth, expect_errors=True)
-        assert_equal(http.FORBIDDEN, res.status_code)
+        assert_equal(http.UNAUTHORIZED, res.status_code)
         assert_true(self.registration.is_pending_embargo)
         assert_equal(self.registration.embargo.state, Embargo.UNAPPROVED)

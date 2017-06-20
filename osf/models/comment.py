@@ -92,8 +92,8 @@ class Comment(GuidMixin, SpamMixin, CommentableMixin, BaseModel):
         if not auth and not self.node.is_public:
             raise PermissionsError
 
-        if self.is_deleted and ((not auth or auth.user.is_anonymous()) or
-                                (auth and not auth.user.is_anonymous() and self.user._id != auth.user._id)):
+        if self.is_deleted and ((not auth or auth.user.is_anonymous) or
+                                (auth and not auth.user.is_anonymous and self.user._id != auth.user._id)):
             return None
 
         return self.content
@@ -158,6 +158,7 @@ class Comment(GuidMixin, SpamMixin, CommentableMixin, BaseModel):
 
         log_dict.update(comment.root_target.referent.get_extra_log_params(comment))
 
+        new_mentions = []
         if comment.content:
             new_mentions = get_valid_mentioned_users_guids(comment, comment.node.contributors)
             if new_mentions:
@@ -174,7 +175,7 @@ class Comment(GuidMixin, SpamMixin, CommentableMixin, BaseModel):
         )
 
         comment.node.save()
-        project_signals.comment_added.send(comment, auth=auth)
+        project_signals.comment_added.send(comment, auth=auth, new_mentions=new_mentions)
 
         return comment
 

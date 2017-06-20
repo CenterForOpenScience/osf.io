@@ -5,7 +5,7 @@ from dateutil.parser import parse
 from datetime import datetime, timedelta
 
 from website.app import init_app
-from website.project.model import NodeLog
+from osf.models import NodeLog
 from framework.mongo.utils import paginated
 from scripts.analytics.base import EventAnalytics
 

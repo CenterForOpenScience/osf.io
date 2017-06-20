@@ -1,25 +1,22 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 """Generate a sitemap for osf.io"""
+import boto3
 import datetime
 import gzip
-import math
 import os
 import shutil
 import sys
-import urllib
 import urlparse
 import xml
 
 import django
 django.setup()
-from django.db import transaction
 import logging
 
 from framework import sentry
 from framework.celery_tasks import app as celery_app
-from osf.models import OSFUser, AbstractNode, Registration
-from osf.models.preprint_service import PreprintService
+from osf.models import OSFUser, AbstractNode, PreprintService, PreprintProvider
 from scripts import utils as script_utils
 from website import settings
 from website.app import init_app
@@ -30,12 +27,12 @@ logging.basicConfig(level=logging.INFO)
 class Progress(object):
     def __init__(self, bar_len=50):
         self.bar_len = bar_len
-    
+
     def start(self, total, prefix):
         self.total = total
         self.count = 0
         self.prefix = prefix
-    
+
     def increment(self, inc=1):
         self.count += inc
         filled_len = int(round(self.bar_len * self.count / float(self.total)))
@@ -57,6 +54,16 @@ class Sitemap(object):
         if not os.path.exists(self.sitemap_dir):
             print('Creating sitemap directory at `{}`'.format(self.sitemap_dir))
             os.makedirs(self.sitemap_dir)
+        if settings.SITEMAP_TO_S3:
+            assert settings.SITEMAP_AWS_BUCKET, 'SITEMAP_AWS_BUCKET must be set for sitemap files to be sent to S3'
+            assert settings.AWS_ACCESS_KEY_ID, 'AWS_ACCESS_KEY_ID must be set for sitemap files to be sent to S3'
+            assert settings.AWS_SECRET_ACCESS_KEY, 'AWS_SECRET_ACCESS_KEY must be set for sitemap files to be sent to S3'
+            self.s3 = boto3.resource(
+                's3',
+                aws_access_key_id=settings.AWS_ACCESS_KEY_ID,
+                aws_secret_access_key=settings.AWS_SECRET_ACCESS_KEY,
+                region_name='us-east-1'
+            )
 
     def new_doc(self):
         """Creates new sitemap document and resets the url_count."""
@@ -87,16 +94,33 @@ class Sitemap(object):
 
     def write_doc(self):
         """Writes and gzips each sitemap xml file"""
-        path = os.path.join(self.sitemap_dir, 'sitemap_{}.xml'.format(str(self.sitemap_count)))
-        print('Writing and gzipping `{}`: url_count = {}'.format(path, str(self.url_count)))
+        file_name = 'sitemap_{}.xml'.format(str(self.sitemap_count))
+        file_path = os.path.join(self.sitemap_dir, file_name)
+        zip_file_name = file_name + '.gz'
+        zip_file_path = file_path + '.gz'
+        print('Writing and gzipping `{}`: url_count = {}'.format(file_path, str(self.url_count)))
 
         xml_str = self.doc.toprettyxml(indent="  ", encoding='utf-8')
-        with open(path, 'w') as f:
+        with open(file_path, 'wb') as f:
             f.write(xml_str)
+
         # Write zipped file
-        with open(path, 'rb') as f_in, gzip.open(path + '.gz', 'wb') as f_out:
+        with open(file_path, 'rb') as f_in, gzip.open(zip_file_path, 'wb') as f_out:
             shutil.copyfileobj(f_in, f_out)
+        if settings.SITEMAP_TO_S3:
+            self.ship_to_s3(file_name, file_path)
+            self.ship_to_s3(zip_file_name, zip_file_path)
         self.sitemap_count += 1
+
+    def ship_to_s3(self, name, path):
+        data = open(path, 'rb')
+        try:
+            self.s3.Bucket(settings.SITEMAP_AWS_BUCKET).put_object(Key='sitemaps/{}'.format(name), Body=data)
+        except Exception as e:
+            logger.info('Error sending data to s3 via boto3')
+            logger.exception(e)
+            sentry.log_message('ERROR: Sitemaps could not be uploaded to s3, see `generate_sitemap` logs')
+        data.close()
 
     def write_sitemap_index(self):
         """Writes the index file for all of the sitemap files"""
@@ -108,10 +132,10 @@ class Sitemap(object):
         for f in range(self.sitemap_count):
             sitemap = doc.createElement('sitemap')
             sitemap_index.appendChild(sitemap)
-            
+
             loc = doc.createElement('loc')
             sitemap.appendChild(loc)
-            loc_text = self.doc.createTextNode(urlparse.urljoin(settings.DOMAIN, 'sitemaps/sitemap_{}.xml.gz'.format(str(f))))
+            loc_text = self.doc.createTextNode(urlparse.urljoin(settings.DOMAIN, 'sitemaps/sitemap_{}.xml'.format(str(f))))
             loc.appendChild(loc_text)
 
             datemod = doc.createElement('lastmod')
@@ -120,9 +144,13 @@ class Sitemap(object):
             datemod.appendChild(datemod_text)
 
         print('Writing `sitemap_index.xml`')
+        file_name = 'sitemap_index.xml'
+        file_path = os.path.join(self.sitemap_dir, file_name)
         xml_str = doc.toprettyxml(indent="  ", encoding='utf-8')
-        with open(os.path.join(self.sitemap_dir, 'sitemap_index.xml'), 'w') as f:
+        with open(file_path, 'wb') as f:
             f.write(xml_str)
+        if settings.SITEMAP_TO_S3:
+            self.ship_to_s3(file_name, file_path)
 
     def log_errors(self, obj, obj_id, error):
         if not self.errors:
@@ -162,7 +190,7 @@ class Sitemap(object):
         progress.stop()
 
         # AbstractNode urls (Nodes and Registrations, no colelctions)
-        objs = AbstractNode.objects.filter(is_public=True, is_deleted=False, retraction_id__isnull=True).exclude(type="osf.collection") 
+        objs = AbstractNode.objects.filter(is_public=True, is_deleted=False, retraction_id__isnull=True).exclude(type="osf.collection")
         progress.start(objs.count(), 'NODE: ')
         for obj in objs.iterator():
             try:
@@ -178,23 +206,29 @@ class Sitemap(object):
         # Preprint urls
         objs = PreprintService.objects.filter(node__isnull=False, node__is_deleted=False, node__is_public=True, is_published=True)
         progress.start(objs.count() * 2, 'PREP: ')
+        osf = PreprintProvider.load('osf')
         for obj in objs.iterator():
             try:
                 preprint_date = obj.date_modified.strftime('%Y-%m-%d')
                 config = settings.SITEMAP_PREPRINT_CONFIG
-                config['loc'] = urlparse.urljoin(settings.DOMAIN, obj.url)
+                preprint_url = obj.url
+                if obj.provider == osf:
+                    preprint_url = '/preprints/{}/'.format(obj._id)
+                config['loc'] = urlparse.urljoin(settings.DOMAIN, preprint_url)
                 config['lastmod'] = preprint_date
                 self.add_url(config)
 
                 # Preprint file urls
                 try:
                     file_config = settings.SITEMAP_PREPRINT_FILE_CONFIG
-                    file_config['loc'] = urlparse.urljoin(settings.DOMAIN, 
-                        os.path.join('project', 
-                            obj.primary_file.node._id, # Parent node id
+                    file_config['loc'] = urlparse.urljoin(
+                        settings.DOMAIN,
+                        os.path.join(
+                            'project',
+                            obj.primary_file.node._id,  # Parent node id
                             'files',
                             'osfstorage',
-                            obj.primary_file._id, # Preprint file deep_url
+                            obj.primary_file._id,  # Preprint file deep_url
                             '?action=download'
                         )
                     )

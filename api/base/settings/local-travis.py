@@ -23,3 +23,5 @@ REST_FRAMEWORK['DEFAULT_THROTTLE_RATES'] = {
     'test-user': '2/hour',
     'test-anon': '1/hour',
 }
+
+ALLOWED_HOSTS.append('localhost')

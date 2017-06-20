@@ -1,8 +1,9 @@
 from rest_framework import generics, permissions as drf_permissions
 from rest_framework.exceptions import ValidationError, NotFound
 from framework.auth.oauth_scopes import CoreScopes
+from modularodm import Q
 
-from website.project.model import Q, Node, Pointer
+from osf.models import AbstractNode as Node
 from api.base import permissions as base_permissions
 from api.base.views import JSONAPIBaseView, BaseContributorDetail, BaseContributorList, BaseNodeLinksDetail, BaseNodeLinksList
 
@@ -13,7 +14,7 @@ from api.base.parsers import JSONAPIRelationshipParserForRegularJSON
 from api.base.utils import get_user_auth
 from api.comments.serializers import RegistrationCommentSerializer, CommentCreateSerializer
 from api.identifiers.serializers import RegistrationIdentifierSerializer
-from api.identifiers.views import IdentifierList
+from api.nodes.views import NodeIdentifierList
 from api.users.views import UserMixin
 
 from api.nodes.permissions import (
@@ -32,7 +33,7 @@ from api.registrations.serializers import (
     RegistrationProviderSerializer
 )
 
-from api.nodes.filters import NodesListFilterMixin
+from api.nodes.filters import NodesFilterMixin
 
 from api.nodes.views import (
     NodeMixin, ODMFilterMixin, NodeRegistrationsList,
@@ -74,7 +75,7 @@ class RegistrationMixin(NodeMixin):
         return node
 
 
-class RegistrationList(JSONAPIBaseView, generics.ListAPIView, NodesListFilterMixin):
+class RegistrationList(JSONAPIBaseView, generics.ListAPIView, NodesFilterMixin):
     """Node Registrations.
 
     Registrations are read-only snapshots of a project. This view is a list of all current registrations for which a user
@@ -150,35 +151,33 @@ class RegistrationList(JSONAPIBaseView, generics.ListAPIView, NodesListFilterMix
     view_category = 'registrations'
     view_name = 'registration-list'
 
-    # overrides ODMFilterMixin
-    def get_default_odm_query(self):
+    # overrides NodesFilterMixin
+    def get_default_queryset(self):
         base_query = (
             Q('is_deleted', 'ne', True) &
             Q('type', 'eq', 'osf.registration')
         )
         user = self.request.user
         permission_query = Q('is_public', 'eq', True)
-        if not user.is_anonymous():
+        if not user.is_anonymous:
             permission_query = (permission_query | Q('contributors', 'eq', user))
 
         query = base_query & permission_query
-        return query
+        return Node.find(query)
 
-    def is_blacklisted(self, query):
-        for query_param in query.nodes:
-            field_name = getattr(query_param, 'attribute', None)
-            if not field_name:
-                continue
-            field = self.serializer_class._declared_fields.get(field_name)
-            if isinstance(field, HideIfWithdrawal):
-                return True
+    def is_blacklisted(self):
+        query_params = self.parse_query_params(self.request.query_params)
+        for key, field_names in query_params.iteritems():
+            for field_name, data in field_names.iteritems():
+                field = self.serializer_class._declared_fields.get(field_name)
+                if isinstance(field, HideIfWithdrawal):
+                    return True
         return False
 
     # overrides ListAPIView
     def get_queryset(self):
-        query = self.get_query_from_request()
-        blacklisted = self.is_blacklisted(query)
-        nodes = Node.find(query).distinct()
+        blacklisted = self.is_blacklisted()
+        nodes = self.get_queryset_from_request().distinct()
         # If attempting to filter on a blacklisted field, exclude withdrawals.
         if blacklisted:
             non_withdrawn_list = [node._id for node in nodes if not node.is_retracted]
@@ -186,21 +185,6 @@ class RegistrationList(JSONAPIBaseView, generics.ListAPIView, NodesListFilterMix
             return non_withdrawn_nodes
         return nodes
 
-    # overrides FilterMixin
-    def postprocess_query_param(self, key, field_name, operation):
-        # tag queries will usually be on Tag.name,
-        # ?filter[tags]=foo should be translated to Q('tags__name', 'eq', 'foo')
-        # But queries on lists should be tags, e.g.
-        # ?filter[tags]=foo,bar should be translated to Q('tags', 'isnull', True)
-        # ?filter[tags]=[] should be translated to Q('tags', 'isnull', True)
-        if field_name == 'tags':
-            if operation['value'] not in (list(), tuple()):
-                operation['source_field_name'] = 'tags__name'
-                operation['op'] = 'iexact'
-        if field_name == 'contributors':
-            if operation['value'] not in (list(), tuple()):
-                operation['source_field_name'] = '_contributors__guids___id'
-                operation['op'] = 'iexact'
 
 class RegistrationDetail(JSONAPIBaseView, generics.RetrieveUpdateAPIView, RegistrationMixin, WaterButlerMixin):
     """Node Registrations.
@@ -537,7 +521,7 @@ class RegistrationChildrenList(JSONAPIBaseView, generics.ListAPIView, ODMFilterM
         )
         user = self.request.user
         permission_query = Q('is_public', 'eq', True)
-        if not user.is_anonymous():
+        if not user.is_anonymous:
             permission_query = (permission_query | Q('contributors', 'eq', user))
 
         query = base_query & permission_query
@@ -771,7 +755,8 @@ class RegistrationNodeLinksList(BaseNodeLinksList, RegistrationMixin):
     required_read_scopes = [CoreScopes.NODE_REGISTRATIONS_READ]
     required_write_scopes = [CoreScopes.NULL]
 
-    model_class = Pointer
+    # TODO: This class doesn't exist
+    # model_class = Pointer
 
 
 class RegistrationNodeLinksDetail(BaseNodeLinksDetail, RegistrationMixin):
@@ -826,7 +811,8 @@ class RegistrationNodeLinksDetail(BaseNodeLinksDetail, RegistrationMixin):
     required_read_scopes = [CoreScopes.NODE_REGISTRATIONS_READ]
     required_write_scopes = [CoreScopes.NULL]
 
-    model_class = Pointer
+    # TODO: this class doesn't exist
+    # model_class = Pointer
 
     # overrides RetrieveAPIView
     def get_object(self):
@@ -1051,7 +1037,7 @@ class RegistrationViewOnlyLinkDetail(NodeViewOnlyLinkDetail, RegistrationMixin):
     view_name = 'registration-view-only-link-detail'
 
 
-class RegistrationIdentifierList(RegistrationMixin, IdentifierList):
+class RegistrationIdentifierList(RegistrationMixin, NodeIdentifierList):
     """List of identifiers for a specified node. *Read-only*.
 
     ##Identifier Attributes

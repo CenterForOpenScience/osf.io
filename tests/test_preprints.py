@@ -2,12 +2,9 @@
 from nose.tools import *  # flake8: noqa (PEP8 asserts)
 import mock
 import urlparse
-from modularodm import Q
-from modularodm.exceptions import NoResultsFound, ValidationValueError
 
 from framework.celery_tasks import handlers
-from addons.osfstorage import settings as osfstorage_settings
-from website.files.models.osfstorage import OsfStorageFile
+from addons.osfstorage.models import OsfStorageFile
 from website.preprints.tasks import format_preprint
 from website.util import permissions
 
@@ -15,8 +12,8 @@ from framework.auth import Auth
 from framework.exceptions import PermissionsError
 
 from website import settings
+from website.identifiers.utils import get_doi_and_metadata_for_object
 from osf.models import NodeLog, Subject
-from osf.exceptions import NodeStateError
 
 from tests.base import OsfTestCase
 from osf_tests.factories import (
@@ -26,7 +23,7 @@ from osf_tests.factories import (
     PreprintProviderFactory,
     SubjectFactory
 )
-from tests.utils import assert_logs, assert_not_logs
+from tests.utils import assert_logs
 from api_tests import utils as api_test_utils
 from website.project.views.contributor import find_preprint_provider
 
@@ -112,7 +109,7 @@ class TestSetPreprintFile(OsfTestCase):
     def test_add_primary_file(self):
         self.preprint.set_primary_file(self.file, auth=self.auth, save=True)
         assert_equal(self.project.preprint_file, self.file)
-        assert_equal(type(self.project.preprint_file), type(self.file.stored_object))
+        assert_equal(type(self.project.preprint_file), type(self.file))
 
     @assert_logs(NodeLog.PREPRINT_FILE_UPDATED, 'project')
     def test_change_primary_file(self):
@@ -125,6 +122,12 @@ class TestSetPreprintFile(OsfTestCase):
     def test_add_invalid_file(self):
         with assert_raises(AttributeError):
             self.preprint.set_primary_file('inatlanta', auth=self.auth, save=True)
+
+    def test_deleted_file_creates_orphan(self):
+        self.preprint.set_primary_file(self.file, auth=self.auth, save=True)
+        self.file.is_deleted = True
+        self.file.save()
+        assert_true(self.project.is_preprint_orphan)
 
     def test_preprint_created_date(self):
         self.preprint.set_primary_file(self.file, auth=self.auth, save=True)
@@ -154,12 +157,12 @@ class TestPreprintServicePermissions(OsfTestCase):
 
 
     def test_nonadmin_cannot_set_subjects(self):
-        initial_subjects = self.preprint.subjects
+        initial_subjects = list(self.preprint.subjects.all())
         with assert_raises(PermissionsError):
             self.preprint.set_subjects([[SubjectFactory()._id]], auth=Auth(self.write_contrib), save=True)
 
         self.preprint.reload()
-        assert_equal(initial_subjects, self.preprint.subjects)
+        assert_equal(initial_subjects, list(self.preprint.subjects.all()))
 
     def test_nonadmin_cannot_set_file(self):
         initial_file = self.preprint.primary_file
@@ -169,7 +172,7 @@ class TestPreprintServicePermissions(OsfTestCase):
             name='panda.txt',
             materialized_path='/panda.txt')
         file.save()
-        
+
         with assert_raises(PermissionsError):
             self.preprint.set_primary_file(file, auth=Auth(self.write_contrib), save=True)
 
@@ -186,11 +189,11 @@ class TestPreprintServicePermissions(OsfTestCase):
         assert_false(self.preprint.is_published)
 
     def test_admin_can_set_subjects(self):
-        initial_subjects = self.preprint.subjects
+        initial_subjects = list(self.preprint.subjects.all())
         self.preprint.set_subjects([[SubjectFactory()._id]], auth=Auth(self.user), save=True)
 
         self.preprint.reload()
-        assert_not_equal(initial_subjects, self.preprint.subjects)
+        assert_not_equal(initial_subjects, list(self.preprint.subjects.all()))
 
     def test_admin_can_set_file(self):
         initial_file = self.preprint.primary_file
@@ -200,7 +203,7 @@ class TestPreprintServicePermissions(OsfTestCase):
             name='panda.txt',
             materialized_path='/panda.txt')
         file.save()
-        
+
         self.preprint.set_primary_file(file, auth=Auth(self.user), save=True)
 
         self.preprint.reload()
@@ -228,9 +231,9 @@ class TestPreprintServicePermissions(OsfTestCase):
         assert_in('Cannot unpublish', e.exception.message)
 
 
-class TestPreprintProviders(OsfTestCase):
+class TestPreprintProvider(OsfTestCase):
     def setUp(self):
-        super(TestPreprintProviders, self).setUp()
+        super(TestPreprintProvider, self).setUp()
         self.preprint = PreprintFactory(provider=None, is_published=False)
         self.provider = PreprintProviderFactory(name='WWEArxiv')
 
@@ -255,8 +258,59 @@ class TestPreprintProviders(OsfTestCase):
         self.preprint.save()
         self.preprint.reload()
 
-        assert ('branded', 'WWEArxiv') == find_preprint_provider(self.preprint.node)
+        assert ('branded', self.provider) == find_preprint_provider(self.preprint.node)
 
+    def test_top_level_subjects(self):
+        subj_a = SubjectFactory(provider=self.provider, text='A')
+        subj_b = SubjectFactory(provider=self.provider, text='B')
+        subj_aa = SubjectFactory(provider=self.provider, text='AA', parent=subj_a)
+        subj_ab = SubjectFactory(provider=self.provider, text='AB', parent=subj_a)
+        subj_ba = SubjectFactory(provider=self.provider, text='BA', parent=subj_b)
+        subj_bb = SubjectFactory(provider=self.provider, text='BB', parent=subj_b)
+        subj_aaa = SubjectFactory(provider=self.provider, text='AAA', parent=subj_aa)
+
+        some_other_provider = PreprintProviderFactory(name='asdfArxiv')
+        subj_asdf = SubjectFactory(provider=some_other_provider)
+
+        assert set(self.provider.top_level_subjects) == set([subj_a, subj_b])
+
+    def test_all_subjects(self):
+        subj_a = SubjectFactory(provider=self.provider, text='A')
+        subj_b = SubjectFactory(provider=self.provider, text='B')
+        subj_aa = SubjectFactory(provider=self.provider, text='AA', parent=subj_a)
+        subj_ab = SubjectFactory(provider=self.provider, text='AB', parent=subj_a)
+        subj_ba = SubjectFactory(provider=self.provider, text='BA', parent=subj_b)
+        subj_bb = SubjectFactory(provider=self.provider, text='BB', parent=subj_b)
+        subj_aaa = SubjectFactory(provider=self.provider, text='AAA', parent=subj_aa)
+
+        some_other_provider = PreprintProviderFactory(name='asdfArxiv')
+        subj_asdf = SubjectFactory(provider=some_other_provider)
+
+
+        assert set(self.provider.all_subjects) == set([subj_a, subj_b, subj_aa, subj_ab, subj_ba, subj_bb, subj_aaa])
+
+class TestPreprintIdentifiers(OsfTestCase):
+    def setUp(self):
+        super(TestPreprintIdentifiers, self).setUp()
+        self.user = AuthUserFactory()
+        self.auth = Auth(user=self.user)
+        self.preprint = PreprintFactory(is_published=False, creator=self.user)
+
+    @mock.patch('website.preprints.tasks.get_and_set_preprint_identifiers.s')
+    def test_identifiers_task_called_on_publish(self, mock_get_and_set_identifiers):
+        assert self.preprint.identifiers.count() == 0
+        self.preprint.set_published(True, auth=self.auth, save=True)
+
+        assert mock_get_and_set_identifiers.called
+
+    def test_get_doi_for_preprint(self):
+        new_provider = PreprintProviderFactory()
+        preprint = PreprintFactory(provider=new_provider)
+        ideal_doi = '{}osf.io/{}'.format(settings.DOI_NAMESPACE, preprint._id)
+
+        doi, metadata = get_doi_and_metadata_for_object(preprint)
+
+        assert doi == ideal_doi
 
 class TestOnPreprintUpdatedTask(OsfTestCase):
     def setUp(self):
@@ -313,7 +367,7 @@ class TestOnPreprintUpdatedTask(OsfTestCase):
         subjects = [nodes.pop(k) for k, v in nodes.items() if v['@type'] == 'subject']
         through_subjects = [nodes.pop(k) for k, v in nodes.items() if v['@type'] == 'throughsubjects']
         assert sorted(subject['@id'] for subject in subjects) == sorted(tt['subject']['@id'] for tt in through_subjects)
-        assert sorted(subject['name'] for subject in subjects) == [Subject.load(s).text for h in self.preprint.subjects for s in h]
+        assert sorted(subject['name'] for subject in subjects) == [s.bepress_text for h in self.preprint.subject_hierarchy for s in h]
 
         people = sorted([nodes.pop(k) for k, v in nodes.items() if v['@type'] == 'person'], key=lambda x: x['given_name'])
         expected_people = sorted([{
@@ -371,11 +425,14 @@ class TestOnPreprintUpdatedTask(OsfTestCase):
         related_work = next(nodes.pop(k) for k, v in nodes.items() if v['@type'] == 'creativework')
         assert set(related_work.keys()) == {'@id', '@type'}  # Empty except @id and @type
 
-        doi = next(nodes.pop(k) for k, v in nodes.items() if v['@type'] == 'workidentifier' and 'doi' in v['uri'])
-        assert doi['creative_work'] == related_work
+        osf_doi = next(nodes.pop(k) for k, v in nodes.items() if v['@type'] == 'workidentifier' and 'doi' in v['uri'] and 'osf.io' in v['uri'])
+        assert osf_doi['creative_work'] == {'@id': preprint['@id'], '@type': preprint['@type']}
+
+        related_doi = next(nodes.pop(k) for k, v in nodes.items() if v['@type'] == 'workidentifier' and 'doi' in v['uri'])
+        assert related_doi['creative_work'] == related_work
 
         workidentifiers = [nodes.pop(k)['uri'] for k, v in nodes.items() if v['@type'] == 'workidentifier']
-        assert workidentifiers == [urlparse.urljoin(settings.DOMAIN, self.preprint.url)]
+        assert workidentifiers == [urlparse.urljoin(settings.DOMAIN, self.preprint._id + '/')]
 
         relation = nodes.pop(nodes.keys()[0])
         assert relation == {'@id': relation['@id'], '@type': 'workrelation', 'related': {'@id': related_work['@id'], '@type': related_work['@type']}, 'subject': {'@id': preprint['@id'], '@type': preprint['@type']}}
@@ -456,7 +513,7 @@ class TestOnPreprintUpdatedTask(OsfTestCase):
 
         workidentifiers = {nodes.pop(k)['uri'] for k, v in nodes.items() if v['@type'] == 'workidentifier'}
         # URLs should *always* be osf.io/guid/
-        assert workidentifiers == set([urlparse.urljoin(settings.DOMAIN, self.preprint._id) + '/'])
+        assert workidentifiers == set([urlparse.urljoin(settings.DOMAIN, self.preprint._id) + '/', 'http://dx.doi.org/{}'.format(self.preprint.get_identifier('doi').value)])
 
         assert nodes == {}
 

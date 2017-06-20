@@ -212,7 +212,9 @@ $(document).ready(function () {
         width: '100%',
         interactive: window.contextVars.currentUser.canEdit,
         maxChars: 128,
+        defaultText: 'add a tag to enhance discoverability',
         onAddTag: function(tag) {
+            $('#node-tags_tag').attr('data-default', 'add a tag');
             var url = nodeApiUrl + 'tags/';
             var data = {tag: tag};
             var request = $osf.postJSON(url, data);
@@ -245,6 +247,11 @@ $(document).ready(function () {
         }
     });
 
+    // allows inital default message to fit on empty tag
+    if(!$('.tag').length){
+        $('#node-tags_tag').css('width', '250px');
+    }
+
     $('#addPointer').on('shown.bs.modal', function(){
         if(!$osf.isIE()){
             $('#addPointer input').focus();
@@ -265,7 +272,7 @@ $(document).ready(function () {
             url: ctx.urls.wikiContent
         });
         request.done(function(resp) {
-            var rawText = resp.wiki_content || '*No wiki content*';
+            var rawText = resp.wiki_content || '*Add important information, links, or images here to describe your project.*';
             var renderedText = ctx.renderedBeforeUpdate ? oldMd.render(rawText) : md.render(rawText);
             var truncatedText = $.truncate(renderedText, {length: 400});
             markdownElement.html(truncatedText);

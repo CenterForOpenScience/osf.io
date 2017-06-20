@@ -428,8 +428,8 @@ def subscribe_user_to_global_notifications(user):
     for user_event in user_events:
         user_event_id = to_subscription_key(user._id, user_event)
 
-        subscription = NotificationSubscription(_id=user_event_id, owner=user, event_name=user_event)
-        subscription.save()  # Need to save in order to access m2m fields
+        # get_or_create saves on creation
+        subscription, created = NotificationSubscription.objects.get_or_create(_id=user_event_id, user=user, event_name=user_event)
         subscription.add_user_to_subscription(user, notification_type)
         subscription.save()
 

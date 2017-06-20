@@ -5,7 +5,7 @@ from rest_framework import serializers as ser
 
 from api.base.exceptions import Conflict
 from api.base.serializers import (
-    JSONAPISerializer, IDField, JSONAPIListField,
+    JSONAPISerializer, IDField,
     LinksField, RelationshipField, DateByVersion,
 )
 from api.base.utils import absolute_reverse, get_user_auth
@@ -19,12 +19,12 @@ from framework.exceptions import PermissionsError
 from website.util import permissions
 from website.exceptions import NodeStateError
 from website.project import signals as project_signals
-from osf.models import StoredFileNode, PreprintService, PreprintProvider, Node, NodeLicense
+from osf.models import BaseFileNode, PreprintService, PreprintProvider, Node, NodeLicense
 
 
 class PrimaryFileRelationshipField(RelationshipField):
     def get_object(self, file_id):
-        return StoredFileNode.load(file_id)
+        return BaseFileNode.load(file_id)
 
     def to_internal_value(self, data):
         file = self.get_object(data)
@@ -63,10 +63,11 @@ class PreprintSerializer(JSONAPISerializer):
         'date_published',
         'provider',
         'is_published',
+        'subjects',
     ])
 
     id = IDField(source='_id', read_only=True)
-    subjects = JSONAPIListField(child=JSONAPIListField(child=TaxonomyField()), allow_null=True, required=False)
+    subjects = ser.SerializerMethodField()
     date_created = DateByVersion(read_only=True)
     date_modified = DateByVersion(read_only=True)
     date_published = DateByVersion(read_only=True)
@@ -77,6 +78,11 @@ class PreprintSerializer(JSONAPISerializer):
 
     citation = RelationshipField(
         related_view='preprints:preprint-citation',
+        related_view_kwargs={'preprint_id': '<_id>'}
+    )
+
+    identifiers = RelationshipField(
+        related_view='preprints:identifier-list',
         related_view_kwargs={'preprint_id': '<_id>'}
     )
 
@@ -109,12 +115,20 @@ class PreprintSerializer(JSONAPISerializer):
         {
             'self': 'get_preprint_url',
             'html': 'get_absolute_html_url',
-            'doi': 'get_doi_url'
+            'doi': 'get_article_doi_url',
+            'preprint_doi': 'get_preprint_doi_url'
         }
     )
 
     class Meta:
         type_ = 'preprints'
+
+    def get_subjects(self, obj):
+        return [
+            [
+                TaxonomyField().to_representation(subj) for subj in hier
+            ] for hier in obj.subject_hierarchy
+        ]
 
     def get_preprint_url(self, obj):
         return absolute_reverse('preprints:preprint-detail', kwargs={'preprint_id': obj._id, 'version': self.context['request'].parser_context['kwargs']['version']})
@@ -122,8 +136,20 @@ class PreprintSerializer(JSONAPISerializer):
     def get_absolute_url(self, obj):
         return self.get_preprint_url(obj)
 
-    def get_doi_url(self, obj):
+    def get_article_doi_url(self, obj):
         return 'https://dx.doi.org/{}'.format(obj.article_doi) if obj.article_doi else None
+
+    def get_preprint_doi_url(self, obj):
+        doi_identifier = obj.get_identifier('doi')
+        return 'https://dx.doi.org/{}'.format(doi_identifier.value) if doi_identifier else None
+
+    def run_validation(self, *args, **kwargs):
+        # Overrides construtor for validated_data to allow writes to a SerializerMethodField
+        # Validation for `subjects` happens in the model
+        _validated_data = super(PreprintSerializer, self).run_validation(*args, **kwargs)
+        if 'subjects' in self.initial_data:
+            _validated_data['subjects'] = self.initial_data['subjects']
+        return _validated_data
 
     def update(self, preprint, validated_data):
         assert isinstance(preprint, PreprintService), 'You must specify a valid preprint to be updated'
@@ -150,16 +176,16 @@ class PreprintSerializer(JSONAPISerializer):
             preprint.node.preprint_article_doi = validated_data['article_doi']
             save_node = True
 
+        if 'license_type' in validated_data or 'license' in validated_data:
+            license_details = get_license_details(preprint, validated_data)
+            self.set_field(preprint.set_preprint_license, license_details, auth)
+            save_preprint = True
+
         published = validated_data.pop('is_published', None)
         if published is not None:
             self.set_field(preprint.set_published, published, auth)
             save_preprint = True
             recently_published = published
-
-        if 'license_type' in validated_data or 'license' in validated_data:
-            license_details = get_license_details(preprint, validated_data)
-            self.set_field(preprint.set_preprint_license, license_details, auth)
-            save_preprint = True
 
         if save_node:
             try:
@@ -176,7 +202,7 @@ class PreprintSerializer(JSONAPISerializer):
         # nodes will send emails making it seem like a new node.
         if recently_published:
             for author in preprint.node.contributors:
-                if author.is_active and author != auth.user:
+                if author != auth.user:
                     project_signals.contributor_added.send(preprint.node, contributor=author, auth=auth, email_template='preprint')
 
         return preprint

@@ -15,6 +15,7 @@ from framework.utils import iso8601format
 from framework.flask import redirect
 from framework.auth.decorators import must_be_logged_in, collect_auth
 from framework.exceptions import HTTPError
+from osf.models.nodelog import NodeLog
 
 from website import language
 
@@ -35,12 +36,12 @@ from website.util.rubeus import collect_addon_js
 from website.project.model import has_anonymous_link, NodeUpdateError, validate_title
 from website.project.forms import NewNodeForm
 from website.project.metadata.utils import serialize_meta_schemas
-from website.models import Node, WatchConfig, PrivateLink, Comment
+from osf.models import AbstractNode as Node, PrivateLink, Comment
+from osf.models.licenses import serialize_node_license_record
 from website import settings
 from website.views import find_bookmark_collection, validate_page_num
 from website.views import serialize_node_summary
 from website.profile import utils
-from website.project.licenses import serialize_node_license_record
 from website.util.sanitize import strip_html
 from website.util import rapply
 
@@ -347,9 +348,9 @@ def configure_comments(node, **kwargs):
 # View Project
 ##############################################################################
 
+@process_token_or_pass
 @must_be_valid_project(retractions_valid=True)
 @must_be_contributor_or_public
-@process_token_or_pass
 def view_project(auth, node, **kwargs):
     primary = '/api/v1' not in request.path
     ret = _view_project(node, auth,
@@ -459,75 +460,6 @@ def project_set_privacy(auth, node, **kwargs):
         'permissions': permissions,
     }
 
-
-@must_be_valid_project
-@must_be_contributor_or_public
-@must_not_be_registration
-def watch_post(auth, node, **kwargs):
-    user = auth.user
-    watch_config = WatchConfig(node=node,
-                               digest=request.json.get('digest', False),
-                               immediate=request.json.get('immediate', False))
-    try:
-        user.watch(watch_config)
-    except ValueError:  # Node is already being watched
-        raise HTTPError(http.BAD_REQUEST)
-
-    user.save()
-
-    return {
-        'status': 'success',
-        'watchCount': node.watches.count()
-    }
-
-
-@must_be_valid_project
-@must_be_contributor_or_public
-@must_not_be_registration
-def unwatch_post(auth, node, **kwargs):
-    user = auth.user
-    watch_config = WatchConfig(node=node,
-                               digest=request.json.get('digest', False),
-                               immediate=request.json.get('immediate', False))
-    try:
-        user.unwatch(watch_config)
-    except ValueError:  # Node isn't being watched
-        raise HTTPError(http.BAD_REQUEST)
-
-    return {
-        'status': 'success',
-        'watchCount': node.watches.count()
-    }
-
-
-@must_be_valid_project
-@must_be_contributor_or_public
-@must_not_be_registration
-def togglewatch_post(auth, node, **kwargs):
-    '''View for toggling watch mode for a node.'''
-    # TODO: refactor this, watch_post, unwatch_post (@mambocab)
-    user = auth.user
-    watch_config = WatchConfig(
-        node=node,
-        digest=request.json.get('digest', False),
-        immediate=request.json.get('immediate', False)
-    )
-    try:
-        if user.is_watching(node):
-            user.unwatch(watch_config)
-        else:
-            user.watch(watch_config)
-    except ValueError:
-        raise HTTPError(http.BAD_REQUEST)
-
-    user.save()
-
-    return {
-        'status': 'success',
-        'watchCount': node.watches.count(),
-        'watched': user.is_watching(node)
-    }
-
 @must_be_valid_project
 @must_not_be_registration
 @must_have_permission(WRITE)
@@ -596,6 +528,21 @@ def remove_private_link(*args, **kwargs):
         link = PrivateLink.load(link_id)
         link.is_deleted = True
         link.save()
+
+        for node in link.nodes.all():
+            log_dict = {
+                'project': node.parent_id,
+                'node': node._id,
+                'user': kwargs.get('auth').user._id,
+                'anonymous_link': link.anonymous,
+            }
+
+            node.add_log(
+                NodeLog.VIEW_ONLY_LINK_REMOVED,
+                log_dict,
+                auth=kwargs.get('auth', None)
+            )
+
     except ModularOdmException:
         raise HTTPError(http.NOT_FOUND)
 
@@ -692,6 +639,7 @@ def _view_project(node, auth, primary=False,
             'is_retracted': node.is_retracted,
             'is_pending_retraction': node.is_pending_retraction,
             'retracted_justification': getattr(node.retraction, 'justification', None),
+            'date_retracted': iso8601format(getattr(node.retraction, 'date_retracted', None)),
             'embargo_end_date': node.embargo_end_date.strftime('%A, %b. %d, %Y') if node.embargo_end_date else False,
             'is_pending_embargo': node.is_pending_embargo,
             'is_embargoed': node.is_embargoed,
@@ -728,6 +676,7 @@ def _view_project(node, auth, primary=False,
             'contributors': list(node.contributors.values_list('guids___id', flat=True)),
             'is_preprint': node.is_preprint,
             'is_preprint_orphan': node.is_preprint_orphan,
+            'has_published_preprint': node.preprints.filter(is_published=True).exists() if node else False,
             'preprint_file_id': node.preprint_file._id if node.preprint_file else None,
             'preprint_url': node.preprint_url
         },
@@ -784,12 +733,12 @@ def _view_project(node, auth, primary=False,
     if embed_registrations:
         data['node']['registrations'] = [
             serialize_node_summary(node=each, auth=auth, show_path=False)
-            for each in node.registrations_all.sort('-registered_date').exclude(is_deleted=True).annotate(nlogs=Count('logs'))
+            for each in node.registrations_all.order_by('-registered_date').exclude(is_deleted=True).annotate(nlogs=Count('logs'))
         ]
     if embed_forks:
         data['node']['forks'] = [
             serialize_node_summary(node=each, auth=auth, show_path=False)
-            for each in node.forks.exclude(type='osf.registration').exclude(is_deleted=True).sort('-forked_date').annotate(nlogs=Count('logs'))
+            for each in node.forks.exclude(type='osf.registration').exclude(is_deleted=True).order_by('-forked_date').annotate(nlogs=Count('logs'))
         ]
     return data
 
@@ -1099,46 +1048,6 @@ def _add_pointers(node, pointers, auth):
 
 
 @collect_auth
-def move_pointers(auth):
-    """Move pointer from one node to another node.
-
-    """
-    NodeRelation = apps.get_model('osf.NodeRelation')
-
-    from_node_id = request.json.get('fromNodeId')
-    to_node_id = request.json.get('toNodeId')
-    pointers_to_move = request.json.get('pointerIds')
-
-    if from_node_id is None or to_node_id is None or pointers_to_move is None:
-        raise HTTPError(http.BAD_REQUEST)
-
-    from_node = Node.load(from_node_id)
-    to_node = Node.load(to_node_id)
-
-    if to_node is None or from_node is None:
-        raise HTTPError(http.BAD_REQUEST)
-
-    for pointer_to_move in pointers_to_move:
-        try:
-            node_relation = NodeRelation.objects.get(_id=pointer_to_move)
-        except NodeRelation.DoesNotExist:
-            raise HTTPError(http.BAD_REQUEST)
-
-        try:
-            from_node.rm_pointer(node_relation, auth=auth)
-        except ValueError:
-            raise HTTPError(http.BAD_REQUEST)
-
-        from_node.save()
-        try:
-            _add_pointers(to_node, [node_relation.node], auth)
-        except ValueError:
-            raise HTTPError(http.BAD_REQUEST)
-
-    return {}, 200, None
-
-
-@collect_auth
 def add_pointer(auth):
     """Add a single pointer to a node using only JSON parameters
 
@@ -1195,32 +1104,6 @@ def remove_pointer(auth, node, **kwargs):
         raise HTTPError(http.BAD_REQUEST)
 
     pointer = Node.load(pointer_id)
-    if pointer is None:
-        raise HTTPError(http.BAD_REQUEST)
-
-    try:
-        node.rm_pointer(pointer, auth=auth)
-    except ValueError:
-        raise HTTPError(http.BAD_REQUEST)
-
-    node.save()
-
-
-@must_be_valid_project  # injects project
-@must_have_permission(WRITE)
-@must_not_be_registration
-def remove_pointer_from_folder(auth, node, pointer_id, **kwargs):
-    """Remove a pointer from a node, raising a 400 if the pointer is not
-    in `node.nodes`.
-
-    """
-    if pointer_id is None:
-        raise HTTPError(http.BAD_REQUEST)
-
-    pointer_id = node.pointing_at(pointer_id)
-
-    pointer = Node.load(pointer_id)
-
     if pointer is None:
         raise HTTPError(http.BAD_REQUEST)
 

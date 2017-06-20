@@ -491,7 +491,7 @@ class Embargo(PreregCallbackMixin, EmailApprovableSanction):
         return context
 
     def _on_reject(self, user):
-        from website.project.model import NodeLog
+        NodeLog = apps.get_model('osf.NodeLog')
 
         parent_registration = self._get_registration()
         parent_registration.registered_from.add_log(
@@ -560,6 +560,7 @@ class Retraction(EmailApprovableSanction):
 
     initiated_by = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, blank=True)
     justification = models.CharField(max_length=2048, null=True, blank=True)
+    date_retracted = NonNaiveDateTimeField(null=True, blank=True)
 
     def _view_url_context(self, user_id, node):
         registration = self.registrations.first()
@@ -638,6 +639,9 @@ class Retraction(EmailApprovableSanction):
     def _on_complete(self, user):
         Registration = apps.get_model('osf.Registration')
         NodeLog = apps.get_model('osf.NodeLog')
+
+        self.date_retracted = timezone.now()
+        self.save()
 
         parent_registration = Registration.find_one(Q('retraction', 'eq', self))
         parent_registration.registered_from.add_log(
@@ -807,7 +811,7 @@ class RegistrationApproval(PreregCallbackMixin, EmailApprovableSanction):
         self.save()
 
     def _on_reject(self, user):
-        from website.project.model import NodeLog
+        NodeLog = apps.get_model('osf.NodeLog')
 
         register = self._get_registration()
         registered_from = register.registered_from

@@ -180,7 +180,7 @@ var getAllNodeChildrenFromNodeList = function(parent, nodeList) {
         for (var c in tree[node]){
             var child = tree[node][c];
             remaining.push([child]);
-            children[child] = nodeList[child];    
+            children[child] = nodeList[child];
         }
     }
     return children;
@@ -362,7 +362,7 @@ var mapByProperty = function(list, attr) {
 };
 
 
-/** 
+/**
  * Replaces encoded & with decoded values
  */
 var decodeText = function(text) {

@@ -1,395 +1,455 @@
-from nose.tools import *  # flake8: noqa
+import pytest
 
 from api.base.settings.defaults import API_BASE
 from framework.auth.core import Auth
 from website.util import disconnected_from_listeners
 from website.project.signals import contributor_removed
-
-from tests.base import ApiTestCase
 from osf_tests.factories import (
     NodeFactory,
     AuthUserFactory,
     RegistrationFactory
 )
 
+@pytest.fixture()
+def user():
+    return AuthUserFactory()
 
-class TestNodeRelationshipNodeLinks(ApiTestCase):
+@pytest.mark.django_db
+class TestNodeRelationshipNodeLinks:
 
-    def setUp(self):
-        super(TestNodeRelationshipNodeLinks, self).setUp()
-        self.user = AuthUserFactory()
-        self.user2 = AuthUserFactory()
-        self.auth = Auth(self.user)
-        self.linking_node_source = NodeFactory(creator=self.user)
-        self.admin_node = NodeFactory(creator=self.user)
-        self.contributor_node = NodeFactory(creator=self.user2)
-        self.contributor_node.add_contributor(self.user, auth=Auth(self.user2))
-        self.contributor_node.save()
-        self.other_node = NodeFactory()
-        self.private_node = NodeFactory(creator=self.user)
-        self.public_node = NodeFactory(is_public=True)
-        self.linking_node_source.add_pointer(self.private_node, auth=self.auth)
-        self.linking_node_source.add_pointer(self.admin_node, auth=self.auth)
-        self.public_linking_node_source = NodeFactory(is_public=True, creator=self.user2)
-        self.public_linking_node_source.add_pointer(self.private_node, auth=Auth(self.user2))
-        self.public_linking_node_source.add_pointer(self.public_node, auth=Auth(self.user2))
-        self.public_linking_node = RegistrationFactory(project=self.public_linking_node_source, is_public=True, creator=self.user2)
-        self.linking_node = RegistrationFactory(project=self.linking_node_source, creator=self.user)
-        self.url = '/{}registrations/{}/relationships/linked_nodes/'.format(API_BASE, self.linking_node._id)
-        self.public_url = '/{}registrations/{}/relationships/linked_nodes/'.format(API_BASE, self.public_linking_node._id)
+    @pytest.fixture()
+    def contributor(self):
+        return AuthUserFactory()
 
-    def payload(self, node_ids=None):
-        node_ids = node_ids or [self.admin_node._id]
-        env_linked_nodes = [{"type": "linked_nodes", "id": node_id} for node_id in node_ids]
-        return {"data": env_linked_nodes}
+    @pytest.fixture()
+    def auth(self, user):
+        return Auth(user)
 
-    def test_get_relationship_linked_nodes(self):
-        res = self.app.get(
-            self.url, auth=self.user.auth
+    @pytest.fixture()
+    def private_node(self, user):
+        return NodeFactory(creator=user)
+
+    @pytest.fixture()
+    def admin_node(self, user):
+        return NodeFactory(creator=user)
+
+    @pytest.fixture()
+    def other_node(self):
+        return NodeFactory()
+
+    @pytest.fixture()
+    def public_node(self):
+        return NodeFactory(is_public=True)
+
+    @pytest.fixture()
+    def linking_node_source(self, user, auth, private_node, admin_node):
+        linking_node_source = NodeFactory(creator=user)
+        linking_node_source.add_pointer(private_node, auth=auth)
+        linking_node_source.add_pointer(admin_node, auth=auth)
+        return linking_node_source
+
+    @pytest.fixture()
+    def contributor_node(self, user, contributor):
+        contributor_node = NodeFactory(creator=contributor)
+        contributor_node.add_contributor(user, auth=Auth(contributor))
+        contributor_node.save()
+        return contributor_node
+
+    @pytest.fixture()
+    def public_linking_node_source(self, contributor, private_node, public_node):
+        public_linking_node_source = NodeFactory(is_public=True, creator=contributor)
+        public_linking_node_source.add_pointer(private_node, auth=Auth(contributor))
+        public_linking_node_source.add_pointer(public_node, auth=Auth(contributor))
+        public_linking_node_source.save()
+        return public_linking_node_source
+
+    @pytest.fixture()
+    def public_linking_node(self, public_linking_node_source, contributor):
+        return RegistrationFactory(project=public_linking_node_source, is_public=True, creator=contributor)
+
+    @pytest.fixture()
+    def linking_node(self, user, linking_node_source):
+        return RegistrationFactory(project=linking_node_source, creator=user)
+
+    @pytest.fixture()
+    def url(self, linking_node):
+        return '/{}registrations/{}/relationships/linked_nodes/'.format(API_BASE, linking_node._id)
+
+    @pytest.fixture()
+    def public_url(self, public_linking_node):
+        return '/{}registrations/{}/relationships/linked_nodes/'.format(API_BASE, public_linking_node._id)
+
+    @pytest.fixture()
+    def payload(self, admin_node):
+        def payload(node_ids=None):
+            node_ids = node_ids or [admin_node._id]
+            return {'data': [{'type': 'linked_nodes', 'id': node_id} for node_id in node_ids]}
+        return payload
+
+    def test_node_relationship_node_links(self, app, user, url, public_url, linking_node, private_node, admin_node, public_node, contributor_node, other_node, payload):
+
+    #   get_relationship_linked_nodes
+        res = app.get(url, auth=user.auth)
+
+        assert res.status_code == 200
+        assert linking_node.linked_nodes_self_url in res.json['links']['self']
+        assert linking_node.linked_nodes_related_url in res.json['links']['html']
+        assert private_node._id in [e['id'] for e in res.json['data']]
+
+    #   get_linked_nodes_related_counts
+        res = app.get(
+            '/{}registrations/{}/?related_counts=linked_nodes'.format(API_BASE, linking_node._id),
+            auth=user.auth
         )
 
-        assert_equal(res.status_code, 200)
+        assert res.json['data']['relationships']['linked_nodes']['links']['related']['meta']['count'] == 2
 
-        assert_in(self.linking_node.linked_nodes_self_url, res.json['links']['self'])
-        assert_in(self.linking_node.linked_nodes_related_url, res.json['links']['html'])
-        assert_in(self.private_node._id, [e['id'] for e in res.json['data']])
+    #   get_public_relationship_linked_nodes_logged_out
+        res = app.get(public_url)
 
-    def test_get_linked_nodes_related_counts(self):
-        res = self.app.get(
-            '/{}registrations/{}/?related_counts=linked_nodes'.format(API_BASE, self.linking_node._id),
-            auth=self.user.auth
-        )
-        assert_equal(res.json['data']['relationships']['linked_nodes']['links']['related']['meta']['count'], 2)
+        assert res.status_code == 200
+        assert len(res.json['data']) == 1
+        assert public_node._id in [e['id'] for e in res.json['data']]
 
-    def test_get_public_relationship_linked_nodes_logged_out(self):
-        res = self.app.get(self.public_url)
+    #   get_public_relationship_linked_nodes_logged_in
+        res = app.get(public_url, auth=user.auth)
 
-        assert_equal(res.status_code, 200)
-        assert_equal(len(res.json['data']), 1)
-        assert_in(self.public_node._id, [e['id'] for e in res.json['data']])
+        assert res.status_code == 200
+        assert len(res.json['data']) == 2
 
-    def test_get_public_relationship_linked_nodes_logged_in(self):
-        res = self.app.get(self.public_url, auth=self.user.auth)
+    #   get_private_relationship_linked_nodes_logged_out
+        res = app.get(url, expect_errors=True)
 
-        assert_equal(res.status_code, 200)
-        assert_equal(len(res.json['data']), 2)
+        assert res.status_code == 401
 
-    def test_get_private_relationship_linked_nodes_logged_out(self):
-        res = self.app.get(self.url, expect_errors=True)
-
-        assert_equal(res.status_code, 401)
-
-    def test_post_contributing_node(self):
-        res = self.app.post_json_api(
-            self.url, self.payload([self.contributor_node._id]),
-            auth=self.user.auth, expect_errors=True
+    #   post_contributing_node
+        res = app.post_json_api(
+            url, payload([contributor_node._id]),
+            auth=user.auth, expect_errors=True
         )
 
-        assert_equal(res.status_code, 405)
+        assert res.status_code == 405
 
-    def test_post_public_node(self):
-        res = self.app.post_json_api(
-            self.url, self.payload([self.public_node._id]),
-            auth=self.user.auth, expect_errors=True
+    #   post_public_node
+        res = app.post_json_api(
+            url, payload([public_node._id]),
+            auth=user.auth, expect_errors=True
         )
 
-        assert_equal(res.status_code, 405)
+        assert res.status_code == 405
 
-    def test_post_private_node(self):
-        res = self.app.post_json_api(
-            self.url, self.payload([self.other_node._id]),
-            auth=self.user.auth,
+    #   post_private_node
+        res = app.post_json_api(
+            url, payload([other_node._id]),
+            auth=user.auth,
             expect_errors=True
         )
 
-        assert_equal(res.status_code, 405)
+        assert res.status_code == 405
 
-        res = self.app.get(
-            self.url, auth=self.user.auth
+        res = app.get(
+            url, auth=user.auth
         )
 
         ids = [data['id'] for data in res.json['data']]
-        assert_not_in(self.other_node._id, ids)
-        assert_in(self.private_node._id, ids)
+        assert other_node._id not in ids
+        assert private_node._id in ids
 
-    def test_post_mixed_nodes(self):
-        res = self.app.post_json_api(
-            self.url, self.payload([self.other_node._id, self.contributor_node._id]),
-            auth=self.user.auth,
+    #   post_mixed_nodes
+        res = app.post_json_api(
+            url, payload([other_node._id, contributor_node._id]),
+            auth=user.auth,
             expect_errors=True
         )
 
-        assert_equal(res.status_code, 405)
+        assert res.status_code == 405
 
-        res = self.app.get(
-            self.url, auth=self.user.auth
+        res = app.get(
+            url, auth=user.auth
         )
 
         ids = [data['id'] for data in res.json['data']]
-        assert_not_in(self.other_node._id, ids)
-        assert_not_in(self.contributor_node._id, ids)
-        assert_in(self.private_node._id, ids)
+        assert other_node._id not in ids
+        assert contributor_node._id not in ids
+        assert private_node._id in ids
 
-    def test_post_node_already_linked(self):
-        res = self.app.post_json_api(
-            self.url, self.payload([self.private_node._id]),
-            auth=self.user.auth, expect_errors=True
+    #   post_node_already_linked
+        res = app.post_json_api(
+            url, payload([private_node._id]),
+            auth=user.auth, expect_errors=True
         )
 
-        assert_equal(res.status_code, 405)
+        assert res.status_code == 405
 
-    def test_put_contributing_node(self):
-        res = self.app.put_json_api(
-            self.url, self.payload([self.contributor_node._id]),
-            auth=self.user.auth, expect_errors=True
+    #   put_contributing_node
+        res = app.put_json_api(
+            url, payload([contributor_node._id]),
+            auth=user.auth, expect_errors=True
         )
 
-        assert_equal(res.status_code, 405)
+        assert res.status_code == 405
 
-    def test_put_private_node(self):
-        res = self.app.put_json_api(
-            self.url, self.payload([self.other_node._id]),
-            auth=self.user.auth,
+    #   put_private_node
+        res = app.put_json_api(
+            url, payload([other_node._id]),
+            auth=user.auth,
             expect_errors=True
         )
 
-        assert_equal(res.status_code, 405)
+        assert res.status_code == 405
 
-        res = self.app.get(
-            self.url, auth=self.user.auth
+        res = app.get(
+            url, auth=user.auth
         )
 
         ids = [data['id'] for data in res.json['data']]
-        assert_not_in(self.other_node._id, ids)
-        assert_in(self.private_node._id, ids)
+        assert other_node._id not in ids
+        assert private_node._id in ids
 
-    def test_put_mixed_nodes(self):
-        res = self.app.put_json_api(
-            self.url, self.payload([self.other_node._id, self.contributor_node._id]),
-            auth=self.user.auth, expect_errors=True
+    #   put_mixed_nodes
+        res = app.put_json_api(
+            url, payload([other_node._id, contributor_node._id]),
+            auth=user.auth, expect_errors=True
         )
 
-        assert_equal(res.status_code, 405)
+        assert res.status_code == 405
 
-        res = self.app.get(
-            self.url, auth=self.user.auth
+        res = app.get(
+            url, auth=user.auth
         )
 
         ids = [data['id'] for data in res.json['data']]
-        assert_not_in(self.other_node._id, ids)
-        assert_not_in(self.contributor_node._id, ids)
-        assert_in(self.private_node._id, ids)
+        assert other_node._id not in ids
+        assert contributor_node._id not in ids
+        assert private_node._id in ids
 
-    def test_delete_with_put_empty_array(self):
-        payload = self.payload()
-        payload['data'].pop()
-        res = self.app.put_json_api(
-            self.url, payload, auth=self.user.auth, expect_errors=True
+    #   delete_with_put_empty_array
+        new_payload = payload()
+        new_payload['data'].pop()
+        res = app.put_json_api(
+            url, new_payload, auth=user.auth, expect_errors=True
         )
-        assert_equal(res.status_code, 405)
+        assert res.status_code == 405
 
-    def test_delete_one(self):
-        res = self.app.delete_json_api(
-            self.url, self.payload([self.private_node._id]),
-            auth=self.user.auth, expect_errors=True
+    #   delete_one
+        res = app.delete_json_api(
+            url, payload([private_node._id]),
+            auth=user.auth, expect_errors=True
         )
-        assert_equal(res.status_code, 405)
+        assert res.status_code == 405
 
-        res = self.app.get(self.url, auth=self.user.auth)
+        res = app.get(url, auth=user.auth)
 
         ids = [data['id'] for data in res.json['data']]
-        assert_in(self.admin_node._id, ids)
-        assert_in(self.private_node._id, ids)
+        assert admin_node._id in ids
+        assert private_node._id in ids
 
-    def test_delete_multiple(self):
+    #   delete_multiple
 
-        res = self.app.delete_json_api(
-            self.url, self.payload([self.private_node._id, self.admin_node._id]),
-            auth=self.user.auth, expect_errors=True
+        res = app.delete_json_api(
+            url, payload([private_node._id, admin_node._id]),
+            auth=user.auth, expect_errors=True
         )
-        assert_equal(res.status_code, 405)
+        assert res.status_code == 405
 
-        res = self.app.get(self.url, auth=self.user.auth)
-        assert_equal(len(res.json['data']), 2)
+        res = app.get(url, auth=user.auth)
+        assert len(res.json['data']) == 2
 
-    def test_delete_not_present(self):
-        number_of_links = self.linking_node.linked_nodes.count()
-        res = self.app.delete_json_api(
-            self.url, self.payload([self.other_node._id]),
-            auth=self.user.auth, expect_errors=True
+    #   delete_not_present
+        number_of_links = linking_node.linked_nodes.count()
+        res = app.delete_json_api(
+            url, payload([other_node._id]),
+            auth=user.auth, expect_errors=True
         )
-        assert_equal(res.status_code, 405)
+        assert res.status_code == 405
 
-        res = self.app.get(
-            self.url, auth=self.user.auth
+        res = app.get(
+            url, auth=user.auth
         )
-        assert_equal(len(res.json['data']), number_of_links)
+        assert len(res.json['data']) == number_of_links
 
-
-    def test_node_doesnt_exist(self):
-        res = self.app.post_json_api(
-            self.url, self.payload(['aquarela']),
-            auth=self.user.auth,
+    #   node_doesnt_exist
+        res = app.post_json_api(
+            url, payload(['aquarela']),
+            auth=user.auth,
             expect_errors=True
         )
 
-        assert_equal(res.status_code, 405)
+        assert res.status_code == 405
 
-    def test_type_mistyped(self):
-        res = self.app.post_json_api(
-            self.url,
+    #   type_mistyped
+        res = app.post_json_api(
+            url,
             {
-                'data': [{'type': 'not_linked_nodes', 'id': self.contributor_node._id}]
+                'data': [{'type': 'not_linked_nodes', 'id': contributor_node._id}]
             },
-            auth=self.user.auth,
+            auth=user.auth,
             expect_errors=True
         )
 
-        assert_equal(res.status_code, 405)
+        assert res.status_code == 405
 
-    def test_creates_public_linked_node_relationship_logged_out(self):
-        res = self.app.post_json_api(
-                self.public_url, self.payload([self.public_node._id]),
+    #   creates_public_linked_node_relationship_logged_out
+        res = app.post_json_api(
+                public_url, payload([public_node._id]),
                 expect_errors=True
         )
 
-        assert_equal(res.status_code, 401)
+        assert res.status_code == 401
 
-    def test_creates_public_linked_node_relationship_logged_in(self):
-        res = self.app.post_json_api(
-                self.public_url, self.payload([self.public_node._id]),
-                auth=self.user.auth, expect_errors=True
+    #   creates_public_linked_node_relationship_logged_in
+        res = app.post_json_api(
+                public_url, payload([public_node._id]),
+                auth=user.auth, expect_errors=True
         )
 
-        assert_equal(res.status_code, 405)
+        assert res.status_code == 405
 
-    def test_creates_private_linked_node_relationship_logged_out(self):
-        res = self.app.post_json_api(
-                self.url, self.payload([self.other_node._id]),
+    #   creates_private_linked_node_relationship_logged_out
+        res = app.post_json_api(
+                url, payload([other_node._id]),
                 expect_errors=True
         )
 
-        assert_equal(res.status_code, 401)
+        assert res.status_code == 401
 
-    def test_put_public_nodes_relationships_logged_out(self):
-        res = self.app.put_json_api(
-                self.public_url, self.payload([self.public_node._id]),
+    #   put_public_nodes_relationships_logged_out
+        res = app.put_json_api(
+                public_url, payload([public_node._id]),
                 expect_errors=True
         )
 
-        assert_equal(res.status_code, 401)
+        assert res.status_code == 401
 
-    def test_put_public_nodes_relationships_logged_in(self):
-        res = self.app.put_json_api(
-                self.public_url, self.payload([self.private_node._id]),
-                auth=self.user.auth, expect_errors=True
+    #   put_public_nodes_relationships_logged_in
+        res = app.put_json_api(
+                public_url, payload([private_node._id]),
+                auth=user.auth, expect_errors=True
         )
 
-        assert_equal(res.status_code, 405)
+        assert res.status_code == 405
 
-    def test_delete_public_nodes_relationships_logged_out(self):
-        res = self.app.delete_json_api(
-            self.public_url, self.payload([self.public_node._id]),
+    #   delete_public_nodes_relationships_logged_out
+        res = app.delete_json_api(
+            public_url, payload([public_node._id]),
             expect_errors=True
         )
 
-        assert_equal(res.status_code, 401)
+        assert res.status_code == 401
 
-    def test_delete_public_nodes_relationships_logged_in(self):
-        res = self.app.delete_json_api(
-                self.public_url, self.payload([self.private_node._id]),
-                auth=self.user.auth, expect_errors=True
+    #   delete_public_nodes_relationships_logged_in
+        res = app.delete_json_api(
+                public_url, payload([private_node._id]),
+                auth=user.auth, expect_errors=True
         )
 
-        assert_equal(res.status_code, 405)
+        assert res.status_code == 405
 
+@pytest.mark.django_db
+class TestNodeLinkedNodes:
 
-class TestNodeLinkedNodes(ApiTestCase):
-    def setUp(self):
-        super(TestNodeLinkedNodes, self).setUp()
-        self.user = AuthUserFactory()
-        self.auth = Auth(self.user)
-        self.linking_node_source = NodeFactory(creator=self.user)
-        self.linked_node = NodeFactory(creator=self.user)
-        self.linked_node2 = NodeFactory(creator=self.user)
-        self.public_node = NodeFactory(is_public=True, creator=self.user)
-        self.linking_node_source.add_pointer(self.linked_node, auth=self.auth)
-        self.linking_node_source.add_pointer(self.linked_node2, auth=self.auth)
-        self.linking_node_source.add_pointer(self.public_node, auth=self.auth)
-        self.linking_node_source.save()
-        self.linking_node = RegistrationFactory(project=self.linking_node_source, creator=self.user)
+    @pytest.fixture()
+    def auth(self, user):
+        return Auth(user)
 
-        self.url = '/{}registrations/{}/linked_nodes/'.format(API_BASE, self.linking_node._id)
-        self.node_ids = list(self.linking_node.nodes_pointer.values_list('guids___id', flat=True))
+    @pytest.fixture()
+    def private_node_one(self, user):
+        return NodeFactory(creator=user)
 
-    def test_linked_nodes_returns_everything(self):
-        res = self.app.get(self.url, auth=self.user.auth)
+    @pytest.fixture()
+    def private_node_two(self, user):
+        return NodeFactory(creator=user)
 
-        assert_equal(res.status_code, 200)
+    @pytest.fixture()
+    def node_source(self, user, auth, private_node_one, private_node_two, public_node):
+        node_source = NodeFactory(creator=user)
+        node_source.add_pointer(private_node_one, auth=auth)
+        node_source.add_pointer(private_node_two, auth=auth)
+        node_source.add_pointer(public_node, auth=auth)
+        node_source.save()
+        return node_source
+
+    @pytest.fixture()
+    def public_node(self, user):
+        return NodeFactory(is_public=True, creator=user)
+
+    @pytest.fixture()
+    def linking_node(self, user, node_source):
+        return RegistrationFactory(project=node_source, creator=user)
+
+    @pytest.fixture()
+    def url(self, linking_node):
+        return '/{}registrations/{}/linked_nodes/'.format(API_BASE, linking_node._id)
+
+    @pytest.fixture()
+    def node_ids(self, linking_node):
+        return list(linking_node.nodes_pointer.values_list('guids___id', flat=True))
+
+    def test_linked_nodes_returns_everything(self, app, user, url, node_ids):
+        res = app.get(url, auth=user.auth)
+
+        assert res.status_code == 200
         nodes_returned = [linked_node['id'] for linked_node in res.json['data']]
-        assert_equal(len(nodes_returned), len(self.node_ids))
+        assert len(nodes_returned) == len(node_ids)
 
-        for node_id in self.node_ids:
-            assert_in(node_id, nodes_returned)
+        for node_id in node_ids:
+            assert node_id in nodes_returned
 
-    def test_linked_nodes_only_return_viewable_nodes(self):
+    def test_linked_nodes_only_return_viewable_nodes(self, app, auth, private_node_one, private_node_two, public_node, node_ids):
         user = AuthUserFactory()
         new_linking_node = NodeFactory(creator=user)
-        self.linked_node.add_contributor(user, auth=self.auth, save=True)
-        self.linked_node2.add_contributor(user, auth=self.auth, save=True)
-        self.public_node.add_contributor(user, auth=self.auth, save=True)
-        new_linking_node.add_pointer(self.linked_node, auth=Auth(user))
-        new_linking_node.add_pointer(self.linked_node2, auth=Auth(user))
-        new_linking_node.add_pointer(self.public_node, auth=Auth(user))
+        private_node_one.add_contributor(user, auth=auth, save=True)
+        private_node_two.add_contributor(user, auth=auth, save=True)
+        public_node.add_contributor(user, auth=auth, save=True)
+        new_linking_node.add_pointer(private_node_one, auth=Auth(user))
+        new_linking_node.add_pointer(private_node_two, auth=Auth(user))
+        new_linking_node.add_pointer(public_node, auth=Auth(user))
         new_linking_node.save()
         new_linking_registration = RegistrationFactory(project=new_linking_node, creator=user)
 
-        res = self.app.get(
+        res = app.get(
             '/{}registrations/{}/linked_nodes/'.format(API_BASE, new_linking_registration._id),
             auth=user.auth
         )
 
-        assert_equal(res.status_code, 200)
+        assert res.status_code == 200
         nodes_returned = [linked_node['id'] for linked_node in res.json['data']]
-        assert_equal(len(nodes_returned), len(self.node_ids))
+        assert len(nodes_returned) == len(node_ids)
 
-        for node_id in self.node_ids:
-            assert_in(node_id, nodes_returned)
+        for node_id in node_ids:
+            assert node_id in nodes_returned
 
         # Disconnect contributor_removed so that we don't check in files
         # We can remove this when StoredFileNode is implemented in osf-models
         with disconnected_from_listeners(contributor_removed):
-            self.linked_node2.remove_contributor(user, auth=self.auth)
-            self.public_node.remove_contributor(user, auth=self.auth)
+            private_node_two.remove_contributor(user, auth=auth)
+            public_node.remove_contributor(user, auth=auth)
 
-        res = self.app.get(
+        res = app.get(
             '/{}registrations/{}/linked_nodes/'.format(API_BASE, new_linking_registration._id),
             auth=user.auth
         )
         nodes_returned = [linked_node['id'] for linked_node in res.json['data']]
-        assert_equal(len(nodes_returned), len(self.node_ids) - 1)
+        assert len(nodes_returned) == len(node_ids) - 1
 
-        assert_in(self.linked_node._id, nodes_returned)
-        assert_in(self.public_node._id, nodes_returned)
-        assert_not_in(self.linked_node2._id, nodes_returned)
+        assert private_node_one._id in nodes_returned
+        assert public_node._id in nodes_returned
+        assert private_node_two._id not in nodes_returned
 
-    def test_linked_nodes_doesnt_return_deleted_nodes(self):
-        self.linked_node.is_deleted = True
-        self.linked_node.save()
-        res = self.app.get(self.url, auth=self.user.auth)
+    def test_linked_nodes_doesnt_return_deleted_nodes(self, app, user, url, private_node_one, private_node_two, public_node, node_ids):
+        private_node_one.is_deleted = True
+        private_node_one.save()
+        res = app.get(url, auth=user.auth)
 
-        assert_equal(res.status_code, 200)
+        assert res.status_code == 200
         nodes_returned = [linked_node['id'] for linked_node in res.json['data']]
-        assert_equal(len(nodes_returned), len(self.node_ids) - 1)
+        assert len(nodes_returned) == len(node_ids) - 1
 
-        assert_not_in(self.linked_node._id, nodes_returned)
-        assert_in(self.linked_node2._id, nodes_returned)
-        assert_in(self.public_node._id, nodes_returned)
+        assert private_node_one._id not in nodes_returned
+        assert private_node_two._id in nodes_returned
+        assert public_node._id in nodes_returned
 
-    def test_attempt_to_return_linked_nodes_logged_out(self):
-        res = self.app.get(
-            self.url, auth=None,
-            expect_errors=True
-        )
+    def test_attempt_to_return_linked_nodes_logged_out(self, app, url):
+        res = app.get(url, auth=None, expect_errors=True)
 
-        assert_equal(res.status_code, 401)
+        assert res.status_code == 401

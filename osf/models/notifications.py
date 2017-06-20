@@ -10,7 +10,7 @@ from website.notifications.constants import NOTIFICATION_TYPES
 
 class NotificationSubscription(BaseModel):
     primary_identifier_name = '_id'
-    _id = models.CharField(max_length=50, db_index=True)  # pxyz_wiki_updated, uabc_comment_replies
+    _id = models.CharField(max_length=50, db_index=True, unique=True)  # pxyz_wiki_updated, uabc_comment_replies
 
     event_name = models.CharField(max_length=50)  # wiki_updated, comment_replies
 

@@ -4,7 +4,7 @@
 
 Hello ${fullname},
 
-You have been added by ${referrer.fullname} as a contributor to the preprint "${node.title}" on ${branded_service_name}, powered by the Open Science Framework. To set a password for your account, visit:
+You have been added by ${referrer.fullname} as a contributor to the preprint "${node.title}" on ${branded_service.name}, powered by the Open Science Framework. To set a password for your account, visit:
 
 ${claim_url}
 
@@ -14,12 +14,12 @@ To preview "${node.title}" click the following link: ${node.absolute_url}
 
 (NOTE: if this project is private, you will not be able to view it until you have confirmed your account)
 
-If you are not ${fullname} or you have been erroneously associated with "${node.title}", then email contact+${branded_service_name.lower()}@osf.io with the subject line "Claiming Error" to report the problem.
+If you are not ${fullname} or you have been erroneously associated with "${node.title}", then email contact+${branded_service._id}@osf.io with the subject line "Claiming Error" to report the problem.
 
 
 Sincerely,
 
-Your ${branded_service_name} and OSF teams
+Your ${branded_service.name} and OSF teams
 
 Center for Open Science
 210 Ridge McIntire Road
@@ -27,6 +27,6 @@ Suite 500
 Charlottesville, VA 22903-5083
 Privacy Policy: https://github.com/CenterForOpenScience/cos.io/blob/master/PRIVACY_POLICY.md
 
-Want more information? Visit https://osf.io/preprints/${branded_service_name.lower()} to learn about ${branded_service_name} or https://osf.io/ to learn about the Open Science Framework, or https://cos.io/ for information about its supporting organization, the Center for Open Science.
+Want more information? Visit https://osf.io/preprints/${branded_service._id} to learn about ${branded_service.name} or https://osf.io/ to learn about the Open Science Framework, or https://cos.io/ for information about its supporting organization, the Center for Open Science.
 
-Questions? Email support+${branded_service_name.lower()}@osf.io
+Questions? Email support+${branded_service._id}@osf.io

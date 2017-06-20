@@ -1,3 +1,4 @@
+import mock
 import functools
 from modularodm import Q
 from nose.tools import *  # flake8: noqa
@@ -7,11 +8,10 @@ from api_tests import utils as test_utils
 from framework.auth.core import Auth
 from osf_tests.factories import PreprintFactory, AuthUserFactory, ProjectFactory, SubjectFactory, PreprintProviderFactory
 from osf.models import PreprintService, NodeLicense
-from website.project.licenses import ensure_licenses
 from website.project.signals import contributor_added
+from website.identifiers.utils import build_ezid_metadata
 from tests.base import ApiTestCase, fake, capture_signals
 
-ensure_licenses = functools.partial(ensure_licenses, warn=False)
 
 def build_preprint_update_payload(node_id, attributes=None, relationships=None):
     payload = {
@@ -41,6 +41,16 @@ class TestPreprintDetail(ApiTestCase):
     def test_preprint_top_level(self):
         assert_equal(self.data['type'], 'preprints')
         assert_equal(self.data['id'], self.preprint._id)
+
+    def test_preprint_node_deleted_detail_failure(self):
+        deleted_node = ProjectFactory(creator=self.user, is_deleted=True)
+        deleted_preprint = PreprintFactory(project=deleted_node, creator=self.user)
+
+        url = '/{}preprints/{}/'.format(API_BASE, deleted_preprint._id)
+        res = self.app.get(url, expect_errors=True)
+        assert_equal(res.status_code, 404)
+        assert_equal(self.res.content_type, 'application/vnd.api+json')
+
 
 class TestPreprintDelete(ApiTestCase):
     def setUp(self):
@@ -98,14 +108,14 @@ class TestPreprintUpdate(ApiTestCase):
         assert_equal(res.status_code, 401)
 
     def test_update_subjects(self):
-        assert_not_equal(self.preprint.subjects[0], [self.subject._id])
+        assert_false(self.preprint.subjects.filter(_id=self.subject._id).exists())
         update_subjects_payload = build_preprint_update_payload(self.preprint._id, attributes={"subjects": [[self.subject._id]]})
 
         res = self.app.patch_json_api(self.url, update_subjects_payload, auth=self.user.auth)
         assert_equal(res.status_code, 200)
 
         self.preprint.reload()
-        assert_equal(self.preprint.subjects[0], [self.subject._id])
+        assert_true(self.preprint.subjects.filter(_id=self.subject._id).exists())
 
     def test_update_invalid_subjects(self):
         subjects = self.preprint.subjects
@@ -134,7 +144,7 @@ class TestPreprintUpdate(ApiTestCase):
         assert_equal(res.status_code, 200)
 
         self.preprint.node.reload()
-        assert_equal(self.preprint.primary_file.wrapped(), new_file)
+        assert_equal(self.preprint.primary_file, new_file)
 
         # check logs
         log = self.preprint.node.logs.latest()
@@ -160,9 +170,9 @@ class TestPreprintUpdate(ApiTestCase):
         assert_equal(res.status_code, 400)
 
         self.preprint.reload()
-        assert_not_equal(self.preprint.primary_file.wrapped(), file_for_project)
+        assert_not_equal(self.preprint.primary_file, file_for_project)
 
-    def test_update_doi(self):
+    def test_update_article_doi(self):
         new_doi = '10.1234/ASDFASDF'
         assert_not_equal(self.preprint.article_doi, new_doi)
         update_subjects_payload = build_preprint_update_payload(self.preprint._id, attributes={"doi": new_doi})
@@ -227,26 +237,26 @@ class TestPreprintUpdate(ApiTestCase):
         user_two = AuthUserFactory()
         self.preprint.node.add_contributor(user_two, permissions=['read', 'write'], auth=Auth(self.user), save=True)
 
-        assert_not_equal(self.preprint.subjects[0][0], self.subject._id)
+        assert_false(self.preprint.subjects.filter(_id=self.subject._id).exists())
         update_subjects_payload = build_preprint_update_payload(self.preprint._id, attributes={"subjects": [[self.subject._id]]})
 
         res = self.app.patch_json_api(self.url, update_subjects_payload, auth=user_two.auth, expect_errors=True)
         assert_equal(res.status_code, 403)
 
-        assert_not_equal(self.preprint.subjects[0], self.subject._id)
+        assert_false(self.preprint.subjects.filter(_id=self.subject._id).exists())
 
     def test_noncontrib_cannot_set_subjects(self):
         user_two = AuthUserFactory()
         self.preprint.node.add_contributor(user_two, permissions=['read', 'write'], auth=Auth(self.user), save=True)
 
-        assert_not_equal(self.preprint.subjects[0][0], self.subject._id)
+        assert_false(self.preprint.subjects.filter(_id=self.subject._id).exists())
 
         update_subjects_payload = build_preprint_update_payload(self.preprint._id, attributes={"subjects": [[self.subject._id]]})
 
         res = self.app.patch_json_api(self.url, update_subjects_payload, auth=user_two.auth, expect_errors=True)
         assert_equal(res.status_code, 403)
 
-        assert_not_equal(self.preprint.subjects[0], self.subject._id)
+        assert_false(self.preprint.subjects.filter(_id=self.subject._id).exists())
 
     def test_update_published(self):
         unpublished = PreprintFactory(creator=self.user, is_published=False)
@@ -256,29 +266,19 @@ class TestPreprintUpdate(ApiTestCase):
         unpublished.reload()
         assert_true(unpublished.is_published)
 
-    # Regression test for https://openscience.atlassian.net/browse/OSF-7630
-    def test_update_published_does_not_send_contributor_added_for_inactive_users(self):
-        unpublished = PreprintFactory(creator=self.user, is_published=False)
-        unpublished.node.add_unregistered_contributor(
-            fullname=fake.name(),
-            email=fake.email(),
-            auth=Auth(self.user),
-            save=True
-        )
-        url = '/{}preprints/{}/'.format(API_BASE, unpublished._id)
-        payload = build_preprint_update_payload(unpublished._id, attributes={'is_published': True})
-        with capture_signals() as captured:
-            res = self.app.patch_json_api(url, payload, auth=self.user.auth)
-            # Signal not sent, because contributor is not registered
-            assert_false(captured[contributor_added])
+    @mock.patch('website.preprints.tasks.on_preprint_updated.s')
+    def test_update_preprint_task_called_on_api_update(self, mock_on_preprint_updated):
+        update_doi_payload = build_preprint_update_payload(self.preprint._id, attributes={'doi': '10.1234/ASDFASDF'})
 
+        self.app.patch_json_api(self.url, update_doi_payload, auth=self.user.auth)
+        self.preprint.node.reload()
+
+        assert mock_on_preprint_updated.called
 
 class TestPreprintUpdateLicense(ApiTestCase):
 
     def setUp(self):
         super(TestPreprintUpdateLicense, self).setUp()
-
-        ensure_licenses()
 
         self.admin_contributor = AuthUserFactory()
         self.rw_contributor = AuthUserFactory()

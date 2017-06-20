@@ -114,14 +114,14 @@ def migrate_filenodes():
             )
 
             # Wrapped's save will populate path and materialized_path
-            new_node.wrapped().save()
+            new_node.save()
             listing.append(new_node)
 
         assert node_settings.get_root()
         for x in listing:
             # Make sure everything transfered properly
             if x.to_storage()['parent']:
-                assert x.parent, '{!r}\'s parent {} does not exist'.format(x.wrapped(), x.to_storage()['parent'])
+                assert x.parent, '{!r}\'s parent {} does not exist'.format(x, x.to_storage()['parent'])
 
 
 def translate_versions(versions):

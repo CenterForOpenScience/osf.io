@@ -4,7 +4,9 @@ import re
 import furl
 from django.core.urlresolvers import resolve, reverse, NoReverseMatch
 from django.core.exceptions import ImproperlyConfigured
-from rest_framework import exceptions
+from django.utils import six
+
+from rest_framework import exceptions, permissions
 from rest_framework import serializers as ser
 from rest_framework.fields import SkipField
 from rest_framework.fields import get_attribute as get_nested_attributes
@@ -18,10 +20,11 @@ from api.base.exceptions import RelationshipPostMakesNoChanges
 from api.base.settings import BULK_SETTINGS
 from api.base.utils import absolute_reverse, extend_querystring_params, get_user_auth, extend_querystring_if_key_exists
 from framework.auth import core as auth_core
+from osf.models import AbstractNode as Node
 from website import settings
 from website import util as website_utils
-from website.models import Node
 from website.util.sanitize import strip_html
+from website.project.model import has_anonymous_link
 
 
 def format_relationship_links(related_link=None, self_link=None, rel_meta=None, self_meta=None):
@@ -73,6 +76,7 @@ class ShowIfVersion(ser.Field):
         self.read_only = field.read_only
         self.min_version = min_version
         self.max_version = max_version
+        self.help_text = 'This field is deprecated as of version {}'.format(self.max_version) or kwargs.get('help_text')
 
     def get_attribute(self, instance):
         request = self.context.get('request')
@@ -343,8 +347,7 @@ class AuthorizedCharField(ser.CharField):
         content = AuthorizedCharField(source='get_content')
     """
 
-    def __init__(self, source=None, **kwargs):
-        assert source is not None, 'The `source` argument is required.'
+    def __init__(self, source, **kwargs):
         self.source = source
         super(AuthorizedCharField, self).__init__(source=self.source, **kwargs)
 
@@ -354,6 +357,33 @@ class AuthorizedCharField(ser.CharField):
         field_source_method = getattr(obj, self.source)
         return field_source_method(auth=auth)
 
+class AnonymizedRegexField(AuthorizedCharField):
+    """
+    Performs a regex replace on the content of the authorized object's
+    source field when an anonymous view is requested.
+
+    Example:
+        content = AnonymizedRegexField(source='get_content', regex='\[@[^\]]*\]\([^\) ]*\)', replace='@A User')
+    """
+
+    def __init__(self, source, regex, replace, **kwargs):
+        self.source = source
+        self.regex = regex
+        self.replace = replace
+        super(AnonymizedRegexField, self).__init__(source=self.source, **kwargs)
+
+    def get_attribute(self, obj):
+        value = super(AnonymizedRegexField, self).get_attribute(obj)
+
+        if value:
+            user = self.context['request'].user
+            auth = auth_core.Auth(user)
+            if 'view_only' in self.context['request'].query_params:
+                auth.private_key = self.context['request'].query_params['view_only']
+                if has_anonymous_link(obj.node, auth):
+                    value = re.sub(self.regex, self.replace, value)
+
+        return value
 
 class RelationshipField(ser.HyperlinkedIdentityField):
     """
@@ -819,6 +849,27 @@ class LinksField(ser.Field):
         return ret
 
 
+class ListDictField(ser.DictField):
+
+    def __init__(self, **kwargs):
+        super(ListDictField, self).__init__(**kwargs)
+
+    def to_representation(self, value):
+        """
+        Ensure the value of each key in the Dict to be a list
+        """
+        res = {}
+        for key, val in value.items():
+            if isinstance(self.child.to_representation(val), list):
+                res[six.text_type(key)] = self.child.to_representation(val)
+            else:
+                if self.child.to_representation(val):
+                    res[six.text_type(key)] = [self.child.to_representation(val)]
+                else:
+                    res[six.text_type(key)] = []
+        return res
+
+
 _tpl_pattern = re.compile(r'\s*<\s*(\S*)\s*>\s*')
 
 
@@ -1008,15 +1059,30 @@ class JSONAPIListSerializer(ser.ListSerializer):
         return ret
 
 
-class PrefetchRelationshipsSerializer(ser.Serializer):
+class SparseFieldsetMixin(object):
+    def parse_sparse_fields(self, allow_unsafe=False, **kwargs):
+        request = kwargs.get('context', {}).get('request', None)
+        if request and (allow_unsafe or request.method in permissions.SAFE_METHODS):
+            sparse_fieldset_query_param = 'fields[{}]'.format(self.Meta.type_)
+            if sparse_fieldset_query_param in request.query_params:
+                fieldset = request.query_params[sparse_fieldset_query_param].split(',')
+                for field_name in self.fields.fields.copy().keys():
+                    if field_name in ('id', 'links', 'type'):
+                        # MUST return these fields
+                        continue
+                    if field_name not in fieldset:
+                        self.fields.pop(field_name)
+
+class BaseAPISerializer(ser.Serializer, SparseFieldsetMixin):
 
     def __init__(self, *args, **kwargs):
-        super(PrefetchRelationshipsSerializer, self).__init__(*args, **kwargs)
+        self.parse_sparse_fields(**kwargs)
+        super(BaseAPISerializer, self).__init__(*args, **kwargs)
         self.model_field_names = [name if field.source == '*' else field.source
                                   for name, field in self.fields.iteritems()]
 
 
-class JSONAPISerializer(PrefetchRelationshipsSerializer):
+class JSONAPISerializer(BaseAPISerializer):
     """Base serializer. Requires that a `type_` option is set on `class Meta`. Also
     allows for enveloping of both single resources and collections.  Looks to nest fields
     according to JSON API spec. Relational fields must set json_api_link=True flag.
@@ -1033,7 +1099,7 @@ class JSONAPISerializer(PrefetchRelationshipsSerializer):
     # overrides Serializer
     @classmethod
     def many_init(cls, *args, **kwargs):
-        kwargs['child'] = cls()
+        kwargs['child'] = cls(*args, **kwargs)
         return JSONAPIListSerializer(*args, **kwargs)
 
     def invalid_embeds(self, fields, embeds):
@@ -1067,6 +1133,7 @@ class JSONAPISerializer(PrefetchRelationshipsSerializer):
         meta = getattr(self, 'Meta', None)
         type_ = getattr(meta, 'type_', None)
         assert type_ is not None, 'Must define Meta.type_'
+        self.parse_sparse_fields(allow_unsafe=True, context=self.context)
 
         data = {
             'id': '',
@@ -1198,7 +1265,7 @@ class JSONAPISerializer(PrefetchRelationshipsSerializer):
         return website_utils.rapply(self.validated_data, strip_html)
 
 
-class JSONAPIRelationshipSerializer(PrefetchRelationshipsSerializer):
+class JSONAPIRelationshipSerializer(BaseAPISerializer):
     """Base Relationship serializer. Requires that a `type_` option is set on `class Meta`.
     Provides a simplified serialization of the relationship, allowing for simple update request
     bodies.
@@ -1301,7 +1368,7 @@ class LinkedRegistration(JSONAPIRelationshipSerializer):
         type_ = 'linked_registrations'
 
 
-class LinkedNodesRelationshipSerializer(PrefetchRelationshipsSerializer):
+class LinkedNodesRelationshipSerializer(BaseAPISerializer):
     data = ser.ListField(child=LinkedNode())
     links = LinksField({'self': 'get_self_url',
                         'html': 'get_related_url'})
@@ -1366,7 +1433,7 @@ class LinkedNodesRelationshipSerializer(PrefetchRelationshipsSerializer):
         return self.make_instance_obj(collection)
 
 
-class LinkedRegistrationsRelationshipSerializer(PrefetchRelationshipsSerializer):
+class LinkedRegistrationsRelationshipSerializer(BaseAPISerializer):
     data = ser.ListField(child=LinkedRegistration())
     links = LinksField({'self': 'get_self_url',
                         'html': 'get_related_url'})

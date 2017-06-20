@@ -9,7 +9,7 @@ from flask import request
 from framework.auth.decorators import must_be_logged_in
 
 from addons.base import generic_views
-from website.oauth.models import ExternalAccount
+from osf.models import ExternalAccount
 from website.project.decorators import (
     must_have_addon)
 

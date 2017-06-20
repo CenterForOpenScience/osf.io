@@ -1,9 +1,9 @@
-<% from website.models import Node %>
+<% from osf.models import AbstractNode%>
 <%
 def print_message(d, indent=0):
     message = ''
     for key in d['children']:
-        message += '\t' * indent + ' - ' + Node.load(key).title + ':'
+        message += '\t' * indent + ' - ' + AbstractNode.load(key).title + ':'
         if d['children'][key]['messages']:
             for m in d['children'][key]['messages']:
                 message += '\n' +'\t' * (indent+1) + ' - '+ m
@@ -28,7 +28,7 @@ Privacy Policy: https://github.com/CenterForOpenScience/cos.io/blob/master/PRIVA
 
 <%def name="build_message(d, indent=0)">
 %for key in d['children']:
-    ${'\t' * indent + Node.load(key).title + ':'}
+    ${'\t' * indent + AbstractNode.load(key).title + ':'}
     %if d['children'][key]['messages']:
         %for m in d['children'][key]['messages']:
         ${'\t' * indent + '- ' + m['message'] + ' ' + m['timestamp'].strftime("%H:%M")}

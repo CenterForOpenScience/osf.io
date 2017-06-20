@@ -4,7 +4,7 @@ import pytest
 from bulk_update.helper import bulk_update
 
 from osf.models import OSFUser
-from django.db.models import CharField, Max, DateTimeField
+from django.db.models import Max, DateTimeField
 
 from osf_tests.factories import UserFactory, PreprintFactory
 
@@ -156,10 +156,13 @@ class TestGuidAnnotations:
     @pytest.mark.django_assert_num_queries
     def test_bulk_create_objects(self, Factory, django_assert_num_queries):
         objects = []
-        ids = range(0, 5)
         Model = Factory._meta.model
-        for id in ids:
-            objects.append(Factory.build(id=id))
+        kwargs = {}
+        if Factory == PreprintFactory:
+            # Don't try to save preprints on build when neither the subject nor provider have been saved
+            kwargs['finish'] = False
+        for _ in range(0,5):
+            objects.append(Factory.build(**kwargs))
         with django_assert_num_queries(1):
             things = Model.objects.bulk_create(objects)
         assert len(things) == len(objects)

@@ -48,7 +48,7 @@ class GuidView(DetailView):
                 AttributeError(
                     '{} with id "{}" not found.'.format(
                         self.context_object_name.title(),
-                        kwargs.get('spam_id')
+                        kwargs.get('guid')
                     )
                 )
             )

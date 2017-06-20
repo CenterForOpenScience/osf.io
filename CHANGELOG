@@ -2,6 +2,157 @@
 Changelog
 *********
 
+0.114.0 (2017-06-13)
+====================
+- Replies notifications sending double entries to some users
+- GitHub is misspelled on osf.io/support page
+- All fangorn errors on non-Chrome browsers report as "Cannot upload folder"
+- Author link on OSF meeting site isn't updating
+- Prereg Challenge: "Learn more here" link on Notice form is broken
+- "Check in file" button is missing from file widget
+- Dashboard "Search for more projects" button url shows zero search results in elastic search
+- Unable to Cancel a Registration if Project is Deleted Shortly After Creation
+- Clicking "Add" button multiple times when adding an unconfirmed user results in error
+- NodeProviderDetail endpoint 502s
+- Preprint is not orphaned if its file is deleted
+- Preprint deletion tests and cleanup (OSF-7938 followup)
+- Facebook link in footer needs to be updated
+- Preprint emails need updating to handle 2-word preprint providers
+- APIv2: Filtering on User's tags is broken
+- Admin not handling custom preprint taxonomies correctly
+- Admin requires all subjects to be checked to create full bepress taxonomy
+- Admin app 502s when saving preprint providers
+- Modify Column Widths on My Projects page to maximize Project Title column
+- Make preprint_provider model easier to maintain
+- Change button text on final Registration modal
+- Use Short URL's for Downloads on File View Page
+- No longer offer Election Pre-reg form
+- Remove FAQ page and Update Support to Point to new FAQ
+- Allow popup from Dataverses other than UVA
+
+0.113.0 (2017-06-05)
+====================
+
+- Normalize user emails in database (add Email model).
+- Remove legacy MODM models and unused mongo-related code.
+- Remove unnecessary gravatar endpoint from APIv1.
+- Use upstream django-typed-models package on PyPI.
+
+0.112.0 (2017-06-01)
+====================
+
+- Render project lists on profile pages client-side for faster load times.
+
+0.111.0 (2017-05-31)
+====================
+
+- Automatically create DOIs for preprints.
+- API: Support sparse fieldsets.
+- Dev: Refactor API OAuth Application tests to use pytest fixtures for better performance.
+
+0.110.0 (2017-05-26)
+====================
+
+- [production] Can't view file revisions/versions if sharejs is down
+- User can enter invalid Copyright year on projects with no license
+- Deactivated users can be added to a node via API
+- Incorrect link to get API token from "other" Dataverses
+- Can't drag files from any Storage Provider to Dataverse
+- Searching for Contributors is Broken
+- Admin tests are not run on Travis (and ~11 fail)
+- Test Optimization: PreprintIsValidListMixin
+- staging1 - Scielo submit preprint form shows two Engineering disciplines
+- Improve CAS/OSF Logout Logic: OSF Part
+- Remove usages of StoredFileNode and FileNode
+- Use custom JSON encoder to implement datetime-aware JSON fields
+- Update branded domains (fixes)
+- Add Location and Date to Meetings pages
+- Hide OSF for Institutions Logos from Dashboard Until 5 Projects Affiliated
+- Update Google+ Link on footer
+- Users should see language explaining the components inherit the license of the parent project upon creation
+- Add UVA to list of available Dataverses
+- Remove demo, apitest dataverses from dropdown list
+- Remove v1 share registration code
+- Create a log when user creates or removes VOL link
+- Add London and Central Canada for S3 bucket locations
+- Update Docs for branded preprint provider domains
+- Change icons on top right of Project Overview page to make them more universal
+- Add preprint_providers and institutions to Admin app with import/export
+- "close" ERPC
+- Update image on Lab@DC OSF4I page
+- Update text on UC OSF4I page
+- Add default license field, serve as first item through provider/licenses endpoint
+- Populate register.mako from database
+- Make preprint and registries landing pages much more basic
+- Update Keen Analytics scripts to be runnable manually in Django
+- API: Create a way to filter a preprints search on subject name/text in addition to  subject_id
+
+0.109.0 (2017-05-10)
+====================
+
+- Support custom taxonomies for preprint providers.
+
+0.108.0 (2017-05-08)
+====================
+- [My Projects] Icon for Uncategorized disappears when project/component is highlighted
+- Comment pane should not appear in anonymous view-only links
+- Moving multiple GitHub files into folder fails
+- Incorrect heading text is displayed in copy or move "taking longer than expected" message
+- Files added to OSF Storage display incorrect time stamps
+- Update Social Links to ImpactStory
+- & in file name causes registration to fail
+- Prereg banner on Dashboard misbehaves on mobile and requires hard refresh to show correct color
+- Retractions should show the date retracted in the metadata
+- Update Default to Collapsed Preview Pane on My Projects Page
+- Add Search by User Name and Search by Email to Admin App
+- Finish user serialization
+- Add Banner to Private Project That Has Preprint
+- Generate Account Confirmation + Password reset Links in Admin App
+- Redirect osf.io/explore (and osf.io/explore/activity) to osf.io/activity
+- Better way to surface registration form
+- Improve wording on move/replace file modal
+- Change Default Language on Wiki without Content
+- Update Language when there are no components on a project
+- Change text prompt if no tags applied
+- Change Project Description Prompt text
+- Change No License Prompt Text
+- Improve Language for Non-Admins on Registrations Tab
+- Add timestamp to APIv2 file versions
+- Make wiki versioning more clear to users
+
+
+0.107.0 (2017-04-28)
+====================
+
+- Upgrade to Django 1.11.
+- Remove BaseFileNode.wrapped() method.
+- Remove guid_string field from models.
+- Preprints: Add LawArxiv.
+- Admin: Add Date Registration Initiated to node view.
+- Admin: Add link between projects and registrations.
+
+0.106.0 (2017-04-21)
+====================
+
+- Registrations with 100+ nodes fail with content_length_mismatch error
+- [Win 10] DropZone patch for Windows folder uploads (IE / Firefox)
+- Submitting to OSF4M using deleted project name does not create new project
+- Fangorn edit undefined
+- API 502s when refreshing github metadata (was: TypeError: Can't compare datetime.datetime to NoneType)
+- API 502s when requesting Github file metadata w/ version=2.2
+- Search unhappy with some users
+- Registries: "Withdrawn" label not appearing on newly-withdrawn registrations
+- Retraction detail pages throw mithril mounting error
+- Preprint Provider detail not 404-ing if not found
+- Sitemap index datemod -> lastmod
+- Cannot change GitHub branches on staging/staging3
+- When project marked spam, update EZID DOI status to Unavailable
+- Populate Fangorn text input on rename
+- Allow UVA dataverse-specific Pop-up in Fangorn upon publishing dataset/verse
+- Linked Registrations on Nodes in API
+- OSF - Convert all Dropbox v1 API code/clients to v2 API before deadline
+- Update dockerfile to support running registries locally
+
 0.105.0 (2017-04-02)
 ====================
 

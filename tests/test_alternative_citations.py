@@ -3,7 +3,7 @@ from nose.tools import *  # flake8: noqa (PEP8 asserts)
 
 from framework.auth.core import Auth
 
-from website.project.model import AlternativeCitation
+from osf.models import AlternativeCitation
 
 from modularodm.exceptions import ValidationError
 

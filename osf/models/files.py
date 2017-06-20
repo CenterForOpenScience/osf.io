@@ -10,7 +10,7 @@ from django.db import models
 from django.db.models import Manager
 from django.utils import timezone
 from modularodm.exceptions import NoResultsFound
-from typedmodels.models import TypedModel
+from typedmodels.models import TypedModel, TypedModelManager
 from include import IncludeManager
 
 from framework.analytics import get_basic_counters
@@ -29,7 +29,6 @@ __all__ = (
     'File',
     'Folder',
     'FileVersion',
-    'StoredFileNode',
     'BaseFileNode',
     'TrashedFileNode',
 )
@@ -38,8 +37,7 @@ PROVIDER_MAP = {}
 logger = logging.getLogger(__name__)
 
 
-class BaseFileNodeManager(Manager):
-    use_for_related_fields = True
+class BaseFileNodeManager(TypedModelManager):
 
     def get_queryset(self):
         qs = super(BaseFileNodeManager, self).get_queryset()
@@ -108,7 +106,9 @@ class BaseFileNode(TypedModel, CommentableMixin, OptionalGuidMixin, Taggable, Ob
 
     objects = BaseFileNodeManager()
     active = ActiveFileNodeManager()
-    _base_manager = BaseFileNodeManager()
+
+    class Meta:
+        base_manager_name = 'objects'
 
     @property
     def history(self):
@@ -162,19 +162,6 @@ class BaseFileNode(TypedModel, CommentableMixin, OptionalGuidMixin, Taggable, Ob
     def root_target_page(self):
         """The comment page type associated with StoredFileNodes."""
         return 'files'
-
-    @property
-    def stored_object(self):
-        """
-        DEPRECATED: Returns self after logging.
-        :return:
-        """
-        logger.warn('BaseFileNode.stored_object is deprecated.')
-        return self
-
-    @stored_object.setter
-    def stored_object(self, value):
-        raise DeprecatedException('BaseFileNode.stored_object is deprecated.')
 
     @classmethod
     def create(cls, **kwargs):
@@ -339,7 +326,7 @@ class BaseFileNode(TypedModel, CommentableMixin, OptionalGuidMixin, Taggable, Ob
 
     def move_under(self, destination_parent, name=None):
         self.name = name or self.name
-        self.parent = destination_parent.stored_object
+        self.parent = destination_parent
         self._update_node(save=True)  # Trust _update_node to save us
 
         return self
@@ -366,12 +353,6 @@ class BaseFileNode(TypedModel, CommentableMixin, OptionalGuidMixin, Taggable, Ob
         if recursive and not self.is_file:
             for child in self.children:
                 child._update_node(save=save)
-
-    def wrapped(self):
-        """Wrap self in a FileNode subclass
-        """
-        logger.warn('Wrapped is deprecated.')
-        return self
 
     # TODO: Remove unused parent param
     def delete(self, user=None, parent=None, save=True, deleted_on=None):
@@ -419,11 +400,6 @@ class BaseFileNode(TypedModel, CommentableMixin, OptionalGuidMixin, Taggable, Ob
             self.name,
             self.node
         )
-
-
-# TODO Refactor code pointing at FileNode to point to StoredFileNode
-FileNode = StoredFileNode = BaseFileNode
-
 
 class UnableToRestore(Exception):
     pass
@@ -695,15 +671,14 @@ class FileVersion(ObjectIDMixin, BaseModel):
             # Shouldn't ever happen, but we already have an archive
             return True  # We've found ourself
 
-        qs = self.__class__.find(
+        other = self.__class__.find(
             Q('_id', 'ne', self._id) &
             Q('metadata.sha256', 'eq', self.metadata['sha256']) &
             Q('metadata.archive', 'ne', None) &
             Q('metadata.vault', 'ne', None)
-        ).limit(1)
-        if qs.count() < 1:
+        ).first()
+        if not other:
             return False
-        other = qs[0]
         try:
             self.metadata['vault'] = other.metadata['vault']
             self.metadata['archive'] = other.metadata['archive']

@@ -185,7 +185,7 @@ function _poColumnTitles() {
     if(!mobile){
         columns.push({
             title: 'Name',
-            width : '50%',
+            width : '55%',
             sort : true,
             sortType : 'text'
         },{
@@ -194,7 +194,7 @@ function _poColumnTitles() {
             sort : false
         }, {
             title : 'Modified',
-            width : '25%',
+            width : '20%',
             sort : true,
             sortType : 'date'
         });

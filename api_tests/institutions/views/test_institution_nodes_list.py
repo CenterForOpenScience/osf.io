@@ -4,7 +4,7 @@ from tests.base import ApiTestCase
 from osf_tests.factories import InstitutionFactory, AuthUserFactory, ProjectFactory, NodeFactory
 
 from api.base.settings.defaults import API_BASE
-from api_tests.nodes.filters.test_filters import NodesListFilteringMixin
+from api_tests.nodes.filters.test_filters import NodesListFilteringMixin, NodesListDateFilteringMixin
 
 class TestInstitutionNodeList(ApiTestCase):
 
@@ -121,3 +121,24 @@ class TestNodeListFiltering(NodesListFilteringMixin, ApiTestCase):
         self.node_C1.save()
         self.node_C2.save()
         self.node_D2.save()
+
+
+class TestNodeListDateFiltering(NodesListDateFilteringMixin, ApiTestCase):
+
+    def setUp(self):
+        self.institution = InstitutionFactory()
+        self.url = '/{}institutions/{}/nodes/?'.format(API_BASE, self.institution._id)
+
+        super(TestNodeListDateFiltering, self).setUp()
+
+        self.node_may.is_public = True
+        self.node_june.is_public = True
+        self.node_july.is_public = True
+
+        self.node_may.affiliated_institutions.add(self.institution)
+        self.node_june.affiliated_institutions.add(self.institution)
+        self.node_july.affiliated_institutions.add(self.institution)
+
+        self.node_may.save()
+        self.node_june.save()
+        self.node_july.save()

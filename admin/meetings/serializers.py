@@ -1,4 +1,4 @@
-from website.conferences.model import DEFAULT_FIELD_NAMES
+from osf.models.conference import DEFAULT_FIELD_NAMES
 
 def serialize_meeting(meeting):
     is_meeting = True

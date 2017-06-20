@@ -6,7 +6,7 @@ ${confirmation_url}
 
 
 Sincerely,
-From the team at the Center for Open Science
+Open Science Framework Robot
 
 Center for Open Science
 210 Ridge McIntire Road
