@@ -2,8 +2,11 @@
 import urlparse
 from nose.tools import *  # flake8: noqa
 
+from osf.models import QuickFiles
+from website import util as website_utils
 from website.util.sanitize import strip_html
 from website.views import find_bookmark_collection
+
 
 from tests.base import ApiTestCase
 from osf_tests.factories import AuthUserFactory, CollectionFactory, ProjectFactory
@@ -78,6 +81,21 @@ class TestUserDetail(ApiTestCase):
         res = self.app.get(url)
         user_json = res.json['data']
         assert_in('profile_image', user_json['links'])
+
+    def test_files_relationship_upload(self):
+        url = "/{}users/{}/".format(API_BASE, self.user_one._id)
+        res = self.app.get(url, auth=self.user_one)
+        quickfiles = QuickFiles.objects.get(creator=self.user_one)
+        user_json = res.json['data']
+        upload_url = user_json['relationships']['files']['links']['upload']['href']
+        waterbutler_upload = website_utils.waterbutler_api_url_for(quickfiles._id, 'osfstorage')
+
+        assert_equal(upload_url, waterbutler_upload)
+
+    def test_nodes_relationship_is_absent(self):
+        url = "/{}users/{}/".format(API_BASE, self.user_one._id)
+        res = self.app.get(url, auth=self.user_one)
+        assert_not_in('node', res.json['data']['relationships'].keys())
 
 
 class TestUserRoutesNodeRoutes(ApiTestCase):
