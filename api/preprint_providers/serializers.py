@@ -27,6 +27,7 @@ class PreprintProviderSerializer(JSONAPISerializer):
     email_support = ser.CharField(required=False, allow_null=True)
     allow_submissions = DevOnly(ser.BooleanField(read_only=True))
     additional_providers = DevOnly(ser.ListField(child=ser.CharField(), read_only=True))
+    preprint_word = ser.CharField(required=False, allow_null=True)
 
     preprints = RelationshipField(
         related_view='preprint_providers:preprints-list',
