@@ -3,7 +3,7 @@ from django.contrib.auth.models import AnonymousUser
 from rest_framework.permissions import BasePermission
 
 
-class IsCasJweAuthentication(BasePermission):
+class IsCasLogin(BasePermission):
     """
     Allow access for CAS authentication request.
     """

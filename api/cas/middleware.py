@@ -10,7 +10,7 @@ from api.cas import messages
 def is_cas_request(request):
     """ Check if the request targets CAS endpoints.
     """
-    return request.path.startswith('/v2/cas/')
+    return request.method == 'POST' and request.path.startswith('/v2/cas/')
 
 
 def decrypt_request_body(request):

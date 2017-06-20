@@ -7,8 +7,6 @@ from api.base.exceptions import (UnconfirmedAccountError, UnclaimedAccountError,
                                  MergedAccountError, InvalidAccountError)
 from api.cas import messages, cas_errors
 
-from addons.twofactor.models import UserSettings as TwoFactorUserSettings
-
 from framework.auth.views import send_confirm_email
 from framework.auth.core import generate_verification_key
 
@@ -38,102 +36,6 @@ def is_user_inactive(user):
     except (MergedAccountError, InvalidAccountError):
         return cas_errors.INVALID_ACCOUNT_STATUS
     return None
-
-
-def verify_two_factor(user, one_time_password):
-    """
-    Check users' two factor settings after they successful pass the initial verification.
-
-    :param user: the osf user
-    :param one_time_password: the one time password
-    :return: None, if two factor is not required
-             None, if two factor is required and one time password passes verification
-             TWO_FACTOR_AUTHENTICATION_REQUIRED, if two factor is required but one time password is not provided
-             INVALID_ONE_TIME_PASSWORD if two factor is required but one time password fails verification
-    """
-
-    try:
-        two_factor = TwoFactorUserSettings.objects.get(owner_id=user.pk)
-    except TwoFactorUserSettings.DoesNotExist:
-        two_factor = None
-
-    # two factor not required
-    if not two_factor:
-        return None
-
-    # two factor required
-    if not one_time_password:
-        return cas_errors.TFA_REQUIRED
-
-    # verify two factor
-    if two_factor.verify_code(one_time_password):
-        return None
-    return cas_errors.INVALID_TOTP
-
-
-def find_account_for_verify_email(data_user):
-    """
-    Find account by email and verify if the user has a pending email verification. If so, resend the verification email
-    if user hasn't recently make the same request.
-
-    :param data_user: the user object in decrypted data payload
-    :return: the user if successful, the error message otherwise
-    """
-
-    email = data_user.get('email')
-    if not email:
-        raise ValidationError(detail=messages.INVALID_REQUEST)
-
-    user = find_user_by_email(email, username_only=False)
-    if not user:
-        return None, messages.EMAIL_NOT_FOUND
-
-    if not throttle_period_expired(user.email_last_sent, web_settings.SEND_EMAIL_THROTTLE):
-        return None, messages.RESEND_VERIFICATION_THROTTLE_ACTIVE
-
-    try:
-        send_confirm_email(user, email, renew=True, external_id_provider=None, external_id=None, destination=None)
-    except KeyError:
-        return None, messages.ALREADY_VERIFIED
-
-    user.email_last_sent = timezone.now()
-    user.save()
-    return user, None
-
-
-def find_account_for_reset_password(data_user):
-    """
-    Find account by email and verify if the user is eligible for reset password. If so, send the verification email
-    if user hasn't recently make the same request.
-
-    :param data_user: the user object in decrypted data payload
-    :return: the user if successful, the error message otherwise
-    """
-
-    email = data_user.get('email')
-    if not email:
-        raise ValidationError(detail=messages.INVALID_REQUEST)
-
-    user = find_user_by_email(email, username_only=False)
-    if not user:
-        return None, messages.EMAIL_NOT_FOUND
-
-    if not throttle_period_expired(user.email_last_sent, web_settings.SEND_EMAIL_THROTTLE):
-        return None, messages.RESET_PASSWORD_THROTTLE_ACTIVE
-
-    if not user.is_active:
-        return None, messages.RESET_PASSWORD_NOT_ELIGIBLE
-
-    user.verification_key_v2 = generate_verification_key(verification_type='password')
-    send_mail(
-        to_addr=email,
-        mail=FORGOT_PASSWORD,
-        user=user,
-        verification_code=user.verification_key_v2['token']
-    )
-    user.email_last_sent = timezone.now()
-    user.save()
-    return user, None
 
 
 def ensure_external_identity_uniqueness(provider, identity, user):

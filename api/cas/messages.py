@@ -28,13 +28,8 @@ INVALID_CODE = 'The verification code is invalid.'
 
 ALREADY_VERIFIED = 'This email has already been verified.'
 
-RESET_PASSWORD_NOT_ELIGIBLE =\
-    'You cannot reset password on this account. Please contact OSF support.'
+ACCOUNT_NOT_ELIGIBLE =\
+    'The OSF account associated with this email is not eligible for the requested action. Please contact OSF support.'
 
-EXTERNAL_IDENTITY_NOT_ELIGIBLE = 'The OSF account associated with this email is not eligible. Please contact OSF support.'
-
-RESEND_VERIFICATION_THROTTLE_ACTIVE =\
-    'You have recently requested to resend your verification email. Please wait a few minutes before trying again.'
-
-RESET_PASSWORD_THROTTLE_ACTIVE =\
-    'You have recently requested to reset your password. Please wait a few minutes before trying again.'
+EMAIL_THROTTLE_ACTIVE =\
+    'You have recently make the same request. Please wait a few minutes before trying again.'

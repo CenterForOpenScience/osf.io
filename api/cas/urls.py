@@ -3,18 +3,21 @@ from django.conf.urls import url
 from api.cas import views
 
 urlpatterns = [
-    # auth
-    url(r'^auth/login/$', views.AuthLogin.as_view(), name=views.AuthLogin.view_name),
-    url(r'^auth/register/$', views.AuthRegister.as_view(), name=views.AuthRegister.view_name),
-    url(r'^auth/institution/$', views.AuthInstitution.as_view(), name=views.AuthInstitution.view_name),
-    url(r'^auth/external/$', views.AuthExternal.as_view(), name=views.AuthExternal.view_name),
-    url(r'^auth/external/createOrLink/$', views.AuthExternalCreateOrLinkOsfAccount.as_view(), name=views.AuthExternalCreateOrLinkOsfAccount.view_name),
-    url(r'^auth/verifyEmail/$', views.AuthVerifyEmail.as_view(), name=views.AuthVerifyEmail.view_name),
-    url(r'^auth/resetPassword/$', views.AuthResetPassword.as_view(), name=views.AuthResetPassword.view_name),
+    # login
+    url(r'^login/osf/$', views.LoginOsf.as_view(), name=views.LoginOsf.view_name),
+    url(r'^login/institution/$', views.LoginInstitution.as_view(), name=views.LoginInstitution.view_name),
+    url(r'^login/external/$', views.LoginExternal.as_view(), name=views.LoginExternal.view_name),
+    # account
+    url(r'^account/register/osf/$', views.AccountRegisterOsf.as_view(), name=views.AccountRegisterOsf.view_name),
+    url(r'^account/register/external/', views.AccountRegisterExternal.as_view(), name=views.AccountRegisterExternal.view_name),
+    url(r'^account/verify/osf/$', views.AccountVerifyOsf.as_view(), name=views.AccountVerifyOsf.view_name),
+    url(r'^account/verify/osf/resend/$', views.AccountVerifyOsfResend.as_view(), name=views.AccountVerifyOsfResend.view_name),
+    url(r'^account/verify/external/$', views.AccountVerifyExternal.as_view(), name=views.AccountVerifyExternal.view_name),
+    url(r'^account/password/forgot/$', views.AccountPasswordForgot.as_view(), name=views.AccountPasswordForgot.view_name),
+    url(r'^account/password/reset/$', views.AccountPasswordReset.as_view(), name=views.AccountPasswordReset.view_name),
     # service
-    url(r'^service/findAccount/$', views.ServiceFindAccount.as_view(), name=views.ServiceFindAccount.view_name),
-    url(r'^service/checkPAT/$', views.ServiceCheckPersonalAccessToken.as_view(), name=views.ServiceCheckPersonalAccessToken.view_name),
-    url(r'^service/checkOauthScope/$', views.ServiceCheckOauthScope.as_view(), name=views.ServiceCheckOauthScope.view_name),
-    url(r'^service/loadInstitutions/$', views.ServiceLoadInstitutions.as_view(), name=views.ServiceLoadInstitutions.view_name),
-    url(r'^service/loadDeveloperApps/$', views.ServiceLoadDeveloperApps.as_view(), name=views.ServiceLoadDeveloperApps.view_name),
+    url(r'^service/oauth/token/$', views.ServiceOauthToken.as_view(), name=views.ServiceOauthToken.view_name),
+    url(r'^service/oauth/scope/$', views.ServiceOauthScope.as_view(), name=views.ServiceOauthScope.view_name),
+    url(r'^service/oauth/apps/$', views.ServiceOauthApps.as_view(), name=views.ServiceOauthApps.view_name),
+    url(r'^service/institutions/$', views.ServiceInstitutions.as_view(), name=views.ServiceInstitutions.view_name),
 ]
