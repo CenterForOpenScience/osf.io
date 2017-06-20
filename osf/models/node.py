@@ -2318,6 +2318,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
             # .preprints wouldn't return a single deleted preprint
             for preprint in PreprintService.objects.filter(node_id=self.id, is_published=True):
                 enqueue_task(on_preprint_updated.s(preprint._id, update_share=update_share))
+                preprint.save()
 
         user = User.load(user_id)
         if user and self.check_spam(user, saved_fields, request_headers):
