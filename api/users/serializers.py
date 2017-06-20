@@ -4,6 +4,7 @@ from modularodm.exceptions import ValidationValueError, ValidationError
 
 from website import util as website_utils
 from api.base.exceptions import InvalidModelValueError
+from api.files.serializers import OsfStorageFileSerializer
 from api.base.serializers import JSONAPIRelationshipSerializer, HideIfDisabled, BaseAPISerializer
 from osf.models import OSFUser, QuickFiles
 
@@ -14,15 +15,21 @@ from api.base.serializers import (
 from api.base.utils import absolute_reverse, get_user_auth
 
 
-class QuickFilesUploadRelationshipField(RelationshipField):
+class QuickFilesRelationshipField(RelationshipField):
 
     def to_representation(self, value):
-        relationship_links = super(QuickFilesUploadRelationshipField, self).to_representation(value)
-        quickfiles_guid = QuickFiles.objects.filter(creator=value).values_list('_id', flat=True).get()
-        url = website_utils.waterbutler_api_url_for(quickfiles_guid, 'osfstorage')
-        relationship_links['links']['upload'] = {
-            'href': url,
-            'meta': {}
+        relationship_links = super(QuickFilesRelationshipField, self).to_representation(value)
+        quickfiles_guid = QuickFiles.objects.get_for_user(value)._id
+        upload_url = website_utils.waterbutler_api_url_for(quickfiles_guid, 'osfstorage')
+        relationship_links['links'] = {
+            'upload': {
+                'href': upload_url,
+                'meta': {}
+            },
+            'download': {
+                'href': '{}?zip='.format(upload_url),
+                'meta': {}
+            }
         }
         return relationship_links
 
@@ -62,7 +69,7 @@ class UserSerializer(JSONAPISerializer):
         related_meta={'projects_in_common': 'get_projects_in_common'},
     ))
 
-    files = HideIfDisabled(QuickFilesUploadRelationshipField(
+    files = HideIfDisabled(QuickFilesRelationshipField(
         related_view='users:user-files',
         related_view_kwargs={'user_id': '<_id>'},
     ))
@@ -175,6 +182,21 @@ class UserDetailSerializer(UserSerializer):
     Overrides UserSerializer to make id required.
     """
     id = IDField(source='_id', required=True)
+
+
+class UserQuickFilesSerializer(OsfStorageFileSerializer):
+    links = LinksField({
+        'info': Link('files:file-detail', kwargs={'file_id': '<_id>'}),
+        'upload': WaterbutlerLink(),
+        'delete': WaterbutlerLink(),
+        'download': WaterbutlerLink(must_be_file=True),
+    })
+
+    def to_representation(self, obj, envelope='data'):
+        # Remove the node relationship for QuickFiles as they don't have a detail view
+        results = super(UserQuickFilesSerializer, self).to_representation(obj, envelope)
+        del results['relationships']['node']
+        return results
 
 
 class ReadEmailUserDetailSerializer(UserDetailSerializer):

@@ -15,7 +15,6 @@ from api.institutions.serializers import InstitutionSerializer
 from api.nodes.filters import NodesFilterMixin
 from api.nodes.serializers import NodeSerializer
 from api.preprints.serializers import PreprintSerializer
-from api.files.serializers import OsfStorageFileSerializer
 from api.registrations.serializers import RegistrationSerializer
 from api.users.permissions import (CurrentUser, ReadOnlyOrCurrentUser,
                                    ReadOnlyOrCurrentUserRelationship)
@@ -23,6 +22,7 @@ from api.users.serializers import (UserAddonSettingsSerializer,
                                    UserDetailSerializer,
                                    UserInstitutionsRelationshipSerializer,
                                    UserSerializer,
+                                   UserQuickFilesSerializer)
                                    ReadEmailUserDetailSerializer,)
 from django.contrib.auth.models import AnonymousUser
 from framework.auth.oauth_scopes import CoreScopes, normalize_scopes
@@ -559,7 +559,7 @@ class UserQuickFiles(JSONAPIBaseView, generics.ListAPIView, WaterButlerMixin, Us
     required_read_scopes = [CoreScopes.USERS_READ]
     required_write_scopes = [CoreScopes.USERS_WRITE]
 
-    serializer_class = OsfStorageFileSerializer
+    serializer_class = UserQuickFilesSerializer
     view_category = 'users'
     view_name = 'user-files'
 
