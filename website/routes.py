@@ -821,9 +821,6 @@ def make_url_map(app):
         Rule('/profile/<uid>/', 'get', profile_views.profile_view_id_json, json_renderer),
 
         # Used by profile.html
-        Rule('/profile/<uid>/edit/', 'post', profile_views.edit_profile, json_renderer),
-        Rule('/profile/<user_id>/summary/', 'get',
-             profile_views.get_profile_summary, json_renderer),
         Rule('/user/<uid>/<pid>/claim/email/', 'post',
              project_views.contributor.claim_user_post, json_renderer),
 
@@ -1303,27 +1300,11 @@ def make_url_map(app):
         ),
         Rule(
             [
-                '/pointers/move/',
-            ],
-            'post',
-            project_views.node.move_pointers,
-            json_renderer,
-        ),
-        Rule(
-            [
                 '/project/<pid>/pointer/',
                 '/project/<pid>/node/<nid>pointer/',
             ],
             'delete',
             project_views.node.remove_pointer,
-            json_renderer,
-        ),
-        Rule(
-            [
-                '/folder/<pid>/pointer/<pointer_id>',
-            ],
-            'delete',
-            project_views.node.remove_pointer_from_folder,
             json_renderer,
         ),
 

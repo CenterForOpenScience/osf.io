@@ -62,13 +62,13 @@ from website.util.permissions import (ADMIN, CREATOR_PERMISSIONS,
                                       DEFAULT_CONTRIBUTOR_PERMISSIONS, READ,
                                       WRITE, expand_permissions,
                                       reduce_permissions)
-from .base import BaseModel, Guid, GuidMixin, MODMCompatibilityQuerySet
+from .base import BaseModel, Guid, GuidMixin
 
 
 logger = logging.getLogger(__name__)
 
 
-class AbstractNodeQuerySet(MODMCompatibilityQuerySet, IncludeQuerySet):
+class AbstractNodeQuerySet(IncludeQuerySet):
 
     def get_roots(self):
         return self.filter(id__in=self.exclude(type='osf.collection').values_list('root_id', flat=True))
@@ -159,17 +159,6 @@ class AbstractNodeManager(TypedModelManager, IncludeManager):
         qs = AbstractNodeQuerySet(self.model, using=self._db)
         # Filter by typedmodels type
         return self._filter_by_type(qs)
-
-    # MODMCompatibilityQuerySet methods
-
-    def eager(self, *fields):
-        return self.get_queryset().eager(*fields)
-
-    def sort(self, *fields):
-        return self.get_queryset().sort(*fields)
-
-    def limit(self, n):
-        return self.get_queryset().limit(n)
 
     # AbstractNodeQuerySet methods
 
@@ -797,7 +786,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
 
     def get_aggregate_logs_queryset(self, auth):
         query = self.get_aggregate_logs_query(auth)
-        return NodeLog.find(query).sort('-date')
+        return NodeLog.find(query).order_by('-date')
 
     def get_absolute_url(self):
         return self.absolute_api_v2_url

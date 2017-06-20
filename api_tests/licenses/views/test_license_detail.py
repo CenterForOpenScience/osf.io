@@ -3,16 +3,12 @@ import functools
 
 from tests.base import ApiTestCase
 from osf.models.licenses import NodeLicense
-from website.project.licenses import ensure_licenses
 from api.base.settings.defaults import API_BASE
-
-ensure_licenses = functools.partial(ensure_licenses, warn=False)
 
 
 class TestLicenseDetail(ApiTestCase):
     def setUp(self):
         super(TestLicenseDetail, self).setUp()
-        ensure_licenses()
         self.license = NodeLicense.find()[0]
         self.url = '/{}licenses/{}/'.format(API_BASE, self.license._id)
         self.res = self.app.get(self.url)

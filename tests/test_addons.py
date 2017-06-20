@@ -28,7 +28,6 @@ from osf.models import Session, MetaSchema
 from osf.models import files as file_models
 from osf.models.files import BaseFileNode, TrashedFileNode
 from website.project import new_private_link
-from website.project.model import ensure_schemas
 from website.project.views.node import _view_project as serialize_node
 from website.util import api_url_for, rubeus
 
@@ -363,7 +362,6 @@ class TestCheckPreregAuth(OsfTestCase):
     def setUp(self):
         super(TestCheckPreregAuth, self).setUp()
 
-        ensure_schemas()
         self.prereg_challenge_admin_user = AuthUserFactory()
         self.prereg_challenge_admin_user.add_system_tag(settings.PREREG_ADMIN_TAG)
         self.prereg_challenge_admin_user.save()

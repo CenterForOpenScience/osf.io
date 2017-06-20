@@ -30,7 +30,7 @@ class PreprintProviderList(PermissionRequiredMixin, ListView):
     model = PreprintProvider
 
     def get_queryset(self):
-        return PreprintProvider.objects.all().sort(self.ordering)
+        return PreprintProvider.objects.all().order_by(self.ordering)
 
     def get_context_data(self, **kwargs):
         query_set = kwargs.pop('object_list', self.object_list)

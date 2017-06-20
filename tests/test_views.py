@@ -1048,12 +1048,6 @@ class TestUserProfile(OsfTestCase):
         super(TestUserProfile, self).setUp()
         self.user = AuthUserFactory()
 
-    def test_sanitization_of_edit_profile(self):
-        url = api_url_for('edit_profile', uid=self.user._id)
-        post_data = {'name': 'fullname', 'value': 'new<b> name</b>     '}
-        request = self.app.post(url, post_data, auth=self.user.auth)
-        assert_equal('new name', request.json['name'])
-
     def test_fmt_date_or_none(self):
         with assert_raises(HTTPError) as cm:
             #enter a date before 1900
@@ -2839,31 +2833,6 @@ class TestPointerViews(OsfTestCase):
         res = self.app.post_json(url, {}, auth=self.user.auth, expect_errors=True)
         assert_equal(res.status_code, 400)
 
-    def test_move_pointers(self):
-        project_two = ProjectFactory(creator=self.user)
-        url = api_url_for('move_pointers')
-        node = NodeFactory()
-        pointer = self.project.add_pointer(node, auth=self.consolidate_auth)
-
-        assert_equal(self.project.linked_nodes.count(), 1)
-        assert_equal(project_two.linked_nodes.count(), 0)
-
-        user_auth = self.user.auth
-        move_request = \
-            {
-                'fromNodeId': self.project._id,
-                'toNodeId': project_two._id,
-                'pointerIds': [pointer._id],
-            }
-        self.app.post_json(
-            url,
-            move_request,
-            auth=user_auth,
-        ).maybe_follow()
-        self.project.reload()
-        project_two.reload()
-        assert_equal(self.project.linked_nodes.count(), 0)
-        assert_equal(project_two.linked_nodes.count(), 1)
 
     def test_remove_pointer(self):
         url = self.project.api_url + 'pointer/'
