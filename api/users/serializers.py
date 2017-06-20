@@ -2,15 +2,29 @@ from rest_framework import serializers as ser
 
 from modularodm.exceptions import ValidationValueError, ValidationError
 
+from website import util as website_utils
 from api.base.exceptions import InvalidModelValueError
 from api.base.serializers import JSONAPIRelationshipSerializer, HideIfDisabled, BaseAPISerializer
-from osf.models import OSFUser
+from osf.models import OSFUser, QuickFiles
 
 from api.base.serializers import (
     JSONAPISerializer, LinksField, RelationshipField, DevOnly, IDField, TypeField, ListDictField,
     DateByVersion,
 )
 from api.base.utils import absolute_reverse, get_user_auth
+
+
+class QuickFilesUploadRelationshipField(RelationshipField):
+
+    def to_representation(self, value):
+        relationship_links = super(QuickFilesUploadRelationshipField, self).to_representation(value)
+        quickfiles_guid = QuickFiles.objects.filter(creator=value).values_list('_id', flat=True).get()
+        url = website_utils.waterbutler_api_url_for(quickfiles_guid, 'osfstorage')
+        relationship_links['links']['upload'] = {
+            'href': url,
+            'meta': {}
+        }
+        return relationship_links
 
 
 class UserSerializer(JSONAPISerializer):
@@ -46,6 +60,11 @@ class UserSerializer(JSONAPISerializer):
         related_view='users:user-nodes',
         related_view_kwargs={'user_id': '<_id>'},
         related_meta={'projects_in_common': 'get_projects_in_common'},
+    ))
+
+    files = HideIfDisabled(QuickFilesUploadRelationshipField(
+        related_view='users:user-files',
+        related_view_kwargs={'user_id': '<_id>'},
     ))
 
     registrations = DevOnly(HideIfDisabled(RelationshipField(
