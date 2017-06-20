@@ -33,41 +33,45 @@ services:
 #    image: quay.io/centerforopenscience/fakecas:latest
 #    command: fakecas -host=0.0.0.0:8080 -dbaddress=172.19.0.7:27017
 
-#  wb:
-#    volumes:
-#      - container:wb-sync
+  wb:
+    volumes:
+      - wb-sync:/code:nocopy
 
 #  wb_worker:
 #    volumes:
-#      - container:wb-sync
+#      - wb-sync:/code:nocopy
 
 #  wb_requirements:
 #    volumes:
-#      - container:wb-sync
+#      - wb-sync:/code:nocopy
 
 #  mfr:
 #    volumes:
-#      - container:mfr-sync
+#      - mfr-sync:/code:nocopy
 
 #  mfr_requirements:
 #    volumes:
-#      - container:mfr-sync
+#      - mfr-sync:/code:nocopy
 
 #  preprints:
 #    volumes:
-#      - container:preprints-sync
-#
-#    # Use this for ember-osf linked development (with docker-sync):
-#    depends_on:
-#      - emberosf
-#    command: /bin/bash -c "cd /ember-osf && yarn link && cd /code && yarn link ember-osf && yarn --pure-lockfile && ./node_modules/bower/bin/bower install --allow-root --config.interactive=false && ./node_modules/ember-cli/bin/ember serve --host 0.0.0.0 --port 4200"
-#    volumes:
-#      - preprints_dist_vol:/code/dist
-#      - emberosf-sync:/ember-osf
+#      - preprints-sync:/nocopy
+##    # Use this for ember-osf linked development (with docker-sync):
+##      - preprints_dist_vol:/code/dist
+##      - emberosf-sync:/ember-osf
+##    depends_on:
+##      - emberosf
+##    command: /bin/bash -c "cd /ember-osf && yarn link && cd /code && yarn link ember-osf && yarn --pure-lockfile && ./node_modules/bower/bin/bower install --allow-root --config.interactive=false && ./node_modules/ember-cli/bin/ember serve --host 0.0.0.0 --port 4200"
 
 volumes:
   code:
     external: true
+
+#  wb-sync:
+#    external: true
+
+#  mfr-sync:
+#    external: true
 
 #  ember-osf-sync:
 #    external: true
