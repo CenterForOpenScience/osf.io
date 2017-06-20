@@ -272,8 +272,8 @@ class TestNodeChildCreate:
         assert project.nodes[0].logs.latest().action == NodeLog.PROJECT_CREATED
 
     def test_creates_child_creates_child_and_sanitizes_html_logged_in_owner(self, app, user, project, url):
-        title = '<em>Cool</em> <strong>Project</strong>'
-        description = 'An <script>alert("even cooler")</script> child'
+        title = '<em>Reasonable</em> <strong>Project</strong>'
+        description = 'An <script>alert("even reasonabler")</script> child'
 
         res = app.post_json_api(url, {
             'data': {
@@ -429,8 +429,8 @@ class TestNodeChildrenBulkCreate:
         assert nodes[1].logs.latest().action == NodeLog.PROJECT_CREATED
 
     def test_bulk_creates_children_and_sanitizes_html_logged_in_owner(self, app, user, project, url):
-        title = '<em>Cool</em> <strong>Project</strong>'
-        description = 'An <script>alert("even cooler")</script> child'
+        title = '<em>Reasoning</em> <strong>Aboot Projects</strong>'
+        description = 'A <script>alert("super reasonable")</script> child'
 
         res = app.post_json_api(url, {
             'data': [{
