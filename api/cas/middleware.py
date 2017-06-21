@@ -1,4 +1,4 @@
-from rest_framework.exceptions import ParseError
+from rest_framework.exceptions import ParseError, ValidationError
 
 import jwe
 import jwt
@@ -10,7 +10,12 @@ from api.cas import messages
 def is_cas_request(request):
     """ Check if the request targets CAS endpoints.
     """
-    return request.method == 'POST' and request.path.startswith('/v2/cas/')
+
+    if request.path.startswith('/v2/cas/'):
+        if request.method == 'POST':
+            return True
+        raise ValidationError('Method {} not allowed'.format(request.method))
+    return False
 
 
 def decrypt_request_body(request):

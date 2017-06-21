@@ -305,7 +305,7 @@ def handle_password_forgot(data_user):
         raise PermissionDenied(detail=messages.EMAIL_THROTTLE_ACTIVE)
 
     # check user status
-    if not util.is_user_inactive(user):
+    if util.is_user_inactive(user):
         raise PermissionDenied(detail=messages.ACCOUNT_NOT_ELIGIBLE)
 
     # generate v2 key for reset password and send

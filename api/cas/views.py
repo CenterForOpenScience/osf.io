@@ -11,8 +11,6 @@ from api.cas import login, account, permissions
 
 from osf.models import ApiOAuth2Application, ApiOAuth2PersonalToken, ApiOAuth2Scope, Institution, OSFUser
 
-from website import settings as web_settings
-
 
 class LoginOsf(JSONAPIBaseView, generics.CreateAPIView):
     """ Default login through OSF.
@@ -111,10 +109,10 @@ class AccountVerifyOsf(JSONAPIBaseView, generics.CreateAPIView):
         user = account.handle_verify_osf(body_data.get('user'))
 
         content = {
-            'verificationKey': user.verification_key,
-            'casActionUrl': web_settings.DOMAIN + 'cas/action/' + user._id + '/',
-            'destinationView': 'index',
-            'campaign': True
+            "verificationKey": user.verification_key,
+            'userId': user._id,
+            'casAction': 'account-verify-osf',
+            'nextUrl': False,
         }
 
         return Response(data=content, status=status.HTTP_200_OK)
@@ -189,10 +187,10 @@ class AccountVerifyExternal(JSONAPIBaseView, generics.CreateAPIView):
         user, create_or_link = account.handle_verify_external(body_data.get('user'))
 
         content = {
-            'verificationKey': user.verification_key,
-            'casActionUrl': web_settings.DOMAIN + 'cas/action/' + user._id + '/',
-            'destinationView': 'index',
-            'campaign': True
+            "verificationKey": user.verification_key,
+            'userId': user._id,
+            'casAction': 'account-verify-external',
+            'nextUrl': True,
         }
 
         return Response(data=content, status=status.HTTP_200_OK)
@@ -215,7 +213,7 @@ class AccountPasswordForgot(JSONAPIBaseView, generics.CreateAPIView):
         if account_action != 'PASSWORD_FORGOT':
             raise ValidationError(detail=messages.INVALID_REQUEST)
 
-        account.handle_password_forgot(body_data.get('data'))
+        account.handle_password_forgot(body_data.get('user'))
 
         return Response(status=status.HTTP_204_NO_CONTENT)
 
@@ -241,9 +239,9 @@ class AccountPasswordReset(JSONAPIBaseView, generics.CreateAPIView):
 
         content = {
             "verificationKey": user.verification_key,
-            'casActionUrl': web_settings.DOMAIN + 'cas/action/' + request.user._id + '/',
-            'destinationView': 'user-account',
-            'campaign': False
+            'userId': user._id,
+            'casAction': 'account-password-reset',
+            'nextUrl': False,
         }
 
         return Response(data=content, status=status.HTTP_200_OK)

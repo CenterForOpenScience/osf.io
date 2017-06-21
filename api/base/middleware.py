@@ -153,3 +153,5 @@ class CasEndpointMiddleware(object):
 
         if is_cas_request(request):
             decrypt_request_body(request)
+
+
