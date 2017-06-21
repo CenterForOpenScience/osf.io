@@ -26,8 +26,11 @@ services:
   api:
     volumes:
       - code:/code:nocopy
-
 # Additional configuration for development on services linked with osf.io
+
+# beat:
+#    volumes:
+#      - code:/code:nocopy
 
 #  fakecas:
 #    image: quay.io/centerforopenscience/fakecas:latest
