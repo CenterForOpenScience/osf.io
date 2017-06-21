@@ -4,28 +4,28 @@ version: "3"
 services:
   requirements:
     volumes:
-      - code:/code:nocopy
+      - osf-sync:/code:nocopy
   assets:
     volumes:
-      - code:/code:nocopy
+      - osf-sync:/code:nocopy
   admin_assets:
     volumes:
-      - code:/code:nocopy
+      - osf-sync:/code:nocopy
   sharejs:
     volumes:
-      - code:/code:nocopy
+      - osf-sync:/code:nocopy
   worker:
     volumes:
-      - code:/code:nocopy
+      - osf-sync:/code:nocopy
   admin:
     volumes:
-      - code:/code:nocopy
+      - osf-sync:/code:nocopy
   web:
     volumes:
-      - code:/code:nocopy
+      - osf-sync:/code:nocopy
   api:
     volumes:
-      - code:/code:nocopy
+      - osf-sync:/code:nocopy
 
 # Additional configuration for development on services linked with osf.io
 
@@ -85,7 +85,7 @@ services:
 
 
 volumes:
-  code:
+  osf-sync:
     external: true
 
 #  wb-sync:
