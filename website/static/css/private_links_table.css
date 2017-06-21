@@ -24,3 +24,9 @@
 #generate-private-link {
     margin: 20px 20px;
 }
+
+@media screen and (max-width: 768px) {
+  #privateLinkTable.table {
+    margin-top: 12px;
+  }
+}

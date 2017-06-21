@@ -7,7 +7,7 @@
 
 <div class="row project-page">
     <!-- Begin left column -->
-    <div class="col-sm-3 affix-parent scrollspy">
+    <div class="col-md-3 col-xs-12 affix-parent scrollspy">
 
         % if 'write' in user['permissions']:
 
@@ -56,7 +56,7 @@
     <!-- End left column -->
 
     <!-- Begin right column -->
-    <div class="col-sm-9">
+    <div class="col-md-9 col-xs-12">
 
         % if 'write' in user['permissions']:  ## Begin Configure Project
 
