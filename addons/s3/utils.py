@@ -18,7 +18,7 @@ def connect_s3(access_key=None, secret_key=None, node_settings=None):
     if node_settings is not None:
         if node_settings.external_account is not None:
             access_key, secret_key = node_settings.external_account.oauth_key, node_settings.external_account.oauth_secret
-    connection = S3Connection(access_key, secret_key, calling_format=OrdinaryCallingFormat(), host='localhost:9000')
+    connection = S3Connection(access_key, secret_key, calling_format=OrdinaryCallingFormat())
     return connection
 
 
