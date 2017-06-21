@@ -201,7 +201,7 @@ def modify_file_tree_recursive(tree, file_obj, deleted, cached=False):
 def revert_log_actions(file_tree, reg, obj_cache):
     logs_to_revert = reg.registered_from.logs.filter(date__gt=reg.registered_date).exclude(action__in=LOG_WHITELIST).order_by('-date')
     if len(PERMISSIBLE_ADDONS) > 1:
-        logs_to_revert = logs_to_revert.exclude(PERMISSIBLE_BLACKLIST)
+        logs_to_revert = logs_to_revert.exclude(action=PERMISSIBLE_BLACKLIST)
     for log in list(logs_to_revert):
         file_obj = BaseFileNode.objects.get(_id=log.params['urls']['view'].split('/')[5])
         assert file_obj.node in reg.registered_from.root.node_and_primary_descendants()
