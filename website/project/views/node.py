@@ -640,7 +640,7 @@ def _view_project(node, auth, primary=False,
             'is_pending_retraction': node.is_pending_retraction,
             'retracted_justification': getattr(node.retraction, 'justification', None),
             'date_retracted': iso8601format(getattr(node.retraction, 'date_retracted', None)),
-            'embargo_end_date': node.embargo_end_date.strftime('%A, %b. %d, %Y') if node.embargo_end_date else False,
+            'embargo_end_date': node.embargo_end_date.strftime('%A, %b %d, %Y') if node.embargo_end_date else False,
             'is_pending_embargo': node.is_pending_embargo,
             'is_embargoed': node.is_embargoed,
             'is_pending_embargo_termination': node.is_embargoed and (
