@@ -162,7 +162,7 @@ def manually_archive(tree, reg, node_settings, parent=None):
                 cloned.versions.add(*file_obj.versions.filter(identifier__lte=filenode['version']))
 
         if filenode.get('children'):
-            manually_archive(filenode['children'], reg, parent=cloned)
+            manually_archive(filenode['children'], reg, node_settings, parent=cloned)
 
 
 def modify_file_tree_recursive(tree, file_obj, deleted, cached=False):
