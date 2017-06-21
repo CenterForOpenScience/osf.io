@@ -1,7 +1,7 @@
 version: "2"
 options:
 
-  verbose: true
+#  verbose: true
   compose-file-path: 'docker-compose.yml'
   compose-dev-file-path: 'docker-compose.override.yml'
 
