@@ -132,11 +132,11 @@ table.table.table-plain th, table.table.table-plain td {
 
 /* Table
 -----------------------*/
-table {
+table.social-links {
   table-layout: fixed;
   width: 100%;
 }
 
-table a {
+table.social-links a {
   word-wrap: break-word;
 }

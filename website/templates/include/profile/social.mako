@@ -157,7 +157,7 @@
     </div>
 
     <div data-bind="if: mode() === 'view'">
-        <table class="table" data-bind="if: hasValues()">
+        <table class="table social-links" data-bind="if: hasValues()">
             <tbody>
                 <tr data-bind="if: hasProfileWebsites()">
                     <td data-bind="visible: profileWebsites().length > 1">Personal websites</td>
