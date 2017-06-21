@@ -1,14 +1,19 @@
-import pytest
-import mock
-from django.utils import timezone
 from datetime import datetime
 
-from osf.models import Guid
+from django.utils import timezone
+import mock
+import pytest
+
+from addons.wiki.tests.factories import NodeWikiFactory
 from api.base.settings.defaults import API_BASE
 from api_tests import utils as test_utils
-from tests.base import ApiTestCase
-from osf_tests.factories import ProjectFactory, AuthUserFactory, CommentFactory
-from addons.wiki.tests.factories import NodeWikiFactory
+from osf.models import Guid
+from osf_tests.factories import (
+    ProjectFactory,
+    AuthUserFactory,
+    CommentFactory,
+)
+
 
 @pytest.mark.django_db
 class ReportDetailViewMixin(object):
@@ -22,7 +27,7 @@ class ReportDetailViewMixin(object):
         return AuthUserFactory()
 
     @pytest.fixture()
-    def non_contributor(self):
+    def non_contrib(self):
         return AuthUserFactory()
 
     @pytest.fixture()
@@ -63,7 +68,7 @@ class ReportDetailViewMixin(object):
     def public_url(self):
         raise NotImplementedError
 
-    def test_private_node_view_report_detail_auth_misc(self, app, user, contributor, non_contributor, private_url):
+    def test_private_node_view_report_detail_auth_misc(self, app, user, contributor, non_contrib, private_url):
         # test_private_node_reporting_contributor_can_view_report_detail
         res = app.get(private_url, auth=user.auth)
         assert res.status_code == 200
@@ -73,15 +78,15 @@ class ReportDetailViewMixin(object):
         res = app.get(private_url, auth=contributor.auth, expect_errors=True)
         assert res.status_code == 403
 
-        # test_private_node_logged_in_non_contributor_cannot_view_report_detail
-        res = app.get(private_url, auth=non_contributor.auth, expect_errors=True)
+        # test_private_node_logged_in_non_contrib_cannot_view_report_detail
+        res = app.get(private_url, auth=non_contrib.auth, expect_errors=True)
         assert res.status_code == 403
 
         # test_private_node_logged_out_contributor_cannot_view_report_detail
         res = app.get(private_url, expect_errors=True)
         assert res.status_code == 401
 
-    def test_public_node_view_report_detail_auth_misc(self, app, user, contributor, non_contributor, public_url):
+    def test_public_node_view_report_detail_auth_misc(self, app, user, contributor, non_contrib, public_url):
         # test_public_node_reporting_contributor_can_view_report_detail
         res = app.get(public_url, auth=user.auth)
         assert res.status_code == 200
@@ -91,33 +96,33 @@ class ReportDetailViewMixin(object):
         res = app.get(public_url, auth=contributor.auth, expect_errors=True)
         assert res.status_code == 403
 
-        # test_public_node_logged_in_non_contributor_cannot_view_other_users_report_detail
-        res = app.get(public_url, auth=non_contributor.auth, expect_errors=True)
+        # test_public_node_logged_in_non_contrib_cannot_view_other_users_report_detail
+        res = app.get(public_url, auth=non_contrib.auth, expect_errors=True)
         assert res.status_code == 403
 
         # test_public_node_logged_out_contributor_cannot_view_report_detail
         res = app.get(public_url, expect_errors=True)
         assert res.status_code == 401
 
-    def test_public_node_logged_in_non_contributor_reporter_can_view_own_report_detail(self, app, non_contributor, public_comment):
-        public_comment.reports[non_contributor._id] = {
+    def test_public_node_logged_in_non_contrib_reporter_can_view_own_report_detail(self, app, non_contrib, public_comment):
+        public_comment.reports[non_contrib._id] = {
             'category': 'spam',
             'text': 'This is spam',
             'date': timezone.now(),
             'retracted': False,
         }
         public_comment.save()
-        url = '/{}comments/{}/reports/{}/'.format(API_BASE, public_comment._id, non_contributor._id)
-        res = app.get(url, auth=non_contributor.auth)
+        url = '/{}comments/{}/reports/{}/'.format(API_BASE, public_comment._id, non_contrib._id)
+        res = app.get(url, auth=non_contrib.auth)
         assert res.status_code == 200
 
-    def test_private_node_update_report_detail_auth_misc(self, app, user, contributor, non_contributor, payload, private_url):
+    def test_private_node_update_report_detail_auth_misc(self, app, user, contributor, non_contrib, payload, private_url):
         # test_private_node_reported_contributor_cannot_update_report_detail
         res = app.put_json_api(private_url, payload, auth=contributor.auth, expect_errors=True)
         assert res.status_code == 403
 
-        # test_private_node_logged_in_non_contributor_cannot_update_report_detail
-        res = app.put_json_api(private_url, payload, auth=non_contributor.auth, expect_errors=True)
+        # test_private_node_logged_in_non_contrib_cannot_update_report_detail
+        res = app.put_json_api(private_url, payload, auth=non_contrib.auth, expect_errors=True)
         assert res.status_code == 403
 
         # test_private_node_logged_out_contributor_cannot_update_detail
@@ -130,13 +135,13 @@ class ReportDetailViewMixin(object):
         assert res.json['data']['id'] == user._id
         assert res.json['data']['attributes']['message'] == payload['data']['attributes']['message']
 
-    def test_public_node_update_report_detail_auth_misc(self, app, user, contributor, non_contributor, payload, public_url):
+    def test_public_node_update_report_detail_auth_misc(self, app, user, contributor, non_contrib, payload, public_url):
         # test_public_node_reported_contributor_cannot_update_detail
         res = app.put_json_api(public_url, payload, auth=contributor.auth, expect_errors=True)
         assert res.status_code == 403
 
-        # test_public_node_logged_in_non_contributor_cannot_update_other_users_report_detail
-        res = app.put_json_api(public_url, payload, auth=non_contributor.auth, expect_errors=True)
+        # test_public_node_logged_in_non_contrib_cannot_update_other_users_report_detail
+        res = app.put_json_api(public_url, payload, auth=non_contrib.auth, expect_errors=True)
         assert res.status_code == 403
 
         # test_public_node_logged_out_contributor_cannot_update_report_detail
@@ -149,18 +154,18 @@ class ReportDetailViewMixin(object):
         assert res.json['data']['id'] == user._id
         assert res.json['data']['attributes']['message'] == payload['data']['attributes']['message']
 
-    def test_public_node_logged_in_non_contributor_reporter_can_update_own_report_detail(self, app, non_contributor, public_comment):
-        public_comment.reports[non_contributor._id] = {
+    def test_public_node_logged_in_non_contrib_reporter_can_update_own_report_detail(self, app, non_contrib, public_comment):
+        public_comment.reports[non_contrib._id] = {
             'category': 'spam',
             'text': 'This is spam',
             'date': timezone.now(),
             'retracted': False,
         }
         public_comment.save()
-        url = '/{}comments/{}/reports/{}/'.format(API_BASE, public_comment._id, non_contributor._id)
+        url = '/{}comments/{}/reports/{}/'.format(API_BASE, public_comment._id, non_contrib._id)
         payload = {
             'data': {
-                'id': non_contributor._id,
+                'id': non_contrib._id,
                 'type': 'comment_reports',
                 'attributes': {
                     'category': 'spam',
@@ -168,17 +173,17 @@ class ReportDetailViewMixin(object):
                 }
             }
         }
-        res = app.put_json_api(url, payload, auth=non_contributor.auth)
+        res = app.put_json_api(url, payload, auth=non_contrib.auth)
         assert res.status_code == 200
         assert res.json['data']['attributes']['message'] == payload['data']['attributes']['message']
 
-    def test_private_node_delete_report_detail_auth_misc(self, app, user, contributor, non_contributor, private_project, payload, private_url, comment):
+    def test_private_node_delete_report_detail_auth_misc(self, app, user, contributor, non_contrib, private_project, payload, private_url, comment):
         # test_private_node_reported_contributor_cannot_delete_report_detail
         res = app.delete_json_api(private_url, auth=contributor.auth, expect_errors=True)
         assert res.status_code == 403
 
-        # test_private_node_logged_in_non_contributor_cannot_delete_report_detail
-        res = app.delete_json_api(private_url, auth=non_contributor.auth, expect_errors=True)
+        # test_private_node_logged_in_non_contrib_cannot_delete_report_detail
+        res = app.delete_json_api(private_url, auth=non_contrib.auth, expect_errors=True)
         assert res.status_code == 403
 
         # test_private_node_logged_out_contributor_cannot_delete_detail
@@ -198,14 +203,14 @@ class ReportDetailViewMixin(object):
         res = app.delete_json_api(url, auth=user.auth)
         assert res.status_code == 204
 
-    def test_public_node_delete_report_detail_auth_misc(self, app, user, contributor, non_contributor, public_url):
+    def test_public_node_delete_report_detail_auth_misc(self, app, user, contributor, non_contrib, public_url):
 
         # test_public_node_reported_contributor_cannot_delete_detail
         res = app.delete_json_api(public_url, auth=contributor.auth, expect_errors=True)
         assert res.status_code == 403
 
-        # test_public_node_logged_in_non_contributor_cannot_delete_other_users_report_detail
-        res = app.delete_json_api(public_url, auth=non_contributor.auth, expect_errors=True)
+        # test_public_node_logged_in_non_contrib_cannot_delete_other_users_report_detail
+        res = app.delete_json_api(public_url, auth=non_contrib.auth, expect_errors=True)
         assert res.status_code == 403
 
         # test_public_node_logged_out_contributor_cannot_delete_report_detail
@@ -216,16 +221,16 @@ class ReportDetailViewMixin(object):
         res = app.delete_json_api(public_url, auth=user.auth)
         assert res.status_code == 204
 
-    def test_public_node_logged_in_non_contributor_reporter_can_delete_own_report_detail(self, app, non_contributor, public_comment):
-        public_comment.reports[non_contributor._id] = {
+    def test_public_node_logged_in_non_contrib_reporter_can_delete_own_report_detail(self, app, non_contrib, public_comment):
+        public_comment.reports[non_contrib._id] = {
             'category': 'spam',
             'text': 'This is spam',
             'date': timezone.now(),
             'retracted': False,
         }
         public_comment.save()
-        url = '/{}comments/{}/reports/{}/'.format(API_BASE, public_comment._id, non_contributor._id)
-        res = app.delete_json_api(url, auth=non_contributor.auth)
+        url = '/{}comments/{}/reports/{}/'.format(API_BASE, public_comment._id, non_contrib._id)
+        res = app.delete_json_api(url, auth=non_contrib.auth)
         assert res.status_code == 204
 
 

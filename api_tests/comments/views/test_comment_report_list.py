@@ -1,15 +1,20 @@
-import pytest
-import mock
-from django.utils import timezone
 from datetime import datetime
 
-from rest_framework import exceptions
-from osf.models import Guid
+from django.utils import timezone
+import mock
+import pytest
+
+from addons.wiki.tests.factories import NodeWikiFactory
 from api.base.settings.defaults import API_BASE
 from api_tests import utils as test_utils
-from tests.base import ApiTestCase
-from osf_tests.factories import ProjectFactory, AuthUserFactory, CommentFactory
-from addons.wiki.tests.factories import NodeWikiFactory
+from osf.models import Guid
+from osf_tests.factories import (
+    ProjectFactory,
+    AuthUserFactory,
+    CommentFactory,
+)
+from rest_framework import exceptions
+
 
 @pytest.mark.django_db
 class CommentReportsMixin(object):
@@ -23,7 +28,7 @@ class CommentReportsMixin(object):
         return AuthUserFactory()
 
     @pytest.fixture()
-    def non_contributor(self):
+    def non_contrib(self):
         return AuthUserFactory()
 
     @pytest.fixture()
@@ -68,13 +73,13 @@ class CommentReportsMixin(object):
     def comment_level(self):
         raise NotImplementedError
 
-    def test_private_node_view_reports_auth_misc(self, app, user, contributor, non_contributor, private_url):
+    def test_private_node_view_reports_auth_misc(self, app, user, contributor, non_contrib, private_url):
         # test_private_node_logged_out_user_cannot_view_reports
         res = app.get(private_url, expect_errors=True)
         assert res.status_code == 401
 
-        # test_private_node_logged_in_non_contributor_cannot_view_reports
-        res = app.get(private_url, auth=non_contributor.auth, expect_errors=True)
+        # test_private_node_logged_in_non_contrib_cannot_view_reports
+        res = app.get(private_url, auth=non_contrib.auth, expect_errors=True)
         assert res.status_code == 403
 
         # test_private_node_only_reporting_user_can_view_reports
@@ -93,7 +98,7 @@ class CommentReportsMixin(object):
         assert len(report_json) == 0
         assert contributor._id not in report_ids
 
-    def test_public_node_view_report_auth_misc(self, app, user, contributor, non_contributor, public_url):
+    def test_public_node_view_report_auth_misc(self, app, user, contributor, non_contrib, public_url):
         # test_public_node_logged_out_user_cannot_view_reports
         res = app.get(public_url, expect_errors=True)
         assert res.status_code == 401
@@ -114,32 +119,32 @@ class CommentReportsMixin(object):
         assert len(report_json) == 0
         assert contributor._id not in report_ids
 
-        # test_public_node_non_contributor_does_not_see_other_user_reports
-        res = app.get(public_url, auth=non_contributor.auth, expect_errors=True)
+        # test_public_node_non_contrib_does_not_see_other_user_reports
+        res = app.get(public_url, auth=non_contrib.auth, expect_errors=True)
         assert res.status_code == 200
         report_json = res.json['data']
         report_ids = [report['id'] for report in report_json]
         assert len(report_json) == 0
-        assert non_contributor._id not in report_ids
+        assert non_contrib._id not in report_ids
 
-    def test_public_node_non_contributor_reporter_can_view_own_report(self, app, non_contributor, public_comment, public_url):
-        public_comment.reports[non_contributor._id] = {
+    def test_public_node_non_contrib_reporter_can_view_own_report(self, app, non_contrib, public_comment, public_url):
+        public_comment.reports[non_contrib._id] = {
             'category': 'spam',
             'text': 'This is spam',
             'date': timezone.now(),
             'retracted': False,
         }
         public_comment.save()
-        res = app.get(public_url, auth=non_contributor.auth)
+        res = app.get(public_url, auth=non_contrib.auth)
         assert res.status_code == 200
         report_json = res.json['data']
         report_ids = [report['id'] for report in report_json]
         assert len(report_json) == 1
-        assert non_contributor._id in report_ids
+        assert non_contrib._id in report_ids
 
     @pytest.mark.parametrize('comment_level', ['private'])
-    def test_public_node_private_comment_level_non_contributor_cannot_see_reports(self, app, non_contributor, public_url, comment_level):
-        res = app.get(public_url, auth=non_contributor.auth, expect_errors=True)
+    def test_public_node_private_comment_level_non_contrib_cannot_see_reports(self, app, non_contrib, public_url, comment_level):
+        res = app.get(public_url, auth=non_contrib.auth, expect_errors=True)
         assert res.status_code == 403
         assert res.json['errors'][0]['detail'] == exceptions.PermissionDenied.default_detail
 
@@ -205,14 +210,14 @@ class CommentReportsMixin(object):
         assert res.json['data']['id'] == user._id
         assert res.json['data']['attributes']['message'] == payload['data']['attributes']['message']
 
-    def test_private_node_report_comment_auth_misc(self, app, user, contributor, non_contributor, private_project, private_url, comment, payload):
+    def test_private_node_report_comment_auth_misc(self, app, user, contributor, non_contrib, private_project, private_url, comment, payload):
 
         # test_private_node_logged_out_user_cannot_report_comment
         res = app.post_json_api(private_url, payload, expect_errors=True)
         assert res.status_code == 401
 
-        # test_private_node_logged_in_non_contributor_cannot_report_comment
-        res = app.post_json_api(private_url, payload, auth=non_contributor.auth, expect_errors=True)
+        # test_private_node_logged_in_non_contrib_cannot_report_comment
+        res = app.post_json_api(private_url, payload, auth=non_contrib.auth, expect_errors=True)
         assert res.status_code == 403
 
         # test_private_node_logged_in_contributor_can_report_comment
@@ -234,7 +239,7 @@ class CommentReportsMixin(object):
         assert res.status_code == 400
         assert res.json['errors'][0]['detail'] == 'Comment already reported.'
 
-    def test_public_node_report_comment_auth_misc(self, app, user, contributor, non_contributor, public_project, public_url, public_comment, payload):
+    def test_public_node_report_comment_auth_misc(self, app, user, contributor, non_contrib, public_project, public_url, public_comment, payload):
     # def test_public_node_logged_out_user_cannot_report_comment(self):
         res = app.post_json_api(public_url, payload, expect_errors=True)
         assert res.status_code == 401
@@ -246,18 +251,18 @@ class CommentReportsMixin(object):
         assert res.status_code == 201
         assert res.json['data']['id'] == user._id
 
-    # def test_public_node_non_contributor_can_report_comment(self):
+    # def test_public_node_non_contrib_can_report_comment(self):
         """ Test that when a public project allows any osf user to
             comment (comment_level == 'public), non-contributors
             can also report comments.
         """
-        res = app.post_json_api(public_url, payload, auth=non_contributor.auth)
+        res = app.post_json_api(public_url, payload, auth=non_contrib.auth)
         assert res.status_code == 201
-        assert res.json['data']['id'] == non_contributor._id
+        assert res.json['data']['id'] == non_contrib._id
 
     @pytest.mark.parametrize('comment_level', ['private'])
-    def test_public_node_private_comment_level_non_contributor_cannot_report_comment(self, app, non_contributor, comment_level, public_url):
-        res = app.get(public_url, auth=non_contributor.auth, expect_errors=True)
+    def test_public_node_private_comment_level_non_contrib_cannot_report_comment(self, app, non_contrib, comment_level, public_url):
+        res = app.get(public_url, auth=non_contrib.auth, expect_errors=True)
         assert res.status_code == 403
         assert res.json['errors'][0]['detail'] == exceptions.PermissionDenied.default_detail
 
