@@ -80,5 +80,5 @@ def format_subject(subject, context={}):
         uri=subject.absolute_api_v2_url,
     )
     context[subject.id].attrs['parent'] = format_subject(subject.parent, context)
-    context[subject.id].attrs['central_synonym'] = format_subject(subject.central_alias, context)
+    context[subject.id].attrs['central_synonym'] = format_subject(subject.bepress_subject, context)
     return context[subject.id]

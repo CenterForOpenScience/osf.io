@@ -43,10 +43,6 @@ class Subject(ObjectIDMixin, BaseModel, DirtyFieldsMixin):
         """For v1 compat."""
         return self.children.count()
 
-    @property
-    def central_alias(self):
-        return self.bepress_subject or self
-
     def get_absolute_url(self):
         return self.absolute_api_v2_url
 

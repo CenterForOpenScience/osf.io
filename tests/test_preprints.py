@@ -369,14 +369,14 @@ class TestOnPreprintUpdatedTask(OsfTestCase):
         through_subjects = [nodes.pop(k) for k, v in nodes.items() if v['@type'] == 'throughsubjects']
         s_ids = [s['@id'] for s in subjects]
         ts_ids = [ts['subject']['@id'] for ts in through_subjects]
-        cs_ids = list(set(s['central_synonym']['@id'] for s in subjects))
+        cs_ids = [i for i in set(s.get('central_synonym', {}).get('@id') for s in subjects) if i]
         for ts in ts_ids:
             assert ts in s_ids
             assert ts not in cs_ids  # Only aliased subjects are connected to self.preprint
         for s in subjects:
             subject = Subject.objects.get(text=s['name'])
             assert s['uri'].endswith('v2/taxonomies/{}/'.format(subject._id))  # This cannot change
-        assert set(subject['name'] for subject in subjects) == set([s.text for s in self.preprint.subjects.all()] + [s.central_alias.text for s in self.preprint.subjects.all()])
+        assert set(subject['name'] for subject in subjects) == set([s.text for s in self.preprint.subjects.all()] + [s.bepress_subject.text for s in self.preprint.subjects.filter(bepress_subject__isnull=False)])
 
         people = sorted([nodes.pop(k) for k, v in nodes.items() if v['@type'] == 'person'], key=lambda x: x['given_name'])
         expected_people = sorted([{
