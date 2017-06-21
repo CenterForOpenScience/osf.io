@@ -75,7 +75,7 @@ class TestFileView:
 
     @mock.patch('api.base.throttling.CreateGuidThrottle.allow_request')
     def test_file_guid_not_created_with_basic_auth(self, mock_allow, app, user, file_url):
-        res = app.get(file_url + '?create_guid=1', auth=user.auth)
+        res = app.get('{}?create_guid=1'.format(file_url), auth=user.auth)
         guid = res.json['data']['attributes'].get('guid', None)
         assert res.status_code == 200
         assert mock_allow.call_count == 1
@@ -88,7 +88,7 @@ class TestFileView:
         cookie = itsdangerous.Signer(website_settings.SECRET_KEY).sign(session._id)
         app.set_cookie(website_settings.COOKIE_NAME, str(cookie))
 
-        res = app.get(file_url + '?create_guid=1', auth=user.auth)
+        res = app.get('{}?create_guid=1'.format(file_url), auth=user.auth)
 
         app.reset()  # clear cookie
 
