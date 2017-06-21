@@ -2,8 +2,17 @@
 Changelog
 *********
 
+0.115.0 (2017-06-21)
+====================
+
+- Port maintenance code to use Postgres
+- Remove MODMCompatibilityQueryset.
+- Remove unused APIv1 profile, pointer, and project endpoints.
+- Fix importing Preprint Provider from JSON.
+
 0.114.0 (2017-06-13)
 ====================
+
 - Replies notifications sending double entries to some users
 - GitHub is misspelled on osf.io/support page
 - All fangorn errors on non-Chrome browsers report as "Cannot upload folder"

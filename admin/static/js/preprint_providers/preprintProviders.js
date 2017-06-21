@@ -115,17 +115,19 @@ $(document).ready(function() {
         $.get(window.templateVars.rulesToSubjectsUrl, {"rules": JSON.stringify(rules)}, function (data) {
             var subjects = data["subjects"];
             for (var h=0; h<selected_subjects.length; h++) {
-                $("input[value=" + selected_subjects[h] + "]").prop("checked", false);
+                $("#subjects input[value=" + selected_subjects[h] + "]").prop("checked", false);
             }
             clearSubjects();
             for (var i=0; i<subjects.length; i++) {
                 addSubject(subjects[i]);
-                $("input[value=" + subjects[i] + "]").prop("checked", true);
+                $("#subjects input[value=" + subjects[i] + "]").prop("checked", true);
             }
         });
     };
 
     $("#import-form").submit(function(event) {
+        tinymceFields = ['description', 'advisory_board', 'footer_links'];
+        checkedBooleanFields = ['domain_redirect_enabled', 'allow_submissions'];
         event.preventDefault();
         $.ajax({
             url: window.templateVars.importUrl,
@@ -135,13 +137,22 @@ $(document).ready(function() {
             contentType: false,
             processData: false,
             success: function(response) {
-                for (var k in response){
-                    if (response.hasOwnProperty(k)) {
-                        if (k === "subjects_acceptable") {
-                            populateSubjects(response[k]);
+                for (var field_name in response){
+                    if (response.hasOwnProperty(field_name)) {
+                        field_value = response[field_name];
+                        if (field_name === "subjects_acceptable") {
+                            populateSubjects(field_value);
+                        } else if (checkedBooleanFields.includes(field_name)) {
+                            $("input[name=" + field_name + "]").prop("checked", field_value);
+                        } else if (tinymceFields.includes(field_name)) {
+                            tinymce.get("id_" + field_name).setContent(field_value);
+                        } else if (field_name === "licenses_acceptable") {
+                            field_value.forEach(function(element, index, array) {
+                                $("input[name=" + field_name + "][value=" + element + "]").prop("checked", true);
+                            });
                         } else {
-                            var field = $("#id_" + k);
-                            field.val(response[k]);
+                            var field = $("#id_" + field_name);
+                            field.val(field_value);
                         }
                     }
                 }

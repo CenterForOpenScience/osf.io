@@ -1,7 +1,6 @@
 import pytest
 
 from website.project import new_private_link
-from website.project.model import ensure_schemas
 
 from .factories import PrivateLinkFactory, NodeFactory
 from osf.models import MetaSchema, DraftRegistration, NodeLog
@@ -47,7 +46,6 @@ class TestPrivateLink:
         assert link.node_scale(node) == -40
 
     def test_create_from_node(self):
-        ensure_schemas()
         proj = NodeFactory()
         user = proj.creator
         schema = MetaSchema.find()[0]

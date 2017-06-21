@@ -1644,7 +1644,7 @@ class NodeForksList(JSONAPIBaseView, generics.ListCreateAPIView, NodeMixin, Node
 
     # overrides ListCreateAPIView
     def get_queryset(self):
-        all_forks = self.get_node().forks.sort('-forked_date')
+        all_forks = self.get_node().forks.order_by('-forked_date')
         auth = get_user_auth(self.request)
 
         node_pks = [node.pk for node in all_forks if node.can_view(auth)]

@@ -12,7 +12,6 @@ from django.db.models import Count
 
 from framework import status
 from framework.utils import iso8601format
-from framework.flask import redirect
 from framework.auth.decorators import must_be_logged_in, collect_auth
 from framework.exceptions import HTTPError
 from osf.models.nodelog import NodeLog
@@ -419,25 +418,9 @@ def project_statistics(auth, node, **kwargs):
     return ret
 
 
-@must_be_valid_project
-@must_be_contributor_or_public
-def project_statistics_redirect(auth, node, **kwargs):
-    return redirect(node.web_url_for('project_statistics', _guid=True))
-
 ###############################################################################
 # Make Private/Public
 ###############################################################################
-
-
-@must_be_valid_project
-@must_have_permission(ADMIN)
-def project_before_set_public(node, **kwargs):
-    prompt = node.callback('before_make_public')
-
-    return {
-        'prompts': prompt
-    }
-
 
 @must_be_valid_project
 @must_have_permission(ADMIN)
@@ -459,6 +442,7 @@ def project_set_privacy(auth, node, **kwargs):
         'status': 'success',
         'permissions': permissions,
     }
+
 
 @must_be_valid_project
 @must_not_be_registration
@@ -482,41 +466,6 @@ def update_node(auth, node, **kwargs):
     }
     node.save()
     return {'updated_fields': updated_fields_dict}
-
-
-@must_be_valid_project
-@must_have_permission(ADMIN)
-@must_not_be_registration
-def component_remove(auth, node, **kwargs):
-    """Remove component, and recursively remove its children. If node has a
-    parent, add log and redirect to parent; else redirect to user dashboard.
-
-    """
-    try:
-        node.remove_node(auth)
-    except NodeStateError as e:
-        raise HTTPError(
-            http.BAD_REQUEST,
-            data={
-                'message_short': 'Error',
-                'message_long': 'Could not delete component: ' + e.message
-            },
-        )
-    node.save()
-
-    message = '{} has been successfully deleted.'.format(
-        node.project_or_component.capitalize()
-    )
-    status.push_status_message(message, kind='success', trust=False)
-    parent = node.parent_node
-    if parent and parent.can_view(auth):
-        redirect_url = node.parent_node.url
-    else:
-        redirect_url = '/dashboard/'
-
-    return {
-        'url': redirect_url,
-    }
 
 
 @must_be_valid_project
@@ -733,12 +682,12 @@ def _view_project(node, auth, primary=False,
     if embed_registrations:
         data['node']['registrations'] = [
             serialize_node_summary(node=each, auth=auth, show_path=False)
-            for each in node.registrations_all.sort('-registered_date').exclude(is_deleted=True).annotate(nlogs=Count('logs'))
+            for each in node.registrations_all.order_by('-registered_date').exclude(is_deleted=True).annotate(nlogs=Count('logs'))
         ]
     if embed_forks:
         data['node']['forks'] = [
             serialize_node_summary(node=each, auth=auth, show_path=False)
-            for each in node.forks.exclude(type='osf.registration').exclude(is_deleted=True).sort('-forked_date').annotate(nlogs=Count('logs'))
+            for each in node.forks.exclude(type='osf.registration').exclude(is_deleted=True).order_by('-forked_date').annotate(nlogs=Count('logs'))
         ]
     return data
 
@@ -1048,46 +997,6 @@ def _add_pointers(node, pointers, auth):
 
 
 @collect_auth
-def move_pointers(auth):
-    """Move pointer from one node to another node.
-
-    """
-    NodeRelation = apps.get_model('osf.NodeRelation')
-
-    from_node_id = request.json.get('fromNodeId')
-    to_node_id = request.json.get('toNodeId')
-    pointers_to_move = request.json.get('pointerIds')
-
-    if from_node_id is None or to_node_id is None or pointers_to_move is None:
-        raise HTTPError(http.BAD_REQUEST)
-
-    from_node = Node.load(from_node_id)
-    to_node = Node.load(to_node_id)
-
-    if to_node is None or from_node is None:
-        raise HTTPError(http.BAD_REQUEST)
-
-    for pointer_to_move in pointers_to_move:
-        try:
-            node_relation = NodeRelation.objects.get(_id=pointer_to_move)
-        except NodeRelation.DoesNotExist:
-            raise HTTPError(http.BAD_REQUEST)
-
-        try:
-            from_node.rm_pointer(node_relation, auth=auth)
-        except ValueError:
-            raise HTTPError(http.BAD_REQUEST)
-
-        from_node.save()
-        try:
-            _add_pointers(to_node, [node_relation.node], auth)
-        except ValueError:
-            raise HTTPError(http.BAD_REQUEST)
-
-    return {}, 200, None
-
-
-@collect_auth
 def add_pointer(auth):
     """Add a single pointer to a node using only JSON parameters
 
@@ -1144,32 +1053,6 @@ def remove_pointer(auth, node, **kwargs):
         raise HTTPError(http.BAD_REQUEST)
 
     pointer = Node.load(pointer_id)
-    if pointer is None:
-        raise HTTPError(http.BAD_REQUEST)
-
-    try:
-        node.rm_pointer(pointer, auth=auth)
-    except ValueError:
-        raise HTTPError(http.BAD_REQUEST)
-
-    node.save()
-
-
-@must_be_valid_project  # injects project
-@must_have_permission(WRITE)
-@must_not_be_registration
-def remove_pointer_from_folder(auth, node, pointer_id, **kwargs):
-    """Remove a pointer from a node, raising a 400 if the pointer is not
-    in `node.nodes`.
-
-    """
-    if pointer_id is None:
-        raise HTTPError(http.BAD_REQUEST)
-
-    pointer_id = node.pointing_at(pointer_id)
-
-    pointer = Node.load(pointer_id)
-
     if pointer is None:
         raise HTTPError(http.BAD_REQUEST)
 
