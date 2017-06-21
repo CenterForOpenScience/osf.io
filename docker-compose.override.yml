@@ -1,44 +1,44 @@
-
 version: "3"
 
 services:
   requirements:
     volumes:
-      - code:/code:nocopy
+      - osf-sync:/code:nocopy
   assets:
     volumes:
-      - code:/code:nocopy
+      - osf-sync:/code:nocopy
   admin_assets:
     volumes:
-      - code:/code:nocopy
+      - osf-sync:/code:nocopy
   sharejs:
     volumes:
-      - code:/code:nocopy
+      - osf-sync:/code:nocopy
   worker:
     volumes:
-      - code:/code:nocopy
+      - osf-sync:/code:nocopy
   admin:
     volumes:
-      - code:/code:nocopy
+      - osf-sync:/code:nocopy
   web:
     volumes:
-      - code:/code:nocopy
+      - osf-sync:/code:nocopy
   api:
     volumes:
-      - code:/code:nocopy
+      - osf-sync:/code:nocopy
+
 # Additional configuration for development on services linked with osf.io
 
-# beat:
+#  beat:
 #    volumes:
-#      - code:/code:nocopy
+#      - osf-sync:/code:nocopy
 
 #  fakecas:
 #    image: quay.io/centerforopenscience/fakecas:latest
 #    command: fakecas -host=0.0.0.0:8080 -dbaddress=172.19.0.7:27017
 
-  wb:
-    volumes:
-      - wb-sync:/code:nocopy
+#  wb:
+#    volumes:
+#      - wb-sync:/code:nocopy
 
 #  wb_worker:
 #    volumes:
@@ -78,7 +78,6 @@ services:
 ##      - emberosf
 ##    command: /bin/bash -c "cd /ember-osf && yarn link && cd /code && yarn link ember-osf && yarn --pure-lockfile && ./node_modules/bower/bin/bower install --allow-root --config.interactive=false && ./node_modules/ember-cli/bin/ember serve --host 0.0.0.0 --port 4300"
 
-
 #  # Use this for ember-osf linked development (with docker-sync):
 #  emberosf:
 #    build: ../ember-osf
@@ -86,9 +85,8 @@ services:
 #    volumes:
 #      - ember-osf-sync:/code:nocopy
 
-
 volumes:
-  code:
+  osf-sync:
     external: true
 
 #  wb-sync:
@@ -99,4 +97,3 @@ volumes:
 
 #  ember-osf-sync:
 #    external: true
-
