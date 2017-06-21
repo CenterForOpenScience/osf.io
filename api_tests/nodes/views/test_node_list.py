@@ -1,4 +1,3 @@
-from django.db.models import F
 from modularodm import Q
 import pytest
 
@@ -7,7 +6,6 @@ from api_tests.nodes.filters.test_filters import NodesListFilteringMixin, NodesL
 from framework.auth.core import Auth
 from osf.models import AbstractNode as Node, NodeLog
 from osf_tests.factories import (
-    BookmarkCollectionFactory,
     CollectionFactory,
     ProjectFactory,
     NodeFactory,
@@ -53,7 +51,7 @@ class TestNodeList:
 
     def test_return(self, app, user, non_contrib, deleted_project, private_project, public_project, url):
 
-    #   test_only_returns_non_deleted_public_projects
+        #   test_only_returns_non_deleted_public_projects
         res = app.get(url)
         node_json = res.json['data']
 
@@ -117,7 +115,7 @@ class TestNodeList:
         project_one = ProjectFactory(title='Project One', is_public=True)
         ProjectFactory(parent=project_one, is_public=True)
 
-        res = app.get(url+'?embed=root&embed=parent', auth=user.auth)
+        res = app.get(url + '?embed=root&embed=parent', auth=user.auth)
 
         for project_json in res.json['data']:
             project = Node.load(project_json['id'])
@@ -187,7 +185,7 @@ class TestNodeFiltering:
 
     def test_filtering(self, app, user_one, public_project_one, public_project_two, public_project_three, user_one_private_project, user_two_private_project, preprint):
 
-    #   test_filtering_by_id
+        #   test_filtering_by_id
         url = '/{}nodes/?filter[id]={}'.format(API_BASE, public_project_one._id)
         res = app.get(url, auth=user_one.auth)
         assert res.status_code == 200
@@ -406,7 +404,7 @@ class TestNodeFiltering:
         assert len(res.json.get('data')) == 0
 
     def test_filtering_tags_returns_distinct(self, app, user_one, public_project_one):
-       # regression test for returning multiple of the same file
+        # regression test for returning multiple of the same file
         public_project_one.add_tag('cat', Auth(user_one))
         public_project_one.add_tag('cAt', Auth(user_one))
         public_project_one.add_tag('caT', Auth(user_one))
@@ -439,7 +437,7 @@ class TestNodeFiltering:
 
     def test_get_projects(self, app, user_one, public_project_one, public_project_two, public_project_three, user_one_private_project, user_two_private_project, folder, bookmark_collection, url):
 
-    #   test_get_all_projects_with_no_filter_logged_in
+        #   test_get_all_projects_with_no_filter_logged_in
         res = app.get(url, auth=user_one.auth)
         node_json = res.json['data']
 
@@ -789,7 +787,7 @@ class TestNodeCreate:
 
     def test_create_node_errors(self, app, user_one, public_project, private_project, url):
 
-    #   test_node_create_invalid_data
+        #   test_node_create_invalid_data
         res = app.post_json_api(url, 'Incorrect data', auth=user_one.auth, expect_errors=True)
         assert res.status_code == 400
         assert res.json['errors'][0]['detail'] == exceptions.ParseError.default_detail
@@ -832,7 +830,7 @@ class TestNodeCreate:
 
     def test_create_from_template_errors(self, app, user_one, user_two, url):
 
-    #   test_404_on_create_from_template_of_nonexistent_project
+        #   test_404_on_create_from_template_of_nonexistent_project
         template_from_id = 'thisisnotavalidguid'
         templated_project_data = {
             'data': {
@@ -946,7 +944,7 @@ class TestNodeCreate:
         parent_project = ProjectFactory(creator=user_one)
         parent_project.add_unregistered_contributor(
             fullname='far', email='foo@bar.baz', permissions=[permissions.READ],
-            auth= Auth(user=user_one), save=True
+            auth=Auth(user=user_one), save=True
         )
         url = '/{}nodes/{}/children/?inherit_contributors=true'.format(API_BASE, parent_project._id)
         component_data = {
@@ -969,7 +967,7 @@ class TestNodeCreate:
 
     def test_create_project_errors(self, app, user_one, title, description, category, url):
 
-    #   test_creates_project_no_type
+        #   test_creates_project_no_type
         project = {
             'data': {
                 'attributes': {
@@ -1087,7 +1085,7 @@ class TestNodeBulkCreate:
     @pytest.fixture()
     def empty_project(self):
         return {
-            'type': 'nodes', 
+            'type': 'nodes',
             'attributes': {
                 'title': '',
                 'description': '',
@@ -1097,7 +1095,7 @@ class TestNodeBulkCreate:
 
     def test_bulk_create(self, app, user_one, public_project, private_project, empty_project, title, category, url):
 
-    #   test_bulk_create_nodes_blank_request
+        #   test_bulk_create_nodes_blank_request
         res = app.post_json_api(url, auth=user_one.auth, expect_errors=True, bulk=True)
         assert res.status_code == 400
 
@@ -1121,7 +1119,7 @@ class TestNodeBulkCreate:
         assert len(res.json['errors']) == 2
         errors = res.json['errors']
         assert errors[0]['source'] == {'pointer': '/data/0/attributes/title'}
-        assert errors[1]['source'] ==  {'pointer': '/data/1/attributes/title'}
+        assert errors[1]['source'] == {'pointer': '/data/1/attributes/title'}
         assert errors[0]['detail'] == 'This field may not be blank.'
         assert errors[1]['detail'] == 'This field may not be blank.'
 
@@ -1308,20 +1306,20 @@ class TestNodeBulkUpdate:
         return {
             'data': [
                 {
-                    'id': public_project_one._id, 
-                    'type': 'nodes', 
+                    'id': public_project_one._id,
+                    'type': 'nodes',
                     'attributes': {
-                        'title': '', 
-                        'description': '', 
+                        'title': '',
+                        'description': '',
                         'category': ''
                     }
                 },
                 {
-                    'id': public_project_two._id, 
-                    'type': 'nodes', 
+                    'id': public_project_two._id,
+                    'type': 'nodes',
                     'attributes': {
-                        'title': '', 
-                        'description': '', 
+                        'title': '',
+                        'description': '',
                         'category': ''
                     }
                 }
@@ -1330,7 +1328,7 @@ class TestNodeBulkUpdate:
 
     def test_bulk_update_errors(self, app, user, public_project_one, public_project_two, private_project_one, private_project_two, public_payload, private_payload, empty_payload, title, new_title, new_category, url):
 
-    #   test_bulk_update_nodes_blank_request
+        #   test_bulk_update_nodes_blank_request
         res = app.put_json_api(url, auth=user.auth, expect_errors=True, bulk=True)
         assert res.status_code == 400
 
@@ -1338,23 +1336,23 @@ class TestNodeBulkUpdate:
         payload = {
             "data": [
                 {
-                  "id": public_project_one._id,
-                  "type": "nodes",
-                  "attributes": {
-                    "title": "This shouldn't update.",
-                    "category": "instrumentation"
-                  }
+                    "id": public_project_one._id,
+                    "type": "nodes",
+                    "attributes": {
+                        "title": "This shouldn't update.",
+                        "category": "instrumentation"
+                    }
                 },
                 {
-                  "id": public_project_two._id,
-                  "type": "nodes",
-                  "attributes": {
-                    "title": " ",
-                    "category": "hypothesis"
-                  }
+                    "id": public_project_two._id,
+                    "type": "nodes",
+                    "attributes": {
+                        "title": " ",
+                        "category": "hypothesis"
+                    }
                 }
-              ]
-            }
+            ]
+        }
         public_project_one_url = '/{}nodes/{}/'.format(API_BASE, public_project_one._id)
         res = app.put_json_api(url, payload, auth=user.auth, expect_errors=True, bulk=True)
         assert res.status_code == 400
@@ -1378,7 +1376,6 @@ class TestNodeBulkUpdate:
         assert res.status_code == 400
         assert res.json['errors'][0]['detail'] == 'Could not find all objects to update.'
 
-
         public_project_one_url = '/{}nodes/{}/'.format(API_BASE, public_project_one._id)
         res = app.get(public_project_one_url)
         assert res.json['data']['attributes']['title'] == title
@@ -1401,7 +1398,6 @@ class TestNodeBulkUpdate:
         res = app.put_json_api(url, private_payload, expect_errors=True, bulk=True)
         assert res.status_code == 401
         assert res.json['errors'][0]['detail'] == exceptions.NotAuthenticated.default_detail
-
 
         private_project_one_url = '/{}nodes/{}/'.format(API_BASE, private_project_one._id)
         private_project_two_url = '/{}nodes/{}/'.format(API_BASE, private_project_two._id)
@@ -1629,15 +1625,15 @@ class TestNodeBulkPartialUpdate:
         return {
             'data': [
                 {
-                    'id': public_project_one._id, 
-                    'type': 'nodes', 
+                    'id': public_project_one._id,
+                    'type': 'nodes',
                     'attributes': {
                         'title': ''
                     }
                 },
                 {
-                    'id': public_project_two._id, 
-                    'type': 'nodes', 
+                    'id': public_project_two._id,
+                    'type': 'nodes',
                     'attributes': {
                         'title': ''
                     }
@@ -1647,7 +1643,7 @@ class TestNodeBulkPartialUpdate:
 
     def test_bulk_partial_update_errors(self, app, user, public_project_one, public_project_two, private_project_one, private_project_two, title, new_title, public_payload, private_payload, empty_payload, url):
 
-    #   test_bulk_patch_nodes_blank_request
+        #   test_bulk_patch_nodes_blank_request
         res = app.patch_json_api(url, auth=user.auth, expect_errors=True, bulk=True)
         assert res.status_code == 400
 
@@ -1688,7 +1684,6 @@ class TestNodeBulkPartialUpdate:
         res = app.patch_json_api(url, private_payload, expect_errors=True, bulk=True)
         assert res.status_code == 401
         assert res.json['errors'][0]['detail'] == exceptions.NotAuthenticated.default_detail
-
 
         private_project_one_url = '/{}nodes/{}/'.format(API_BASE, private_project_one._id)
         private_project_two_url = '/{}nodes/{}/'.format(API_BASE, private_project_two._id)
@@ -1738,7 +1733,7 @@ class TestNodeBulkPartialUpdate:
         assert res.json['errors'][0]['detail'] == 'This field may not be null.'
 
     #   test_bulk_partial_update_limits
-        node_update_list = {'data': [public_payload['data'][0]] * 101 }
+        node_update_list = {'data': [public_payload['data'][0]] * 101}
         res = app.patch_json_api(url, node_update_list, auth=user.auth, expect_errors=True, bulk=True)
         assert res.json['errors'][0]['detail'] == 'Bulk operation limit is 100, got 101.'
         assert res.json['errors'][0]['source']['pointer'] == '/data'
@@ -1783,7 +1778,7 @@ class TestNodeBulkPartialUpdate:
         assert res.status_code == 200
         public_project_one.reload()
         assert list(public_project_one.tags.values_list('name', flat=True)) == ['tag1']
-        assert public_project_one.is_public == False
+        assert public_project_one.is_public is False
 
 @pytest.mark.django_db
 class TestNodeBulkUpdateSkipUneditable:
@@ -1860,7 +1855,7 @@ class TestNodeBulkUpdateSkipUneditable:
                         'public': True
                     }
                 },
-                 {
+                {
                     'id': user_two_public_project_one._id,
                     'type': 'nodes',
                     'attributes': {
@@ -1870,7 +1865,7 @@ class TestNodeBulkUpdateSkipUneditable:
                         'public': True
                     }
                 },
-                 {
+                {
                     'id': user_two_public_project_two._id,
                     'type': 'nodes',
                     'attributes': {
@@ -1889,7 +1884,7 @@ class TestNodeBulkUpdateSkipUneditable:
 
     def test_bulk_update_skips(self, app, user_one, user_one_public_project_one, user_one_public_project_two, user_two_public_project_one, user_two_public_project_two, title, public_payload):
 
-    #   test_skip_uneditable_bulk_update_query_param_required
+        #   test_skip_uneditable_bulk_update_query_param_required
         nodes_url = '/{}nodes/'.format(API_BASE)
         res = app.put_json_api(nodes_url, public_payload, auth=user_one.auth, expect_errors=True, bulk=True)
         assert res.status_code == 403
@@ -2018,11 +2013,11 @@ class TestNodeBulkDelete:
         return {
             'data': [
                 {
-                    'id': public_project_one._id, 
+                    'id': public_project_one._id,
                     'type': 'nodes'
-                }, 
+                },
                 {
-                    'id': public_project_two._id, 
+                    'id': public_project_two._id,
                     'type': 'nodes'
                 }
             ]
@@ -2041,7 +2036,7 @@ class TestNodeBulkDelete:
         return {
             'data': [
                 {
-                    'id': user_one_private_project._id, 
+                    'id': user_one_private_project._id,
                     'type': 'nodes'
                 }
             ]
@@ -2053,7 +2048,7 @@ class TestNodeBulkDelete:
 
     def test_bulk_delete_errors(self, app, user_one, public_project_one, public_project_two, user_one_private_project, public_payload, private_payload, type_query_param, public_query_params, url):
 
-    #   test_bulk_delete_with_query_params_and_payload
+        #   test_bulk_delete_with_query_params_and_payload
         res_url = '{}?{}&{}'.format(url, type_query_param, public_query_params)
         res = app.delete_json_api(res_url, public_payload, auth=user_one.auth, expect_errors=True, bulk=True)
         assert res.status_code == 409
@@ -2110,7 +2105,7 @@ class TestNodeBulkDelete:
         assert res.json['errors'][0]['detail'] == exceptions.NotAuthenticated.default_detail
 
     #   test_bulk_delete_limits
-        new_payload = {'data': [{'id': user_one_private_project._id, 'type':'nodes'}] * 101 }
+        new_payload = {'data': [{'id': user_one_private_project._id, 'type': 'nodes'}] * 101}
         res = app.delete_json_api(url, new_payload,
                                        auth=user_one.auth, expect_errors=True, bulk=True)
         assert res.status_code == 400
@@ -2237,11 +2232,11 @@ class TestNodeBulkDeleteSkipUneditable:
                     'id': public_project_two._id,
                     'type': 'nodes',
                 },
-                 {
+                {
                     'id': public_project_three._id,
                     'type': 'nodes',
                 },
-                 {
+                {
                     'id': public_project_four._id,
                     'type': 'nodes',
                 }
@@ -2291,8 +2286,8 @@ class TestNodeBulkDeleteSkipUneditable:
         public_project_one.reload()
         public_project_two.reload()
 
-        assert public_project_one.is_deleted == True
-        assert public_project_two.is_deleted == True
+        assert public_project_one.is_deleted is True
+        assert public_project_two.is_deleted is True
 
     def test_skip_uneditable_does_not_have_admin_permission_for_any_nodes(self, app, user_one, public_project_three, public_project_four, url):
         payload = {
@@ -2335,7 +2330,7 @@ class TestNodeListPagination:
         assert res.json['links']['meta']['per_page'] == 10
 
     def test_max_page_size_enforced(self, app, users, projects, url):
-        res_url = '{}?page[size]={}'.format(url, MAX_PAGE_SIZE+1)
+        res_url = '{}?page[size]={}'.format(url, MAX_PAGE_SIZE + 1)
         res = app.get(res_url, auth=Auth(users[0]))
         pids = [e['id'] for e in res.json['data']]
         for project in projects:
@@ -2346,7 +2341,7 @@ class TestNodeListPagination:
         for user in users[1:]:
             projects[-1].add_contributor(user, auth=Auth(users[0]), save=True)
 
-        res_url = '{}?page[size]={}&embed=contributors'.format(url, MAX_PAGE_SIZE+1)
+        res_url = '{}?page[size]={}&embed=contributors'.format(url, MAX_PAGE_SIZE + 1)
         res = app.get(res_url, auth=Auth(users[0]))
         pids = [e['id'] for e in res.json['data']]
         for project in projects:
@@ -2375,4 +2370,4 @@ class TestNodeListDateFiltering(NodesListDateFilteringMixin):
 
     @pytest.fixture()
     def url(self):
-        return '/{}nodes/?'.format(API_BASE) 
+        return '/{}nodes/?'.format(API_BASE)
