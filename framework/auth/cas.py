@@ -8,8 +8,7 @@ import urllib
 from lxml import etree
 import requests
 
-from framework.auth import authenticate, external_first_login_authenticate
-from framework.auth.core import get_user, generate_verification_key
+from framework.auth import authenticate
 from framework.flask import redirect
 from framework.exceptions import HTTPError
 from website import settings
@@ -114,7 +113,7 @@ class CasClient(object):
         url.args['ticket'] = ticket
         url.args['service'] = service_url
 
-        resp = requests.get(url.url)
+        resp = requests.get(url.url, verify=False)
         if resp.status_code == 200:
             return self._parse_service_validation(resp.content)
         else:
@@ -133,7 +132,7 @@ class CasClient(object):
         headers = {
             'Authorization': 'Bearer {}'.format(access_token),
         }
-        resp = requests.get(url, headers=headers)
+        resp = requests.get(url, headers=headers, verify=False)
         if resp.status_code == 200:
             return self._parse_profile(resp.content, access_token)
         else:
@@ -182,7 +181,7 @@ class CasClient(object):
         """Revoke a tokens based on payload"""
         url = self.get_auth_token_revocation_url()
 
-        resp = requests.post(url, data=payload)
+        resp = requests.post(url, data=payload, verify=False)
         if resp.status_code == 204:
             return True
         else:
@@ -261,53 +260,20 @@ def make_response_from_ticket(ticket, service_url):
     client = get_client()
     cas_resp = client.service_validate(ticket, service_furl.url)
     if cas_resp.authenticated:
-        user, external_credential, action = get_user_from_cas_resp(cas_resp)
+        user = get_user_from_cas_resp(cas_resp)
         # user found and authenticated
-        if user and action == 'authenticate':
+        if user:
             # if we successfully authenticate and a verification key is present, invalidate it
             if user.verification_key:
                 user.verification_key = None
                 user.save()
 
-            # if user is authenticated by external IDP, ask CAS to authenticate user for a second time
-            # this extra step will guarantee that 2FA are enforced
-            # current CAS session created by external login must be cleared first before authentication
-            if external_credential:
-                user.verification_key = generate_verification_key()
-                user.save()
-                return redirect(get_logout_url(get_login_url(
-                    service_url,
-                    username=user.username,
-                    verification_key=user.verification_key
-                )))
-
-            # if user is authenticated by CAS
-            # TODO [CAS-27]: Remove Access Token From Service Validation
             return authenticate(
                 user,
                 cas_resp.attributes.get('accessToken', ''),
                 redirect(service_furl.url)
             )
-        # first time login from external identity provider
-        if not user and external_credential and action == 'external_first_login':
-            from website.util import web_url_for
-            # orcid attributes can be marked private and not shared, default to orcid otherwise
-            fullname = u'{} {}'.format(cas_resp.attributes.get('given-names', ''), cas_resp.attributes.get('family-name', '')).strip()
-            if not fullname:
-                fullname = external_credential['id']
-            # TODO [CAS-27]: Remove Access Token From Service Validation
-            user = {
-                'external_id_provider': external_credential['provider'],
-                'external_id': external_credential['id'],
-                'fullname': fullname,
-                'access_token': cas_resp.attributes.get('accessToken', ''),
-                'service_url': service_furl.url,
-            }
-            return external_first_login_authenticate(
-                user,
-                redirect(web_url_for('external_login_email_get'))
-            )
-    # Unauthorized: ticket could not be validated, or user does not exist.
+    # Unauthorized: ticket could not be validated, or user cannot be found.
     return redirect(service_furl.url)
 
 
@@ -321,26 +287,12 @@ def get_user_from_cas_resp(cas_resp):
     :return: the user, the external_credential, and the next action
     """
     from osf.models import OSFUser
+
     if cas_resp.user:
-        user = OSFUser.load(cas_resp.user)
-        # cas returns a valid OSF user id
-        if user:
-            return user, None, 'authenticate'
-        # cas does not return a valid OSF user id
-        else:
-            external_credential = validate_external_credential(cas_resp.user)
-            # invalid cas response
-            if not external_credential:
-                return None, None, None
-            # cas returns a valid external credential
-            user = get_user(external_id_provider=external_credential['provider'],
-                            external_id=external_credential['id'])
-            # existing user found
-            if user:
-                return user, external_credential, 'authenticate'
-            # user first time login through external identity provider
-            else:
-                return None, external_credential, 'external_first_login'
+
+        return OSFUser.load(cas_resp.user)
+
+    return None
 
 
 def validate_external_credential(external_credential):

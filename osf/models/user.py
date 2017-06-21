@@ -321,21 +321,6 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
     #     'twitter': <twitter id>,
     # }
 
-    # last auth action
-    CAS_ACTIONS = (
-        ('reset-password', 'Reset Password'),
-        ('verify-new-account', 'Verify Email for a New Account'),
-        ('verify-existing-account', 'Verify Email for an Existing Account'),
-        (None, 'No Pending Actions'),
-    )
-    last_cas_action = models.CharField(
-        choices=CAS_ACTIONS,
-        blank=True,
-        null=True,
-        max_length=31,
-        default=None
-    )
-
     # date the user last sent a request
     date_last_login = NonNaiveDateTimeField(null=True, blank=True)
 

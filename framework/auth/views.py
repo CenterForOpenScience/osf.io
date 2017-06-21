@@ -1,10 +1,7 @@
 # -*- coding: utf-8 -*-
-import furl
 import httplib as http
-import urllib
 
 import markupsafe
-from django.utils import timezone
 from flask import request
 
 from modularodm import Q
@@ -12,55 +9,66 @@ from modularodm.exceptions import NoResultsFound
 from modularodm.exceptions import ValidationError
 from modularodm.exceptions import ValidationValueError
 
-from framework import forms, sentry, status
+from framework import sentry, status
 from framework import auth as framework_auth
 from framework.auth import exceptions
 from framework.auth import cas, campaigns
 from framework.auth import logout as osf_logout
-from framework.auth import get_user
 from framework.auth.exceptions import DuplicateEmailError, ExpiredTokenError, InvalidTokenError
 from framework.auth.core import generate_verification_key
 from framework.auth.decorators import block_bing_preview, collect_auth, must_be_logged_in
-from framework.auth.forms import ResendConfirmationForm
-from framework.auth.utils import ensure_external_identity_uniqueness, validate_recaptcha
+from framework.auth.utils import validate_recaptcha
 from framework.exceptions import HTTPError
 from framework.flask import redirect  # VOL-aware redirect
-from framework.sessions.utils import remove_sessions_for_user, remove_session
-from framework.sessions import get_session
+from framework.sessions.utils import remove_sessions_for_user
 from osf.models import OSFUser as User
 from website import settings, mails, language
 from website.util import web_url_for
 from website.util.sanitize import strip_html
 from osf.models.preprint_provider import PreprintProvider
 
+
 @collect_auth
 def auth_cas_action(auth, uid):
+    """
+    The service view for successful CAS verification. 'action' parameter defines the type of verification, e.g. reset
+    password, verify email for new account and external id. The final landing page and whether push notification is
+    shown depends on the `action` and the `next` parameter.
+    
+    :param auth: the auth, user must be authenticated
+    :param uid: the GUID of the user, which must match the GUID of the auth.user
+    :return: redirect to the final landing page
+    :raises: HTTP 400, 403
+    """
 
     if not auth or not auth.user or auth.user._id != uid:
         raise HTTPError(http.FORBIDDEN)
 
-    if 'reset-password' == auth.user.last_cas_action:
-        auth.user.last_cas_action = None
-        auth.user.save()
+    cas_action = request.args.get('action', None)
+    next_url = request.args.get('next', None)
+
+    if not cas_action:
+        raise HTTPError(http.BAD_REQUEST)
+
+    if 'account-password-reset' == cas_action:
         status.push_status_message(language.PASSWORD_RESET_SUCCESS, kind='success', trust=True)
         return redirect(web_url_for('user_account'))
 
-    if 'verify-new-account' == auth.user.last_cas_action:
-        auth.user.last_cas_action = None
-        auth.user.save()
+    if 'account-verify-osf' == cas_action:
         campaign = campaigns.campaign_for_user(auth.user)
         if campaign:
             return redirect(campaigns.campaign_url_for(campaign))
         status.push_status_message(language.WELCOME_MESSAGE, kind='default', jumbotron=True, trust=True)
         return redirect(web_url_for('index'))
 
-    if 'verify-existing-account' == auth.user.last_cas_action:
-        auth.user.last_cas_action = None
-        auth.user.save()
-        campaign = campaigns.campaign_for_user(auth.user)
-        if campaign:
-            return redirect(campaigns.campaign_url_for(campaign))
-        return redirect(web_url_for('index'))
+    if 'account-verify-external' == cas_action:
+        if not next_url:
+            campaign = campaigns.campaign_for_user(auth.user)
+            if campaign:
+                return redirect(campaigns.campaign_url_for(campaign))
+            return redirect(web_url_for('index'))
+        validate_next_url(next_url)
+        return redirect(next_url)
 
     raise HTTPError(http.BAD_REQUEST)
 
@@ -345,103 +353,6 @@ def auth_email_logout(token, user):
 
 @block_bing_preview
 @collect_auth
-def external_login_confirm_email_get(auth, uid, token):
-    """
-    View for email confirmation links when user first login through external identity provider.
-    HTTP Method: GET
-
-    When users click the confirm link, they are expected not to be logged in. If not, they will be logged out first and
-    redirected back to this view. After OSF verifies the link and performs all actions, they will be automatically
-    logged in through CAS and redirected back to this view again being authenticated.
-
-    :param auth: the auth context
-    :param uid: the user's primary key
-    :param token: the verification token
-    """
-
-    user = User.load(uid)
-    if not user:
-        raise HTTPError(http.BAD_REQUEST)
-
-    destination = request.args.get('destination')
-    if not destination:
-        raise HTTPError(http.BAD_REQUEST)
-
-    # if user is already logged in
-    if auth and auth.user:
-        # if it is a wrong user
-        if auth.user._id != user._id:
-            return auth_logout(redirect_url=request.url)
-        # if it is the expected user
-        new = request.args.get('new', None)
-        if destination in campaigns.get_campaigns():
-            # external domain takes priority
-            campaign_url = campaigns.external_campaign_url_for(destination)
-            if not campaign_url:
-                campaign_url = campaigns.campaign_url_for(destination)
-            return redirect(campaign_url)
-        if new:
-            status.push_status_message(language.WELCOME_MESSAGE, kind='default', jumbotron=True, trust=True)
-        return redirect(web_url_for('dashboard'))
-
-    # token is invalid
-    if token not in user.email_verifications:
-        raise HTTPError(http.BAD_REQUEST)
-    verification = user.email_verifications[token]
-    email = verification['email']
-    provider = verification['external_identity'].keys()[0]
-    provider_id = verification['external_identity'][provider].keys()[0]
-    # wrong provider
-    if provider not in user.external_identity:
-        raise HTTPError(http.BAD_REQUEST)
-    external_status = user.external_identity[provider][provider_id]
-
-    try:
-        ensure_external_identity_uniqueness(provider, provider_id, user)
-    except ValidationError as e:
-        raise HTTPError(http.FORBIDDEN, e.message)
-
-    if not user.is_registered:
-        user.register(email)
-
-    if not user.emails.filter(address=email.lower()):
-        user.emails.create(address=email.lower())
-
-    user.date_last_logged_in = timezone.now()
-    user.external_identity[provider][provider_id] = 'VERIFIED'
-    user.social[provider.lower()] = provider_id
-    del user.email_verifications[token]
-    user.verification_key = generate_verification_key()
-    user.save()
-
-    service_url = request.url
-
-    if external_status == 'CREATE':
-        mails.send_mail(
-            to_addr=user.username,
-            mail=mails.WELCOME,
-            mimetype='html',
-            user=user
-        )
-        service_url += '&{}'.format(urllib.urlencode({'new': 'true'}))
-    elif external_status == 'LINK':
-        mails.send_mail(
-            user=user,
-            to_addr=user.username,
-            mail=mails.EXTERNAL_LOGIN_LINK_SUCCESS,
-            external_id_provider=provider,
-        )
-
-    # redirect to CAS and authenticate the user with the verification key
-    return redirect(cas.get_login_url(
-        service_url,
-        username=user.username,
-        verification_key=user.verification_key
-    ))
-
-
-@block_bing_preview
-@collect_auth
 def confirm_email_get(token, auth=None, **kwargs):
     """
     View for email confirmation links. Authenticates and redirects to user settings page if confirmation is successful,
@@ -709,139 +620,6 @@ def register_user(**kwargs):
         return {'message': message}
     else:
         return {'message': 'You may now log in.'}
-
-
-def external_login_email_get():
-    """
-    Landing view for first-time oauth-login user to enter their email address.
-    HTTP Method: GET
-    """
-
-    form = ResendConfirmationForm(request.form)
-    session = get_session()
-    if not session.is_external_first_login:
-        raise HTTPError(http.UNAUTHORIZED)
-
-    external_id_provider = session.data['auth_user_external_id_provider']
-
-    return {
-        'form': form,
-        'external_id_provider': external_id_provider
-    }
-
-
-def external_login_email_post():
-    """
-    View to handle email submission for first-time oauth-login user.
-    HTTP Method: POST
-    """
-
-    form = ResendConfirmationForm(request.form)
-    session = get_session()
-    if not session.is_external_first_login:
-        raise HTTPError(http.UNAUTHORIZED)
-
-    external_id_provider = session.data['auth_user_external_id_provider']
-    external_id = session.data['auth_user_external_id']
-    fullname = session.data['auth_user_fullname']
-    service_url = session.data['service_url']
-
-    # TODO: @cslzchen use user tags instead of destination
-    destination = 'dashboard'
-    for campaign in campaigns.get_campaigns():
-        if campaign != 'institution':
-            # Handle different url encoding schemes between `furl` and `urlparse/urllib`.
-            # OSF use `furl` to parse service url during service validation with CAS. However, `web_url_for()` uses
-            # `urlparse/urllib` to generate service url. `furl` handles `urlparser/urllib` generated urls while ` but
-            # not vice versa.
-            campaign_url = furl.furl(campaigns.campaign_url_for(campaign)).url
-            external_campaign_url = furl.furl(campaigns.external_campaign_url_for(campaign)).url
-            if campaigns.is_proxy_login(campaign):
-                # proxy campaigns: OSF Preprints and branded ones
-                if check_service_url_with_proxy_campaign(str(service_url), campaign_url, external_campaign_url):
-                    destination = campaign
-                    # continue to check branded preprints even service url matches osf preprints
-                    if campaign != 'osf-preprints':
-                        break
-            elif service_url.startswith(campaign_url):
-                # osf campaigns: OSF Prereg and ERPC
-                destination = campaign
-                break
-
-    if form.validate():
-        clean_email = form.email.data
-        user = get_user(email=clean_email)
-        external_identity = {
-            external_id_provider: {
-                external_id: None,
-            },
-        }
-        try:
-            ensure_external_identity_uniqueness(external_id_provider, external_id, user)
-        except ValidationError as e:
-            raise HTTPError(http.FORBIDDEN, e.message)
-        if user:
-            # 1. update user oauth, with pending status
-            external_identity[external_id_provider][external_id] = 'LINK'
-            if external_id_provider in user.external_identity:
-                user.external_identity[external_id_provider].update(external_identity[external_id_provider])
-            else:
-                user.external_identity.update(external_identity)
-            # 2. add unconfirmed email and send confirmation email
-            user.add_unconfirmed_email(clean_email, external_identity=external_identity)
-            user.save()
-            send_confirm_email(
-                user,
-                clean_email,
-                external_id_provider=external_id_provider,
-                external_id=external_id,
-                destination=destination
-            )
-            # 3. notify user
-            message = language.EXTERNAL_LOGIN_EMAIL_LINK_SUCCESS.format(
-                external_id_provider=external_id_provider,
-                email=user.username
-            )
-            kind = 'success'
-            # 4. remove session and osf cookie
-            remove_session(session)
-        else:
-            # 1. create unconfirmed user with pending status
-            external_identity[external_id_provider][external_id] = 'CREATE'
-            user = User.create_unconfirmed(
-                username=clean_email,
-                password=None,
-                fullname=fullname,
-                external_identity=external_identity,
-                campaign=None
-            )
-            # TODO: [#OSF-6934] update social fields, verified social fields cannot be modified
-            user.save()
-            # 3. send confirmation email
-            send_confirm_email(
-                user,
-                user.username,
-                external_id_provider=external_id_provider,
-                external_id=external_id,
-                destination=destination
-            )
-            # 4. notify user
-            message = language.EXTERNAL_LOGIN_EMAIL_CREATE_SUCCESS.format(
-                external_id_provider=external_id_provider,
-                email=user.username
-            )
-            kind = 'success'
-            # 5. remove session
-            remove_session(session)
-        status.push_status_message(message, kind=kind, trust=False)
-    else:
-        forms.push_errors_to_status(form.errors)
-
-    # Don't go anywhere
-    return {
-        'form': form,
-        'external_id_provider': external_id_provider
-    }
 
 
 def validate_campaign(campaign):

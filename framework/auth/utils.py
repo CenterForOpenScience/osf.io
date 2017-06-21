@@ -87,27 +87,6 @@ def privacy_info_handle(info, anonymous, name=False):
     return info
 
 
-def ensure_external_identity_uniqueness(provider, identity, user=None):
-    from osf.models import OSFUser
-
-    users_with_identity = OSFUser.find(Q('external_identity.{}.{}'.format(provider, identity), 'ne', None))
-    for existing_user in users_with_identity:
-        if user and user._id == existing_user._id:
-            continue
-        if existing_user.external_identity[provider][identity] == 'VERIFIED':
-            if user and user.external_identity.get(provider, {}).get(identity, {}):
-                user.external_identity[provider].pop(identity)
-                if user.external_identity[provider] == {}:
-                    user.external_identity.pop(provider)
-                user.save()  # Note: This won't work in v2 because it rolls back transactions when status >= 400
-            raise ValidationError('Another user has already claimed this external identity')
-        existing_user.external_identity[provider].pop(identity)
-        if existing_user.external_identity[provider] == {}:
-            existing_user.external_identity.pop(provider)
-        existing_user.save()
-    return
-
-
 def validate_recaptcha(response, remote_ip=None):
     """
     Validate if the recaptcha response is valid.
