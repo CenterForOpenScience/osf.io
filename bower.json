@@ -20,7 +20,7 @@
     "raven-js": "2.1.0",
     "zeroclipboard": "2.1.6",
     "osf-style": "https://github.com/CenterForOpenScience/osf-style.git#1.0.0",
-    "At.js": "jquery.atwho",
+    "At.js": "jquery.atwho#master",
     "academicons": "1.7.0"
   }
 }
