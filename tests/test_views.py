@@ -788,6 +788,33 @@ class TestProjectViews(OsfTestCase):
         assert last_log.action == NodeLog.VIEW_ONLY_LINK_REMOVED
         assert last_log.params.get('anonymous_link')
 
+    def test_remove_component(self):
+        node = NodeFactory(parent=self.project, creator=self.user1)
+        url = node.api_url
+        res = self.app.delete_json(url, {}, auth=self.auth).maybe_follow()
+        node.reload()
+        assert_equal(node.is_deleted, True)
+        assert_in('url', res.json)
+        assert_equal(res.json['url'], self.project.url)
+
+    def test_cant_remove_component_if_not_admin(self):
+        node = NodeFactory(parent=self.project, creator=self.user1)
+        non_admin = AuthUserFactory()
+        node.add_contributor(
+            non_admin,
+            permissions=['read', 'write'],
+            save=True,
+        )
+
+        url = node.api_url
+        res = self.app.delete_json(
+            url, {}, auth=non_admin.auth,
+            expect_errors=True,
+        ).maybe_follow()
+
+        assert_equal(res.status_code, http.FORBIDDEN)
+        assert_false(node.is_deleted)
+
     def test_view_project_returns_whether_to_show_wiki_widget(self):
         user = AuthUserFactory()
         project = ProjectFactory(creator=user, is_public=True)
