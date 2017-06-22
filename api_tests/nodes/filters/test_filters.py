@@ -67,42 +67,42 @@ class NodesListFilteringMixin(object):
 
     def test_non_mutating_list_filtering_tests(self, app, user, contrib, parent_project, child_node_one, child_node_two, grandchild_node_one, grandchild_node_two, great_grandchild_node_two, parent_url, root_url, contributors_url):
 
-    # def test_parent_filter_null(self, app, user, parent_project, parent_url):
+    #   test_parent_filter_null
         expected = [parent_project._id]
         res = app.get('{}null'.format(parent_url), auth=user.auth)
         actual = [node['id'] for node in res.json['data']]
         assert expected == actual
 
-    # def test_parent_filter_equals_returns_one(self, app, user, child_node_two, grandchild_node_two, parent_url):
+    #   test_parent_filter_equals_returns_one
         expected = [grandchild_node_two._id]
         res = app.get('{}{}'.format(parent_url, child_node_two._id), auth=user.auth)
         actual = [node['id'] for node in res.json['data']]
         assert expected == actual
 
-    # def test_parent_filter_equals_returns_multiple(self, app, user, parent_project, child_node_one, child_node_two, parent_url):
+    #   test_parent_filter_equals_returns_multiple
         expected = [child_node_one._id, child_node_two._id]
         res = app.get('{}{}'.format(parent_url, parent_project._id), auth=user.auth)
         actual = [node['id'] for node in res.json['data']]
         assert set(expected) == set(actual)
 
-    # def test_root_filter_null(self, app, user, root_url):
+    #   test_root_filter_null
         res = app.get('{}null'.format(root_url), auth=user.auth, expect_errors=True)
         assert res.status_code == 400
         assert res.json['errors'][0]['source']['parameter'] == 'filter'
 
-    # def test_root_filter_equals_returns_branch(self, app, user, child_node_two, root_url):
+    #   test_root_filter_equals_returns_branch
         expected = []
         res = app.get('{}{}'.format(root_url, child_node_two._id), auth=user.auth)
         actual = [node['id'] for node in res.json['data']]
         assert expected == actual
 
-    # def test_root_filter_equals_returns_tree(self, app, user, parent_project, child_node_one, child_node_two, grandchild_node_one, grandchild_node_two, great_grandchild_node_two, root_url):
+    #   test_root_filter_equals_returns_tree
         expected = [parent_project._id, child_node_one._id, child_node_two._id, grandchild_node_one._id, grandchild_node_two._id, great_grandchild_node_two._id]
         res = app.get('{}{}'.format(root_url, parent_project._id), auth=user.auth)
         actual = [node['id'] for node in res.json['data']]
         assert set(expected) == set(actual)
 
-    # def test_contributor_filter(self, app, user, contrib, parent_project, contributors_url):
+    #   test_contributor_filter
         expected = [parent_project._id]
         res = app.get('{}{}'.format(contributors_url, contrib._id), auth=user.auth)
         actual = [node['id'] for node in res.json['data']]
@@ -167,7 +167,7 @@ class NodesListDateFilteringMixin(object):
 
     def test_node_list_date_filter(self, app, user, node_may, node_june, node_july, url, date_created_url):
 
-    #   test_date_filter_equals(self):
+    #   test_date_filter_equals
         expected = []
         res = app.get('{}{}'.format(date_created_url, '2016-04-01'), auth=user.auth)
         actual = [node['id'] for node in res.json['data']]
@@ -178,7 +178,7 @@ class NodesListDateFilteringMixin(object):
         actual = [node['id'] for node in res.json['data']]
         assert expected == actual
 
-    #   test_date_filter_gt(self):
+    #   test_date_filter_gt
         res_url = '{}filter[date_created][gt]='.format(url)
 
         expected = []
@@ -191,7 +191,7 @@ class NodesListDateFilteringMixin(object):
         actual = [node['id'] for node in res.json['data']]
         assert set(expected) == set(actual)
 
-    #   test_date_filter_gte(self):
+    #   test_date_filter_gte
         res_url = '{}filter[date_created][gte]='.format(url)
 
         expected = []
@@ -204,7 +204,7 @@ class NodesListDateFilteringMixin(object):
         actual = [node['id'] for node in res.json['data']]
         assert set(expected) == set(actual)
 
-    #   test_date_fitler_lt(self):
+    #   test_date_fitler_lt
         res_url = '{}filter[date_created][lt]='.format(url)
 
         expected = []
@@ -217,7 +217,7 @@ class NodesListDateFilteringMixin(object):
         actual = [node['id'] for node in res.json['data']]
         assert set(expected) == set(actual)
 
-    #   test_date_filter_lte(self):
+    #   test_date_filter_lte
         res_url = '{}filter[date_created][lte]='.format(url)
 
         expected = []
@@ -230,7 +230,7 @@ class NodesListDateFilteringMixin(object):
         actual = [node['id'] for node in res.json['data']]
         assert set(expected) == set(actual)
 
-    #   test_date_filter_eq(self):
+    #   test_date_filter_eq
         res_url = '{}filter[date_created][eq]='.format(url)
 
         expected = []
