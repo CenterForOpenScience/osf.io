@@ -731,6 +731,11 @@ SocialViewModel.prototype.unserialize = function(data) {
     var self = this;
     var websiteValue = [];
     $.each(data || {}, function(key, value) {
+        if (key === 'profileWebsites') {
+            value = value.map(function(website) {
+                return website.replace(/&amp;/gi, '&');
+            });
+        }
         if (ko.isObservable(self[key]) && key === 'profileWebsites') {
             if (value && value.length === 0) {
                 value.push(ko.observable('').extend({
@@ -924,6 +929,11 @@ ListViewModel.prototype.unserialize = function(data) {
         self.editable(false);
     }
     self.contents(ko.utils.arrayMap(data.contents || [], function (each) {
+        for (var attr in each) {
+            if (typeof each[attr] === 'string') {
+                each[attr] = each[attr].replace(/&amp;/gi, '&');
+            }
+        }
         return new self.ContentModel(self).unserialize(each);
     }));
 
