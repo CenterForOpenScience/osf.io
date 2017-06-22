@@ -82,9 +82,6 @@ var AddProject = {
             if (self.isAdding()) {
                 return;
             }
-            if (self.newProjectName().length === 0) {
-                return;
-            }
             self.isAdding(true);
             var url;
             var data;
@@ -179,12 +176,13 @@ var AddProject = {
                             m('label[for="projectName].f-w-lg.text-bigger', 'Title'),
                             m('input[type="text"].form-control.project-name', {
                                 onkeyup: function(ev){
-                                    if (ev.which === 13) {
-                                         ctrl.add();
-                                    }
                                     var val = ev.target.value;
+                                    var validTitle = val.trim().length > 0;
+                                    if (ev.which === 13) {
+                                         validTitle && ctrl.add();
+                                    }
                                     ctrl.newProjectName(val);
-                                    ctrl.isValid(val.trim().length > 0);
+                                    ctrl.isValid(validTitle);
                                 },
                                 onchange: function(ev) {
                                     //  This will not be reliably running!
