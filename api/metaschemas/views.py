@@ -48,6 +48,8 @@ class MetaSchemasList(JSONAPIBaseView, generics.ListAPIView):
     view_category = 'metaschemas'
     view_name = 'metaschema-list'
 
+    ordering = ('-id',)
+
     # overrides ListCreateAPIView
     def get_queryset(self):
         return MetaSchema.objects.filter(schema_version=LATEST_SCHEMA_VERSION, active=True)

@@ -306,6 +306,8 @@ class UserAddonList(JSONAPIBaseView, generics.ListAPIView, ListFilterMixin, User
     view_category = 'users'
     view_name = 'user-addons'
 
+    ordering = ('-date_last_refreshed',)
+
     def get_queryset(self):
         qs = [addon for addon in self.get_user().get_addons() if 'accounts' in addon.config.configs]
         qs.sort()
@@ -394,6 +396,8 @@ class UserAddonAccountList(JSONAPIBaseView, generics.ListAPIView, UserMixin, Add
     serializer_class = AddonAccountSerializer
     view_category = 'users'
     view_name = 'user-external_accounts'
+
+    ordering = ('-date_last_refreshed',)
 
     def get_queryset(self):
         return self.get_addon_settings(check_object_permissions=False).external_accounts
@@ -514,6 +518,8 @@ class UserNodes(JSONAPIBaseView, generics.ListAPIView, UserMixin, NodesFilterMix
     view_category = 'users'
     view_name = 'user-nodes'
 
+    ordering = ('-date_modified',)
+
     # overrides NodesFilterMixin
     def get_default_queryset(self):
         user = self.get_user()
@@ -583,6 +589,8 @@ class UserInstitutions(JSONAPIBaseView, generics.ListAPIView, UserMixin):
     serializer_class = InstitutionSerializer
     view_category = 'users'
     view_name = 'user-institutions'
+
+    ordering = ('-date_modified',)
 
     def get_default_odm_query(self):
         return None
@@ -687,6 +695,8 @@ class UserRegistrations(JSONAPIBaseView, generics.ListAPIView, UserMixin, NodesF
     serializer_class = RegistrationSerializer
     view_category = 'users'
     view_name = 'user-registrations'
+
+    ordering = ('-date_modified',)
 
     # overrides NodesFilterMixin
     def get_default_queryset(self):

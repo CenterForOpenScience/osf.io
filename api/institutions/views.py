@@ -189,6 +189,8 @@ class InstitutionUserList(JSONAPIBaseView, ODMFilterMixin, generics.ListAPIView,
     view_category = 'institutions'
     view_name = 'institution-users'
 
+    ordering = ('-id',)
+
     # overrides ODMFilterMixin
     def get_default_odm_query(self):
         inst = self.get_institution()

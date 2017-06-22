@@ -234,6 +234,8 @@ class PreprintProviderSubjectList(JSONAPIBaseView, generics.ListAPIView):
 
     serializer_class = TaxonomySerializer
 
+    ordering = ('-id',)
+
     def is_valid_subject(self, allows_children, allowed_parents, sub):
         # TODO: Delet this when all PreprintProviders have a mapping
         if sub._id in allowed_parents:
@@ -264,7 +266,7 @@ class PreprintProviderSubjectList(JSONAPIBaseView, generics.ListAPIView):
 
 
 class PreprintProviderLicenseList(LicenseList):
-    ordering = ()
+    ordering = ()  # TODO: should be ordered once the frontend for selecting default licenses no longer relies on order
     view_category = 'preprint_providers'
 
     def get_queryset(self):

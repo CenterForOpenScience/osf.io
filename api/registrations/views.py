@@ -151,6 +151,8 @@ class RegistrationList(JSONAPIBaseView, generics.ListAPIView, NodesFilterMixin):
     view_category = 'registrations'
     view_name = 'registration-list'
 
+    ordering = ('-date_modified',)
+
     # overrides NodesFilterMixin
     def get_default_queryset(self):
         base_query = (
@@ -513,6 +515,8 @@ class RegistrationChildrenList(JSONAPIBaseView, generics.ListAPIView, ODMFilterM
 
     required_read_scopes = [CoreScopes.NODE_REGISTRATIONS_READ]
     required_write_scopes = [CoreScopes.NULL]
+
+    ordering = ('-date_modified',)
 
     def get_default_odm_query(self):
         base_query = (
