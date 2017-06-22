@@ -68,7 +68,9 @@ def format_contributor(preprint, user, bibliographic, index):
         cited_as=user.fullname,
     )
 
-def format_subject(subject, context={}):
+def format_subject(subject, context=None):
+    if context is None:
+        context = {}
     if subject is None:
         return None
     if subject.id in context:

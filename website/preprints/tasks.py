@@ -16,12 +16,13 @@ logger = logging.getLogger(__name__)
 
 
 @celery_app.task(ignore_results=True)
-def on_preprint_updated(preprint_id, update_share=True, old_subjects=[]):
+def on_preprint_updated(preprint_id, update_share=True, old_subjects=None):
     # WARNING: Only perform Read-Only operations in an asynchronous task, until Repeatable Read/Serializable
     # transactions are implemented in View and Task application layers.
     from osf.models import PreprintService
     preprint = PreprintService.load(preprint_id)
-
+    if old_subjects is None:
+        old_subjects = []
     if preprint.node:
         status = 'public' if preprint.node.is_public else 'unavailable'
         try:
@@ -46,7 +47,9 @@ def on_preprint_updated(preprint_id, update_share=True, old_subjects=[]):
         logger.debug(resp.content)
         resp.raise_for_status()
 
-def format_preprint(preprint, old_subjects=[]):
+def format_preprint(preprint, old_subjects=None):
+    if old_subjects is None:
+        old_subjects = []
     from osf.models import Subject
     old_subjects = [Subject.objects.get(id=s) for s in old_subjects]
     preprint_graph = GraphNode('preprint', **{
