@@ -9171,8 +9171,6 @@ CSL.Attributes["@variable"] = function (state, arg) {
                     }
                     break;
                 } else if ("object" === typeof Item[variable]) {
-                    if (Item[variable].length) {
-                    }
                     break;
                 } else if ("string" === typeof Item[variable] && Item[variable]) {
                     output = true;
