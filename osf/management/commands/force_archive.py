@@ -39,6 +39,10 @@ from website.util import waterbutler_api_url_for
 
 logger = logging.getLogger(__name__)
 
+# Control globals
+DELETE_COLLISIONS = False
+SKIP_COLLISIONS = False
+
 # Logging globals
 CHECKED_OKAY = []
 CHECKED_STUCK_RECOVERABLE = []
@@ -109,16 +113,23 @@ PERMISSIBLE_ADDONS = {
     'osfstorage'
 }
 
-def complete_registration(reg):
+def complete_archive_target(reg, addon_short_name):
     archive_job = reg.archive_job
-    for addon_short_name in PERMISSIBLE_ADDONS:
-        target = archive_job.get_target(addon_short_name)
-        target.status = ARCHIVER_SUCCESS
-        target.save()
+    target = archive_job.get_target(addon_short_name)
+    target.status = ARCHIVER_SUCCESS
+    target.save()
     archive_job._post_update_target()
 
 def perform_wb_copy(reg, node_settings):
     src, dst, user = reg.archive_job.info()
+    if dst.files.filter(name=node_settings.archive_folder_name.replace('/', '-')).exists():
+        if not DELETE_COLLISIONS and not SKIP_COLLISIONS:
+            raise Exception('Archive folder for {} already exists. Investigate manually and rerun with either --delete-collisions or --skip-collisions')
+        if DELETE_COLLISIONS:
+            archive_folder = dst.files.get(name=node_settings.archive_folder_name.replace('/', '-'))
+            archive_folder.delete()
+        if SKIP_COLLISIONS:
+            return
     params = {'cookie': user.get_or_create_cookie()}
     data = {
         'action': 'copy',
@@ -201,7 +212,7 @@ def modify_file_tree_recursive(tree, file_obj, deleted, cached=False):
 def revert_log_actions(file_tree, reg, obj_cache):
     logs_to_revert = reg.registered_from.logs.filter(date__gt=reg.registered_date).exclude(action__in=LOG_WHITELIST).order_by('-date')
     if len(PERMISSIBLE_ADDONS) > 1:
-        logs_to_revert = logs_to_revert.exclude(action=PERMISSIBLE_BLACKLIST)
+        logs_to_revert = logs_to_revert.exclude(action__in=PERMISSIBLE_BLACKLIST)
     for log in list(logs_to_revert):
         file_obj = BaseFileNode.objects.get(_id=log.params['urls']['view'].split('/')[5])
         assert file_obj.node in reg.registered_from.root.node_and_primary_descendants()
@@ -272,12 +283,14 @@ def archive(registration):
             if not hasattr(node_settings, '_get_file_tree'):
                 # Excludes invalid or None-type
                 continue
+            if not reg.archive_job.get_target(short_name) or reg.archive_job.get_target(short_name).status == ARCHIVER_SUCCESS:
+                continue
             if short_name == 'osfstorage':
                 file_tree = build_file_tree(reg, node_settings)
                 manually_archive(file_tree, reg, node_settings)
             else:
                 perform_wb_copy(reg, node_settings)
-        complete_registration(reg)
+            complete_archive_target(reg, short_name)
 
 def archive_registrations():
     for reg in deepcopy(VERIFIED):
@@ -402,10 +415,29 @@ class Command(BaseCommand):
             dest='check',
             help='Check if registrations are stuck',
         )
+        parser.add_argument(
+            '--delete-collisions',
+            action='store_true',
+            dest='delete_collisions',
+            help='Specifies that colliding archive filenodes should be deleted and re-archived in the event of a collision',
+        )
+        parser.add_argument(
+            '--skip-collisions',
+            action='store_true',
+            dest='skip_collisions',
+            help='Specifies that colliding archive filenodes should be skipped and the archive job target marked as successful in the event of a collision',
+        )
         parser.add_argument('--addons', type=str, nargs='*', help='Addons other than OSFStorage to archive. Use caution')
         parser.add_argument('--guids', type=str, nargs='+', help='GUIDs of registrations to archive')
 
     def handle(self, *args, **options):
+        global DELETE_COLLISIONS
+        global SKIP_COLLISIONS
+        DELETE_COLLISIONS = options.get('delete_collisions')
+        SKIP_COLLISIONS = options.get('skip_collisions')
+        if DELETE_COLLISIONS and SKIP_COLLISIONS:
+            raise Exception('Cannot specify both delete_collisions and skip_collisions')
+
         dry_run = options.get('dry_run')
         if not dry_run:
             script_utils.add_file_logger(logger, __file__)
