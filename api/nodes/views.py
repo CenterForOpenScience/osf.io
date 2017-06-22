@@ -2265,6 +2265,7 @@ class NodeProvider(object):
         self.provider = provider
         self.node_id = node._id
         self.pk = node._id
+        self.id = node.id
 
 
 class NodeProvidersList(JSONAPIBaseView, generics.ListAPIView, NodeMixin):
@@ -2394,7 +2395,7 @@ class NodeProvidersList(JSONAPIBaseView, generics.ListAPIView, NodeMixin):
     view_category = 'nodes'
     view_name = 'node-providers'
 
-    ordering = ('-pk',)
+    ordering = ('-id',)
 
     def get_provider_item(self, provider):
         return NodeProvider(provider, self.get_node())
