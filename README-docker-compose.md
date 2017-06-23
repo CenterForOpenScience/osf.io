@@ -89,7 +89,7 @@
 ## Docker Sync
 
 Ubuntu: Skip install of docker-sync, fswatch, and unison. instead...
-        `cp docker-compose.ubuntu.yml docker-compose.override.yml`
+        `cp docker-compose.linux.yml docker-compose.override.yml`
         Ignore future steps that start, stop, or wait for docker-sync
 
 1. Install Docker Sync 0.3.5
