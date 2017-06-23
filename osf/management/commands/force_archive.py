@@ -126,7 +126,8 @@ def perform_wb_copy(reg, node_settings):
         if not DELETE_COLLISIONS and not SKIP_COLLISIONS:
             raise Exception('Archive folder for {} already exists. Investigate manually and rerun with either --delete-collisions or --skip-collisions')
         if DELETE_COLLISIONS:
-            archive_folder = dst.files.get(name=node_settings.archive_folder_name.replace('/', '-'))
+            archive_folder = dst.files.exclude(type='osf.trashedfolder').get(name=node_settings.archive_folder_name.replace('/', '-'))
+            logger.info('Removing {}'.format(archive_folder))
             archive_folder.delete()
         if SKIP_COLLISIONS:
             complete_archive_target(reg, node_settings.short_name)
