@@ -129,6 +129,7 @@ def perform_wb_copy(reg, node_settings):
             archive_folder = dst.files.get(name=node_settings.archive_folder_name.replace('/', '-'))
             archive_folder.delete()
         if SKIP_COLLISIONS:
+            complete_archive_target(reg, node_settings.short_name)
             return
     params = {'cookie': user.get_or_create_cookie()}
     data = {
@@ -288,9 +289,10 @@ def archive(registration):
             if short_name == 'osfstorage':
                 file_tree = build_file_tree(reg, node_settings)
                 manually_archive(file_tree, reg, node_settings)
+                complete_archive_target(reg, short_name)
             else:
+                assert reg.archiving, '{}: Must be `archiving` for WB to copy'.format(reg._id)
                 perform_wb_copy(reg, node_settings)
-            complete_archive_target(reg, short_name)
 
 def archive_registrations():
     for reg in deepcopy(VERIFIED):
