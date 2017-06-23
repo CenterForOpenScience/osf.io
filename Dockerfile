@@ -74,6 +74,7 @@ COPY ./requirements.txt /code/
 COPY ./requirements/ /code/requirements/
 
 COPY ./website/addons/badges/requirements.txt /code/website/addons/badges/
+COPY ./website/addons/bitbucket/requirements.txt /code/website/addons/bitbucket/
 COPY ./website/addons/box/requirements.txt /code/website/addons/box/
 COPY ./website/addons/dataverse/requirements.txt /code/website/addons/dataverse/
 COPY ./website/addons/dropbox/requirements.txt /code/website/addons/dropbox/
@@ -89,6 +90,7 @@ RUN pip install --no-cache-dir -c /code/requirements/constraints.txt -r /code/re
     && pip install --no-cache-dir -c /code/requirements/constraints.txt -r /code/requirements/release.txt
 
 RUN pip install --no-cache-dir -c /code/requirements/constraints.txt -r /code/website/addons/badges/requirements.txt \
+    && pip install --no-cache-dir -c /code/requirements/constraints.txt -r /code/website/addons/bitbucket/requirements.txt \
     && pip install --no-cache-dir -c /code/requirements/constraints.txt -r /code/website/addons/box/requirements.txt \
     && pip install --no-cache-dir -c /code/requirements/constraints.txt -r /code/website/addons/dataverse/requirements.txt \
     && pip install --no-cache-dir -c /code/requirements/constraints.txt -r /code/website/addons/dropbox/requirements.txt \
@@ -125,6 +127,7 @@ RUN mv /code/website/settings/local-dist.py /code/website/settings/local.py \
 COPY ./webpack* /code/
 COPY ./website/static /code/website/static/
 COPY ./website/addons/badges/static/ /code/website/addons/badges/static/
+COPY ./website/addons/bitbucket/static/ /code/website/addons/bitbucket/static/
 COPY ./website/addons/box/static/ /code/website/addons/box/static/
 COPY ./website/addons/citations/static/ /code/website/addons/citations/static/
 COPY ./website/addons/dataverse/static/ /code/website/addons/dataverse/static/
