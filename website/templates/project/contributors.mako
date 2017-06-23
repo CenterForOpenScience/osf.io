@@ -292,7 +292,8 @@
 
     <script type="text/javascript">
       window.contextVars = window.contextVars || {};
-      window.contextVars.user = ${ user | sjson, n };
+      window.contextVars.currentUser = window.contextVars.currentUser || {};
+      window.contextVars.currentUser.permissions = ${ user['permissions'] | sjson, n } ;
       window.contextVars.isRegistration = ${ node['is_registration'] | sjson, n };
       window.contextVars.contributors = ${ contributors | sjson, n };
       window.contextVars.adminContributors = ${ adminContributors | sjson, n };

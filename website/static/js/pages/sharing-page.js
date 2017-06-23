@@ -19,10 +19,10 @@ var isContribPage = $('#manageContributors').length;
 var cm;
 
 if (isContribPage) {
-    cm = new ContribManager('#manageContributors', ctx.contributors, ctx.adminContributors, ctx.user, ctx.isRegistration, '#manageContributorsTable', '#adminContributorsTable');
+    cm = new ContribManager('#manageContributors', ctx.contributors, ctx.adminContributors, ctx.currentUser, ctx.isRegistration, '#manageContributorsTable', '#adminContributorsTable');
 }
 
-if ($.inArray('admin', ctx.user.permissions) !== -1) {
+if ($.inArray('admin', ctx.currentUser.permissions) !== -1) {
     // Controls the modal
     var configUrl = ctx.node.urls.api + 'get_editable_children/';
     var privateLinkManager = new PrivateLinkManager('#addPrivateLink', configUrl);

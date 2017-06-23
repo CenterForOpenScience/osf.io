@@ -497,7 +497,7 @@
       window.contextVars.wiki.isEnabled = ${wiki.short_name in addons_enabled | sjson, n };
       window.contextVars.currentUser = window.contextVars.currentUser || {};
       window.contextVars.currentUser.institutions = ${ user['institutions'] | sjson, n };
-      window.contextVars.user = ${ user | sjson, n };
+      window.contextVars.currentUser.permissions = ${ user['permissions'] | sjson, n } ;
       window.contextVars.analyticsMeta = $.extend(true, {}, window.contextVars.analyticsMeta, {
           pageMeta: {
               title: 'Settings',

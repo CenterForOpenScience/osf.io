@@ -46,7 +46,7 @@
         </td>
         <td>
             <div class="td-content" data-bind="visible: expanded() || !$root.collapsed()">
-                <button data-bind="click:  $root.removeLink" type="button" class="btn btn-danger to-top-element">Remove</button>
+                <button data-bind="click:  $root.removeLink" type="button" class="btn btn-danger btn-sm m-l-md to-top-element">Remove</button>
             </div>
         </td>
     </tr>
