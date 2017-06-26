@@ -113,7 +113,7 @@ class CasClient(object):
         url.args['ticket'] = ticket
         url.args['service'] = service_url
 
-        resp = requests.get(url.url, verify=False)
+        resp = requests.get(url.url)
         if resp.status_code == 200:
             return self._parse_service_validation(resp.content)
         else:
@@ -132,7 +132,7 @@ class CasClient(object):
         headers = {
             'Authorization': 'Bearer {}'.format(access_token),
         }
-        resp = requests.get(url, headers=headers, verify=False)
+        resp = requests.get(url, headers=headers)
         if resp.status_code == 200:
             return self._parse_profile(resp.content, access_token)
         else:
@@ -181,7 +181,7 @@ class CasClient(object):
         """Revoke a tokens based on payload"""
         url = self.get_auth_token_revocation_url()
 
-        resp = requests.post(url, data=payload, verify=False)
+        resp = requests.post(url, data=payload)
         if resp.status_code == 204:
             return True
         else:
