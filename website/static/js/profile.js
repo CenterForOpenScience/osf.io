@@ -731,14 +731,14 @@ SocialViewModel.prototype.unserialize = function(data) {
     var self = this;
     var websiteValue = [];
     $.each(data || {}, function(key, value) {
-        console.log(key, value);
         if (key === 'profileWebsites') {
             value = value.map(function(website) {
                 return $osf.decodeText(website);
             });
-        } else {
+        } else if (typeof value === 'string') {
             value = $osf.decodeText(value);
         }
+
         if (ko.isObservable(self[key]) && key === 'profileWebsites') {
             if (value && value.length === 0) {
                 value.push(ko.observable('').extend({
