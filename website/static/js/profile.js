@@ -731,13 +731,13 @@ SocialViewModel.prototype.unserialize = function(data) {
     var self = this;
     var websiteValue = [];
     $.each(data || {}, function(key, value) {
-        if (key === 'scholar') {
-            value = $osf.decodeText(value);
-        }
+        console.log(key, value);
         if (key === 'profileWebsites') {
             value = value.map(function(website) {
                 return $osf.decodeText(website);
             });
+        } else {
+            value = $osf.decodeText(value);
         }
         if (ko.isObservable(self[key]) && key === 'profileWebsites') {
             if (value && value.length === 0) {
@@ -934,7 +934,7 @@ ListViewModel.prototype.unserialize = function(data) {
     self.contents(ko.utils.arrayMap(data.contents || [], function (each) {
         for (var attr in each) {
             if (typeof each[attr] === 'string') {
-                each[attr] = $osf.decodeText(each[attr])
+                each[attr] = $osf.decodeText(each[attr]);
             }
         }
         return new self.ContentModel(self).unserialize(each);
