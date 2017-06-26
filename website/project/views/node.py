@@ -12,7 +12,6 @@ from django.db.models import Count
 
 from framework import status
 from framework.utils import iso8601format
-from framework.flask import redirect
 from framework.auth.decorators import must_be_logged_in, collect_auth
 from framework.exceptions import HTTPError
 from osf.models.nodelog import NodeLog
@@ -419,25 +418,9 @@ def project_statistics(auth, node, **kwargs):
     return ret
 
 
-@must_be_valid_project
-@must_be_contributor_or_public
-def project_statistics_redirect(auth, node, **kwargs):
-    return redirect(node.web_url_for('project_statistics', _guid=True))
-
 ###############################################################################
 # Make Private/Public
 ###############################################################################
-
-
-@must_be_valid_project
-@must_have_permission(ADMIN)
-def project_before_set_public(node, **kwargs):
-    prompt = node.callback('before_make_public')
-
-    return {
-        'prompts': prompt
-    }
-
 
 @must_be_valid_project
 @must_have_permission(ADMIN)
@@ -459,6 +442,7 @@ def project_set_privacy(auth, node, **kwargs):
         'status': 'success',
         'permissions': permissions,
     }
+
 
 @must_be_valid_project
 @must_not_be_registration
@@ -482,7 +466,6 @@ def update_node(auth, node, **kwargs):
     }
     node.save()
     return {'updated_fields': updated_fields_dict}
-
 
 @must_be_valid_project
 @must_have_permission(ADMIN)
@@ -1064,6 +1047,30 @@ def add_pointer(auth):
         _add_pointers(to_node, [pointer], auth)
     except ValueError:
         raise HTTPError(http.BAD_REQUEST)
+
+
+@must_have_permission(WRITE)
+@must_not_be_registration
+def add_pointers(auth, node, **kwargs):
+    """Add pointers to a node.
+
+    """
+    node_ids = request.json.get('nodeIds')
+
+    if not node_ids:
+        raise HTTPError(http.BAD_REQUEST)
+
+    nodes = [
+        Node.load(node_id)
+        for node_id in node_ids
+    ]
+
+    try:
+        _add_pointers(node, nodes, auth)
+    except ValueError:
+        raise HTTPError(http.BAD_REQUEST)
+
+    return {}
 
 
 @must_have_permission(WRITE)

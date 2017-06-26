@@ -235,7 +235,10 @@ class NodeSettings(BaseStorageAddon, BaseOAuthNodeSettings):
         except HTTPError as e:
             if e.code == 403:
                 return [messages.OAUTH_INVALID]
-            raise
+            elif e.code == 500:
+                return [messages.FIGSHARE_INTERNAL_SERVER_ERROR]
+            else:
+                return [messages.FIGSHARE_UNSPECIFIED_ERROR.format(error_message=e.message)]
 
         article_permissions = 'public' if project_is_public else 'private'
 
