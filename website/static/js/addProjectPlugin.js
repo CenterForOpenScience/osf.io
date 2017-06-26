@@ -178,8 +178,8 @@ var AddProject = {
                                 onkeyup: function(ev){
                                     var val = ev.target.value;
                                     var validTitle = val.trim().length > 0;
-                                    if (ev.which === 13) {
-                                         validTitle && ctrl.add();
+                                    if (ev.which === 13 && validTitle) {
+                                        ctrl.add();
                                     }
                                     ctrl.newProjectName(val);
                                     ctrl.isValid(validTitle);
