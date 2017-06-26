@@ -731,6 +731,9 @@ SocialViewModel.prototype.unserialize = function(data) {
     var self = this;
     var websiteValue = [];
     $.each(data || {}, function(key, value) {
+        if (key === 'scholar') {
+            value = value.replace(/&amp;/gi, '&');
+        }
         if (key === 'profileWebsites') {
             value = value.map(function(website) {
                 return website.replace(/&amp;/gi, '&');
