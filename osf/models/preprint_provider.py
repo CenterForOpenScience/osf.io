@@ -34,7 +34,9 @@ class PreprintProvider(ObjectIDMixin, BaseModel):
 
     PREPRINT_WORD_CHOICES = (
         ('preprint', 'Preprint'),
-        ('paper', 'Paper')
+        ('paper', 'Paper'),
+        ('thesis', 'Thesis'),
+        ('none', 'None')
     )
     preprint_word = models.CharField(max_length=10, choices=PREPRINT_WORD_CHOICES, default='preprint')
 
