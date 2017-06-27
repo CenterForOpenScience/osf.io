@@ -209,7 +209,7 @@ class TestRegistrationUpdate:
         public_to_private_payload = make_payload(id=public_registration._id, attributes={'public': False})
 
         res = app.put_json_api(public_url, public_to_private_payload, auth=user.auth, expect_errors=True)
-        assert res.status_code == 400
+        assert res.status_code == 403
         assert res.json['errors'][0]['detail'] == 'Registrations can only be turned from private to public.'
 
     def test_fields(self, app, user, public_registration, private_registration, public_url, private_url, make_payload):
