@@ -58,7 +58,7 @@ services:
 
 #  preprints:
 #    volumes:
-#      - preprints-sync:/nocopy
+#      - preprints-sync:/code:nocopy
 #
 ##      # Use this for ember-osf linked development (with docker-sync):
 ##      - preprints_dist_vol:/code/dist
@@ -96,4 +96,7 @@ volumes:
 #    external: true
 
 #  ember-osf-sync:
+#    external: true
+
+#  preprints-sync:
 #    external: true
