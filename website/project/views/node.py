@@ -594,6 +594,8 @@ def _view_project(node, auth, primary=False,
             messages = addon.before_page_load(node, user) or []
             for message in messages:
                 status.push_status_message(message, kind='info', dismissible=False, trust=True)
+    NodeRelation = apps.get_model('osf.NodeRelation')
+
     data = {
         'node': {
             'disapproval_link': disapproval_link,
@@ -644,6 +646,7 @@ def _view_project(node, auth, primary=False,
             'templated_count': node.templated_list.count(),
             'private_links': [x.to_json() for x in node.private_links_active],
             'link': view_only_link,
+            'linked_nodes_count': NodeRelation.objects.filter(child=node, is_node_link=True).exclude(parent__type='osf.collection').count(),
             'anonymous': anonymous,
             'points': len(node.get_points(deleted=False, folders=False)),
             'comment_level': node.comment_level,
