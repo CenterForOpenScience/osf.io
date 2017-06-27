@@ -75,10 +75,12 @@ LOG_WHITELIST = {
     'made_public',
     'made_wiki_private',
     'made_wiki_public',
+    'node_removed',
     'permissions_updated',
     'pointer_created',
     'pointer_removed',
     'prereg_registration_initiated',
+    'project_deleted',
     'project_registered',
     'registration_approved',
     'registration_cancelled',
@@ -246,27 +248,19 @@ def revert_log_actions(file_tree, reg, obj_cache):
 
 def build_file_tree(reg, node_settings):
     n = reg.registered_from
-    nft = node_settings._get_file_tree(user=n.creator)
-    obj_cache = set()
+    obj_cache = set(n.files.values_list('_id', flat=True))
 
-    def associate_objver_recursive(tree, node, ns):
-        retree = []
-        if not isinstance(tree, list):
-            tree = [tree]
-        for filenode in tree:
-            if filenode['kind'] == 'folder' and filenode['path'] == '/':
-                filenode['object'] = ns.root_node
-            else:
-                filenode['object'] = node.files.get(_id=filenode['path'].strip('/'))
-            filenode['deleted'] = False
-            filenode['version'] = int(filenode['object'].versions.latest('date_created').identifier) if filenode['object'].versions.exists() else None
-            if filenode.get('children'):
-                filenode['children'] = associate_objver_recursive(filenode['children'], node, ns)
-            obj_cache.add(filenode['object']._id)
-            retree.append(filenode)
-        return retree
+    def _recurse(file_obj, node):
+        serialized = {
+            'object': file_obj,
+            'deleted': file_obj.is_deleted,
+            'version': int(file_obj.versions.latest('date_created').identifier) if file_obj.versions.exists() else None
+        }
+        if not file_obj.is_file:
+            serialized['children'] = [_recurse(child, node) for child in node.files.filter(parent_id=file_obj.id)]
+        return serialized
 
-    current_tree = associate_objver_recursive(nft, n, node_settings)
+    current_tree = _recurse(node_settings.get_root(), n)
     return revert_log_actions(current_tree, reg, obj_cache)
 
 def archive(registration):
@@ -325,11 +319,10 @@ def verify(registration):
                 reg.registered_from._id
             ))
         if reg.registered_from.is_deleted:
-            logger.error('{}: Original node {} is deleted'.format(
+            logger.info('{}: Original node {} is deleted'.format(
                 registration._id,
                 reg.registered_from._id
             ))
-            return False
         if reg.registered_from.get_aggregate_logs_queryset(Auth(reg.registered_from.creator)).filter(date__gte=reg.registered_date, action='addon_file_moved', params__source__nid=reg.registered_from._id).exists():
             # TODO: This should realistically be a recoverabe state if osfstorage is the provider
             logger.error('{}: Original node {} had files moved to another node'.format(
