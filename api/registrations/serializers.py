@@ -284,7 +284,7 @@ class BaseRegistrationSerializer(NodeSerializer):
             except NodeStateError as err:
                 raise exceptions.ValidationError(err.message)
         else:
-            raise exceptions.ValidationError('Registrations can only be turned from private to public.')
+            raise exceptions.PermissionDenied('Registrations can only be turned from private to public.')
         return registration
 
     class Meta:
