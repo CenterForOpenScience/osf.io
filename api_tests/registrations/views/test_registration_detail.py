@@ -210,7 +210,7 @@ class TestRegistrationUpdate:
 
         res = app.put_json_api(public_url, public_to_private_payload, auth=user.auth, expect_errors=True)
         assert res.status_code == 403
-        assert res.json['errors'][0]['detail'] == 'Registrations can only be turned from private to public.'
+        assert res.json['errors'][0]['detail'] == 'You do not have permission to perform this action.'
 
     def test_fields(self, app, user, public_registration, private_registration, public_url, private_url, make_payload):
 
