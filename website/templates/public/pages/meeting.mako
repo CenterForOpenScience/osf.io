@@ -1,5 +1,8 @@
 <%inherit file="base.mako"/>
 <%def name="title()">${ meeting['name'] }</%def>
+<%def name="service_title()">MEETINGS</%def>
+<%def name="service_href()">/meetings/</%def>
+<%def name="service_support()">http://help.osf.io/m/meetings/</%def>
 
 <%def name="content()">
     <%include file="public/pages/meeting_body.mako" />

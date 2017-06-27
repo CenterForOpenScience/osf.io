@@ -1,6 +1,10 @@
 <%inherit file="base.mako"/>
 
 <%def name="title()">Meetings</%def>
+<%def name="service_title()">MEETINGS</%def>
+<%def name="service_href()">/meetings/</%def>
+<%def name="service_support()">http://help.osf.io/m/meetings/</%def>
+
 <%def name="stylesheets()">
     ${parent.stylesheets()}
     <link rel="stylesheet" href="/static/css/pages/meeting-landing-page.css">

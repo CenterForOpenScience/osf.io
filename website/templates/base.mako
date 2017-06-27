@@ -89,7 +89,7 @@
 
     <%namespace name="nav_file" file="nav.mako"/>
     <%block name="nav">
-        ${nav_file.nav()}
+        ${nav_file.nav(self.service_title, self.service_href, self.service_support)}
     </%block>
      ## TODO: shouldn't always have the watermark class
     ${self.content_wrap()}
@@ -245,6 +245,12 @@
 <%def name="alert()">
     <%include file="alert.mako"/>
 </%def>
+
+## Default nav bar service values
+<%def name="service_title()">HOME</%def>
+<%def name="service_href()">/</%def>
+<%def name="service_support()">/support/</%def>
+
 
 <%def name="content_wrap()">
     <div class="watermarked">

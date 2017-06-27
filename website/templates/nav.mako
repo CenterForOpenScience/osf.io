@@ -1,4 +1,4 @@
-<%block name="nav">
+<%block name="nav", args="service_title,service_href,service_support">
 <link rel="stylesheet" href='/static/css/nav.css'>
 <div class="osf-nav-wrapper">
 
@@ -13,9 +13,9 @@
             </button>
         <a class="navbar-brand" href="/" aria-label="Go home"><span class="osf-navbar-logo"></span></a>
         <div class="service-name">
-            <a data-bind="attr: {href: osfServices[currentService].href}">
+            <a href="${service_href()}">
                 <span class="hidden-xs"> OSF </span>
-                <span><strong data-bind="text: osfServices[currentService].name"></strong></span>
+                <span><strong>${service_title()}</strong></span>
             </a>
         </div>
         <div class="dropdown primary-nav">
@@ -44,7 +44,7 @@
             <!-- /ko -->
 
             <li class="dropdown">
-            <a data-bind="attr: {href: osfServices[currentService].support}">Support</a>
+            <a href="${service_support()}">Support</a>
             </li>
 
             % if user_name and display_name:
