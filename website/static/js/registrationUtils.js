@@ -40,7 +40,7 @@ $.each(VALIDATORS, function(key, value) {
     VALIDATOR_LOOKUP[value.message] = value;
 });
 
-// Extentions that lose data bind if re-created.
+// Extensions that lose data bind if re-created.
 var CACHED_EXTENSIONS = ['osf-author-import'];
 
 /**
@@ -1014,7 +1014,7 @@ RegistrationEditor.prototype.context = function(data, $root, preview) {
         // osf-author-import loses binding when re-created. Hence, this kludge.
         if (lodashIncludes(CACHED_EXTENSIONS, data.type)) {
             if (!lodashHas(this, ['extCache', data.type, data.id])) {
-                lodashSet(this, ['extCache', data.type, data.id],  new this.extensions[data.type](data, $root.pk, preview));
+                lodashSet(this, ['extCache', data.type, data.id], new this.extensions[data.type](data, $root.pk, preview));
             }
             return this.extCache[data.type][data.id];
         } else {
