@@ -90,4 +90,4 @@ services:
 #    build: ../ember-osf
 #    command: /bin/bash -c "yarn --pure-lockfile && ./node_modules/bower/bin/bower install --allow-root --config.interactive=false"
 #    volumes:
-#      - ../ember-osf:/code/
+#      - ../emberosf:/code/
