@@ -208,6 +208,9 @@ def osfstorage_create_child(file_node, payload, node_addon, **kwargs):
     if not (name or user) or '/' in name:
         raise HTTPError(httplib.BAD_REQUEST)
 
+    if file_node.node.is_quickfiles and is_folder:
+        raise HTTPError(httplib.FORBIDDEN, data={'message_long': 'You may not create a folder for QuickFiles'})
+
     try:
         # Create a save point so that we can rollback and unlock
         # the parent record
@@ -221,7 +224,7 @@ def osfstorage_create_child(file_node, payload, node_addon, **kwargs):
 
     if not created and is_folder:
         raise HTTPError(httplib.CONFLICT, data={
-            'message': 'Cannot create folder "{name}" because a file or folder already exists at path "{path}"'.format(
+            'message_long': 'Cannot create folder "{name}" because a file or folder already exists at path "{path}"'.format(
                 name=file_node.name,
                 path=file_node.materialized_path,
             )
