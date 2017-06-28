@@ -87,10 +87,7 @@
     </div>
     % endif
 
-    <%namespace name="nav_file" file="nav.mako"/>
-    <%block name="nav">
-        ${nav_file.nav()}
-    </%block>
+    ${self.nav()}
      ## TODO: shouldn't always have the watermark class
     ${self.content_wrap()}
 
@@ -205,6 +202,11 @@
 
 
 ###### Base template functions #####
+
+<%def name="nav()">
+    <%namespace name="nav_helper" file="nav.mako" />
+    ${nav_helper.nav(service_name='HOME', service_url='/', service_support_url='/support/')}
+</%def>
 
 <%def name="title()">
     ### The page title ###
