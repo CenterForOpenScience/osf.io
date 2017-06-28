@@ -87,10 +87,7 @@
     </div>
     % endif
 
-    <%namespace name="nav_file" file="nav.mako"/>
-    <%block name="nav">
-        ${nav_file.nav(self.service_title, self.service_href, self.service_support)}
-    </%block>
+    ${self.nav()}
      ## TODO: shouldn't always have the watermark class
     ${self.content_wrap()}
 
@@ -206,6 +203,11 @@
 
 ###### Base template functions #####
 
+<%def name="nav()">
+    <%namespace name="nav_helper" file="nav.mako" />
+    ${nav_helper.nav(service_name='HOME', service_url='/', service_support_url='/support/')}
+</%def>
+
 <%def name="title()">
     ### The page title ###
 </%def>
@@ -245,12 +247,6 @@
 <%def name="alert()">
     <%include file="alert.mako"/>
 </%def>
-
-## Default nav bar service values
-<%def name="service_title()">HOME</%def>
-<%def name="service_href()">/</%def>
-<%def name="service_support()">/support/</%def>
-
 
 <%def name="content_wrap()">
     <div class="watermarked">
