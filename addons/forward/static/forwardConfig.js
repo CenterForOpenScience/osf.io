@@ -152,6 +152,7 @@ var ViewModel = function(node, enabled, url, label) {
             self.pendingRequest(false);
         }).fail(function(response) {
             onSubmitError()
+            self.pendingRequest(false);
         });
     };
 
