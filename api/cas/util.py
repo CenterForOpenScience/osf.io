@@ -1,20 +1,11 @@
-from django.utils import timezone
-
-from rest_framework.exceptions import ValidationError, PermissionDenied
+from rest_framework.exceptions import PermissionDenied
 
 from api.base.authentication.drf import check_user
 from api.base.exceptions import (UnconfirmedAccountError, UnclaimedAccountError, DeactivatedAccountError,
                                  MergedAccountError, InvalidAccountError)
-from api.cas import messages, cas_errors
-
-from framework.auth.views import send_confirm_email
-from framework.auth.core import generate_verification_key
+from api.cas import errors
 
 from osf.models import OSFUser
-
-from website.util.time import throttle_period_expired
-from website.mails import send_mail, FORGOT_PASSWORD
-from website import settings as web_settings
 
 
 def is_user_inactive(user):
@@ -28,13 +19,13 @@ def is_user_inactive(user):
     try:
         check_user(user)
     except UnconfirmedAccountError:
-        return cas_errors.ACCOUNT_NOT_VERIFIED
+        return errors.ACCOUNT_NOT_VERIFIED
     except DeactivatedAccountError:
-        return cas_errors.ACCOUNT_DISABLED
+        return errors.ACCOUNT_DISABLED
     except UnclaimedAccountError:
-        return cas_errors.ACCOUNT_NOT_CLAIMED
+        return errors.ACCOUNT_NOT_CLAIMED
     except (MergedAccountError, InvalidAccountError):
-        return cas_errors.INVALID_ACCOUNT_STATUS
+        return errors.ACCOUNT_STATUS_INVALID
     return None
 
 
@@ -64,7 +55,7 @@ def ensure_external_identity_uniqueness(provider, identity, user):
         if existing_user.external_identity[provider][identity] == 'VERIFIED':
             # clear user's pending identity won't work since API rolls back transactions when status >= 400
             # TODO: CAS will do another request to clear the pending identity on this user
-            raise PermissionDenied(detail=cas_errors.EXTERNAL_IDENTITY_CLAIMED)
+            raise PermissionDenied(detail=errors.EXTERNAL_IDENTITY_CLAIMED)
 
         existing_user.external_identity[provider].pop(identity)
         if existing_user.external_identity[provider] == {}:
