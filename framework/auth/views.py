@@ -374,7 +374,7 @@ def auth_register(auth):
         context['preprint_campaigns'] = {k._id + '-preprints': {
             'id': k._id,
             'name': k.name,
-            'logo_path': settings.PREPRINTS_ASSETS + k._id + '/square_color_no_transparent.png'
+            'logo_path': settings.OSF_CDN_DOMAIN + settings.PREPRINTS_ASSETS + k._id + '/square_color_no_transparent.png'
         } for k in PreprintProvider.objects.all() if k._id != 'osf'}
         context['campaign'] = data['campaign']
         return context, http.OK
