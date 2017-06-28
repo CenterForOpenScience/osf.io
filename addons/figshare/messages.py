@@ -32,4 +32,8 @@ FIGSHARE_VIEW_FILE_OVERSIZED = 'This figshare file is too large to render; <u><a
 
 OAUTH_INVALID = 'Your OAuth key for figshare is no longer valid. Please re-authenticate. '
 
+FIGSHARE_INTERNAL_SERVER_ERROR = 'Figshare is experiencing technical problems when connecting to the OSF. Please wait while they resolve the problem or contact them at https://support.figshare.com.'
+
+FIGSHARE_UNSPECIFIED_ERROR = 'Figshare was contacted and returned with the following error message: {error_message}.'
+
 # END MFR MESSAGES

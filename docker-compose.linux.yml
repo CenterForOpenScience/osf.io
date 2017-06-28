@@ -1,36 +1,43 @@
+
 version: "3"
 
 services:
   requirements:
     volumes:
-      - osf-sync:/code:nocopy
+      - ./:/code
   assets:
     volumes:
-      - osf-sync:/code:nocopy
+      - ./:/code
+
   admin_assets:
     volumes:
-      - osf-sync:/code:nocopy
+      - ./:/code
+
   sharejs:
     volumes:
-      - osf-sync:/code:nocopy
+      - ./:/code
+
   worker:
     volumes:
-      - osf-sync:/code:nocopy
+      - ./:/code
+
   admin:
     volumes:
-      - osf-sync:/code:nocopy
+      - ./:/code
+
   web:
     volumes:
-      - osf-sync:/code:nocopy
+      - ./:/code
+
   api:
     volumes:
-      - osf-sync:/code:nocopy
+      - ./:/code
 
 # Additional configuration for development on services linked with osf.io
 
 #  beat:
 #    volumes:
-#      - osf-sync:/code:nocopy
+#      - ./:/code
 
 #  fakecas:
 #    image: quay.io/centerforopenscience/fakecas:latest
@@ -38,65 +45,49 @@ services:
 
 #  wb:
 #    volumes:
-#      - wb-sync:/code:nocopy
+#      - ../waterbutler:/code
 
 #  wb_worker:
 #    volumes:
-#      - wb-sync:/code:nocopy
+#      - ../waterbutler:/code
 
 #  wb_requirements:
 #    volumes:
-#      - wb-sync:/code:nocopy
+#      - ../waterbutler:/code
 
 #  mfr:
 #    volumes:
-#      - mfr-sync:/code:nocopy
+#      - ../modular-file-renderer:/code
 
 #  mfr_requirements:
 #    volumes:
-#      - mfr-sync:/code:nocopy
+#      - ../modular-file-renderer:/code
 
 #  preprints:
 #    volumes:
-#      - preprints-sync:/code:nocopy
+#      - ../ember-preprints:/code
 #
-##      # Use this for ember-osf linked development (with docker-sync):
+##      # Use this for ember-osf linked development:
 ##      - preprints_dist_vol:/code/dist
-##      - emberosf-sync:/ember-osf
+##      - ../ember-osf:/ember-osf
 ##    depends_on:
 ##      - emberosf
 ##    command: /bin/bash -c "cd /ember-osf && yarn link && cd /code && yarn link ember-osf && yarn --pure-lockfile && ./node_modules/bower/bin/bower install --allow-root --config.interactive=false && ./node_modules/ember-cli/bin/ember serve --host 0.0.0.0 --port 4200"
 
 #  registries:
 #    volumes:
-#      - registries-sync:/code:nocopy
+#      - ../ember-osf-registries:/code
 #
-##      # Use this for ember-osf linked development (with docker-sync):
+##      # Use this for ember-osf linked development:
 ##      - registries_dist_vol:/code/dist
-##      - emberosf-sync:/ember-osf
+##      - ../ember-osf:/ember-osf
 ##    depends_on:
 ##      - emberosf
 ##    command: /bin/bash -c "cd /ember-osf && yarn link && cd /code && yarn link ember-osf && yarn --pure-lockfile && ./node_modules/bower/bin/bower install --allow-root --config.interactive=false && ./node_modules/ember-cli/bin/ember serve --host 0.0.0.0 --port 4300"
 
-#  # Use this for ember-osf linked development (with docker-sync):
+#  # Use this for ember-osf linked development:
 #  emberosf:
 #    build: ../ember-osf
 #    command: /bin/bash -c "yarn --pure-lockfile && ./node_modules/bower/bin/bower install --allow-root --config.interactive=false"
 #    volumes:
-#      - ember-osf-sync:/code:nocopy
-
-volumes:
-  osf-sync:
-    external: true
-
-#  wb-sync:
-#    external: true
-
-#  mfr-sync:
-#    external: true
-
-#  emberosf-sync:
-#    external: true
-
-#  preprints-sync:
-#    external: true
+#      - ../ember-osf:/code/

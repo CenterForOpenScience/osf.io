@@ -41,7 +41,7 @@ ALIASES = {
     'component': 'Components',
     'registration': 'Registrations',
     'user': 'Users',
-    'total': 'Total',
+    'total': 'All OSF Results',
     'file': 'Files',
     'institution': 'Institutions',
 }

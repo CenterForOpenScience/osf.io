@@ -5,16 +5,22 @@ USE WITH CARE.
 Usage:
 
     # Check if Registration abc12 and qwe34 are stuck
-    python manage.py force_archive --check abc12 qwe34
+    python manage.py force_archive --check --guids abc12 qwe34
 
     # Dry-run a force-archive of abc12 and qwe34. Verifies that the force-archive can occur.
-    python manage.py force_archive --dry abc12 qwe34
+    python manage.py force_archive --dry --guids abc12 qwe34
 
     # Force-archive abc12 and qwe34
-    python manage.py force_archive abc12 qwe34
+    python manage.py force_archive --guids abc12 qwe34
+
+    # Force archive OSFS and Dropbox on abc12
+    python manage.py force_archive --addons dropbox --guids abc12
 """
 from copy import deepcopy
+import httplib as http
+import json
 import logging
+import requests
 
 import django
 django.setup()
@@ -24,12 +30,18 @@ from django.utils import timezone
 
 from addons.osfstorage.models import OsfStorageFile, OsfStorageFolder
 from framework.auth import Auth
+from framework.exceptions import HTTPError
 from osf.models import Registration, BaseFileNode
 from scripts import utils as script_utils
 from website.archiver import ARCHIVER_SUCCESS
-from website.settings import ARCHIVE_TIMEOUT_TIMEDELTA
+from website.settings import ARCHIVE_TIMEOUT_TIMEDELTA, ARCHIVE_PROVIDER
+from website.util import waterbutler_api_url_for
 
 logger = logging.getLogger(__name__)
+
+# Control globals
+DELETE_COLLISIONS = False
+SKIP_COLLISIONS = False
 
 # Logging globals
 CHECKED_OKAY = []
@@ -63,10 +75,12 @@ LOG_WHITELIST = {
     'made_public',
     'made_wiki_private',
     'made_wiki_public',
+    'node_removed',
     'permissions_updated',
     'pointer_created',
     'pointer_removed',
     'prereg_registration_initiated',
+    'project_deleted',
     'project_registered',
     'registration_approved',
     'registration_cancelled',
@@ -87,14 +101,53 @@ LOG_GREYLIST = {
     'osf_storage_folder_created'
 }
 
-def complete_registration(reg):
+# Permissible in certain circumstances after communication with user
+PERMISSIBLE_BLACKLIST = {
+    'dropbox_folder_selected',
+    'dropbox_node_authorized',
+    'dropbox_node_deauthorized',
+    'addon_removed',
+    'addon_added'
+}
+
+# Extendable with command line input
+PERMISSIBLE_ADDONS = {
+    'osfstorage'
+}
+
+def complete_archive_target(reg, addon_short_name):
     archive_job = reg.archive_job
-    target = archive_job.get_target('osfstorage')
+    target = archive_job.get_target(addon_short_name)
     target.status = ARCHIVER_SUCCESS
     target.save()
     archive_job._post_update_target()
 
-def manually_archive(tree, reg, parent=None):
+def perform_wb_copy(reg, node_settings):
+    src, dst, user = reg.archive_job.info()
+    if dst.files.filter(name=node_settings.archive_folder_name.replace('/', '-')).exists():
+        if not DELETE_COLLISIONS and not SKIP_COLLISIONS:
+            raise Exception('Archive folder for {} already exists. Investigate manually and rerun with either --delete-collisions or --skip-collisions')
+        if DELETE_COLLISIONS:
+            archive_folder = dst.files.exclude(type='osf.trashedfolder').get(name=node_settings.archive_folder_name.replace('/', '-'))
+            logger.info('Removing {}'.format(archive_folder))
+            archive_folder.delete()
+        if SKIP_COLLISIONS:
+            complete_archive_target(reg, node_settings.short_name)
+            return
+    params = {'cookie': user.get_or_create_cookie()}
+    data = {
+        'action': 'copy',
+        'path': '/',
+        'rename': node_settings.archive_folder_name.replace('/', '-'),
+        'resource': dst._id,
+        'provider': ARCHIVE_PROVIDER,
+    }
+    url = waterbutler_api_url_for(src._id, node_settings.short_name, _internal=True, **params)
+    res = requests.post(url, data=json.dumps(data))
+    if res.status_code not in (http.OK, http.CREATED, http.ACCEPTED):
+        raise HTTPError(res.status_code)
+
+def manually_archive(tree, reg, node_settings, parent=None):
     if not isinstance(tree, list):
         tree = [tree]
     for filenode in tree:
@@ -108,9 +161,8 @@ def manually_archive(tree, reg, parent=None):
             else:
                 cloned.recast(OsfStorageFolder._typedmodels_type)
         if not parent:
-            nodesettings = reg.get_addon('osfstorage')
-            parent = nodesettings.get_root()
-            cloned.name = nodesettings.archive_folder_name
+            parent = reg.get_addon('osfstorage').get_root()
+            cloned.name = node_settings.archive_folder_name
         cloned.parent = parent
         cloned.node = reg
         cloned.copied_from = file_obj
@@ -125,7 +177,7 @@ def manually_archive(tree, reg, parent=None):
                 cloned.versions.add(*file_obj.versions.filter(identifier__lte=filenode['version']))
 
         if filenode.get('children'):
-            manually_archive(filenode['children'], reg, parent=cloned)
+            manually_archive(filenode['children'], reg, node_settings, parent=cloned)
 
 
 def modify_file_tree_recursive(tree, file_obj, deleted, cached=False):
@@ -163,6 +215,8 @@ def modify_file_tree_recursive(tree, file_obj, deleted, cached=False):
 
 def revert_log_actions(file_tree, reg, obj_cache):
     logs_to_revert = reg.registered_from.logs.filter(date__gt=reg.registered_date).exclude(action__in=LOG_WHITELIST).order_by('-date')
+    if len(PERMISSIBLE_ADDONS) > 1:
+        logs_to_revert = logs_to_revert.exclude(action__in=PERMISSIBLE_BLACKLIST)
     for log in list(logs_to_revert):
         file_obj = BaseFileNode.objects.get(_id=log.params['urls']['view'].split('/')[5])
         assert file_obj.node in reg.registered_from.root.node_and_primary_descendants()
@@ -192,30 +246,21 @@ def revert_log_actions(file_tree, reg, obj_cache):
             obj_cache.add(file_obj._id)
     return file_tree
 
-def build_file_tree(reg):
+def build_file_tree(reg, node_settings):
     n = reg.registered_from
-    n_osfs = n.get_addon('osfstorage')
-    nft = n_osfs._get_file_tree(user=n.creator)
-    obj_cache = set()
+    obj_cache = set(n.files.values_list('_id', flat=True))
 
-    def associate_objver_recursive(tree, node, nosfs):
-        retree = []
-        if not isinstance(tree, list):
-            tree = [tree]
-        for filenode in tree:
-            if filenode['kind'] == 'folder' and filenode['path'] == '/':
-                filenode['object'] = nosfs.root_node
-            else:
-                filenode['object'] = node.files.get(_id=filenode['path'].strip('/'))
-            filenode['deleted'] = False
-            filenode['version'] = int(filenode['object'].versions.latest('date_created').identifier) if filenode['object'].versions.exists() else None
-            if filenode.get('children'):
-                filenode['children'] = associate_objver_recursive(filenode['children'], node, nosfs)
-            obj_cache.add(filenode['object']._id)
-            retree.append(filenode)
-        return retree
+    def _recurse(file_obj, node):
+        serialized = {
+            'object': file_obj,
+            'deleted': file_obj.is_deleted,
+            'version': int(file_obj.versions.latest('date_created').identifier) if file_obj.versions.exists() else None
+        }
+        if not file_obj.is_file:
+            serialized['children'] = [_recurse(child, node) for child in node.files.filter(parent_id=file_obj.id)]
+        return serialized
 
-    current_tree = associate_objver_recursive(nft, n, n_osfs)
+    current_tree = _recurse(node_settings.get_root(), n)
     return revert_log_actions(current_tree, reg, obj_cache)
 
 def archive(registration):
@@ -224,11 +269,25 @@ def archive(registration):
         if reg.archive_job.status == ARCHIVER_SUCCESS:
             continue
         logs_to_revert = reg.registered_from.logs.filter(date__gt=reg.registered_date).exclude(action__in=LOG_WHITELIST)
-        assert not logs_to_revert.exclude(action__in=LOG_GREYLIST).exists(), '{}: {} had unexpected unacceptable logs'.format(registration._id, reg.registered_from._id)
+        if len(PERMISSIBLE_ADDONS) == 1:
+            assert not logs_to_revert.exclude(action__in=LOG_GREYLIST).exists(), '{}: {} had unexpected unacceptable logs'.format(registration._id, reg.registered_from._id)
+        else:
+            assert not logs_to_revert.exclude(action__in=LOG_GREYLIST).exclude(action__in=PERMISSIBLE_BLACKLIST).exists(), '{}: {} had unexpected unacceptable logs'.format(registration._id, reg.registered_from._id)
         logger.info('Preparing to archive {}'.format(reg._id))
-        file_tree = build_file_tree(reg)
-        manually_archive(file_tree, reg)
-        complete_registration(reg)
+        for short_name in PERMISSIBLE_ADDONS:
+            node_settings = reg.registered_from.get_addon(short_name)
+            if not hasattr(node_settings, '_get_file_tree'):
+                # Excludes invalid or None-type
+                continue
+            if not reg.archive_job.get_target(short_name) or reg.archive_job.get_target(short_name).status == ARCHIVER_SUCCESS:
+                continue
+            if short_name == 'osfstorage':
+                file_tree = build_file_tree(reg, node_settings)
+                manually_archive(file_tree, reg, node_settings)
+                complete_archive_target(reg, short_name)
+            else:
+                assert reg.archiving, '{}: Must be `archiving` for WB to copy'.format(reg._id)
+                perform_wb_copy(reg, node_settings)
 
 def archive_registrations():
     for reg in deepcopy(VERIFIED):
@@ -243,14 +302,15 @@ def verify(registration):
         nonignorable_logs = reg.registered_from.logs.filter(date__gt=reg.registered_date).exclude(action__in=LOG_WHITELIST)
         unacceptable_logs = nonignorable_logs.exclude(action__in=LOG_GREYLIST)
         if unacceptable_logs.exists():
-            logger.error('{}: Original node {} has unacceptable logs: {}'.format(
-                registration._id,
-                reg.registered_from._id,
-                list(unacceptable_logs.values_list('action', flat=True))
-            ))
-            return False
+            if len(PERMISSIBLE_ADDONS) == 1 or unacceptable_logs.exclude(action__in=PERMISSIBLE_BLACKLIST):
+                logger.error('{}: Original node {} has unacceptable logs: {}'.format(
+                    registration._id,
+                    reg.registered_from._id,
+                    list(unacceptable_logs.values_list('action', flat=True))
+                ))
+                return False
         addons = reg.registered_from.get_addon_names()
-        if set(addons) - {'osfstorage', 'wiki'} != set():
+        if set(addons) - set(PERMISSIBLE_ADDONS | {'wiki'}) != set():
             logger.error('{}: Original node {} has addons: {}'.format(registration._id, reg.registered_from._id, addons))
             return False
         if nonignorable_logs.exists():
@@ -259,11 +319,10 @@ def verify(registration):
                 reg.registered_from._id
             ))
         if reg.registered_from.is_deleted:
-            logger.error('{}: Original node {} is deleted'.format(
+            logger.info('{}: Original node {} is deleted'.format(
                 registration._id,
                 reg.registered_from._id
             ))
-            return False
         if reg.registered_from.get_aggregate_logs_queryset(Auth(reg.registered_from.creator)).filter(date__gte=reg.registered_date, action='addon_file_moved', params__source__nid=reg.registered_from._id).exists():
             # TODO: This should realistically be a recoverabe state if osfstorage is the provider
             logger.error('{}: Original node {} had files moved to another node'.format(
@@ -352,13 +411,37 @@ class Command(BaseCommand):
             dest='check',
             help='Check if registrations are stuck',
         )
-        parser.add_argument('registration_ids', type=str, nargs='+', help='GUIDs of registrations to archive')
+        parser.add_argument(
+            '--delete-collisions',
+            action='store_true',
+            dest='delete_collisions',
+            help='Specifies that colliding archive filenodes should be deleted and re-archived in the event of a collision',
+        )
+        parser.add_argument(
+            '--skip-collisions',
+            action='store_true',
+            dest='skip_collisions',
+            help='Specifies that colliding archive filenodes should be skipped and the archive job target marked as successful in the event of a collision',
+        )
+        parser.add_argument('--addons', type=str, nargs='*', help='Addons other than OSFStorage to archive. Use caution')
+        parser.add_argument('--guids', type=str, nargs='+', help='GUIDs of registrations to archive')
 
     def handle(self, *args, **options):
+        global DELETE_COLLISIONS
+        global SKIP_COLLISIONS
+        DELETE_COLLISIONS = options.get('delete_collisions')
+        SKIP_COLLISIONS = options.get('skip_collisions')
+        if DELETE_COLLISIONS and SKIP_COLLISIONS:
+            raise Exception('Cannot specify both delete_collisions and skip_collisions')
+
         dry_run = options.get('dry_run')
         if not dry_run:
             script_utils.add_file_logger(logger, __file__)
-        registration_ids = options.get('registration_ids', [])
+
+        addons = options.get('addons', [])
+        if addons:
+            PERMISSIBLE_ADDONS.update(set(addons))
+        registration_ids = options.get('guids', [])
 
         if options.get('check', False):
             check_registrations(registration_ids)
