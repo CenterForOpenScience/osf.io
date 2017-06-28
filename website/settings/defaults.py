@@ -1831,4 +1831,5 @@ CUSTOM_CITATIONS = {
     'bluebook-inline': 'bluebook'
 }
 
-PREPRINTS_ASSETS = '/static/img/preprints_assets/'
+OSF_CDN_DOMAIN = 'https://staging-cdn.osf.io'
+PREPRINTS_ASSETS = '/preprints-assets/'
