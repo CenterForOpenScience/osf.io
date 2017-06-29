@@ -154,13 +154,13 @@ class TestFileView:
         res = app.get(file_url, auth=user.auth)
         can_comment = res.json['data']['attributes']['current_user_can_comment']
         assert res.status_code == 200
-        assert can_comment == True
+        assert can_comment is True
 
         non_contributor = AuthUserFactory()
         res = app.get(file_url, auth=non_contributor.auth)
         can_comment = res.json['data']['attributes']['current_user_can_comment']
         assert res.status_code == 200
-        assert can_comment == False
+        assert can_comment is False
 
     def test_logged_or_not_user_comment_status_on_open_project(self, app, node, file_url):
         node.is_public = True
@@ -171,13 +171,13 @@ class TestFileView:
         res = app.get(file_url, auth=non_contributor.auth)
         can_comment = res.json['data']['attributes']['current_user_can_comment']
         assert res.status_code == 200
-        assert can_comment == True
+        assert can_comment is True
 
         # test_non_logged_in_user_cant_comment(self, app, file_url, node):
         res = app.get(file_url)
         can_comment = res.json['data']['attributes']['current_user_can_comment']
         assert res.status_code == 200
-        assert can_comment == False
+        assert can_comment is False
 
     def test_checkout(self, app, user, file, file_url, node):
         assert file.checkout == None
