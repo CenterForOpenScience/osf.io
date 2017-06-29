@@ -934,7 +934,7 @@ ListViewModel.prototype.unserialize = function(data) {
     self.contents(ko.utils.arrayMap(data.contents || [], function (each) {
         for (var attr in each) {
             each[attr] = $osf.decodeText(each[attr]);
-        };
+        }
         return new self.ContentModel(self).unserialize(each);
     }));
 
