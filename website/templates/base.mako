@@ -250,8 +250,12 @@
     <div class="watermarked">
         <div class="container ${self.container_class()}">
             ## Maintenance alert
+            <div class="alert alert-warning" role="alert">
+                <strong>Notice:</strong> File operations may be temporarily unavailable. We are experiencing issues with our downstream file storage provider and are actively working to
+                resolve the issue. No data have been lost. Thank you for your patience.
+            </div>
             % if maintenance:
-                <div id="maintenance" class="scripted alert alert-info alert-dismissible" role="alert">
+            <div id="maintenance" class="scripted alert alert-info alert-dismissible" role="alert">
                 <button type="button" class="close" data-dismiss="alert" aria-label="Close">
                     <span aria-hidden="true">&times;</span></button>
                 <strong>Notice:</strong> The site will undergo maintenance between

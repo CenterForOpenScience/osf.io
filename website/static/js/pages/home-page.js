@@ -32,13 +32,6 @@ $(document).ready(function(){
                 return {logoPath: inst.logo_path, id: inst.id, name: inst.name};
             });
             return [
-                m('.prereg-banner', m('.container',
-                    [
-                        m('.row', [
-                            m(columnSizeClass,  m.component(PreregBanner, {}))
-                        ])
-                    ]
-                )),
                 m('.quickSearch', m('.container.p-t-lg',
                     [
                         m('.row.m-t-lg', [
