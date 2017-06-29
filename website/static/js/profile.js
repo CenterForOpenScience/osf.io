@@ -735,7 +735,7 @@ SocialViewModel.prototype.unserialize = function(data) {
             value = value.map(function(website) {
                 return $osf.decodeText(website);
             });
-        } else if (typeof value === 'string') {
+        } else {
             value = $osf.decodeText(value);
         }
 
@@ -933,9 +933,7 @@ ListViewModel.prototype.unserialize = function(data) {
     }
     self.contents(ko.utils.arrayMap(data.contents || [], function (each) {
         for (var attr in each) {
-            if (typeof each[attr] === 'string') {
-                each[attr] = $osf.decodeText(each[attr]);
-            }
+            each[attr] = $osf.decodeText(each[attr]);
         }
         return new self.ContentModel(self).unserialize(each);
     }));
