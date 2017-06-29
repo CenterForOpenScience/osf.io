@@ -177,37 +177,43 @@ class Sitemap(object):
         progress.stop()
 
         # User urls
-        objs = OSFUser.objects.filter(is_active=True)
+        objs = OSFUser.objects.filter(is_active=True).values_list('guids___id', flat=True)
         progress.start(objs.count(), 'USER: ')
-        for obj in objs.iterator():
+        for obj in objs:
             try:
                 config = settings.SITEMAP_USER_CONFIG
-                config['loc'] = urlparse.urljoin(settings.DOMAIN, obj.url)
+                config['loc'] = urlparse.urljoin(settings.DOMAIN, '/{}/'.format(obj))
                 self.add_url(config)
             except Exception as e:
-                self.log_errors(obj, obj._id, e)
+                self.log_errors('USER', obj, e)
             progress.increment()
         progress.stop()
 
-        # AbstractNode urls (Nodes and Registrations, no colelctions)
-        objs = AbstractNode.objects.filter(is_public=True, is_deleted=False, retraction_id__isnull=True).exclude(type="osf.collection")
+        # AbstractNode urls (Nodes and Registrations, no Collections)
+        objs = (AbstractNode.objects
+            .filter(is_public=True, is_deleted=False, retraction_id__isnull=True)
+            .exclude(type="osf.collection")
+            .values('guids___id', 'date_modified'))
         progress.start(objs.count(), 'NODE: ')
-        for obj in objs.iterator():
+        for obj in objs:
             try:
                 config = settings.SITEMAP_NODE_CONFIG
-                config['loc'] = urlparse.urljoin(settings.DOMAIN, obj.url)
-                config['lastmod'] = obj.date_modified.strftime('%Y-%m-%d')
+                config['loc'] = urlparse.urljoin(settings.DOMAIN, obj['guids___id'])
+                config['lastmod'] = obj['date_modified'].strftime('%Y-%m-%d')
                 self.add_url(config)
             except Exception as e:
-                self.log_errors(obj, obj._id, e)
+                self.log_errors('NODE', obj['guids___id'], e)
             progress.increment()
         progress.stop()
 
         # Preprint urls
-        objs = PreprintService.objects.filter(node__isnull=False, node__is_deleted=False, node__is_public=True, is_published=True)
+        objs = (PreprintService.objects
+                    .filter(node__isnull=False, node__is_deleted=False, node__is_public=True, is_published=True)
+                    .select_related('node', 'provider', 'node__preprint_file')
+                    .include('guids', 'node__guids', 'node__preprint_file__guids'))
         progress.start(objs.count() * 2, 'PREP: ')
-        osf = PreprintProvider.load('osf')
-        for obj in objs.iterator():
+        osf = PreprintProvider.objects.get(_id='osf')
+        for obj in objs:
             try:
                 preprint_date = obj.date_modified.strftime('%Y-%m-%d')
                 config = settings.SITEMAP_PREPRINT_CONFIG
@@ -225,7 +231,7 @@ class Sitemap(object):
                         settings.DOMAIN,
                         os.path.join(
                             'project',
-                            obj.primary_file.node._id,  # Parent node id
+                            obj.node._id,   # Parent node id
                             'files',
                             'osfstorage',
                             obj.primary_file._id,  # Preprint file deep_url
