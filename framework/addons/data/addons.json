@@ -311,7 +311,7 @@
             },
             "Logs": {
                 "status": "full",
-                "text": "Bitbucket dynamically updates OSF logs when files are modified outside the OSF. Changes to Bitbucket repos made before the repo is linked to the OSF will not be reflected in OSF logs."
+                "text": "OSF keeps track of changes you make to your Bitbucket content through OSF, but not for changes made using Bitbucket directly."
             },
             "Forking": {
                 "status": "partial",

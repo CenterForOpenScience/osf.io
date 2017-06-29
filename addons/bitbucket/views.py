@@ -7,18 +7,16 @@ from flask import request, make_response
 
 from framework.exceptions import HTTPError
 
-from website.addons.base import generic_views
-from website.addons.bitbucket.api import BitbucketClient, ref_to_params
-from website.addons.bitbucket.exceptions import NotFoundError
-from website.addons.bitbucket.serializer import BitbucketSerializer
-from website.addons.bitbucket.utils import get_refs
+from addons.base import generic_views
+from addons.bitbucket.api import BitbucketClient
+from addons.bitbucket.apps import bitbucket_hgrid_data
+from addons.bitbucket.serializer import BitbucketSerializer
 
 from website.project.decorators import (
     must_have_addon, must_be_addon_authorizer,
     must_have_permission, must_not_be_registration,
     must_be_contributor_or_public
 )
-from website.util import rubeus
 
 logger = logging.getLogger(__name__)
 
@@ -58,9 +56,6 @@ bitbucket_deauthorize_node = generic_views.deauthorize_node(
     SHORT_NAME
 )
 
-bitbucket_root_folder = generic_views.root_folder(
-    SHORT_NAME
-)
 
 #################
 # Special Cased #
@@ -178,69 +173,3 @@ def bitbucket_root_folder(*args, **kwargs):
     data = request.args.to_dict()
 
     return bitbucket_hgrid_data(node_settings, auth=auth, **data)
-
-def bitbucket_hgrid_data(node_settings, auth, **kwargs):
-
-    # Quit if no repo linked
-    if not node_settings.complete:
-        return
-
-    connection = BitbucketClient(access_token=node_settings.external_account.oauth_key)
-
-    # Quit if privacy mismatch and not contributor
-    node = node_settings.owner
-    if node.is_public and not node.is_contributor(auth.user):
-        try:
-            repo = connection.repo(node_settings.user, node_settings.repo)
-        except NotFoundError:
-            # TODO: Test me @jmcarp
-            # TODO: Add warning message
-            logger.error('Could not access Bitbucket repo')
-            return None
-        if repo['is_private']:
-            return None
-
-    try:
-        branch, sha, branches = get_refs(
-            node_settings,
-            branch=kwargs.get('branch'),
-            sha=kwargs.get('sha'),
-            connection=connection,
-        )
-    except (NotFoundError, Exception):
-        # TODO: Show an alert or change Bitbucket configuration?
-        logger.error('Bitbucket repo not found')
-        return
-
-    ref = None if branch is None else ref_to_params(branch, sha)
-
-    name_tpl = '{user}/{repo}'.format(
-        user=node_settings.user, repo=node_settings.repo
-    )
-
-    permissions = {
-        'edit': False,
-        'view': True,
-        'private': node_settings.is_private
-    }
-    urls = {
-        'upload': None,
-        'fetch': node_settings.owner.api_url + 'bitbucket/hgrid/' + (ref or ''),
-        'branch': node_settings.owner.api_url + 'bitbucket/hgrid/root/',
-        'zip': node_settings.owner.api_url + 'bitbucket/zipball/' + (ref or ''),
-        'repo': 'https://bitbucket.com/{0}/{1}/branch/'.format(node_settings.user, node_settings.repo)
-    }
-
-    branch_names = [each['name'] for each in branches]
-    if not branch_names:
-        branch_names = [branch]  # if repo un-init-ed then still add default branch to list of branches
-
-    return [rubeus.build_addon_root(
-        node_settings,
-        name_tpl,
-        urls=urls,
-        permissions=permissions,
-        branches=branch_names,
-        defaultBranch=branch,
-        private_key=kwargs.get('view_only', None),
-    )]

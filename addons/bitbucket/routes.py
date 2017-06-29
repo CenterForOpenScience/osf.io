@@ -2,7 +2,7 @@
 
 from framework.routing import Rule, json_renderer
 
-from website.addons.bitbucket import views
+from addons.bitbucket import views
 
 api_routes = {
     'rules': [

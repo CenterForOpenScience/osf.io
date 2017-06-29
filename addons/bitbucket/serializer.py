@@ -1,7 +1,7 @@
 from oauthlib.oauth2 import InvalidGrantError
 
+from addons.base.serializer import StorageAddonSerializer
 from website.util import api_url_for
-from website.addons.base.serializer import StorageAddonSerializer
 
 
 class BitbucketSerializer(StorageAddonSerializer):

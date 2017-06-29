@@ -1,10 +1,10 @@
 import mock
 
-from website.addons.bitbucket.api import BitbucketClient
+from addons.bitbucket.api import BitbucketClient
 
-from website.addons.base.testing import OAuthAddonTestCaseMixin, AddonTestCase
-from website.addons.bitbucket.model import BitbucketProvider
-from website.addons.bitbucket.tests.factories import BitbucketAccountFactory
+from addons.base.tests.base import OAuthAddonTestCaseMixin, AddonTestCase
+from addons.bitbucket.models import BitbucketProvider
+from addons.bitbucket.tests.factories import BitbucketAccountFactory
 
 
 class BitbucketAddonTestCase(OAuthAddonTestCaseMixin, AddonTestCase):

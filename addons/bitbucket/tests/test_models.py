@@ -1,34 +1,36 @@
 # -*- coding: utf-8 -*-
 
 import mock
+import pytest
 import unittest
 from nose.tools import *  # noqa
 
 from tests.base import OsfTestCase, get_default_metaschema
-from tests.factories import ExternalAccountFactory, ProjectFactory, UserFactory
+from osf_tests.factories import ExternalAccountFactory, ProjectFactory, UserFactory
 
 from framework.auth import Auth
 
-from website.addons.bitbucket.exceptions import NotFoundError
-from website.addons.bitbucket import settings as bitbucket_settings
-from website.addons.bitbucket.model import BitbucketUserSettings
-from website.addons.bitbucket.model import BitbucketNodeSettings
-from website.addons.bitbucket.tests.factories import (
+from addons.bitbucket.exceptions import NotFoundError
+from addons.bitbucket import settings as bitbucket_settings
+from addons.bitbucket.models import NodeSettings
+from addons.bitbucket.tests.factories import (
     BitbucketAccountFactory,
     BitbucketNodeSettingsFactory,
     BitbucketUserSettingsFactory
 )
-from website.addons.base.testing import models
+from addons.base.tests import models
+
+pytestmark = pytest.mark.django_db
 
 
-class TestNodeSettings(models.OAuthAddonNodeSettingsTestSuiteMixin, OsfTestCase):
+class TestNodeSettings(models.OAuthAddonNodeSettingsTestSuiteMixin, unittest.TestCase):
 
     short_name = 'bitbucket'
     full_name = 'Bitbucket'
     ExternalAccountFactory = BitbucketAccountFactory
 
     NodeSettingsFactory = BitbucketNodeSettingsFactory
-    NodeSettingsClass = BitbucketNodeSettings
+    NodeSettingsClass = NodeSettings
     UserSettingsFactory = BitbucketUserSettingsFactory
 
     ## Mixin Overrides ##
@@ -54,21 +56,21 @@ class TestNodeSettings(models.OAuthAddonNodeSettingsTestSuiteMixin, OsfTestCase)
         assert_equal(settings, expected)
 
     @mock.patch(
-        'website.addons.bitbucket.model.BitbucketUserSettings.revoke_remote_oauth_access',
+        'addons.bitbucket.models.UserSettings.revoke_remote_oauth_access',
         mock.PropertyMock()
     )
     def test_complete_has_auth_not_verified(self):
         super(TestNodeSettings, self).test_complete_has_auth_not_verified()
 
-    @mock.patch('website.addons.bitbucket.api.BitbucketClient.repos')
-    @mock.patch('website.addons.bitbucket.api.BitbucketClient.team_repos')
+    @mock.patch('addons.bitbucket.api.BitbucketClient.repos')
+    @mock.patch('addons.bitbucket.api.BitbucketClient.team_repos')
     def test_to_json(self, mock_repos, mock_team_repos):
         mock_repos.return_value = []
         mock_team_repos.return_value = []
         super(TestNodeSettings, self).test_to_json()
 
-    @mock.patch('website.addons.bitbucket.api.BitbucketClient.repos')
-    @mock.patch('website.addons.bitbucket.api.BitbucketClient.team_repos')
+    @mock.patch('addons.bitbucket.api.BitbucketClient.repos')
+    @mock.patch('addons.bitbucket.api.BitbucketClient.team_repos')
     def test_to_json_user_is_owner(self, mock_repos, mock_team_repos):
         mock_repos.return_value = []
         mock_team_repos.return_value = []
@@ -79,8 +81,8 @@ class TestNodeSettings(models.OAuthAddonNodeSettingsTestSuiteMixin, OsfTestCase)
         assert_true(result['valid_credentials'])
         assert_equal(result.get('repo_names', None), [])
 
-    @mock.patch('website.addons.bitbucket.api.BitbucketClient.repos')
-    @mock.patch('website.addons.bitbucket.api.BitbucketClient.team_repos')
+    @mock.patch('addons.bitbucket.api.BitbucketClient.repos')
+    @mock.patch('addons.bitbucket.api.BitbucketClient.team_repos')
     def test_to_json_user_is_not_owner(self, mock_repos, mock_team_repos):
         mock_repos.return_value = []
         mock_team_repos.return_value = []
@@ -93,14 +95,14 @@ class TestNodeSettings(models.OAuthAddonNodeSettingsTestSuiteMixin, OsfTestCase)
         assert_equal(result.get('repo_names', None), None)
 
 
-class TestUserSettings(models.OAuthAddonUserSettingTestSuiteMixin, OsfTestCase):
+class TestUserSettings(models.OAuthAddonUserSettingTestSuiteMixin, unittest.TestCase):
 
     short_name = 'bitbucket'
     full_name = 'Bitbucket'
     ExternalAccountFactory = BitbucketAccountFactory
 
     def test_public_id(self):
-        assert_equal(self.user.external_accounts[0].display_name, self.user_settings.public_id)
+        assert_equal(self.user.external_accounts.first().display_name, self.user_settings.public_id)
 
 
 class TestCallbacks(OsfTestCase):
@@ -111,7 +113,9 @@ class TestCallbacks(OsfTestCase):
 
         self.project = ProjectFactory.build()
         self.consolidated_auth = Auth(self.project.creator)
+        self.project.creator.save()
         self.non_authenticator = UserFactory()
+        self.non_authenticator.save()
         self.project.save()
         self.project.add_contributor(
             contributor=self.non_authenticator,
@@ -121,7 +125,7 @@ class TestCallbacks(OsfTestCase):
         self.project.add_addon('bitbucket', auth=self.consolidated_auth)
         self.project.creator.add_addon('bitbucket')
         self.external_account = BitbucketAccountFactory()
-        self.project.creator.external_accounts.append(self.external_account)
+        self.project.creator.external_accounts.add(self.external_account)
         self.project.creator.save()
         self.node_settings = self.project.get_addon('bitbucket')
         self.user_settings = self.project.creator.get_addon('bitbucket')
@@ -134,14 +138,14 @@ class TestCallbacks(OsfTestCase):
         self.user_settings.oauth_grants[self.project._id] = {self.external_account._id: []}
         self.user_settings.save()
 
-    @mock.patch('website.addons.bitbucket.api.BitbucketClient.repo')
+    @mock.patch('addons.bitbucket.api.BitbucketClient.repo')
     def test_before_make_public(self, mock_repo):
         mock_repo.side_effect = NotFoundError
 
         result = self.node_settings.before_make_public(self.project)
         assert_is(result, None)
 
-    @mock.patch('website.addons.bitbucket.api.BitbucketClient.repo')
+    @mock.patch('addons.bitbucket.api.BitbucketClient.repo')
     def test_before_page_load_osf_public_bb_public(self, mock_repo):
         self.project.is_public = True
         self.project.save()
@@ -153,7 +157,7 @@ class TestCallbacks(OsfTestCase):
         )
         assert_false(message)
 
-    @mock.patch('website.addons.bitbucket.api.BitbucketClient.repo')
+    @mock.patch('addons.bitbucket.api.BitbucketClient.repo')
     def test_before_page_load_osf_public_bb_private(self, mock_repo):
         self.project.is_public = True
         self.project.save()
@@ -165,7 +169,7 @@ class TestCallbacks(OsfTestCase):
         )
         assert_true(message)
 
-    @mock.patch('website.addons.bitbucket.api.BitbucketClient.repo')
+    @mock.patch('addons.bitbucket.api.BitbucketClient.repo')
     def test_before_page_load_osf_private_bb_public(self, mock_repo):
         mock_repo.return_value = {'is_private': False}
         message = self.node_settings.before_page_load(self.project, self.project.creator)
@@ -175,7 +179,7 @@ class TestCallbacks(OsfTestCase):
         )
         assert_true(message)
 
-    @mock.patch('website.addons.bitbucket.api.BitbucketClient.repo')
+    @mock.patch('addons.bitbucket.api.BitbucketClient.repo')
     def test_before_page_load_osf_private_bb_private(self, mock_repo):
         mock_repo.return_value = {'is_private': True}
         message = self.node_settings.before_page_load(self.project, self.project.creator)
@@ -239,7 +243,7 @@ class TestCallbacks(OsfTestCase):
 
     def test_after_fork_authenticator(self):
         fork = ProjectFactory()
-        clone, message = self.node_settings.after_fork(
+        clone = self.node_settings.after_fork(
             self.project, fork, self.project.creator,
         )
         assert_equal(
@@ -249,7 +253,7 @@ class TestCallbacks(OsfTestCase):
 
     def test_after_fork_not_authenticator(self):
         fork = ProjectFactory()
-        clone, message = self.node_settings.after_fork(
+        clone = self.node_settings.after_fork(
             self.project, fork, self.non_authenticator,
         )
         assert_equal(

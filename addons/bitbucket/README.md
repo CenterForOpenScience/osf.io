@@ -12,7 +12,7 @@
  * Projects: Read
  * Repositories: Read
 5. Submit the form.
-6. `cp website/addons/bitbucket/settings/local-dist.py website/addons/bitbucket/settings/local.py`
+6. `cp addons/bitbucket/settings/local-dist.py addons/bitbucket/settings/local.py`
 7. Copy your new application's Key and Secret from Bitbucket into the new `local.py` file.
 8. Ensure `"bitbucket"` exists in the addons list in `"addons.json"`
 9. Restart your app server.

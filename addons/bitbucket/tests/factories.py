@@ -1,9 +1,10 @@
 # -*- coding: utf-8 -*-
 
 from factory import Sequence, SubFactory
-from tests.factories import ExternalAccountFactory, ModularOdmFactory, ProjectFactory, UserFactory
+from factory.django import DjangoModelFactory
+from osf_tests.factories import ExternalAccountFactory, ProjectFactory, UserFactory
 
-from website.addons.bitbucket.model import BitbucketNodeSettings, BitbucketUserSettings
+from addons.bitbucket.models import NodeSettings, UserSettings
 
 
 class BitbucketAccountFactory(ExternalAccountFactory):
@@ -13,16 +14,16 @@ class BitbucketAccountFactory(ExternalAccountFactory):
     display_name = 'abc'
 
 
-class BitbucketUserSettingsFactory(ModularOdmFactory):
+class BitbucketUserSettingsFactory(DjangoModelFactory):
     class Meta:
-        model = BitbucketUserSettings
+        model = UserSettings
 
     owner = SubFactory(UserFactory)
 
 
-class BitbucketNodeSettingsFactory(ModularOdmFactory):
+class BitbucketNodeSettingsFactory(DjangoModelFactory):
     class Meta:
-        model = BitbucketNodeSettings
+        model = NodeSettings
 
     owner = SubFactory(ProjectFactory)
     user_settings = SubFactory(BitbucketUserSettingsFactory)

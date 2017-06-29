@@ -4,38 +4,39 @@ import httplib as http
 import mock
 import datetime
 import unittest
+import pytest
 
 from nose.tools import *  # noqa (PEP8 asserts)
 from tests.base import OsfTestCase, get_default_metaschema
-from tests.factories import ProjectFactory, UserFactory, AuthUserFactory
+from osf_tests.factories import ProjectFactory, UserFactory, AuthUserFactory
 
 from framework.exceptions import HTTPError
 from framework.auth import Auth
 
 from website.util import api_url_for
-from website.addons.base.testing.views import (
+from addons.base.tests.views import (
     OAuthAddonAuthViewsTestCaseMixin, OAuthAddonConfigViewsTestCaseMixin
 )
-from website.addons.bitbucket import views, utils
-from website.addons.bitbucket.api import BitbucketClient
-from website.addons.bitbucket.model import BitbucketProvider
-from website.addons.bitbucket.serializer import BitbucketSerializer
-from website.addons.bitbucket.tests.factories import BitbucketAccountFactory
-from website.addons.bitbucket.tests.utils import BitbucketAddonTestCase, create_mock_bitbucket
+from addons.bitbucket import utils
+from addons.bitbucket.api import BitbucketClient
+from addons.bitbucket.models import BitbucketProvider
+from addons.bitbucket.serializer import BitbucketSerializer
+from addons.bitbucket.tests.factories import BitbucketAccountFactory
+from addons.bitbucket.tests.utils import BitbucketAddonTestCase, create_mock_bitbucket
+
+pytestmark = pytest.mark.django_db
 
 
-
-class TestBitbucketAuthViews(BitbucketAddonTestCase, OAuthAddonAuthViewsTestCaseMixin):
-    
+class TestBitbucketAuthViews(BitbucketAddonTestCase, OAuthAddonAuthViewsTestCaseMixin, OsfTestCase):
     @mock.patch(
-        'website.addons.bitbucket.model.BitbucketUserSettings.revoke_remote_oauth_access',
+        'addons.bitbucket.models.UserSettings.revoke_remote_oauth_access',
         mock.PropertyMock()
     )
     def test_delete_external_account(self):
         super(TestBitbucketAuthViews, self).test_delete_external_account()
 
 
-class TestBitbucketConfigViews(BitbucketAddonTestCase, OAuthAddonConfigViewsTestCaseMixin):
+class TestBitbucketConfigViews(BitbucketAddonTestCase, OAuthAddonConfigViewsTestCaseMixin, OsfTestCase):
     folder = None
     Serializer = BitbucketSerializer
     client = BitbucketClient
@@ -44,7 +45,7 @@ class TestBitbucketConfigViews(BitbucketAddonTestCase, OAuthAddonConfigViewsTest
 
     def setUp(self):
         super(TestBitbucketConfigViews, self).setUp()
-        self.mock_access_token = mock.patch("website.addons.bitbucket.model.BitbucketProvider.fetch_access_token")
+        self.mock_access_token = mock.patch("addons.bitbucket.models.BitbucketProvider.fetch_access_token")
         self.mock_access_token.return_value = mock.Mock()
         self.mock_access_token.start()
 
@@ -56,8 +57,8 @@ class TestBitbucketConfigViews(BitbucketAddonTestCase, OAuthAddonConfigViewsTest
         # BB only lists root folder (repos), this test is superfluous
         pass
 
-    @mock.patch('website.addons.bitbucket.views.BitbucketClient.repo')
-    @mock.patch('website.addons.bitbucket.model.BitbucketNodeSettings.external_account')
+    @mock.patch('addons.bitbucket.views.BitbucketClient.repo')
+    @mock.patch('addons.bitbucket.models.NodeSettings.external_account')
     def test_set_config(self, mock_account, mock_repo):
         # BB selects repos, not folders, so this needs to be overriden
         mock_account.return_value = mock.Mock()
@@ -70,7 +71,7 @@ class TestBitbucketConfigViews(BitbucketAddonTestCase, OAuthAddonConfigViewsTest
         assert_equal(res.status_code, http.OK)
         self.project.reload()
         assert_equal(
-            self.project.logs[-1].action,
+            self.project.logs.latest().action,
             '{0}_repo_linked'.format(self.ADDON_SHORT_NAME)
         )
 
@@ -94,7 +95,7 @@ class TestBitbucketViews(OsfTestCase):
 
         self.project.add_addon('bitbucket', auth=self.consolidated_auth)
         self.project.creator.add_addon('bitbucket')
-        self.project.creator.external_accounts.append(self.external_account)
+        self.project.creator.external_accounts.add(self.external_account)
         self.project.creator.save()
 
         self.bitbucket = create_mock_bitbucket(user='fred', private=False)
@@ -122,10 +123,10 @@ class TestBitbucketViews(OsfTestCase):
         return branch_sha
 
     # Tests for _get_refs
-    @mock.patch('website.addons.bitbucket.api.BitbucketClient.branches')
-    @mock.patch('website.addons.bitbucket.api.BitbucketClient.repo')
-    @mock.patch('website.addons.bitbucket.api.BitbucketClient.repo_default_branch')
-    @mock.patch('website.addons.bitbucket.model.BitbucketNodeSettings.external_account')
+    @mock.patch('addons.bitbucket.api.BitbucketClient.branches')
+    @mock.patch('addons.bitbucket.api.BitbucketClient.repo')
+    @mock.patch('addons.bitbucket.api.BitbucketClient.repo_default_branch')
+    @mock.patch('addons.bitbucket.models.NodeSettings.external_account')
     def test_get_refs_defaults(self, mock_account, mock_default_branch, mock_repo, mock_branches):
         bitbucket_mock = self.bitbucket
         mock_account.return_value = mock.Mock()
@@ -146,10 +147,10 @@ class TestBitbucketViews(OsfTestCase):
         ]
         assert_equal(branches, expected_branches)
 
-    @mock.patch('website.addons.bitbucket.api.BitbucketClient.branches')
-    @mock.patch('website.addons.bitbucket.api.BitbucketClient.repo')
-    @mock.patch('website.addons.bitbucket.api.BitbucketClient.repo_default_branch')
-    @mock.patch('website.addons.bitbucket.model.BitbucketNodeSettings.external_account')
+    @mock.patch('addons.bitbucket.api.BitbucketClient.branches')
+    @mock.patch('addons.bitbucket.api.BitbucketClient.repo')
+    @mock.patch('addons.bitbucket.api.BitbucketClient.repo_default_branch')
+    @mock.patch('addons.bitbucket.models.NodeSettings.external_account')
     def test_get_refs_branch(self, mock_account, mock_default_branch, mock_repo, mock_branches):
         bitbucket_mock = self.bitbucket
         mock_account.return_value = mock.Mock()
@@ -177,8 +178,8 @@ class TestBitbucketViews(OsfTestCase):
         url = self.project.api_url + 'beforeregister/'
         res = self.app.get(url, auth=self.user.auth).maybe_follow()
         assert_true('Bitbucket' in res.json['prompts'][1])
-        
-    @mock.patch('website.addons.bitbucket.model.BitbucketNodeSettings.external_account')
+
+    @mock.patch('addons.bitbucket.models.NodeSettings.external_account')
     def test_get_refs_sha_no_branch(self, mock_account):
         with assert_raises(HTTPError):
             utils.get_refs(self.node_settings, sha='12345')
@@ -200,7 +201,7 @@ class TestBitbucketSettings(OsfTestCase):
 
         super(TestBitbucketSettings, self).setUp()
         self.bitbucket = create_mock_bitbucket(user='fred', private=False)
-        self.project = ProjectFactory.build()
+        self.project = ProjectFactory()
         self.project.save()
         self.auth = self.project.creator.auth
         self.consolidated_auth = Auth(user=self.project.creator)
@@ -214,8 +215,8 @@ class TestBitbucketSettings(OsfTestCase):
         self.node_settings.repo = 'Sheer-Heart-Attack'
         self.node_settings.save()
 
-    @mock.patch('website.addons.bitbucket.api.BitbucketClient.repo')
-    @mock.patch('website.addons.bitbucket.model.BitbucketNodeSettings.external_account')
+    @mock.patch('addons.bitbucket.api.BitbucketClient.repo')
+    @mock.patch('addons.bitbucket.models.NodeSettings.external_account')
     def test_link_repo(self, mock_account, mock_repo):
         bitbucket_mock = self.bitbucket
         mock_account.return_value = mock.Mock()
@@ -236,16 +237,16 @@ class TestBitbucketSettings(OsfTestCase):
 
         assert_equal(self.node_settings.user, 'queen')
         assert_equal(self.node_settings.repo, 'night at the opera')
-        assert_equal(self.project.logs[-1].action, 'bitbucket_repo_linked')
+        assert_equal(self.project.logs.latest().action, 'bitbucket_repo_linked')
 
-    @mock.patch('website.addons.bitbucket.api.BitbucketClient.repo')
-    @mock.patch('website.addons.bitbucket.model.BitbucketNodeSettings.external_account')
+    @mock.patch('addons.bitbucket.api.BitbucketClient.repo')
+    @mock.patch('addons.bitbucket.models.NodeSettings.external_account')
     def test_link_repo_no_change(self, mock_account, mock_repo):
         bitbucket_mock = self.bitbucket
         mock_account.return_value = mock.Mock()
         mock_repo.return_value = bitbucket_mock.repo.return_value
 
-        log_count = len(self.project.logs)
+        log_count = self.project.logs.count()
 
         url = self.project.api_url + 'bitbucket/settings/'
         self.app.post_json(
@@ -260,10 +261,10 @@ class TestBitbucketSettings(OsfTestCase):
         self.project.reload()
         self.node_settings.reload()
 
-        assert_equal(len(self.project.logs), log_count)
+        assert_equal(self.project.logs.count(), log_count)
 
-    @mock.patch('website.addons.bitbucket.api.BitbucketClient.repo')
-    @mock.patch('website.addons.bitbucket.model.BitbucketNodeSettings.external_account')
+    @mock.patch('addons.bitbucket.api.BitbucketClient.repo')
+    @mock.patch('addons.bitbucket.models.NodeSettings.external_account')
     def test_link_repo_non_existent(self, mock_account, mock_repo):
         mock_account.return_value = mock.Mock()
         mock_repo.return_value = None
@@ -281,7 +282,7 @@ class TestBitbucketSettings(OsfTestCase):
 
         assert_equal(res.status_code, 400)
 
-    @mock.patch('website.addons.bitbucket.api.BitbucketClient.branches')
+    @mock.patch('addons.bitbucket.api.BitbucketClient.branches')
     def test_link_repo_registration(self, mock_branches):
         bitbucket_mock = self.bitbucket
         mock_branches.return_value = bitbucket_mock.branches.return_value
@@ -317,7 +318,7 @@ class TestBitbucketSettings(OsfTestCase):
         assert_equal(self.node_settings.repo, None)
         assert_equal(self.node_settings.user_settings, None)
 
-        assert_equal(self.project.logs[-1].action, 'bitbucket_node_deauthorized')
+        assert_equal(self.project.logs.latest().action, 'bitbucket_node_deauthorized')
 
 
 if __name__ == '__main__':

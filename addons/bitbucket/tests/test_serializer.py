@@ -3,13 +3,15 @@
 
 import mock
 from nose.tools import *  # noqa (PEP8 asserts)
+import pytest
 
 from tests.base import OsfTestCase
-from website.addons.bitbucket.api import BitbucketClient
-from website.addons.bitbucket.tests.factories import BitbucketAccountFactory
-from website.addons.bitbucket.serializer import BitbucketSerializer
-from website.addons.base.testing.serializers import StorageAddonSerializerTestSuiteMixin
+from addons.bitbucket.api import BitbucketClient
+from addons.bitbucket.tests.factories import BitbucketAccountFactory
+from addons.bitbucket.serializer import BitbucketSerializer
+from addons.base.tests.serializers import StorageAddonSerializerTestSuiteMixin
 
+pytestmark = pytest.mark.django_db
 
 class TestBitbucketSerializer(StorageAddonSerializerTestSuiteMixin, OsfTestCase):
 

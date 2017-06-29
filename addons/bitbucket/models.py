@@ -1,25 +1,40 @@
 # -*- coding: utf-8 -*-
 
 import markupsafe
-from modularodm import fields
 
+from django.db import models
+
+from addons.base import exceptions
+from addons.base.models import (BaseOAuthNodeSettings, BaseOAuthUserSettings,
+                                BaseStorageAddon)
+
+from addons.bitbucket.api import BitbucketClient
+from addons.bitbucket.serializer import BitbucketSerializer
+from addons.bitbucket import settings as bitbucket_settings
+from addons.bitbucket.exceptions import NotFoundError
 from framework.auth import Auth
-
+from osf.models.external import ExternalProvider
+from osf.models.files import File, Folder, BaseFileNode
 from website import settings
 from website.util import web_url_for
-from website.addons.base import exceptions
-from website.addons.base import AddonOAuthUserSettingsBase, AddonOAuthNodeSettingsBase
-from website.addons.base import StorageAddonBase
-
-from website.addons.bitbucket.api import BitbucketClient
-from website.addons.bitbucket.serializer import BitbucketSerializer
-from website.addons.bitbucket import settings as bitbucket_settings
-from website.addons.bitbucket.exceptions import NotFoundError
-from website.oauth.models import ExternalProvider
-
 
 hook_domain = bitbucket_settings.HOOK_DOMAIN or settings.DOMAIN
 
+
+class BitbucketFileNode(BaseFileNode):
+    _provider = 'bitbucket'
+
+
+class BitbucketFolder(BitbucketFileNode, Folder):
+    pass
+
+
+class BitbucketFile(BitbucketFileNode, File):
+    version_identifier = 'commitSha'
+
+    def touch(self, auth_header, revision=None, commitSha=None, branch=None, **kwargs):
+        revision = revision or commitSha or branch
+        return super(BitbucketFile, self).touch(auth_header, revision=revision, **kwargs)
 
 class BitbucketProvider(ExternalProvider):
     """Provider to handler Bitbucket OAuth workflow
@@ -65,7 +80,7 @@ class BitbucketProvider(ExternalProvider):
         return self.account.oauth_key
 
 
-class BitbucketUserSettings(AddonOAuthUserSettingsBase):
+class UserSettings(BaseStorageAddon, BaseOAuthUserSettings):
     """Stores user-specific bitbucket information
 
     Quirks::
@@ -80,22 +95,20 @@ class BitbucketUserSettings(AddonOAuthUserSettingsBase):
     # Assumes oldest connected account is primary.
     @property
     def public_id(self):
-        bitbucket_accounts = [
-            a for a in self.owner.external_accounts
-            if a.provider == self.oauth_provider.short_name
-        ]
+        bitbucket_accounts = self.owner.external_accounts.filter(provider=self.oauth_provider.short_name)
         if bitbucket_accounts:
             return bitbucket_accounts[0].display_name
         return None
 
 
-class BitbucketNodeSettings(StorageAddonBase, AddonOAuthNodeSettingsBase):
+class NodeSettings(BaseStorageAddon, BaseOAuthNodeSettings):
     oauth_provider = BitbucketProvider
     serializer = BitbucketSerializer
 
-    user = fields.StringField()
-    repo = fields.StringField()
-    hook_id = fields.StringField()
+    user = models.TextField(blank=True, null=True)
+    repo = models.TextField(blank=True, null=True)
+    hook_id = models.TextField(blank=True, null=True)
+    user_settings = models.ForeignKey(UserSettings, null=True, blank=True)
 
     _api = None
 
@@ -158,7 +171,7 @@ class BitbucketNodeSettings(StorageAddonBase, AddonOAuthNodeSettingsBase):
         self.clear_auth()
 
     def delete(self, save=False):
-        super(BitbucketNodeSettings, self).delete(save=False)
+        super(NodeSettings, self).delete(save=False)
         self.deauthorize(log=False)
         if save:
             self.save()
@@ -185,7 +198,7 @@ class BitbucketNodeSettings(StorageAddonBase, AddonOAuthNodeSettingsBase):
 
     # TODO: Delete me and replace with serialize_settings / Knockout
     def to_json(self, user):
-        ret = super(BitbucketNodeSettings, self).to_json(user)
+        ret = super(NodeSettings, self).to_json(user)
         user_settings = user.get_addon('bitbucket')
         ret.update({
             'user_has_auth': user_settings and user_settings.has_auth,
@@ -199,7 +212,7 @@ class BitbucketNodeSettings(StorageAddonBase, AddonOAuthNodeSettingsBase):
                 mine = connection.repos()
                 ours = connection.team_repos()
                 repo_names = [
-                    '{0} / {1}'.format(repo['owner']['username'], repo['name'])
+                    '{0} / {1}'.format(repo['owner']['username'], repo['slug'])
                     for repo in mine + ours
                 ]
             except Exception:
@@ -334,7 +347,7 @@ class BitbucketNodeSettings(StorageAddonBase, AddonOAuthNodeSettingsBase):
 
         """
         try:
-            message = (super(BitbucketNodeSettings, self).before_remove_contributor_message(node, removed) +
+            message = (super(NodeSettings, self).before_remove_contributor_message(node, removed) +
             'You can download the contents of this repository before removing '
             'this contributor <u><a href="{url}">here</a></u>.'.format(
                 url=node.api_url + 'bitbucket/tarball/'
@@ -387,32 +400,18 @@ class BitbucketNodeSettings(StorageAddonBase, AddonOAuthNodeSettingsBase):
         :param bool save: Save settings after callback
         :return tuple: Tuple of cloned settings and alert message
         """
-        clone, _ = super(BitbucketNodeSettings, self).after_fork(
+        clone = super(NodeSettings, self).after_fork(
             node, fork, user, save=False
         )
 
         # Copy authentication if authenticated by forking user
         if self.user_settings and self.user_settings.owner == user:
             clone.user_settings = self.user_settings
-            message = (
-                'Bitbucket authorization copied to forked {cat}.'
-            ).format(
-                cat=markupsafe.escape(fork.project_or_component),
-            )
-        else:
-            message = (
-                'Bitbucket authorization not copied to forked {cat}. You may '
-                'authorize this fork on the <u><a href={url}>Settings</a></u> '
-                'page.'
-            ).format(
-                cat=markupsafe.escape(fork.project_or_component),
-                url=fork.url + 'settings/'
-            )
 
         if save:
             clone.save()
 
-        return clone, message
+        return clone
 
     def before_make_public(self, node):
         try:

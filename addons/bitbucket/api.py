@@ -3,7 +3,7 @@ import urllib
 from framework.exceptions import HTTPError
 
 from website.util.client import BaseClient
-from website.addons.bitbucket import settings
+from addons.bitbucket import settings
 
 
 class BitbucketClient(BaseClient):

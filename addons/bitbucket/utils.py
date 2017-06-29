@@ -3,7 +3,7 @@ import httplib as http
 
 from framework.exceptions import HTTPError
 
-from website.addons.bitbucket.api import BitbucketClient
+from addons.bitbucket.api import BitbucketClient
 
 
 def get_path(kwargs, required=True):
