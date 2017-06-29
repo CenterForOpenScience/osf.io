@@ -209,8 +209,7 @@ class Sitemap(object):
         # Preprint urls
         objs = (PreprintService.objects
                     .filter(node__isnull=False, node__is_deleted=False, node__is_public=True, is_published=True)
-                    .select_related('node', 'provider', 'node__preprint_file')
-                    .include('guids', 'node__guids', 'node__preprint_file__guids'))
+                    .select_related('node', 'provider', 'node__preprint_file'))
         progress.start(objs.count() * 2, 'PREP: ')
         osf = PreprintProvider.objects.get(_id='osf')
         for obj in objs:
@@ -255,7 +254,7 @@ class Sitemap(object):
         # TODO: once the sitemap is validated add a ping to google with sitemap index file location
         # TODO: server side cursor query wrapper might be useful as the index gets larger.
         # Sitemap indexable limit check
-        if self.sitemap_count > settings.SITEMAP_INDEX_MAX * .90: # 10% of urls remaining
+        if self.sitemap_count > settings.SITEMAP_INDEX_MAX * .90:  # 10% of urls remaining
             sentry.log_message('WARNING: Max sitemaps nearly reached.')
         print('Total url_count = {}'.format((self.sitemap_count - 1) * settings.SITEMAP_URL_MAX + self.url_count))
         print('Total sitemap_count = {}'.format(str(self.sitemap_count)))
