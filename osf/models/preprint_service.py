@@ -6,7 +6,6 @@ from django.db import models
 from django.utils import timezone
 from django.utils.functional import cached_property
 from django.contrib.contenttypes.fields import GenericRelation
-from include import IncludeManager
 
 from framework.celery_tasks.handlers import enqueue_task
 from framework.exceptions import PermissionsError
@@ -40,8 +39,6 @@ class PreprintService(DirtyFieldsMixin, GuidMixin, IdentifierMixin, BaseModel):
     subjects = models.ManyToManyField(blank=True, to='osf.Subject', related_name='preprint_services')
 
     identifiers = GenericRelation(Identifier, related_query_name='preprintservices')
-
-    objects = IncludeManager()
 
     class Meta:
         unique_together = ('node', 'provider')
