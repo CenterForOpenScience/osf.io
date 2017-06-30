@@ -1304,7 +1304,6 @@ class NodeChildrenList(JSONAPIBaseView, bulk_views.ListBulkCreateJSONAPIView, No
         serializer.save(creator=user, parent=self.get_node())
 
 
-
 class NodeCitationDetail(JSONAPIBaseView, generics.RetrieveAPIView, NodeMixin):
     """ The node citation for a node in CSL format *read only*
 
