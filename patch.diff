@@ -1,0 +1,24 @@
+From ba21ac60bfb7645a78e996c8861b45439cd49aea Mon Sep 17 00:00:00 2001
+From: John Tordoff <john@cos.io>
+Date: Fri, 30 Jun 2017 13:53:40 -0400
+Subject: [PATCH] no message
+
+---
+ api/nodes/views.py | 1 -
+ 1 file changed, 1 deletion(-)
+
+diff --git a/api/nodes/views.py b/api/nodes/views.py
+index 5f91ce2..1d68877 100644
+--- a/api/nodes/views.py
++++ b/api/nodes/views.py
+@@ -1304,7 +1304,6 @@ class NodeChildrenList(JSONAPIBaseView, bulk_views.ListBulkCreateJSONAPIView, No
+         serializer.save(creator=user, parent=self.get_node())
+ 
+ 
+-
+ class NodeCitationDetail(JSONAPIBaseView, generics.RetrieveAPIView, NodeMixin):
+     """ The node citation for a node in CSL format *read only*
+ 
+-- 
+2.10.1
+
