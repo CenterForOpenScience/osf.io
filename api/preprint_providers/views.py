@@ -39,7 +39,6 @@ class PreprintProviderList(JSONAPIBaseView, generics.ListAPIView, ODMFilterMixin
         advisory_board           string              HTML for the advisory board/steering committee section
         email_contact            string              the contact email for the preprint provider
         email_support            string              the support email for the preprint provider
-        subjects_acceptable      [[string],boolean]  the list of acceptable subjects for the preprint provider
         social_facebook          string              the preprint provider's Facebook account
         social_instagram         string              the preprint provider's Instagram account
         social_twitter           string              the preprint provider's Twitter account
@@ -103,7 +102,6 @@ class PreprintProviderDetail(JSONAPIBaseView, generics.RetrieveAPIView):
         advisory_board           string              HTML for the advisory board/steering committee section
         email_contact            string              the contact email for the preprint provider
         email_support            string              the support email for the preprint provider
-        subjects_acceptable      [[string],boolean]  the list of acceptable subjects for the preprint provider
         social_facebook          string              the preprint provider's Facebook account
         social_instagram         string              the preprint provider's Instagram account
         social_twitter           string              the preprint provider's Twitter account
@@ -220,7 +218,7 @@ class PreprintProviderPreprintList(JSONAPIBaseView, generics.ListAPIView, Prepri
         return PreprintService.objects.filter(self.get_query_from_request()).distinct()
 
 
-class PreprintProviderSubjectList(JSONAPIBaseView, generics.ListAPIView):
+class PreprintProviderTaxonomies(JSONAPIBaseView, generics.ListAPIView):
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
         base_permissions.TokenHasScope,
