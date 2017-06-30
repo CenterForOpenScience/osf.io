@@ -968,7 +968,7 @@ var MyProjects = {
                 // TODO Figure out why
                 setTimeout(m.redraw.bind(this, true), 250);
             }
-        }
+        };
 
         self.init = function _init_fileBrowser() {
             self.loadCategories().then(function(){
@@ -1032,7 +1032,7 @@ var MyProjects = {
                 multiselected : ctrl.multiselected,
                 highlightMultiselect : ctrl.highlightMultiselect,
                 _onload: function(tb) {
-                    ctrl.onLoadReset()
+                    ctrl.onLoadReset();
                 }
             },
             ctrl.projectOrganizerOptions
