@@ -13,11 +13,12 @@ If you are manually testing functionality for permissions views, do not log in t
 - Open up the OSF shell with `docker-compose run --rm web invoke shell`
 - Select the already existing OSF User you'd like to make an admin superuser with `user = OSFUser.objects.get(username=<your_user@cos.io>)`
 - Set that user to be a superuser and staff with `user.is_superuser = True` and `user.is_staff = True`
-- Save your user with `user.save()`
+- Save your user with `user.save()`, then commit your changes with `commit()`
 
 3. Log in to the admin
 - Visit the admin at `http://localhost:8001/`
-- Log in with your OSF User's username and password
+- Log in with your OSF User's username and password. 
+- Note: Unlike OSF proper if you are using FakeCas your password must still be correct. 
 
 3. Add other admin users
 - Visit the admin user form at the top right under your username
