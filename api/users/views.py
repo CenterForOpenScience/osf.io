@@ -4,7 +4,7 @@ from django.apps import apps
 from api.addons.views import AddonSettingsMixin
 from api.base import permissions as base_permissions
 from api.base.exceptions import Conflict, UserGone
-from api.base.filters import ListFilterMixin, JSONAPIFilterSet, PreprintFilterMixin, MultiValueCharFilter
+from api.base.filters import ListFilterMixin, PreprintFilterMixin
 from api.base.parsers import (JSONAPIRelationshipParser,
                               JSONAPIRelationshipParserForRegularJSON)
 from api.base.serializers import AddonAccountSerializer
@@ -18,6 +18,7 @@ from api.nodes.filters import NodesFilterMixin
 from api.nodes.serializers import NodeSerializer
 from api.preprints.serializers import PreprintSerializer
 from api.registrations.serializers import RegistrationSerializer
+from api.users.filters import UserFilterSet
 from api.users.permissions import (CurrentUser, ReadOnlyOrCurrentUser,
                                    ReadOnlyOrCurrentUserRelationship)
 from api.users.serializers import (UserAddonSettingsSerializer,
@@ -84,16 +85,6 @@ class UserMixin(object):
             # May raise a permission denied
             self.check_object_permissions(self.request, obj)
         return obj
-
-
-class UserFilterSet(JSONAPIFilterSet):
-
-    full_name = MultiValueCharFilter(name='fullname', lookup_expr='icontains')
-    id = django_filters.CharFilter(name='guids___id')
-
-    class Meta(JSONAPIFilterSet.Meta):
-        model = OSFUser
-        fields = ['id', 'full_name', 'given_name', 'middle_names', 'family_name']
 
 
 class UserList(JSONAPIBaseView, generics.ListAPIView):
