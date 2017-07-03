@@ -17,10 +17,6 @@ function _formatRepoUrl(item, branch) {
     return item.data.urls.repo.substring(0, item.data.urls.repo.indexOf('/tree/') + 6) + branch;
 }
 
-function _formatZipUrl(item, branch) {
-    return item.data.urls.zip.substring(0, item.data.urls.zip.indexOf('?ref=') + 5) + branch;
-}
-
 function _getCurrentBranch(item) {
     var branch;
     if (item.data.branch === undefined) {
@@ -78,7 +74,7 @@ var _gitlabItemButtons = {
                     buttons.push(
                         m.component(Fangorn.Components.button, {
                             onclick: function (event) {
-                                window.location = _formatZipUrl(item, branch);
+                                window.location = waterbutler.buildTreeBeardDownloadZip(item, {'branch': item.data.branch});
                             },
                             icon: 'fa fa-download',
                             className: 'text-primary'
@@ -133,8 +129,8 @@ function changeBranch(item, ref){
 }
 
 function _resolveLazyLoad(item) {
-    var branch = _getCurrentBranch(item);
-    return waterbutler.buildTreeBeardMetadata(item, {ref: branch});
+    var _branch = _getCurrentBranch(item);
+    return waterbutler.buildTreeBeardMetadata(item, {branch: _branch});
 }
 
 function _fangornLazyLoadOnLoad (tree, event) {

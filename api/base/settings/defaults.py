@@ -103,6 +103,7 @@ INSTALLED_APPS = (
     'addons.figshare',
     'addons.forward',
     'addons.github',
+    'addons.gitlab',
     'addons.googledrive',
     'addons.mendeley',
     'addons.owncloud',

@@ -5,7 +5,8 @@ import gitlab
 import cachecontrol
 from requests.adapters import HTTPAdapter
 
-from website.addons.gitlab.exceptions import NotFoundError
+from addons.gitlab.exceptions import NotFoundError
+from addons.gitlab.settings import DEFAULT_HOSTS
 
 # Initialize caches
 https_cache = cachecontrol.CacheControlAdapter()
@@ -13,11 +14,9 @@ default_adapter = HTTPAdapter()
 
 class GitLabClient(object):
 
-    def __init__(self, external_account=None, access_token=None):
-
-        self.access_token = getattr(external_account, 'provider_id', None) or access_token
-
-        self.host = getattr(external_account, 'display_name', None) or 'gitlab.com'
+    def __init__(self, external_account=None, access_token=None, host=None):
+        self.access_token = getattr(external_account, 'oauth_key', None) or access_token
+        self.host = getattr(external_account, 'oauth_secret', None) or host or DEFAULT_HOSTS[0]
 
         if self.access_token:
             self.gitlab = gitlab.Gitlab(self.host, token=self.access_token)

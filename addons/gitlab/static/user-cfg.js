@@ -8,4 +8,4 @@ var gitlabViewModel = new GitLabViewModel(url);
 $osf.applyBindings(gitlabViewModel, '#gitlabAddonScope');
 
 // Load initial GitLab data
-gitlabViewModel.fetch();
+gitlabViewModel.fetch(url);

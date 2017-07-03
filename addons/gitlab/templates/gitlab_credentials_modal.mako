@@ -33,7 +33,7 @@
                         <div class="col-sm-6">
                             <!-- Personal Access Token Input-->
                             <div class="form-group" data-bind="if: showApiTokenInput">
-                                <label for="clientId">
+                              <label for="apiToken">
                                     Personal Access Token
                                     <!-- Link to API token generation page -->
                                     <a data-bind="attr: {href: tokenUrl}"
@@ -41,7 +41,7 @@
                                         (Get from GitLab <i class="fa fa-external-link-square"></i>)
                                     </a>
                                 </label>
-                                <input class="form-control" name="clientId" data-bind="value: clientId"/>
+                                <input class="form-control" name="apiToken" data-bind="value: apiToken"/>
                             </div>
                         </div>
                     </div><!-- end row -->

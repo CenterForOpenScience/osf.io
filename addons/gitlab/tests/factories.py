@@ -1,9 +1,10 @@
 # -*- coding: utf-8 -*-
 
 from factory import Sequence, SubFactory
-from tests.factories import ExternalAccountFactory, ModularOdmFactory, ProjectFactory, UserFactory
+from factory.django import DjangoModelFactory
+from osf_tests.factories import ExternalAccountFactory, UserFactory, ProjectFactory
 
-from website.addons.gitlab.model import GitLabNodeSettings, GitLabUserSettings
+from addons.gitlab.models import NodeSettings, UserSettings
 
 
 class GitLabAccountFactory(ExternalAccountFactory):
@@ -13,16 +14,16 @@ class GitLabAccountFactory(ExternalAccountFactory):
     display_name = 'abc'
 
 
-class GitLabUserSettingsFactory(ModularOdmFactory):
+class GitLabUserSettingsFactory(DjangoModelFactory):
     class Meta:
-        model = GitLabUserSettings
+        model = UserSettings
 
     owner = SubFactory(UserFactory)
 
 
-class GitLabNodeSettingsFactory(ModularOdmFactory):
+class GitLabNodeSettingsFactory(DjangoModelFactory):
     class Meta:
-        model = GitLabNodeSettings
+        model = NodeSettings
 
     owner = SubFactory(ProjectFactory)
     user_settings = SubFactory(GitLabUserSettingsFactory)

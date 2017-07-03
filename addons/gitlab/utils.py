@@ -5,9 +5,9 @@ import hashlib
 import httplib as http
 
 from framework.exceptions import HTTPError
-from website.addons.base.exceptions import HookError
+from addons.base.exceptions import HookError
 
-from website.addons.gitlab.api import GitLabClient
+from addons.gitlab.api import GitLabClient
 
 MESSAGE_BASE = 'via the Open Science Framework'
 MESSAGES = {

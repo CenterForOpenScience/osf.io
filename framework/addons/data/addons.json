@@ -48,16 +48,16 @@
                 "text": "Deleting files via OSF is not implemented yet."
             },
             "Logs": {
-                "status": "full",
-                "text": "GitLab dynamically updates OSF logs when files are modified outside the OSF. Changes to GitLab repos made before the repo is linked to the OSF will not be reflected in OSF logs."
+                "status": "none",
+                "text": "OSF does not keep track of changes made using Gitlab directly."
             },
             "Forking": {
-                "status": "none",
-                "text": "Forking a project is not implemented yet."
+                "status": "partial",
+                "text": "Forking a project or component does not copy GitLab authorization unless the user forking the project is the same user who authorized the GitLab add-on in the source project being forked."
             },
             "Registering": {
-                "status": "none",
-                "text": "Registration on Gitlab is not implemented yet."
+                "status": "partial",
+                "text": "GitLab content will be registered, but version history will not be copied to the registration."
             }
         },
         "Amazon S3": {

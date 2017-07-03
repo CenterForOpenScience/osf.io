@@ -7,9 +7,9 @@ from nose.tools import *  # noqa
 
 from tests.base import OsfTestCase
 
-from website.addons.gitlab import utils
-from website.addons.base.exceptions import HookError
-from website.addons.gitlab.model import GitLabNodeSettings
+from addons.gitlab import utils
+from addons.base.exceptions import HookError
+from addons.gitlab.models import NodeSettings
 
 
 def make_signature(secret, data):
@@ -25,7 +25,7 @@ class TestHookVerify(OsfTestCase):
 
     def setUp(self):
         super(TestHookVerify, self).setUp()
-        self.node_settings = GitLabNodeSettings(
+        self.node_settings = NodeSettings(
             hook_secret='speakfriend',
         )
 

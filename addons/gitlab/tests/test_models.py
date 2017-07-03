@@ -1,37 +1,38 @@
 # -*- coding: utf-8 -*-
 
 import mock
+import pytest
 import unittest
 from nose.tools import *  # noqa
 
 from tests.base import OsfTestCase, get_default_metaschema
-from tests.factories import ExternalAccountFactory, ProjectFactory, UserFactory
+from osf_tests.factories import ProjectFactory, UserFactory
 
 from framework.auth import Auth
 
-from website.addons.gitlab.exceptions import NotFoundError, GitLabError
-from website.addons.gitlab import settings as gitlab_settings
-from website.addons.gitlab.model import GitLabUserSettings
-from website.addons.gitlab.model import GitLabNodeSettings
-from website.addons.gitlab.tests.factories import (
+from addons.base.tests.models import (OAuthAddonNodeSettingsTestSuiteMixin,
+                                      OAuthAddonUserSettingTestSuiteMixin)
+from addons.gitlab.exceptions import NotFoundError
+from addons.gitlab.models import NodeSettings
+from addons.gitlab.tests.factories import (
     GitLabAccountFactory,
     GitLabNodeSettingsFactory,
     GitLabUserSettingsFactory
 )
-from website.addons.base.testing import models
 
 from .utils import create_mock_gitlab
 mock_gitlab = create_mock_gitlab()
 
+pytestmark = pytest.mark.django_db
 
-class TestNodeSettings(models.OAuthAddonNodeSettingsTestSuiteMixin, OsfTestCase):
+class TestNodeSettings(OAuthAddonNodeSettingsTestSuiteMixin, unittest.TestCase):
 
     short_name = 'gitlab'
     full_name = 'GitLab'
     ExternalAccountFactory = GitLabAccountFactory
 
     NodeSettingsFactory = GitLabNodeSettingsFactory
-    NodeSettingsClass = GitLabNodeSettings
+    NodeSettingsClass = NodeSettings
     UserSettingsFactory = GitLabUserSettingsFactory
 
     ## Mixin Overrides ##
@@ -42,7 +43,7 @@ class TestNodeSettings(models.OAuthAddonNodeSettingsTestSuiteMixin, OsfTestCase)
             'repo': 'mock',
             'user': 'abc',
             'owner': self.node,
-            'repo_id': 123
+            'repo_id': '123'
         }
 
     def test_set_folder(self):
@@ -54,22 +55,22 @@ class TestNodeSettings(models.OAuthAddonNodeSettingsTestSuiteMixin, OsfTestCase)
         # GitLab's serialized_settings are a little different from
         # common storage addons.
         settings = self.node_settings.serialize_waterbutler_settings()
-        expected = {'host': 'https://abc', 'owner': 'abc', 'repo': 'mock', 'repo_id': 123}
+        expected = {'host': 'https://some-super-secret', 'owner': 'abc', 'repo': 'mock', 'repo_id': '123'}
         assert_equal(settings, expected)
 
     @mock.patch(
-        'website.addons.gitlab.model.GitLabUserSettings.revoke_remote_oauth_access',
+        'addons.gitlab.models.UserSettings.revoke_remote_oauth_access',
         mock.PropertyMock()
     )
     def test_complete_has_auth_not_verified(self):
         super(TestNodeSettings, self).test_complete_has_auth_not_verified()
 
-    @mock.patch('website.addons.gitlab.api.GitLabClient.repos')
+    @mock.patch('addons.gitlab.api.GitLabClient.repos')
     def test_to_json(self, mock_repos):
         mock_repos.return_value = {}
         super(TestNodeSettings, self).test_to_json()
 
-    @mock.patch('website.addons.gitlab.api.GitLabClient.repos')
+    @mock.patch('addons.gitlab.api.GitLabClient.repos')
     def test_to_json_user_is_owner(self, mock_repos):
         mock_repos.return_value = {}
         result = self.node_settings.to_json(self.user)
@@ -79,7 +80,7 @@ class TestNodeSettings(models.OAuthAddonNodeSettingsTestSuiteMixin, OsfTestCase)
         assert_true(result['valid_credentials'])
         assert_equal(result.get('gitlab_repo', None), 'mock')
 
-    @mock.patch('website.addons.gitlab.api.GitLabClient.repos')
+    @mock.patch('addons.gitlab.api.GitLabClient.repos')
     def test_to_json_user_is_not_owner(self, mock_repos):
         mock_repos.return_value = {}
         not_owner = UserFactory()
@@ -91,14 +92,11 @@ class TestNodeSettings(models.OAuthAddonNodeSettingsTestSuiteMixin, OsfTestCase)
         assert_equal(result.get('repo_names', None), None)
 
 
-class TestUserSettings(models.OAuthAddonUserSettingTestSuiteMixin, OsfTestCase):
+class TestUserSettings(OAuthAddonUserSettingTestSuiteMixin, unittest.TestCase):
 
     short_name = 'gitlab'
     full_name = 'GitLab'
     ExternalAccountFactory = GitLabAccountFactory
-
-    def test_public_id(self):
-        assert_equal(self.user.external_accounts[0].display_name, self.user_settings.public_id)
 
 
 class TestCallbacks(OsfTestCase):
@@ -109,7 +107,9 @@ class TestCallbacks(OsfTestCase):
 
         self.project = ProjectFactory.build()
         self.consolidated_auth = Auth(self.project.creator)
+        self.project.creator.save()
         self.non_authenticator = UserFactory()
+        self.non_authenticator.save()
         self.project.save()
         self.project.add_contributor(
             contributor=self.non_authenticator,
@@ -119,7 +119,7 @@ class TestCallbacks(OsfTestCase):
         self.project.add_addon('gitlab', auth=self.consolidated_auth)
         self.project.creator.add_addon('gitlab')
         self.external_account = GitLabAccountFactory()
-        self.project.creator.external_accounts.append(self.external_account)
+        self.project.creator.external_accounts.add(self.external_account)
         self.project.creator.save()
         self.node_settings = self.project.get_addon('gitlab')
         self.user_settings = self.project.creator.get_addon('gitlab')
@@ -130,8 +130,7 @@ class TestCallbacks(OsfTestCase):
         self.node_settings.save()
         self.node_settings.set_auth
 
-
-    @mock.patch('website.addons.gitlab.api.GitLabClient.repo')
+    @mock.patch('addons.gitlab.api.GitLabClient.repo')
     def test_before_make_public(self, mock_repo):
         mock_repo.side_effect = NotFoundError
 
@@ -167,7 +166,7 @@ class TestCallbacks(OsfTestCase):
             None
         )
         assert_true(message)
-        assert_not_in("You can re-authenticate", message)
+        assert_not_in('You can re-authenticate', message)
 
     def test_after_remove_contributor_authenticator_not_self(self):
         auth = Auth(user=self.non_authenticator)
@@ -179,7 +178,7 @@ class TestCallbacks(OsfTestCase):
             None
         )
         assert_true(message)
-        assert_in("You can re-authenticate", message)
+        assert_in('You can re-authenticate', message)
 
     def test_after_remove_contributor_not_authenticator(self):
         self.node_settings.after_remove_contributor(
@@ -192,7 +191,7 @@ class TestCallbacks(OsfTestCase):
 
     def test_after_fork_authenticator(self):
         fork = ProjectFactory()
-        clone, message = self.node_settings.after_fork(
+        clone = self.node_settings.after_fork(
             self.project, fork, self.project.creator,
         )
         assert_equal(
@@ -202,7 +201,7 @@ class TestCallbacks(OsfTestCase):
 
     def test_after_fork_not_authenticator(self):
         fork = ProjectFactory()
-        clone, message = self.node_settings.after_fork(
+        clone = self.node_settings.after_fork(
             self.project, fork, self.non_authenticator,
         )
         assert_equal(
@@ -226,20 +225,19 @@ class TestCallbacks(OsfTestCase):
         assert_false(registration.has_addon('gitlab'))
 
 
-
-class TestGitLabNodeSettings(OsfTestCase):
+class TestGitLabNodeSettings(unittest.TestCase):
 
     def setUp(self):
-        OsfTestCase.setUp(self)
+        super(TestGitLabNodeSettings, self).setUp()
         self.user = UserFactory()
         self.user.add_addon('gitlab')
         self.user_settings = self.user.get_addon('gitlab')
         self.external_account = GitLabAccountFactory()
-        self.user_settings.owner.external_accounts.append(self.external_account)
+        self.user_settings.owner.external_accounts.add(self.external_account)
         self.user_settings.owner.save()
         self.node_settings = GitLabNodeSettingsFactory(user_settings=self.user_settings)
 
-    @mock.patch('website.addons.gitlab.api.GitLabClient.delete_hook')
+    @mock.patch('addons.gitlab.api.GitLabClient.delete_hook')
     def test_delete_hook_no_hook(self, mock_delete_hook):
         res = self.node_settings.delete_hook()
         assert_false(res)

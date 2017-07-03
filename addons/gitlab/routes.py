@@ -2,7 +2,7 @@
 
 from framework.routing import Rule, json_renderer
 
-from website.addons.gitlab import views
+from addons.gitlab import views
 
 api_routes = {
     'rules': [

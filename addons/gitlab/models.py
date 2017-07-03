@@ -1,82 +1,73 @@
 # -*- coding: utf-8 -*-
-
 import os
 import urlparse
 
+from django.db import models
 import markupsafe
-from modularodm import fields
 
+from addons.base import exceptions
+from addons.base.models import (BaseOAuthNodeSettings, BaseOAuthUserSettings,
+                                BaseStorageAddon)
+from addons.gitlab import utils
+from addons.gitlab.api import GitLabClient
+from addons.gitlab.serializer import GitLabSerializer
+from addons.gitlab import settings as gitlab_settings
+from addons.gitlab.exceptions import ApiError, NotFoundError, GitLabError
 from framework.auth import Auth
-
+from osf.models.files import File, Folder, BaseFileNode
 from website import settings
 from website.util import web_url_for
-from website.addons.base import exceptions
-from website.addons.base import AddonOAuthUserSettingsBase, AddonOAuthNodeSettingsBase
-from website.addons.base import StorageAddonBase
-
-from website.addons.gitlab import utils
-from website.addons.gitlab.api import GitLabClient
-from website.addons.gitlab.serializer import GitLabSerializer
-from website.addons.gitlab import settings as gitlab_settings
-from website.addons.gitlab.exceptions import ApiError, NotFoundError, GitLabError
-from website.oauth.models import ExternalProvider
-
 
 hook_domain = gitlab_settings.HOOK_DOMAIN or settings.DOMAIN
 
 
-class GitLabProvider(ExternalProvider):
+class GitLabFileNode(BaseFileNode):
+    _provider = 'gitlab'
+
+
+class GitLabFolder(GitLabFileNode, Folder):
+    pass
+
+
+class GitLabFile(GitLabFileNode, File):
+    version_identifier = 'branch'
+
+    def touch(self, auth_header, revision=None, ref=None, branch=None, **kwargs):
+        revision = revision or ref or branch
+        return super(GitLabFile, self).touch(auth_header, revision=revision, **kwargs)
+
+class GitLabProvider(object):
     name = 'GitLab'
     short_name = 'gitlab'
+    serializer = GitLabSerializer
 
-    @property
-    def auth_url_base(self):
-        return 'https://{0}{1}'.format('gitlab.com', '/oauth/authorize')
+    def __init__(self, account=None):
+        super(GitLabProvider, self).__init__()  # this does exactly nothing...
+        # provide an unauthenticated session by default
+        self.account = account
 
-    @property
-    def callback_url(self):
-        return 'https://{0}{1}'.format('gitlab.com', '/oauth/token')
-
-    @property
-    def client_secret(self):
-        return ''
-
-    @property
-    def client_id(self):
-        return ''
-
-    def handle_callback(self, response):
-        """View called when the OAuth flow is completed. Adds a new GitLabUserSettings
-        record to the user and saves the account info.
-        """
-        client = GitLabClient(
-            access_token=response['access_token']
+    def __repr__(self):
+        return '<{name}: {status}>'.format(
+            name=self.__class__.__name__,
+            status=self.account.display_name if self.account else 'anonymous'
         )
 
-        user_info = client.user()
 
-        return {
-            'provider_id': client.host,
-            'profile_url': user_info['web_url'],
-            'oauth_key': response['access_token'],
-            'display_name': client.host
-        }
-
-
-class GitLabUserSettings(AddonOAuthUserSettingsBase):
+class UserSettings(BaseStorageAddon, BaseOAuthUserSettings):
     oauth_provider = GitLabProvider
     serializer = GitLabSerializer
 
 
-class GitLabNodeSettings(StorageAddonBase, AddonOAuthNodeSettingsBase):
+class NodeSettings(BaseStorageAddon, BaseOAuthNodeSettings):
     oauth_provider = GitLabProvider
     serializer = GitLabSerializer
 
-    user = fields.StringField()
-    repo = fields.StringField()
-    repo_id = fields.StringField()
-    hook_id = fields.StringField()
-    hook_secret = fields.StringField()
+    user = models.TextField(blank=True, null=True)
+    repo = models.TextField(blank=True, null=True)
+    repo_id = models.TextField(blank=True, null=True)
+    hook_id = models.TextField(blank=True, null=True)
+    hook_secret = models.TextField(blank=True, null=True)
+    user_settings = models.ForeignKey(UserSettings, null=True, blank=True)
 
     @property
     def folder_id(self):
@@ -136,7 +127,7 @@ class GitLabNodeSettings(StorageAddonBase, AddonOAuthNodeSettingsBase):
         self.clear_auth()
 
     def delete(self, save=False):
-        super(GitLabNodeSettings, self).delete(save=False)
+        super(NodeSettings, self).delete(save=False)
         self.deauthorize(log=False)
         if save:
             self.save()
@@ -158,7 +149,7 @@ class GitLabNodeSettings(StorageAddonBase, AddonOAuthNodeSettingsBase):
 
     def to_json(self, user):
 
-        ret = super(GitLabNodeSettings, self).to_json(user)
+        ret = super(NodeSettings, self).to_json(user)
         user_settings = user.get_addon('gitlab')
         ret.update({
             'user_has_auth': user_settings and user_settings.has_auth,
@@ -203,13 +194,13 @@ class GitLabNodeSettings(StorageAddonBase, AddonOAuthNodeSettingsBase):
     def serialize_waterbutler_credentials(self):
         if not self.complete or not self.repo:
             raise exceptions.AddonError('Addon is not authorized')
-        return {'token': self.external_account.provider_id}
+        return {'token': self.external_account.oauth_key}
 
     def serialize_waterbutler_settings(self):
         if not self.complete:
             raise exceptions.AddonError('Repo is not configured')
         return {
-            'host': 'https://{}'.format(self.external_account.display_name),
+            'host': 'https://{}'.format(self.external_account.oauth_secret),
             'owner': self.user,
             'repo': self.repo,
             'repo_id': self.repo_id
@@ -226,8 +217,8 @@ class GitLabNodeSettings(StorageAddonBase, AddonOAuthNodeSettingsBase):
         else:
             sha = metadata['extra']['fileSha']
             urls = {
-                'view': '{0}?ref={1}'.format(url, sha),
-                'download': '{0}?action=download&ref={1}'.format(url, sha)
+                'view': '{0}?branch={1}'.format(url, sha),
+                'download': '{0}?action=download&branch={1}'.format(url, sha)
             }
 
         self.owner.add_log(
@@ -301,7 +292,7 @@ class GitLabNodeSettings(StorageAddonBase, AddonOAuthNodeSettingsBase):
                 message += (
                     ' The files in this GitLab repo can be viewed on GitLab '
                     '<u><a href="{url}">here</a></u>.'
-                ).format(url = repo['http_url_to_repo'])
+                ).format(url=repo['http_url_to_repo'])
             messages.append(message)
             return messages
 
@@ -314,7 +305,7 @@ class GitLabNodeSettings(StorageAddonBase, AddonOAuthNodeSettingsBase):
 
         """
         try:
-            message = (super(GitLabNodeSettings, self).before_remove_contributor_message(node, removed) +
+            message = (super(NodeSettings, self).before_remove_contributor_message(node, removed) +
             'You can download the contents of this repository before removing '
             'this contributor <u><a href="{url}">here</a></u>.'.format(
                 url=node.api_url + 'gitlab/tarball/'
@@ -364,32 +355,18 @@ class GitLabNodeSettings(StorageAddonBase, AddonOAuthNodeSettingsBase):
         :param bool save: Save settings after callback
         :return tuple: Tuple of cloned settings and alert message
         """
-        clone, _ = super(GitLabNodeSettings, self).after_fork(
+        clone = super(NodeSettings, self).after_fork(
             node, fork, user, save=False
         )
 
         # Copy authentication if authenticated by forking user
         if self.user_settings and self.user_settings.owner == user:
             clone.user_settings = self.user_settings
-            message = (
-                'GitLab authorization copied to forked {cat}.'
-            ).format(
-                cat=markupsafe.escape(fork.project_or_component),
-            )
-        else:
-            message = (
-                'GitLab authorization not copied to forked {cat}. You may '
-                'authorize this fork on the <u><a href={url}>Settings</a></u> '
-                'page.'
-            ).format(
-                cat=markupsafe.escape(fork.project_or_component),
-                url=fork.url + 'settings/'
-            )
 
         if save:
             clone.save()
 
-        return clone, message
+        return clone
 
     def before_make_public(self, node):
         try:

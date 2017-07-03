@@ -4,35 +4,27 @@ from dateutil.parser import parse as dateparse
 import httplib as http
 import logging
 
-from furl import furl
+from django.core.exceptions import ValidationError
 from flask import request, make_response
 
 from framework.exceptions import HTTPError
 
-from modularodm import Q
-from modularodm.storage.base import KeyExistsException
-from website.oauth.models import ExternalAccount
-
-from website.addons.base import generic_views
-from website.addons.gitlab.api import GitLabClient, ref_to_params
-from website.addons.gitlab.exceptions import NotFoundError, GitLabError
-from website.addons.gitlab.settings import DEFAULT_HOSTS
-from website.addons.gitlab.serializer import GitLabSerializer
-from website.addons.gitlab.utils import (
-    get_refs, check_permissions,
-    verify_hook_signature, MESSAGES
-)
-
-from website.models import NodeLog
+from addons.base import generic_views
+from addons.gitlab.api import GitLabClient
+from addons.gitlab.apps import gitlab_hgrid_data
+from addons.gitlab.exceptions import GitLabError
+from addons.gitlab.settings import DEFAULT_HOSTS
+from addons.gitlab.serializer import GitLabSerializer
+from addons.gitlab.utils import verify_hook_signature, MESSAGES
+from framework.auth.decorators import must_be_logged_in
+from osf.models import ExternalAccount, NodeLog
 from website.project.decorators import (
     must_have_addon, must_be_addon_authorizer,
     must_have_permission, must_not_be_registration,
     must_be_contributor_or_public, must_be_valid_project,
 )
-from website.util import rubeus
-
-from framework.auth.decorators import must_be_logged_in
 from website.util import api_url_for
+
 
 logger = logging.getLogger(__name__)
 
@@ -71,10 +63,6 @@ gitlab_deauthorize_node = generic_views.deauthorize_node(
     SHORT_NAME
 )
 
-gitlab_root_folder = generic_views.root_folder(
-    SHORT_NAME
-)
-
 @must_be_logged_in
 def gitlab_user_config_get(auth, **kwargs):
     """View for getting a JSON representation of the logged-in user's
@@ -101,32 +89,38 @@ def gitlab_user_config_get(auth, **kwargs):
 def gitlab_add_user_account(auth, **kwargs):
     """Verifies new external account credentials and adds to user's list"""
 
-    f = furl()
-    f.host = request.json.get('host').rstrip('/')
-    f.scheme = 'https'
-    clientId = request.json.get('clientId')
-    clientSecret = request.json.get('clientSecret')
+    host = request.json.get('host').rstrip('/')
+    access_token = request.json.get('access_token')
+
+    client = GitLabClient(access_token=access_token, host=host)
+    try:
+        user_info = client.user()
+    except:
+        # TODO: does gitlab even throw errors?
+        raise
+
+    if user_info.get('message') == '401 Unauthorized':
+        raise HTTPError(http.UNAUTHORIZED)
 
     try:
         account = ExternalAccount(
             provider='gitlab',
             provider_name='GitLab',
-            display_name=f.host,       # no username; show host
-            oauth_key=f.host,          # hijacked; now host
-            oauth_secret=clientSecret,   # hijacked; now clientSecret
-            provider_id=clientId,   # hijacked; now clientId
+            display_name=user_info['username'],
+            oauth_key=access_token,
+            oauth_secret=host,  # Hijacked to allow multiple hosts
+            provider_id=user_info['web_url'],   # unique for host/username
         )
         account.save()
-    except KeyExistsException:
+    except ValidationError:
         # ... or get the old one
-        account = ExternalAccount.find_one(
-            Q('provider', 'eq', 'gitlab') &
-            Q('provider_id', 'eq', clientId)
+        account = ExternalAccount.objects.get(
+            provider='gitlab', provider_id=user_info['web_url']
         )
 
     user = auth.user
-    if account not in user.external_accounts:
-        user.external_accounts.append(account)
+    if not user.external_accounts.filter(id=account.id).exists():
+        user.external_accounts.add(account)
 
     user.get_or_add_addon('gitlab', auth=auth)
     user.save()
@@ -222,7 +216,7 @@ def gitlab_set_config(auth, **kwargs):
 @must_have_addon('gitlab', 'node')
 def gitlab_download_starball(node_addon, **kwargs):
 
-    ref = request.args.get('ref', 'master')
+    ref = request.args.get('branch', 'master')
 
     connection = GitLabClient(external_account=node_addon.external_account)
     headers, data = connection.starball(
@@ -252,67 +246,6 @@ def gitlab_root_folder(*args, **kwargs):
     data = request.args.to_dict()
 
     return gitlab_hgrid_data(node_settings, auth=auth, **data)
-
-def gitlab_hgrid_data(node_settings, auth, **kwargs):
-
-    # Quit if no repo linked
-    if not node_settings.complete:
-        return
-
-    connection = GitLabClient(external_account=node_settings.external_account)
-
-    # Initialize repo here in the event that it is set in the privacy check
-    # below. This potentially saves an API call in _check_permissions, below.
-    repo = None
-
-    # Quit if privacy mismatch and not contributor
-    node = node_settings.owner
-    if node.is_public or node.is_contributor(auth.user):
-        try:
-            repo = connection.repo(node_settings.repo_id)
-        except NotFoundError:
-            logger.error('Could not access GitLab repo')
-            return None
-
-    try:
-        branch, sha, branches = get_refs(node_settings, branch=kwargs.get('branch'), sha=kwargs.get('sha'), connection=connection)
-    except (NotFoundError, GitLabError):
-        logger.error('GitLab repo not found')
-        return
-
-    if branch is not None:
-        ref = ref_to_params(branch, sha)
-        can_edit = check_permissions(node_settings, auth, connection, branch, sha, repo=repo)
-    else:
-        ref = None
-        can_edit = False
-
-    permissions = {
-        'edit': can_edit,
-        'view': True,
-        'private': node_settings.is_private
-    }
-    urls = {
-        'upload': node_settings.owner.api_url + 'gitlab/file/' + branch,
-        'fetch': node_settings.owner.api_url + 'gitlab/hgrid/' + branch,
-        'branch': node_settings.owner.api_url + 'gitlab/hgrid/root/' + branch,
-        'zip': 'https://{0}/{1}/repository/archive.zip?ref={2}'.format(node_settings.external_account.display_name, repo['path_with_namespace'], branch),
-        'repo': 'https://{0}/{1}/tree/{2}'.format(node_settings.external_account.display_name, repo['path_with_namespace'], branch)
-    }
-
-    branch_names = [each['name'] for each in branches]
-    if not branch_names:
-        branch_names = [branch]  # if repo un-init-ed then still add default branch to list of branches
-
-    return [rubeus.build_addon_root(
-        node_settings,
-        repo['path_with_namespace'],
-        urls=urls,
-        permissions=permissions,
-        branches=branch_names,
-        private_key=kwargs.get('view_only', None),
-        default_branch=repo['default_branch'],
-    )]
 
 #########
 # Repos #
@@ -367,8 +300,8 @@ def add_hook_log(node, gitlab, action, path, date, committer, include_urls=False
         url = node.web_url_for('addon_view_or_download_file', path=path, provider=SHORT_NAME)
 
         urls = {
-            'view': '{0}?ref={1}'.format(url, sha),
-            'download': '{0}?action=download&ref={1}'.format(url, sha)
+            'view': '{0}?branch={1}'.format(url, sha),
+            'download': '{0}?action=download&branch={1}'.format(url, sha)
         }
 
     node.add_log(

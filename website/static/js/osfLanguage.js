@@ -65,11 +65,12 @@ module.exports = {
                 'This will revoke access to figshare for all projects you have ' +
                 'associated with this account.',
         },
-        // TODO
         github: {
             confirmDeauth: 'Are you sure you want to disconnect the GitHub account? ' +
                 'This will revoke access to GitHub for all projects you have ' +
                 'associated with this account.',
+            userSettingsError: 'Could not retrieve settings. Please refresh the page or ' +
+                'contact ' + SUPPORT_LINK + ' if the problem persists.',
         },
         bitbucket: {
             confirmDeauth: 'Are you sure you want to disconnect the Bitbucket account? ' +

@@ -1,9 +1,7 @@
-from website.addons.base.serializer import StorageAddonSerializer
-
+from addons.base.serializer import StorageAddonSerializer
+from addons.gitlab.api import GitLabClient
+from addons.gitlab.exceptions import GitLabError
 from website.util import api_url_for
-
-from website.addons.gitlab.api import GitLabClient
-from website.addons.gitlab.exceptions import GitLabError
 
 class GitLabSerializer(StorageAddonSerializer):
 
@@ -12,7 +10,7 @@ class GitLabSerializer(StorageAddonSerializer):
     # Include host information with more informative labels / formatting
     def serialize_account(self, external_account):
         ret = super(GitLabSerializer, self).serialize_account(external_account)
-        host = external_account.display_name
+        host = external_account.oauth_secret
         ret.update({
             'host': host,
             'host_url': 'https://{0}'.format(host),
@@ -22,7 +20,7 @@ class GitLabSerializer(StorageAddonSerializer):
 
     def credentials_are_valid(self, user_settings, client):
         if user_settings:
-            client = client or GitLabClient(external_account=user_settings.external_accounts[0])
+            client = client or GitLabClient(external_account=user_settings.external_accounts.first())
             try:
                 client.user()
             except (GitLabError, IndexError):
