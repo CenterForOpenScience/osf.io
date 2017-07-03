@@ -4,7 +4,7 @@ from urllib2 import HTTPError
 import httplib as http
 
 from framework.auth.decorators import must_be_logged_in
-from website.addons.dryad.provider import DryadProvider
+from addons.dryad.provider import DryadProvider
 from website.citations.views import GenericCitationViews
 from website.project.decorators import (
     must_have_addon,

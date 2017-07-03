@@ -1,6 +1,6 @@
 from nose.tools import *  # noqa
 
-from website.addons.dryad.tests.utils import (DryadTestRepository, DryadTestCase)
+from addons.dryad.tests.utils import DryadTestRepository, DryadTestCase
 
 
 class DryadTestUtils(DryadTestCase):

@@ -1,10 +1,12 @@
-from website.addons.dryad.settings import DRYAD_BASE_URL, DRYAD_DOI_PREFIX
-from website.citations.providers import CitationsOauthProvider
-from website.addons.dryad.serializer import DryadSerializer
-import requests
 from furl import furl
-import xml
+import requests
 import re
+import xml
+
+from addons.dryad.settings import DRYAD_BASE_URL, DRYAD_DOI_PREFIX
+from addons.dryad.serializer import DryadSerializer
+from website.citations.providers import CitationsOauthProvider
+
 
 class DryadProvider(CitationsOauthProvider):
     name = 'Dryad'

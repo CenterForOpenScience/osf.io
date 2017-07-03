@@ -1,4 +1,4 @@
-from website.addons.base.serializer import CitationsAddonSerializer
+from addons.base.serializer import CitationsAddonSerializer
 
 class DryadSerializer(CitationsAddonSerializer):
     addon_short_name = 'dryad'

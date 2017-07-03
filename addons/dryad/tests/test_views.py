@@ -2,17 +2,16 @@
 # encoding: utf-8
 import httpretty
 from furl import furl
+import pytest
 
 from nose.tools import assert_true, assert_false, assert_equal
 
+from addons.dryad.settings import DRYAD_BASE_URL
+from addons.dryad.tests.utils import DryadTestCase, dryad_meta_url, response_dict
 from framework.auth import Auth
+from osf_tests.factories import AuthUserFactory, ProjectFactory
 
-from nose.tools import *  # noqa
-
-from website.addons.dryad.settings import DRYAD_BASE_URL
-from website.addons.dryad.tests.utils import (DryadTestCase, AuthUserFactory,
-                                              ProjectFactory, dryad_meta_url,
-                                              response_dict)
+pytestmark = pytest.mark.django_db
 
 
 class TestJSONViews(DryadTestCase):
@@ -27,12 +26,8 @@ class TestJSONViews(DryadTestCase):
         self.user = AuthUserFactory()
         self.project = ProjectFactory(creator=self.user)
         self.project.add_addon('dryad', auth=Auth(self.user))
-        #self.project.creator.add_addon('dryad', auth=Auth(self.user))
         self.user.save()
         self.node_settings = self.project.get_addon('dryad')
-        #self.user_settings = self.project.creator.get_addon('dryad', auth=Auth(self.user))
-        #self.user_settings.save()
-        #self.node_settings.user_settings = self.user_settings
         self.node_settings.save()
 
     @httpretty.activate

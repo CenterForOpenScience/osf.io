@@ -1,19 +1,21 @@
 # -*- coding: utf-8 -*-
-from modularodm import fields
+
+from django.db import models
+
+from addons.base.models import BaseCitationsNodeSettings
+from addons.dryad.provider import DryadProvider
+from addons.dryad.serializer import DryadSerializer
 from website.project.model import validate_doi
-from website.addons.dryad.provider import DryadProvider
-from website.addons.dryad.serializer import DryadSerializer
-from website.citations.models import AddonCitationsNodeSettings
 
 
-class DryadNodeSettings(AddonCitationsNodeSettings):
+class NodeSettings(BaseCitationsNodeSettings):
     """
         A Dryad node is a collection of packages. Each package is specified by a DOI, and the title is saved automatically
     """
     provider_name = 'dryad'
     oauth_provider = DryadProvider
     serializer = DryadSerializer
-    dryad_package_doi = fields.StringField()
+    dryad_package_doi = models.CharField(max_length=128, blank=True, null=True, validators=[validate_doi])
     has_auth = True
     complete = True
 
@@ -27,7 +29,7 @@ class DryadNodeSettings(AddonCitationsNodeSettings):
 
     def delete(self, **kwargs):
         self.dryad_package_doi = None
-        super(DryadNodeSettings, self).delete()
+        super(NodeSettings, self).delete()
 
     @property
     def folder_id(self):

@@ -3,11 +3,11 @@ from json import dumps
 from furl import furl
 
 from tests.base import OsfTestCase
-from tests.factories import ProjectFactory, AuthUserFactory
+from osf_tests.factories import ProjectFactory, AuthUserFactory
 from framework.auth import Auth
 
-from website.addons.dryad.model import DryadProvider
-from website.addons.dryad.settings import DRYAD_BASE_URL
+from addons.dryad.provider import DryadProvider
+from addons.dryad.settings import DRYAD_BASE_URL
 
 dryad_metadata_path = furl(DRYAD_BASE_URL)
 dryad_metadata_path.path.segments = ['mn', 'object', 'doi:10.5061/dryad.1850']

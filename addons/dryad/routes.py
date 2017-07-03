@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 from framework.routing import Rule, json_renderer
-from website.addons.dryad import views
+from addons.dryad import views
 
 # Routes for JSON API
 
