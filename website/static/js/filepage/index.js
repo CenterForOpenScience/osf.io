@@ -136,8 +136,8 @@ var FileViewPage = {
                     '. It needs to be checked in before any changes can be made.'
                 ])));
             }
-        } else if (self.file.provider === 'bitbucket') {
-            self.canEdit = function() { return false; };  // Bitbucket is read-only
+        } else if (self.file.provider === 'bitbucket' || self.file.provider === 'gitlab') {
+            self.canEdit = function() { return false; };  // Bitbucket and GitLab are read-only
         } else {
             self.canEdit = function() {
                 return self.context.currentUser.canEdit;
@@ -168,7 +168,7 @@ var FileViewPage = {
                     {sha: $osf.urlParams().branch}
                 );
             }
-            else if (self.file.provider === 'bitbucket') {
+            else if (self.file.provider === 'bitbucket' || self.file.provider === 'gitlab') {
                 self.file.urls.revisions = waterbutler.buildRevisionsUrl(
                     self.file.path, self.file.provider, self.node.id,
                     {branch: $osf.urlParams().branch}
