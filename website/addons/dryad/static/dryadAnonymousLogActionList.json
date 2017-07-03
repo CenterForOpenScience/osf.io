@@ -1,0 +1,11 @@
+{
+    "dryad_doi_set" : "A user linked a Dryad DOI to a project",
+    "dryad_doi_unset" : "A user unselected a Dryad DOI in a project",
+    "dryad_file_added" : "A user added a file to a Dryad DOI in a project",
+    "dryad_file_removed" : "A user removed a file in a Dryad DOI in a project",
+    "dryad_file_updated" : "A user updated a file in a Dryad DOI in a project",
+    "dryad_folder_created" : "A user created a folder in a Dryad in a project",
+    "dryad_node_authorized" : "A user authorized the Dryad addon for a project",
+    "dryad_node_deauthorized" : "A user deauthorized the Dryad addon for a project",
+    "dryad_node_deauthorized_no_user" : "Dryad addon for a project deauthorized"
+}

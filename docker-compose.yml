@@ -360,12 +360,12 @@ services:
       - osf_admin_bower_components_vol:/code/admin/static/vendor/bower_components
       - osf_admin_node_modules_vol:/code/admin/node_modules
 
-  api:
+  web:
     image: quay.io/centerforopenscience/osf:develop
-    command: invoke apiserver -h 0.0.0.0
+    command: invoke server -h 0.0.0.0
     restart: unless-stopped
     ports:
-      - 8000:8000
+      - 5000:5000
     depends_on:
       - postgres
       - rabbitmq
