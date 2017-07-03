@@ -8,11 +8,13 @@ from flask import request
 from addons.base import generic_views
 from addons.fedora.models import FedoraProvider
 from addons.fedora.serializer import FedoraSerializer
+from addons.fedora.settings import USE_SSL
 from framework.auth.decorators import must_be_logged_in
 from osf.models.external import ExternalAccount
 from website.project.decorators import (
     must_have_addon)
 
+import httplib as http
 import requests
 
 SHORT_NAME = 'fedora'
@@ -43,18 +45,42 @@ def fedora_add_user_account(auth, **kwargs):
         body of the request.
     """
 
-    host = furl(request.json.get('host'))
+    fedora_url = request.json.get('host')
     username = request.json.get('username')
     password = request.json.get('password')
 
+    # If Fedora URL does not start with http:// or https://, add scheme based on settings.
+
+    if not fedora_url.startswith('http://') and not fedora_url.startswith('https://'):
+        fedora_url = ('https://' if USE_SSL else 'http://') + fedora_url
+
+    # Check Fedora URL syntax
+
+    try:
+        furl(fedora_url)
+    except:
+        return {
+            'message': 'Invalid URL.'
+        }, http.BAD_REQUEST
+
     # Check that this is a LDP container by issuing a HEAD request and checking Link header
-    resp = requests.head(host.url)
 
-    if '<http://www.w3.org/ns/ldp#Container>;rel="type"' not in resp.headers['Link']:
-        raise ValidationError(host.url + ' is not a Fedora container.')
+    try:
+        resp = requests.head(fedora_url, auth=(username, password))
+    except:
+        return {
+            'message': 'Unable to access URL.'
+        }, http.BAD_REQUEST
 
+    else:
+        if '<http://www.w3.org/ns/ldp#Container>;rel="type"' not in resp.headers.get('Link', ''):
+            return {
+                'message': 'Fedora login failed.'
+            }, http.UNAUTHORIZED
 
-    provider = FedoraProvider(account=None, host=host.url,
+    # Save the account
+
+    provider = FedoraProvider(account=None, host=fedora_url,
                             username=username, password=password)
 
     try:
@@ -63,7 +89,7 @@ def fedora_add_user_account(auth, **kwargs):
         # ... or get the old one
         provider.account = ExternalAccount.objects.get(
             provider=provider.short_name,
-            provider_id='{}:{}'.format(host.url, username).lower()
+            provider_id='{}:{}'.format(fedora_url, username).lower()
         )
 
     user = auth.user

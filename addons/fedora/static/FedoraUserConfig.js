@@ -101,7 +101,7 @@ var FedoraViewModel = oop.extend(OAuthAddonSettingsViewModel,{
 
         }).fail(function(xhr, textStatus, error) {
             var errorMessage = (xhr.status === 401) ? language.authInvalid : language.authError;
-            self.setMessage(errorMessage, 'text-danger');
+            self.setMessage(errorMessage + ': ' + xhr.responseJSON.message, 'text-danger');
             Raven.captureMessage('Could not authenticate with fedora', {
                 url: self.url,
                 textStatus: textStatus,
