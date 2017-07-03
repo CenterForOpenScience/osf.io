@@ -106,7 +106,7 @@ class JSONAPIFilterSet(django_filters.FilterSet):
         super(JSONAPIFilterSet, self).__init__(data=data, *args, **kwargs)
 
         for field in field_names:
-            if field not in self.form.fields.keys():
+            if field not in self.form.fields:
                 raise InvalidFilterFieldError(parameter='filter', value=field)
 
     @property
