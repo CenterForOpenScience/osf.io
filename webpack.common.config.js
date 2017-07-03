@@ -86,7 +86,12 @@ var entry = {
         'mithril',
         'js/qToggle',
         'js/components/autocomplete',
-    ]
+        // Main CSS files that get loaded above the fold
+        nodePath('bootstrap/dist/css/bootstrap.css'),
+        nodePath('select2/select2.css'),
+        '@centerforopenscience/osf-style',
+        staticPath('css/style.css'),
+    ],
 };
 
 // Collect log text from addons

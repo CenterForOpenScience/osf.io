@@ -689,50 +689,6 @@ class TestProjectViews(OsfTestCase):
         # A log event was saved
         assert_equal(self.project.logs.latest().action, 'edit_title')
 
-    def test_make_public(self):
-        self.project.is_public = False
-        self.project.save()
-        url = "/api/v1/project/{0}/permissions/public/".format(self.project._id)
-        res = self.app.post_json(url, {}, auth=self.auth)
-        self.project.reload()
-        assert_true(self.project.is_public)
-        assert_equal(res.json['status'], 'success')
-
-    def test_make_private(self):
-        self.project.is_public = True
-        self.project.save()
-        url = "/api/v1/project/{0}/permissions/private/".format(self.project._id)
-        res = self.app.post_json(url, {}, auth=self.auth)
-        self.project.reload()
-        assert_false(self.project.is_public)
-        assert_equal(res.json['status'], 'success')
-
-    def test_cant_make_public_if_not_admin(self):
-        non_admin = AuthUserFactory()
-        self.project.add_contributor(non_admin, permissions=['read', 'write'])
-        self.project.is_public = False
-        self.project.save()
-        url = "/api/v1/project/{0}/permissions/public/".format(self.project._id)
-        res = self.app.post_json(
-            url, {}, auth=non_admin.auth,
-            expect_errors=True,
-        )
-        assert_equal(res.status_code, http.FORBIDDEN)
-        assert_false(self.project.is_public)
-
-    def test_cant_make_private_if_not_admin(self):
-        non_admin = AuthUserFactory()
-        self.project.add_contributor(non_admin, permissions=['read', 'write'])
-        self.project.is_public = True
-        self.project.save()
-        url = "/api/v1/project/{0}/permissions/private/".format(self.project._id)
-        res = self.app.post_json(
-            url, {}, auth=non_admin.auth,
-            expect_errors=True,
-        )
-        assert_equal(res.status_code, http.FORBIDDEN)
-        assert_true(self.project.is_public)
-
     def test_add_tag(self):
         url = self.project.api_url_for('project_add_tag')
         self.app.post_json(url, {'tag': "foo'ta#@%#%^&g?"}, auth=self.auth)
@@ -763,14 +719,6 @@ class TestProjectViews(OsfTestCase):
         url = self.project.api_url_for('project_remove_tag')
         res = self.app.delete_json(url, {'tag': 'troz'}, auth=self.auth, expect_errors=True)
         assert_equal(res.status_code, http.CONFLICT)
-
-    def test_remove_project(self):
-        url = self.project.api_url
-        res = self.app.delete_json(url, {}, auth=self.auth).maybe_follow()
-        self.project.reload()
-        assert_equal(self.project.is_deleted, True)
-        assert_in('url', res.json)
-        assert_equal(res.json['url'], '/dashboard/')
 
     def test_suspended_project(self):
         node = NodeFactory(parent=self.project, creator=self.user1)
@@ -891,12 +839,6 @@ class TestProjectViews(OsfTestCase):
         res = self.app.get(url, auth=user.auth)
         assert_in('fork_count', res.json['node'])
         assert_equal(0, res.json['node']['fork_count'])
-
-    def test_statistic_page_redirect(self):
-        url = self.project.web_url_for('project_statistics_redirect')
-        res = self.app.get(url, auth=self.auth)
-        assert_equal(res.status_code, 302)
-        assert_in(self.project.web_url_for('project_statistics', _guid=True), res.location)
 
     def test_registration_retraction_redirect(self):
         url = self.project.web_url_for('node_registration_retraction_redirect')
@@ -2734,6 +2676,106 @@ class TestPointerViews(OsfTestCase):
         assert_in(pointer_project._id, pointer_ids)
         assert_not_in(collection._id, pointer_ids)
 
+    def test_add_pointers(self):
+
+        url = self.project.api_url + 'pointer/'
+        node_ids = [
+            NodeFactory()._id
+            for _ in range(5)
+        ]
+        self.app.post_json(
+            url,
+            {'nodeIds': node_ids},
+            auth=self.user.auth,
+        ).maybe_follow()
+
+        self.project.reload()
+        assert_equal(
+            self.project.nodes_active.count(),
+            5
+        )
+
+    def test_add_the_same_pointer_more_than_once(self):
+        url = self.project.api_url + 'pointer/'
+        double_node = NodeFactory()
+
+        self.app.post_json(
+            url,
+            {'nodeIds': [double_node._id]},
+            auth=self.user.auth,
+        )
+        res = self.app.post_json(
+            url,
+            {'nodeIds': [double_node._id]},
+            auth=self.user.auth,
+            expect_errors=True
+        )
+        assert_equal(res.status_code, 400)
+
+    def test_add_pointers_no_user_logg_in(self):
+
+        url = self.project.api_url_for('add_pointers')
+        node_ids = [
+            NodeFactory()._id
+            for _ in range(5)
+        ]
+        res = self.app.post_json(
+            url,
+            {'nodeIds': node_ids},
+            auth=None,
+            expect_errors=True
+        )
+
+        assert_equal(res.status_code, 401)
+
+    def test_add_pointers_public_non_contributor(self):
+
+        project2 = ProjectFactory()
+        project2.set_privacy('public')
+        project2.save()
+
+        url = self.project.api_url_for('add_pointers')
+
+        self.app.post_json(
+            url,
+            {'nodeIds': [project2._id]},
+            auth=self.user.auth,
+        ).maybe_follow()
+
+        self.project.reload()
+        assert_equal(
+            self.project.nodes_active.count(),
+            1
+        )
+
+    def test_add_pointers_contributor(self):
+        user2 = AuthUserFactory()
+        self.project.add_contributor(user2)
+        self.project.save()
+
+        url = self.project.api_url_for('add_pointers')
+        node_ids = [
+            NodeFactory()._id
+            for _ in range(5)
+        ]
+        self.app.post_json(
+            url,
+            {'nodeIds': node_ids},
+            auth=user2.auth,
+        ).maybe_follow()
+
+        self.project.reload()
+        assert_equal(
+            self.project.linked_nodes.count(),
+            5
+        )
+
+    def test_add_pointers_not_provided(self):
+        url = self.project.api_url + 'pointer/'
+        res = self.app.post_json(url, {}, auth=self.user.auth, expect_errors=True)
+        assert_equal(res.status_code, 400)
+
+
     def test_remove_pointer(self):
         url = self.project.api_url + 'pointer/'
         node = NodeFactory()
@@ -3999,17 +4041,6 @@ class TestFileViews(OsfTestCase):
         self.project = ProjectFactory(creator=self.user, is_public=True)
         self.project.add_contributor(self.user)
         self.project.save()
-
-    def test_files_get(self):
-
-        url = self.project.api_url_for('collect_file_trees')
-        res = self.app.get(url, auth=self.user.auth)
-        expected = _view_project(self.project, auth=Auth(user=self.user))
-
-        assert_equal(res.status_code, http.OK)
-        assert_equal(res.json['node'], expected['node'])
-        assert_in('tree_js', res.json)
-        assert_in('tree_css', res.json)
 
     def test_grid_data(self):
         url = self.project.api_url_for('grid_data')

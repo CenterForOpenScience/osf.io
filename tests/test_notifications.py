@@ -1674,7 +1674,7 @@ class TestSendDigest(OsfTestCase):
             node_lineage=[self.project._id]
         )
         d3.save()
-        user_groups = get_users_emails(send_type)
+        user_groups = list(get_users_emails(send_type))
         expected = [
             {
                 u'user_id': self.user_1._id,
@@ -1683,8 +1683,8 @@ class TestSendDigest(OsfTestCase):
                     u'node_lineage': [unicode(self.project._id)],
                     u'_id': d._id
                 }]
-                },
-                {
+            },
+            {
                 u'user_id': self.user_2._id,
                 u'info': [{
                     u'message': u'Hello',
@@ -1726,7 +1726,7 @@ class TestSendDigest(OsfTestCase):
             node_lineage=[self.project._id]
         )
         d3.save()
-        user_groups = get_users_emails(send_type)
+        user_groups = list(get_users_emails(send_type))
         expected = [
             {
                 u'user_id': unicode(self.user_1._id),
@@ -1762,14 +1762,13 @@ class TestSendDigest(OsfTestCase):
             node_lineage=[factories.ProjectFactory()._id]
         )
         d.save()
-        user_groups = get_users_emails(send_type)
+        user_groups = list(get_users_emails(send_type))
         send_users_email(send_type)
         assert_true(mock_send_mail.called)
         assert_equals(mock_send_mail.call_count, len(user_groups))
 
         last_user_index = len(user_groups) - 1
         user = OSFUser.load(user_groups[last_user_index]['user_id'])
-        email_notification_ids = [message['_id'] for message in user_groups[last_user_index]['info']]
 
         args, kwargs = mock_send_mail.call_args
 
@@ -1779,7 +1778,6 @@ class TestSendDigest(OsfTestCase):
         assert_equal(kwargs['name'], user.fullname)
         message = group_by_node(user_groups[last_user_index]['info'])
         assert_equal(kwargs['message'], message)
-        assert_equal(kwargs['callback'], remove_notifications(email_notification_ids=email_notification_ids))
 
     def test_remove_sent_digest_notifications(self):
         d = factories.NotificationDigestFactory(
