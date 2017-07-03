@@ -75,6 +75,10 @@ module.exports = {
             confirmDeauth: 'Are you sure you want to disconnect the Bitbucket account? ' +
                 'This will revoke access to Bitbucket for all projects you have ' +
                 'associated with this account.',
+        gitlab: {
+            confirmDeauth: 'Are you sure you want to disconnect the GitLab account? ' +
+                'This will revoke access to GitLab for all projects you have ' +
+                'associated with this account.',
         },
         s3:{
             authError: 'Could not connect to Amazon S3 at this time. Please try again later.',
