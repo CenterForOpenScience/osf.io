@@ -179,7 +179,7 @@ def check_can_access(node, user, key=None, api_node=None):
     if not node.can_view(Auth(user=user)) and api_node != node:
         if key in node.private_link_keys_deleted:
             status.push_status_message('The view-only links you used are expired.', trust=False)
-        elif node.embargo and node.embargo_end_date is not False:
+        elif node.embargo and not node.is_pending_embargo:
             raise HTTPError(
                 http.FORBIDDEN,
                 data={
