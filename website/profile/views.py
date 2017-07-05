@@ -10,7 +10,7 @@ import markupsafe
 import mailchimp
 from modularodm.exceptions import ValidationError, NoResultsFound, MultipleResultsFound
 from modularodm import Q
-from osf.models import Node, NodeRelation
+from osf.models import Node, NodeRelation, OSFUser as User
 
 from framework import sentry
 from framework.auth import Auth
@@ -25,17 +25,16 @@ from framework.exceptions import HTTPError, PermissionsError
 from framework.flask import redirect  # VOL-aware redirect
 from framework.status import push_status_message
 
+from osf.models import ApiOAuth2Application, ApiOAuth2PersonalToken
 from website import mails
 from website import mailchimp_utils
 from website import settings
 from website.project.utils import PROJECT_QUERY
-from website.models import ApiOAuth2Application, ApiOAuth2PersonalToken, User
 from website.oauth.utils import get_available_scopes
 from website.profile import utils as profile_utils
 from website.util.time import throttle_period_expired
 from website.util import api_v2_url, web_url_for, paths
 from website.util.sanitize import escape_html
-from website.util.sanitize import strip_html
 from website.views import serialize_node_summary
 from addons.base import utils as addon_utils
 
@@ -91,15 +90,6 @@ def get_public_components(uid=None, user=None):
         serialize_node_summary(node=node, auth=Auth(user), show_path=True)
         for node in nodes
     ]
-
-@must_be_logged_in
-def current_user_gravatar(size=None, **kwargs):
-    user_id = kwargs['auth'].user._id
-    return get_gravatar(user_id, size=size)
-
-
-def get_gravatar(uid, size=None):
-    return {'gravatar_url': profile_utils.get_gravatar(User.load(uid), size=size)}
 
 
 def date_or_none(date):
@@ -175,7 +165,7 @@ def update_user(auth):
 
         available_emails = [
             each.strip().lower() for each in
-            user.emails + user.unconfirmed_emails
+            list(user.emails.values_list('address', flat=True)) + user.unconfirmed_emails
         ]
         # removals
         removed_emails = [
@@ -188,7 +178,7 @@ def update_user(auth):
             raise HTTPError(httplib.FORBIDDEN)
 
         for address in removed_emails:
-            if address in user.emails:
+            if user.emails.filter(address=address):
                 try:
                     user.remove_email(address)
                 except PermissionsError as e:
@@ -231,12 +221,12 @@ def update_user(auth):
 
         if primary_email:
             primary_email_address = primary_email['address'].strip().lower()
-            if primary_email_address not in [each.strip().lower() for each in user.emails]:
+            if primary_email_address not in [each.strip().lower() for each in user.emails.values_list('address', flat=True)]:
                 raise HTTPError(httplib.FORBIDDEN)
             username = primary_email_address
 
         # make sure the new username has already been confirmed
-        if username and username in user.emails and username != user.username:
+        if username and username != user.username and user.emails.filter(address=username).exists():
             mails.send_mail(user.username,
                             mails.PRIMARY_EMAIL_CHANGED,
                             user=user,
@@ -273,7 +263,7 @@ def update_user(auth):
     return _profile_view(user, is_profile=True)
 
 
-def _profile_view(profile, is_profile=False, embed_nodes=False):
+def _profile_view(profile, is_profile=False, embed_nodes=False, include_node_counts=False):
     if profile and profile.is_disabled:
         raise HTTPError(http.GONE)
     # NOTE: While badges, are unused, 'assertions' and 'badges' can be
@@ -282,7 +272,7 @@ def _profile_view(profile, is_profile=False, embed_nodes=False):
     badges = []
 
     if profile:
-        profile_user_data = profile_utils.serialize_user(profile, full=True, is_profile=is_profile, include_node_counts=embed_nodes)
+        profile_user_data = profile_utils.serialize_user(profile, full=True, is_profile=is_profile, include_node_counts=include_node_counts)
         ret = {
             'profile': profile_user_data,
             'assertions': badge_assertions,
@@ -319,7 +309,7 @@ def profile_view_id_json(uid, auth):
 @must_be_logged_in
 def profile_view(auth):
     # Embed node data, so profile node lists can be rendered
-    return _profile_view(auth.user, True, embed_nodes=True)
+    return _profile_view(auth.user, True, embed_nodes=False, include_node_counts=True)
 
 @collect_auth
 @must_be_confirmed
@@ -327,29 +317,7 @@ def profile_view_id(uid, auth):
     user = User.load(uid)
     is_profile = auth and auth.user == user
     # Embed node data, so profile node lists can be rendered
-    return _profile_view(user, is_profile, embed_nodes=True)
-
-
-@must_be_logged_in
-def edit_profile(**kwargs):
-    # NOTE: This method is deprecated. Use update_user instead.
-    # TODO: Remove this view
-    user = kwargs['auth'].user
-
-    form = request.form
-
-    ret = {'response': 'success'}
-    if form.get('name') == 'fullname' and form.get('value', '').strip():
-        user.fullname = strip_html(form['value']).strip()
-        user.save()
-        ret['name'] = user.fullname
-    return ret
-
-
-def get_profile_summary(user_id, formatter='long'):
-
-    user = User.load(user_id)
-    return user.get_summary(formatter)
+    return _profile_view(user, is_profile, embed_nodes=False, include_node_counts=True)
 
 
 @must_be_logged_in

@@ -6,10 +6,10 @@ from api.base.serializers import (
     JSONAPISerializer, IDField, RelationshipField,
     JSONAPIRelationshipSerializer, LinksField, relationship_diff,
     DateByVersion,
-    PrefetchRelationshipsSerializer)
+    BaseAPISerializer)
 from api.base.utils import absolute_reverse
 
-from website.project.model import Node
+from osf.models import AbstractNode as Node
 
 
 class ViewOnlyLinkDetailSerializer(JSONAPISerializer):
@@ -51,7 +51,7 @@ class VOLNode(JSONAPIRelationshipSerializer):
         type_ = 'nodes'
 
 
-class ViewOnlyLinkNodesSerializer(PrefetchRelationshipsSerializer):
+class ViewOnlyLinkNodesSerializer(BaseAPISerializer):
     data = ser.ListField(child=VOLNode())
     links = LinksField({
         'self': 'get_self_url',

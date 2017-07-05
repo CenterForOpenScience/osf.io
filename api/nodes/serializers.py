@@ -9,7 +9,7 @@ from api.base.serializers import (DateByVersion, HideIfRegistration, IDField,
                                   JSONAPISerializer, LinksField,
                                   NodeFileHyperLinkField, RelationshipField,
                                   ShowIfVersion, TargetTypeField, TypeField,
-                                  WaterbutlerLink, relationship_diff, PrefetchRelationshipsSerializer)
+                                  WaterbutlerLink, relationship_diff, BaseAPISerializer)
 from api.base.settings import ADDONS_FOLDER_CONFIGURABLE
 from api.base.utils import (absolute_reverse, get_object_or_error,
                             get_user_auth, is_truthy)
@@ -23,14 +23,13 @@ from rest_framework import serializers as ser
 from rest_framework import exceptions
 from addons.base.exceptions import InvalidAuthError, InvalidFolderError
 from website.exceptions import NodeStateError
-from website.models import (Comment, DraftRegistration, Institution,
-                            MetaSchema, Node, PrivateLink)
-from website.oauth.models import ExternalAccount
-from website.preprints.model import PreprintService
+from osf.models import (Comment, DraftRegistration, Institution,
+                        MetaSchema, AbstractNode as Node, PrivateLink)
+from osf.models.external import ExternalAccount
+from osf.models.licenses import NodeLicense
+from osf.models.preprint_service import PreprintService
 from website.project import new_private_link
-from website.project.licenses import NodeLicense
-from website.project.metadata.schemas import (ACTIVE_META_SCHEMAS,
-                                              LATEST_SCHEMA_VERSION)
+from website.project.metadata.schemas import LATEST_SCHEMA_VERSION
 from website.project.metadata.utils import is_prereg_admin_not_project_admin
 from website.project.model import NodeUpdateError
 from website.util import permissions as osf_permissions
@@ -46,11 +45,13 @@ class NodeTagField(ser.Field):
         return data
 
 
-class NodeLicenseSerializer(PrefetchRelationshipsSerializer):
+class NodeLicenseSerializer(BaseAPISerializer):
 
     copyright_holders = ser.ListField(allow_empty=True)
     year = ser.CharField(allow_blank=True)
 
+    class Meta:
+        type_ = 'node_licenses'
 
 class NodeLicenseRelationshipField(RelationshipField):
 
@@ -322,7 +323,7 @@ class NodeSerializer(JSONAPISerializer):
 
     def get_current_user_permissions(self, obj):
         user = self.context['request'].user
-        if user.is_anonymous():
+        if user.is_anonymous:
             return ['read']
         permissions = obj.get_permissions(user=user)
         if not permissions:
@@ -331,7 +332,7 @@ class NodeSerializer(JSONAPISerializer):
 
     def get_current_user_can_comment(self, obj):
         user = self.context['request'].user
-        auth = Auth(user if not user.is_anonymous() else None)
+        auth = Auth(user if not user.is_anonymous else None)
         return obj.can_comment(auth)
 
     class Meta:
@@ -956,7 +957,7 @@ class NodeProviderSerializer(JSONAPISerializer):
     provider = ser.CharField(read_only=True)
     files = NodeFileHyperLinkField(
         related_view='nodes:node-files',
-        related_view_kwargs={'node_id': '<node_id>', 'path': '<path>', 'provider': '<provider>'},
+        related_view_kwargs={'node_id': '<node._id>', 'path': '<path>', 'provider': '<provider>'},
         kind='folder',
         never_embed=True
     )
@@ -999,7 +1000,7 @@ class InstitutionRelated(JSONAPIRelationshipSerializer):
     class Meta:
         type_ = 'institutions'
 
-class NodeInstitutionsRelationshipSerializer(PrefetchRelationshipsSerializer):
+class NodeInstitutionsRelationshipSerializer(BaseAPISerializer):
     data = ser.ListField(child=InstitutionRelated())
     links = LinksField({'self': 'get_self_url',
                         'html': 'get_related_url'})
@@ -1165,7 +1166,7 @@ class DraftRegistrationSerializer(JSONAPISerializer):
 
         schema_id = validated_data.pop('registration_schema').get('_id')
         schema = get_object_or_error(MetaSchema, schema_id)
-        if schema.schema_version != LATEST_SCHEMA_VERSION or schema.name not in ACTIVE_META_SCHEMAS:
+        if schema.schema_version != LATEST_SCHEMA_VERSION or not schema.active:
             raise exceptions.ValidationError('Registration supplement must be an active schema.')
 
         draft = DraftRegistration.create_from_node(node=node, user=initiator, schema=schema)

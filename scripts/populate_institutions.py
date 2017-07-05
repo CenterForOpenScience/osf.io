@@ -13,7 +13,7 @@ django.setup()
 
 from website import settings
 from website.app import init_app
-from website.models import Institution, Node
+from osf.models import Institution, Node
 from website.search.search import update_institution, update_node
 
 logger = logging.getLogger(__name__)
@@ -50,6 +50,18 @@ def main(env):
 
     if env == 'prod':
         INSTITUTIONS = [
+            {
+                '_id': 'brown',
+                'name': 'Brown University',
+                'description': 'A Research Project Management and Publication Tool for the Brown University Research Community in partnership with <a href="https://library.brown.edu/info/data_management">Brown University Library Research Data Management Services</a> | <a href="https://www.brown.edu/research/home">Research at Brown</a> | <a href="https://it.brown.edu/computing-policies/policy-handling-brown-restricted-information">Brown Restricted Information Handling Policy</a> | <a href="https://www.brown.edu/about/administration/provost/policies/privacy">Research Privacy Policy</a>',
+                'banner_name': 'brown-banner.png',
+                'logo_name': 'brown-shield.png',
+                'login_url': SHIBBOLETH_SP_LOGIN.format(encode_uri_component('https://sso.brown.edu/idp/shibboleth')),
+                'logout_url': SHIBBOLETH_SP_LOGOUT.format(encode_uri_component('https://osf.io/goodbye')),
+                'domains': ['osf.brown.edu'],
+                'email_domains': [],
+                'delegation_protocol': 'saml-shib',
+            },
             {
                 '_id': 'bu',
                 'name': 'Boston University',
@@ -123,6 +135,18 @@ def main(env):
                 'delegation_protocol': '',
             },
             {
+                '_id': 'fsu',
+                'name': 'Florida State University',
+                'description': 'This service is supported by the <a href="https://www.lib.fsu.edu/">FSU Libraries</a> for our research community. Do not use this service to store or transfer personally identifiable information (PII), personal health information (PHI), or any other controlled unclassified information (CUI). FSU\'s <a href="http://regulations.fsu.edu/sites/g/files/upcbnu486/files/policies/research/FSU%20Policy%207A-26.pdf">Research Data Management Policy</a> applies. For assistance please contact the FSU Libraries <a href="mailto:lib-datamgmt@fsu.edu">Research Data Management Program</a>.',
+                'banner_name': 'fsu-banner.png',
+                'logo_name': 'fsu-shield.png',
+                'login_url': SHIBBOLETH_SP_LOGIN.format(encode_uri_component('https://shib.its.fsu.edu/idp/shibboleth')),
+                'logout_url': SHIBBOLETH_SP_LOGOUT.format(encode_uri_component('https://osf.io/goodbye')),
+                'domains': ['osf.fsu.edu'],
+                'email_domains': [],
+                'delegation_protocol': 'saml-shib',
+            },
+            {
                 '_id': 'jhu',
                 'name': 'Johns Hopkins University',
                 'description': 'A research data service provided by the <a href="https://www.library.jhu.edu/">Sheridan Libraries</a>.',
@@ -131,6 +155,18 @@ def main(env):
                 'login_url': SHIBBOLETH_SP_LOGIN.format(encode_uri_component('urn:mace:incommon:johnshopkins.edu')),
                 'logout_url': SHIBBOLETH_SP_LOGOUT.format(encode_uri_component('https://osf.io/goodbye')),
                 'domains': ['osf.data.jhu.edu'],
+                'email_domains': [],
+                'delegation_protocol': 'saml-shib',
+            },
+            {
+                '_id': 'jmu',
+                'name': 'James Madison University',
+                'description': 'This service is supported on campus by the Office of Research and Scholarship, Central IT, and Libraries and Educational Technology for the JMU campus community. Do not use this service to store or transfer personally identifiable information, personal health information, or any other controlled unclassified information. For assistance please contact the Library\'s Data Services Coordinator at <a href="mailto:shorisyl@jmu.edu">shorisyl@jmu.edu</a>.',
+                'banner_name': 'jmu-banner.png',
+                'logo_name': 'jmu-shield.png',
+                'login_url': SHIBBOLETH_SP_LOGIN.format(encode_uri_component('urn:mace:incommon:jmu.edu')),
+                'logout_url': SHIBBOLETH_SP_LOGOUT.format(encode_uri_component('https://osf.io/goodbye')),
+                'domains': ['osf.jmu.edu'],
                 'email_domains': [],
                 'delegation_protocol': 'saml-shib',
             },
@@ -209,7 +245,7 @@ def main(env):
             {
                 '_id': 'uc',
                 'name': 'University of Cincinnati',
-                'description': 'In partnership with the <a href="https://research.uc.edu/home/officeofresearch/administrativeoffices.aspx">Office of Research</a>, <a href="https://www.libraries.uc.edu/">UC Libraries</a> and <a href="https://www.uc.edu/ucit.html">IT&#64;UC</a>. Projects must abide by the University Security and Data Protection Policies depending on approval from OoR. Learn more by visiting <a href="https://libraries.uc.edu/digital-scholarship/data-services.html">Research Data & GIS services</a>.',
+                'description': 'In partnership with the <a href="https://research.uc.edu/home/officeofresearch/administrativeoffices.aspx">Office of Research</a>, <a href="https://www.libraries.uc.edu/">UC Libraries</a> and <a href="https://www.uc.edu/ucit.html">IT&#64;UC</a>. Projects must abide by <a href="http://www.uc.edu/infosec/policies.html">Security (9.1.27) and Data Protection (9.1.1) Policies.</a> Learn more by visiting <a href="https://libraries.uc.edu/digital-scholarship/data-services.html">Research Data & GIS services</a>.',
                 'banner_name': 'uc-banner.png',
                 'logo_name': 'uc-shield.png',
                 'login_url': SHIBBOLETH_SP_LOGIN.format(encode_uri_component('https://login.uc.edu/idp/shibboleth')),
@@ -217,7 +253,18 @@ def main(env):
                 'domains': ['osf.uc.edu'],
                 'email_domains': [],
                 'delegation_protocol': 'saml-shib',
-
+            },
+            {
+                '_id': 'ucla',
+                'name': 'UCLA',
+                'description': 'A research data service provided by the <a href="https://www.library.ucla.edu/">UCLA Library</a>. Please do not use this service to store or transfer personally identifiable information, personal health information, or any other controlled unclassified information. For assistance please contact <a href="mailto:data@library.ucla.edu">data@library.ucla.edu</a>.',
+                'banner_name': 'ucla-banner.png',
+                'logo_name': 'ucla-shield.png',
+                'login_url': SHIBBOLETH_SP_LOGIN.format(encode_uri_component('urn:mace:incommon:ucla.edu')),
+                'logout_url': SHIBBOLETH_SP_LOGOUT.format(encode_uri_component('https://osf.io/goodbye')),
+                'domains': ['osf.ucla.edu'],
+                'email_domains': [],
+                'delegation_protocol': 'saml-shib',
             },
             {
                 '_id': 'ucsd',
@@ -249,7 +296,7 @@ def main(env):
                 'description': '<a href="http://www.lib.uct.ac.za/">UCT Libraries</a>, <a href="http://www.eresearch.uct.ac.za/">UCT eResearch</a> &amp; <a href="http://www.icts.uct.ac.za/">ICTS</a> present the UCT OSF institutional service to UCT affiliated students, staff and researchers. The UCT OSF facility should be used in conjunction with the institution\'s <a href="http://www.digitalservices.lib.uct.ac.za/dls/rdm-policy">Research Data Management (RDM) Policy</a>, <a href="https://www.uct.ac.za/downloads/uct.ac.za/about/policies/UCTOpenAccessPolicy.pdf">Open Access Policy</a> and <a href="https://www.uct.ac.za/downloads/uct.ac.za/about/policies/UCTOpenAccessPolicy.pdf">IP Policy</a>. Visit the <a href="http://www.digitalservices.lib.uct.ac.za/">UCT Digital Library Services</a> for more information and/or assistance with <a href="http://www.digitalservices.lib.uct.ac.za/dls/rdm">RDM</a> and <a href="http://www.digitalservices.lib.uct.ac.za/dls/data-sharing-guidelines">data sharing</a>. We also encourage the use of UCT Libraries\'s Data Management Planning tool, <a href="http://dmp.lib.uct.ac.za/about_us">DMPonline</a>',
                 'banner_name': 'uct-banner.png',
                 'logo_name': 'uct-shield.png',
-                'login_url': SHIBBOLETH_SP_LOGIN.format(encode_uri_component('http://adfs.uct.ac.za/adfs/services/trust')),
+                'login_url': SHIBBOLETH_SP_LOGIN.format(encode_uri_component('http://sso.uct.ac.za/adfs/services/trust')),
                 'logout_url': SHIBBOLETH_SP_LOGOUT.format(encode_uri_component('https://osf.io/goodbye')),
                 'domains': ['osf.uct.ac.za'],
                 'email_domains': [],
@@ -396,6 +443,18 @@ def main(env):
     elif env == 'test':
         INSTITUTIONS = [
             {
+                '_id': 'brown',
+                'name': 'Brown University [Test]',
+                'description': 'A Research Project Management and Publication Tool for the Brown University Research Community in partnership with <a href="https://library.brown.edu/info/data_management">Brown University Library Research Data Management Services</a> | <a href="https://www.brown.edu/research/home">Research at Brown</a> | <a href="https://it.brown.edu/computing-policies/policy-handling-brown-restricted-information">Brown Restricted Information Handling Policy</a> | <a href="https://www.brown.edu/about/administration/provost/policies/privacy">Research Privacy Policy</a>',
+                'banner_name': 'brown-banner.png',
+                'logo_name': 'brown-shield.png',
+                'login_url': SHIBBOLETH_SP_LOGIN.format(encode_uri_component('https://sso.brown.edu/idp/shibboleth')),
+                'logout_url': SHIBBOLETH_SP_LOGOUT.format(encode_uri_component('https://test.osf.io/goodbye')),
+                'domains': ['test-osf.brown.edu'],
+                'email_domains': [],
+                'delegation_protocol': 'saml-shib',
+            },
+            {
                 '_id': 'bu',
                 'name': 'Boston University [Test]',
                 'description': 'A Research Project Management Tool for BU',
@@ -403,7 +462,7 @@ def main(env):
                 'logo_name': 'bu-shield.png',
                 'login_url': SHIBBOLETH_SP_LOGIN.format(encode_uri_component('https://shib.bu.edu/idp/shibboleth')),
                 'logout_url': SHIBBOLETH_SP_LOGOUT.format(encode_uri_component('https://test.osf.io/goodbye')),
-                'domains': ['osf.bu.edu'],
+                'domains': ['test-osf.bu.edu'],
                 'email_domains': [],
                 'delegation_protocol': 'saml-shib',
             },
@@ -468,6 +527,18 @@ def main(env):
                 'delegation_protocol': '',
             },
             {
+                '_id': 'fsu',
+                'name': 'Florida State University [Test]',
+                'description': 'This service is supported by the <a href="https://www.lib.fsu.edu/">FSU Libraries</a> for our research community. Do not use this service to store or transfer personally identifiable information (PII), personal health information (PHI), or any other controlled unclassified information (CUI). FSU\'s <a href="http://regulations.fsu.edu/sites/g/files/upcbnu486/files/policies/research/FSU%20Policy%207A-26.pdf">Research Data Management Policy</a> applies. For assistance please contact the FSU Libraries <a href="mailto:lib-datamgmt@fsu.edu">Research Data Management Program</a>.',
+                'banner_name': 'fsu-banner.png',
+                'logo_name': 'fsu-shield.png',
+                'login_url': SHIBBOLETH_SP_LOGIN.format(encode_uri_component('https://shib.its.fsu.edu/idp/shibboleth')),
+                'logout_url': SHIBBOLETH_SP_LOGOUT.format(encode_uri_component('https://test.osf.io/goodbye')),
+                'domains': ['test-osf.fsu.edu'],
+                'email_domains': [],
+                'delegation_protocol': 'saml-shib',
+            },
+            {
                 '_id': 'jhu',
                 'name': 'Johns Hopkins University [Test]',
                 'description': 'A research data service provided by the <a href="https://www.library.jhu.edu/">Sheridan Libraries</a>.',
@@ -475,7 +546,19 @@ def main(env):
                 'logo_name': 'jhu-shield.png',
                 'login_url': SHIBBOLETH_SP_LOGIN.format(encode_uri_component('urn:mace:incommon:johnshopkins.edu')),
                 'logout_url': SHIBBOLETH_SP_LOGOUT.format(encode_uri_component('https://test.osf.io/goodbye')),
-                'domains': ['osf.data.jhu.edu'],
+                'domains': ['test-osf.data.jhu.edu'],
+                'email_domains': [],
+                'delegation_protocol': 'saml-shib',
+            },
+            {
+                '_id': 'jmu',
+                'name': 'James Madison University [Test]',
+                'description': 'This service is supported on campus by the Office of Research and Scholarship, Central IT, and Libraries and Educational Technology for the JMU campus community. Do not use this service to store or transfer personally identifiable information, personal health information, or any other controlled unclassified information. For assistance please contact the Library\'s Data Services Coordinator at <a href="mailto:shorisyl@jmu.edu">shorisyl@jmu.edu</a>.',
+                'banner_name': 'jmu-banner.png',
+                'logo_name': 'jmu-shield.png',
+                'login_url': SHIBBOLETH_SP_LOGIN.format(encode_uri_component('urn:mace:incommon:jmu.edu')),
+                'logout_url': SHIBBOLETH_SP_LOGOUT.format(encode_uri_component('https://test.osf.io/goodbye')),
+                'domains': ['test-osf.jmu.edu'],
                 'email_domains': [],
                 'delegation_protocol': 'saml-shib',
             },
@@ -554,12 +637,24 @@ def main(env):
             {
                 '_id': 'uc',
                 'name': 'University of Cincinnati [Test]',
-                'description': 'In partnership with the <a href="https://research.uc.edu/home/officeofresearch/administrativeoffices.aspx">Office of Research</a>, <a href="https://www.libraries.uc.edu/">UC Libraries</a> and <a href="https://www.uc.edu/ucit.html">IT&#64;UC</a>. Projects must abide by the University Security and Data Protection Policies depending on approval from OoR. Learn more by visiting <a href="https://libraries.uc.edu/digital-scholarship/data-services.html">Research Data & GIS services</a>.',
+                'description': 'In partnership with the <a href="https://research.uc.edu/home/officeofresearch/administrativeoffices.aspx">Office of Research</a>, <a href="https://www.libraries.uc.edu/">UC Libraries</a> and <a href="https://www.uc.edu/ucit.html">IT&#64;UC</a>. Projects must abide by <a href="http://www.uc.edu/infosec/policies.html">Security (9.1.27) and Data Protection (9.1.1) Policies.</a> Learn more by visiting <a href="https://libraries.uc.edu/digital-scholarship/data-services.html">Research Data & GIS services</a>.',
                 'banner_name': 'uc-banner.png',
                 'logo_name': 'uc-shield.png',
                 'login_url': SHIBBOLETH_SP_LOGIN.format(encode_uri_component('https://login.uc.edu/idp/shibboleth')),
                 'logout_url': SHIBBOLETH_SP_LOGOUT.format(encode_uri_component('https://test.osf.io/goodbye')),
-                'domains': ['osf.uc.edu'],
+                'domains': ['test-osf.uc.edu'],
+                'email_domains': [],
+                'delegation_protocol': 'saml-shib',
+            },
+            {
+                '_id': 'ucla',
+                'name': 'UCLA [Test]',
+                'description': 'A research data service provided by the <a href="https://www.library.ucla.edu/">UCLA Library</a>. Please do not use this service to store or transfer personally identifiable information, personal health information, or any other controlled unclassified information. For assistance please contact <a href="mailto:data@library.ucla.edu">data@library.ucla.edu</a>.',
+                'banner_name': 'ucla-banner.png',
+                'logo_name': 'ucla-shield.png',
+                'login_url': SHIBBOLETH_SP_LOGIN.format(encode_uri_component('urn:mace:incommon:ucla.edu')),
+                'logout_url': SHIBBOLETH_SP_LOGOUT.format(encode_uri_component('https://test.osf.io/goodbye')),
+                'domains': ['test-osf.ucla.edu'],
                 'email_domains': [],
                 'delegation_protocol': 'saml-shib',
             },
@@ -593,16 +688,16 @@ def main(env):
                 'description': '<a href="http://www.lib.uct.ac.za/">UCT Libraries</a>, <a href="http://www.eresearch.uct.ac.za/">UCT eResearch</a> &amp; <a href="http://www.icts.uct.ac.za/">ICTS</a> present the UCT OSF institutional service to UCT affiliated students, staff and researchers. The UCT OSF facility should be used in conjunction with the institution\'s <a href="http://www.digitalservices.lib.uct.ac.za/dls/rdm-policy">Research Data Management (RDM) Policy</a>, <a href="https://www.uct.ac.za/downloads/uct.ac.za/about/policies/UCTOpenAccessPolicy.pdf">Open Access Policy</a> and <a href="https://www.uct.ac.za/downloads/uct.ac.za/about/policies/UCTOpenAccessPolicy.pdf">IP Policy</a>. Visit the <a href="http://www.digitalservices.lib.uct.ac.za/">UCT Digital Library Services</a> for more information and/or assistance with <a href="http://www.digitalservices.lib.uct.ac.za/dls/rdm">RDM</a> and <a href="http://www.digitalservices.lib.uct.ac.za/dls/data-sharing-guidelines">data sharing</a>. We also encourage the use of UCT Libraries\'s Data Management Planning tool, <a href="http://dmp.lib.uct.ac.za/about_us">DMPonline</a>',
                 'banner_name': 'uct-banner.png',
                 'logo_name': 'uct-shield.png',
-                'login_url': SHIBBOLETH_SP_LOGIN.format(encode_uri_component('http://adfs.uct.ac.za/adfs/services/trust')),
+                'login_url': SHIBBOLETH_SP_LOGIN.format(encode_uri_component('http://sso.uct.ac.za/adfs/services/trust')),
                 'logout_url': SHIBBOLETH_SP_LOGOUT.format(encode_uri_component('https://test.osf.io/goodbye')),
-                'domains': ['osf.uct.ac.za'],
+                'domains': ['test-osf.uct.ac.za'],
                 'email_domains': [],
                 'delegation_protocol': 'saml-shib',
             },
             {
                 '_id': 'ugent',
                 'name': 'Universiteit Gent [Test]',
-                'description': 'Universiteit Gent [Test]',
+                'description': None,
                 'banner_name': 'ugent-banner.png',
                 'logo_name': 'ugent-shield.png',
                 'login_url': SHIBBOLETH_SP_LOGIN.format(encode_uri_component('https://identity.ugent.be/simplesaml/saml2/idp/metadata.php')),
@@ -645,6 +740,7 @@ def main(env):
                 'logout_url': SHIBBOLETH_SP_LOGOUT.format(encode_uri_component('https://test.osf.io/goodbye')),
                 'domains': [],
                 'email_domains': [],
+                'delegation_protocol': 'saml-shib',
             },
             {
                 '_id': 'vcu',

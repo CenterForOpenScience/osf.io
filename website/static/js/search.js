@@ -156,7 +156,7 @@ var ViewModel = function(params) {
         if(self.shareCategory()){
             return self.categories().concat(self.shareCategory());
         }
-        return self.categories().concat(new Category('SHARE', 0, 'SHARE'));
+        return self.categories();
     });
 
     self.totalCount = ko.pureComputed(function() {
@@ -280,6 +280,7 @@ var ViewModel = function(params) {
 
     self.filter = function(alias) {
         self.searchStarted(false);
+        self.results([]);
         self.currentPage(1);
         self.category(alias);
         if (alias.name === 'SHARE') {
@@ -340,6 +341,8 @@ var ViewModel = function(params) {
     };
 
     self.search = function(noPush, validate) {
+
+        self.searching(true);
 
         // Check for NOTs and ANDs put spaces before the ones that don't have spaces
         var query = self.query().replace(/\s?NOT tags:/g, ' NOT tags:');
@@ -459,8 +462,12 @@ var ViewModel = function(params) {
             }
 
             $osf.postJSON(window.contextVars.shareUrl + 'api/v2/search/creativeworks/_count', shareQuery).success(function(data) {
-                self.shareCategory(new Category('SHARE', data.count, 'SHARE'));
+                if(data.count > 0) {
+                    self.shareCategory(new Category('SHARE', data.count, 'SHARE'));
+                }
             });
+
+            self.searching(false);
 
         }).fail(function(response){
             self.totalResults(0);
@@ -469,6 +476,7 @@ var ViewModel = function(params) {
             self.tags([]);
             self.categories([]);
             self.searchStarted(false);
+            self.searching(false);
             $osf.handleJSONError(response);
         });
 

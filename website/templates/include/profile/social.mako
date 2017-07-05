@@ -84,7 +84,7 @@
             <div class="form-group">
                 <label>ImpactStory</label>
                 <div class="input-group">
-                <span class="input-group-addon">https://impactstory.org/</span>
+                <span class="input-group-addon">https://impactstory.org/u/</span>
                 <input class="form-control" data-bind="value: impactStory" placeholder="profileID"/>
                 </div>
             </div>

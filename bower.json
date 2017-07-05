@@ -3,8 +3,7 @@
   "dependencies": {
     "jquery": "^1.11.2",
     "jquery-ui": "~1.10.4",
-    "bootstrap": "^3.3.0",
-    "select2": "3.5.1",
+    "bootstrap": "^3.3.7",
     "ace-builds": "1.1.8",
     "bootstrap.growl": "2.0.0",
     "MathJax": "2.6",

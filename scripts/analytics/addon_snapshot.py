@@ -3,10 +3,14 @@ from __future__ import absolute_import
 import logging
 from modularodm import Q
 
+# App must be initialized before models or ADDONS_AVAILABLE are available
 from website.app import init_app
-from website.models import Node, User
+init_app()
+
+from osf.models import OSFUser as User, AbstractNode as Node
 from framework.mongo.utils import paginated
 from scripts.analytics.base import SnapshotAnalytics
+from website.settings import ADDONS_AVAILABLE
 
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO)
@@ -30,12 +34,12 @@ def get_enabled_authorized_linked(user_settings_list, has_external_account, shor
     # osfstorage and wiki don't have user_settings, so always assume they're enabled, authorized, linked
     if short_name == 'osfstorage' or short_name == 'wiki':
         num_enabled = num_authorized = num_linked = User.find(
-                    Q('is_registered', 'eq', True) &
-                    Q('password', 'ne', None) &
-                    Q('merged_by', 'eq', None) &
-                    Q('date_disabled', 'eq', None) &
-                    Q('date_confirmed', 'ne', None)
-                ).count()
+            Q('is_registered', 'eq', True) &
+            Q('password', 'ne', None) &
+            Q('merged_by', 'eq', None) &
+            Q('date_disabled', 'eq', None) &
+            Q('date_confirmed', 'ne', None)
+        ).count()
 
     elif short_name == 'forward':
         num_enabled = num_authorized = ForwardNodeSettings.find().count()
@@ -71,8 +75,6 @@ class AddonSnapshot(SnapshotAnalytics):
     def get_events(self, date=None):
         super(AddonSnapshot, self).get_events(date)
 
-        from addons.base.models import BaseNodeSettings
-        from website.settings import ADDONS_AVAILABLE
 
         counts = []
         addons_available = {k: v for k, v in [(addon.short_name, addon) for addon in ADDONS_AVAILABLE]}
@@ -128,7 +130,6 @@ def get_class():
 
 
 if __name__ == '__main__':
-    init_app()
     addon_snapshot = AddonSnapshot()
     events = addon_snapshot.get_events()
     addon_snapshot.send_events(events)

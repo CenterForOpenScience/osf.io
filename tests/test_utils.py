@@ -10,8 +10,8 @@ from flask import Flask
 from nose.tools import *  # noqa (PEP8 asserts)
 import blinker
 
-from tests.base import OsfTestCase
-from osf_tests.factories import RegistrationFactory
+from tests.base import OsfTestCase, DbTestCase
+from osf_tests.factories import RegistrationFactory, UserFactory
 
 from framework.routing import Rule, json_renderer
 from framework.utils import secure_filename
@@ -22,6 +22,7 @@ from website.util import paths
 from website.util.mimetype import get_mimetype
 from website.util import web_url_for, api_url_for, is_json_request, waterbutler_url_for, conjunct, api_v2_url
 from website.project import utils as project_utils
+from website.profile import utils as profile_utils
 from website.util.time import throttle_period_expired
 
 try:
@@ -424,6 +425,20 @@ class TestProjectUtils(OsfTestCase):
             self.set_registered_date(reg, tdiff)
         regs = [r for r in project_utils.recent_public_registrations(7)]
         assert_equal(len(regs), 7)
+
+
+class TestProfileUtils(DbTestCase):
+
+    def setUp(self):
+        self.user = UserFactory()
+
+    def test_get_other_user_gravatar_default_size(self):
+        gravitar = profile_utils.get_gravatar(self.user)
+        assert_true(gravitar)
+
+    def test_get_other_user_gravatar_specific_size(self):
+        gravitar = profile_utils.get_gravatar(self.user, size=25)
+        assert_true(gravitar)
 
 
 class TestSignalUtils(unittest.TestCase):

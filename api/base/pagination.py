@@ -14,8 +14,7 @@ from api.base.serializers import is_anonymized
 from api.base.settings import MAX_PAGE_SIZE
 from api.base.utils import absolute_reverse
 
-from framework.guid.model import Guid
-from website.project.model import Node, Comment
+from osf.models import AbstractNode as Node, Comment, Guid
 from website.search.elastic_search import DOC_TYPE_TO_MODEL
 
 
@@ -183,7 +182,7 @@ class CommentPagination(JSONAPIPagination):
             node_id = kwargs.get('node_id', None)
             node = Node.load(node_id)
             user = self.request.user
-            if target_id and not user.is_anonymous() and node.is_contributor(user):
+            if target_id and not user.is_anonymous and node.is_contributor(user):
                 root_target = Guid.load(target_id)
                 if root_target:
                     page = getattr(root_target.referent, 'root_target_page', None)

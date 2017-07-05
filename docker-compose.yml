@@ -1,6 +1,6 @@
 # Reference README-docker-compose.md for instructions.
 
-version: '2.1'
+version: '3'
 
 volumes:
   postgres_data_vol:
@@ -17,7 +17,11 @@ volumes:
     external: false
   mfr_requirements_vol:
     external: false
+  mfr_requirements_local_bin_vol:
+    external: false
   wb_requirements_vol:
+    external: false
+  wb_requirements_local_bin_vol:
     external: false
   wb_tmp_vol:
     external: false
@@ -115,6 +119,7 @@ services:
     restart: 'no'
     volumes:
       - mfr_requirements_vol:/python3.5
+      - mfr_requirements_local_bin_vol:/usr/local/bin
 
   mfr:
     image: quay.io/centerforopenscience/mfr:develop
@@ -126,6 +131,7 @@ services:
       - .docker-compose.mfr.env
     volumes:
       - mfr_requirements_vol:/usr/local/lib/python3.5
+      - mfr_requirements_local_bin_vol:/usr/local/bin
     stdin_open: true
 
   ###############
@@ -144,6 +150,7 @@ services:
     restart: 'no'
     volumes:
       - wb_requirements_vol:/python3.5
+      - wb_requirements_local_bin_vol:/usr/local/bin
 
   wb:
     image: quay.io/centerforopenscience/waterbutler:develop
@@ -155,6 +162,7 @@ services:
       - .docker-compose.wb.env
     volumes:
       - wb_requirements_vol:/usr/local/lib/python3.5
+      - wb_requirements_local_bin_vol:/usr/local/bin
       - osfstoragecache_vol:/code/website/osfstoragecache
       - wb_tmp_vol:/tmp
     stdin_open: true
@@ -197,7 +205,7 @@ services:
 
   preprints:
     image: quay.io/centerforopenscience/ember-preprints:develop-development-local
-    command: /bin/bash -c "yarn --pure-lockfile --no-progress --no-emoji && ./node_modules/bower/bin/bower install --allow-root --config.interactive=false && ./node_modules/ember-cli/bin/ember serve --host 0.0.0.0 --port 4200"
+    command: /bin/bash -c "yarn --pure-lockfile --no-progress --no-emoji && ./node_modules/bower/bin/bower install --allow-root --config.interactive=false && ./node_modules/ember-cli/bin/ember serve --host 0.0.0.0 --port 4200 --live-reload-port 41953"
     restart: unless-stopped
     depends_on:
       - api
@@ -206,8 +214,10 @@ services:
       - BACKEND=local
     expose:
       - 4200
+      - 41953
     ports:
       - 4200:4200
+      - 41953:41953
     volumes:
       - preprints_dist_vol:/code/dist
     stdin_open: true

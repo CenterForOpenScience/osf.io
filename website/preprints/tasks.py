@@ -3,22 +3,34 @@ import urlparse
 
 import requests
 
+from framework.exceptions import HTTPError
 from framework.celery_tasks import app as celery_app
+from framework import sentry
 
 from website import settings
 from website.util.share import GraphNode, format_contributor
+
+from website.identifiers.utils import request_identifiers_from_ezid, get_ezid_client, build_ezid_metadata, parse_identifiers
 
 logger = logging.getLogger(__name__)
 
 
 @celery_app.task(ignore_results=True)
-def on_preprint_updated(preprint_id):
+def on_preprint_updated(preprint_id, update_share=True):
     # WARNING: Only perform Read-Only operations in an asynchronous task, until Repeatable Read/Serializable
     # transactions are implemented in View and Task application layers.
     from osf.models import PreprintService
     preprint = PreprintService.load(preprint_id)
 
-    if settings.SHARE_URL:
+    if preprint.node:
+        status = 'public' if preprint.node.is_public else 'unavailable'
+        try:
+            update_ezid_metadata_on_change(preprint, status=status)
+        except HTTPError as err:
+            sentry.log_exception()
+            sentry.log_message(err.args[0])
+
+    if settings.SHARE_URL and update_share:
         if not preprint.provider.access_token:
             raise ValueError('No access_token for {}. Unable to send {} to SHARE.'.format(preprint.provider, preprint))
         resp = requests.post('{}api/v2/normalizeddata/'.format(settings.SHARE_URL), json={
@@ -51,8 +63,14 @@ def format_preprint(preprint):
 
     to_visit = [
         preprint_graph,
-        GraphNode('workidentifier', creative_work=preprint_graph, uri=urlparse.urljoin(settings.DOMAIN, preprint.url))
+        GraphNode('workidentifier', creative_work=preprint_graph, uri=urlparse.urljoin(settings.DOMAIN, preprint._id + '/'))
     ]
+
+    if preprint.get_identifier('doi'):
+        to_visit.append(GraphNode('workidentifier', creative_work=preprint_graph, uri='http://dx.doi.org/{}'.format(preprint.get_identifier('doi').value)))
+
+    if preprint.provider.domain_redirect_enabled:
+        to_visit.append(GraphNode('workidentifier', creative_work=preprint_graph, uri=preprint.absolute_url))
 
     if preprint.article_doi:
         # Article DOI refers to a clone of this preprint on another system and therefore does not qualify as an identifier for this preprint
@@ -62,12 +80,12 @@ def format_preprint(preprint):
 
     preprint_graph.attrs['tags'] = [
         GraphNode('throughtags', creative_work=preprint_graph, tag=GraphNode('tag', name=tag))
-        for tag in preprint.node.tags.values_list('name', flat=True)
+        for tag in preprint.node.tags.values_list('name', flat=True) if tag
     ]
 
     preprint_graph.attrs['subjects'] = [
         GraphNode('throughsubjects', creative_work=preprint_graph, subject=GraphNode('subject', name=subject))
-        for subject in set(x['text'] for hier in preprint.get_subjects() or [] for x in hier) if subject
+        for subject in set(s.bepress_text for s in preprint.subjects.all())
     ]
 
     to_visit.extend(format_contributor(preprint_graph, user, preprint.node.get_visible(user), i) for i, user in enumerate(preprint.node.contributors))
@@ -87,3 +105,22 @@ def format_preprint(preprint):
         to_visit.extend(list(n.get_related()))
 
     return [node.serialize() for node in visited]
+
+
+@celery_app.task(ignore_results=True)
+def get_and_set_preprint_identifiers(preprint_id):
+    from osf.models import PreprintService
+
+    preprint = PreprintService.load(preprint_id)
+    ezid_response = request_identifiers_from_ezid(preprint)
+    id_dict = parse_identifiers(ezid_response)
+    preprint.set_identifier_values(doi=id_dict['doi'], ark=id_dict['ark'])
+
+
+@celery_app.task(ignore_results=True)
+def update_ezid_metadata_on_change(target_object, status):
+    if (settings.EZID_USERNAME and settings.EZID_PASSWORD) and target_object.get_identifier('doi'):
+        client = get_ezid_client()
+
+        doi, metadata = build_ezid_metadata(target_object)
+        client.change_status_identifier(status, doi, metadata)

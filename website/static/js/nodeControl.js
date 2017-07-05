@@ -34,6 +34,7 @@ var ProjectViewModel = function(data, options) {
     self.ark = ko.observable(data.node.identifiers.ark);
     self.idCreationInProgress = ko.observable(false);
     self.dateRegistered = new $osf.FormattableDate(data.node.registered_date);
+    self.dateRetracted = new $osf.FormattableDate(data.node.date_retracted);
     self.inDashboard = ko.observable(data.node.in_dashboard);
     self.dashboard = data.user.dashboard_id;
     self.userCanEdit = data.user.can_edit;
@@ -103,10 +104,11 @@ var ProjectViewModel = function(data, options) {
             }
         }));
 
+        var project_or_component_label = self.categoryValue() === 'project' ? 'project' : 'component';
         $('#nodeDescriptionEditable').editable($.extend({}, editableOptions, {
             name: 'description',
             title: 'Edit Description',
-            emptytext: 'No description',
+            emptytext: 'Add a brief description to your ' + project_or_component_label,
             emptyclass: 'text-muted',
             value: self.description(),
             success: function(response, newValue) {

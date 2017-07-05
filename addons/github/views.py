@@ -15,7 +15,7 @@ from addons.github.exceptions import GitHubError
 from addons.github.serializer import GitHubSerializer
 from addons.github.utils import verify_hook_signature, MESSAGES
 
-from website.models import NodeLog
+from osf.models import NodeLog
 from website.project.decorators import (
     must_have_addon, must_be_addon_authorizer,
     must_have_permission, must_not_be_registration,

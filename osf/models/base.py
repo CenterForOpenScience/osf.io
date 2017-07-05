@@ -6,7 +6,6 @@ import modularodm.exceptions
 from django.contrib.contenttypes.fields import (GenericForeignKey,
                                                 GenericRelation)
 from django.contrib.contenttypes.models import ContentType
-from django.contrib.postgres.fields import ArrayField
 from django.core.exceptions import MultipleObjectsReturned
 from django.core.exceptions import ValidationError as DjangoValidationError
 from django.db import models
@@ -45,38 +44,6 @@ def generate_object_id():
     return str(bson.ObjectId())
 
 
-class MODMCompatibilityQuerySet(models.QuerySet):
-
-    def eager(self, *fields):
-        qs = self._clone()
-        field_set = set(fields)
-        fk_fields = set(qs.model.get_fk_field_names()) & field_set
-        m2m_fields = set(qs.model.get_m2m_field_names()) & field_set
-        if 'contributors' in field_set:
-            m2m_fields.add('_contributors')
-        qs = qs.select_related(*fk_fields).prefetch_related(*m2m_fields)
-        return qs
-
-    def sort(self, *fields):
-        # Fields are passed in as e.g. [('title', 1), ('date_created', -1)]
-        if isinstance(fields[0], list):
-            fields = fields[0]
-
-        def sort_key(item):
-            if isinstance(item, basestring):
-                return item
-            elif isinstance(item, tuple):
-                field_name, direction = item
-                prefix = '-' if direction == -1 else ''
-                return ''.join([prefix, field_name])
-
-        sort_keys = [sort_key(each) for each in fields]
-        return self.order_by(*sort_keys)
-
-    def limit(self, n):
-        return self[:n]
-
-
 class BaseModel(models.Model):
     """Base model that acts makes subclasses mostly compatible with the
     modular-odm ``StoredObject`` interface.
@@ -84,7 +51,7 @@ class BaseModel(models.Model):
 
     migration_page_size = 50000
 
-    objects = MODMCompatibilityQuerySet.as_manager()
+    objects = models.QuerySet.as_manager()
 
     class Meta:
         abstract = True
@@ -160,9 +127,6 @@ class BaseModel(models.Model):
         for field in self._meta.virtual_fields:
             if hasattr(field, 'cache_attr') and field.cache_attr in self.__dict__:
                 del self.__dict__[field.cache_attr]
-
-    def _natural_key(self):
-        return self.pk
 
     def clone(self):
         """Create a new, unsaved copy of this object."""
@@ -272,9 +236,6 @@ class ObjectIDMixin(BaseIDMixin):
     class Meta:
         abstract = True
 
-    def _natural_key(self):
-        return self._id
-
 
 class InvalidGuid(Exception):
     pass
@@ -288,7 +249,6 @@ class OptionalGuidMixin(BaseIDMixin):
     __guid_min_length__ = 5
 
     guids = GenericRelation(Guid, related_name='referent', related_query_name='referents')
-    guid_string = ArrayField(models.CharField(max_length=255, null=True, blank=True), null=True, blank=True)
     content_type_pk = models.PositiveIntegerField(null=True, blank=True)
 
     def __unicode__(self):
@@ -315,7 +275,8 @@ class OptionalGuidMixin(BaseIDMixin):
         abstract = True
 
 
-class GuidMixinQuerySet(MODMCompatibilityQuerySet):
+class GuidMixinQuerySet(models.QuerySet):
+
     tables = ['osf_guid', 'django_content_type']
 
     GUID_FIELDS = [
@@ -504,10 +465,7 @@ class GuidMixinQuerySet(MODMCompatibilityQuerySet):
 class GuidMixin(BaseIDMixin):
     __guid_min_length__ = 5
 
-    primary_identifier_name = 'guid_string'
-
     guids = GenericRelation(Guid, related_name='referent', related_query_name='referents')
-    guid_string = ArrayField(models.CharField(max_length=255, null=True, blank=True), null=True, blank=True)
     content_type_pk = models.PositiveIntegerField(null=True, blank=True)
 
     objects = GuidMixinQuerySet.as_manager()
@@ -515,9 +473,6 @@ class GuidMixin(BaseIDMixin):
 
     def __unicode__(self):
         return '{}'.format(self._id)
-
-    def _natural_key(self):
-        return self.guid_string
 
     @cached_property
     def _id(self):
@@ -548,8 +503,12 @@ class GuidMixin(BaseIDMixin):
 
     @classmethod
     def load(cls, q):
+        # Minor optimization--no need to query if q is None or ''
+        if not q:
+            return None
         try:
-            queryset = cls.objects.filter(guids___id=q)
+            # guids___id__isnull=False forces an INNER JOIN
+            queryset = cls.objects.filter(guids___id__isnull=False, guids___id=q)
             if hasattr(queryset, 'remove_guid_annotations'):
                 # Remove annotation then re-annotate
                 # doing annotations AFTER the filter allows the
@@ -581,9 +540,3 @@ def ensure_guid(sender, instance, created, **kwargs):
             del instance._prefetched_objects_cache['guids']
         Guid.objects.create(object_id=instance.pk, content_type=ContentType.objects.get_for_model(instance),
                             _id=generate_guid(instance.__guid_min_length__))
-    elif not existing_guids.exists() and instance.guid_string is not None:
-        # Clear query cache of instance.guids
-        if has_cached_guids:
-            del instance._prefetched_objects_cache['guids']
-        Guid.objects.create(object_id=instance.pk, content_type_id=instance.content_type_pk,
-                            _id=instance.guid_string)

@@ -17,8 +17,8 @@ from django.utils import timezone
 from django.utils.functional import cached_property
 from keen import scoped_keys
 from psycopg2._psycopg import AsIs
-from typedmodels.models import TypedModel
-from include import IncludeQuerySet
+from typedmodels.models import TypedModel, TypedModelManager
+from include import IncludeQuerySet, IncludeManager
 
 from framework import status
 from framework.celery_tasks.handlers import enqueue_task
@@ -62,13 +62,13 @@ from website.util.permissions import (ADMIN, CREATOR_PERMISSIONS,
                                       DEFAULT_CONTRIBUTOR_PERMISSIONS, READ,
                                       WRITE, expand_permissions,
                                       reduce_permissions)
-from .base import BaseModel, Guid, GuidMixin, MODMCompatibilityQuerySet
+from .base import BaseModel, Guid, GuidMixin
 
 
 logger = logging.getLogger(__name__)
 
 
-class AbstractNodeQuerySet(MODMCompatibilityQuerySet, IncludeQuerySet):
+class AbstractNodeQuerySet(IncludeQuerySet):
 
     def get_roots(self):
         return self.filter(id__in=self.exclude(type='osf.collection').values_list('root_id', flat=True))
@@ -153,6 +153,24 @@ class AbstractNodeQuerySet(MODMCompatibilityQuerySet, IncludeQuerySet):
 
         return qs.distinct()
 
+class AbstractNodeManager(TypedModelManager, IncludeManager):
+
+    def get_queryset(self):
+        qs = AbstractNodeQuerySet(self.model, using=self._db)
+        # Filter by typedmodels type
+        return self._filter_by_type(qs)
+
+    # AbstractNodeQuerySet methods
+
+    def get_roots(self):
+        return self.get_queryset().get_roots()
+
+    def get_children(self, root, active=False):
+        return self.get_queryset().get_children(root, active=active)
+
+    def can_view(self, user=None, private_link=None):
+        return self.get_queryset().can_view(user=user, private_link=private_link)
+
 
 class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixin,
                    NodeLinkMixin, CommentableMixin, SpamMixin,
@@ -192,18 +210,13 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         'title',
         'category',
         'description',
-        'visible_contributor_ids',
-        'tags',
         'is_fork',
-        'is_registration',
         'retraction',
         'embargo',
         'is_public',
         'is_deleted',
         'wiki_pages_current',
-        'is_retracted',
         'node_license',
-        'affiliated_institutions',
         'preprint_file',
     }
 
@@ -302,9 +315,10 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
                                     related_name='parent_nodes')
 
     class Meta:
+        base_manager_name = 'objects'
         index_together = (('is_public', 'is_deleted', 'type'))
 
-    objects = AbstractNodeQuerySet.as_manager()
+    objects = AbstractNodeManager()
 
     @cached_property
     def parent_node(self):
@@ -430,6 +444,8 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         """For v1 compat"""
         if (not self.is_preprint) and self._is_preprint_orphan:
             return True
+        if self.preprint_file:
+            return self.preprint_file.is_deleted
         return False
 
     @property
@@ -690,6 +706,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
             raise UserNotAffiliatedError('User is not affiliated with {}'.format(inst.name))
         if not self.is_affiliated_with_institution(inst):
             self.affiliated_institutions.add(inst)
+            self.update_search()
         if log:
             NodeLog = apps.get_model('osf.NodeLog')
 
@@ -722,6 +739,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
                 )
             if save:
                 self.save()
+            self.update_search()
             return True
         return False
 
@@ -768,7 +786,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
 
     def get_aggregate_logs_queryset(self, auth):
         query = self.get_aggregate_logs_query(auth)
-        return NodeLog.find(query).sort('-date')
+        return NodeLog.find(query).order_by('-date')
 
     def get_absolute_url(self):
         return self.absolute_api_v2_url
@@ -1075,6 +1093,9 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
 
         # If user is merged into another account, use master account
         contrib_to_add = contributor.merged_by if contributor.is_merged else contributor
+        if contrib_to_add.is_disabled:
+            raise ValidationValueError('Deactivated users cannot be added as contributors.')
+
         if not self.is_contributor(contrib_to_add):
 
             contributor_obj, created = Contributor.objects.get_or_create(user=contrib_to_add, node=self)
@@ -1118,7 +1139,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
                 project_signals.contributor_added.send(self,
                                                        contributor=contributor,
                                                        auth=auth, email_template=send_email)
-
+            self.update_search()
             return contrib_to_add, True
 
         # Permissions must be overridden if changed when contributor is
@@ -1333,7 +1354,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
             )
 
         self.save()
-
+        self.update_search()
         # send signal to remove this user from project subscriptions
         project_signals.contributor_removed.send(self, user=contributor)
 
@@ -2280,13 +2301,14 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
             }
         enqueue_task(node_tasks.on_node_updated.s(self._id, user_id, first_save, saved_fields, request_headers))
 
-        if self.preprint_file and bool(self.SEARCH_UPDATE_FIELDS.intersection(saved_fields)):
+        if self.preprint_file:
             # avoid circular imports
             from website.preprints.tasks import on_preprint_updated
             PreprintService = apps.get_model('osf.PreprintService')
+            update_share = bool(self.SEARCH_UPDATE_FIELDS.intersection(saved_fields))
             # .preprints wouldn't return a single deleted preprint
             for preprint in PreprintService.objects.filter(node_id=self.id, is_published=True):
-                enqueue_task(on_preprint_updated.s(preprint._id))
+                enqueue_task(on_preprint_updated.s(preprint._id, update_share=update_share))
 
         user = User.load(user_id)
         if user and self.check_spam(user, saved_fields, request_headers):

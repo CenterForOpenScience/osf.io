@@ -35,7 +35,21 @@ class TestCorsMiddleware(MiddlewareTestCase):
             domains=[domain.netloc.lower()],
             name="Institute for Sexy Lizards"
         )
-        settings.load_institutions()
+        settings.load_origins_whitelist()
+        request = self.request_factory.get(url, HTTP_ORIGIN=domain.geturl())
+        response = HttpResponse()
+        self.middleware.process_request(request)
+        processed = self.middleware.process_response(request, response)
+        assert_equal(response['Access-Control-Allow-Origin'], domain.geturl())
+
+    def test_institutions_added_to_cors_whitelist(self):
+        url = api_v2_url('users/me/')
+        domain = urlparse("https://dinoprints.sexy")
+        preprintprovider = factories.PreprintProviderFactory(
+            domain=domain.netloc.lower(),
+            _id="DinoXiv"
+        )
+        settings.load_origins_whitelist()
         request = self.request_factory.get(url, HTTP_ORIGIN=domain.geturl())
         response = HttpResponse()
         self.middleware.process_request(request)

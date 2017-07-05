@@ -25,6 +25,7 @@ from framework.auth.core import _get_current_user
 from modularodm import Q
 from modularodm.exceptions import QueryException, NoResultsFound
 
+from osf.models import Institution
 from website import util
 from website import prereg
 from website import settings
@@ -33,12 +34,12 @@ from website.util import metrics
 from website.util import paths
 from website.util import sanitize
 from website import maintenance
-from website.models import Institution
 from website import landing_pages as landing_page_views
 from website import views as website_views
 from website.citations import views as citation_views
 from website.search import views as search_views
 from website.oauth import views as oauth_views
+from website.profile.utils import get_gravatar
 from website.profile import views as profile_views
 from website.project import views as project_views
 from addons.base import views as addon_views
@@ -73,7 +74,7 @@ def get_globals():
         'user_locale': user.locale if user and user.locale else '',
         'user_timezone': user.timezone if user and user.timezone else '',
         'user_url': user.url if user else '',
-        'user_gravatar': profile_views.current_user_gravatar(size=25)['gravatar_url'] if user else '',
+        'user_gravatar': get_gravatar(user=user, size=25) if user else '',
         'user_email_verifications': user.unconfirmed_email_info if user else [],
         'user_api_url': user.api_url if user else '',
         'user_entry_point': metrics.get_entry_point(user) if user else '',
@@ -119,7 +120,8 @@ def get_globals():
             },
         },
         'maintenance': maintenance.get_maintenance(),
-        'recaptcha_site_key': settings.RECAPTCHA_SITE_KEY
+        'recaptcha_site_key': settings.RECAPTCHA_SITE_KEY,
+        'custom_citations': settings.CUSTOM_CITATIONS
     }
 
 
@@ -268,17 +270,35 @@ def make_url_map(app):
         Rule('/sitemaps/<path>', 'get', sitemap_file, json_renderer),
     ])
 
+    # Ember Applications
     if settings.USE_EXTERNAL_EMBER:
         # Routes that serve up the Ember application. Hide behind feature flag.
-        rules = []
         for prefix in settings.EXTERNAL_EMBER_APPS.keys():
-            rules += [
-                '/{}/'.format(prefix),
-                '/{}/<path:path>'.format(prefix),
-            ]
-        process_rules(app, [
-            Rule(rules, 'get', ember_app, json_renderer),
-        ])
+            process_rules(app, [
+                Rule(
+                    [
+                        '/<provider>/<guid>/download',
+                        '/<provider>/<guid>/download/',
+                    ],
+                    ['get', 'post', 'put', 'patch', 'delete'],
+                    website_views.resolve_guid_download,
+                    notemplate,
+                    endpoint_suffix='__' + prefix
+                ),
+            ], prefix='/' + prefix)
+
+            process_rules(app, [
+                Rule(
+                    [
+                        '/',
+                        '/<path:path>',
+                    ],
+                    'get',
+                    ember_app,
+                    json_renderer,
+                    endpoint_suffix='__' + prefix
+                ),
+            ], prefix='/' + prefix)
 
     ### Base ###
 
@@ -306,15 +326,15 @@ def make_url_map(app):
         ),
         Rule('/about/', 'get', website_views.redirect_about, notemplate),
         Rule('/help/', 'get', website_views.redirect_help, notemplate),
-        Rule('/faq/', 'get', {}, OsfWebRenderer('public/pages/faq.mako', trust=False)),
+        Rule('/faq/', 'get', website_views.redirect_faq, notemplate),
         Rule(['/getting-started/', '/getting-started/email/', '/howosfworks/'], 'get', website_views.redirect_getting_started, notemplate),
         Rule('/support/', 'get', {}, OsfWebRenderer('public/pages/support.mako', trust=False)),
 
         Rule(
             '/explore/',
             'get',
-            {},
-            OsfWebRenderer('public/explore.mako', trust=False)
+            discovery_views.redirect_explore_to_activity,
+            notemplate
         ),
 
         Rule(
@@ -517,6 +537,13 @@ def make_url_map(app):
 
         Rule(
             '/explore/activity/',
+            'get',
+            discovery_views.redirect_explore_activity_to_activity,
+            notemplate
+        ),
+
+        Rule(
+            '/activity/',
             'get',
             discovery_views.activity,
             OsfWebRenderer('public/pages/active_nodes.mako', trust=False)
@@ -794,9 +821,6 @@ def make_url_map(app):
         Rule('/profile/<uid>/', 'get', profile_views.profile_view_id_json, json_renderer),
 
         # Used by profile.html
-        Rule('/profile/<uid>/edit/', 'post', profile_views.edit_profile, json_renderer),
-        Rule('/profile/<user_id>/summary/', 'get',
-             profile_views.get_profile_summary, json_renderer),
         Rule('/user/<uid>/<pid>/claim/email/', 'post',
              project_views.contributor.claim_user_post, json_renderer),
 
@@ -820,31 +844,6 @@ def make_url_map(app):
             profile_views.delete_external_identity,
             json_renderer,
         ),
-
-        Rule(
-            [
-                '/profile/gravatar/',
-                '/users/gravatar/',
-                '/profile/gravatar/<size>',
-                '/users/gravatar/<size>',
-            ],
-            'get',
-            profile_views.current_user_gravatar,
-            json_renderer,
-        ),
-
-        Rule(
-            [
-                '/profile/<uid>/gravatar/',
-                '/users/<uid>/gravatar/',
-                '/profile/<uid>/gravatar/<size>',
-                '/users/<uid>/gravatar/<size>',
-            ],
-            'get',
-            profile_views.get_gravatar,
-            json_renderer,
-        ),
-
 
         # Rules for user profile configuration
         Rule('/settings/names/', 'get', profile_views.serialize_names, json_renderer),
@@ -929,7 +928,7 @@ def make_url_map(app):
             '/share/registration/',
             'get',
             {'register': settings.SHARE_REGISTRATION_URL},
-            OsfWebRenderer('share_registration.mako', trust=False)
+            json_renderer
         ),
         Rule(
             '/api/v1/user/search/',
@@ -1118,17 +1117,6 @@ def make_url_map(app):
             notemplate,
         ),
 
-        # Statistics
-        Rule(
-            [
-                '/project/<pid>/statistics/',
-                '/project/<pid>/node/<nid>/statistics/',
-            ],
-            'get',
-            project_views.node.project_statistics_redirect,
-            notemplate,
-        ),
-
         Rule(
             [
                 '/project/<pid>/analytics/',
@@ -1301,27 +1289,11 @@ def make_url_map(app):
         ),
         Rule(
             [
-                '/pointers/move/',
-            ],
-            'post',
-            project_views.node.move_pointers,
-            json_renderer,
-        ),
-        Rule(
-            [
                 '/project/<pid>/pointer/',
                 '/project/<pid>/node/<nid>pointer/',
             ],
             'delete',
             project_views.node.remove_pointer,
-            json_renderer,
-        ),
-        Rule(
-            [
-                '/folder/<pid>/pointer/<pointer_id>',
-            ],
-            'delete',
-            project_views.node.remove_pointer_from_folder,
             json_renderer,
         ),
 
@@ -1474,11 +1446,6 @@ def make_url_map(app):
                 '/project/<pid>/node/<nid>/pointer/fork/',
             ], 'post', project_views.node.fork_pointer, json_renderer,
         ),
-        # View forks
-        Rule([
-            '/project/<pid>/forks/',
-            '/project/<pid>/node/<nid>/forks/',
-        ], 'get', project_views.node.node_forks, json_renderer),
 
         # Registrations
         Rule([
@@ -1490,10 +1457,6 @@ def make_url_map(app):
             '/project/<pid>/node/<nid>/drafts/<draft_id>/register/',
         ], 'post', project_views.drafts.register_draft_registration, json_renderer),
         Rule([
-            '/project/<pid>/register/<template>/',
-            '/project/<pid>/node/<nid>/register/<template>/',
-        ], 'get', project_views.register.node_register_template_page, json_renderer),
-        Rule([
             '/project/<pid>/withdraw/',
             '/project/<pid>/node/<nid>/withdraw/'
         ], 'post', project_views.register.node_registration_retraction_post, json_renderer),
@@ -1503,62 +1466,8 @@ def make_url_map(app):
                 '/project/<pid>/identifiers/',
                 '/project/<pid>/node/<nid>/identifiers/',
             ],
-            'get',
-            project_views.register.node_identifiers_get,
-            json_renderer,
-        ),
-
-        Rule(
-            [
-                '/project/<pid>/identifiers/',
-                '/project/<pid>/node/<nid>/identifiers/',
-            ],
             'post',
             project_views.register.node_identifiers_post,
-            json_renderer,
-        ),
-
-        # Statistics
-        Rule([
-            '/project/<pid>/statistics/',
-            '/project/<pid>/node/<nid>/statistics/',
-        ], 'get', project_views.node.project_statistics, json_renderer),
-
-        # Permissions
-        Rule([
-            '/project/<pid>/permissions/<permissions>/',
-            '/project/<pid>/node/<nid>/permissions/<permissions>/',
-        ], 'post', project_views.node.project_set_privacy, json_renderer),
-
-        Rule([
-            '/project/<pid>/permissions/beforepublic/',
-            '/project/<pid>/node/<nid>/permissions/beforepublic/',
-        ], 'get', project_views.node.project_before_set_public, json_renderer),
-
-        ### Watching ###
-        Rule([
-            '/project/<pid>/watch/',
-            '/project/<pid>/node/<nid>/watch/'
-        ], 'post', project_views.node.watch_post, json_renderer),
-
-        Rule([
-            '/project/<pid>/unwatch/',
-            '/project/<pid>/node/<nid>/unwatch/'
-        ], 'post', project_views.node.unwatch_post, json_renderer),
-
-        Rule([
-            '/project/<pid>/togglewatch/',
-            '/project/<pid>/node/<nid>/togglewatch/'
-        ], 'post', project_views.node.togglewatch_post, json_renderer),
-
-        # Combined files
-        Rule(
-            [
-                '/project/<pid>/files/',
-                '/project/<pid>/node/<nid>/files/'
-            ],
-            'get',
-            project_views.file.collect_file_trees,
             json_renderer,
         ),
 
@@ -1690,7 +1599,15 @@ def make_url_map(app):
     # NOTE: We use nginx to serve static addon assets in production
     addon_base_path = os.path.abspath('addons')
     if settings.DEV_MODE:
+        from flask import stream_with_context, Response
+        import requests
+
         @app.route('/static/addons/<addon>/<path:filename>')
         def addon_static(addon, filename):
             addon_path = os.path.join(addon_base_path, addon, 'static')
             return send_from_directory(addon_path, filename)
+
+        @app.route('/ember-cli-live-reload.js')
+        def ember_cli_live_reload():
+            req = requests.get('{}/ember-cli-live-reload.js'.format(settings.LIVE_RELOAD_DOMAIN), stream=True)
+            return Response(stream_with_context(req.iter_content()), content_type=req.headers['content-type'])

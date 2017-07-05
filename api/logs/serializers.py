@@ -8,10 +8,9 @@ from api.base.serializers import (
     is_anonymized,
     DateByVersion,
 )
-from website.project.model import Node
+
+from osf.models import OSFUser, AbstractNode as Node, PreprintService
 from website.util import permissions as osf_permissions
-from framework.auth.core import User
-from website.preprints.model import PreprintService
 
 
 class NodeLogIdentifiersSerializer(RestrictedDictSerializer):
@@ -36,7 +35,7 @@ class NodeLogFileParamsSerializer(RestrictedDictSerializer):
         user = self.context['request'].user
         node_title = obj['node']['title']
         node = Node.load(obj['node']['_id'])
-        if not user.is_authenticated():
+        if not user.is_authenticated:
             if node.is_public:
                 return node_title
         elif node.has_permission(user, osf_permissions.READ):
@@ -87,6 +86,7 @@ class NodeLogParamsSerializer(RestrictedDictSerializer):
     wiki = ser.DictField(read_only=True)
     citation_name = ser.CharField(read_only=True, source='citation.name')
     institution = NodeLogInstitutionSerializer(read_only=True)
+    anonymous_link = ser.BooleanField(read_only=True)
 
     def get_view_url(self, obj):
         urls = obj.get('urls', None)
@@ -122,7 +122,7 @@ class NodeLogParamsSerializer(RestrictedDictSerializer):
 
         if contributor_ids:
             for contrib_id in contributor_ids:
-                user = User.load(contrib_id)
+                user = OSFUser.load(contrib_id)
                 unregistered_name = None
                 if user.unclaimed_records.get(params_node):
                     unregistered_name = user.unclaimed_records[params_node].get('name', None)

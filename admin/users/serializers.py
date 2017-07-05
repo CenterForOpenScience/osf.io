@@ -9,7 +9,7 @@ def serialize_user(user):
         'name': user.fullname,
         'id': user._id,
         'nodes': map(serialize_simple_node, user.contributor_to),
-        'emails': user.emails,
+        'emails': user.emails.values_list('address', flat=True),
         'last_login': user.date_last_login,
         'confirmed': user.date_confirmed,
         'registered': user.date_registered,
@@ -17,6 +17,7 @@ def serialize_user(user):
         'two_factor': user.has_addon('twofactor'),
         'osf_link': user.absolute_url,
         'system_tags': user.system_tags,
+        'unclaimed': bool(user.unclaimed_records)
     }
 
 

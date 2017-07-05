@@ -7,7 +7,6 @@ from modularodm.exceptions import ValidationError, ValidationValueError
 
 from framework import forms, status
 from framework.auth import cas
-from framework.auth import User
 from framework.auth.core import get_user, generate_verification_key
 from framework.auth.decorators import block_bing_preview, collect_auth, must_be_logged_in
 from framework.auth.forms import PasswordForm, SetEmailAndPasswordForm
@@ -17,8 +16,8 @@ from framework.exceptions import HTTPError
 from framework.flask import redirect  # VOL-aware redirect
 from framework.sessions import session
 from framework.transactions.handlers import no_auto_transaction
+from osf.models import AbstractNode as Node, OSFUser as User, PreprintService
 from website import mails, language, settings
-from website.models import Node, PreprintService
 from website.notifications.utils import check_if_all_global_subscriptions_are_none
 from website.profile import utils as profile_utils
 from website.project.decorators import (must_have_permission, must_be_valid_project, must_not_be_registration,
@@ -200,9 +199,13 @@ def deserialize_contributors(node, user_dicts, auth, validate=False):
 
 @unreg_contributor_added.connect
 def finalize_invitation(node, contributor, auth, email_template='default'):
-    record = contributor.get_unclaimed_record(node._primary_key)
-    if record['email']:
-        send_claim_email(record['email'], contributor, node, notify=True, email_template=email_template)
+    try:
+        record = contributor.get_unclaimed_record(node._primary_key)
+    except ValueError:
+        pass
+    else:
+        if record['email']:
+            send_claim_email(record['email'], contributor, node, notify=True, email_template=email_template)
 
 
 @must_be_valid_project
@@ -453,7 +456,7 @@ def send_claim_email(email, unclaimed_user, node, notify=True, throttle=24 * 360
             email_template, preprint_provider = find_preprint_provider(node)
             if not email_template or not preprint_provider:
                 return
-            mail_tpl = getattr(mails, 'INVITE_PREPRINT')(email_template, preprint_provider)
+            mail_tpl = getattr(mails, 'INVITE_PREPRINT')(email_template, preprint_provider.name)
         else:
             mail_tpl = getattr(mails, 'INVITE_DEFAULT'.format(email_template.upper()))
 
@@ -505,7 +508,7 @@ def send_claim_email(email, unclaimed_user, node, notify=True, throttle=24 * 360
         claim_url=claim_url,
         email=claimer_email,
         fullname=unclaimed_record['name'],
-        branded_service_name=preprint_provider
+        branded_service=preprint_provider
     )
 
     return to_addr
@@ -527,7 +530,7 @@ def notify_added_contributor(node, contributor, auth=None, throttle=None, email_
             email_template, preprint_provider = find_preprint_provider(node)
             if not email_template or not preprint_provider:
                 return
-            email_template = getattr(mails, 'CONTRIBUTOR_ADDED_PREPRINT')(email_template, preprint_provider)
+            email_template = getattr(mails, 'CONTRIBUTOR_ADDED_PREPRINT')(email_template, preprint_provider.name)
         else:
             email_template = getattr(mails, 'CONTRIBUTOR_ADDED_DEFAULT'.format(email_template.upper()))
 
@@ -547,7 +550,7 @@ def notify_added_contributor(node, contributor, auth=None, throttle=None, email_
             node=node,
             referrer_name=auth.user.fullname if auth else '',
             all_global_subscriptions_none=check_if_all_global_subscriptions_are_none(contributor),
-            branded_service_name=preprint_provider
+            branded_service=preprint_provider
         )
 
         contributor.contributor_added_email_records[node._id]['last_sent'] = get_timestamp()
@@ -562,18 +565,15 @@ def find_preprint_provider(node):
     Given a node, find the preprint and the service provider.
 
     :param node: the node to which a contributer or preprint author is added
-    :return: the email template
+    :return: tuple containing the type of email template (osf or branded) and the preprint provider
     """
 
     try:
         preprint = PreprintService.objects.get(node=node)
         provider = preprint.provider
-        if provider._id == 'osf':
-            return 'osf', provider.name
-        else:
-            return 'branded', provider.name
-    # TODO: fine-grained exception handling
-    except Exception:
+        email_template = 'osf' if provider._id == 'osf' else 'branded'
+        return email_template, provider
+    except PreprintService.DoesNotExist:
         return None, None
 
 
@@ -715,7 +715,7 @@ def claim_user_form(auth, **kwargs):
     claimer_email = unclaimed_record.get('claimer_email') or unclaimed_record.get('email')
     # If there is a registered user with this email, redirect to 're-enter password' page
     try:
-        user_from_email = User.objects.get(emails__icontains=claimer_email) if claimer_email else None
+        user_from_email = User.objects.get(emails__address=claimer_email.lower().strip()) if claimer_email else None
     except User.DoesNotExist:
         user_from_email = None
     if user_from_email and user_from_email.is_registered:

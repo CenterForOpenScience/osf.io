@@ -9,7 +9,8 @@ from django.core.exceptions import ValidationError
 from django.db import models
 from django.utils import timezone
 from flask import request
-from oauthlib.oauth2 import MissingTokenError
+from oauthlib.oauth2 import (AccessDeniedError, InvalidGrantError,
+    TokenExpiredError, MissingTokenError)
 from requests.exceptions import HTTPError as RequestsHTTPError
 from requests_oauthlib import OAuth1Session, OAuth2Session
 
@@ -421,10 +422,17 @@ class ExternalProvider(object):
             'client_secret': self.client_secret
         })
 
-        token = client.refresh_token(
-            self.auto_refresh_url,
-            **extra
-        )
+        try:
+            token = client.refresh_token(
+                self.auto_refresh_url,
+                **extra
+            )
+        except (AccessDeniedError, InvalidGrantError, TokenExpiredError):
+            if not force:
+                return False
+            else:
+                raise
+
         self.account.oauth_key = token[resp_auth_token_key]
         self.account.refresh_token = token[resp_refresh_token_key]
         self.account.expires_at = resp_expiry_fn(token)
@@ -452,3 +460,41 @@ class ExternalProvider(object):
         if self.expiry_time and self.account.expires_at:
             return (timezone.now() - self.account.expires_at).total_seconds() > self.expiry_time
         return False
+
+class BasicAuthProviderMixin(object):
+    """
+        Providers utilizing BasicAuth can utilize this class to implement the
+        storage providers framework by subclassing this mixin. This provides
+        a translation between the oauth parameters and the BasicAuth parameters.
+
+        The password here is kept decrypted by default.
+    """
+
+    def __init__(self, account=None, host=None, username=None, password=None):
+        super(BasicAuthProviderMixin, self).__init__()
+        if account:
+            self.account = account
+        elif not account and host and password and username:
+            self.account = ExternalAccount(
+                display_name=username,
+                oauth_key=password,
+                oauth_secret=host.lower(),
+                provider_id='{}:{}'.format(host.lower(), username),
+                profile_url=host.lower(),
+                provider=self.short_name,
+                provider_name=self.name
+            )
+        else:
+            self.account = None
+
+    @property
+    def host(self):
+        return self.account.profile_url
+
+    @property
+    def username(self):
+        return self.account.display_name
+
+    @property
+    def password(self):
+        return self.account.oauth_key

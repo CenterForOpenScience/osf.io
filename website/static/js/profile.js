@@ -9,6 +9,7 @@ require('knockout-sortable');
 
 var $osf = require('./osfHelpers');
 var koHelpers = require('./koHelpers');
+var m = require('mithril');
 require('js/objectCreateShim');
 
 // Adapted from Django URLValidator
@@ -48,7 +49,7 @@ var socialRules = {
     scholar: /scholar\.google\.com\/citations\?user=(\w+)/i,
     twitter: /twitter\.com\/(\w+)/i,
     linkedIn: /.*\/?(in\/.*|profile\/.*|pub\/.*)/i,
-    impactStory: /impactstory\.org\/([\w\.-]+)/i,
+    impactStory: /impactstory\.org\/u\/([\w\.-]+)/i,
     github: /github\.com\/(\w+)/i,
     researchGate: /researchgate\.net\/profile\/(\w+)/i,
     academia: /(\w+)\.academia\.edu\/(\w+)/i,
@@ -596,7 +597,7 @@ var SocialViewModel = function(urls, modes, preventUnsaved) {
     );
     self.impactStory = extendLink(
         ko.observable().extend({trimmed: true, cleanup: cleanByRule(socialRules.impactStory)}),
-        self, 'impactStory', 'https://www.impactstory.org/'
+        self, 'impactStory', 'https://www.impactstory.org/u/'
     );
     self.github = extendLink(
         ko.observable().extend({trimmed: true, cleanup: cleanByRule(socialRules.github)}),
