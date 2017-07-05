@@ -209,3 +209,10 @@
 
   </body>
 </html>
+
+{% if not osf_settings.DEV_MODE %}
+  <style>
+    .navbar { background-color: #bc493c !important;}
+    .logo { background-color: #a53e35 !important;}
+  </style>
+{% endif %}
