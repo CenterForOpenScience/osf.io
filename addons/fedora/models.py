@@ -134,7 +134,6 @@ class NodeSettings(BaseStorageAddon, BaseOAuthNodeSettings):
 
     def get_folders(self, **kwargs):
         provider = FedoraProvider(account=self.external_account)
-        path = kwargs.get('path')
         url = furl(provider.host)
 
         # For the moment just show the path into the Fedora repository specified
