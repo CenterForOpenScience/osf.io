@@ -34,6 +34,16 @@ def get_notebook(client, nb_guid):
              'stack': notebook.stack,
              'defaultNotebook': notebook.defaultNotebook}
 
+
+def note_link(client, note):
+
+    return ('https://{service}/shard/{shardId}/nl/{userId}/{noteGuid}/'.format(
+        service='www.evernote.com',
+        shardId=client.user.shardId,
+        userId=client.user.id,
+        noteGuid=note.guid
+    ))
+
 def notes_metadata(client, **input_kw):
     """ """
     # http://dev.evernote.com/documentation/reference/NoteStore.html#Fn_NoteStore_findNotesMetadata
@@ -88,6 +98,7 @@ def notes_metadata(client, **input_kw):
 
         # yield each individually
         for nm in note_meta.notes:
+            nm.link = note_link(client, nm)
             yield nm
 
         # grab next page if there is more to grab
@@ -104,8 +115,11 @@ def get_note(client, guid,
 
     # https://dev.evernote.com/doc/reference/NoteStore.html#Fn_NoteStore_getNote
     noteStore = client.get_note_store()
-    return noteStore.getNote(guid, withContent, withResourcesData,
+    note = noteStore.getNote(guid, withContent, withResourcesData,
                                  withResourcesRecognition, withResourcesAlternateData)
+    note.link = note_link(client, note)
+
+    return note
 
 def timestamp_iso(ts):
     """
