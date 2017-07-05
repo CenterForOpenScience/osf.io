@@ -8,7 +8,7 @@ from framework.celery_tasks import app as celery_app
 from framework import sentry
 
 from website import settings
-from website.util.share import GraphNode, format_contributor, format_subject
+from website.util.share import GraphNode, format_contributor
 
 from website.identifiers.utils import request_identifiers_from_ezid, get_ezid_client, build_ezid_metadata, parse_identifiers
 
@@ -16,13 +16,12 @@ logger = logging.getLogger(__name__)
 
 
 @celery_app.task(ignore_results=True)
-def on_preprint_updated(preprint_id, update_share=True, old_subjects=None):
+def on_preprint_updated(preprint_id, update_share=True):
     # WARNING: Only perform Read-Only operations in an asynchronous task, until Repeatable Read/Serializable
     # transactions are implemented in View and Task application layers.
     from osf.models import PreprintService
     preprint = PreprintService.load(preprint_id)
-    if old_subjects is None:
-        old_subjects = []
+
     if preprint.node:
         status = 'public' if preprint.node.is_public else 'unavailable'
         try:
@@ -40,18 +39,14 @@ def on_preprint_updated(preprint_id, update_share=True, old_subjects=None):
                 'attributes': {
                     'tasks': [],
                     'raw': None,
-                    'data': {'@graph': format_preprint(preprint, old_subjects)}
+                    'data': {'@graph': format_preprint(preprint)}
                 }
             }
         }, headers={'Authorization': 'Bearer {}'.format(preprint.provider.access_token), 'Content-Type': 'application/vnd.api+json'})
         logger.debug(resp.content)
         resp.raise_for_status()
 
-def format_preprint(preprint, old_subjects=None):
-    if old_subjects is None:
-        old_subjects = []
-    from osf.models import Subject
-    old_subjects = [Subject.objects.get(id=s) for s in old_subjects]
+def format_preprint(preprint):
     preprint_graph = GraphNode('preprint', **{
         'title': preprint.node.title,
         'description': preprint.node.description or '',
@@ -88,15 +83,10 @@ def format_preprint(preprint, old_subjects=None):
         for tag in preprint.node.tags.values_list('name', flat=True) if tag
     ]
 
-    current_subjects = [
-        GraphNode('throughsubjects', creative_work=preprint_graph, subject=format_subject(s))
-        for s in preprint.subjects.all()
+    preprint_graph.attrs['subjects'] = [
+        GraphNode('throughsubjects', creative_work=preprint_graph, subject=GraphNode('subject', name=subject))
+        for subject in set(s.bepress_text for s in preprint.subjects.all())
     ]
-    deleted_subjects = [
-        GraphNode('throughsubjects', creative_work=preprint_graph, is_deleted=True, subject=format_subject(s))
-        for s in old_subjects if not preprint.subjects.filter(id=s.id).exists()
-    ]
-    preprint_graph.attrs['subjects'] = current_subjects + deleted_subjects
 
     to_visit.extend(format_contributor(preprint_graph, user, preprint.node.get_visible(user), i) for i, user in enumerate(preprint.node.contributors))
     to_visit.extend(GraphNode('AgentWorkRelation', creative_work=preprint_graph, agent=GraphNode('institution', name=institution))
