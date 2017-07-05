@@ -693,6 +693,20 @@ class TestNodeFiltering(ApiTestCase):
         assert_not_in(self.preprint.node._id, ids)
         assert_in(unpublished.node._id, ids)
 
+    def test_nodes_list_filter_multiple_field(self):
+        url = "/{}nodes/?filter[title,description]=One".format(API_BASE)
+
+        res = self.app.get(url)
+        node_json = res.json['data']
+
+        ids = [each['id'] for each in node_json]
+        assert_in(self.project_one._id, ids)
+        assert_in('One', self.project_one.title)
+
+        assert_in(self.project_two._id, ids)
+        assert_in('One', self.project_two.description)
+        assert_not_in(self.project_three._id, ids)
+
 
 class TestNodeCreate(ApiTestCase):
 
