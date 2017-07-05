@@ -1,6 +1,6 @@
 import functools
 import mock
-from modularodm import Q
+from django import Q
 import pytest
 
 from api.base.settings.defaults import API_BASE
@@ -12,7 +12,7 @@ from osf_tests.factories import (
     AuthUserFactory, 
     ProjectFactory, 
     SubjectFactory, 
-    PreprintProviderFactory
+    PreprintProviderFactory,
 )
 from rest_framework import exceptions
 from tests.base import fake, capture_signals
@@ -330,15 +330,15 @@ class TestPreprintUpdateLicense:
 
     @pytest.fixture()
     def cc0_license(self):
-        return NodeLicense.find_one(Q('name', 'eq', 'CC0 1.0 Universal'))
+        return NodeLicense.objects.filter(name='CC0 1.0 Universal').first()
 
     @pytest.fixture()
     def mit_license(self):
-        return NodeLicense.find_one(Q('name', 'eq', 'MIT License'))
+        return NodeLicense.objects.filter(name='MIT License').first()
 
     @pytest.fixture()
     def no_license(self):
-        return NodeLicense.find_one(Q('name', 'eq', 'No license'))
+        return NodeLicense.objects.filter(name='MIT License').first()
 
     @pytest.fixture()
     def preprint_provider(self, cc0_license, no_license):
