@@ -1,6 +1,7 @@
 from __future__ import unicode_literals
 
 import json
+import requests
 
 from django.core import serializers
 from django.core.urlresolvers import reverse_lazy
@@ -15,6 +16,7 @@ from admin.base.forms import ImportFileForm
 from admin.preprint_providers.forms import PreprintProviderForm
 from osf.models import PreprintProvider, Subject
 from osf.models.preprint_provider import rules_to_subjects
+from website import settings as osf_settings
 
 # When preprint_providers exclusively use Subject relations for creation, set this to False
 SHOW_TAXONOMIES_IN_PREPRINT_PROVIDER_CREATE = True
@@ -218,6 +220,35 @@ class ImportPreprintProvider(PermissionRequiredMixin, View):
         for chunk in f.chunks():
             parsed_file += str(chunk)
         return parsed_file
+
+class PreprintProviderShareSource(PermissionRequiredMixin, View):
+    permission_required = 'osf.change_preprintprovider'
+    raise_exception = True
+
+    def post(self, request, *args, **kwargs):
+        preprint_provider = PreprintProvider.objects.get(id=self.kwargs['preprint_provider_id'])
+        if preprint_provider.share_source or preprint_provider.access_token:
+            # more descriptive error
+            raise ValueError
+        resp = requests.post(
+            '{}api/v2/sources/'.format(osf_settings.SHARE_URL),
+            json={
+                'data': {
+                    'type': 'Source',
+                    'attributes': {
+                        'homePage': preprint_provider.domain if preprint_provider.domain else '{}/preprints/{}/'.format(osf_settings.DOMAIN, preprint_provider._id),
+                        'longTitle': preprint_provider.name,
+                        # this base URL should live in settings somewhere
+                        'icon': 'https://staging-cdn.osf.io/preprints-assets/{}/square_color_no_transparent.png'.format(preprint_provider._id)
+                    }
+                }
+            },
+            headers={
+                'Authorization': 'Bearer {}'.format(osf_settings.SHARE_API_TOKEN),
+                'Content-Type': 'application/vnd.api+json'
+            }
+        )
+        return HttpResponse(resp.json(), content_type='text/json')
 
 
 class SubjectDynamicUpdateView(PermissionRequiredMixin, View):

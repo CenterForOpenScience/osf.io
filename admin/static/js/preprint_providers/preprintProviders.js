@@ -159,4 +159,26 @@ $(document).ready(function() {
             }
         });
     });
+
+    // disable share-creds button if fields are already populated
+    var share_source = $('#id_share_source').val()
+    var access_token = $('#id_access_token').val()
+
+    if (share_source || access_token) {
+        $('#share_creds').prop('disabled', true);
+    }
+
+    $('#share-source').submit(function(event) {
+        event.preventDefault();
+        $.ajax({
+            url: window.templateVars.shareSourceURL,
+            type: "POST",
+        }).done(function(response) {
+            // disable share-creds button
+            // populate access_token and share_source form fields
+        }).fail(function(xhr, status, error) {
+            // error handling
+        });
+    });
+
 });
