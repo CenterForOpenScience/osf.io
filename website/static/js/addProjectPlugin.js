@@ -180,10 +180,10 @@ var AddProject = {
                             m('label[for="projectName].f-w-lg.text-bigger', 'Title'),
                             m('input[type="text"].form-control.project-name', {
                                 onkeyup: function(ev){
-                                    var val = ev.target.value;
                                     if (ev.which === 13) {
                                         ctrl.add();
                                     }
+                                    var val = ev.target.value;
                                     ctrl.newProjectName(val);
                                     ctrl.isValid(val.trim().length > 0);
                                 },
