@@ -400,7 +400,10 @@ class NodeList(JSONAPIBaseView, bulk_views.BulkUpdateJSONAPIView, bulk_views.Bul
 
     # overrides NodeODMFilterMixin
     def get_default_odm_query(self):
-        return default_node_list_query()
+        user = self.request.user
+        base_query = default_node_list_query()
+        permissions_query = default_node_permission_query(user)
+        return base_query & permissions_query
 
 
 class NodeDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView, NodeMixin, WaterButlerMixin):
