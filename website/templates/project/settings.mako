@@ -191,21 +191,21 @@
 
         % if 'admin' in user['permissions']:  ## Begin create VOLS
             % if not node['is_registration']:
-            <div class="panel panel-default">
-                <span id="createVolsAnchor" class="anchor"></span>
-                <div class="panel-heading clearfix">
-                    <h3 class="panel-title">View-Only Links</h3>
+                <div class="panel panel-default">
+                    <span id="createVolsAnchor" class="anchor"></span>
+                    <div class="panel-heading clearfix">
+                        <h3 class="panel-title">View-Only Links</h3>
+                    </div>
+                    <div class="panel-body">
+                        <p>
+                            Create a link to share this project so those who have the link can view&mdash;but not edit&mdash;the project.
+                        </p>
+                        <a href="#addPrivateLink" data-toggle="modal" class="btn btn-success btn-sm">
+                          <i class="fa fa-plus"></i> Add
+                        </a>
+                        <%include file="project/private_links.mako"/>
+                    </div>
                 </div>
-                <div class="panel-body">
-                    <p>
-                        Create a link to share this project so those who have the link can view&mdash;but not edit&mdash;the project.
-                    </p>
-                    <a href="#addPrivateLink" data-toggle="modal" class="btn btn-success btn-sm">
-                      <i class="fa fa-plus"></i> Add
-                    </a>
-                    <%include file="project/private_links.mako"/>
-                </div>
-            </div>
             % endif
         % endif ## End create vols
 
