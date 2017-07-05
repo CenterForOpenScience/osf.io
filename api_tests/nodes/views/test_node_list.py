@@ -29,7 +29,6 @@ def user():
 def non_contrib():
     return AuthUserFactory()
 
-
 @pytest.mark.django_db
 class TestNodeList:
 

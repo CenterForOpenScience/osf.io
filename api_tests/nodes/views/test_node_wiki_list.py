@@ -15,7 +15,6 @@ from rest_framework import exceptions
 def user():
     return AuthUserFactory()
 
-
 @pytest.mark.django_db
 class TestNodeWikiList:
 

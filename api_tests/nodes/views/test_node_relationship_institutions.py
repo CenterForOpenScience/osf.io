@@ -53,7 +53,7 @@ class TestNodeRelationshipInstitutions:
     @pytest.fixture()
     def node(self, user, write_contrib, read_contrib):
         node = NodeFactory(creator=user)
-        node.add_contributor(write_contrib, permissions=[permissions.WRITE])
+        node.add_contributor(write_contrib, permissions=[permissions.READ, permissions.WRITE])
         node.add_contributor(read_contrib, permissions=[permissions.READ])
         node.save()
         return node
