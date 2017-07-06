@@ -420,7 +420,7 @@ var ViewModel = function(params) {
                 }
                 if (result.category === 'registration') {
                     result.dateRegistered = new $osf.FormattableDate(result.date_registered);
-                } else if (result.category == 'preprint') {
+                } else if (result.category === 'preprint') {
                     result.preprintUrl = result.preprint_url;
                 }
             });
