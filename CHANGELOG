@@ -2,6 +2,14 @@
 Changelog
 *********
 
+0.116.0 (2017-07-05)
+====================
+- Allow Styling in Admin App Preprint Provider HTML Fields
+- OSF side changes for new navbar
+- Distinguish Staging Admin from Production Admin
+- Create Scope to Get User Email Address
+- Cachebust CSS assets
+
 0.115.0 (2017-06-21)
 ====================
 

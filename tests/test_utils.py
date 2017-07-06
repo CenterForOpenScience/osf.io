@@ -13,6 +13,7 @@ import blinker
 from tests.base import OsfTestCase, DbTestCase
 from osf_tests.factories import RegistrationFactory, UserFactory
 
+from framework.auth.utils import generate_csl_given_name
 from framework.routing import Rule, json_renderer
 from framework.utils import secure_filename
 from website.routes import process_rules, OsfWebRenderer
@@ -325,6 +326,7 @@ class TestWebpackFilter(unittest.TestCase):
         with assert_raises(KeyError):
             paths.webpack_asset('bundle.js', self.asset_paths, debug=False)
 
+
 class TestWebsiteUtils(unittest.TestCase):
 
     def test_conjunct(self):
@@ -461,3 +463,36 @@ class TestSignalUtils(unittest.TestCase):
         with util.disconnected_from(self.signal_, self.listener):
             self.signal_.send()
         assert_false(self.mock_listener.called)
+
+
+class TestUserUtils(unittest.TestCase):
+
+    def test_generate_csl_given_name_with_given_middle_suffix(self):
+        given_name = 'Cause'
+        middle_names = 'Awesome'
+        suffix = 'Jr.'
+        csl_given_name = generate_csl_given_name(
+            given_name=given_name, middle_names=middle_names, suffix=suffix
+        )
+        assert_equal(csl_given_name, 'Cause A, Jr.')
+
+    def test_generate_csl_given_name_with_given_middle(self):
+        given_name = 'Cause'
+        middle_names = 'Awesome'
+        csl_given_name = generate_csl_given_name(
+            given_name=given_name, middle_names=middle_names
+        )
+        assert_equal(csl_given_name, 'Cause A')
+
+    def test_generate_csl_given_name_with_given_suffix(self):
+        given_name = 'Cause'
+        suffix = 'Jr.'
+        csl_given_name = generate_csl_given_name(
+            given_name=given_name, suffix=suffix
+        )
+        assert_equal(csl_given_name, 'Cause, Jr.')
+
+    def test_generate_csl_given_name_with_given(self):
+        given_name = 'Cause'
+        csl_given_name = generate_csl_given_name(given_name)
+        assert_equal(csl_given_name, 'Cause')

@@ -21,7 +21,6 @@ class PreprintProviderSerializer(JSONAPISerializer):
     example = ser.CharField(required=False, allow_null=True)
     domain = ser.CharField(required=False, allow_null=False)
     domain_redirect_enabled = ser.BooleanField(required=True)
-    subjects_acceptable = ser.JSONField(required=False, allow_null=True)
     footer_links = ser.CharField(required=False)
     share_source = ser.CharField(read_only=True)
     email_support = ser.CharField(required=False, allow_null=True)
@@ -77,6 +76,10 @@ class PreprintProviderSerializer(JSONAPISerializer):
     social_instagram = ShowIfVersion(
         ser.CharField(required=False, allow_null=True),
         min_version='2.0', max_version='2.3'
+    )
+    subjects_acceptable = ShowIfVersion(
+        ser.ListField(required=False, default=[]),
+        min_version='2.0', max_version='2.4'
     )
 
     class Meta:
