@@ -31,6 +31,7 @@ var entry = {
     'project-dashboard': staticPath('js/pages/project-dashboard-page.js'),
     'project-base-page': staticPath('js/pages/project-base-page.js'),
     'project-settings-page': staticPath('js/pages/project-settings-page.js'),
+    'component-settings-page': staticPath('js/pages/component-settings-page.js'),
     'project-registrations-page': staticPath('js/pages/project-registrations-page.js'),
     'registration-retraction-page': staticPath('js/pages/registration-retraction-page.js'),
     'registration-edit-page': staticPath('js/pages/registration-edit-page.js'),
@@ -86,7 +87,11 @@ var entry = {
         'mithril',
         'js/qToggle',
         'js/components/autocomplete',
-    ]
+        // Main CSS files that get loaded above the fold
+        nodePath('select2/select2.css'),
+        '@centerforopenscience/osf-style',
+        staticPath('css/style.css'),
+    ],
 };
 
 // Collect log text from addons

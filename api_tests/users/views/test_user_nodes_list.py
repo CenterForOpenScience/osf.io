@@ -13,7 +13,7 @@ from osf_tests.factories import (
 )
 
 from api.base.settings.defaults import API_BASE
-from api_tests.nodes.filters.test_filters import NodesListFilteringMixin
+from api_tests.nodes.filters.test_filters import NodesListFilteringMixin, NodesListDateFilteringMixin
 
 from website.views import find_bookmark_collection
 
@@ -145,5 +145,10 @@ class TestUserNodesPreprintsFiltering(ApiTestCase):
 
 
 class TestNodeListFiltering(NodesListFilteringMixin, ApiTestCase):
+
+    url = '/{}users/me/nodes/?'.format(API_BASE)
+
+
+class TestNodeListDateFiltering(NodesListDateFilteringMixin, ApiTestCase):
 
     url = '/{}users/me/nodes/?'.format(API_BASE)

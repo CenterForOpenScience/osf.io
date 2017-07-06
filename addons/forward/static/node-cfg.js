@@ -1,7 +1,31 @@
+var $osf = require('js/osfHelpers');
 var ForwardConfig = require('./forwardConfig.js');
 
-var url = window.contextVars.node.urls.api + 'forward/config/';
-// #forwardScope will only be in the DOM if the addon is properly configured
-if ($('#forwardScope')[0]) {
-    new ForwardConfig('#forwardScope', url, window.contextVars.node.id);
-}
+var ctx = window.contextVars;
+
+var enabled = false;
+var url = '';
+var label = '';
+
+$(document).ready(function() {
+    $osf.ajaxJSON(
+        'GET',
+        $osf.apiV2Url('nodes/' + ctx.node.id + '/addons/'),
+        {'isCors': true}
+    ).done(function(response){
+        response.data.forEach(function(addon) {
+            if (addon.id === 'forward') {
+                enabled = true;
+                url = addon.attributes.url;
+                label = addon.attributes.label;
+            }
+        });
+        new ForwardConfig('#configureForward', ctx.node, enabled, url, label);
+    }).fail(function(response){
+        $osf.growl('Error:', 'Unable to retrieve settings.');
+        Raven.captureMessage('Error occurred retrieving node addons');
+    });
+
+});
+
+

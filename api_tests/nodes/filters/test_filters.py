@@ -94,3 +94,103 @@ class NodesListFilteringMixin(object):
         res = self.app.get('{}{}'.format(self.contributors_url, self.user_two._id), auth=self.user.auth)
         actual = [node['id'] for node in res.json['data']]
         assert_equal(expected, actual)
+
+
+class NodesListDateFilteringMixin(object):
+
+    def setUp(self):
+        super(NodesListDateFilteringMixin, self).setUp()
+
+        assert self.url, 'Subclasses of NodesListDateFilteringMixin must define self.url'
+
+        self.user = AuthUserFactory()
+
+        self.node_may = ProjectFactory(creator=self.user)
+        self.node_june = ProjectFactory(creator=self.user)
+        self.node_july = ProjectFactory(creator=self.user)
+
+        self.node_may.date_created = '2016-05-01 00:00:00.000000+00:00'
+        self.node_june.date_created = '2016-06-01 00:00:00.000000+00:00'
+        self.node_july.date_created = '2016-07-01 00:00:00.000000+00:00'
+
+        self.node_may.save()
+        self.node_june.save()
+        self.node_july.save()
+
+        self.date_created_url = '{}filter[date_created]='.format(self.url)
+
+    def test_date_filter_equals(self):
+        expected = []
+        res = self.app.get('{}{}'.format(self.date_created_url, '2016-04-01'), auth=self.user.auth)
+        actual = [node['id'] for node in res.json['data']]
+        assert_equal(expected, actual)
+
+        expected = [self.node_may._id]
+        res = self.app.get('{}{}'.format(self.date_created_url, self.node_may.date_created), auth=self.user.auth)
+        actual = [node['id'] for node in res.json['data']]
+        assert_equal(expected, actual)
+
+    def test_date_filter_gt(self):
+        url = '{}filter[date_created][gt]='.format(self.url)
+
+        expected = []
+        res = self.app.get('{}{}'.format(url, '2016-08-01'), auth=self.user.auth)
+        actual = [node['id'] for node in res.json['data']]
+        assert_equal(expected, actual)
+
+        expected = [self.node_june._id, self.node_july._id]
+        res = self.app.get('{}{}'.format(url, '2016-05-01'), auth=self.user.auth)
+        actual = [node['id'] for node in res.json['data']]
+        assert_equal(set(expected), set(actual))
+
+    def test_date_filter_gte(self):
+        url = '{}filter[date_created][gte]='.format(self.url)
+
+        expected = []
+        res = self.app.get('{}{}'.format(url, '2016-08-01'), auth=self.user.auth)
+        actual = [node['id'] for node in res.json['data']]
+        assert_equal(expected, actual)
+
+        expected = [self.node_may._id, self.node_june._id, self.node_july._id]
+        res = self.app.get('{}{}'.format(url, '2016-05-01'), auth=self.user.auth)
+        actual = [node['id'] for node in res.json['data']]
+        assert_equal(set(expected), set(actual))
+
+    def test_date_fitler_lt(self):
+        url = '{}filter[date_created][lt]='.format(self.url)
+
+        expected = []
+        res = self.app.get('{}{}'.format(url, '2016-05-01'), auth=self.user.auth)
+        actual = [node['id'] for node in res.json['data']]
+        assert_equal(expected, actual)
+
+        expected = [self.node_may._id, self.node_june._id]
+        res = self.app.get('{}{}'.format(url, '2016-07-01'), auth=self.user.auth)
+        actual = [node['id'] for node in res.json['data']]
+        assert_equal(set(expected), set(actual))
+
+    def test_date_filter_lte(self):
+        url = '{}filter[date_created][lte]='.format(self.url)
+
+        expected = []
+        res = self.app.get('{}{}'.format(url, '2016-04-01'), auth=self.user.auth)
+        actual = [node['id'] for node in res.json['data']]
+        assert_equal(expected, actual)
+
+        expected = [self.node_may._id, self.node_june._id, self.node_july._id]
+        res = self.app.get('{}{}'.format(url, '2016-07-01'), auth=self.user.auth)
+        actual = [node['id'] for node in res.json['data']]
+        assert_equal(set(expected), set(actual))
+
+    def test_date_filter_eq(self):
+        url = '{}filter[date_created][eq]='.format(self.url)
+
+        expected = []
+        res = self.app.get('{}{}'.format(url, '2016-04-01'), auth=self.user.auth)
+        actual = [node['id'] for node in res.json['data']]
+        assert_equal(expected, actual)
+
+        expected = [self.node_may._id]
+        res = self.app.get('{}{}'.format(url, self.node_may.date_created), auth=self.user.auth)
+        actual = [node['id'] for node in res.json['data']]
+        assert_equal(expected, actual)
