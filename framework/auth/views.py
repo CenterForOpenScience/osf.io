@@ -873,7 +873,7 @@ def resend_confirmation_post(auth):
     if form.validate():
         clean_email = form.email.data
         user = get_user(email=clean_email)
-        status_message = ('If there is an OSF account associated with this unconfirmed email {0}, '
+        status_message = ('If there is an OSF account associated with this unconfirmed email address {0}, '
                           'a confirmation email has been resent to it. If you do not receive an email and believe '
                           'you should have, please contact OSF Support.').format(clean_email)
         kind = 'success'
