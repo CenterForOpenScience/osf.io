@@ -748,12 +748,23 @@ def addon_view_file(auth, node, file_node, version):
         'file_tags': list(file_node.tags.filter(system=False).values_list('name', flat=True)) if not file_node._state.adding else [],  # Only access ManyRelatedManager if saved
         'file_guid': file_node.get_guid()._id,
         'file_id': file_node._id,
-        'allow_comments': file_node.provider in settings.ADDONS_COMMENTABLE
+        'allow_comments': file_node.provider in settings.ADDONS_COMMENTABLE,
+        'checkout_user': file_node.checkout._id if file_node.checkout else None,
+        'pre_reg_checkout': is_pre_reg_checkout(node, file_node),
     })
 
     ret.update(rubeus.collect_addon_assets(node))
     return ret
 
+def is_pre_reg_checkout(node, file_node):
+    checkout_user = file_node.checkout
+    if not checkout_user:
+        return False
+    if checkout_user in node.contributors:
+        return False
+    if checkout_user.has_perm('osf.prereg_view'):
+        return node.draft_registrations_active.filter(registration_schema__name='Prereg Challenge').exists()
+    return False
 
 def get_archived_from_url(node, file_node):
     if file_node.copied_from:

@@ -89,8 +89,11 @@
                             <div class="ball-scale ball-scale-blue text-center"><div></div></div>
                         </div>
                         <!-- /ko -->
-                        <!-- ko if: searchStarted() && !totalCount() -->
+                        <!-- ko if: searchStarted() && !totalCount() && query() !== "" -->
                         <div class="search-results hidden" data-bind="css: {hidden: totalCount() }">No results found.</div>
+                        <!-- /ko -->
+                        <!-- ko if: searchStarted() && !totalCount() && query() === "" -->
+                        <div class="search-results hidden" data-bind="css: {hidden: totalCount() }">Type your search terms in the box above.</div>
                         <!-- /ko -->
                         <!-- ko if: totalCount() -->
                         <div data-bind="foreach: results">
@@ -198,7 +201,7 @@
                     </li>
                     <li data-bind="visible: social.ssrn">
                         <a data-bind="attr: {href: social.ssrn}">
-                            <img class="social-icons" src="/static/img/SSRN.jpg"data-toggle="tooltip" style="PADDING-BOTTOM: 5px" title="SSRN">
+                            <img class="social-icons" src="/static/img/SSRN.png"data-toggle="tooltip" style="PADDING-BOTTOM: 5px" title="SSRN">
                         </a>
                     </li>
                 </ul>
