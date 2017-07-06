@@ -1,29 +1,39 @@
-from nose.tools import *  # flake8: noqa
+import pytest
 import functools
 
-from tests.base import ApiTestCase
-from osf.models.licenses import NodeLicense
 from api.base.settings.defaults import API_BASE
+from osf.models.licenses import NodeLicense
 
+@pytest.mark.django_db
+class TestLicenseDetail:
+    @pytest.fixture()
+    def license(self):
+        return NodeLicense.find()[0]
 
-class TestLicenseDetail(ApiTestCase):
-    def setUp(self):
-        super(TestLicenseDetail, self).setUp()
-        self.license = NodeLicense.find()[0]
-        self.url = '/{}licenses/{}/'.format(API_BASE, self.license._id)
-        self.res = self.app.get(self.url)
-        self.data = self.res.json['data']
+    @pytest.fixture()
+    def url_license(self, license):
+        return '/{}licenses/{}/'.format(API_BASE, license._id)
 
-    def test_license_detail_success(self):
-        assert_equal(self.res.status_code, 200)
-        assert_equal(self.res.content_type, 'application/vnd.api+json')
+    @pytest.fixture()
+    def res_license(self, app, url_license):
+        return app.get(url_license)
 
-    def test_license_top_level(self):
-        assert_equal(self.data['type'], 'licenses')
-        assert_equal(self.data['id'], self.license._id)
+    @pytest.fixture()
+    def data_license(self, res_license):
+        return res_license.json['data']
 
-    def test_license_name(self):
-        assert_equal(self.data['attributes']['name'], self.license.name)
+    def test_license_detail(self, license, res_license, data_license):
 
-    def test_license_text(self):
-        assert_equal(self.data['attributes']['text'], self.license.text)
+        #test_license_detail_success(self, res_license):
+        assert res_license.status_code == 200
+        assert res_license.content_type == 'application/vnd.api+json'
+
+        #test_license_top_level(self, license, data_license):
+        assert data_license['type'] == 'licenses'
+        assert data_license['id'] == license._id
+
+        #test_license_name(self, data_license, license):
+        assert data_license['attributes']['name'] == license.name
+
+        #test_license_text(self, data_license, license):
+        assert data_license['attributes']['text'] == license.text
