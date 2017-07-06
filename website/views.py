@@ -246,7 +246,7 @@ def resolve_guid(guid, suffix=None):
         #   expected.
         if not hasattr(guid_object.referent, 'deep_url'):
             sentry.log_message(
-                'Guid `{}` resolved to an object with no deep_url'.format(guid)
+                'Guid resolved to an object with no deep_url', dict(guid=guid)
             )
             raise HTTPError(http.NOT_FOUND)
         referent = guid_object.referent
