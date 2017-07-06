@@ -141,7 +141,7 @@ $(document).ready(function() {
         var unchecked = checkedOnLoad.filter('#selectAddonsForm input:not(:checked)');
         var checked = uncheckedOnLoad.filter('#selectAddonsForm input:checked');
         var msgElm = $(this).find('.addon-settings-message');
-        
+
         var submit = function() {
             var request = $osf.postJSON(ctx.node.urls.api + 'settings/addons/', formData);
             return request;

@@ -277,7 +277,7 @@ def node_setting(auth, node, **kwargs):
         addon
         for addon in settings.ADDONS_AVAILABLE
         if 'node' in addon.owners
-        and addon.short_name not in settings.SYSTEM_ADDED_ADDONS['node'] and addon.short_name != 'wiki'
+        and addon.short_name not in settings.SYSTEM_ADDED_ADDONS['node'] and addon.short_name not in ['wiki', 'forward']
     ], key=lambda addon: addon.full_name.lower())
 
     for addon in settings.ADDONS_AVAILABLE:

@@ -18,6 +18,8 @@ USER_RESTORED = 41
 USER_2_FACTOR = 42
 USER_EMAILED = 43
 
+REINDEX_SHARE = 50
+REINDEX_ELASTIC = 51
 
 def update_admin_log(user_id, object_id, object_repr, message, action_flag=UNKNOWN):
     AdminLogEntry.objects.log_action(
