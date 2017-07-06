@@ -41,6 +41,20 @@ from tests.test_cas_authentication import generate_external_user_with_resp
 
 class TestAuthUtils(OsfTestCase):
 
+    def test_citation_with_only_fullname(self):
+        user = UserFactory()
+        user.fullname = 'Martin Luther King, Jr.'
+        user.family_name = ''
+        user.given_name = ''
+        user.middle_names = ''
+        user.suffix = ''
+        user.save()
+        resp = user.csl_name
+        family_name = resp['family']
+        given_name = resp['given']
+        assert_equal(family_name, 'King')
+        assert_equal(given_name, 'Martin L, Jr.')
+
     def test_unreg_user_can_register(self):
         user = UnregUserFactory()
 
@@ -97,9 +111,9 @@ class TestAuthUtils(OsfTestCase):
         assert_equal(len(mock_mail.call_args_list), 1)
         session = Session.find(
             Q('data.auth_user_id', 'eq', user._id)
-        ).sort(
+        ).order_by(
             '-date_modified'
-        ).limit(1)[0]
+        ).first()
         assert_equal(len(session.data['status']), 1)
 
     def test_get_user_by_id(self):

@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 # Python 3.x incompatible, use import builtins instead
 import __builtin__ as builtins
-import functools
 import json
 import unittest
 
@@ -13,14 +12,13 @@ from nose.tools import *  # flake8: noqa (PEP8 asserts)
 from osf_tests.factories import (AuthUserFactory, NodeLicenseRecordFactory,
                                  ProjectFactory)
 from tests.base import OsfTestCase
+from osf.utils.migrations import ensure_licenses
 from tests.utils import assert_logs, assert_not_logs
 from website import settings
 from osf.models.licenses import NodeLicense, serialize_node_license_record, serialize_node_license
-from website.project.licenses import ensure_licenses
 from osf.models import NodeLog
 from website.exceptions import NodeStateError
 
-ensure_licenses = functools.partial(ensure_licenses, warn=False)
 
 
 CHANGED_NAME = 'FOO BAR'
@@ -41,7 +39,6 @@ class TestNodeLicenses(OsfTestCase):
 
         self.user = AuthUserFactory()
         self.node = ProjectFactory(creator=self.user)
-        ensure_licenses()
         self.LICENSE_NAME = 'MIT License'
         self.node_license = NodeLicense.find_one(
             Q('name', 'eq', self.LICENSE_NAME)

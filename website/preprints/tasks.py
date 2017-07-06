@@ -3,7 +3,9 @@ import urlparse
 
 import requests
 
+from framework.exceptions import HTTPError
 from framework.celery_tasks import app as celery_app
+from framework import sentry
 
 from website import settings
 from website.util.share import GraphNode, format_contributor
@@ -14,7 +16,7 @@ logger = logging.getLogger(__name__)
 
 
 @celery_app.task(ignore_results=True)
-def on_preprint_updated(preprint_id, update_share=False):
+def on_preprint_updated(preprint_id, update_share=True):
     # WARNING: Only perform Read-Only operations in an asynchronous task, until Repeatable Read/Serializable
     # transactions are implemented in View and Task application layers.
     from osf.models import PreprintService
@@ -22,7 +24,11 @@ def on_preprint_updated(preprint_id, update_share=False):
 
     if preprint.node:
         status = 'public' if preprint.node.is_public else 'unavailable'
-        update_ezid_metadata_on_change(preprint, status=status)
+        try:
+            update_ezid_metadata_on_change(preprint, status=status)
+        except HTTPError as err:
+            sentry.log_exception()
+            sentry.log_message(err.args[0])
 
     if settings.SHARE_URL and update_share:
         if not preprint.provider.access_token:

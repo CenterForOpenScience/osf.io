@@ -2,6 +2,51 @@
 Changelog
 *********
 
+0.116.0 (2017-07-05)
+====================
+- Allow Styling in Admin App Preprint Provider HTML Fields
+- OSF side changes for new navbar
+- Distinguish Staging Admin from Production Admin
+- Create Scope to Get User Email Address
+- Cachebust CSS assets
+
+0.115.0 (2017-06-21)
+====================
+
+- Port maintenance code to use Postgres
+- Remove MODMCompatibilityQueryset.
+- Remove unused APIv1 profile, pointer, and project endpoints.
+- Fix importing Preprint Provider from JSON.
+
+0.114.0 (2017-06-13)
+====================
+
+- Replies notifications sending double entries to some users
+- GitHub is misspelled on osf.io/support page
+- All fangorn errors on non-Chrome browsers report as "Cannot upload folder"
+- Author link on OSF meeting site isn't updating
+- Prereg Challenge: "Learn more here" link on Notice form is broken
+- "Check in file" button is missing from file widget
+- Dashboard "Search for more projects" button url shows zero search results in elastic search
+- Unable to Cancel a Registration if Project is Deleted Shortly After Creation
+- Clicking "Add" button multiple times when adding an unconfirmed user results in error
+- NodeProviderDetail endpoint 502s
+- Preprint is not orphaned if its file is deleted
+- Preprint deletion tests and cleanup (OSF-7938 followup)
+- Facebook link in footer needs to be updated
+- Preprint emails need updating to handle 2-word preprint providers
+- APIv2: Filtering on User's tags is broken
+- Admin not handling custom preprint taxonomies correctly
+- Admin requires all subjects to be checked to create full bepress taxonomy
+- Admin app 502s when saving preprint providers
+- Modify Column Widths on My Projects page to maximize Project Title column
+- Make preprint_provider model easier to maintain
+- Change button text on final Registration modal
+- Use Short URL's for Downloads on File View Page
+- No longer offer Election Pre-reg form
+- Remove FAQ page and Update Support to Point to new FAQ
+- Allow popup from Dataverses other than UVA
+
 0.113.0 (2017-06-05)
 ====================
 

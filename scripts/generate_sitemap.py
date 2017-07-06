@@ -16,7 +16,7 @@ import logging
 
 from framework import sentry
 from framework.celery_tasks import app as celery_app
-from osf.models import OSFUser, AbstractNode, PreprintService
+from osf.models import OSFUser, AbstractNode, PreprintService, PreprintProvider
 from scripts import utils as script_utils
 from website import settings
 from website.app import init_app
@@ -177,40 +177,49 @@ class Sitemap(object):
         progress.stop()
 
         # User urls
-        objs = OSFUser.objects.filter(is_active=True)
+        objs = OSFUser.objects.filter(is_active=True).values_list('guids___id', flat=True)
         progress.start(objs.count(), 'USER: ')
-        for obj in objs.iterator():
+        for obj in objs:
             try:
                 config = settings.SITEMAP_USER_CONFIG
-                config['loc'] = urlparse.urljoin(settings.DOMAIN, obj.url)
+                config['loc'] = urlparse.urljoin(settings.DOMAIN, '/{}/'.format(obj))
                 self.add_url(config)
             except Exception as e:
-                self.log_errors(obj, obj._id, e)
+                self.log_errors('USER', obj, e)
             progress.increment()
         progress.stop()
 
-        # AbstractNode urls (Nodes and Registrations, no colelctions)
-        objs = AbstractNode.objects.filter(is_public=True, is_deleted=False, retraction_id__isnull=True).exclude(type="osf.collection")
+        # AbstractNode urls (Nodes and Registrations, no Collections)
+        objs = (AbstractNode.objects
+            .filter(is_public=True, is_deleted=False, retraction_id__isnull=True)
+            .exclude(type="osf.collection")
+            .values('guids___id', 'date_modified'))
         progress.start(objs.count(), 'NODE: ')
-        for obj in objs.iterator():
+        for obj in objs:
             try:
                 config = settings.SITEMAP_NODE_CONFIG
-                config['loc'] = urlparse.urljoin(settings.DOMAIN, obj.url)
-                config['lastmod'] = obj.date_modified.strftime('%Y-%m-%d')
+                config['loc'] = urlparse.urljoin(settings.DOMAIN, obj['guids___id'])
+                config['lastmod'] = obj['date_modified'].strftime('%Y-%m-%d')
                 self.add_url(config)
             except Exception as e:
-                self.log_errors(obj, obj._id, e)
+                self.log_errors('NODE', obj['guids___id'], e)
             progress.increment()
         progress.stop()
 
         # Preprint urls
-        objs = PreprintService.objects.filter(node__isnull=False, node__is_deleted=False, node__is_public=True, is_published=True)
+        objs = (PreprintService.objects
+                    .filter(node__isnull=False, node__is_deleted=False, node__is_public=True, is_published=True)
+                    .select_related('node', 'provider', 'node__preprint_file'))
         progress.start(objs.count() * 2, 'PREP: ')
-        for obj in objs.iterator():
+        osf = PreprintProvider.objects.get(_id='osf')
+        for obj in objs:
             try:
                 preprint_date = obj.date_modified.strftime('%Y-%m-%d')
                 config = settings.SITEMAP_PREPRINT_CONFIG
-                config['loc'] = urlparse.urljoin(settings.DOMAIN, obj.url)
+                preprint_url = obj.url
+                if obj.provider == osf:
+                    preprint_url = '/preprints/{}/'.format(obj._id)
+                config['loc'] = urlparse.urljoin(settings.DOMAIN, preprint_url)
                 config['lastmod'] = preprint_date
                 self.add_url(config)
 
@@ -221,7 +230,7 @@ class Sitemap(object):
                         settings.DOMAIN,
                         os.path.join(
                             'project',
-                            obj.primary_file.node._id,  # Parent node id
+                            obj.node._id,   # Parent node id
                             'files',
                             'osfstorage',
                             obj.primary_file._id,  # Preprint file deep_url
@@ -245,7 +254,7 @@ class Sitemap(object):
         # TODO: once the sitemap is validated add a ping to google with sitemap index file location
         # TODO: server side cursor query wrapper might be useful as the index gets larger.
         # Sitemap indexable limit check
-        if self.sitemap_count > settings.SITEMAP_INDEX_MAX * .90: # 10% of urls remaining
+        if self.sitemap_count > settings.SITEMAP_INDEX_MAX * .90:  # 10% of urls remaining
             sentry.log_message('WARNING: Max sitemaps nearly reached.')
         print('Total url_count = {}'.format((self.sitemap_count - 1) * settings.SITEMAP_URL_MAX + self.url_count))
         print('Total sitemap_count = {}'.format(str(self.sitemap_count)))

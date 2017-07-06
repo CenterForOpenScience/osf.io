@@ -98,18 +98,6 @@ class TestNodeFileLogDetail(ApiTestCase):
 
         self.file = api_utils.create_test_file(node=self.component, user=self.user_one)
         self.node.add_log(
-            NodeLog.FILE_ADDED,
-            auth=Auth(self.user_one),
-            params={
-                'node': self.component._id,
-                'params_file': None,
-                'urls': {
-                    'download': '/project/{}/files/osfstorage/{}/?action=download'.format(self.component._id, self.file._id),
-                    'view': '/project/{}/files/osfstorage/{}/'.format(self.component._id, self.file._id)
-                }
-            }
-        )
-        self.node.add_log(
             'osf_storage_file_moved',
             auth=Auth(self.user_one),
             params={
@@ -152,12 +140,3 @@ class TestNodeFileLogDetail(ApiTestCase):
         assert_equal(res.status_code, 200)
         assert_not_in(self.component.title, res.json['data'])
         assert_equal(res.json['data'][0]['attributes']['params']['source']['node_title'], 'Private Component')
-
-    def test_file_params(self):
-        res = self.app.get(self.node_logs_url, auth=self.user_one.auth)
-        assert_equal(res.status_code, 200)
-        assert_equal(res.json['data'][1]['attributes']['action'], 'file_added')
-        assert_equal(
-            res.json['data'][1]['attributes']['params']['params_file'],
-            '/project/{}/files/osfstorage/{}/'.format(self.component._id, self.file._id)
-        )

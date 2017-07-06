@@ -660,6 +660,17 @@ class TestDeleteHook(HookTestCase):
         res = self.delete(folder, expect_errors=True)
         assert_equal(res.status_code, 403)
 
+    def test_attempt_delete_double_nested_folder_rented_file(self):
+        folder = self.root_node.append_folder('One is not enough')
+        folder_two = folder.append_folder('Two might be doe')
+        user = factories.AuthUserFactory()
+        file_checked = folder_two.append_file('We shall see')
+        file_checked.checkout = user
+        file_checked.save()
+
+        res = self.delete(folder, expect_errors=True)
+        assert_equal(res.status_code, 403)
+
 
 @pytest.mark.django_db
 class TestMoveHook(HookTestCase):
@@ -715,6 +726,32 @@ class TestMoveHook(HookTestCase):
     def test_move_checkedout_file_in_folder(self):
         folder = self.root_node.append_folder('From Here')
         file = folder.append_file('No I don\'t wanna go')
+        file.checkout = self.user
+        file.save()
+        
+        folder_two = self.root_node.append_folder('To There')
+        res = self.send_hook(
+            'osfstorage_move_hook',
+            {'nid': self.root_node.node._id},
+            payload={
+                'source': folder._id,
+                'node': self.root_node._id,
+                'user': self.user._id,
+                'destination': {
+                    'parent': folder_two._id,
+                    'node': folder_two.node._id,
+                    'name': folder_two.name,
+                }
+            },
+            method='post_json',
+            expect_errors=True,
+        )
+        assert_equal(res.status_code, 405)
+
+    def test_move_checkedout_file_two_deep_in_folder(self):
+        folder = self.root_node.append_folder('From Here')
+        folder_nested = folder.append_folder('Inbetween')
+        file = folder_nested.append_file('No I don\'t wanna go')
         file.checkout = self.user
         file.save()
         

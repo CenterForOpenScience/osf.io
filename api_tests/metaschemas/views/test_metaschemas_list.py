@@ -2,7 +2,6 @@ from nose.tools import *  # flake8: noqa
 
 from osf.models.metaschema import MetaSchema
 from website.project.metadata.schemas import LATEST_SCHEMA_VERSION
-from website.project.model import ensure_schemas
 
 from api.base.settings.defaults import API_BASE
 
@@ -16,7 +15,6 @@ class TestMetaSchemaList(ApiTestCase):
     def setUp(self):
         super(TestMetaSchemaList, self).setUp()
         self.user = AuthUserFactory()
-        ensure_schemas()
         self.url = '/{}metaschemas/'.format(API_BASE)
 
     def test_pass_authenticated_user_can_view_schemas(self):

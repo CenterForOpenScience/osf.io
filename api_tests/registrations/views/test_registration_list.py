@@ -6,7 +6,6 @@ from urlparse import urlparse
 from django.utils import timezone
 from nose.tools import *  # flake8: noqa
 
-from website.project.model import ensure_schemas
 from website.project.metadata.schemas import LATEST_SCHEMA_VERSION
 from osf.models import AbstractNode as Node, MetaSchema, DraftRegistration
 from website.views import find_bookmark_collection
@@ -460,7 +459,6 @@ class TestRegistrationFiltering(ApiTestCase):
 class TestRegistrationCreate(DraftRegistrationTestCase):
     def setUp(self):
         super(TestRegistrationCreate, self).setUp()
-        ensure_schemas()
 
         self.schema = MetaSchema.find_one(
             Q('name', 'eq', 'Replication Recipe (Brandt et al., 2013): Post-Completion') &

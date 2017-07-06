@@ -35,7 +35,6 @@ from website.profile import utils as profile_utils
 from website.util.time import throttle_period_expired
 from website.util import api_v2_url, web_url_for, paths
 from website.util.sanitize import escape_html
-from website.util.sanitize import strip_html
 from website.views import serialize_node_summary
 from addons.base import utils as addon_utils
 
@@ -319,28 +318,6 @@ def profile_view_id(uid, auth):
     is_profile = auth and auth.user == user
     # Embed node data, so profile node lists can be rendered
     return _profile_view(user, is_profile, embed_nodes=False, include_node_counts=True)
-
-
-@must_be_logged_in
-def edit_profile(**kwargs):
-    # NOTE: This method is deprecated. Use update_user instead.
-    # TODO: Remove this view
-    user = kwargs['auth'].user
-
-    form = request.form
-
-    ret = {'response': 'success'}
-    if form.get('name') == 'fullname' and form.get('value', '').strip():
-        user.fullname = strip_html(form['value']).strip()
-        user.save()
-        ret['name'] = user.fullname
-    return ret
-
-
-def get_profile_summary(user_id, formatter='long'):
-
-    user = User.load(user_id)
-    return user.get_summary(formatter)
 
 
 @must_be_logged_in

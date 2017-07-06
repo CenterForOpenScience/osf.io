@@ -22,8 +22,9 @@ from django.dispatch import receiver
 from django.db.models.signals import post_save
 from django.db import models
 from django.utils import timezone
+
 from django_extensions.db.models import TimeStampedModel
-from framework.auth import Auth, signals
+from framework.auth import Auth, signals, utils
 from framework.auth.core import generate_verification_key
 from framework.auth.exceptions import (ChangePasswordError, ExpiredTokenError,
                                        InvalidTokenError,
@@ -467,17 +468,26 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
 
     @property
     def csl_given_name(self):
-        parts = [self.given_name]
-        if self.middle_names:
-            parts.extend(each[0] for each in re.split(r'\s+', self.middle_names))
-        return ' '.join(parts)
+        return utils.generate_csl_given_name(self.given_name, self.middle_names, self.suffix)
 
     @property
     def csl_name(self):
-        return {
-            'family': self.family_name,
-            'given': self.csl_given_name,
-        }
+        if self.family_name and self.given_name:
+            return {
+                'family': self.family_name,
+                'given': self.csl_given_name,
+            }
+        else:
+            parsed = utils.impute_names(self.fullname)
+            given_name = parsed['given']
+            middle_names = parsed['middle']
+            family_name = parsed['family']
+            suffix = parsed['suffix']
+            csl_given_name = utils.generate_csl_given_name(given_name, middle_names, suffix)
+            return {
+                'family': family_name,
+                'given': csl_given_name,
+            }
 
     @property
     def contributor_to(self):
@@ -509,6 +519,9 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
     @property
     def is_anonymous(self):
         return False
+
+    def get_absolute_url(self):
+        return self.absolute_api_v2_url
 
     def get_addon_names(self):
         return []
@@ -1355,15 +1368,13 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
         :returns: The signed cookie
         """
         secret = secret or settings.SECRET_KEY
-        sessions = Session.find(
+        user_session = Session.find(
             Q('data.auth_user_id', 'eq', self._id)
-        ).sort(
+        ).order_by(
             '-date_modified'
-        ).limit(1)
+        ).first()
 
-        if sessions.exists():
-            user_session = sessions[0]
-        else:
+        if not user_session:
             user_session = Session(data={
                 'auth_user_id': self._id,
                 'auth_user_username': self.username,

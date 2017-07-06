@@ -6,6 +6,7 @@ import urlparse
 from framework.celery_tasks import handlers
 from addons.osfstorage.models import OsfStorageFile
 from website.preprints.tasks import format_preprint
+from website.preprints.tasks import on_preprint_updated
 from website.util import permissions
 
 from framework.auth import Auth
@@ -601,3 +602,12 @@ class TestPreprintSaveShareHook(OsfTestCase):
     def test_save_unpublished_subject_change_not_called(self, mock_on_preprint_updated):
         self.preprint.set_subjects([[self.subject_two._id]], auth=self.auth, save=True)
         assert not mock_on_preprint_updated.called
+
+    @mock.patch('website.preprints.tasks.requests')
+    @mock.patch('website.project.tasks.settings.SHARE_URL', 'ima_real_website')
+    def test_send_to_share_is_true(self, mock_requests):
+        self.preprint.provider.access_token = 'Snowmobiling'
+        self.preprint.provider.save()
+        on_preprint_updated(self.preprint._id)
+
+        assert mock_requests.post.called

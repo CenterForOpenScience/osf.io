@@ -7,7 +7,6 @@ from tests.factories import DraftRegistrationFactory, ProjectFactory
 from website.files import models
 from tests.test_addons import TestFile
 from website.models import MetaSchema
-from website.project.model import ensure_schemas
 from website.prereg.utils import get_prereg_schema
 from scripts.migration.migrate_registration_extra_drafts import main
 
@@ -35,8 +34,6 @@ class TestMigrateRegistrationExtra(OsfTestCase):
         self.node = ProjectFactory(creator=self.user)
         self.file = self._get_test_file()
         MetaSchema.remove()
-        ensure_schemas()
-
 
         self.file_ans = {
             'file': {

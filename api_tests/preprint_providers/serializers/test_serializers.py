@@ -49,7 +49,6 @@ class TestPreprintProviderSerializer(DbTestCase):
         assert_not_in('logo_path', attributes)
         assert_not_in('header_text', attributes)
         assert_not_in('email_contact', attributes)
-        assert_not_in('email_support', attributes)
         assert_not_in('social_facebook', attributes)
         assert_not_in('social_instagram', attributes)
         assert_not_in('social_twitter', attributes)

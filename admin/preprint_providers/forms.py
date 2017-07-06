@@ -7,8 +7,8 @@ from admin.base.utils import get_subject_rules, get_toplevel_subjects, get_nodel
 
 
 class PreprintProviderForm(ModelForm):
-    toplevel_subjects = MultipleChoiceField(widget=CheckboxSelectMultiple())
-    subjects_chosen = CharField(widget=HiddenInput())
+    toplevel_subjects = MultipleChoiceField(widget=CheckboxSelectMultiple(), required=False)
+    subjects_chosen = CharField(widget=HiddenInput(), required=False)
 
     class Meta:
         model = PreprintProvider
@@ -36,8 +36,9 @@ class PreprintProviderForm(ModelForm):
     def clean_advisory_board(self, *args, **kwargs):
         return bleach.clean(
             self.data.get('advisory_board'),
-            tags=['a', 'b', 'br', 'div', 'em', 'h2', 'li', 'p', 'strong', 'ul'],
-            attributes=['class', 'href', 'title', 'target'],
+            tags=['a', 'b', 'br', 'div', 'em', 'h2', 'h3', 'li', 'p', 'strong', 'ul'],
+            attributes=['class', 'style', 'href', 'title', 'target'],
+            styles=['text-align', 'vertical-align'],
             strip=True
         )
 
@@ -45,7 +46,8 @@ class PreprintProviderForm(ModelForm):
         return bleach.clean(
             self.data.get('description'),
             tags=['a', 'br', 'em', 'p', 'span', 'strong'],
-            attributes=['class', 'href', 'title', 'target'],
+            attributes=['class', 'style', 'href', 'title', 'target'],
+            styles=['text-align', 'vertical-align'],
             strip=True
         )
 
@@ -54,6 +56,6 @@ class PreprintProviderForm(ModelForm):
             self.data.get('footer_links'),
             tags=['a', 'br', 'div', 'em', 'p', 'span', 'strong'],
             attributes=['class', 'style', 'href', 'title', 'target'],
-            styles=['vertical-align'],
+            styles=['text-align', 'vertical-align'],
             strip=True
         )
