@@ -1,23 +1,29 @@
-from nose.tools import *  # flake8: noqa
-
-from tests.base import ApiTestCase
-from osf_tests.factories import InstitutionFactory
+import pytest
 
 from api.base.settings.defaults import API_BASE
+from osf_tests.factories import InstitutionFactory
 
-class TestInstitutionDetail(ApiTestCase):
-    def setUp(self):
-        super(TestInstitutionDetail, self).setUp()
-        self.institution = InstitutionFactory()
-        self.institution_url = '/' + API_BASE + 'institutions/{id}/'
+@pytest.mark.django_db
+class TestInstitutionDetail:
 
-    def test_return_wrong_id(self):
-        res = self.app.get(self.institution_url.format(id='1PO'), expect_errors=True)
+    @pytest.fixture()
+    def institution(self):
+        return InstitutionFactory()
 
-        assert_equal(res.status_code, 404)
+    @pytest.fixture()
+    def url_institution(self):
+        def url(id):
+            return '/{}institutions/{}/'.format(API_BASE, id)
+        return url
 
-    def test_return_with_id(self):
-        res = self.app.get(self.institution_url.format(id=self.institution._id))
 
-        assert_equal(res.status_code, 200)
-        assert_equal(res.json['data']['attributes']['name'], self.institution.name)
+    def test_detail_response(self, app, institution, url_institution):
+        #return_wrong_id
+        res = app.get(url_institution(id='1PO'), expect_errors=True)
+        assert res.status_code == 404
+
+        #test_return_with_id
+        res = app.get(url_institution(id=institution._id))
+
+        assert res.status_code == 200
+        assert res.json['data']['attributes']['name'] == institution.name
