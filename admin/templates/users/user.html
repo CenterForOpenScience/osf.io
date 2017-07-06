@@ -143,9 +143,13 @@
                     </td>
                 </tr>
                 <tr>
-                    <td>Email</td>
+                    <td>Username</td>
+                    <td>{{ user.username }}</td>
+                </tr>
+                <tr>
+                    <td>Emails</td>
                     <td>
-                        {% for email in emails %}
+                        {% for email in user.emails %}
                             <li>
                                 {% if email == user.username %}
                                     <strong>Primary: </strong>
