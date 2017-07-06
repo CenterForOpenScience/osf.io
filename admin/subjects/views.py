@@ -14,10 +14,10 @@ class SubjectListView(PermissionRequiredMixin, ListView):
     raise_exception = True
 
     def get_queryset(self):
-        request = self.request.GET
+        req_obj = self.request.GET
         qs = super(SubjectListView, self).get_queryset().order_by('text')
-        if PreprintProvider.objects.filter(_id=request.get('provider_id')).exists():
-            qs = qs.filter(provider___id=request.get('provider_id'))
+        if PreprintProvider.objects.filter(_id=req_obj.get('provider_id')).exists():
+            qs = qs.filter(provider___id=req_obj.get('provider_id'))
         return qs
 
     def get_context_data(self, **kwargs):
