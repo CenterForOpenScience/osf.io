@@ -1,38 +1,52 @@
-from nose.tools import *  # flake8: noqa
+import pytest
 
-from tests.base import ApiTestCase
-from osf_tests.factories import InstitutionFactory
-
-from osf.models import AbstractNode as Node
 from api.base.settings.defaults import API_BASE
 
-class TestInstitutionList(ApiTestCase):
-    def setUp(self):
-        super(TestInstitutionList, self).setUp()
-        self.institution = InstitutionFactory()
-        self.institution2 = InstitutionFactory()
-        self.institution_url = '/{}institutions/'.format(API_BASE)
+from osf_tests.factories import InstitutionFactory
+from osf.models import AbstractNode as Node
 
-    def test_return_all_institutions(self):
-        res = self.app.get(self.institution_url)
+@pytest.mark.django_db
+class TestInstitutionList:
 
-        assert_equal(res.status_code, 200)
+    @pytest.fixture()
+    def institution_one(self):
+        return InstitutionFactory()
+
+    @pytest.fixture()
+    def institution_two(self):
+        return InstitutionFactory()
+
+    @pytest.fixture()
+    def url_institution(self):
+        return '/{}institutions/'.format(API_BASE)
+
+    @pytest.fixture()
+    def res_institutions(self, app, url_institution):
+        return app.get(url_institution)
+
+    @pytest.fixture()
+    def data_institutions(self, res_institutions):
+        return res_institutions.json['data']
+
+
+    def test_return_all_institutions(self, institution_one, institution_two, url_institution, res_institutions, data_institutions):
+        assert res_institutions.status_code == 200
+
+        ids = [each['id'] for each in data_institutions]
+        assert len(data_institutions) == 2
+        assert res_institutions.json['links']['meta']['per_page'] == 1000
+
+        assert institution_one._id in ids
+        assert institution_two._id in ids
+
+    def test_does_not_return_deleted_institution(self, app, institution_one, institution_two, url_institution):
+        institution_one.is_deleted = True
+        institution_one.save()
+
+        res = app.get(url_institution)
+        assert res.status_code == 200
 
         ids = [each['id'] for each in res.json['data']]
-        assert_equal(len(res.json['data']), 2)
-        assert_equal(res.json['links']['meta']['per_page'], 1000)
-        assert_in(self.institution._id, ids)
-        assert_in(self.institution2._id, ids)
-
-    def test_does_not_return_deleted_institution(self):
-        self.institution.is_deleted = True
-        self.institution.save()
-
-        res = self.app.get(self.institution_url)
-
-        assert_equal(res.status_code, 200)
-
-        ids = [each['id'] for each in res.json['data']]
-        assert_equal(len(res.json['data']), 1)
-        assert_not_in(self.institution._id, ids)
-        assert_in(self.institution2._id, ids)
+        assert len(res.json['data']) == 1
+        assert institution_one._id not in ids
+        assert institution_two._id in ids
