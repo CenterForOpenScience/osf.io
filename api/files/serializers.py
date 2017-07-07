@@ -252,7 +252,6 @@ class FileSerializer(JSONAPISerializer):
         }
         if obj.provider == 'osfstorage' and obj.is_file:
             extras['downloads'] = obj.get_download_count()
-            extras['views'] = obj.get_view_count()
         return extras
 
     def get_current_user_can_comment(self, obj):
