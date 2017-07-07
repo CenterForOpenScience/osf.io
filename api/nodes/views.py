@@ -946,6 +946,8 @@ class NodeDraftRegistrationsList(JSONAPIBaseView, generics.ListCreateAPIView, No
     view_category = 'nodes'
     view_name = 'node-draft-registrations'
 
+    ordering = ('-date_modified',)
+
     # overrides ListCreateAPIView
     def get_queryset(self):
         node = self.get_node()
@@ -1166,6 +1168,8 @@ class NodeRegistrationsList(JSONAPIBaseView, generics.ListCreateAPIView, NodeMix
     view_category = 'nodes'
     view_name = 'node-registrations'
 
+    ordering = ('-date_modified',)
+
     # overrides ListCreateAPIView
     # TODO: Filter out withdrawals by default
     def get_queryset(self):
@@ -1273,6 +1277,8 @@ class NodeChildrenList(JSONAPIBaseView, bulk_views.ListBulkCreateJSONAPIView, No
     serializer_class = NodeSerializer
     view_category = 'nodes'
     view_name = 'node-children'
+
+    ordering = ('-date_modified',)
 
     # overrides NodeODMFilterMixin
     def get_default_odm_query(self):
@@ -1641,6 +1647,8 @@ class NodeForksList(JSONAPIBaseView, generics.ListCreateAPIView, NodeMixin, Node
     serializer_class = NodeForksSerializer
     view_category = 'nodes'
     view_name = 'node-forks'
+
+    ordering = ('-forked_date',)
 
     # overrides ListCreateAPIView
     def get_queryset(self):
@@ -2050,6 +2058,8 @@ class NodeAddonList(JSONAPIBaseView, generics.ListAPIView, ListFilterMixin, Node
     view_category = 'nodes'
     view_name = 'node-addons'
 
+    ordering = ('-date_modified',)
+
     def get_default_queryset(self):
         qs = []
         for addon in ADDONS_OAUTH:
@@ -2227,6 +2237,8 @@ class NodeAddonFolderList(JSONAPIBaseView, generics.ListAPIView, NodeMixin, Addo
     view_category = 'nodes'
     view_name = 'node-addon-folders'
 
+    ordering = ('-date_modified',)
+
     def get_queryset(self):
         # TODO: [OSF-6120] refactor this/NS models to be generalizable
         node_addon = self.get_addon_settings()
@@ -2253,6 +2265,7 @@ class NodeProvider(object):
         self.provider = provider
         self.node_id = node._id
         self.pk = node._id
+        self.id = node.id
 
 
 class NodeProvidersList(JSONAPIBaseView, generics.ListAPIView, NodeMixin):
@@ -2382,6 +2395,8 @@ class NodeProvidersList(JSONAPIBaseView, generics.ListAPIView, NodeMixin):
     view_category = 'nodes'
     view_name = 'node-providers'
 
+    ordering = ('-id',)
+
     def get_provider_item(self, provider):
         return NodeProvider(provider, self.get_node())
 
@@ -2446,6 +2461,8 @@ class NodeAlternativeCitationsList(JSONAPIBaseView, generics.ListCreateAPIView, 
     serializer_class = NodeAlternativeCitationSerializer
     view_category = 'nodes'
     view_name = 'alternative-citations'
+
+    ordering = ('-id',)
 
     def get_queryset(self):
         return self.get_node().alternative_citations.all()
@@ -2818,6 +2835,8 @@ class NodeInstitutionsList(JSONAPIBaseView, generics.ListAPIView, ODMFilterMixin
     model = Institution
     view_category = 'nodes'
     view_name = 'node-institutions'
+
+    ordering = ('-id',)
 
     def get_queryset(self):
         node = self.get_node()
@@ -3349,6 +3368,8 @@ class NodeViewOnlyLinksList(JSONAPIBaseView, generics.ListCreateAPIView, ListFil
     view_category = 'nodes'
     view_name = 'node-view-only-links'
 
+    ordering = ('-date_created',)
+
     def get_default_queryset(self):
         return self.get_node().private_links.filter(is_deleted=False)
 
@@ -3561,6 +3582,8 @@ class NodePreprintsList(JSONAPIBaseView, generics.ListAPIView, NodeMixin, Prepri
 
     view_category = 'nodes'
     view_name = 'node-preprints'
+
+    ordering = ('-date_modified',)
 
     # overrides DjangoFilterMixin
     def get_default_django_query(self):

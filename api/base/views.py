@@ -798,6 +798,8 @@ class BaseContributorDetail(JSONAPIBaseView, generics.RetrieveAPIView):
 
 class BaseContributorList(JSONAPIBaseView, generics.ListAPIView, ListFilterMixin):
 
+    ordering = ('-date_modified',)
+
     def get_default_queryset(self):
         node = self.get_node()
 
@@ -824,6 +826,8 @@ class BaseNodeLinksDetail(JSONAPIBaseView, generics.RetrieveAPIView):
 
 
 class BaseNodeLinksList(JSONAPIBaseView, generics.ListAPIView):
+
+    ordering = ('-date_modified',)
 
     def get_queryset(self):
         auth = get_user_auth(self.request)
@@ -853,6 +857,8 @@ class BaseLinkedList(JSONAPIBaseView, generics.ListAPIView):
     serializer_class = None
     view_category = None
     view_name = None
+
+    ordering = ('-date_modified',)
 
     # TODO: This class no longer exists
     # model_class = Pointer

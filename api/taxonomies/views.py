@@ -48,6 +48,8 @@ class TaxonomyList(JSONAPIBaseView, generics.ListAPIView, ODMFilterMixin):
     view_category = 'taxonomies'
     view_name = 'taxonomy-list'
 
+    ordering = ('-id',)
+
     # overrides ListAPIView
     def get_default_odm_query(self):
         return
