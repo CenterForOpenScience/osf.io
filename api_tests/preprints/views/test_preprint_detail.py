@@ -1,6 +1,6 @@
 import functools
 import mock
-from django import Q
+from django.db.models import Q
 import pytest
 
 from api.base.settings.defaults import API_BASE
