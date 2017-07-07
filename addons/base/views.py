@@ -656,7 +656,7 @@ def addon_view_or_download_file(auth, path, provider, **kwargs):
 
     # TODO clean up these urls and unify what is used as a version identifier
     if request.method == 'HEAD':
-        return make_response(('', 200, {
+        return make_response(('', httplib.FOUND, {
             'Location': file_node.generate_waterbutler_url(**dict(extras, direct=None, version=version.identifier, _internal=extras.get('mode') == 'render'))
         }))
 
