@@ -18,7 +18,7 @@ from modularodm import Q as MQ
 from modularodm.query import queryset as modularodm_queryset
 from rest_framework import serializers as ser
 from rest_framework.filters import OrderingFilter
-from osf.models import Subject
+from osf.models import Subject, Node
 
 
 def lowercase(lower):
@@ -540,13 +540,27 @@ class ListFilterMixin(FilterMixin):
 
         if filters:
             for key, field_names in filters.iteritems():
-                for field_name, data in field_names.iteritems():
-                    operations = data if isinstance(data, list) else [data]
-                    for operation in operations:
-                        if isinstance(queryset, list):
-                            queryset = self.get_filtered_queryset(field_name, operation, queryset)
-                        else:
-                            queryset = self.filter_by_field(queryset, field_name, operation)
+                match = self.QUERY_PATTERN.match(key)
+                fields = match.groupdict()['fields']
+                if len(re.findall(self.FILTER_FIELDS, fields)) > 1:  # This indicates an OR statement
+                    sub_query = Node.objects.none()
+                    for field_name, data in field_names.iteritems():
+                        operations = data if isinstance(data, list) else [data]
+                        for operation in operations:
+                            if isinstance(queryset, list):
+                                sub_query = sub_query | self.get_filtered_queryset(field_name, operation, default_queryset)
+                            else:
+                                sub_query = sub_query | self.filter_by_field(default_queryset, field_name, operation)
+
+                    queryset = queryset & sub_query
+                else:
+                    for field_name, data in field_names.iteritems():
+                        operations = data if isinstance(data, list) else [data]
+                        for operation in operations:
+                            if isinstance(queryset, list):
+                                queryset = self.get_filtered_queryset(field_name, operation, queryset)
+                            else:
+                                queryset = self.filter_by_field(queryset, field_name, operation)
         return queryset
 
     def filter_by_field(self, queryset, field_name, operation):
