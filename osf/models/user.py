@@ -472,14 +472,19 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
 
     def csl_name(self, node_id):
         if self.is_registered:
-            """If the user is registered, use the family/given names """
+            name = self.fullname
+        else:
+            name = self.get_unclaimed_record(node_id)['name']
+
+        if self.is_registered and self.family_name and self.given_name:
+            """If the user is registered and has a family and given name, use those"""
             return {
                 'family': self.family_name,
                 'given': self.csl_given_name,
             }
         else:
             """ If the user isn't registered, use the unregistered contributor name instead """
-            parsed = utils.impute_names(self.get_unclaimed_record(node_id)['name'])
+            parsed = utils.impute_names(name)
             given_name = parsed['given']
             middle_names = parsed['middle']
             family_name = parsed['family']
