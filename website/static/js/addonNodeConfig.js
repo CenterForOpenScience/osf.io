@@ -8,8 +8,7 @@ var ko = require('knockout');
 var $ = require('jquery');
 var Raven = require('raven-js');
 
-var ZeroClipboard = require('zeroclipboard');
-ZeroClipboard.config('/static/vendor/bower_components/zeroclipboard/dist/ZeroClipboard.swf');
+var Clipboard = require('clipboard');
 var $osf = require('js/osfHelpers');
 var oop = require('js/oop');
 var FolderPickerViewModel = require('js/folderPickerNodeConfig');
@@ -64,7 +63,7 @@ var AddonFolderPickerViewModel = oop.extend(FolderPickerViewModel, {
         self.options = $.extend({}, defaults, opts);
         // Treebeard config
         self.treebeardOptions = $.extend(
-            {}, 
+            {},
             FolderPickerViewModel.prototype.treebeardOptions,
             {
                 onPickFolder: function(evt, item) {
