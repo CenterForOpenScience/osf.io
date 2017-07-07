@@ -1,4 +1,3 @@
-
 var $ = require('jquery');
 var ko = require('knockout');
 var bootbox = require('bootbox'); // TODO: Why is this import required? Is it? See [#OSF-6100]
@@ -10,21 +9,6 @@ var $osf = require('js/osfHelpers');
     */
 var NavbarViewModel = function() {
     var self = this;
-
-    self.currentService = window.contextVars.meetings ? 'meetings' : 'home';
-
-    self.osfServices = {
-        home: {
-            name: 'HOME ',
-            href: '/',
-            support: '/support/'
-        },
-        meetings: {
-            name: 'MEETINGS',
-            href: '/meetings/',
-            support: 'http://help.osf.io/m/meetings'
-        }
-    };
 
     $('#primary-navigation').on('click', function () {
         $('.navbar-collapse').collapse('hide');

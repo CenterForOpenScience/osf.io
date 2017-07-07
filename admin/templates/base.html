@@ -171,6 +171,9 @@
           {% if perms.osf.view_metrics %}
             <li><a href="{% url 'metrics:metrics' %}"><i class='fa fa-link'></i> <span>OSF Metrics</span></a></li>
           {% endif %}
+          {% if perms.osf.view_subjects%}
+            <li><a href="{% url 'subjects:list' %}"><i class='fa fa-link'></i> <span>OSF Subjects</span></a></li>
+          {% endif %}
           </ul><!-- /.sidebar-menu -->
         </section>
         <!-- /.sidebar -->
