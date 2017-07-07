@@ -788,6 +788,33 @@ class TestProjectViews(OsfTestCase):
         assert last_log.action == NodeLog.VIEW_ONLY_LINK_REMOVED
         assert last_log.params.get('anonymous_link')
 
+    def test_remove_component(self):
+        node = NodeFactory(parent=self.project, creator=self.user1)
+        url = node.api_url
+        res = self.app.delete_json(url, {}, auth=self.auth).maybe_follow()
+        node.reload()
+        assert_equal(node.is_deleted, True)
+        assert_in('url', res.json)
+        assert_equal(res.json['url'], self.project.url)
+
+    def test_cant_remove_component_if_not_admin(self):
+        node = NodeFactory(parent=self.project, creator=self.user1)
+        non_admin = AuthUserFactory()
+        node.add_contributor(
+            non_admin,
+            permissions=['read', 'write'],
+            save=True,
+        )
+
+        url = node.api_url
+        res = self.app.delete_json(
+            url, {}, auth=non_admin.auth,
+            expect_errors=True,
+        ).maybe_follow()
+
+        assert_equal(res.status_code, http.FORBIDDEN)
+        assert_false(node.is_deleted)
+
     def test_view_project_returns_whether_to_show_wiki_widget(self):
         user = AuthUserFactory()
         project = ProjectFactory(creator=user, is_public=True)
@@ -1885,6 +1912,36 @@ class TestAddingContributorViews(OsfTestCase):
         time.sleep(1)  # throttle period expires
         notify_added_contributor(project, contributor, auth, throttle=throttle)
         assert_equal(send_mail.call_count, 2)
+
+    @mock.patch('website.mails.send_mail')
+    def test_add_contributor_to_fork_sends_email(self, send_mail):
+        contributor = UserFactory()
+        fork = self.project.fork_node(auth=Auth(self.creator))
+        fork.add_contributor(contributor, auth=Auth(self.creator))
+        fork.save()
+        assert_true(send_mail.called)
+        assert_equal(send_mail.call_count, 1)
+
+    @mock.patch('website.mails.send_mail')
+    def test_add_contributor_to_template_sends_email(self, send_mail):
+        contributor = UserFactory()
+        template = self.project.use_as_template(auth=Auth(self.creator))
+        template.add_contributor(contributor, auth=Auth(self.creator))
+        template.save()
+        assert_true(send_mail.called)
+        assert_equal(send_mail.call_count, 1)
+
+    @mock.patch('website.mails.send_mail')
+    def test_creating_fork_does_not_email_creator(self, send_mail):
+        contributor = UserFactory()
+        fork = self.project.fork_node(auth=Auth(self.creator))
+        assert_false(send_mail.called)
+
+    @mock.patch('website.mails.send_mail')
+    def test_creating_template_does_not_email_creator(self, send_mail):
+        contributor = UserFactory()
+        template = self.project.use_as_template(auth=Auth(self.creator))
+        assert_false(send_mail.called)
 
     def test_add_multiple_contributors_only_adds_one_log(self):
         n_logs_pre = self.project.logs.count()

@@ -939,6 +939,31 @@ class TestNodeCreate:
         assert len(new_component.contributors) == 2
         assert len(new_component.contributors) == len(parent_project.contributors)
 
+    def test_create_component_with_tags(self, app, user_one, title, category):
+        parent_project = ProjectFactory(creator=user_one)
+        url = '/{}nodes/{}/children/'.format(API_BASE, parent_project._id)
+        component_data = {
+            'data': {
+                'type': 'nodes',
+                'attributes': {
+                    'title': title,
+                    'category': category,
+                    'tags': ['test tag 1', 'test tag 2']
+                }
+            }
+        }
+        res = app.post_json_api(url, component_data, auth=user_one.auth)
+        assert res.status_code == 201
+        json_data = res.json['data']
+
+        new_component_id = json_data['id']
+        new_component = Node.load(new_component_id)
+
+        assert len(new_component.tags.all()) == 2
+        tag1, tag2 = new_component.tags.all()
+        assert tag1.name == 'test tag 1'
+        assert tag2.name == 'test tag 2'
+
     def test_create_component_inherit_contributors_with_unregistered_contributor(self, app, user_one, title, category):
         parent_project = ProjectFactory(creator=user_one)
         parent_project.add_unregistered_contributor(

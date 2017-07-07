@@ -277,7 +277,7 @@ def node_setting(auth, node, **kwargs):
         addon
         for addon in settings.ADDONS_AVAILABLE
         if 'node' in addon.owners
-        and addon.short_name not in settings.SYSTEM_ADDED_ADDONS['node'] and addon.short_name != 'wiki'
+        and addon.short_name not in settings.SYSTEM_ADDED_ADDONS['node'] and addon.short_name not in ['wiki', 'forward']
     ], key=lambda addon: addon.full_name.lower())
 
     for addon in settings.ADDONS_AVAILABLE:
@@ -466,6 +466,40 @@ def update_node(auth, node, **kwargs):
     }
     node.save()
     return {'updated_fields': updated_fields_dict}
+
+@must_be_valid_project
+@must_have_permission(ADMIN)
+@must_not_be_registration
+def component_remove(auth, node, **kwargs):
+    """Remove component, and recursively remove its children. If node has a
+    parent, add log and redirect to parent; else redirect to user dashboard.
+
+    """
+    try:
+        node.remove_node(auth)
+    except NodeStateError as e:
+        raise HTTPError(
+            http.BAD_REQUEST,
+            data={
+                'message_short': 'Error',
+                'message_long': 'Could not delete component: ' + e.message
+            },
+        )
+    node.save()
+
+    message = '{} has been successfully deleted.'.format(
+        node.project_or_component.capitalize()
+    )
+    status.push_status_message(message, kind='success', trust=False)
+    parent = node.parent_node
+    if parent and parent.can_view(auth):
+        redirect_url = node.parent_node.url
+    else:
+        redirect_url = '/dashboard/'
+
+    return {
+        'url': redirect_url,
+    }
 
 
 @must_be_valid_project

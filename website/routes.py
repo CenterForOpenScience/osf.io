@@ -1393,6 +1393,17 @@ def make_url_map(app):
             json_renderer,
         ),
 
+        # Remove
+        Rule(
+            [
+                '/project/<pid>/',
+                '/project/<pid>/node/<nid>/',
+            ],
+            'delete',
+            project_views.node.component_remove,
+            json_renderer,
+        ),
+
         # Reorder components
         Rule('/project/<pid>/reorder_components/', 'post',
              project_views.node.project_reorder_components, json_renderer),
