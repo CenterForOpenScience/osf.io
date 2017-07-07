@@ -16,6 +16,8 @@ Usage:
     # Force archive OSFS and Dropbox on abc12
     python manage.py force_archive --addons dropbox --guids abc12
 """
+from __future__ import unicode_literals
+
 from copy import deepcopy
 import httplib as http
 import json
