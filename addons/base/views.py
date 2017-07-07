@@ -209,7 +209,7 @@ def check_access(node, auth, action, cas_resp):
         if action == 'download' and \
                     auth.user is not None and \
                     prereg_draft_registration.count() > 0 and \
-                    settings.PREREG_ADMIN_TAG in auth.user.system_tags:
+                    (settings.PREREG_ADMIN_TAG in auth.user.system_tags or auth.user.has_perm('osf.administer_prereg')):
             return True
     except NoResultsFound:
         pass
