@@ -15,7 +15,7 @@
         <div class="service-name">
             <a href="${service_url}">
                 <span class="hidden-xs"> OSF </span>
-                <span><strong>${service_name}</strong></span>
+                <span class="current-service"><strong>${service_name}</strong></span>
             </a>
         </div>
         <div class="dropdown primary-nav">

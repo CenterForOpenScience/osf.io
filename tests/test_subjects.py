@@ -148,6 +148,12 @@ class TestSubjectEditValidation(OsfTestCase):
         with assert_raises(ValidationError):
             self.subject.delete()
 
+    def test_max_highlighted_count(self):
+        highlights = [SubjectFactory(provider=self.subject.provider, highlighted=True) for _ in range(10)]
+        with assert_raises(ValidationError):
+            self.subject.highlighted=True
+            self.subject.save()
+
 class TestSubjectProperties(OsfTestCase):
     def test_bepress_text(self):
         osf_provider = PreprintProviderFactory(_id='osf')
