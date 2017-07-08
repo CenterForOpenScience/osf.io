@@ -57,7 +57,7 @@
                     <i class="fa fa-times remove-pointer" data-id="${summary['id']}" data-toggle="tooltip" title="Remove link"></i>
                     <i class="fa fa-code-fork" onclick="NodeActions.forkPointer('${summary['id']}', '${summary['primary_id']}');" data-toggle="tooltip" title="Fork this ${summary['node_type']} into ${node['node_type']} ${node['title']}"></i>
                 % endif
-                % if summary['node_type'] == 'component' and summary['logged_in'] and summary['is_contributor']:
+                % if summary['primary'] and summary['logged_in'] and summary['is_contributor']:
                     <div class="dropdown pull-right" id="componentQuickActions">
                         <button class="btn btn-default dropdown-toggle" type="button" data-toggle="dropdown">
                             <span class="glyphicon glyphicon-option-horizontal"></span>
