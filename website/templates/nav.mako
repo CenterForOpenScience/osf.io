@@ -1,4 +1,4 @@
-<%block name="nav">
+<%def name="nav(service_name, service_url, service_support_url)">
 <link rel="stylesheet" href='/static/css/nav.css'>
 <div class="osf-nav-wrapper">
 
@@ -13,9 +13,9 @@
             </button>
         <a class="navbar-brand" href="/" aria-label="Go home"><span class="osf-navbar-logo"></span></a>
         <div class="service-name">
-            <a data-bind="attr: {href: osfServices[currentService].href}">
+            <a href="${service_url}">
                 <span class="hidden-xs"> OSF </span>
-                <span><strong data-bind="text: osfServices[currentService].name"></strong></span>
+                <span class="current-service"><strong>${service_name}</strong></span>
             </a>
         </div>
         <div class="dropdown primary-nav">
@@ -36,15 +36,14 @@
 
     <div class="navbar-collapse collapse navbar-right" id="secondary-navigation">
         <ul class="nav navbar-nav">
-            <!-- ko if: currentService === 'home' -->
-            % if user_name:
-                <li><a href="${domain}myprojects/">My Projects</a></li>
+            % if service_name == 'HOME':
+                % if user_name:
+                    <li><a href="${domain}myprojects/">My Projects</a></li>
+                % endif
+                    <li><a href="${domain}search/">Search</a></li>
             % endif
-                <li><a href="${domain}search/">Search</a></li>
-            <!-- /ko -->
-
             <li class="dropdown">
-            <a data-bind="attr: {href: osfServices[currentService].support}">Support</a>
+            <a href="${service_support_url}">Support</a>
             </li>
 
             % if user_name and display_name:
@@ -87,8 +86,6 @@
         </ul>
     </div>
 </div>
-
-
 </nav>
 </div>
-</%block>
+</%def>

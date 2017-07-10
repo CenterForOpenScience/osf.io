@@ -3173,7 +3173,7 @@ class TestCitationsProperties:
         node.save()
         assert len(node.csl['author']) == 2
         expected_authors = [
-            contrib.csl_name for contrib in [node.creator, visible]
+            contrib.csl_name(node._id) for contrib in [node.creator, visible]
         ]
 
         assert node.csl['author'] == expected_authors

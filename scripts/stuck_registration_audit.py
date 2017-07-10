@@ -17,6 +17,7 @@ from website import settings
 
 from framework.auth import Auth
 from framework.celery_tasks import app as celery_app
+from osf.management.commands import force_archive as fa
 from osf.models import NodeLog, ArchiveJob, Registration
 from website.archiver import ARCHIVER_INITIATED
 from website.settings import ARCHIVE_TIMEOUT_TIMEDELTA, ADDONS_REQUESTED
@@ -26,17 +27,6 @@ from scripts import utils as scripts_utils
 logger = logging.getLogger(__name__)
 
 HERE = os.path.dirname(os.path.abspath(__file__))
-
-LOG_WHITELIST = {
-    NodeLog.EMBARGO_APPROVED,
-    NodeLog.EMBARGO_INITIATED,
-    NodeLog.REGISTRATION_APPROVAL_INITIATED,
-    NodeLog.REGISTRATION_APPROVAL_APPROVED,
-    NodeLog.PROJECT_REGISTERED,
-    NodeLog.MADE_PUBLIC,
-    NodeLog.EDITED_DESCRIPTION,
-}
-
 
 def find_failed_registrations():
     expired_if_before = datetime.utcnow() - ARCHIVE_TIMEOUT_TIMEDELTA
@@ -61,10 +51,11 @@ def analyze_failed_registration_nodes():
     # Build up a list of dictionaries with info about these failed nodes
     failed_registration_info = []
     for broken_registration in failed_registration_nodes:
-        node_logs_after_date = list(
+        unacceptable_node_logs_after_date = list(
             broken_registration.registered_from.get_aggregate_logs_queryset(Auth(broken_registration.registered_from.creator))
             .filter(date__gt=broken_registration.registered_date)
-            .exclude(action__in=LOG_WHITELIST)
+            .exclude(action__in=fa.LOG_WHITELIST)
+            .exclude(action__in=fa.LOG_GREYLIST)
             .values_list('action', flat=True)
         )
 
@@ -74,7 +65,7 @@ def analyze_failed_registration_nodes():
             if broken_registration.registered_from.has_addon(addon)
             and addon not in {'osfstorage', 'wiki'}
         ]
-        has_addons = True if len(addon_list) > 0 else False
+        has_addons = bool(addon_list)
 
         # Any registrations succeeded after the stuck one?
         # Not sure why broken_registration.registered_from.registrations was always 0 locally...
@@ -89,14 +80,14 @@ def analyze_failed_registration_nodes():
             else:
                 succeeded_registrations_after_failed.append(other_reg._id)
 
-        can_be_reset = len(node_logs_after_date) == 0 and not has_addons
+        can_be_reset = fa.verify(broken_registration)
         logger.info('Found broken registration {}'.format(broken_registration._id))
         failed_registration_info.append(
             {
                 'registration': broken_registration._id,
                 'registered_date': broken_registration.registered_date,
                 'original_node': broken_registration.registered_from._id,
-                'logs_on_original_after_registration_date': node_logs_after_date,
+                'logs_on_original_after_registration_date': unacceptable_node_logs_after_date,
                 'has_addons': has_addons,
                 'addon_list': addon_list,
                 'succeeded_registrations_after_failed': succeeded_registrations_after_failed,

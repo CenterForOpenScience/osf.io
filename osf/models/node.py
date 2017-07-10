@@ -638,7 +638,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
             'id': self._id,
             'title': sanitize.unescape_entities(self.title),
             'author': [
-                contributor.csl_name  # method in auth/model.py which parses the names of authors
+                contributor.csl_name(self._id)  # method in auth/model.py which parses the names of authors
                 for contributor in self.visible_contributors
             ],
             'publisher': 'Open Science Framework',
@@ -1135,7 +1135,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
             if save:
                 self.save()
 
-            if self._id and send_email != 'false':
+            if self._id:
                 project_signals.contributor_added.send(self,
                                                        contributor=contributor,
                                                        auth=auth, email_template=send_email)
@@ -1231,6 +1231,11 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
             contributor = OSFUser.load(user_id)
             if not contributor:
                 raise ValueError('User with id {} was not found.'.format(user_id))
+            if not contributor.is_registered:
+                raise ValueError(
+                    'Cannot add unconfirmed user {} to node {} by guid. Add an unregistered contributor with fullname and email.'
+                    .format(user_id, self._id)
+                )
             if self.contributor_set.filter(user=contributor).exists():
                 raise ValidationValueError('{} is already a contributor.'.format(contributor.fullname))
             contributor, _ = self.add_contributor(contributor=contributor, auth=auth, visible=bibliographic,
@@ -1939,7 +1944,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         forked.save()
 
         # Need to call this after save for the notifications to be created with the _primary_key
-        project_signals.contributor_added.send(forked, contributor=user, auth=auth)
+        project_signals.contributor_added.send(forked, contributor=user, auth=auth, email_template='false')
 
         forked.add_log(
             action=NodeLog.NODE_FORKED,
@@ -2021,6 +2026,9 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         new.date_created = timezone.now()
 
         new.save(suppress_log=True)
+
+        # Need to call this after save for the notifications to be created with the _primary_key
+        project_signals.contributor_added.send(new, contributor=auth.user, auth=auth, email_template='false')
 
         # Log the creation
         new.add_log(

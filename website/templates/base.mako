@@ -87,10 +87,7 @@
     </div>
     % endif
 
-    <%namespace name="nav_file" file="nav.mako"/>
-    <%block name="nav">
-        ${nav_file.nav()}
-    </%block>
+    ${self.nav()}
      ## TODO: shouldn't always have the watermark class
     ${self.content_wrap()}
 
@@ -206,6 +203,11 @@
 
 ###### Base template functions #####
 
+<%def name="nav()">
+    <%namespace name="nav_helper" file="nav.mako" />
+    ${nav_helper.nav(service_name='HOME', service_url='/', service_support_url='/support/')}
+</%def>
+
 <%def name="title()">
     ### The page title ###
 </%def>
@@ -282,14 +284,11 @@
       <script src="//cdnjs.cloudflare.com/ajax/libs/es5-shim/4.0.3/es5-sham.min.js"></script>
     <![endif]-->
 
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/es6-shim/0.35.0/es6-shim.min.js"></script>
-
-    ## TODO: Get fontawesome and select2 to play nicely with webpack
+    ## TODO: Install bootstrap with npm and build it into vendor.js when
+    ## https://github.com/webpack/webpack/issues/2023 is resolved
     <link rel="stylesheet" href="/static/vendor/bower_components/bootstrap/dist/css/bootstrap.min.css">
-    <link rel="stylesheet" href="/static/vendor/bower_components/select2/select2.css">
-    <link rel="stylesheet" href="/static/vendor/bower_components/osf-style/css/base.css">
-    <link rel="stylesheet" href="/static/css/style.css">
 
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/es6-shim/0.35.0/es6-shim.min.js"></script>
     % if settings.USE_CDN_FOR_CLIENT_LIBS:
         <script src="//ajax.googleapis.com/ajax/libs/jquery/1.11.2/jquery.min.js"></script>
         <script>window.jQuery || document.write('<script src="/static/vendor/bower_components/jquery/dist/jquery.min.js">\x3C/script>')</script>

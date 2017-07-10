@@ -83,7 +83,7 @@ services:
 #    build: ../ember-osf
 #    command: /bin/bash -c "yarn --pure-lockfile && ./node_modules/bower/bin/bower install --allow-root --config.interactive=false"
 #    volumes:
-#      - ember-osf-sync:/code:nocopy
+#      - emberosf-sync:/code:nocopy
 
 volumes:
   osf-sync:
@@ -95,7 +95,7 @@ volumes:
 #  mfr-sync:
 #    external: true
 
-#  ember-osf-sync:
+#  emberosf-sync:
 #    external: true
 
 #  preprints-sync:

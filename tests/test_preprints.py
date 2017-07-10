@@ -290,6 +290,20 @@ class TestPreprintProvider(OsfTestCase):
 
         assert set(self.provider.all_subjects) == set([subj_a, subj_b, subj_aa, subj_ab, subj_ba, subj_bb, subj_aaa])
 
+    def test_highlighted_subjects(self):
+        subj_a = SubjectFactory(provider=self.provider, text='A')
+        subj_b = SubjectFactory(provider=self.provider, text='B')
+        subj_aa = SubjectFactory(provider=self.provider, text='AA', parent=subj_a)
+        subj_ab = SubjectFactory(provider=self.provider, text='AB', parent=subj_a)
+        subj_ba = SubjectFactory(provider=self.provider, text='BA', parent=subj_b)
+        subj_bb = SubjectFactory(provider=self.provider, text='BB', parent=subj_b)
+        subj_aaa = SubjectFactory(provider=self.provider, text='AAA', parent=subj_aa)
+
+        assert set(self.provider.highlighted_subjects) == set([subj_a, subj_b])
+        subj_aaa.highlighted = True
+        subj_aaa.save()
+        assert set(self.provider.highlighted_subjects) == set([subj_aaa])
+
 class TestPreprintIdentifiers(OsfTestCase):
     def setUp(self):
         super(TestPreprintIdentifiers, self).setUp()

@@ -443,7 +443,8 @@ class NodeSerializer(JSONAPISerializer):
         except ValidationError as e:
             raise InvalidModelValueError(detail=e.messages[0])
         if len(tag_instances):
-            node.tags.add(*tag_instances)
+            for tag in tag_instances:
+                node.tags.add(tag)
         if is_truthy(request.GET.get('inherit_contributors')) and validated_data['parent'].has_permission(user, 'write'):
             auth = get_user_auth(request)
             parent = validated_data['parent']

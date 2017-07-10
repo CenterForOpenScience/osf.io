@@ -1913,6 +1913,36 @@ class TestAddingContributorViews(OsfTestCase):
         notify_added_contributor(project, contributor, auth, throttle=throttle)
         assert_equal(send_mail.call_count, 2)
 
+    @mock.patch('website.mails.send_mail')
+    def test_add_contributor_to_fork_sends_email(self, send_mail):
+        contributor = UserFactory()
+        fork = self.project.fork_node(auth=Auth(self.creator))
+        fork.add_contributor(contributor, auth=Auth(self.creator))
+        fork.save()
+        assert_true(send_mail.called)
+        assert_equal(send_mail.call_count, 1)
+
+    @mock.patch('website.mails.send_mail')
+    def test_add_contributor_to_template_sends_email(self, send_mail):
+        contributor = UserFactory()
+        template = self.project.use_as_template(auth=Auth(self.creator))
+        template.add_contributor(contributor, auth=Auth(self.creator))
+        template.save()
+        assert_true(send_mail.called)
+        assert_equal(send_mail.call_count, 1)
+
+    @mock.patch('website.mails.send_mail')
+    def test_creating_fork_does_not_email_creator(self, send_mail):
+        contributor = UserFactory()
+        fork = self.project.fork_node(auth=Auth(self.creator))
+        assert_false(send_mail.called)
+
+    @mock.patch('website.mails.send_mail')
+    def test_creating_template_does_not_email_creator(self, send_mail):
+        contributor = UserFactory()
+        template = self.project.use_as_template(auth=Auth(self.creator))
+        assert_false(send_mail.called)
+
     def test_add_multiple_contributors_only_adds_one_log(self):
         n_logs_pre = self.project.logs.count()
         reg_user = UserFactory()
