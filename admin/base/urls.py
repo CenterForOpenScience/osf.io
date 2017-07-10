@@ -21,6 +21,7 @@ urlpatterns = [
             url(r'^password/', include('password_reset.urls')),
             url(r'^nodes/', include('admin.nodes.urls', namespace='nodes')),
             url(r'^preprints/', include('admin.preprints.urls', namespace='preprints')),
+            url(r'^subjects/', include('admin.subjects.urls', namespace='subjects')),
             url(r'^users/', include('admin.users.urls', namespace='users')),
             url(r'^meetings/', include('admin.meetings.urls',
                                        namespace='meetings')),
