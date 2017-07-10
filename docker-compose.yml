@@ -1,6 +1,6 @@
 # Reference README-docker-compose.md for instructions.
 
-version: '2.1'
+version: '3'
 
 volumes:
   postgres_data_vol:

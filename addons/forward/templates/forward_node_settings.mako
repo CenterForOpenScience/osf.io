@@ -1,10 +1,5 @@
 <div id="forwardScope" class="scripted">
 
-    <h4 class="addon-title">
-        <i class="fa fa-external-link"></i>
-        External Link
-    </h4>
-
     <!-- Settings Pane -->
     <div class="forward-settings">
 
@@ -16,7 +11,7 @@
                         id="forwardUrl"
                         class="form-control"
                         data-bind="value: url"
-                        placeholder="Required"
+                        placeholder="Send people who visit your OSF project page to this link instead"
                         />
             </div>
 

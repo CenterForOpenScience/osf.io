@@ -197,13 +197,6 @@ class TestIdentifierViews(OsfTestCase):
         self.user = AuthUserFactory()
         self.node = RegistrationFactory(creator=self.user, is_public=True)
 
-    def test_get_identifiers(self):
-        self.node.set_identifier_value('doi', 'FK424601')
-        self.node.set_identifier_value('ark', 'fk224601')
-        res = self.app.get(self.node.api_url_for('node_identifiers_get'))
-        assert_equal(res.json['doi'], 'FK424601')
-        assert_equal(res.json['ark'], 'fk224601')
-
     @httpretty.activate
     def test_create_identifiers_not_exists(self):
         identifier = self.node._id
