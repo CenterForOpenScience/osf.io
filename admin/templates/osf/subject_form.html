@@ -1,0 +1,25 @@
+{% extends 'base.html' %}
+
+{% block content %}
+  <h3>Subject:</h3>
+  <dl>
+    <dt>ID</dt> <dd>{{object.id}}</dd>
+    <dt>Text</dt> <dd>{{object.text}}</dd>
+    <dt>Provider</dt> <dd>{{object.provider.name}}</dd>
+    <dt>Highlighted</dt> <dd>{{object.highlighted}}</dd>
+    <dt>Hierarchy</dt> 
+    <dd>
+      {% for s in object.object_hierarchy %}
+        {{s.text}}
+        {% if not forloop.last %}
+         - 
+        {% endif %}
+      {% endfor %}
+    </dd>
+  </dl>
+  <form method="post" action="{% url 'subjects:update' object.id %}">
+    {% csrf_token %}
+    {{form.as_p}}
+    <input class="btn btn-success" type="submit" value="Submit" />
+  </form>
+{% endblock %}

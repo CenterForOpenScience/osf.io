@@ -514,8 +514,8 @@ class NodeAddonSettingsSerializerBase(JSONAPISerializer):
     folder_path = ser.CharField(required=False, allow_null=True)
 
     # Forward-specific
-    label = ser.CharField(required=False, allow_null=True)
-    url = ser.CharField(required=False, allow_null=True)
+    label = ser.CharField(required=False, allow_blank=True)
+    url = ser.CharField(required=False, allow_blank=True)
 
     links = LinksField({
         'self': 'get_absolute_url',

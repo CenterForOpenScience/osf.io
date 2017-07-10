@@ -151,7 +151,8 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
         'researchGate': u'https://researchgate.net/profile/{}',
         'academiaInstitution': u'https://{}',
         'academiaProfileID': u'.academia.edu/{}',
-        'baiduScholar': u'http://xueshu.baidu.com/scholarID/{}'
+        'baiduScholar': u'http://xueshu.baidu.com/scholarID/{}',
+        'ssrn': u'http://papers.ssrn.com/sol3/cf_dev/AbsByAuth.cfm?per_id={}'
     }
 
     # The primary email address for the account.
@@ -470,15 +471,21 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
     def csl_given_name(self):
         return utils.generate_csl_given_name(self.given_name, self.middle_names, self.suffix)
 
-    @property
-    def csl_name(self):
-        if self.family_name and self.given_name:
+    def csl_name(self, node_id):
+        if self.is_registered:
+            name = self.fullname
+        else:
+            name = self.get_unclaimed_record(node_id)['name']
+
+        if self.is_registered and self.family_name and self.given_name:
+            """If the user is registered and has a family and given name, use those"""
             return {
                 'family': self.family_name,
                 'given': self.csl_given_name,
             }
         else:
-            parsed = utils.impute_names(self.fullname)
+            """ If the user isn't registered, use the unregistered contributor name instead """
+            parsed = utils.impute_names(name)
             given_name = parsed['given']
             middle_names = parsed['middle']
             family_name = parsed['family']
