@@ -237,3 +237,18 @@ class TestPreprintProviderSpecificSubjects(ApiTestCase):
         assert_equal(res_2.status_code, 200)
         assert_equal(res_1.json['links']['meta']['total'], 0)
         assert_equal(res_2.json['links']['meta']['total'], 0)
+
+class TestPreprintProviderHighlightedSubjects(ApiTestCase):
+    def setUp(self):
+        super(TestPreprintProviderHighlightedSubjects, self).setUp()
+        self.provider = PreprintProviderFactory()
+        self.subj_a = SubjectFactory(provider=self.provider, text='A')
+        self.subj_aa = SubjectFactory(provider=self.provider, text='AA', parent=self.subj_a, highlighted=True)
+        self.url = '/{}preprint_providers/{}/taxonomies/highlighted/'.format(API_BASE, self.provider._id)
+
+    def test_mapped_subjects_filter_wrong_provider(self):
+        res = self.app.get(self.url)
+
+        assert res.status_code == 200
+        assert len(res.json['data']) == 1
+        assert res.json['data'][0]['id'] == self.subj_aa._id
