@@ -338,7 +338,7 @@ class TestPreprintUpdateLicense:
 
     @pytest.fixture()
     def no_license(self):
-        return NodeLicense.objects.filter(name='MIT License').first()
+        return NodeLicense.objects.filter(name='No license').first()
 
     @pytest.fixture()
     def preprint_provider(self, cc0_license, no_license):
