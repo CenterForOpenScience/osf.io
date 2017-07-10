@@ -13,6 +13,10 @@
 
 <!-- Briefly describe or list your changes  -->
 
+## Tests
+
+<!-- Are there tests? What kind? If not why not?  -->
+
 ## Side effects
 
 <!--Any possible side effects? -->
