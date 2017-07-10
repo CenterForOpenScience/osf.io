@@ -8,7 +8,7 @@ from osf_tests.factories import (
     AuthUserFactory,
 )
 from rest_framework import exceptions
-from tests.utils import assert_logs, assert_not_logs
+from tests.utils import assert_latest_log, assert_latest_log_not
 from website.util import permissions, disconnected_from_listeners
 from website.project.signals import contributor_removed
 
@@ -190,29 +190,29 @@ class TestNodeContributorOrdering:
             found_contributors = True
         assert found_contributors, 'Did not compare any contributors.'
 
-#     @assert_logs(NodeLog.CONTRIB_REORDERED, 'project')
-#     def test_move_top_contributor_down_one_and_also_log(self):
-#         contributor_to_move = self.contribs[0]._id
-#         contributor_id = '{}-{}'.format(self.project._id, contributor_to_move)
-#         former_second_contributor = self.contribs[1]
-#         url = '{}{}/'.format(self.base_contributor_url, contributor_to_move)
-#         data = {
-#             'data': {
-#                 'id': contributor_id,
-#                 'type': 'contributors',
-#                 'attributes': {
-#                     'index': 1
-#                 }
-#             }
-#         }
-#         res_patch = self.app.patch_json_api(url, data, auth=self.user.auth)
-#         assert res_patch.status_code == 200
-#         self.project.reload()
-#         res = self.app.get('/{}nodes/{}/contributors/'.format(API_BASE, self.project._id), auth=self.user.auth)
-#         assert res.status_code == 200
-#         contributor_list = res.json['data']
-#         assert self.contrib_user_id(contributor_list[1]) == contributor_to_move
-#         assert self.contrib_user_id(contributor_list[0]) == former_second_contributor._id
+    def test_move_top_contributor_down_one_and_also_log(self, app, user, contribs, project, contrib_user_id, url_contrib_base):
+        with assert_latest_log(NodeLog.CONTRIB_REORDERED, project):
+            contributor_to_move = contribs[0]._id
+            contributor_id = '{}-{}'.format(project._id, contributor_to_move)
+            former_second_contributor = contribs[1]
+            url = '{}{}/'.format(url_contrib_base, contributor_to_move)
+            data = {
+                'data': {
+                    'id': contributor_id,
+                    'type': 'contributors',
+                    'attributes': {
+                        'index': 1
+                    }
+                }
+            }
+            res_patch = app.patch_json_api(url, data, auth=user.auth)
+            assert res_patch.status_code == 200
+            project.reload()
+            res = app.get('/{}nodes/{}/contributors/'.format(API_BASE, project._id), auth=user.auth)
+            assert res.status_code == 200
+            contributor_list = res.json['data']
+            assert contrib_user_id(contributor_list[1]) == contributor_to_move
+            assert contrib_user_id(contributor_list[0]) == former_second_contributor._id
 
     def test_move_second_contributor_up_one_to_top(self, app, user, contribs, project, contrib_user_id, url_contrib_base):
         contributor_to_move = contribs[1]._id
@@ -573,171 +573,172 @@ class TestNodeContributorUpdate:
         project.reload()
         assert project.get_visible(user)
 
-#     @assert_logs(NodeLog.PERMISSIONS_UPDATED, 'project', -3)
-#     @assert_logs(NodeLog.PERMISSIONS_UPDATED, 'project', -2)
-#     @assert_logs(NodeLog.PERMISSIONS_UPDATED, 'project')
-#     def test_change_contributor_permissions(self):
-#         contrib_id = '{}-{}'.format(self.project._id, self.contrib._id)
-#         data = {
-#             'data': {
-#                 'id': contrib_id,
-#                 'type': 'contributors',
-#                 'attributes': {
-#                     'permission': permissions.ADMIN,
-#                     'bibliographic': True
-#                 }
-#             }
-#         }
-#         res = self.app.put_json_api(self.url_contrib, data, auth=self.user.auth)
-#         assert res.status_code == 200
-#         attributes = res.json['data']['attributes']
-#         assert attributes['permission'] == permissions.ADMIN
+    def test_change_contributor_permissions(self, app, user, contrib, project, url_contrib):
+        contrib_id = '{}-{}'.format(project._id, contrib._id)
 
-#         self.project.reload()
-#         assert self.project.get_permissions(self.contrib) == [permissions.READ, permissions.WRITE, permissions.ADMIN]
+        with assert_latest_log(NodeLog.PERMISSIONS_UPDATED, project):
+            data = {
+                'data': {
+                    'id': contrib_id,
+                    'type': 'contributors',
+                    'attributes': {
+                        'permission': permissions.ADMIN,
+                        'bibliographic': True
+                    }
+                }
+            }
+            res = app.put_json_api(url_contrib, data, auth=user.auth)
+            assert res.status_code == 200
+            attributes = res.json['data']['attributes']
+            assert attributes['permission'] == permissions.ADMIN
 
-#         data = {
-#             'data': {
-#                 'id': contrib_id,
-#                 'type': 'contributors',
-#                 'attributes': {
-#                     'permission': permissions.WRITE,
-#                     'bibliographic': True
-#                 }
-#             }
-#         }
-#         res = self.app.put_json_api(self.url_contrib, data, auth=self.user.auth)
-#         assert res.status_code == 200
-#         attributes = res.json['data']['attributes']
-#         assert attributes['permission'] == permissions.WRITE
+            project.reload()
+            assert project.get_permissions(contrib) == [permissions.READ, permissions.WRITE, permissions.ADMIN]
 
-#         self.project.reload()
-#         assert self.project.get_permissions(self.contrib) == [permissions.READ, permissions.WRITE]
+        with assert_latest_log(NodeLog.PERMISSIONS_UPDATED, project):
+            data = {
+                'data': {
+                    'id': contrib_id,
+                    'type': 'contributors',
+                    'attributes': {
+                        'permission': permissions.WRITE,
+                        'bibliographic': True
+                    }
+                }
+            }
+            res = app.put_json_api(url_contrib, data, auth=user.auth)
+            assert res.status_code == 200
+            attributes = res.json['data']['attributes']
+            assert attributes['permission'] == permissions.WRITE
 
-#         data = {
-#             'data': {
-#                 'id': contrib_id,
-#                 'type': 'contributors',
-#                 'attributes': {
-#                     'permission': permissions.READ,
-#                     'bibliographic': True
-#                 }
-#             }
-#         }
-#         res = self.app.put_json_api(self.url_contrib, data, auth=self.user.auth)
-#         assert res.status_code == 200
-#         attributes = res.json['data']['attributes']
-#         assert attributes['permission'] == permissions.READ
+            project.reload()
+            assert project.get_permissions(contrib) == [permissions.READ, permissions.WRITE]
 
-#         self.project.reload()
-#         assert self.project.get_permissions(self.contrib) == [permissions.READ]
+        with assert_latest_log(NodeLog.PERMISSIONS_UPDATED, project):
+            data = {
+                'data': {
+                    'id': contrib_id,
+                    'type': 'contributors',
+                    'attributes': {
+                        'permission': permissions.READ,
+                        'bibliographic': True
+                    }
+                }
+            }
+            res = app.put_json_api(url_contrib, data, auth=user.auth)
+            assert res.status_code == 200
+            attributes = res.json['data']['attributes']
+            assert attributes['permission'] == permissions.READ
 
-#     @assert_logs(NodeLog.MADE_CONTRIBUTOR_INVISIBLE, 'project', -2)
-#     @assert_logs(NodeLog.MADE_CONTRIBUTOR_VISIBLE, 'project')
-#     def test_change_contributor_bibliographic(self):
-#         contrib_id = '{}-{}'.format(self.project._id, self.contrib._id)
-#         data = {
-#             'data': {
-#                 'id': contrib_id,
-#                 'type': 'contributors',
-#                 'attributes': {
-#                     'bibliographic': False
-#                 }
-#             }
-#         }
-#         res = self.app.put_json_api(self.url_contrib, data, auth=self.user.auth)
-#         assert res.status_code == 200
-#         attributes = res.json['data']['attributes']
-#         assert attributes['bibliographic'] == False
+            project.reload()
+            assert project.get_permissions(contrib) == [permissions.READ]
 
-#         self.project.reload()
-#         assert not self.project.get_visible(self.contrib)
+    def test_change_contributor_bibliographic(self, app, user, contrib, project, url_contrib):
+        contrib_id = '{}-{}'.format(project._id, contrib._id)
+        with assert_latest_log(NodeLog.MADE_CONTRIBUTOR_INVISIBLE, project):
+            data = {
+                'data': {
+                    'id': contrib_id,
+                    'type': 'contributors',
+                    'attributes': {
+                        'bibliographic': False
+                    }
+                }
+            }
+            res = app.put_json_api(url_contrib, data, auth=user.auth)
+            assert res.status_code == 200
+            attributes = res.json['data']['attributes']
+            assert attributes['bibliographic'] == False
 
-#         data = {
-#             'data': {
-#                 'id': contrib_id,
-#                 'type': 'contributors',
-#                 'attributes': {
-#                     'bibliographic': True
-#                 }
-#             }
-#         }
-#         res = self.app.put_json_api(self.url_contrib, data, auth=self.user.auth)
-#         assert res.status_code == 200
-#         attributes = res.json['data']['attributes']
-#         assert attributes['bibliographic'] == True
+            project.reload()
+            assert not project.get_visible(contrib)
 
-#         self.project.reload()
-#         assert self.project.get_visible(self.contrib)
+        with assert_latest_log(NodeLog.MADE_CONTRIBUTOR_VISIBLE, project):
+            data = {
+                'data': {
+                    'id': contrib_id,
+                    'type': 'contributors',
+                    'attributes': {
+                        'bibliographic': True
+                    }
+                }
+            }
+            res = app.put_json_api(url_contrib, data, auth=user.auth)
+            assert res.status_code == 200
+            attributes = res.json['data']['attributes']
+            assert attributes['bibliographic'] == True
 
-#     @assert_logs(NodeLog.PERMISSIONS_UPDATED, 'project', -2)
-#     @assert_logs(NodeLog.MADE_CONTRIBUTOR_INVISIBLE, 'project')
-#     def test_change_contributor_permission_and_bibliographic(self):
-#         contrib_id = '{}-{}'.format(self.project._id, self.contrib._id)
-#         data = {
-#             'data': {
-#                 'id': contrib_id,
-#                 'type': 'contributors',
-#                 'attributes': {
-#                     'permission': permissions.READ,
-#                     'bibliographic': False
-#                 }
-#             }
-#         }
-#         res = self.app.put_json_api(self.url_contrib, data, auth=self.user.auth)
-#         assert res.status_code == 200
-#         attributes = res.json['data']['attributes']
-#         assert attributes['permission'] == permissions.READ
-#         assert attributes['bibliographic'] == False
+            project.reload()
+            assert project.get_visible(contrib)
 
-#         self.project.reload()
-#         assert self.project.get_permissions(self.contrib) == [permissions.READ]
-#         assert not self.project.get_visible(self.contrib)
+    def test_change_contributor_permission_and_bibliographic(self, app, user, contrib, project, url_contrib):
+        with assert_latest_log(NodeLog.PERMISSIONS_UPDATED, project, 1), assert_latest_log(NodeLog.MADE_CONTRIBUTOR_INVISIBLE, project):
+            contrib_id = '{}-{}'.format(project._id, contrib._id)
+            data = {
+                'data': {
+                    'id': contrib_id,
+                    'type': 'contributors',
+                    'attributes': {
+                        'permission': permissions.READ,
+                        'bibliographic': False
+                    }
+                }
+            }
+            res = app.put_json_api(url_contrib, data, auth=user.auth)
+            assert res.status_code == 200
+            attributes = res.json['data']['attributes']
+            assert attributes['permission'] == permissions.READ
+            assert attributes['bibliographic'] == False
 
-#     @assert_not_logs(NodeLog.PERMISSIONS_UPDATED, 'project')
-#     def test_not_change_contributor(self):
-#         contrib_id = '{}-{}'.format(self.project._id, self.contrib._id)
-#         data = {
-#             'data': {
-#                 'id': contrib_id,
-#                 'type': 'contributors',
-#                 'attributes': {
-#                     'permission': None,
-#                     'bibliographic': True
-#                 }
-#             }
-#         }
-#         res = self.app.put_json_api(self.url_contrib, data, auth=self.user.auth)
-#         assert res.status_code == 200
-#         attributes = res.json['data']['attributes']
-#         assert attributes['permission'] == permissions.WRITE
-#         assert attributes['bibliographic'] == True
+            project.reload()
+            assert project.get_permissions(contrib) == [permissions.READ]
+            assert not project.get_visible(contrib)
 
-#         self.project.reload()
-#         assert self.project.get_permissions(self.contrib) == [permissions.READ, permissions.WRITE]
-#         assert self.project.get_visible(self.contrib)
+    # @assert_not_logs(NodeLog.PERMISSIONS_UPDATED, 'project')
+    def test_not_change_contributor(self, app, user, contrib, project, url_contrib):
+        with assert_latest_log_not(NodeLog.PERMISSIONS_UPDATED, project):
+            contrib_id = '{}-{}'.format(project._id, contrib._id)
+            data = {
+                'data': {
+                    'id': contrib_id,
+                    'type': 'contributors',
+                    'attributes': {
+                        'permission': None,
+                        'bibliographic': True
+                    }
+                }
+            }
+            res = app.put_json_api(url_contrib, data, auth=user.auth)
+            assert res.status_code == 200
+            attributes = res.json['data']['attributes']
+            assert attributes['permission'] == permissions.WRITE
+            assert attributes['bibliographic'] == True
 
-#     @assert_logs(NodeLog.PERMISSIONS_UPDATED, 'project')
-#     def test_change_admin_self_with_other_admin(self):
-#         self.project.add_permission(self.contrib, permissions.ADMIN, save=True)
-#         contrib_id = '{}-{}'.format(self.project._id, self.user._id)
-#         data = {
-#             'data': {
-#                 'id': contrib_id,
-#                 'type': 'contributors',
-#                 'attributes': {
-#                     'permission': permissions.WRITE,
-#                     'bibliographic': True
-#                 }
-#             }
-#         }
-#         res = self.app.put_json_api(self.url_creator, data, auth=self.user.auth)
-#         assert res.status_code == 200
-#         attributes = res.json['data']['attributes']
-#         assert attributes['permission'] == permissions.WRITE
+            project.reload()
+            assert project.get_permissions(contrib) == [permissions.READ, permissions.WRITE]
+            assert project.get_visible(contrib)
 
-#         self.project.reload()
-#         assert self.project.get_permissions(self.user) == [permissions.READ, permissions.WRITE]
+    def test_change_admin_self_with_other_admin(self, app, user, contrib, project, url_creator):
+        with assert_latest_log(NodeLog.PERMISSIONS_UPDATED, project):
+            project.add_permission(contrib, permissions.ADMIN, save=True)
+            contrib_id = '{}-{}'.format(project._id, user._id)
+            data = {
+                'data': {
+                    'id': contrib_id,
+                    'type': 'contributors',
+                    'attributes': {
+                        'permission': permissions.WRITE,
+                        'bibliographic': True
+                    }
+                }
+            }
+            res = app.put_json_api(url_creator, data, auth=user.auth)
+            assert res.status_code == 200
+            attributes = res.json['data']['attributes']
+            assert attributes['permission'] == permissions.WRITE
+
+            project.reload()
+            assert project.get_permissions(user) == [permissions.READ, permissions.WRITE]
 
 
 @pytest.mark.django_db
@@ -893,49 +894,53 @@ class TestNodeContributorDelete:
         assert user_non_contrib in project.contributors
 
     # @assert_logs(NodeLog.CONTRIB_REMOVED, 'project')
-    # def test_remove_contributor_admin(self):
-    #     # Disconnect contributor_removed so that we don't check in files
-    #     # We can remove this when StoredFileNode is implemented in osf-models
-    #     with disconnected_from_listeners(contributor_removed):
-    #         res = self.app.delete(self.url_user_two, auth=self.user.auth)
-    #     assert res.status_code == 204
+    def test_remove_contributor_admin(self, app, user, user_write_contrib, project, url_user_write_contrib):
+        with assert_latest_log(NodeLog.CONTRIB_REMOVED, project):
+            # Disconnect contributor_removed so that we don't check in files
+            # We can remove this when StoredFileNode is implemented in osf-models
+            with disconnected_from_listeners(contributor_removed):
+                res = app.delete(url_user_write_contrib, auth=user.auth)
+            assert res.status_code == 204
 
-    #     self.project.reload()
-    #     assert self.user_two not in self.project.contributors
-
-    # @assert_logs(NodeLog.CONTRIB_REMOVED, 'project')
-    # def test_remove_self_non_admin(self):
-    #     self.project.add_contributor(self.user_three, permissions=[permissions.READ, permissions.WRITE], visible=True, save=True)
-
-    #     # Disconnect contributor_removed so that we don't check in files
-    #     # We can remove this when StoredFileNode is implemented in osf-models
-    #     with disconnected_from_listeners(contributor_removed):
-    #         res = self.app.delete(self.url_user_three, auth=self.user_three.auth)
-    #     assert res.status_code == 204
-
-    #     self.project.reload()
-    #     assert self.user_three not in self.project.contributors
+            project.reload()
+            assert user_write_contrib not in project.contributors
 
     # @assert_logs(NodeLog.CONTRIB_REMOVED, 'project')
-    # def test_remove_self_contributor_not_unique_admin(self):
-    #     self.project.add_permission(self.user_two, permissions.ADMIN, save=True)
-    #     # Disconnect contributor_removed so that we don't check in files
-    #     # We can remove this when StoredFileNode is implemented in osf-models
-    #     with disconnected_from_listeners(contributor_removed):
-    #         res = self.app.delete(self.url_user, auth=self.user.auth)
-    #     assert res.status_code == 204
+    def test_remove_self_non_admin(self, app, user_non_contrib, project, url_user_non_contrib):
+        with assert_latest_log(NodeLog.CONTRIB_REMOVED, project):
+            project.add_contributor(user_non_contrib, permissions=[permissions.READ, permissions.WRITE], visible=True, save=True)
 
-    #     self.project.reload()
-    #     assert self.user not in self.project.contributors
+            # Disconnect contributor_removed so that we don't check in files
+            # We can remove this when StoredFileNode is implemented in osf-models
+            with disconnected_from_listeners(contributor_removed):
+                res = app.delete(url_user_non_contrib, auth=user_non_contrib.auth)
+            assert res.status_code == 204
+
+            project.reload()
+            assert user_non_contrib not in project.contributors
 
     # @assert_logs(NodeLog.CONTRIB_REMOVED, 'project')
-    # def test_can_remove_self_as_contributor_not_unique_admin(self):
-    #     self.project.add_permission(self.user_two, permissions.ADMIN, save=True)
-    #     # Disconnect contributor_removed so that we don't check in files
-    #     # We can remove this when StoredFileNode is implemented in osf-models
-    #     with disconnected_from_listeners(contributor_removed):
-    #         res = self.app.delete(self.url_user_two, auth=self.user_two.auth)
-    #     assert res.status_code == 204
+    def test_remove_self_contributor_not_unique_admin(self, app, user, user_write_contrib, project, url_user):
+        with assert_latest_log(NodeLog.CONTRIB_REMOVED, project):
+            project.add_permission(user_write_contrib, permissions.ADMIN, save=True)
+            # Disconnect contributor_removed so that we don't check in files
+            # We can remove this when StoredFileNode is implemented in osf-models
+            with disconnected_from_listeners(contributor_removed):
+                res = app.delete(url_user, auth=user.auth)
+            assert res.status_code == 204
 
-    #     self.project.reload()
-    #     assert self.user_two not in self.project.contributors
+            project.reload()
+            assert user not in project.contributors
+
+    # @assert_logs(NodeLog.CONTRIB_REMOVED, 'project')
+    def test_can_remove_self_as_contributor_not_unique_admin(self, app, user_write_contrib, project, url_user_write_contrib):
+        with assert_latest_log(NodeLog.CONTRIB_REMOVED, project):
+            project.add_permission(user_write_contrib, permissions.ADMIN, save=True)
+            # Disconnect contributor_removed so that we don't check in files
+            # We can remove this when StoredFileNode is implemented in osf-models
+            with disconnected_from_listeners(contributor_removed):
+                res = app.delete(url_user_write_contrib, auth=user_write_contrib.auth)
+            assert res.status_code == 204
+
+            project.reload()
+            assert user_write_contrib not in project.contributors
