@@ -22,8 +22,9 @@ from django.dispatch import receiver
 from django.db.models.signals import post_save
 from django.db import models
 from django.utils import timezone
+
 from django_extensions.db.models import TimeStampedModel
-from framework.auth import Auth, signals
+from framework.auth import Auth, signals, utils
 from framework.auth.core import generate_verification_key
 from framework.auth.exceptions import (ChangePasswordError, ExpiredTokenError,
                                        InvalidTokenError,
@@ -467,17 +468,32 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
 
     @property
     def csl_given_name(self):
-        parts = [self.given_name]
-        if self.middle_names:
-            parts.extend(each[0] for each in re.split(r'\s+', self.middle_names))
-        return ' '.join(parts)
+        return utils.generate_csl_given_name(self.given_name, self.middle_names, self.suffix)
 
-    @property
-    def csl_name(self):
-        return {
-            'family': self.family_name,
-            'given': self.csl_given_name,
-        }
+    def csl_name(self, node_id):
+        if self.is_registered:
+            name = self.fullname
+        else:
+            name = self.get_unclaimed_record(node_id)['name']
+
+        if self.is_registered and self.family_name and self.given_name:
+            """If the user is registered and has a family and given name, use those"""
+            return {
+                'family': self.family_name,
+                'given': self.csl_given_name,
+            }
+        else:
+            """ If the user isn't registered, use the unregistered contributor name instead """
+            parsed = utils.impute_names(name)
+            given_name = parsed['given']
+            middle_names = parsed['middle']
+            family_name = parsed['family']
+            suffix = parsed['suffix']
+            csl_given_name = utils.generate_csl_given_name(given_name, middle_names, suffix)
+            return {
+                'family': family_name,
+                'given': csl_given_name,
+            }
 
     @property
     def contributor_to(self):

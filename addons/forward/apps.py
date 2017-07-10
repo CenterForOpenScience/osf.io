@@ -13,9 +13,9 @@ class ForwardAddonAppConfig(BaseAddonAppConfig):
 
     name = 'addons.forward'
     label = 'addons_forward'
-    full_name = 'External Link'
+    full_name = 'Redirect Link'
     short_name = 'forward'
-    configs = ['node']
+    configs = []
     owners = ['node']
     views = ['widget']
     categories = ['other']

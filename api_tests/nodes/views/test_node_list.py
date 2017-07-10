@@ -12,7 +12,7 @@ from website.util.sanitize import strip_html
 from website.views import find_bookmark_collection
 
 from api.base.settings.defaults import API_BASE, MAX_PAGE_SIZE
-from api_tests.nodes.filters.test_filters import NodesListFilteringMixin
+from api_tests.nodes.filters.test_filters import NodesListFilteringMixin, NodesListDateFilteringMixin
 
 from tests.base import ApiTestCase
 from osf_tests.factories import (
@@ -880,6 +880,31 @@ class TestNodeCreate(ApiTestCase):
         new_component = Node.load(new_component_id)
         assert_equal(len(new_component.contributors), 2)
         assert_equal(len(new_component.contributors), len(parent_project.contributors))
+
+    def test_create_component_with_tags(self):
+        parent_project = ProjectFactory(creator=self.user_one)
+        url = '/{}nodes/{}/children/'.format(API_BASE, parent_project._id)
+        component_data = {
+            'data': {
+                'type': 'nodes',
+                'attributes': {
+                    'title': self.title,
+                    'category': self.category,
+                    'tags': ['test tag 1', 'test tag 2']
+                }
+            }
+        }
+        res = self.app.post_json_api(url, component_data, auth=self.user_one.auth)
+        assert_equal(res.status_code, 201)
+        json_data = res.json['data']
+
+        new_component_id = json_data['id']
+        new_component = Node.load(new_component_id)
+
+        assert_equal(len(new_component.tags.all()), 2)
+        tag1, tag2 = new_component.tags.all()
+        assert_equal(tag1.name, 'test tag 1')
+        assert_equal(tag2.name, 'test tag 2')
 
     def test_create_component_inherit_contributors_with_unregistered_contributor(self):
         parent_project = ProjectFactory(creator=self.user_one)
@@ -2124,5 +2149,10 @@ class TestNodeListPagination(ApiTestCase):
 
 
 class TestNodeListFiltering(NodesListFilteringMixin, ApiTestCase):
+
+    url = '/{}nodes/?'.format(API_BASE)
+
+
+class TestNodeListDateFiltering(NodesListDateFilteringMixin, ApiTestCase):
 
     url = '/{}nodes/?'.format(API_BASE)

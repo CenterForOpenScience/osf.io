@@ -97,7 +97,6 @@ $(document).ready(function(){
         }
     };
     m.mount(document.getElementById('osfHome'), m.component(osfHome, {}));
-    $('#osfNavDashboard').addClass('active');
 
 
     // If logged in...
