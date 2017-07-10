@@ -18,6 +18,7 @@ class NodeSettings(BaseCitationsNodeSettings):
     dryad_package_doi = models.CharField(max_length=128, blank=True, null=True, validators=[validate_doi])
     has_auth = True
     complete = True
+    list_id = None
 
     _api = None
 
@@ -31,38 +32,8 @@ class NodeSettings(BaseCitationsNodeSettings):
         self.dryad_package_doi = None
         super(NodeSettings, self).delete()
 
-    @property
-    def folder_id(self):
-        return self.dryad_package_doi
-
-    @property
-    def folder_name(self):
-        return self.dryad_package_doi
-
-    @property
-    def fetch_folder_name(self):
-        return self.dryad_package_doi
-
-    @property
-    def configured(self):
-        return self.dryad_package_doi is not None
-
-    def serialize_waterbutler_credentials(self):
-        return {'storage': {}}
-
     def serialize_waterbutler_settings(self):
         return {'doi': self.dryad_package_doi}
-
-    def create_waterbutler_log(self, auth, action, metadata):
-        path = metadata['path']
-        self.owner.add_log(
-            'dryad_{}'.format(action),
-            auth=auth,
-            params={'project': self.owner.parent_id,
-                    'node': self.owner._id,
-                    'path': path,
-                    'folder': self.dryad_package_doi
-                    })
 
     def set_doi(self, doi, title, auth):
         if self.api.check_dryad_doi(doi) and validate_doi(doi):
@@ -70,7 +41,7 @@ class NodeSettings(BaseCitationsNodeSettings):
             self.owner.add_log(action='dryad_doi_set', auth=auth,
                                params={'project': self.owner.parent_id,
                                        'node': self.owner._id,
-                                       'folder': self.dryad_package_doi
+                                       'folder': doi
                                        })
             return True
         return False

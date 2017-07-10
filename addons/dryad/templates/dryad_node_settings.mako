@@ -1,4 +1,4 @@
-<div id="DryadStatusScope">
+<div id="DryadScope">
 
     <div id="dryadImportModal" class="modal fade">
         <div class="modal-dialog modal-lg">
@@ -19,7 +19,7 @@
                     <div class="row" style="text-align: center">
                         <div class="logo-spin logo-lg"></div>
                     </div>
-                    
+
                     <div class="row text-info" style="text-align: center">
                         <span class="help-block">
                             <p data-bind="text: message, attr.class: messageClass"></p>
@@ -52,23 +52,6 @@
         <span class="help-block">
             <p data-bind="text: message, attr.class: messageClass"></p>
         </span>
-
-        <div class="panel panel-default" >
-            <div class="panel-heading clearfix">
-                <h3 class="panel-title">
-                    Current Package
-                </h3>
-                <div class="pull-right">
-                    <button class="btn btn-link project-toggle">
-                        <i class="fa fa-angle-down"></i>
-                    </button>
-                </div>
-            </div>
-            <div class="panel-body"
-                 style="display:none;max-height:500px;overflow:auto;">
-                <%include file="dryad_status.mako"/>
-            </div>
-        </div>
     </div>
 
     <!-- Browser Sub-Pane -->
@@ -86,24 +69,6 @@
         <div class="panel-body"
              style="display:none;max-height:500px;overflow:auto;">
             <%include file="dryad_browser.mako"/>
-        </div>
-    </div>
-
-    <!-- Citation  Sub Pane-->
-    <div id="DryadCitationScope" class="panel panel-default">
-        <div class="panel-heading clearfix">
-            <h3 class="panel-title">
-                Citation
-            </h3>
-            <div class="pull-right">
-                <button class="btn btn-link project-toggle">
-                    <i class="fa fa-angle-down"></i>
-                </button>
-            </div>
-        </div>
-        <div class="panel-body"
-             style="display:none;max-height:500px;overflow:auto;">
-            <%include file="dryad_citation.mako"/>
         </div>
     </div>
 </div>

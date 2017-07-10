@@ -75,44 +75,12 @@ var DryadFolderPickerViewModel = oop.extend(OauthAddonFolderPicker, {
             self.node_id = response.result.node_id;
             self.urls(response.result.urls);
             self.doi(response.result.doi);
-            if (response.result.doi) {
-                self.refreshMetadata();
-            } else {
-                $('#dryad-node-spinner-loading').hide();
-                $('#dryad-node-details').hide();
-                self.changeMessage(language.Addons.dryad.noSettingsWarning,
-                    'text-warning');
-            }
         }).fail(function(xhr, textStatus, error) {
             self.changeMessage(language.projectSettings.updateErrorMessage,
                 'text-danger');
             Raven.captureMessage(language.projectSettings.updateErrorMessage, {
                 extra: {
                     url: self.url,
-                    textStatus: textStatus,
-                    error: error
-                }
-            });
-        });
-    },
-    fetchCitation: function() {
-        /*
-            Fetches the citation information from the citation endpoint
-        */
-        var self = this;
-        $('#citation_loading').show();
-        $('#citation_wrapper').hide();
-        $.getJSON(self.urls().dryad_citation).done(function(response) {
-            self.packageCitation(response.package);
-            self.publicationCitation(response.publication);
-            $('#citation_loading').hide();
-            $('#citation_wrapper').show();
-        }).fail(function(xhr, textStatus, error) {
-            self.changeMessage(language.projectSettings.updateErrorMessage,
-                'text-danger');
-            Raven.captureMessage(language.projectSettings.updateErrorMessage, {
-                extra: {
-                    url: self.urls().dryad_citation,
                     textStatus: textStatus,
                     error: error
                 }
@@ -349,7 +317,6 @@ var DryadFolderPickerViewModel = oop.extend(OauthAddonFolderPicker, {
         xhr.onreadystatechange = function() {
             if (xhr.readyState == 4 && xhr.status == 201) {
                 self.changeMessage("Licensing Information Uploaded");
-                self.uploadFiles(self.osf_safe_doi(), path);
             } else if (xhr.readyState == 4) {
                 self.changeMessage("Licensing Information Failed to Upload");
                 Raven.captureMessage("Licensing Information Failed to Upload", {
@@ -364,7 +331,7 @@ var DryadFolderPickerViewModel = oop.extend(OauthAddonFolderPicker, {
             }
         }
         var body = "Dryad Data is available under a [CC-BY 3.0 license](http://creativecommons.org/licenses/by/3.0/)\n";
-        $.getJSON(self.urls().dryad_citation).done(function(response) {
+        $.getJSON(self.urls().dryad_citation, {'doi': self.osf_safe_doi()}).done(function(response) {
             body += "\n__Please Cite the following paper located at the following URL:__\n\n";
             body += '[' + response.publication + '](' + response.publication + ')\n\n';
             body += "\n__Additionally, Please Cite the following Dryad Package:__\n\n";
@@ -396,6 +363,64 @@ var DryadFolderPickerViewModel = oop.extend(OauthAddonFolderPicker, {
                 }
             });
         });
+    },
+    makePackageInformation: function(path) {
+        /*
+            Creates the package information that will be transferred to osfstorage
+
+            Note that currently, buildTreeBeardUpload is being used since buildUrl
+            is broken (needs type:files-> type:file).
+        */
+        var self = this;
+        var xhr = new XMLHttpRequest();
+        xhr.open("PUT", waterbutler.buildMetadataUrl(path, 'osfstorage', self.node_id, {
+            name: 'DRYAD_PACKAGE.md',
+            kind: 'file'
+        }), true);
+        xhr.setRequestHeader("Content-type", "multipart/form-data;");
+        $osf.setXHRAuthorization(xhr, null);
+
+        xhr.onreadystatechange = function() {
+            if (xhr.readyState == 4 && xhr.status == 201) {
+                self.changeMessage("Package Information Uploaded");
+                self.uploadFiles(self.osf_safe_doi(), path);
+            } else if (xhr.readyState == 4) {
+                self.changeMessage("Package Information Failed to Upload");
+                Raven.captureMessage("Package Information Failed to Upload", {
+                    extra: {
+                        url: waterbutler.buildMetadataUrl(path, 'osfstorage', self.node_id, {
+                            name: 'DRYAD_PACKAGE.md'
+                        }),
+                        textStatus: xhr.status,
+                        error: xhr.error
+                    }
+                });
+            }
+        }
+        var body = "__" + self.title() + "__\n\n" + self.description() + "\n\n";
+        body += "DOI: [" + self.doi() + "](" + self.ident() + ")\n\n";
+        body += "Authors: \n\n"
+        for (var i = 0; i < self.authors().length; i++) {
+            body += "- " + self.authors()[i] + "\n";
+        }
+        body += "\nDate Submitted: " + self.dateSubmitted() + "\n\n";
+        body += "Date Available: " + self.dateAvailable() + "\n\n";
+        if (self.subjects() !== undefined) {
+            body += "Subjects: " + self.subjects() + "\n\n";
+        }
+        if (self.scientificNames() !== undefined) {
+            body += "Scientific Names: " + self.scientificNames() + "\n\n";
+        }
+        if (self.temporalInfo() !== undefined) {
+            body += "Temporal Info: " + self.temporalInfo() + "\n\n";
+        }
+        if (self.references() !== undefined) {
+            body += "References: [" + self.references() + "](" + self.references() + ")\n\n";
+        }
+        if (self.files() !== undefined) {
+            body += "Files: [" + self.files() + "](" + self.files() + ")\n\n";
+        }
+        xhr.send(body);
     },
     uploadSingleFile: function(doi, dest_path, files, index) {
         /*
@@ -497,6 +522,7 @@ var DryadFolderPickerViewModel = oop.extend(OauthAddonFolderPicker, {
         }).then(function(item) {
             var dest_path = item.data.attributes.path;
             self.makeLicensingInformation(dest_path);
+            self.makePackageInformation(dest_path);
             ret.resolve(self.messages.setDOISuccess());
         }, function(data) {
             self.changeMessage(language.Addons.dryad.doiExistsFailure, 'text-danger');

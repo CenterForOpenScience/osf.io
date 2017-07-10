@@ -17,12 +17,14 @@ class DryadSerializer(CitationsAddonSerializer):
             Adds in the non-standard endpoints.
         """
         urls = {}
-        api_endpoints = ['dryad_validate_doi',
-                'dryad_set_doi',
-                'dryad_list_objects',
-                'dryad_search_objects',
-                'dryad_get_current_metadata',
-                'dryad_citation']
+        api_endpoints = [
+            'dryad_validate_doi',
+            'dryad_set_doi',
+            'dryad_list_objects',
+            'dryad_search_objects',
+            'dryad_get_current_metadata',
+            'dryad_citation'
+        ]
         for endpoint in api_endpoints:
             urls[endpoint] = self.node_settings.owner.api_url_for(endpoint)
         return urls
@@ -36,6 +38,5 @@ class DryadSerializer(CitationsAddonSerializer):
             Dryad to osfstorage.
         """
         result = super(DryadSerializer, self).serialized_node_settings
-        result['doi'] = self.node_settings.dryad_package_doi
         result['node_id'] = self.node_settings.owner._id
         return result

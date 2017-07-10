@@ -68,9 +68,9 @@ class TestJSONViews(DryadTestCase):
 
         doi = '10.5061/dryad.1850'
         self.app.put_json(url, auth=self.user.auth, params={'doi': doi})
-        settings = self.node_settings
-        settings.reload()
-        assert_equal(settings.dryad_package_doi, doi)
+        self.node_settings.reload()
+        assert_equal(self.node_settings.dryad_package_doi, doi)
+        assert self.node_settings.owner.logs.latest().action == 'dryad_doi_set'
 
     @httpretty.activate
     def test_dryad_get_current_metadata(self):
@@ -78,16 +78,10 @@ class TestJSONViews(DryadTestCase):
         httpretty.register_uri(
             httpretty.GET,
             dryad_meta_url,
-            responses=[httpretty.Response(body='Response to Set DOI', status=200),
-                       httpretty.Response(body=response_dict[dryad_meta_url],
+            responses=[httpretty.Response(body=response_dict[dryad_meta_url],
                        status=200),
                        ]
         )
-        settings = self.node_settings
-        assert_true(settings.set_doi('10.5061/dryad.1850', 'My Title',
-                    auth=Auth(self.user)))
-        assert_equal(settings.dryad_package_doi, '10.5061/dryad.1850')
-        settings.save()
         url = self.project.api_url_for('dryad_get_current_metadata')
-        meta_resp = self.app.get(url, auth=self.user.auth)
+        meta_resp = self.app.get(url, auth=self.user.auth, params={'doi': '10.5061/dryad.1850'})
         assert_equal(meta_resp.json['doi'], '10.5061/dryad.1850')

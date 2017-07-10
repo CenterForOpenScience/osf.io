@@ -1,7 +1,6 @@
 import json
 from flask import request
 from urllib2 import HTTPError
-import httplib as http
 
 from framework.auth.decorators import must_be_logged_in
 from addons.dryad.provider import DryadProvider
@@ -36,20 +35,20 @@ def dryad_set_doi(node_addon, **kwargs):
         doi = json.loads(request.data)['doi']
         repo = DryadProvider()
         title = repo.get_dryad_title(doi)
-        ret = node_addon.set_doi(doi, title, auth)
+        node_addon.set_doi(doi, title, auth)
         node_addon.save()
-        return ret
+        return {}
     except HTTPError:
         return False
 
 @must_have_addon('dryad', 'node')
 def dryad_get_current_metadata(node_addon, **kwargs):
     """
-        Retrieves metadata of the currently selected package.
+        Retrieves metadata of the specified package.
     """
-    doi = node_addon.dryad_package_doi
+    doi = request.args.get('doi', None)
     repo = DryadProvider()
-    if doi is not None:
+    if doi:
         return repo.get_dryad_metadata_as_json(doi)
     else:
         return {}
@@ -80,7 +79,7 @@ def dryad_citation(node_addon, **kwargs):
     """
         Returns the citations for Dryad packages and publications.
     """
-    doi = node_addon.dryad_package_doi
+    doi = request.args.get('doi', None)
     repo = DryadProvider()
     ret = repo.get_dryad_citation(doi)
-    return ret, http.OK
+    return ret

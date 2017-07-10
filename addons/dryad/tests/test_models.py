@@ -1,5 +1,5 @@
 import httpretty
-from nose.tools import assert_false, assert_true, assert_equal
+from nose.tools import assert_equal
 import pytest
 
 from addons.dryad.tests.utils import DryadTestCase, dryad_meta_url
@@ -26,15 +26,12 @@ class DryadTestModel(DryadTestCase):
             dryad_meta_url,
             status=200
         )
+        assert not self.node_settings.dryad_package_doi
 
-        assert_equal(self.node_settings.dryad_package_doi, None)
-        assert_false(self.node_settings.dryad_package_doi == '10.5061/dryad.1850')
         num_logs = self.project.logs.count()
         self.node_settings.set_doi('10.5061/dryad.1850', 'My Fake Package',
                                    auth=Auth(self.user))
-        assert_false(self.node_settings.dryad_package_doi == '')
-        assert_equal(self.node_settings.dryad_package_doi,
-                      '10.5061/dryad.1850')
+        assert self.node_settings.dryad_package_doi == '10.5061/dryad.1850'
         num_logs += 1
         assert_equal(self.project.logs.count(), num_logs)
         last_log = self.project.logs.latest()
@@ -44,4 +41,4 @@ class DryadTestModel(DryadTestCase):
         self.project.remove_node(Auth(user=self.project.creator))
         # Ensure that changes to node settings have been saved
         self.node_settings.reload()
-        assert_true(self.node_settings.dryad_package_doi is None)
+        assert self.node_settings.dryad_package_doi is None
