@@ -161,7 +161,7 @@ class TestSearchViews(OsfTestCase):
         assert_equal(res.status_code, 200)
         assert_equal(len(res.json['results']), 1)
         assert_true(res.json['results'][0]['social'])
-        assert_raises(KeyError, lambda: res.json['results'][0]['social']['ssrn'])
+        assert_not_in('ssrn', res.json['results'][0]['social'])
         assert_equal(res.json['results'][0]['social']['profileWebsites'][0], 'http://me.com/{}'.format(user_two.given_name))
         assert_equal(res.json['results'][0]['social']['impactStory'], 'https://impactstory.org/u/{}'.format(user_two.given_name))
         assert_equal(res.json['results'][0]['social']['orcid'], 'http://orcid.org/{}'.format(user_two.given_name))
