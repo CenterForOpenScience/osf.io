@@ -597,7 +597,7 @@ var SocialViewModel = function(urls, modes, preventUnsaved) {
     );
     self.impactStory = extendLink(
         ko.observable().extend({trimmed: true, cleanup: cleanByRule(socialRules.impactStory)}),
-        self, 'impactStory', 'https://www.impactstory.org/u/'
+        self, 'impactStory', 'https://impactstory.org/u/'
     );
     self.github = extendLink(
         ko.observable().extend({trimmed: true, cleanup: cleanByRule(socialRules.github)}),
