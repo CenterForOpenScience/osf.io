@@ -495,6 +495,17 @@ var LogPieces = {
         }
     },
 
+    bitbucket_repo: {
+        view: function(ctrl, logObject) {
+            var bitbucketUser = logObject.attributes.params.bitbucket_user;
+            var bitbucketRepo = logObject.attributes.params.bitbucket_repo;
+            if (paramIsReturned(bitbucketRepo, logObject) && paramIsReturned(bitbucketUser, logObject)){
+                return m('span', bitbucketUser + '/' + bitbucketRepo);
+            }
+            return m('span', '');
+        }
+    },
+
     folder_name: {
         view: function(ctrl, logObject) {
             return returnTextParams('folder_name', 'a folder', logObject);
@@ -671,7 +682,7 @@ var LogPieces = {
             return m('span', '');
         }
     },
-    
+
     anonymous_link: {
         view: function(ctrl, logObject) {
             if (logObject.attributes.params.anonymous_link) {
