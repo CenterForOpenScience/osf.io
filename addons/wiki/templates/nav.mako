@@ -17,6 +17,14 @@
                 </li>
                 % endif
             % endif
+            % if wiki_content:
+                <li data-toggle="tooltip" title="Export" data-placement="right" data-container="body">
+                    <a href="#" data-toggle="modal" data-target="#exportWiki">
+                        <span class="wiki-nav-closed"><i class="fa fa-file-pdf-o text-primary"> </i></span>
+                    </a>
+                </li>
+            % endif
+
         </ul>
     </div>
 </nav>

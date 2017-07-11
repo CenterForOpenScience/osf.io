@@ -41,6 +41,11 @@
                     % else:
                         <h3 class="panel-title"> <i class="fa fa-list"></i>  Menu </h3>
                     % endif
+                    % if wiki_content:
+                        <div class="wiki-toolbar-icon text-primary" data-toggle="modal" data-target="#exportWiki">
+                            <i class="fa fa-file-pdf-o text-primary"></i><span>PDF</span>
+                        </div>
+                    % endif
                     <div id="toggleIcon" class="pull-right hidden-xs">
                         <div class="panel-collapse pointer"><i class="fa fa-angle-left"></i></div>
                     </div>
@@ -239,6 +244,7 @@
 <!-- Wiki modals should also be placed here! -->
   <%include file="wiki/templates/add_wiki_page.mako"/>
   <%include file="wiki/templates/wiki-bar-modal-help.mako"/>
+  <%include file="wiki/templates/export.mako"/>
 % if wiki_id and wiki_name != 'home':
   <%include file="wiki/templates/delete_wiki_page.mako"/>
 % endif

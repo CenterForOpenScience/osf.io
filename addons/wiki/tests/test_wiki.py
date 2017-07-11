@@ -483,6 +483,8 @@ class TestViewHelpers(OsfTestCase):
         assert_equal(urls['rename'], self.project.api_url_for('project_wiki_rename', wname=self.wname))
         assert_equal(urls['content'], self.project.api_url_for('wiki_page_content', wname=self.wname))
         assert_equal(urls['settings'], self.project.api_url_for('edit_wiki_settings'))
+        assert_equal(urls['pdf'], self.project.api_url_for('wiki_page_to_pdf', wname=self.wname))
+        assert_equal(urls['pdf_export'], self.project.api_url_for('wiki_to_pdf'))
 
 
 class TestWikiDelete(OsfTestCase):
@@ -1375,3 +1377,63 @@ class TestWikiMenu(OsfTestCase):
             }
         ]
         assert_equal(data, expected)
+
+
+class TestWikiPDFExport(OsfTestCase):
+
+    def setUp(self):
+        super(TestWikiPDFExport, self).setUp()
+        self.user = AuthUserFactory()
+        self.project = ProjectFactory(is_public=True, creator=self.user)
+        self.consolidate_auth = Auth(user=self.project.creator)
+
+    def test_wiki_page_export_content_returns_200(self):
+        content = 'Some content'
+        self.project.update_node_wiki('somerandomid', content, Auth(self.user))
+        self.project.save()
+
+        url = self.project.api_url_for('wiki_page_to_pdf', wname='somerandomid')
+        res = self.app.get(url, auth=self.user.auth)
+
+        assert_equal(res.status_code, 200)
+
+    def test_wiki_page_export_no_content(self):
+        self.project.update_node_wiki('home', 'content here', self.consolidate_auth)
+        self.project.update_node_wiki('zoo', '', self.consolidate_auth)
+
+        url = self.project.api_url_for('wiki_page_to_pdf', wname='zoo')
+        res = self.app.get(url, auth=self.user.auth, expect_errors=True)
+
+        assert_equal(res.status_code, 406)
+
+    def test_wiki_export_returns_200(self):
+        content = 'Some content on the secound page'
+        self.project.update_node_wiki('home', 'content here', self.consolidate_auth)
+        self.project.update_node_wiki('zoo', content, self.consolidate_auth)
+        self.project.save()
+
+        url = self.project.api_url_for('wiki_to_pdf')
+        res = self.app.get(url, auth=self.user.auth)
+
+        assert_equal(res.status_code, 200)
+
+    def test_wiki_export_no_content(self):
+        self.project.update_node_wiki('home', '', self.consolidate_auth)
+        self.project.update_node_wiki('no content here', '', self.consolidate_auth)
+        self.project.save()
+
+        url = self.project.api_url_for('wiki_to_pdf')
+        res = self.app.get(url, auth=self.user.auth, expect_errors=True)
+
+        assert_equal(res.status_code, 406)
+
+    def test_wiki_export_one_page_without_content(self):
+        self.project.update_node_wiki('home', 'content here', self.consolidate_auth)
+        self.project.update_node_wiki('no content here', '', self.consolidate_auth)
+        self.project.update_node_wiki('third page', 'again content here', self.consolidate_auth)
+        self.project.save()
+
+        url = self.project.api_url_for('wiki_to_pdf')
+        res = self.app.get(url, auth=self.user.auth, expect_errors=True)
+
+        assert_equal(res.status_code, 200)

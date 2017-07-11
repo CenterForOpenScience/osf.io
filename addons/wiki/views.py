@@ -5,6 +5,7 @@ import logging
 
 from bs4 import BeautifulSoup
 from flask import request
+from flask import make_response
 
 from framework.mongo.utils import to_mongo_key
 from framework.exceptions import HTTPError
@@ -62,6 +63,10 @@ WIKI_PAGE_NOT_FOUND_ERROR = HTTPError(http.NOT_FOUND, data=dict(
     message_short='Not found',
     message_long='A wiki page could not be found.'
 ))
+WIKI_PAGE_EXPORT_ERROR = HTTPError(http.NOT_ACCEPTABLE, data=dict(
+    message_short='Export Error',
+    message_long='A wiki page could not be exported to PDF.'
+))
 WIKI_INVALID_VERSION_ERROR = HTTPError(http.BAD_REQUEST, data=dict(
     message_short='Invalid request',
     message_long='The requested version of this wiki page does not exist.'
@@ -115,7 +120,9 @@ def _get_wiki_api_urls(node, name, additional_urls=None):
         'rename': node.api_url_for('project_wiki_rename', wname=name),
         'content': node.api_url_for('wiki_page_content', wname=name),
         'settings': node.api_url_for('edit_wiki_settings'),
-        'grid': node.api_url_for('project_wiki_grid_data', wname=name)
+        'grid': node.api_url_for('project_wiki_grid_data', wname=name),
+        'pdf': node.api_url_for('wiki_page_to_pdf', wname=name),
+        'pdf_export': node.api_url_for('wiki_to_pdf')
     }
     if additional_urls:
         urls.update(additional_urls)
@@ -180,6 +187,59 @@ def wiki_page_draft(wname, **kwargs):
         'wiki_draft': (wiki_page.get_draft(node) if wiki_page
                        else wiki_utils.get_sharejs_content(node, wname)),
     }
+
+@must_be_valid_project
+@must_have_write_permission_or_public_wiki
+@must_have_addon('wiki', 'node')
+def wiki_page_to_pdf(wname='home', **kwargs):
+    node = kwargs['node'] or kwargs['project']
+
+    wiki_page = node.get_wiki_page(wname)
+
+    pdf = wiki_page.pdf(node)
+
+    if pdf is None:
+        raise WIKI_PAGE_EXPORT_ERROR
+
+    response = make_response(pdf)
+    response.headers['Content-Description'] = 'File Transfer'
+    response.headers['Cache-Control'] = 'no-cache'
+    response.headers['Content-Type'] = 'application/pdf'
+    response.headers['Content-Disposition'] = 'attachment; filename=' + wname.replace(' ', '-') + '.pdf'
+
+    return response
+
+@must_be_valid_project
+@must_have_write_permission_or_public_wiki
+@must_have_addon('wiki', 'node')
+def wiki_to_pdf(**kwargs):
+    node = kwargs['node'] or kwargs['project']
+
+    pdf = []
+    project_wiki_pages = _get_wiki_pages_current(node)
+
+    for wiki_page in project_wiki_pages:
+        current_wiki_page = node.get_wiki_page(wiki_page['name'])
+
+        if not current_wiki_page.content:
+            continue
+
+        document = current_wiki_page.pdf_prerendering(node, headline=wiki_page['name'])
+
+        pdf.append(document)
+
+    if not pdf:
+        raise WIKI_PAGE_EXPORT_ERROR
+
+    document = wiki_utils.export_wiki_to_pdf(pdf)
+
+    response = make_response(document)
+    response.headers['Content-Description'] = 'File Transfer'
+    response.headers['Cache-Control'] = 'no-cache'
+    response.headers['Content-Type'] = 'application/pdf'
+    response.headers['Content-Disposition'] = 'attachment; filename=' + node.title.replace(' ', '_') + '.pdf'
+
+    return response
 
 def _wiki_page_content(wname, wver=None, **kwargs):
     node = kwargs['node'] or kwargs['project']

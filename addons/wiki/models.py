@@ -18,6 +18,8 @@ from addons.wiki import utils as wiki_utils
 from website.exceptions import NodeStateError
 from website.util import api_v2_url
 
+from weasyprint import HTML
+
 from .exceptions import (
     NameEmptyError,
     NameInvalidError,
@@ -91,6 +93,27 @@ def render_content(content, node):
     sanitized_content = sanitize(html_output, **settings.WIKI_WHITELIST)
     return sanitized_content
 
+def generate_content_pdf(content):
+    # build a PDF from the given content
+    if content is None:
+        return
+
+    pdf = HTML(string=content).write_pdf()
+
+    return pdf
+
+
+def render_wiki_content_pdf(content, headline=None):
+    # render the given content, you can later generate a PDF.
+    if content is None:
+        return
+    if headline:
+        # if headline is specified it will be printed in "icomoon,sans-serif" in the center of the page
+        content = '<h1 style="font-family: icomoon,sans-serif;text-align: center;">' + headline + '</h1>' + content
+
+    pdf = HTML(string=content).render()
+
+    return pdf
 
 def build_wiki_url(node, label, base, end):
     return '/{pid}/wiki/{wname}/'.format(pid=node._id, wname=label)
@@ -169,6 +192,22 @@ class NodeWikiPage(GuidMixin, BaseModel):
         except TypeError:
             logger.warning('Returning unlinkified content.')
             return sanitized_content
+
+    def pdf(self, node):
+        """The PDF of the page"""
+        if not self.content:
+            return
+
+        pdf = generate_content_pdf(self.html(node))
+        return pdf
+
+    def pdf_prerendering(self, node, headline=None):
+        """Prepare the content to generate a PDF document"""
+        if not self.content:
+            return
+
+        pdf = render_wiki_content_pdf(self.html(node), headline=headline)
+        return pdf
 
     def raw_text(self, node):
         """ The raw text of the page, suitable for using in a test search"""
