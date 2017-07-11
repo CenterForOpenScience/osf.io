@@ -16,7 +16,6 @@ from osf_tests.factories import (
 from osf_tests.utils import mock_archive
 
 from osf.models import MetaSchema
-from website.project.model import ensure_schemas
 from website.project.metadata.schemas import LATEST_SCHEMA_VERSION
 from website.search import search
 
@@ -404,7 +403,6 @@ class TestSearchRegistrations(ApiSearchTestCase):
         super(TestSearchRegistrations, self).setUp()
         self.url = '/{}search/registrations/'.format(API_BASE)
 
-        ensure_schemas()
         self.schema = MetaSchema.find_one(
             Q('name', 'eq', 'Replication Recipe (Brandt et al., 2013): Post-Completion') &
             Q('schema_version', 'eq', LATEST_SCHEMA_VERSION)

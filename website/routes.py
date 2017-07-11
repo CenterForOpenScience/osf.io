@@ -821,9 +821,6 @@ def make_url_map(app):
         Rule('/profile/<uid>/', 'get', profile_views.profile_view_id_json, json_renderer),
 
         # Used by profile.html
-        Rule('/profile/<uid>/edit/', 'post', profile_views.edit_profile, json_renderer),
-        Rule('/profile/<user_id>/summary/', 'get',
-             profile_views.get_profile_summary, json_renderer),
         Rule('/user/<uid>/<pid>/claim/email/', 'post',
              project_views.contributor.claim_user_post, json_renderer),
 
@@ -1120,17 +1117,6 @@ def make_url_map(app):
             notemplate,
         ),
 
-        # Statistics
-        Rule(
-            [
-                '/project/<pid>/statistics/',
-                '/project/<pid>/node/<nid>/statistics/',
-            ],
-            'get',
-            project_views.node.project_statistics_redirect,
-            notemplate,
-        ),
-
         Rule(
             [
                 '/project/<pid>/analytics/',
@@ -1303,27 +1289,11 @@ def make_url_map(app):
         ),
         Rule(
             [
-                '/pointers/move/',
-            ],
-            'post',
-            project_views.node.move_pointers,
-            json_renderer,
-        ),
-        Rule(
-            [
                 '/project/<pid>/pointer/',
                 '/project/<pid>/node/<nid>pointer/',
             ],
             'delete',
             project_views.node.remove_pointer,
-            json_renderer,
-        ),
-        Rule(
-            [
-                '/folder/<pid>/pointer/<pointer_id>',
-            ],
-            'delete',
-            project_views.node.remove_pointer_from_folder,
             json_renderer,
         ),
 
@@ -1476,11 +1446,6 @@ def make_url_map(app):
                 '/project/<pid>/node/<nid>/pointer/fork/',
             ], 'post', project_views.node.fork_pointer, json_renderer,
         ),
-        # View forks
-        Rule([
-            '/project/<pid>/forks/',
-            '/project/<pid>/node/<nid>/forks/',
-        ], 'get', project_views.node.node_forks, json_renderer),
 
         # Registrations
         Rule([
@@ -1492,10 +1457,6 @@ def make_url_map(app):
             '/project/<pid>/node/<nid>/drafts/<draft_id>/register/',
         ], 'post', project_views.drafts.register_draft_registration, json_renderer),
         Rule([
-            '/project/<pid>/register/<template>/',
-            '/project/<pid>/node/<nid>/register/<template>/',
-        ], 'get', project_views.register.node_register_template_page, json_renderer),
-        Rule([
             '/project/<pid>/withdraw/',
             '/project/<pid>/node/<nid>/withdraw/'
         ], 'post', project_views.register.node_registration_retraction_post, json_renderer),
@@ -1505,46 +1466,8 @@ def make_url_map(app):
                 '/project/<pid>/identifiers/',
                 '/project/<pid>/node/<nid>/identifiers/',
             ],
-            'get',
-            project_views.register.node_identifiers_get,
-            json_renderer,
-        ),
-
-        Rule(
-            [
-                '/project/<pid>/identifiers/',
-                '/project/<pid>/node/<nid>/identifiers/',
-            ],
             'post',
             project_views.register.node_identifiers_post,
-            json_renderer,
-        ),
-
-        # Statistics
-        Rule([
-            '/project/<pid>/statistics/',
-            '/project/<pid>/node/<nid>/statistics/',
-        ], 'get', project_views.node.project_statistics, json_renderer),
-
-        # Permissions
-        Rule([
-            '/project/<pid>/permissions/<permissions>/',
-            '/project/<pid>/node/<nid>/permissions/<permissions>/',
-        ], 'post', project_views.node.project_set_privacy, json_renderer),
-
-        Rule([
-            '/project/<pid>/permissions/beforepublic/',
-            '/project/<pid>/node/<nid>/permissions/beforepublic/',
-        ], 'get', project_views.node.project_before_set_public, json_renderer),
-
-        # Combined files
-        Rule(
-            [
-                '/project/<pid>/files/',
-                '/project/<pid>/node/<nid>/files/'
-            ],
-            'get',
-            project_views.file.collect_file_trees,
             json_renderer,
         ),
 

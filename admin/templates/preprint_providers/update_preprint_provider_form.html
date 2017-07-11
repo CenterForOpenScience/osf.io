@@ -9,8 +9,9 @@
             var DESCRIPTION_CONFIG = $.extend({
                 selector:'textarea[name=description]',
                 valid_elements: '*[*]',
-                plugins: 'link preview',
-                toolbar: 'bold italic underline | undo redo | link | preview',
+                plugins: 'link preview code',
+                end_container_on_empty_block: true,
+                toolbar: 'bold italic underline | undo redo | link | code | preview',
                 forced_root_block: ''
             }, TINYMCE_BASE_CONFIG);
 
@@ -18,8 +19,13 @@
                 selector:'textarea[name=advisory_board]',
                 content_css: 'https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css',
                 valid_elements: '*[*]',
-                plugins: 'link lists preview',
-                toolbar: 'bold italic underline | undo redo | link | bullist | preview'
+                style_formats: [
+                    {title: 'two column', block: 'div', classes: 'col-xs-6', wrapper: true, exact: false},
+                ],
+                style_formats_merge: true,
+                end_container_on_empty_block: true,
+                plugins: 'link lists advlist preview code',
+                toolbar: 'bold italic underline | undo redo | link | bullist | code | preview'
             }, TINYMCE_BASE_CONFIG);
 
             var FOOTER_LINKS_CONFIG = $.extend({
@@ -33,6 +39,7 @@
                     {title: 'fontawesome 2x', selector: 'span.fa', classes: 'fa-2x'},
                 ],
                 style_formats_merge: true,
+                end_container_on_empty_block: true,
                 plugins: 'link image preview code fontawesome',
                 toolbar: 'bold italic underline | undo redo | link | image | fontawesome | code | preview ',
                 external_plugins: {
@@ -62,7 +69,7 @@
                 {% endif %}
             {% endfor %}
             {% if show_taxonomies %}
-            <div class="row">
+            <div class="row" id="subjects">
                 <div class="col-md-4">
                     <div class="firstlevel_subjects">
                         <ul style="list-style-type:none">

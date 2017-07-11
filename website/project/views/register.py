@@ -128,7 +128,7 @@ def node_register_template_page(auth, node, metaschema_id, **kwargs):
             try:
                 meta_schema = MetaSchema.find(
                     Q('name', 'eq', _id_to_name(metaschema_id))
-                ).sort('-schema_version')[0]
+                ).order_by('-schema_version').first()
             except IndexError:
                 raise HTTPError(http.NOT_FOUND, data={
                     'message_short': 'Invalid schema name',
@@ -219,19 +219,6 @@ def osf_admin_change_status_identifier(node, status):
         doi, metadata = build_ezid_metadata(node)
         client = EzidClient(settings.EZID_USERNAME, settings.EZID_PASSWORD)
         client.change_status_identifier(status, doi, metadata)
-
-
-@must_be_valid_project
-@must_be_contributor_or_public
-def node_identifiers_get(node, **kwargs):
-    """Retrieve identifiers for a node. Node must be a public registration.
-    """
-    if not node.is_public:
-        raise HTTPError(http.BAD_REQUEST)
-    return {
-        'doi': node.get_identifier_value('doi'),
-        'ark': node.get_identifier_value('ark'),
-    }
 
 
 @must_be_valid_project

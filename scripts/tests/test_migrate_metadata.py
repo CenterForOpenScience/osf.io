@@ -6,7 +6,7 @@ from modularodm import Q
 
 from framework.mongo.utils import to_mongo
 
-from website.project.model import ensure_schemas, MetaSchema, Node
+from website.project.model import MetaSchema, Node
 from tests import factories
 from scripts.migration.migrate_registered_meta import (
     main as do_migration,
@@ -100,9 +100,6 @@ class TestMigrateSchemas(OsfTestCase):
 
     def setUp(self):
         super(TestMigrateSchemas, self).setUp()
-
-        MetaSchema.remove()
-        ensure_schemas()
 
         self.regular_old_node = factories.NodeFactory()
 

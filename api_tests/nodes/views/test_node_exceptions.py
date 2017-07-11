@@ -1,81 +1,94 @@
-# -*- coding: utf-8 -*-
-from nose.tools import *  # flake8: noqa
+import pytest
 
 from api.base.settings.defaults import API_BASE
-
-from tests.base import ApiTestCase
 from osf_tests.factories import (
     ProjectFactory,
     AuthUserFactory
 )
+from rest_framework import exceptions
 
+@pytest.fixture()
+def user():
+    return AuthUserFactory()
 
-class TestExceptionFormatting(ApiTestCase):
-    def setUp(self):
+@pytest.mark.django_db
+class TestExceptionFormatting:
 
-        super(TestExceptionFormatting, self).setUp()
-        self.user = AuthUserFactory()
-        self.non_contrib = AuthUserFactory()
+    @pytest.fixture()
+    def non_contrib(self):
+        return AuthUserFactory()
 
-        self.title = 'Cool Project'
-        self.description = 'A Properly Cool Project'
-        self.category = 'data'
-
-        self.project_no_title = {
+    @pytest.fixture()
+    def project_no_title(self):
+        return {
             'data': {
                 'attributes': {
-                    'description': self.description,
-                    'category': self.category,
+                    'description': 'A Monument to Reason',
+                    'category': 'data',
                     'type': 'nodes',
                 }
             }
         }
 
-        self.private_project = ProjectFactory(is_public=False, creator=self.user)
-        self.public_project = ProjectFactory(is_public=True, creator=self.user)
-        self.private_url = '/{}nodes/{}/'.format(API_BASE, self.private_project._id)
+    @pytest.fixture()
+    def private_project(self, user):
+        return ProjectFactory(is_public=False, creator=user)
 
-    def test_creates_project_with_no_title_formatting(self):
+    @pytest.fixture()
+    def public_project(self, user):
+        return ProjectFactory(is_public=True, creator=user)
+
+    @pytest.fixture()
+    def private_url(self, private_project):
+        return '/{}nodes/{}/'.format(API_BASE, private_project._id)
+
+    def test_exception_formatting(self, app, user, non_contrib, public_project, private_project, private_url, project_no_title):
+
+        error_required_field = 'This field is required.'
+        error_blank_field = 'This field may not be blank.'
+
+    #   test_creates_project_with_no_title_formatting
         url = '/{}nodes/'.format(API_BASE)
-        res = self.app.post_json_api(url, self.project_no_title, auth=self.user.auth, expect_errors=True)
+        res = app.post_json_api(url, project_no_title, auth=user.auth, expect_errors=True)
         errors = res.json['errors']
-        assert(isinstance(errors, list))
-        assert_equal(res.json['errors'][0]['source'], {'pointer': '/data/attributes/title'})
-        assert_equal(res.json['errors'][0]['detail'], 'This field is required.')
+        assert isinstance(errors, list)
+        assert res.json['errors'][0]['source'] == {'pointer': '/data/attributes/title'}
+        assert res.json['errors'][0]['detail'] == error_required_field
 
-    def test_node_does_not_exist_formatting(self):
+    #   test_node_does_not_exist_formatting
         url = '/{}nodes/{}/'.format(API_BASE, '12345')
-        res = self.app.get(url, auth=self.user.auth, expect_errors=True)
+        res = app.get(url, auth=user.auth, expect_errors=True)
         errors = res.json['errors']
-        assert(isinstance(errors, list))
-        assert_equal(errors[0], {'detail': 'Not found.'})
+        assert isinstance(errors, list)
+        assert errors[0] == {'detail': exceptions.NotFound.default_detail}
 
-    def test_forbidden_formatting(self):
-        res = self.app.get(self.private_url, auth=self.non_contrib.auth, expect_errors=True)
+    #   test_forbidden_formatting
+        res = app.get(private_url, auth=non_contrib.auth, expect_errors=True)
         errors = res.json['errors']
-        assert(isinstance(errors, list))
-        assert_equal(errors[0], {'detail': 'You do not have permission to perform this action.'})
+        assert isinstance(errors, list)
+        assert errors[0] == {'detail': exceptions.PermissionDenied.default_detail}
 
-    def test_not_authorized_formatting(self):
-        res = self.app.get(self.private_url, expect_errors=True)
+    #   test_not_authorized_formatting
+        res = app.get(private_url, expect_errors=True)
         errors = res.json['errors']
-        assert(isinstance(errors, list))
-        assert_equal(errors[0], {'detail': "Authentication credentials were not provided."})
+        assert isinstance(errors, list)
+        assert errors[0] == {'detail': exceptions.NotAuthenticated.default_detail}
 
-    def test_update_project_with_no_title_or_category_formatting(self):
-        res = self.app.put_json_api(self.private_url, {'data': {'type': 'nodes', 'id': self.private_project._id, 'attributes': {'description': 'New description'}}}, auth=self.user.auth, expect_errors=True)
+    #   test_update_project_with_no_title_or_category_formatting
+        res = app.put_json_api(private_url, {'data': {'type': 'nodes', 'id': private_project._id, 'attributes': {'description': 'New description'}}}, auth=user.auth, expect_errors=True)
         errors = res.json['errors']
-        assert(isinstance(errors, list))
-        assert_equal(len(errors), 2)
+        assert isinstance(errors, list)
+        assert len(errors) == 2
         errors = res.json['errors']
-        assert_items_equal([errors[0]['source'], errors[1]['source']],
-                           [{'pointer': '/data/attributes/category'}, {'pointer': '/data/attributes/title'}])
-        assert_items_equal([errors[0]['detail'], errors[1]['detail']],
-                           ['This field is required.', 'This field is required.'])
+        assert errors[0]['source'] == {'pointer': '/data/attributes/category'}
+        assert errors[1]['source'] == {'pointer': '/data/attributes/title'}
 
-    def test_create_node_link_no_target_formatting(self):
-        url = self.private_url + 'node_links/'
-        res = self.app.post_json_api(url, {
+        assert errors[0]['detail'] == error_required_field
+        assert errors[1]['detail'] == error_required_field
+
+    #   test_create_node_link_no_target_formatting
+        url = '{}node_links/'.format(private_url)
+        res = app.post_json_api(url, {
             'data': {
                 'type': 'node_links',
                 'relationships': {
@@ -87,42 +100,42 @@ class TestExceptionFormatting(ApiTestCase):
                     }
                 }
             }
-        }, auth=self.user.auth, expect_errors=True)
+        }, auth=user.auth, expect_errors=True)
         errors = res.json['errors']
-        assert(isinstance(errors, list))
-        assert_equal(res.status_code, 400)
-        assert_equal(res.json['errors'][0]['source'], {'pointer': '/data/id'})
-        assert_equal(res.json['errors'][0]['detail'], 'This field may not be blank.')
+        assert isinstance(errors, list)
+        assert res.status_code == 400
+        assert res.json['errors'][0]['source'] == {'pointer': '/data/id'}
+        assert res.json['errors'][0]['detail'] == error_blank_field
 
-    def test_node_link_already_exists(self):
-        url = self.private_url + 'node_links/'
-        res = self.app.post_json_api(url, {
+    #   test_node_link_already_exists
+        url = '{}node_links/'.format(private_url)
+        res = app.post_json_api(url, {
             'data': {
                 'type': 'node_links',
                 'relationships': {
                     'nodes': {
                         'data': {
-                            'id': self.public_project._id,
+                            'id': public_project._id,
                             'type': 'nodes',
                         }
                     }
                 }
             }
-        }, auth=self.user.auth)
-        assert_equal(res.status_code, 201)
+        }, auth=user.auth)
+        assert res.status_code == 201
 
-        res = self.app.post_json_api(url, {'data': {
+        res = app.post_json_api(url, {'data': {
             'type': 'node_links',
             'relationships': {
                 'nodes': {
                     'data': {
-                        'id': self.public_project._id,
+                        'id': public_project._id,
                         'type': 'nodes'
                     }
                 }
             }
-        }}, auth=self.user.auth, expect_errors=True)
+        }}, auth=user.auth, expect_errors=True)
         errors = res.json['errors']
-        assert(isinstance(errors, list))
-        assert_equal(res.status_code, 400)
-        assert(self.public_project._id in res.json['errors'][0]['detail'])
+        assert isinstance(errors, list)
+        assert res.status_code == 400
+        assert public_project._id in res.json['errors'][0]['detail']

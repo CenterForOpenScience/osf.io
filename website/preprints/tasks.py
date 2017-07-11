@@ -3,10 +3,12 @@ import urlparse
 
 import requests
 
+from framework.exceptions import HTTPError
 from framework.celery_tasks import app as celery_app
+from framework import sentry
 
 from website import settings
-from website.util.share import GraphNode, format_contributor
+from website.util.share import GraphNode, format_contributor, format_subject
 
 from website.identifiers.utils import request_identifiers_from_ezid, get_ezid_client, build_ezid_metadata, parse_identifiers
 
@@ -14,15 +16,20 @@ logger = logging.getLogger(__name__)
 
 
 @celery_app.task(ignore_results=True)
-def on_preprint_updated(preprint_id, update_share=False):
+def on_preprint_updated(preprint_id, update_share=True, old_subjects=None):
     # WARNING: Only perform Read-Only operations in an asynchronous task, until Repeatable Read/Serializable
     # transactions are implemented in View and Task application layers.
     from osf.models import PreprintService
     preprint = PreprintService.load(preprint_id)
-
+    if old_subjects is None:
+        old_subjects = []
     if preprint.node:
         status = 'public' if preprint.node.is_public else 'unavailable'
-        update_ezid_metadata_on_change(preprint, status=status)
+        try:
+            update_ezid_metadata_on_change(preprint, status=status)
+        except HTTPError as err:
+            sentry.log_exception()
+            sentry.log_message(err.args[0])
 
     if settings.SHARE_URL and update_share:
         if not preprint.provider.access_token:
@@ -33,14 +40,18 @@ def on_preprint_updated(preprint_id, update_share=False):
                 'attributes': {
                     'tasks': [],
                     'raw': None,
-                    'data': {'@graph': format_preprint(preprint)}
+                    'data': {'@graph': format_preprint(preprint, old_subjects)}
                 }
             }
         }, headers={'Authorization': 'Bearer {}'.format(preprint.provider.access_token), 'Content-Type': 'application/vnd.api+json'})
         logger.debug(resp.content)
         resp.raise_for_status()
 
-def format_preprint(preprint):
+def format_preprint(preprint, old_subjects=None):
+    if old_subjects is None:
+        old_subjects = []
+    from osf.models import Subject
+    old_subjects = [Subject.objects.get(id=s) for s in old_subjects]
     preprint_graph = GraphNode('preprint', **{
         'title': preprint.node.title,
         'description': preprint.node.description or '',
@@ -77,10 +88,15 @@ def format_preprint(preprint):
         for tag in preprint.node.tags.values_list('name', flat=True) if tag
     ]
 
-    preprint_graph.attrs['subjects'] = [
-        GraphNode('throughsubjects', creative_work=preprint_graph, subject=GraphNode('subject', name=subject))
-        for subject in set(s.bepress_text for s in preprint.subjects.all())
+    current_subjects = [
+        GraphNode('throughsubjects', creative_work=preprint_graph, subject=format_subject(s))
+        for s in preprint.subjects.all()
     ]
+    deleted_subjects = [
+        GraphNode('throughsubjects', creative_work=preprint_graph, is_deleted=True, subject=format_subject(s))
+        for s in old_subjects if not preprint.subjects.filter(id=s.id).exists()
+    ]
+    preprint_graph.attrs['subjects'] = current_subjects + deleted_subjects
 
     to_visit.extend(format_contributor(preprint_graph, user, preprint.node.get_visible(user), i) for i, user in enumerate(preprint.node.contributors))
     to_visit.extend(GraphNode('AgentWorkRelation', creative_work=preprint_graph, agent=GraphNode('institution', name=institution))

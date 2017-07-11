@@ -15,6 +15,7 @@ import pytest
 
 from django.test.utils import override_settings
 from django.test import TestCase as DjangoTestCase
+from django.test import override_settings
 from faker import Factory
 from framework.auth.core import Auth
 from framework.celery_tasks.handlers import celery_before_request
@@ -25,7 +26,6 @@ from website import settings
 from website.app import init_app
 from website.notifications.listeners import (subscribe_contributor,
                                              subscribe_creator)
-from website.project.model import ensure_schemas
 from website.project.signals import contributor_added, project_created
 from website.project.views.contributor import notify_added_contributor
 from website.signals import ALL_SIGNALS
@@ -40,11 +40,7 @@ logger = logging.getLogger(__name__)
 
 def get_default_metaschema():
     """This needs to be a method so it gets called after the test database is set up"""
-    try:
-        return MetaSchema.find()[0]
-    except IndexError:
-        ensure_schemas()
-        return MetaSchema.find()[0]
+    return MetaSchema.find()[0]
 
 try:
     test_app = init_app(routes=True, set_backends=False)

@@ -5,7 +5,6 @@ from api.base.settings.defaults import API_BASE
 from tests.base import ApiTestCase
 from osf.models.licenses import NodeLicense
 from osf_tests.factories import PreprintProviderFactory
-from website.project.licenses import ensure_licenses
 
 
 class TestPreprintProviderLicenses(ApiTestCase):
@@ -13,9 +12,6 @@ class TestPreprintProviderLicenses(ApiTestCase):
         super(TestPreprintProviderLicenses, self).setUp()
         self.provider = PreprintProviderFactory()
         self.licenses = NodeLicense.objects.all()
-        if not len(self.licenses):
-            ensure_licenses()
-            self.licenses = NodeLicense.objects.all()
         self.license1 = self.licenses[0]
         self.license2 = self.licenses[1]
         self.license3 = self.licenses[2]

@@ -8,7 +8,7 @@ from modularodm.exceptions import ValidationError
 from modularodm import Q
 
 from osf.models import MetaSchema
-from website.project.model import ensure_schemas
+from osf.utils.migrations import ensure_schemas
 from website.project.metadata.schemas import OSF_META_SCHEMAS
 
 from tests.base import OsfTestCase
@@ -19,12 +19,14 @@ class TestMetaData(OsfTestCase):
     def test_ensure_schemas(self):
 
         # Should be zero MetaSchema records to begin with
+        MetaSchema.remove()
         assert_equal(
             MetaSchema.find().count(),
             0
         )
 
         ensure_schemas()
+
         assert_equal(
             MetaSchema.find().count(),
             len(OSF_META_SCHEMAS)

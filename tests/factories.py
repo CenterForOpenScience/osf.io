@@ -29,7 +29,6 @@ from tests.base import fake
 from tests.base import get_default_metaschema
 from tests import mock_addons as addons_base
 from addons.wiki.models import NodeWikiPage
-from website.project.model import ensure_schemas
 from addons.osfstorage.models import OsfStorageFile
 from osf.models import (Subject, NotificationSubscription, NotificationDigest,
                         ArchiveJob, ArchiveTarget, Identifier, NodeLicense,
@@ -41,11 +40,8 @@ from osf.models import (Subject, NotificationSubscription, NotificationDigest,
                         ExternalProvider, OSFUser as User, PreprintService,
                         PreprintProvider, Session, Guid)
 from website.archiver import ARCHIVER_SUCCESS
-from website.project.licenses import ensure_licenses
 from website.util import permissions
 from website.exceptions import InvalidSanctionApprovalToken
-
-ensure_licenses = functools.partial(ensure_licenses, warn=False)
 
 
 # TODO: This is a hack. Check whether FactoryBoy can do this better
@@ -836,10 +832,7 @@ class DraftRegistrationFactory(ModularOdmFactory):
                 project_params['creator'] = initiator
             branched_from = ProjectFactory(**project_params)
         initiator = branched_from.creator
-        try:
-            registration_schema = registration_schema or MetaSchema.find()[0]
-        except IndexError:
-            ensure_schemas()
+        registration_schema = registration_schema or MetaSchema.find()[0]
         registration_metadata = registration_metadata or {}
         draft = DraftRegistration.create_from_node(
             branched_from,
@@ -855,12 +848,9 @@ class NodeLicenseRecordFactory(ModularOdmFactory):
 
     @classmethod
     def _create(cls, *args, **kwargs):
-        try:
-            NodeLicense.find_one(
-                Q('name', 'eq', 'No license')
-            )
-        except NoResultsFound:
-            ensure_licenses()
+        NodeLicense.find_one(
+            Q('name', 'eq', 'No license')
+        )
         kwargs['node_license'] = kwargs.get(
             'node_license',
             NodeLicense.find_one(

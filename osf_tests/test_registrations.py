@@ -9,7 +9,6 @@ from addons.wiki.models import NodeWikiPage
 from osf.modm_compat import Q
 
 from website import settings
-from website.project.model import ensure_schemas
 from website.util.permissions import READ, WRITE, ADMIN
 
 from . import factories
@@ -18,11 +17,6 @@ from .factories import get_default_metaschema
 from addons.wiki.tests.factories import NodeWikiFactory
 
 pytestmark = pytest.mark.django_db
-
-
-@pytest.fixture(autouse=True)
-def _ensure_schemas():
-    return ensure_schemas()
 
 
 @pytest.fixture()
@@ -129,7 +123,7 @@ class TestRegisterNode:
         # Registered node has all logs except for registration approval initiated
         assert project.logs.count() - 1 == registration.logs.count()
         assert project.logs.first().action == 'registration_initiated'
-        project_second_log = project.logs.limit(2)[1]
+        project_second_log = project.logs.all()[:2][1]
         assert registration.logs.first().action == project_second_log.action
 
     def test_tags(self, registration, project):
