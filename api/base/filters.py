@@ -5,6 +5,7 @@ import re
 
 import django_filters
 from django.db import models
+from django import forms
 import pytz
 from guardian.shortcuts import get_objects_for_user
 from api.base import utils
@@ -74,20 +75,67 @@ class MultiValueCharFilter(django_filters.BaseInFilter, django_filters.filters.C
         q = Q()
         values = value or []
         for value in values:
-            name = self.name
-            q |= Q(**{'{}__icontains'.format(name): value})
+            q |= Q(**{'{}__icontains'.format(self.name): value.strip()})
         qs = qs.filter(q)
 
         return qs
 
 
-class JSONAPIFilterSet(django_filters.FilterSet):
+class NullModelMultipleChoiceCaseInsensitiveField(forms.ModelMultipleChoiceField):
+
+    def clean(self, value):
+        # let a custom filter handle the actual filtering for null values later in the qs
+        if value == 'null':
+            return value
+
+        try:
+            return super(NullModelMultipleChoiceCaseInsensitiveField, self).clean(value)
+
+        except ValidationError as validation_error:
+            # Check to make sure the validation error wasn't because of a case sensitive relationship query
+            q = Q()
+            for choice in value:
+                q |= Q(**{'{}__iexact'.format(self.to_field_name): choice})
+            queryset = self.queryset.filter(q)
+
+            if not queryset:
+                raise validation_error
+
+            return queryset
+
+
+class NullModelMultipleChoiceFilter(django_filters.ModelChoiceFilter):
+
+    field_class = NullModelMultipleChoiceCaseInsensitiveField
+
+    def __init__(self, *args, **kwargs):
+        # use base_name to filter later on for a null relationship
+        self.base_name = kwargs.pop('base_name')
+        super(NullModelMultipleChoiceFilter, self).__init__(*args, **kwargs)
+
+    def filter(self, qs, value):
+        if value == 'null':
+            return qs.filter(Q(**{'{}__isnull'.format(self.base_name): True}))
+
+        q = Q()
+        values = value or []
+        for value in values:
+            q |= Q(**{self.name: value})
+        return qs.filter(q)
+
+
+class JSONAPIFilterSet(django_filters.rest_framework.FilterSet):
 
     QUERY_PATTERN = re.compile(r'^filter\[(?P<fields>((?:,*\s*\w+)*))\](\[(?P<op>\w+)\])?$')
     FILTER_FIELDS = re.compile(r'(?:,*\s*(\w+)+)')
 
+    # TODO - there must be a better way to recognize these
+    MANY_TO_MANY_FIELDS = ['tags', 'contributors']
+    DATE_FIELDS = ['date_created', 'date_modified']
+
     def __init__(self, data=None, *args, **kwargs):
         self.or_fields = {}
+        self.operator_fields = []
         field_names = []
         if data:
             new_data = {}
@@ -97,22 +145,45 @@ class JSONAPIFilterSet(django_filters.FilterSet):
                     match_dict = match.groupdict()
                     fields = match_dict['fields']
                     field_names = self.FILTER_FIELDS.findall(fields.strip())
+                    op = match_dict.get('op', None)
+                    # some filter values can be passed in brackets, with spaces between them
+                    value = value.replace('[', '').replace(']', '')
                     values = value.split(',')
                     if len(field_names) > 1:
                         self.or_fields[frozenset(field_names)] = values
+                    elif op and op != 'eq':
+                        self.operator_fields.append({'field': field_names[0], 'value': value, 'op': op})
                     else:
                         new_data.update({field_names[0]: value})
-            data = new_data
+            data = self.postprocess_data(new_data)
         super(JSONAPIFilterSet, self).__init__(data=data, *args, **kwargs)
 
         for field in field_names:
             if field not in self.form.fields:
                 raise InvalidFilterFieldError(parameter='filter', value=field)
 
+    def postprocess_data(self, data):
+        data_to_return = {}
+        for field_name, value in data.iteritems():
+            # to filter on a relationship field, values must be in a list
+            if field_name in self.MANY_TO_MANY_FIELDS and value != 'null':
+                value = value if type(value) == list else value.split(',')
+            if field_name in self.DATE_FIELDS:
+                # reformat timezone information for django's parse_datetime util to recognize datetimes
+                split_parts = value.split(' ')
+                if len(split_parts) > 1:
+                    value = '{}+{}'.format('T'.join(split_parts[:-1]), split_parts[-1])
+
+            data_to_return[field_name] = value
+
+        return data_to_return
+
     @property
     def qs(self, *args, **kwargs):
         self.form.is_valid()
         qs = super(JSONAPIFilterSet, self).qs
+        if self.operator_fields:
+            qs = self.filter_operators(qs)
         return self.filter_groups(qs)
 
     def filter_groups(self, qs):
@@ -127,9 +198,28 @@ class JSONAPIFilterSet(django_filters.FilterSet):
 
         return qs
 
+    def filter_operators(self, qs):
+        for field_dict in self.operator_fields:
+            value = field_dict['value']
+            field = field_dict['field']
+            op = field_dict['op']
+
+            if field in self.DATE_FIELDS:
+                value = datetime.datetime.strptime(value, '%Y-%m-%d').replace(tzinfo=pytz.UTC)
+            if op == 'ne':
+                qs = qs.filter(~Q(**{field: value}))
+            else:
+                filter_left = '{}__{}'.format(field, op)
+                qs = qs.filter(Q(**{filter_left: value}))
+
+            return qs
+
     class Meta:
         filter_overrides = {
             models.CharField: {
+                'filter_class': MultiValueCharFilter,
+            },
+            models.TextField: {
                 'filter_class': MultiValueCharFilter,
             }
         }
