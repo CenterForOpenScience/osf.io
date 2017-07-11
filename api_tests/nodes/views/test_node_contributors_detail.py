@@ -138,15 +138,13 @@ class TestNodeContributorOrdering:
 
     @pytest.fixture()
     def contribs(self, user):
-        contribs = [AuthUserFactory() for number in range(1, 10)]
-        contribs.insert(0, user)
-        return contribs
+        return [user] + [AuthUserFactory() for _ in range(9)]
 
     @pytest.fixture()
     def project(self, user, contribs):
         project = ProjectFactory(creator=user)
         for contrib in contribs:
-            if contrib._id is not user._id:
+            if contrib._id != user._id:
                 project.add_contributor(
                     contrib,
                     permissions=[permissions.READ, permissions.WRITE],
@@ -184,7 +182,7 @@ class TestNodeContributorOrdering:
         assert res.status_code == 200
         contributor_list = res.json['data']
         found_contributors = False
-        for i in range(0, len(contribs)):
+        for i in range(len(contribs)):
             assert contribs[i]._id == contrib_user_id(contributor_list[i])
             assert i == contributor_list[i]['attributes']['index']
             found_contributors = True

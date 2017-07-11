@@ -29,80 +29,80 @@ class NodeCommentsListMixin(object):
         return AuthUserFactory()
 
     @pytest.fixture()
-    def project_private(self):
+    def project_private_dict(self):
         raise NotImplementedError
 
     @pytest.fixture()
-    def project_public(self):
+    def project_public_dict(self):
         raise NotImplementedError
 
     @pytest.fixture()
-    def registration(self):
+    def registration_dict(self):
         raise NotImplementedError
 
-    def test_return_comments(self, app, user, user_non_contrib, project_public, project_private, registration):
+    def test_return_comments(self, app, user, user_non_contrib, project_public_dict, project_private_dict, registration_dict):
 
     #   test_return_public_node_comments_logged_out_user
-        res = app.get(project_public['url'])
+        res = app.get(project_public_dict['url'])
         assert res.status_code == 200
         comment_json = res.json['data']
         comment_ids = [comment['id'] for comment in comment_json]
         assert len(comment_json) == 1
-        assert project_public['comment']._id in comment_ids
+        assert project_public_dict['comment']._id in comment_ids
 
     #   test_return_public_node_comments_logged_in_user
-        res = app.get(project_public['url'], auth=user_non_contrib)
+        res = app.get(project_public_dict['url'], auth=user_non_contrib)
         assert res.status_code == 200
         comment_json = res.json['data']
         comment_ids = [comment['id'] for comment in comment_json]
         assert len(comment_json) == 1
-        assert project_public['comment']._id in comment_ids
+        assert project_public_dict['comment']._id in comment_ids
 
     #   test_return_private_node_comments_logged_out_user
-        res = app.get(project_private['url'], expect_errors=True)
+        res = app.get(project_private_dict['url'], expect_errors=True)
         assert res.status_code == 401
         assert res.json['errors'][0]['detail'] == exceptions.NotAuthenticated.default_detail
 
     #   test_return_private_node_comments_logged_in_non_contributor
-        res = app.get(project_private['url'], auth=user_non_contrib, expect_errors=True)
+        res = app.get(project_private_dict['url'], auth=user_non_contrib, expect_errors=True)
         assert res.status_code == 401
         assert res.json['errors'][0]['detail'] == exceptions.NotAuthenticated.default_detail
 
     #   test_return_private_node_comments_logged_in_contributor
-        res = app.get(project_private['url'], auth=user.auth)
+        res = app.get(project_private_dict['url'], auth=user.auth)
         assert res.status_code == 200
         comment_json = res.json['data']
         comment_ids = [comment['id'] for comment in comment_json]
         assert len(comment_json) == 1
-        assert project_private['comment']._id in comment_ids
+        assert project_private_dict['comment']._id in comment_ids
 
     #   test_return_registration_comments_logged_in_contributor
-        res = app.get(registration['url'], auth=user.auth)
+        res = app.get(registration_dict['url'], auth=user.auth)
         assert res.status_code == 200
         comment_json = res.json['data']
         comment_ids = [comment['id'] for comment in comment_json]
         assert len(comment_json) == 1
-        assert registration['comment']._id in comment_ids
+        assert registration_dict['comment']._id in comment_ids
 
-    def test_return_both_deleted_and_undeleted_comments(self, app, user, project_private, mock_update_search=None):
-        deleted_comment = CommentFactory(node=project_private['project'], user=user, target=project_private['comment'].target, is_deleted=True)
-        res = app.get(project_private['url'], auth=user.auth)
+    def test_return_both_deleted_and_undeleted_comments(self, app, user, project_private_dict, mock_update_search=None):
+        deleted_comment = CommentFactory(node=project_private_dict['project'], user=user, target=project_private_dict['comment'].target, is_deleted=True)
+        res = app.get(project_private_dict['url'], auth=user.auth)
         assert res.status_code == 200
         comment_json = res.json['data']
         comment_ids = [comment['id'] for comment in comment_json]
-        assert project_private['comment']._id in comment_ids
+        assert project_private_dict['comment']._id in comment_ids
         assert deleted_comment._id in comment_ids
 
-    def test_node_comments_pagination(self, app, user, project_public):
+    def test_node_comments_pagination(self, app, user, project_public_dict):
 
     #   test_node_comments_list_pagination
-        url = '{}?filter[target]={}&related_counts=False'.format(project_public['url'], project_public['project']._id)
+        url = '{}?filter[target]={}&related_counts=False'.format(project_public_dict['url'], project_public_dict['project']._id)
         res = app.get(url, user=user, auth=user.auth)
         assert res.status_code == 200
         assert res.json['links']['meta']['unread'] == 0
 
     #   test_node_comments_list_updated_pagination
-        url = '{}?filter[target]={}&related_counts=False&version=2.1'.format(project_public['url'], project_public['project']._id)
+        url = '{}?filter[target]={}&related_counts=False&version=2.1'.format(project_public_dict['url'], project_public_dict['project']._id)
         res = app.get(url, user=user, auth=user.auth)
         assert res.status_code == 200
         assert res.json['meta']['unread'] == 0
@@ -112,21 +112,21 @@ class NodeCommentsListMixin(object):
 class TestNodeCommentsList(NodeCommentsListMixin):
 
     @pytest.fixture()
-    def project_private(self, user):
+    def project_private_dict(self, user):
         project_private = ProjectFactory(is_public=False, creator=user)
         comment_private = CommentFactory(node=project_private, user=user)
         url_private = '/{}nodes/{}/comments/'.format(API_BASE, project_private._id)
         return {'project': project_private, 'comment': comment_private, 'url': url_private}
 
     @pytest.fixture()
-    def project_public(self, user):
+    def project_public_dict(self, user):
         project_public = ProjectFactory(is_public=True, creator=user)
         comment_public = CommentFactory(node=project_public, user=user)
         url_public = '/{}nodes/{}/comments/'.format(API_BASE, project_public._id)
         return {'project': project_public, 'comment': comment_public, 'url': url_public}
 
     @pytest.fixture()
-    def registration(self, user):
+    def registration_dict(self, user):
         registration = RegistrationFactory(creator=user)
         comment_registration = CommentFactory(node=registration, user=user)
         url_registration = '/{}registrations/{}/comments/'.format(API_BASE, registration._id)
@@ -137,15 +137,15 @@ class TestNodeCommentsList(NodeCommentsListMixin):
 class TestNodeCommentsListFiles(NodeCommentsListMixin):
 
     @pytest.fixture()
-    def project_private(self, user):
+    def project_private_dict(self, user):
         project_private = ProjectFactory(is_public=False, creator=user)
-        file = test_utils.create_test_file(project_private, user)
-        comment_private = CommentFactory(node=project_private, user=user, target=file.get_guid(), page='files')
+        file_private = test_utils.create_test_file(project_private, user)
+        comment_private = CommentFactory(node=project_private, user=user, target=file_private.get_guid(), page='files')
         url_private = '/{}nodes/{}/comments/'.format(API_BASE, project_private._id)
-        return {'project': project_private, 'file': file, 'comment': comment_private, 'url': url_private}
+        return {'project': project_private, 'file': file_private, 'comment': comment_private, 'url': url_private}
 
     @pytest.fixture()
-    def project_public(self, user):
+    def project_public_dict(self, user):
         project_public = ProjectFactory(is_public=True, creator=user)
         file_public = test_utils.create_test_file(project_public, user)
         comment_public = CommentFactory(node=project_public, user=user, target=file_public.get_guid(), page='files')
@@ -153,31 +153,31 @@ class TestNodeCommentsListFiles(NodeCommentsListMixin):
         return {'project': project_public, 'file': file_public, 'comment': comment_public, 'url': url_public}
 
     @pytest.fixture()
-    def registration(self, user):
+    def registration_dict(self, user):
         registration = RegistrationFactory(creator=user)
         file_registration = test_utils.create_test_file(registration, user)
         comment_registration = CommentFactory(node=registration, user=user, target=file_registration.get_guid(), page='files')
         url_registration = '/{}registrations/{}/comments/'.format(API_BASE, registration._id)
         return {'registration': registration, 'file': file_registration, 'comment': comment_registration, 'url': url_registration}
 
-    def test_comments_on_deleted_files_are_not_returned(self, app, user, project_private):
+    def test_comments_on_deleted_files_are_not_returned(self, app, user, project_private_dict):
         # Delete commented file
-        osfstorage = project_private['project'].get_addon('osfstorage')
+        osfstorage = project_private_dict['project'].get_addon('osfstorage')
         root_node = osfstorage.get_root()
-        # root_node.delete(project_private['file'])
-        project_private['file'].delete(user=user)
-        res = app.get(project_private['url'], auth=user.auth)
+        # root_node.delete(project_private_dict['file'])
+        project_private_dict['file'].delete(user=user)
+        res = app.get(project_private_dict['url'], auth=user.auth)
         assert res.status_code == 200
         comment_json = res.json['data']
         comment_ids = [comment['id'] for comment in comment_json]
-        assert project_private['comment']._id not in comment_ids
+        assert project_private_dict['comment']._id not in comment_ids
 
 
 @pytest.mark.django_db
 class TestNodeCommentsListWiki(NodeCommentsListMixin):
 
     @pytest.fixture()
-    def project_private(self, user):
+    def project_private_dict(self, user):
         project_private = ProjectFactory(is_public=False, creator=user)
         wiki_private = NodeWikiFactory(node=project_private, user=user)
         comment_private = CommentFactory(node=project_private, user=user, target=Guid.load(wiki_private._id), page='wiki')
@@ -185,7 +185,7 @@ class TestNodeCommentsListWiki(NodeCommentsListMixin):
         return {'project': project_private, 'wiki': wiki_private, 'comment': comment_private, 'url': url_private}
 
     @pytest.fixture()
-    def project_public(self, user):
+    def project_public_dict(self, user):
         project_public = ProjectFactory(is_public=True, creator=user)
         wiki_public = NodeWikiFactory(node=project_public, user=user)
         comment_public = CommentFactory(node=project_public, user=user, target=Guid.load(wiki_public._id), page='wiki')
@@ -193,21 +193,21 @@ class TestNodeCommentsListWiki(NodeCommentsListMixin):
         return {'project': project_public, 'wiki': wiki_public, 'comment': comment_public, 'url': url_public}
 
     @pytest.fixture()
-    def registration(self, user):
+    def registration_dict(self, user):
         registration = RegistrationFactory(creator=user)
         wiki_registration = NodeWikiFactory(node=registration, user=user)
         comment_registration = CommentFactory(node=registration, user=user, target=Guid.load(wiki_registration._id), page='wiki')
         url_registration = '/{}registrations/{}/comments/'.format(API_BASE, registration._id)
         return {'registration': registration, 'wiki': wiki_registration, 'comment': comment_registration, 'url': url_registration}
 
-    def test_comments_on_deleted_wikis_are_not_returned(self, app, user, project_private, mock_update_search=None):
+    def test_comments_on_deleted_wikis_are_not_returned(self, app, user, project_private_dict, mock_update_search=None):
         # Delete wiki
-        project_private['project'].delete_node_wiki(project_private['wiki'].page_name, core.Auth(user))
-        res = app.get(project_private['url'], auth=user.auth)
+        project_private_dict['project'].delete_node_wiki(project_private_dict['wiki'].page_name, core.Auth(user))
+        res = app.get(project_private_dict['url'], auth=user.auth)
         assert res.status_code == 200
         comment_json = res.json['data']
         comment_ids = [comment['id'] for comment in comment_json]
-        assert project_private['comment']._id not in comment_ids
+        assert project_private_dict['comment']._id not in comment_ids
 
 @pytest.mark.django_db
 class NodeCommentsCreateMixin(object):
@@ -267,67 +267,62 @@ class NodeCommentsCreateMixin(object):
         assert res.json['errors'][0]['detail'] == exceptions.NotAuthenticated.default_detail
 
     #   test_private_node_with_public_comment_level_admin_can_comment
-        """ Test admin contributors can still comment on a private project with comment_level == 'public' """
+        # Test admin contributors can still comment on a private project with comment_level == 'public'
         project_dict = project_private_comment_public
         res = app.post_json_api(project_dict['url'], project_dict['payload'], auth=user.auth)
         assert res.status_code == 201
         assert res.json['data']['attributes']['content'] == project_dict['payload']['data']['attributes']['content']
 
     #   test_private_node_with_public_comment_level_read_only_contributor_can_comment
-        """ Test read-only contributors can still comment on a private project with comment_level == 'public' """
+        # Test read-only contributors can still comment on a private project with comment_level == 'public'
         project_dict = project_private_comment_public
         res = app.post_json_api(project_dict['url'], project_dict['payload'], auth=user_read_contrib.auth)
         assert res.status_code == 201
         assert res.json['data']['attributes']['content'] == project_dict['payload']['data']['attributes']['content']
 
     #   test_private_node_with_public_comment_level_non_contributor_cannot_comment
-        """ Test non-contributors cannot comment on a private project with comment_level == 'public' """
+        # Test non-contributors cannot comment on a private project with comment_level == 'public'
         project_dict = project_private_comment_public
         res = app.post_json_api(project_dict['url'], project_dict['payload'], auth=user_non_contrib.auth, expect_errors=True)
         assert res.status_code == 403
 
     #   test_private_node_with_public_comment_level_logged_out_user_cannot_comment
-        """ Test logged out users cannot comment on a private project with comment_level == 'public' """
+        # Test logged out users cannot comment on a private project with comment_level == 'public'
         project_dict = project_private_comment_public
         res = app.post_json_api(project_dict['url'], project_dict['payload'], expect_errors=True)
         assert res.status_code == 401
         assert res.json['errors'][0]['detail'] == exceptions.NotAuthenticated.default_detail
 
     #   test_public_project_with_public_comment_level_admin_can_comment
-        """ Test admin contributor can still comment on a public project when it is
-            configured so any logged-in user can comment (comment_level == 'public') """
+        # Test admin contributor can still comment on a public project when it is configured so any logged-in user can comment (comment_level == 'public')
         project_dict = project_public_comment_public
         res = app.post_json_api(project_dict['url'], project_dict['payload'], auth=user.auth)
         assert res.status_code == 201
         assert res.json['data']['attributes']['content'] == project_dict['payload']['data']['attributes']['content']
 
     #   test_public_project_with_public_comment_level_read_only_contributor_can_comment
-        """ Test read-only contributor can still comment on a public project when it is
-            configured so any logged-in user can comment (comment_level == 'public') """
+        # Test read-only contributor can still comment on a public project when it is configured so any logged-in user can comment (comment_level == 'public')
         project_dict = project_public_comment_public
         res = app.post_json_api(project_dict['url'], project_dict['payload'], auth=user_read_contrib.auth)
         assert res.status_code == 201
         assert res.json['data']['attributes']['content'] == project_dict['payload']['data']['attributes']['content']
 
     #   test_public_project_with_public_comment_level_non_contributor_can_comment
-        """ Test non-contributors can comment on a public project when it is
-            configured so any logged-in user can comment (comment_level == 'public') """
+        # Test non-contributors can comment on a public project when it is configured so any logged-in user can comment (comment_level == 'public')
         project_dict = project_public_comment_public
         res = app.post_json_api(project_dict['url'], project_dict['payload'], auth=user_non_contrib.auth)
         assert res.status_code == 201
         assert res.json['data']['attributes']['content'] == project_dict['payload']['data']['attributes']['content']
 
     #   test_public_project_with_public_comment_level_logged_out_user_cannot_comment
-        """ Test logged out users cannot comment on a public project when it is
-            configured so any logged-in user can comment (comment_level == 'public') """
+        # Test logged out users cannot comment on a public project when it is configured so any logged-in user can comment (comment_level == 'public')
         project_dict = project_public_comment_public
         res = app.post_json_api(project_dict['url'], project_dict['payload'], expect_errors=True)
         assert res.status_code == 401
         assert res.json['errors'][0]['detail'] == exceptions.NotAuthenticated.default_detail
 
     #   test_public_node_private_comment_level_admin_can_comment
-        """ Test only contributors can comment on a public project when it is
-            configured so only contributors can comment (comment_level == 'private') """
+        # Test only contributors can comment on a public project when it is configured so only contributors can comment (comment_level == 'private')
         project_dict = project_public_comment_private
         res = app.post_json_api(project_dict['url'], project_dict['payload'], auth=user.auth)
         assert res.status_code == 201
