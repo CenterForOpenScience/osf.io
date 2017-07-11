@@ -162,29 +162,29 @@ var AddPointerViewModel = oop.extend(Paginator, {
         }
         else{
             // BLOCKER
-            // var url = osfHelpers.apiV2Url('nodes/'+nodeId+'/registration_links/', {});
-            // var request = osfHelpers.ajaxJSON(
-            //     'POST',
-            //     url,
-            //     {
-            //         'isCors': true,
-            //         'data': {
-            //             'data': {
-            //                 'type': 'registration_links',
-            //                 'relationships': {
-            //                     'nodes': {
-            //                         'data': {
-            //                             'type': 'registrations',
-            //                             'id': data.id
-            //                         }
-            //                     }
-            //                 }
-            //             }
-            //         }
-            //     });
-            // request.done(function (response) {
-            //     self.selection.push(data);
-            // });
+            var url = osfHelpers.apiV2Url('nodes/'+nodeId+'/registration_links/', {});
+            var request = osfHelpers.ajaxJSON(
+                'POST',
+                url,
+                {
+                    'isCors': true,
+                    'data': {
+                        'data': {
+                            'type': 'registration_links',
+                            'relationships': {
+                                'nodes': {
+                                    'data': {
+                                        'type': 'registrations',
+                                        'id': data.id
+                                    }
+                                }
+                            }
+                        }
+                    }
+                });
+            request.done(function (response) {
+                self.selection.push(data);
+            });
         }
     },
     remove: function(data) {
@@ -218,31 +218,31 @@ var AddPointerViewModel = oop.extend(Paginator, {
         }
         else {
             // BLOCKER
-            // var url = osfHelpers.apiV2Url('nodes/'+nodeId+'/registration_links/', {});
-            // var request = osfHelpers.ajaxJSON(
-            //     'GET',
-            //     url,
-            //     {'isCors': true});
-            // request.done(function(response) {
-            //     var i, nl_id;
-            //     for (i = 0; i < response.data.length; i++){
-            //         if (response.data[i].embeds.target_node.data.id === data.id){
-            //             nl_id = response.data[i].id;
-            //         }
-            //     }
-            //     var url = osfHelpers.apiV2Url('nodes/'+nodeId+'/registration_links/'+nl_id+'/', {});
-            //     var request = osfHelpers.ajaxJSON(
-            //         'DELETE',
-            //         url,
-            //         {
-            //             'isCors': true
-            //         });
-            //     request.done(function(nl_response) {
-            //         self.selection.splice(
-            //             self.selection.indexOf(data), 1
-            //         );
-            //     });
-            // });
+            var url = osfHelpers.apiV2Url('nodes/'+nodeId+'/registration_links/', {});
+            var request = osfHelpers.ajaxJSON(
+                'GET',
+                url,
+                {'isCors': true});
+            request.done(function(response) {
+                var i, nl_id;
+                for (i = 0; i < response.data.length; i++){
+                    if (response.data[i].embeds.target_node.data.id === data.id){
+                        nl_id = response.data[i].id;
+                    }
+                }
+                var url = osfHelpers.apiV2Url('nodes/'+nodeId+'/registration_links/'+nl_id+'/', {});
+                var request = osfHelpers.ajaxJSON(
+                    'DELETE',
+                    url,
+                    {
+                        'isCors': true
+                    });
+                request.done(function(nl_response) {
+                    self.selection.splice(
+                        self.selection.indexOf(data), 1
+                    );
+                });
+            });
         }
 
     },
