@@ -1,8 +1,5 @@
 # -*- coding: utf-8 -*-
-
 from modularodm import Q
-
-from framework.sessions.model import Session
 
 
 def remove_sessions_for_user(user):
@@ -12,6 +9,7 @@ def remove_sessions_for_user(user):
     :param user: User
     :return:
     """
+    from osf.models import Session
 
     Session.remove(Q('data.auth_user_id', 'eq', user._id))
 
@@ -23,5 +21,5 @@ def remove_session(session):
     :param session: Session
     :return:
     """
-
-    Session.remove(Q('_id', 'eq', session._id))
+    from osf.models import Session
+    Session.remove_one(session)

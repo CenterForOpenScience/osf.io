@@ -6,12 +6,11 @@ from types import NoneType
 from xmlrpclib import DateTime
 
 import mock
-from nose.tools import *
-from webtest_plus import TestApp
+from nose.tools import *  # flake8: noqa
 
 from tests.base import OsfTestCase
-from tests.factories import (UserFactory, ProjectFactory, NodeFactory,
-                             AuthFactory, PointerFactory, RegistrationFactory,
+from osf_tests.factories import (UserFactory, ProjectFactory, NodeFactory,
+                             AuthFactory, RegistrationFactory,
                              PrivateLinkFactory)
 from framework.auth import Auth
 from website.util import rubeus
@@ -106,7 +105,7 @@ class TestRubeus(OsfTestCase):
         assert_equal(result['accept']['maxSize'], self.node_settings.config.max_file_size)
 
         # user now has elevated upload limit
-        user.system_tags.append('high_upload_limit')
+        user.add_system_tag('high_upload_limit')
         user.save()
 
         result = rubeus.build_addon_root(
@@ -122,7 +121,7 @@ class TestRubeus(OsfTestCase):
 
     def test_build_addon_root_for_anonymous_vols_hides_path(self):
         private_anonymous_link = PrivateLinkFactory(anonymous=True)
-        private_anonymous_link.nodes.append(self.project)
+        private_anonymous_link.nodes.add(self.project)
         private_anonymous_link.save()
         project_viewer = UserFactory()
 
@@ -137,7 +136,7 @@ class TestRubeus(OsfTestCase):
 
     def test_build_addon_root_for_anonymous_vols_shows_path(self):
         private_link = PrivateLinkFactory()
-        private_link.nodes.append(self.project)
+        private_link.nodes.add(self.project)
         private_link.save()
         project_viewer = UserFactory()
 
@@ -299,10 +298,13 @@ class TestRubeus(OsfTestCase):
         assert_equal(len(nodes), 0)
 
     def test_serialized_pointer_has_flag_indicating_its_a_pointer(self):
-        pointer = PointerFactory()
-        serializer = rubeus.NodeFileCollector(node=pointer, auth=self.consolidated_auth)
-        ret = serializer._serialize_node(pointer)
-        assert_true(ret['isPointer'])
+        project = ProjectFactory(creator=self.consolidated_auth.user)
+        pointed_project = ProjectFactory(is_public=True)
+        project.add_pointer(pointed_project, auth=self.consolidated_auth)
+        serializer = rubeus.NodeFileCollector(node=project, auth=self.consolidated_auth)
+        ret = serializer._serialize_node(project)
+        child = ret['children'][1]  # first child is OSFStorage, second child is pointer
+        assert_true(child['isPointer'])
 
 
 # TODO: Make this more reusable across test modules
@@ -368,7 +370,7 @@ class TestSerializingNodeWithAddon(OsfTestCase):
         ret = self.serializer._serialize_node(self.project)
         assert_equal(
             len(ret['children']),
-            len(self.project.get_addons.return_value) + len(self.project.nodes)
+            len(self.project.get_addons.return_value) + len(list(self.project.nodes))
         )
         assert_equal(ret['kind'], rubeus.FOLDER)
         assert_equal(ret['name'], self.project.title)

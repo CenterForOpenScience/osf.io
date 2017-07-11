@@ -1,20 +1,33 @@
 # -*- coding: utf-8 -*-
+import random
+
+import mock
+
+from datetime import datetime
+
 from nose.tools import *  # flake8: noqa
 
+from rest_framework import exceptions
+
+from api.base.exceptions import Conflict
 from api.base.settings.defaults import API_BASE
-from website.models import NodeLog
+from api.nodes.serializers import NodeContributorsCreateSerializer
 
 from framework.auth.core import Auth
 
-from tests.base import ApiTestCase
-from tests.factories import (
+from tests.base import ApiTestCase, capture_signals, fake
+from osf_tests.factories import (
     ProjectFactory,
     AuthUserFactory,
-    UserFactory
+    UserFactory,
+    UnconfirmedUserFactory
 )
-
 from tests.utils import assert_logs
-from website.util import permissions
+
+from osf.models import NodeLog
+from website.project.signals import contributor_added, unreg_contributor_added, contributor_removed
+from website.util import permissions, disconnected_from_listeners
+
 
 class NodeCRUDTestCase(ApiTestCase):
 
@@ -73,6 +86,33 @@ class TestNodeContributorList(NodeCRUDTestCase):
 
         assert_equal(res.json['data'][0]['id'].split('-')[0], self.public_project._id)
         assert_equal(res.json['data'][0]['id'].split('-')[1], self.user._id)
+
+    def test_permissions_work_with_many_users(self):
+        users = {
+            'admin': [self.user._id],
+            'write': [],
+            'read': []
+        }
+        for i in range(0, 25):
+            perm = random.choice(users.keys())
+            perms = []
+            if perm == 'admin':
+                perms = ['read', 'write', 'admin', ]
+            elif perm == 'write':
+                perms = ['read', 'write', ]
+            elif perm == 'read':
+                perms = ['read', ]
+            user = AuthUserFactory()
+
+            self.private_project.add_contributor(user, permissions=perms)
+            users[perm].append(user._id)
+
+        res = self.app.get(self.private_url, auth=self.user.auth)
+        data = res.json['data']
+        for user in data:
+            api_perm = user['attributes']['permission']
+            user_id = user['id'].split('-')[1]
+            assert user_id in users[api_perm], 'Permissions incorrect for {}. Should not have {} permission.'.format(user_id, api_perm)
 
     def test_return_public_contributor_list_logged_out(self):
         self.public_project.add_contributor(self.user_two, save=True)
@@ -153,7 +193,7 @@ class TestNodeContributorList(NodeCRUDTestCase):
         assert_equal(res.json['links']['meta']['total_bibliographic'], len(self.public_project.visible_contributor_ids))
 
     def test_unregistered_contributor_field_is_null_if_account_claimed(self):
-        project = ProjectFactory(creator=self.user, public=True)
+        project = ProjectFactory(creator=self.user, is_public=True)
         url = '/{}nodes/{}/contributors/'.format(API_BASE, project._id)
         res = self.app.get(url, auth=self.user.auth, expect_errors=True)
         assert_equal(res.status_code, 200)
@@ -161,7 +201,7 @@ class TestNodeContributorList(NodeCRUDTestCase):
         assert_equal(res.json['data'][0]['attributes'].get('unregistered_contributor'), None)
 
     def test_unregistered_contributors_show_up_as_name_associated_with_project(self):
-        project = ProjectFactory(creator=self.user, public=True)
+        project = ProjectFactory(creator=self.user, is_public=True)
         project.add_unregistered_contributor('Robert Jackson', 'robert@gmail.com', auth=Auth(self.user), save=True)
         url = '/{}nodes/{}/contributors/'.format(API_BASE, project._id)
         res = self.app.get(url, auth=self.user.auth, expect_errors=True)
@@ -170,7 +210,7 @@ class TestNodeContributorList(NodeCRUDTestCase):
         assert_equal(res.json['data'][1]['embeds']['users']['data']['attributes']['full_name'], 'Robert Jackson')
         assert_equal(res.json['data'][1]['attributes'].get('unregistered_contributor'), 'Robert Jackson')
 
-        project_two = ProjectFactory(creator=self.user, public=True)
+        project_two = ProjectFactory(creator=self.user, is_public=True)
         project_two.add_unregistered_contributor('Bob Jackson', 'robert@gmail.com', auth=Auth(self.user), save=True)
         url = '/{}nodes/{}/contributors/'.format(API_BASE, project_two._id)
         res = self.app.get(url, auth=self.user.auth, expect_errors=True)
@@ -287,8 +327,8 @@ class TestNodeContributorAdd(NodeCRUDTestCase):
     def setUp(self):
         super(TestNodeContributorAdd, self).setUp()
 
-        self.private_url = '/{}nodes/{}/contributors/'.format(API_BASE, self.private_project._id)
-        self.public_url = '/{}nodes/{}/contributors/'.format(API_BASE, self.public_project._id)
+        self.private_url = '/{}nodes/{}/contributors/?send_email=false'.format(API_BASE, self.private_project._id)
+        self.public_url = '/{}nodes/{}/contributors/?send_email=false'.format(API_BASE, self.public_project._id)
 
         self.user_three = AuthUserFactory()
         self.data_user_two = {
@@ -328,6 +368,9 @@ class TestNodeContributorAdd(NodeCRUDTestCase):
         data = {
             'data': {
                 'type': 'contributors',
+                'attributes': {
+                    'bibliographic': True
+                },
                 'relationships': [{'contributor_id': self.user_three._id}]
             }
         }
@@ -355,7 +398,7 @@ class TestNodeContributorAdd(NodeCRUDTestCase):
         }
         res = self.app.post_json_api(self.public_url, data, auth=self.user.auth, expect_errors=True)
         assert_equal(res.status_code, 400)
-        assert_equal(res.json['errors'][0]['source']['pointer'], '/data/relationships')
+        assert_equal(res.json['errors'][0]['detail'], 'A user ID or full name must be provided to add a contributor.')
 
     def test_add_contributor_empty_relationships(self):
         data = {
@@ -368,7 +411,8 @@ class TestNodeContributorAdd(NodeCRUDTestCase):
             }
         }
         res = self.app.post_json_api(self.public_url, data, auth=self.user.auth, expect_errors=True)
-        assert_equal(res.json['errors'][0]['source']['pointer'], '/data/relationships')
+        assert_equal(res.status_code, 400)
+        assert_equal(res.json['errors'][0]['detail'], 'A user ID or full name must be provided to add a contributor.')
 
     def test_add_contributor_no_user_key_in_relationships(self):
         data = {
@@ -444,7 +488,7 @@ class TestNodeContributorAdd(NodeCRUDTestCase):
         }
         res = self.app.post_json_api(self.public_url, data, auth=self.user.auth, expect_errors=True)
         assert_equal(res.status_code, 400)
-        assert_equal(res.json['errors'][0]['source']['pointer'], '/data/id')
+        assert_equal(res.json['errors'][0]['detail'], 'A user ID or full name must be provided to add a contributor.')
 
     def test_add_contributor_incorrect_target_id_in_relationships(self):
         data = {
@@ -465,26 +509,6 @@ class TestNodeContributorAdd(NodeCRUDTestCase):
         }
         res = self.app.post_json_api(self.public_url, data, auth=self.user.auth, expect_errors=True)
         assert_equal(res.status_code, 404)
-
-    def test_add_contributor_incorrect_target_type_in_relationships(self):
-        data = {
-            'data': {
-                'type': 'contributors',
-                'attributes': {
-                    'bibliographic': True
-                },
-                'relationships': {
-                    'users': {
-                        'data': {
-                            'type': 'Incorrect!',
-                            'id': self.user_two._id
-                        }
-                    }
-                }
-            }
-        }
-        res = self.app.post_json_api(self.public_url, data, auth=self.user.auth, expect_errors=True)
-        assert_equal(res.status_code, 409)
 
     def test_add_contributor_no_type(self):
         data = {
@@ -531,7 +555,7 @@ class TestNodeContributorAdd(NodeCRUDTestCase):
         del self.data_user_two['data']['attributes']['bibliographic']
         res = self.app.post_json_api(self.public_url, self.data_user_two, auth=self.user.auth, expect_errors=True)
         assert_equal(res.status_code, 201)
-        assert_equal(res.json['data']['id'], '{}-{}'.format(self.public_project, self.user_two._id))
+        assert_equal(res.json['data']['id'], '{}-{}'.format(self.public_project._id, self.user_two._id))
 
         self.public_project.reload()
         assert_in(self.user_two, self.public_project.contributors)
@@ -541,7 +565,7 @@ class TestNodeContributorAdd(NodeCRUDTestCase):
     def test_adds_bibliographic_contributor_public_project_admin(self):
         res = self.app.post_json_api(self.public_url, self.data_user_two, auth=self.user.auth)
         assert_equal(res.status_code, 201)
-        assert_equal(res.json['data']['id'], '{}-{}'.format(self.public_project, self.user_two._id))
+        assert_equal(res.json['data']['id'], '{}-{}'.format(self.public_project._id, self.user_two._id))
 
         self.public_project.reload()
         assert_in(self.user_two, self.public_project.contributors)
@@ -566,7 +590,7 @@ class TestNodeContributorAdd(NodeCRUDTestCase):
         }
         res = self.app.post_json_api(self.private_url, data, auth=self.user.auth, expect_errors=True)
         assert_equal(res.status_code, 201)
-        assert_equal(res.json['data']['id'], '{}-{}'.format(self.private_project, self.user_two._id))
+        assert_equal(res.json['data']['id'], '{}-{}'.format(self.private_project._id, self.user_two._id))
         assert_equal(res.json['data']['attributes']['bibliographic'], False)
 
         self.private_project.reload()
@@ -579,24 +603,24 @@ class TestNodeContributorAdd(NodeCRUDTestCase):
                                  auth=self.user_two.auth, expect_errors=True)
         assert_equal(res.status_code, 403)
         self.public_project.reload()
-        assert_not_in(self.user_three, self.public_project.contributors)
+        assert_not_in(self.user_three, self.public_project.contributors.all())
 
     def test_adds_contributor_public_project_non_contributor(self):
         res = self.app.post_json_api(self.public_url, self.data_user_three,
                                  auth=self.user_two.auth, expect_errors=True)
         assert_equal(res.status_code, 403)
-        assert_not_in(self.user_three, self.public_project.contributors)
+        assert_not_in(self.user_three, self.public_project.contributors.all())
 
     def test_adds_contributor_public_project_not_logged_in(self):
         res = self.app.post_json_api(self.public_url, self.data_user_two, expect_errors=True)
         assert_equal(res.status_code, 401)
-        assert_not_in(self.user_two, self.public_project.contributors)
+        assert_not_in(self.user_two, self.public_project.contributors.all())
 
     @assert_logs(NodeLog.CONTRIB_ADDED, 'private_project')
     def test_adds_contributor_private_project_admin(self):
         res = self.app.post_json_api(self.private_url, self.data_user_two, auth=self.user.auth)
         assert_equal(res.status_code, 201)
-        assert_equal(res.json['data']['id'], '{}-{}'.format(self.private_project, self.user_two._id))
+        assert_equal(res.json['data']['id'], '{}-{}'.format(self.private_project._id, self.user_two._id))
 
         self.private_project.reload()
         assert_in(self.user_two, self.private_project.contributors)
@@ -645,7 +669,7 @@ class TestNodeContributorAdd(NodeCRUDTestCase):
         }
         res = self.app.post_json_api(self.private_url, data, auth=self.user.auth)
         assert_equal(res.status_code, 201)
-        assert_equal(res.json['data']['id'], '{}-{}'.format(self.private_project, self.user_two._id))
+        assert_equal(res.json['data']['id'], '{}-{}'.format(self.private_project._id, self.user_two._id))
 
         self.private_project.reload()
         assert_in(self.user_two, self.private_project.contributors)
@@ -672,7 +696,7 @@ class TestNodeContributorAdd(NodeCRUDTestCase):
         }
         res = self.app.post_json_api(self.private_url, data, auth=self.user.auth)
         assert_equal(res.status_code, 201)
-        assert_equal(res.json['data']['id'], '{}-{}'.format(self.private_project, self.user_two._id))
+        assert_equal(res.json['data']['id'], '{}-{}'.format(self.private_project._id, self.user_two._id))
 
         self.private_project.reload()
         assert_in(self.user_two, self.private_project.contributors)
@@ -699,7 +723,7 @@ class TestNodeContributorAdd(NodeCRUDTestCase):
         }
         res = self.app.post_json_api(self.private_url, data, auth=self.user.auth)
         assert_equal(res.status_code, 201)
-        assert_equal(res.json['data']['id'], '{}-{}'.format(self.private_project, self.user_two._id))
+        assert_equal(res.json['data']['id'], '{}-{}'.format(self.private_project._id, self.user_two._id))
 
         self.private_project.reload()
         assert_in(self.user_two, self.private_project.contributors)
@@ -727,7 +751,7 @@ class TestNodeContributorAdd(NodeCRUDTestCase):
         assert_equal(res.status_code, 400)
 
         self.private_project.reload()
-        assert_not_in(self.user_two, self.private_project.contributors)
+        assert_not_in(self.user_two, self.private_project.contributors.all())
 
     @assert_logs(NodeLog.CONTRIB_ADDED, 'private_project')
     def test_adds_none_permission_contributor_private_project_admin_uses_default_permissions(self):
@@ -794,7 +818,7 @@ class TestNodeContributorAdd(NodeCRUDTestCase):
         assert_equal(res.status_code, 403)
 
         self.private_project.reload()
-        assert_not_in(self.user_three, self.private_project.contributors)
+        assert_not_in(self.user_three, self.private_project.contributors.all())
 
     def test_adds_contributor_private_project_non_contributor(self):
         res = self.app.post_json_api(self.private_url, self.data_user_three,
@@ -802,14 +826,502 @@ class TestNodeContributorAdd(NodeCRUDTestCase):
         assert_equal(res.status_code, 403)
 
         self.private_project.reload()
-        assert_not_in(self.user_three, self.private_project.contributors)
+        assert_not_in(self.user_three, self.private_project.contributors.all())
 
     def test_adds_contributor_private_project_not_logged_in(self):
         res = self.app.post_json_api(self.private_url, self.data_user_two, expect_errors=True)
         assert_equal(res.status_code, 401)
 
         self.private_project.reload()
-        assert_not_in(self.user_two, self.private_project.contributors)
+        assert_not_in(self.user_two, self.private_project.contributors.all())
+
+    @assert_logs(NodeLog.CONTRIB_ADDED, 'public_project')
+    def test_add_unregistered_contributor_with_fullname(self):
+        payload = {
+            'data': {
+                'type': 'contributors',
+                'attributes': {
+                    'full_name': 'John Doe',
+                }
+            }
+        }
+        res = self.app.post_json_api(self.public_url, payload, auth=self.user.auth)
+        self.public_project.reload()
+        assert_equal(res.status_code, 201)
+        assert_equal(res.json['data']['attributes']['unregistered_contributor'], 'John Doe')
+        assert_equal(res.json['data']['attributes']['email'], None)
+        assert_in(res.json['data']['embeds']['users']['data']['id'],
+                  self.public_project.contributors.values_list('guids___id', flat=True))
+
+    @assert_logs(NodeLog.CONTRIB_ADDED, 'public_project')
+    def test_add_contributor_with_fullname_and_email_unregistered_user(self):
+        payload = {
+            'data': {
+                'type': 'contributors',
+                'attributes': {
+                    'full_name': 'John Doe',
+                    'email': 'john@doe.com'
+                }
+            }
+        }
+        res = self.app.post_json_api(self.public_url, payload, auth=self.user.auth)
+        self.public_project.reload()
+        assert_equal(res.status_code, 201)
+        assert_equal(res.json['data']['attributes']['unregistered_contributor'], 'John Doe')
+        assert_equal(res.json['data']['attributes']['email'], 'john@doe.com')
+        assert_equal(res.json['data']['attributes']['bibliographic'], True)
+        assert_equal(res.json['data']['attributes']['permission'], permissions.WRITE)
+        assert_in(
+            res.json['data']['embeds']['users']['data']['id'],
+            self.public_project.contributors.values_list('guids___id', flat=True)
+        )
+
+    @assert_logs(NodeLog.CONTRIB_ADDED, 'public_project')
+    def test_add_contributor_with_fullname_and_email_unregistered_user_set_attributes(self):
+        payload = {
+            'data': {
+                'type': 'contributors',
+                'attributes': {
+                    'full_name': 'John Doe',
+                    'email': 'john@doe.com',
+                    'bibliographic': False,
+                    'permission': permissions.READ
+                }
+            }
+        }
+        res = self.app.post_json_api(self.public_url, payload, auth=self.user.auth)
+        self.public_project.reload()
+        assert_equal(res.status_code, 201)
+        assert_equal(res.json['data']['attributes']['unregistered_contributor'], 'John Doe')
+        assert_equal(res.json['data']['attributes']['email'], 'john@doe.com')
+        assert_equal(res.json['data']['attributes']['bibliographic'], False)
+        assert_equal(res.json['data']['attributes']['permission'], permissions.READ)
+        assert_in(res.json['data']['embeds']['users']['data']['id'],
+                  self.public_project.contributors.values_list('guids___id', flat=True))
+
+    @assert_logs(NodeLog.CONTRIB_ADDED, 'public_project')
+    def test_add_contributor_with_fullname_and_email_registered_user(self):
+        user = UserFactory()
+        payload = {
+            'data': {
+                'type': 'contributors',
+                'attributes': {
+                    'full_name': user.fullname,
+                    'email': user.username
+                }
+            }
+        }
+        res = self.app.post_json_api(self.public_url, payload, auth=self.user.auth)
+        self.public_project.reload()
+        assert_equal(res.status_code, 201)
+        assert_equal(res.json['data']['attributes']['unregistered_contributor'], None)
+        assert_equal(res.json['data']['attributes']['email'], user.username)
+        assert_in(res.json['data']['embeds']['users']['data']['id'],
+                  self.public_project.contributors.values_list('guids___id', flat=True))
+
+    def test_add_unregistered_contributor_already_contributor(self):
+        name, email = fake.name(), fake.email()
+        self.public_project.add_unregistered_contributor(auth=Auth(self.user), fullname=name, email=email)
+        payload = {
+            'data': {
+                'type': 'contributors',
+                'attributes': {
+                    'full_name': 'Doesn\'t Matter',
+                    'email': email
+                }
+            }
+        }
+        res = self.app.post_json_api(self.public_url, payload, auth=self.user.auth, expect_errors=True)
+        self.public_project.reload()
+        assert_equal(res.status_code, 400)
+        assert_equal(res.json['errors'][0]['detail'], '{} is already a contributor.'.format(name))
+
+    def test_add_contributor_user_is_deactivated_registered_payload(self):
+        user = UserFactory()
+        user.date_disabled = datetime.utcnow()
+        user.save()
+        payload = {
+            'data': {
+                'type': 'contributors',
+                'attributes': {},
+                'relationships': {
+                    'users': {
+                        'data': {
+                            'type': 'users',
+                            'id': user._id
+                        }
+                    }
+                }
+            }
+        }
+        res = self.app.post_json_api(self.public_url, payload, auth=self.user.auth, expect_errors=True)
+        assert_equal(res.status_code, 400)
+        assert_equal(res.json['errors'][0]['detail'], 'Deactivated users cannot be added as contributors.')
+
+    def test_add_contributor_user_is_deactivated_unregistered_payload(self):
+        user = UserFactory()
+        user.date_disabled = datetime.utcnow()
+        user.save()
+        payload =  {
+            'data': {
+                'type': 'contributors',
+                'attributes': {
+                    'full_name': user.fullname,
+                    'email': user.username
+                },
+            }
+        }
+        res = self.app.post_json_api(self.public_url, payload, auth=self.user.auth, expect_errors=True)
+        assert_equal(res.status_code, 400)
+        assert_equal(res.json['errors'][0]['detail'], 'Deactivated users cannot be added as contributors.')
+
+    def test_add_contributor_index_returned(self):
+        res = self.app.post_json_api(self.public_url, self.data_user_two, auth=self.user.auth)
+        assert_equal(res.status_code, 201)
+        assert_equal(res.json['data']['attributes']['index'], 1)
+
+        res = self.app.post_json_api(self.public_url, self.data_user_three, auth=self.user.auth)
+        assert_equal(res.status_code, 201)
+        assert_equal(res.json['data']['attributes']['index'], 2)
+
+    def test_add_contributor_set_index_out_of_range(self):
+        user_one = UserFactory()
+        self.public_project.add_contributor(user_one, save=True)
+        user_two = UserFactory()
+        self.public_project.add_contributor(user_two, save=True)
+        payload = {
+            'data': {
+                'type': 'contributors',
+                'attributes': {
+                    'index': 4
+                },
+                'relationships': {
+                    'users': {
+                        'data': {
+                            'type': 'users',
+                            'id': self.user_two._id
+                        }
+                    }
+                }
+            }
+        }
+        res = self.app.post_json_api(self.public_url, payload, auth=self.user.auth, expect_errors=True)
+        assert_equal(res.status_code, 400)
+        assert_equal(res.json['errors'][0]['detail'],
+                     '4 is not a valid contributor index for node with id {}'.format(self.public_project._id))
+
+    def test_add_contributor_set_index_first(self):
+        user_one = UserFactory()
+        self.public_project.add_contributor(user_one, save=True)
+        user_two = UserFactory()
+        self.public_project.add_contributor(user_two, save=True)
+        payload = {
+            'data': {
+                'type': 'contributors',
+                'attributes': {
+                    'index': 0
+                },
+                'relationships': {
+                    'users': {
+                        'data': {
+                            'type': 'users',
+                            'id': self.user_two._id
+                        }
+                    }
+                }
+            }
+        }
+        res = self.app.post_json_api(self.public_url, payload, auth=self.user.auth)
+        self.public_project.reload()
+        assert_equal(res.status_code, 201)
+        contributor_obj = self.public_project.contributor_set.get(user=self.user_two)
+        index = list(self.public_project.get_contributor_order()).index(contributor_obj.pk)
+        assert_equal(index, 0)
+
+    def test_add_contributor_set_index_last(self):
+        user_one = UserFactory()
+        self.public_project.add_contributor(user_one, save=True)
+        user_two = UserFactory()
+        self.public_project.add_contributor(user_two, save=True)
+        payload = {
+            'data': {
+                'type': 'contributors',
+                'attributes': {
+                    'index': 3
+                },
+                'relationships': {
+                    'users': {
+                        'data': {
+                            'type': 'users',
+                            'id': self.user_two._id
+                        }
+                    }
+                }
+            }
+        }
+        res = self.app.post_json_api(self.public_url, payload, auth=self.user.auth)
+        self.public_project.reload()
+        assert_equal(res.status_code, 201)
+        contributor_obj = self.public_project.contributor_set.get(user=self.user_two)
+        index = list(self.public_project.get_contributor_order()).index(contributor_obj.pk)
+        assert_equal(index, 3)
+
+    def test_add_inactive_merged_user_as_contributor(self):
+        primary_user = UserFactory()
+        merged_user = UserFactory(merged_by=primary_user)
+
+        payload = {
+            'data': {
+                'type': 'contributors',
+                'attributes': {},
+                'relationships': {
+                    'users': {
+                        'data': {
+                            'type': 'users',
+                            'id': merged_user._id
+                        }
+                    }
+                }
+            }
+        }
+
+        res = self.app.post_json_api(self.public_url, payload, auth=self.user.auth)
+        assert_equal(res.status_code, 201)
+        contributor_added = res.json['data']['embeds']['users']['data']['id']
+        assert_equal(contributor_added, primary_user._id)
+
+    def test_add_unconfirmed_user_by_guid(self):
+        unconfirmed_user = UnconfirmedUserFactory()
+        payload = {
+            'data': {
+                'type':'contributors',
+                'attributes': {},
+                'relationships': {
+                     'users': {
+                          'data': {
+                               'type': 'users',
+                               'id': unconfirmed_user._id
+                            }
+                       }
+                  }
+            }
+        }
+        res = self.app.post_json_api(self.public_url, payload, auth=self.user.auth, expect_errors=True)
+        assert_equal(res.status_code, 404)
+        assert_equal(
+            res.json['errors'][0]['detail'],
+            'Cannot add unconfirmed user {} to node {} by guid. Add an unregistered contributor with fullname and email.'
+            .format(unconfirmed_user._id, self.public_project._id)
+        )
+
+
+class TestNodeContributorCreateValidation(NodeCRUDTestCase):
+
+    def setUp(self):
+        super(TestNodeContributorCreateValidation, self).setUp()
+        self.validate_data = NodeContributorsCreateSerializer.validate_data
+
+    def test_add_contributor_validation_user_id(self):
+        self.validate_data(NodeContributorsCreateSerializer(), self.public_project, user_id='abcde')
+
+    def test_add_contributor_validation_user_id_fullname(self):
+        with assert_raises(Conflict):
+            self.validate_data(NodeContributorsCreateSerializer(), 'fake', user_id='abcde', full_name='Kanye')
+
+    def test_add_contributor_validation_user_id_email(self):
+        with assert_raises(Conflict):
+            self.validate_data(NodeContributorsCreateSerializer(), 'fake', user_id='abcde', email='kanye@west.com')
+
+    def test_add_contributor_validation_user_id_fullname_email(self):
+        with assert_raises(Conflict):
+            self.validate_data(NodeContributorsCreateSerializer(), 'fake', user_id='abcde', full_name='Kanye', email='kanye@west.com')
+
+    def test_add_contributor_validation_fullname(self):
+        self.validate_data(NodeContributorsCreateSerializer(), self.public_project, full_name='Kanye')
+
+    def test_add_contributor_validation_email(self):
+        with assert_raises(exceptions.ValidationError):
+            self.validate_data(NodeContributorsCreateSerializer(), 'fake', email='kanye@west.com')
+
+    def test_add_contributor_validation_fullname_email(self):
+        self.validate_data(NodeContributorsCreateSerializer(), self.public_project, full_name='Kanye', email='kanye@west.com')
+
+
+class TestNodeContributorCreateEmail(NodeCRUDTestCase):
+
+    def setUp(self):
+        super(TestNodeContributorCreateEmail, self).setUp()
+        self.url = '/{}nodes/{}/contributors/'.format(API_BASE, self.public_project._id)
+
+    @mock.patch('framework.auth.views.mails.send_mail')
+    def test_add_contributor_no_email_if_false(self, mock_mail):
+        url = '{}?send_email=false'.format(self.url)
+        payload = {
+            'data': {
+                'type': 'contributors',
+                'attributes': {
+                    'full_name': 'Kanye West',
+                    'email': 'kanye@west.com'
+                }
+            }
+        }
+        res = self.app.post_json_api(url, payload, auth=self.user.auth)
+        assert_equal(res.status_code, 201)
+        assert_equal(mock_mail.call_count, 0)
+
+    @mock.patch('framework.auth.views.mails.send_mail')
+    def test_add_contributor_sends_email(self, mock_mail):
+        url = '{}?send_email=default'.format(self.url)
+        payload = {
+            'data': {
+                'type': 'contributors',
+                'attributes': {
+                },
+                'relationships': {
+                    'users': {
+                        'data': {
+                            'type': 'users',
+                            'id': self.user_two._id
+                        }
+                    }
+                }
+            }
+        }
+
+        res = self.app.post_json_api(url, payload, auth=self.user.auth)
+        assert_equal(res.status_code, 201)
+        assert_equal(mock_mail.call_count, 1)
+
+    @mock.patch('website.project.signals.contributor_added.send')
+    def test_add_contributor_signal_if_default(self, mock_send):
+        url = '{}?send_email=default'.format(self.url)
+        payload = {
+            'data': {
+                'type': 'contributors',
+                'attributes': {
+                },
+                'relationships': {
+                    'users': {
+                        'data': {
+                            'type': 'users',
+                            'id': self.user_two._id
+                        }
+                    }
+                }
+            }
+        }
+        res = self.app.post_json_api(url, payload, auth=self.user.auth)
+        args, kwargs = mock_send.call_args
+        assert_equal(res.status_code, 201)
+        assert_equal('default', kwargs['email_template'])
+
+    @mock.patch('website.project.signals.contributor_added.send')
+    def test_add_contributor_signal_if_preprint(self, mock_send):
+        url = '{}?send_email=preprint'.format(self.url)
+        payload = {
+            'data': {
+                'type': 'contributors',
+                'attributes': {
+                },
+                'relationships': {
+                    'users': {
+                        'data': {
+                            'type': 'users',
+                            'id': self.user_two._id
+                        }
+                    }
+                }
+            }
+        }
+        res = self.app.post_json_api(url, payload, auth=self.user.auth)
+        args, kwargs = mock_send.call_args
+        assert_equal(res.status_code, 201)
+        assert_equal('preprint', kwargs['email_template'])
+
+    @mock.patch('framework.auth.views.mails.send_mail')
+    def test_add_unregistered_contributor_sends_email(self, mock_mail):
+        url = '{}?send_email=default'.format(self.url)
+        payload = {
+            'data': {
+                'type': 'contributors',
+                'attributes': {
+                    'full_name': 'Kanye West',
+                    'email': 'kanye@west.com'
+                }
+            }
+        }
+        res = self.app.post_json_api(url, payload, auth=self.user.auth)
+        assert_equal(res.status_code, 201)
+        assert_equal(mock_mail.call_count, 1)
+
+    @mock.patch('website.project.signals.unreg_contributor_added.send')
+    def test_add_unregistered_contributor_signal_if_default(self, mock_send):
+        url = '{}?send_email=default'.format(self.url)
+        payload = {
+            'data': {
+                'type': 'contributors',
+                'attributes': {
+                    'full_name': 'Kanye West',
+                    'email': 'kanye@west.com'
+                }
+            }
+        }
+        res = self.app.post_json_api(url, payload, auth=self.user.auth)
+        args, kwargs = mock_send.call_args
+        assert_equal(res.status_code, 201)
+        assert_equal('default', kwargs['email_template'])
+
+    @mock.patch('website.project.signals.unreg_contributor_added.send')
+    def test_add_unregistered_contributor_signal_if_preprint(self, mock_send):
+        url = '{}?send_email=preprint'.format(self.url)
+        payload = {
+            'data': {
+                'type': 'contributors',
+                'attributes': {
+                    'full_name': 'Kanye West',
+                    'email': 'kanye@west.com'
+                }
+            }
+        }
+        res = self.app.post_json_api(url, payload, auth=self.user.auth)
+        args, kwargs = mock_send.call_args
+        assert_equal(res.status_code, 201)
+        assert_equal('preprint', kwargs['email_template'])
+
+    @mock.patch('framework.auth.views.mails.send_mail')
+    def test_add_contributor_invalid_send_email_param(self, mock_mail):
+        url = '{}?send_email=true'.format(self.url)
+        payload = {
+            'data': {
+                'type': 'contributors',
+                'attributes': {
+                    'full_name': 'Kanye West',
+                    'email': 'kanye@west.com'
+                }
+            }
+        }
+        res = self.app.post_json_api(url, payload, auth=self.user.auth, expect_errors=True)
+        assert_equal(res.status_code, 400)
+        assert_equal(res.json['errors'][0]['detail'], 'true is not a valid email preference.')
+        assert_equal(mock_mail.call_count, 0)
+
+    @mock.patch('framework.auth.views.mails.send_mail')
+    def test_add_unregistered_contributor_without_email_no_email(self, mock_mail):
+        url = '{}?send_email=default'.format(self.url)
+        payload = {
+            'data': {
+                'type': 'contributors',
+                'attributes': {
+                    'full_name': 'Kanye West',
+                }
+            }
+        }
+
+        with capture_signals() as mock_signal:
+            res = self.app.post_json_api(url, payload, auth=self.user.auth)
+        assert_in(contributor_added, mock_signal.signals_sent())
+        assert_equal(res.status_code, 201)
+        assert_equal(mock_mail.call_count, 0)
 
 
 class TestNodeContributorBulkCreate(NodeCRUDTestCase):
@@ -818,8 +1330,8 @@ class TestNodeContributorBulkCreate(NodeCRUDTestCase):
         super(TestNodeContributorBulkCreate, self).setUp()
         self.user_three = AuthUserFactory()
 
-        self.private_url = '/{}nodes/{}/contributors/'.format(API_BASE, self.private_project._id)
-        self.public_url = '/{}nodes/{}/contributors/'.format(API_BASE, self.public_project._id)
+        self.private_url = '/{}nodes/{}/contributors/?send_email=false'.format(API_BASE, self.private_project._id)
+        self.public_url = '/{}nodes/{}/contributors/?send_email=false'.format(API_BASE, self.public_project._id)
 
         self.payload_one = {
                 'type': 'contributors',
@@ -862,7 +1374,7 @@ class TestNodeContributorBulkCreate(NodeCRUDTestCase):
         res = self.app.post_json_api(self.public_url, {'data': [self.payload_two, self.payload_one]},
                                      auth=self.user.auth, expect_errors=True, bulk=True)
         assert_equal(res.status_code, 400)
-        assert "is already a contributor" in res.json['errors'][0]['detail']
+        assert 'is already a contributor' in res.json['errors'][0]['detail']
 
         res = self.app.get(self.public_url, auth=self.user.auth)
         assert_equal(len(res.json['data']), 2)
@@ -930,6 +1442,9 @@ class TestNodeContributorBulkCreate(NodeCRUDTestCase):
     def test_node_contributor_bulk_create_all_or_nothing(self):
         invalid_id_payload = {
             'type': 'contributors',
+            'attributes': {
+                'bibliographic': True
+            },
             'relationships': {
                 'users': {
                     'data': {
@@ -952,41 +1467,6 @@ class TestNodeContributorBulkCreate(NodeCRUDTestCase):
                                      auth=self.user.auth, expect_errors=True, bulk=True)
         assert_equal(res.json['errors'][0]['detail'], 'Bulk operation limit is 100, got 101.')
         assert_equal(res.json['errors'][0]['source']['pointer'], '/data')
-
-    def test_node_contributor_bulk_create_no_type(self):
-        payload = {'data': [{'relationships': {'users': {'data': {'type': 'users', 'id': self.user_two._id}}}}]}
-        res = self.app.post_json_api(self.public_url, payload, auth=self.user.auth,
-                                     expect_errors=True, bulk=True)
-        assert_equal(res.status_code, 400)
-        assert_equal(res.json['errors'][0]['source']['pointer'], '/data/0/type')
-
-    def test_node_contributor_bulk_create_incorrect_type(self):
-        payload = {
-            'data': [{
-                'type': 'contributors',
-                'relationships': {
-                    'users': {
-                        'data': {
-                            'type': 'Wrong type.',
-                            'id': self.user_two._id
-                        }
-                    }
-                }
-            }]
-        }
-        res = self.app.post_json_api(self.public_url, payload, auth=self.user.auth, expect_errors=True, bulk=True)
-        assert_equal(res.status_code, 409)
-
-    def test_node_contributor_bulk_create_no_relationships(self):
-        payload = {
-            'data': [{
-                'type': 'contributors',
-                'id': self.user_two._id
-            }]
-        }
-        res = self.app.post_json_api(self.public_url, payload, auth=self.user.auth, expect_errors=True, bulk=True)
-        assert_equal(res.status_code, 400)
-        assert_equal(res.json['errors'][0]['source']['pointer'], '/data/relationships')
 
     def test_node_contributor_ugly_payload(self):
         payload = 'sdf;jlasfd'
@@ -1547,8 +2027,11 @@ class TestNodeContributorBulkDelete(NodeCRUDTestCase):
         res = self.app.get(self.public_url, auth=self.user.auth)
         assert_equal(len(res.json['data']), 3)
 
-        res = self.app.delete_json_api(self.public_url, {'data': [self.public_payload_one, self.public_payload_two]},
-                                       auth=self.user.auth, bulk=True)
+        # Disconnect contributor_removed so that we don't check in files
+        # We can remove this when StoredFileNode is implemented in osf-models
+        with disconnected_from_listeners(contributor_removed):
+            res = self.app.delete_json_api(self.public_url, {'data': [self.public_payload_one, self.public_payload_two]},
+                                           auth=self.user.auth, bulk=True)
         assert_equal(res.status_code, 204)
 
         res = self.app.get(self.public_url, auth=self.user.auth)
@@ -1569,8 +2052,11 @@ class TestNodeContributorBulkDelete(NodeCRUDTestCase):
         res = self.app.get(self.private_url, auth=self.user.auth)
         assert_equal(len(res.json['data']), 3)
 
-        res = self.app.delete_json_api(self.private_url, {'data': [self.private_payload_one, self.private_payload_two]},
-                                       auth=self.user.auth, bulk=True)
+        # Disconnect contributor_removed so that we don't check in files
+        # We can remove this when StoredFileNode is implemented in osf-models
+        with disconnected_from_listeners(contributor_removed):
+            res = self.app.delete_json_api(self.private_url, {'data': [self.private_payload_one, self.private_payload_two]},
+                                           auth=self.user.auth, bulk=True)
         assert_equal(res.status_code, 204)
 
         res = self.app.get(self.private_url, auth=self.user.auth)

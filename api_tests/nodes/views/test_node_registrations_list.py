@@ -1,64 +1,76 @@
-# -*- coding: utf-8 -*-
-from nose.tools import *  # flake8: noqa
+import pytest
 from urlparse import urlparse
-from api.base.settings.defaults import API_BASE
 
-from tests.base import ApiTestCase
-from tests.factories import (
+from api.base.settings.defaults import API_BASE
+from osf_tests.factories import (
     ProjectFactory,
     RegistrationFactory,
     AuthUserFactory,
 )
 
-
 node_url_for = lambda n_id: '/{}nodes/{}/'.format(API_BASE, n_id)
 
+@pytest.fixture()
+def user():
+    return AuthUserFactory()
 
-class TestNodeRegistrationList(ApiTestCase):
-    def setUp(self):
-        super(TestNodeRegistrationList, self).setUp()
-        self.user = AuthUserFactory()
+@pytest.mark.django_db
+class TestNodeRegistrationList:
 
-        self.project = ProjectFactory(is_public=False, creator=self.user)
-        self.registration_project = RegistrationFactory(creator=self.user, project=self.project, is_public=True)
-        self.project.save()
-        self.private_url = '/{}nodes/{}/registrations/'.format(API_BASE, self.project._id)
+    @pytest.fixture()
+    def private_project(self, user):
+        return ProjectFactory(is_public=False, creator=user)
 
-        self.public_project = ProjectFactory(is_public=True, creator=self.user)
-        self.public_registration_project = RegistrationFactory(creator=self.user, project=self.public_project, is_public=True)
-        self.public_project.save()
-        self.public_url = '/{}nodes/{}/registrations/'.format(API_BASE, self.public_project._id)
+    @pytest.fixture()
+    def private_registration(self, user, private_project):
+        return RegistrationFactory(creator=user, project=private_project, is_public=True)
 
-        self.user_two = AuthUserFactory()
+    @pytest.fixture()
+    def private_url(self, private_project):
+        return '/{}nodes/{}/registrations/'.format(API_BASE, private_project._id)
 
-    def test_return_public_registrations_logged_out(self):
-        res = self.app.get(self.public_url)
-        assert_equal(res.status_code, 200)
-        assert_equal(res.content_type, 'application/vnd.api+json')
-        assert_equal(res.json['data'][0]['attributes']['registration'], True)
+    @pytest.fixture()
+    def public_project(self, user):
+        return ProjectFactory(is_public=True, creator=user)
+
+    @pytest.fixture()
+    def public_registration(self, user, public_project):
+        return RegistrationFactory(creator=user, project=public_project, is_public=True)
+
+    @pytest.fixture()
+    def public_url(self, public_project):
+        return '/{}nodes/{}/registrations/'.format(API_BASE, public_project._id)
+
+    def test_node_registration_list(self, app, user, public_project, private_project, public_registration, private_registration, public_url, private_url):
+
+    #   test_return_public_registrations_logged_out
+        res = app.get(public_url)
+        assert res.status_code == 200
+        assert res.content_type == 'application/vnd.api+json'
+        assert res.json['data'][0]['attributes']['registration'] is True
         url = res.json['data'][0]['relationships']['registered_from']['links']['related']['href']
-        assert_equal(urlparse(url).path, '/{}nodes/{}/'.format(API_BASE, self.public_project._id))
-        assert_equal(res.json['data'][0]['type'], 'registrations')
+        assert urlparse(url).path == '/{}nodes/{}/'.format(API_BASE, public_project._id)
+        assert res.json['data'][0]['type'] == 'registrations'
 
-    def test_return_public_registrations_logged_in(self):
-        res = self.app.get(self.public_url, auth=self.user.auth)
-        assert_equal(res.status_code, 200)
-        assert_equal(res.json['data'][0]['attributes']['registration'], True)
+    #   test_return_public_registrations_logged_in
+        res = app.get(public_url, auth=user.auth)
+        assert res.status_code == 200
+        assert res.json['data'][0]['attributes']['registration'] is True
         url = res.json['data'][0]['relationships']['registered_from']['links']['related']['href']
-        assert_equal(urlparse(url).path, '/{}nodes/{}/'.format(API_BASE, self.public_project._id))
-        assert_equal(res.content_type, 'application/vnd.api+json')
-        assert_equal(res.json['data'][0]['type'], 'registrations')
+        assert urlparse(url).path == '/{}nodes/{}/'.format(API_BASE, public_project._id)
+        assert res.content_type == 'application/vnd.api+json'
+        assert res.json['data'][0]['type'] == 'registrations'
 
-    def test_return_private_registrations_logged_out(self):
-        res = self.app.get(self.private_url, expect_errors=True)
-        assert_equal(res.status_code, 401)
+    #   test_return_private_registrations_logged_out
+        res = app.get(private_url, expect_errors=True)
+        assert res.status_code == 401
         assert 'detail' in res.json['errors'][0]
 
-    def test_return_private_registrations_logged_in_contributor(self):
-        res = self.app.get(self.private_url, auth=self.user.auth)
-        assert_equal(res.status_code, 200)
-        assert_equal(res.json['data'][0]['attributes']['registration'], True)
+    #   test_return_private_registrations_logged_in_contributor
+        res = app.get(private_url, auth=user.auth)
+        assert res.status_code == 200
+        assert res.json['data'][0]['attributes']['registration'] is True
         url = res.json['data'][0]['relationships']['registered_from']['links']['related']['href']
-        assert_equal(urlparse(url).path, '/{}nodes/{}/'.format(API_BASE, self.project._id))
-        assert_equal(res.content_type, 'application/vnd.api+json')
-        assert_equal(res.json['data'][0]['type'], 'registrations')
+        assert urlparse(url).path == '/{}nodes/{}/'.format(API_BASE, private_project._id)
+        assert res.content_type == 'application/vnd.api+json'
+        assert res.json['data'][0]['type'] == 'registrations'

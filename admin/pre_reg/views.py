@@ -6,11 +6,12 @@ from modularodm import Q
 
 from django.views.generic import ListView, DetailView, FormView, UpdateView
 from django.views.defaults import permission_denied, bad_request
+from django.contrib.auth.mixins import PermissionRequiredMixin
 from django.core.urlresolvers import reverse
 from django.http import JsonResponse, Http404, HttpResponse
 from django.shortcuts import redirect
 
-from admin.common_auth.logs import (
+from osf.models.admin_log_entry import (
     update_admin_log,
     ACCEPT_PREREG,
     REJECT_PREREG,
@@ -21,19 +22,19 @@ from admin.pre_reg.forms import DraftRegistrationForm
 from admin.pre_reg.utils import sort_drafts, SORT_BY
 from framework.exceptions import PermissionsError
 from website.exceptions import NodeStateError
-from website.files.models import FileNode
-from website.project.model import DraftRegistration
+from osf.models.files import BaseFileNode
+from osf.models.node import Node
+from osf.models.registrations import DraftRegistration
 from website.prereg.utils import get_prereg_schema
-from website.files.models import OsfStorageFileNode
 from website.project.metadata.schemas import from_json
 
-from admin.base.utils import PreregAdmin
 
-
-class DraftListView(PreregAdmin, ListView):
+class DraftListView(PermissionRequiredMixin, ListView):
     template_name = 'pre_reg/draft_list.html'
     ordering = '-date'
     context_object_name = 'draft'
+    permission_required = 'osf.view_prereg'
+    raise_exception = True
 
     def get_queryset(self):
         query = (
@@ -102,9 +103,11 @@ class DraftDownloadListView(DraftListView):
         return response
 
 
-class DraftDetailView(PreregAdmin, DetailView):
+class DraftDetailView(PermissionRequiredMixin, DetailView):
     template_name = 'pre_reg/draft_detail.html'
     context_object_name = 'draft'
+    permission_required = 'osf.view_prereg'
+    raise_exception = True
 
     def get_object(self, queryset=None):
         draft = DraftRegistration.load(self.kwargs.get('draft_pk'))
@@ -118,16 +121,18 @@ class DraftDetailView(PreregAdmin, DetailView):
             ))
 
     def checkout_files(self, draft):
-        prereg_user = self.request.user.osf_user
+        prereg_user = self.request.user
         for item in get_metadata_files(draft):
             item.checkout = prereg_user
             item.save()
 
 
-class DraftFormView(PreregAdmin, FormView):
+class DraftFormView(PermissionRequiredMixin, FormView):
     template_name = 'pre_reg/draft_form.html'
     form_class = DraftRegistrationForm
     context_object_name = 'draft'
+    permission_required = 'osf.view_prereg'
+    raise_exception = True
 
     def dispatch(self, request, *args, **kwargs):
         self.draft = DraftRegistration.load(self.kwargs.get('draft_pk'))
@@ -158,7 +163,7 @@ class DraftFormView(PreregAdmin, FormView):
 
     def form_valid(self, form):
         if 'approve_reject' in form.changed_data:
-            osf_user = self.request.user.osf_user
+            osf_user = self.request.user
             try:
                 if form.cleaned_data.get('approve_reject') == 'approve':
                     flag = ACCEPT_PREREG
@@ -191,8 +196,13 @@ class DraftFormView(PreregAdmin, FormView):
                                    self.request.POST.get('page', 1))
 
 
-class CommentUpdateView(PreregAdmin, UpdateView):
+class CommentUpdateView(PermissionRequiredMixin, UpdateView):
     context_object_name = 'draft'
+    permission_required = ('osf.view_prereg', 'osf.administer_prereg')
+    raise_exception = True
+
+    def get_object(self, *args, **kwargs):
+        return DraftRegistration.load(self.kwargs.get('draft_pk'))
 
     def post(self, request, *args, **kwargs):
         try:
@@ -223,26 +233,69 @@ class CommentUpdateView(PreregAdmin, UpdateView):
 
 
 def view_file(request, node_id, provider, file_id):
-    fp = FileNode.load(file_id)
+    fp = BaseFileNode.load(file_id)
     wb_url = fp.generate_waterbutler_url()
     return redirect(wb_url)
 
 
 def get_metadata_files(draft):
-    for q in get_file_questions('prereg-prize.json'):
-        for file_info in draft.registration_metadata[q]['value']['uploader']['extra']:
-            if file_info['data']['provider'] != 'osfstorage':
-                raise Http404('File does not exist in OSFStorage: {} {}'.format(
-                    q, file_info
-                ))
-            file_guid = file_info['data'].get('fileId')
-            if file_guid is None:
-                raise Http404('File in {} does not have a guid.'.format(q))
-            item = OsfStorageFileNode.load(file_guid)
+    data = draft.registration_metadata
+    for q, question in get_file_questions('prereg-prize.json'):
+        if not isinstance(data[q]['value'], dict):
+            for i, file_info in enumerate(data[q]['extra']):
+                provider = file_info['data']['provider']
+                if provider != 'osfstorage':
+                    raise Http404(
+                        'File does not exist in OSFStorage ({}: {})'.format(
+                            q, question
+                        ))
+                file_guid = file_info.get('fileId')
+                if not file_guid:
+                    node = Node.load(file_info.get('nodeId'))
+                    path = file_info['data'].get('path')
+                    item = BaseFileNode.resolve_class(
+                        provider,
+                        BaseFileNode.FILE
+                    ).get_or_create(node, path)
+                    file_guid = item.get_guid(create=True)._id
+                    data[q]['extra'][i]['fileId'] = file_guid
+                    draft.update_metadata(data)
+                    draft.save()
+                else:
+                    item = BaseFileNode.load(file_info['data']['path'].replace('/', ''))
+                if item is None:
+                    raise Http404(
+                        'File with guid "{}" in "{}" does not exist'.format(
+                            file_guid, question
+                        ))
+                yield item
+            continue
+        for i, file_info in enumerate(data[q]['value']['uploader']['extra']):
+            provider = file_info['data']['provider']
+            if provider != 'osfstorage':
+                raise Http404(
+                    'File does not exist in OSFStorage ({}: {})'.format(
+                        q, question
+                    ))
+            file_guid = file_info.get('fileId')
+            if not file_guid:
+                node = Node.load(file_info.get('nodeId'))
+                path = file_info['data'].get('path')
+                item = BaseFileNode.resolve_class(
+                    provider,
+                    BaseFileNode.FILE
+                ).get_or_create(node, path)
+                file_guid = item.get_guid(create=True)._id
+                data[q]['value']['uploader']['extra'][i]['fileId'] = file_guid
+                draft.update_metadata(data)
+                draft.save()
+            else:
+                item = BaseFileNode.load(file_info['data']['path'].replace('/', ''))
             if item is None:
-                raise Http404('File with guid "{}" in {} does not exist'.format(
-                    file_guid, q
-                ))
+                raise Http404(
+                    'File with guid "{}" in "{}" does not exist'.format(
+                        file_guid, question
+                    ))
             yield item
 
 
@@ -257,11 +310,11 @@ def get_file_questions(json_file):
     for item in schema['pages']:
         for question in item['questions']:
             if question['type'] == 'osf-upload':
-                questions.append(question['qid'])
+                questions.append((question['qid'], question['title']))
                 continue
             properties = question.get('properties')
             if properties is None:
                 continue
             if uploader in properties:
-                questions.append(question['qid'])
+                questions.append((question['qid'], question['title']))
     return questions

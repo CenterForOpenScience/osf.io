@@ -216,7 +216,7 @@ var UserProfileViewModel = oop.extend(ChangeMessageMixin, {
                                 title: 'Confirmation email sent',
                                 message: '<em>' + safeAddr + '</em>' + ' was added to your account.' +
                                 ' You will receive a confirmation email at ' + '<em>' + safeAddr + '</em>.' +
-                                ' Please log out of this account and check your email to confirm this action.',
+                                ' Please click the link in your email to confirm this action. You will be required to enter your password.',
                                 buttons: {
                                     ok: {
                                         label: 'Close',
@@ -231,9 +231,6 @@ var UserProfileViewModel = oop.extend(ChangeMessageMixin, {
         } else {
             this.changeMessage('Email cannot be empty.', 'text-danger');
         }
-        
-        
-        
     },
     resendConfirmation: function(email){
         var self = this;
@@ -302,6 +299,51 @@ var UserProfileViewModel = oop.extend(ChangeMessageMixin, {
     }
 });
 
+var ExternalIdentityViewModel = oop.defclass({
+    constructor: function () {},
+    urls: {
+        'delete': '/api/v1/profile/logins/'
+    },
+    _removeIdentity: function(identity) {
+        var request = $osf.ajaxJSON('PATCH', this.urls.delete, {'data': {'identity': identity}});
+        request.done(function() {
+            $osf.growl('Success', 'You have revoked this connected identity.', 'success');
+            window.location.reload();
+        }.bind(this));
+        request.fail(function(xhr, status, error) {
+            $osf.growl('Error',
+                'Revocation request failed. Please contact <a href="mailto: support@osf.io">support@osf.io</a> if the problem persists.',
+                'danger'
+            );
+            Raven.captureMessage('Error revoking connected identity', {
+                extra: {
+                    url: this.urls.update,
+                    status: status,
+                    error: error
+                }
+            });
+        }.bind(this));
+        return request;
+    },
+    removeIdentity: function (identity) {
+        var self = this;
+        bootbox.confirm({
+            title: 'Remove authorization?',
+            message: 'Are you sure you want to remove this authorization?',
+            callback: function(confirmed) {
+                if (confirmed) {
+                    return self._removeIdentity(identity);
+                }
+            },
+            buttons:{
+                confirm:{
+                    label:'Remove',
+                    className:'btn-danger'
+                }
+            }
+        });
+    }
+});
 
 var DeactivateAccountViewModel = oop.defclass({
     constructor: function () {
@@ -410,5 +452,6 @@ var ExportAccountViewModel = oop.defclass({
 module.exports = {
     UserProfileViewModel: UserProfileViewModel,
     DeactivateAccountViewModel: DeactivateAccountViewModel,
-    ExportAccountViewModel: ExportAccountViewModel
+    ExportAccountViewModel: ExportAccountViewModel,
+    ExternalIdentityViewModel: ExternalIdentityViewModel
 };

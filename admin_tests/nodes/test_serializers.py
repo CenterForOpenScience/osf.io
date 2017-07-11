@@ -1,9 +1,9 @@
 from nose.tools import *  # flake8: noqa
 
 from tests.base import AdminTestCase
-from tests.factories import NodeFactory, UserFactory
+from osf_tests.factories import NodeFactory, UserFactory
 
-from admin.nodes.serializers import serialize_simple_user, serialize_node
+from admin.nodes.serializers import serialize_simple_user_and_node_permissions, serialize_node
 
 
 class TestNodeSerializers(AdminTestCase):
@@ -32,7 +32,8 @@ class TestNodeSerializers(AdminTestCase):
 
     def test_serialize_simple_user(self):
         user = UserFactory()
-        info = serialize_simple_user((user._id, 'admin'))
+        node = NodeFactory(creator=user)
+        info = serialize_simple_user_and_node_permissions(node, user)
         assert_is_instance(info, dict)
         assert_equal(info['id'], user._id)
         assert_equal(info['name'], user.fullname)

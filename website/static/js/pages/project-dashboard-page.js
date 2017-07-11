@@ -7,7 +7,7 @@ require('bootstrap-editable');
 require('js/osfToggleHeight');
 
 var m = require('mithril');
-var Fangorn = require('js/fangorn');
+var Fangorn = require('js/fangorn').Fangorn;
 var Raven = require('raven-js');
 var lodashGet  = require('lodash.get');
 require('truncate');
@@ -21,6 +21,7 @@ var CitationList = require('js/citationList');
 var CitationWidget = require('js/citationWidget');
 var mathrender = require('js/mathrender');
 var md = require('js/markdown').full;
+var oldMd = require('js/markdown').old;
 var AddProject = require('js/addProjectPlugin');
 var mHelpers = require('js/mithrilHelpers');
 var SocialShare = require('js/components/socialshare');
@@ -74,7 +75,7 @@ var institutionLogos = {
         self.width = self.nLogos > 1 ? (self.nLogos === 2 ? '115px' : '86px') : '75px';
         self.makeLogo = function(institution){
             return m('a', {href: '/institutions/' + institution.id},
-                m('img.img-circle', {
+                m('img', {
                     height: self.side, width: self.side,
                     style: {margin: '3px'},
                     title: institution.name,
@@ -120,17 +121,15 @@ $(document).ready(function () {
         contributors: window.contextVars.node.contributors,
         currentUserCanEdit: window.contextVars.currentUser.canEdit
     });
-    var newComponentElem = document.getElementById('newComponent');
-    if (newComponentElem) {
-        m.mount(newComponentElem, AddComponentButton);
-    }
-
-    if (ctx.node.institutions.length && !ctx.node.anonymous){
-        m.mount(document.getElementById('instLogo'), m.component(institutionLogos, {institutions: window.contextVars.node.institutions}));
-    }
-    $('#contributorsList').osfToggleHeight();
 
     if (!ctx.node.isRetracted) {
+        m.startComputation();
+
+        if (ctx.node.institutions.length && !ctx.node.anonymous) {
+            m.mount(document.getElementById('instLogo'), m.component(institutionLogos, {institutions: window.contextVars.node.institutions}));
+        }
+        $('#contributorsList').osfToggleHeight();
+
         // Recent Activity widget
         m.mount(document.getElementById('logFeed'), m.component(LogFeed.LogFeed, {node: node}));
 
@@ -200,7 +199,22 @@ $(document).ready(function () {
                 }
             };
             var filebrowser = new Fangorn(fangornOpts);
+            var newComponentElem = document.getElementById('newComponent');
+            if (window.contextVars.node.isPublic) {
+                m.mount(
+                    document.getElementById('shareButtonsPopover'),
+                    m.component(
+                        SocialShare.ShareButtonsPopover,
+                        {title: window.contextVars.node.title, url: window.location.href}
+                    )
+                );
+            }
+            if (newComponentElem) {
+                m.mount(newComponentElem, AddComponentButton);
+            }
+            m.endComputation();
         });
+
     }
 
     // Tooltips
@@ -211,10 +225,15 @@ $(document).ready(function () {
         width: '100%',
         interactive: window.contextVars.currentUser.canEdit,
         maxChars: 128,
+        defaultText: 'add a tag to enhance discoverability',
         onAddTag: function(tag) {
+            $('#node-tags_tag').attr('data-default', 'add a tag');
             var url = nodeApiUrl + 'tags/';
             var data = {tag: tag};
             var request = $osf.postJSON(url, data);
+            request.success(function() {
+                window.contextVars.node.tags.push(tag);
+            });
             request.fail(function(xhr, textStatus, error) {
                 Raven.captureMessage('Failed to add tag', {
                     extra: {
@@ -230,6 +249,9 @@ $(document).ready(function () {
                 return false;
             }
             var request = $osf.ajaxJSON('DELETE', url, {'data': {'tag': tag}});
+            request.success(function() {
+                window.contextVars.node.tags.splice(window.contextVars.node.tags.indexOf(tag), 1);
+            });
             request.fail(function(xhr, textStatus, error) {
                 // Suppress "tag not found" errors, as the end result is what the user wanted (tag is gone)- eg could be because two people were working at same time
                 if (xhr.status !== 409) {
@@ -243,6 +265,11 @@ $(document).ready(function () {
             });
         }
     });
+
+    // allows inital default message to fit on empty tag
+    if(!$('.tag').length){
+        $('#node-tags_tag').css('width', '250px');
+    }
 
     $('#addPointer').on('shown.bs.modal', function(){
         if(!$osf.isIE()){
@@ -260,21 +287,17 @@ $(document).ready(function () {
         mathrender.mathjaxify(markdownElement);
 
         // Render the raw markdown of the wiki
-        if (!ctx.usePythonRender) {
-            var request = $.ajax({
-                url: ctx.urls.wikiContent
-            });
-            request.done(function(resp) {
-                var rawText = resp.wiki_content || '*No wiki content*';
-                var renderedText = md.render(rawText);
-                var truncatedText = $.truncate(renderedText, {length: 400});
-                markdownElement.html(truncatedText);
-                mathrender.mathjaxify(markdownElement);
-                markdownElement.show();
-            });
-        } else {
-            markdownElement.css('display', 'inherit');
-        }
+        var request = $.ajax({
+            url: ctx.urls.wikiContent
+        });
+        request.done(function(resp) {
+            var rawText = resp.wiki_content || '*Add important information, links, or images here to describe your project.*';
+            var renderedText = ctx.renderedBeforeUpdate ? oldMd.render(rawText) : md.render(rawText);
+            var truncatedText = $.truncate(renderedText, {length: 400});
+            markdownElement.html(truncatedText);
+            mathrender.mathjaxify(markdownElement);
+            markdownElement.show();
+        });
     }
 
     // Remove delete UI if not contributor
@@ -283,11 +306,5 @@ $(document).ready(function () {
         $('span.tag span').each(function(idx, elm) {
             $(elm).text($(elm).text().replace(/\s*$/, ''));
         });
-    }
-
-    if (window.contextVars.node.isPublic) {
-        m.mount(document.getElementById('shareButtonsPopover'),
-                m.component(SocialShare.ShareButtonsPopover,
-                    {title: window.contextVars.node.title, url: window.location.href}));
     }
 });

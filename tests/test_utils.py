@@ -4,14 +4,16 @@ import mock
 import os
 import time
 import unittest
+from django.utils import timezone
 
 from flask import Flask
 from nose.tools import *  # noqa (PEP8 asserts)
 import blinker
 
-from tests.base import OsfTestCase
-from tests.factories import RegistrationFactory
+from tests.base import OsfTestCase, DbTestCase
+from osf_tests.factories import RegistrationFactory, UserFactory
 
+from framework.auth.utils import generate_csl_given_name
 from framework.routing import Rule, json_renderer
 from framework.utils import secure_filename
 from website.routes import process_rules, OsfWebRenderer
@@ -21,6 +23,7 @@ from website.util import paths
 from website.util.mimetype import get_mimetype
 from website.util import web_url_for, api_url_for, is_json_request, waterbutler_url_for, conjunct, api_v2_url
 from website.project import utils as project_utils
+from website.profile import utils as profile_utils
 from website.util.time import throttle_period_expired
 
 try:
@@ -37,7 +40,7 @@ class TestTimeUtils(unittest.TestCase):
         assert_true(is_expired)
 
     def test_throttle_period_expired_using_datetime(self):
-        timestamp = datetime.datetime.utcnow()
+        timestamp = timezone.now()
         is_expired = throttle_period_expired(timestamp=(timestamp + datetime.timedelta(seconds=29)),  throttle=30)
         assert_false(is_expired)
 
@@ -210,6 +213,18 @@ class TestUrlForHelpers(unittest.TestCase):
         assert_in('path=path', url)
         assert_in('provider=provider', url)
 
+    def test_waterbutler_url_for_internal(self):
+        settings.WATERBUTLER_INTERNAL_URL = 'http://1.2.3.4:7777'
+        with self.app.test_request_context():
+            url = waterbutler_url_for('upload', 'provider', 'path', mock.Mock(_id='_id'), _internal=True)
+
+        assert_not_in(settings.WATERBUTLER_URL, url)
+        assert_in(settings.WATERBUTLER_INTERNAL_URL, url)
+        assert_in('nid=_id', url)
+        assert_in('/file?', url)
+        assert_in('path=path', url)
+        assert_in('provider=provider', url)
+
     def test_waterbutler_url_for_implicit_cookie(self):
         with self.app.test_request_context() as context:
             context.request.cookies = {settings.COOKIE_NAME: 'cookie'}
@@ -311,6 +326,7 @@ class TestWebpackFilter(unittest.TestCase):
         with assert_raises(KeyError):
             paths.webpack_asset('bundle.js', self.asset_paths, debug=False)
 
+
 class TestWebsiteUtils(unittest.TestCase):
 
     def test_conjunct(self):
@@ -387,11 +403,7 @@ class TestWebsiteUtils(unittest.TestCase):
 class TestProjectUtils(OsfTestCase):
 
     def set_registered_date(self, reg, date):
-        reg._fields['registered_date'].__set__(
-            reg,
-            date,
-            safe=True
-        )
+        reg.registered_date = date
         reg.save()
 
     def test_get_recent_public_registrations(self):
@@ -401,7 +413,7 @@ class TestProjectUtils(OsfTestCase):
             reg = RegistrationFactory()
             reg.is_public = True
             count = count + 1
-            tdiff = datetime.datetime.now() - datetime.timedelta(days=count)
+            tdiff = timezone.now() - datetime.timedelta(days=count)
             self.set_registered_date(reg, tdiff)
         regs = [r for r in project_utils.recent_public_registrations()]
         assert_equal(len(regs), 5)
@@ -411,10 +423,24 @@ class TestProjectUtils(OsfTestCase):
             reg = RegistrationFactory()
             reg.is_public = True
             count = count + 1
-            tdiff = datetime.datetime.now() - datetime.timedelta(days=count)
+            tdiff = timezone.now() - datetime.timedelta(days=count)
             self.set_registered_date(reg, tdiff)
         regs = [r for r in project_utils.recent_public_registrations(7)]
         assert_equal(len(regs), 7)
+
+
+class TestProfileUtils(DbTestCase):
+
+    def setUp(self):
+        self.user = UserFactory()
+
+    def test_get_other_user_gravatar_default_size(self):
+        gravitar = profile_utils.get_gravatar(self.user)
+        assert_true(gravitar)
+
+    def test_get_other_user_gravatar_specific_size(self):
+        gravitar = profile_utils.get_gravatar(self.user, size=25)
+        assert_true(gravitar)
 
 
 class TestSignalUtils(unittest.TestCase):
@@ -437,3 +463,36 @@ class TestSignalUtils(unittest.TestCase):
         with util.disconnected_from(self.signal_, self.listener):
             self.signal_.send()
         assert_false(self.mock_listener.called)
+
+
+class TestUserUtils(unittest.TestCase):
+
+    def test_generate_csl_given_name_with_given_middle_suffix(self):
+        given_name = 'Cause'
+        middle_names = 'Awesome'
+        suffix = 'Jr.'
+        csl_given_name = generate_csl_given_name(
+            given_name=given_name, middle_names=middle_names, suffix=suffix
+        )
+        assert_equal(csl_given_name, 'Cause A, Jr.')
+
+    def test_generate_csl_given_name_with_given_middle(self):
+        given_name = 'Cause'
+        middle_names = 'Awesome'
+        csl_given_name = generate_csl_given_name(
+            given_name=given_name, middle_names=middle_names
+        )
+        assert_equal(csl_given_name, 'Cause A')
+
+    def test_generate_csl_given_name_with_given_suffix(self):
+        given_name = 'Cause'
+        suffix = 'Jr.'
+        csl_given_name = generate_csl_given_name(
+            given_name=given_name, suffix=suffix
+        )
+        assert_equal(csl_given_name, 'Cause, Jr.')
+
+    def test_generate_csl_given_name_with_given(self):
+        given_name = 'Cause'
+        csl_given_name = generate_csl_given_name(given_name)
+        assert_equal(csl_given_name, 'Cause')

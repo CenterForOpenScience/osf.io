@@ -4,7 +4,7 @@ import time
 import datetime
 from nose.tools import *  # noqa; PEP8 asserts
 
-from tests.factories import ProjectFactory, NodeFactory, AuthUserFactory
+from osf_tests.factories import ProjectFactory, NodeFactory, AuthUserFactory
 from tests.base import OsfTestCase
 
 from framework.auth.decorators import Auth

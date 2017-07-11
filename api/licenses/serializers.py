@@ -16,10 +16,15 @@ class LicenseSerializer(JSONAPISerializer):
     type = TypeField()
     name = ser.CharField(required=True, help_text='License name')
     text = ser.CharField(required=True, help_text='Full text of the license')
+    required_fields = ser.ListField(source='properties', read_only=True,
+                                    help_text='Fields required for this license (provided to help front-end validators)')
     links = LinksField({'self': 'get_absolute_url'})
 
     class Meta:
         type_ = 'licenses'
 
     def get_absolute_url(self, obj):
-        return absolute_reverse('licenses:license-detail', kwargs={'license_id': obj._id})
+        return absolute_reverse('licenses:license-detail', kwargs={
+            'license_id': obj._id,
+            'version': self.context['request'].parser_context['kwargs']['version']
+        })

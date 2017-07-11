@@ -6,9 +6,11 @@
     <title>OSF Admin | Meetings</title>
 {% endblock title %}
 {% block content %}
-    <a href="{% url 'meetings:create' %}" class="btn btn-primary">
-        Add meeting
-    </a>
+    {%  if perms.osf.change_conference %}
+        <a href="{% url 'meetings:create' %}" class="btn btn-primary">
+            Add meeting
+        </a>
+    {% endif %}
     <h2>List of Meetings</h2>
     {% include "util/pagination.html" with items=page status=status %}
     <table class="table table-striped, table-hover table-responsive">
@@ -24,12 +26,14 @@
     <tbody>
     {% for meeting in meetings %}
         <tr>
-            <td>
-                <a href="{% url 'meetings:detail' endpoint=meeting.endpoint %}"
-                   target="_blank" class="btn btn-primary">
-                    {{ meeting.endpoint }}
-                </a>
-            </td>
+            {%  if perms.osf.change_conference %}
+                <td>
+                    <a href="{% url 'meetings:detail' endpoint=meeting.endpoint %}"
+                       target="_blank" class="btn btn-primary">
+                        {{ meeting.endpoint }}
+                    </a>
+                </td>
+            {%  endif %}
             <td>
                 {{ meeting.name }}
             </td>

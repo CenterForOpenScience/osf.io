@@ -19,24 +19,28 @@ class BaseClient(object):
     def _default_headers(self):
         return {}
 
-    def _make_request(self, method, url, params=None, **kwargs):
+    @property
+    def _default_params(self):
+        return {}
+
+    def _make_request(self, method, url, **kwargs):
         expects = kwargs.pop('expects', None)
         throws = kwargs.pop('throws', None)
 
-        kwargs['headers'] = self._build_headers(**kwargs.get('headers', {}))
+        kwargs['headers'] = self._build_defaults(self._default_headers, **kwargs.get('headers', {}))
+        kwargs['params'] = self._build_defaults(self._default_params, **kwargs.get('params', {}))
 
-        response = requests.request(method, url, params=params, auth=self._auth, **kwargs)
+        response = requests.request(method, url, auth=self._auth, **kwargs)
         if expects and response.status_code not in expects:
             raise throws if throws else HTTPError(response.status_code, message=response.content)
 
         return response
 
-    def _build_headers(self, **kwargs):
-        headers = self._default_headers
-        headers.update(kwargs)
+    def _build_defaults(self, defaults, **kwargs):
+        defaults.update(kwargs)
         return {
             key: value
-            for key, value in headers.items()
+            for key, value in defaults.items()
             if value is not None
         }
 
@@ -45,7 +49,7 @@ class BaseClient(object):
         segments = filter(
             lambda segment: segment,
             map(
-                lambda segment: segment.strip('/'),
+                lambda segment: str(segment).strip('/'),
                 itertools.chain(url.path.segments, segments)
             )
         )

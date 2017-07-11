@@ -24,9 +24,6 @@ var RegistrationModal = require('js/registrationModal');
 
 // This value should match website.settings.DRAFT_REGISTRATION_APPROVAL_PERIOD
 var DRAFT_REGISTRATION_MIN_EMBARGO_DAYS = 10;
-var DRAFT_REGISTRATION_MIN_EMBARGO_TIMESTAMP = new Date().getTime() + (
-        DRAFT_REGISTRATION_MIN_EMBARGO_DAYS * 24 * 60 * 60 * 1000
-);
 
 var VALIDATORS = {
     required: {
@@ -592,7 +589,7 @@ var Draft = function(params, metaSchema) {
         }).length > 0;
     });
 
-    self.completion = ko.computed(function() {
+    self.completion = ko.pureComputed(function() {
         var complete = 0;
         var questions = self.metaSchema.flatQuestions()
                 .filter(function(question) {
@@ -604,6 +601,20 @@ var Draft = function(params, metaSchema) {
             }
         });
         return Math.ceil(100 * (complete / questions.length));
+    });
+
+    self.isComplete = ko.pureComputed(function() {
+        var complete = true;
+        var questions = self.metaSchema.flatQuestions()
+                .filter(function(question) {
+                    return question.required;
+                });
+        $.each(questions, function(_, question) {
+            if (!question.isComplete()) {
+                complete = false;
+            }
+        });
+        return complete;
     });
 };
 Draft.prototype.getUnseenComments = function() {
@@ -620,14 +631,15 @@ Draft.prototype.preRegisterPrompts = function(response, confirm) {
     var validator = null;
     if (self.metaSchema.requiresApproval) {
         validator = {
-            validator: function(value) {
-                return (new Date(value)).getTime() > DRAFT_REGISTRATION_MIN_EMBARGO_TIMESTAMP;
+            validator: function(end) {
+                var min = moment().add(DRAFT_REGISTRATION_MIN_EMBARGO_DAYS, 'days');
+                return end.isAfter(min);
             },
             message: 'Embargo end date must be at least ' + DRAFT_REGISTRATION_MIN_EMBARGO_DAYS + ' days in the future.'
         };
     }
     var preRegisterPrompts = response.prompts || [];
-    
+
     var registrationModal = new RegistrationModal.ViewModel(
         confirm, preRegisterPrompts, validator
     );
@@ -896,7 +908,7 @@ var RegistrationEditor = function(urls, editorId, preview) {
 		$elem.append(
 		    $('<span class="col-md-12">').append(
 			$('<p class="breaklines"><small><em>' + $osf.htmlEscape(question.description) + '</em></small></p>'),
-                            $('<span class="well col-xs-12">').append(value)
+                            $('<span class="well breaklines col-xs-12">').append(value)
 		));
             }
 	    return $elem;
@@ -1331,9 +1343,6 @@ RegistrationManager.prototype.init = function() {
             var drafts = $.map(response.drafts, function(draft) {
                 return new Draft(draft);
             });
-            drafts.sort(function(a, b) {
-                return a.initiated.getTime() < b.initiated.getTime();
-            });
             self.drafts(drafts);
             self.loadingDrafts(false);
         });
@@ -1349,17 +1358,25 @@ RegistrationManager.prototype.init = function() {
         });
 
         var urlParams = $osf.urlParams();
-        if (urlParams.campaign && urlParams.campaign === 'prereg') {
-            $osf.block();
-            getSchemas.done(function() {
-                var preregSchema = self.schemas().filter(function(schema) {
-                    return schema.name === 'Prereg Challenge';
-                })[0];
-                preregSchema.askConsent(true).then(function() {
-                    self.selectedSchema(preregSchema);
-                    $('#newDraftRegistrationForm').submit();
-                });
-            }).always($osf.unblock);
+        if (urlParams.campaign) {
+            var schemaName;
+            if (urlParams.campaign === 'prereg'){
+                schemaName = 'Prereg Challenge';
+            } else if (urlParams.campaign === 'erpc') {
+                schemaName = 'Election Research Preacceptance Competition';
+            }
+            if (schemaName) {
+                $osf.block();
+                getSchemas.done(function() {
+                    var preregSchema = self.schemas().filter(function(schema) {
+                        return schema.name === schemaName;
+                    })[0];
+                    preregSchema.askConsent(true).then(function() {
+                        self.selectedSchema(preregSchema);
+                        $('#newDraftRegistrationForm').submit();
+                    });
+                }).always($osf.unblock);   
+            }
         }
     }
 };

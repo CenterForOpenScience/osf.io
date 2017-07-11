@@ -1,19 +1,17 @@
 """
 Tasks for making even transactional emails consolidated.
 """
-from bson.code import Code
-from modularodm import Q
+import itertools
+
+from django.db import connection
 
 from framework.celery_tasks import app as celery_app
-from framework.mongo import database as db
-from framework.auth.core import User
 from framework.sentry import log_exception
-
-from framework.transactions.context import TokuTransaction
-
-from website.notifications.utils import NotificationsDict
-from website.notifications.model import NotificationDigest
+from modularodm import Q
+from osf.models import OSFUser as User
+from osf.models import NotificationDigest
 from website import mails
+from website.notifications.utils import NotificationsDict
 
 
 @celery_app.task(name='website.notifications.tasks.send_users_email', max_retries=0)
@@ -24,8 +22,6 @@ def send_users_email(send_type):
     :return:
     """
     grouped_emails = get_users_emails(send_type)
-    if not grouped_emails:
-        return
     for group in grouped_emails:
         user = User.load(group['user_id'])
         if not user:
@@ -41,60 +37,64 @@ def send_users_email(send_type):
                 mail=mails.DIGEST,
                 name=user.fullname,
                 message=sorted_messages,
-                callback=remove_notifications(email_notification_ids=notification_ids)
             )
+            remove_notifications(email_notification_ids=notification_ids)
 
 
 def get_users_emails(send_type):
     """Get all emails that need to be sent.
 
     :param send_type: from NOTIFICATION_TYPES
-    :return: [{
-                'user_id': 'se8ea',
-                'info': [{
-                    'message': {
-                        'message': 'Freddie commented on your project Open Science',
-                        'timestamp': datetime object
-                    },
-                    'node_lineage': ['parent._id', 'node._id'],
-                    '_id': NotificationDigest._id
-                }, ...
-                }]
-              },
-              {
-                'user_id': ...
-              }]
+    :return: Iterable of dicts of the form:
+        {
+            'user_id': 'se8ea',
+            'info': [{
+                'message': {
+                    'message': 'Freddie commented on your project Open Science',
+                    'timestamp': datetime object
+                },
+                'node_lineage': ['parent._id', 'node._id'],
+                '_id': NotificationDigest._id
+            }, ...
+            }]
+            {
+            'user_id': ...
+            }
+        }
     """
-    with TokuTransaction():
-        emails = db['notificationdigest'].group(
-            key={'user_id': 1},
-            condition={
-                'send_type': send_type
-            },
-            initial={'info': []},
-            reduce=Code(
-                """
-                function(curr, result) {
-                    result.info.push({
-                        'message': curr.message,
-                        'node_lineage': curr.node_lineage,
-                        '_id': curr._id
-                    });
-                };
-                """
+
+    sql = """
+    SELECT json_build_object(
+            'user_id', osf_guid._id,
+            'info', json_agg(
+                json_build_object(
+                    'message', nd.message,
+                    'node_lineage', nd.node_lineage,
+                    '_id', nd._id
+                )
             )
         )
-    return emails
+    FROM osf_notificationdigest AS nd
+      LEFT JOIN osf_guid ON nd.user_id = osf_guid.object_id
+    WHERE send_type = %s
+    AND osf_guid.content_type_id = (SELECT id FROM django_content_type WHERE model = 'osfuser')
+    GROUP BY osf_guid.id
+    ORDER BY osf_guid.id ASC
+    """
+
+    with connection.cursor() as cursor:
+        cursor.execute(sql, [send_type, ])
+        return itertools.chain.from_iterable(cursor.fetchall())
 
 
-def group_by_node(notifications):
+def group_by_node(notifications, limit=15):
     """Take list of notifications and group by node.
 
     :param notifications: List of stored email notifications
     :return:
     """
     emails = NotificationsDict()
-    for notification in notifications:
+    for notification in notifications[:15]:
         emails.add_message(notification['node_lineage'], notification['message'])
     return emails
 

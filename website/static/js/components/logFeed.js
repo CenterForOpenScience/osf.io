@@ -59,6 +59,7 @@ var LogFeed = {
                 var page = params.page || 1;
                 self.currentPage(parseInt(page));
                 self.totalPages(Math.ceil(result.links.meta.total / result.links.meta.per_page));
+                m.redraw();
             }
             self.logRequestPending(true);
             var promise = m.request({method : 'GET', url : url, config: mHelpers.apiV2Config({withCredentials: window.contextVars.isOnRootDomain})});
@@ -70,8 +71,7 @@ var LogFeed = {
                 }, function(xhr, textStatus, error) {
                     self.failed = true;
                     self.logRequestPending(false);
-                    var message = 'Error retrieving logs for ' + self.node.id;
-                    Raven.captureMessage(message, {extra: {url: url, textStatus: textStatus, error: error}});
+                    Raven.captureMessage('Error retrieving logs', {extra: {url: url, textStatus: textStatus, error: error}});
                 }
             );
         };

@@ -3,8 +3,7 @@ from rest_framework import permissions
 
 from api.base.utils import get_user_auth
 from api.comments.serializers import CommentReport
-from website.models import Node, Comment
-
+from osf.models import AbstractNode as Node, Comment
 
 class CanCommentOrPublic(permissions.BasePermission):
 
@@ -29,6 +28,7 @@ class CommentDetailPermissions(permissions.BasePermission):
         auth = get_user_auth(request)
         comment = obj
         node = obj.node
+
         if request.method in permissions.SAFE_METHODS:
             return node.is_public or node.can_view(auth)
         else:

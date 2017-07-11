@@ -1,4 +1,5 @@
 <%inherit file="base.mako"/>
+<%namespace name="render_nodes" file="util/render_nodes.mako" />
 <%def name="title()">${profile["fullname"]}</%def>
 <%def name="stylesheets()">
    ${parent.stylesheets()}
@@ -144,13 +145,12 @@
             <div class="panel-heading clearfix">
               <h3 class="panel-title" >Public projects</h3>
             </div>
-            <div class="panel-body">
-                <div mod-meta='{
-                   "tpl" : "util/render_nodes.mako",
-                   "uri" : "/api/v1/profile/${profile["id"]}/public_projects/",
-                   "replace" : true,
-                   "kwargs" : {"sortable" : true, "user": ${ user | sjson, n }, "pluralized_node_type": "projects", "skipBindings": true}
-                 }'></div>
+            <div class="panel-body clearfix" id="publicProjects">
+                <div class="ball-pulse ball-scale-blue text-center">
+                  <div></div>
+                  <div></div>
+                  <div></div>
+                </div>
             </div>
         </div>
     </div>
@@ -159,13 +159,12 @@
             <div class="panel-heading clearfix">
                 <h3 class="panel-title">Public components</h3>
             </div>
-            <div class="panel-body">
-                <div mod-meta='{
-                  "tpl" : "util/render_nodes.mako",
-                  "uri" : "/api/v1/profile/${profile["id"]}/public_components/",
-                  "replace" : true,
-                  "kwargs" : {"sortable" : true,  "user": ${ user | sjson, n }, "pluralized_node_type": "components"}
-              }'></div>
+            <div class="panel-body clearfix" id="publicComponents">
+              <div class="ball-pulse ball-scale-blue text-center">
+                <div></div>
+                <div></div>
+                <div></div>
+              </div>
             </div>
         </div>
     </div>
@@ -189,7 +188,8 @@
       window.contextVars = $.extend(true, {}, window.contextVars, {
           socialUrls: socialUrls,
           jobsUrls: jobsUrls,
-          schoolsUrls: schoolsUrls
+          schoolsUrls: schoolsUrls,
+          user: ${ user | sjson, n },
       });
   })();
 </script>

@@ -51,9 +51,11 @@ var getContributorList = function(url, contributors, ret) {
         });
         request.fail(function(xhr, status, error) {
             Raven.captureMessage('Error getting contributors', {
-                url: url,
-                status: status,
-                error: error
+                extra: {
+                    url: url,
+                    status: status,
+                    error: error
+                }
             });
             ret.reject(xhr, status, error);
         });
@@ -148,7 +150,7 @@ var convertMentionMarkdownToHtml = function(commentContent) {
 
             content = content.replace(
                 match[0],
-                '<span class="atwho-inserted" contenteditable="false" data-atwho-guid="' +
+                '<span class="atwho-inserted" contenteditable="true" data-atwho-guid="' +
                     guid + '" data-atwho-at-query="' + atwho + '">' +
                     atwho + mention + '</span>'
             );
@@ -406,14 +408,7 @@ var CommentModel = function(data, $parent, $root) {
         return !self.isDeleted() && self.isAbuse();
     });
 
-    if (window.contextVars.node.anonymous) {
-        self.author = {
-            'id': null,
-            'urls': {'profile': ''},
-            'fullname': 'A User',
-            'gravatarUrl': ''
-        };
-    } else if ('embeds' in data && 'user' in data.embeds && 'data' in data.embeds.user) {
+    if ('embeds' in data && 'user' in data.embeds && 'data' in data.embeds.user) {
         var userData = data.embeds.user.data;
         self.author = {
             'id': userData.id,

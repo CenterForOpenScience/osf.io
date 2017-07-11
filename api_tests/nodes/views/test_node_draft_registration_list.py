@@ -1,7 +1,6 @@
 from nose.tools import *  # flake8: noqa
 
-from website.project.model import ensure_schemas
-from website.models import MetaSchema
+from osf.models import MetaSchema
 from website.project.metadata.schemas import LATEST_SCHEMA_VERSION
 from website.project.metadata.utils import create_jsonschema_from_metaschema
 from modularodm import Q
@@ -11,7 +10,7 @@ from website.settings import PREREG_ADMIN_TAG
 from api.base.settings.defaults import API_BASE
 
 from tests.base import ApiTestCase
-from tests.factories import (
+from osf_tests.factories import (
     ProjectFactory,
     RegistrationFactory,
     AuthUserFactory,
@@ -53,7 +52,6 @@ class TestDraftRegistrationList(DraftRegistrationTestCase):
 
     def setUp(self):
         super(TestDraftRegistrationList, self).setUp()
-        ensure_schemas()
         self.schema = MetaSchema.find_one(
             Q('name', 'eq', 'Open-Ended Registration') &
             Q('schema_version', 'eq', LATEST_SCHEMA_VERSION)
@@ -120,7 +118,6 @@ class TestDraftRegistrationCreate(DraftRegistrationTestCase):
     def setUp(self):
         super(TestDraftRegistrationCreate, self).setUp()
         self.url = '/{}nodes/{}/draft_registrations/'.format(API_BASE, self.public_project._id)
-        ensure_schemas()
         self.open_ended_metaschema = MetaSchema.find_one(
             Q('name', 'eq', 'Open-Ended Registration') &
             Q('schema_version', 'eq', LATEST_SCHEMA_VERSION)
@@ -158,12 +155,12 @@ class TestDraftRegistrationCreate(DraftRegistrationTestCase):
         assert_equal(data['embeds']['initiator']['data']['id'], self.user._id)
 
     def test_write_only_contributor_cannot_create_draft(self):
-        assert_in(self.read_write_user._id, self.public_project.contributors)
+        assert_in(self.read_write_user, self.public_project.contributors.all())
         res = self.app.post_json_api(self.url, self.payload, auth=self.read_write_user.auth, expect_errors=True)
         assert_equal(res.status_code, 403)
 
     def test_read_only_contributor_cannot_create_draft(self):
-        assert_in(self.read_only_user._id, self.public_project.contributors)
+        assert_in(self.read_only_user, self.public_project.contributors.all())
         res = self.app.post_json_api(self.url, self.payload, auth=self.read_only_user.auth, expect_errors=True)
         assert_equal(res.status_code, 403)
 
@@ -188,6 +185,20 @@ class TestDraftRegistrationCreate(DraftRegistrationTestCase):
         assert_equal(res.status_code, 404)
 
     def test_registration_supplement_must_be_active_metaschema(self):
+        schema =  MetaSchema.objects.get(name='Election Research Preacceptance Competition', active=False)
+        draft_data = {
+            "data": {
+                "type": "draft_registrations",
+                "attributes": {
+                    "registration_supplement": schema._id
+                }
+            }
+        }
+        res = self.app.post_json_api(self.url, draft_data, auth=self.user.auth, expect_errors=True)
+        assert_equal(res.status_code, 400)
+        assert_equal(res.json['errors'][0]['detail'], 'Registration supplement must be an active schema.')
+
+    def test_registration_supplement_must_be_most_recent_metaschema(self):
         schema =  MetaSchema.find_one(
             Q('name', 'eq', 'Open-Ended Registration') &
             Q('schema_version', 'eq', 1)
@@ -245,7 +256,7 @@ class TestDraftRegistrationCreate(DraftRegistrationTestCase):
 
         prereg_draft_registration = DraftRegistrationFactory(
             initiator=self.user,
-            registration_schema=prereg_schema._id,
+            registration_schema=prereg_schema,
             branched_from=self.public_project
         )
 
@@ -283,7 +294,6 @@ class TestDraftRegistrationCreate(DraftRegistrationTestCase):
         assert_equal(errors['detail'], 'Expected a dictionary of items but got type "unicode".')
 
     def test_registration_metadata_question_values_must_be_dictionaries(self):
-        ensure_schemas()
         self.schema = MetaSchema.find_one(
             Q('name', 'eq', 'OSF-Standard Pre-Data Collection Registration') &
             Q('schema_version', 'eq', LATEST_SCHEMA_VERSION)
@@ -298,7 +308,6 @@ class TestDraftRegistrationCreate(DraftRegistrationTestCase):
         assert_equal(errors['detail'], "u'No, data collection has not begun' is not of type 'object'")
 
     def test_registration_metadata_question_keys_must_be_value(self):
-        ensure_schemas()
         self.schema = MetaSchema.find_one(
             Q('name', 'eq', 'OSF-Standard Pre-Data Collection Registration') &
             Q('schema_version', 'eq', LATEST_SCHEMA_VERSION)
@@ -315,7 +324,6 @@ class TestDraftRegistrationCreate(DraftRegistrationTestCase):
         assert_equal(errors['detail'], "Additional properties are not allowed (u'incorrect_key' was unexpected)")
 
     def test_question_in_registration_metadata_must_be_in_schema(self):
-        ensure_schemas()
         self.schema = MetaSchema.find_one(
             Q('name', 'eq', 'OSF-Standard Pre-Data Collection Registration') &
             Q('schema_version', 'eq', LATEST_SCHEMA_VERSION)
@@ -332,7 +340,6 @@ class TestDraftRegistrationCreate(DraftRegistrationTestCase):
         assert_equal(errors['detail'], "Additional properties are not allowed (u'q11' was unexpected)")
 
     def test_multiple_choice_question_value_must_match_value_in_schema(self):
-        ensure_schemas()
         self.schema = MetaSchema.find_one(
             Q('name', 'eq', 'OSF-Standard Pre-Data Collection Registration') &
             Q('schema_version', 'eq', LATEST_SCHEMA_VERSION)
@@ -351,9 +358,9 @@ class TestDraftRegistrationCreate(DraftRegistrationTestCase):
 
     def test_reviewer_cannot_create_draft_registration(self):
         user = AuthUserFactory()
-        user.system_tags.append(PREREG_ADMIN_TAG)
+        user.add_system_tag(PREREG_ADMIN_TAG)
         user.save()
 
-        assert_in(self.read_only_user._id, self.public_project.contributors)
+        assert_in(self.read_only_user, self.public_project.contributors.all())
         res = self.app.post_json_api(self.url, self.payload, auth=user.auth, expect_errors=True)
         assert_equal(res.status_code, 403)

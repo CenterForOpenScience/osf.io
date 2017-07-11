@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+{% load static %}
+{% block top_includes %}
+    <link rel="stylesheet" type="text/css" href="/static/css/institutions.css" />
+    <script src="/static/js/preprint_providers/preprintProviders.js"></script>
+    <script src="https://cloud.tinymce.com/stable/tinymce.min.js?apiKey={{ tinymce_apikey }}"></script>
+{% endblock %}
+{% load user_extras %}
+{% load spam_extras %}
+{% block title %}
+    <title>Create Preprint Provider</title>
+{% endblock title %}
+{% block content %}
+    <div class="container-fluid">
+        <div class="row">
+            <div class="col-md-12">
+                <h2>Create A Preprint Provider</h2>
+            </div>
+        </div>
+        <div class="row">
+            {% include 'preprint_providers/update_preprint_provider_form.html' %}
+        </div>
+    </div>
+
+{% endblock content %}
+
+{% block bottom_js %}
+<script>
+    window.templateVars = {
+        'importUrl': '{% url 'preprint_providers:import' %}',
+        'getSubjectsUrl': '{% url 'preprint_providers:get_subjects' %}',
+        'getDescendantsUrl': '{% url 'preprint_providers:get_descendants' %}',
+        'rulesToSubjectsUrl': '{% url 'preprint_providers:rules_to_subjects' %}',
+        'originalSubjects': []
+    }
+</script>
+{% endblock %}

@@ -21,16 +21,16 @@ from website.project.decorators import (
     must_have_permission,
     must_not_be_registration, must_be_registration,
 )
-from website.identifiers.model import Identifier
-from website.identifiers.metadata import datacite_metadata_for_node
+from website.identifiers.utils import get_or_create_identifiers, build_ezid_metadata
+from osf.models import Identifier, MetaSchema, NodeLog
 from website.project.utils import serialize_node
 from website.util.permissions import ADMIN
-from website.models import MetaSchema, NodeLog
 from website import language
 from website.project import signals as project_signals
 from website.project.metadata.schemas import _id_to_name
 from website import util
 from website.project.metadata.utils import serialize_meta_schema
+from website.project.model import has_anonymous_link
 from website.archiver.decorators import fail_archive_on_error
 
 from website.identifiers.client import EzidClient
@@ -99,7 +99,7 @@ def node_registration_retraction_post(auth, node, **kwargs):
             'message_long': 'Withdrawal of non-registrations is not permitted.'
         })
 
-    if node.root is not node:
+    if node.root_id != node.id:
         raise HTTPError(http.BAD_REQUEST, data={
             'message_short': 'Invalid Request',
             'message_long': 'Withdrawal of non-parent registrations is not permitted.'
@@ -128,19 +128,25 @@ def node_register_template_page(auth, node, metaschema_id, **kwargs):
             try:
                 meta_schema = MetaSchema.find(
                     Q('name', 'eq', _id_to_name(metaschema_id))
-                ).sort('-schema_version')[0]
+                ).order_by('-schema_version').first()
             except IndexError:
                 raise HTTPError(http.NOT_FOUND, data={
                     'message_short': 'Invalid schema name',
                     'message_long': 'No registration schema with that name could be found.'
                 })
-        if meta_schema not in node.registered_schema:
+        if not node.registered_schema.filter(id=meta_schema.id).exists():
             raise HTTPError(http.BAD_REQUEST, data={
                 'message_short': 'Invalid schema',
                 'message_long': 'This registration has no registration supplment with that name.'
             })
 
         ret = _view_project(node, auth, primary=True)
+        my_meta = serialize_meta_schema(meta_schema)
+        if has_anonymous_link(node, auth):
+            for indx, schema_page in enumerate(my_meta['schema']['pages']):
+                for idx, schema_question in enumerate(schema_page['questions']):
+                    if schema_question['title'] in settings.ANONYMIZED_TITLES:
+                        del my_meta['schema']['pages'][indx]['questions'][idx]
         ret['node']['registered_schema'] = serialize_meta_schema(meta_schema)
         return ret
     else:
@@ -172,7 +178,7 @@ def project_before_register(auth, node, **kwargs):
     }
     errors = {}
 
-    addon_set = [n.get_addons() for n in itertools.chain([node], node.get_descendants_recursive(lambda n: n.primary))]
+    addon_set = [n.get_addons() for n in itertools.chain([node], node.get_descendants_recursive(primary_only=True))]
     for addon in itertools.chain(*addon_set):
         if not addon.complete:
             continue
@@ -207,55 +213,12 @@ def project_before_register(auth, node, **kwargs):
         'errors': error_messages
     }
 
-def _build_ezid_metadata(node):
-    """Build metadata for submission to EZID using the DataCite profile. See
-    http://ezid.cdlib.org/doc/apidoc.html for details.
-    """
-    doi = settings.EZID_FORMAT.format(namespace=settings.DOI_NAMESPACE, guid=node._id)
-    metadata = {
-        '_target': node.absolute_url,
-        'datacite': datacite_metadata_for_node(node=node, doi=doi)
-    }
-    return doi, metadata
 
-
-def _get_or_create_identifiers(node):
-    """
-    Note: ARKs include a leading slash. This is stripped here to avoid multiple
-    consecutive slashes in internal URLs (e.g. /ids/ark/<ark>/). Frontend code
-    that build ARK URLs is responsible for adding the leading slash.
-    """
-    doi, metadata = _build_ezid_metadata(node)
-    client = EzidClient(settings.EZID_USERNAME, settings.EZID_PASSWORD)
-    try:
-        resp = client.create_identifier(doi, metadata)
-        return dict(
-            [each.strip('/') for each in pair.strip().split(':')]
-            for pair in resp['success'].split('|')
-        )
-    except HTTPError as error:
-        if 'identifier already exists' not in error.message.lower():
-            raise
-        resp = client.get_identifier(doi)
-        doi = resp['success']
-        suffix = doi.strip(settings.DOI_NAMESPACE)
-        return {
-            'doi': doi.replace('doi:', ''),
-            'ark': '{0}{1}'.format(settings.ARK_NAMESPACE.replace('ark:', ''), suffix),
-        }
-
-
-@must_be_valid_project
-@must_be_contributor_or_public
-def node_identifiers_get(node, **kwargs):
-    """Retrieve identifiers for a node. Node must be a public registration.
-    """
-    if not node.is_registration or not node.is_public:
-        raise HTTPError(http.BAD_REQUEST)
-    return {
-        'doi': node.get_identifier_value('doi'),
-        'ark': node.get_identifier_value('ark'),
-    }
+def osf_admin_change_status_identifier(node, status):
+    if node.get_identifier_value('doi') and node.get_identifier_value('ark'):
+        doi, metadata = build_ezid_metadata(node)
+        client = EzidClient(settings.EZID_USERNAME, settings.EZID_PASSWORD)
+        client.change_status_identifier(status, doi, metadata)
 
 
 @must_be_valid_project
@@ -263,13 +226,12 @@ def node_identifiers_get(node, **kwargs):
 def node_identifiers_post(auth, node, **kwargs):
     """Create identifier pair for a node. Node must be a public registration.
     """
-    # TODO: Fail if `node` is retracted
-    if not node.is_registration or not node.is_public:  # or node.is_retracted:
+    if not node.is_public or node.is_retracted:
         raise HTTPError(http.BAD_REQUEST)
     if node.get_identifier('doi') or node.get_identifier('ark'):
         raise HTTPError(http.BAD_REQUEST)
     try:
-        identifiers = _get_or_create_identifiers(node)
+        identifiers = get_or_create_identifiers(node)
     except HTTPError:
         raise HTTPError(http.BAD_REQUEST)
     for category, value in identifiers.iteritems():

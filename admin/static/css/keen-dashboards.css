@@ -96,3 +96,25 @@ body.application .return-link:hover,
   font-size: 12px;
   padding: 8px 10px 5px;
 }
+
+.keen-dataviz-table-dataset td{
+  min-width: 60px !important;
+}
+
+#dropdownMenuButton {
+  margin-top: 20px;
+  margin-right: 20px;
+}
+
+.institution-tables thead {
+  display: none;
+}
+
+.hr-menu {
+  background-color: lightgray;
+  height: 1px;
+}
+
+#reload-node-logs {
+  margin-left: 20px;
+}

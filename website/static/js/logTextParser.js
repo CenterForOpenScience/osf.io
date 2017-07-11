@@ -25,7 +25,6 @@ function ravenMessage (message, logObject) {
     }
 }
 
-
 /**
  * Checks if the required parameter to complete the log is returned
  * This may intentionally not be returned to make log anonymous
@@ -83,7 +82,13 @@ var returnTextParams = function (param, text, logObject, view_url) {
         if (param === 'path'){
             source = stripBackslash(source);
         }
-        return view_url ? m('a', {href: view_url}, source) : m('span', source);
+        // If the user changed the home page, display logText with capitalized
+        // name to reflect how home is displayed to user.
+        var type = logObject.attributes.action;
+        if (type === 'wiki_updated' && source === 'home') {
+            source = 'Home';
+        }
+        return view_url ? m('a', {href: $osf.toRelativeUrl(view_url, window)}, source) : m('span', source);
     }
     return m('span', text);
 };
@@ -164,7 +169,7 @@ var LogPieces = {
             var userObject = logObject.embeds.user;
             var githubUser = logObject.attributes.params.github_user;
             if(paramIsReturned(userObject, logObject) && userObject.data) {
-                return m('a', {href: userObject.data.links.html, onclick: function() {
+                return m('a', {href: $osf.toRelativeUrl(userObject.data.links.html, window), onclick: function() {
                     $osf.trackClick(logObject.trackingCategory, logObject.trackingAction, 'navigate-to-user-from-logs');
                 }}, userObject.data.attributes.full_name);
             }
@@ -191,7 +196,7 @@ var LogPieces = {
             }}
             else if(paramIsReturned(nodeObject, logObject) && nodeObject.data){
                 if (nodeObject.data.links && nodeObject.data.attributes) {
-                    return m('a', {href: nodeObject.data.links.html, onclick: function() {
+                    return m('a', {href: $osf.toRelativeUrl(nodeObject.data.links.html, window), onclick: function() {
                         $osf.trackClick(logObject.trackingCategory, logObject.trackingAction, 'navigate-to-project-from-logs');
                     }}, nodeObject.data.attributes.title);
                 }
@@ -268,7 +273,7 @@ var LogPieces = {
         view: function (ctrl, logObject) {
             var linked_node = logObject.embeds.linked_node;
             if(paramIsReturned(linked_node, logObject)){
-                return m('a', {href: linked_node.data.links.html}, linked_node.data.attributes.title);
+                return m('a', {href: $osf.toRelativeUrl(linked_node.data.links.html, window)}, linked_node.data.attributes.title);
             }
             // Applicable when pointer has been deleted
             var pointer_info = logObject.attributes.params.pointer;
@@ -305,7 +310,7 @@ var LogPieces = {
             var template_node = logObject.embeds.template_node;
 
             if(paramIsReturned(template_node, logObject)){
-                return m('a', {href: template_node.data.links.html}, template_node.data.attributes.title);
+                return m('a', {href: $osf.toRelativeUrl(template_node.data.links.html, window)}, template_node.data.attributes.title);
             }
 
             var templateFromParams = logObject.attributes.params.template_node;
@@ -419,7 +424,7 @@ var LogPieces = {
                     destinationMaterialized = stripBackslash(destination.materialized);
                     return m('span', [destinationMaterialized, ' in ', destination.addon]);
                 }
-                return m('span', [m('a', {href: destination.url}, destinationMaterialized), ' in ', destination.addon]);
+                return m('span', [m('a', {href: $osf.toRelativeUrl(destination.url, window)}, destinationMaterialized), ' in ', destination.addon]);
             }
             return m('span','a new name/location' );
         }
@@ -434,21 +439,21 @@ var LogPieces = {
     path: {
         controller: function(logObject){
             var self = this;
-            self.returnLinkForPath = function() {
+            self.returnLinkForPath = function(logObject) {
                 if (logObject) {
                     var action = logObject.attributes.action;
                     var acceptableLinkedItems = ['osf_storage_file_added', 'osf_storage_file_updated', 'file_tag_added', 'file_tag_removed',
                     'github_file_added', 'github_file_updated', 'box_file_added', 'box_file_updated', 'dropbox_file_added', 'dropbox_file_updated',
                     's3_file_added', 's3_file_updated', 'figshare_file_added', 'checked_in', 'checked_out'];
                     if (acceptableLinkedItems.indexOf(action) !== -1 && logObject.attributes.params.urls) {
-                         return logObject.attributes.params.urls.view;
+                       return logObject.attributes.params.urls.view;
                     }
                 }
                 return null;
             };
         },
         view: function (ctrl, logObject) {
-            var url = ctrl.returnLinkForPath();
+            var url = ctrl.returnLinkForPath(logObject);
             return returnTextParams('path', 'a file', logObject, url);
         }
     },
@@ -456,7 +461,7 @@ var LogPieces = {
     filename: {
         controller: function(logObject) {
             var self = this;
-            self.returnLinkForPath = function(){
+            self.returnLinkForPath = function(logObject){
                 if (logObject){
                     var action = logObject.attributes.action;
                     var acceptableLinkedItems = ['dataverse_file_added'];
@@ -468,7 +473,7 @@ var LogPieces = {
             };
         },
         view: function (ctrl, logObject) {
-            var url = ctrl.returnLinkForPath();
+            var url = ctrl.returnLinkForPath(logObject);
             return returnTextParams('filename', 'a title', logObject, url);
         }
     },
@@ -499,12 +504,6 @@ var LogPieces = {
     bucket: {
         view: function(ctrl, logObject) {
             return returnTextParams('bucket', 'a bucket', logObject);
-        }
-    },
-
-    figshare_title: {
-        view: function(ctrl, logObject) {
-            return returnTextParams('figshare_title', '', logObject);
         }
     },
 
@@ -558,7 +557,7 @@ var LogPieces = {
     googledrive_path: {
         controller: function(logObject){
             var self = this;
-            self.returnLinkForPath = function() {
+            self.returnLinkForPath = function(logObject) {
                 if (logObject) {
                     var action = logObject.attributes.action;
                     var acceptableLinkedItems = ['googledrive_file_added', 'googledrive_file_updated'];
@@ -570,12 +569,12 @@ var LogPieces = {
             };
         },
         view: function (ctrl, logObject) {
-            var url = ctrl.returnLinkForPath();
+            var url = ctrl.returnLinkForPath(logObject);
             var path = logObject.attributes.params.path;
             if(paramIsReturned(path, logObject)){
-                path = stripBackslash(decodeURIComponent(path));
+                path = stripBackslash(path);
                 if (url) {
-                     return m('a', {href: url}, path);
+                     return m('a', {href: $osf.toRelativeUrl(url, window)}, path);
                 }
                 return m('span', path);
             }
@@ -599,7 +598,7 @@ var LogPieces = {
         view: function(ctrl, logObject){
             var folder = logObject.attributes.params.folder;
             if(paramIsReturned(folder, logObject)){
-                return m('span', folder === '/' ? '(Full Google Drive)' : decodeURIComponent(folder));
+                return m('span', folder === '/' ? '(Full Google Drive)' : folder);
             }
             return m('span', '');
         }
@@ -631,14 +630,54 @@ var LogPieces = {
             // skip param.isReturned as not having a file or wiki is expected at times
             // Comment left on file
             if (file){
-                return m('span', ['on ', m('a', {href: file.url}, file.name)]);
+                return m('span', ['on ', m('a', {href: $osf.toRelativeUrl(file.url, window)}, file.name)]);
             }
             // Comment left on wiki
             if (wiki) {
-                return m('span', ['on wiki page ', m('a', {href: wiki.url}, wiki.name)]);
+                var name = (wiki.name === 'home') ? 'Home' : wiki.name;
+                return m('span', ['on wiki page ', m('a', {href: $osf.toRelativeUrl(wiki.url, window)}, name)]);
             }
             // Comment left on project
             return m('span', '');
+        }
+    },
+
+    preprint: {
+        view: function(ctrl, logObject){
+            var preprint = logObject.attributes.params.preprint;
+            if (paramIsReturned(preprint, logObject)) {
+                return m('a', {href: '/' + preprint}, 'preprint');
+            }
+            return m('span', 'preprint');
+        }
+    },
+
+    preprint_provider: {
+        view: function(ctrl, logObject){
+            var preprint_provider = logObject.attributes.params.preprint_provider;
+            if (paramIsReturned(preprint_provider, logObject)) {
+                return m('a', {href: preprint_provider.url}, preprint_provider.name);
+            }
+            return m('span', '');
+        }
+    },
+
+    license: {
+        view: function(ctrl, logObject){
+            var license_name = logObject.attributes.params.license;
+            if (license_name) {
+                return m('span', 'to ' + license_name);
+            }
+            return m('span', '');
+        }
+    },
+    
+    anonymous_link: {
+        view: function(ctrl, logObject) {
+            if (logObject.attributes.params.anonymous_link) {
+                return m('span', 'an anonymous');
+            }
+            return m('span', 'a');
         }
     }
 };

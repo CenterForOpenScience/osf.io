@@ -1,0 +1,21 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load node_extras %}
+{% block title %}
+    <title>User Search</title>
+{% endblock title %}
+{% block content %}
+    <div class="container-fluid">
+        <div class="row">
+            <form action="{% url 'users:workshop' %}" method="post" enctype="multipart/form-data">
+                {% csrf_token %}
+                {{ form }}
+                </br>
+                <p><input class="btn btn-primary" type="submit" value="Upload" /></p>
+            </form>
+        </div>
+        <div class="row">
+            <table></table>
+        </div>
+    </div>
+{% endblock content %}

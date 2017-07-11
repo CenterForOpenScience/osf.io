@@ -16,8 +16,8 @@ from website import settings
 from website.models import Guid
 from website.app import init_app
 
-from website.addons.osffiles.model import OsfGuidFile
-from website.addons.osfstorage.model import OsfStorageGuidFile
+from addons.osffiles.model import OsfGuidFile
+from addons.osfstorage.model import OsfStorageGuidFile
 
 from scripts import utils as script_utils
 from scripts.osfstorage.utils import ensure_osf_files

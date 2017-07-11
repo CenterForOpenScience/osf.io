@@ -1,15 +1,15 @@
 import datetime as dt
 
+from django.utils import timezone
 from modularodm import Q
 
 from framework.auth import Auth
 
 from website.util import permissions
-from website.models import MetaSchema
-from website.project.model import ensure_schemas
+from osf.models import MetaSchema
 
 from tests.base import OsfTestCase
-from tests.factories import AuthUserFactory, ProjectFactory, DraftRegistrationFactory
+from osf_tests.factories import AuthUserFactory, ProjectFactory, DraftRegistrationFactory
 
 class RegistrationsTestBase(OsfTestCase):
     def setUp(self):
@@ -27,8 +27,6 @@ class RegistrationsTestBase(OsfTestCase):
         )
         self.non_contrib = AuthUserFactory()
 
-        MetaSchema.remove()
-        ensure_schemas()
         self.meta_schema = MetaSchema.find_one(
             Q('name', 'eq', 'Open-Ended Registration') &
             Q('schema_version', 'eq', 2)
@@ -42,10 +40,10 @@ class RegistrationsTestBase(OsfTestCase):
             }
         )
 
-        current_month = dt.datetime.now().strftime("%B")
-        current_year = dt.datetime.now().strftime("%Y")
+        current_month = timezone.now().strftime("%B")
+        current_year = timezone.now().strftime("%Y")
 
-        valid_date = dt.datetime.now() + dt.timedelta(days=180)
+        valid_date = timezone.now() + dt.timedelta(days=180)
         self.embargo_payload = {
             u'embargoEndDate': unicode(valid_date.strftime('%a, %d, %B %Y %H:%M:%S')) + u' GMT',
             u'registrationChoice': 'embargo'

@@ -1,0 +1,9 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block title %}
+<title>Flagged Spam Users</title>
+{% endblock title %}
+{% block content %}
+  {% url 'users:flagged-spam' as form_action %}
+  {% include 'users/user_list.html' with form_action=form_action%}
+{% endblock content %}

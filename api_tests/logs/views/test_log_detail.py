@@ -3,16 +3,18 @@
 from nose.tools import *  # noqa
 
 from tests.base import ApiTestCase
-from tests.factories import (
+from osf_tests.factories import (
     ProjectFactory,
-    AuthUserFactory
+    AuthUserFactory,
+    NodeFactory,
 )
 
 from framework.auth.core import Auth
 
-from website.models import NodeLog, Node
+from osf.models import NodeLog
 from website.util import permissions as osf_permissions
 from api.base.settings.defaults import API_BASE
+from api_tests import utils as api_utils
 
 
 class LogsTestCase(ApiTestCase):
@@ -28,14 +30,16 @@ class LogsTestCase(ApiTestCase):
 
         self.node.add_contributor(self.user, permissions=[osf_permissions.READ], auth=Auth(self.node.creator), log=True, save=True)
 
-        self.log = self.node.logs[0]
-        self.log_add_contributor = self.node.logs[1]
+        logs = list(self.node.logs.order_by('date'))
+        self.log = logs[0]
+        self.log_add_contributor = logs[1]
 
         self.public_node = ProjectFactory(is_public=True)
-        self.public_node.add_contributor(self.user, permissions=[osf_permissions.READ], auth=Auth(self.node.creator), log=True, save=True)
+        self.public_node.add_contributor(self.user, permissions=[osf_permissions.READ], auth=Auth(self.public_node.creator), log=True, save=True)
 
-        self.public_log = self.public_node.logs[0]
-        self.public_log_add_contributor = self.public_node.logs[1]
+        public_logs = list(self.public_node.logs.order_by('date'))
+        self.public_log = public_logs[0]
+        self.public_log_add_contributor = public_logs[1]
 
         self.node_log_url = '/{}nodes/{}/logs/'.format(API_BASE, self.node._id)
         self.url = '/{}logs/'.format(API_BASE)
@@ -43,10 +47,6 @@ class LogsTestCase(ApiTestCase):
         self.private_log_detail = self.url + '{}/'.format(self.log._id)
         self.log_public_nodes_url = self.url + '{}/nodes/'.format(self.public_log._id)
         self.public_log_detail = self.url + '{}/'.format(self.public_log._id)
-
-    def tearDown(self):
-        NodeLog.remove()
-        Node.remove()
 
 
 class TestLogDetail(LogsTestCase):
@@ -82,3 +82,61 @@ class TestLogDetail(LogsTestCase):
         assert_equal(res.status_code, 200)
         assert_in(self.public_log._id, unicode(res.body, 'utf-8'))
 
+
+class TestNodeFileLogDetail(ApiTestCase):
+
+    def setUp(self):
+        super(TestNodeFileLogDetail, self).setUp()
+
+        self.user_one = AuthUserFactory()
+        self.user_two = AuthUserFactory()
+
+        self.node = ProjectFactory(creator=self.user_one)
+        self.node.add_contributor(self.user_two)
+
+        self.component = NodeFactory(parent=self.node, creator=self.user_one)
+
+        self.file = api_utils.create_test_file(node=self.component, user=self.user_one)
+        self.node.add_log(
+            'osf_storage_file_moved',
+            auth=Auth(self.user_one),
+            params={
+                'node': self.node._id,
+                'project': self.node.parent_id,
+                'path': self.file.materialized_path,
+                'source': {
+                    'materialized': self.file.materialized_path,
+                    'addon': 'osfstorage',
+                    'node': {
+                        '_id': self.component._id,
+                        'url': self.component.url,
+                        'title': self.component.title,
+                    }
+                },
+                'destination': {
+                    'materialized': self.file.materialized_path,
+                    'addon': 'osfstorage',
+                    'node': {
+                        '_id': self.node._id,
+                        'url': self.node.url,
+                        'title': self.node.title,
+                    }
+                }
+            },
+        )
+
+        self.node.save()
+
+        self.node_logs_url = '/{}nodes/{}/logs/'.format(API_BASE, self.node._id)
+        self.component_logs_url = '/{}nodes/{}/logs/'.format(API_BASE, self.component._id)
+
+    def test_title_not_hidden_from_contributor_in_file_move(self):
+        res = self.app.get(self.node_logs_url, auth=self.user_two.auth)
+        assert_equal(res.status_code, 200)
+        assert_equal(res.json['data'][0]['attributes']['params']['destination']['node_title'], self.node.title)
+
+    def test_title_hidden_from_non_contributor_in_file_move(self):
+        res = self.app.get(self.node_logs_url, auth=self.user_two.auth)
+        assert_equal(res.status_code, 200)
+        assert_not_in(self.component.title, res.json['data'])
+        assert_equal(res.json['data'][0]['attributes']['params']['source']['node_title'], 'Private Component')

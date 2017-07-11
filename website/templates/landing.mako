@@ -42,7 +42,7 @@
               <a class="youtube" href="//www.youtube.com/watch?v=2TV21gOzfhw" aria-label="OSF YouTube Video"><i class="icon icon-play"></i></a>
               <img src="/static/img/front-page/screenshot.png" class="img-responsive" id="screenshot" alt="Screenshot of OSF" />
             </div>
-            <div class="col-sm-6">
+            <div class="col-sm-6 sign-up-div">
               <h2>Free and open source. Start now.</h2>
 
              <div id="signUp" class="anchor"></div>
@@ -65,7 +65,7 @@
                           </div>
                           <div class="form-group" data-bind="css: {'has-error': password() && !password.isValid(), 'has-success': password() && password.isValid()}">
                               <label class="placeholder-replace" style="display:none">Password</label>
-                              <input type="password" class="form-control" placeholder="Password (Must be 6 to 256 characters)" data-bind=", textInput: typedPassword, value: password, disable: submitted(), event: {blur: trim.bind($data, password)}">
+                              <input type="password" class="form-control" placeholder="Password (Must be 8 to 255 characters)" data-bind=", textInput: typedPassword, value: password, disable: submitted(), event: {blur: trim.bind($data, password)}">
 
                               <div class="row" data-bind="visible: typedPassword().length > 0">
                                   <div class="col-xs-8">
@@ -99,8 +99,13 @@
                               <small> By clicking "Sign up free", you agree to our <a style="color:#5BC0DE" href="https://github.com/CenterForOpenScience/centerforopenscience.org/blob/master/TERMS_OF_USE.md">Terms</a> and that you have read our <a style="color:#5BC0DE" href="https://github.com/CenterForOpenScience/centerforopenscience.org/blob/master/PRIVACY_POLICY.md">Privacy Policy</a>, including our information on <a style="color:#5BC0DE" href="https://github.com/CenterForOpenScience/centerforopenscience.org/blob/master/PRIVACY_POLICY.md#f-cookies">Cookie Use</a>.</small>
                           </div>
                           <!-- /ko -->
+                          %if recaptcha_site_key:
+                              <div data-bind="fadeVisible: (fullName.isValid() || email1.isValid() || email2.isValid() || password.isValid()) && !submitted()" class="col-md-12 m-t-sm" style="z-index: 9;">
+                                  <div class="g-recaptcha" style="display: inline-block; margin: 0 auto;" data-sitekey="${recaptcha_site_key}"></div>
+                              </div>
+                          %endif
                           <div>
-                              <button type="submit" class="btn btn-warning" data-bind="visible: !submitted()" id="signupSubmit">Sign up free</button>
+                              <button type="submit" class="btn btn-warning m-t-sm" data-bind="visible: !submitted()" id="signupSubmit">Sign up free</button>
                           </div>
                   </form>
 
@@ -347,4 +352,7 @@
 <%def name="javascript_bottom()">
     ${parent.javascript_bottom()}
     <script src=${"/static/public/js/landing-page.js" | webpack_asset}></script>
+    %if recaptcha_site_key:
+        <script src="https://www.google.com/recaptcha/api.js" async defer></script>
+    %endif
 </%def>

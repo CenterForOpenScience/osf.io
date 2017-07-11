@@ -1,16 +1,6 @@
 <%inherit file="project/project_base.mako"/>
 <%def name="title()">${node['title']} Settings</%def>
 
-##<!-- Show API key settings -->
-##<div mod-meta='{
-##        "tpl": "util/render_keys.mako",
-##        "uri": "${node["api_url"]}keys/",
-##        "replace": true,
-##        "kwargs": {
-##            "route": "${node["url"]}"
-##        }
-##    }'></div>
-
 <div class="page-header visible-xs">
   <h2 class="text-300">Settings</h2>
 </div>
@@ -44,6 +34,8 @@
                         % endif
 
                         <li><a href="#configureNotificationsAnchor">Email Notifications</a></li>
+
+                        <li><a href="#redirectLink">Redirect Link</a></li>
 
                     % endif
 
@@ -307,6 +299,9 @@
                     </div>
                     <div class="panel-body">
                         <div class="help-block">
+                            % if 'write' not in user['permissions']:
+                                <p class="text-muted">Contributors with read-only permissions to this project cannot add or remove institutional affiliations.</p>
+                            % endif:
                             <!-- ko if: affiliatedInstitutions().length == 0 -->
                             Projects can be affiliated with institutions that have created OSF for Institutions accounts.
                             This allows:
@@ -327,14 +322,17 @@
                                 <tr>
                                     <td><img class="img-circle" width="50px" height="50px" data-bind="attr: {src: item.logo_path}"></td>
                                     <td><span data-bind="text: item.name"></span></td>
-                                    % if 'admin' in user['permissions']:
-                                        <td><button data-bind="disable: $parent.loading(),
-                                        click: $parent.clearInst"
-                                                    class="pull-right btn btn-danger">Remove</button></td>
-                                    % endif
+                                    <td>
+                                        % if 'admin' in user['permissions']:
+                                            <button data-bind="disable: $parent.loading(), click: $parent.clearInst" class="pull-right btn btn-danger">Remove</button>
+                                        % elif 'write' in user['permissions']:
+                                            <!-- ko if: $parent.userInstitutionsIds.indexOf(item.id) !== -1 -->
+                                               <button data-bind="disable: $parent.loading(), click: $parent.clearInst" class="pull-right btn btn-danger">Remove</button>
+                                            <!-- /ko -->
+                                        % endif
+                                    </td>
                                 </tr>
                                 <!-- /ko -->
-
                             </tbody>
                         </table>
                             </br>
@@ -346,7 +344,7 @@
                                 <tr>
                                     <td><img class="img-circle" width="50px" height="50px" data-bind="attr: {src: item.logo_path}"></td>
                                     <td><span data-bind="text: item.name"></span></td>
-                                    % if 'admin' in user['permissions']:
+                                    % if 'write' in user['permissions']:
                                         <td><button
                                                 data-bind="disable: $parent.loading(),
                                                 click: $parent.submitInst"
@@ -391,6 +389,76 @@
             %endif
 
         % endif ## End Configure Email Notifications
+
+        % if 'write' in user['permissions']:  ## Begin Redirect Link Config
+            % if not node['is_registration']:
+
+                <div class="panel panel-default">
+                    <span id="redirectLink" class="anchor"></span>
+                    <div class="panel-heading clearfix">
+                        <h3 class="panel-title">Redirect Link</h3>
+                    </div>
+                    <div class="panel-body" id="configureForward">
+                        <div>
+                            <label>
+                                <input
+                                    type="checkbox"
+                                    name="forward"
+                                    data-bind="checked: enabled, disable: pendingRequest"
+                                    ${'disabled' if node['is_registration'] else ''}
+                                />
+                                Redirect visitors from your project page to an external webpage
+                            </label>
+                        </div>
+
+                        <div data-bind="visible: enabled" style="display: none">
+
+                            <div class="forward-settings">
+
+                                <form class="form" data-bind="submit: submitSettings">
+
+                                    <div class="form-group">
+                                        <label for="forwardUrl">URL</label>
+                                        <input
+                                            id="forwardUrl"
+                                            class="form-control"
+                                            data-bind="value: url"
+                                            placeholder="Send people who visit your OSF project page to this link instead"
+                                        />
+                                    </div>
+
+                                    <div class="form-group">
+                                        <label for="forwardLabel">Label</label>
+                                        <input
+                                            id="forwardLabel"
+                                            class="form-control"
+                                            data-bind="value: label"
+                                            placeholder="Optional"
+                                        />
+                                    </div>
+
+                                    <div class="row">
+                                        <div class="col-md-10 overflow">
+                                            <p data-bind="html: message, attr: {class: messageClass}"></p>
+                                        </div>
+                                        <div class="col-md-2">
+                                            <input
+                                                type="submit"
+                                               class="btn btn-success pull-right"
+                                               value="Save"
+                                            />
+                                        </div>
+                                    </div>
+
+                                </form>
+
+                            </div><!-- end .forward-settings -->
+                        </div><!-- end #configureForward -->
+
+                    </div>
+                </div>
+            %endif
+        %endif ## End Redirect Link Config
 
         % if 'admin' in user['permissions']:  ## Begin Retract Registration
 
@@ -445,8 +513,6 @@
 
 </div>
 
-
-
 <%def name="render_node_settings(data)">
     <%
        template_name = data['node_settings_template']
@@ -478,13 +544,19 @@
       window.contextVars.wiki.isEnabled = ${wiki.short_name in addons_enabled | sjson, n };
       window.contextVars.currentUser = window.contextVars.currentUser || {};
       window.contextVars.currentUser.institutions = ${ user['institutions'] | sjson, n };
+      window.contextVars.analyticsMeta = $.extend(true, {}, window.contextVars.analyticsMeta, {
+          pageMeta: {
+              title: 'Settings',
+              pubic: false,
+          },
+      });
     </script>
 
     <script type="text/javascript" src=${"/static/public/js/project-settings-page.js" | webpack_asset}></script>
+    <script type="text/javascript" src=${"/static/public/js/forward/node-cfg.js" | webpack_asset}></script>
 
     % for js_asset in addon_js:
-    <script src="${js_asset | webpack_asset}"></script>
+        <script src="${js_asset | webpack_asset}"></script>
     % endfor
-
 
 </%def>

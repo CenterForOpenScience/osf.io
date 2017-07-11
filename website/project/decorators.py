@@ -15,7 +15,7 @@ from framework.exceptions import HTTPError
 from framework.auth.decorators import collect_auth
 from framework.mongo.utils import get_or_http_error
 
-from website.models import Node
+from osf.models import AbstractNode as Node
 from website import settings
 
 _load_node_or_fail = lambda pk: get_or_http_error(Node, pk)
@@ -179,7 +179,9 @@ def check_can_access(node, user, key=None, api_node=None):
     if not node.can_view(Auth(user=user)) and api_node != node:
         if key in node.private_link_keys_deleted:
             status.push_status_message('The view-only links you used are expired.', trust=False)
-        raise HTTPError(http.FORBIDDEN)
+        raise HTTPError(http.FORBIDDEN, data={'message_long': ('User has restricted access to this page. '
+            'If this should not have occurred and the issue persists, please report it to '
+            '<a href="mailto:support@osf.io">support@osf.io</a>.')})
     return True
 
 
@@ -223,7 +225,7 @@ def _must_be_contributor_factory(include_public, include_view_only_anon=True):
             kwargs['auth'].private_key = key
             link_anon = None
             if not include_view_only_anon:
-                from website.models import PrivateLink
+                from osf.models import PrivateLink
                 try:
                     link_anon = PrivateLink.find_one(Q('key', 'eq', key)).anonymous
                 except ModularOdmException:

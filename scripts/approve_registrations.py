@@ -3,15 +3,18 @@ elapsed the pending approval time..
 """
 
 import logging
-import datetime
 
+import django
+from django.utils import timezone
+from django.db import transaction
 from modularodm import Q
+django.setup()
 
 from framework.celery_tasks import app as celery_app
-from framework.transactions.context import TokuTransaction
 
+from osf import models
 from website.app import init_app
-from website import models, settings
+from website import settings
 
 from scripts import utils as scripts_utils
 
@@ -26,7 +29,7 @@ def main(dry_run=True):
         if should_be_approved(registration_approval):
             if dry_run:
                 logger.warn('Dry run mode')
-            pending_registration = models.Node.find_one(Q('registration_approval', 'eq', registration_approval))
+            pending_registration = models.Registration.find_one(Q('registration_approval', 'eq', registration_approval))
             logger.warn(
                 'RegistrationApproval {0} automatically approved by system. Making registration {1} public.'
                 .format(registration_approval._id, pending_registration._id)
@@ -38,7 +41,7 @@ def main(dry_run=True):
                     registration_approval.save()
                     continue
 
-                with TokuTransaction():
+                with transaction.atomic():
                     try:
                         # Ensure no `User` is associated with the final approval
                         registration_approval._on_complete(None)
@@ -51,7 +54,7 @@ def main(dry_run=True):
 
 def should_be_approved(pending_registration):
     """Returns true if pending_registration has surpassed its pending time."""
-    return (datetime.datetime.utcnow() - pending_registration.initiation_date) >= settings.REGISTRATION_APPROVAL_TIME
+    return (timezone.now() - pending_registration.initiation_date) >= settings.REGISTRATION_APPROVAL_TIME
 
 
 @celery_app.task(name='scripts.approve_registrations')
@@ -60,4 +63,3 @@ def run_main(dry_run=True):
     if not dry_run:
         scripts_utils.add_file_logger(logger, __file__)
     main(dry_run=dry_run)
-

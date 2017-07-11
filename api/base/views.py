@@ -1,28 +1,32 @@
-import weakref
 from django.conf import settings as django_settings
+from django.db import transaction
 from django.http import JsonResponse
-from rest_framework.decorators import api_view
-from rest_framework.response import Response
 from rest_framework import generics
-from rest_framework import status
 from rest_framework import permissions as drf_permissions
-
-from framework.auth.oauth_scopes import CoreScopes
-
+from rest_framework import status
+from rest_framework.decorators import api_view, throttle_classes
+from rest_framework.exceptions import ValidationError, NotFound
 from rest_framework.mixins import ListModelMixin
-from api.base import permissions as base_permissions
-from api.base.exceptions import RelationshipPostMakesNoChanges
+from rest_framework.response import Response
 
-from api.users.serializers import UserSerializer
+from api.base import permissions as base_permissions
+from api.base import utils
+from api.base.exceptions import RelationshipPostMakesNoChanges
+from api.base.filters import ListFilterMixin
 from api.base.parsers import JSONAPIRelationshipParser
 from api.base.parsers import JSONAPIRelationshipParserForRegularJSON
 from api.base.requests import EmbeddedRequest
 from api.base.serializers import LinkedNodesRelationshipSerializer
-from api.base import utils
-from api.nodes.permissions import ReadOnlyIfRegistration
+from api.base.serializers import LinkedRegistrationsRelationshipSerializer
+from api.base.throttling import RootAnonThrottle, UserRateThrottle
+from api.base.utils import is_bulk_request, get_user_auth
+from api.nodes.permissions import ContributorOrPublic
 from api.nodes.permissions import ContributorOrPublicForRelationshipPointers
-
-CACHE = weakref.WeakKeyDictionary()
+from api.nodes.permissions import ReadOnlyIfRegistration
+from api.users.serializers import UserSerializer
+from framework.auth.oauth_scopes import CoreScopes
+from osf.models.contributor import Contributor
+from website import maintenance
 
 
 class JSONAPIBaseView(generics.GenericAPIView):
@@ -43,19 +47,27 @@ class JSONAPIBaseView(generics.GenericAPIView):
         """
         if getattr(field, 'field', None):
             field = field.field
+
         def partial(item):
             # resolve must be implemented on the field
-            v, view_args, view_kwargs = field.resolve(item, field_name)
+            v, view_args, view_kwargs = field.resolve(item, field_name, self.request)
             if not v:
                 return None
-            if isinstance(self.request._request, EmbeddedRequest):
-                request = self.request._request
+
+            if isinstance(self.request, EmbeddedRequest):
+                request = EmbeddedRequest(self.request._request)
             else:
                 request = EmbeddedRequest(self.request)
 
+            if not hasattr(request._request._request, '_embed_cache'):
+                request._request._request._embed_cache = {}
+            cache = request._request._request._embed_cache
+
+            request.parents.setdefault(type(item), {})[item._id] = item
+
             view_kwargs.update({
                 'request': request,
-                'is_embedded': True
+                'is_embedded': True,
             })
 
             # Setup a view ourselves to avoid all the junk DRF throws in
@@ -67,25 +79,33 @@ class JSONAPIBaseView(generics.GenericAPIView):
             view.request.parser_context['kwargs'] = view_kwargs
             view.format_kwarg = view.get_format_suffix(**view_kwargs)
 
-            _cache_key = (v.cls, field_name, view.get_serializer_class(), item)
-            if _cache_key in CACHE.setdefault(self.request._request, {}):
+            if not isinstance(view, ListModelMixin):
+                try:
+                    item = view.get_object()
+                except Exception as e:
+                    with transaction.atomic():
+                        ret = view.handle_exception(e).data
+                    return ret
+
+            _cache_key = (v.cls, field_name, view.get_serializer_class(), (type(item), item.id))
+            if _cache_key in cache:
                 # We already have the result for this embed, return it
-                return CACHE[self.request._request][_cache_key]
+                return cache[_cache_key]
 
             # Cache serializers. to_representation of a serializer should NOT augment it's fields so resetting the context
             # should be sufficient for reuse
-            if not view.get_serializer_class() in CACHE.setdefault(self.request._request, {}):
-                CACHE[self.request._request][view.get_serializer_class()] = view.get_serializer_class()(many=isinstance(view, ListModelMixin))
-            ser = CACHE[self.request._request][view.get_serializer_class()]
+            if not view.get_serializer_class() in cache:
+                cache[view.get_serializer_class()] = view.get_serializer_class()(many=isinstance(view, ListModelMixin), context=view.get_serializer_context())
+            ser = cache[view.get_serializer_class()]
 
             try:
                 ser._context = view.get_serializer_context()
 
                 if not isinstance(view, ListModelMixin):
-                    ret = ser.to_representation(view.get_object())
+                    ret = ser.to_representation(item)
                 else:
                     queryset = view.filter_queryset(view.get_queryset())
-                    page = view.paginate_queryset(queryset)
+                    page = view.paginate_queryset(getattr(queryset, '_results_cache', None) or queryset)
 
                     ret = ser.to_representation(page or queryset)
 
@@ -95,13 +115,14 @@ class JSONAPIBaseView(generics.GenericAPIView):
                         view.paginator.request = request
                         ret = view.paginator.get_paginated_response(ret).data
             except Exception as e:
-                ret = view.handle_exception(e).data
+                with transaction.atomic():
+                    ret = view.handle_exception(e).data
 
             # Allow request to be gc'd
             ser._context = None
 
             # Cache our final result
-            CACHE[self.request._request][_cache_key] = ret
+            cache[_cache_key] = ret
 
             return ret
 
@@ -119,6 +140,12 @@ class JSONAPIBaseView(generics.GenericAPIView):
             embeds = self.request.query_params.getlist('embed')
 
         fields_check = self.serializer_class._declared_fields.copy()
+        if 'fields[{}]'.format(self.serializer_class.Meta.type_) in self.request.query_params:
+            # Check only requested and mandatory fields
+            sparse_fields = self.request.query_params['fields[{}]'.format(self.serializer_class.Meta.type_)]
+            for field in fields_check.copy().keys():
+                if field not in ('type', 'id', 'links') and field not in sparse_fields:
+                    fields_check.pop(field)
 
         for field in fields_check:
             if getattr(fields_check[field], 'field', None):
@@ -226,9 +253,8 @@ class LinkedNodesRelationship(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPI
         auth = utils.get_user_auth(self.request)
         obj = {'data': [
             pointer for pointer in
-            object.nodes_pointer
-            if not pointer.node.is_deleted and not pointer.node.is_collection and
-            pointer.node.can_view(auth)
+            object.linked_nodes.filter(is_deleted=False, type='osf.node')
+            if pointer.can_view(auth)
         ], 'self': object}
         self.check_object_permissions(self.request, obj)
         return obj
@@ -236,7 +262,7 @@ class LinkedNodesRelationship(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPI
     def perform_destroy(self, instance):
         data = self.request.data['data']
         auth = utils.get_user_auth(self.request)
-        current_pointers = {pointer.node._id: pointer for pointer in instance['data']}
+        current_pointers = {pointer._id: pointer for pointer in instance['data']}
         collection = instance['self']
         for val in data:
             if val['id'] in current_pointers:
@@ -250,8 +276,115 @@ class LinkedNodesRelationship(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPI
         return ret
 
 
+class LinkedRegistrationsRelationship(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView, generics.CreateAPIView):
+    """ Relationship Endpoint for Linked Registrations relationships
+
+    Used to set, remove, update and retrieve the ids of the linked registrations attached to this collection. For each id, there
+    exists a node link that contains that registration.
+
+    ##Actions
+
+    ###Create
+
+        Method:        POST
+        URL:           /links/self
+        Query Params:  <none>
+        Body (JSON):   {
+                         "data": [{
+                           "type": "linked_registrations",   # required
+                           "id": <node_id>   # required
+                         }]
+                       }
+        Success:       201
+
+    This requires both edit permission on the collection, and for the user that is
+    making the request to be able to read the registrations requested. Data can contain any number of
+    node identifiers. This will create a node_link for all node_ids in the request that
+    do not currently have a corresponding node_link in this collection.
+
+    ###Update
+
+        Method:        PUT || PATCH
+        URL:           /links/self
+        Query Params:  <none>
+        Body (JSON):   {
+                         "data": [{
+                           "type": "linked_registrations",   # required
+                           "id": <node_id>   # required
+                         }]
+                       }
+        Success:       200
+
+    This requires both edit permission on the collection and for the user that is
+    making the request to be able to read the registrations requested. Data can contain any number of
+    node identifiers. This will replace the contents of the node_links for this collection with
+    the contents of the request. It will delete all node links that don't have a node_id in the data
+    array, create node links for the node_ids that don't currently have a node id, and do nothing
+    for node_ids that already have a corresponding node_link. This means a update request with
+    {"data": []} will remove all node_links in this collection
+
+    ###Destroy
+
+        Method:        DELETE
+        URL:           /links/self
+        Query Params:  <none>
+        Body (JSON):   {
+                         "data": [{
+                           "type": "linked_registrations",   # required
+                           "id": <node_id>   # required
+                         }]
+                       }
+        Success:       204
+
+    This requires edit permission on the node. This will delete any node_links that have a
+    corresponding node_id in the request.
+    """
+    permission_classes = (
+        ContributorOrPublicForRelationshipPointers,
+        drf_permissions.IsAuthenticatedOrReadOnly,
+        base_permissions.TokenHasScope,
+        ReadOnlyIfRegistration,
+    )
+
+    required_read_scopes = [CoreScopes.NODE_LINKS_READ]
+    required_write_scopes = [CoreScopes.NODE_LINKS_WRITE]
+
+    serializer_class = LinkedRegistrationsRelationshipSerializer
+    parser_classes = (JSONAPIRelationshipParser, JSONAPIRelationshipParserForRegularJSON, )
+
+    def get_object(self):
+        object = self.get_node(check_object_permissions=False)
+        auth = utils.get_user_auth(self.request)
+        obj = {'data': [
+            pointer for pointer in
+            object.linked_nodes.filter(is_deleted=False, type='osf.registration')
+            if pointer.can_view(auth)
+        ], 'self': object}
+        self.check_object_permissions(self.request, obj)
+        return obj
+
+    def perform_destroy(self, instance):
+        data = self.request.data['data']
+        auth = utils.get_user_auth(self.request)
+        current_pointers = {pointer._id: pointer for pointer in instance['data']}
+        collection = instance['self']
+        for val in data:
+            if val['id'] in current_pointers:
+                collection.rm_pointer(current_pointers[val['id']], auth)
+            else:
+                raise NotFound(detail='Pointer with id "{}" not found in pointers list'.format(val['id'], collection))
+
+    def create(self, *args, **kwargs):
+        try:
+            ret = super(LinkedRegistrationsRelationship, self).create(*args, **kwargs)
+        except RelationshipPostMakesNoChanges:
+            return Response(status=status.HTTP_204_NO_CONTENT)
+        return ret
+
+
 @api_view(('GET',))
-def root(request, format=None):
+@throttle_classes([RootAnonThrottle, UserRateThrottle])
+def root(request, format=None, **kwargs):
     """Welcome to the V2 Open Science Framework API. With this API you can access users, projects, components, logs, and files
     from the [Open Science Framework](https://osf.io/). The Open Science Framework (OSF) is a free, open-source service
     maintained by the [Center for Open Science](http://cos.io/).
@@ -273,6 +406,8 @@ def root(request, format=None):
     The OSF API generally conforms to the [JSON-API v1.0 spec](http://jsonapi.org/format/1.0/).  Where exceptions
     exist, they will be noted.  Each endpoint will have its own documentation, but there are some general principles.
 
+    Assume undocumented routes/features/fields are unstable.
+
     ##Requests
 
     ###Canonical URLs
@@ -293,6 +428,47 @@ def root(request, format=None):
     entity or entity collection referenced by the endpoint.  An `OPTIONS` request will return a JSON object that describes the
     endpoint, including the name, a description, the acceptable request formats, the allowed response formats, and any
     actions available via the endpoint.
+
+    ###Versioning
+    Versioning can be specified in three different ways:
+
+    1. URL Path Versioning, e.g. `/v2/` or `/v3/`
+
+        + A version specified via the URL path is a **required** part of the URL.
+
+        + Only a major version can be specified via the URL path, i.e. `/v2.0.6/` is invalid,
+        additionally, paths such as `/v2.0/` are invalid.
+
+        + If the default version of the API is within the major version specified in the URL path,
+        the default version will be applied (i.e. if the default version is `2.3` and the URL path is `/v2/`,
+        then version returned will be `2.3`).
+
+        + If the default version of the API is not within the major version specified in the URL path,
+        the URL path version will be applied (i.e. if the default version is `3.0` and the URL path is `/v2/`,
+        then the version returned will be `2.0`)
+
+    2. Query Parameter Versioning, e.g. `/v2/nodes/?version=2.1.6`
+
+        + Pinning to a specific version via a query parameter is **optional**.
+
+        + A specific version (major, minor, or patch) for a single request can be specified via the `version`
+        query parameter, as long as it is an allowed version.
+
+        + If the version specified in the query parameter does not fall within the same major version
+         specified in the URL path, i.e `/v2/nodes/?version=3.1.4` a `409 Conflict` response will be returned.
+
+    3.  Header Versioning, e.g. `Accept-Header=application/vnd.api+json;version=3.0.1`
+
+        + Pinning to a specific version via request header is **optional**.
+
+        + A specific version (major, minor, or patch) for a single request can be specified
+         via the `Accept Header` of the request, as long as it is an allowed version.
+
+        + If the version specified in the header does not fall within the same major version specified
+         in the URL path a `409 Conflict` response will be returned.
+
+        + If both a header version and query parameter version are specified, the versions must match exactly
+          or a `409 Conflict` response will be returned (i.e. one does not take precedence over the other).
 
     ###Filtering
 
@@ -561,12 +737,12 @@ def root(request, format=None):
         s3           Amazon S3
 
     """
-    if request.user and not request.user.is_anonymous():
+    if request.user and not request.user.is_anonymous:
         user = request.user
         current_user = UserSerializer(user, context={'request': request}).data
     else:
         current_user = None
-
+    kwargs = request.parser_context['kwargs']
     return_val = {
         'meta': {
             'message': 'Welcome to the OSF API.',
@@ -574,13 +750,14 @@ def root(request, format=None):
             'current_user': current_user,
         },
         'links': {
-            'nodes': utils.absolute_reverse('nodes:node-list'),
-            'users': utils.absolute_reverse('users:user-list'),
-            'collections': utils.absolute_reverse('collections:collection-list'),
-            'registrations': utils.absolute_reverse('registrations:registration-list'),
-            'institutions': utils.absolute_reverse('institutions:institution-list'),
-            'licenses': utils.absolute_reverse('licenses:license-list'),
-            'metaschemas': utils.absolute_reverse('metaschemas:metaschema-list'),
+            'nodes': utils.absolute_reverse('nodes:node-list', kwargs=kwargs),
+            'users': utils.absolute_reverse('users:user-list', kwargs=kwargs),
+            'collections': utils.absolute_reverse('collections:collection-list', kwargs=kwargs),
+            'registrations': utils.absolute_reverse('registrations:registration-list', kwargs=kwargs),
+            'institutions': utils.absolute_reverse('institutions:institution-list', kwargs=kwargs),
+            'licenses': utils.absolute_reverse('licenses:license-list', kwargs=kwargs),
+            'metaschemas': utils.absolute_reverse('metaschemas:metaschema-list', kwargs=kwargs),
+            'addons': utils.absolute_reverse('addons:addon-list', kwargs=kwargs),
         }
     }
 
@@ -589,6 +766,13 @@ def root(request, format=None):
 
     return Response(return_val)
 
+@api_view(('GET',))
+@throttle_classes([RootAnonThrottle, UserRateThrottle])
+def status_check(request, format=None, **kwargs):
+    return Response({
+        'maintenance': maintenance.get_maintenance(),
+    })
+
 
 def error_404(request, format=None, *args, **kwargs):
     return JsonResponse(
@@ -596,3 +780,84 @@ def error_404(request, format=None, *args, **kwargs):
         status=404,
         content_type='application/vnd.api+json; application/json'
     )
+
+
+class BaseContributorDetail(JSONAPIBaseView, generics.RetrieveAPIView):
+
+    # overrides RetrieveAPIView
+    def get_object(self):
+        node = self.get_node()
+        user = self.get_user()
+        # May raise a permission denied
+        self.check_object_permissions(self.request, user)
+        try:
+            return node.contributor_set.get(user=user)
+        except Contributor.DoesNotExist:
+            raise NotFound('{} cannot be found in the list of contributors.'.format(user))
+
+
+class BaseContributorList(JSONAPIBaseView, generics.ListAPIView, ListFilterMixin):
+
+    def get_default_queryset(self):
+        node = self.get_node()
+
+        return node.contributor_set.all()
+
+    def get_queryset(self):
+        queryset = self.get_queryset_from_request()
+        # If bulk request, queryset only contains contributors in request
+        if is_bulk_request(self.request):
+            contrib_ids = []
+            for item in self.request.data:
+                try:
+                    contrib_ids.append(item['id'].split('-')[1])
+                except AttributeError:
+                    raise ValidationError('Contributor identifier not provided.')
+                except IndexError:
+                    raise ValidationError('Contributor identifier incorrectly formatted.')
+            queryset[:] = [contrib for contrib in queryset if contrib._id in contrib_ids]
+        return queryset
+
+
+class BaseNodeLinksDetail(JSONAPIBaseView, generics.RetrieveAPIView):
+    pass
+
+
+class BaseNodeLinksList(JSONAPIBaseView, generics.ListAPIView):
+
+    def get_queryset(self):
+        auth = get_user_auth(self.request)
+        query = self.get_node()\
+                .node_relations.select_related('child')\
+                .filter(is_node_link=True, child__is_deleted=False)\
+                .exclude(child__type='osf.collection')
+        return sorted([
+            node_link for node_link in query
+            if node_link.child.can_view(auth) and not node_link.child.is_retracted
+        ], key=lambda node_link: node_link.child.date_modified, reverse=True)
+
+
+class BaseLinkedList(JSONAPIBaseView, generics.ListAPIView):
+
+    permission_classes = (
+        drf_permissions.IsAuthenticatedOrReadOnly,
+        ContributorOrPublic,
+        ReadOnlyIfRegistration,
+        base_permissions.TokenHasScope,
+    )
+
+    required_read_scopes = [CoreScopes.NODE_LINKS_READ]
+    required_write_scopes = [CoreScopes.NULL]
+
+    # subclass must set
+    serializer_class = None
+    view_category = None
+    view_name = None
+
+    # TODO: This class no longer exists
+    # model_class = Pointer
+
+    def get_queryset(self):
+        auth = get_user_auth(self.request)
+
+        return self.get_node().linked_nodes.filter(is_deleted=False).exclude(type='osf.collection').can_view(user=auth.user, private_link=auth.private_link).order_by('-date_modified')

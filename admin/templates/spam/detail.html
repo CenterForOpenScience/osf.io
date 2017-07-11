@@ -16,14 +16,24 @@
                class="btn btn-primary">
                 Back to user's list
             </a>
-            <a href="{% reverse_spam_email comment.id page=page_number status=status %}"
+            {%  if perms.osf.mark_spam %}
+            <a href="{% url 'spam:email' comment.id %}"
+               data-toggle="modal" data-target="#email"
                class="btn btn-default">
                 Email
             </a>
+            {% endif %}
+            <div class="modal" id="email">
+                <div class="modal-dialog">
+                    <div class="modal-content"></div>
+                    {# Data from above link #}
+                </div>
+            </div>
         </div>
 
         <br>
 
+        {%  if perms.osf.mark_spam %}
         <div class="row">
         <div class="panel col-md-6">
         <form action="{% reverse_spam_detail comment.id page=page_number status=status %}"
@@ -45,6 +55,7 @@
         </form>
         </div>
         </div>
+        {% endif %}
 
         {# General info about the comment #}
         <div class="row">
@@ -70,13 +81,13 @@
             <div class="col-md-6">
                 <h4>
                     <strong>Status: </strong>
-                    {% if comment.spam_status == UNKNOWN %}
+                    {% if comment.spam_status == SPAM_STATUS.UNKNOWN %}
                         <span class="label label-default">Unknown</span>
-                    {% elif comment.spam_status == FLAGGED %}
+                    {% elif comment.spam_status == SPAM_STATUS.FLAGGED %}
                         <span class="label label-warning">Flagged</span>
-                    {% elif comment.spam_status == SPAM %}
+                    {% elif comment.spam_status == SPAM_STATUS.SPAM %}
                         <span class="label label-danger">Spam</span>
-                    {% elif comment.spam_status == HAM %}
+                    {% elif comment.spam_status == SPAM_STATUS.HAM %}
                         <span class="label label-success">Ham</span>
                     {% endif %}
                 </h4>
@@ -115,6 +126,9 @@
                         <div class="col-md-6">
                             <strong>Reporter:</strong>
                             {{ report.reporter.fullname }}
+                            (<a href="{{ report.reporter.pk | reverse_user }}">
+                            User's profile
+                            </a>)
                         </div>
                         <div class="col-md-6">
                             <strong>

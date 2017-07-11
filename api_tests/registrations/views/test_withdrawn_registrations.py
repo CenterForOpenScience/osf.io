@@ -7,7 +7,7 @@ from api.base.settings.defaults import API_BASE
 from framework.auth.core import Auth
 
 from tests.base import fake
-from tests.factories import (
+from osf_tests.factories import (
     ProjectFactory,
     CommentFactory,
     RegistrationFactory,
@@ -26,7 +26,7 @@ class TestWithdrawnRegistrations(NodeCRUDTestCase):
         self.public_pointer = self.public_project.add_pointer(self.public_pointer_project,
                                                               auth=Auth(self.user),
                                                               save=True)
-        self.withdrawn_url = '/{}registrations/{}/'.format(API_BASE, self.registration._id)
+        self.withdrawn_url = '/{}registrations/{}/?version=2.2'.format(API_BASE, self.registration._id)
         self.withdrawn_registration.justification = 'We made a major error.'
         self.withdrawn_registration.save()
 
@@ -71,7 +71,7 @@ class TestWithdrawnRegistrations(NodeCRUDTestCase):
     def test_cannot_access_withdrawn_node_links_detail(self):
         url = '/{}registrations/{}/node_links/{}/'.format(API_BASE, self.registration._id, self.public_pointer._id)
         res = self.app.get(url, auth=self.user.auth, expect_errors=True)
-        assert_equal(res.status_code, 404)
+        assert_equal(res.status_code, 403)
 
     def test_cannot_access_withdrawn_node_links_list(self):
         url = '/{}registrations/{}/node_links/'.format(API_BASE, self.registration._id)
@@ -95,15 +95,17 @@ class TestWithdrawnRegistrations(NodeCRUDTestCase):
         res = self.app.get(self.withdrawn_url, auth=self.user.auth)
         assert_equal(res.status_code, 200)
         attributes = res.json['data']['attributes']
+        registration.reload()
         expected_attributes = {
             'title': registration.title,
             'description': registration.description,
-            'date_created': registration.date_created.isoformat(),
-            'date_registered': registration.registered_date.isoformat(),
+            'date_created': registration.date_created.isoformat().replace('+00:00', 'Z'),
+            'date_registered': registration.registered_date.isoformat().replace('+00:00', 'Z'),
+            'date_modified': registration.date_modified.isoformat().replace('+00:00', 'Z'),
+            'date_withdrawn': registration.retraction.date_retracted.isoformat().replace('+00:00', 'Z'),
             'withdrawal_justification': registration.retraction.justification,
             'public': None,
             'category': None,
-            'date_modified': None,
             'registration': True,
             'fork': None,
             'collection': None,
@@ -115,7 +117,7 @@ class TestWithdrawnRegistrations(NodeCRUDTestCase):
             'embargo_end_date': None,
             'registered_meta': None,
             'current_user_permissions': None,
-            'registration_supplement': registration.registered_schema[0].name
+            'registration_supplement': registration.registered_schema.first().name
         }
 
         for attribute in expected_attributes:

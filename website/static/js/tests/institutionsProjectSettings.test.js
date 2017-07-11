@@ -56,10 +56,6 @@ describe('InstitutionSettings', () => {
 
     var viewModel = new InstitutionProjectSettings.ViewModel(data);
 
-    viewModel.institutionInAllChildren = function() {
-        return false;
-    };
-
     it('user variables set', () => {
         assert.equal(viewModel.userInstitutions, data.currentUser.institutions);
         assert.equal(viewModel.userInstitutionsIds.length, 2);
@@ -84,14 +80,14 @@ describe('InstitutionSettings', () => {
     });
 
     it('shows a dialog if the Node has children', () => {
-        viewModel.hasChildren(true);
+        viewModel.childExists(true);
         viewModel.submitInst(item);
         assert(modifyStub.called);
     });
 
     it('does not show dialog if the Node has no children', () => {
 
-        viewModel.hasChildren(false);
+        viewModel.childExists(false);
         viewModel.submitInst(item);
         assert.isFalse(modifyStub.called);
     });

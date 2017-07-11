@@ -1,0 +1,41 @@
+{% extends 'base.html' %}
+
+{% block content %}
+    <form method="GET">
+      Filter: <select name="provider_id" onchange="filterSubjects(this.value)">
+        {% for id, name in filterable_provider_ids.items %}
+          <option value={{id}}>{{name}}</option>
+        {% endfor %}
+      </select>
+    </form>
+
+    <table style="width:100%">
+      <tr>
+        <td> ID </td>
+        <td> Text </td>
+        <td> Provider </td>
+        <td> Level </td>
+        <td> Highlighted </td>
+        <td> Edit </td>
+      </tr>
+    {% for obj in object_list %}
+      <tr>
+        <td> {{obj.id}} </td>
+        <td> {{obj.text}} </td>
+        <td> {{obj.provider.name}} </td>
+        <td> {{obj.hierarchy|length}} </td>
+        <td> {{obj.highlighted}} </td>
+        <td> <a href="{% url 'subjects:update' obj.id %}"><button> Edit </button></a> </td>
+      </tr>
+    {% endfor %}
+    </table>
+    {% include "util/pagination.html" with items=page_obj status=status %}
+{% endblock %}
+
+{% block bottom_js %}
+  <script>
+    function filterSubjects(provider_id) {
+      document.location.search = "?provider_id=" + provider_id;
+    }
+  </script>
+{% endblock %}

@@ -1,11 +1,10 @@
 from babel import dates, core, Locale
 
+from osf.models import AbstractNode, OSFUser, NotificationDigest, NotificationSubscription
+
 from website import mails
-from website import models as website_models
 from website.notifications import constants
 from website.notifications import utils
-from website.notifications.model import NotificationDigest
-from website.notifications.model import NotificationSubscription
 from website.util import web_url_for
 
 
@@ -20,28 +19,36 @@ def notify(event, user, node, timestamp, **context):
         target_user: used with comment_replies
     :return: List of user ids notifications were sent to
     """
-    event_type = utils.find_subscription_type(event)
-    subscriptions = compile_subscriptions(node, event_type, event)
     sent_users = []
+    # The user who the current comment is a reply to
     target_user = context.get('target_user', None)
-    if target_user:
-        target_user_id = target_user._id
-        if event_type in constants.USER_SUBSCRIPTIONS_AVAILABLE:
-            subscriptions = get_user_subscriptions(target_user, event_type)
+    exclude = context.get('exclude', [])
+    # do not notify user who initiated the emails
+    exclude.append(user._id)
+
+    event_type = utils.find_subscription_type(event)
+    if target_user and event_type in constants.USER_SUBSCRIPTIONS_AVAILABLE:
+        # global user
+        subscriptions = get_user_subscriptions(target_user, event_type)
+    else:
+        # local project user
+        subscriptions = compile_subscriptions(node, event_type, event)
+
     for notification_type in subscriptions:
-        if notification_type != 'none' and subscriptions[notification_type]:
-            if user in subscriptions[notification_type]:
-                subscriptions[notification_type].pop(subscriptions[notification_type].index(user))
-            if target_user and target_user_id in subscriptions[notification_type]:
-                subscriptions[notification_type].pop(subscriptions[notification_type].index(target_user_id))
-                if target_user_id != user._id:
-                    store_emails([target_user_id], notification_type, 'comment_replies', user, node,
-                                 timestamp, **context)
-                    sent_users.append(target_user_id)
-            if subscriptions[notification_type]:
-                store_emails(subscriptions[notification_type], notification_type, event_type, user, node,
-                             timestamp, **context)
-                sent_users.extend(subscriptions[notification_type])
+        if notification_type == 'none' or not subscriptions[notification_type]:
+            continue
+        # Remove excluded ids from each notification type
+        subscriptions[notification_type] = [guid for guid in subscriptions[notification_type] if guid not in exclude]
+
+        # If target, they get a reply email and are removed from the general email
+        if target_user and target_user._id in subscriptions[notification_type]:
+            subscriptions[notification_type].remove(target_user._id)
+            store_emails([target_user._id], notification_type, 'comment_replies', user, node, timestamp, **context)
+            sent_users.append(target_user._id)
+
+        if subscriptions[notification_type]:
+            store_emails(subscriptions[notification_type], notification_type, event_type, user, node, timestamp, **context)
+            sent_users.extend(subscriptions[notification_type])
     return sent_users
 
 def notify_mentions(event, user, node, timestamp, **context):
@@ -49,10 +56,14 @@ def notify_mentions(event, user, node, timestamp, **context):
     sent_users = []
     new_mentions = context.get('new_mentions', [])
     for m in new_mentions:
-        mentioned_user = website_models.User.load(m)
+        mentioned_user = OSFUser.load(m)
         subscriptions = get_user_subscriptions(mentioned_user, event_type)
         for notification_type in subscriptions:
-            if notification_type != 'none' and subscriptions[notification_type] and m in subscriptions[notification_type]:
+            if (
+                notification_type != 'none' and
+                subscriptions[notification_type] and
+                m in subscriptions[notification_type]
+            ):
                 store_emails([m], notification_type, 'mentions', user, node,
                                  timestamp, **context)
                 sent_users.extend([m])
@@ -72,17 +83,19 @@ def store_emails(recipient_ids, notification_type, event, user, node, timestamp,
     :param context:
     :return: --
     """
+
     if notification_type == 'none':
         return
 
     template = event + '.html.mako'
+    # user whose action triggered email sending
     context['user'] = user
     node_lineage_ids = get_node_lineage(node) if node else []
 
-    for user_id in recipient_ids:
-        if user_id == user._id:
+    for recipient_id in recipient_ids:
+        if recipient_id == user._id:
             continue
-        recipient = website_models.User.load(user_id)
+        recipient = OSFUser.load(recipient_id)
         context['localized_timestamp'] = localize_timestamp(timestamp, recipient)
         message = mails.render_message(template, **context)
 
@@ -90,7 +103,7 @@ def store_emails(recipient_ids, notification_type, event, user, node, timestamp,
             timestamp=timestamp,
             send_type=notification_type,
             event=event,
-            user_id=user_id,
+            user=recipient,
             message=message,
             node_lineage=node_lineage_ids
         )
@@ -112,7 +125,7 @@ def compile_subscriptions(node, event_type, event=None, level=0):
         parent_subscriptions = compile_subscriptions(node, event_type, level=level + 1)  # get node and parent subs
     elif node.parent_id:
         parent_subscriptions = \
-            compile_subscriptions(website_models.Node.load(node.parent_id), event_type, level=level + 1)
+            compile_subscriptions(AbstractNode.load(node.parent_id), event_type, level=level + 1)
     else:
         parent_subscriptions = check_node(None, event_type)
     for notification_type in parent_subscriptions:
@@ -134,15 +147,19 @@ def check_node(node, event):
         subscription = NotificationSubscription.load(utils.to_subscription_key(node._id, event))
         for notification_type in node_subscriptions:
             users = getattr(subscription, notification_type, [])
-            for user in users:
-                if node.has_permission(user, 'read'):
-                    node_subscriptions[notification_type].append(user._id)
+            if users:
+                for user in users.all():
+                    if node.has_permission(user, 'read'):
+                        node_subscriptions[notification_type].append(user._id)
     return node_subscriptions
 
 
 def get_user_subscriptions(user, event):
     user_subscription = NotificationSubscription.load(utils.to_subscription_key(user._id, event))
-    return {key: getattr(user_subscription, key, []) for key in constants.NOTIFICATION_TYPES}
+    if user_subscription:
+        return {key: list(getattr(user_subscription, key).all().values_list('guids___id', flat=True)) for key in constants.NOTIFICATION_TYPES}
+    else:
+        return {key: [] for key in constants.NOTIFICATION_TYPES}
 
 
 def get_node_lineage(node):
@@ -152,7 +169,7 @@ def get_node_lineage(node):
     lineage = [node._id]
 
     while node.parent_id:
-        node = website_models.Node.load(node.parent_id)
+        node = node.parent_node
         lineage = [node._id] + lineage
 
     return lineage
@@ -162,7 +179,7 @@ def get_settings_url(uid, user):
     if uid == user._id:
         return web_url_for('user_notifications', _absolute=True)
 
-    node = website_models.Node.load(uid)
+    node = AbstractNode.load(uid)
     assert node, 'get_settings_url recieved an invalid Node id'
     return node.web_url_for('node_setting', _guid=True, _absolute=True)
 

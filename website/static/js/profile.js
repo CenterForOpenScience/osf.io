@@ -9,7 +9,39 @@ require('knockout-sortable');
 
 var $osf = require('./osfHelpers');
 var koHelpers = require('./koHelpers');
+var m = require('mithril');
 require('js/objectCreateShim');
+
+// Adapted from Django URLValidator
+function urlRegex() {
+    var ul = '\\u00a1-\\uffff'; // unicode character range
+    // IP patterns
+    var ipv4_re = '(?:25[0-5]|2[0-4]\\d|[0-1]?\\d?\\d)(?:\\.(?:25[0-5]|2[0-4]\\d|[0-1]?\\d?\\d)){3}';
+    var ipv6_re = '\\[[0-9a-f:\\.]+\\]';  // (simple regex, validated later)
+
+    // Host patterns
+    var hostname_re = '[a-z' + ul + '0-9](?:[a-z' + ul + '0-9-]{0,61}[a-z' + ul + '0-9])?';
+    // Max length for domain name labels is 63 characters per RFC 1034 sec. 3.1
+    var domain_re = '(?:\\.(?!-)[a-z' + ul + '0-9-]{0,62}[a-z' + ul + '0-9])*';
+    var tld_re = (
+        '\\.' +                               // dot
+        '(?!-)' +                             // can't start with a dash
+        '(?:xn--[a-z0-9]{1,59}' +             // punycode labels (first for an eager regex match)
+        '|[a-z' + ul + '-]{1,62}' +           // or domain label
+        '[a-z' + ul + '])' +                  // can't end with a dash
+        '\\.?');                              // may have a trailing dot
+    var host_re = '(' + hostname_re + domain_re + tld_re + '|localhost)';
+
+    var regex = (
+        '^(?:[a-z0-9\\.\\-\\+]*):\\/\\/' +  // scheme is validated separately
+        '(?:\\S+(?::\\S*)?@)?' +  // user:pass authentication
+        '(?:' + ipv4_re + '|' + ipv6_re + '|' + host_re + ')' +
+        '(?::\\d{2,5})?' +  // port
+        '(?:[/?#][^\\s]*)?' +  // resource path
+        '$');
+
+    return new RegExp(regex, 'i');
+}
 
 var socialRules = {
     orcid: /orcid\.org\/([-\d]+)/i,
@@ -17,17 +49,13 @@ var socialRules = {
     scholar: /scholar\.google\.com\/citations\?user=(\w+)/i,
     twitter: /twitter\.com\/(\w+)/i,
     linkedIn: /.*\/?(in\/.*|profile\/.*|pub\/.*)/i,
-    impactStory: /impactstory\.org\/([\w\.-]+)/i,
+    impactStory: /impactstory\.org\/u\/([\w\.-]+)/i,
     github: /github\.com\/(\w+)/i,
     researchGate: /researchgate\.net\/profile\/(\w+)/i,
     academia: /(\w+)\.academia\.edu\/(\w+)/i,
     baiduScholar: /xueshu\.baidu\.com\/scholarID\/(\w+)/i,
-    url: '^(https?:\\/\\/)?'+ // protocol
-            '((([a-z\\d]([a-z\\d-]*[a-z\\d])*)\\.)+[a-z]{2,}|'+ // domain name
-            '((\\d{1,3}\\.){3}\\d{1,3}))'+ // OR ip (v4) address
-            '(\\:\\d+)?(\\/[-a-z\\d%_.~+]*)*'+ // port and path
-            '(\\?[;&a-z\\d%_.~+=-]*)?'+ // query string
-            '(\\#[-a-z\\d_]*)?$'
+    ssrn: /papers\.ssrn\.com\/sol3\/cf\_dev\/AbsByAuth\.cfm\?per\_id=(\w+)/i,
+    url: urlRegex()
 };
 
 var cleanByRule = function(rule) {
@@ -235,15 +263,17 @@ var BaseViewModel = function(urls, modes, preventUnsaved) {
     }
 
     // Warn on tab change if dirty
-    $('body').on('show.bs.tab', function() {
-        if (self.dirty()) {
-            $osf.growl('There are unsaved changes to your settings.',
-                    'Please save or discard your changes before switching ' +
-                    'tabs.');
-            return false;
-        }
-        return true;
-    });
+    if (preventUnsaved !== false) {
+        $('body').on('show.bs.tab', function() {
+            if (self.dirty()) {
+                $osf.growl('There are unsaved changes to your settings.',
+                        'Please save or discard your changes before switching ' +
+                        'tabs.');
+                return false;
+            }
+            return true;
+        });
+    }
 
     this.message = ko.observable();
     this.messageClass = ko.observable();
@@ -496,9 +526,9 @@ var extendLink = function(obs, $parent, label, baseUrl) {
     return obs;
 };
 
-var SocialViewModel = function(urls, modes) {
+var SocialViewModel = function(urls, modes, preventUnsaved) {
     var self = this;
-    BaseViewModel.call(self, urls, modes);
+    BaseViewModel.call(self, urls, modes, preventUnsaved);
     TrackedMixin.call(self);
 
     self.addons = ko.observableArray();
@@ -521,12 +551,24 @@ var SocialViewModel = function(urls, modes) {
         return false;
     });
 
+    function urlIsValid(value) {
+        // First validate the scheme
+        var schemes = ['http', 'https', 'ftp', 'ftps'];
+        if (value.indexOf('://') === -1) {
+            value = 'http://' + value;
+        }
+        var scheme = value.split('://')[0].toLowerCase();
+        if (schemes.indexOf(scheme) === -1) {
+            return false;
+        }
+        return socialRules.url.test(value);
+    }
+
     self.hasValidWebsites = ko.pureComputed(function() {
         //Check to see if there are bad profile websites
         var profileWebsites = ko.toJS(self.profileWebsites());
-        var urlexp = new RegExp(socialRules.url,'i'); // fragment locator
         for (var i=0; i<profileWebsites.length; i++) {
-            if (profileWebsites[i] && !urlexp.test(profileWebsites[i])) {
+            if (profileWebsites[i] && !urlIsValid(profileWebsites[i])) {
                 return false;
             }
         }
@@ -555,7 +597,7 @@ var SocialViewModel = function(urls, modes) {
     );
     self.impactStory = extendLink(
         ko.observable().extend({trimmed: true, cleanup: cleanByRule(socialRules.impactStory)}),
-        self, 'impactStory', 'https://www.impactstory.org/'
+        self, 'impactStory', 'https://impactstory.org/u/'
     );
     self.github = extendLink(
         ko.observable().extend({trimmed: true, cleanup: cleanByRule(socialRules.github)}),
@@ -578,6 +620,10 @@ var SocialViewModel = function(urls, modes) {
         ko.observable().extend({trimmed: true, cleanup: cleanByRule(socialRules.baiduScholar)}),
         self, 'baiduScholar', 'http://xueshu.baidu.com/scholarID/'
     );
+    self.ssrn = extendLink(
+        ko.observable().extend({trimmed: true, cleanup: cleanByRule(socialRules.ssrn)}),
+        self, 'ssrn', 'http://papers.ssrn.com/sol3/cf_dev/AbsByAuth.cfm?per_id='
+    );
 
     self.trackedProperties = [
         self.profileWebsites,
@@ -591,7 +637,8 @@ var SocialViewModel = function(urls, modes) {
         self.researchGate,
         self.academiaInstitution,
         self.academiaProfileID,
-        self.baiduScholar
+        self.baiduScholar,
+        self.ssrn,
     ];
 
     var validated = ko.validatedObservable(self);
@@ -611,7 +658,8 @@ var SocialViewModel = function(urls, modes) {
             {label: 'Google Scholar', text: self.scholar(), value: self.scholar.url()},
             {label: 'ResearchGate', text: self.researchGate(), value: self.researchGate.url()},
             {label: 'Academia', text: self.academiaInstitution() + '.academia.edu/' + self.academiaProfileID(), value: self.academiaInstitution.url() + self.academiaProfileID.url()},
-            {label: 'Baidu Scholar', text: self.baiduScholar(), value: self.baiduScholar.url()}
+            {label: 'Baidu Scholar', text: self.baiduScholar(), value: self.baiduScholar.url()},
+            {label: 'SSRN', text: self.ssrn(), value: self.ssrn.url()},
         ];
     });
 
@@ -714,6 +762,7 @@ SocialViewModel.prototype.submit = function() {
         );
     }
     else if (this.hasValidProperty() && this.isValid()) {
+        var self = this;
         this.saving(true);
         $osf.putJSON(
             this.urls.crud,
@@ -725,16 +774,16 @@ SocialViewModel.prototype.submit = function() {
         ).fail(
             this.handleError.bind(this)
         ).always(
-            function() { this.saving(false); }
+            function() { self.saving(false); }
         );
     } else {
         this.showMessages(true);
     }
 };
 
-var ListViewModel = function(ContentModel, urls, modes) {
+var ListViewModel = function(ContentModel, urls, modes, preventUnsaved) {
     var self = this;
-    BaseViewModel.call(self, urls, modes);
+    BaseViewModel.call(self, urls, modes, preventUnsaved);
 
     self.ContentModel = ContentModel;
     self.contents = ko.observableArray();
@@ -1016,42 +1065,42 @@ var SchoolViewModel = function() {
 };
 $.extend(SchoolViewModel.prototype, DateMixin.prototype, TrackedMixin.prototype);
 
-var JobsViewModel = function(urls, modes) {
+var JobsViewModel = function(urls, modes, preventUnsaved) {
     var self = this;
-    ListViewModel.call(self, JobViewModel, urls, modes);
+    ListViewModel.call(self, JobViewModel, urls, modes, preventUnsaved);
 
     self.fetch();
 };
 JobsViewModel.prototype = Object.create(ListViewModel.prototype);
 
-var SchoolsViewModel = function(urls, modes) {
+var SchoolsViewModel = function(urls, modes, preventUnsaved) {
     var self = this;
-    ListViewModel.call(self, SchoolViewModel, urls, modes);
+    ListViewModel.call(self, SchoolViewModel, urls, modes, preventUnsaved);
 
     self.fetch();
 };
 SchoolsViewModel.prototype = Object.create(ListViewModel.prototype);
 
-var Names = function(selector, urls, modes) {
-    this.viewModel = new NameViewModel(urls, modes);
+var Names = function(selector, urls, modes, preventUnsaved) {
+    this.viewModel = new NameViewModel(urls, modes, preventUnsaved);
     $osf.applyBindings(this.viewModel, selector);
     window.nameModel = this.viewModel;
 };
 
-var Social = function(selector, urls, modes) {
-    this.viewModel = new SocialViewModel(urls, modes);
+var Social = function(selector, urls, modes, preventUnsaved) {
+    this.viewModel = new SocialViewModel(urls, modes, preventUnsaved);
     $osf.applyBindings(this.viewModel, selector);
     window.social = this.viewModel;
 };
 
-var Jobs = function(selector, urls, modes) {
-    this.viewModel = new JobsViewModel(urls, modes);
+var Jobs = function(selector, urls, modes, preventUnsaved) {
+    this.viewModel = new JobsViewModel(urls, modes, preventUnsaved);
     $osf.applyBindings(this.viewModel, selector);
     window.jobsModel = this.viewModel;
 };
 
-var Schools = function(selector, urls, modes) {
-    this.viewModel = new SchoolsViewModel(urls, modes);
+var Schools = function(selector, urls, modes, preventUnsaved) {
+    this.viewModel = new SchoolsViewModel(urls, modes, preventUnsaved);
     $osf.applyBindings(this.viewModel, selector);
 };
 
@@ -1066,4 +1115,3 @@ module.exports = {
     SocialViewModel: SocialViewModel,
     BaseViewModel: BaseViewModel
 };
-

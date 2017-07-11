@@ -15,6 +15,27 @@ var util = require('./util.js');
 
 var model = {};
 
+// This stops the FileEditor Ajax from being called twice on load when
+// Mithril reloads the controller twice
+var FileFetcher = {
+    clear: function(){
+        self = this;
+        delete self.promise;
+    },
+    fetch: function(url, reload){
+        self = this;
+        if(typeof self.promise === 'undefined' || reload){
+            self.promise = $.ajax({
+                type: 'GET',
+                url: url,
+                dataType: 'text',
+                beforeSend: $osf.setXHRAuthorization,
+            });
+        }
+        return self.promise;
+    }
+};
+
 var FileEditor = {
     controller: function(contentUrl, shareWSUrl, editorMeta, observables) {
         var self = {};
@@ -23,6 +44,10 @@ var FileEditor = {
         self.loaded = false;
         self.initialText = '';
         self.editorMeta = editorMeta;
+        self.sharejs_running = true;
+        if (typeof sharejs === 'undefined') {
+            self.sharejs_running = false;
+        }        
 
         self.observables = observables;
 
@@ -38,14 +63,11 @@ var FileEditor = {
             new ShareJSDoc(shareWSUrl, self.editorMeta, model.editor, self.observables);
         };
 
-        self.reloadFile = function() {
+        self.loadFile = function(reload) {
             self.loaded = false;
-            $.ajax({
-                type: 'GET',
-                url: self.url,
-                dataType: 'text',
-                beforeSend: $osf.setXHRAuthorization,
-            }).done(function (parsed, status, response) {
+            var response = FileFetcher.fetch(self.url, reload);
+
+            response.done(function (parsed, status, response) {
                 m.startComputation();
                 self.loaded = true;
                 self.initialText = response.responseText;
@@ -53,7 +75,9 @@ var FileEditor = {
                     model.editor.setValue(self.initialText);
                 }
                 m.endComputation();
-            }).fail(function (xhr, textStatus, error) {
+            });
+
+            response.fail(function (xhr, textStatus, error) {
                 $osf.growl('Error','The file content could not be loaded.');
                 Raven.captureMessage('Could not GET file contents.', {
                     extra: {
@@ -76,6 +100,7 @@ var FileEditor = {
                 data: model.editor.getValue(),
                 beforeSend: $osf.setXHRAuthorization
             }).done(function () {
+                FileFetcher.clear();
                 model.editor.setReadOnly(false);
                 self.unthrottledStatus(oldstatus);
                 $(document).trigger('fileviewpage:reload');
@@ -114,13 +139,13 @@ var FileEditor = {
 
             return clean1 !== clean2;
         };
-
-        self.reloadFile();
+        
+        self.loadFile(false);
 
         return self;
     },
     view: function(ctrl) {
-        if (!ctrl.loaded) {
+        if (!ctrl.loaded || !ctrl.sharejs_running) {
             return util.Spinner;
         }
         return m('.editor-pane.panel-body', [
@@ -148,7 +173,7 @@ var FileEditor = {
             m('[style=position:inherit]', [
                 m('.row', m('.col-sm-12', [
                     m('.pull-right', [
-                        m('button#fileEditorRevert.btn.btn-sm.btn-danger', {onclick: function(){ctrl.reloadFile();}}, 'Revert'),
+                        m('button#fileEditorRevert.btn.btn-sm.btn-danger', {onclick: function(){ctrl.loadFile(true);}}, 'Revert'),
                         ' ',
                         m('button#fileEditorSave.btn.btn-sm.btn-success', {onclick: function() {ctrl.saveFile();}}, 'Save')
                     ])

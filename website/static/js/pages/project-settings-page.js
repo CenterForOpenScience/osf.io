@@ -83,7 +83,11 @@ $(document).ready(function() {
     }
 
     $('#deleteNode').on('click', function() {
-        ProjectSettings.getConfirmationCode(ctx.node.nodeType);
+        if(ctx.node.childExists){
+            $osf.growl('Error', 'Any child components must be deleted prior to deleting this project.','danger', 30000);
+        }else{
+            ProjectSettings.getConfirmationCode(ctx.node.nodeType, ctx.node.isPreprint);
+        }
     });
 
     // TODO: Knockout-ify me
@@ -137,7 +141,7 @@ $(document).ready(function() {
         var unchecked = checkedOnLoad.filter('#selectAddonsForm input:not(:checked)');
         var checked = uncheckedOnLoad.filter('#selectAddonsForm input:checked');
         var msgElm = $(this).find('.addon-settings-message');
-        
+
         var submit = function() {
             var request = $osf.postJSON(ctx.node.urls.api + 'settings/addons/', formData);
             return request;

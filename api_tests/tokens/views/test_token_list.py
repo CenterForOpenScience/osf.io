@@ -3,12 +3,12 @@ import mock
 
 from nose.tools import * # flake8: noqa
 
-from website.models import User, ApiOAuth2PersonalToken
+from osf.models import ApiOAuth2PersonalToken
 from website.util import api_v2_url
 from website.util import sanitize
 
 from tests.base import ApiTestCase
-from tests.factories import ApiOAuth2PersonalTokenFactory, AuthUserFactory
+from osf_tests.factories import ApiOAuth2PersonalTokenFactory, AuthUserFactory
 
 TOKEN_LIST_URL = api_v2_url('tokens/', base_route='/')
 
@@ -122,8 +122,3 @@ class TestTokenList(ApiTestCase):
         )
         assert_equal(res.status_code, 400)
         assert_equal(res.json['errors'][0]['detail'], 'User requested invalid scope')
-
-    def tearDown(self):
-        super(TestTokenList, self).tearDown()
-        ApiOAuth2PersonalToken.remove()
-        User.remove()

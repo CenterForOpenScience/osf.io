@@ -6,7 +6,7 @@ import mock
 from nose.tools import *  # noqa
 
 from tests.base import OsfTestCase
-from website.addons.osfstorage.tests.factories import FileVersionFactory
+from addons.osfstorage.tests.factories import FileVersionFactory
 from scripts.osfstorage import settings as storage_settings
 from scripts.osfstorage import files_audit
 from scripts.osfstorage.files_audit import ensure_parity, ensure_glacier, download_from_cloudfiles

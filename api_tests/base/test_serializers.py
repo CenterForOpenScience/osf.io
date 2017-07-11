@@ -1,21 +1,44 @@
 # -*- coding: utf-8 -*-
 import httplib as http
-import contextlib
-import mock
+import importlib
+import pkgutil
+
+import pytest
+from pytz import utc
+from datetime import datetime
+import urllib
 
 from nose.tools import *  # flake8: noqa
 import re
 
 from tests.base import ApiTestCase, DbTestCase
-from tests import factories
-from tests.utils import make_drf_request
+from osf_tests import factories
+from tests.utils import make_drf_request_with_version
 
 from api.base.settings.defaults import API_BASE
-from api.base.serializers import JSONAPISerializer
+from api.base.serializers import JSONAPISerializer, BaseAPISerializer
 from api.base import serializers as base_serializers
 from api.nodes.serializers import NodeSerializer, RelationshipField
 from api.registrations.serializers import RegistrationSerializer
 
+SER_MODULES = []
+for loader, name, _ in pkgutil.iter_modules(['api']):
+    if name != 'base' and name != 'test':
+        try:
+            SER_MODULES.append(importlib.import_module('api.{}.serializers'.format(name)))
+        except ImportError:
+            pass
+
+SER_CLASSES = []
+for mod in SER_MODULES:
+    for name, val in mod.__dict__.iteritems():
+        try:
+            if issubclass(val, BaseAPISerializer):
+                if 'JSONAPI' in name or 'BaseAPI' in name:
+                    continue
+                SER_CLASSES.append(val)
+        except TypeError:
+            pass
 
 class FakeModel(object):
 
@@ -54,6 +77,13 @@ class FakeSerializer(base_serializers.JSONAPISerializer):
         return 'http://foo.com'
 
 
+class TestSerializerMetaType(ApiTestCase):
+    def test_expected_serializers_have_meta_types(self):
+        for ser in SER_CLASSES:
+            assert hasattr(ser, 'Meta'), 'Serializer {} has no Meta'.format(ser)
+            assert hasattr(ser.Meta, 'type_'), 'Serializer {} has no Meta.type_'.format(ser)
+
+
 class TestNodeSerializerAndRegistrationSerializerDifferences(ApiTestCase):
     """
     All fields on the Node Serializer other than the few we can serialize for withdrawals must be redeclared on the
@@ -74,7 +104,7 @@ class TestNodeSerializerAndRegistrationSerializerDifferences(ApiTestCase):
     def test_registration_serializer(self):
 
         # fields that are visible for withdrawals
-        visible_on_withdrawals = ['contributors', 'date_created', 'description', 'id', 'links', 'registration', 'title', 'type', 'current_user_can_comment']
+        visible_on_withdrawals = ['contributors', 'date_created', 'date_modified', 'description', 'id', 'links', 'registration', 'title', 'type', 'current_user_can_comment', 'preprint']
         # fields that do not appear on registrations
         non_registration_fields = ['registrations', 'draft_registrations']
 
@@ -83,7 +113,8 @@ class TestNodeSerializerAndRegistrationSerializerDifferences(ApiTestCase):
             reg_field = RegistrationSerializer._declared_fields[field]
 
             if field not in visible_on_withdrawals and field not in non_registration_fields:
-                assert_true(isinstance(reg_field, base_serializers.HideIfWithdrawal))
+                assert_true(isinstance(reg_field, base_serializers.HideIfWithdrawal)
+                            or isinstance(reg_field, base_serializers.ShowIfVersion))
 
     def test_hide_if_registration_fields(self):
 
@@ -103,14 +134,13 @@ class TestNodeSerializerAndRegistrationSerializerDifferences(ApiTestCase):
 class TestNullLinks(ApiTestCase):
 
     def test_null_links_are_omitted(self):
-        req = make_drf_request()
+        req = make_drf_request_with_version(version='2.0')
         rep = FakeSerializer(FakeModel, context={'request': req}).data['data']
 
         assert_not_in('null_field', rep['links'])
         assert_in('valued_field', rep['links'])
         assert_not_in('null_link_field', rep['relationships'])
         assert_in('valued_link_field', rep['relationships'])
-
 
 
 class TestApiBaseSerializers(ApiTestCase):
@@ -226,33 +256,34 @@ class TestApiBaseSerializers(ApiTestCase):
 
 
 
-class TestRelationshipField(DbTestCase):
+@pytest.mark.django_db
+class TestRelationshipField:
 
     # We need a Serializer to test the Relationship field (needs context)
     class BasicNodeSerializer(JSONAPISerializer):
 
         parent = RelationshipField(
             related_view='nodes:node-detail',
-            related_view_kwargs={'node_id': '<pk>'}
+            related_view_kwargs={'node_id': '<_id>'}
         )
 
         parent_with_meta = RelationshipField(
             related_view='nodes:node-detail',
-            related_view_kwargs={'node_id': '<pk>'},
+            related_view_kwargs={'node_id': '<_id>'},
             related_meta={'count': 'get_count', 'extra': 'get_extra'},
         )
 
         self_and_related_field = RelationshipField(
             related_view='nodes:node-detail',
-            related_view_kwargs={'node_id': '<pk>'},
+            related_view_kwargs={'node_id': '<_id>'},
             self_view='nodes:node-contributors',
-            self_view_kwargs={'node_id': '<pk>'},
+            self_view_kwargs={'node_id': '<_id>'},
         )
 
         two_url_kwargs = RelationshipField(
             # fake url, for testing purposes
             related_view='nodes:node-pointer-detail',
-            related_view_kwargs={'node_id': '<pk>', 'node_link_id': '<pk>'},
+            related_view_kwargs={'node_id': '<_id>', 'node_link_id': '<_id>'},
         )
 
         not_attribute_on_target = RelationshipField(
@@ -266,8 +297,14 @@ class TestRelationshipField(DbTestCase):
         registered_from = RelationshipField(
             related_view=lambda n: 'registrations:registration-detail' if n and n.is_registration else 'nodes:node-detail',
             related_view_kwargs=lambda n: {
-                'node_id': '<registered_from_id>'
+                'node_id': '<registered_from._id>'
             }
+        )
+
+        field_with_filters = base_serializers.RelationshipField(
+            related_view='nodes:node-detail',
+            related_view_kwargs={'node_id': '<_id>'},
+            filter={'target': 'hello', 'woop': 'yea'}
         )
 
         class Meta:
@@ -283,7 +320,7 @@ class TestRelationshipField(DbTestCase):
 
     # Regression test for https://openscience.atlassian.net/browse/OSF-4832
     def test_serializing_meta(self):
-        req = make_drf_request()
+        req = make_drf_request_with_version(version='2.0')
         project = factories.ProjectFactory()
         node = factories.NodeFactory(parent=project)
         data = self.BasicNodeSerializer(node, context={'request': req}).data['data']
@@ -294,7 +331,7 @@ class TestRelationshipField(DbTestCase):
         assert_equal(meta['extra'], 'foo')
 
     def test_self_and_related_fields(self):
-        req = make_drf_request()
+        req = make_drf_request_with_version(version='2.0')
         project = factories.ProjectFactory()
         node = factories.NodeFactory(parent=project)
         data = self.BasicNodeSerializer(node, context={'request': req}).data['data']
@@ -304,15 +341,24 @@ class TestRelationshipField(DbTestCase):
         assert_in('/v2/nodes/{}/'.format(node._id), relationship_field['related']['href'])
 
     def test_field_with_two_kwargs(self):
-        req = make_drf_request()
+        req = make_drf_request_with_version(version='2.0')
         project = factories.ProjectFactory()
         node = factories.NodeFactory(parent=project)
         data = self.BasicNodeSerializer(node, context={'request': req}).data['data']
         field = data['relationships']['two_url_kwargs']['links']
         assert_in('/v2/nodes/{}/node_links/{}/'.format(node._id, node._id), field['related']['href'])
 
+    def test_field_with_two_filters(self):
+        req = make_drf_request_with_version(version='2.0')
+        project = factories.ProjectFactory()
+        node = factories.NodeFactory(parent=project)
+        data = self.BasicNodeSerializer(node, context={'request': req}).data['data']
+        field = data['relationships']['field_with_filters']['links']
+        assert_in(urllib.quote('filter[target]=hello', safe='?='), field['related']['href'])
+        assert_in(urllib.quote('filter[woop]=yea', safe='?='), field['related']['href'])
+
     def test_field_with_non_attribute(self):
-        req = make_drf_request()
+        req = make_drf_request_with_version(version='2.0')
         project = factories.ProjectFactory()
         node = factories.NodeFactory(parent=project)
         data = self.BasicNodeSerializer(node, context={'request': req}).data['data']
@@ -320,7 +366,7 @@ class TestRelationshipField(DbTestCase):
         assert_in('/v2/nodes/{}/children/'.format('12345'), field['related']['href'])
 
     def test_field_with_callable_related_attrs(self):
-        req = make_drf_request()
+        req = make_drf_request_with_version(version='2.0')
         project = factories.ProjectFactory()
         node = factories.NodeFactory(parent=project)
         data = self.BasicNodeSerializer(node, context={'request': req}).data['data']
@@ -331,7 +377,103 @@ class TestRelationshipField(DbTestCase):
         field = data['relationships']['registered_from']['links']
         assert_in('/v2/nodes/{}/'.format(node._id), field['related']['href'])
 
-        registration_registration = factories.RegistrationFactory(project=registration)
-        data = self.BasicNodeSerializer(registration_registration, context={'request': req}).data['data']
-        field = data['relationships']['registered_from']['links']
-        assert_in('/v2/registrations/{}/'.format(registration._id), field['related']['href'])
+class TestShowIfVersion(ApiTestCase):
+
+    def setUp(self):
+        super(TestShowIfVersion, self).setUp()
+        self.node = factories.NodeFactory()
+        self.registration = factories.RegistrationFactory()
+
+    def test_node_links_allowed_version_node_serializer(self):
+        req = make_drf_request_with_version(version='2.0')
+        data = NodeSerializer(self.node, context={'request': req}).data['data']
+        assert_in('node_links', data['relationships'])
+
+    def test_node_links_bad_version_node_serializer(self):
+        req = make_drf_request_with_version(version='2.1')
+        data = NodeSerializer(self.node, context={'request': req}).data['data']
+        assert_not_in('node_links', data['relationships'])
+
+    def test_node_links_allowed_version_registration_serializer(self):
+        req = make_drf_request_with_version(version='2.0')
+        data = RegistrationSerializer(self.registration, context={'request': req}).data['data']
+        assert_in('node_links', data['attributes'])
+
+    def test_node_links_bad_version_registration_serializer(self):
+        req = make_drf_request_with_version(version='2.1')
+        data = RegistrationSerializer(self.registration, context={'request': req}).data['data']
+        assert_not_in('node_links', data['attributes'])
+
+
+class TestDateByVersion(DbTestCase):
+
+    def setUp(self):
+        super(TestDateByVersion, self).setUp()
+        self.node = factories.NodeFactory()
+        self.old_date = datetime.utcnow()   # naive dates before django-osf
+        self.old_date_without_microseconds = self.old_date.replace(microsecond=0)
+        self.new_date = datetime.utcnow().replace(tzinfo=utc)  # non-naive after django-osf
+        self.new_date_without_microseconds = self.new_date.replace(microsecond=0)
+        self.old_format = '%Y-%m-%dT%H:%M:%S.%f'
+        self.old_format_without_microseconds = '%Y-%m-%dT%H:%M:%S'
+        self.new_format = '%Y-%m-%dT%H:%M:%S.%fZ'
+
+    def test_old_date_formats_to_old_format(self):
+        req = make_drf_request_with_version(version='2.0')
+        setattr(self.node, 'date_modified', self.old_date)
+        data = NodeSerializer(self.node, context={'request': req}).data['data']
+        assert_equal(datetime.strftime(self.old_date, self.old_format), data['attributes']['date_modified'])
+
+    def test_old_date_without_microseconds_formats_to_old_format(self):
+        req = make_drf_request_with_version(version='2.0')
+        setattr(self.node, 'date_modified', self.old_date_without_microseconds)
+        data = NodeSerializer(self.node, context={'request': req}).data['data']
+        assert_equal(
+            datetime.strftime(self.old_date_without_microseconds, self.old_format_without_microseconds),
+            data['attributes']['date_modified']
+        )
+
+    def test_old_date_formats_to_new_format(self):
+        req = make_drf_request_with_version(version='2.2')
+        setattr(self.node, 'date_modified', self.old_date)
+        data = NodeSerializer(self.node, context={'request': req}).data['data']
+        assert_equal(datetime.strftime(self.old_date, self.new_format), data['attributes']['date_modified'])
+
+    def test_old_date_without_microseconds_formats_to_new_format(self):
+        req = make_drf_request_with_version(version='2.2')
+        setattr(self.node, 'date_modified', self.old_date_without_microseconds)
+        data = NodeSerializer(self.node, context={'request': req}).data['data']
+        assert_equal(
+            datetime.strftime(self.old_date_without_microseconds, self.new_format),
+            data['attributes']['date_modified']
+        )
+
+    def test_new_date_formats_to_old_format(self):
+        req = make_drf_request_with_version(version='2.0')
+        setattr(self.node, 'date_modified', self.new_date)
+        data = NodeSerializer(self.node, context={'request': req}).data['data']
+        assert_equal(datetime.strftime(self.new_date, self.old_format), data['attributes']['date_modified'])
+
+    def test_new_date_without_microseconds_formats_to_old_format(self):
+        req = make_drf_request_with_version(version='2.0')
+        setattr(self.node, 'date_modified', self.new_date_without_microseconds)
+        data = NodeSerializer(self.node, context={'request': req}).data['data']
+        assert_equal(
+            datetime.strftime(self.new_date_without_microseconds, self.old_format_without_microseconds),
+            data['attributes']['date_modified']
+        )
+
+    def test_new_date_formats_to_new_format(self):
+        req = make_drf_request_with_version(version='2.2')
+        setattr(self.node, 'date_modified', self.new_date)
+        data = NodeSerializer(self.node, context={'request': req}).data['data']
+        assert_equal(datetime.strftime(self.new_date, self.new_format), data['attributes']['date_modified'])
+
+    def test_new_date_without_microseconds_formats_to_new_format(self):
+        req = make_drf_request_with_version(version='2.2')
+        setattr(self.node, 'date_modified', self.new_date_without_microseconds)
+        data = NodeSerializer(self.node, context={'request': req}).data['data']
+        assert_equal(
+            datetime.strftime(self.new_date_without_microseconds, self.new_format),
+            data['attributes']['date_modified']
+        )

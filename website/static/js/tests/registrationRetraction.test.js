@@ -19,8 +19,6 @@ describe('registrationRetraction', () => {
 
         describe('RegistrationRetractionViewModel', () => {
             var vm;
-            var registrationTitle = 'This is a fake registration';
-            var truncatedTitle = registrationTitle.slice(0, 50).split(' ').slice(0, -1).join(' ');
             var invalidJustification = faker.lorem.paragraphs(50);
             var invalidConfirmationText = 'abcd';
             var submitUrl = '/project/abcdef/withdraw/';
@@ -52,7 +50,7 @@ describe('registrationRetraction', () => {
 
             var onSubmitSuccessStub;
             beforeEach(() => {
-                vm = new registrationRetraction.ViewModel(submitUrl, registrationTitle);
+                vm = new registrationRetraction.ViewModel(submitUrl);
                 onSubmitSuccessStub = sinon.stub(vm, 'onSubmitSuccess');
             });
 
@@ -66,13 +64,8 @@ describe('registrationRetraction', () => {
             });
 
             it('matching registration title is valid', () => {
-                 vm.confirmationText(truncatedTitle);
+                vm.confirmationText(vm.confirmationString);
                 assert.isTrue(vm.confirmationText.isValid());
-            });
-
-            it('decodes html entities in project title', () => {
-                var test = new registrationRetraction.ViewModel(submitUrl, 'Carrot &gt;== Cake');
-                assert.equal(test.registrationTitle, 'Carrot >== Cake');
             });
 
             describe('submit', () => {
@@ -96,14 +89,14 @@ describe('registrationRetraction', () => {
                     assert.notCalled(postSpy);
                 });
                 it('calls changeMessage if justification is too long', () => {
-                    vm.confirmationText(registrationTitle);
+                    vm.confirmationText(vm.confirmationString);
                     vm.justification(invalidJustification);
                     vm.submit();
                     assert.calledOnce(changeMessageSpy);
                     assert.notCalled(postSpy);
                 });
                 it('submits successfully with valid confirmation text', (done) => {
-                    vm.confirmationText(truncatedTitle);
+                    vm.confirmationText(vm.confirmationString);
                     vm.submit().always(() => {
                         assert.equal(response.redirectUrl, redirectUrl);
                         assert.called(onSubmitSuccessStub);
@@ -115,11 +108,11 @@ describe('registrationRetraction', () => {
 
                 it('logs error with Raven if submit fails', (done) => {
                     sinon.collection.restore();
-                    vm = new registrationRetraction.ViewModel(invalidSubmitUrl, registrationTitle);
+                    vm = new registrationRetraction.ViewModel(invalidSubmitUrl);
                     var onSubmitErrorSpy = new sinon.spy(vm, 'onSubmitError');
                     var ravenStub = new sinon.stub(Raven, 'captureMessage');
 
-                    vm.confirmationText(truncatedTitle);
+                    vm.confirmationText(vm.confirmationString);
                     vm.submit().always((xhr) => {
                         assert.equal(xhr.status, 500);
                         assert.equal(response.redirectUrl, redirectUrl);

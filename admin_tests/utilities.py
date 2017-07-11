@@ -2,7 +2,7 @@
 Utilities to help run Django tests
 * setup_view - replaces as_view
 """
-from admin_tests.factories import UserFactory
+from osf_tests.factories import UserFactory
 
 
 def setup_view(view, request, *args, **kwargs):

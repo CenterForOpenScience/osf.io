@@ -86,6 +86,13 @@
                     <p class="help-block" data-bind="validationMessage: passwordConfirmation" style="display: none;"></p>
                 </div>
             </div>
+            %if recaptcha_site_key:
+                <div class="row">
+                    <div class="col-sm-12">
+                        <div class="pull-right p-b-sm g-recaptcha" data-sitekey="${recaptcha_site_key}"></div>
+                    </div>
+                </div>
+            %endif
             <div class='help-block'>
                 <p>If you are not ${fullname}, or if you were erroneously added as a contributor to the project described in the email invitation, please email <a href="mailto:contact@osf.io">contact@osf.io</a>
                 </p>
@@ -110,4 +117,7 @@
     </script>
     ${parent.javascript_bottom()}
     <script src=${"/static/public/js/claimaccount-page.js" | webpack_asset}></script>
+    %if recaptcha_site_key:
+        <script src="https://www.google.com/recaptcha/api.js" async defer></script>
+    %endif
 </%def>

@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 import unittest
 from nose.tools import *  # noqa; PEP8 asserts
-from webtest_plus import TestApp
+from webtest_plus import TestApp as WebtestApp  # py.test tries to collect `TestApp`
 import mock
 import urlparse
 import httplib as http
@@ -13,19 +13,20 @@ from werkzeug.wrappers import BaseResponse
 
 from framework import auth
 from framework.auth import cas
-from framework.sessions import Session
+from framework.auth.utils import validate_recaptcha
 from framework.exceptions import HTTPError
-from tests.base import OsfTestCase, assert_is_redirect
-from tests.factories import (
+from tests.base import OsfTestCase, assert_is_redirect, fake
+from osf_tests.factories import (
     UserFactory, UnregUserFactory, AuthFactory,
     ProjectFactory, NodeFactory, AuthUserFactory, PrivateLinkFactory
 )
 
-from framework.auth import User, Auth
+from framework.auth import Auth
 from framework.auth.decorators import must_be_logged_in
-
+from osf.models import OSFUser as User, Session
 from website import mails
 from website import settings
+from website.util import permissions
 from website.project.decorators import (
     must_have_permission,
     must_be_contributor,
@@ -33,9 +34,26 @@ from website.project.decorators import (
     must_be_contributor_or_public_but_not_anonymized,
     must_have_addon, must_be_addon_authorizer,
 )
+from website.util import api_url_for
+
+from tests.test_cas_authentication import generate_external_user_with_resp
 
 
 class TestAuthUtils(OsfTestCase):
+
+    def test_citation_with_only_fullname(self):
+        user = UserFactory()
+        user.fullname = 'Martin Luther King, Jr.'
+        user.family_name = ''
+        user.given_name = ''
+        user.middle_names = ''
+        user.suffix = ''
+        user.save()
+        resp = user.csl_name(user._id)
+        family_name = resp['family']
+        given_name = resp['given']
+        assert_equal(family_name, 'King')
+        assert_equal(given_name, 'Martin L, Jr.')
 
     def test_unreg_user_can_register(self):
         user = UnregUserFactory()
@@ -45,6 +63,8 @@ class TestAuthUtils(OsfTestCase):
             password='gattaca',
             fullname='Rosie',
         )
+
+        user.reload()
 
         assert_true(user.get_confirmation_token(user.username))
 
@@ -58,6 +78,7 @@ class TestAuthUtils(OsfTestCase):
             fullname='Rosie',
         )
 
+        user.reload()
         token = user.get_confirmation_token(user.username)
 
         res = self.app.get('/confirm/{}/{}'.format(user._id, token), allow_redirects=False)
@@ -67,6 +88,7 @@ class TestAuthUtils(OsfTestCase):
         assert_in('login?service=', res.location)
 
         user.reload()
+        mock_mail.assert_called()
         assert_equal(len(mock_mail.call_args_list), 1)
         empty, kwargs = mock_mail.call_args
         kwargs['user'].reload()
@@ -89,9 +111,9 @@ class TestAuthUtils(OsfTestCase):
         assert_equal(len(mock_mail.call_args_list), 1)
         session = Session.find(
             Q('data.auth_user_id', 'eq', user._id)
-        ).sort(
+        ).order_by(
             '-date_modified'
-        ).limit(1)[0]
+        ).first()
         assert_equal(len(session.data['status']), 1)
 
     def test_get_user_by_id(self):
@@ -109,10 +131,55 @@ class TestAuthUtils(OsfTestCase):
             auth.get_user(email=user.username, password='wrong')
         )
 
+    def test_get_user_by_external_info(self):
+        service_url = 'http://localhost:5000/dashboard/'
+        user, validated_credentials, cas_resp = generate_external_user_with_resp(service_url)
+        user.save()
+        assert_equal(auth.get_user(external_id_provider=validated_credentials['provider'], external_id=validated_credentials['id']), user)
+
+    @mock.patch('framework.auth.cas.get_user_from_cas_resp')
+    @mock.patch('framework.auth.cas.CasClient.service_validate')
+    def test_successful_external_login_cas_redirect(self, mock_service_validate, mock_get_user_from_cas_resp):
+        service_url = 'http://localhost:5000/dashboard/'
+        user, validated_credentials, cas_resp = generate_external_user_with_resp(service_url)
+        mock_service_validate.return_value = cas_resp
+        mock_get_user_from_cas_resp.return_value = (user, validated_credentials, 'authenticate')
+        ticket = fake.md5()
+        resp = cas.make_response_from_ticket(ticket, service_url)
+        assert_equal(resp.status_code, 302, 'redirect to CAS login')
+        assert_in('/login?service=', resp.location)
+        assert_in('username={}'.format(user.username), resp.location)
+        assert_in('verification_key={}'.format(user.verification_key), resp.location)
+
+    @mock.patch('framework.auth.cas.get_user_from_cas_resp')
+    @mock.patch('framework.auth.cas.CasClient.service_validate')
+    def test_successful_external_first_login(self, mock_service_validate, mock_get_user_from_cas_resp):
+        service_url = 'http://localhost:5000/dashboard/'
+        _, validated_credentials, cas_resp = generate_external_user_with_resp(service_url, user=False)
+        mock_service_validate.return_value = cas_resp
+        mock_get_user_from_cas_resp.return_value = (None, validated_credentials, 'external_first_login')
+        ticket = fake.md5()
+        resp = cas.make_response_from_ticket(ticket, service_url)
+        assert_equal(resp.status_code, 302, 'redirect to external login email get')
+        assert_in('/external-login/email', resp.location)
+
+    @mock.patch('framework.auth.cas.external_first_login_authenticate')
+    @mock.patch('framework.auth.cas.get_user_from_cas_resp')
+    @mock.patch('framework.auth.cas.CasClient.service_validate')
+    def test_successful_external_first_login_without_attributes(self, mock_service_validate, mock_get_user_from_cas_resp, mock_external_first_login_authenticate):
+        service_url = 'http://localhost:5000/dashboard/'
+        user, validated_credentials, cas_resp = generate_external_user_with_resp(service_url, user=False, release=False)
+        mock_service_validate.return_value = cas_resp
+        mock_get_user_from_cas_resp.return_value = (None, validated_credentials, 'external_first_login')
+        ticket = fake.md5()
+        cas.make_response_from_ticket(ticket, service_url)
+        assert_equal(user, mock_external_first_login_authenticate.call_args[0][0])
+
     @mock.patch('framework.auth.views.mails.send_mail')
     def test_password_change_sends_email(self, mock_mail):
-        user = UserFactory.build()
+        user = UserFactory()
         user.set_password('killerqueen')
+        user.save()
         assert_equal(len(mock_mail.call_args_list), 1)
         empty, kwargs = mock_mail.call_args
         kwargs['user'].reload()
@@ -125,6 +192,65 @@ class TestAuthUtils(OsfTestCase):
             'to_addr': user.username,
         })
 
+    @mock.patch('framework.auth.utils.requests.post')
+    def test_validate_recaptcha_success(self, req_post):
+        resp = mock.Mock()
+        resp.status_code = http.OK
+        resp.json = mock.Mock(return_value={'success': True})
+        req_post.return_value = resp
+        assert_true(validate_recaptcha('a valid captcha'))
+
+    @mock.patch('framework.auth.utils.requests.post')
+    def test_validate_recaptcha_valid_req_failure(self, req_post):
+        resp = mock.Mock()
+        resp.status_code = http.OK
+        resp.json = mock.Mock(return_value={'success': False})
+        req_post.return_value = resp
+        assert_false(validate_recaptcha(None))
+
+    @mock.patch('framework.auth.utils.requests.post')
+    def test_validate_recaptcha_invalid_req_failure(self, req_post):
+        resp = mock.Mock()
+        resp.status_code = http.BAD_REQUEST
+        resp.json = mock.Mock(return_value={'success': True})
+        req_post.return_value = resp
+        assert_false(validate_recaptcha(None))
+
+    @mock.patch('framework.auth.utils.requests.post')
+    def test_validate_recaptcha_empty_response(self, req_post):
+        req_post.side_effect=AssertionError()
+        # ensure None short circuits execution (no call to google)
+        assert_false(validate_recaptcha(None))
+
+    @mock.patch('framework.auth.views.mails.send_mail')
+    def test_sign_up_twice_sends_two_confirmation_emails_only(self, mock_mail):
+        # Regression test for https://openscience.atlassian.net/browse/OSF-7060
+        url = api_url_for('register_user')
+        sign_up_data = {
+            'fullName': 'Julius Caesar',
+            'email1': 'caesar@romanempire.com',
+            'email2': 'caesar@romanempire.com',
+            'password': 'brutusisajerk'
+        }
+
+        self.app.post_json(url, sign_up_data)
+        assert_equal(len(mock_mail.call_args_list), 1)
+        args, kwargs = mock_mail.call_args
+        assert_equal(args, (
+            'caesar@romanempire.com',
+            mails.INITIAL_CONFIRM_EMAIL,
+            'plain'
+        ))
+
+        self.app.post_json(url, sign_up_data)
+        assert_equal(len(mock_mail.call_args_list), 2)
+        args, kwargs = mock_mail.call_args
+        assert_equal(args, (
+            'caesar@romanempire.com',
+            mails.INITIAL_CONFIRM_EMAIL,
+            'plain'
+        ))
+
 
 class TestAuthObject(OsfTestCase):
 
@@ -135,7 +261,7 @@ class TestAuthObject(OsfTestCase):
 
     def test_factory(self):
         auth_obj = AuthFactory()
-        assert_true(isinstance(auth_obj.user, auth.User))
+        assert_true(isinstance(auth_obj.user, User))
 
     def test_from_kwargs(self):
         user = UserFactory()
@@ -164,12 +290,12 @@ class TestPrivateLink(OsfTestCase):
         def project_get(**kwargs):
             return 'success', 200
 
-        self.app = TestApp(self.flaskapp)
+        self.app = WebtestApp(self.flaskapp)
 
         self.user = AuthUserFactory()
         self.project = ProjectFactory(is_public=False)
         self.link = PrivateLinkFactory()
-        self.link.nodes.append(self.project)
+        self.link.nodes.add(self.project)
         self.link.save()
 
     @mock.patch('website.project.decorators.Auth.from_kwargs')
@@ -451,9 +577,9 @@ class TestMustBeContributorOrPublicButNotAnonymizedDecorator(AuthAppTestCase):
         self.private_project.save()
         self.anonymized_link_to_public_project = PrivateLinkFactory(anonymous=True)
         self.anonymized_link_to_private_project = PrivateLinkFactory(anonymous=True)
-        self.anonymized_link_to_public_project.nodes.append(self.public_project)
+        self.anonymized_link_to_public_project.nodes.add(self.public_project)
         self.anonymized_link_to_public_project.save()
-        self.anonymized_link_to_private_project.nodes.append(self.private_project)
+        self.anonymized_link_to_private_project.nodes.add(self.private_project)
         self.anonymized_link_to_private_project.save()
         self.flaskapp = Flask('Testing decorator')
 
@@ -461,7 +587,7 @@ class TestMustBeContributorOrPublicButNotAnonymizedDecorator(AuthAppTestCase):
         @must_be_contributor_or_public_but_not_anonymized
         def project_get(**kwargs):
             return 'success', 200
-        self.app = TestApp(self.flaskapp)
+        self.app = WebtestApp(self.flaskapp)
 
     def test_must_be_contributor_when_user_is_contributor_and_public_project(self):
         result = view_that_needs_contributor_or_public_but_not_anonymized(
@@ -573,7 +699,7 @@ def protected(**kwargs):
     return 'open sesame'
 
 
-@must_have_permission('dance')
+@must_have_permission('admin')
 def thriller(**kwargs):
     return 'chiller'
 
@@ -598,8 +724,10 @@ class TestPermissionDecorators(AuthAppTestCase):
     @mock.patch('framework.auth.decorators.Auth.from_kwargs')
     def test_must_have_permission_true(self, mock_from_kwargs, mock_to_nodes):
         project = ProjectFactory()
-        project.add_permission(project.creator, 'dance')
-        mock_from_kwargs.return_value = Auth(user=project.creator)
+        user = UserFactory()
+        project.add_contributor(user, permissions=[permissions.READ, permissions.WRITE, permissions.ADMIN],
+                                auth=Auth(project.creator))
+        mock_from_kwargs.return_value = Auth(user=user)
         mock_to_nodes.return_value = (None, project)
         thriller(node=project)
 
@@ -607,7 +735,8 @@ class TestPermissionDecorators(AuthAppTestCase):
     @mock.patch('framework.auth.decorators.Auth.from_kwargs')
     def test_must_have_permission_false(self, mock_from_kwargs, mock_to_nodes):
         project = ProjectFactory()
-        mock_from_kwargs.return_value = Auth(user=project.creator)
+        user = UserFactory()
+        mock_from_kwargs.return_value = Auth(user=user)
         mock_to_nodes.return_value = (None, project)
         with assert_raises(HTTPError) as ctx:
             thriller(node=project)

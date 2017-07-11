@@ -10,8 +10,23 @@ from framework.auth import cas
 from framework.auth import signing
 from framework.flask import redirect
 from framework.exceptions import HTTPError
-
 from .core import Auth
+
+
+# TODO [CAS-10][OSF-7566]: implement long-term fix for URL preview/prefetch
+def block_bing_preview(func):
+    """
+    This decorator is a temporary fix to prevent BingPreview from pre-fetching confirmation links.
+    """
+
+    @functools.wraps(func)
+    def wrapped(*args, **kwargs):
+        user_agent = request.headers.get('User-Agent')
+        if user_agent and ('BingPreview' in user_agent or 'MSIE 9.0' in user_agent):
+            return HTTPError(httplib.FORBIDDEN, data={'message_long': 'Internet Explorer 9 and BingPreview cannot be used to access this page for security reasons. Please use another browser. If this should not have occurred and the issue persists, please report it to <a href="mailto: support@osf.io">support@osf.io</a>.'})
+        return func(*args, **kwargs)
+
+    return wrapped
 
 
 def collect_auth(func):
@@ -20,6 +35,27 @@ def collect_auth(func):
     def wrapped(*args, **kwargs):
         kwargs['auth'] = Auth.from_kwargs(request.args.to_dict(), kwargs)
         return func(*args, **kwargs)
+
+    return wrapped
+
+
+def must_be_confirmed(func):
+
+    @functools.wraps(func)
+    def wrapped(*args, **kwargs):
+        from osf.models import OSFUser
+
+        user = OSFUser.load(kwargs['uid'])
+        if user is not None:
+            if user.is_confirmed:
+                return func(*args, **kwargs)
+            else:
+                raise HTTPError(httplib.BAD_REQUEST, data={
+                    'message_short': 'Account not yet confirmed',
+                    'message_long': 'The profile page could not be displayed as the user has not confirmed the account.'
+                })
+        else:
+            raise HTTPError(httplib.NOT_FOUND)
 
     return wrapped
 

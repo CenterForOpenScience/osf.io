@@ -34,5 +34,11 @@
         % if 'write' in user['permissions'] and not node['is_registration']:
             window.contextVars.diskSavingMode = !${ disk_saving_mode | sjson, n };
         % endif
+        window.contextVars.analyticsMeta = $.extend(true, {}, window.contextVars.analyticsMeta, {
+            pageMeta: {
+                title: 'Files',
+                public: true,
+            },
+        });
     </script>
 </%def>

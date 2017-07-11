@@ -1,0 +1,153 @@
+{
+    "name": "Election Research Preacceptance Competition",
+    "version": 2,
+    "active": false,
+    "flags": {
+        "payment_sent": false,
+        "proof_of_publication": false
+    },
+    "config": {
+        "requiresConsent": true,
+        "messages": {
+            "preConsentHeader": "<div class='text-center m-t-lg'><h3>Election Research Preacceptance Competition </h3><hr><h2> Eligibility Criteria </h2></div><div class='row m-t-xl'><div class='col-lg-10 col-lg-offset-1'><p>How the competition works:</p>",
+            "postConsentHeader": "<div class='text-center m-t-lg'><h3>Election Research Preacceptance Competition </h3><hr><h2> Notice of Consent </h2></div><div class='row m-t-xl'><div class='col-lg-10 col-lg-offset-1'><p>Please read and agree to the terms before submitting your research plan to the Election Research Preacceptance Competition.</p>",
+            "consentBody": "<ol id='consentList'> <li>Articles must be published in a participating journal: <a href='https://ajps.org/'>American Journal of Political Science</a>, <a href='http://www.apsanet.org/apsr'>American Political Science Review</a>, <a href='http://apr.sagepub.com/'>American Politics Research</a>, <a href='http://pan.oxfordjournals.org/'>Political Analysis</a>, <a href='http://link.springer.com/journal/11109'>Political Behavior</a>, <a href='http://www.psqonline.org/'>Political Science Quarterly</a>, <a href='http://journals.cambridge.org/action/displayJournal?jid=RAM'>Political Science Research and Methods</a>, <a href='http://poq.oxfordjournals.org/'>Public Opinion Quarterly</a>, and  <a href='http://spa.sagepub.com/'>State Politics and Policy Quarterly</a></li><li>Entering the contest requires preregistration of a research plan on the OSF. The research plan must use data from a 2016 American National Election Studies survey and must be completed prior to ANES’s release of the data.</li><li>If a participating journal accepts an article using a qualifying preregistered research plan, the editor of the journal and the contest administrators will affirm that the published paper contains a clear link to the preregistered research plan.</li><li>Residents of the <a target='_blank' href='https://www.pmddtc.state.gov/embargoed_countries/'>U.S. State Department's list of embargoed countries</a> may not participate in the competition.</li><li>Individuals can enter the competition multiple times and earn multiple prizes. Prizes for coauthored papers are split equally between all listed co-authors of a paper unless all co-authors explicitly request an alternate arrangement.</li><li>Entering the Election Research Preacceptance Competition requires that you agree to all of its <a target='_blank' href='http://www.erpc2016.com/'>terms</a>. If you do not agree to the terms, you may still use the form and register your research study without entering the competition.</li><li>The Election Research Preacceptance Competition is being administered by the Center for Political Studies at the University of Michigan, which is entirely responsible for its fair and legal administration. The Center for Open Science is hosting the content of the Competition entries on the Open Science Framework (OSF). Use of the OSF requires adherence to its <a target='_blank' href='https://github.com/CenterForOpenScience/centerforopenscience.org/blob/master/TERMS_OF_USE.md'>Terms of Use</a> and <a target='_blank' href='https://github.com/CenterForOpenScience/centerforopenscience.org/blob/master/PRIVACY_POLICY.md'>Privacy Policy</a>.</li></ol><div>(Please see the competition <a target='_blank' href='http://www.erpc2016.com/'>terms and conditions</a> for further details. These rules were created to meet legal requirements and ensure that the process is administered fairly. Contact Arthur Lupia at <a href='mailto:lupia@umich.edu'>lupia@umich.edu</a> or Brendan Nyhan at <a href='mailto:nyhan@dartmouth.edu'>nyhan@dartmouth.edu</a> if you have any questions or concerns.)</div></div></div>"
+        },
+        "fulfills": [{
+            "name": "Election Research Preacceptance Competition",
+            "info": "http://www.erpc2016.com/"
+        }]
+    },
+    "description": "Election Research Preacceptance Competition: You will be asked a series of questions about your study and its pre-analysis plan. This form must be completed and registered on the OSF prior to the release of the 2016 American National Election Study data in order to be eligible for a $2,000 prize. For more information, please visit http://www.erpc2016.com/",
+    "pages": [{
+        "id": "page1",
+        "title": "Study Information",
+        "questions": [{
+            "qid": "q1",
+            "nav": "Title",
+            "type": "string",
+            "format": "text",
+            "title": "Title",
+            "description": "Provide the working title of your study. It may be the same title that you submit for publication of your final manuscript, but this is not a requirement.",
+            "required": true
+        }, {
+            "qid": "q2",
+            "nav": "Authors",
+            "type": "string",
+            "title": "Authors",
+            "type": "osf-author-import",
+            "format": "textarea",
+            "required": true
+        }, {
+            "qid": "q3",
+            "nav": "Research Questions",
+            "type": "string",
+            "format": "textarea",
+            "title": "Research Questions",
+            "description": "Please list each research question included in this study.",
+            "required": true
+        }, {
+            "qid": "q4",
+            "nav": "Hypotheses",
+            "type": "string",
+            "format": "textarea",
+            "title": "Hypotheses",
+            "description": "For each of the research questions listed in the previous section, provide one or multiple specific and testable hypotheses. Please state if the hypotheses are directional or non-directional. If directional, state the direction. A predicted effect may also be appropriate here.",
+            "required": true
+        }]
+    }, {
+        "id": "page2",
+        "title": "Variables",
+        "description": "In this section you can describe all variables that will later be used in your confirmatory analysis plan. In your analysis plan, you will have the opportunity to describe how each variable will be used.",
+        "questions": [{
+            "qid": "q5",
+            "nav": "Measured variables",
+            "title": "Measured variables",
+            "description": "Describe each variable that you will use in your analysis. This will include outcome measures as well as any predictors or covariates.",
+            "type": "string",
+            "format": "textarea",
+            "required": true
+        }, {
+            "qid": "q6",
+            "nav": "Indices",
+            "type": "string",
+            "format": "textarea",
+            "title": "Indices",
+            "description": "If any measurements are going to be combined into an index (or even a mean), what measures will you use and how will they be combined? Include either a formula or a precise description of your method. If your are using a more complicated statistical method to combine measures (e.g. a factor analysis), you can note that here, but describe the exact method in the analysis plan section.",
+            "required": true
+        }]
+    }, {
+        "id": "page3",
+        "title": "Analysis Plan",
+        "description": "<p>You may describe one or more analyses in this preregistration. Please remember that all analyses specified below must be reported in the final article, and any additional analyses must be noted as exploratory or hypothesis-generating.</p><p>An analysis plan must specify which variables are predictors (independent variables) and which are the outcomes (dependent variables); otherwise, it is exploratory. You are allowed to describe any exploratory work here, but a clear confirmatory analysis is required.</p>",
+        "questions": [{
+            "qid": "q7",
+            "nav": "Statistical models",
+            "type": "string",
+            "format": "textarea",
+            "title": "Statistical models",
+            "description": "What statistical model will you use to test each hypothesis? Please include the type of model (e.g. ANOVA, multiple regression, SEM, etc.) and the specification of the model (this includes each variable that will be used as a predictor, outcome, or covariate). Please specify any interactions that will be tested and remember that any test not included here must be noted as an exploratory test in your final article.",
+            "required": true
+            }, {
+            "qid": "q8",
+            "nav": "Transformations",
+            "type": "string",
+            "format": "textarea",
+            "title": "Transformations",
+            "description": "If you plan on transforming, centering, recoding the data, or will require a coding scheme for categorical variables, please describe that process.",
+            "required": true
+            }, {
+            "qid": "q9",
+            "nav": "Follow-up analyses",
+            "type": "string",
+            "format": "textarea",
+            "title": "Follow-up analyses",
+            "description": "If not specified previously, will you be conducting any confirmatory analyses to follow up on effects in your statistical model, such as subgroup analyses, pairwise or complex contrasts, or follow-up tests from interactions? Remember that any analyses not specified in this research plan must be noted as exploratory.",
+            "required": true
+            }, {
+            "qid": "q10",
+            "nav": "Inference criteria",
+            "type": "string",
+            "format": "textarea",
+            "title": "Inference criteria",
+            "description": "What criteria will you use to make inferences? Please describe the information you will use (e.g. p-values, Bayes factors, specific model fit indices) as well as cut-off criterion where appropriate. Will you be using one- or two-tailed tests for each of your analyses? If you are comparing multiple conditions or testing multiple hypotheses, will you account for this?",
+            "required": true
+            }, {
+            "qid": "q11",
+            "nav": "Data exclusion",
+            "type": "string",
+            "format": "textarea",
+            "title": "Data exclusion",
+            "description": "How will you determine what data or samples, if any, to exclude from your analyses? How will outliers be handled?",
+            "required": true
+            }, {
+            "qid": "q12",
+            "nav": "Missing data",
+            "type": "string",
+            "format": "textarea",
+            "title": "Missing data",
+            "description": "How will you deal with incomplete or missing data?",
+            "required": true
+            }, {
+            "qid": "q13",
+            "nav": "Exploratory analysis",
+            "type": "string",
+            "format": "textarea",
+            "title": "Exploratory analysis",
+            "description": "If you plan to explore your data set to look for unexpected differences or relationships, you may describe those tests here. An exploratory test is any test where a prediction is not made up front, or there are multiple possible tests that you are going to use. A statistically significant finding in an exploratory test is a great way to form a new confirmatory hypothesis, which could be registered at a later time.",
+            "required": false
+            }]
+        }, {
+        "id": "page4",
+        "title": "Other",
+        "questions": [{
+            "qid": "q14",
+            "nav": "Other",
+            "title": "Other",
+            "description": "If there is any additional information that you feel needs to be included in your preregistration, please enter it here.",
+            "required": false,
+            "type": "string",
+            "format": "textarea"
+        }]
+    }]
+}

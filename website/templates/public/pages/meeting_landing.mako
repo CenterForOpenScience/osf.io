@@ -1,6 +1,12 @@
 <%inherit file="base.mako"/>
 
 <%def name="title()">Meetings</%def>
+
+<%def name="nav()">
+    <%namespace name="nav_helper" file="nav.mako" />
+    ${nav_helper.nav(service_name='MEETINGS', service_url='/meetings/', service_support_url='http://help.osf.io/m/meetings/')}
+</%def>
+
 <%def name="stylesheets()">
     ${parent.stylesheets()}
     <link rel="stylesheet" href="/static/css/pages/meeting-landing-page.css">
@@ -79,14 +85,14 @@
             <div class="col-md-12">
                 <div role="tabpanel">
                     <!-- Nav tabs -->
-                    <ul class="nav nav-tabs m-b-md" role="tablist">
-                        <li role="presentation" class="active">
-                            <a href="#meetings" aria-controls="meetings" role="tab" data-toggle="tab">All meetings</a>
-                        </li>
-                        <li role="presentation">
-                            <a href="#submissions" aria-controls="submissions" role="tab" data-toggle="tab">All submissions</a>
-                        </li>
-                    </ul>
+                    ## <ul class="nav nav-tabs m-b-md" role="tablist">
+                    ##     <li role="presentation" class="active">
+                    ##         <a href="#meetings" aria-controls="meetings" role="tab" data-toggle="tab">All meetings</a>
+                    ##     </li>
+                    ##     <li role="presentation">
+                    ##         <a href="#submissions" aria-controls="submissions" role="tab" data-toggle="tab">All submissions</a>
+                    ##     </li>
+                    ## </ul>
                     <!-- Tab panes -->
                     <div class="tab-content">
                         <div role="tabpanel" class="tab-pane active" id="meetings">

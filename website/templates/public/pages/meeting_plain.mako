@@ -2,7 +2,7 @@
 
 <head>
 
-    <title>${ meeting['name'] } Presentations</title>
+    <title>${ meeting['name'] }</title>
 
     <%namespace name="globals" file="base.mako" />
     ${globals.includes_top()}

@@ -1,0 +1,9 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block title %}
+<title>Flagged Spam Nodes</title>
+{% endblock title %}
+{% block content %}
+  {% url 'nodes:flagged-spam' as form_action %}
+  {% include 'nodes/node_list.html' with form_action=form_action show_title=True%}
+{% endblock content %}

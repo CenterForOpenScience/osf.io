@@ -4,11 +4,22 @@ from django import forms
 from django.core.validators import validate_email
 
 from framework.auth.core import get_user
-from website.models import Conference
+from osf.models import Conference
 from website.conferences.exceptions import ConferenceError
 
 
 class MultiEmailField(forms.Field):
+
+    def prepare_value(self, value):
+        if not value:
+            ret = None
+        else:
+            if isinstance(value, basestring):
+                ret = value
+            else:
+                ret = ', '.join(list(value))
+        return ret
+
     def to_python(self, value):
         if not value:
             return []
@@ -37,8 +48,12 @@ class MeetingForm(forms.Form):
         required=True,
         widget=forms.TextInput(attrs={'size': '40'}),
     )
-    info_url = forms.CharField(
+    info_url = forms.URLField(
         label='Info url',
+        required=False
+    )
+    homepage_link_text = forms.CharField(
+        label='Homepage link text (Default: "Conference homepage")',
         required=False,
         widget=forms.TextInput(attrs={'size': '60'}),
     )
@@ -47,19 +62,22 @@ class MeetingForm(forms.Form):
         required=False,
     )
     start_date = forms.DateField(
-        widget=forms.DateInput(format='%b %d %Y'),
         required=False,
-        label='Start date (e.g. Nov 7 2016)'
+        label='Start date (e.g. Nov 7 2016 or 11/7/2016)'
     )
     end_date = forms.DateField(
-        widget=forms.DateInput(format='%b %d %Y'),
         required=False,
-        label='End date (e.g. Nov 9 2016)'
+        label='End date (e.g. Nov 9 2016 or 11/9/2016)'
     )
-    logo_url = forms.CharField(
+    logo_url = forms.URLField(
         label='Logo url',
         required=False,
         widget=forms.TextInput(attrs={'size': '60'}),
+    )
+    is_meeting = forms.BooleanField(
+        label='This is a meeting',
+        initial=True,
+        required=False,
     )
     active = forms.BooleanField(
         label='Conference is active',
@@ -115,9 +133,6 @@ class MeetingForm(forms.Form):
         label='Mail attachment message',
         widget=forms.TextInput(attrs={'size': '60'}),
     )
-    homepage_link_text = forms.CharField(
-        label='Homepage link text (Default: "Conference homepage")'
-    )
 
     def clean_start_date(self):
         date = self.cleaned_data.get('start_date')
@@ -133,7 +148,7 @@ class MeetingForm(forms.Form):
         endpoint = self.cleaned_data['endpoint']
         edit = self.cleaned_data['edit']
         try:
-            Conference.get_by_endpoint(endpoint)
+            Conference.get_by_endpoint(endpoint, False)
             if not edit:
                 raise forms.ValidationError(
                     'A meeting with this endpoint exists already.'

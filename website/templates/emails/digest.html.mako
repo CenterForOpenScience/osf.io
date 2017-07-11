@@ -8,10 +8,10 @@
             <thead class="block-head">
             <th colspan="2" style="padding: 0px 15px 0px 15px;">
                 <h3 style="padding: 0 15px 5px 15px; margin: 30px 0 0 0;border: none;list-style: none;font-weight: 300; border-bottom: 1px solid #eee; text-align: left;">
-                  <% from website.project.model import Node %>
-                ${Node.load(key).title}
+                  <% from osf.models import AbstractNode %>
+                ${AbstractNode.load(key).title}
                 %if parent :
-                    <small style="font-size: 14px;color: #999;"> in ${Node.load(parent).title}</small>
+                    <small style="font-size: 14px;color: #999;"> in ${AbstractNode.load(parent).title}</small>
                 %endif
                 </h3>
             </th>

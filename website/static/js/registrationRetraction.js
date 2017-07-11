@@ -18,7 +18,7 @@ var Raven = require('raven-js');
 var RegistrationRetractionViewModel = oop.extend(
     ChangeMessageMixin,
     {
-        constructor: function(submitUrl, registrationTitle) {
+        constructor: function(submitUrl) {
             this.super.constructor.call(this);
 
             ko.validation.registerExtenders();
@@ -26,22 +26,14 @@ var RegistrationRetractionViewModel = oop.extend(
             var self = this;
 
             self.submitUrl = submitUrl;
-            self.registrationTitle = $osf.htmlDecode(registrationTitle);
-            // Truncate title to around 50 chars
-            var parts = self.registrationTitle.slice(0, 50).split(' ');
-            if (parts.length > 1) {
-                self.truncatedTitle = parts.slice(0, -1).join(' ');
-            }
-            else {
-                self.truncatedTitle = parts[0];
-            }
 
+            self.confirmationString = $osf.getConfirmationString();
             self.justification = ko.observable('').extend({
                 maxLength: 2048
             });
             self.confirmationText = ko.observable().extend({
                 required: true,
-                mustEqual: self.truncatedTitle
+                mustEqual: self.confirmationString
             });
             self.disableSave = ko.observable(false);
             self.valid = ko.computed(function(){
@@ -88,8 +80,8 @@ var RegistrationRetractionViewModel = oop.extend(
         }
 });
 
-var RegistrationRetraction = function(selector, submitUrl, registrationTitle) {
-    this.viewModel = new RegistrationRetractionViewModel(submitUrl, registrationTitle);
+var RegistrationRetraction = function(selector, submitUrl) {
+    this.viewModel = new RegistrationRetractionViewModel(submitUrl);
     $osf.applyBindings(this.viewModel, selector);
 };
 

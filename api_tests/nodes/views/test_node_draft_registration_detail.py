@@ -2,14 +2,13 @@ import hashlib, binascii
 from nose.tools import *  # flake8: noqa
 
 from modularodm import Q
-from website.models import MetaSchema
+from osf.models import MetaSchema
 from website.project.metadata.schemas import LATEST_SCHEMA_VERSION
 from api.base.settings.defaults import API_BASE
 from website.settings import PREREG_ADMIN_TAG
-from website.project.model import ensure_schemas
 from test_node_draft_registration_list import DraftRegistrationTestCase
 
-from tests.factories import (
+from osf_tests.factories import (
     ProjectFactory,
     DraftRegistrationFactory,
     AuthUserFactory,
@@ -21,7 +20,6 @@ class TestDraftRegistrationDetail(DraftRegistrationTestCase):
 
     def setUp(self):
         super(TestDraftRegistrationDetail, self).setUp()
-        ensure_schemas()
 
         self.schema = MetaSchema.find_one(
             Q('name', 'eq', 'OSF-Standard Pre-Data Collection Registration') &
@@ -69,7 +67,7 @@ class TestDraftRegistrationDetail(DraftRegistrationTestCase):
 
     def test_reviewer_can_see_draft_registration(self):
         user = AuthUserFactory()
-        user.system_tags.append(PREREG_ADMIN_TAG)
+        user.add_system_tag(PREREG_ADMIN_TAG)
         user.save()
         res = self.app.get(self.url, auth=user.auth)
         assert_equal(res.status_code, 200)
@@ -83,7 +81,6 @@ class TestDraftRegistrationUpdate(DraftRegistrationTestCase):
 
     def setUp(self):
         super(TestDraftRegistrationUpdate, self).setUp()
-        ensure_schemas()
 
         self.schema = MetaSchema.find_one(
             Q('name', 'eq', 'OSF-Standard Pre-Data Collection Registration') &
@@ -268,7 +265,7 @@ class TestDraftRegistrationUpdate(DraftRegistrationTestCase):
 
     def test_reviewer_can_update_draft_registration(self):
         user = AuthUserFactory()
-        user.system_tags.append(PREREG_ADMIN_TAG)
+        user.add_system_tag(PREREG_ADMIN_TAG)
         user.save()
 
         payload = {
@@ -295,7 +292,7 @@ class TestDraftRegistrationUpdate(DraftRegistrationTestCase):
 
     def test_reviewer_can_only_update_comment_fields_draft_registration(self):
         user = AuthUserFactory()
-        user.system_tags.append(PREREG_ADMIN_TAG)
+        user.add_system_tag(PREREG_ADMIN_TAG)
         user.save()
 
         payload = {
@@ -320,7 +317,7 @@ class TestDraftRegistrationUpdate(DraftRegistrationTestCase):
 
     def test_reviewer_can_update_nested_comment_fields_draft_registration(self):
         user = AuthUserFactory()
-        user.system_tags.append(PREREG_ADMIN_TAG)
+        user.add_system_tag(PREREG_ADMIN_TAG)
         user.save()
 
         payload = {
@@ -349,7 +346,7 @@ class TestDraftRegistrationUpdate(DraftRegistrationTestCase):
 
     def test_reviewer_cannot_update_nested_value_fields_draft_registration(self):
         user = AuthUserFactory()
-        user.system_tags.append(PREREG_ADMIN_TAG)
+        user.add_system_tag(PREREG_ADMIN_TAG)
         user.save()
 
         payload = {
@@ -381,7 +378,6 @@ class TestDraftRegistrationPatch(DraftRegistrationTestCase):
 
     def setUp(self):
         super(TestDraftRegistrationPatch, self).setUp()
-        ensure_schemas()
 
         self.schema = MetaSchema.find_one(
             Q('name', 'eq', 'OSF-Standard Pre-Data Collection Registration') &
@@ -457,7 +453,6 @@ class TestDraftRegistrationPatch(DraftRegistrationTestCase):
 class TestDraftRegistrationDelete(DraftRegistrationTestCase):
     def setUp(self):
         super(TestDraftRegistrationDelete, self).setUp()
-        ensure_schemas()
 
         schema = MetaSchema.find_one(
             Q('name', 'eq', 'OSF-Standard Pre-Data Collection Registration') &
@@ -502,7 +497,7 @@ class TestDraftRegistrationDelete(DraftRegistrationTestCase):
 
     def test_reviewer_cannot_delete_draft_registration(self):
         user = AuthUserFactory()
-        user.system_tags.append(PREREG_ADMIN_TAG)
+        user.add_system_tag(PREREG_ADMIN_TAG)
         user.save()
 
         res = self.app.delete_json_api(self.url, auth=user.auth, expect_errors=True)
@@ -514,7 +509,6 @@ class TestDraftPreregChallengeRegistrationMetadataValidation(DraftRegistrationTe
 
     def setUp(self):
         super(TestDraftPreregChallengeRegistrationMetadataValidation, self).setUp()
-        ensure_schemas()
 
         self.prereg_schema = MetaSchema.find_one(
             Q('name', 'eq', 'Prereg Challenge') &

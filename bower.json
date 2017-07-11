@@ -1,10 +1,9 @@
 {
-  "name": "OSF",
+  "name": "osf",
   "dependencies": {
     "jquery": "^1.11.2",
     "jquery-ui": "~1.10.4",
-    "bootstrap": "^3.3.0",
-    "select2": "3.5.1",
+    "bootstrap": "^3.3.7",
     "ace-builds": "1.1.8",
     "bootstrap.growl": "2.0.0",
     "MathJax": "2.6",
@@ -18,8 +17,8 @@
     "styles": "https://github.com/CenterForOpenScience/styles.git#master",
     "locales": "https://github.com/CenterForOpenScience/locales.git#d2b612f8a6f764cbd66e67238636fac3888a7736",
     "raven-js": "2.1.0",
-    "zeroclipboard": "2.1.6",
-    "osf-style": "https://github.com/CenterForOpenScience/osf-style.git#5dcf5997ad2808ffc7c8564f94cde102bf7a4a96",
-    "At.js": "https://github.com/CenterForOpenScience/At.js.git#d4c1c6ebce3808a275bac59740dabd9bcf76d96f"
+    "clipboard": "^1.6.1",
+    "At.js": "CenterForOpenScience/At.js#cos",
+    "academicons": "1.7.0"
   }
 }

@@ -17,7 +17,7 @@ var license = licenses.MIT;
 // proxy attribute to match server data
 license.copyright_holders = [];
 
-describe('LicensePicker', () => {
+describe.skip('LicensePicker', () => {
 
     before(() => {
         window.contextVars = $.extend({}, window.contextVars || {}, {

@@ -7,14 +7,13 @@ from nose.tools import *  # noqa
 from modularodm import Q
 
 from tests.base import OsfTestCase
-from tests import factories
+from osf_tests import factories
 from tests.utils import mock_auth
 
 from framework.exceptions import HTTPError
 
 from website import settings
-from website.models import Node
-from website.project.sanctions import Embargo, RegistrationApproval, Retraction, Sanction
+from osf.models import AbstractNode as Node, Embargo, RegistrationApproval, Retraction, Sanction
 from website.tokens import decode, encode, TokenHandler
 from website.tokens.exceptions import TokenHandlerNotFound
 
@@ -87,7 +86,8 @@ class SanctionTokenHandlerBase(OsfTestCase):
         self.reg = Node.find_one(Q(self.Model.SHORT_NAME, 'eq', self.sanction))
         self.user = self.reg.creator
 
-    def test_sanction_handler(self):
+    @mock.patch('website.project.tasks.on_registration_updated')
+    def test_sanction_handler(self, mock_registration_updated):
         if not self.kind:
             return
         approval_token = self.sanction.approval_state[self.user._id]['approval_token']

@@ -1,10 +1,12 @@
-
-from rest_framework.exceptions import NotFound
+from django.apps import apps
+from rest_framework.exceptions import NotFound, PermissionDenied
 from rest_framework import generics, permissions as drf_permissions
 
 from framework.auth.oauth_scopes import CoreScopes
 
 from api.addons.serializers import AddonSerializer
+from api.base.filters import ListFilterMixin
+from api.base.pagination import MaxSizePagination
 from api.base.permissions import TokenHasScope
 from api.base.settings import ADDONS_OAUTH
 from api.base.views import JSONAPIBaseView
@@ -17,15 +19,23 @@ class AddonSettingsMixin(object):
     current URL. By default, fetches the settings based on the user or node available in self context.
     """
 
-    def get_addon_settings(self, provider=None, fail_if_absent=True):
+    def get_addon_settings(self, provider=None, fail_if_absent=True, check_object_permissions=True):
         owner = None
+        provider = provider or self.kwargs['provider']
+
         if hasattr(self, 'get_user'):
             owner = self.get_user()
+            owner_type = 'user'
         elif hasattr(self, 'get_node'):
             owner = self.get_node()
+            owner_type = 'node'
 
-        provider = provider or self.kwargs['provider']
-        if not owner or provider not in ADDONS_OAUTH:
+        try:
+            addon_module = apps.get_app_config('addons_{}'.format(provider))
+        except LookupError:
+            raise NotFound('Requested addon unrecognized')
+
+        if not owner or provider not in ADDONS_OAUTH or owner_type not in addon_module.owners:
             raise NotFound('Requested addon unavailable')
 
         addon_settings = owner.get_addon(provider)
@@ -35,9 +45,18 @@ class AddonSettingsMixin(object):
         if not addon_settings or addon_settings.deleted:
             return None
 
+        if addon_settings and check_object_permissions:
+            authorizer = None
+            if owner_type == 'user':
+                authorizer = addon_settings.owner
+            elif hasattr(addon_settings, 'user_settings'):
+                authorizer = addon_settings.user_settings.owner
+            if authorizer and authorizer != self.request.user:
+                raise PermissionDenied('Must be addon authorizer to list folders')
+
         return addon_settings
 
-class AddonList(JSONAPIBaseView, generics.ListAPIView):
+class AddonList(JSONAPIBaseView, generics.ListAPIView, ListFilterMixin):
     """List of addons configurable with the OSF *Read-only*.
 
     Paginated list of addons associated with third-party services
@@ -68,9 +87,13 @@ class AddonList(JSONAPIBaseView, generics.ListAPIView):
     required_read_scopes = [CoreScopes.ALWAYS_PUBLIC]
     required_write_scopes = [CoreScopes.NULL]
 
+    pagination_class = MaxSizePagination
     serializer_class = AddonSerializer
     view_category = 'addons'
     view_name = 'addon-list'
 
-    def get_queryset(self):
+    def get_default_queryset(self):
         return [conf for conf in osf_settings.ADDONS_AVAILABLE_DICT.itervalues() if 'accounts' in conf.configs]
+
+    def get_queryset(self):
+        return self.get_queryset_from_request()

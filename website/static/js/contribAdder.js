@@ -51,6 +51,7 @@ AddContributorViewModel = oop.extend(Paginator, {
         //state of current nodes
         self.childrenToChange = ko.observableArray();
         self.nodesState = ko.observable();
+        self.canSubmit = ko.observable(true);
         //nodesState is passed to nodesSelectTreebeard which can update it and key off needed action.
         self.nodesState.subscribe(function (newValue) {
             //The subscribe causes treebeard changes to change which nodes will be affected
@@ -97,6 +98,15 @@ AddContributorViewModel = oop.extend(Paginator, {
         self.parentImport = ko.observable(false);
         self.totalPages = ko.observable(0);
         self.childrenToChange = ko.observableArray();
+
+        self.emailSearch = ko.pureComputed(function () {
+            var emailRegex = new RegExp('[^\\s]+@[^\\s]+\\.[^\\s]');
+            if (emailRegex.test(String(self.query()))) {
+                return true;
+            } else {
+                return false;
+            }
+        });
 
         self.foundResults = ko.pureComputed(function () {
             return self.query() && self.results().length && !self.parentImport();
@@ -328,6 +338,8 @@ AddContributorViewModel = oop.extend(Paginator, {
     postInvite: function () {
         var self = this;
         self.inviteError('');
+        self.canSubmit(false);
+
         var validated = self.validateInviteForm();
         if (typeof validated === 'string') {
             self.inviteError(validated);
@@ -473,11 +485,14 @@ AddContributorViewModel = oop.extend(Paginator, {
         self.results([]);
         self.page('whom');
         self.add(result.contributor);
+        self.canSubmit(true);
     },
     onInviteError: function (xhr) {
+        var self = this;
         var response = JSON.parse(xhr.responseText);
         // Update error message
-        this.inviteError(response.message);
+        self.inviteError(response.message);
+        self.canSubmit(true);
     },
     hasChildren: function() {
         var self = this;
@@ -504,7 +519,9 @@ AddContributorViewModel = oop.extend(Paginator, {
         }).fail(function (xhr, status, error) {
             $osf.growl('Error', 'Unable to retrieve project settings');
             Raven.captureMessage('Could not GET project settings.', {
-                url: treebeardUrl, status: status, error: error
+                extra: {
+                    url: treebeardUrl, status: status, error: error
+                }
             });
         });
     }

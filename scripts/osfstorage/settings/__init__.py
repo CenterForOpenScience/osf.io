@@ -1,6 +1,6 @@
 # encoding: utf-8
 
-from .defaults import *
+from .defaults import *  # noqa
 
 
 try:

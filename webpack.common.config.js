@@ -14,7 +14,7 @@ var nodePath = function(dir) {
     return path.join(__dirname, 'node_modules', dir);
 };
 var addonsPath = function(dir) {
-    return path.join(__dirname, 'website', 'addons', dir);
+    return path.join(__dirname, 'addons', dir);
 };
 
 /**
@@ -51,7 +51,6 @@ var entry = {
     'meetings-page': staticPath('js/pages/meetings-page.js'),
     'view-file-tree-page': staticPath('js/pages/view-file-tree-page.js'),
     'search-page': staticPath('js/pages/search-page.js'),
-    'share-search-page': staticPath('js/pages/share-search-page.js'),
     'profile-settings-addons-page': staticPath('js/pages/profile-settings-addons-page.js'),
     'twofactor-page': staticPath('js/pages/twofactor-page.js'),
     'forgotpassword-page': staticPath('js/pages/forgotpassword-page.js'),
@@ -60,7 +59,6 @@ var entry = {
     'login-page': staticPath('js/pages/login-page.js'),
     'notifications-config-page': staticPath('js/pages/notifications-config-page.js'),
     'faq-page' : staticPath('js/pages/faq-page.js'),
-    'share-embed-page': staticPath('js/pages/share-embed-page.js'),
     'render-nodes': staticPath('js/pages/render-nodes.js'),
     'institution-page': staticPath('js/pages/institution-page.js'),
     // Commons chunk
@@ -88,7 +86,11 @@ var entry = {
         'mithril',
         'js/qToggle',
         'js/components/autocomplete',
-    ]
+        // Main CSS files that get loaded above the fold
+        nodePath('select2/select2.css'),
+        '@centerforopenscience/osf-style',
+        staticPath('css/style.css'),
+    ],
 };
 
 // Collect log text from addons
@@ -104,20 +106,20 @@ var addonModules = ['files.js', 'node-cfg.js', 'user-cfg.js', 'file-detail.js', 
 addons.addons.forEach(function(addonName) {
     var baseDir = addonName + '/';
     addonModules.forEach(function(module) {
-        var modulePath = path.join(__dirname, 'website', 'addons',
+        var modulePath = path.join(__dirname, 'addons',
                                   addonName, 'static', module);
         if (fs.existsSync(modulePath)) {
             var entryPoint = baseDir + module.split('.')[0];
             entry[entryPoint] =  modulePath;
         }
     });
-    var logTextPath = path.join(__dirname, 'website', 'addons',
+    var logTextPath = path.join(__dirname, 'addons',
         addonName, 'static', addonName + 'LogActionList.json');
     if(fs.existsSync(logTextPath)){
         addonLog = require(logTextPath);
         for (var attrname in addonLog) { mainLogs[attrname] = addonLog[attrname]; }
     }
-    var anonymousLogTextPath = path.join(__dirname, 'website', 'addons',
+    var anonymousLogTextPath = path.join(__dirname, 'addons',
         addonName, 'static', addonName + 'AnonymousLogActionList.json');
     if(fs.existsSync(anonymousLogTextPath)) {
         anonymousAddonLog = require(anonymousLogTextPath);
@@ -140,7 +142,7 @@ var resolve = {
         'jquery-blockui': staticPath('vendor/jquery-blockui/jquery.blockui.js'),
         'bootstrap': staticPath('vendor/bower_components/bootstrap/dist/js/bootstrap.min.js'),
         'jquery-tagsinput': staticPath('vendor/bower_components/jquery.tagsinput/jquery.tagsinput.js'),
-        'zeroclipboard': staticPath('vendor/bower_components/zeroclipboard/dist/ZeroClipboard.js'),
+        'clipboard': staticPath('vendor/bower_components/clipboard/dist/clipboard.js'),
         'history': nodePath('historyjs/scripts/bundled/html4+html5/jquery.history.js'),
         // Needed for knockout-sortable
         'jquery.ui.sortable': staticPath('vendor/bower_components/jquery-ui/ui/jquery.ui.sortable.js'),
@@ -153,14 +155,16 @@ var resolve = {
         'pagedown-ace-sanitizer': addonsPath('wiki/static/pagedown-ace/Markdown.Sanitizer.js'),
         'pagedown-ace-editor': addonsPath('wiki/static/pagedown-ace/Markdown.Editor.js'),
         'wikiPage': addonsPath('wiki/static/wikiPage.js'),
+        'typo': staticPath('vendor/ace-plugins/typo.js'),
         'highlight-css': nodePath('highlight.js/styles/default.css'),
         'pikaday-css': nodePath('pikaday/css/pikaday.css'),
         // Also alias some internal libraries for easy access
-        'addons': path.join(__dirname, 'website', 'addons'),
+        'addons': path.join(__dirname, 'addons'),
         'tests': staticPath('js/tests'),
         // GASP Items not defined as main in its package.json
         'TweenLite' : nodePath('gsap/src/minified/TweenLite.min.js'),
         'EasePack' : nodePath('gsap/src/minified/easing/EasePack.min.js'),
+        'keen-dataset' : nodePath('keen-dataviz/lib/dataset/'),
     }
 };
 
@@ -187,7 +191,8 @@ var plugins = [
     }),
     // Slight hack to make sure that CommonJS is always used
     new webpack.DefinePlugin({
-        'define.amd': false
+        'define.amd': false,
+        '__ENABLE_DEV_MODE_CONTROLS': fs.existsSync(staticPath(path.join('built', 'git_logs.json')))
     }),
 ];
 

@@ -8,7 +8,7 @@ from api.base.utils import has_admin_scope
 from framework.auth import oauth_scopes
 from framework.auth.cas import CasResponse
 
-from website.models import ApiOAuth2Application, ApiOAuth2PersonalToken
+from osf.models import ApiOAuth2Application, ApiOAuth2PersonalToken
 from website.util.sanitize import is_iterable_but_not_string
 
 
@@ -44,7 +44,6 @@ class TokenHasScope(permissions.BasePermission):
 
         # Scopes are returned as a space-delimited list in the token
         allowed_scopes = token.attributes['accessTokenScope']
-
         try:
             normalized_scopes = oauth_scopes.normalize_scopes(allowed_scopes)
         except KeyError:
@@ -94,9 +93,12 @@ class RequiresScopedRequestOrReadOnly(TokenHasScope):
     def has_permission(self, request, view):
         token = request.auth
 
+        # User either needs properly scoped token or cookie. Otherwise, endpoint has restricted write.
         if token is None or not isinstance(token, CasResponse):
-            # Assumption: user authenticated via non-oauth means, and this endpoint has restricted write
-            return request.method in permissions.SAFE_METHODS
+            if request.COOKIES:
+                return True
+            else:
+                return request.method in permissions.SAFE_METHODS
 
         return self._verify_scopes(request, view, token)
 
@@ -120,7 +122,7 @@ class OwnerOnly(permissions.BasePermission):
     def has_object_permission(self, request, view, obj):
         """Not applied to all members of a queryset"""
         assert isinstance(obj, (ApiOAuth2Application, ApiOAuth2PersonalToken)), 'obj must be an ApiOAuth2Application or ApiOAuth2PersonalToken, got {}'.format(obj)
-        return (obj.owner._id == request.user._id)
+        return (obj.owner.id == request.user.id)
 
 
 def PermissionWithGetter(Base, getter):

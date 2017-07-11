@@ -87,9 +87,9 @@ var AddProject = {
             var data;
             self.viewState('processing');
             if(self.options.parentID) {
-                url = $osf.apiV2Url('nodes/' + self.options.parentID + '/children/', { query : {'inherit_contributors' : self.newProjectInheritContribs()}});
+                url = $osf.apiV2Url('nodes/' + self.options.parentID + '/children/', { query : {'inherit_contributors' : self.newProjectInheritContribs(), 'version': '2.2'}});
             } else {
-                url = $osf.apiV2Url('nodes/', { query : {}});
+                url = $osf.apiV2Url('nodes/', { query : {'version': '2.2'}});
             }
             data = {
                     'data' : {
@@ -119,7 +119,7 @@ var AddProject = {
             var request = m.request({method : 'POST', url : url, data : data, config : xhrconfig});
             if (self.institutions.length > 0) {
                 request.then(function (result) {
-                    var newNodeApiUrl = $osf.apiV2Url('nodes/' + result.data.id + '/relationships/institutions/');
+                    var newNodeApiUrl = $osf.apiV2Url('nodes/' + result.data.id + '/relationships/institutions/', {query: {'version': '2.2'}});
                     var data = {
                         data: self.institutions.filter(
                             function (inst) {
@@ -230,9 +230,21 @@ var AddProject = {
                                     onchange : function() {
                                         ctrl.newProjectInheritContribs(this.checked);
                                     }
-                                }), ' Add contributors from ', m('b', options.parentTitle)
+                                }), ' Add contributors from ', m('b', options.parentTitle),
+                                m('br'),
+                                m('i', ' Admins of ', m('b', options.parentTitle), ' will have read access to this component.')
                             )
                         ]) : '',
+                        ctrl.options.parentID !== null ? m('.span', [
+                                m('label.f-w-lg.text-bigger', 'License'),
+                                m('p',
+                                    m('i', ' This component will inherit the same license as ',
+                                        m('b', options.parentTitle),
+                                        '. ',
+                                        m('a[href="http://help.osf.io/m/sharing/l/524050-licenses?id=524050-licenses"]', 'Learn more.' )
+                                    )
+                                )
+                        ]): '',
                         m('.text-muted.pointer', { onclick : function(){
                             ctrl.showMore(!ctrl.showMore());
                             $osf.trackClick(options.trackingCategory, options.trackingAction, 'show-more-or-less');

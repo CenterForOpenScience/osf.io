@@ -18,6 +18,33 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__fil
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/1.8/howto/deployment/checklist/
 
+DATABASES = {
+    'default': {
+        'CONN_MAX_AGE': 0,
+        'ENGINE': 'osf.db.backends.postgresql',  # django.db.backends.postgresql
+        'NAME': os.environ.get('OSF_DB_NAME', 'osf'),
+        'USER': os.environ.get('OSF_DB_USER', 'postgres'),
+        'PASSWORD': os.environ.get('OSF_DB_PASSWORD', ''),
+        'HOST': os.environ.get('OSF_DB_HOST', '127.0.0.1'),
+        'PORT': os.environ.get('OSF_DB_PORT', '5432'),
+        'ATOMIC_REQUESTS': True,
+    }
+}
+
+DATABASE_ROUTERS = ['osf.db.router.PostgreSQLFailoverRouter', ]
+CELERY_IMPORTS = [
+    'osf.management.commands.migratedata',
+    'osf.management.commands.migraterelations',
+    'osf.management.commands.verify',
+]
+
+PASSWORD_HASHERS = [
+    'django.contrib.auth.hashers.BCryptSHA256PasswordHasher',
+    'django.contrib.auth.hashers.BCryptPasswordHasher',
+]
+
+AUTH_USER_MODEL = 'osf.OSFUser'
+
 # SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = osf_settings.SECRET_KEY
 
@@ -26,6 +53,7 @@ AUTHENTICATION_BACKENDS = (
 )
 
 # SECURITY WARNING: don't run with debug turned on in production!
+DEV_MODE = osf_settings.DEV_MODE
 DEBUG = osf_settings.DEBUG_MODE
 DEBUG_PROPAGATE_EXCEPTIONS = True
 
@@ -49,17 +77,40 @@ ALLOWED_HOSTS = [
 INSTALLED_APPS = (
     'django.contrib.auth',
     'django.contrib.contenttypes',
+    'django.contrib.messages',
+    'django.contrib.sessions',
     'django.contrib.staticfiles',
+    'django.contrib.admin',
 
     # 3rd party
     'rest_framework',
     'rest_framework_swagger',
     'corsheaders',
     'raven.contrib.django.raven_compat',
+    'django_extensions',
+
+    # OSF
+    'osf',
+
+    # Addons
+    'addons.osfstorage',
+    'addons.box',
+    'addons.dataverse',
+    'addons.dropbox',
+    'addons.figshare',
+    'addons.forward',
+    'addons.github',
+    'addons.googledrive',
+    'addons.mendeley',
+    'addons.owncloud',
+    'addons.s3',
+    'addons.twofactor',
+    'addons.wiki',
+    'addons.zotero',
 )
 
 # local development using https
-if osf_settings.SECURE_MODE and osf_settings.DEBUG_MODE:
+if osf_settings.SECURE_MODE and DEBUG:
     INSTALLED_APPS += ('sslserver',)
 
 # TODO: Are there more granular ways to configure reporting specifically related to the API?
@@ -93,8 +144,16 @@ REST_FRAMEWORK = {
     ),
     'EXCEPTION_HANDLER': 'api.base.exceptions.json_api_exception_handler',
     'DEFAULT_CONTENT_NEGOTIATION_CLASS': 'api.base.content_negotiation.JSONAPIContentNegotiation',
-    'DEFAULT_VERSIONING_CLASS': 'rest_framework.versioning.AcceptHeaderVersioning',
+    'DEFAULT_VERSIONING_CLASS': 'api.base.versioning.BaseVersioning',
     'DEFAULT_VERSION': '2.0',
+    'ALLOWED_VERSIONS': (
+        '2.0',
+        '2.1',
+        '2.2',
+        '2.3',
+        '2.4',
+        '2.5',
+    ),
     'DEFAULT_FILTER_BACKENDS': ('api.base.filters.ODMOrderingFilter',),
     'DEFAULT_PAGINATION_CLASS': 'api.base.pagination.JSONAPIPagination',
     'ORDERING_PARAM': 'sort',
@@ -104,6 +163,19 @@ REST_FRAMEWORK = {
         'api.base.authentication.drf.OSFSessionAuthentication',
         'api.base.authentication.drf.OSFCASAuthentication'
     ),
+    'DEFAULT_THROTTLE_CLASSES': (
+        'rest_framework.throttling.UserRateThrottle',
+        'api.base.throttling.NonCookieAuthThrottle',
+    ),
+    'DEFAULT_THROTTLE_RATES': {
+        'user': '10000/day',
+        'non-cookie-auth': '100/hour',
+        'add-contributor': '10/second',
+        'create-guid': '1000/hour',
+        'root-anon-throttle': '1000/hour',
+        'test-user': '2/hour',
+        'test-anon': '1/hour',
+    }
 }
 
 # Settings related to CORS Headers addon: allow API to receive authenticated requests from OSF
@@ -116,17 +188,11 @@ CORS_ORIGIN_WHITELIST = (urlparse(osf_settings.DOMAIN).netloc,
 # use cookies.
 CORS_ALLOW_CREDENTIALS = True
 # Set dynamically on app init
-INSTITUTION_ORIGINS_WHITELIST = ()
+ORIGINS_WHITELIST = ()
 
 MIDDLEWARE_CLASSES = (
-    # TokuMX transaction support
-    # Needs to go before CommonMiddleware, so that transactions are always started,
-    # even in the event of a redirect. CommonMiddleware may cause other middlewares'
-    # process_request to be skipped, e.g. when a trailing slash is omitted
     'api.base.middleware.DjangoGlobalMiddleware',
-    'api.base.middleware.MongoConnectionMiddleware',
     'api.base.middleware.CeleryTaskMiddleware',
-    'api.base.middleware.TokuTransactionMiddleware',
     'api.base.middleware.PostcommitTaskMiddleware',
 
     # A profiling middleware. ONLY FOR DEV USE
@@ -196,7 +262,7 @@ SWAGGER_SETTINGS = {
         'title': 'OSF APIv2 Documentation',
     },
     'doc_expansion': 'list',
-    'exclude_namespaces': ['applications', 'tokens'],
+    'exclude_namespaces': ['applications', 'tokens', 'test'],
 }
 
 NODE_CATEGORY_MAP = osf_settings.NODE_CATEGORY_MAP
@@ -211,5 +277,12 @@ ENABLE_ESI = osf_settings.ENABLE_ESI
 VARNISH_SERVERS = osf_settings.VARNISH_SERVERS
 ESI_MEDIA_TYPES = osf_settings.ESI_MEDIA_TYPES
 
-ADDONS_FOLDER_CONFIGURABLE = ['box', 'dropbox', 's3', 'googledrive']
-ADDONS_OAUTH = ADDONS_FOLDER_CONFIGURABLE + ['dataverse', 'github', 'mendeley', 'zotero']
+ADDONS_FOLDER_CONFIGURABLE = ['box', 'dropbox', 's3', 'googledrive', 'figshare', 'owncloud']
+ADDONS_OAUTH = ADDONS_FOLDER_CONFIGURABLE + ['dataverse', 'github', 'mendeley', 'zotero', 'forward']
+
+BYPASS_THROTTLE_TOKEN = 'test-token'
+
+OSF_SHELL_USER_IMPORTS = None
+
+# Settings for use in the admin
+OSF_URL = 'https://osf.io'

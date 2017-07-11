@@ -2,7 +2,7 @@
 
 var $ = require('jquery');
 var $osf = require('js/osfHelpers');
-var Fangorn = require('js/fangorn');
+var Fangorn = require('js/fangorn').Fangorn;
 var node = window.contextVars.node;
 
 // Don't show dropped content if user drags outside grid

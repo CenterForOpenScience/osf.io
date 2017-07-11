@@ -17,7 +17,7 @@ from api.base.views import JSONAPIBaseView
 from api.base import permissions as base_permissions
 from api.tokens.serializers import ApiOAuth2PersonalTokenSerializer
 
-from website.models import ApiOAuth2PersonalToken
+from osf.models import ApiOAuth2PersonalToken
 
 
 class TokenList(JSONAPIBaseView, generics.ListCreateAPIView, ODMFilterMixin):
@@ -43,7 +43,7 @@ class TokenList(JSONAPIBaseView, generics.ListCreateAPIView, ODMFilterMixin):
 
     def get_default_odm_query(self):
 
-        owner = self.request.user._id
+        owner = self.request.user
         return (
             Q('owner', 'eq', owner) &
             Q('is_active', 'eq', True)

@@ -49,7 +49,8 @@
                 <!-- Folder buttons -->
                 <div class="btn-group" data-bind="visible: userIsOwner() && validCredentials()">
                     <button data-bind="click: togglePicker,
-                                       css: {active: currentDisplay() === PICKER}" class="btn btn-primary">Change</button>
+                                       css: {active: currentDisplay() === PICKER}" class="btn btn-primary">
+                                       <span data-bind="text: toggleChangeText"></span></button>
                 </div>
                 <!-- Folder picker -->
                 <div class="m-t-sm addon-folderpicker-widget ${addon_short_name}-widget">

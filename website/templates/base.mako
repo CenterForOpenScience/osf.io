@@ -35,7 +35,7 @@
     % endif
 
     <!-- Facebook display -->
-    <meta name="og:image" content="http://centerforopenscience.org/static/img/cos_center_logo_small.png"/>
+    <meta name="og:image" content="https://cos.io/static/img/cos_center_logo_small.png"/>
     <meta name="og:title" content="${self.title()}"/>
     <meta name="og:ttl" content="3"/>
     <meta name="og:description" content="${self.og_description()}"/>
@@ -87,10 +87,7 @@
     </div>
     % endif
 
-    <%namespace name="nav_file" file="nav.mako"/>
-    <%block name="nav">
-        ${nav_file.nav()}
-    </%block>
+    ${self.nav()}
      ## TODO: shouldn't always have the watermark class
     ${self.content_wrap()}
 
@@ -120,20 +117,6 @@
 
     ${self.footer()}
     <%include file="copyright.mako"/>
-        % if settings.PINGDOM_ID:
-            <script>
-            var _prum = [['id', ${ settings.PINGDOM_ID | sjson, n }],
-                            ['mark', 'firstbyte', (new Date()).getTime()]];
-            (function() {
-                var s = document.getElementsByTagName('script')[0]
-                    , p = document.createElement('script');
-                p.async = 'async';
-                p.src = '//rum-static.pingdom.net/prum.min.js';
-                s.parentNode.insertBefore(p, s);
-            })();
-            </script>
-        % endif
-
         <%!
             import hashlib
 
@@ -158,7 +141,7 @@
 
             ga('create', ${ settings.GOOGLE_ANALYTICS_ID | sjson, n }, 'auto', {'allowLinker': true});
             ga('require', 'linker');
-            ga('linker:autoLink', ['centerforopenscience.org'] );
+            ga('linker:autoLink', ['centerforopenscience.org', 'cos.io'] );
             ga('set', 'dimension1', ${user_hash(user_id) | sjson, n});
             ga('set', 'dimension2', ${create_timestamp() | sjson, n});
             ga('send', 'pageview');
@@ -168,10 +151,6 @@
             <script>
                 window.ga = function() {};
           </script>
-        % endif
-
-        % if piwik_host:
-            <script src="${ piwik_host }piwik.js" type="text/javascript"></script>
         % endif
 
         <script>
@@ -189,47 +168,32 @@
                     timezone: ${ user_timezone | sjson, n },
                     entryPoint: ${ user_entry_point | sjson, n },
                     institutions: ${ user_institutions | sjson, n},
-                    emailsToAdd: ${ user_email_verifications | sjson, n }
+                    emailsToAdd: ${ user_email_verifications | sjson, n },
+                    anon: ${ anon | sjson, n },
                 },
-                allInstitutions: ${ all_institutions | sjson, n},
                 popular: ${ popular_links_node | sjson, n },
                 newAndNoteworthy: ${ noteworthy_links_node | sjson, n },
-                maintenance: ${ maintenance | sjson, n}
+                maintenance: ${ maintenance | sjson, n},
+                analyticsMeta: {},
             });
         </script>
 
-        % if piwik_host:
-            <% is_public = node.get('is_public', 'ERROR') if node else True %>
-            <script type="text/javascript">
-
-                $(function() {
-                    var cvars = [];
-                    % if user_id:
-                        cvars.push([1, "User ID", ${ user_id | sjson, n }, "visit"]);
-                        cvars.push([2, "User Name", ${ user_full_name | sjson, n }, "visit"]);
-                    % endif
-                    % if node:
-                        <% parent_project = parent_node.get('id') or node.get('id') %>
-                        cvars.push([2, "Project ID", ${ parent_project | sjson, n }, "page"]);
-                        cvars.push([3, "Node ID", ${ node.get('id') | sjson, n }, "page"]);
-                        cvars.push([4, "Tags", ${ ','.join(node.get('tags', [])) | sjson , n }, "page"]);
-                    % endif
-                    // Note: Use cookies for global site ID; only one cookie
-                    // will be used, so this won't overflow uwsgi header
-                    // buffer.
-                    $.osf.trackPiwik(${ piwik_host | sjson, n}, ${ piwik_site_id | sjson, n }, cvars, true);
+        % if keen['public']['project_id']:
+            <script>
+                window.contextVars = $.extend(true, {}, window.contextVars, {
+                    keen: {
+                        public: {
+                            projectId: ${ keen['public']['project_id'] | sjson, n },
+                            writeKey: ${ keen['public']['write_key'] | sjson, n },
+                        },
+                        private: {
+                            projectId: ${ keen['private']['project_id'] | sjson, n },
+                            writeKey: ${ keen['private']['write_key'] | sjson, n },
+                        },
+                    },
                 });
             </script>
         % endif
-
-        %if keen_project_id:
-            <script>
-                window.contextVars = $.extend(true, {}, window.contextVars, {
-                    keenProjectId: ${keen_project_id | sjson, n},
-                    keenWriteKey: ${keen_write_key | sjson, n}
-                })
-            </script>
-        %endif
 
 
         ${self.javascript_bottom()}
@@ -238,6 +202,11 @@
 
 
 ###### Base template functions #####
+
+<%def name="nav()">
+    <%namespace name="nav_helper" file="nav.mako" />
+    ${nav_helper.nav(service_name='HOME', service_url='/', service_support_url='/support/')}
+</%def>
 
 <%def name="title()">
     ### The page title ###
@@ -282,17 +251,17 @@
 <%def name="content_wrap()">
     <div class="watermarked">
         <div class="container ${self.container_class()}">
-            % if maintenance:
             ## Maintenance alert
-            <div id="maintenance" class="scripted alert alert-info alert-dismissible" role="alert">
+            % if maintenance:
+                <div id="maintenance" class="scripted alert alert-info alert-dismissible" role="alert">
                 <button type="button" class="close" data-dismiss="alert" aria-label="Close">
                     <span aria-hidden="true">&times;</span></button>
                 <strong>Notice:</strong> The site will undergo maintenance between
                 <span id="maintenanceTime"></span>.
                 Thank you for your patience.
             </div>
-            ## End Maintenance alert
             % endif
+            ## End Maintenance alert
 
             % if status:
                 ${self.alert()}
@@ -315,14 +284,11 @@
       <script src="//cdnjs.cloudflare.com/ajax/libs/es5-shim/4.0.3/es5-sham.min.js"></script>
     <![endif]-->
 
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/es6-shim/0.35.0/es6-shim.min.js"></script>
-
-    ## TODO: Get fontawesome and select2 to play nicely with webpack
+    ## TODO: Install bootstrap with npm and build it into vendor.js when
+    ## https://github.com/webpack/webpack/issues/2023 is resolved
     <link rel="stylesheet" href="/static/vendor/bower_components/bootstrap/dist/css/bootstrap.min.css">
-    <link rel="stylesheet" href="/static/vendor/bower_components/select2/select2.css">
-    <link rel="stylesheet" href="/static/vendor/bower_components/osf-style/css/base.css">
-    <link rel="stylesheet" href="/static/css/style.css">
 
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/es6-shim/0.35.0/es6-shim.min.js"></script>
     % if settings.USE_CDN_FOR_CLIENT_LIBS:
         <script src="//ajax.googleapis.com/ajax/libs/jquery/1.11.2/jquery.min.js"></script>
         <script>window.jQuery || document.write('<script src="/static/vendor/bower_components/jquery/dist/jquery.min.js">\x3C/script>')</script>

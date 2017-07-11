@@ -13,7 +13,8 @@ from api.comments.permissions import (
 )
 from api.comments.serializers import (
     CommentSerializer,
-    CommentDetailSerializer,
+    NodeCommentDetailSerializer,
+    RegistrationCommentDetailSerializer,
     CommentReportSerializer,
     CommentReportDetailSerializer,
     CommentReport
@@ -21,7 +22,8 @@ from api.comments.serializers import (
 from framework.auth.core import Auth
 from framework.auth.oauth_scopes import CoreScopes
 from framework.exceptions import PermissionsError
-from website.project.model import Comment
+from osf.models import AbstractNode as Node, Comment, BaseFileNode
+from addons.wiki.models import NodeWikiPage
 
 
 class CommentMixin(object):
@@ -35,7 +37,7 @@ class CommentMixin(object):
     def get_comment(self, check_permissions=True):
         pk = self.kwargs[self.comment_lookup_url_kwarg]
         try:
-            comment = Comment.find_one(Q('_id', 'eq', pk) & Q('root_target', 'ne', None))
+            comment = Comment.find_one(Q('guids___id', 'eq', pk) & Q('root_target', 'ne', None))
         except NoResultsFound:
             raise NotFound
 
@@ -159,13 +161,25 @@ class CommentDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView, Comm
     required_read_scopes = [CoreScopes.NODE_COMMENTS_READ]
     required_write_scopes = [CoreScopes.NODE_COMMENTS_WRITE]
 
-    serializer_class = CommentDetailSerializer
+    serializer_class = NodeCommentDetailSerializer
     view_category = 'comments'
     view_name = 'comment-detail'
 
     # overrides RetrieveAPIView
     def get_object(self):
-        return self.get_comment()
+        comment = self.get_comment()
+        comment_node = None
+
+        if isinstance(comment.target.referent, Node):
+            comment_node = comment.target.referent
+        elif isinstance(comment.target.referent, (NodeWikiPage,
+                                                  BaseFileNode)):
+            comment_node = comment.target.referent.node
+
+        if comment_node and comment_node.is_registration:
+            self.serializer_class = RegistrationCommentDetailSerializer
+
+        return comment
 
     def perform_destroy(self, instance):
         auth = Auth(self.request.user)

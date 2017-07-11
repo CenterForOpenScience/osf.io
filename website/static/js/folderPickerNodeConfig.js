@@ -12,8 +12,7 @@ var m = require('mithril');
 
 
 var FolderPicker = require('js/folderpicker');
-var ZeroClipboard = require('zeroclipboard');
-ZeroClipboard.config('/static/vendor/bower_components/zeroclipboard/dist/ZeroClipboard.swf');
+var Clipboard = require('clipboard');
 var $osf = require('js/osfHelpers');
 
 var oop = require('js/oop');
@@ -77,6 +76,8 @@ var FolderPickerViewModel = oop.defclass({
         self.currentDisplay = ko.observable(null);
         // Whether the folders have been loaded from the API
         self.loadedFolders = ko.observable(false);
+        // Button text for changing folders
+        self.toggleChangeText = ko.observable('Change');
 
         var addonSafeName = $osf.htmlEscape(self.addonName);
         self.messages = {
@@ -178,13 +179,13 @@ var FolderPickerViewModel = oop.defclass({
         self.folderName = ko.pureComputed(function() {
             var nodeHasAuth = self.nodeHasAuth();
             var folder = self.folder();
-            return (nodeHasAuth && folder && folder.name) ? decodeURIComponent(folder.name.trim()) : '';
+            return (nodeHasAuth && folder && folder.name) ? folder.name.trim() : '';
         });
 
         self.selectedFolderName = ko.pureComputed(function() {
             var userIsOwner = self.userIsOwner();
             var selected = self.selected();
-            var name = selected.name ? decodeURIComponent(selected.name) : 'None';
+            var name = selected.name ? selected.name : 'None';
             name = name.replace('All Files', 'Full ' + addonName);
             return userIsOwner ? name : '';
         });
@@ -259,7 +260,7 @@ var FolderPickerViewModel = oop.defclass({
             self.afterUpdate();
             ret.resolve();
         };
-        if (typeof data === 'undefined'){
+        if (typeof data === 'undefined' || $.isEmptyObject(data)){
             self.fetchFromServer()
                 .done(applySettings)
                 .fail(ret.reject);
@@ -432,14 +433,17 @@ var FolderPickerViewModel = oop.defclass({
         this.selected(null);
     },
     /**
-     *  Toggles the visibility of the folder picker.
+     *  Toggles the visibility of the folder picker and toggles
+     *  Change button text between 'Change' and 'Close'
      */
     togglePicker: function() {
         var shown = this.currentDisplay() === this.PICKER;
         if (!shown) {
             this.currentDisplay(this.PICKER);
+            this.toggleChangeText('Close');
             this.activatePicker();
         } else {
+            this.toggleChangeText('Change');
             this.currentDisplay(null);
             // Clear selection
             this.cancelSelection();
@@ -499,8 +503,7 @@ var FolderPickerViewModel = oop.defclass({
                     folderIcons : true,
                     filter : false,
                     custom : function(item, col) {
-                        //This is bad, but probably necessary. GoogleDrive returns URI encoded folder names, but (most/all?) others don't
-                        return m('span', decodeURIComponent(item.data.name));
+                        return m('span', item.data.name);
                     }
                 },
                 {
@@ -515,11 +518,7 @@ var FolderPickerViewModel = oop.defclass({
                 // Also handle data from API -- squash `attributes` to what TB expects
                 // TODO: [OSF-6384] DRY this up when PR #5240 goes in
                 if (data.data) {
-                    $.each(data.data, function(i, obj) {
-                        var savedAttributes = obj.attributes;
-                        delete obj.attributes;
-                        $.extend(true, obj, savedAttributes);
-                    });
+                    return $osf.squashAPIAttributes(data);
                 }
                 return data;
             },

@@ -25,9 +25,15 @@ var FolderPickerViewModel = require('js/folderPickerNodeConfig');
  * @param {Object} opts Optional overrides to the class' default treebeardOptions, in particular onPickFolder
  */
 var OauthAddonFolderPickerViewModel = oop.extend(FolderPickerViewModel, {
-    constructor: function(addonName, url, selector, folderPicker, opts) {
+    constructor: function(addonName, url, selector, folderPicker, opts, tbOpts) {
         var self = this;
         self.super.constructor.call(self, addonName, url, selector, folderPicker);
+        self.construct(addonName, url, selector, folderPicker, opts, tbOpts);
+    },
+    construct: function(addonName, url, selector, folderPicker, opts, tbOpts){
+        // Broken out from `constructor` due to recursive scoping issue with oop super calls
+        // TODO: [OSF-7069]
+        var self = this;
         // externalAccounts
         self.accounts = ko.observableArray();
         self.selectedFolderType = ko.pureComputed(function() {
@@ -82,6 +88,7 @@ var OauthAddonFolderPickerViewModel = oop.extend(FolderPickerViewModel, {
         };
         // Overrides
         self.options = $.extend({}, defaults, opts);
+
         // Treebeard config
         self.treebeardOptions = $.extend(
             {},
@@ -96,7 +103,8 @@ var OauthAddonFolderPickerViewModel = oop.extend(FolderPickerViewModel, {
                     }
                     return item.data.urls.folders;
                 }
-            }
+            },
+            tbOpts
         );
     },
     afterUpdate: function() {
@@ -134,12 +142,7 @@ var OauthAddonFolderPickerViewModel = oop.extend(FolderPickerViewModel, {
                     inputType: 'select',
                     inputOptions: ko.utils.arrayMap(
                         self.accounts(),
-                        function(item) {
-                            return {
-                                text: $osf.htmlEscape(item.name),
-                                value: item.id
-                            };
-                        }
+                        self.formatExternalName
                     ),
                     value: self.accounts()[0].id,
                     callback: (self.connectExistingAccount.bind(self)),
@@ -189,6 +192,7 @@ var OauthAddonFolderPickerViewModel = oop.extend(FolderPickerViewModel, {
             self.accounts(data.accounts.map(function(account) {
                 return {
                     name: account.display_name,
+                    profile: account.profile_url,
                     id: account.id
                 };
             }));
@@ -203,15 +207,22 @@ var OauthAddonFolderPickerViewModel = oop.extend(FolderPickerViewModel, {
             });
         });
     },
+   formatExternalName: function(item) {
+        return {
+            text: $osf.htmlEscape(item.name),
+            value: item.id
+        };
+    }
 });
 
 // Public API
-function OauthAddonNodeConfig(addonName, selector, url, folderPicker, opts) {
+function OauthAddonNodeConfig(addonName, selector, url, folderPicker, opts, tbOpts) {
     var self = this;
     self.url = url;
     self.folderPicker = folderPicker;
     opts = opts || {};
-    self.viewModel = new OauthAddonFolderPickerViewModel(addonName, url, selector, folderPicker, opts);
+    tbOpts = tbOpts || {};
+    self.viewModel = new OauthAddonFolderPickerViewModel(addonName, url, selector, folderPicker, opts, tbOpts);
     self.viewModel.updateFromData();
     $osf.applyBindings(self.viewModel, selector);
 }

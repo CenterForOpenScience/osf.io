@@ -1,17 +1,19 @@
 """Script for retracting pending retractions that are more than 48 hours old."""
 
-import datetime
 import logging
 
+import django
+from django.db import transaction
+from django.utils import timezone
 from modularodm import Q
+django.setup()
 
 from framework.auth import Auth
 from framework.celery_tasks import app as celery_app
-from framework.transactions.context import TokuTransaction
 
 from website.app import init_app
-from website import models, settings
-from website.project.model import NodeLog
+from website import settings
+from osf.models import Node, NodeLog, Retraction
 
 from scripts import utils as scripts_utils
 
@@ -21,13 +23,13 @@ logging.basicConfig(level=logging.INFO)
 
 
 def main(dry_run=True):
-    pending_retractions = models.Retraction.find(Q('state', 'eq', models.Retraction.UNAPPROVED))
+    pending_retractions = Retraction.find(Q('state', 'eq', Retraction.UNAPPROVED))
     for retraction in pending_retractions:
         if should_be_retracted(retraction):
             if dry_run:
                 logger.warn('Dry run mode')
             try:
-                parent_registration = models.Node.find_one(Q('retraction', 'eq', retraction))
+                parent_registration = Node.find_one(Q('retraction', 'eq', retraction))
             except Exception as err:
                 logger.error('Could not find registration associated with retraction {}'.format(retraction))
                 logger.error('Skipping...'.format(retraction))
@@ -38,8 +40,8 @@ def main(dry_run=True):
                 .format(retraction._id, parent_registration._id)
             )
             if not dry_run:
-                with TokuTransaction():
-                    retraction.state = models.Retraction.APPROVED
+                with transaction.atomic():
+                    retraction.state = Retraction.APPROVED
                     try:
                         parent_registration.registered_from.add_log(
                             action=NodeLog.RETRACTION_APPROVED,
@@ -63,7 +65,7 @@ def main(dry_run=True):
 
 def should_be_retracted(retraction):
     """Returns true if retraction was initiated more than 48 hours prior"""
-    return (datetime.datetime.utcnow() - retraction.initiation_date) >= settings.RETRACTION_PENDING_TIME
+    return (timezone.now() - retraction.initiation_date) >= settings.RETRACTION_PENDING_TIME
 
 
 @celery_app.task(name='scripts.retract_registrations')

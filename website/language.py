@@ -18,12 +18,16 @@ WELCOME_MESSAGE = '''
 
 REGISTRATION_SUCCESS = '''Registration successful. Please check {email} to confirm your email address.'''
 
+EXTERNAL_LOGIN_EMAIL_CREATE_SUCCESS = '''A new OSF account has been created with your {external_id_provider} profile. Please check {email} to confirm your email address.'''
+
+EXTERNAL_LOGIN_EMAIL_LINK_SUCCESS = '''Your OSF account has been linked with your {external_id_provider}. Please check {email} to confirm this action.'''
+
 # Shown if registration is turned off in website.settings
 REGISTRATION_UNAVAILABLE = 'Registration currently unavailable.'
 
 ALREADY_REGISTERED = u'The email {email} has already been registered.'
 
-AFTER_SUBMIT_FOR_REVIEW = 'Your submission has been received. You will be notified within ten business days regarding the status of your submission. If you have questions you may contact us at prereg@cos.io.'
+AFTER_SUBMIT_FOR_REVIEW = 'Your submission has been received. You will be notified within two business days regarding the status of your submission. If you have questions you may contact us at prereg@cos.io.'
 
 # Shown if user tries to login with an email that is not yet confirmed
 UNCONFIRMED = ('This login email has been registered but not confirmed. Please check your email (and spam folder).'
@@ -41,7 +45,7 @@ Log-in failed. Please try again or reset your password.
 
 # Shown at login page if user tries to access a resource that requires auth
 MUST_LOGIN = '''
-You must log in to access this resource.
+You must log in or create a new account to claim the contributor-ship.
 '''
 
 # Shown on logout
@@ -165,7 +169,7 @@ LINK_DESCRIPTION = """
 creating a copy. The link will always point to the most up-to-date version.</p>
 """
 
-TEMPLATE_ACTION = 'Copy Project Structure'
+TEMPLATE_ACTION = 'Duplicate template'
 TEMPLATE_DESCRIPTION = """
 <p>This option will create a new project, using this project as a template.
 The new project will be structured in the same way, but contain no data.</p>

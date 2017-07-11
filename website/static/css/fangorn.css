@@ -38,6 +38,9 @@
 .fangorn-selected > div span.text-muted {
 	color: #DDD;
 }
+.fangorn-preprint {
+    background-color: #e7f1f3;
+}
 .tb-disabled {
 	background: #eee;
 	color: #ccc;
@@ -351,4 +354,9 @@ a.fangorn-toolbar-icon {
 	height: 16px;
     display: inline-block;
     background: url('/static/img/hgrid/fontawesome/file-text-o.png');
+}
+
+/* file pop up modal text  */
+.replace-file {
+    margin-left: 8px;
 }

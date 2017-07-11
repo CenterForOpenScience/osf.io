@@ -189,3 +189,22 @@ class JSONAPIOnetoOneRelationshipParserForRegularJSON(JSONAPIOnetoOneRelationshi
     Allows same processing as JSONAPIRelationshipParser to occur for requests with application/json media type.
     """
     media_type = 'application/json'
+
+
+class JSONAPIMultipleRelationshipsParser(JSONAPIParser):
+    def flatten_relationships(self, relationships):
+        rel = {}
+        for resource in relationships:
+            ret = super(JSONAPIMultipleRelationshipsParser, self).flatten_relationships({resource: relationships[resource]})
+            if ret.get('target_type') and ret.get('id'):
+                rel[resource] = ret['id']
+        return rel
+
+
+class JSONAPIMultipleRelationshipsParserForRegularJSON(JSONAPIParserForRegularJSON):
+    def flatten_relationships(self, relationships):
+        ret = super(JSONAPIMultipleRelationshipsParserForRegularJSON, self).flatten_relationships(relationships)
+        related_resource = relationships.keys()[0]
+        if ret.get('target_type') and ret.get('id'):
+            return {related_resource: ret['id']}
+        return ret

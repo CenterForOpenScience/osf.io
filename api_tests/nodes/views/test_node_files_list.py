@@ -2,20 +2,23 @@ import datetime
 import json
 
 import httpretty
+import pytest
+from django.utils import timezone
 from nose.tools import *  # flake8: noqa
 
 from framework.auth.core import Auth
 
-from website.addons.github.tests.factories import GitHubAccountFactory
-from website.models import Node
+from addons.github.tests.factories import GitHubAccountFactory
+from osf.models import AbstractNode as Node
 from website.util import waterbutler_api_url_for
 from api.base.settings.defaults import API_BASE
 from api_tests import utils as api_utils
 from tests.base import ApiTestCase
-from tests.factories import (
+from osf_tests.factories import (
     ProjectFactory,
     AuthUserFactory
 )
+
 
 def prepare_mock_wb_response(
         node=None,
@@ -106,11 +109,14 @@ class TestNodeFilesList(ApiTestCase):
         oauth_settings = GitHubAccountFactory()
         oauth_settings.save()
         self.user.add_addon('github')
-        self.user.external_accounts.append(oauth_settings)
+        self.user.external_accounts.add(oauth_settings)
         self.user.save()
         addon.user_settings = self.user.get_addon('github')
+        addon.external_account = oauth_settings
         addon.save()
         self.project.save()
+        addon.user_settings.oauth_grants[self.project._id] = {oauth_settings._id: []}
+        addon.user_settings.save()
 
     def _prepare_mock_wb_response(self, node=None, **kwargs):
         prepare_mock_wb_response(node=node or self.project, **kwargs)
@@ -127,6 +133,10 @@ class TestNodeFilesList(ApiTestCase):
         assert_equal(res.content_type, 'application/vnd.api+json')
         assert_equal(res.json['data'][0]['attributes']['provider'], 'osfstorage')
 
+    def test_returns_storage_addons_link(self):
+        res = self.app.get(self.private_url, auth=self.user.auth)
+        assert_in('storage_addons', res.json['data'][0]['links'])
+
     def test_returns_file_data(self):
         fobj = self.project.get_addon('osfstorage').get_root().append_file('NewFile')
         fobj.save()
@@ -136,6 +146,27 @@ class TestNodeFilesList(ApiTestCase):
         assert_equal(res.content_type, 'application/vnd.api+json')
         assert_equal(res.json['data']['attributes']['kind'], 'file')
         assert_equal(res.json['data']['attributes']['name'], 'NewFile')
+
+    def test_returns_osfstorage_folder_version_two(self):
+        fobj = self.project.get_addon('osfstorage').get_root().append_folder('NewFolder')
+        fobj.save()
+        res = self.app.get('{}osfstorage/'.format(self.private_url), auth=self.user.auth)
+        assert_equal(res.status_code, 200)
+
+    def test_returns_osf_storage_folder_version_two_point_two(self):
+        fobj = self.project.get_addon('osfstorage').get_root().append_folder('NewFolder')
+        fobj.save()
+        res = self.app.get('{}osfstorage/?version=2.2'.format(self.private_url), auth=self.user.auth)
+        assert_equal(res.status_code, 200)
+
+    def test_list_returns_folder_data(self):
+        fobj = self.project.get_addon('osfstorage').get_root().append_folder('NewFolder')
+        fobj.save()
+        res = self.app.get('{}osfstorage/'.format(self.private_url, fobj._id), auth=self.user.auth)
+        assert_equal(res.status_code, 200)
+        assert_equal(len(res.json['data']), 1)
+        assert_equal(res.content_type, 'application/vnd.api+json')
+        assert_equal(res.json['data'][0]['attributes']['name'], 'NewFolder')
 
     def test_returns_folder_data(self):
         fobj = self.project.get_addon('osfstorage').get_root().append_folder('NewFolder')
@@ -175,11 +206,14 @@ class TestNodeFilesList(ApiTestCase):
         oauth_settings = GitHubAccountFactory()
         oauth_settings.save()
         self.user.add_addon('github')
-        self.user.external_accounts.append(oauth_settings)
+        self.user.external_accounts.add(oauth_settings)
         self.user.save()
         addon.user_settings = self.user.get_addon('github')
+        addon.external_account = oauth_settings
         addon.save()
         self.project.save()
+        addon.user_settings.oauth_grants[self.project._id] = {oauth_settings._id: []}
+        addon.user_settings.save()
         res = self.app.get(self.private_url, auth=self.user.auth)
         data = res.json['data']
         providers = [item['attributes']['provider'] for item in data]
@@ -320,11 +354,14 @@ class TestNodeFilesListFiltering(ApiTestCase):
         oauth_settings = GitHubAccountFactory()
         oauth_settings.save()
         self.user.add_addon('github')
-        self.user.external_accounts.append(oauth_settings)
+        self.user.external_accounts.add(oauth_settings)
         self.user.save()
         addon.user_settings = self.user.get_addon('github')
+        addon.external_account = oauth_settings
         addon.save()
         self.project.save()
+        addon.user_settings.oauth_grants[self.project._id] = {oauth_settings._id: []}
+        addon.user_settings.save()
 
     def test_node_files_are_filterable_by_name(self):
         url = '/{}nodes/{}/files/github/?filter[name]=xyz'.format(API_BASE, self.project._id)
@@ -359,7 +396,7 @@ class TestNodeFilesListFiltering(ApiTestCase):
         assert_equal(res.json['data'][0]['attributes']['name'], 'abc')
 
     def test_node_files_external_provider_can_filter_by_last_touched(self):
-        yesterday_stamp = datetime.datetime.utcnow() - datetime.timedelta(days=1)
+        yesterday_stamp = timezone.now() - datetime.timedelta(days=1)
         self.add_github()
         url = '/{}nodes/{}/files/github/?filter[last_touched][gt]={}'.format(API_BASE,
                                                                              self.project._id,
@@ -369,7 +406,7 @@ class TestNodeFilesListFiltering(ApiTestCase):
         assert_equal(len(res.json['data']), 2)
 
     def test_node_files_osfstorage_cannot_filter_by_last_touched(self):
-        yesterday_stamp = datetime.datetime.utcnow() - datetime.timedelta(days=1)
+        yesterday_stamp = timezone.now() - datetime.timedelta(days=1)
         self.file = api_utils.create_test_file(self.project, self.user)
 
         url = '/{}nodes/{}/files/osfstorage/?filter[last_touched][gt]={}'.format(API_BASE,
@@ -401,17 +438,20 @@ class TestNodeFilesListPagination(ApiTestCase):
         oauth_settings = GitHubAccountFactory()
         oauth_settings.save()
         self.user.add_addon('github')
-        self.user.external_accounts.append(oauth_settings)
+        self.user.external_accounts.add(oauth_settings)
         self.user.save()
         addon.user_settings = self.user.get_addon('github')
+        addon.external_account = oauth_settings
         addon.save()
         self.project.save()
+        addon.user_settings.oauth_grants[self.project._id] = {oauth_settings._id: []}
+        addon.user_settings.save()
 
     def check_file_order(self, resp):
         previous_file_name = 0
         for file in resp.json['data']:
             int_file_name = int(file['attributes']['name'])
-            assert(int_file_name > previous_file_name, 'Files were not in order')
+            assert int_file_name > previous_file_name, 'Files were not in order'
             previous_file_name = int_file_name
 
     def test_node_files_are_sorted_correctly(self):
@@ -450,4 +490,26 @@ class TestNodeFilesListPagination(ApiTestCase):
         res = self.app.get(url, auth=self.user.auth)
         self.check_file_order(res)
 
+class TestNodeProviderDetail(ApiTestCase):
 
+    def setUp(self):
+        super(TestNodeProviderDetail, self).setUp()
+        self.user = AuthUserFactory()
+        self.public_project = ProjectFactory(is_public=True)
+        self.private_project = ProjectFactory(creator=self.user)
+        self.public_url = '/{}nodes/{}/files/providers/osfstorage/'.format(API_BASE, self.public_project._id)
+        self.private_url = '/{}nodes/{}/files/providers/osfstorage/'.format(API_BASE, self.private_project._id)
+
+    def test_can_view_if_contributor(self):
+        res = self.app.get(self.private_url, auth=self.user.auth)
+        assert_equal(res.status_code, 200)
+        assert_equal(res.json['data']['id'], '{}:osfstorage'.format(self.private_project._id))
+
+    def test_can_view_if_public(self):
+        res = self.app.get(self.public_url)
+        assert_equal(res.status_code, 200)
+        assert_equal(res.json['data']['id'], '{}:osfstorage'.format(self.public_project._id))
+
+    def test_cannot_view_if_private(self):
+        res = self.app.get(self.private_url, expect_errors=True)
+        assert_equal(res.status_code, 401)

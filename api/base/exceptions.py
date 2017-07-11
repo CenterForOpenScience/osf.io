@@ -116,7 +116,12 @@ class Gone(JSONAPIException):
     default_detail = ('The requested resource is no longer available.')
 
 
-class Conflict(APIException):
+def UserGone(user):
+    return Gone(detail='The requested user is no longer available.',
+            meta={'full_name': user.fullname, 'family_name': user.family_name, 'given_name': user.given_name,
+                    'middle_names': user.middle_names, 'profile_image': user.profile_image_url()})
+
+class Conflict(JSONAPIException):
     status_code = status.HTTP_409_CONFLICT
     default_detail = ('Resource identifier does not match server endpoint.')
 
@@ -209,9 +214,24 @@ class UnconfirmedAccountError(APIException):
     default_detail = _('Please confirm your account before using the API.')
 
 
+class UnclaimedAccountError(APIException):
+    status_code = 400
+    default_detail = _('Please claim your account before using the API.')
+
+
 class DeactivatedAccountError(APIException):
     status_code = 400
     default_detail = _('Making API requests with credentials associated with a deactivated account is not allowed.')
+
+
+class MergedAccountError(APIException):
+    status_code = 400
+    default_detail = _('Making API requests with credentials associated with a merged account is not allowed.')
+
+
+class InvalidAccountError(APIException):
+    status_code = 400
+    default_detail = _('Making API requests with credentials associated with an invalid account is not allowed.')
 
 
 class TwoFactorRequiredError(AuthenticationFailed):
@@ -231,3 +251,14 @@ class TargetNotSupportedError(Exception):
 class RelationshipPostMakesNoChanges(Exception):
     """Raised when a post is on a relationship that already exists, so view can return a 204"""
     pass
+
+
+class NonDescendantNodeError(APIException):
+    """Raised when a client attempts to associate a non-descendant node with a view only link"""
+    status_code = 400
+    default_detail = _('The node {0} cannot be affiliated with this View Only Link because the node you\'re trying to affiliate is not descended from the node that the View Only Link is attached to.')
+
+    def __init__(self, node_id, detail=None):
+        if not detail:
+            detail = self.default_detail.format(node_id)
+        super(NonDescendantNodeError, self).__init__(detail=detail)

@@ -5,7 +5,7 @@ from scripts import utils as script_utils
 from framework.transactions.context import TokuTransaction
 
 from website.app import init_app
-from website.addons.osfstorage import model
+from addons.osfstorage import model
 
 logger = logging.getLogger(__name__)
 

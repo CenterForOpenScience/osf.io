@@ -9,9 +9,9 @@ from website.notifications.events.files import (
     AddonFileCopied, AddonFileMoved, AddonFileRenamed,
 )
 from website.notifications.events import utils
-from website.addons.base import signals
+from addons.base import signals
 from framework.auth import Auth
-from tests import factories
+from osf_tests import factories
 from tests.base import OsfTestCase, NotificationTestCase
 
 email_transactional = 'email_transactional'
@@ -178,7 +178,7 @@ class TestFileUpdated(OsfTestCase):
     @mock.patch('website.notifications.emails.notify')
     def test_file_updated(self, mock_notify):
         self.event.perform()
-        # notify('exd', 'file_updated', 'user', self.project, datetime.utcnow())
+        # notify('exd', 'file_updated', 'user', self.project, timezone.now())
         assert_true(mock_notify.called)
 
 
@@ -205,7 +205,7 @@ class TestFileAdded(NotificationTestCase):
     @mock.patch('website.notifications.emails.notify')
     def test_file_added(self, mock_notify):
         self.event.perform()
-        # notify('exd', 'file_updated', 'user', self.project, datetime.utcnow())
+        # notify('exd', 'file_updated', 'user', self.project, timezone.now())
         assert_true(mock_notify.called)
 
 
@@ -240,7 +240,7 @@ class TestFileRemoved(NotificationTestCase):
     @mock.patch('website.notifications.emails.notify')
     def test_file_removed(self, mock_notify):
         self.event.perform()
-        # notify('exd', 'file_updated', 'user', self.project, datetime.utcnow())
+        # notify('exd', 'file_updated', 'user', self.project, timezone.now())
         assert_true(mock_notify.called)
 
 
@@ -293,7 +293,7 @@ class TestFolderFileRenamed(OsfTestCase):
             self.user_1, self.project, 'addon_file_renamed',
             payload=file_renamed_payload
         )
-        self.sub.email_digest.append(self.user_2)
+        self.sub.email_digest.add(self.user_2)
         self.sub.save()
 
     def test_rename_file_html(self):
@@ -368,7 +368,7 @@ class TestFileMoved(NotificationTestCase):
     def test_user_performing_action_no_email(self, mock_store):
         # Move Event: Makes sure user who performed the action is not
         # included in the notifications
-        self.sub.email_digest.append(self.user_2)
+        self.sub.email_digest.add(self.user_2)
         self.sub.save()
         self.event.perform()
         assert_equal(0, mock_store.call_count)
@@ -376,7 +376,7 @@ class TestFileMoved(NotificationTestCase):
     @mock.patch('website.notifications.emails.store_emails')
     def test_perform_store_called_once(self, mock_store):
         # Move Event: Tests that store_emails is called once from perform
-        self.sub.email_transactional.append(self.user_1)
+        self.sub.email_transactional.add(self.user_1)
         self.sub.save()
         self.event.perform()
         assert_equal(1, mock_store.call_count)
@@ -385,16 +385,16 @@ class TestFileMoved(NotificationTestCase):
     def test_perform_store_one_of_each(self, mock_store):
         # Move Event: Tests that store_emails is called 3 times, one in
         # each category
-        self.sub.email_transactional.append(self.user_1)
+        self.sub.email_transactional.add(self.user_1)
         self.project.add_contributor(self.user_3, permissions=['write', 'read'], auth=self.auth)
         self.project.save()
         self.private_node.add_contributor(self.user_3, permissions=['write', 'read'], auth=self.auth)
         self.private_node.save()
-        self.sub.email_digest.append(self.user_3)
+        self.sub.email_digest.add(self.user_3)
         self.sub.save()
         self.project.add_contributor(self.user_4, permissions=['write', 'read'], auth=self.auth)
         self.project.save()
-        self.file_sub.email_digest.append(self.user_4)
+        self.file_sub.email_digest.add(self.user_4)
         self.file_sub.save()
         self.event.perform()
         assert_equal(3, mock_store.call_count)
@@ -404,7 +404,7 @@ class TestFileMoved(NotificationTestCase):
         # Move Event: Tests removed user is removed once. Regression
         self.project.add_contributor(self.user_3, permissions=['write', 'read'], auth=self.auth)
         self.project.save()
-        self.file_sub.email_digest.append(self.user_3)
+        self.file_sub.email_digest.add(self.user_3)
         self.file_sub.save()
         self.event.perform()
         assert_equal(1, mock_store.call_count)
@@ -467,16 +467,16 @@ class TestFileCopied(NotificationTestCase):
     def test_copied_one_of_each(self, mock_store):
         # Copy Event: Tests that store_emails is called 2 times, two with
         # permissions, one without
-        self.sub.email_transactional.append(self.user_1)
+        self.sub.email_transactional.add(self.user_1)
         self.project.add_contributor(self.user_3, permissions=['write', 'read'], auth=self.auth)
         self.project.save()
         self.private_node.add_contributor(self.user_3, permissions=['write', 'read'], auth=self.auth)
         self.private_node.save()
-        self.sub.email_digest.append(self.user_3)
+        self.sub.email_digest.add(self.user_3)
         self.sub.save()
         self.project.add_contributor(self.user_4, permissions=['write', 'read'], auth=self.auth)
         self.project.save()
-        self.file_sub.email_digest.append(self.user_4)
+        self.file_sub.email_digest.add(self.user_4)
         self.file_sub.save()
         self.event.perform()
         assert_equal(2, mock_store.call_count)
@@ -485,7 +485,7 @@ class TestFileCopied(NotificationTestCase):
     def test_user_performing_action_no_email(self, mock_store):
         # Move Event: Makes sure user who performed the action is not
         # included in the notifications
-        self.sub.email_digest.append(self.user_2)
+        self.sub.email_digest.add(self.user_2)
         self.sub.save()
         self.event.perform()
         assert_equal(0, mock_store.call_count)
@@ -538,14 +538,14 @@ class TestCategorizeUsers(NotificationTestCase):
     def test_warn_user(self):
         # Tests that a user with a sub in the origin node gets a warning that
         # they are no longer tracking the file.
-        self.sub.email_transactional.append(self.user_1)
+        self.sub.email_transactional.add(self.user_1)
         self.project.add_contributor(self.user_3, permissions=['write', 'read'], auth=self.auth)
         self.project.save()
         self.private_node.add_contributor(self.user_3, permissions=['write', 'read'], auth=self.auth)
         self.private_node.save()
-        self.sub.email_digest.append(self.user_3)
+        self.sub.email_digest.add(self.user_3)
         self.sub.save()
-        self.private_sub.none.append(self.user_3)
+        self.private_sub.none.add(self.user_3)
         self.private_sub.save()
         moved, warn, removed = utils.categorize_users(
             self.event.user, self.event.event_type, self.event.source_node,
@@ -561,9 +561,9 @@ class TestCategorizeUsers(NotificationTestCase):
         self.project.save()
         self.private_node.add_contributor(self.user_3, permissions=['write', 'read'], auth=self.auth)
         self.private_node.save()
-        self.sub.email_digest.append(self.user_3)
+        self.sub.email_digest.add(self.user_3)
         self.sub.save()
-        self.private_sub.email_transactional.append(self.user_3)
+        self.private_sub.email_transactional.add(self.user_3)
         self.private_sub.save()
         moved, warn, removed = utils.categorize_users(
             self.event.user, self.event.event_type, self.event.source_node,
@@ -575,7 +575,7 @@ class TestCategorizeUsers(NotificationTestCase):
     def test_remove_user(self):
         self.project.add_contributor(self.user_3, permissions=['write', 'read'], auth=self.auth)
         self.project.save()
-        self.file_sub.email_transactional.append(self.user_3)
+        self.file_sub.email_transactional.add(self.user_3)
         self.file_sub.save()
         moved, warn, removed = utils.categorize_users(
             self.event.user, self.event.event_type, self.event.source_node,
@@ -585,7 +585,7 @@ class TestCategorizeUsers(NotificationTestCase):
 
     def test_node_permissions(self):
         self.private_node.add_contributor(self.user_3, permissions=['write', 'read'])
-        self.private_sub.email_digest.extend([self.user_3, self.user_4])
+        self.private_sub.email_digest.add(self.user_3, self.user_4)
         remove = {email_transactional: [], email_digest: [], 'none': []}
         warn = {email_transactional: [], email_digest: [self.user_3._id, self.user_4._id], 'none': []}
         subbed, remove = utils.subscriptions_node_permissions(

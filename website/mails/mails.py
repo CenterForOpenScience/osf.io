@@ -74,7 +74,7 @@ def render_message(tpl_name, **context):
 
 
 def send_mail(to_addr, mail, mimetype='plain', from_addr=None, mailer=None,
-            username=None, password=None, callback=None, **context):
+            username=None, password=None, callback=None, attachment_name=None, attachment_content=None, **context):
     """Send an email from the OSF.
     Example: ::
 
@@ -112,33 +112,101 @@ def send_mail(to_addr, mail, mimetype='plain', from_addr=None, mailer=None,
         username=username,
         password=password,
         categories=mail.categories,
+        attachment_name=attachment_name,
+        attachment_content=attachment_content,
     )
 
+    logger.debug('Preparing to send...')
     if settings.USE_EMAIL:
         if settings.USE_CELERY:
+            logger.debug('Sending via celery...')
             return mailer.apply_async(kwargs=kwargs, link=callback)
         else:
+            logger.debug('Sending without celery')
             ret = mailer(**kwargs)
             if callback:
                 callback()
 
             return ret
 
+
+def get_english_article(word):
+    """
+    Decide whether to use 'a' or 'an' for a given English word.
+
+    :param word: the word immediately after the article
+    :return: 'a' or 'an'
+    """
+    return 'a' + ('n' if word[0].lower() in 'aeiou' else '')
+
+
 # Predefined Emails
 
 TEST = Mail('test', subject='A test email to ${name}', categories=['test'])
 
-INITIAL_CONFIRM_EMAIL = Mail('initial_confirm', subject='Open Science Framework Account Verification')
-CONFIRM_EMAIL = Mail('confirm', subject='Add a new email to your OSF account')
-CONFIRM_EMAIL_PREREG = Mail('confirm_prereg', subject='Open Science Framework Account Verification, Preregistration Challenge')
+# Emails for first-time login through external identity providers.
+EXTERNAL_LOGIN_CONFIRM_EMAIL_CREATE = Mail(
+    'external_confirm_create',
+    subject='Open Science Framework Account Verification'
+)
+EXTERNAL_LOGIN_CONFIRM_EMAIL_LINK = Mail(
+    'external_confirm_link',
+    subject='Open Science Framework Account Verification'
+)
+EXTERNAL_LOGIN_LINK_SUCCESS = Mail(
+    'external_confirm_success',
+    subject='Open Science Framework Account Verification Success'
+)
 
+# Sign up confirmation emails for OSF, native campaigns and branded campaigns
+INITIAL_CONFIRM_EMAIL = Mail(
+    'initial_confirm',
+    subject='Open Science Framework Account Verification'
+)
+CONFIRM_EMAIL = Mail(
+    'confirm',
+    subject='Add a new email to your OSF account'
+)
+CONFIRM_EMAIL_PREREG = Mail(
+    'confirm_prereg',
+    subject='Open Science Framework Account Verification, Preregistration Challenge'
+)
+CONFIRM_EMAIL_ERPC = Mail(
+    'confirm_erpc',
+    subject='Open Science Framework Account Verification, Election Research Preacceptance Competition'
+)
+CONFIRM_EMAIL_PREPRINTS = lambda name, provider: Mail(
+    'confirm_preprints_{}'.format(name),
+    subject='Open Science Framework Account Verification, {} Preprints Service'.format(provider)
+)
+CONFIRM_EMAIL_REGISTRIES_OSF = Mail(
+    'confirm_registries_osf',
+    subject='Open Science Framework Account Verification, OSF Registries'
+)
+
+# Merge account, add or remove email confirmation emails.
 CONFIRM_MERGE = Mail('confirm_merge', subject='Confirm account merge')
-
 REMOVED_EMAIL = Mail('email_removed', subject='Email address removed from your OSF account')
 PRIMARY_EMAIL_CHANGED = Mail('primary_email_changed', subject='Primary email changed')
-INVITE = Mail('invite', subject='You have been added as a contributor to an OSF project.')
-CONTRIBUTOR_ADDED = Mail('contributor_added', subject='You have been added as a contributor to an OSF project.')
 
+
+# Contributor added confirmation emails
+INVITE_DEFAULT = Mail(
+    'invite_default',
+    subject='You have been added as a contributor to an OSF project.'
+)
+INVITE_PREPRINT = lambda template, provider: Mail(
+    'invite_preprints_{}'.format(template),
+    subject='You have been added as a contributor to {} {} preprint.'.format(get_english_article(provider), provider)
+)
+CONTRIBUTOR_ADDED_DEFAULT = Mail(
+    'contributor_added_default',
+    subject='You have been added as a contributor to an OSF project.'
+)
+CONTRIBUTOR_ADDED_PREPRINT = lambda template, provider: Mail(
+    'contributor_added_preprints_{}'.format(template),
+    subject='You have been added as a contributor to {} {} preprint.'.format(get_english_article(provider), provider)
+)
 FORWARD_INVITE = Mail('forward_invite', subject='Please forward to ${fullname}')
 FORWARD_INVITE_REGISTERED = Mail('forward_invite_registered', subject='Please forward to ${fullname}')
 
@@ -149,6 +217,8 @@ PENDING_VERIFICATION_REGISTERED = Mail('pending_registered', subject='Received r
 
 REQUEST_EXPORT = Mail('support_request', subject='[via OSF] Export Request')
 REQUEST_DEACTIVATION = Mail('support_request', subject='[via OSF] Deactivation Request')
+
+SPAM_USER_BANNED = Mail('spam_user_banned', subject='[OSF] Account flagged as spam')
 
 CONFERENCE_SUBMITTED = Mail(
     'conference_submitted',
@@ -219,7 +289,6 @@ FILE_OPERATION_FAILED = Mail(
 
 UNESCAPE = '<% from website.util.sanitize import unescape_entities %> ${unescape_entities(src.title)}'
 PROBLEM_REGISTERING = 'Problem registering ' + UNESCAPE
-PROBLEM_REGISTERING_STUCK = PROBLEM_REGISTERING + '- Stuck Registration'
 
 ARCHIVE_SIZE_EXCEEDED_DESK = Mail(
     'archive_size_exceeded_desk',
@@ -255,7 +324,7 @@ ARCHIVE_UNCAUGHT_ERROR_DESK = Mail(
 
 ARCHIVE_REGISTRATION_STUCK_DESK = Mail(
     'archive_registration_stuck_desk',
-    subject=PROBLEM_REGISTERING_STUCK
+    subject='[auto] Stuck registrations audit'
 )
 
 ARCHIVE_UNCAUGHT_ERROR_USER = Mail(

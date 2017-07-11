@@ -2,7 +2,7 @@
 from nose.tools import *  # flake8: noqa
 
 from tests.base import ApiTestCase
-from tests.factories import AuthUserFactory, InstitutionFactory
+from osf_tests.factories import AuthUserFactory, InstitutionFactory
 
 from api.base.settings.defaults import API_BASE
 
@@ -15,8 +15,8 @@ class TestUserInstititutionRelationship(ApiTestCase):
         self.url = '/{}users/{}/relationships/institutions/'.format(API_BASE, self.user._id)
         self.institution1 = InstitutionFactory()
         self.institution2 = InstitutionFactory()
-        self.user.affiliated_institutions.append(self.institution1)
-        self.user.affiliated_institutions.append(self.institution2)
+        self.user.affiliated_institutions.add(self.institution1)
+        self.user.affiliated_institutions.add(self.institution2)
         self.user.save()
 
     def test_get_relationship_institutions(self):
@@ -108,7 +108,7 @@ class TestUserInstititutionRelationship(ApiTestCase):
 
         self.user.reload()
 
-        ids = [inst._id for inst in self.user.affiliated_institutions]
+        ids = list(self.user.affiliated_institutions.values_list('_id', flat=True))
         assert_not_in(self.institution1._id, ids)
         assert_in(self.institution2._id, ids)
 
@@ -137,7 +137,7 @@ class TestUserInstititutionRelationship(ApiTestCase):
 
         self.user.reload()
 
-        ids = [inst._id for inst in self.user.affiliated_institutions]
+        ids = list(self.user.affiliated_institutions.values_list('_id', flat=True))
         assert_not_in(self.institution1._id, ids)
         assert_not_in(self.institution2._id, ids)
 
@@ -154,7 +154,7 @@ class TestUserInstititutionRelationship(ApiTestCase):
 
         self.user.reload()
 
-        ids = [inst._id for inst in self.user.affiliated_institutions]
+        ids = list(self.user.affiliated_institutions.values_list('_id', flat=True))
         assert_in(self.institution1._id, ids)
         assert_in(self.institution2._id, ids)
 

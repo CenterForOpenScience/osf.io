@@ -13,6 +13,7 @@ def ensure_schema_structure(schema):
     schema['pages'] = schema.get('pages', [])
     schema['title'] = schema['name']
     schema['version'] = schema.get('version', 1)
+    schema['active'] = schema.get('active', True)
     return schema
 
 here = os.path.split(os.path.abspath(__file__))[0]
@@ -31,13 +32,14 @@ OSF_META_SCHEMAS = [
     ensure_schema_structure(from_json('brandt-postcomp-1.json')),
     ensure_schema_structure(from_json('brandt-postcomp-2.json')),
     ensure_schema_structure(from_json('prereg-prize.json')),
+    ensure_schema_structure(from_json('erpc-prize.json')),
     ensure_schema_structure(from_json('confirmatory-general-2.json')),
     ensure_schema_structure(from_json('egap-project-2.json')),
     ensure_schema_structure(from_json('veer-1.json')),
     ensure_schema_structure(from_json('aspredicted.json')),
 ]
 
-ACTIVE_META_SCHEMAS = (
+METASCHEMA_ORDERING = (
     'Prereg Challenge',
     'Open-Ended Registration',
     'AsPredicted Preregistration',
@@ -45,4 +47,5 @@ ACTIVE_META_SCHEMAS = (
     'Replication Recipe (Brandt et al., 2013): Pre-Registration',
     'Replication Recipe (Brandt et al., 2013): Post-Completion',
     "Pre-Registration in Social Psychology (van 't Veer & Giner-Sorolla, 2016): Pre-Registration",
+    'Election Research Preacceptance Competition',
 )

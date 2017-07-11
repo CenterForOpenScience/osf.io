@@ -14,7 +14,7 @@ from tests.factories import ProjectFactory, UserFactory
 
 from website.models import User, Node
 from website.oauth.models import ExternalAccount
-from website.addons.s3.model import (
+from addons.s3.model import (
     S3UserSettings,
     S3NodeSettings
 )

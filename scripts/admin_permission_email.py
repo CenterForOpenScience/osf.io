@@ -4,6 +4,7 @@
 import logging
 import datetime
 
+from django.utils import timezone
 from modularodm import Q
 
 from framework.email.tasks import send_email
@@ -43,7 +44,7 @@ def send_security_message(user, label, mail):
         password=settings.MANDRILL_PASSWORD,
         mail_server=settings.MANDRILL_MAIL_SERVER,
     )
-    user.security_messages[label] = datetime.datetime.utcnow()
+    user.security_messages[label] = timezone.now()
     user.save()
 
 
@@ -91,7 +92,7 @@ class TestSendSecurityMessage(OsfTestCase):
 
     def test_get_targets(self):
         users = [UserFactory() for _ in range(3)]
-        users[0].security_messages[MESSAGE_NAME] = datetime.datetime.utcnow()
+        users[0].security_messages[MESSAGE_NAME] = timezone.now()
         users[0].save()
         targets = get_targets()
         assert_equal(set(targets), set(users[1:]))

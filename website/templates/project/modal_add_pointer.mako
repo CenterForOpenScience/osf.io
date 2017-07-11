@@ -5,7 +5,7 @@
         <div class="modal-content">
 
             <div class="modal-header">
-                <h3>Add Links</h3>
+                <h3>Link other OSF projects</h3>
             </div>
 
             <div class="modal-body">
