@@ -517,7 +517,7 @@ var NameViewModel = function(urls, modes, preventUnsaved, fetchCallback) {
         }
 
         if (cite === '') {
-            cite = fullName.lastName
+            cite = fullName.lastName;
 
             if (fullName.firstName) {
                 cite = cite + ', ' + self.initials($.trim(fullName.firstName + ' ' + fullName.middleName));
@@ -546,7 +546,7 @@ var NameViewModel = function(urls, modes, preventUnsaved, fetchCallback) {
         }
 
         if (cite === '') {
-            cite = fullName.lastName
+            cite = fullName.lastName;
 
             if (fullName.firstName) {
                 cite = cite + ', ' + fullName.firstName;
