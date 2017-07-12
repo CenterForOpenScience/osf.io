@@ -25,7 +25,6 @@ var AddPointerViewModel = oop.extend(Paginator, {
         this.submitEnabled = ko.observable(true);
         this.searchAllProjectsSubmitText = ko.observable(SEARCH_ALL_SUBMIT_TEXT);
         this.searchMyProjectsSubmitText = ko.observable(SEARCH_MY_PROJECTS_SUBMIT_TEXT);
-
         this.query = ko.observable();
         this.results = ko.observableArray();
         this.selection = ko.observableArray();
@@ -35,29 +34,36 @@ var AddPointerViewModel = oop.extend(Paginator, {
         this.searchWarningMsg = ko.observable('');
         this.submitWarningMsg = ko.observable('');
         this.loadingResults = ko.observable(false);
-
         this.inputType = ko.observable('nodes');
-
         this.foundResults = ko.pureComputed(function() {
             return self.results().length;
         });
-
         this.noResults = ko.pureComputed(function() {
             return self.query() && !self.results().length;
         });
         this.searchMyProjects();
     },
+    doneSearching: function(){
+      var self = this;
+      self.searchAllProjectsSubmitText(SEARCH_ALL_SUBMIT_TEXT);
+      self.searchMyProjectsSubmitText(SEARCH_MY_PROJECTS_SUBMIT_TEXT);
+      self.loadingResults(false);
+    },
     searchAllProjects: function() {
-        this.includePublic(true);
-        this.pageToGet(0);
-        this.searchAllProjectsSubmitText('Searching...');
-        this.fetchResults();
+        var self = this;
+        self.includePublic(true);
+        self.pageToGet(0);
+        self.searchAllProjectsSubmitText('Searching...');
+        self.loadingResults(true);
+        self.fetchResults();
     },
     searchMyProjects: function() {
-        this.includePublic(false);
-        this.pageToGet(0);
-        this.searchMyProjectsSubmitText('Searching...');
-        this.fetchResults();
+        var self = this;
+        self.includePublic(false);
+        self.pageToGet(0);
+        self.searchMyProjectsSubmitText('Searching...');
+        self.loadingResults(true);
+        self.fetchResults();
     },
     fetchResults: function() {
         var self = this;
@@ -65,7 +71,6 @@ var AddPointerViewModel = oop.extend(Paginator, {
         self.searchWarningMsg('');
         self.results([]); // clears page for spinner
         self.selection([]);
-        self.loadingResults(true); // enables spinner
         var query = '', myProjects = '', pageNum = self.pageToGet()+1;
         if (self.query()){
             query += 'filter[title]='+self.query()+'&';
@@ -73,7 +78,7 @@ var AddPointerViewModel = oop.extend(Paginator, {
         if (!self.includePublic()){
             myProjects = 'users/me/';
         }
-        var url = osfHelpers.apiV2Url(myProjects+self.inputType()+'/', {query: query+'page='+pageNum+'&embed=contributors&page[size]=5'});
+        var url = osfHelpers.apiV2Url(myProjects+self.inputType()+'/', {query: query+'page='+pageNum+'&embed=contributors&page[size]=4'});
         var request = osfHelpers.ajaxJSON(
             'GET',
             url,
@@ -85,25 +90,26 @@ var AddPointerViewModel = oop.extend(Paginator, {
             }
             else {
                 var count = nodes.length;
-                nodes.forEach(function(each) {
-                    if (each.type === 'registrations') {
-                        each.dateRegistered = new osfHelpers.FormattableDate(each.attributes.date_registered);
-                    } else {
-                        each.dateCreated = new osfHelpers.FormattableDate(each.attributes.date_created);
-                        each.dateModified = new osfHelpers.FormattableDate(each.attributes.date_modified);
-                    }
-                    each.link = '';
-                    var url = osfHelpers.apiV2Url('nodes/'+nodeId+'/node_links/', {});
-                    var request = osfHelpers.ajaxJSON(
-                        'GET',
-                        url,
-                        {'isCors': true});
-                    request.done(function(nl_response) {
-                        var result = nl_response.data;
+                var url = osfHelpers.apiV2Url('nodes/'+nodeId+'/node_links/', {});
+                var request = osfHelpers.ajaxJSON(
+                    'GET',
+                    url,
+                    {'isCors': true});
+                request.done(function(nl_response) {
+                    nodes.forEach(function(each) {
+                        if (each.type === 'registrations') {
+                            each.dateRegistered = new osfHelpers.FormattableDate(each.attributes.date_registered);
+                        } else {
+                            each.dateCreated = new osfHelpers.FormattableDate(each.attributes.date_created);
+                            each.dateModified = new osfHelpers.FormattableDate(each.attributes.date_modified);
+                        }
+                        // each.link = '';
                         var i;
-                        for (i = 0; i < result.length; i++) {
-                            if (result[i].embeds.target_node.data.id === each.id) {
+                        for (i = 0; i < nl_response.data.length; i++) {
+                            var target_id = nl_response.data[i].embeds.target_node.data.id;
+                            if (target_id === each.id) {
                                 self.selection.push(each);
+                                nl_response.data.splice(i, 1);
                                 break;
                             }
                         }
@@ -114,24 +120,25 @@ var AddPointerViewModel = oop.extend(Paginator, {
                             self.addNewPaginators();
                         }
                     });
-                    request.fail(function(xhr) {
-                        self.searchWarningMsg(xhr.responseJSON && xhr.responseJSON.message_long);
-                        if (--count === 0) {
-                            self.results(nodes);
-                            self.currentPage(self.pageToGet());
-                            self.numberOfPages(Math.ceil(response.links.meta.total / response.links.meta.per_page));
-                            self.addNewPaginators();
-                        }
-                    });
-                });
+                    self.doneSearching();
+                })
+
+                request.fail(function(xhr) {
+                    self.searchWarningMsg(xhr.responseJSON && xhr.responseJSON.message_long);
+                    if (--count === 0) {
+                        self.results(nodes);
+                        self.currentPage(self.pageToGet());
+                        self.numberOfPages(Math.ceil(response.links.meta.total / response.links.meta.per_page));
+                        self.addNewPaginators();
+                    }
+                    self.doneSearching();
+                })
             }
         });
         request.fail(function(xhr) {
             self.searchWarningMsg(xhr.responseJSON && xhr.responseJSON.message_long);
+            self.doneSearching();
         });
-        self.searchAllProjectsSubmitText(SEARCH_ALL_SUBMIT_TEXT);
-        self.searchMyProjectsSubmitText(SEARCH_MY_PROJECTS_SUBMIT_TEXT);
-        self.loadingResults(false);
     },
     add: function(data) {
         var self = this;
@@ -161,7 +168,6 @@ var AddPointerViewModel = oop.extend(Paginator, {
             });
         }
         else{
-            // BLOCKER
             var url = osfHelpers.apiV2Url('nodes/'+nodeId+'/registration_links/', {});
             var request = osfHelpers.ajaxJSON(
                 'POST',
@@ -200,15 +206,15 @@ var AddPointerViewModel = oop.extend(Paginator, {
                 for (i = 0; i < response.data.length; i++){
                     if (response.data[i].embeds.target_node.data.id === data.id){
                         nl_id = response.data[i].id;
+                        response.data.splice(i, 1);
+                        break;
                     }
                 }
                 var url = osfHelpers.apiV2Url('nodes/'+nodeId+'/node_links/'+nl_id+'/', {});
                 var request = osfHelpers.ajaxJSON(
                     'DELETE',
                     url,
-                    {
-                        'isCors': true
-                    });
+                    {'isCors': true});
                 request.done(function(nl_response) {
                     self.selection.splice(
                         self.selection.indexOf(data), 1
@@ -217,8 +223,6 @@ var AddPointerViewModel = oop.extend(Paginator, {
             });
         }
         else {
-            // BLOCKER
-            var url = osfHelpers.apiV2Url('nodes/'+nodeId+'/registration_links/', {});
             var request = osfHelpers.ajaxJSON(
                 'GET',
                 url,
@@ -228,6 +232,8 @@ var AddPointerViewModel = oop.extend(Paginator, {
                 for (i = 0; i < response.data.length; i++){
                     if (response.data[i].embeds.target_node.data.id === data.id){
                         nl_id = response.data[i].id;
+                        response.data.splice(i, 1);
+                        break;
                     }
                 }
                 var url = osfHelpers.apiV2Url('nodes/'+nodeId+'/registration_links/'+nl_id+'/', {});
@@ -289,6 +295,15 @@ var AddPointerViewModel = oop.extend(Paginator, {
             date = 'Created: ' + data.dateCreated.local + '\nModified: ' + data.dateModified.local;
         }
         return date;
+    },
+    clear: function () {
+        var self = this;
+        if (self.query()) {
+            self.query('');
+            self.results([]);
+        }
+        self.errorMsg('');
+        self.searchWarningMsg('');
     },
     done: function() {
         window.location.reload();

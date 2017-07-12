@@ -22,15 +22,18 @@
                       <button class="btn btn-default"
                           data-bind="click:searchAllProjects,
                           text: searchAllProjectsSubmitText(),
-                          attr: {disabled: loadingResults()}">
+                          attr: {disabled: loadingResults()},
+                          css: {active: includePublic()}">
                           Search all projects
                       </button>
                       <button class="btn btn-default"
-                        data-bind="
-                        click: searchMyProjects,
-                        text: searchMyProjectsSubmitText(),
-                        attr: {disabled: loadingResults()}">
-                        Search my projects</button>
+                          data-bind="
+                          click: searchMyProjects,
+                          text: searchMyProjectsSubmitText(),
+                          attr: {disabled: loadingResults()},
+                          css: {active: !includePublic()}">
+                          Search my projects
+                      </button>
                     </div>
                 </form>
 
@@ -79,12 +82,15 @@
                         </table>
                         <div class='help-block'>
                             <div data-bind='if: loadingResults'>
-                                <div class="spinner-loading-wrapper">
-                                    <div class="logo-spin logo-lg"></div>
-                                    <p class="m-t-sm fg-load-message"> Loading results...  </p>
+                                <div class="ball-pulse ball-scale-blue text-center">
+                                  <div></div>
+                                  <div></div>
+                                  <div></div>
                                 </div>
+                                <!-- <div class="ball-scale ball-dark">
+                                    <div></div>
+                                </div> -->
                             </div>
-
                             <div data-bind='if: foundResults'>
                                 <ul class="pagination pagination-sm" data-bind="foreach: paginators">
                                     <li data-bind="css: style"><a href="#" data-bind="click: handler, text: text"></a></li>
