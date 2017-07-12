@@ -11,35 +11,27 @@ from website.project.signals import contributor_added
 from website.project.views.contributor import notify_added_contributor
 
 # Silence some 3rd-party logging and some "loud" internal loggers
-# SILENT_LOGGERS = [
-#     'api.caching.tasks',
-#     'factory.generate',
-#     'factory.containers',
-#     'framework.analytics',
-#     'framework.auth.core',
-#     'framework.celery_tasks.signals',
-#     'website.app',
-#     'website.archiver.tasks',
-#     'website.mails',
-#     'website.notifications.listeners',
-#     'website.search.elastic_search',
-#     'website.search_migration.migrate',
-#     'website.util.paths',
-#     'requests_oauthlib.oauth2_session',
-#     'raven.base.Client',
-#     'raven.contrib.django.client.DjangoClient',
-#     'osf.migrations.0001_initial',
-#     'osf.models',
-#     'addons.osfstorage.models',
-#     'rest_framework.pagination',
-#     'tests.base',
-#     'website.project',
-#     'django.db.models.fields',
-# ]
-# for logger_name in SILENT_LOGGERS:
-#     logging.getLogger(logger_name).setLevel(logging.CRITICAL)
+SILENT_LOGGERS = [
+    'api.caching.tasks',
+    'factory.generate',
+    'factory.containers',
+    'framework.analytics',
+    'framework.auth.core',
+    'framework.celery_tasks.signals',
+    'website.app',
+    'website.archiver.tasks',
+    'website.mails',
+    'website.notifications.listeners',
+    'website.search.elastic_search',
+    'website.search_migration.migrate',
+    'website.util.paths',
+    'requests_oauthlib.oauth2_session',
+    'raven.base.Client',
+    'raven.contrib.django.client.DjangoClient',
+]
+for logger_name in SILENT_LOGGERS:
+    logging.getLogger(logger_name).setLevel(logging.CRITICAL)
 
-logging.disable(logging.WARNING)
 
 # NOTE: autouse so that ADDONS_REQUESTED gets set on website.settings
 @pytest.fixture(autouse=True, scope='session')
@@ -73,6 +65,18 @@ DISCONNECTED_SIGNALS = {
 def disconnected_signals():
     for signal in DISCONNECTED_SIGNALS:
         for receiver in DISCONNECTED_SIGNALS[signal]:
+            signal.disconnect(receiver)
+
+@pytest.fixture(autouse=True)
+def patched_settings():
+    """Patch settings for tests"""
+    settings.ENABLE_EMAIL_SUBSCRIPTIONS = False
+    settings.BCRYPT_LOG_ROUNDS = 1
+
+@pytest.fixture()
+def fake():
+    return Factory.create()
+al]:
             signal.disconnect(receiver)
 
 @pytest.fixture(autouse=True)
