@@ -76,15 +76,3 @@ def patched_settings():
 @pytest.fixture()
 def fake():
     return Factory.create()
-al]:
-            signal.disconnect(receiver)
-
-@pytest.fixture(autouse=True)
-def patched_settings():
-    """Patch settings for tests"""
-    settings.ENABLE_EMAIL_SUBSCRIPTIONS = False
-    settings.BCRYPT_LOG_ROUNDS = 1
-
-@pytest.fixture()
-def fake():
-    return Factory.create()
