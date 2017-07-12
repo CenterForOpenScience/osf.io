@@ -480,23 +480,23 @@ var NameViewModel = function(urls, modes, preventUnsaved, fetchCallback) {
             return name.trim().length > 0;
         });
 
-        if (fullName.length == 4 && fullName[3].includes('.')) {
+        if (fullName.length === 4 && fullName[3].includes('.')) {
             fullNameObj.firstName = fullName[0];
             fullNameObj.middleName = fullName[1];
             fullNameObj.lastName = fullName[2];
             fullNameObj.suffix = fullName[3];
-        } else if (fullName.length == 3 && fullName[2].includes('.')) {
+        } else if (fullName.length === 3 && fullName[2].includes('.')) {
             fullNameObj.firstName = fullName[0];
             fullNameObj.lastName = fullName[1];
             fullNameObj.suffix = fullName[2];
-        } else if (fullName.length == 3 && !fullName[2].includes('.')) {
+        } else if (fullName.length === 3 && !fullName[2].includes('.')) {
             fullNameObj.firstName = fullName[0];
             fullNameObj.middleName = fullName[1];
             fullNameObj.lastName = fullName[2];
-        } else if (fullName.length == 2) {
+        } else if (fullName.length === 2) {
             fullNameObj.firstName = fullName[0];
             fullNameObj.lastName = fullName[1];
-        } else if (fullName.length == 1) {
+        } else if (fullName.length === 1) {
             fullNameObj.firstName = fullName[0];
         }
 
