@@ -142,9 +142,11 @@ class CommentReportsMixin(object):
         assert len(report_json) == 1
         assert non_contrib._id in report_ids
 
-    @pytest.mark.parametrize('comment_level', ['private'])
-    def test_public_node_private_comment_level_non_contrib_cannot_see_reports(self, app, non_contrib, public_url, comment_level):
+    def test_public_node_private_comment_level_non_contrib_cannot_see_reports(self, app, non_contrib, public_project, public_url):
+        public_project.comment_level = 'private'
+        public_project.save()
         res = app.get(public_url, auth=non_contrib.auth, expect_errors=True)
+        print res
         assert res.status_code == 403
         assert res.json['errors'][0]['detail'] == exceptions.PermissionDenied.default_detail
 
@@ -260,8 +262,9 @@ class CommentReportsMixin(object):
         assert res.status_code == 201
         assert res.json['data']['id'] == non_contrib._id
 
-    @pytest.mark.parametrize('comment_level', ['private'])
-    def test_public_node_private_comment_level_non_contrib_cannot_report_comment(self, app, non_contrib, comment_level, public_url):
+    def test_public_node_private_comment_level_non_contrib_cannot_report_comment(self, app, non_contrib, public_project, public_url):
+        public_project.comment_level = 'private'
+        public_project.save()
         res = app.get(public_url, auth=non_contrib.auth, expect_errors=True)
         assert res.status_code == 403
         assert res.json['errors'][0]['detail'] == exceptions.PermissionDenied.default_detail
@@ -293,8 +296,8 @@ class TestCommentReportsView(CommentReportsMixin):
 
     # public_project_comment_reports
     @pytest.fixture()
-    def public_project(self, user, contributor, comment_level):
-        public_project = ProjectFactory.create(is_public=True, creator=user, comment_level=comment_level)
+    def public_project(self, user, contributor):
+        public_project = ProjectFactory.create(is_public=True, creator=user, comment_level='public')
         public_project.add_contributor(contributor=contributor, save=True)
         return public_project
 
@@ -314,10 +317,6 @@ class TestCommentReportsView(CommentReportsMixin):
     @pytest.fixture()
     def public_url(self, user, public_comment):
         return '/{}comments/{}/reports/'.format(API_BASE, public_comment._id)
-
-    @pytest.fixture()
-    def comment_level(self):
-        return 'public'
 
 class TestWikiCommentReportsView(CommentReportsMixin):
 
@@ -352,8 +351,8 @@ class TestWikiCommentReportsView(CommentReportsMixin):
 
     # public_project_comment_reports
     @pytest.fixture()
-    def public_project(self, user, contributor, comment_level):
-        public_project = ProjectFactory.create(is_public=True, creator=user, comment_level=comment_level)
+    def public_project(self, user, contributor):
+        public_project = ProjectFactory.create(is_public=True, creator=user, comment_level='public')
         public_project.add_contributor(contributor=contributor, save=True)
         return public_project
 
@@ -378,10 +377,6 @@ class TestWikiCommentReportsView(CommentReportsMixin):
     @pytest.fixture()
     def public_url(self, user, public_comment):
         return '/{}comments/{}/reports/'.format(API_BASE, public_comment._id)
-
-    @pytest.fixture()
-    def comment_level(self):
-        return 'public'
 
 class TestFileCommentReportsView(CommentReportsMixin):
 
@@ -415,8 +410,8 @@ class TestFileCommentReportsView(CommentReportsMixin):
 
     # public_project_comment_reports
     @pytest.fixture()
-    def public_project(self, user, contributor, comment_level):
-        public_project = ProjectFactory.create(is_public=True, creator=user, comment_level=comment_level)
+    def public_project(self, user, contributor):
+        public_project = ProjectFactory.create(is_public=True, creator=user, comment_level='public')
         public_project.add_contributor(contributor=contributor, save=True)
         return public_project
 
@@ -440,7 +435,3 @@ class TestFileCommentReportsView(CommentReportsMixin):
     @pytest.fixture()
     def public_url(self, user, public_comment):
         return '/{}comments/{}/reports/'.format(API_BASE, public_comment._id)
-
-    @pytest.fixture()
-    def comment_level(self):
-        return 'public'
