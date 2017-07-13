@@ -24,7 +24,6 @@ from django.db.models.signals import post_save
 from django.db import models
 from django.utils import timezone
 
-from django_extensions.db.models import TimeStampedModel
 from framework.auth import Auth, signals, utils
 from framework.auth.core import generate_verification_key
 from framework.auth.exceptions import (ChangePasswordError, ExpiredTokenError,
@@ -102,7 +101,7 @@ class OSFUserManager(BaseUserManager):
         return user
 
 
-class Email(BaseModel, TimeStampedModel):
+class Email(BaseModel):
     address = LowercaseEmailField(unique=True, db_index=True, validators=[validate_email])
     user = models.ForeignKey('OSFUser', related_name='emails', on_delete=models.CASCADE)
 
@@ -1433,7 +1432,7 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
         user_session = Session.objects.filter(
             data__auth_user_id=self._id
         ).order_by(
-            '-date_modified'
+            '-modified'
         ).first()
 
         if not user_session:

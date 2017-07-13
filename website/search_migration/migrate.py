@@ -76,7 +76,7 @@ def migrate(delete, index=None, app=None):
     set_up_alias(index, new_index)
 
     # migrate nodes modified since start
-    migrate_nodes(new_index, query=Q(date_modified__gte=start_time))
+    migrate_nodes(new_index, query=Q(modified__gte=start_time))
 
     if delete:
         delete_old(new_index)

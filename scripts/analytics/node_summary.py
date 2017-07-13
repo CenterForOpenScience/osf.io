@@ -27,7 +27,7 @@ class NodeSummary(SummaryAnalytics):
         timestamp_datetime = datetime(date.year, date.month, date.day).replace(tzinfo=pytz.UTC)
         query_datetime = timestamp_datetime + timedelta(1)
 
-        node_query = {'is_deleted': False, 'date_created__lte': query_datetime}
+        node_query = {'is_deleted': False, 'created__lte': query_datetime}
         project_query = node_query
 
         public_query = {'is_public': True}

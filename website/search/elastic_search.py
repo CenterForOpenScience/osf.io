@@ -370,7 +370,7 @@ def serialize_node(node, category):
         'registered_date': node.registered_date,
         'wikis': {},
         'parent_id': parent_id,
-        'date_created': node.date_created,
+        'date_created': node.created,
         'license': serialize_node_license_record(node.license),
         'affiliated_institutions': list(node.affiliated_institutions.values_list('name', flat=True)),
         'boost': int(not node.is_registration) + 1,  # This is for making registered projects less relevant
