@@ -6,20 +6,11 @@ from osf.models.licenses import NodeLicense
 @pytest.mark.django_db
 class TestLicenseList:
 
-    @pytest.fixture()
-    def licenses(self):
-        return NodeLicense.find()
+    def test_license_list(self, app):
+        licenses = NodeLicense.find()
+        url_licenses = '/{}licenses/'.format(API_BASE)
+        res_licenses = app.get(url_licenses)
 
-    @pytest.fixture()
-    def url_licenses(self):
-        return '/{}licenses/'.format(API_BASE)
-
-    @pytest.fixture()
-    def res_licenses(self, app, url_licenses):
-        return app.get(url_licenses)
-
-
-    def test_license_list(self, licenses, app, url_licenses, res_licenses):
         #test_license_list_success
         assert res_licenses.status_code == 200
         assert res_licenses.content_type == 'application/vnd.api+json'
