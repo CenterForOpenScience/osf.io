@@ -3,7 +3,6 @@ import pytest
 from addons.osfstorage.models import OsfStorageFile
 from addons.wiki.tests.factories import NodeWikiFactory
 from api.base.settings.defaults import API_BASE
-
 from osf_tests.factories import (
     AuthUserFactory,
     ProjectFactory,
@@ -26,7 +25,7 @@ class TestGuidDetail:
         return ProjectFactory()
 
     @pytest.fixture()
-    def _add_private_link(self, project):
+    def add_private_link(self, project):
         def private_link(anonymous=False):
             view_only_link = PrivateLinkFactory(anonymous=anonymous)
             view_only_link.nodes.add(project)
@@ -92,10 +91,10 @@ class TestGuidDetail:
         res = app.get(url, auth=user.auth, expect_errors=True)
         assert res.status_code == 404
 
-    def test_redirects_through_view_only_link(self, app, project, _add_private_link, user):
+    def test_redirects_through_view_only_link(self, app, project, add_private_link, user):
 
         #test_redirect_when_viewing_private_project_through_view_only_link
-        view_only_link = _add_private_link()
+        view_only_link = add_private_link()
         url = '/{}guids/{}/?view_only={}'.format(API_BASE, project._id, view_only_link.key)
         res = app.get(url, auth=user.auth)
         redirect_url = '{}{}nodes/{}/?view_only={}'.format(API_DOMAIN, API_BASE, project._id, view_only_link.key)
