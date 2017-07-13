@@ -120,6 +120,7 @@ MIGRATION_MODULES = {
 }
 
 USE_TZ = True
+TIME_ZONE = 'UTC'
 
 # local development using https
 if osf_settings.SECURE_MODE and osf_settings.DEBUG_MODE:

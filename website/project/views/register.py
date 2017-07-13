@@ -222,19 +222,6 @@ def osf_admin_change_status_identifier(node, status):
 
 
 @must_be_valid_project
-@must_be_contributor_or_public
-def node_identifiers_get(node, **kwargs):
-    """Retrieve identifiers for a node. Node must be a public registration.
-    """
-    if not node.is_public:
-        raise HTTPError(http.BAD_REQUEST)
-    return {
-        'doi': node.get_identifier_value('doi'),
-        'ark': node.get_identifier_value('ark'),
-    }
-
-
-@must_be_valid_project
 @must_have_permission(ADMIN)
 def node_identifiers_post(auth, node, **kwargs):
     """Create identifier pair for a node. Node must be a public registration.
