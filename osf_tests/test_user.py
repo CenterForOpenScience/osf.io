@@ -1447,7 +1447,7 @@ class TestUser(OsfTestCase):
         # make sure there's at least one project
         ProjectFactory(creator=self.user)
         projects_created_by_user = AbstractNode.objects.filter(creator=self.user)
-        assert list(self.user.created.all()) == list(projects_created_by_user)
+        assert list(self.user.nodes_created.all()) == list(projects_created_by_user)
 
 
 # Copied from tests/models/test_user.py
