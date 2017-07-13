@@ -891,23 +891,34 @@ var dialog = function(title, message, actionButtonLabel, options) {
 
 // Formats contributor family names for display.  Takes in project, number of contributors, and getFamilyName function
 var contribNameFormat = function(node, number, getFamilyName) {
+    const charLimit = 22;
+    let contribs = '';
+    let otherContribs = '';
+    let ellipses = '...';
+
     if (number === 1) {
-        return getFamilyName(0, node);
+        contribs = getFamilyName(0, node);
+    } else if (number === 2) {
+        contribs = `${getFamilyName(0, node)} and ${getFamilyName(1, node)}`;
+    } else {
+        contribs = `${getFamilyName(0, node)}, ${getFamilyName(1, node)}`;
+        otherContribs = ` + ${number - 2}`;
     }
-    else if (number === 2) {
-        return getFamilyName(0, node) + ' and ' +
-            getFamilyName(1, node);
+
+    if (number === 1 && contribs.length > charLimit) {
+        contribs.substring(0, charLimit - ellipses.length);
+    } else if (number == 2 && contribs.length > charLimit) {
+        contribs = contribs.substring(0, charLimit - (ellipses.length)).trim();
+        contribs = contribs.concat(ellipses);
+    } else if (number > 2 && (contribs.length + otherContribs.length) > charLimit) {
+        contribs = contribs.substring(0, charLimit - (ellipses.length + otherContribs.length)).trim();
+        contribs = contribs.concat(ellipses, otherContribs);
+    } else if (number > 2 && contribs.length < charLimit) {
+        contribs = contribs.substring(0, charLimit - (otherContribs.length)).trim();
+        contribs = contribs.concat(otherContribs);
     }
-    else if (number === 3) {
-        return getFamilyName(0, node) + ', ' +
-            getFamilyName(1, node) + ', and ' +
-            getFamilyName(2, node);
-    }
-    else {
-        return getFamilyName(0, node) + ', ' +
-            getFamilyName(1, node) + ', ' +
-            getFamilyName(2, node) + ' + ' + (number - 3);
-    }
+
+    return contribs
 };
 
 // Returns single name representing contributor, First match found of family name, given name, middle names, full name.
