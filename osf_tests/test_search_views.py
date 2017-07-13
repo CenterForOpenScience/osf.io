@@ -95,6 +95,80 @@ class TestSearchViews(OsfTestCase):
         res = self.app.get(url, {'q': self.project.title})
         assert_equal(res.status_code, 200)
 
+    def test_search_user(self):
+
+        url = '/api/v1/search/user/'
+
+        res = self.app.get(url, {'q': 'Umwali'})
+        assert_equal(res.status_code, 200)
+        assert_false(res.json['results'])
+
+        user_one = factories.AuthUserFactory(fullname='Joe Umwali')
+        user_two = factories.AuthUserFactory(fullname='Joan Uwase')
+
+        res = self.app.get(url, {'q': 'Umwali'})
+
+        assert_equal(res.status_code, 200)
+        assert_equal(len(res.json['results']), 1)
+        assert_false(res.json['results'][0]['social'])
+
+        user_one.social = {
+            'github': user_one.given_name,
+            'twitter': user_one.given_name,
+            'ssrn': user_one.given_name
+        }
+        user_one.save()
+
+        res = self.app.get(url, {'q': 'Umwali'})
+
+        assert_equal(res.status_code, 200)
+        assert_equal(len(res.json['results']), 1)
+        assert_not_in('Joan', res.body)
+        assert_true(res.json['results'][0]['social'])
+        assert_equal(res.json['results'][0]['names']['fullname'], user_one.fullname)
+        assert_equal(res.json['results'][0]['social']['github'], 'http://github.com/{}'.format(user_one.given_name))
+        assert_equal(res.json['results'][0]['social']['twitter'], 'http://twitter.com/{}'.format(user_one.given_name))
+        assert_equal(res.json['results'][0]['social']['ssrn'], 'http://papers.ssrn.com/sol3/cf_dev/AbsByAuth.cfm?per_id={}'.format(user_one.given_name))
+
+        user_two.social = {
+            'profileWebsites': ['http://me.com/{}'.format(user_two.given_name)],
+            'orcid': user_two.given_name,
+            'linkedIn': user_two.given_name,
+            'scholar': user_two.given_name,
+            'impactStory': user_two.given_name,
+            'baiduScholar': user_two.given_name
+        }
+        user_two.save()
+
+        user_three = factories.AuthUserFactory(fullname='Janet Umwali')
+        user_three.social = {
+            'github': user_three.given_name,
+            'ssrn': user_three.given_name
+        }
+        user_three.save()
+
+        res = self.app.get(url, {'q': 'Umwali'})
+
+        assert_equal(res.status_code, 200)
+        assert_equal(len(res.json['results']), 2)
+        assert_true(res.json['results'][0]['social'])
+        assert_true(res.json['results'][1]['social'])
+        assert_not_equal(res.json['results'][0]['social']['ssrn'], res.json['results'][1]['social']['ssrn'])
+        assert_not_equal(res.json['results'][0]['social']['github'], res.json['results'][1]['social']['github'])
+
+        res = self.app.get(url, {'q': 'Uwase'})
+
+        assert_equal(res.status_code, 200)
+        assert_equal(len(res.json['results']), 1)
+        assert_true(res.json['results'][0]['social'])
+        assert_not_in('ssrn', res.json['results'][0]['social'])
+        assert_equal(res.json['results'][0]['social']['profileWebsites'][0], 'http://me.com/{}'.format(user_two.given_name))
+        assert_equal(res.json['results'][0]['social']['impactStory'], 'https://impactstory.org/u/{}'.format(user_two.given_name))
+        assert_equal(res.json['results'][0]['social']['orcid'], 'http://orcid.org/{}'.format(user_two.given_name))
+        assert_equal(res.json['results'][0]['social']['baiduScholar'], 'http://xueshu.baidu.com/scholarID/{}'.format(user_two.given_name))
+        assert_equal(res.json['results'][0]['social']['linkedIn'], 'https://www.linkedin.com/{}'.format(user_two.given_name))
+        assert_equal(res.json['results'][0]['social']['scholar'], 'http://scholar.google.com/citations?user={}'.format(user_two.given_name))
+
 
 class TestODMTitleSearch(OsfTestCase):
     """ Docs from original method:

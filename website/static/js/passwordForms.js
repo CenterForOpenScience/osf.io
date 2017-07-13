@@ -295,6 +295,10 @@ var SignUpViewModel = oop.extend(BaseViewModel, {
         if ($('.g-recaptcha').length !== 0) {
             var captchaResponse = $('#g-recaptcha-response').val();
             if (captchaResponse.length === 0) {
+                self.changeMessage(
+                    'Please complete reCAPTCHA',
+                    'text-danger p-xs'
+                );
                 return false;
             }
             $.extend(payload, {'g-recaptcha-response': captchaResponse});

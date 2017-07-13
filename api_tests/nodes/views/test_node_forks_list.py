@@ -1,13 +1,8 @@
-from nose.tools import *  # flake8: noqa
-
-from framework.auth.core import Auth
-
-from osf.models import AbstractNode as Node
-from website.util import permissions
+import pytest
 
 from api.base.settings.defaults import API_BASE
-
-from tests.base import ApiTestCase
+from framework.auth.core import Auth
+from osf.models import AbstractNode as Node
 from osf_tests.factories import (
     NodeFactory,
     ProjectFactory,
@@ -15,137 +10,188 @@ from osf_tests.factories import (
     AuthUserFactory,
     ForkFactory
 )
+from rest_framework import exceptions
+from website.util import permissions
 
 
-class TestNodeForksList(ApiTestCase):
-    def setUp(self):
-        super(TestNodeForksList, self).setUp()
-        self.user = AuthUserFactory()
-        self.private_project = ProjectFactory()
-        self.private_project.add_contributor(self.user, permissions=[permissions.READ, permissions.WRITE])
-        self.private_project.save()
-        self.component = NodeFactory(parent=self.private_project, creator=self.user)
-        self.pointer = ProjectFactory(creator=self.user)
-        self.private_project.add_pointer(self.pointer, auth=Auth(self.user), save=True)
-        self.private_fork = ForkFactory(project=self.private_project, user=self.user)
-        self.private_project_url = '/{}nodes/{}/forks/'.format(API_BASE, self.private_project._id)
+@pytest.fixture()
+def user():
+    return AuthUserFactory()
 
-        self.public_project = ProjectFactory(is_public=True, creator=self.user)
-        self.public_project.save()
-        self.public_component = NodeFactory(parent=self.public_project, creator=self.user, is_public=True)
-        self.public_project_url = '/{}nodes/{}/forks/'.format(API_BASE, self.public_project._id)
-        self.public_fork = ForkFactory(project=self.public_project, user=self.user)
-        self.user_two = AuthUserFactory()
+@pytest.mark.django_db
+class TestNodeForksList:
 
-    def test_can_access_public_node_forks_list_when_unauthenticated(self):
-        res = self.app.get(self.public_project_url)
-        assert_equal(res.status_code, 200)
-        assert_equal(len(res.json['data']), 0)
+    @pytest.fixture()
+    def pointer(self, user):
+        return ProjectFactory(creator=user)
+
+    @pytest.fixture()
+    def private_project(self, user, pointer):
+        private_project = ProjectFactory()
+        private_project.add_contributor(user, permissions=[permissions.READ, permissions.WRITE])
+        private_project.add_pointer(pointer, auth=Auth(user), save=True)
+        private_project.save()
+        return private_project
+
+    @pytest.fixture()
+    def public_project(self, user):
+        return ProjectFactory(is_public=True, creator=user)
+
+    @pytest.fixture()
+    def private_component(self, user, private_project):
+        return NodeFactory(parent=private_project, creator=user)
+
+    @pytest.fixture()
+    def public_component(self, user, public_project):
+        return NodeFactory(parent=public_project, creator=user, is_public=True)
+
+    @pytest.fixture()
+    def private_fork(self, user, private_project):
+        return ForkFactory(project=private_project, user=user)
+
+    @pytest.fixture()
+    def public_fork(self, user, public_project):
+        return ForkFactory(project=public_project, user=user)
+
+    @pytest.fixture()
+    def private_project_url(self, private_project):
+        return '/{}nodes/{}/forks/'.format(API_BASE, private_project._id)
+
+    @pytest.fixture()
+    def public_project_url(self, public_project):
+        return '/{}nodes/{}/forks/'.format(API_BASE, public_project._id)
+
+    def test_can_access_public_node_forks_list_when_unauthenticated(self, app, public_project, public_fork, public_project_url):
+        res = app.get(public_project_url)
+        assert res.status_code == 200
+        assert len(res.json['data']) == 0
         # Fork defaults to private
-        assert_equal(self.public_fork.is_public, False)
+        assert public_fork.is_public == False
 
-        self.public_fork.is_public = True
-        self.public_fork.save()
+        public_fork.is_public = True
+        public_fork.save()
 
-        res = self.app.get(self.public_project_url)
-        assert_equal(len(res.json['data']), 1)
-        assert_equal(self.public_fork.is_public, True)
+        res = app.get(public_project_url)
+        assert len(res.json['data']) == 1
+        assert public_fork.is_public == True
         data = res.json['data'][0]
-        assert_equal(data['attributes']['title'], 'Fork of ' + self.public_project.title)
-        assert_equal(data['id'], self.public_fork._id)
-        assert_equal(data['attributes']['registration'], False)
-        assert_equal(data['attributes']['fork'], True)
+        assert data['attributes']['title'] == 'Fork of ' + public_project.title
+        assert data['id'] == public_fork._id
+        assert data['attributes']['registration'] == False
+        assert data['attributes']['fork'] == True
 
-    def test_can_access_public_node_forks_list_authenticated_contributor(self):
-        res = self.app.get(self.public_project_url, auth=self.user.auth)
-        assert_equal(res.status_code, 200)
-        assert_equal(self.public_fork.is_public, False)
-        assert_equal(len(res.json['data']), 1)
+    def test_can_access_public_node_forks_list_authenticated_contributor(self, app, user, public_project, public_fork, public_project_url):
+        res = app.get(public_project_url, auth=user.auth)
+        assert res.status_code == 200
+        assert public_fork.is_public == False
+        assert len(res.json['data']) == 1
         data = res.json['data'][0]
-        assert_equal(data['attributes']['title'], 'Fork of ' + self.public_project.title)
-        assert_equal(data['id'], self.public_fork._id)
-        assert_equal(data['attributes']['registration'], False)
-        assert_equal(data['attributes']['fork'], True)
+        assert data['attributes']['title'] == 'Fork of ' + public_project.title
+        assert data['id'] == public_fork._id
+        assert data['attributes']['registration'] == False
+        assert data['attributes']['fork'] == True
 
-    def test_can_access_public_node_forks_list_authenticated_non_contributor(self):
-        res = self.app.get(self.public_project_url, auth=self.user_two.auth)
-        assert_equal(res.status_code, 200)
-        assert_equal(len(res.json['data']), 0)
+    def test_can_access_public_node_forks_list_authenticated_non_contributor(self, app, public_project, public_fork, public_project_url):
+        non_contrib = AuthUserFactory()
+        res = app.get(public_project_url, auth=non_contrib.auth)
+        assert res.status_code == 200
+        assert len(res.json['data']) == 0
         # Fork defaults to private
-        assert_equal(self.public_fork.is_public, False)
+        assert public_fork.is_public == False
 
-        self.public_fork.is_public = True
-        self.public_fork.save()
+        public_fork.is_public = True
+        public_fork.save()
 
-        res = self.app.get(self.public_project_url)
-        assert_equal(len(res.json['data']), 1)
-        assert_equal(self.public_fork.is_public, True)
+        res = app.get(public_project_url)
+        assert len(res.json['data']) == 1
+        assert public_fork.is_public == True
         data = res.json['data'][0]
-        assert_equal(data['attributes']['title'], 'Fork of ' + self.public_project.title)
-        assert_equal(data['id'], self.public_fork._id)
-        assert_equal(data['attributes']['registration'], False)
-        assert_equal(data['attributes']['fork'], True)
+        assert data['attributes']['title'] == 'Fork of ' + public_project.title
+        assert data['id'] == public_fork._id
+        assert data['attributes']['registration'] == False
+        assert data['attributes']['fork'] == True
 
-    def test_cannot_access_private_node_forks_list_unauthenticated(self):
-        res = self.app.get(self.private_project_url, expect_errors=True)
-
-        assert_equal(res.status_code, 401)
-        assert_equal(res.json['errors'][0]['detail'], 'Authentication credentials were not provided.')
-
-    def test_authenticated_contributor_can_access_private_node_forks_list(self):
-        res = self.app.get(self.private_project_url + '?embed=children&embed=node_links&embed=logs&embed=contributors&embed=forked_from', auth=self.user.auth)
-        assert_equal(res.status_code, 200)
-        assert_equal(len(res.json['data']), 1)
+    def test_authenticated_contributor_can_access_private_node_forks_list(self, app, user, private_project, private_component, private_fork, pointer, private_project_url):
+        res = app.get(private_project_url + '?embed=children&embed=node_links&embed=logs&embed=contributors&embed=forked_from', auth=user.auth)
+        assert res.status_code == 200
+        assert len(res.json['data']) == 1
         data = res.json['data'][0]
-        assert_equal(data['attributes']['title'], 'Fork of ' + self.private_project.title)
-        assert_equal(data['id'], self.private_fork._id)
+        assert data['attributes']['title'] == 'Fork of ' + private_project.title
+        assert data['id'] == private_fork._id
 
         fork_contributors = data['embeds']['contributors']['data'][0]['embeds']['users']['data']
-        assert_equal(fork_contributors['attributes']['family_name'], self.user.family_name)
-        assert_equal(fork_contributors['id'], self.user._id)
+        assert fork_contributors['attributes']['family_name'] == user.family_name
+        assert fork_contributors['id'] == user._id
 
         forked_children = data['embeds']['children']['data'][0]
-        assert_equal(forked_children['id'], self.component.forks.first()._id)
-        assert_equal(forked_children['attributes']['title'], self.component.title)
+        assert forked_children['id'] == private_component.forks.first()._id
+        assert forked_children['attributes']['title'] == private_component.title
 
         forked_node_links = data['embeds']['node_links']['data'][0]['embeds']['target_node']['data']
-        assert_equal(forked_node_links['id'], self.pointer._id)
-        assert_equal(forked_node_links['attributes']['title'], self.pointer.title)
+        assert forked_node_links['id'] == pointer._id
+        assert forked_node_links['attributes']['title'] == pointer.title
 
-        auth = Auth(self.user)
-        expected_logs = list(self.private_project.get_aggregate_logs_queryset(auth).values_list('action', flat=True))
+        auth = Auth(user)
+        expected_logs = list(private_project.get_aggregate_logs_queryset(auth).values_list('action', flat=True))
         expected_logs.append('node_forked')
 
         forked_logs = data['embeds']['logs']['data']
         forked_log_actions = [log['attributes']['action'] for log in forked_logs]
-        assert_equal(set(expected_logs), set(forked_log_actions))
-        assert_equal(len(set(forked_log_actions)), len(set(expected_logs)))
+        assert set(expected_logs) == set(forked_log_actions)
+        assert len(set(forked_log_actions)) == len(set(expected_logs))
 
         forked_from = data['embeds']['forked_from']['data']
-        assert_equal(forked_from['id'], self.private_project._id)
+        assert forked_from['id'] == private_project._id
 
-    def test_authenticated_non_contributor_cannot_access_private_node_forks_list(self):
-        res = self.app.get(self.private_project_url, auth=self.user_two.auth, expect_errors=True)
-        assert_equal(res.status_code, 403)
-        assert_equal(res.json['errors'][0]['detail'], 'You do not have permission to perform this action.')
+    def test_node_forks_list_errors(self, app, private_project_url):
+
+    #   test_cannot_access_private_node_forks_list_unauthenticated
+        res = app.get(private_project_url, expect_errors=True)
+
+        assert res.status_code == 401
+        assert res.json['errors'][0]['detail'] == exceptions.NotAuthenticated.default_detail
+
+    #   test_authenticated_non_contributor_cannot_access_private_node_forks_list
+        non_contrib = AuthUserFactory()
+        res = app.get(private_project_url, auth=non_contrib.auth, expect_errors=True)
+        assert res.status_code == 403
+        assert res.json['errors'][0]['detail'] == exceptions.PermissionDenied.default_detail
 
 
-class TestNodeForkCreate(ApiTestCase):
+@pytest.mark.django_db
+class TestNodeForkCreate:
 
-    def setUp(self):
-        super(TestNodeForkCreate, self).setUp()
-        self.user = AuthUserFactory()
-        self.user_two = AuthUserFactory()
-        self.user_three = AuthUserFactory()
-        self.private_project = ProjectFactory(creator=self.user)
+    @pytest.fixture()
+    def user_two(self):
+        return AuthUserFactory()
 
-        self.fork_data = {
+    @pytest.fixture()
+    def private_project(self, user):
+        return ProjectFactory(creator=user)
+
+    @pytest.fixture()
+    def public_project(self, user):
+        return ProjectFactory(is_public=True, creator=user)
+
+    @pytest.fixture()
+    def private_project_url(self, private_project):
+        return '/{}nodes/{}/forks/'.format(API_BASE, private_project._id)
+
+    @pytest.fixture()
+    def public_project_url(self, public_project):
+        return '/{}nodes/{}/forks/'.format(API_BASE, public_project._id)
+
+    @pytest.fixture()
+    def fork_data(self):
+        return {
             'data': {
                 'type': 'nodes'
             }
         }
 
-        self.fork_data_with_title = {
+    @pytest.fixture()
+    def fork_data_with_title(self):
+        return {
             'data': {
                 'type': 'nodes',
                 'attributes':
@@ -153,123 +199,123 @@ class TestNodeForkCreate(ApiTestCase):
             }
         }
 
-        self.private_project_url = '/{}nodes/{}/forks/'.format(API_BASE, self.private_project._id)
+    def test_create_fork_from_public_project_with_new_title(self, app, user, public_project, fork_data_with_title, public_project_url):
+        res = app.post_json_api(public_project_url, fork_data_with_title, auth=user.auth)
+        assert res.status_code == 201
+        assert res.json['data']['id'] == public_project.forks.first()._id
+        assert res.json['data']['attributes']['title'] == fork_data_with_title['data']['attributes']['title']
 
-        self.public_project = ProjectFactory(is_public=True, creator=self.user)
-        self.public_project_url = '/{}nodes/{}/forks/'.format(API_BASE, self.public_project._id)
+    def test_create_fork_from_private_project_with_new_title(self, app, user, private_project, fork_data_with_title, private_project_url):
+        res = app.post_json_api(private_project_url, fork_data_with_title, auth=user.auth)
+        assert res.status_code == 201
+        assert res.json['data']['id'] == private_project.forks.first()._id
+        assert res.json['data']['attributes']['title'] == fork_data_with_title['data']['attributes']['title']
 
-    def test_create_fork_from_public_project_with_new_title(self):
-        res = self.app.post_json_api(self.public_project_url, self.fork_data_with_title, auth=self.user.auth)
-        assert_equal(res.status_code, 201)
-        assert_equal(res.json['data']['id'], self.public_project.forks.first()._id)
-        assert_equal(res.json['data']['attributes']['title'], self.fork_data_with_title['data']['attributes']['title'])
+    def test_can_fork_public_node_logged_in(self, app, public_project, fork_data, public_project_url):
+        non_contrib = AuthUserFactory()
+        res = app.post_json_api(public_project_url, fork_data, auth=non_contrib.auth)
+        assert res.status_code == 201
+        assert res.json['data']['id'] == public_project.forks.first()._id
+        assert res.json['data']['attributes']['title'] == 'Fork of ' + public_project.title
 
-    def test_create_fork_from_private_project_with_new_title(self):
-        res = self.app.post_json_api(self.private_project_url, self.fork_data_with_title, auth=self.user.auth)
-        assert_equal(res.status_code, 201)
-        assert_equal(res.json['data']['id'], self.private_project.forks.first()._id)
-        assert_equal(res.json['data']['attributes']['title'], self.fork_data_with_title['data']['attributes']['title'])
+    def test_cannot_fork_errors(self, app, fork_data, public_project_url, private_project_url):
 
-    def test_can_fork_public_node_logged_in(self):
-        res = self.app.post_json_api(self.public_project_url, self.fork_data, auth=self.user_two.auth)
-        assert_equal(res.status_code, 201)
-        assert_equal(res.json['data']['id'], self.public_project.forks.first()._id)
-        assert_equal(res.json['data']['attributes']['title'], 'Fork of ' + self.public_project.title)
+    #   test_cannot_fork_public_node_logged_out
+        res = app.post_json_api(public_project_url, fork_data, expect_errors=True)
+        assert res.status_code == 401
+        assert res.json['errors'][0]['detail'] == exceptions.NotAuthenticated.default_detail
 
-    def test_cannot_fork_public_node_logged_out(self):
-        res = self.app.post_json_api(self.public_project_url, self.fork_data, expect_errors=True)
-        assert_equal(res.status_code, 401)
-        assert_equal(res.json['errors'][0]['detail'], 'Authentication credentials were not provided.')
+    #   test_cannot_fork_private_node_logged_out
+        res = app.post_json_api(private_project_url, fork_data, expect_errors=True)
+        assert res.status_code == 401
+        assert res.json['errors'][0]['detail'] == exceptions.NotAuthenticated.default_detail
 
-    def test_can_fork_public_node_logged_in_contributor(self):
-        res = self.app.post_json_api(self.public_project_url, self.fork_data, auth=self.user.auth)
-        assert_equal(res.status_code, 201)
-        assert_equal(res.json['data']['id'], self.public_project.forks.first()._id)
-        assert_equal(res.json['data']['attributes']['title'], 'Fork of ' + self.public_project.title)
+    #   test_cannot_fork_private_node_logged_in_non_contributor
+        non_contrib = AuthUserFactory()
+        res = app.post_json_api(private_project_url, fork_data, auth=non_contrib.auth, expect_errors=True)
+        assert res.status_code == 403
+        assert res.json['errors'][0]['detail'] == exceptions.PermissionDenied.default_detail
 
-    def test_cannot_fork_private_node_logged_out(self):
-        res = self.app.post_json_api(self.private_project_url, self.fork_data, expect_errors=True)
-        assert_equal(res.status_code, 401)
-        assert_equal(res.json['errors'][0]['detail'], 'Authentication credentials were not provided.')
+    def test_can_fork_public_node_logged_in_contributor(self, app, user, public_project, fork_data, public_project_url):
+        res = app.post_json_api(public_project_url, fork_data, auth=user.auth)
+        assert res.status_code == 201
+        assert res.json['data']['id'] == public_project.forks.first()._id
+        assert res.json['data']['attributes']['title'] == 'Fork of ' + public_project.title
 
-    def test_cannot_fork_private_node_logged_in_non_contributor(self):
-        res = self.app.post_json_api(self.private_project_url, self.fork_data, auth=self.user_two.auth, expect_errors=True)
-        assert_equal(res.status_code, 403)
-        assert_equal(res.json['errors'][0]['detail'], 'You do not have permission to perform this action.')
-
-    def test_can_fork_private_node_logged_in_contributor(self):
-        res = self.app.post_json_api(self.private_project_url + '?embed=children&embed=node_links&embed=logs&embed=contributors&embed=forked_from', self.fork_data, auth=self.user.auth)
-        assert_equal(res.status_code, 201)
+    def test_can_fork_private_node_logged_in_contributor(self, app, user, private_project, fork_data, private_project_url):
+        res = app.post_json_api(private_project_url + '?embed=children&embed=node_links&embed=logs&embed=contributors&embed=forked_from', fork_data, auth=user.auth)
+        assert res.status_code == 201
 
         data = res.json['data']
-        assert_equal(data['attributes']['title'], 'Fork of ' + self.private_project.title)
+        assert data['attributes']['title'] == 'Fork of ' + private_project.title
 
         fork_contributors = data['embeds']['contributors']['data'][0]['embeds']['users']['data']
-        assert_equal(fork_contributors['attributes']['family_name'], self.user.family_name)
-        assert_equal(fork_contributors['id'], self.user._id)
+        assert fork_contributors['attributes']['family_name'] == user.family_name
+        assert fork_contributors['id'] == user._id
 
         forked_from = data['embeds']['forked_from']['data']
-        assert_equal(forked_from['id'], self.private_project._id)
+        assert forked_from['id'] == private_project._id
 
-    def test_fork_private_components_no_access(self):
-        url = self.public_project_url + '?embed=children'
-        private_component = NodeFactory(parent=self.public_project, creator=self.user_two, is_public=False)
-        res = self.app.post_json_api(url, self.fork_data, auth=self.user_three.auth)
-        assert_equal(res.status_code, 201)
+    def test_fork_private_components_no_access(self, app, user_two, public_project, fork_data, public_project_url):
+        user_three = AuthUserFactory()
+        url = public_project_url + '?embed=children'
+        private_component = NodeFactory(parent=public_project, creator=user_two, is_public=False)
+        res = app.post_json_api(url, fork_data, auth=user_three.auth)
+        assert res.status_code == 201
         # Private components that you do not have access to are not forked
-        assert_equal(res.json['data']['embeds']['children']['links']['meta']['total'], 0)
+        assert res.json['data']['embeds']['children']['links']['meta']['total'] == 0
 
-    def test_fork_components_you_can_access(self):
-        url = self.private_project_url + '?embed=children'
-        new_component = NodeFactory(parent=self.private_project, creator=self.user)
-        res = self.app.post_json_api(url, self.fork_data, auth=self.user.auth)
-        assert_equal(res.status_code, 201)
-        assert_equal(res.json['data']['embeds']['children']['links']['meta']['total'], 1)
-        assert_equal(res.json['data']['embeds']['children']['data'][0]['id'], new_component.forks.first()._id)
-        assert_equal(res.json['data']['embeds']['children']['data'][0]['attributes']['title'], new_component.title)
+    def test_fork_components_you_can_access(self, app, user, private_project, fork_data, private_project_url):
+        url = private_project_url + '?embed=children'
+        new_component = NodeFactory(parent=private_project, creator=user)
+        res = app.post_json_api(url, fork_data, auth=user.auth)
+        assert res.status_code == 201
+        assert res.json['data']['embeds']['children']['links']['meta']['total'] == 1
+        assert res.json['data']['embeds']['children']['data'][0]['id'] == new_component.forks.first()._id
+        assert res.json['data']['embeds']['children']['data'][0]['attributes']['title'] == new_component.title
 
-    def test_fork_private_node_links(self):
-        private_pointer = ProjectFactory(creator=self.user_two)
-        actual_pointer = self.private_project.add_pointer(private_pointer, auth=Auth(self.user_two), save=True)
+    def test_fork_private_node_links(self, app, user, user_two, private_project, fork_data, private_project_url):
+        private_pointer = ProjectFactory(creator=user_two)
+        actual_pointer = private_project.add_pointer(private_pointer, auth=Auth(user_two), save=True)
 
-        url = self.private_project_url + '?embed=node_links'
+        url = private_project_url + '?embed=node_links'
 
         # Node link is forked, but shows up as a private node link
-        res = self.app.post_json_api(url, self.fork_data, auth=self.user.auth)
-        assert_equal(res.status_code, 201)
+        res = app.post_json_api(url, fork_data, auth=user.auth)
+        assert res.status_code == 201
 
-        assert_equal(res.json['data']['embeds']['node_links']['data'][0]['embeds']['target_node']['errors'][0]['detail'],
-                     'You do not have permission to perform this action.')
-        assert_equal(res.json['data']['embeds']['node_links']['links']['meta']['total'], 1)
+        assert (res.json['data']['embeds']['node_links']['data'][0]['embeds']['target_node']['errors'][0]['detail'] ==
+                     exceptions.PermissionDenied.default_detail)
+        assert res.json['data']['embeds']['node_links']['links']['meta']['total'] == 1
 
-        self.private_project.rm_pointer(actual_pointer, auth=Auth(self.user_two))
+        private_project.rm_pointer(actual_pointer, auth=Auth(user_two))
 
-    def test_fork_node_links_you_can_access(self):
-        pointer = ProjectFactory(creator=self.user)
-        self.private_project.add_pointer(pointer, auth=Auth(self.user_two), save=True)
+    def test_fork_node_links_you_can_access(self, app, user, user_two, private_project, fork_data, private_project_url):
+        pointer = ProjectFactory(creator=user)
+        private_project.add_pointer(pointer, auth=Auth(user_two), save=True)
 
-        url = self.private_project_url + '?embed=node_links'
+        url = private_project_url + '?embed=node_links'
 
-        res = self.app.post_json_api(url, self.fork_data, auth=self.user.auth)
-        assert_equal(res.status_code, 201)
+        res = app.post_json_api(url, fork_data, auth=user.auth)
+        assert res.status_code == 201
 
-        assert_equal(res.json['data']['embeds']['node_links']['data'][0]['embeds']['target_node']['data']['id'], pointer._id)
-        assert_equal(res.json['data']['embeds']['node_links']['links']['meta']['total'], 1)
+        assert res.json['data']['embeds']['node_links']['data'][0]['embeds']['target_node']['data']['id'] == pointer._id
+        assert res.json['data']['embeds']['node_links']['links']['meta']['total'] == 1
 
-    def test_can_fork_registration(self):
-        registration = RegistrationFactory(project=self.private_project, user=self.user)
+    def test_can_fork_registration(self, app, user, private_project, fork_data):
+        registration = RegistrationFactory(project=private_project, user=user)
 
         url = '/{}registrations/{}/forks/'.format(API_BASE, registration._id)
-        res = self.app.post_json_api(url, self.fork_data, auth=self.user.auth)
-        assert_equal(res.status_code, 201)
-        assert_equal(res.json['data']['id'], registration.forks.first()._id)
-        assert_equal(res.json['data']['attributes']['title'], 'Fork of ' + registration.title)
+        res = app.post_json_api(url, fork_data, auth=user.auth)
+        assert res.status_code == 201
+        assert res.json['data']['id'] == registration.forks.first()._id
+        assert res.json['data']['attributes']['title'] == 'Fork of ' + registration.title
 
-    def test_read_only_contributor_can_fork_private_registration(self):
-        read_only_user = AuthUserFactory()
+    def test_read_only_contributor_can_fork_private_registration(self, app, private_project, fork_data, private_project_url):
+        read_contrib = AuthUserFactory()
 
-        self.private_project.add_contributor(read_only_user, permissions=[permissions.READ], save=True)
-        res = self.app.post_json_api(self.private_project_url, self.fork_data, auth=read_only_user.auth)
-        assert_equal(res.status_code, 201)
-        assert_equal(res.json['data']['id'], self.private_project.forks.first()._id)
-        assert_equal(res.json['data']['attributes']['title'], 'Fork of ' + self.private_project.title)
+        private_project.add_contributor(read_contrib, permissions=[permissions.READ], save=True)
+        res = app.post_json_api(private_project_url, fork_data, auth=read_contrib.auth)
+        assert res.status_code == 201
+        assert res.json['data']['id'] == private_project.forks.first()._id
+        assert res.json['data']['attributes']['title'] == 'Fork of ' + private_project.title

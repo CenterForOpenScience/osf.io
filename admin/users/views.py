@@ -4,6 +4,7 @@ import csv
 import pytz
 from furl import furl
 from datetime import datetime, timedelta
+from django.db.models import Q
 from django.views.defaults import page_not_found
 from django.views.generic import FormView, DeleteView, ListView, TemplateView
 from django.contrib.auth.mixins import PermissionRequiredMixin
@@ -22,6 +23,7 @@ from framework.auth.utils import impute_names
 from framework.auth.core import generate_verification_key
 
 from website.mailchimp_utils import subscribe_on_confirm
+from website import search
 
 from admin.base.views import GuidView
 from osf.models.admin_log_entry import (
@@ -30,7 +32,9 @@ from osf.models.admin_log_entry import (
     USER_EMAILED,
     USER_REMOVED,
     USER_RESTORED,
-    CONFIRM_SPAM)
+    CONFIRM_SPAM,
+    REINDEX_ELASTIC,
+)
 
 from admin.users.serializers import serialize_user
 from admin.users.forms import EmailResetForm, WorkshopForm, UserSearchForm
@@ -278,7 +282,7 @@ class UserFormView(PermissionRequiredMixin, FormView):
         if guid or email:
             if email:
                 try:
-                    user = OSFUser.objects.get(emails__address=email)
+                    user = OSFUser.objects.filter(Q(username=email) | Q(emails__address=email)).get()
                     guid = user.guids.first()._id
                 except OSFUser.DoesNotExist:
                     return page_not_found(self.request, AttributeError('User with email address {} not found.'.format(email)))
@@ -514,17 +518,26 @@ class ResetPasswordView(PermissionRequiredMixin, FormView):
     permission_required = 'osf.change_osfuser'
     raise_exception = True
 
-    def get_context_data(self, **kwargs):
-        user = OSFUser.load(self.kwargs.get('guid'))
-        try:
-            self.initial.setdefault('emails', [(r, r) for r in user.emails.values_list('address', flat=True)])
-        except AttributeError:
+    def dispatch(self, request, *args, **kwargs):
+        self.user = OSFUser.load(self.kwargs.get('guid'))
+        if self.user is None:
             raise Http404(
                 '{} with id "{}" not found.'.format(
                     self.context_object_name.title(),
                     self.kwargs.get('guid')
                 ))
-        kwargs.setdefault('guid', user._id)
+        return super(ResetPasswordView, self).dispatch(request, *args, **kwargs)
+
+    def get_initial(self):
+        self.initial = {
+            'guid': self.user._id,
+            'emails': [(r, r) for r in self.user.emails.values_list('address', flat=True)],
+        }
+        return super(ResetPasswordView, self).get_initial()
+
+    def get_context_data(self, **kwargs):
+        kwargs.setdefault('guid', self.user._id)
+        kwargs.setdefault('emails', self.user.emails)
         return super(ResetPasswordView, self).get_context_data(**kwargs)
 
     def form_valid(self, form):
@@ -566,3 +579,19 @@ class ResetPasswordView(PermissionRequiredMixin, FormView):
     @property
     def success_url(self):
         return reverse_user(self.kwargs.get('guid'))
+
+
+class UserReindexElastic(UserDeleteView):
+    template_name = 'users/reindex_user_elastic.html'
+
+    def delete(self, request, *args, **kwargs):
+        user = self.get_object()
+        search.search.update_user(user, async=False)
+        update_admin_log(
+            user_id=self.request.user.id,
+            object_id=user._id,
+            object_repr='User',
+            message='User Reindexed (Elastic): {}'.format(user._id),
+            action_flag=REINDEX_ELASTIC
+        )
+        return redirect(reverse_user(self.kwargs.get('guid')))
