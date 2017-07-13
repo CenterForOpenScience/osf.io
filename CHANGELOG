@@ -2,6 +2,39 @@
 Changelog
 *********
 
+0.117.0 (2017-07-13)
+====================
+- Profile: long Personal Website URLs run over in cause problems in display #5270
+- Show error message if user doesn't complete captcha
+- Add-ons, Revisions page missing column heading, and list user as "Anonymous Contributor"
+- Rename "Newest Public Projects" to "New and Noteworthy" on "new projects" tab
+- Forked and templated projects do not send contributor emails
+- Copy to clipboard button when creating View-only Links is broken in Safari
+- Admin app, reset password modal shows email from previous user accessed (not current user)
+- Citations leave off suffixes
+- API: Should not be allowed to add unconfirmed users to a node via GUID
+- Display Acceptable Licenses in Admin Preprint Config
+- Clicking Add Component too quickly gives grey screen
+- Files checked out to David Mellor while under Prereg Review
+- Wrong citations showing for some unregistered contributors
+- Deleting an at mention in comment throws JS error
+- Cannot delete @mention in Firefox
+- Admin spam lists are broken
+- Add preprint filter on OSF search
+- Language change: Resend confirmation email page should say "unconfirmed email address"
+- Fix SSRN logo on User Search results
+- Add Common Actions in Dropdown on Component Widget
+- Allow users to autopopulate tags in new component creation
+- Arbitrarily Reindex OSF things in SHARE and OSF Search via admin
+- Make 'GUID has no deep URL' sentry error less annoying
+- Linking to the eligible journal list in the OSF preregistration challenge workflow
+- Preprint providers should not have subjects_acceptable in API response
+- Surface Unregistered Contributor Emails in Admin
+- Allow "highlighted" taxonomy per provider
+- Move External Link to Project Settings Page
+- ImpactStory link in profile is "Not Secure"
+- Distinguish Staging Admin from Production Admin
+
 0.116.0 (2017-07-05)
 ====================
 - Allow Styling in Admin App Preprint Provider HTML Fields
