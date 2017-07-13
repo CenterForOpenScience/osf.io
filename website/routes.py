@@ -119,7 +119,7 @@ def get_globals():
                 'write_key': settings.KEEN['private']['write_key'],
             },
         },
-        'maintenance': maintenance.get_maintenance(),
+        'maintenance_states': maintenance.get_maintenance_states(),
         'recaptcha_site_key': settings.RECAPTCHA_SITE_KEY,
         'custom_citations': settings.CUSTOM_CITATIONS
     }

@@ -108,14 +108,16 @@ class TestStatusView(ApiTestCase):
         url = '/{}status/'.format(API_BASE)
         res = self.app.get(url)
         assert_equal(res.status_code, 200)
-        assert_equal(res.json, {'maintenance': None})
+        assert_equal(res.json, [])
 
     def test_status_view_with_maintenance(self):
-        maintenance.set_maintenance()
+        maintenance.set_maintenance(_id='test', message='test')
         url = '/{}status/'.format(API_BASE)
         res = self.app.get(url)
         assert_equal(res.status_code, 200)
-        assert_equal(res.json, {'maintenance': maintenance.get_maintenance()})
+        assert_equal(res.json[0]['_id'], 'test')
+        assert_equal(res.json[0]['message'], 'test')
+        assert_equal(res.json[0]['level'], 'info')
 
 
 class TestJSONAPIBaseView(ApiTestCase):

@@ -20,7 +20,7 @@ from api.base.exceptions import RelationshipPostMakesNoChanges
 from api.base.settings import BULK_SETTINGS
 from api.base.utils import absolute_reverse, extend_querystring_params, get_user_auth, extend_querystring_if_key_exists
 from framework.auth import core as auth_core
-from osf.models import AbstractNode as Node
+from osf.models import AbstractNode as Node, MaintenanceState
 from website import settings
 from website import util as website_utils
 from website.util.sanitize import strip_html
@@ -1539,3 +1539,15 @@ class LinkedRegistrationsRelationshipSerializer(BaseAPISerializer):
             collection.add_pointer(node, auth)
 
         return self.make_instance_obj(collection)
+
+
+class MaintenanceStateSerializer(ser.ModelSerializer):
+
+    level = ser.SerializerMethodField()
+
+    def get_level(self, obj):
+        return obj.get_level_display()
+
+    class Meta:
+        model = MaintenanceState
+        exclude = ('id', )
