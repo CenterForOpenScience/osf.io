@@ -40,6 +40,11 @@ EXTERNAL_EMBER_APPS = {
         'url': '/registries/',
         'server': 'http://192.168.168.167:4300',
         'path': '/registries/'
+    },
+    'reviews': {
+        'url': '/reviews/',
+        'server': 'http://localhost:4400',
+        'path': '/reviews/'
     }
     # 'meetings': {
     #     'url': '/meetings/',
