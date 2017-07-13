@@ -124,7 +124,7 @@ class ComposedScopes(object):
     USERS_READ = (CoreScopes.USERS_READ, CoreScopes.ALWAYS_PUBLIC, )
     USERS_WRITE = USERS_READ + (CoreScopes.USERS_WRITE,)
     USERS_CREATE = USERS_READ + (CoreScopes.USERS_CREATE, )
-    USER_EMAIL_READ = (CoreScopes.USER_EMAIL_READ, )
+    USER_EMAIL_READ =  (CoreScopes.USERS_READ, CoreScopes.USER_EMAIL_READ, )
 
     # Applications collection
     APPLICATIONS_READ = (CoreScopes.APPLICATIONS_READ, CoreScopes.ALWAYS_PUBLIC, )
@@ -210,7 +210,7 @@ public_scopes = {
 
 if settings.DEV_MODE:
     public_scopes.update({
-        CoreScopes.USER_EMAIL_READ: scope(parts_=frozenset(ComposedScopes.USER_EMAIL_READ),
+        'osf.users.email_read': scope(parts_=frozenset(ComposedScopes.USER_EMAIL_READ),
                                           description='Read your primary email address.',
                                           is_public=True),
         'osf.users.profile_write': scope(parts_=frozenset(ComposedScopes.USERS_WRITE),

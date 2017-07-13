@@ -248,7 +248,7 @@ class TestOAuthScopedAccess(ApiTestCase):
 
     @mock.patch('framework.auth.cas.CasClient.profile')
     def test_user_email_scope_can_read_email(self, mock_user_info):
-        mock_user_info.return_value = self._scoped_response([oauth_scopes.ComposedScopes.USER_EMAIL_READ, 'osf.users.profile_read'])
+        mock_user_info.return_value = self._scoped_response(['osf.users.email_read'])
         url = api_v2_url('users/me/', base_route='/', base_prefix='v2/')
         res = self.app.get(url, auth='some_valid_token', auth_type='jwt')
         assert_equal(res.status_code, 200)
@@ -265,7 +265,7 @@ class TestOAuthScopedAccess(ApiTestCase):
 
     @mock.patch('framework.auth.cas.CasClient.profile')
     def test_user_email_scope_cannot_read_other_email(self, mock_user_info):
-        mock_user_info.return_value = self._scoped_response(['osf.users.email_read', 'osf.users.profile_read'])
+        mock_user_info.return_value = self._scoped_response(['osf.users.email_read'])
         url = api_v2_url('users/{}/'.format(self.user2._id), base_route='/', base_prefix='v2/')
         res = self.app.get(url, auth='some_valid_token', auth_type='jwt')
         assert_equal(res.status_code, 200)

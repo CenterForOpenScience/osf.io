@@ -22,9 +22,9 @@ from api.users.serializers import (UserAddonSettingsSerializer,
                                    UserDetailSerializer,
                                    UserInstitutionsRelationshipSerializer,
                                    UserSerializer,
-                                   ReadEmailUserSerializer,)
+                                   ReadEmailUserDetailSerializer,)
 from django.contrib.auth.models import AnonymousUser
-from framework.auth.oauth_scopes import CoreScopes, ComposedScopes
+from framework.auth.oauth_scopes import CoreScopes, normalize_scopes
 from modularodm import Q as MQ
 from django.db.models import Q
 from rest_framework import permissions as drf_permissions
@@ -256,8 +256,9 @@ class UserDetail(JSONAPIBaseView, generics.RetrieveUpdateAPIView, UserMixin):
     def get_serializer_class(self):
         if self.request.auth:
             scopes = self.request.auth.attributes['accessTokenScope']
-            if ComposedScopes.USER_EMAIL_READ in scopes and self.request.user == self.get_user():
-                return ReadEmailUserSerializer
+            if (CoreScopes.USER_EMAIL_READ in normalize_scopes(scopes)
+                and self.request.user == self.get_user()):
+                return ReadEmailUserDetailSerializer
         return UserDetailSerializer
 
     # overrides RetrieveAPIView

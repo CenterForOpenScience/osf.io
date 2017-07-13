@@ -156,7 +156,7 @@ class UserDetailSerializer(UserSerializer):
     id = IDField(source='_id', required=True)
 
 
-class ReadEmailUserSerializer(UserDetailSerializer):
+class ReadEmailUserDetailSerializer(UserDetailSerializer):
 
     email = ser.CharField(source='username', read_only=True)
 
