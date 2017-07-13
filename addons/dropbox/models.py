@@ -121,7 +121,7 @@ class UserSettings(BaseOAuthUserSettings):
             pass
 
 
-class NodeSettings(BaseStorageAddon, BaseOAuthNodeSettings):
+class NodeSettings(BaseOAuthNodeSettings, BaseStorageAddon):
     oauth_provider = Provider
     serializer = DropboxSerializer
 

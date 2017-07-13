@@ -381,7 +381,7 @@ class OsfStorageFolder(OsfStorageFileNode, Folder):
         return ret
 
 
-class NodeSettings(BaseStorageAddon, BaseNodeSettings):
+class NodeSettings(BaseNodeSettings, BaseStorageAddon):
     # Required overrides
     complete = True
     has_auth = True
