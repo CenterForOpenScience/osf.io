@@ -13,12 +13,13 @@ var oop = require('js/oop');
 // Grab nodeID from global context (mako)
 var nodeApiUrl = window.contextVars.node.urls.api;
 var nodeId = window.contextVars.node.id;
+var nodeLinksUrl = osfHelpers.apiV2Url('nodes/' + nodeId + '/node_links/', {});
 
 var SEARCH_ALL_SUBMIT_TEXT = 'Search all projects';
 var SEARCH_MY_PROJECTS_SUBMIT_TEXT = 'Search my projects';
 
 var AddPointerViewModel = oop.extend(Paginator, {
-    constructor: function(nodeTitle) {
+    constructor: function(nodeTitle){
         var self = this;
         this.super.constructor.call(this);
         this.nodeTitle = nodeTitle;
@@ -31,25 +32,26 @@ var AddPointerViewModel = oop.extend(Paginator, {
         this.errorMsg = ko.observable('');
         this.totalPages = ko.observable(0);
         this.includePublic = ko.observable(false);
+        this.dirty = ko.observable(false);
         this.searchWarningMsg = ko.observable('');
         this.submitWarningMsg = ko.observable('');
         this.loadingResults = ko.observable(false);
         this.inputType = ko.observable('nodes');
-        this.foundResults = ko.pureComputed(function() {
+        this.foundResults = ko.pureComputed(function(){
             return self.results().length;
         });
-        this.noResults = ko.pureComputed(function() {
+        this.noResults = ko.pureComputed(function(){
             return self.query() && !self.results().length;
         });
         this.searchMyProjects();
     },
     doneSearching: function(){
-      var self = this;
-      self.searchAllProjectsSubmitText(SEARCH_ALL_SUBMIT_TEXT);
-      self.searchMyProjectsSubmitText(SEARCH_MY_PROJECTS_SUBMIT_TEXT);
-      self.loadingResults(false);
+        var self = this;
+        self.searchAllProjectsSubmitText(SEARCH_ALL_SUBMIT_TEXT);
+        self.searchMyProjectsSubmitText(SEARCH_MY_PROJECTS_SUBMIT_TEXT);
+        self.loadingResults(false);
     },
-    searchAllProjects: function() {
+    searchAllProjects: function(){
         var self = this;
         self.includePublic(true);
         self.pageToGet(0);
@@ -57,7 +59,7 @@ var AddPointerViewModel = oop.extend(Paginator, {
         self.loadingResults(true);
         self.fetchResults();
     },
-    searchMyProjects: function() {
+    searchMyProjects: function(){
         var self = this;
         self.includePublic(false);
         self.pageToGet(0);
@@ -65,222 +67,179 @@ var AddPointerViewModel = oop.extend(Paginator, {
         self.loadingResults(true);
         self.fetchResults();
     },
-    fetchResults: function() {
+    fetchResults: function(){
         var self = this;
         self.errorMsg('');
         self.searchWarningMsg('');
         self.results([]); // clears page for spinner
         self.selection([]);
-        var query = '', myProjects = '', pageNum = self.pageToGet()+1;
-        if (self.query()){
-            query += 'filter[title]='+self.query()+'&';
-        }
-        if (!self.includePublic()){
-            myProjects = 'users/me/';
-        }
-        var url = osfHelpers.apiV2Url(myProjects+self.inputType()+'/', {query: query+'page='+pageNum+'&embed=contributors&page[size]=4'});
-        var request = osfHelpers.ajaxJSON(
+        var pageNum = self.pageToGet() + 1;
+        var userOrPublicNodes = self.includePublic() ? '' : 'users/me/';
+        var url = osfHelpers.apiV2Url(
+             userOrPublicNodes + self.inputType() + '/', {
+              query : {
+                'filter[title]' : self.query(),
+                'page' : pageNum,
+                'embed' : 'contributors',
+                'page[size]' : '4'
+              }
+            }
+        );
+        var requestNodes = osfHelpers.ajaxJSON(
             'GET',
             url,
-            {'isCors': true});
-        request.done(function(response) {
+            {'isCors': true}
+        );
+        requestNodes.done(function(response){
             var nodes = response.data;
-            if (!nodes.length) {
+            var count = nodes.length;
+            if (!count){
                 self.errorMsg('No results found.');
+                self.doneSearching();
+                return;
             }
-            else {
-                var count = nodes.length;
-                var url = osfHelpers.apiV2Url('nodes/'+nodeId+'/node_links/', {});
-                var request = osfHelpers.ajaxJSON(
-                    'GET',
-                    url,
-                    {'isCors': true});
-                request.done(function(nl_response) {
-                    nodes.forEach(function(each) {
-                        if (each.type === 'registrations') {
-                            each.dateRegistered = new osfHelpers.FormattableDate(each.attributes.date_registered);
-                        } else {
-                            each.dateCreated = new osfHelpers.FormattableDate(each.attributes.date_created);
-                            each.dateModified = new osfHelpers.FormattableDate(each.attributes.date_modified);
-                        }
-                        // each.link = '';
-                        var i;
-                        for (i = 0; i < nl_response.data.length; i++) {
-                            var target_id = nl_response.data[i].embeds.target_node.data.id;
-                            if (target_id === each.id) {
-                                self.selection.push(each);
-                                nl_response.data.splice(i, 1);
-                                break;
-                            }
-                        }
-                        if (--count === 0) {
-                            self.results(nodes);
-                            self.currentPage(self.pageToGet());
-                            self.numberOfPages(Math.ceil(response.links.meta.total / response.links.meta.per_page));
-                            self.addNewPaginators();
-                        }
-                    });
-                    self.doneSearching();
-                })
-
-                request.fail(function(xhr) {
-                    self.searchWarningMsg(xhr.responseJSON && xhr.responseJSON.message_long);
-                    if (--count === 0) {
+            var requestNodeLinks = osfHelpers.ajaxJSON(
+                'GET',
+                nodeLinksUrl,
+                {'isCors': true}
+            );
+            requestNodeLinks.done(function(response){
+                var embedNodeIds = [];
+                for (var i = 0; i < response.data.length; i++){
+                    embedNodeIds.push(response.data[i].embeds.target_node.data.id);
+                }
+                nodes.forEach(function(each){
+                    if (each.type === 'registrations'){
+                        each.dateRegistered = new osfHelpers.FormattableDate(each.attributes.date_registered);
+                    } else {
+                        each.dateCreated = new osfHelpers.FormattableDate(each.attributes.date_created);
+                        each.dateModified = new osfHelpers.FormattableDate(each.attributes.date_modified);
+                    }
+                    if (embedNodeIds.indexOf(each.id) !== -1){
+                        self.selection.push(each);
+                    }
+                    count -= 1;
+                    if (count === 0){
                         self.results(nodes);
                         self.currentPage(self.pageToGet());
                         self.numberOfPages(Math.ceil(response.links.meta.total / response.links.meta.per_page));
                         self.addNewPaginators();
                     }
-                    self.doneSearching();
-                })
-            }
+                });
+                self.doneSearching();
+            });
+            requestNodeLinks.fail(function(xhr){
+                self.searchWarningMsg(xhr.responseJSON && xhr.responseJSON.message_long);
+                count -= 1;
+                if (count === 0){
+                    self.results(nodes);
+                    self.currentPage(self.pageToGet());
+                    self.numberOfPages(Math.ceil(response.links.meta.total / response.links.meta.per_page));
+                    self.addNewPaginators();
+                }
+                self.doneSearching();
+            });
         });
-        request.fail(function(xhr) {
+        requestNodes.fail(function(xhr){
             self.searchWarningMsg(xhr.responseJSON && xhr.responseJSON.message_long);
             self.doneSearching();
         });
     },
-    add: function(data) {
+    add: function(data){
         var self = this;
-        if (self.inputType() === 'nodes') {
-            var url = osfHelpers.apiV2Url('nodes/'+nodeId+'/node_links/', {});
-            var request = osfHelpers.ajaxJSON(
-                'POST',
-                url,
-                {
-                    'isCors': true,
+        var type = self.inputType() === 'nodes' ? 'node_links' : 'registration_links';
+        var addUrl = osfHelpers.apiV2Url('nodes/' + nodeId + '/' + type + '/', {});
+        var request = osfHelpers.ajaxJSON(
+            'POST',
+            addUrl,
+            {
+                'isCors': true,
+                'data': {
                     'data': {
-                        'data': {
-                            'type': 'node_links',
-                            'relationships': {
-                                'nodes': {
-                                    'data': {
-                                        'type': 'nodes',
-                                        'id': data.id
-                                    }
+                        'type': type,
+                        'relationships': {
+                            'nodes': {
+                                'data': {
+                                    'type': self.inputType(),
+                                    'id': data.id
                                 }
                             }
                         }
                     }
-                });
-            request.done(function (response) {
-                    self.selection.push(data);
-            });
-        }
-        else{
-            var url = osfHelpers.apiV2Url('nodes/'+nodeId+'/registration_links/', {});
-            var request = osfHelpers.ajaxJSON(
-                'POST',
-                url,
-                {
-                    'isCors': true,
-                    'data': {
-                        'data': {
-                            'type': 'registration_links',
-                            'relationships': {
-                                'nodes': {
-                                    'data': {
-                                        'type': 'registrations',
-                                        'id': data.id
-                                    }
-                                }
-                            }
-                        }
-                    }
-                });
-            request.done(function (response) {
-                self.selection.push(data);
-            });
-        }
-    },
-    remove: function(data) {
-        var self = this;
-        if (self.inputType() === 'nodes'){
-            var url = osfHelpers.apiV2Url('nodes/'+nodeId+'/node_links/', {});
-            var request = osfHelpers.ajaxJSON(
-                'GET',
-                url,
-                {'isCors': true});
-            request.done(function(response) {
-                var i, nl_id;
-                for (i = 0; i < response.data.length; i++){
-                    if (response.data[i].embeds.target_node.data.id === data.id){
-                        nl_id = response.data[i].id;
-                        response.data.splice(i, 1);
-                        break;
-                    }
                 }
-                var url = osfHelpers.apiV2Url('nodes/'+nodeId+'/node_links/'+nl_id+'/', {});
-                var request = osfHelpers.ajaxJSON(
-                    'DELETE',
-                    url,
-                    {'isCors': true});
-                request.done(function(nl_response) {
-                    self.selection.splice(
-                        self.selection.indexOf(data), 1
-                    );
-                });
-            });
-        }
-        else {
-            var request = osfHelpers.ajaxJSON(
-                'GET',
-                url,
-                {'isCors': true});
-            request.done(function(response) {
-                var i, nl_id;
-                for (i = 0; i < response.data.length; i++){
-                    if (response.data[i].embeds.target_node.data.id === data.id){
-                        nl_id = response.data[i].id;
-                        response.data.splice(i, 1);
-                        break;
-                    }
-                }
-                var url = osfHelpers.apiV2Url('nodes/'+nodeId+'/registration_links/'+nl_id+'/', {});
-                var request = osfHelpers.ajaxJSON(
-                    'DELETE',
-                    url,
-                    {
-                        'isCors': true
-                    });
-                request.done(function(nl_response) {
-                    self.selection.splice(
-                        self.selection.indexOf(data), 1
-                    );
-                });
-            });
-        }
-
+            }
+        );
+        request.done(function (response){
+            self.dirty(true);
+            self.selection.push(data);
+        });
+        request.fail(function(xhr){
+            self.searchWarningMsg(xhr.responseJSON && xhr.responseJSON.message_long);
+        });
     },
-    selected: function(data) {
+    remove: function(data){
         var self = this;
-        for (var idx = 0; idx < self.selection().length; idx++) {
-            if (data.id === self.selection()[idx].id) {
+        var requestNodeLinks = osfHelpers.ajaxJSON(
+            'GET',
+            nodeLinksUrl,
+            {'isCors': true}
+        );
+        requestNodeLinks.done(function(response){
+            var nodeLinkId;
+            for (var i = 0; i < response.data.length; i++){
+                if (response.data[i].embeds.target_node.data.id === data.id){
+                    nodeLinkId = response.data[i].id;
+                    break;
+                }
+            }
+            var type = self.inputType() === 'nodes' ? '/node_links/' : '/registration_links/';
+            var deleteUrl = osfHelpers.apiV2Url('nodes/' + nodeId + type + nodeLinkId + '/', {});
+            osfHelpers.ajaxJSON(
+                'DELETE',
+                deleteUrl,
+                {'isCors': true}
+            ).done(function(response){
+                self.selection.splice(
+                    self.selection.indexOf(data), 1
+                );
+                self.dirty(true);
+            }).fail(function(xhr){
+                self.searchWarningMsg(xhr.responseJSON && xhr.responseJSON.message_long);
+            });
+        });
+        requestNodeLinks.fail(function(xhr){
+            self.searchWarningMsg(xhr.responseJSON && xhr.responseJSON.message_long);
+        });
+    },
+    selected: function(data){
+        var self = this;
+        for (var idx = 0; idx < self.selection().length; idx++){
+            if (data.id === self.selection()[idx].id){
                 return true;
             }
         }
         return false;
     },
-    authorText: function(node) {
+    authorText: function(node){
         var contributors = node.embeds.contributors.data;
         var author = contributors[0].embeds.users.data.attributes.family_name;
-        if (contributors.length > 1) {
+        if (contributors.length > 1){
             author += ' et al.';
         }
         return author;
     },
-    nodeView: function() {
+    nodeView: function(){
         var self = this;
-        if (self.inputType() !== 'nodes') {
+        if (self.inputType() !== 'nodes'){
             $('#getLinksRegistrationsTab').removeClass('active');
             $('#getLinksNodesTab').addClass('active');
             self.inputType('nodes');
             self.searchMyProjects();
         }
     },
-    registrationView: function() {
+    registrationView: function(){
         var self = this;
-        if (self.inputType() !== 'registrations') {
+        if (self.inputType() !== 'registrations'){
             $('#getLinksNodesTab').removeClass('active');
             $('#getLinksRegistrationsTab').addClass('active');
             self.inputType('registrations');
@@ -289,41 +248,44 @@ var AddPointerViewModel = oop.extend(Paginator, {
     },
     getDates: function(data){
         var date = '';
-        if (data.type === 'registrations') {
+        if (data.type === 'registrations'){
             date = 'Registered: ' + data.dateRegistered.local;
         } else {
             date = 'Created: ' + data.dateCreated.local + '\nModified: ' + data.dateModified.local;
         }
         return date;
     },
-    clear: function () {
+    clear: function (){
         var self = this;
-        if (self.query()) {
+        if (self.query()){
             self.query('');
             self.results([]);
         }
         self.errorMsg('');
         self.searchWarningMsg('');
     },
-    done: function() {
+    done: function(){
+        var self = this;
+        if (! self.dirty()) {
+          self.clear();
+          return false;
+        }
         window.location.reload();
     }
 });
 
-var LinksViewModel = function($elm) {
-
+var LinksViewModel = function($elm){
     var self = this;
     self.links = ko.observableArray([]);
-
-    $elm.on('shown.bs.modal', function() {
-        if (self.links().length === 0) {
+    $elm.on('shown.bs.modal', function(){
+        if (self.links().length === 0){
             $.ajax({
                 type: 'GET',
                 url: nodeApiUrl + 'pointer/',
                 dataType: 'json'
-            }).done(function(response) {
+            }).done(function(response){
                 self.links(response.pointed);
-            }).fail(function() {
+            }).fail(function(){
                 $elm.modal('hide');
                 osfHelpers.growl('Error:', 'Could not get links');
             });
@@ -336,7 +298,7 @@ var LinksViewModel = function($elm) {
 // Public API //
 ////////////////
 
-function PointerManager(selector, nodeName) {
+function PointerManager(selector, nodeName){
     var self = this;
     self.selector = selector;
     self.$element = $(self.selector);
@@ -345,15 +307,15 @@ function PointerManager(selector, nodeName) {
     self.init();
 }
 
-PointerManager.prototype.init = function() {
+PointerManager.prototype.init = function(){
     var self = this;
     ko.applyBindings(self.viewModel, self.$element[0]);
-    self.$element.on('hidden.bs.modal', function() {
+    self.$element.on('hidden.bs.modal', function(){
         self.viewModel.clear();
     });
 };
 
-function PointerDisplay(selector) {
+function PointerDisplay(selector){
     this.selector = selector;
     this.$element = $(selector);
     this.viewModel = new LinksViewModel(this.$element);
