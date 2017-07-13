@@ -121,17 +121,15 @@ $(document).ready(function () {
         contributors: window.contextVars.node.contributors,
         currentUserCanEdit: window.contextVars.currentUser.canEdit
     });
-    var newComponentElem = document.getElementById('newComponent');
-    if (newComponentElem) {
-        m.mount(newComponentElem, AddComponentButton);
-    }
-
-    if (ctx.node.institutions.length && !ctx.node.anonymous && !ctx.node.isRetracted) {
-        m.mount(document.getElementById('instLogo'), m.component(institutionLogos, {institutions: window.contextVars.node.institutions}));
-    }
-    $('#contributorsList').osfToggleHeight();
 
     if (!ctx.node.isRetracted) {
+        m.startComputation();
+
+        if (ctx.node.institutions.length && !ctx.node.anonymous) {
+            m.mount(document.getElementById('instLogo'), m.component(institutionLogos, {institutions: window.contextVars.node.institutions}));
+        }
+        $('#contributorsList').osfToggleHeight();
+
         // Recent Activity widget
         m.mount(document.getElementById('logFeed'), m.component(LogFeed.LogFeed, {node: node}));
 
@@ -201,7 +199,22 @@ $(document).ready(function () {
                 }
             };
             var filebrowser = new Fangorn(fangornOpts);
+            var newComponentElem = document.getElementById('newComponent');
+            if (window.contextVars.node.isPublic) {
+                m.mount(
+                    document.getElementById('shareButtonsPopover'),
+                    m.component(
+                        SocialShare.ShareButtonsPopover,
+                        {title: window.contextVars.node.title, url: window.location.href}
+                    )
+                );
+            }
+            if (newComponentElem) {
+                m.mount(newComponentElem, AddComponentButton);
+            }
+            m.endComputation();
         });
+
     }
 
     // Tooltips
@@ -218,6 +231,9 @@ $(document).ready(function () {
             var url = nodeApiUrl + 'tags/';
             var data = {tag: tag};
             var request = $osf.postJSON(url, data);
+            request.success(function() {
+                window.contextVars.node.tags.push(tag);
+            });
             request.fail(function(xhr, textStatus, error) {
                 Raven.captureMessage('Failed to add tag', {
                     extra: {
@@ -233,6 +249,9 @@ $(document).ready(function () {
                 return false;
             }
             var request = $osf.ajaxJSON('DELETE', url, {'data': {'tag': tag}});
+            request.success(function() {
+                window.contextVars.node.tags.splice(window.contextVars.node.tags.indexOf(tag), 1);
+            });
             request.fail(function(xhr, textStatus, error) {
                 // Suppress "tag not found" errors, as the end result is what the user wanted (tag is gone)- eg could be because two people were working at same time
                 if (xhr.status !== 409) {
@@ -287,11 +306,5 @@ $(document).ready(function () {
         $('span.tag span').each(function(idx, elm) {
             $(elm).text($(elm).text().replace(/\s*$/, ''));
         });
-    }
-
-    if (window.contextVars.node.isPublic && !window.contextVars.node.isRetracted) {
-        m.mount(document.getElementById('shareButtonsPopover'),
-                m.component(SocialShare.ShareButtonsPopover,
-                    {title: window.contextVars.node.title, url: window.location.href}));
     }
 });
