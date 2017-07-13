@@ -891,7 +891,7 @@ var dialog = function(title, message, actionButtonLabel, options) {
 
 // Formats contributor family names for display.  Takes in project, number of contributors, and getFamilyName function
 var contribNameFormat = function(node, number, getFamilyName) {
-    const charLimit = 22;
+    const charLimit = 21;
     let contribs = '';
     let otherContribs = '';
     let ellipses = '...';
