@@ -8,7 +8,7 @@ from osf.models import OSFUser as User
 
 from api.base.serializers import (
     JSONAPISerializer, LinksField, RelationshipField, DevOnly, IDField, TypeField, ListDictField,
-    DateByVersion,
+    DateByVersion, EmailScopeRequired,
 )
 from api.base.utils import absolute_reverse, get_user_auth
 
@@ -34,6 +34,7 @@ class UserSerializer(JSONAPISerializer):
     timezone = HideIfDisabled(ser.CharField(required=False, help_text="User's timezone, e.g. 'Etc/UTC"))
     locale = HideIfDisabled(ser.CharField(required=False, help_text="User's locale, e.g.  'en_US'"))
     social = ListDictField(required=False)
+    email = EmailScopeRequired(ser.CharField(source='username', read_only=True))
 
     links = HideIfDisabled(LinksField(
         {
