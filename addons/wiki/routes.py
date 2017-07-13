@@ -128,6 +128,18 @@ api_routes = {
             '/project/<pid>/node/<nid>/wiki/<wname>/validate/',
         ], 'get', views.project_wiki_validate_name, json_renderer),
 
+        # Export : GET
+        Rule([
+            '/project/<pid>/wiki/<wname>/pdf/',
+            '/project/<pid>/node/<nid>/wiki/<wname>/pdf/',
+        ], 'get', views.wiki_page_to_pdf, json_renderer),
+
+        # Export : GET
+        Rule([
+            '/project/<pid>/wiki/pdf/',
+            '/project/<pid>/node/<nid>/wiki/pdf/',
+        ], 'get', views.wiki_to_pdf, json_renderer),
+
         # Edit | POST
         Rule([
             '/project/<pid>/wiki/<wname>/edit/',

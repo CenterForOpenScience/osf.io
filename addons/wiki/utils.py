@@ -205,3 +205,22 @@ def serialize_wiki_settings(user, nodes):
         items.append(item)
 
     return items
+
+
+def export_wiki_to_pdf(all_pages):
+    """ Generate a PDF document from a list of prerendered PDF files
+
+    :param all_pages: list of prerendered PDF files
+    :return: joined data as PDF file
+    """
+    val = []
+
+    for doc in all_pages:
+        if not doc:
+            continue
+        for p in doc.pages:
+            val.append(p)
+
+    pdf = all_pages[0].copy(val).write_pdf()
+
+    return pdf
