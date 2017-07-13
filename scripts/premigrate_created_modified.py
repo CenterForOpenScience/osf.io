@@ -53,8 +53,6 @@ FINALIZE_MIGRATION = [
     "UPDATE osf_pagecounter SET created='epoch', modified='epoch' WHERE created IS NULL;",
     "ALTER TABLE osf_pagecounter ALTER COLUMN created SET NOT NULL;",
     "ALTER TABLE osf_pagecounter ALTER COLUMN modified SET NOT NULL;",
-    "ALTER TABLE osf_alternativecitation ADD COLUMN created timestamp with time zone;",
-    "ALTER TABLE osf_alternativecitation ADD COLUMN modified timestamp with time zone;",
     "ALTER TABLE osf_apioauth2application ADD COLUMN modified timestamp with time zone;",
     "ALTER TABLE osf_apioauth2personaltoken ADD COLUMN created timestamp with time zone;",
     "ALTER TABLE osf_apioauth2personaltoken ADD COLUMN modified timestamp with time zone;",
@@ -141,7 +139,6 @@ FINALIZE_MIGRATION = [
     SET last_logged=modified
     WHERE (SELECT COUNT(id) FROM osf_nodelog WHERE node_id = "osf_abstractnode"."id" LIMIT 1) = 0;
     """,
-    "UPDATE osf_alternativecitation SET created=TO_TIMESTAMP(('x' || SUBSTR(_id, 1, 8))::bit(32)::int)::timestamptz, modified='epoch';",
     "UPDATE osf_apioauth2application SET modified='epoch';",
     "UPDATE osf_apioauth2personaltoken SET created=TO_TIMESTAMP(('x' || SUBSTR(_id, 1, 8))::bit(32)::int)::timestamptz, modified='epoch';",
     "UPDATE osf_apioauth2scope SET created=TO_TIMESTAMP(('x' || SUBSTR(_id, 1, 8))::bit(32)::int)::timestamptz, modified='epoch';",
@@ -178,8 +175,6 @@ FINALIZE_MIGRATION = [
     "UPDATE osf_subject SET created=TO_TIMESTAMP(('x' || SUBSTR(_id, 1, 8))::bit(32)::int)::timestamptz, modified='epoch';",
     "UPDATE osf_tag SET created='epoch', modified='epoch';",
     "UPDATE osf_useractivitycounter SET created='epoch', modified='epoch';",
-    "ALTER TABLE osf_alternativecitation ALTER COLUMN created SET NOT NULL;",
-    "ALTER TABLE osf_alternativecitation ALTER COLUMN modified SET NOT NULL;",
     "ALTER TABLE osf_apioauth2application ALTER COLUMN modified SET NOT NULL;",
     "ALTER TABLE osf_apioauth2personaltoken ALTER COLUMN created SET NOT NULL;",
     "ALTER TABLE osf_apioauth2personaltoken ALTER COLUMN modified SET NOT NULL;",

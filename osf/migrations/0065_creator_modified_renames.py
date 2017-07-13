@@ -10,7 +10,7 @@ import django.db.models.deletion
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('osf', '0041_auto_20170706_1024'),
+        ('osf', '0064_auto_20171019_0918'),
     ]
 
     operations = [
@@ -18,5 +18,10 @@ class Migration(migrations.Migration):
             model_name='abstractnode',
             name='creator',
             field=models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='nodes_created', to=settings.AUTH_USER_MODEL),
+        ),
+        migrations.RenameField(
+            model_name='comment',
+            old_name='modified',
+            new_name='edited'
         ),
     ]
