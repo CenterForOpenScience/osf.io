@@ -75,7 +75,6 @@ class NodesFilterMixin(ListFilterMixin):
 class NodeFilterSet(JSONAPIFilterSet):
     id = MultiValueCharFilter(name='guids___id')
     public = django_filters.BooleanFilter(name='is_public')
-    registration = django_filters.BooleanFilter(name='is_registration')
     tags = NullModelMultipleChoiceFilter(name='tags__name', queryset=Tag.objects.all(), to_field_name='name', lookup_expr='in', base_name='tags')
     category = django_filters.ChoiceFilter(choices=settings.NODE_CATEGORY_MAP.items())
     preprint = django_filters.CharFilter(method='filter_preprint')

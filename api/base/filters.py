@@ -80,7 +80,6 @@ class MultiValueCharFilter(django_filters.BaseInFilter, django_filters.filters.C
 
         return qs
 
-
 class NullModelMultipleChoiceCaseInsensitiveField(forms.ModelMultipleChoiceField):
 
     def clean(self, value):
@@ -168,6 +167,8 @@ class JSONAPIFilterSet(django_filters.rest_framework.FilterSet):
             # to filter on a relationship field, values must be in a list
             if field_name in self.MANY_TO_MANY_FIELDS and value != 'null':
                 value = value if type(value) == list else value.split(',')
+            if value == 'true' or value == 'false':
+                value = value.title()
             if field_name in self.DATE_FIELDS:
                 # reformat timezone information for django's parse_datetime util to recognize datetimes
                 split_parts = value.split(' ')
