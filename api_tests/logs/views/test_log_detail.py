@@ -72,19 +72,19 @@ class LogsTestCase:
 
     @pytest.fixture()
     def url_log_private_nodes(self, log_private, url_logs):
-        return url_logs + '{}/nodes/'.format(log_private._id)
+        return '{}{}/nodes/'.format(url_logs, log_private._id)
 
     @pytest.fixture()
     def url_log_public_nodes(self, log_public, url_logs):
-        return url_logs + '{}/nodes/'.format(log_public._id)
+        return '{}{}/nodes/'.format(url_logs, log_public._id)
 
     @pytest.fixture()
     def url_log_detail_private(self, log_private, url_logs):
-        return url_logs + '{}/'.format(log_private._id)
+        return '{}{}/'.format(url_logs, log_private._id)
 
     @pytest.fixture()
     def url_log_detail_public(self, log_public, url_logs):
-        return url_logs + '{}/'.format(log_public._id)
+        return '{}{}/'.format(url_logs, log_public._id)
 
 @pytest.mark.django_db
 class TestLogDetail(LogsTestCase):
@@ -118,7 +118,7 @@ class TestLogDetail(LogsTestCase):
         assert data['id'] == log_public._id
 
         #test_log_detail_data_format_api
-        res = app.get(url_log_detail_public + '?format=api', auth=user_one.auth)
+        res = app.get('{}?format=api'.format(url_log_detail_public), auth=user_one.auth)
         assert res.status_code == 200
         assert log_public._id in unicode(res.body, 'utf-8')
 
@@ -144,7 +144,7 @@ class TestNodeFileLogDetail:
         return NodeFactory(parent=node, creator=user_one)
 
     @pytest.fixture()
-    def file(self, user_one, component):
+    def file_(self, user_one, component):
         return api_utils.create_test_file(node=component, user=user_one)
 
     @pytest.fixture()
@@ -156,16 +156,16 @@ class TestNodeFileLogDetail:
         return '/{}nodes/{}/logs/'.format(API_BASE, component._id)
 
     @pytest.fixture()
-    def node_with_log(self, node, user_one, file, component):
+    def node_with_log(self, node, user_one, file_, component):
         node.add_log(
             'osf_storage_file_moved',
             auth=Auth(user_one),
             params={
                 'node': node._id,
                 'project': node.parent_id,
-                'path': file.materialized_path,
+                'path': file_.materialized_path,
                 'source': {
-                    'materialized': file.materialized_path,
+                    'materialized': file_.materialized_path,
                     'addon': 'osfstorage',
                     'node': {
                         '_id': component._id,
@@ -174,7 +174,7 @@ class TestNodeFileLogDetail:
                     }
                 },
                 'destination': {
-                    'materialized': file.materialized_path,
+                    'materialized': file_.materialized_path,
                     'addon': 'osfstorage',
                     'node': {
                         '_id': node._id,

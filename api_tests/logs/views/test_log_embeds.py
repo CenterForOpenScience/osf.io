@@ -4,7 +4,7 @@ from api.base.settings.defaults import API_BASE
 from osf_tests.factories import (
     ProjectFactory,
     AuthUserFactory,
-    RegistrationFactory
+    RegistrationFactory,
 )
 
 @pytest.mark.django_db
@@ -67,4 +67,4 @@ class TestLogEmbeds:
 
         res = app.get(url_registration_log, expect_errors=True)
         assert res.status_code == 400
-        assert res.json['errors'][0]['detail'] == "The following fields are not embeddable: action"
+        assert res.json['errors'][0]['detail'] == 'The following fields are not embeddable: action'

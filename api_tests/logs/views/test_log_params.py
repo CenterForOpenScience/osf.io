@@ -4,7 +4,7 @@ from api.base.settings.defaults import API_BASE
 from framework.auth.core import Auth
 from osf_tests.factories import (
     ProjectFactory,
-    PrivateLinkFactory
+    PrivateLinkFactory,
 )
 from test_log_detail import LogsTestCase
 
@@ -14,7 +14,7 @@ from test_log_detail import LogsTestCase
 class TestLogContributors(LogsTestCase):
 
     def test_contributor_added_log_has_contributor_info_in_params(self, app, node_private, contributor_log_private, url_logs, user_one):
-        url = url_logs + '{}/'.format(contributor_log_private._id)
+        url = '{}{}/'.format(url_logs, contributor_log_private._id)
         res = app.get(url, auth=user_one.auth)
         assert res.status_code == 200
         params = res.json['data']['attributes']['params']
@@ -56,7 +56,7 @@ class TestLogContributors(LogsTestCase):
         private_link.nodes.add(node_private)
         private_link.save()
 
-        url = url_logs + '{}/'.format(contributor_log_private._id)
+        url = '{}{}/'.format(url_logs, contributor_log_private._id)
 
         res = app.get(url, {'view_only': private_link.key}, expect_errors=True)
         assert res.status_code == 200
