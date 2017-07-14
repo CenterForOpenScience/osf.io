@@ -1,7 +1,7 @@
 from rest_framework import serializers as ser
 
 from api.base.utils import absolute_reverse
-from api.base.serializers import JSONAPISerializer, LinksField, RelationshipField, ShowIfVersion, DevOnly
+from api.base.serializers import JSONAPISerializer, LinksField, RelationshipField, ShowIfVersion
 
 
 class PreprintProviderSerializer(JSONAPISerializer):
@@ -21,11 +21,11 @@ class PreprintProviderSerializer(JSONAPISerializer):
     example = ser.CharField(required=False, allow_null=True)
     domain = ser.CharField(required=False, allow_null=False)
     domain_redirect_enabled = ser.BooleanField(required=True)
-    subjects_acceptable = ser.JSONField(required=False, allow_null=True)
     footer_links = ser.CharField(required=False)
     share_source = ser.CharField(read_only=True)
-    allow_submissions = DevOnly(ser.BooleanField(read_only=True))
-    additional_providers = DevOnly(ser.ListField(child=ser.CharField(), read_only=True))
+    email_support = ser.CharField(required=False, allow_null=True)
+    allow_submissions = ser.BooleanField(read_only=True)
+    additional_providers = ser.ListField(child=ser.CharField(), read_only=True)
 
     preprints = RelationshipField(
         related_view='preprint_providers:preprints-list',
@@ -65,10 +65,6 @@ class PreprintProviderSerializer(JSONAPISerializer):
         ser.CharField(required=False, allow_null=True),
         min_version='2.0', max_version='2.3'
     )
-    email_support = ShowIfVersion(
-        ser.CharField(required=False, allow_null=True),
-        min_version='2.0', max_version='2.3'
-    )
     social_twitter = ShowIfVersion(
         ser.CharField(required=False, allow_null=True),
         min_version='2.0', max_version='2.3'
@@ -80,6 +76,10 @@ class PreprintProviderSerializer(JSONAPISerializer):
     social_instagram = ShowIfVersion(
         ser.CharField(required=False, allow_null=True),
         min_version='2.0', max_version='2.3'
+    )
+    subjects_acceptable = ShowIfVersion(
+        ser.ListField(required=False, default=[]),
+        min_version='2.0', max_version='2.4'
     )
 
     class Meta:

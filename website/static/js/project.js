@@ -176,39 +176,6 @@ NodeActions.useAsTemplate = function() {
     });
 };
 
-/*
-Hide/show recent logs for for a node on the project view page.
-*/
-NodeActions.openCloseNode = function(nodeId) {
-
-    var icon = $('#icon-' + nodeId);
-    var body = $('#body-' + nodeId);
-
-    body.toggleClass('hide');
-    var node = null;
-
-    if (document.getElementById('logFeed-' + nodeId).children[0].classList.item(0) === 'spinner-loading-wrapper') {
-        for (var i = 0; i < window.contextVars.nodes.length; ++i){
-            if (window.contextVars.nodes[i].id === nodeId) {
-                node = window.contextVars.nodes[i].node;
-            }
-        }
-    }
-
-    if (body.hasClass('hide')) {
-        icon.removeClass('fa fa-angle-up');
-        icon.addClass('fa fa-angle-down');
-    } else {
-        if (node && node.can_view && !node.archiving && !node.is_retracted) {
-            var nodeLogFeed = 'logFeed-' + node.primary_id;
-            m.mount(document.getElementById(nodeLogFeed), m.component(LogFeed.LogFeed, {node: node, limitLogs: true}));
-        }
-        icon.removeClass('fa fa-angle-down');
-        icon.addClass('fa fa-angle-up');
-    }
-};
-
-
 NodeActions.reorderChildren = function(idList, elm) {
     $osf.postJSON(
         ctx.node.urls.api + 'reorder_components/',

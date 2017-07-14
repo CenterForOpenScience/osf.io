@@ -54,7 +54,7 @@ def subscribe_mailchimp(list_name, user_id):
             update_existing=True,
         )
 
-    except mailchimp.ValidationError as error:
+    except (mailchimp.ValidationError, mailchimp.ListInvalidBounceMemberError) as error:
         sentry.log_exception()
         sentry.log_message(error.message)
         user.mailchimp_mailing_lists[list_name] = False

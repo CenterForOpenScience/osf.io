@@ -16,8 +16,7 @@ BEPRESS_PROVIDER = PreprintProvider.objects.filter(_id='osf').first()
 
 def validate_input(custom_provider, data):
     logger.info('Validating data')
-    assert data.get('include'), 'Must specify Subjects to recursively include with `include`.'
-    includes = data.get('include')
+    includes = data.get('include', [])
     excludes = data.get('exclude', [])
     customs = data.get('custom', {})
     merges = data.get('merge', {})

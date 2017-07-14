@@ -11,7 +11,7 @@
 <%def name="steps()">
   <ol>
     <li>Specify all your study and analysis decisions prior to investigating your data</li>
-    <li>Publish your study in an eligible journal</li>
+    <li>Publish your study in an <a target='_blank' href='https://cos.io/our-services/prereg-more-information/'>eligible journal</a></li>
     <li>Receive $1,000</li>
   </ol>
 </%def>
