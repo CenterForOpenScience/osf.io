@@ -218,7 +218,7 @@ class Sitemap(object):
                 config = settings.SITEMAP_PREPRINT_CONFIG
                 preprint_url = obj.url
                 provider = obj.provider
-                domain = provider.domain if (provider.enable_redirect and provider.domain) else settings.DOMAIN
+                domain = provider.domain if (provider.domain_redirect_enabled and provider.domain) else settings.DOMAIN
                 if provider == osf:
                     preprint_url = '/preprints/{}/'.format(obj._id)
                 config['loc'] = urlparse.urljoin(domain, preprint_url)
