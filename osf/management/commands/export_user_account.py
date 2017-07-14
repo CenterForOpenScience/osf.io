@@ -1,24 +1,32 @@
 # -*- coding: utf-8 -*-
+from __future__ import unicode_literals
+
 import io
 import os
 import json
 import logging
 import requests
 import shutil
+import tempfile
 
 from django.core import serializers
 from django.core.management.base import BaseCommand
 
 from addons.wiki.models import NodeWikiPage
-from addons.osfstorage.models import OsfStorageFileNode
+from addons.osfstorage.models import OsfStorageFileNode, OsfStorageFile
 from framework.auth.core import Auth
 from osf.models import (
+    FileVersion,
     OSFUser,
     PreprintService,
     Registration,
 )
 from scripts.utils import Progress
 from website.util import waterbutler_api_url_for
+
+ERRORS = []
+GBs = 1024 ** 3.0
+TMP_PATH = tempfile.mkdtemp()
 
 PREPRINT_EXPORT_FIELDS = [
     'is_published',
@@ -46,8 +54,6 @@ REGISTRATION_EXPORT_FIELDS = NODE_EXPORT_FIELDS + [
 logging.getLogger('urllib3').setLevel(logging.WARNING)
 logger = logging.getLogger(__name__)
 
-ERRORS = []
-
 def export_metadata(node, current_dir):
     """
     Exports the pretty printed serialization of a given model instance to metadata.json.
@@ -59,10 +65,10 @@ def export_metadata(node, current_dir):
         export_fields = REGISTRATION_EXPORT_FIELDS
     elif isinstance(node, PreprintService):
         export_fields = PREPRINT_EXPORT_FIELDS
-    with open('{}metadata.json'.format(current_dir), 'w') as f:
+    with open(os.path.join(current_dir, 'metadata.json'), 'w') as f:
         # only write the fields dict, throw away pk and model_name
-        metadata = serializers.serialize('json', [node], fields=export_fields)
-        f.write(json.dumps(metadata, indent=4, sort_keys=True))
+        metadata = json.loads(serializers.serialize('json', [node], fields=export_fields))
+        json.dump(metadata[0]['fields'], f, indent=4, sort_keys=True)
 
 def export_files(node, user, current_dir):
     """
@@ -71,7 +77,7 @@ def export_files(node, user, current_dir):
     Uses WB's download zip functionality to download osfstorage-archive.zip in a single request.
 
     """
-    files_dir = '{}files/'.format(current_dir)
+    files_dir = os.path.join(current_dir, 'files')
     os.mkdir(files_dir)
     response = requests.get(
         url=waterbutler_api_url_for(
@@ -83,7 +89,7 @@ def export_files(node, user, current_dir):
         )
     )
     if response.status_code == 200:
-        with open('{}osfstorage-archive.zip'.format(files_dir), 'wb') as f:
+        with open(os.path.join(files_dir, 'osfstorage-archive.zip'), 'wb') as f:
             f.write(response.content)
     else:
         ERRORS.append(
@@ -97,12 +103,12 @@ def export_wikis(node, current_dir):
     Exports all of the wiki pages for a given node as individual markdown files.
 
     """
-    wikis_dir = '{}wikis/'.format(current_dir)
+    wikis_dir = os.path.join(current_dir, 'wikis')
     os.mkdir(wikis_dir)
     for wiki_name, wiki_id in node.wiki_pages_current.iteritems():
         wiki = NodeWikiPage.objects.get(guids___id=wiki_id)
         if wiki.content:
-            with io.open('{}{}.md'.format(wikis_dir, wiki_name), 'w', encoding='utf-8') as f:
+            with io.open(os.path.join(wikis_dir, '{}.md'.format(wiki_name)), 'w', encoding='utf-8') as f:
                 f.write(wiki.content)
 
 def export_node(node, user, current_dir):
@@ -121,11 +127,12 @@ def export_node(node, user, current_dir):
     if OsfStorageFileNode.objects.filter(node=node):
         export_files(node, user, current_dir)
 
-    if node.nodes:
-        components_dir = '{}components/'.format(current_dir)
+    descendants = list(node.find_readable_descendants(Auth(user)))
+    if len(descendants):
+        components_dir = os.path.join(current_dir, 'components')
         os.mkdir(components_dir)
-        for child in node.find_readable_descendants(Auth(user)):
-            current_dir = '{}{}/'.format(components_dir, child._id)
+        for child in descendants:
+            current_dir = os.path.join(components_dir, child._id)
             os.mkdir(current_dir)
             export_node(child, user, current_dir)
 
@@ -140,11 +147,11 @@ def export_nodes(nodes_to_export, user, dir, nodes_type):
         progress.start(nodes_to_export.count(), nodes_type.upper())
         for node in nodes_to_export:
             # export the preprint (just metadata)
-            current_dir = '{}{}/'.format(dir, node._id)
+            current_dir = os.path.join(dir, node._id)
             os.mkdir(current_dir)
             export_metadata(node, current_dir)
             # export the associated project (metadata, files, wiki, etc)
-            current_dir = '{}{}/'.format(dir, node.node._id)
+            current_dir = os.path.join(dir, node.node._id)
             os.mkdir(current_dir)
             export_node(node.node, user, current_dir)
             progress.increment()
@@ -152,11 +159,17 @@ def export_nodes(nodes_to_export, user, dir, nodes_type):
     else:
         progress.start(nodes_to_export.count(), nodes_type.upper())
         for node in nodes_to_export:
-            current_dir = '{}{}/'.format(dir, node._id)
+            current_dir = os.path.join(dir, node._id)
             os.mkdir(current_dir)
             export_node(node, user, current_dir)
             progress.increment()
         progress.stop()
+
+def get_usage(user):
+    nodes = user.nodes.filter(is_deleted=False).exclude(type='osf.collection').values_list('guids___id', flat=True)
+    files = OsfStorageFile.objects.filter(node__guids___id__in=nodes).values_list('id', flat=True)
+    versions = FileVersion.objects.filter(basefilenode__in=files)
+    return sum([v.size or 0 for v in versions]) / GBs
 
 def export_account(user_id, only_private=False, only_admin=False, export_files=True, export_wikis=True):
     """
@@ -198,11 +211,15 @@ def export_account(user_id, only_private=False, only_admin=False, export_files=T
 
     """
     user = OSFUser.objects.get(guids___id=user_id)
+    proceed = raw_input('\nUser has {} GB of data in OSFStorage that will be exported.\nWould you like to continue? [y/n] '.format(get_usage(user)))
+    if not proceed or proceed.lower() != 'y':
+        print('Exiting...')
+        exit(1)
 
-    base_dir = '{}/'.format(user_id)
-    preprints_dir = '{}preprints/'.format(base_dir)
-    projects_dir = '{}projects/'.format(base_dir)
-    registrations_dir = '{}registrations/'.format(base_dir)
+    base_dir = os.path.join(TMP_PATH, user_id)
+    preprints_dir = os.path.join(base_dir, 'preprints')
+    projects_dir = os.path.join(base_dir, 'projects')
+    registrations_dir = os.path.join(base_dir, 'registrations')
 
     os.mkdir(base_dir)
     os.mkdir(preprints_dir)
@@ -223,7 +240,7 @@ def export_account(user_id, only_private=False, only_admin=False, export_files=T
     )
 
     registrations_to_export = (user.nodes
-        .filter(is_deleted=False, type='osf.registration', retraction__null=True, embargo__null=True)
+        .filter(is_deleted=False, type='osf.registration', retraction__isnull=True)
         .include('guids')
         .get_roots()
     )
@@ -233,10 +250,10 @@ def export_account(user_id, only_private=False, only_admin=False, export_files=T
     export_nodes(registrations_to_export, user, registrations_dir, 'registrations')
 
     print('Creating {} ({}).zip ...'.format(user.fullname, user_id))
-    shutil.make_archive('{} ({})'.format(user.fullname, user_id), 'zip', user_id)
+    shutil.make_archive('{} ({})'.format(user.fullname, user_id), 'zip', base_dir)
 
-    print('Removing temp {}/ directory...'.format(user_id))
-    shutil.rmtree(base_dir)
+    finished_msg = 'Finished without errors.' if not ERRORS else 'Finished with errors logged below.'
+    print(finished_msg)
 
     for err in ERRORS:
         logger.error(err)
