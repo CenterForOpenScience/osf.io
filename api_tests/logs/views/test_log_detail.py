@@ -144,7 +144,7 @@ class TestNodeFileLogDetail:
         return NodeFactory(parent=node, creator=user_one)
 
     @pytest.fixture()
-    def file_(self, user_one, component):
+    def file_component(self, user_one, component):
         return api_utils.create_test_file(node=component, user=user_one)
 
     @pytest.fixture()
@@ -156,16 +156,16 @@ class TestNodeFileLogDetail:
         return '/{}nodes/{}/logs/'.format(API_BASE, component._id)
 
     @pytest.fixture()
-    def node_with_log(self, node, user_one, file_, component):
+    def node_with_log(self, node, user_one, file_component, component):
         node.add_log(
             'osf_storage_file_moved',
             auth=Auth(user_one),
             params={
                 'node': node._id,
                 'project': node.parent_id,
-                'path': file_.materialized_path,
+                'path': file_component.materialized_path,
                 'source': {
-                    'materialized': file_.materialized_path,
+                    'materialized': file_component.materialized_path,
                     'addon': 'osfstorage',
                     'node': {
                         '_id': component._id,
@@ -174,7 +174,7 @@ class TestNodeFileLogDetail:
                     }
                 },
                 'destination': {
-                    'materialized': file_.materialized_path,
+                    'materialized': file_component.materialized_path,
                     'addon': 'osfstorage',
                     'node': {
                         '_id': node._id,
