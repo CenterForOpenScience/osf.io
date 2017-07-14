@@ -38,7 +38,7 @@ class TestMetaSchemaDetail:
         res = app.get(url)
         assert res.status_code == 200
         assert res.json['data']['attributes']['name'] == 'Election Research Preacceptance Competition'
-        assert res.json['data']['attributes']['active'] == False
+        assert res.json['data']['attributes']['active'] is False
 
         #test_non_latest_version_metaschema_returned
         old_schema = MetaSchema.objects.get(name='OSF-Standard Pre-Data Collection Registration', schema_version=1)
