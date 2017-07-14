@@ -386,15 +386,13 @@ var parseName = function(text) {
     });
 
     if (text.length >= 1) {
-        text.reverse();
-        fullName.firstName = text.pop();
-        text.reverse();
+        fullName.firstName = text.shift();
     }
 
     if (text.length >= 1) {
         const name = text.pop();
         const nameLower = name.toLowerCase();
-        if (suffixList.includes(nameLower) || name.includes('.')) {
+        if (name.includes('.') || suffixList.includes(nameLower)) {
             fullName.suffix = name;
         } else {
             fullName.lastName = name;
