@@ -3,30 +3,24 @@ import pytest
 from api.base.settings.defaults import API_BASE
 from osf.models import MetaSchema
 from osf_tests.factories import (
-    AuthUserFactory
+    AuthUserFactory,
 )
 from website.project.metadata.schemas import LATEST_SCHEMA_VERSION
-from website.project.model import Q
 
 @pytest.mark.django_db
 class TestMetaSchemaDetail:
 
-    @pytest.fixture()
-    def user(self):
-        return AuthUserFactory()
+    def test_metaschemas_detail_visibility(self, app):
 
-    @pytest.fixture()
-    def schema(self):
-        return MetaSchema.find_one(Q('name', 'eq', 'Prereg Challenge') & Q('schema_version', 'eq', LATEST_SCHEMA_VERSION))
+        user = AuthUserFactory()
+        schema = MetaSchema.objects.filter(name='Prereg Challenge', schema_version=LATEST_SCHEMA_VERSION).first()
 
-    @pytest.fixture()
-    def url_metaschemas_detail(self, schema):
-        return '/{}metaschemas/{}/'.format(API_BASE, schema._id)
-
-    def test_metaschemas_detail_visibility(self, app, schema, url_metaschemas_detail, user):
+        def url_metaschemas_detail(schema_id):
+            return '/{}metaschemas/{}/'.format(API_BASE, schema_id)
 
         #test_pass_authenticated_user_can_retrieve_schema
-        res = app.get(url_metaschemas_detail, auth=user.auth)
+        url = url_metaschemas_detail(schema._id)
+        res = app.get(url, auth=user.auth)
         assert res.status_code == 200
         data = res.json['data']['attributes']
         assert data['name'] == 'Prereg Challenge'
@@ -35,12 +29,12 @@ class TestMetaSchemaDetail:
         assert res.json['data']['id'] == schema._id
 
         #test_pass_unauthenticated_user_can_view_schemas
-        res = app.get(url_metaschemas_detail)
+        res = app.get(url)
         assert res.status_code == 200
 
         #test_inactive_metaschema_returned
         inactive_schema = MetaSchema.objects.get(name='Election Research Preacceptance Competition', active=False)
-        url = '/{}metaschemas/{}/'.format(API_BASE, inactive_schema._id)
+        url = url_metaschemas_detail(inactive_schema._id)
         res = app.get(url)
         assert res.status_code == 200
         assert res.json['data']['attributes']['name'] == 'Election Research Preacceptance Competition'
@@ -48,7 +42,7 @@ class TestMetaSchemaDetail:
 
         #test_non_latest_version_metaschema_returned
         old_schema = MetaSchema.objects.get(name='OSF-Standard Pre-Data Collection Registration', schema_version=1)
-        url = '/{}metaschemas/{}/'.format(API_BASE, old_schema._id)
+        url = url_metaschemas_detail(old_schema._id)
         res = app.get(url)
         assert res.status_code == 200
         assert res.json['data']['attributes']['name'] == 'OSF-Standard Pre-Data Collection Registration'
