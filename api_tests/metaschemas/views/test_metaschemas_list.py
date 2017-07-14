@@ -13,7 +13,7 @@ class TestMetaSchemaList:
     def test_metaschemas_list_crud(self, app):
 
         user = AuthUserFactory()
-        url= '/{}metaschemas/'.format(API_BASE)
+        url = '/{}metaschemas/'.format(API_BASE)
 
         #test_pass_authenticated_user_can_view_schemas
         res = app.get(url, auth=user.auth)
