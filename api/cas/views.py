@@ -2,15 +2,12 @@ import json
 
 from rest_framework import generics
 from rest_framework import status
-from rest_framework.exceptions import ValidationError, PermissionDenied
+from rest_framework.exceptions import ValidationError
 from rest_framework.response import Response
 
 from api.base.views import JSONAPIBaseView
-from api.cas import messages
-from api.cas import login, account, permissions
+from api.cas import login, account, messages, permissions, service
 from api.cas.mixins import APICASMixin
-
-from osf.models import ApiOAuth2Application, ApiOAuth2PersonalToken, ApiOAuth2Scope, Institution, OSFUser
 
 
 class LoginOsf(APICASMixin, generics.CreateAPIView, JSONAPIBaseView):
@@ -261,29 +258,8 @@ class ServiceOauthToken(APICASMixin, generics.CreateAPIView, JSONAPIBaseView):
     def post(self, request, *args, **kwargs):
 
         body_data = self.load_request_body_data(request)
-        service_type = body_data.get('serviceType')
-        token_id = body_data.get('tokenId')
-
-        if service_type != 'OAUTH_TOKEN' or not token_id:
-            raise ValidationError(detail=messages.INVALID_REQUEST)
-
-        try:
-            token = ApiOAuth2PersonalToken.objects.get(token_id=token_id)
-        except ApiOAuth2PersonalToken.DoesNotExist:
-            raise PermissionDenied(detail=messages.TOKEN_NOT_FOUND)
-
-        try:
-            user = OSFUser.objects.get(pk=token.owner_id)
-        except OSFUser.DoesNotExist:
-            raise PermissionDenied(detail=messages.TOKEN_OWNER_NOT_FOUND)
-
-        content = {
-            'tokenId': token.token_id,
-            'ownerId': user._id,
-            'tokenScopes': token.scopes,
-        }
-
-        return Response(content)
+        content = service.get_oauth_token(body_data)
+        return Response(data=content, status=status.HTTP_200_OK)
 
 
 class ServiceOauthScope(APICASMixin, generics.CreateAPIView, JSONAPIBaseView):
@@ -298,24 +274,8 @@ class ServiceOauthScope(APICASMixin, generics.CreateAPIView, JSONAPIBaseView):
     def post(self, request, *args, **kwargs):
 
         body_data = self.load_request_body_data(request)
-        service_type = body_data.get('serviceType')
-        scope_name = body_data.get('scopeName')
-
-        if service_type != 'OAUTH_SCOPE' or not scope_name:
-            raise ValidationError(detail=messages.INVALID_REQUEST)
-
-        try:
-            scope = ApiOAuth2Scope.objects.get(name=scope_name)
-            if not scope.is_active:
-                raise PermissionDenied(detail=messages.SCOPE_NOT_ACTIVE)
-        except ApiOAuth2Scope.DoesNotExist:
-            raise PermissionDenied(detail=messages.SCOPE_NOT_FOUND)
-
-        content = {
-            'scopeDescription': scope.description,
-        }
-
-        return Response(content)
+        content = service.get_oauth_scope(body_data)
+        return Response(data=content, status=status.HTTP_200_OK)
 
 
 class ServiceOauthApps(APICASMixin, generics.CreateAPIView, JSONAPIBaseView):
@@ -330,26 +290,8 @@ class ServiceOauthApps(APICASMixin, generics.CreateAPIView, JSONAPIBaseView):
     def post(self, request, *args, **kwargs):
 
         body_data = self.load_request_body_data(request)
-        service_type = body_data.get('serviceType')
-
-        if service_type != 'OAUTH_APPS':
-            raise ValidationError(detail=messages.INVALID_REQUEST)
-
-        oauth_applications = ApiOAuth2Application.objects.filter(is_active=True)
-
-        content = {}
-        for oauth_app in oauth_applications:
-            key = oauth_app._id
-            value = {
-                'name': oauth_app.name,
-                'description': oauth_app.description,
-                'callbackUrl': oauth_app.callback_url,
-                'clientId': oauth_app.client_id,
-                'clientSecret': oauth_app.client_secret,
-            }
-            content.update({key: value})
-
-        return Response(content)
+        content = service.load_oauth_apps(body_data)
+        return Response(data=content, status=status.HTTP_200_OK)
 
 
 class ServiceInstitutions(APICASMixin, generics.CreateAPIView, JSONAPIBaseView):
@@ -364,24 +306,5 @@ class ServiceInstitutions(APICASMixin, generics.CreateAPIView, JSONAPIBaseView):
     def post(self, request, *args, **kwargs):
 
         body_data = self.load_request_body_data(request)
-        service_type = body_data.get('serviceType')
-
-        if service_type != 'INSTITUTIONS':
-            raise ValidationError(detail=messages.INVALID_REQUEST)
-
-        institutions = Institution.objects\
-            .exclude(delegation_protocol__isnull=True)\
-            .exclude(delegation_protocol__exact='')
-
-        content = {}
-        for institution in institutions:
-            key = institution._id
-            value = {
-                'institutionName': institution.name,
-                'institutionLoginUrl': institution.login_url if institution.login_url else '',
-                'institutionLogoutUrl': institution.logout_url,
-                'delegationProtocol': institution.delegation_protocol,
-            }
-            content.update({key: value})
-
-        return Response(content)
+        content = service.load_institutions(body_data)
+        return Response(data=content, status=status.HTTP_200_OK)

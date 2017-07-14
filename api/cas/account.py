@@ -32,7 +32,6 @@ def handle_register_osf(data_user):
     email = data_user.get('email')
     password = data_user.get('password')
     if not (fullname and email and password):
-        # TODO: inform sentry
         raise ValidationError(detail=messages.INVALID_REQUEST)
 
     # check and update campaign
@@ -76,13 +75,11 @@ def handle_verify_osf(data_user):
     email = data_user.get('email')
     token = data_user.get('verificationCode')
     if not email or not token:
-        # TODO: inform Sentry
         raise ValidationError(detail=messages.INVALID_REQUEST)
 
     # retrieve the user (the email must be primary)
     user = util.find_user_by_email(email, username_only=True)
     if not user:
-        # TODO: inform Sentry
         raise APIException(detail=messages.EMAIL_NOT_FOUND)
     if user.date_confirmed:
         raise PermissionDenied(detail=messages.ALREADY_VERIFIED)
@@ -341,13 +338,11 @@ def handle_password_reset(data_user):
     token = data_user.get('verificationCode')
     password = data_user.get('password')
     if not (email and token and password):
-        # TODO: inform Sentry
         raise ValidationError(detail=messages.INVALID_REQUEST)
 
     # retrieve the user
     user = util.find_user_by_email(email, username_only=False)
     if not user:
-        # TODO: inform Sentry
         raise APIException(detail=messages.EMAIL_NOT_FOUND)
 
     # check to token
@@ -358,8 +353,7 @@ def handle_password_reset(data_user):
     try:
         user.set_password(password)
     except ChangePasswordError:
-        # TODO: inform Sentry
-        raise APIException(detail=messages.REQUEST_FAILED)
+        raise PermissionDenied(detail=messages.PASSWORD_SAME_AS_EMAIL)
 
     # clear v2 key for password reset
     user.verification_key_v2 = {}
