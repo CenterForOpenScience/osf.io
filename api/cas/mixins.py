@@ -34,5 +34,5 @@ class APICASMixin(object):
             return json.loads(request.body.get('data'))
         except (AttributeError, TypeError, jwt.exceptions.InvalidTokenError,
                 jwt.exceptions.InvalidKeyError, jwe.exceptions.PyJWEException):
-            sentry.log_message("Error: fail to decrypt or decode CAS request.")
+            sentry.log_message('Error: fail to decrypt or decode CAS request.')
             raise ParseError(detail=messages.INVALID_REQUEST)

@@ -34,7 +34,7 @@ def auth_cas_action(auth, uid):
     The service view for successful CAS verification. 'action' parameter defines the type of verification, e.g. reset
     password, verify email for new account and external id. The final landing page and whether push notification is
     shown depends on the `action` and the `next` parameter.
-    
+
     :param auth: the auth, user must be authenticated
     :param uid: the GUID of the user, which must match the GUID of the auth.user
     :return: redirect to the final landing page

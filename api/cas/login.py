@@ -21,7 +21,7 @@ class CasLoginAuthentication(APICASMixin, BaseAuthentication):
         """
         Handle Authentication for CAS Login Request. If authentication succeeds, return the user. Otherwise, raise
         respective API exceptions with detailed error message for CAS:
-        
+
         HTTP 401 or HTTP 403: expected authentication failures which can be handled by CAS
         HTTP 400: OSF fails to understand CAS request. Inform Sentry, something wrong with CAS.
         HTTP 500: OSF understands CAS request but fails to complete it. Inform Sentry, something wrong with OSF.
@@ -74,7 +74,6 @@ def handle_login_osf(data_user):
 
     # check if credentials are provided
     if not email or not (remote_authenticated or verification_key or password):
-        # TODO: inform Sentry
         # something is wrong with CAS, raise 400
         raise ValidationError(detail=messages.INVALID_REQUEST)
 
@@ -168,8 +167,8 @@ def handle_login_institution(provider):
 def handle_login_external(data_user):
     """
     Handle authentication through non-institution external identity provider
-    
-    :param data_user: the decrypted user object  
+
+    :param data_user: the decrypted user object
     :return: the user with verified external identity
     :raises: PermissionDenied
     """

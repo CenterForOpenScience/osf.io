@@ -65,7 +65,7 @@ def handle_register_osf(data_user):
 def handle_verify_osf(data_user):
     """
     Handle email verification for account creation through OSF.
-    
+
     :param data_user: the user's information
     :return: the user
     :raises: ValidationError, PermissionDenied
@@ -148,7 +148,7 @@ def handle_verify_osf_resend(data_user):
 def handle_register_external(data_user):
     """
     Handle account creation or link through external identity provider.
-    
+
     :param data_user: the user
     :return: the newly created or linked user and pending status for external identity
     :raises: ValidationError, PermissionDenied, APIException
@@ -165,7 +165,6 @@ def handle_register_external(data_user):
     if not fullname:  # user's ORCiD privacy settings may prevent releasing names, use the identity instead
         fullname = identity
     if not (email and fullname and provider and identity):
-        # TODO: inform Sentry
         raise ValidationError(detail=messages.INVALID_REQUEST)
 
     # check and update campaign
@@ -226,7 +225,6 @@ def handle_register_external(data_user):
             external_id=identity
         )
     except KeyError:
-        # TODO: inform Sentry
         raise APIException(detail=messages.REQUEST_FAILED)
 
     return user, external_identity[provider][identity]
@@ -235,7 +233,7 @@ def handle_register_external(data_user):
 def handle_verify_external(data_user):
     """
     Handle email verification for account creation or link through external identity provider.
-    
+
     :param data_user: the user
     :return: the created or linked user and the previous pending status
     :raises: ValidationError, PermissionDenied, APIException

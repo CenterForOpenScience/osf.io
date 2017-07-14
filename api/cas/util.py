@@ -36,11 +36,10 @@ def ensure_external_identity_uniqueness(provider, identity, user):
        Do not raise 400s or 500s because it rolls back transactions. What's the best practice?
     2. If there is any existing user B with this identity as "CREATE" or "LINK", remove this pending identity from the
        user B and remove the provider if there is no other identity for it.
-    
+
     :param provider: the external identity provider
     :param identity: the external identity of the user
     :param user: the user
-    :return: 
     """
 
     users_with_identity = OSFUser.objects.filter(**{
@@ -54,7 +53,7 @@ def ensure_external_identity_uniqueness(provider, identity, user):
 
         if existing_user.external_identity[provider][identity] == 'VERIFIED':
             # clear user's pending identity won't work since API rolls back transactions when status >= 400
-            # TODO: CAS will do another request to clear the pending identity on this user
+            # TODO: CAS will do another request to clear the pending identity on this user?
             raise PermissionDenied(detail=errors.EXTERNAL_IDENTITY_CLAIMED)
 
         existing_user.external_identity[provider].pop(identity)
@@ -69,7 +68,7 @@ def find_user_by_email(email, username_only=False):
     """
     Find the OSF user by email or by username only.
     For performance concern, query on username first, and do not combine both queries.
-    
+
     :param email: the email
     :param username_only: the flag for username only lookup
     :return: the user or None

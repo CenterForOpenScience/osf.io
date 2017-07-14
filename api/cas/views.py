@@ -59,7 +59,7 @@ class LoginExternal(APICASMixin, generics.CreateAPIView, JSONAPIBaseView):
     def post(self, request, *args, **kwargs):
 
         content = {
-            "username": request.user.username
+            'username': request.user.username
         }
 
         return Response(data=content, status=status.HTTP_200_OK)
@@ -80,7 +80,7 @@ class AccountRegisterOsf(APICASMixin, generics.CreateAPIView, JSONAPIBaseView):
         body_data = json.loads(request.body['data'])
         account_action = body_data.get('accountAction')
 
-        if account_action != "REGISTER_OSF":
+        if account_action != 'REGISTER_OSF':
             raise ValidationError(detail=messages.INVALID_REQUEST)
 
         account.handle_register_osf(body_data.get('user'))
@@ -102,13 +102,13 @@ class AccountVerifyOsf(APICASMixin, generics.CreateAPIView, JSONAPIBaseView):
         body_data = self.load_request_body_data(request)
         account_action = body_data.get('accountAction')
 
-        if account_action != "VERIFY_OSF":
+        if account_action != 'VERIFY_OSF':
             raise ValidationError(detail=messages.INVALID_REQUEST)
 
         user = account.handle_verify_osf(body_data.get('user'))
 
         content = {
-            "verificationKey": user.verification_key,
+            'verificationKey': user.verification_key,
             'userId': user._id,
             'casAction': 'account-verify-osf',
             'nextUrl': False,
@@ -186,7 +186,7 @@ class AccountVerifyExternal(APICASMixin, generics.CreateAPIView, JSONAPIBaseView
         user, create_or_link = account.handle_verify_external(body_data.get('user'))
 
         content = {
-            "verificationKey": user.verification_key,
+            'verificationKey': user.verification_key,
             'userId': user._id,
             'casAction': 'account-verify-external',
             'nextUrl': True,
@@ -237,7 +237,7 @@ class AccountPasswordReset(APICASMixin, generics.CreateAPIView, JSONAPIBaseView)
         user = account.handle_password_reset(body_data.get('user'))
 
         content = {
-            "verificationKey": user.verification_key,
+            'verificationKey': user.verification_key,
             'userId': user._id,
             'casAction': 'account-password-reset',
             'nextUrl': False,
@@ -295,7 +295,7 @@ class ServiceOauthApps(APICASMixin, generics.CreateAPIView, JSONAPIBaseView):
 
 
 class ServiceInstitutions(APICASMixin, generics.CreateAPIView, JSONAPIBaseView):
-    """ Load institutions that provide authentication delegation. 
+    """ Load institutions that provide authentication delegation.
     """
 
     view_category = 'cas'
