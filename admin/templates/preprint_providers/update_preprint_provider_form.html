@@ -97,7 +97,7 @@
             <h4>Import from JSON</h4>
             <p>Choose a JSON file that has been previously exported from another Preprint Provider detail page. This will
                 pre-populate the Preprint Provider change form with those details.</p>
-            <form id="import-form" action = {% url 'preprint_providers:import' %} method="post" enctype="multipart/form-data">
+            <form action = {% url 'preprint_providers:import' %} method="post" enctype="multipart/form-data">
                 {% csrf_token %}
                 {{ import_form.as_p }}
                 <input class="form-button" type="submit" value="Import" />

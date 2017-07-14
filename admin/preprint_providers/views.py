@@ -4,21 +4,24 @@ import json
 
 from django.core import serializers
 from django.core.urlresolvers import reverse_lazy
-from django.http import HttpResponse, JsonResponse
+from django.http import HttpResponse, JsonResponse, HttpResponseRedirect
 from django.views.generic import ListView, DetailView, View, CreateView, DeleteView, TemplateView, UpdateView
 from django.contrib.auth.mixins import PermissionRequiredMixin
 from django.forms.models import model_to_dict
 from django.shortcuts import redirect
+from modularodm import Q
+from modularodm.exceptions import NoResultsFound
 
 from admin.base import settings
 from admin.base.forms import ImportFileForm
 from admin.preprint_providers.forms import PreprintProviderForm
-from osf.models import PreprintProvider, Subject
+from osf.models import PreprintProvider, Subject, NodeLicense
 from osf.models.preprint_provider import rules_to_subjects
 
 # When preprint_providers exclusively use Subject relations for creation, set this to False
 SHOW_TAXONOMIES_IN_PREPRINT_PROVIDER_CREATE = True
 FIELDS_TO_NOT_IMPORT_EXPORT = ['access_token', 'share_source']
+MANY_TO_MANY_FIELDS = ['subjects_acceptable', 'licenses_acceptable', 'default_license']
 
 
 class PreprintProviderList(PermissionRequiredMixin, ListView):
@@ -167,6 +170,9 @@ class ExportPreprintProvider(PermissionRequiredMixin, View):
         data = serializers.serialize('json', [preprint_provider])
         cleaned_data = json.loads(data)[0]
         cleaned_fields = {key: value for key, value in cleaned_data['fields'].iteritems() if key not in FIELDS_TO_NOT_IMPORT_EXPORT}
+        # Change licenses from ID to name
+        cleaned_fields['licenses_acceptable'] = [license.license_id for license in preprint_provider.licenses_acceptable.all()]
+        #TODO: Update subject serialization????
         cleaned_data['fields'] = cleaned_fields
         filename = '{}_export.json'.format(preprint_provider.name)
         response = HttpResponse(json.dumps(cleaned_data), content_type='text/json')
@@ -216,13 +222,44 @@ class ImportPreprintProvider(PermissionRequiredMixin, View):
             file_json = json.loads(file_str)
             # make sure not to import an exported access token for SHARE
             cleaned_result = {key: value for key, value in file_json['fields'].iteritems() if key not in FIELDS_TO_NOT_IMPORT_EXPORT}
-            return JsonResponse(cleaned_result)
+            preprint_provider = self.create_or_update_provider(cleaned_result)
+            return HttpResponseRedirect("/preprint_providers/" + str(preprint_provider.id))
 
     def parse_file(self, f):
         parsed_file = ''
         for chunk in f.chunks():
             parsed_file += str(chunk)
         return parsed_file
+
+    # I thought license ids worked nicely here, but we can use names instead if desired
+    def get_license(self, license_id):
+        try:
+            license = NodeLicense.find_one(Q('license_id', 'eq', license_id))
+        except NoResultsFound:
+            raise Exception('License: "{}" not found'.format(license_id))
+        return license
+
+    def create_or_update_provider(self, provider_data):
+        provider = PreprintProvider.load(provider_data['_id'])
+        licenses = [self.get_license(license_id) for license_id in provider_data.pop('licenses_acceptable', [])]
+        default_license = provider_data.pop('default_license', False)
+        #TODO: Deal with stubjects here
+        # If I do something about subjects here I won't have to use simple_provider_data
+        simple_provider_data = {key: value for key, value in provider_data.iteritems() if key not in MANY_TO_MANY_FIELDS}
+
+        if provider:
+            for key, val in simple_provider_data.iteritems():
+                setattr(provider, key, val)
+        else:
+            provider = PreprintProvider(**simple_provider_data)
+
+        provider.save()
+
+        if licenses:
+            provider.licenses_acceptable.add(*licenses)
+        if default_license:
+            provider.default_license = self.get_license(default_license)
+        return provider
 
 
 class SubjectDynamicUpdateView(PermissionRequiredMixin, View):
