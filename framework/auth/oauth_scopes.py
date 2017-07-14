@@ -30,6 +30,7 @@ class CoreScopes(object):
     USERS_READ = 'users_read'
     USERS_WRITE = 'users_write'
     USERS_CREATE = 'users_create'
+    USERS_EMAIL = 'users_email'
 
     USER_ADDON_READ = 'users.addon_read'
 
@@ -123,6 +124,7 @@ class ComposedScopes(object):
     USERS_READ = (CoreScopes.USERS_READ, CoreScopes.ALWAYS_PUBLIC, )
     USERS_WRITE = USERS_READ + (CoreScopes.USERS_WRITE,)
     USERS_CREATE = USERS_READ + (CoreScopes.USERS_CREATE, )
+    USERS_EMAIL = (CoreScopes.USERS_EMAIL, )
 
     # Applications collection
     APPLICATIONS_READ = (CoreScopes.APPLICATIONS_READ, CoreScopes.ALWAYS_PUBLIC, )
@@ -208,6 +210,9 @@ public_scopes = {
 
 if settings.DEV_MODE:
     public_scopes.update({
+        'osf.users.email_read': scope(parts_=frozenset(ComposedScopes.USERS_EMAIL),
+                                    description='Read your primary email address.',
+                                    is_public=True),
         'osf.users.profile_write': scope(parts_=frozenset(ComposedScopes.USERS_WRITE),
                                      description='Read and edit your profile data',
                                      is_public=True),

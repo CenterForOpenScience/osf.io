@@ -1378,6 +1378,12 @@ function _fangornTitleColumnHelper(tb, item, col, nameTitle, toUrl, classNameOpt
             attrs = {
                 className: classNameOption,
                 onclick: function(event) {
+                    // Prevent gotoFileEvent from getting
+                    // called more than once after user has clicked once
+                    if (item.loading) {
+                        return false;
+                    }
+                    item.loading = true;
                     event.stopImmediatePropagation();
                     gotoFileEvent.call(tb, item, toUrl);
                 }

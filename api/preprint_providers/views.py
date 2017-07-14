@@ -39,7 +39,6 @@ class PreprintProviderList(JSONAPIBaseView, generics.ListAPIView, ODMFilterMixin
         advisory_board           string              HTML for the advisory board/steering committee section
         email_contact            string              the contact email for the preprint provider
         email_support            string              the support email for the preprint provider
-        subjects_acceptable      [[string],boolean]  the list of acceptable subjects for the preprint provider
         social_facebook          string              the preprint provider's Facebook account
         social_instagram         string              the preprint provider's Instagram account
         social_twitter           string              the preprint provider's Twitter account
@@ -103,7 +102,6 @@ class PreprintProviderDetail(JSONAPIBaseView, generics.RetrieveAPIView):
         advisory_board           string              HTML for the advisory board/steering committee section
         email_contact            string              the contact email for the preprint provider
         email_support            string              the support email for the preprint provider
-        subjects_acceptable      [[string],boolean]  the list of acceptable subjects for the preprint provider
         social_facebook          string              the preprint provider's Facebook account
         social_instagram         string              the preprint provider's Instagram account
         social_twitter           string              the preprint provider's Twitter account
@@ -220,7 +218,7 @@ class PreprintProviderPreprintList(JSONAPIBaseView, generics.ListAPIView, Prepri
         return PreprintService.objects.filter(self.get_query_from_request()).distinct()
 
 
-class PreprintProviderSubjectList(JSONAPIBaseView, generics.ListAPIView):
+class PreprintProviderTaxonomies(JSONAPIBaseView, generics.ListAPIView):
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
         base_permissions.TokenHasScope,
@@ -261,6 +259,25 @@ class PreprintProviderSubjectList(JSONAPIBaseView, generics.ListAPIView):
                 allows_children = [subs[0][-1] for subs in provider.subjects_acceptable if subs[1]]
                 return [sub for sub in Subject.find(MQ('parent___id', 'eq', parent)) if provider.subjects_acceptable == [] or self.is_valid_subject(allows_children=allows_children, allowed_parents=allowed_parents, sub=sub)]
         return provider.all_subjects
+
+
+class PreprintProviderHighlightedSubjectList(JSONAPIBaseView, generics.ListAPIView):
+    permission_classes = (
+        drf_permissions.IsAuthenticatedOrReadOnly,
+        base_permissions.TokenHasScope,
+    )
+
+    view_category = 'preprint_providers'
+    view_name = 'highlighted-taxonomy-list'
+
+    required_read_scopes = [CoreScopes.ALWAYS_PUBLIC]
+    required_write_scopes = [CoreScopes.NULL]
+
+    serializer_class = TaxonomySerializer
+
+    def get_queryset(self):
+        provider = get_object_or_error(PreprintProvider, self.kwargs['provider_id'], display_name='PreprintProvider')
+        return Subject.objects.filter(id__in=[s.id for s in provider.highlighted_subjects]).order_by('text')
 
 
 class PreprintProviderLicenseList(LicenseList):
