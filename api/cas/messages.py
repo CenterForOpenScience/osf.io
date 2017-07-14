@@ -20,7 +20,13 @@ REQUEST_FAILED =\
 
 # cas account messages that will be shown to the user on CAS pages
 
-ALREADY_REGISTERED = 'This email has already been registered.'
+ALREADY_REGISTERED = 'Email already registered.'
+
+PASSWORD_SAME_AS_EMAIL = 'Password cannot be the same as your email address.'
+
+INVALID_EMAIL = 'Email invalid or blacklisted.'
+
+EMAIL_ALREADY_CONFIRMED = 'Email already confirmed to this user.'
 
 EMAIL_NOT_FOUND = 'The email is not found.'
 

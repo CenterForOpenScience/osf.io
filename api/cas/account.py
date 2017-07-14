@@ -10,6 +10,7 @@ from framework.auth.exceptions import DuplicateEmailError, ChangePasswordError, 
 from framework.auth.views import send_confirm_email
 
 from osf.models import OSFUser
+from osf.exceptions import ValidationError as OSFValidationError
 
 from website import settings as web_settings
 from website.mails import send_mail
@@ -41,14 +42,22 @@ def handle_register_osf(data_user):
 
     try:
         user = register_unconfirmed(email, password, fullname, campaign=campaign)
-    except (DuplicateEmailError, ValueError):
+    except DuplicateEmailError:
         # user already exists
         raise PermissionDenied(detail=messages.ALREADY_REGISTERED)
+    except ChangePasswordError:
+        # password is same as email
+        raise PermissionDenied(detail=messages.PASSWORD_SAME_AS_EMAIL)
+    except OSFValidationError:
+        # email is invalid or its domain is blacklisted
+        raise PermissionDenied(detail=messages.INVALID_EMAIL)
+    except ValueError:
+        # email has already been confirmed to this user
+        raise PermissionDenied(detail=messages.EMAIL_ALREADY_CONFIRMED)
 
     try:
         send_confirm_email(user, email=user.username, renew=False, external_id_provider=None, external_id=None)
     except KeyError:
-        # TODO: inform sentry
         raise APIException(detail=messages.REQUEST_FAILED)
 
     return user
