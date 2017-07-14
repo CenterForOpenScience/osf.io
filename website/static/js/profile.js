@@ -468,43 +468,8 @@ var NameViewModel = function(urls, modes, preventUnsaved, fetchCallback) {
         return suffix;
     };
 
-    self.fullNameParsed = function() {
-        let fullName = $.trim(self.full());
-        let fullNameObj = {};
-        fullNameObj.firstName = '';
-        fullNameObj.middleName = '';
-        fullNameObj.lastName = '';
-        fullNameObj.suffix = '';
-
-        fullName = fullName.split(/(\s+)/).filter( function(name) {
-            return name.trim().length > 0;
-        });
-
-        if (fullName.length === 4 && fullName[3].includes('.')) {
-            fullNameObj.firstName = fullName[0];
-            fullNameObj.middleName = fullName[1];
-            fullNameObj.lastName = fullName[2];
-            fullNameObj.suffix = fullName[3];
-        } else if (fullName.length === 3 && fullName[2].includes('.')) {
-            fullNameObj.firstName = fullName[0];
-            fullNameObj.lastName = fullName[1];
-            fullNameObj.suffix = fullName[2];
-        } else if (fullName.length === 3 && !fullName[2].includes('.')) {
-            fullNameObj.firstName = fullName[0];
-            fullNameObj.middleName = fullName[1];
-            fullNameObj.lastName = fullName[2];
-        } else if (fullName.length === 2) {
-            fullNameObj.firstName = fullName[0];
-            fullNameObj.lastName = fullName[1];
-        } else if (fullName.length === 1) {
-            fullNameObj.firstName = fullName[0];
-        }
-
-        return fullNameObj;
-    };
-
     self.citeApa = ko.computed(function() {
-        const fullName = self.fullNameParsed();
+        const fullName = $osf.parseName($.trim(self.full()));
 
         var cite = self.family();
         var given = $.trim(self.given() + ' ' + self.middle());
@@ -532,7 +497,7 @@ var NameViewModel = function(urls, modes, preventUnsaved, fetchCallback) {
     });
 
     self.citeMla = ko.computed(function() {
-        const fullName = self.fullNameParsed();
+        const fullName = $osf.parseName($.trim(self.full()));
 
         var cite = self.family();
         if (self.given()) {

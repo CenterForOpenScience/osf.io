@@ -372,6 +372,52 @@ var decodeText = function(text) {
     return text;
 };
 
+var parseName = function(text) {
+    const suffixList = ['jr','jnr','sr','snr','dr','phd','i','ii','iii','iv','v','md','esq'];
+    let fullName = {
+        firstName: '',
+        middleName: '',
+        lastName: '',
+        suffix: ''
+    };
+
+    text = text.split(/(\s+)/).filter( function(name) {
+        return name.trim().length > 0;
+    });
+
+    if (text.length >= 1) {
+        text.reverse();
+        fullName.firstName = text.pop();
+        text.reverse();
+    }
+
+    if (text.length >= 1) {
+        const name = text.pop();
+        const nameLower = name.toLowerCase();
+        if (suffixList.includes(nameLower) || name.includes('.')) {
+            fullName.suffix = name;
+        } else {
+            fullName.lastName = name;
+        }
+    }
+
+    if (!fullName.lastName && text.length >= 1) {
+        fullName.lastName = text.pop();
+    } 
+
+    if (text.length >= 1) {
+        text.forEach(function(name) {
+            if (!fullName.middleName) {
+                fullName.middleName = fullName.middleName.concat(name);
+            } else {
+                fullName.middleName = fullName.middleName.concat(' ', name);
+            }
+        });
+    }
+
+    return fullName;
+}
+
 /**
   * Return whether or not a value is an email address.
   * Adapted from Knockout-Validation.
@@ -1079,4 +1125,5 @@ module.exports = window.$.osf = {
     linkifyText: linkifyText,
     getConfirmationString: getConfirmationString,
     decodeText: decodeText,
+    parseName: parseName,
 };
