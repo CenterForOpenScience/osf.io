@@ -1,11 +1,10 @@
-import json
-
 from rest_framework.exceptions import ValidationError, AuthenticationFailed, PermissionDenied
 from rest_framework.authentication import BaseAuthentication
 
 from addons.twofactor.models import UserSettings as TwoFactorUserSettings
 
 from api.cas import util, messages, errors
+from api.cas.mixins import APICASMixin
 
 from framework import sentry
 from framework.auth import get_or_create_user
@@ -16,7 +15,7 @@ from osf.models import Institution, OSFUser
 from website.mails import send_mail, WELCOME_OSF4I
 
 
-class CasLoginAuthentication(BaseAuthentication):
+class CasLoginAuthentication(APICASMixin, BaseAuthentication):
 
     def authenticate(self, request):
         """
@@ -32,12 +31,12 @@ class CasLoginAuthentication(BaseAuthentication):
         :raises: APIException, ValidationError, AuthenticationFailed, PermissionDenied
         """
 
-        data = json.loads(request.body['data'])
-        login_type = data.get('loginType')
+        body_data = self.load_request_body_data(request)
+        login_type = body_data.get('loginType')
 
         # default OSF login
         if login_type == 'OSF':
-            user, error_message, user_status_exception = handle_login_osf(data.get('user'))
+            user, error_message, user_status_exception = handle_login_osf(body_data.get('user'))
             if user and not error_message:
                 if user_status_exception:
                     # authentication fails due to invalid user status, raise 403
@@ -49,11 +48,11 @@ class CasLoginAuthentication(BaseAuthentication):
 
         # institution login
         if login_type == 'INSTITUTION':
-            return handle_login_institution(data.get('provider'))
+            return handle_login_institution(body_data.get('provider'))
 
         # non-institution external login
         if login_type == 'EXTERNAL':
-            return handle_login_external(data.get('user'))
+            return handle_login_external(body_data.get('user'))
 
         # invalid login type
         raise ValidationError(detail=messages.INVALID_REQUEST)

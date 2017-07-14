@@ -8,8 +8,6 @@ import corsheaders.middleware
 
 from django.conf import settings
 
-from api.cas.middleware import is_cas_request, decrypt_request_body
-
 from raven.contrib.django.raven_compat.models import sentry_exception_handler
 
 from framework.postcommit_tasks.handlers import (
@@ -143,15 +141,3 @@ class ProfileMiddleware(object):
             response.content = s.getvalue()
 
         return response
-
-
-class CasEndpointMiddleware(object):
-    """ Verify and decrypt the body for requests that target CAS endpoints.
-    """
-
-    def process_request(self, request):
-
-        if is_cas_request(request):
-            decrypt_request_body(request)
-
-

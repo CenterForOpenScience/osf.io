@@ -8,12 +8,13 @@ from rest_framework.response import Response
 from api.base.views import JSONAPIBaseView
 from api.cas import messages
 from api.cas import login, account, permissions
+from api.cas.mixins import APICASMixin
 
 from osf.models import ApiOAuth2Application, ApiOAuth2PersonalToken, ApiOAuth2Scope, Institution, OSFUser
 
 
-class LoginOsf(JSONAPIBaseView, generics.CreateAPIView):
-    """ Default login through OSF.
+class LoginOsf(APICASMixin, generics.CreateAPIView, JSONAPIBaseView):
+    """ Default login through OSF. Authentication Required.
     """
 
     view_category = 'cas'
@@ -35,8 +36,8 @@ class LoginOsf(JSONAPIBaseView, generics.CreateAPIView):
         return Response(data=content, status=status.HTTP_200_OK)
 
 
-class LoginInstitution(JSONAPIBaseView, generics.CreateAPIView):
-    """ Login through institutions.
+class LoginInstitution(APICASMixin, generics.CreateAPIView, JSONAPIBaseView):
+    """ Login through institutions. Authentication Required.
     """
 
     view_category = 'cas'
@@ -49,8 +50,8 @@ class LoginInstitution(JSONAPIBaseView, generics.CreateAPIView):
         return Response(status=status.HTTP_204_NO_CONTENT)
 
 
-class LoginExternal(JSONAPIBaseView, generics.CreateAPIView):
-    """ Login through non-institution external IdP.
+class LoginExternal(APICASMixin, generics.CreateAPIView, JSONAPIBaseView):
+    """ Login through non-institution external IdP. Authentication Required.
     """
 
     view_category = 'cas'
@@ -67,7 +68,7 @@ class LoginExternal(JSONAPIBaseView, generics.CreateAPIView):
         return Response(data=content, status=status.HTTP_200_OK)
 
 
-class AccountRegisterOsf(JSONAPIBaseView, generics.CreateAPIView):
+class AccountRegisterOsf(APICASMixin, generics.CreateAPIView, JSONAPIBaseView):
     """ Default account creation through OSF.
     """
 
@@ -78,6 +79,7 @@ class AccountRegisterOsf(JSONAPIBaseView, generics.CreateAPIView):
 
     def post(self, request, *args, **kwargs):
 
+        self.load_request_body_data(request)
         body_data = json.loads(request.body['data'])
         account_action = body_data.get('accountAction')
 
@@ -89,7 +91,7 @@ class AccountRegisterOsf(JSONAPIBaseView, generics.CreateAPIView):
         return Response(status=status.HTTP_204_NO_CONTENT)
 
 
-class AccountVerifyOsf(JSONAPIBaseView, generics.CreateAPIView):
+class AccountVerifyOsf(APICASMixin, generics.CreateAPIView, JSONAPIBaseView):
     """ Verify email for account creation through OSF.
     """
 
@@ -100,7 +102,7 @@ class AccountVerifyOsf(JSONAPIBaseView, generics.CreateAPIView):
 
     def post(self, request, *args, **kwargs):
 
-        body_data = json.loads(request.body['data'])
+        body_data = self.load_request_body_data(request)
         account_action = body_data.get('accountAction')
 
         if account_action != "VERIFY_OSF":
@@ -118,7 +120,7 @@ class AccountVerifyOsf(JSONAPIBaseView, generics.CreateAPIView):
         return Response(data=content, status=status.HTTP_200_OK)
 
 
-class AccountVerifyOsfResend(JSONAPIBaseView, generics.CreateAPIView):
+class AccountVerifyOsfResend(APICASMixin, generics.CreateAPIView, JSONAPIBaseView):
     """ Find user by email and resend verification email for account creation.
     """
 
@@ -129,7 +131,7 @@ class AccountVerifyOsfResend(JSONAPIBaseView, generics.CreateAPIView):
 
     def post(self, request, *args, **kwargs):
 
-        body_data = json.loads(request.body['data'])
+        body_data = self.load_request_body_data(request)
         account_action = body_data.get('accountAction')
 
         if account_action != 'VERIFY_OSF_RESEND':
@@ -140,7 +142,7 @@ class AccountVerifyOsfResend(JSONAPIBaseView, generics.CreateAPIView):
         return Response(status=status.HTTP_204_NO_CONTENT)
 
 
-class AccountRegisterExternal(JSONAPIBaseView, generics.CreateAPIView):
+class AccountRegisterExternal(APICASMixin, generics.CreateAPIView, JSONAPIBaseView):
     """ Account creation (or link) though non-institution external identity provider.
     """
 
@@ -151,7 +153,7 @@ class AccountRegisterExternal(JSONAPIBaseView, generics.CreateAPIView):
 
     def post(self, request, *args, **kwargs):
 
-        body_data = json.loads(request.body['data'])
+        body_data = self.load_request_body_data(request)
         account_action = body_data.get('accountAction')
 
         if account_action != 'REGISTER_EXTERNAL':
@@ -167,7 +169,7 @@ class AccountRegisterExternal(JSONAPIBaseView, generics.CreateAPIView):
         return Response(data=content, status=status.HTTP_200_OK)
 
 
-class AccountVerifyExternal(JSONAPIBaseView, generics.CreateAPIView):
+class AccountVerifyExternal(APICASMixin, generics.CreateAPIView, JSONAPIBaseView):
     """ Verify email for account creation (or link) though non-institution external identity provider.
     """
 
@@ -178,7 +180,7 @@ class AccountVerifyExternal(JSONAPIBaseView, generics.CreateAPIView):
 
     def post(self, request, *args, **kwargs):
 
-        body_data = json.loads(request.body['data'])
+        body_data = self.load_request_body_data(request)
         account_action = body_data.get('accountAction')
 
         if account_action != 'VERIFY_EXTERNAL':
@@ -196,7 +198,7 @@ class AccountVerifyExternal(JSONAPIBaseView, generics.CreateAPIView):
         return Response(data=content, status=status.HTTP_200_OK)
 
 
-class AccountPasswordForgot(JSONAPIBaseView, generics.CreateAPIView):
+class AccountPasswordForgot(APICASMixin, generics.CreateAPIView, JSONAPIBaseView):
     """ Find user by email and (re)send verification email for password reset.
     """
 
@@ -207,7 +209,7 @@ class AccountPasswordForgot(JSONAPIBaseView, generics.CreateAPIView):
 
     def post(self, request, *args, **kwargs):
 
-        body_data = json.loads(request.body['data'])
+        body_data = self.load_request_body_data(request)
         account_action = body_data.get('accountAction')
 
         if account_action != 'PASSWORD_FORGOT':
@@ -218,7 +220,7 @@ class AccountPasswordForgot(JSONAPIBaseView, generics.CreateAPIView):
         return Response(status=status.HTTP_204_NO_CONTENT)
 
 
-class AccountPasswordReset(JSONAPIBaseView, generics.CreateAPIView):
+class AccountPasswordReset(APICASMixin, generics.CreateAPIView, JSONAPIBaseView):
     """ Reset the password for an osf account.
     """
 
@@ -229,7 +231,7 @@ class AccountPasswordReset(JSONAPIBaseView, generics.CreateAPIView):
 
     def post(self, request, *args, **kwargs):
 
-        body_data = json.loads(request.body['data'])
+        body_data = self.load_request_body_data(request)
         account_action = body_data.get('accountAction')
 
         if account_action != 'PASSWORD_RESET':
@@ -247,7 +249,7 @@ class AccountPasswordReset(JSONAPIBaseView, generics.CreateAPIView):
         return Response(data=content, status=status.HTTP_200_OK)
 
 
-class ServiceOauthToken(JSONAPIBaseView, generics.CreateAPIView):
+class ServiceOauthToken(APICASMixin, generics.CreateAPIView, JSONAPIBaseView):
     """ Get the owner and scopes of a personal access token by token id.
     """
 
@@ -258,9 +260,9 @@ class ServiceOauthToken(JSONAPIBaseView, generics.CreateAPIView):
 
     def post(self, request, *args, **kwargs):
 
-        data = json.loads(request.body['data'])
-        service_type = data.get('serviceType')
-        token_id = data.get('tokenId')
+        body_data = self.load_request_body_data(request)
+        service_type = body_data.get('serviceType')
+        token_id = body_data.get('tokenId')
 
         if service_type != 'OAUTH_TOKEN' or not token_id:
             raise ValidationError(detail=messages.INVALID_REQUEST)
@@ -284,7 +286,7 @@ class ServiceOauthToken(JSONAPIBaseView, generics.CreateAPIView):
         return Response(content)
 
 
-class ServiceOauthScope(JSONAPIBaseView, generics.CreateAPIView):
+class ServiceOauthScope(APICASMixin, generics.CreateAPIView, JSONAPIBaseView):
     """ Get the description of the oauth scope by scope name.
     """
 
@@ -295,9 +297,9 @@ class ServiceOauthScope(JSONAPIBaseView, generics.CreateAPIView):
 
     def post(self, request, *args, **kwargs):
 
-        data = json.loads(request.body['data'])
-        service_type = data.get('serviceType')
-        scope_name = data.get('scopeName')
+        body_data = self.load_request_body_data(request)
+        service_type = body_data.get('serviceType')
+        scope_name = body_data.get('scopeName')
 
         if service_type != 'OAUTH_SCOPE' or not scope_name:
             raise ValidationError(detail=messages.INVALID_REQUEST)
@@ -316,7 +318,7 @@ class ServiceOauthScope(JSONAPIBaseView, generics.CreateAPIView):
         return Response(content)
 
 
-class ServiceOauthApps(JSONAPIBaseView, generics.CreateAPIView):
+class ServiceOauthApps(APICASMixin, generics.CreateAPIView, JSONAPIBaseView):
     """ Load all active developer applications.
     """
 
@@ -327,8 +329,8 @@ class ServiceOauthApps(JSONAPIBaseView, generics.CreateAPIView):
 
     def post(self, request, *args, **kwargs):
 
-        data = json.loads(request.body['data'])
-        service_type = data.get('serviceType')
+        body_data = self.load_request_body_data(request)
+        service_type = body_data.get('serviceType')
 
         if service_type != 'OAUTH_APPS':
             raise ValidationError(detail=messages.INVALID_REQUEST)
@@ -350,7 +352,7 @@ class ServiceOauthApps(JSONAPIBaseView, generics.CreateAPIView):
         return Response(content)
 
 
-class ServiceInstitutions(JSONAPIBaseView, generics.CreateAPIView):
+class ServiceInstitutions(APICASMixin, generics.CreateAPIView, JSONAPIBaseView):
     """ Load institutions that provide authentication delegation. 
     """
 
@@ -361,8 +363,8 @@ class ServiceInstitutions(JSONAPIBaseView, generics.CreateAPIView):
 
     def post(self, request, *args, **kwargs):
 
-        data = json.loads(request.body['data'])
-        service_type = data.get('serviceType')
+        body_data = self.load_request_body_data(request)
+        service_type = body_data.get('serviceType')
 
         if service_type != 'INSTITUTIONS':
             raise ValidationError(detail=messages.INVALID_REQUEST)
