@@ -638,7 +638,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
             'id': self._id,
             'title': sanitize.unescape_entities(self.title),
             'author': [
-                contributor.csl_name  # method in auth/model.py which parses the names of authors
+                contributor.csl_name(self._id)  # method in auth/model.py which parses the names of authors
                 for contributor in self.visible_contributors
             ],
             'publisher': 'Open Science Framework',
