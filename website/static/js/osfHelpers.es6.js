@@ -414,7 +414,7 @@ var parseName = function(text) {
     }
 
     return fullName;
-}
+};
 
 /**
   * Return whether or not a value is an email address.
