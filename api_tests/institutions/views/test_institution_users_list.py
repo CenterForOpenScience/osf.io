@@ -9,30 +9,19 @@ from osf_tests.factories import (
 @pytest.mark.django_db
 class TestInstitutionUsersList:
 
-    @pytest.fixture()
-    def institution(self):
-        return InstitutionFactory()
+    def test_return_all_users(self, app):
+        institution = InstitutionFactory()
 
-    @pytest.fixture()
-    def user_one(self, institution):
         user_one = UserFactory()
         user_one.affiliated_institutions.add(institution)
         user_one.save()
-        return user_one
 
-    @pytest.fixture()
-    def user_two(self, institution):
         user_two = UserFactory()
         user_two.affiliated_institutions.add(institution)
         user_two.save()
-        return user_two
 
-    @pytest.fixture()
-    def url_institution_user(self, institution):
-        return '/{0}institutions/{1}/users/'.format(API_BASE, institution._id)
-
-    def test_return_all_users(self, app, institution, user_one, user_two, url_institution_user):
-        res = app.get(url_institution_user)
+        url = '/{0}institutions/{1}/users/'.format(API_BASE, institution._id)
+        res = app.get(url)
 
         assert res.status_code == 200
 

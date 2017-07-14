@@ -1,9 +1,8 @@
 import pytest
 
 from api.base.settings.defaults import API_BASE
-
-from osf_tests.factories import InstitutionFactory
 from osf.models import AbstractNode as Node
+from osf_tests.factories import InstitutionFactory
 
 @pytest.mark.django_db
 class TestInstitutionList:

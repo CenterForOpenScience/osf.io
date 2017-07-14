@@ -1,18 +1,17 @@
 import pytest
 import json
-
 import jwt
 import jwe
-from modularodm import Q
 
+from django.db.models import Q
 from api.base import settings
 from api.base.settings.defaults import API_BASE
 from framework.auth import signals
+from osf.models import OSFUser as User
 from osf_tests.factories import (
     InstitutionFactory,
     UserFactory,
 )
-from osf.models import OSFUser as User
 from tests.base import capture_signals
 
 @pytest.mark.django_db
@@ -60,7 +59,7 @@ class TestInstitutionAuth:
 
     def test_creates_user(self, app, url_auth_institution, institution, make_payload):
         username = 'hmoco@circle.edu'
-        assert User.find(Q('username', 'eq', username)).count() == 0
+        assert User.objects.filter(Q(username=username)).count() == 0
 
         with capture_signals() as mock_signals:
             res = app.post(url_auth_institution, make_payload(username))
@@ -68,7 +67,7 @@ class TestInstitutionAuth:
         assert res.status_code == 204
         assert mock_signals.signals_sent() == set([signals.user_confirmed])
 
-        user = User.find_one(Q('username', 'eq', username))
+        user = User.objects.filter(Q(username=username)).get()
 
         assert user
         assert institution in user.affiliated_institutions.all()
@@ -111,7 +110,7 @@ class TestInstitutionAuth:
         res = app.post(url_auth_institution, make_payload(username))
 
         assert res.status_code == 204
-        user = User.find_one(Q('username', 'eq', username))
+        user = User.objects.filter(Q(username=username)).get()
 
         assert user
         assert user.fullname == 'Fake User'
@@ -124,7 +123,7 @@ class TestInstitutionAuth:
         res = app.post(url_auth_institution, make_payload(username, family_name='West', given_name='Kanye'))
 
         assert res.status_code == 204
-        user = User.find_one(Q('username', 'eq', username))
+        user = User.objects.filter(Q(username=username)).get()
 
         assert user
         assert user.fullname == 'Fake User'
