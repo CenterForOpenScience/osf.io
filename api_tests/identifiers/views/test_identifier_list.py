@@ -1,6 +1,4 @@
 import pytest
-
-from modularodm import Q
 from urlparse import urlparse
 
 from api.base.settings.defaults import API_BASE
@@ -91,10 +89,10 @@ class TestRegistrationIdentifierList:
             ['carpid', 'nopeid']
         )
 
-        filter_url = url_registration_identifiers + '?filter[category]=carpid'
+        filter_url = '{}?filter[category]=carpid'.format(url_registration_identifiers)
         new_res = app.get(filter_url)
 
-        carpid_total = len(Identifier.find(Q('category', 'eq', 'carpid')))
+        carpid_total = Identifier.objects.filter(category='carpid').count()
 
         total = new_res.json['links']['meta']['total']
         assert total == carpid_total
@@ -109,7 +107,7 @@ class TestRegistrationIdentifierList:
         url = '/{}registrations/{}/identifiers/'.format(API_BASE, node._id)
         res = app.get(url, expect_errors=True)
         assert res.status_code == 404
-
+#
 @pytest.mark.django_db
 class TestNodeIdentifierList:
 
@@ -171,17 +169,18 @@ class TestNodeIdentifierList:
 
     def test_identifier_filter_by_category(self, app, node, identifier_node, url_node_identifiers):
         IdentifierFactory(referent=node, category='nopeid')
-        identifiers_for_node = Identifier.find(Q('referent', 'eq', node))
-        assert len(identifiers_for_node) == 2
+        identifiers_for_node = Identifier.objects.filter(object_id=node.id)
+
+        assert identifiers_for_node.count() == 2
         assert_items_equal(
             [identifier.category for identifier in identifiers_for_node],
             ['carpid', 'nopeid']
         )
 
-        filter_url = url_node_identifiers + '?filter[category]=carpid'
+        filter_url = '{}?filter[category]=carpid'.format(url_node_identifiers)
         new_res = app.get(filter_url)
 
-        carpid_total = len(Identifier.find(Q('category', 'eq', 'carpid')))
+        carpid_total = Identifier.objects.filter(category='carpid').count()
 
         total = new_res.json['links']['meta']['total']
         assert total == carpid_total

@@ -1,5 +1,4 @@
 import pytest
-
 from urlparse import urlparse
 
 from api.base.settings.defaults import API_BASE
@@ -67,7 +66,6 @@ class TestIdentifierDetail:
 
         #test_identifier_detail_returns_correct_value_registration
         assert data_registration['attributes']['value'] == identifier_registration.value
-
 
     def test_identifier_node_detail(self, user, node, identifier_node, res_node, data_node):
 
