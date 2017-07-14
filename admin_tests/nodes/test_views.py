@@ -261,22 +261,19 @@ class TestNodeReindex(AdminTestCase):
 
         self.patcher_share_url = mock.patch('website.settings.SHARE_URL', 'ima_real_website')
         self.patcher_share_token = mock.patch('website.settings.SHARE_API_TOKEN', 'ima_real_token')
-        self.patcher_mock_reindex_node = mock.patch('website.project.tasks.update_node_share')
-        self.patcher_mock_reindex_registration = mock.patch('website.project.tasks.on_registration_updated')
+        self.patcher_mock_reindex_share = mock.patch('website.project.tasks.send_share_data')
         self.patcher_mock_reindex_elastic = mock.patch('website.search.search.update_node')
 
         self.patcher_share_url.start()
         self.patcher_share_token.start()
-        self.mock_reindex_node = self.patcher_mock_reindex_node.start()
-        self.mock_reindex_registration = self.patcher_mock_reindex_registration.start()
+        self.mock_reindex_share = self.patcher_mock_reindex_share.start()
         self.mock_reindex_elastic = self.patcher_mock_reindex_elastic.start()
 
     def tearDown(self):
         super(TestNodeReindex, self).tearDown()
         self.patcher_share_url.stop()
         self.patcher_share_token.stop()
-        self.patcher_mock_reindex_node.stop()
-        self.patcher_mock_reindex_registration.stop()
+        self.patcher_mock_reindex_share.stop()
         self.patcher_mock_reindex_elastic.stop()
 
     def test_reindex_node_share(self):
@@ -285,8 +282,7 @@ class TestNodeReindex(AdminTestCase):
         view = setup_log_view(view, self.request, guid=self.node._id)
         view.delete(self.request)
 
-        nt.assert_true(self.mock_reindex_node.called)
-        nt.assert_false(self.mock_reindex_registration.called)
+        nt.assert_true(self.mock_reindex_share.called)
         nt.assert_equal(AdminLogEntry.objects.count(), count + 1)
 
     def test_reindex_registration_share(self):
@@ -295,8 +291,7 @@ class TestNodeReindex(AdminTestCase):
         view = setup_log_view(view, self.request, guid=self.registration._id)
         view.delete(self.request)
 
-        nt.assert_false(self.mock_reindex_node.called)
-        nt.assert_true(self.mock_reindex_registration.called)
+        nt.assert_true(self.mock_reindex_share.called)
         nt.assert_equal(AdminLogEntry.objects.count(), count + 1)
 
     def test_reindex_node_elastic(self):

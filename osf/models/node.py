@@ -1140,6 +1140,8 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
                                                        contributor=contributor,
                                                        auth=auth, email_template=send_email)
             self.update_search()
+            self.update_node_preprints_share()
+
             return contrib_to_add, True
 
         # Permissions must be overridden if changed when contributor is
@@ -1310,6 +1312,8 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         if self._id in old.unclaimed_records:
             del old.unclaimed_records[self._id]
             old.save()
+
+        self.update_node_preprints_share()
         return True
 
     def remove_contributor(self, contributor, auth, log=True):
@@ -1528,6 +1532,14 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
             }],
             'allowed_operations': ['read']
         })
+
+    def update_node_preprints_share(self):
+        # Update share with contributor changes
+        if self.preprint_file:
+            from website.preprints.tasks import update_preprint_share
+            PreprintService = apps.get_model('osf.PreprintService')
+            for preprint in PreprintService.objects.filter(node_id=self.id, is_published=True):
+                update_preprint_share(preprint)
 
     @property
     def private_links_active(self):
@@ -2227,6 +2239,8 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
                 )
             if save:
                 self.save()
+
+            self.update_node_preprints_share()
 
         with transaction.atomic():
             if to_remove or permissions_changed and ['read'] in permissions_changed.values():

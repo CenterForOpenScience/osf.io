@@ -1,13 +1,15 @@
+from django.apps import apps
 import logging
 import urlparse
 
+import random
 import requests
 
 from framework.exceptions import HTTPError
 from framework.celery_tasks import app as celery_app
 from framework import sentry
 
-from website import settings
+from website import settings, mails
 from website.util.share import GraphNode, format_contributor, format_subject
 
 from website.identifiers.utils import request_identifiers_from_ezid, get_ezid_client, build_ezid_metadata, parse_identifiers
@@ -30,22 +32,66 @@ def on_preprint_updated(preprint_id, update_share=True, old_subjects=None):
         except HTTPError as err:
             sentry.log_exception()
             sentry.log_message(err.args[0])
+    if update_share:
+        update_preprint_share(preprint, old_subjects)
 
-    if settings.SHARE_URL and update_share:
+def update_preprint_share(preprint, old_subjects=None):
+    if settings.SHARE_URL:
         if not preprint.provider.access_token:
             raise ValueError('No access_token for {}. Unable to send {} to SHARE.'.format(preprint.provider, preprint))
-        resp = requests.post('{}api/v2/normalizeddata/'.format(settings.SHARE_URL), json={
-            'data': {
-                'type': 'NormalizedData',
-                'attributes': {
-                    'tasks': [],
-                    'raw': None,
-                    'data': {'@graph': format_preprint(preprint, old_subjects)}
-                }
-            }
-        }, headers={'Authorization': 'Bearer {}'.format(preprint.provider.access_token), 'Content-Type': 'application/vnd.api+json'})
-        logger.debug(resp.content)
+        _update_preprint_share(preprint, old_subjects)
+
+def _update_preprint_share(preprint, old_subjects):
+    data = serialize_share_preprint_data(preprint, old_subjects)
+    resp = send_share_preprint_data(preprint, data)
+    try:
+        assert False
         resp.raise_for_status()
+    # any exception gets sent to deskk
+    except Exception:
+        if resp.status_code >= 500:
+            _async_update_preprint_share.delay(preprint._id, old_subjects)
+        else:
+            send_desk_share_preprint_error(preprint, resp, 0)
+
+@celery_app.task(bind=True, max_retries=4, acks_late=True)
+def _async_update_preprint_share(self, preprint_id, old_subjects):
+    # Any modifications to this function may need to change _async_update_share
+    # Takes preprint_id to ensure async retries push fresh data
+    PreprintService = apps.get_model('osf.PreprintService')
+    preprint = PreprintService.load(preprint_id)
+
+    data = serialize_share_preprint_data(preprint, old_subjects)
+    resp = send_share_preprint_data(preprint, data)
+    try:
+        resp.raise_for_status()
+    except Exception as e:
+        if resp.status_code >= 500:
+            if self.request.retries == self.max_retries:
+                send_desk_share_preprint_error(preprint, resp, self.request.retries)
+            raise self.retry(
+                exc=e,
+                countdown=(random.random() + 1) * min(60 + settings.CELERY_RETRY_BACKOFF_BASE ** self.request.retries, 60 * 10)
+            )
+        else:
+            send_desk_share_preprint_error(preprint, resp, self.request.retries)
+
+def serialize_share_preprint_data(preprint, old_subjects):
+    return {
+        'data': {
+            'type': 'NormalizedData',
+            'attributes': {
+                'tasks': [],
+                'raw': None,
+                'data': {'@graph': format_preprint(preprint, old_subjects)}
+            }
+        }
+    }
+
+def send_share_preprint_data(preprint, data):
+    resp = requests.post('{}api/v2/normalizeddata/'.format(settings.SHARE_URL), json=data, headers={'Authorization': 'Bearer {}'.format(preprint.provider.access_token), 'Content-Type': 'application/vnd.api+json'})
+    logger.debug(resp.content)
+    return resp
 
 def format_preprint(preprint, old_subjects=None):
     if old_subjects is None:
@@ -134,3 +180,12 @@ def update_ezid_metadata_on_change(target_object, status):
 
         doi, metadata = build_ezid_metadata(target_object)
         client.change_status_identifier(status, doi, metadata)
+
+def send_desk_share_preprint_error(preprint, resp, retries):
+    mails.send_mail(
+        to_addr=settings.SUPPORT_EMAIL,
+        mail=mails.SHARE_PREPRINT_ERROR_DESK,
+        preprint=preprint,
+        resp=resp,
+        retries=retries,
+    )
