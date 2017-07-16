@@ -122,7 +122,7 @@ class ComposedScopes(object):
     # All views should be based on selections from CoreScopes, above
 
     # Users collection
-    USERS_READ = (CoreScopes.USERS_READ, CoreScopes.ALWAYS_PUBLIC, )
+    USERS_READ = (CoreScopes.USERS_READ, )
     USERS_WRITE = USERS_READ + (CoreScopes.USERS_WRITE,)
     USERS_CREATE = USERS_READ + (CoreScopes.USERS_CREATE, )
 
@@ -130,7 +130,7 @@ class ComposedScopes(object):
     USER_EMAIL_READ =  (CoreScopes.USER_EMAIL_READ, )
 
     # Applications collection
-    APPLICATIONS_READ = (CoreScopes.APPLICATIONS_READ, CoreScopes.ALWAYS_PUBLIC, )
+    APPLICATIONS_READ = (CoreScopes.APPLICATIONS_READ, )
     APPLICATIONS_WRITE = APPLICATIONS_READ + (CoreScopes.APPLICATIONS_WRITE,)
 
     # Tokens collection
