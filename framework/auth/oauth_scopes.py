@@ -30,6 +30,7 @@ class CoreScopes(object):
     USERS_READ = 'users_read'
     USERS_WRITE = 'users_write'
     USERS_CREATE = 'users_create'
+
     USER_EMAIL_READ = 'users.email_read'
 
     USER_ADDON_READ = 'users.addon_read'
@@ -124,7 +125,9 @@ class ComposedScopes(object):
     USERS_READ = (CoreScopes.USERS_READ, CoreScopes.ALWAYS_PUBLIC, )
     USERS_WRITE = USERS_READ + (CoreScopes.USERS_WRITE,)
     USERS_CREATE = USERS_READ + (CoreScopes.USERS_CREATE, )
-    USER_EMAIL_READ =  (CoreScopes.USERS_READ, CoreScopes.USER_EMAIL_READ, )
+
+    # User extensions
+    USER_EMAIL_READ =  (CoreScopes.USER_EMAIL_READ, )
 
     # Applications collection
     APPLICATIONS_READ = (CoreScopes.APPLICATIONS_READ, CoreScopes.ALWAYS_PUBLIC, )
@@ -189,7 +192,7 @@ class ComposedScopes(object):
 
     # Admin permissions- includes functionality not intended for third-party use
     ADMIN_LEVEL = FULL_WRITE + APPLICATIONS_WRITE + TOKENS_WRITE + COMMENT_REPORTS_WRITE + USERS_CREATE +\
-                    (CoreScopes.USER_ADDON_READ, CoreScopes.NODE_ADDON_READ, CoreScopes.NODE_ADDON_WRITE, )
+                    (CoreScopes.USER_EMAIL_READ, CoreScopes.USER_ADDON_READ, CoreScopes.NODE_ADDON_READ, CoreScopes.NODE_ADDON_WRITE, )
 
 # List of all publicly documented scopes, mapped to composed scopes defined above.
 #   Return as sets to enable fast comparisons of provided scopes vs those required by a given node
