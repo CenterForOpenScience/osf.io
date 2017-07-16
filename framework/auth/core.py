@@ -135,7 +135,7 @@ def get_user(email=None, password=None, token=None, external_id_provider=None, e
     if password:
         password = password.strip()
         try:
-            user = qs.first()
+            user = qs.get()
         except Exception as err:
             logger.error(err)
             user = None
@@ -150,7 +150,7 @@ def get_user(email=None, password=None, token=None, external_id_provider=None, e
         qs = qs.filter(**{'external_identity__{}__{}'.format(external_id_provider, external_id): 'VERIFIED'})
 
     try:
-        user = qs.first()
+        user = qs.get()
         return user
     except Exception as err:
         logger.error(err)
