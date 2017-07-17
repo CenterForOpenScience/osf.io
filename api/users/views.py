@@ -22,7 +22,7 @@ from api.users.serializers import (UserAddonSettingsSerializer,
                                    UserDetailSerializer,
                                    UserInstitutionsRelationshipSerializer,
                                    UserSerializer,
-                                   UserQuickFilesSerializer)
+                                   UserQuickFilesSerializer,
                                    ReadEmailUserDetailSerializer,)
 from django.contrib.auth.models import AnonymousUser
 from framework.auth.oauth_scopes import CoreScopes, normalize_scopes
