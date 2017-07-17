@@ -20,6 +20,7 @@ from django.core.exceptions import PermissionDenied
 from django.contrib.auth.models import Permission
 
 from tests.base import AdminTestCase
+from tests.utils import mock_patch_update_share
 from osf_tests.factories import AuthUserFactory, ProjectFactory, RegistrationFactory
 
 
@@ -259,55 +260,50 @@ class TestNodeReindex(AdminTestCase):
         self.node = ProjectFactory(creator=self.user)
         self.registration = RegistrationFactory(project=self.node, creator=self.user)
 
-        self.patcher_share_url = mock.patch('website.settings.SHARE_URL', 'ima_real_website')
-        self.patcher_share_token = mock.patch('website.settings.SHARE_API_TOKEN', 'ima_real_token')
-        self.patcher_mock_reindex_share = mock.patch('website.project.tasks.send_share_data')
-        self.patcher_mock_reindex_elastic = mock.patch('website.search.search.update_node')
-
-        self.patcher_share_url.start()
-        self.patcher_share_token.start()
-        self.mock_reindex_share = self.patcher_mock_reindex_share.start()
-        self.mock_reindex_elastic = self.patcher_mock_reindex_elastic.start()
-
-    def tearDown(self):
-        super(TestNodeReindex, self).tearDown()
-        self.patcher_share_url.stop()
-        self.patcher_share_token.stop()
-        self.patcher_mock_reindex_share.stop()
-        self.patcher_mock_reindex_elastic.stop()
-
-    def test_reindex_node_share(self):
+    @mock.patch('website.project.tasks.format_node')
+    @mock.patch('website.project.tasks.format_registration')
+    @mock_patch_update_share
+    def test_reindex_node_share(self, mock_update_share, mock_format_registration, mock_format_node):
         count = AdminLogEntry.objects.count()
         view = NodeReindexShare()
         view = setup_log_view(view, self.request, guid=self.node._id)
         view.delete(self.request)
 
-        nt.assert_true(self.mock_reindex_share.called)
+        nt.assert_true(mock_update_share.called)
+        nt.assert_true(mock_format_node.called)
+        nt.assert_false(mock_format_registration.called)
         nt.assert_equal(AdminLogEntry.objects.count(), count + 1)
 
-    def test_reindex_registration_share(self):
+    @mock.patch('website.project.tasks.format_node')
+    @mock.patch('website.project.tasks.format_registration')
+    @mock_patch_update_share
+    def test_reindex_registration_share(self, mock_update_share, mock_format_registration, mock_format_node):
         count = AdminLogEntry.objects.count()
         view = NodeReindexShare()
         view = setup_log_view(view, self.request, guid=self.registration._id)
         view.delete(self.request)
 
-        nt.assert_true(self.mock_reindex_share.called)
+        nt.assert_true(mock_update_share.called)
+        nt.assert_false(mock_format_node.called)
+        nt.assert_true(mock_format_registration.called)
         nt.assert_equal(AdminLogEntry.objects.count(), count + 1)
 
-    def test_reindex_node_elastic(self):
+    @mock.patch('website.search.search.update_node')
+    def test_reindex_node_elastic(self, mock_update_search):
         count = AdminLogEntry.objects.count()
         view = NodeReindexElastic()
         view = setup_log_view(view, self.request, guid=self.node._id)
         view.delete(self.request)
 
-        nt.assert_true(self.mock_reindex_elastic.called)
+        nt.assert_true(mock_update_search.called)
         nt.assert_equal(AdminLogEntry.objects.count(), count + 1)
 
-    def test_reindex_registration_elastic(self):
+    @mock.patch('website.search.search.update_node')
+    def test_reindex_registration_elastic(self, mock_update_search):
         count = AdminLogEntry.objects.count()
         view = NodeReindexElastic()
         view = setup_log_view(view, self.request, guid=self.registration._id)
         view.delete(self.request)
 
-        nt.assert_true(self.mock_reindex_elastic.called)
+        nt.assert_true(mock_update_search.called)
         nt.assert_equal(AdminLogEntry.objects.count(), count + 1)

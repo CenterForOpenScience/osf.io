@@ -22,7 +22,7 @@ from osf_tests.factories import (
     ProjectFactory,
     PreprintFactory,
     PreprintProviderFactory,
-    SubjectFactory
+    SubjectFactory,
 )
 from tests.utils import assert_logs
 from api_tests import utils as api_test_utils
@@ -633,3 +633,32 @@ class TestPreprintSaveShareHook(OsfTestCase):
         on_preprint_updated(self.preprint._id)
 
         assert mock_requests.post.called
+
+    @mock.patch('website.preprints.tasks.update_preprint_share')
+    @mock.patch('website.project.tasks.settings.SHARE_URL', 'ima_real_website')
+    def test_node_contributor_changes_updates_preprints_share(self, mock_update_preprint_share):
+        # A user is added as a contributor
+        self.preprint.is_published = True
+        self.preprint.save()
+
+        user = AuthUserFactory()
+        node = self.preprint.node
+        node.preprint_file = self.file
+
+        node.add_contributor(contributor=user, auth=self.auth)
+        assert mock_update_preprint_share.call_count == 1
+        
+        node.move_contributor(contributor=user, index=0, auth=self.auth)
+        assert mock_update_preprint_share.call_count == 2
+
+        data = [{'id': self.admin._id, 'permission': 'admin', 'visible': True},
+                {'id': user._id, 'permission': 'write', 'visible': False}]
+        node.manage_contributors(data, auth=self.auth, save=True)
+        assert mock_update_preprint_share.call_count == 3
+        
+        node.update_contributor(user, 'read', True, auth=self.auth, save=True)
+        assert mock_update_preprint_share.call_count == 4
+
+        node.remove_contributor(contributor=user, auth=self.auth)
+        assert mock_update_preprint_share.call_count == 5
+

@@ -1366,7 +1366,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         self.update_search()
         # send signal to remove this user from project subscriptions
         project_signals.contributor_removed.send(self, user=contributor)
-
+        self.update_node_preprints_share()
         return True
 
     def remove_contributors(self, contributors, auth=None, log=True, save=False):
@@ -1420,6 +1420,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         )
         if save:
             self.save()
+        self.update_node_preprints_share()
 
     @classmethod
     def find_for_user(cls, user, subquery=None):
@@ -2289,6 +2290,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
                         project_signals.write_permissions_revoked.send(self)
         if visible is not None:
             self.set_visible(user, visible, auth=auth)
+            self.update_node_preprints_share()
 
     def save(self, *args, **kwargs):
         first_save = not bool(self.pk)

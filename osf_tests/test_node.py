@@ -1084,6 +1084,18 @@ class TestContributorMethods:
                 auth=auth
             )
 
+    def test_add_contributor_updates_preprints(self, node, user, auth):
+        # A user is added as a contributor
+        user2 = UserFactory()
+        node.add_contributor(contributor=user2, auth=auth)
+        node.save()
+        assert node.is_contributor(user2) is True
+        last_log = node.logs.all().order_by('-date')[0]
+        assert last_log.action == 'contributor_added'
+        assert last_log.params['contributors'] == [user2._id]
+
+        assert user2 in user.recently_added.all()
+
 
 # Copied from tests/test_models.py
 class TestNodeAddContributorRegisteredOrNot:
@@ -3407,6 +3419,12 @@ class TestOnNodeUpdate:
             graph = kwargs['json']['data']['attributes']['data']['@graph']
             assert graph[1]['is_deleted'] == case['is_deleted']
 
+    @mock.patch('website.project.tasks.settings.SHARE_URL', 'a_real_url')
+    @mock.patch('website.project.tasks.settings.SHARE_API_TOKEN', 'a_real_token')
+    @mock.patch('website.project.tasks.requests')
+    def test_skips_no_settings(self, requests, node, user, request_context):
+        on_node_updated(node._id, user._id, False, {'is_public'})
+        assert requests.post.called is False
 
 # copied from tests/test_models.py
 class TestRemoveNode:
