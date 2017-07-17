@@ -8,8 +8,8 @@ from osf.models.licenses import NodeLicense
 class TestLicenseDetail:
 
     def test_license_detail(self, app):
-        license = NodeLicense.find()[0]
-        url_license = '/{}licenses/{}/'.format(API_BASE, license._id)
+        license_node = NodeLicense.objects.first()
+        url_license = '/{}licenses/{}/'.format(API_BASE, license_node._id)
         res_license = app.get(url_license)
         data_license = res_license.json['data']
 
@@ -19,10 +19,10 @@ class TestLicenseDetail:
 
         #test_license_top_level(self, license, data_license):
         assert data_license['type'] == 'licenses'
-        assert data_license['id'] == license._id
+        assert data_license['id'] == license_node._id
 
         #test_license_name(self, data_license, license):
-        assert data_license['attributes']['name'] == license.name
+        assert data_license['attributes']['name'] == license_node.name
 
         #test_license_text(self, data_license, license):
-        assert data_license['attributes']['text'] == license.text
+        assert data_license['attributes']['text'] == license_node.text

@@ -7,7 +7,8 @@ from osf.models.licenses import NodeLicense
 class TestLicenseList:
 
     def test_license_list(self, app):
-        licenses = NodeLicense.find()
+        licenses = NodeLicense.objects.all()
+        license_node = licenses[0]
         url_licenses = '/{}licenses/'.format(API_BASE)
         res_licenses = app.get(url_licenses)
 
@@ -20,16 +21,15 @@ class TestLicenseList:
         assert total == licenses.count()
 
         #test_license_list_name_filter
-        license = licenses[0]
-        url = '/{}licenses/?filter[name]={}'.format(API_BASE, license.name)
+        url = '/{}licenses/?filter[name]={}'.format(API_BASE, license_node.name)
         res = app.get(url)
         data = res.json['data'][0]
-        assert data['attributes']['name'] == license.name
-        assert data['id'] == license._id
+        assert data['attributes']['name'] == license_node.name
+        assert data['id'] == license_node._id
 
         #test_license_list_id_filter(self, licenses):
-        url = '/{}licenses/?filter[id]={}'.format(API_BASE, license._id)
+        url = '/{}licenses/?filter[id]={}'.format(API_BASE, license_node._id)
         res = app.get(url)
         data = res.json['data'][0]
-        assert data['attributes']['name'] == license.name
-        assert data['id'] == license._id
+        assert data['attributes']['name'] == license_node.name
+        assert data['id'] == license_node._id
