@@ -24,24 +24,9 @@ class TestGuidDetail:
     def project(self):
         return ProjectFactory()
 
-    @pytest.fixture()
-    def add_private_link(self, project):
-        def private_link(anonymous=False):
-            view_only_link = PrivateLinkFactory(anonymous=anonymous)
-            view_only_link.nodes.add(project)
-            view_only_link.save()
-            return view_only_link
-        return private_link
-
-    @pytest.fixture()
-    def url_guids_detail(self):
-        def url(id):
-            return '/{}guids/{}/'.format(API_BASE, id)
-        return url
-
-    def test_redirects(self, app, project, url_guids_detail, user):
+    def test_redirects(self, app, project, user):
         #test_redirect_to_node_view
-        url = url_guids_detail(project._id)
+        url = '/{}guids/{}/'.format(API_BASE, project._id)
         res = app.get(url, auth=user.auth)
         redirect_url = '{}{}nodes/{}/'.format(API_DOMAIN, API_BASE, project._id)
         assert res.status_code == 302
@@ -49,7 +34,7 @@ class TestGuidDetail:
 
         #test_redirect_to_registration_view
         registration = RegistrationFactory()
-        url = url_guids_detail(registration._id)
+        url = '/{}guids/{}/'.format(API_BASE, registration._id)
         res = app.get(url, auth=user.auth)
         redirect_url = '{}{}registrations/{}/'.format(API_DOMAIN, API_BASE, registration._id)
         assert res.status_code == 302
@@ -57,7 +42,7 @@ class TestGuidDetail:
 
         #test_redirect_to_collections_view
         collection = CollectionFactory()
-        url = url_guids_detail(collection._id)
+        url = '/{}guids/{}/'.format(API_BASE, collection._id)
         res = app.get(url, auth=user.auth)
         redirect_url = '{}{}collections/{}/'.format(API_DOMAIN, API_BASE, collection._id)
         assert res.status_code == 302
@@ -72,7 +57,7 @@ class TestGuidDetail:
         )
         test_file.save()
         guid = test_file.get_guid(create=True)
-        url = url_guids_detail(guid._id)
+        url = '/{}guids/{}/'.format(API_BASE, guid._id)
         res = app.get(url, auth=user.auth)
         redirect_url = '{}{}files/{}/'.format(API_DOMAIN, API_BASE, test_file._id)
         assert res.status_code == 302
@@ -80,21 +65,24 @@ class TestGuidDetail:
 
         #test_redirect_to_comment_view
         comment = CommentFactory()
-        url = url_guids_detail(comment._id)
+        url = '/{}guids/{}/'.format(API_BASE, comment._id)
         res = app.get(url, auth=user.auth)
         redirect_url = '{}{}comments/{}/'.format(API_DOMAIN, API_BASE, comment._id)
         assert res.status_code == 302
         assert res.location == redirect_url
 
         #test_redirect_throws_404_for_invalid_guids
-        url = url_guids_detail('fakeguid')
+        url = '/{}guids/{}/'.format(API_BASE, 'fakeguid')
         res = app.get(url, auth=user.auth, expect_errors=True)
         assert res.status_code == 404
 
-    def test_redirects_through_view_only_link(self, app, project, add_private_link, user):
+    def test_redirects_through_view_only_link(self, app, project, user):
 
         #test_redirect_when_viewing_private_project_through_view_only_link
-        view_only_link = add_private_link()
+        view_only_link = PrivateLinkFactory(anonymous=False)
+        view_only_link.nodes.add(project)
+        view_only_link.save()
+
         url = '/{}guids/{}/?view_only={}'.format(API_BASE, project._id, view_only_link.key)
         res = app.get(url, auth=user.auth)
         redirect_url = '{}{}nodes/{}/?view_only={}'.format(API_DOMAIN, API_BASE, project._id, view_only_link.key)
