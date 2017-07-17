@@ -100,3 +100,6 @@ volumes:
 
 #  preprints-sync:
 #    external: true
+
+#  registries-sync:
+#    external: true
