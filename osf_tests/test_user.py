@@ -991,9 +991,8 @@ class TestCitationProperties:
     @pytest.fixture()
     def unreg_user(self, referrer, project, email):
         user = UnregUserFactory()
-        given_name = 'Fredd Merkury'
         user.add_unclaimed_record(node=project,
-            given_name=given_name, referrer=referrer,
+            given_name=user.fullname, referrer=referrer,
             email=email)
         user.save()
         return user
