@@ -256,8 +256,7 @@ class UserDetail(JSONAPIBaseView, generics.RetrieveUpdateAPIView, UserMixin):
     def get_serializer_class(self):
         if self.request.auth:
             scopes = self.request.auth.attributes['accessTokenScope']
-            if (CoreScopes.USER_EMAIL_READ in normalize_scopes(scopes)
-                and self.request.user == self.get_user()):
+            if (CoreScopes.USER_EMAIL_READ in normalize_scopes(scopes) and self.request.user == self.get_user()):
                 return ReadEmailUserDetailSerializer
         return UserDetailSerializer
 
