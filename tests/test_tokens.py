@@ -86,8 +86,7 @@ class SanctionTokenHandlerBase(OsfTestCase):
         self.reg = Node.find_one(Q(self.Model.SHORT_NAME, 'eq', self.sanction))
         self.user = self.reg.creator
 
-    @mock_patch_update_share
-    def test_sanction_handler(self, mock_update_share):
+    def test_sanction_handler(self):
         if not self.kind:
             return
         approval_token = self.sanction.approval_state[self.user._id]['approval_token']
@@ -96,7 +95,6 @@ class SanctionTokenHandlerBase(OsfTestCase):
             with mock.patch('website.tokens.handlers.{0}_handler'.format(self.kind)) as mock_handler:
                 handler.to_response()
                 mock_handler.assert_called_with('approve', self.reg, self.reg.registered_from)
-        assert mock_update_share.called
 
     def test_sanction_handler_no_sanction(self):
         if not self.kind:

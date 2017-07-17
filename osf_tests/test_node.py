@@ -17,7 +17,7 @@ from website.exceptions import NodeStateError
 from website.util import permissions, disconnected_from_listeners, api_url_for, web_url_for
 from website.citations.utils import datetime_to_csl
 from website import language, settings
-from website.project.tasks import on_node_updated
+from website.project.tasks import on_node_updated, update_share
 
 from osf.models import (
     AbstractNode,
@@ -58,7 +58,7 @@ from osf_tests.factories import (
 )
 from .factories import get_default_metaschema
 from addons.wiki.tests.factories import NodeWikiFactory
-from .utils import capture_signals, assert_datetime_equal, mock_archive
+from .utils import capture_signals, assert_datetime_equal, mock_archive, MockShareResponse
 
 pytestmark = pytest.mark.django_db
 
@@ -1084,17 +1084,6 @@ class TestContributorMethods:
                 auth=auth
             )
 
-    def test_add_contributor_updates_preprints(self, node, user, auth):
-        # A user is added as a contributor
-        user2 = UserFactory()
-        node.add_contributor(contributor=user2, auth=auth)
-        node.save()
-        assert node.is_contributor(user2) is True
-        last_log = node.logs.all().order_by('-date')[0]
-        assert last_log.action == 'contributor_added'
-        assert last_log.params['contributors'] == [user2._id]
-
-        assert user2 in user.recently_added.all()
 
 
 # Copied from tests/test_models.py
@@ -3419,12 +3408,32 @@ class TestOnNodeUpdate:
             graph = kwargs['json']['data']['attributes']['data']['@graph']
             assert graph[1]['is_deleted'] == case['is_deleted']
 
-    @mock.patch('website.project.tasks.settings.SHARE_URL', 'a_real_url')
-    @mock.patch('website.project.tasks.settings.SHARE_API_TOKEN', 'a_real_token')
+    @mock.patch('website.project.tasks.settings.SHARE_URL', None)
+    @mock.patch('website.project.tasks.settings.SHARE_API_TOKEN', None)
     @mock.patch('website.project.tasks.requests')
     def test_skips_no_settings(self, requests, node, user, request_context):
         on_node_updated(node._id, user._id, False, {'is_public'})
         assert requests.post.called is False
+
+    @mock.patch('website.project.tasks.settings.SHARE_URL', 'a_real_url')
+    @mock.patch('website.project.tasks.settings.SHARE_API_TOKEN', 'a_real_token')
+    @mock.patch('website.project.tasks._async_update_share.delay')
+    @mock.patch('website.project.tasks.requests')
+    def test_call_async_update_on_500_failure(self, requests, mock_async, node, user, request_context):
+        requests.post.return_value = MockShareResponse(501)
+        on_node_updated(node._id, user._id, False, {'is_public'})
+        assert mock_async.called
+
+    @mock.patch('website.project.tasks.settings.SHARE_URL', 'a_real_url')
+    @mock.patch('website.project.tasks.settings.SHARE_API_TOKEN', 'a_real_token')
+    @mock.patch('website.project.tasks.send_desk_share_error')
+    @mock.patch('website.project.tasks._async_update_share.delay')
+    @mock.patch('website.project.tasks.requests')
+    def test_no_call_async_update_on_400_failure(self, requests, mock_async, mock_mail, node, user, request_context):
+        requests.post.return_value = MockShareResponse(400)
+        on_node_updated(node._id, user._id, False, {'is_public'})
+        assert mock_mail.called
+        assert not mock_async.called
 
 # copied from tests/test_models.py
 class TestRemoveNode:

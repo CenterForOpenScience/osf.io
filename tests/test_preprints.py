@@ -24,8 +24,10 @@ from osf_tests.factories import (
     PreprintProviderFactory,
     SubjectFactory,
 )
+from osf_tests.utils import MockShareResponse
 from tests.utils import assert_logs
 from api_tests import utils as api_test_utils
+from website.preprints.tasks import update_preprint_share
 from website.project.views.contributor import find_preprint_provider
 
 
@@ -626,7 +628,7 @@ class TestPreprintSaveShareHook(OsfTestCase):
         assert not mock_on_preprint_updated.called
 
     @mock.patch('website.preprints.tasks.requests')
-    @mock.patch('website.project.tasks.settings.SHARE_URL', 'ima_real_website')
+    @mock.patch('website.preprints.tasks.settings.SHARE_URL', 'ima_real_website')
     def test_send_to_share_is_true(self, mock_requests):
         self.preprint.provider.access_token = 'Snowmobiling'
         self.preprint.provider.save()
@@ -635,7 +637,7 @@ class TestPreprintSaveShareHook(OsfTestCase):
         assert mock_requests.post.called
 
     @mock.patch('website.preprints.tasks.update_preprint_share')
-    @mock.patch('website.project.tasks.settings.SHARE_URL', 'ima_real_website')
+    @mock.patch('website.preprints.tasks.settings.SHARE_URL', 'ima_real_website')
     def test_node_contributor_changes_updates_preprints_share(self, mock_update_preprint_share):
         # A user is added as a contributor
         self.preprint.is_published = True
@@ -662,3 +664,20 @@ class TestPreprintSaveShareHook(OsfTestCase):
         node.remove_contributor(contributor=user, auth=self.auth)
         assert mock_update_preprint_share.call_count == 5
 
+    @mock.patch('website.preprints.tasks.settings.SHARE_URL', 'a_real_url')
+    @mock.patch('website.preprints.tasks._async_update_preprint_share.delay')
+    @mock.patch('website.preprints.tasks.requests')
+    def test_call_async_update_on_500_failure(self, requests, mock_async):
+        self.preprint.provider.access_token = 'Snowmobiling'
+        requests.post.return_value = MockShareResponse(501)
+        update_preprint_share(self.preprint)
+        assert mock_async.called
+
+    @mock.patch('website.preprints.tasks.settings.SHARE_URL', 'a_real_url')
+    @mock.patch('website.preprints.tasks._async_update_preprint_share.delay')
+    @mock.patch('website.preprints.tasks.requests')
+    def test_no_call_async_update_on_400_failure(self, requests, mock_async):
+        self.preprint.provider.access_token = 'Snowmobiling'
+        requests.post.return_value = MockShareResponse(400)
+        update_preprint_share(self.preprint)
+        assert not mock_async.called

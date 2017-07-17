@@ -446,7 +446,7 @@ class RegistrationWithChildNodesRetractionModelTestCase(OsfTestCase):
         assert mock_format_registration.called
         assert not mock_format_node.called
 
-    def test_disapproval_cancels_retraction_on_descendant_nodes(self, mock_update_share):
+    def test_disapproval_cancels_retraction_on_descendant_nodes(self):
         # Initiate retraction for parent registration
         self.registration.retract_registration(self.user)
         self.registration.save()
