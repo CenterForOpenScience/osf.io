@@ -314,6 +314,7 @@ class TestNodeFilesList(ApiTestCase):
         self.add_github()
         url = '/{}nodes/{}/files/github/'.format(API_BASE, self.project._id)
         res = self.app.get(url, auth=self.user.auth, expect_errors=True)
+        assert False
         assert_equal(res.status_code, 503)
         assert_in('detail', res.json['errors'][0])
 
