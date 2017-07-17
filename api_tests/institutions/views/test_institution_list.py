@@ -19,16 +19,10 @@ class TestInstitutionList:
     def url_institution(self):
         return '/{}institutions/'.format(API_BASE)
 
-    @pytest.fixture()
-    def res_institutions(self, app, url_institution):
-        return app.get(url_institution)
+    def test_return_all_institutions(self, app, institution_one, institution_two, url_institution):
+        res_institutions = app.get(url_institution)
+        data_institutions = res_institutions.json['data']
 
-    @pytest.fixture()
-    def data_institutions(self, res_institutions):
-        return res_institutions.json['data']
-
-
-    def test_return_all_institutions(self, institution_one, institution_two, url_institution, res_institutions, data_institutions):
         assert res_institutions.status_code == 200
 
         ids = [each['id'] for each in data_institutions]

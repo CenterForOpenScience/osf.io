@@ -9,6 +9,12 @@ from osf_tests.factories import (
 )
 from website.util import permissions
 
+def make_payload(*node_ids):
+    data = [
+        {'type': 'nodes', 'id': id_} for id_ in node_ids
+    ]
+    return {'data': data}
+
 @pytest.mark.django_db
 class TestInstitutionRelationshipNodes:
 
@@ -49,16 +55,7 @@ class TestInstitutionRelationshipNodes:
         return '/{}institutions/{}/relationships/nodes/'.format(API_BASE, institution._id)
 
 
-    @pytest.fixture()
-    def make_payload(self):
-        def payload(*node_ids):
-            data = [
-                {'type': 'nodes', 'id': id_} for id_ in node_ids
-            ]
-            return {'data': data}
-        return payload
-
-    def test_auth_get_nodes(self, institution, user, node, node_public, node_private, app, url_institution_nodes):
+    def test_auth_get_nodes(self, app, institution, user, node, node_public, node_private, url_institution_nodes):
         #test_get_nodes_no_auth
         res = app.get(url_institution_nodes)
 
@@ -77,7 +74,7 @@ class TestInstitutionRelationshipNodes:
         assert node_public._id in node_ids
         assert node_private._id not in node_ids
 
-    def test_node_or_type_does_not_exist(self, app, user, url_institution_nodes, make_payload):
+    def test_node_or_type_does_not_exist(self, app, user, url_institution_nodes):
         #test_node_does_not_exist
         res = app.post_json_api(
             url_institution_nodes,
@@ -99,7 +96,7 @@ class TestInstitutionRelationshipNodes:
 
         assert res.status_code == 409
 
-    def test_user_with_nodes_and_permissions(self, user, app, url_institution_nodes, make_payload, institution):
+    def test_user_with_nodes_and_permissions(self, user, app, url_institution_nodes, institution):
         node = NodeFactory(creator=user)
         res = app.post_json_api(
             url_institution_nodes,
@@ -114,7 +111,7 @@ class TestInstitutionRelationshipNodes:
         node.reload()
         assert institution in node.affiliated_institutions.all()
 
-    def test_user_does_not_have_node(self, app, url_institution_nodes, make_payload, user, institution):
+    def test_user_does_not_have_node(self, app, url_institution_nodes, user, institution):
         node = NodeFactory()
         res = app.post_json_api(
             url_institution_nodes,
@@ -127,7 +124,7 @@ class TestInstitutionRelationshipNodes:
         node.reload()
         assert institution not in node.affiliated_institutions.all()
 
-    def test_user_is_admin(self, app, url_institution_nodes, make_payload, user, institution):
+    def test_user_is_admin(self, app, url_institution_nodes, user, institution):
         node = NodeFactory(creator=user)
         res = app.post_json_api(
             url_institution_nodes,
@@ -138,7 +135,7 @@ class TestInstitutionRelationshipNodes:
         node.reload()
         assert institution in node.affiliated_institutions.all()
 
-    def test_user_is_read_write(self, app, url_institution_nodes, make_payload, institution):
+    def test_user_is_read_write(self, app, url_institution_nodes, institution):
         user = AuthUserFactory()
         user.affiliated_institutions.add(institution)
         node = NodeFactory()
@@ -154,7 +151,7 @@ class TestInstitutionRelationshipNodes:
         node.reload()
         assert institution in node.affiliated_institutions.all()
 
-    def test_user_is_read_only(self, app, url_institution_nodes, make_payload, institution):
+    def test_user_is_read_only(self, app, url_institution_nodes, institution):
         user = AuthUserFactory()
         user.affiliated_institutions.add(institution)
         node = NodeFactory()
@@ -172,7 +169,7 @@ class TestInstitutionRelationshipNodes:
         node.reload()
         assert institution not in node.affiliated_institutions.all()
 
-    def test_user_is_admin_but_not_affiliated(self, app, url_institution_nodes, make_payload, institution):
+    def test_user_is_admin_but_not_affiliated(self, app, url_institution_nodes, institution):
         user = AuthUserFactory()
         node = NodeFactory(creator=user)
         res = app.post_json_api(
@@ -186,7 +183,7 @@ class TestInstitutionRelationshipNodes:
         node.reload()
         assert institution not in node.affiliated_institutions.all()
 
-    def test_add_some_with_permissions_others_without(self, user, app, url_institution_nodes, make_payload, institution):
+    def test_add_some_with_permissions_others_without(self, user, app, url_institution_nodes, institution):
         node_one = NodeFactory(creator=user)
         node_two = NodeFactory()
         res = app.post_json_api(
@@ -202,7 +199,7 @@ class TestInstitutionRelationshipNodes:
         assert institution not in node_one.affiliated_institutions.all()
         assert institution not in node_two.affiliated_institutions.all()
 
-    def test_add_some_existant_others_not(self, institution, node, app, url_institution_nodes, make_payload, user):
+    def test_add_some_existant_others_not(self, institution, node, app, url_institution_nodes, user):
         assert institution in node.affiliated_institutions.all()
 
         node_one= NodeFactory(creator=user)
@@ -218,7 +215,7 @@ class TestInstitutionRelationshipNodes:
         assert institution in node.affiliated_institutions.all()
         assert institution in node_one.affiliated_institutions.all()
 
-    def test_only_add_existent_with_mixed_permissions(self, institution, node, node_public, app, url_institution_nodes, make_payload, user):
+    def test_only_add_existent_with_mixed_permissions(self, institution, node, node_public, app, url_institution_nodes, user):
         assert institution in node.affiliated_institutions.all()
         assert institution in node_public.affiliated_institutions.all()
 
@@ -235,7 +232,7 @@ class TestInstitutionRelationshipNodes:
         assert institution in node.affiliated_institutions.all()
         assert institution in node_public.affiliated_institutions.all()
 
-    def test_only_add_existent_with_permissions(self, user, node, institution, app, url_institution_nodes, make_payload):
+    def test_only_add_existent_with_permissions(self, user, node, institution, app, url_institution_nodes):
         node_one = NodeFactory(creator=user)
         node_one.affiliated_institutions.add(institution)
         node_one.save()
@@ -250,7 +247,7 @@ class TestInstitutionRelationshipNodes:
 
         assert res.status_code == 204
 
-    def test_delete_user_is_admin(self, app, url_institution_nodes, make_payload, node, user, institution):
+    def test_delete_user_is_admin(self, app, url_institution_nodes, node, user, institution):
         res = app.delete_json_api(
             url_institution_nodes,
             make_payload(node._id),
@@ -260,7 +257,7 @@ class TestInstitutionRelationshipNodes:
         assert res.status_code == 204
         assert institution not in node.affiliated_institutions.all()
 
-    def test_delete_user_is_read_write(self, node_private, user, app, url_institution_nodes, make_payload, institution):
+    def test_delete_user_is_read_write(self, node_private, user, app, url_institution_nodes, institution):
         node_private.add_contributor(user)
         node_private.save()
 
@@ -274,7 +271,7 @@ class TestInstitutionRelationshipNodes:
         assert res.status_code == 204
         assert institution not in node_private.affiliated_institutions.all()
 
-    def test_delete_user_is_read_only(self, node_private, user, app, url_institution_nodes, make_payload, institution):
+    def test_delete_user_is_read_only(self, node_private, user, app, url_institution_nodes, institution):
         node_private.add_contributor(user, permissions='read')
         node_private.save()
 
@@ -289,7 +286,7 @@ class TestInstitutionRelationshipNodes:
         assert res.status_code == 403
         assert institution in node_private.affiliated_institutions.all()
 
-    def test_delete_user_is_admin_and_affiliated_with_inst(self, institution, node, app, url_institution_nodes, make_payload, user):
+    def test_delete_user_is_admin_and_affiliated_with_inst(self, institution, node, app, url_institution_nodes, user):
         assert institution in node.affiliated_institutions.all()
 
         res = app.delete_json_api(
@@ -302,7 +299,7 @@ class TestInstitutionRelationshipNodes:
         node.reload()
         assert institution not in node.affiliated_institutions.all()
 
-    def test_delete_user_is_admin_but_not_affiliated_with_inst(self, institution, app, url_institution_nodes, make_payload):
+    def test_delete_user_is_admin_but_not_affiliated_with_inst(self, institution, app, url_institution_nodes):
         user = AuthUserFactory()
         node = NodeFactory(creator=user)
         node.affiliated_institutions.add(institution)
@@ -319,7 +316,7 @@ class TestInstitutionRelationshipNodes:
         node.reload()
         assert institution not in node.affiliated_institutions.all()
 
-    def test_delete_user_is_affiliated_with_inst_and_mixed_permissions_on_nodes(self, app, url_institution_nodes, make_payload, node, node_public, user):
+    def test_delete_user_is_affiliated_with_inst_and_mixed_permissions_on_nodes(self, app, url_institution_nodes, node, node_public, user):
         res = app.delete_json_api(
             url_institution_nodes,
             make_payload(node._id, node_public._id),
