@@ -27,7 +27,7 @@ class TestLogContributors(LogsTestCase):
         assert contributors['family_name'] == user_one.family_name
         assert contributors['full_name'] == user_one.fullname
         assert contributors['given_name'] == user_one.given_name
-        assert contributors['unregistered_name'] == None
+        assert contributors['unregistered_name'] is None
 
     def test_unregistered_contributor_added_has_contributor_info_in_params(self, app, user_one):
         project = ProjectFactory(creator=user_one)

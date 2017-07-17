@@ -3,7 +3,6 @@ import pytest
 from api.base.settings.defaults import API_BASE
 from api_tests import utils as api_utils
 from framework.auth.core import Auth
-from osf.models import NodeLog
 from osf_tests.factories import (
     ProjectFactory,
     AuthUserFactory,
@@ -21,10 +20,6 @@ class LogsTestCase:
     @pytest.fixture()
     def user_two(self):
         return AuthUserFactory()
-
-    @pytest.fixture()
-    def action_set(self):
-        return NodeLog.actions
 
     @pytest.fixture()
     def node_private(self, user_one):
