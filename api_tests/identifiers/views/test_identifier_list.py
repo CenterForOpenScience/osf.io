@@ -18,7 +18,7 @@ def user():
 
 @pytest.fixture()
 def all_identifiers():
-    return Identifier.find()
+    return Identifier.objects.all()
 
 @pytest.mark.django_db
 class TestRegistrationIdentifierList:
@@ -107,7 +107,7 @@ class TestRegistrationIdentifierList:
         url = '/{}registrations/{}/identifiers/'.format(API_BASE, node._id)
         res = app.get(url, expect_errors=True)
         assert res.status_code == 404
-#
+
 @pytest.mark.django_db
 class TestNodeIdentifierList:
 
