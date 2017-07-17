@@ -891,11 +891,12 @@ var dialog = function(title, message, actionButtonLabel, options) {
 
 // Formats contributor family names for display.  Takes in project, number of contributors, and getFamilyName function
 var contribNameFormat = function(node, number, getFamilyName) {
-    const charLimit = 21;
-    let contribs = '';
-    let otherContribs = '';
-    let ellipses = '...';
+    var charLimit = 21;
+    var ellipses = '...';
+    var contribs = '';
+    var otherContribs = '';
 
+    // set base string to return
     if (number === 1) {
         contribs = getFamilyName(0, node);
     } else if (number === 2) {
@@ -905,6 +906,7 @@ var contribNameFormat = function(node, number, getFamilyName) {
         otherContribs = ` + ${number - 2}`;
     }
 
+    // handle charLimit overflow
     if (number === 1 && contribs.length > charLimit) {
         contribs.substring(0, charLimit - ellipses.length);
     } else if (number == 2 && contribs.length > charLimit) {
@@ -916,6 +918,17 @@ var contribNameFormat = function(node, number, getFamilyName) {
     } else if (number > 2 && contribs.length < charLimit) {
         contribs = contribs.substring(0, charLimit - (otherContribs.length)).trim();
         contribs = contribs.concat(otherContribs);
+    }
+
+    // handle long first name edge cases
+    if (number === 2 && getFamilyName(0, node).length > charLimit - 10) {
+        otherContribs = ` + ${number - 1}`;
+        contribs = getFamilyName(0, node).substring(0, charLimit - (ellipses.length + otherContribs.length));
+        contribs = contribs.concat(ellipses, otherContribs);
+    } else if (number === 3 && getFamilyName(0, node).length > charLimit - 10) {
+        otherContribs = ` + ${number - 1}`;
+        contribs = getFamilyName(0, node).substring(0, charLimit - (ellipses.length + otherContribs.length)).trim();
+        contribs = contribs.concat(ellipses, otherContribs);
     }
 
     return contribs
