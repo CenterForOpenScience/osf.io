@@ -1006,9 +1006,9 @@ class TestCitationProperties:
         # Tests the csl name for a registered user
         if user.is_registered:
             assert bool(
-                user.csl_name(user._id) ==
+                user.csl_name() ==
                 {
-                    'given': user.given_name,
+                    'given': user.csl_given_name,
                     'family': user.family_name,
                 }
             )
