@@ -868,7 +868,9 @@ class DraftRegistrationApproval(Sanction):
         draft = DraftRegistration.find_one(
             Q('approval', 'eq', self)
         )
-        auth = Auth(draft.initiator)
+
+        initiator = draft.initiator.merged_by or draft.initiator
+        auth = Auth(initiator)
         registration = draft.register(
             auth=auth,
             save=True
@@ -876,14 +878,14 @@ class DraftRegistrationApproval(Sanction):
         registration_choice = self.meta['registration_choice']
 
         if registration_choice == 'immediate':
-            sanction = functools.partial(registration.require_approval, draft.initiator)
+            sanction = functools.partial(registration.require_approval, initiator)
         elif registration_choice == 'embargo':
             embargo_end_date = parse_date(self.meta.get('embargo_end_date'))
             if not embargo_end_date.tzinfo:
                 embargo_end_date = embargo_end_date.replace(tzinfo=pytz.UTC)
             sanction = functools.partial(
                 registration.embargo_registration,
-                draft.initiator,
+                initiator,
                 embargo_end_date
             )
         else:
@@ -900,7 +902,8 @@ class DraftRegistrationApproval(Sanction):
         draft = DraftRegistration.find_one(
             Q('approval', 'eq', self)
         )
-        self._send_rejection_email(draft.initiator, draft)
+        initiator = draft.initiator.merged_by or draft.initiator
+        self._send_rejection_email(initiator, draft)
 
 
 class EmbargoTerminationApproval(EmailApprovableSanction):
