@@ -909,7 +909,7 @@ var contribNameFormat = function(node, number, getFamilyName) {
     // handle charLimit overflow
     if (number === 1 && contribs.length > charLimit) {
         contribs.substring(0, charLimit - ellipses.length);
-    } else if (number == 2 && contribs.length > charLimit) {
+    } else if (number === 2 && contribs.length > charLimit) {
         contribs = contribs.substring(0, charLimit - (ellipses.length)).trim();
         contribs = contribs.concat(ellipses);
     } else if (number > 2 && (contribs.length + otherContribs.length) > charLimit) {
@@ -931,7 +931,7 @@ var contribNameFormat = function(node, number, getFamilyName) {
         contribs = contribs.concat(ellipses, otherContribs);
     }
 
-    return contribs
+    return contribs;
 };
 
 // Returns single name representing contributor, First match found of family name, given name, middle names, full name.
