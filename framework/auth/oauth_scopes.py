@@ -127,7 +127,7 @@ class ComposedScopes(object):
     USERS_CREATE = USERS_READ + (CoreScopes.USERS_CREATE, )
 
     # User extensions
-    USER_EMAIL_READ =  (CoreScopes.USER_EMAIL_READ, )
+    USER_EMAIL_READ = (CoreScopes.USER_EMAIL_READ, )
 
     # Applications collection
     APPLICATIONS_READ = (CoreScopes.APPLICATIONS_READ, )
