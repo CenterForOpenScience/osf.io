@@ -9,7 +9,7 @@ class Migration(migrations.Migration):
                 preprint.date_modified = preprint.node.date_modified
                 preprint.save()
 
-    dependencies = [('osf', '0039_maintenancestate')]
+    dependencies = [('osf', '0041_auto_20170706_1024')]
 
     operations = [
         migrations.RunPython(fix_preprint_modified_dates)
