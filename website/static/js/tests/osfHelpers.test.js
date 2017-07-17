@@ -266,7 +266,7 @@ describe('osfHelpers', () => {
 
     describe('parseName', () => {
         it('returns a name object with attributes for a suffix and a first, middle, and last name', () => {
-            const names = [
+            var names = [
                 'John Snow',
                 'John Stark Snow',
                 'John Snow Jr',
@@ -276,7 +276,7 @@ describe('osfHelpers', () => {
                 'John Stark Snow Sr.',
                 'John Jacob Jinglheimer Smitt Sr.'
             ];
-            const expectedOutput = [
+            var expectedOutput = [
                 {firstName: 'John', middleName: '', lastName: 'Snow', suffix: ''},
                 {firstName: 'John', middleName: 'Stark', lastName: 'Snow', suffix: ''},
                 {firstName: 'John', middleName: '', lastName: 'Snow', suffix: 'Jr'},

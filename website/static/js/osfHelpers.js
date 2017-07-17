@@ -373,8 +373,9 @@ var decodeText = function(text) {
 };
 
 var parseName = function(text) {
-    const suffixList = ['jr','jnr','sr','snr','dr','phd','i','ii','iii','iv','v','md','esq'];
-    let fullName = {
+    // list for determining the difference between a last name and a suffix in case a period is not used
+    var suffixList = ['jr','jnr','sr','snr','dr','phd','i','ii','iii','iv','v','md','esq'];
+    var fullName = {
         firstName: '',
         middleName: '',
         lastName: '',
@@ -385,32 +386,31 @@ var parseName = function(text) {
         return name.trim().length > 0;
     });
 
+    // sets fullName.firstName to the first item in the array and removes it from the array
     if (text.length >= 1) {
         fullName.firstName = text.shift();
     }
 
+    // determines if the last item on the array is a suffix or a last name and removes it from the array
+    // sets the value on fullName accordingly
     if (text.length >= 1) {
-        const name = text.pop();
-        const nameLower = name.toLowerCase();
-        if (name.includes('.') || suffixList.includes(nameLower)) {
-            fullName.suffix = name;
+        var item = text.pop();
+        var itemLower = item.toLowerCase();
+        if (item.includes('.') || suffixList.includes(itemLower)) {
+            fullName.suffix = item;
         } else {
-            fullName.lastName = name;
+            fullName.lastName = item;
         }
     }
 
+    // determines if fullName.lastName has a value, if it does not, sets it to the last value on the array
     if (!fullName.lastName && text.length >= 1) {
         fullName.lastName = text.pop();
     } 
 
+    // determines if there are any more values on the array, any values remaining are set to fullName.middleName
     if (text.length >= 1) {
-        text.forEach(function(name) {
-            if (!fullName.middleName) {
-                fullName.middleName = fullName.middleName.concat(name);
-            } else {
-                fullName.middleName = fullName.middleName.concat(' ', name);
-            }
-        });
+        fullName.middleName = text.join(' ');
     }
 
     return fullName;

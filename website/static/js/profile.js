@@ -469,7 +469,7 @@ var NameViewModel = function(urls, modes, preventUnsaved, fetchCallback) {
     };
 
     self.citeApa = ko.computed(function() {
-        const fullName = $osf.parseName($.trim(self.full()));
+        var fullName = $osf.parseName($.trim(self.full()));
 
         var cite = self.family();
         var given = $.trim(self.given() + ' ' + self.middle());
@@ -497,7 +497,7 @@ var NameViewModel = function(urls, modes, preventUnsaved, fetchCallback) {
     });
 
     self.citeMla = ko.computed(function() {
-        const fullName = $osf.parseName($.trim(self.full()));
+        var fullName = $osf.parseName($.trim(self.full()));
 
         var cite = self.family();
         if (self.given()) {
