@@ -123,6 +123,9 @@ def get_user(email=None, password=None, token=None, external_id_provider=None, e
     """
     from osf.models import OSFUser, Email
 
+    if not any([email, password, token, external_id_provider, external_id_provider]):
+        return None
+
     if password and not email:
         raise AssertionError('If a password is provided, an email must also be provided.')
 
