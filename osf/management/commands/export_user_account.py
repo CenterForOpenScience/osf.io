@@ -211,7 +211,7 @@ def export_account(user_id, only_private=False, only_admin=False, export_files=T
 
     """
     user = OSFUser.objects.get(guids___id=user_id)
-    proceed = raw_input('\nUser has {} GB of data in OSFStorage that will be exported.\nWould you like to continue? [y/n] '.format(get_usage(user)))
+    proceed = raw_input('\nUser has {:.2f} GB of data in OSFStorage that will be exported.\nWould you like to continue? [y/n] '.format(get_usage(user)))
     if not proceed or proceed.lower() != 'y':
         print('Exiting...')
         exit(1)
@@ -231,7 +231,7 @@ def export_account(user_id, only_private=False, only_admin=False, export_files=T
         .select_related('node')
     )
 
-    preprint_projects_exported = [preprint.node._id for preprint in preprints_to_export]
+    preprint_projects_exported = preprints_to_export.values_list('node__guids___id', flat=True)
     projects_to_export = (user.nodes
         .filter(is_deleted=False, type='osf.node')
         .exclude(guids___id__in=preprint_projects_exported)
@@ -251,6 +251,7 @@ def export_account(user_id, only_private=False, only_admin=False, export_files=T
 
     print('Creating {} ({}).zip ...'.format(user.fullname, user_id))
     shutil.make_archive('{} ({})'.format(user.fullname, user_id), 'zip', base_dir)
+    shutil.rmtree(base_dir)
 
     finished_msg = 'Finished without errors.' if not ERRORS else 'Finished with errors logged below.'
     print(finished_msg)
