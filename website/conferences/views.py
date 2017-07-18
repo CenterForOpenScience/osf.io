@@ -10,10 +10,13 @@ from modularodm.exceptions import ModularOdmException
 
 from addons.osfstorage.models import OsfStorageFile
 from framework.auth import get_or_create_user
+from framework.auth.cas import get_set_password_url
 from framework.exceptions import HTTPError
 from framework.flask import redirect
 from framework.transactions.handlers import no_auto_transaction
+
 from osf.models import AbstractNode as Node, Conference, Tag
+
 from website import settings
 from website.conferences import utils, signals
 from website.conferences.message import ConferenceMessage, ConferenceError
@@ -84,12 +87,7 @@ def add_poster_by_email(conference, message):
             user.save()
 
             # must save the user first before accessing user._id
-            set_password_url = web_url_for(
-                'reset_password_get',
-                uid=user._id,
-                token=user.verification_key_v2['token'],
-                _absolute=True,
-            )
+            set_password_url = get_set_password_url(user._id, meetings=True)
         else:
             set_password_url = None
 

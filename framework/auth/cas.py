@@ -58,6 +58,25 @@ class CasClient(object):
     def __init__(self, base_url):
         self.BASE_URL = base_url
 
+    def get_set_password_url(self, user_id, meetings=False):
+        """
+        Get CAS password set URL (for OSF4Meetings) or reset URL (for Forgot/Reset Password).
+
+        :param user_id: the user's GUID
+        :param meetings: True if it is for new users from OSF4Meetings
+        :return: the CAS password set/reset url
+        """
+
+        url = furl.furl(self.BASE_URL)
+        url.path.segments.append('account')
+        url.path.segments.append('findAccount')
+        url.args.add('target', 'RESET_PASSWORD')
+        url.args.add('user', user_id)
+        if meetings:
+            url.args.add('campaign', 'meetings')
+
+        return url.url
+
     def get_login_url(self, service_url, campaign=None, username=None, verification_key=None):
         """
         Get CAS login url with `service_url` as redirect location. There are three options:
@@ -211,6 +230,17 @@ def get_client():
     return CasClient(settings.CAS_SERVER_URL)
 
 
+def get_set_password_url(*arg, **kwargs):
+    """
+    Convenience function for getting a password set/reset URL.
+
+    :param arg: Same args that `CasClient.get_set_password_url` receives
+    :param kwargs: Same kwargs that `CasClient.get_set_password_url` receives
+    """
+
+    return get_client().get_set_password_url(*arg, **kwargs)
+
+
 def get_login_url(*args, **kwargs):
     """
     Convenience function for getting a login URL for a service.
@@ -279,12 +309,11 @@ def make_response_from_ticket(ticket, service_url):
 
 def get_user_from_cas_resp(cas_resp):
     """
-    Given a CAS service validation response, attempt to retrieve user information and next action.
-    The `user` in `cas_resp` is the unique GUID of the user. Please do not use the primary key `id`
-    or the email `username`. This holds except for the first step of ORCiD login.
+    Given a CAS service validation response, attempt to retrieve the user. The `user` in `cas_resp` is the unique GUID
+    of the user. Please do not use the primary key `id` or the email `username`.
 
     :param cas_resp: the cas service validation response
-    :return: the user, the external_credential, and the next action
+    :return: the user if found or None
     """
     from osf.models import OSFUser
 
@@ -301,8 +330,7 @@ def validate_external_credential(external_credential):
     of the external provider, separated by `#`. Return the provider and id on success.
 
     :param external_credential: the external credential string
-    :return: provider and id
-
+    :return: a dictionary of provider and technical id
     """
     # wrong format
     if not external_credential or '#' not in external_credential:

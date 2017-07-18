@@ -168,7 +168,7 @@ class TestCASTicketAuthentication(OsfTestCase):
     @mock.patch('framework.auth.cas.CasClient.service_validate')
     def test_make_response_from_ticket_success(self, mock_service_validate, mock_get_user_from_cas_resp):
         mock_service_validate.return_value = make_successful_response(self.user)
-        mock_get_user_from_cas_resp.return_value = (self.user, None, 'authenticate')
+        mock_get_user_from_cas_resp.return_value = self.user
         ticket = fake.md5()
         service_url = 'http://localhost:5000/'
         resp = cas.make_response_from_ticket(ticket, service_url)
@@ -180,7 +180,7 @@ class TestCASTicketAuthentication(OsfTestCase):
     @mock.patch('framework.auth.cas.CasClient.service_validate')
     def test_make_response_from_ticket_failure(self, mock_service_validate, mock_get_user_from_cas_resp):
         mock_service_validate.return_value = make_failure_response()
-        mock_get_user_from_cas_resp.return_value = (None, None, None)
+        mock_get_user_from_cas_resp.return_value = None
         ticket = fake.md5()
         service_url = 'http://localhost:5000/'
         resp = cas.make_response_from_ticket(ticket, service_url)
@@ -198,4 +198,3 @@ class TestCASTicketAuthentication(OsfTestCase):
         resp = cas.make_response_from_ticket(ticket, service_url)
         self.user.reload()
         assert_true(self.user.verification_key is None)
-
