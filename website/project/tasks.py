@@ -38,7 +38,7 @@ def update_share(node):
     # Wrapper that ensures share_url and token exist
     if settings.SHARE_URL:
         if not settings.SHARE_API_TOKEN:
-            return logger.warning('SHARE_URL or SHARE_API_TOKEN not set. Could not send "{}" to SHARE.'.format(node._id))
+            return logger.warning('SHARE_API_TOKEN not set. Could not send "{}" to SHARE.'.format(node._id))
         _update_share(node)
 
 def _update_share(node):
