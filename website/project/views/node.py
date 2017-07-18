@@ -692,7 +692,6 @@ def _view_project(node, auth, primary=False,
             'dashboard_id': bookmark_collection_id,
             'institutions': get_affiliated_institutions(user) if user else [],
         },
-        'badges': _get_badge(user),
         # TODO: Namespace with nested dicts
         'addons_enabled': node.get_addon_names(),
         'addons': configs,
@@ -734,17 +733,6 @@ def get_affiliated_institutions(obj):
             'id': institution._id,
         })
     return ret
-
-def _get_badge(user):
-    if user:
-        badger = user.get_addon('badges')
-        if badger:
-            return {
-                'can_award': badger.can_award,
-                'badges': badger.get_badges_json()
-            }
-    return {}
-
 
 def _get_children(node, auth, indent=0):
 

@@ -266,17 +266,11 @@ def update_user(auth):
 def _profile_view(profile, is_profile=False, embed_nodes=False, include_node_counts=False):
     if profile and profile.is_disabled:
         raise HTTPError(http.GONE)
-    # NOTE: While badges, are unused, 'assertions' and 'badges' can be
-    # empty lists.
-    badge_assertions = []
-    badges = []
 
     if profile:
         profile_user_data = profile_utils.serialize_user(profile, full=True, is_profile=is_profile, include_node_counts=include_node_counts)
         ret = {
             'profile': profile_user_data,
-            'assertions': badge_assertions,
-            'badges': badges,
             'user': {
                 '_id': profile._id,
                 'is_profile': is_profile,
