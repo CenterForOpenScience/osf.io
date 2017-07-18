@@ -29,7 +29,7 @@ from framework.auth.campaigns import get_campaigns, is_institution_login, is_nat
 from framework.auth import Auth
 from framework.auth.cas import get_login_url
 from framework.auth.exceptions import InvalidTokenError
-from framework.auth.utils import impute_names_model, ensure_external_identity_uniqueness
+from framework.auth.utils import impute_names_model
 from framework.auth.views import login_and_register_handler
 from framework.celery_tasks import handlers
 from framework.exceptions import HTTPError
@@ -3646,7 +3646,7 @@ class TestAuthLogout(OsfTestCase):
     def setUp(self):
         super(TestAuthLogout, self).setUp()
         self.goodbye_url = web_url_for('goodbye', _absolute=True)
-        self.redirect_url = web_url_for('forgot_password_get', _absolute=True)
+        self.redirect_url = web_url_for('index', _absolute=True)
         self.valid_next_url = web_url_for('dashboard', _absolute=True)
         self.invalid_next_url = 'http://localhost:1234/abcde'
         self.auth_user = AuthUserFactory()
@@ -3692,148 +3692,6 @@ class TestAuthLogout(OsfTestCase):
         assert_equal(resp.status_code, http.FOUND)
         assert_equal(cas.get_logout_url(self.goodbye_url), resp.headers['Location'])
 
-
-class TestExternalAuthViews(OsfTestCase):
-
-    def setUp(self):
-        super(TestExternalAuthViews, self).setUp()
-        name, email = fake.name(), fake.email()
-        self.provider_id = fake.ean()
-        external_identity = {
-            'service': {
-                self.provider_id: 'CREATE'
-            }
-        }
-        self.user = User.create_unconfirmed(
-            username=email,
-            password=str(fake.password()),
-            fullname=name,
-            external_identity=external_identity,
-        )
-        self.user.save()
-        self.auth = Auth(self.user)
-
-    def test_external_login_email_get_with_invalid_session(self):
-        url = web_url_for('external_login_email_get')
-        resp = self.app.get(url, expect_errors=True)
-        assert_equal(resp.status_code, 401)
-
-    def test_external_login_confirm_email_get_with_another_user_logged_in(self):
-        another_user = AuthUserFactory()
-        url = self.user.get_confirmation_url(self.user.username, external_id_provider='service', destination='dashboard')
-        res = self.app.get(url, auth=another_user.auth)
-        assert_equal(res.status_code, 302, 'redirects to cas logout')
-        assert_in('/logout?service=', res.location)
-        assert_in(url, res.location)
-
-    def test_external_login_confirm_email_get_without_destination(self):
-        url = self.user.get_confirmation_url(self.user.username, external_id_provider='service')
-        res = self.app.get(url, auth=self.auth, expect_errors=True)
-        assert_equal(res.status_code, 400, 'bad request')
-
-    @mock.patch('website.mails.send_mail')
-    def test_external_login_confirm_email_get_create(self, mock_welcome):
-        assert_false(self.user.is_registered)
-        url = self.user.get_confirmation_url(self.user.username, external_id_provider='service', destination='dashboard')
-        res = self.app.get(url, auth=self.auth)
-        assert_equal(res.status_code, 302, 'redirects to cas login')
-        assert_in('/login?service=', res.location)
-        assert_in('new=true', res.location)
-
-        assert_equal(mock_welcome.call_count, 1)
-
-        self.user.reload()
-        assert_equal(self.user.external_identity['service'][self.provider_id], 'VERIFIED')
-        assert_true(self.user.is_registered)
-        assert_true(self.user.has_usable_password())
-
-    @mock.patch('website.mails.send_mail')
-    def test_external_login_confirm_email_get_link(self, mock_link_confirm):
-        self.user.external_identity['service'][self.provider_id] = 'LINK'
-        self.user.save()
-        assert_false(self.user.is_registered)
-        url = self.user.get_confirmation_url(self.user.username, external_id_provider='service', destination='dashboard')
-        res = self.app.get(url, auth=self.auth)
-        assert_equal(res.status_code, 302, 'redirects to cas login')
-        assert_in('/login?service=', res.location)
-        assert_not_in('new=true', res.location)
-
-        assert_equal(mock_link_confirm.call_count, 1)
-
-        self.user.reload()
-        assert_equal(self.user.external_identity['service'][self.provider_id], 'VERIFIED')
-        assert_true(self.user.is_registered)
-        assert_true(self.user.has_usable_password())
-
-    @mock.patch('website.mails.send_mail')
-    def test_external_login_confirm_email_get_duped_id(self, mock_confirm):
-        dupe_user = UserFactory(external_identity={'service': {self.provider_id: 'CREATE'}})
-        assert_equal(dupe_user.external_identity, self.user.external_identity)
-        url = self.user.get_confirmation_url(self.user.username, external_id_provider='service', destination='dashboard')
-        res = self.app.get(url, auth=self.auth)
-        assert_equal(res.status_code, 302, 'redirects to cas login')
-        assert_in('/login?service=', res.location)
-
-        assert_equal(mock_confirm.call_count, 1)
-
-        self.user.reload()
-        dupe_user.reload()
-
-        assert_equal(self.user.external_identity['service'][self.provider_id], 'VERIFIED')
-        assert_equal(dupe_user.external_identity, {})
-
-    @mock.patch('website.mails.send_mail')
-    def test_external_login_confirm_email_get_duping_id(self, mock_confirm):
-        dupe_user = UserFactory(external_identity={'service': {self.provider_id: 'VERIFIED'}})
-        url = self.user.get_confirmation_url(self.user.username, external_id_provider='service', destination='dashboard')
-        res = self.app.get(url, auth=self.auth, expect_errors=True)
-        assert_equal(res.status_code, 403, 'only allows one user to link an id')
-
-        assert_equal(mock_confirm.call_count, 0)
-
-        self.user.reload()
-        dupe_user.reload()
-
-        assert_equal(dupe_user.external_identity['service'][self.provider_id], 'VERIFIED')
-        assert_equal(self.user.external_identity, {})
-
-    def test_ensure_external_identity_uniqueness_unverified(self):
-        dupe_user = UserFactory(external_identity={'service': {self.provider_id: 'CREATE'}})
-        assert_equal(dupe_user.external_identity, self.user.external_identity)
-
-        ensure_external_identity_uniqueness('service', self.provider_id, self.user)
-
-        dupe_user.reload()
-        self.user.reload()
-
-        assert_equal(dupe_user.external_identity, {})
-        assert_equal(self.user.external_identity, {'service': {self.provider_id: 'CREATE'}})
-
-    def test_ensure_external_identity_uniqueness_verified(self):
-        dupe_user = UserFactory(external_identity={'service': {self.provider_id: 'VERIFIED'}})
-        assert_equal(dupe_user.external_identity, {'service': {self.provider_id: 'VERIFIED'}})
-        assert_not_equal(dupe_user.external_identity, self.user.external_identity)
-
-        with assert_raises(ValidationError):
-            ensure_external_identity_uniqueness('service', self.provider_id, self.user)
-
-        dupe_user.reload()
-        self.user.reload()
-
-        assert_equal(dupe_user.external_identity, {'service': {self.provider_id: 'VERIFIED'}})
-        assert_equal(self.user.external_identity, {})
-
-    def test_ensure_external_identity_uniqueness_multiple(self):
-        dupe_user = UserFactory(external_identity={'service': {self.provider_id: 'CREATE'}})
-        assert_equal(dupe_user.external_identity, self.user.external_identity)
-
-        ensure_external_identity_uniqueness('service', self.provider_id)
-
-        dupe_user.reload()
-        self.user.reload()
-
-        assert_equal(dupe_user.external_identity, {})
-        assert_equal(self.user.external_identity, {})
 
 # TODO: Use mock add-on
 class TestAddonUserViews(OsfTestCase):
@@ -4507,105 +4365,6 @@ class TestCommentViews(OsfTestCase):
             assert n_unread == 1
 
 
-class TestResetPassword(OsfTestCase):
-
-    def setUp(self):
-        super(TestResetPassword, self).setUp()
-        self.user = AuthUserFactory()
-        self.another_user = AuthUserFactory()
-        self.osf_key_v2 = generate_verification_key(verification_type='password')
-        self.user.verification_key_v2 = self.osf_key_v2
-        self.user.verification_key = None
-        self.user.save()
-        self.get_url = web_url_for(
-            'reset_password_get',
-            uid=self.user._id,
-            token=self.osf_key_v2['token']
-        )
-        self.get_url_invalid_key = web_url_for(
-            'reset_password_get',
-            uid=self.user._id,
-            token=generate_verification_key()
-        )
-        self.get_url_invalid_user = web_url_for(
-            'reset_password_get',
-            uid=self.another_user._id,
-            token=self.osf_key_v2['token']
-        )
-
-    # successfully load reset password page
-    def test_reset_password_view_returns_200(self):
-        res = self.app.get(self.get_url)
-        assert_equal(res.status_code, 200)
-
-    # raise http 400 error
-    def test_reset_password_view_raises_400(self):
-        res = self.app.get(self.get_url_invalid_key, expect_errors=True)
-        assert_equal(res.status_code, 400)
-
-        res = self.app.get(self.get_url_invalid_user, expect_errors=True)
-        assert_equal(res.status_code, 400)
-
-        self.user.verification_key_v2['expires'] = timezone.now()
-        self.user.save()
-        res = self.app.get(self.get_url, expect_errors=True)
-        assert_equal(res.status_code, 400)
-
-    # successfully reset password
-    @mock.patch('framework.auth.cas.CasClient.service_validate')
-    def test_can_reset_password_if_form_success(self, mock_service_validate):
-        # load reset password page and submit email
-        res = self.app.get(self.get_url)
-        form = res.forms['resetPasswordForm']
-        form['password'] = 'newpassword'
-        form['password2'] = 'newpassword'
-        res = form.submit()
-
-        # check request URL is /resetpassword with username and new verification_key_v2 token
-        request_url_path = res.request.path
-        assert_in('resetpassword', request_url_path)
-        assert_in(self.user._id, request_url_path)
-        assert_not_in(self.user.verification_key_v2['token'], request_url_path)
-
-        # check verification_key_v2 for OSF is destroyed and verification_key for CAS is in place
-        self.user.reload()
-        assert_equal(self.user.verification_key_v2, {})
-        assert_not_equal(self.user.verification_key, None)
-
-        # check redirection to CAS login with username and the new verification_key(CAS)
-        assert_equal(res.status_code, 302)
-        location = res.headers.get('Location')
-        assert_true('login?service=' in location)
-        assert_true('username={}'.format(self.user.username) in location)
-        assert_true('verification_key={}'.format(self.user.verification_key) in location)
-
-        # check if password was updated
-        self.user.reload()
-        assert_true(self.user.check_password('newpassword'))
-
-        # check if verification_key is destroyed after service validation
-        mock_service_validate.return_value = cas.CasResponse(
-            authenticated=True,
-            user=self.user._id,
-            attributes={'accessToken': fake.md5()}
-        )
-        ticket = fake.md5()
-        service_url = 'http://accounts.osf.io/?ticket=' + ticket
-        cas.make_response_from_ticket(ticket, service_url)
-        self.user.reload()
-        assert_equal(self.user.verification_key, None)
-
-    #  log users out before they land on reset password page
-    def test_reset_password_logs_out_user(self):
-        # visit reset password link while another user is logged in
-        res = self.app.get(self.get_url, auth=self.another_user.auth)
-        # check redirection to CAS logout
-        assert_equal(res.status_code, 302)
-        location = res.headers.get('Location')
-        assert_not_in('reauth', location)
-        assert_in('logout?service=', location)
-        assert_in('resetpassword', location)
-
 class TestIndexView(OsfTestCase):
 
     def setUp(self):
@@ -4706,8 +4465,6 @@ class TestResolveGuid(OsfTestCase):
             '/{}/'.format(preprint._id)
         )
 
-
-
     def test_preprint_provider_with_osf_domain(self):
         provider = PreprintProviderFactory(_id='osf', domain='https://osf.io/')
         preprint = PreprintFactory(provider=provider)
@@ -4726,44 +4483,6 @@ class TestConfirmationViewBlockBingPreview(OsfTestCase):
 
         super(TestConfirmationViewBlockBingPreview, self).setUp()
         self.user_agent = 'Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/534+ (KHTML, like Gecko) BingPreview/1.0b'
-
-    # reset password link should fail with BingPreview
-    def test_reset_password_get_returns_403(self):
-
-        user = UserFactory()
-        osf_key_v2 = generate_verification_key(verification_type='password')
-        user.verification_key_v2 = osf_key_v2
-        user.verification_key = None
-        user.save()
-
-        reset_password_get_url = web_url_for(
-            'reset_password_get',
-            uid=user._id,
-            token=osf_key_v2['token']
-        )
-        res = self.app.get(
-            reset_password_get_url,
-            expect_errors=True,
-            headers={
-                'User-Agent': self.user_agent,
-            }
-        )
-        assert_equal(res.status_code, 403)
-
-    # new user confirm account should fail with BingPreview
-    def test_confirm_email_get_new_user_returns_403(self):
-
-        user = User.create_unconfirmed('unconfirmed@cos.io', 'abCD12#$', 'Unconfirmed User')
-        user.save()
-        confirm_url = user.get_confirmation_url('unconfirmed@cos.io', external=False)
-        res = self.app.get(
-            confirm_url,
-            expect_errors=True,
-            headers={
-                'User-Agent': self.user_agent,
-            }
-        )
-        assert_equal(res.status_code, 403)
 
     # confirmation for adding new email should fail with BingPreview
     def test_confirm_email_add_email_returns_403(self):
@@ -4840,65 +4559,6 @@ class TestConfirmationViewBlockBingPreview(OsfTestCase):
         res = self.app.get(
             claim_url,
             auth = auth_user.auth,
-            expect_errors=True,
-            headers={
-                'User-Agent': self.user_agent,
-            }
-        )
-        assert_equal(res.status_code, 403)
-
-    # account creation confirmation for ORCiD login should fail with BingPreview
-    def test_external_login_confirm_email_get_create_user(self):
-        name, email = fake.name(), fake.email()
-        provider_id = fake.ean()
-        external_identity = {
-            'service': {
-                provider_id: 'CREATE'
-            }
-        }
-        user = User.create_unconfirmed(
-            username=email,
-            password=str(fake.password()),
-            fullname=name,
-            external_identity=external_identity,
-        )
-        user.save()
-        create_url = user.get_confirmation_url(
-            user.username,
-            external_id_provider='service',
-            destination='dashboard'
-        )
-
-        res = self.app.get(
-            create_url,
-            expect_errors=True,
-            headers={
-                'User-Agent': self.user_agent,
-            }
-        )
-        assert_equal(res.status_code, 403)
-
-    # account linking confirmation for ORCiD login should fail with BingPreview
-    def test_external_login_confirm_email_get_link_user(self):
-
-        user = UserFactory()
-        provider_id = fake.ean()
-        user.external_identity = {
-            'service': {
-                provider_id: 'LINK'
-            }
-        }
-        user.add_unconfirmed_email(user.username, external_identity='service')
-        user.save()
-
-        link_url = user.get_confirmation_url(
-            user.username,
-            external_id_provider='service',
-            destination='dashboard'
-        )
-
-        res = self.app.get(
-            link_url,
             expect_errors=True,
             headers={
                 'User-Agent': self.user_agent,
