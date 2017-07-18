@@ -88,7 +88,12 @@ class PreprintProviderDisplay(PermissionRequiredMixin, DetailView):
         preprint_provider_attributes = model_to_dict(preprint_provider)
         kwargs.setdefault('page_number', self.request.GET.get('page', '1'))
 
-        preprint_provider_attributes['licenses_acceptable'] = preprint_provider.licenses_acceptable.values_list('name', flat=True)
+        licenses_acceptable = list(preprint_provider.licenses_acceptable.values_list('name', flat=True))
+        licenses_html = '<ul>'
+        for license in licenses_acceptable:
+            licenses_html += '<li>{}</li>'.format(license)
+        licenses_html += '</ul>'
+        preprint_provider_attributes['licenses_acceptable'] = licenses_html
 
         subject_html = '<ul class="three-cols">'
         for parent in preprint_provider.top_level_subjects:

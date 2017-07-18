@@ -980,16 +980,50 @@ class TestTagging:
 
 class TestCitationProperties:
 
-    def test_user_csl(self, user):
-        # Convert a User instance to csl's name-variable schema
+    @pytest.fixture()
+    def referrer(self):
+        return UserFactory()
+
+    @pytest.fixture()
+    def email(self):
+        return fake.email()
+
+    @pytest.fixture()
+    def unreg_user(self, referrer, project, email):
+        user = UnregUserFactory()
+        user.add_unclaimed_record(node=project,
+            given_name=user.fullname, referrer=referrer,
+            email=email)
+        user.save()
+        return user
+
+    @pytest.fixture()
+    def project(self, referrer):
+        return NodeFactory(creator=referrer)
+
+    def test_registered_user_csl(self, user):
+        # Tests the csl name for a registered user
+        if user.is_registered:
+            assert bool(
+                user.csl_name() ==
+                {
+                    'given': user.csl_given_name,
+                    'family': user.family_name,
+                }
+            )
+
+    def test_unregistered_user_csl(self, unreg_user, project):
+        # Tests the csl name for an unregistered user
+        name = unreg_user.unclaimed_records[project._primary_key]['name'].split(' ')
+        family_name = name[-1]
+        given_name = ' '.join(name[:-1])
         assert bool(
-            user.csl_name ==
+            unreg_user.csl_name(project._id) ==
             {
-                'given': user.given_name,
-                'family': user.family_name,
+                'given': given_name,
+                'family': family_name,
             }
         )
-
 
 # copied from tests/test_models.py
 class TestMergingUsers:

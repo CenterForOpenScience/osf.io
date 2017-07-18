@@ -3,6 +3,7 @@
 import os
 import logging
 import datetime
+import sys
 
 from django.utils import timezone
 
@@ -25,3 +26,25 @@ def add_file_logger(logger, script_name, suffix=None):
         )
     )
     logger.addHandler(file_handler)
+
+
+class Progress(object):
+    def __init__(self, bar_len=50):
+        self.bar_len = bar_len
+
+    def start(self, total, prefix):
+        self.total = total
+        self.count = 0
+        self.prefix = prefix
+
+    def increment(self, inc=1):
+        self.count += inc
+        filled_len = int(round(self.bar_len * self.count / float(self.total)))
+        percents = round(100.0 * self.count / float(self.total), 1)
+        bar = '=' * filled_len + '-' * (self.bar_len - filled_len)
+        sys.stdout.flush()
+        sys.stdout.write('{}[{}] {}{} ... {}\r'.format(self.prefix, bar, percents, '%', str(self.total)))
+
+    def stop(self):
+        # To preserve line, there is probably a better way to do this
+        print('')

@@ -156,6 +156,11 @@ class UserDetailSerializer(UserSerializer):
     id = IDField(source='_id', required=True)
 
 
+class ReadEmailUserDetailSerializer(UserDetailSerializer):
+
+    email = ser.CharField(source='username', read_only=True)
+
+
 class RelatedInstitution(JSONAPIRelationshipSerializer):
     id = ser.CharField(required=False, allow_null=True, source='_id')
     class Meta:
