@@ -8,7 +8,7 @@ from modularodm import Q
 
 from tests.base import OsfTestCase
 from osf_tests import factories
-from tests.utils import mock_auth, mock_patch_update_share
+from tests.utils import mock_auth
 
 from framework.exceptions import HTTPError
 

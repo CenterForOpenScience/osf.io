@@ -20,7 +20,6 @@ from django.core.exceptions import PermissionDenied
 from django.contrib.auth.models import Permission
 
 from tests.base import AdminTestCase
-from tests.utils import mock_patch_update_share
 from osf_tests.factories import AuthUserFactory, ProjectFactory, RegistrationFactory
 
 
@@ -262,7 +261,9 @@ class TestNodeReindex(AdminTestCase):
 
     @mock.patch('website.project.tasks.format_node')
     @mock.patch('website.project.tasks.format_registration')
-    @mock_patch_update_share
+    @mock.patch('website.project.tasks.settings.SHARE_URL', 'ima_real_website')
+    @mock.patch('website.project.tasks.settings.SHARE_API_TOKEN', 'totaly_real_token')
+    @mock.patch('website.project.tasks.send_share_data')
     def test_reindex_node_share(self, mock_update_share, mock_format_registration, mock_format_node):
         count = AdminLogEntry.objects.count()
         view = NodeReindexShare()
@@ -276,7 +277,9 @@ class TestNodeReindex(AdminTestCase):
 
     @mock.patch('website.project.tasks.format_node')
     @mock.patch('website.project.tasks.format_registration')
-    @mock_patch_update_share
+    @mock.patch('website.project.tasks.settings.SHARE_URL', 'ima_real_website')
+    @mock.patch('website.project.tasks.settings.SHARE_API_TOKEN', 'totaly_real_token')
+    @mock.patch('website.project.tasks.send_share_data')
     def test_reindex_registration_share(self, mock_update_share, mock_format_registration, mock_format_node):
         count = AdminLogEntry.objects.count()
         view = NodeReindexShare()

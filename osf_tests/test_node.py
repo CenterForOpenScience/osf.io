@@ -1085,7 +1085,6 @@ class TestContributorMethods:
             )
 
 
-
 # Copied from tests/test_models.py
 class TestNodeAddContributorRegisteredOrNot:
 

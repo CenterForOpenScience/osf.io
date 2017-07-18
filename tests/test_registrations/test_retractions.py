@@ -13,7 +13,6 @@ from modularodm import Q
 from framework.auth import Auth
 from framework.exceptions import PermissionsError
 from tests.base import fake, OsfTestCase
-from tests.utils import mock_patch_update_share
 from osf_tests.factories import (
     AuthUserFactory, NodeFactory, ProjectFactory,
     RegistrationFactory, UserFactory, UnconfirmedUserFactory,
@@ -419,7 +418,9 @@ class RegistrationWithChildNodesRetractionModelTestCase(OsfTestCase):
 
     @mock.patch('website.project.tasks.format_node')
     @mock.patch('website.project.tasks.format_registration')
-    @mock_patch_update_share
+    @mock.patch('website.project.tasks.settings.SHARE_URL', 'ima_real_website')
+    @mock.patch('website.project.tasks.settings.SHARE_API_TOKEN', 'totaly_real_token')
+    @mock.patch('website.project.tasks.send_share_data')
     def test_approval_retracts_descendant_nodes(self, mock_update_share, mock_format_registration, mock_format_node):
         # Initiate retraction for parent registration
         self.registration.retract_registration(self.user)
@@ -471,7 +472,9 @@ class RegistrationWithChildNodesRetractionModelTestCase(OsfTestCase):
             assert_false(node.is_pending_retraction)
             assert_false(node.is_retracted)
 
-    @mock_patch_update_share
+    @mock.patch('website.project.tasks.settings.SHARE_URL', 'ima_real_website')
+    @mock.patch('website.project.tasks.settings.SHARE_API_TOKEN', 'totaly_real_token')
+    @mock.patch('website.project.tasks.send_share_data')
     def test_approval_cancels_pending_embargoes_on_descendant_nodes(self, mock_update_share):
         # Initiate embargo for registration
         self.registration.embargo_registration(
@@ -508,7 +511,9 @@ class RegistrationWithChildNodesRetractionModelTestCase(OsfTestCase):
 
         assert mock_update_share.called
 
-    @mock_patch_update_share
+    @mock.patch('website.project.tasks.settings.SHARE_URL', 'ima_real_website')
+    @mock.patch('website.project.tasks.settings.SHARE_API_TOKEN', 'totaly_real_token')
+    @mock.patch('website.project.tasks.send_share_data')
     def test_approval_cancels_active_embargoes_on_descendant_nodes(self, mock_update_share):
         # Initiate embargo for registration
         self.registration.embargo_registration(
@@ -562,7 +567,9 @@ class RegistrationRetractionShareHook(OsfTestCase):
 
     @mock.patch('website.project.tasks.format_node')
     @mock.patch('website.project.tasks.format_registration')
-    @mock_patch_update_share
+    @mock.patch('website.project.tasks.settings.SHARE_URL', 'ima_real_website')
+    @mock.patch('website.project.tasks.settings.SHARE_API_TOKEN', 'totaly_real_token')
+    @mock.patch('website.project.tasks.send_share_data')
     def test_approval_calls_share_hook(self, mock_update_share, mock_format_registration, mock_format_node):
         # Initiate retraction for parent registration
         self.registration.retract_registration(self.user)
@@ -576,7 +583,9 @@ class RegistrationRetractionShareHook(OsfTestCase):
         assert mock_format_registration.called
         assert not mock_format_node.called
 
-    @mock_patch_update_share
+    @mock.patch('website.project.tasks.settings.SHARE_URL', 'ima_real_website')
+    @mock.patch('website.project.tasks.settings.SHARE_API_TOKEN', 'totaly_real_token')
+    @mock.patch('website.project.tasks.send_share_data')
     def test_disapproval_does_not_call_share_hook(self, mock_update_share):
         # Initiate retraction for parent registration
         self.registration.retract_registration(self.user)

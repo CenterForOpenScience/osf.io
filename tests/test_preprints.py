@@ -674,10 +674,12 @@ class TestPreprintSaveShareHook(OsfTestCase):
         assert mock_async.called
 
     @mock.patch('website.preprints.tasks.settings.SHARE_URL', 'a_real_url')
+    @mock.patch('website.preprints.tasks.send_desk_share_preprint_error')
     @mock.patch('website.preprints.tasks._async_update_preprint_share.delay')
     @mock.patch('website.preprints.tasks.requests')
-    def test_no_call_async_update_on_400_failure(self, requests, mock_async):
+    def test_no_call_async_update_on_400_failure(self, requests, mock_async, mock_mail):
         self.preprint.provider.access_token = 'Snowmobiling'
         requests.post.return_value = MockShareResponse(400)
         update_preprint_share(self.preprint)
         assert not mock_async.called
+        assert mock_mail.called

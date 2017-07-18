@@ -1141,7 +1141,6 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
                                                        auth=auth, email_template=send_email)
             self.update_search()
             self.update_node_preprints_share()
-
             return contrib_to_add, True
 
         # Permissions must be overridden if changed when contributor is
@@ -1312,7 +1311,6 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         if self._id in old.unclaimed_records:
             del old.unclaimed_records[self._id]
             old.save()
-
         self.update_node_preprints_share()
         return True
 
@@ -1366,6 +1364,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         self.update_search()
         # send signal to remove this user from project subscriptions
         project_signals.contributor_removed.send(self, user=contributor)
+
         self.update_node_preprints_share()
         return True
 

@@ -224,12 +224,3 @@ def unique(factory):
 def run_celery_tasks():
     yield
     celery_teardown_request()
-
-def mock_patch_update_share(test):
-    @functools.wraps(test)
-    @mock.patch('website.project.tasks.settings.SHARE_URL', 'ima_real_website')
-    @mock.patch('website.project.tasks.settings.SHARE_API_TOKEN', 'totaly_real_token')
-    @mock.patch('website.project.tasks.send_share_data')
-    def wrapped(*args, **kwargs):
-        return test(*args, **kwargs)
-    return wrapped
