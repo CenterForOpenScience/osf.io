@@ -146,7 +146,6 @@ class CommentReportsMixin(object):
         public_project.comment_level = 'private'
         public_project.save()
         res = app.get(public_url, auth=non_contrib.auth, expect_errors=True)
-        print res
         assert res.status_code == 403
         assert res.json['errors'][0]['detail'] == exceptions.PermissionDenied.default_detail
 
