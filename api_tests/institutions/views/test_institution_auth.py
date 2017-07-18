@@ -6,7 +6,7 @@ import jwe
 from api.base import settings
 from api.base.settings.defaults import API_BASE
 from framework.auth import signals
-from osf.models import OSFUser as User
+from osf.models import OSFUser
 from osf_tests.factories import (
     InstitutionFactory,
     UserFactory,
@@ -48,7 +48,7 @@ class TestInstitutionAuth:
 
     def test_creates_user(self, app, url_auth_institution, institution):
         username = 'hmoco@circle.edu'
-        assert User.objects.filter(username=username).count() == 0
+        assert OSFUser.objects.filter(username=username).count() == 0
 
         with capture_signals() as mock_signals:
             res = app.post(url_auth_institution, make_payload(institution, username))
@@ -56,7 +56,7 @@ class TestInstitutionAuth:
         assert res.status_code == 204
         assert mock_signals.signals_sent() == set([signals.user_confirmed])
 
-        user = User.objects.filter(username=username).first()
+        user = OSFUser.objects.filter(username=username).first()
 
         assert user
         assert institution in user.affiliated_institutions.all()
@@ -99,7 +99,7 @@ class TestInstitutionAuth:
         res = app.post(url_auth_institution, make_payload(institution, username))
 
         assert res.status_code == 204
-        user = User.objects.filter(username=username).first()
+        user = OSFUser.objects.filter(username=username).first()
 
         assert user
         assert user.fullname == 'Fake User'
@@ -112,7 +112,7 @@ class TestInstitutionAuth:
         res = app.post(url_auth_institution, make_payload(institution, username, family_name='West', given_name='Kanye'))
 
         assert res.status_code == 204
-        user = User.objects.filter(username=username).first()
+        user = OSFUser.objects.filter(username=username).first()
 
         assert user
         assert user.fullname == 'Fake User'

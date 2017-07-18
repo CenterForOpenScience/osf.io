@@ -2,12 +2,11 @@
 import urlparse
 from nose.tools import *  # flake8: noqa
 
-from osf.models import AbstractNode as Node
 from website.util.sanitize import strip_html
 from website.views import find_bookmark_collection
 
 from tests.base import ApiTestCase
-from osf_tests.factories import AuthUserFactory, BookmarkCollectionFactory, CollectionFactory, ProjectFactory
+from osf_tests.factories import AuthUserFactory, CollectionFactory, ProjectFactory
 
 from api.base.settings.defaults import API_BASE
 
