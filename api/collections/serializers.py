@@ -3,7 +3,7 @@ from rest_framework import serializers as ser
 from rest_framework import exceptions
 from framework.exceptions import PermissionsError
 
-from osf.models import AbstractNode as Node, Collection
+from osf.models import AbstractNode, Collection
 from osf.exceptions import ValidationError
 from api.base.serializers import LinksField, RelationshipField
 from api.base.serializers import JSONAPISerializer, IDField, TypeField, DateByVersion
@@ -92,7 +92,7 @@ class CollectionSerializer(JSONAPISerializer):
         """Update instance with the validated data. Requires
         the request to be in the serializer context.
         """
-        assert isinstance(node, Node), 'collection must be a Node'
+        assert isinstance(node, AbstractNode), 'collection must be an AbstractNode'
         auth = get_user_auth(self.context['request'])
 
         if validated_data:

@@ -100,7 +100,7 @@ from framework.auth.oauth_scopes import CoreScopes
 from framework.postcommit_tasks.handlers import enqueue_postcommit_task
 from osf.models import AbstractNode
 from osf.models import (Node, PrivateLink, Institution, Comment, DraftRegistration, PreprintService)
-from osf.models import OSFUser as User
+from osf.models import OSFUser
 from osf.models import NodeRelation, AlternativeCitation, Guid
 from osf.models import BaseFileNode
 from osf.models.files import File, Folder
@@ -669,7 +669,7 @@ class NodeContributorsList(BaseContributorList, bulk_views.BulkUpdateJSONAPIView
 
     required_read_scopes = [CoreScopes.NODE_CONTRIBUTORS_READ]
     required_write_scopes = [CoreScopes.NODE_CONTRIBUTORS_WRITE]
-    model_class = User
+    model_class = OSFUser
 
     throttle_classes = (AddContributorThrottle, UserRateThrottle, NonCookieAuthThrottle, )
 
@@ -744,7 +744,7 @@ class NodeContributorsList(BaseContributorList, bulk_views.BulkUpdateJSONAPIView
             except IndexError:
                 raise ValidationError('Contributor identifier incorrectly formatted.')
 
-        resource_object_list = User.find(MQ('_id', 'in', requested_ids))
+        resource_object_list = OSFUser.find(MQ('_id', 'in', requested_ids))
         for resource in resource_object_list:
             if getattr(resource, 'is_deleted', None):
                 raise Gone
