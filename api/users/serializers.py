@@ -1,6 +1,6 @@
 from rest_framework import serializers as ser
 
-from modularodm.exceptions import ValidationValueError
+from modularodm.exceptions import ValidationValueError, ValidationError
 
 from api.base.exceptions import InvalidModelValueError
 from api.base.serializers import JSONAPIRelationshipSerializer, HideIfDisabled, BaseAPISerializer
@@ -104,8 +104,10 @@ class UserSerializer(JSONAPISerializer):
             instance.save()
         except ValidationValueError as e:
             raise InvalidModelValueError(detail=e.message)
-        return instance
+        except ValidationError as e:
+            raise InvalidModelValueError(e)
 
+        return instance
 
 class UserAddonSettingsSerializer(JSONAPISerializer):
     """
