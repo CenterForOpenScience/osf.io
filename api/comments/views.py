@@ -1,9 +1,6 @@
 from rest_framework import generics, permissions as drf_permissions
 from rest_framework.exceptions import NotFound, ValidationError, PermissionDenied
 
-from modularodm import Q
-from modularodm.exceptions import NoResultsFound
-
 from api.base.exceptions import Gone
 from api.base import permissions as base_permissions
 from api.base.views import JSONAPIBaseView
@@ -37,8 +34,8 @@ class CommentMixin(object):
     def get_comment(self, check_permissions=True):
         pk = self.kwargs[self.comment_lookup_url_kwarg]
         try:
-            comment = Comment.find_one(Q('guids___id', 'eq', pk) & Q('root_target', 'ne', None))
-        except NoResultsFound:
+            comment = Comment.objects.filter(guids___id=pk).exclude(root_target=None).get()
+        except Comment.DoesNotExist:
             raise NotFound
 
         # Deleted root targets still appear as tuples in the database and are included in

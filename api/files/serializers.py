@@ -2,7 +2,6 @@ from datetime import datetime
 from collections import OrderedDict
 
 from django.core.urlresolvers import resolve, reverse
-from modularodm import Q
 import furl
 import pytz
 
@@ -86,7 +85,7 @@ class CheckoutField(ser.HyperlinkedRelatedField):
         ])
 
     def get_queryset(self):
-        return OSFUser.find(Q('_id', 'eq', self.context['request'].user._id))
+        return OSFUser.objects.filter(guids___id=self.context['request'].user._id)
 
     def get_url(self, obj, view_name, request, format):
         if obj is None:

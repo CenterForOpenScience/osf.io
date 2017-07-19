@@ -1,9 +1,8 @@
 from rest_framework import serializers as ser
 
-from modularodm.exceptions import ValidationValueError
-
 from api.base.exceptions import InvalidModelValueError
 from api.base.serializers import JSONAPIRelationshipSerializer, HideIfDisabled, BaseAPISerializer
+from osf.exceptions import ValidationValueError
 from osf.models import OSFUser as User
 
 from api.base.serializers import (

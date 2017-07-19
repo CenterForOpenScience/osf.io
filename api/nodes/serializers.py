@@ -15,9 +15,9 @@ from api.base.utils import (absolute_reverse, get_object_or_error,
                             get_user_auth, is_truthy)
 from django.apps import apps
 from django.conf import settings
+from django.core.exceptions import ValidationError
 from framework.auth.core import Auth
 from framework.exceptions import PermissionsError
-from modularodm.exceptions import ValidationError
 from osf.models import Tag
 from rest_framework import serializers as ser
 from rest_framework import exceptions

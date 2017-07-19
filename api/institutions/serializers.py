@@ -1,8 +1,5 @@
-from django.apps import apps
 from rest_framework import serializers as ser
 from rest_framework import exceptions
-
-from modularodm import Q
 
 from osf.models import AbstractNode as Node
 from website.util import permissions as osf_permissions
@@ -90,8 +87,7 @@ class InstitutionNodesRelationshipSerializer(BaseAPISerializer):
         if not changes_flag:
             raise RelationshipPostMakesNoChanges
 
-        ConcreteNode = apps.get_model('osf.Node')
         return {
-            'data': list(ConcreteNode.find_by_institutions(inst, Q('is_deleted', 'ne', True))),
+            'data': list(inst.nodes.filter(is_deleted=False, type='osf.node')),
             'self': inst
         }

@@ -1,7 +1,7 @@
 from rest_framework import generics, permissions as drf_permissions
 from framework.auth.oauth_scopes import CoreScopes
 
-from api.base.filters import ODMFilterMixin
+from api.base.filters import ListFilterMixin
 from api.base import permissions as base_permissions
 from api.base.utils import get_object_or_error
 from api.licenses.serializers import LicenseSerializer
@@ -36,7 +36,7 @@ class LicenseDetail(JSONAPIBaseView, generics.RetrieveAPIView):
         return license
 
 
-class LicenseList(JSONAPIBaseView, generics.ListAPIView, ODMFilterMixin):
+class LicenseList(JSONAPIBaseView, generics.ListAPIView, ListFilterMixin):
     """List of licenses available to Nodes. *Read-only*.
 
 
@@ -79,11 +79,13 @@ class LicenseList(JSONAPIBaseView, generics.ListAPIView, ODMFilterMixin):
 
     ordering = ('name', )  # default ordering
 
-    # overrides ODMFilterMixin
-    def get_default_odm_query(self):
-        base_query = None
-        return base_query
+    def get_default_queryset(self):
+        return NodeLicense.objects.all()
 
     def get_queryset(self):
-        queryset = NodeLicense.find(self.get_query_from_request())
-        return queryset
+        return self.get_queryset_from_request()
+
+    def postprocess_query_param(self, key, field_name, operation):
+        if field_name == 'id':
+            operation['source_field_name'] = '_id'
+            operation['op'] = 'in'

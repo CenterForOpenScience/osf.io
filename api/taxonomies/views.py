@@ -2,7 +2,7 @@ from rest_framework import generics, permissions as drf_permissions
 
 from api.base.views import JSONAPIBaseView
 from api.base.utils import get_object_or_error
-from api.base.filters import ODMFilterMixin
+from api.base.filters import ListFilterMixin
 from api.base.pagination import NoMaxPageSizePagination
 from api.base import permissions as base_permissions
 from api.taxonomies.serializers import TaxonomySerializer
@@ -10,7 +10,7 @@ from osf.models import Subject
 from framework.auth.oauth_scopes import CoreScopes
 
 
-class TaxonomyList(JSONAPIBaseView, generics.ListAPIView, ODMFilterMixin):
+class TaxonomyList(JSONAPIBaseView, generics.ListAPIView, ListFilterMixin):
     '''[BePress taxonomy subject](https://www.bepress.com/wp-content/uploads/2016/12/Digital-Commons-Disciplines-taxonomy-2017-01.pdf) instance. *Read-only*
 
     ##Note
@@ -48,12 +48,11 @@ class TaxonomyList(JSONAPIBaseView, generics.ListAPIView, ODMFilterMixin):
     view_category = 'taxonomies'
     view_name = 'taxonomy-list'
 
-    # overrides ListAPIView
-    def get_default_odm_query(self):
-        return
+    def get_default_queryset(self):
+        return Subject.objects.all()
 
     def get_queryset(self):
-        return Subject.find(self.get_query_from_request())
+        return self.get_queryset_from_request()
 
     # overrides FilterMixin
     def postprocess_query_param(self, key, field_name, operation):
