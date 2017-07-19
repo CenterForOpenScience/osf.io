@@ -42,7 +42,7 @@ class TestCorsMiddleware(MiddlewareTestCase):
         processed = self.middleware.process_response(request, response)
         assert_equal(response['Access-Control-Allow-Origin'], domain.geturl())
 
-    def test_institutions_added_to_cors_whitelist(self):
+    def test_preprintproviders_added_to_cors_whitelist(self):
         url = api_v2_url('users/me/')
         domain = urlparse("https://dinoprints.sexy")
         preprintprovider = factories.PreprintProviderFactory(
