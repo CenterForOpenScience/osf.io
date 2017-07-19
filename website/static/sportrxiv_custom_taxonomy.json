@@ -1,0 +1,100 @@
+{
+  "include": [
+    "Rehabilitation and Therapy",
+    "Theatre and Performance Studies"
+  ],
+  "exclude": [
+    "Acting",
+    "Playwriting",
+    "Theatre History",
+    "Other Theatre and Performance Studies",
+    "Dramatic Literature, Criticism and Theory"
+  ],
+  "custom": {
+    "Medicine and Health": {
+      "parent": "Rehabilitation and Therapy",
+      "bepress": "Sociology"
+    },
+    "Sport and Exercise Science": {
+      "parent": "",
+      "bepress": "Kinesiology"
+    },
+    "Exercise Immunology": {
+      "parent": "Sport and Exercise Science",
+      "bepress": "Exercise Science"
+    },
+    "Motor Control and Development": {
+      "parent": "Sport and Exercise Science",
+      "bepress": "Motor Control"
+    },
+    "Other Sport and Exercise Science": {
+      "parent": "Sport and Exercise Science",
+      "bepress": "Kinesiology"
+    },
+    "Performance Analysis": {
+      "parent": "Sport and Exercise Science",
+      "bepress": "Kinesiology"
+    },
+    "Physical Activity": {
+      "parent": "Sport and Exercise Science",
+      "bepress": "Kinesiology"
+    },
+    "Sport and Exercise Physiology": {
+      "parent": "Sport and Exercise Science",
+      "bepress": "Physiology"
+    },
+    "Psychology of Sport and Exercise": {
+      "parent": "Sport and Exercise Science",
+      "bepress": "Psychology of Movement"
+    },
+    "Sport and Exercise Biomechanics": {
+      "parent": "Sport and Exercise Science",
+      "bepress": "Biomechanics"
+    },
+    "Sport and Exercise Medicine": {
+      "parent": "Sport and Exercise Science",
+      "bepress": "Medical Specialties"
+    },
+    "Strength and Conditioning": {
+      "parent": "Sport and Exercise Science",
+      "bepress": "Kinesiology"
+    },
+    "Sport and Exercise Studies": {
+      "parent": "",
+      "bepress": "Social and Behavioral Sciences"
+    },
+    "Adventure and Expeditionary Education": {
+      "parent": "Sport and Exercise Studies",
+      "bepress": "Expeditionary Education"
+    },
+    "Outdoor Education": {
+      "parent": "Sport and Exercise Studies",
+      "bepress": "Social and Behavioral Sciences"
+    },
+    "Sport and Exercise Pedagogy": {
+      "parent": "Sport and Exercise Studies",
+      "bepress": "Social and Behavioral Sciences"
+    },
+    "Sport Development": {
+      "parent": "Sport and Exercise Studies",
+      "bepress": "Social and Behavioral Sciences"
+    },
+    "Sport History": {
+      "parent": "Sport and Exercise Studies",
+      "bepress": "Social and Behavioral Sciences"
+    },
+    "Sport Management": {
+      "parent": "Sport and Exercise Studies",
+      "bepress": "Business"
+    },
+    "Sport Philosophy": {
+      "parent": "Sport and Exercise Studies",
+      "bepress": "Social and Behavioral Sciences"
+    },
+    "Sport Sociology": {
+      "parent": "Sport and Exercise Studies",
+      "bepress": "Social and Behavioral Sciences"
+    }
+  },
+  "merge": {}
+}
