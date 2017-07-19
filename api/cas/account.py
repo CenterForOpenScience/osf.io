@@ -78,7 +78,7 @@ def handle_verify_osf(data_user):
         raise ValidationError(detail=messages.INVALID_REQUEST)
 
     # retrieve the user (the email must be primary)
-    user = util.find_user_by_email(email, username_only=True)
+    user = util.find_user_by_email_or_guid(None, email, username_only=True)
     if not user:
         raise APIException(detail=messages.EMAIL_NOT_FOUND)
     if user.date_confirmed:
@@ -121,7 +121,7 @@ def handle_verify_osf_resend(data_user):
         raise ValidationError(detail=messages.INVALID_REQUEST)
 
     # retrieve the user
-    user = util.find_user_by_email(email, username_only=False)
+    user = util.find_user_by_email_or_guid(None, email, username_only=False)
     if not user:
         raise PermissionDenied(detail=messages.EMAIL_NOT_FOUND)
     inactive_status = util.is_user_inactive(user)
@@ -173,7 +173,7 @@ def handle_register_external(data_user):
         campaign = None
 
     # try to retrieve user
-    user = util.find_user_by_email(email, username_only=False)
+    user = util.find_user_by_email_or_guid(None, email, username_only=False)
     external_identity = {
         provider: {
             identity: None
@@ -246,7 +246,7 @@ def handle_verify_external(data_user):
         raise ValidationError(detail=messages.INVALID_REQUEST)
 
     # retrieve the user
-    user = util.find_user_by_email(email, username_only=False)
+    user = util.find_user_by_email_or_guid(None, email, username_only=False)
     if not user:
         raise APIException(detail=messages.EMAIL_NOT_FOUND)
 
@@ -300,7 +300,7 @@ def handle_password_forgot(data_user):
         raise ValidationError(detail=messages.INVALID_REQUEST)
 
     # retrieve the user
-    user = util.find_user_by_email(email, username_only=False)
+    user = util.find_user_by_email_or_guid(None, email, username_only=False)
     if not user:
         raise PermissionDenied(detail=messages.EMAIL_NOT_FOUND)
 
@@ -332,16 +332,17 @@ def handle_password_reset(data_user):
     """
 
     # check required fields
+    user_id = data_user.get('userId')
     email = data_user.get('email')
     token = data_user.get('verificationCode')
     password = data_user.get('password')
-    if not (email and token and password):
+    if not ((email or user_id) and token and password):
         raise ValidationError(detail=messages.INVALID_REQUEST)
 
     # retrieve the user
-    user = util.find_user_by_email(email, username_only=False)
+    user = util.find_user_by_email_or_guid(user_id, email, username_only=False)
     if not user:
-        raise APIException(detail=messages.EMAIL_NOT_FOUND)
+        raise APIException(detail=messages.USER_NOT_FOUND)
 
     # check to token
     if not user.verify_password_token(token):

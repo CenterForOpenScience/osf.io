@@ -203,3 +203,4 @@ DISK_SAVING_MODE = 'Forks, registrations, and uploads to OSF Storage uploads are
 CONFIRM_ALTERNATE_EMAIL_ERROR = 'The email address has <b>NOT</b> been added to your account. Please log out and revisit the link in your email. Thank you.'
 
 PASSWORD_RESET_SUCCESS = 'You have successfully reset your password.'
+PASSWORD_SET_SUCCESS = 'You have successfully set your password. Please verify your profile information.'

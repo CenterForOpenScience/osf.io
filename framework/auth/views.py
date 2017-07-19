@@ -54,6 +54,10 @@ def auth_cas_action(auth, uid):
         status.push_status_message(language.PASSWORD_RESET_SUCCESS, kind='success', trust=True)
         return redirect(web_url_for('user_account'))
 
+    if 'account-password-meetings' == cas_action:
+        status.push_status_message(language.PASSWORD_SET_SUCCESS, kind='success', trust=True)
+        return redirect(web_url_for('user_profile'))
+
     if 'account-verify-osf' == cas_action:
         campaign = campaigns.campaign_for_user(auth.user)
         if campaign:

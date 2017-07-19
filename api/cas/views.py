@@ -110,6 +110,7 @@ class AccountVerifyOsf(APICASMixin, generics.CreateAPIView, JSONAPIBaseView):
         content = {
             'verificationKey': user.verification_key,
             'userId': user._id,
+            'username': user.username,
             'casAction': 'account-verify-osf',
             'nextUrl': False,
         }
@@ -188,6 +189,7 @@ class AccountVerifyExternal(APICASMixin, generics.CreateAPIView, JSONAPIBaseView
         content = {
             'verificationKey': user.verification_key,
             'userId': user._id,
+            'username': user.username,
             'casAction': 'account-verify-external',
             'nextUrl': True,
         }
@@ -239,7 +241,8 @@ class AccountPasswordReset(APICASMixin, generics.CreateAPIView, JSONAPIBaseView)
         content = {
             'verificationKey': user.verification_key,
             'userId': user._id,
-            'casAction': 'account-password-reset',
+            'username': user.username,
+            'casAction': 'account-password-meetings' if body_data.get('meetings') else 'account-password-reset',
             'nextUrl': False,
         }
 

@@ -78,7 +78,7 @@ def handle_login_osf(data_user):
         raise ValidationError(detail=messages.INVALID_REQUEST)
 
     # retrieve the user
-    user = util.find_user_by_email(email, username_only=False)
+    user = util.find_user_by_email_or_guid(None, email, username_only=False)
     if not user:
         return None, errors.ACCOUNT_NOT_FOUND, None
 

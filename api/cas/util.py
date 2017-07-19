@@ -64,25 +64,33 @@ def ensure_external_identity_uniqueness(provider, identity, user):
     return
 
 
-def find_user_by_email(email, username_only=False):
+def find_user_by_email_or_guid(user_id, email, username_only=False):
     """
-    Find the OSF user by email or by username only.
-    For performance concern, query on username first, and do not combine both queries.
+    Find the OSF user by user's guid, by email or by username only. In the case of email/username, query on username
+    first, and do not combine both queries performance concern.
 
-    :param email: the email
+    :param user_id: the user's GUID
+    :param email: the user's email
     :param username_only: the flag for username only lookup
     :return: the user or None
     """
 
-    try:
-        user = OSFUser.objects.filter(username=email).get()
-    except OSFUser.DoesNotExist:
-        user = None
-
-    if not username_only and not user:
+    if user_id:
         try:
-            user = OSFUser.objects.filter(emails__address__contains=email).get()
+            user = OSFUser.objects.filter(guids___id=user_id).get()
         except OSFUser.DoesNotExist:
             user = None
+    elif email:
+        try:
+            user = OSFUser.objects.filter(username=email).get()
+        except OSFUser.DoesNotExist:
+            user = None
+        if not username_only and not user:
+            try:
+                user = OSFUser.objects.filter(emails__address__contains=email).get()
+            except OSFUser.DoesNotExist:
+                user = None
+    else:
+        user = None
 
     return user

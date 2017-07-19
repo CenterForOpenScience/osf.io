@@ -30,6 +30,8 @@ EMAIL_ALREADY_CONFIRMED = 'Email already confirmed to this user.'
 
 EMAIL_NOT_FOUND = 'The email is not found.'
 
+USER_NOT_FOUND = 'Cannot find user by email or GUID.'
+
 INVALID_CODE = 'The verification code is invalid.'
 
 ALREADY_VERIFIED = 'This email has already been verified.'
