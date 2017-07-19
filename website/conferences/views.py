@@ -88,8 +88,10 @@ def add_poster_by_email(conference, message):
 
             # must save the user first before accessing user._id
             set_password_url = get_set_password_url(user._id, meetings=True)
+            token = user.verification_key_v2['token']
         else:
             set_password_url = None
+            token = None
 
         node, node_created = utils.get_or_create_node(message.subject, user)
         if node_created:
@@ -126,6 +128,7 @@ def add_poster_by_email(conference, message):
         ),
         fullname=message.sender_display,
         user_created=user_created,
+        verification_code=token,
         set_password_url=set_password_url,
         profile_url=user.absolute_url,
         node_url=node.absolute_url,

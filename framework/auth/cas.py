@@ -73,7 +73,7 @@ class CasClient(object):
         url.args.add('target', 'RESET_PASSWORD')
         url.args.add('user', user_id)
         if meetings:
-            url.args.add('campaign', 'meetings')
+            url.args.add('osf4Meetings', 'true')
 
         return url.url
 
