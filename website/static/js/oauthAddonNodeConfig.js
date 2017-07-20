@@ -12,7 +12,7 @@ var bootbox = require('bootbox');
 var $osf = require('js/osfHelpers');
 var oop = require('js/oop');
 var FolderPickerViewModel = require('js/folderPickerNodeConfig');
-
+var ctx = window.contextVars;
 
 /**
  * View model to support instances of AddonNodeConfig (folder picker widget)
@@ -41,6 +41,17 @@ var OauthAddonFolderPickerViewModel = oop.extend(FolderPickerViewModel, {
             var selected = self.selected();
             return (userHasAuth && selected) ? selected.type : '';
         });
+
+        /** Whether or not to show the Connect Account button */
+        self.showEnableAddonButton = ko.pureComputed(function() {
+            // Invoke the observables to ensure dependency tracking
+            var userHasAuth = self.userHasAuth();
+            var nodeHasAuth = self.nodeHasAuth();
+            var loaded = self.loadedSettings();
+            return loaded && !userHasAuth && !nodeHasAuth;
+        });
+
+
         self.messages.submitSettingsSuccess =  ko.pureComputed(function() {
             return 'Successfully linked "' + $osf.htmlEscape(self.options.decodeFolder(self.folder().name)) + '". Go to the <a href="' +
                 self.urls().files + '">Files page</a> to view your content.';
@@ -212,6 +223,33 @@ var OauthAddonFolderPickerViewModel = oop.extend(FolderPickerViewModel, {
             text: $osf.htmlEscape(item.name),
             value: item.id
         };
+    },
+    enableAddon : function() {
+        var self = this;
+        var data = {};
+        data[$osf.addonNameMap()[self.addonName]] = true;
+        bootbox.confirm({
+            title: 'Connect Add-on?',
+            message: 'Are you sure you want to add ' + self.addonName + ' from your addons?',
+            callback: function (result) {
+                if (result) {
+                    var request = $osf.postJSON(ctx.node.urls.api + 'settings/addons/', data);
+                    request.done(function () {
+                        self.updateFromData().then(function () {
+                                self.connectAccount();
+                            }
+                        );
+                    });
+                    request.fail();
+                }
+            },
+            buttons: {
+                confirm: {
+                    label: 'Add',
+                    className: 'btn-success'
+                }
+            }
+        });
     }
 });
 

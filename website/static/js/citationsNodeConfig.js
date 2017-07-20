@@ -13,7 +13,7 @@ require('js/osfToggleHeight');
 var $osf = require('js/osfHelpers');
 var oop = require('js/oop');
 var FolderPickerViewModel = require('js/folderPickerNodeConfig');
-
+var ctx = window.contextVars;
 
 /**
  * View model to support instances of CitationsNodeConfig (folder picker widget)
@@ -36,6 +36,15 @@ var CitationsFolderPickerViewModel = oop.extend(FolderPickerViewModel, {
             return 'Successfully linked "' + $osf.htmlEscape(self.folder().name) + '". Go to the <a href="' +
                 self.urls().files + '">Overview page</a> to view your citations.';
         });
+
+        self.showEnableAddonButton = ko.pureComputed(function() {
+            // Invoke the observables to ensure dependency tracking
+            var userHasAuth = self.userHasAuth();
+            var nodeHasAuth = self.nodeHasAuth();
+            var loaded = self.loadedSettings();
+            return loaded && !userHasAuth && !nodeHasAuth;
+        });
+
 
         self.treebeardOptions = $.extend(
             {},
@@ -192,6 +201,33 @@ var CitationsFolderPickerViewModel = oop.extend(FolderPickerViewModel, {
             }
             self.changeMessage(message, 'text-danger');
         }
+    },
+    enableAddon : function() {
+        var self = this;
+        var data = {};
+        data[$osf.addonNameMap()[self.addonName]] = true;
+        bootbox.confirm({
+            title: 'Connect Add-on?',
+            message: 'Are you sure you want to add ' + self.addonName + ' from your addons?',
+            callback: function (result) {
+                if (result) {
+                    var request = $osf.postJSON(ctx.node.urls.api + 'settings/addons/', data);
+                    request.done(function () {
+                        self.updateFromData().then(function () {
+                                self.connectAccount();
+                            }
+                        );
+                    });
+                    request.fail();
+                }
+            },
+            buttons: {
+                confirm: {
+                    label: 'Add',
+                    className: 'btn-success'
+                }
+            }
+        });
     }
 });
 // Public API
