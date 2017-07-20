@@ -255,7 +255,7 @@ def is_prereg_admin(user):
     Returns true if user has reviewer permissions
     """
     if user is not None:
-        return PREREG_ADMIN_TAG in getattr(user, 'system_tags', []) or user.has_perm('osf.administer_prereg')
+        return user.has_perm('osf.administer_prereg')
     return False
 
 def is_prereg_admin_not_project_admin(request, draft):
