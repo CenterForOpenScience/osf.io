@@ -49,6 +49,9 @@ var s3FolderPickerViewModel = oop.extend(OauthAddonFolderPicker, {
     },
 
     connectAccount: function() {
+        $('#s3InputCredentials').modal('show');
+    },
+    _connectAccount: function() {
         var self = this;
         if( !self.accessKey() && !self.secretKey() ){
             self.changeMessage('Please enter both an API access key and secret key.', 'text-danger');

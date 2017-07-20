@@ -24,7 +24,7 @@
             </span>
 
             <!-- Oauth Start Button -->
-            <span data-bind="if: showTokenCreateButton">
+            <span data-bind="if: showEnableAddonButton">
                 <a href="#ownCloudCredentialsModal" data-toggle="modal" class="pull-right text-primary addon-auth">
                     Connect  Account
                 </a>
