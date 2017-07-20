@@ -146,11 +146,28 @@ var GithubConfigHelper = (function() {
         });
 
         $('#githubCreateToken').on('click', function() {
-            window.oauthComplete = function(res) {
-                askImport();
-            };
-            window.open('/oauth/connect/github/');
+            var self = this;
+            var capabilities = $('#capabilities-github').html();
+            if (capabilities) {
+                bootbox.confirm({
+                    message: capabilities,
+                    callback: function (result) {
+                        if (result) {
+                            window.oauthComplete = function(res) {
+                                askImport();
+                            };
+                            window.open('/oauth/connect/github/');
+                        }
+                    },
+                    buttons: {
+                        confirm: {
+                            label: 'Continue'
+                        }
+                    }
+                });
+            }
         });
+
 
         $('#githubRemoveToken').on('click', function() {
             bootbox.confirm({

@@ -18,6 +18,7 @@ function ViewModel(url) {
     const otherString = 'Other (Please Specify)';
 
     self.addonName = 'Dataverse';
+    this.addon_short_name = 'dataverse'
     self.url = url;
     self.urls = ko.observable();
     self.apiToken = ko.observable();
@@ -351,10 +352,30 @@ ViewModel.prototype.fetchFromServer = function() {
     return ret.promise();
 }
 
+
+ViewModel.prototype.showCapabilities = function() {
+    var self = this;
+    var capabilities = $('#capabilities-' + self.addon_short_name).html();
+    if (capabilities) {
+        bootbox.confirm({
+            message: capabilities,
+            callback: function (result) {
+                if (result) {
+                    self.enableAddon();
+                }
+            },
+            buttons: {
+                confirm: {
+                    label: 'Continue'
+                }
+            }
+        });
+    }}
+
 ViewModel.prototype.enableAddon = function() {
     var self = this;
     var data = {};
-    data[$osf.addonNameMap()[self.addonName]] = true;
+    data[self.addon_short_name] = true;
     bootbox.confirm({
         title: 'Connect Add-on?',
         message: 'Are you sure you want to add ' + self.addonName + ' from your addons?',

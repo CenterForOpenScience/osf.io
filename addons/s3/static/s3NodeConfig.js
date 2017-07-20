@@ -256,7 +256,30 @@ var s3FolderPickerViewModel = oop.extend(OauthAddonFolderPicker, {
                 }
             }
         });
-    }
+    },
+
+    showCapabilities : function() {
+        var self = this;
+        var capabilities = $('#capabilities-' + self.addon_short_name).html();
+        if (capabilities) {
+            bootbox.confirm({
+                message: capabilities,
+                callback: function (result) {
+                    if (result) {
+                        self.enableAddon();
+                    }
+                },
+                buttons: {
+                    confirm: {
+                        label: 'Continue'
+                    }
+                }
+            });
+        } else {
+            self.enableAddon();
+        }
+    },
+
 });
 
 // Public API

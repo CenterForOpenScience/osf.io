@@ -27,7 +27,7 @@
 
             <!-- Oauth Start Button -->
             <span data-bind="if: showEnableAddonButton">
-                <a data-bind="click: enableAddon" class="text-primary pull-right addon-auth">
+                <a data-bind="click: showCapabilities" class="text-primary pull-right addon-auth">
                   Connect Account
                 </a>
             </span>

@@ -34,6 +34,7 @@ var OauthAddonFolderPickerViewModel = oop.extend(FolderPickerViewModel, {
         // Broken out from `constructor` due to recursive scoping issue with oop super calls
         // TODO: [OSF-7069]
         var self = this;
+        this.addon_short_name = $osf.addonNameMap()[self.addonName];
         // externalAccounts
         self.accounts = ko.observableArray();
         self.selectedFolderType = ko.pureComputed(function() {
@@ -218,16 +219,37 @@ var OauthAddonFolderPickerViewModel = oop.extend(FolderPickerViewModel, {
             });
         });
     },
-   formatExternalName: function(item) {
+    formatExternalName: function(item) {
         return {
             text: $osf.htmlEscape(item.name),
             value: item.id
         };
     },
+    showCapabilities : function() {
+        var self = this;
+        var capabilities = $('#capabilities-' + self.addon_short_name).html();
+        if (capabilities) {
+            bootbox.confirm({
+                message: capabilities,
+                callback: function (result) {
+                    if (result) {
+                        self.enableAddon();
+                    }
+                },
+                buttons: {
+                    confirm: {
+                        label: 'Continue'
+                    }
+                }
+            });
+        } else {
+            self.enableAddon();
+        }
+    },
     enableAddon : function() {
         var self = this;
         var data = {};
-        data[$osf.addonNameMap()[self.addonName]] = true;
+        data[self.addon_short_name] = true;
         bootbox.confirm({
             title: 'Connect Add-on?',
             message: 'Are you sure you want to add ' + self.addonName + ' from your addons?',

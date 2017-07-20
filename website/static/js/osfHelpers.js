@@ -1040,7 +1040,8 @@ var addonNameMap = function () {
         'Dropbox' : 'dropbox',
         'owncloud' : 'owncloud',
         'figshare' : 'figshare',
-        'GitHub' : 'github'
+        'GitHub' : 'github',
+        'Google Drive' : 'googledrive'
     };
 };
 

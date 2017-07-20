@@ -296,6 +296,7 @@ def node_addons(auth, node, **kwargs):
 
     addon_settings = sorted(addon_settings, key=lambda addon: addon['full_name'].lower())
 
+    ret['addon_capabilities'] = settings.ADDON_CAPABILITIES
     ret['addon_categories'] = set([item for addon in addon_settings for item in addon['categories']])
     ret['addon_settings'] = addon_settings
     ret['addon_js'] = collect_node_config_js(addon_settings)
