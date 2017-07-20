@@ -11,6 +11,7 @@ var $osf = require('js/osfHelpers');
 
 var $modal = $('#dataverseInputCredentials');
 
+var ctx = window.contextVars;
 
 function ViewModel(url) {
     var self = this;
@@ -211,14 +212,13 @@ function ViewModel(url) {
     self.message = ko.observable('');
     self.messageClass = ko.observable('text-info');
 
+    self.selectionChanged = function() {
+        self.changeMessage('','');
+    };
+
     // Update above observables with data from the server
-    $.ajax({
-        url: url,
-        type: 'GET',
-        dataType: 'json'
-    }).done(function(response) {
-        // Update view model
-        self.updateFromData(response.result);
+    self.fetchFromServer().done(function (response) {
+        self.updateFromData(response);
         self.loadedSettings(true);
     }).fail(function(xhr, textStatus, error) {
         self.changeMessage(self.messages.userSettingsError, 'text-danger');
@@ -230,10 +230,6 @@ function ViewModel(url) {
             }
         });
     });
-
-    self.selectionChanged = function() {
-        self.changeMessage('','');
-    };
 }
 
 /**
@@ -322,6 +318,67 @@ ViewModel.prototype.findDataset = function() {
         }
     }
 };
+
+ViewModel.prototype.fetchFromServer = function() {
+    // Update above observables with data from the server
+    var self = this;
+    var ret = $.Deferred();
+
+    var request = $.ajax({
+        url: self.url,
+        type: 'GET',
+        dataType: 'json'
+    })
+    request.done(function (response) {
+        // Update view model
+        self.loadedSettings(true);
+        ret.resolve(response.result);
+    })
+    request.fail(function (xhr, textStatus, error) {
+        if (xhr.status === 404) {
+            self.loadedSettings(true);
+        } else {
+            self.changeMessage(self.messages.userSettingsError(), 'text-danger');
+            Raven.captureMessage('Could not GET dataverse settings', {
+                extra: {
+                    url: self.url,
+                    textStatus: textStatus,
+                    error: error
+                }
+            });
+        }
+    });
+    return ret.promise();
+}
+
+ViewModel.prototype.enableAddon = function() {
+    var self = this;
+    var data = {};
+    data[$osf.addonNameMap()[self.addonName]] = true;
+    bootbox.confirm({
+        title: 'Connect Add-on?',
+        message: 'Are you sure you want to add ' + self.addonName + ' from your addons?',
+        callback: function (result) {
+            if (result) {
+                var request = $osf.postJSON(ctx.node.urls.api + 'settings/addons/', data);
+                request.done(function () {
+                    self.fetchFromServer().then(function () {
+                            $modal.modal('show');
+                        }
+                    );
+                });
+                request.fail();
+            }
+        },
+        buttons: {
+            confirm: {
+                label: 'Add',
+                className: 'btn-success'
+            }
+        }
+    });
+}
+
 
 ViewModel.prototype.getDatasets = function() {
     var self = this;
