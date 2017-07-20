@@ -1012,6 +1012,17 @@ def make_url_map(app):
             OsfWebRenderer('project/settings.mako', trust=False)
         ),
 
+        Rule(
+            [
+                '/project/<pid>/addons/',
+                '/project/<pid>/node/<nid>/addons/',
+
+            ],
+            'get',
+            project_views.node.node_addons,
+            OsfWebRenderer('project/addons.mako', trust=False)
+        ),
+
         # Permissions
         Rule(  # TODO: Where, if anywhere, is this route used?
             [
