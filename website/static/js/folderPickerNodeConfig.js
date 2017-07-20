@@ -284,15 +284,19 @@ var FolderPickerViewModel = oop.defclass({
             ret.resolve(response.result);
         });
         request.fail(function(xhr, textStatus, error) {
-            self.changeMessage(self.messages.cantRetrieveSettings(), 'text-danger');
-            Raven.captureMessage('Could not GET ' + self.addonName + 'settings', {
-                extra: {
-                    url: self.url,
-                    textStatus: textStatus,
-                    error: error
-                }
-            });
-            ret.reject(xhr, textStatus, error);
+            if(xhr.status === 404){
+                self.loadedSettings(true);
+            } else {
+                self.changeMessage(self.messages.cantRetrieveSettings(), 'text-danger');
+                Raven.captureMessage('Could not GET ' + self.addonName + 'settings', {
+                    extra: {
+                        url: self.url,
+                        textStatus: textStatus,
+                        error: error
+                    }
+                });
+                ret.reject(xhr, textStatus, error);
+            }
         });
         return ret.promise();
     },
