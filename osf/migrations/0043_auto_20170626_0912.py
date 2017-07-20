@@ -8,7 +8,7 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('osf', '0041_preprintprovider_preprint_word'),
+        ('osf', '0042_preprintprovider_preprint_word'),
     ]
 
     operations = [
