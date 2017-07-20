@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+import os
 import logging
 import httplib as http
 import math
@@ -18,7 +19,6 @@ from osf.models.nodelog import NodeLog
 
 from website import language
 
-from website.util import paths
 from website.util import rubeus
 from website.exceptions import NodeStateError
 from website.project import new_node, new_private_link
@@ -257,40 +257,8 @@ def node_setting(auth, node, **kwargs):
     auth.user.save()
     ret = _view_project(node, auth, primary=True)
 
-    addons_enabled = []
-    addon_enabled_settings = []
-
-    for addon in node.get_addons():
-        addons_enabled.append(addon.config.short_name)
-        if 'node' in addon.config.configs:
-            config = addon.to_json(auth.user)
-            # inject the MakoTemplateLookup into the template context
-            # TODO inject only short_name and render fully client side
-            config['template_lookup'] = addon.config.template_lookup
-            config['addon_icon_url'] = addon.config.icon_url
-            addon_enabled_settings.append(config)
-
-    addon_enabled_settings = sorted(addon_enabled_settings, key=lambda addon: addon['addon_full_name'].lower())
-
-    ret['addon_categories'] = settings.ADDON_CATEGORIES
-    ret['addons_available'] = sorted([
-        addon
-        for addon in settings.ADDONS_AVAILABLE
-        if 'node' in addon.owners
-        and addon.short_name not in settings.SYSTEM_ADDED_ADDONS['node'] and addon.short_name not in ['wiki', 'forward']
-    ], key=lambda addon: addon.full_name.lower())
-
-    for addon in settings.ADDONS_AVAILABLE:
-        if 'node' in addon.owners and addon.short_name not in settings.SYSTEM_ADDED_ADDONS['node'] and addon.short_name == 'wiki':
-            ret['wiki'] = addon
-            break
-
-    ret['addons_enabled'] = addons_enabled
-    ret['addon_enabled_settings'] = addon_enabled_settings
-    ret['addon_capabilities'] = settings.ADDON_CAPABILITIES
-    ret['addon_js'] = collect_node_config_js(node.get_addons())
-
     ret['include_wiki_settings'] = node.include_wiki_settings(auth.user)
+    ret['wiki_is_enabled'] = 'wiki' in node.get_addon_names()
 
     ret['comments'] = {
         'level': node.comment_level,
