@@ -18,6 +18,7 @@ var nodeLinksUrl = osfHelpers.apiV2Url('nodes/' + nodeId + '/node_links/');
 
 var SEARCH_ALL_SUBMIT_TEXT = 'Search all projects';
 var SEARCH_MY_PROJECTS_SUBMIT_TEXT = 'Search my projects';
+var SEARCHING_TEXT = 'Searching...';
 
 var AddPointerViewModel = oop.extend(Paginator, {
     constructor: function(nodeTitle){
@@ -25,8 +26,6 @@ var AddPointerViewModel = oop.extend(Paginator, {
         this.super.constructor.call(this);
         this.nodeTitle = nodeTitle;
         this.submitEnabled = ko.observable(true);
-        this.searchAllProjectsSubmitText = ko.observable(SEARCH_ALL_SUBMIT_TEXT);
-        this.searchMyProjectsSubmitText = ko.observable(SEARCH_MY_PROJECTS_SUBMIT_TEXT);
         this.query = ko.observable();
         this.results = ko.observableArray();
         this.selection = ko.observableArray();
@@ -45,28 +44,34 @@ var AddPointerViewModel = oop.extend(Paginator, {
         this.noResults = ko.pureComputed(function(){
             return self.query() && !self.results().length;
         });
+        this.searchAllProjectsSubmitText = ko.pureComputed(function(){
+            if (self.loadingResults() && self.includePublic()){
+              return SEARCHING_TEXT;
+            }
+            return SEARCH_ALL_SUBMIT_TEXT;
+        });
+        this.searchMyProjectsSubmitText = ko.pureComputed(function(){
+            if (self.loadingResults() && ! self.includePublic()){
+              return SEARCHING_TEXT;
+            }
+            return SEARCH_MY_PROJECTS_SUBMIT_TEXT;
+        });
         this.searchMyProjects();
     },
     doneSearching: function(){
         var self = this;
-        self.searchAllProjectsSubmitText(SEARCH_ALL_SUBMIT_TEXT);
-        self.searchMyProjectsSubmitText(SEARCH_MY_PROJECTS_SUBMIT_TEXT);
         self.loadingResults(false);
     },
     searchAllProjects: function(){
         var self = this;
         self.includePublic(true);
         self.pageToGet(0);
-        self.searchAllProjectsSubmitText('Searching...');
-        self.loadingResults(true);
         self.fetchResults();
     },
     searchMyProjects: function(){
         var self = this;
         self.includePublic(false);
         self.pageToGet(0);
-        self.searchMyProjectsSubmitText('Searching...');
-        self.loadingResults(true);
         self.fetchResults();
     },
     logErrors: function(url, status, error, msg){
@@ -82,9 +87,10 @@ var AddPointerViewModel = oop.extend(Paginator, {
     },
     fetchResults: function(){
         var self = this;
+        self.loadingResults(true);
         self.errorMsg('');
         self.searchWarningMsg('');
-        self.results([]); // clears page for spinner
+        // self.results([]); // clears page for spinner
         self.selection([]);
         var pageNum = self.pageToGet() + 1;
         var userOrPublicNodes = self.includePublic() ? '' : 'users/me/';
@@ -118,15 +124,14 @@ var AddPointerViewModel = oop.extend(Paginator, {
                 nodeLinksUrl,
                 {'isCors': true}
             );
-            requestNodeLinks.done(function(response){
+            requestNodeLinks.done(function(responseNodelinks){
                 var embedNodeIds = [];
-                for (var i = 0; i < response.data.length; i++){
-                    var target_node = response.data[i].embeds.target_node;
-                    var embedId = target_node.data ? target_node.data.id : response.data[i]['relationships']['target_node']['links']['related']['href'].split('/')[5];
+                for (var i = 0; i < responseNodelinks.data.length; i++){
+                    var target_node = responseNodelinks.data[i].embeds.target_node;
+                    var embedId = target_node.data ? target_node.data.id : responseNodelinks.data[i]['relationships']['target_node']['links']['related']['href'].split('/')[5];
                     embedNodeIds.push(embedId);
                 }
                 nodes.forEach(function(each){
-
                     if (each.type === 'registrations'){
                         each.dateRegistered = new osfHelpers.FormattableDate(each.attributes.date_registered);
                     } else {

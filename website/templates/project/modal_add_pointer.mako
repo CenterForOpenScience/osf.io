@@ -56,41 +56,40 @@
                             <span data-bind="if: (inputType() != 'nodes' && includePublic)" class="modal-subheader">Results: All Registrations</span>
                             <span data-bind="if: (inputType() != 'nodes' && !includePublic())" class="modal-subheader">Results: My Registrations</span>
                         </div>
-                        <div class="table-responsive error" data-bind="text:errorMsg"></div>
-                        <table class="table table-striped">
-                            <tbody data-bind="foreach:{data:results}">
-                                <tr class="pointer-tow">
-                                    <td class="osf-icon-td">
-                                        <div data-bind="if:!($root.selected($data))">
-                                            <a
-                                                  class="btn btn-success contrib-button"
-                                                  data-bind="click:$root.add.bind($root), attr: {disabled: $root.processing()}"
-                                              ><i class="fa fa-plus"></i></a>
-                                        </div>
-                                        <div data-bind="if:($root.selected($data))">
-                                            <a
-                                              class="btn btn-default contrib-button"
-                                              data-bind="click:$root.remove.bind($root), attr: {disabled: $root.processing()}"
-                                              ><i class="fa fa-minus"></i></a>
-                                        </div>
-                                    </td>
-                                    <td data-bind="text:attributes.title" class="overflow"></td>
-                                    <td class="node-dates" data-bind="text:$root.getDates($data)"></td>
-                                    <td style="width: 20%" data-bind="text:$root.authorText($data)"></td>
-                                </tr>
-                            </tbody>
-                        </table>
-                        <div class='help-block'>
-                            <div data-bind='if: loadingResults'>
-                                <div class="ball-pulse ball-scale-blue text-center">
-                                  <div></div>
-                                  <div></div>
-                                  <div></div>
-                                </div>
-                                <!-- <div class="ball-scale ball-dark">
-                                    <div></div>
-                                </div> -->
+                        <div class="error" data-bind="text:errorMsg"></div>
+                        <div class="table-responsive">
+                          <table class="table table-striped">
+                              <tbody data-bind="foreach:{data:results}">
+                                  <tr class="pointer-tow">
+                                      <td class="osf-icon-td">
+                                          <div data-bind="if:!($root.selected($data))">
+                                              <a
+                                                    class="btn btn-success contrib-button"
+                                                    data-bind="click:$root.add.bind($root), attr: {disabled: $root.processing()}"
+                                                ><i class="fa fa-plus"></i></a>
+                                          </div>
+                                          <div data-bind="if:($root.selected($data))">
+                                              <a
+                                                class="btn btn-default contrib-button"
+                                                data-bind="click:$root.remove.bind($root), attr: {disabled: $root.processing()}"
+                                                ><i class="fa fa-minus"></i></a>
+                                          </div>
+                                      </td>
+                                      <td data-bind="text:attributes.title" class="overflow"></td>
+                                      <td class="node-dates" data-bind="text:$root.getDates($data)"></td>
+                                      <td style="width: 20%" data-bind="text:$root.authorText($data)"></td>
+                                  </tr>
+                              </tbody>
+                          </table>
+                        </div>
+                        <div style="z-index: 10000;" data-bind='if: loadingResults'>
+                            <div class="ball-pulse ball-scale-blue text-center">
+                              <div></div>
+                              <div></div>
+                              <div></div>
                             </div>
+                        </div>
+                        <div class='help-block'>
                             <div data-bind='if: foundResults'>
                                 <ul class="pagination pagination-sm" data-bind="foreach: paginators">
                                     <li data-bind="css: style"><a href="#" data-bind="click: handler, text: text"></a></li>
