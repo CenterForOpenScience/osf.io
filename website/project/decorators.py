@@ -285,7 +285,7 @@ def must_have_addon(addon_name, model):
 
             addon = owner.get_addon(addon_name)
             if addon is None:
-                raise HTTPError(http.BAD_REQUEST)
+                raise HTTPError(http.NOT_FOUND)
 
             kwargs['{0}_addon'.format(model)] = addon
 
