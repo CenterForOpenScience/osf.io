@@ -26,8 +26,11 @@ def validate_input(custom_provider, data):
     included_subjects = Subject.objects.filter(provider=BEPRESS_PROVIDER, text__in=includes).include_children()
     logger.info('Successfully validated `include`')
     for text in excludes:
-        assert Subject.objects.get(provider=BEPRESS_PROVIDER, text=text).exists(), 'Unable to find excluded subject with text {}'.format(text)
-        assert included_subjects.filter(text=text), 'Excluded subject with text {} was not included'.format(text)
+        try:
+            Subject.objects.get(provider=BEPRESS_PROVIDER, text=text)
+        except Subject.DoesNotExist:
+            raise RuntimeError('Unable to find excluded subject with text {}'.format(text))
+        assert included_subjects.filter(text=text).exists(), 'Excluded subject with text {} was not included'.format(text)
     included_subjects.exclude(text__in=excludes)
     logger.info('Successfully validated `exclude`')
     for cust_name, map_dict in customs.iteritems():
