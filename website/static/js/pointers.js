@@ -9,11 +9,12 @@ var ko = require('knockout');
 var osfHelpers = require('js/osfHelpers');
 var Paginator = require('js/paginator');
 var oop = require('js/oop');
+var Raven = require('raven-js');
 
 // Grab nodeID from global context (mako)
 var nodeApiUrl = window.contextVars.node.urls.api;
 var nodeId = window.contextVars.node.id;
-var nodeLinksUrl = osfHelpers.apiV2Url('nodes/' + nodeId + '/node_links/', {});
+var nodeLinksUrl = osfHelpers.apiV2Url('nodes/' + nodeId + '/node_links/');
 
 var SEARCH_ALL_SUBMIT_TEXT = 'Search all projects';
 var SEARCH_MY_PROJECTS_SUBMIT_TEXT = 'Search my projects';
@@ -32,7 +33,8 @@ var AddPointerViewModel = oop.extend(Paginator, {
         this.errorMsg = ko.observable('');
         this.totalPages = ko.observable(0);
         this.includePublic = ko.observable(false);
-        this.dirty = ko.observable(false);
+        this.processing = ko.observable(false);
+        this.dirty = false;
         this.searchWarningMsg = ko.observable('');
         this.submitWarningMsg = ko.observable('');
         this.loadingResults = ko.observable(false);
@@ -67,6 +69,17 @@ var AddPointerViewModel = oop.extend(Paginator, {
         self.loadingResults(true);
         self.fetchResults();
     },
+    logErrors: function(url, status, error, msg){
+        var self = this;
+        Raven.captureMessage(msg, {
+            extra: {
+                url: url,
+                status: status,
+                error: error
+            }
+        });
+        self.searchWarningMsg(msg);
+    },
     fetchResults: function(){
         var self = this;
         self.errorMsg('');
@@ -91,7 +104,9 @@ var AddPointerViewModel = oop.extend(Paginator, {
             {'isCors': true}
         );
         requestNodes.done(function(response){
-            var nodes = response.data;
+            var nodes = response.data.filter(function(node){
+                return node.id !== nodeId;
+            });
             var count = nodes.length;
             if (!count){
                 self.errorMsg('No results found.');
@@ -106,9 +121,12 @@ var AddPointerViewModel = oop.extend(Paginator, {
             requestNodeLinks.done(function(response){
                 var embedNodeIds = [];
                 for (var i = 0; i < response.data.length; i++){
-                    embedNodeIds.push(response.data[i].embeds.target_node.data.id);
+                    var target_node = response.data[i].embeds.target_node;
+                    var embedId = target_node.data ? target_node.data.id : response.data[i]['relationships']['target_node']['links']['related']['href'].split('/')[5];
+                    embedNodeIds.push(embedId);
                 }
                 nodes.forEach(function(each){
+
                     if (each.type === 'registrations'){
                         each.dateRegistered = new osfHelpers.FormattableDate(each.attributes.date_registered);
                     } else {
@@ -128,8 +146,7 @@ var AddPointerViewModel = oop.extend(Paginator, {
                 });
                 self.doneSearching();
             });
-            requestNodeLinks.fail(function(xhr){
-                self.searchWarningMsg(xhr.responseJSON && xhr.responseJSON.message_long);
+            requestNodeLinks.fail(function(xhr, status, error){
                 count -= 1;
                 if (count === 0){
                     self.results(nodes);
@@ -137,18 +154,28 @@ var AddPointerViewModel = oop.extend(Paginator, {
                     self.numberOfPages(Math.ceil(response.links.meta.total / response.links.meta.per_page));
                     self.addNewPaginators();
                 }
+                self.logErrors(nodeLinksUrl, status, error, 'Unable to retrieve project nodelinks');
                 self.doneSearching();
             });
         });
-        requestNodes.fail(function(xhr){
-            self.searchWarningMsg(xhr.responseJSON && xhr.responseJSON.message_long);
+        requestNodes.fail(function(xhr, status, error){
+            var msg = 'Error retrieving nodes';
+            Raven.captureMessage(msg, {
+                extra: {
+                    url: url,
+                    status: status,
+                    error: error
+                }
+            });
+            var typeProjects = self.includePublic() ? 'all projects' : 'user projects';
+            self.logErrors(url, status, error, 'Unable to retrieve ' + typeProjects);
             self.doneSearching();
         });
     },
     add: function(data){
         var self = this;
-        var type = self.inputType() === 'nodes' ? 'node_links' : 'registration_links';
-        var addUrl = osfHelpers.apiV2Url('nodes/' + nodeId + '/' + type + '/', {});
+        self.processing(true);
+        var addUrl = osfHelpers.apiV2Url('nodes/' + nodeId + '/node_links/');
         var request = osfHelpers.ajaxJSON(
             'POST',
             addUrl,
@@ -156,11 +183,11 @@ var AddPointerViewModel = oop.extend(Paginator, {
                 'isCors': true,
                 'data': {
                     'data': {
-                        'type': type,
+                        'type': 'node_links',
                         'relationships': {
                             'nodes': {
                                 'data': {
-                                    'type': self.inputType(),
+                                    'type': 'nodes',
                                     'id': data.id
                                 }
                             }
@@ -170,15 +197,18 @@ var AddPointerViewModel = oop.extend(Paginator, {
             }
         );
         request.done(function (response){
-            self.dirty(true);
             self.selection.push(data);
+            self.processing(false);
+            self.dirty = true;
         });
-        request.fail(function(xhr){
-            self.searchWarningMsg(xhr.responseJSON && xhr.responseJSON.message_long);
+        request.fail(function(xhr, status, error){
+            self.logErrors(addUrl, status, error, 'Unable to link project');
+            self.processing(false);
         });
     },
     remove: function(data){
         var self = this;
+        self.processing(true);
         var requestNodeLinks = osfHelpers.ajaxJSON(
             'GET',
             nodeLinksUrl,
@@ -187,13 +217,16 @@ var AddPointerViewModel = oop.extend(Paginator, {
         requestNodeLinks.done(function(response){
             var nodeLinkId;
             for (var i = 0; i < response.data.length; i++){
-                if (response.data[i].embeds.target_node.data.id === data.id){
+                var target_node = response.data[i].embeds.target_node;
+                var embedId = target_node.data ?
+                    target_node.data.id :
+                    response.data[i]['relationships']['target_node']['links']['related']['href'].split('/')[5];
+                if (embedId === data.id){
                     nodeLinkId = response.data[i].id;
                     break;
                 }
             }
-            var type = self.inputType() === 'nodes' ? '/node_links/' : '/registration_links/';
-            var deleteUrl = osfHelpers.apiV2Url('nodes/' + nodeId + type + nodeLinkId + '/', {});
+            var deleteUrl = osfHelpers.apiV2Url('nodes/' + nodeId + '/node_links/' + nodeLinkId + '/');
             osfHelpers.ajaxJSON(
                 'DELETE',
                 deleteUrl,
@@ -202,13 +235,15 @@ var AddPointerViewModel = oop.extend(Paginator, {
                 self.selection.splice(
                     self.selection.indexOf(data), 1
                 );
-                self.dirty(true);
-            }).fail(function(xhr){
-                self.searchWarningMsg(xhr.responseJSON && xhr.responseJSON.message_long);
+                self.processing(false);
+                self.dirty = true;
+            }).fail(function(xhr, status, error){
+                self.logErrors(deleteUrl, status, error, 'Unable to remove nodelink');
+                self.processing(false);
             });
         });
-        requestNodeLinks.fail(function(xhr){
-            self.searchWarningMsg(xhr.responseJSON && xhr.responseJSON.message_long);
+        requestNodeLinks.fail(function(xhr, status, error){
+            self.logErrors(nodeLinksUrl, status, error, 'Unable to retrieve project nodelinks');
         });
     },
     selected: function(data){
@@ -257,19 +292,11 @@ var AddPointerViewModel = oop.extend(Paginator, {
     },
     clear: function (){
         var self = this;
-        if (self.query()){
-            self.query('');
-            self.results([]);
+        if (self.dirty){
+          window.location.reload();
         }
-        self.errorMsg('');
-        self.searchWarningMsg('');
     },
     done: function(){
-        var self = this;
-        if (! self.dirty()) {
-          self.clear();
-          return false;
-        }
         window.location.reload();
     }
 });

@@ -59,7 +59,10 @@ var LogFeed = {
                 var page = params.page || 1;
                 self.currentPage(parseInt(page));
                 self.totalPages(Math.ceil(result.links.meta.total / result.links.meta.per_page));
-                m.redraw();
+                $('#linkProjects').attr('disabled', false);
+                if (!window.contextVars.node.isRetracted && !$(location).attr('href').includes('profile')) {
+                    m.endComputation(); //paired with m.startComputation in project-dashboard-page; prevents redraw of mithril components.
+                }
             }
             self.logRequestPending(true);
             var promise = m.request({method : 'GET', url : url, config: mHelpers.apiV2Config({withCredentials: window.contextVars.isOnRootDomain})});

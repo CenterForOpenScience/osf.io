@@ -56,7 +56,7 @@
                             <span data-bind="if: (inputType() != 'nodes' && includePublic)" class="modal-subheader">Results: All Registrations</span>
                             <span data-bind="if: (inputType() != 'nodes' && !includePublic())" class="modal-subheader">Results: My Registrations</span>
                         </div>
-                        <div class="error" data-bind="text:errorMsg"></div>
+                        <div class="table-responsive error" data-bind="text:errorMsg"></div>
                         <table class="table table-striped">
                             <tbody data-bind="foreach:{data:results}">
                                 <tr class="pointer-tow">
@@ -64,13 +64,13 @@
                                         <div data-bind="if:!($root.selected($data))">
                                             <a
                                                   class="btn btn-success contrib-button"
-                                                  data-bind="click:$root.add.bind($root)"
+                                                  data-bind="click:$root.add.bind($root), attr: {disabled: $root.processing()}"
                                               ><i class="fa fa-plus"></i></a>
                                         </div>
                                         <div data-bind="if:($root.selected($data))">
                                             <a
                                               class="btn btn-default contrib-button"
-                                              data-bind="click:$root.remove.bind($root)"
+                                              data-bind="click:$root.remove.bind($root), attr: {disabled: $root.processing()}"
                                               ><i class="fa fa-minus"></i></a>
                                         </div>
                                     </td>
