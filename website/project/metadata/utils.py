@@ -1,6 +1,5 @@
 from framework import utils
 
-from website.settings import PREREG_ADMIN_TAG
 from website.util import permissions as osf_permissions
 
 def serialize_initiator(initiator):
