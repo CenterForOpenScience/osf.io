@@ -192,7 +192,7 @@ class TestRestrictions(DropboxAddonTestCase, OsfTestCase):
         url = self.project.api_url_for('dropbox_set_config')
         res = self.app.put_json(url, {'selected': {'path': 'foo'}},
             auth=self.contrib.auth, expect_errors=True)
-        assert_equal(res.status_code, http.BAD_REQUEST)
+        assert_equal(res.status_code, http.NOT_FOUND)
 
     def test_restricted_config_contrib_not_owner(self):
         # Contributor has dropbox auth, but is not the node authorizer
