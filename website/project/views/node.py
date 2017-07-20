@@ -270,6 +270,38 @@ def node_setting(auth, node, **kwargs):
     })
 
     return ret
+
+@must_be_valid_project
+@must_be_logged_in
+@must_have_permission(READ)
+def node_addons(auth, node, **kwargs):
+
+    ret = _view_project(node, auth, primary=True)
+
+    addon_settings = []
+    addons_available = [addon for addon in settings.ADDONS_AVAILABLE
+                        if addon not in settings.SYSTEM_ADDED_ADDONS['node']
+                        and addon.short_name not in ('wiki', 'forward', 'twofactor', 'osfstorage')]
+
+    for addon in addons_available:
+        addon_config = apps.get_app_config('addons_{}'.format(addon.short_name))
+        config = addon_config.to_json()
+        config['template_lookup'] = addon_config.template_lookup
+        config['addon_icon_url'] = addon_config.icon_url
+        config['node_settings_template'] = os.path.basename(addon_config.node_settings_template)
+        config['addon_short_name'] = addon.short_name
+        config['addon_full_name'] = addon.full_name
+        config['categories'] = addon.categories
+        addon_settings.append(config)
+
+    addon_settings = sorted(addon_settings, key=lambda addon: addon['full_name'].lower())
+
+    ret['addon_categories'] = set([item for addon in addon_settings for item in addon['categories']])
+    ret['addon_settings'] = addon_settings
+    ret['addon_js'] = collect_node_config_js(addon_settings)
+
+    return ret
+
 def collect_node_config_js(addons):
     """Collect webpack bundles for each of the addons' node-cfg.js modules. Return
     the URLs for each of the JS modules to be included on the node addons config page.
@@ -278,7 +310,7 @@ def collect_node_config_js(addons):
     """
     js_modules = []
     for addon in addons:
-        js_path = paths.resolve_addon_path(addon.config, 'node-cfg.js')
+        js_path = os.path.join('/', 'static', 'public', 'js', addon['short_name'], 'node-cfg.js')
         if js_path:
             js_modules.append(js_path)
     return js_modules
