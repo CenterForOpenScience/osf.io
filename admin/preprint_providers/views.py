@@ -226,15 +226,23 @@ class ImportPreprintProvider(PermissionRequiredMixin, View):
             parsed_file += str(chunk)
         return parsed_file
 
-class PreprintProviderShareSource(PermissionRequiredMixin, View):
+class ShareSourcePreprintProvider(PermissionRequiredMixin, View):
     permission_required = 'osf.change_preprintprovider'
     raise_exception = True
 
-    def post(self, request, *args, **kwargs):
+    def get(self, request, *args, **kwargs):
         preprint_provider = PreprintProvider.objects.get(id=self.kwargs['preprint_provider_id'])
         if preprint_provider.share_source or preprint_provider.access_token:
             # more descriptive error
             raise ValueError
+        if not osf_settings.SHARE_API_TOKEN or not osf_settings.SHARE_URL:
+            raise ValueError('SHARE_API_TOKEN or SHARE_URL not set')
+
+        debug_prepend = ''
+        if osf_settings.DEBUG_MODE:
+            assert osf_settings.SHARE_PREPRINT_PROVIDER_PREPEND, 'Local SHARE_PREPRINT_PROVIDER_PREPEND (e.g., \'alexschiller\') must be set when in DEBUG_MODE'
+            debug_prepend = '{}_'.format(osf_settings.SHARE_PREPRINT_PROVIDER_PREPEND)
+
         resp = requests.post(
             '{}api/v2/sources/'.format(osf_settings.SHARE_URL),
             json={
@@ -242,7 +250,7 @@ class PreprintProviderShareSource(PermissionRequiredMixin, View):
                     'type': 'Source',
                     'attributes': {
                         'homePage': preprint_provider.domain if preprint_provider.domain else '{}/preprints/{}/'.format(osf_settings.DOMAIN, preprint_provider._id),
-                        'longTitle': preprint_provider.name,
+                        'longTitle': debug_prepend + preprint_provider.name,
                         # this base URL should live in settings somewhere
                         'icon': 'https://staging-cdn.osf.io/preprints-assets/{}/square_color_no_transparent.png'.format(preprint_provider._id)
                     }
@@ -253,7 +261,11 @@ class PreprintProviderShareSource(PermissionRequiredMixin, View):
                 'Content-Type': 'application/vnd.api+json'
             }
         )
-        return HttpResponse(resp.json(), content_type='text/json')
+        data = resp.json()['data']['relationships']
+        preprint_provider.share_source = data['source_config']['data']['id']
+        preprint_provider.access_token = data['share_user']['data']['attributes']['authorization_token']
+        preprint_provider.save()
+        return redirect(reverse_lazy('preprint_providers:detail', kwargs={'preprint_provider_id': preprint_provider.id}))
 
 
 class SubjectDynamicUpdateView(PermissionRequiredMixin, View):

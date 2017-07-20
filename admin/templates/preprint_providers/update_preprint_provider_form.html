@@ -103,12 +103,4 @@
                 <input class="form-button" type="submit" value="Import" />
             </form>
         </div>
-        <div>
-            <h4>Add as SHARE source</h4>
-            <p>Send a request to SHARE to add this provider as a source and get an access token. The access_token and share_source fields will be populated and then the provider will need to be saved.</p>
-            <form id="share-source" action = {% url 'preprint_providers:share_source' %} method="post" enctype="multipart/form-data">
-                {% csrf_token %}
-                <input class="form-button" type="submit" value="Send" />
-            </form>
-        </div>
     </div>
