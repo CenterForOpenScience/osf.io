@@ -1,8 +1,6 @@
 var $ = require('jquery');
 require('bootstrap');
 
-require('osf-style');
-
 var $osf = require('js/osfHelpers');
 var osfLanguage = require('js/osfLanguage');
 
@@ -14,13 +12,13 @@ $(document).ready(function() {
         $drafts.addClass('osf-box');
 
         var $draft = $(this);
-        $draft.removeClass('osf-box');        
+        $draft.removeClass('osf-box');
         $draft.addClass('osf-box-lt');
     });
 
     $('.prereg-draft-save').click(function(e) {
 
-        var $draftElement = $(this).closest('.prereg-draft') ;       
+        var $draftElement = $(this).closest('.prereg-draft') ;
         var $form = $draftElement.find('.prereg-draft-form');
         var data = {};
         $.each($form.serializeArray(), function(_, item) {

@@ -14,6 +14,7 @@ If you are manually testing functionality for permissions views, do not log in t
 - Select the already existing OSF User you'd like to make an admin superuser with `user = OSFUser.objects.get(username=<your_user@cos.io>)`
 - Set that user to be a superuser and staff with `user.is_superuser = True` and `user.is_staff = True`
 - Save your user with `user.save()`
+- Commit the changes with `commit()`
 
 3. Log in to the admin
 - Visit the admin at `http://localhost:8001/`

@@ -41,6 +41,20 @@ from tests.test_cas_authentication import generate_external_user_with_resp
 
 class TestAuthUtils(OsfTestCase):
 
+    def test_citation_with_only_fullname(self):
+        user = UserFactory()
+        user.fullname = 'Martin Luther King, Jr.'
+        user.family_name = ''
+        user.given_name = ''
+        user.middle_names = ''
+        user.suffix = ''
+        user.save()
+        resp = user.csl_name()
+        family_name = resp['family']
+        given_name = resp['given']
+        assert_equal(family_name, 'King')
+        assert_equal(given_name, 'Martin L, Jr.')
+
     def test_unreg_user_can_register(self):
         user = UnregUserFactory()
 

@@ -22,8 +22,9 @@ from django.dispatch import receiver
 from django.db.models.signals import post_save
 from django.db import models
 from django.utils import timezone
+
 from django_extensions.db.models import TimeStampedModel
-from framework.auth import Auth, signals
+from framework.auth import Auth, signals, utils
 from framework.auth.core import generate_verification_key
 from framework.auth.exceptions import (ChangePasswordError, ExpiredTokenError,
                                        InvalidTokenError,
@@ -150,7 +151,8 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
         'researchGate': u'https://researchgate.net/profile/{}',
         'academiaInstitution': u'https://{}',
         'academiaProfileID': u'.academia.edu/{}',
-        'baiduScholar': u'http://xueshu.baidu.com/scholarID/{}'
+        'baiduScholar': u'http://xueshu.baidu.com/scholarID/{}',
+        'ssrn': u'http://papers.ssrn.com/sol3/cf_dev/AbsByAuth.cfm?per_id={}'
     }
 
     # The primary email address for the account.
@@ -467,17 +469,32 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
 
     @property
     def csl_given_name(self):
-        parts = [self.given_name]
-        if self.middle_names:
-            parts.extend(each[0] for each in re.split(r'\s+', self.middle_names))
-        return ' '.join(parts)
+        return utils.generate_csl_given_name(self.given_name, self.middle_names, self.suffix)
 
-    @property
-    def csl_name(self):
-        return {
-            'family': self.family_name,
-            'given': self.csl_given_name,
-        }
+    def csl_name(self, node_id=None):
+        if self.is_registered:
+            name = self.fullname
+        else:
+            name = self.get_unclaimed_record(node_id)['name']
+
+        if self.family_name and self.given_name:
+            """If the user has a family and given name, use those"""
+            return {
+                'family': self.family_name,
+                'given': self.csl_given_name,
+            }
+        else:
+            """ If the user doesn't autofill his family and given name """
+            parsed = utils.impute_names(name)
+            given_name = parsed['given']
+            middle_names = parsed['middle']
+            family_name = parsed['family']
+            suffix = parsed['suffix']
+            csl_given_name = utils.generate_csl_given_name(given_name, middle_names, suffix)
+            return {
+                'family': family_name,
+                'given': csl_given_name,
+            }
 
     @property
     def contributor_to(self):

@@ -1,148 +1,171 @@
-# -*- coding: utf-8 -*-
-from nose.tools import *  # flake8: noqa
-
-from framework.auth.core import Auth
-
-from osf.models import AbstractNode as Node, NodeLog
-from website.util import permissions
-from website.util.sanitize import strip_html
+import pytest
 
 from api.base.settings.defaults import API_BASE
-
-from tests.base import ApiTestCase, fake
+from framework.auth.core import Auth
+from osf.models import AbstractNode as Node, NodeLog
 from osf_tests.factories import (
     NodeFactory,
     ProjectFactory,
     RegistrationFactory,
     AuthUserFactory,
 )
+from tests.base import fake
+from website.util import permissions
+from website.util.sanitize import strip_html
 
 
-class TestNodeChildrenList(ApiTestCase):
-    def setUp(self):
-        super(TestNodeChildrenList, self).setUp()
-        self.user = AuthUserFactory()
-        self.project = ProjectFactory()
-        self.project.add_contributor(self.user, permissions=[permissions.READ, permissions.WRITE])
-        self.project.save()
-        self.component = NodeFactory(parent=self.project, creator=self.user)
-        self.pointer = ProjectFactory()
-        self.project.add_pointer(self.pointer, auth=Auth(self.user), save=True)
-        self.private_project_url = '/{}nodes/{}/children/'.format(API_BASE, self.project._id)
+@pytest.fixture()
+def user():
+    return AuthUserFactory()
 
-        self.public_project = ProjectFactory(is_public=True, creator=self.user)
-        self.public_project.save()
-        self.public_component = NodeFactory(parent=self.public_project, creator=self.user, is_public=True)
-        self.public_project_url = '/{}nodes/{}/children/'.format(API_BASE, self.public_project._id)
+@pytest.mark.django_db
+class TestNodeChildrenList:
 
-        self.user_two = AuthUserFactory()
+    @pytest.fixture()
+    def private_project(self, user):
+        private_project = ProjectFactory()
+        private_project.add_contributor(user, permissions=[permissions.READ, permissions.WRITE])
+        private_project.save()
+        return private_project
 
-    def test_node_children_list_does_not_include_pointers(self):
-        res = self.app.get(self.private_project_url, auth=self.user.auth)
-        assert_equal(len(res.json['data']), 1)
+    @pytest.fixture()
+    def component(self, user, private_project):
+        return NodeFactory(parent=private_project, creator=user)
 
-    def test_return_public_node_children_list_logged_out(self):
-        res = self.app.get(self.public_project_url)
-        assert_equal(res.status_code, 200)
-        assert_equal(res.content_type, 'application/vnd.api+json')
-        assert_equal(len(res.json['data']), 1)
-        assert_equal(res.json['data'][0]['id'], self.public_component._id)
+    @pytest.fixture()
+    def pointer(self):
+        return ProjectFactory()
 
-    def test_return_public_node_children_list_logged_in(self):
-        res = self.app.get(self.public_project_url, auth=self.user_two.auth)
-        assert_equal(res.status_code, 200)
-        assert_equal(res.content_type, 'application/vnd.api+json')
-        assert_equal(len(res.json['data']), 1)
-        assert_equal(res.json['data'][0]['id'], self.public_component._id)
+    @pytest.fixture()
+    def private_project_url(self, private_project):
+        return '/{}nodes/{}/children/'.format(API_BASE, private_project._id)
 
-    def test_return_private_node_children_list_logged_out(self):
-        res = self.app.get(self.private_project_url, expect_errors=True)
-        assert_equal(res.status_code, 401)
+    @pytest.fixture()
+    def public_project(self, user):
+        return ProjectFactory(is_public=True, creator=user)
+
+    @pytest.fixture()
+    def public_component(self, user, public_project):
+        return NodeFactory(parent=public_project, creator=user, is_public=True)
+
+    @pytest.fixture()
+    def public_project_url(self, user, public_project):
+        return '/{}nodes/{}/children/'.format(API_BASE, public_project._id)
+
+    def test_return_public_node_children_list(self, app, public_project, public_component, public_project_url):
+
+    # test_return_public_node_children_list_logged_out
+        res = app.get(public_project_url)
+        assert res.status_code == 200
+        assert res.content_type == 'application/vnd.api+json'
+        assert len(res.json['data']) == 1
+        assert res.json['data'][0]['id'] == public_component._id
+
+    # test_return_public_node_children_list_logged_in
+        non_contrib = AuthUserFactory()
+        res = app.get(public_project_url, auth=non_contrib.auth)
+        assert res.status_code == 200
+        assert res.content_type == 'application/vnd.api+json'
+        assert len(res.json['data']) == 1
+        assert res.json['data'][0]['id'] == public_component._id
+
+    def test_return_private_node_children_list(self, app, user, component, private_project_url):
+
+    #   test_return_private_node_children_list_logged_out
+        res = app.get(private_project_url, expect_errors=True)
+        assert res.status_code == 401
         assert 'detail' in res.json['errors'][0]
 
-    def test_return_private_node_children_list_logged_in_contributor(self):
-        res = self.app.get(self.private_project_url, auth=self.user.auth)
-        assert_equal(res.status_code, 200)
-        assert_equal(res.content_type, 'application/vnd.api+json')
-        assert_equal(len(res.json['data']), 1)
-        assert_equal(res.json['data'][0]['id'], self.component._id)
-
-    def test_return_private_node_children_list_logged_in_non_contributor(self):
-        res = self.app.get(self.private_project_url, auth=self.user_two.auth, expect_errors=True)
-        assert_equal(res.status_code, 403)
+    #   test_return_private_node_children_list_logged_in_non_contributor
+        non_contrib = AuthUserFactory()
+        res = app.get(private_project_url, auth=non_contrib.auth, expect_errors=True)
+        assert res.status_code == 403
         assert 'detail' in res.json['errors'][0]
 
-    def test_node_children_list_does_not_include_unauthorized_projects(self):
-        private_component = NodeFactory(parent=self.project)
-        res = self.app.get(self.private_project_url, auth=self.user.auth)
-        assert_equal(len(res.json['data']), 1)
+    #   test_return_private_node_children_list_logged_in_contributor
+        res = app.get(private_project_url, auth=user.auth)
+        assert res.status_code == 200
+        assert res.content_type == 'application/vnd.api+json'
+        assert len(res.json['data']) == 1
+        assert res.json['data'][0]['id'] == component._id
 
-    def test_node_children_list_does_not_include_deleted(self):
-        child_project = NodeFactory(parent=self.public_project, creator=self.user)
+    def test_node_children_list_does_not_include_pointers(self, app, user, component, private_project_url):
+        res = app.get(private_project_url, auth=user.auth)
+        assert len(res.json['data']) == 1
+
+    def test_node_children_list_does_not_include_unauthorized_projects(self, app, user, component, private_project, private_project_url):
+        private_component = NodeFactory(parent=private_project)
+        res = app.get(private_project_url, auth=user.auth)
+        assert len(res.json['data']) == 1
+
+    def test_node_children_list_does_not_include_deleted(self, app, user, public_project, public_component, component, public_project_url):
+        child_project = NodeFactory(parent=public_project, creator=user)
         child_project.save()
 
-        res = self.app.get(self.public_project_url, auth=self.user.auth)
-        assert_equal(res.status_code, 200)
+        res = app.get(public_project_url, auth=user.auth)
+        assert res.status_code == 200
         ids = [node['id'] for node in res.json['data']]
-        assert_in(child_project._id, ids)
-        assert_equal(2, len(ids))
+        assert child_project._id in ids
+        assert 2 == len(ids)
 
         child_project.is_deleted = True
         child_project.save()
 
-        res = self.app.get(self.public_project_url, auth=self.user.auth)
-        assert_equal(res.status_code, 200)
+        res = app.get(public_project_url, auth=user.auth)
+        assert res.status_code == 200
         ids = [node['id'] for node in res.json['data']]
-        assert_not_in(child_project._id, ids)
-        assert_equal(1, len(ids))
+        assert child_project._id not in ids
+        assert 1 == len(ids)
 
-    def test_node_children_list_does_not_include_node_links(self):
+    def test_node_children_list_does_not_include_node_links(self, app, user, public_project, private_project, public_component, component, pointer, public_project_url):
         pointed_to = ProjectFactory(is_public=True)
 
-        self.public_project.add_pointer(pointed_to, auth=Auth(self.public_project.creator))
+        public_project.add_pointer(pointed_to, auth=Auth(public_project.creator))
 
-        res = self.app.get(self.public_project_url, auth=self.user.auth)
+        res = app.get(public_project_url, auth=user.auth)
         ids = [node['id'] for node in res.json['data']]
-        assert_in(self.public_component._id, ids)  # sanity check
+        assert public_component._id in ids  # sanity check
 
-        assert_not_in(pointed_to._id, ids)
+        assert pointed_to._id not in ids
 
 
-class TestNodeChildrenListFiltering(ApiTestCase):
+@pytest.mark.django_db
+class TestNodeChildrenListFiltering:
 
-    def test_node_child_filtering(self):
-        user = AuthUserFactory()
+    def test_node_child_filtering(self, app, user):
         project = ProjectFactory(creator=user)
 
-        title1, title2 = fake.bs(), fake.bs()
-        component = NodeFactory(title=title1, parent=project)
-        component2 = NodeFactory(title=title2, parent=project)
+        title_one, title_two = fake.bs(), fake.bs()
+        component = NodeFactory(title=title_one, parent=project)
+        component_two = NodeFactory(title=title_two, parent=project)
 
         url = '/{}nodes/{}/children/?filter[title]={}'.format(
             API_BASE,
             project._id,
-            title1
+            title_one
         )
-        res = self.app.get(url, auth=user.auth)
+        res = app.get(url, auth=user.auth)
 
         ids = [node['id'] for node in res.json['data']]
 
-        assert_in(component._id, ids)
-        assert_not_in(component2._id, ids)
+        assert component._id in ids
+        assert component_two._id not in ids
 
 
-class TestNodeChildCreate(ApiTestCase):
+@pytest.mark.django_db
+class TestNodeChildCreate:
 
-    def setUp(self):
-        super(TestNodeChildCreate, self).setUp()
+    @pytest.fixture()
+    def project(self, user):
+        return ProjectFactory(creator=user, is_public=True)
 
-        self.user = AuthUserFactory()
-        self.user_two = AuthUserFactory()
+    @pytest.fixture()
+    def url(self, project):
+        return '/{}nodes/{}/children/'.format(API_BASE, project._id)
 
-        self.project = ProjectFactory(creator=self.user, is_public=True)
-
-        self.url = '/{}nodes/{}/children/'.format(API_BASE, self.project._id)
-        self.child = {
+    @pytest.fixture()
+    def child(self):
+        return {
             'data': {
                 'type': 'nodes',
                 'attributes': {
@@ -153,99 +176,33 @@ class TestNodeChildCreate(ApiTestCase):
             }
         }
 
-    def test_creates_child_logged_out_user(self):
-        res = self.app.post_json_api(self.url, self.child, expect_errors=True)
-        assert_equal(res.status_code, 401)
+    def test_creates_child(self, app, user, project, child, url):
 
-        self.project.reload()
-        assert_equal(len(self.project.nodes), 0)
+    #   test_creates_child_logged_out_user
+        res = app.post_json_api(url, child, expect_errors=True)
+        assert res.status_code == 401
 
-    def test_creates_child_logged_in_owner(self):
-        res = self.app.post_json_api(self.url, self.child, auth=self.user.auth)
-        assert_equal(res.status_code, 201)
-        assert_equal(res.json['data']['attributes']['title'], self.child['data']['attributes']['title'])
-        assert_equal(res.json['data']['attributes']['description'], self.child['data']['attributes']['description'])
-        assert_equal(res.json['data']['attributes']['category'], self.child['data']['attributes']['category'])
+        project.reload()
+        assert len(project.nodes) == 0
 
-        self.project.reload()
-        assert_equal(res.json['data']['id'], self.project.nodes[0]._id)
-        assert_equal(self.project.nodes[0].logs.latest().action, NodeLog.PROJECT_CREATED)
+    #   test_creates_child_logged_in_read_contributor
+        read_contrib = AuthUserFactory()
+        project.add_contributor(read_contrib, permissions=[permissions.READ], auth=Auth(user), save=True)
+        res = app.post_json_api(url, child, auth=read_contrib.auth, expect_errors=True)
+        assert res.status_code == 403
 
-    def test_creates_child_logged_in_write_contributor(self):
-        self.project.add_contributor(self.user_two, permissions=[permissions.READ, permissions.WRITE], auth=Auth(self.user), save=True)
+        project.reload()
+        assert len(project.nodes) == 0
 
-        res = self.app.post_json_api(self.url, self.child, auth=self.user_two.auth)
-        assert_equal(res.status_code, 201)
-        assert_equal(res.json['data']['attributes']['title'], self.child['data']['attributes']['title'])
-        assert_equal(res.json['data']['attributes']['description'], self.child['data']['attributes']['description'])
-        assert_equal(res.json['data']['attributes']['category'], self.child['data']['attributes']['category'])
+    #   test_creates_child_logged_in_non_contributor
+        non_contrib = AuthUserFactory()
+        res = app.post_json_api(url, child, auth=non_contrib.auth, expect_errors=True)
+        assert res.status_code == 403
 
-        self.project.reload()
-        child_id = res.json['data']['id']
-        assert_equal(child_id, self.project.nodes[0]._id)
-        assert_equal(Node.load(child_id).logs.latest().action, NodeLog.PROJECT_CREATED)
+        project.reload()
+        assert len(project.nodes) == 0
 
-    def test_creates_child_logged_in_read_contributor(self):
-        self.project.add_contributor(self.user_two, permissions=[permissions.READ], auth=Auth(self.user), save=True)
-        res = self.app.post_json_api(self.url, self.child, auth=self.user_two.auth, expect_errors=True)
-        assert_equal(res.status_code, 403)
-
-        self.project.reload()
-        assert_equal(len(self.project.nodes), 0)
-
-    def test_creates_child_logged_in_non_contributor(self):
-        res = self.app.post_json_api(self.url, self.child, auth=self.user_two.auth, expect_errors=True)
-        assert_equal(res.status_code, 403)
-
-        self.project.reload()
-        assert_equal(len(self.project.nodes), 0)
-
-    def test_creates_child_creates_child_and_sanitizes_html_logged_in_owner(self):
-        title = '<em>Cool</em> <strong>Project</strong>'
-        description = 'An <script>alert("even cooler")</script> child'
-
-        res = self.app.post_json_api(self.url, {
-            'data': {
-                'type': 'nodes',
-                'attributes': {
-                    'title': title,
-                    'description': description,
-                    'category': 'project',
-                    'public': True
-                }
-            }
-        }, auth=self.user.auth)
-        child_id = res.json['data']['id']
-        assert_equal(res.status_code, 201)
-        url = '/{}nodes/{}/'.format(API_BASE, child_id)
-
-        res = self.app.get(url, auth=self.user.auth)
-        assert_equal(res.json['data']['attributes']['title'], strip_html(title))
-        assert_equal(res.json['data']['attributes']['description'], strip_html(description))
-        assert_equal(res.json['data']['attributes']['category'], 'project')
-
-        self.project.reload()
-        child_id = res.json['data']['id']
-        assert_equal(child_id, self.project.nodes[0]._id)
-        assert_equal(Node.load(child_id).logs.latest().action, NodeLog.PROJECT_CREATED)
-
-    def test_cannot_create_child_on_a_registration(self):
-        registration = RegistrationFactory(project=self.project, creator=self.user)
-        url = '/{}nodes/{}/children/'.format(API_BASE, registration._id)
-        res = self.app.post_json_api(url, {
-            'data': {
-                'type': 'nodes',
-                'attributes': {
-                    'title': fake.catch_phrase(),
-                    'description': fake.bs(),
-                    'category': 'project',
-                    'public': True,
-                }
-            }
-        }, auth=self.user.auth, expect_errors=True)
-        assert_equal(res.status_code, 404)
-
-    def test_creates_child_no_type(self):
+    #   test_creates_child_no_type
         child = {
             'data': {
                 'attributes': {
@@ -255,12 +212,12 @@ class TestNodeChildCreate(ApiTestCase):
                 }
             }
         }
-        res = self.app.post_json_api(self.url, child, auth=self.user.auth, expect_errors=True)
-        assert_equal(res.status_code, 400)
-        assert_equal(res.json['errors'][0]['detail'], 'This field may not be null.')
-        assert_equal(res.json['errors'][0]['source']['pointer'], '/data/type')
+        res = app.post_json_api(url, child, auth=user.auth, expect_errors=True)
+        assert res.status_code == 400
+        assert res.json['errors'][0]['detail'] == 'This field may not be null.'
+        assert res.json['errors'][0]['source']['pointer'] == '/data/type'
 
-    def test_creates_child_incorrect_type(self):
+    #   test_creates_child_incorrect_type
         child = {
             'data': {
                 'type': 'Wrong type.',
@@ -271,11 +228,11 @@ class TestNodeChildCreate(ApiTestCase):
                 }
             }
         }
-        res = self.app.post_json_api(self.url, child, auth=self.user.auth, expect_errors=True)
-        assert_equal(res.status_code, 409)
-        assert_equal(res.json['errors'][0]['detail'], 'This resource has a type of "nodes", but you set the json body\'s type field to "Wrong type.". You probably need to change the type field to match the resource\'s type.')
+        res = app.post_json_api(url, child, auth=user.auth, expect_errors=True)
+        assert res.status_code == 409
+        assert res.json['errors'][0]['detail'] == 'This resource has a type of "nodes", but you set the json body\'s type field to "Wrong type.". You probably need to change the type field to match the resource\'s type.'
 
-    def test_creates_child_properties_not_nested(self):
+    #   test_creates_child_properties_not_nested
         child = {
             'data': {
                 'title': 'child',
@@ -283,121 +240,199 @@ class TestNodeChildCreate(ApiTestCase):
                 'category': 'project',
             }
         }
-        res = self.app.post_json_api(self.url, child, auth=self.user.auth, expect_errors=True)
-        assert_equal(res.status_code, 400)
-        assert_equal(res.json['errors'][0]['detail'], 'Request must include /data/attributes.')
-        assert_equal(res.json['errors'][0]['source']['pointer'], '/data/attributes')
+        res = app.post_json_api(url, child, auth=user.auth, expect_errors=True)
+        assert res.status_code == 400
+        assert res.json['errors'][0]['detail'] == 'Request must include /data/attributes.'
+        assert res.json['errors'][0]['source']['pointer'] == '/data/attributes'
 
+    def test_creates_child_logged_in_write_contributor(self, app, user, project, child, url):
+        write_contrib = AuthUserFactory()
+        project.add_contributor(write_contrib, permissions=[permissions.READ, permissions.WRITE], auth=Auth(user), save=True)
 
-class TestNodeChildrenBulkCreate(ApiTestCase):
+        res = app.post_json_api(url, child, auth=write_contrib.auth)
+        assert res.status_code == 201
+        assert res.json['data']['attributes']['title'] == child['data']['attributes']['title']
+        assert res.json['data']['attributes']['description'] == child['data']['attributes']['description']
+        assert res.json['data']['attributes']['category'] == child['data']['attributes']['category']
 
-    def setUp(self):
-        super(TestNodeChildrenBulkCreate, self).setUp()
+        project.reload()
+        child_id = res.json['data']['id']
+        assert child_id == project.nodes[0]._id
+        assert Node.load(child_id).logs.latest().action == NodeLog.PROJECT_CREATED
 
-        self.user = AuthUserFactory()
-        self.user_two = AuthUserFactory()
+    def test_creates_child_logged_in_owner(self, app, user, project, child, url):
+        res = app.post_json_api(url, child, auth=user.auth)
+        assert res.status_code == 201
+        assert res.json['data']['attributes']['title'] == child['data']['attributes']['title']
+        assert res.json['data']['attributes']['description'] == child['data']['attributes']['description']
+        assert res.json['data']['attributes']['category'] == child['data']['attributes']['category']
 
-        self.project = ProjectFactory(creator=self.user, is_public=True)
+        project.reload()
+        assert res.json['data']['id'] == project.nodes[0]._id
+        assert project.nodes[0].logs.latest().action == NodeLog.PROJECT_CREATED
 
-        self.url = '/{}nodes/{}/children/'.format(API_BASE, self.project._id)
-        self.child = {
+    def test_creates_child_creates_child_and_sanitizes_html_logged_in_owner(self, app, user, project, url):
+        title = '<em>Reasonable</em> <strong>Project</strong>'
+        description = 'An <script>alert("even reasonabler")</script> child'
+
+        res = app.post_json_api(url, {
+            'data': {
                 'type': 'nodes',
                 'attributes': {
-                    'title': 'child',
-                    'description': 'this is a child project',
-                    'category': 'project'
+                    'title': title,
+                    'description': description,
+                    'category': 'project',
+                    'public': True
                 }
-        }
-        self.child_two = {
+            }
+        }, auth=user.auth)
+        child_id = res.json['data']['id']
+        assert res.status_code == 201
+        url = '/{}nodes/{}/'.format(API_BASE, child_id)
+
+        res = app.get(url, auth=user.auth)
+        assert res.json['data']['attributes']['title'] == strip_html(title)
+        assert res.json['data']['attributes']['description'] == strip_html(description)
+        assert res.json['data']['attributes']['category'] == 'project'
+
+        project.reload()
+        child_id = res.json['data']['id']
+        assert child_id == project.nodes[0]._id
+        assert Node.load(child_id).logs.latest().action == NodeLog.PROJECT_CREATED
+
+    def test_cannot_create_child_on_a_registration(self, app, user, project):
+        registration = RegistrationFactory(project=project, creator=user)
+        url = '/{}nodes/{}/children/'.format(API_BASE, registration._id)
+        res = app.post_json_api(url, {
+            'data': {
                 'type': 'nodes',
                 'attributes': {
-                    'title': 'second child',
-                    'description': 'this is my hypothesis',
-                    'category': 'hypothesis'
+                    'title': fake.catch_phrase(),
+                    'description': fake.bs(),
+                    'category': 'project',
+                    'public': True,
                 }
+            }
+        }, auth=user.auth, expect_errors=True)
+        assert res.status_code == 404
+
+
+@pytest.mark.django_db
+class TestNodeChildrenBulkCreate:
+
+    @pytest.fixture()
+    def project(self, user):
+        return ProjectFactory(creator=user, is_public=True)
+
+    @pytest.fixture()
+    def url(self, project):
+        return '/{}nodes/{}/children/'.format(API_BASE, project._id)
+
+    @pytest.fixture()
+    def child_one(self):
+        return {
+            'type': 'nodes',
+            'attributes': {
+                'title': 'child',
+                'description': 'this is a child project',
+                'category': 'project'
+            }
         }
 
-    def test_bulk_children_create_blank_request(self):
-        res = self.app.post_json_api(self.url, auth=self.user.auth, expect_errors=True, bulk=True)
-        assert_equal(res.status_code, 400)
+    @pytest.fixture()
+    def child_two(self):
+        return {
+            'type': 'nodes',
+            'attributes': {
+                'title': 'second child',
+                'description': 'this is my hypothesis',
+                'category': 'hypothesis'
+            }
+        }
 
-    def test_bulk_creates_children_limits(self):
-        res = self.app.post_json_api(self.url, {'data': [self.child] * 101},
-                                     auth=self.user.auth, expect_errors=True, bulk=True)
-        assert_equal(res.status_code, 400)
-        assert_equal(res.json['errors'][0]['detail'], 'Bulk operation limit is 100, got 101.')
-        assert_equal(res.json['errors'][0]['source']['pointer'], '/data')
+    def test_bulk_children_create_blank_request(self, app, user, url):
+        res = app.post_json_api(url, auth=user.auth, expect_errors=True, bulk=True)
+        assert res.status_code == 400
 
-    def test_bulk_creates_children_logged_out_user(self):
-        res = self.app.post_json_api(self.url, {'data': [self.child, self.child_two]}, expect_errors=True, bulk=True)
-        assert_equal(res.status_code, 401)
+    def test_bulk_creates_children_limits(self, app, user, child_one, url):
+        res = app.post_json_api(url, {'data': [child_one] * 101}, auth=user.auth, expect_errors=True, bulk=True)
+        assert res.status_code == 400
+        assert res.json['errors'][0]['detail'] == 'Bulk operation limit is 100, got 101.'
+        assert res.json['errors'][0]['source']['pointer'] == '/data'
 
-        self.project.reload()
-        assert_equal(len(self.project.nodes), 0)
+    def test_bulk_creates_children_auth_errors(self, app, user, project, child_one, child_two, url):
 
-    def test_bulk_creates_children_logged_in_owner(self):
-        res = self.app.post_json_api(self.url, {'data': [self.child, self.child_two]}, auth=self.user.auth, bulk=True)
-        assert_equal(res.status_code, 201)
-        assert_equal(res.json['data'][0]['attributes']['title'], self.child['attributes']['title'])
-        assert_equal(res.json['data'][0]['attributes']['description'], self.child['attributes']['description'])
-        assert_equal(res.json['data'][0]['attributes']['category'], self.child['attributes']['category'])
-        assert_equal(res.json['data'][1]['attributes']['title'], self.child_two['attributes']['title'])
-        assert_equal(res.json['data'][1]['attributes']['description'], self.child_two['attributes']['description'])
-        assert_equal(res.json['data'][1]['attributes']['category'], self.child_two['attributes']['category'])
+    #   test_bulk_creates_children_logged_out_user
+        res = app.post_json_api(url, {'data': [child_one, child_two]}, expect_errors=True, bulk=True)
+        assert res.status_code == 401
 
-        self.project.reload()
-        nodes = self.project.nodes
-        assert_equal(res.json['data'][0]['id'], nodes[0]._id)
-        assert_equal(res.json['data'][1]['id'], nodes[1]._id)
+        project.reload()
+        assert len(project.nodes) == 0
 
-        assert_equal(nodes[0].logs.latest().action, NodeLog.PROJECT_CREATED)
-        assert_equal(nodes[1].logs.latest().action, NodeLog.PROJECT_CREATED)
+    #   test_bulk_creates_children_logged_in_read_contributor
+        read_contrib = AuthUserFactory()
+        project.add_contributor(read_contrib, permissions=[permissions.READ], auth=Auth(user), save=True)
+        res = app.post_json_api(url, {'data': [child_one, child_two]}, auth=read_contrib.auth, expect_errors=True, bulk=True)
+        assert res.status_code == 403
+
+        project.reload()
+        assert len(project.nodes) == 0
+
+    #   test_bulk_creates_children_logged_in_non_contributor
+        non_contrib = AuthUserFactory()
+        res = app.post_json_api(url, {'data': [child_one, child_two]}, auth=non_contrib.auth, expect_errors=True, bulk=True)
+        assert res.status_code == 403
+
+        project.reload()
+        assert len(project.nodes) == 0
+
+    def test_bulk_creates_children_logged_in_owner(self, app, user, project, child_one, child_two, url):
+        res = app.post_json_api(url, {'data': [child_one, child_two]}, auth=user.auth, bulk=True)
+        assert res.status_code == 201
+        assert res.json['data'][0]['attributes']['title'] == child_one['attributes']['title']
+        assert res.json['data'][0]['attributes']['description'] == child_one['attributes']['description']
+        assert res.json['data'][0]['attributes']['category'] == child_one['attributes']['category']
+        assert res.json['data'][1]['attributes']['title'] == child_two['attributes']['title']
+        assert res.json['data'][1]['attributes']['description'] == child_two['attributes']['description']
+        assert res.json['data'][1]['attributes']['category'] == child_two['attributes']['category']
+
+        project.reload()
+        nodes = project.nodes
+        assert res.json['data'][0]['id'] == nodes[0]._id
+        assert res.json['data'][1]['id'] == nodes[1]._id
+
+        assert nodes[0].logs.latest().action == NodeLog.PROJECT_CREATED
+        assert nodes[1].logs.latest().action == NodeLog.PROJECT_CREATED
 
 
-    def test_bulk_creates_children_child_logged_in_write_contributor(self):
-        self.project.add_contributor(self.user_two, permissions=[permissions.READ, permissions.WRITE], auth=Auth(self.user), save=True)
+    def test_bulk_creates_children_child_logged_in_write_contributor(self, app, user, project, child_one, child_two, url):
+        write_contrib = AuthUserFactory()
+        project.add_contributor(write_contrib, permissions=[permissions.READ, permissions.WRITE], auth=Auth(user), save=True)
 
-        res = self.app.post_json_api(self.url, {'data': [self.child, self.child_two]}, auth=self.user_two.auth, bulk=True)
-        assert_equal(res.status_code, 201)
-        assert_equal(res.json['data'][0]['attributes']['title'], self.child['attributes']['title'])
-        assert_equal(res.json['data'][0]['attributes']['description'], self.child['attributes']['description'])
-        assert_equal(res.json['data'][0]['attributes']['category'], self.child['attributes']['category'])
-        assert_equal(res.json['data'][1]['attributes']['title'], self.child_two['attributes']['title'])
-        assert_equal(res.json['data'][1]['attributes']['description'], self.child_two['attributes']['description'])
-        assert_equal(res.json['data'][1]['attributes']['category'], self.child_two['attributes']['category'])
+        res = app.post_json_api(url, {'data': [child_one, child_two]}, auth=write_contrib.auth, bulk=True)
+        assert res.status_code == 201
+        assert res.json['data'][0]['attributes']['title'] == child_one['attributes']['title']
+        assert res.json['data'][0]['attributes']['description'] == child_one['attributes']['description']
+        assert res.json['data'][0]['attributes']['category'] == child_one['attributes']['category']
+        assert res.json['data'][1]['attributes']['title'] == child_two['attributes']['title']
+        assert res.json['data'][1]['attributes']['description'] == child_two['attributes']['description']
+        assert res.json['data'][1]['attributes']['category'] == child_two['attributes']['category']
 
-        self.project.reload()
+        project.reload()
         child_id = res.json['data'][0]['id']
         child_two_id = res.json['data'][1]['id']
-        nodes = self.project.nodes
-        assert_equal(child_id, nodes[0]._id)
-        assert_equal(child_two_id, nodes[1]._id)
+        nodes = project.nodes
+        assert child_id == nodes[0]._id
+        assert child_two_id == nodes[1]._id
 
-        assert_equal(Node.load(child_id).logs.latest().action, NodeLog.PROJECT_CREATED)
-        assert_equal(nodes[1].logs.latest().action, NodeLog.PROJECT_CREATED)
+        assert Node.load(child_id).logs.latest().action == NodeLog.PROJECT_CREATED
+        assert nodes[1].logs.latest().action == NodeLog.PROJECT_CREATED
 
-    def test_bulk_creates_children_logged_in_read_contributor(self):
-        self.project.add_contributor(self.user_two, permissions=[permissions.READ], auth=Auth(self.user), save=True)
-        res = self.app.post_json_api(self.url, {'data': [self.child, self.child_two]}, auth=self.user_two.auth,
-                                     expect_errors=True, bulk=True)
-        assert_equal(res.status_code, 403)
+    def test_bulk_creates_children_and_sanitizes_html_logged_in_owner(self, app, user, project, url):
+        title = '<em>Reasoning</em> <strong>Aboot Projects</strong>'
+        description = 'A <script>alert("super reasonable")</script> child'
 
-        self.project.reload()
-        assert_equal(len(self.project.nodes), 0)
-
-    def test_bulk_creates_children_logged_in_non_contributor(self):
-        res = self.app.post_json_api(self.url, {'data': [self.child, self.child_two]},
-                                     auth=self.user_two.auth, expect_errors=True, bulk=True)
-        assert_equal(res.status_code, 403)
-
-        self.project.reload()
-        assert_equal(len(self.project.nodes), 0)
-
-    def test_bulk_creates_children_and_sanitizes_html_logged_in_owner(self):
-        title = '<em>Cool</em> <strong>Project</strong>'
-        description = 'An <script>alert("even cooler")</script> child'
-
-        res = self.app.post_json_api(self.url, {
+        res = app.post_json_api(url, {
             'data': [{
                 'type': 'nodes',
                 'attributes': {
@@ -407,26 +442,26 @@ class TestNodeChildrenBulkCreate(ApiTestCase):
                     'public': True
                 }
             }]
-        }, auth=self.user.auth, bulk=True)
+        }, auth=user.auth, bulk=True)
         child_id = res.json['data'][0]['id']
-        assert_equal(res.status_code, 201)
+        assert res.status_code == 201
         url = '/{}nodes/{}/'.format(API_BASE, child_id)
 
-        res = self.app.get(url, auth=self.user.auth)
-        assert_equal(res.json['data']['attributes']['title'], strip_html(title))
-        assert_equal(res.json['data']['attributes']['description'], strip_html(description))
-        assert_equal(res.json['data']['attributes']['category'], 'project')
+        res = app.get(url, auth=user.auth)
+        assert res.json['data']['attributes']['title'] == strip_html(title)
+        assert res.json['data']['attributes']['description'] == strip_html(description)
+        assert res.json['data']['attributes']['category'] == 'project'
 
-        self.project.reload()
+        project.reload()
         child_id = res.json['data']['id']
-        assert_equal(child_id, self.project.nodes[0]._id)
-        assert_equal(Node.load(child_id).logs.latest().action, NodeLog.PROJECT_CREATED)
+        assert child_id == project.nodes[0]._id
+        assert Node.load(child_id).logs.latest().action == NodeLog.PROJECT_CREATED
 
-    def test_cannot_bulk_create_children_on_a_registration(self):
-        registration = RegistrationFactory(project=self.project, creator=self.user)
+    def test_cannot_bulk_create_children_on_a_registration(self, app, user, project, child_two):
+        registration = RegistrationFactory(project=project, creator=user)
         url = '/{}nodes/{}/children/'.format(API_BASE, registration._id)
-        res = self.app.post_json_api(url, {
-            'data': [self.child_two, {
+        res = app.post_json_api(url, {
+            'data': [child_two, {
                 'type': 'nodes',
                 'attributes': {
                     'title': fake.catch_phrase(),
@@ -435,15 +470,17 @@ class TestNodeChildrenBulkCreate(ApiTestCase):
                     'public': True,
                 }
             }]
-        }, auth=self.user.auth, expect_errors=True, bulk=True)
-        assert_equal(res.status_code, 404)
+        }, auth=user.auth, expect_errors=True, bulk=True)
+        assert res.status_code == 404
 
-        self.project.reload()
-        assert_equal(len(self.project.nodes), 0)
+        project.reload()
+        assert len(project.nodes) == 0
 
-    def test_bulk_creates_children_no_type(self):
+    def test_bulk_creates_children_payload_errors(self, app, user, project, child_two, url):
+
+    # def test_bulk_creates_children_no_type(self, app, user, project, child_two, url):
         child = {
-            'data': [self.child_two, {
+            'data': [child_two, {
                 'attributes': {
                 'title': 'child',
                 'description': 'this is a child project',
@@ -451,17 +488,17 @@ class TestNodeChildrenBulkCreate(ApiTestCase):
                 }
             }]
         }
-        res = self.app.post_json_api(self.url, child, auth=self.user.auth, expect_errors=True, bulk=True)
-        assert_equal(res.status_code, 400)
-        assert_equal(res.json['errors'][0]['detail'], 'This field may not be null.')
-        assert_equal(res.json['errors'][0]['source']['pointer'], '/data/1/type')
+        res = app.post_json_api(url, child, auth=user.auth, expect_errors=True, bulk=True)
+        assert res.status_code == 400
+        assert res.json['errors'][0]['detail'] == 'This field may not be null.'
+        assert res.json['errors'][0]['source']['pointer'] == '/data/1/type'
 
-        self.project.reload()
-        assert_equal(len(self.project.nodes), 0)
+        project.reload()
+        assert len(project.nodes) == 0
 
-    def test_bulk_creates_children_incorrect_type(self):
+    # def test_bulk_creates_children_incorrect_type(self, app, user, project, child_two, url):
         child = {
-            'data': [self.child_two, {
+            'data': [child_two, {
                 'type': 'Wrong type.',
                 'attributes': {
                     'title': 'child',
@@ -470,26 +507,26 @@ class TestNodeChildrenBulkCreate(ApiTestCase):
                 }
             }]
         }
-        res = self.app.post_json_api(self.url, child, auth=self.user.auth, expect_errors=True, bulk=True)
-        assert_equal(res.status_code, 409)
-        assert_equal(res.json['errors'][0]['detail'], 'This resource has a type of "nodes", but you set the json body\'s type field to "Wrong type.". You probably need to change the type field to match the resource\'s type.')
+        res = app.post_json_api(url, child, auth=user.auth, expect_errors=True, bulk=True)
+        assert res.status_code == 409
+        assert res.json['errors'][0]['detail'] == 'This resource has a type of "nodes", but you set the json body\'s type field to "Wrong type.". You probably need to change the type field to match the resource\'s type.'
 
-        self.project.reload()
-        assert_equal(len(self.project.nodes), 0)
+        project.reload()
+        assert len(project.nodes) == 0
 
-    def test_bulk_creates_children_properties_not_nested(self):
+    # def test_bulk_creates_children_properties_not_nested(self, app, user, project, child_two, url):
         child = {
-            'data': [self.child_two, {
+            'data': [child_two, {
                 'title': 'child',
                 'description': 'this is a child project',
                 'category': 'project',
             }]
         }
-        res = self.app.post_json_api(self.url, child, auth=self.user.auth, expect_errors=True, bulk=True)
-        assert_equal(res.status_code, 400)
-        assert_equal(res.json['errors'][0]['detail'], 'Request must include /data/attributes.')
-        assert_equal(res.json['errors'][0]['source']['pointer'], '/data/attributes')
+        res = app.post_json_api(url, child, auth=user.auth, expect_errors=True, bulk=True)
+        assert res.status_code == 400
+        assert res.json['errors'][0]['detail'] == 'Request must include /data/attributes.'
+        assert res.json['errors'][0]['source']['pointer'] == '/data/attributes'
 
-        self.project.reload()
-        assert_equal(len(self.project.nodes), 0)
+        project.reload()
+        assert len(project.nodes) == 0
 

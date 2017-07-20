@@ -150,7 +150,7 @@ var convertMentionMarkdownToHtml = function(commentContent) {
 
             content = content.replace(
                 match[0],
-                '<span class="atwho-inserted" contenteditable="false" data-atwho-guid="' +
+                '<span class="atwho-inserted" contenteditable="true" data-atwho-guid="' +
                     guid + '" data-atwho-at-query="' + atwho + '">' +
                     atwho + mention + '</span>'
             );
