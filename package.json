@@ -1,6 +1,6 @@
 {
   "name": "OSF",
-  "version": "0.116.0",
+  "version": "0.117.1",
   "description": "Facilitating Open Science",
   "repository": "https://github.com/CenterForOpenScience/osf.io",
   "author": "Center for Open Science",
@@ -48,7 +48,7 @@
     "markdown-it": "~4.1.0",
     "markdown-it-ins-del": "^0.1.1",
     "markdown-it-sanitizer": "~0.3.0",
-    "markdown-it-toc": "~1.1.0",
+    "@centerforopenscience/markdown-it-toc": "~1.1.1",
     "markdown-it-video": "~0.4.0",
     "mime-types": "~2.0.12",
     "mithril": "0.2.0",

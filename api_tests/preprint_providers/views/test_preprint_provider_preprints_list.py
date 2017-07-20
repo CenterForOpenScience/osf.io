@@ -1,12 +1,10 @@
-import pytest
-
 from nose.tools import *  # flake8: noqa
+import pytest
 
 from api.base.settings.defaults import API_BASE
 from api_tests.preprints.filters.test_filters import PreprintsListFilteringMixin
 from api_tests.preprints.views.test_preprint_list_mixin import PreprintIsPublishedListMixin, PreprintIsValidListMixin
 from framework.auth.core import Auth
-from tests.base import ApiTestCase
 from osf_tests.factories import (
     ProjectFactory,
     PreprintFactory,
@@ -14,28 +12,47 @@ from osf_tests.factories import (
     SubjectFactory,
     PreprintProviderFactory
 )
+from tests.base import ApiTestCase
 
-class TestPreprintProviderPreprintsListFiltering(PreprintsListFilteringMixin, ApiTestCase):
+class TestPreprintProviderPreprintsListFiltering(PreprintsListFilteringMixin):
 
-    def setUp(self):
-        self.user = AuthUserFactory()
-        # all the same provider
-        self.provider = PreprintProviderFactory(name='Sockarxiv')
-        self.provider_two = self.provider
-        self.provider_three = self.provider
-        # all different projects
-        self.project = ProjectFactory(creator=self.user)
-        self.project_two = ProjectFactory(creator=self.user)
-        self.project_three = ProjectFactory(creator=self.user)
-        self.url = '/{}preprint_providers/{}/preprints/?version=2.2&'.format(API_BASE, self.provider._id)
-        super(TestPreprintProviderPreprintsListFiltering, self).setUp()
+    @pytest.fixture()
+    def user(self):
+        return AuthUserFactory()
 
-    def test_provider_filter_equals_returns_multiple(self):
-        expected = set([self.preprint._id, self.preprint_two._id, self.preprint_three._id])
-        res = self.app.get('{}{}'.format(self.provider_url, self.provider._id), auth=self.user.auth)
+    @pytest.fixture()
+    def provider_one(self):
+        return PreprintProviderFactory(name='Sockarxiv')
+
+    @pytest.fixture()
+    def provider_two(self, provider_one):
+        return provider_one
+
+    @pytest.fixture()
+    def provider_three(self, provider_one):
+        return provider_one
+
+    @pytest.fixture()
+    def project_one(self, user):
+        return ProjectFactory(creator=user)
+
+    @pytest.fixture()
+    def project_two(self, user):
+        return ProjectFactory(creator=user)
+
+    @pytest.fixture()
+    def project_three(self, user):
+        return ProjectFactory(creator=user)
+
+    @pytest.fixture()
+    def url(self, provider_one):
+        return '/{}preprint_providers/{}/preprints/?version=2.2&'.format(API_BASE, provider_one._id)
+
+    def test_provider_filter_equals_returns_multiple(self, app, user, provider_one, preprint_one, preprint_two, preprint_three, provider_url):
+        expected = set([preprint_one._id, preprint_two._id, preprint_three._id])
+        res = app.get('{}{}'.format(provider_url, provider_one._id), auth=user.auth)
         actual = set([preprint['id'] for preprint in res.json['data']])
-        assert_equal(expected, actual)
-
+        assert expected == actual
 
 class TestPreprintProviderPreprintIsPublishedList(PreprintIsPublishedListMixin, ApiTestCase):
 
