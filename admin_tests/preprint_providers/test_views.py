@@ -156,7 +156,8 @@ class TestPreprintProviderChangeForm(AdminTestCase):
             ),
             'toplevel_subjects': [self.parent_1.id],
             'subjects_acceptable': '[]',
-            '_id': 'newname'
+            '_id': 'newname',
+            'preprint_word': 'preprint'
         }
         form = PreprintProviderForm(data=new_data)
         nt.assert_true(form.is_valid())
@@ -176,7 +177,8 @@ class TestPreprintProviderChangeForm(AdminTestCase):
             'subjects_acceptable': '[]',
             'advisory_board': '<div><ul><li>Bill<i class="fa fa-twitter"></i> Nye</li></ul></div>',
             'description': '<span>Open Preprints <code>Open</code> Science<script></script></span>',
-            'footer_links': '<p>Xiv: <script>Support</script> | <pre>Contact<pre> | <a href=""><span class="fa fa-facebook"></span></a></p>'
+            'footer_links': '<p>Xiv: <script>Support</script> | <pre>Contact<pre> | <a href=""><span class="fa fa-facebook"></span></a></p>',
+            'preprint_word': 'preprint'
         }
 
         stripped_advisory_board = '<div><ul><li>Bill Nye</li></ul></div>'
