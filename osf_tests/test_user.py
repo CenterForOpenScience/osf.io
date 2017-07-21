@@ -502,7 +502,7 @@ class TestOSFUser:
         )
         project.save()
         u.reload()
-        name_list = [contrib.name for contrib in project.contributors]
+        name_list = [contrib.fullname for contrib in project.contributors]
         assert name in name_list
         project.remove_contributor(contributor=u, auth=Auth(project.creator))
         project.save()
@@ -519,7 +519,7 @@ class TestOSFUser:
         new_name_list = [contrib.name for contrib in project.contributors]
         assert name not in new_name_list
         assert new_name in new_name_list
-        
+
     def test_username_is_automatically_lowercased(self):
         user = UserFactory(username='nEoNiCon@bet.com')
         assert user.username == 'neonicon@bet.com'
