@@ -5,6 +5,7 @@ import re
 import urlparse
 import warnings
 
+from django.db.models import Q
 from dirtyfields import DirtyFieldsMixin
 from django.apps import apps
 from django.contrib.contenttypes.fields import GenericRelation
@@ -42,7 +43,7 @@ from osf.models.spam import SpamMixin
 from osf.models.tag import Tag
 from osf.models.user import OSFUser
 from osf.models.validators import validate_doi, validate_title
-from osf.modm_compat import Q
+from osf.modm_compat import Q as MODMQ
 from osf.utils.auth import Auth, get_user
 from osf.utils.datetime_aware_jsonfield import DateTimeAwareJSONField
 from osf.utils.fields import NonNaiveDateTimeField
@@ -687,7 +688,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
 
     @classmethod
     def find_by_institutions(cls, inst, query=None):
-        base_query = Q('affiliated_institutions', 'eq', inst)
+        base_query = MODMQ('affiliated_institutions', 'eq', inst)
         if query:
             final_query = base_query & query
         else:
@@ -778,15 +779,17 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
 
     def get_aggregate_logs_query(self, auth):
         return (
-            (   # TODO: remove `list` call during phase 2
-                Q('node_id', 'in', list(Node.objects.get_children(self).can_view(user=auth.user, private_link=auth.private_link).values_list('id', flat=True))) |
-                Q('node_id', 'eq', self.id)
-            ) & Q('should_hide', 'eq', False)
+            (
+                Q(node_id__in=list(Node.objects.get_children(self).can_view(user=auth.user, private_link=auth.private_link).values_list('id', flat=True))) |
+                Q(node_id=self.id)
+            ) & Q(should_hide=False)
         )
 
     def get_aggregate_logs_queryset(self, auth):
         query = self.get_aggregate_logs_query(auth)
-        return NodeLog.find(query).order_by('-date')
+        return NodeLog.objects.filter(query).order_by('-date').include(
+            'node__guids', 'user__guids', 'original_node__guids', limit_includes=10
+        )
 
     def get_absolute_url(self):
         return self.absolute_api_v2_url
@@ -1419,7 +1422,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
 
     @classmethod
     def find_for_user(cls, user, subquery=None):
-        combined_query = Q('contributors', 'eq', user)
+        combined_query = MODMQ('contributors', 'eq', user)
         if subquery is not None:
             combined_query = combined_query & subquery
         return cls.find(combined_query)
