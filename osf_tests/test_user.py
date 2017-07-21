@@ -516,7 +516,7 @@ class TestOSFUser:
         project.save()
         u.reload()
         project.reload()
-        new_name_list = [contrib.name for contrib in project.contributors]
+        new_name_list = [contrib.fullname for contrib in project.contributors]
         assert old_name not in new_name_list
         assert new_name in new_name_list
 
