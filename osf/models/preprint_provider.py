@@ -29,6 +29,7 @@ class PreprintProvider(ObjectIDMixin, BaseModel):
     social_instagram = models.CharField(null=True, blank=True, max_length=200)  # max length on prod: 8
     footer_links = models.TextField(default='', blank=True)
     share_source = models.CharField(blank=True, max_length=200)
+    share_title = models.TextField(default='', blank=True)
     allow_submissions = models.BooleanField(default=True)
     additional_providers = fields.ArrayField(models.CharField(max_length=200), default=list, blank=True)
 
