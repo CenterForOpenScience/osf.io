@@ -492,6 +492,34 @@ class TestOSFUser:
         u.reload()
         assert u.display_full_name(node=project) == name
 
+    def test_repeat_add_same_unreg_user_with_diff_name(self):
+        name = fake.name()
+        u = UnregUserFactory()
+        project = NodeFactory()
+        project.add_unregistered_contributor(
+            fullname=name, email=u.username,
+            auth=Auth(project.creator)
+        )
+        project.save()
+        u.reload()
+        name_list = [contrib.name for contrib in project.contributors]
+        assert name in name_list
+        project.remove_contributor(contributor=u, auth=Auth(project.creator))
+        project.save()
+        project.reload()
+        assert u not in project.contributors
+        new_name = 'new_name'
+        project.add_unregistered_contributor(
+            fullname=new_name, email=u.username,
+            auth=Auth(project.creator)
+        )
+        project.save()
+        u.reload()
+        project.reload()
+        new_name_list = [contrib.name for contrib in project.contributors]
+        assert name not in new_name_list
+        assert new_name in new_name_list
+        
     def test_username_is_automatically_lowercased(self):
         user = UserFactory(username='nEoNiCon@bet.com')
         assert user.username == 'neonicon@bet.com'
