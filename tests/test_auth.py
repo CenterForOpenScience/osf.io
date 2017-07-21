@@ -47,7 +47,7 @@ class TestAuthUtils(OsfTestCase):
         user.middle_names = ''
         user.suffix = ''
         user.save()
-        resp = user.csl_name(user._id)
+        resp = user.csl_name()
         family_name = resp['family']
         given_name = resp['given']
         assert_equal(family_name, 'King')
