@@ -303,7 +303,6 @@ def main():
         if pargs.start:
             add_columns()
         elif pargs.finish:
-            raise Exception('Not until data is migrated')
             finalize_migration()
         else:
             raise Exception('Must specify start or finish')
