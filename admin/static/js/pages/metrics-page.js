@@ -32,5 +32,8 @@ keenAnalysis.ready(function() {
     $('#addons-tab')[0].onclick = function() {
         Metrics.AddonMetrics();
     };
+    $('#preprints-tab')[0].onclick = function() {
+        Metrics.PreprintMetrics();
+    };
 
 });
