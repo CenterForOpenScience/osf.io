@@ -542,25 +542,19 @@ class ListFilterMixin(FilterMixin):
             for key, field_names in filters.iteritems():
                 match = self.QUERY_PATTERN.match(key)
                 fields = match.groupdict()['fields']
-                if len(re.findall(self.FILTER_FIELDS, fields)) > 1:  # This indicates an OR statement
-                    sub_query = Node.objects.none()
-                    for field_name, data in field_names.iteritems():
-                        operations = data if isinstance(data, list) else [data]
-                        for operation in operations:
-                            if isinstance(queryset, list):
-                                sub_query = sub_query | self.get_filtered_queryset(field_name, operation, default_queryset)
-                            else:
-                                sub_query = sub_query | self.filter_by_field(default_queryset, field_name, operation)
+                statement = len(re.findall(self.FILTER_FIELDS, fields)) > 1  # This indicates an OR statement
+                sub_query = Node.objects.none() if statement else Node.objects.all()
+                query_operator = operator.or_ if statement else operator.and_
+                for field_name, data in field_names.iteritems():
+                    operations = data if isinstance(data, list) else [data]
+                    for operation in operations:
+                        if isinstance(queryset, list):
+                            sub_query = query_operator(sub_query, self.get_filtered_queryset(field_name, operation, default_queryset))
+                        else:
+                            sub_query = query_operator(sub_query, self.filter_by_field(default_queryset, field_name, operation))
 
-                    queryset = queryset & sub_query
-                else:
-                    for field_name, data in field_names.iteritems():
-                        operations = data if isinstance(data, list) else [data]
-                        for operation in operations:
-                            if isinstance(queryset, list):
-                                queryset = self.get_filtered_queryset(field_name, operation, queryset)
-                            else:
-                                queryset = self.filter_by_field(queryset, field_name, operation)
+                queryset = queryset & sub_query
+
         return queryset
 
     def filter_by_field(self, queryset, field_name, operation):
