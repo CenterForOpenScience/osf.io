@@ -49,6 +49,7 @@ from website.preprints import views as preprint_views
 from website.registries import views as registries_views
 from website.institutions import views as institution_views
 from website.notifications import views as notification_views
+from website.closed_challenges import views as closed_challenges_views
 
 
 def get_globals():
@@ -397,10 +398,14 @@ def make_url_map(app):
         ),
 
         Rule(
-            [
-                '/prereg/',
-                '/erpc/',
-            ],
+            '/erpc/',
+            'get',
+            closed_challenges_views.erpc_landing_page,
+            OsfWebRenderer('erpc_landing_page.mako', trust=False)
+        ),
+
+        Rule(
+            '/prereg/',
             'get',
             prereg.prereg_landing_page,
             OsfWebRenderer('prereg_landing_page.mako', trust=False)

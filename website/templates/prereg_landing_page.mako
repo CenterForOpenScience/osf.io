@@ -1,45 +1,7 @@
 <%inherit file="base.mako"/>
 
-<%namespace name="erpc" file="erpc_landing_info.mako"/>
-<%namespace name="prereg" file="prereg_landing_info.mako"/>
 
-<%def name="description()"> 
-    <%
-        if campaign_short == 'erpc':
-            return erpc.description()
-        elif campaign_short == 'prereg':
-            return prereg.description()
-    %>
-</%def>
-
-<%def name="challenge_word()">
-    <%
-      if campaign_short == 'erpc':
-         return erpc.challenge_word()
-      elif campaign_short == 'prereg':
-          return prereg.challenge_word()
-    %>
-</%def>
-
-<%def name="kind()">
-    <%
-      if campaign_short == 'erpc':
-         return erpc.kind()
-      elif campaign_short == 'prereg':
-          return prereg.kind()
-    %>
-</%def>
-
-<%def name="steps()"> 
-  <%
-      if campaign_short == 'erpc':
-         return erpc.steps()
-      elif campaign_short == 'prereg':
-          return prereg.steps()
-  %>
-</%def>
-
-<%def name="title()">OSF ${campaign_long}</%def>
+<%def name="title()">OSF Prereg Challenge</%def>
 
 <%def name="stylesheets()">
     ${ parent.stylesheets() }
@@ -80,29 +42,28 @@
 
 <%def name="content()">
 <div class="prereg-container">
-    % if campaign_short == 'erpc':
-        <h1 class="m-t-xl m-b-lg text-center">The Election Research Preacceptance Competition is Now Closed</h1>
-    % else:
-        <h1 class="m-t-xl m-b-lg text-center">Welcome to the ${campaign_long}!</h1>
-    % endif
-    <p>${description()}</p>
-    % if campaign_short != 'erpc':
-        <p class="m-t-lg f-w-lg">Ready for the ${challenge_word()}? Please follow these steps:</p>
-    % endif
-        <p>
-            ${steps()}
-        </p>
+    <h1 class="m-t-xl m-b-lg text-center">
+        <img class="prereg-logo" src="/static/img/registries/osf-prereg-black.png" alt="preregistration_challenge_logo">
+    </h1>
+    <p>Improve your research with preregistration. </p>
+    <p>The process of creating a <a href='http://www.cos.io/prereg'> preregistration</a> is beneficial to both the scientific field and to you, the scientist. By writing out detailed data collection methods, analysis plans, and rules for excluding or missing data, you can make important decisions that affect your workflow earlier, without the biases that occur once the data are in front of you.</p>
+
     <div class="col-md-12 visible-xs">                  
-      ## Always displayed
+      %if is_logged_in:
       <div class="row">
-        <div class="prereg-button m-b-md p-md osf-box-lt p-md box-round prereg" data-qtoggle-group="prereg" data-qtoggle-target="#newPreregXS">Start a new preregistration</div>
-        <div class="col-md-12">  
+        <div class="prereg-button-xs prereg-button prereg-button-qtoggle m-b-md p-md osf-box-lt p-md box-round prereg" data-qtoggle-group="prereg" data-qtoggle-target="#newPreregXS">Start a new preregistration</div>
+        <div class="col-md-12 prereg-button-content-xs">  
           ${newPrereg('XS')}
         </div>
       </div>
+      %else:
+      <a href="${domain}login/?campaign=prereg">
+          <div class="prereg-button-xs prereg-button m-b-md p-md osf-box-lt p-md box-round">Preregister</div>
+      </a>
+      %endif
       %if has_draft_registrations:
       <div class="row">
-        <div class="prereg-button m-b-md p-md osf-box-lt p-md box-round" data-qtoggle-group="prereg" data-qtoggle-target="#existingPreregXS">Continue working on an existing draft preregistration</div>
+        <div class="prereg-button-xs prereg-button prereg-button-qtoggle m-b-md p-md osf-box-lt p-md box-round" data-qtoggle-group="prereg" data-qtoggle-target="#existingPreregXS">Continue working on an existing preregistration</div>
         <div class="col-md-12 prereg-button-content-xs">
           ${existingPrereg('XS')}
         </div>
@@ -110,7 +71,7 @@
       %endif
       %if has_projects:
       <div class="row">
-        <div class="prereg-button m-b-md p-md osf-box-lt p-md box-round" data-qtoggle-group="prereg" data-qtoggle-target="#existingProjectXS">Preregister a project you already have on the OSF
+        <div class="prereg-button-xs prereg-button prereg-button-qtoggle m-b-md p-md osf-box-lt p-md box-round" data-qtoggle-group="prereg" data-qtoggle-target="#existingProjectXS">Preregister a project you already have on the OSF
         </div>
         <div class="col-md-12 prereg-button-content-xs">
           ${existingProject('XS')}
@@ -134,18 +95,25 @@
           <table class="prereg-button-row">
             <tbody>
               <tr>
-                ## Always displayed
+                %if is_logged_in:
                 <td class="col-sm-${ num_cols } prereg-button-col">
-                  <div class="prereg-button m-b-md p-md osf-box-lt p-md box-round prereg" data-qtoggle-group="prereg" data-qtoggle-target="#newPrereg">Start a new ${kind()}</div>
+                  <div class="prereg-button prereg-button-qtoggle m-b-md p-md osf-box-lt p-md box-round prereg" data-qtoggle-group="prereg" data-qtoggle-target="#newPrereg">Start a new pregistration</div>
                 </td>
+                %else:
+                <td class="col-sm-1 prereg-button-col">
+                  <a href="${domain}login/?campaign=prereg">
+                    <div class="prereg-button m-b-md p-md osf-box-lt p-md box-round">Preregister</div>  
+                  </a>
+                </td>
+                %endif
                 %if has_draft_registrations:
                 <td class="col-sm-${ num_cols } prereg-button-col">
-                  <div class="prereg-button m-b-md p-md osf-box-lt p-md box-round" data-qtoggle-group="prereg" data-qtoggle-target="#existingPrereg">Continue working on an existing ${kind()}</div>
+                  <div class="prereg-button prereg-button-qtoggle m-b-md p-md osf-box-lt p-md box-round" data-qtoggle-group="prereg" data-qtoggle-target="#existingPrereg">Continue working on an existing preregistration</div>
                 </td>
                 %endif
                 %if has_projects:
                 <td class="col-sm-${ num_cols } prereg-button-col">
-                  <div class="prereg-button m-b-md p-md osf-box-lt p-md box-round" data-qtoggle-group="prereg" data-qtoggle-target="#existingProject">Make a ${kind()} for a project you already have on the OSF</div>
+                  <div class="prereg-button prereg-button-qtoggle m-b-md p-md osf-box-lt p-md box-round" data-qtoggle-group="prereg" data-qtoggle-target="#existingProject">Preregister a project you already have on the OSF</div>
                 </td>
                 %endif
               </tr>

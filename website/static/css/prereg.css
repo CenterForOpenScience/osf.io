@@ -9,9 +9,17 @@ body, html {
     height: 100%;
 }
 
+.prereg-button-xs {
+    height: 100% !important; 
+    width: 95% !important;
+    max-width: 95% !important;
+    margin: auto;
+}
+
 .prereg-button {
-    height: 100%;
-    width: 100%;
+    height: 90px; 
+    width: 100%; 
+    max-width: 500px;
     position: relative;
     cursor: pointer;
     display: inline-block;
@@ -44,18 +52,25 @@ body, html {
 }
 .prereg-button-content-xs{
     position: relative !important;
-    left: 20px;
+    left: 4px;
+    max-width: 100% !important;
+    width: 100% !important;
+}
+
+.prereg-logo {
+    max-height:140px; 
+    max-width: 90%;
 }
 
 @media (max-width: 767px) {
     .prereg-button {
-        line-height: 48px;
+        line-height: 30px;
     }
 }
 
 @media (min-width: 992px) {
     div[class^='col']:first-of-type .prereg-button {
-        line-height: 48px;
+        line-height: 30px;
     }
 }
 
