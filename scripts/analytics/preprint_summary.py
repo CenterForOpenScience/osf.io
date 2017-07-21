@@ -21,22 +21,32 @@ class PreprintSummary(SummaryAnalytics):
         return 'preprint_summary'
 
     def get_events(self, date):
-        #super(PreprintSummary, self).get_events(date)
+        super(PreprintSummary, self).get_events(date)
+        from osf.models import PreprintService, PreprintProvider
 
         # Convert to a datetime at midnight for queries and the timestamp
         timestamp_datetime = datetime(date.year, date.month, date.day).replace(tzinfo=pytz.UTC)
         query_datetime = timestamp_datetime + timedelta(1)
 
-        providers = {}
+        counts = []
         for preprint_provider in PreprintProvider.objects.all():
-            providers[preprint_provider.name] = PreprintService.objects.filter(Q(node__isnull=False,
-                                                                                 node__is_deleted=False,
-                                                                                 provider___id=preprint_provider._id)).count()
+            preprint_for_provider_count = PreprintService.objects.filter(Q(
+                node__isnull=False,node__is_deleted=False,
+                provider___id=preprint_provider._id,
+                date_created__lte=query_datetime)).count()
 
-        return {
-            'total': PreprintService.objects.all().count(),
-            'providers': providers
-        }
+            counts.append({
+                'keen': {
+                    'timestamp': timestamp_datetime.isoformat()
+                },
+                'provider': {
+                    'name': preprint_provider.name,
+                    'total': preprint_for_provider_count,
+                },
+            })
+
+
+        return counts
 
 
 def get_class():
@@ -44,13 +54,10 @@ def get_class():
 
 
 if __name__ == '__main__':
-
     init_app()
 
-    from osf.models import PreprintService, PreprintProvider
     preprint_summary = PreprintSummary()
     args = preprint_summary.parse_args()
-    args.date = '7-7-2017'
     yesterday = args.yesterday
     if yesterday:
         date = (datetime.today() - timedelta(1)).date()
