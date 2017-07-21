@@ -31,9 +31,11 @@ class PreprintSummary(SummaryAnalytics):
         counts = []
         for preprint_provider in PreprintProvider.objects.all():
             preprint_for_provider_count = PreprintService.objects.filter(Q(
-                node__isnull=False,node__is_deleted=False,
+                node__isnull=False,
+                node__is_deleted=False,
                 provider___id=preprint_provider._id,
-                date_created__lte=query_datetime)).count()
+                date_created__lte=query_datetime)
+            ).count()
 
             counts.append({
                 'keen': {
