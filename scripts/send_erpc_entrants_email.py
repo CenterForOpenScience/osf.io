@@ -22,39 +22,50 @@ Even if you have not yet submitted an article based on your design, you can stil
 
 We have worked with all of the participating editors to learn about how they wish to receive ERPC manuscripts going forward. Here are their preferences:
 
--Political Behavior and Public Opinion Quarterly would like you to submit ERPC manuscripts *without* the data or analyses (in other words, they want to review the article under preacceptance conditions).
+- Political Behavior and Public Opinion Quarterly would like you to submit ERPC manuscripts *without* the data or analyses (in other words, they want to review the article under preacceptance conditions).
 
--American Journal of Political Science, American Politics Research, Political Analysis, and Political Science Quarterly prefer that you submit ERPC manuscripts *with* the data or analyses (in other words, they want to review manuscripts than include your pre-registered designs, but not under conditions of preacceptance).
+- American Journal of Political Science, American Politics Research, Political Analysis, and Political Science Quarterly prefer that you submit ERPC manuscripts *with* the data or analyses (in other words, they want to review manuscripts than include your pre-registered designs, but not under conditions of preacceptance).
 
--Finally, American Political Science Review and State Politics and Policy Quarterly will accept your ERPC manuscript for review with or without the data.
+- American Political Science Review and State Politics and Policy Quarterly will accept your ERPC manuscript for review with or without the data.
 
-(Political Science Research and Methods has not yet indicated its preferences; please contact the editor for clarification before submitting an article to them.)
+Political Science Research and Methods has not yet indicated its preferences; please contact the editor for clarification before submitting an article to them.
 
 To be eligible for a prize, we ask that you submit the initial version of your article to a partner journal no later than January 31, 2018.
 
 Thank you for your consideration and thank you for participating in the ERPC. Please let us know if you have any additional questions.
 
 Sincerely,
+
 Brendan and Skip
 
 
-IMPORTANT NOTICE ABOUT YOUR CONTACT INFORMATION
+*IMPORTANT NOTICE ABOUT YOUR CONTACT INFORMATION*:
 If you would like to be contacted directly by Brendan and Skip, please share your email address via this google form: https://goo.gl/forms/kgIHxTpL6a7vqmDF2
 
 
 
-Brendan Nyhan
+*Brendan Nyhan*
+
 Professor of Government
+
 Dartmouth College
+
 nyhan@dartmouth.edu
+
 http://www.dartmouth.edu/~nyhan
 
-Arthur Lupia
+*Arthur Lupia*
+
 Institute for Social Research and Department of Political Science, University of Michigan
+
 Chair, The National Academies Roundtable on the Communication and Use of Behavioral and Social Sciences
+
 Chairman of the Board, Center for Open Science
+
 http://www.arthurlupia.com
+
 lupia@umich.edu
+
 Twitter: @ArthurLupia
 
 """
@@ -91,7 +102,8 @@ def send_email_to_erpc_participants(participants, dry=True):
 
     for participant in participants:
         if not dry:
-            send_email(from_addr=from_addr, to_addr=participant, subject=subject, message=EMAIL_TEXT, username=settings.MAIL_USERNAME, password=settings.MAIL_PASSWORD)
+            logger.info('Sending to {}'.format(participant))
+            send_email(from_addr=from_addr, to_addr=participant, subject=subject, mimetype='text', message=EMAIL_TEXT, username=settings.MAIL_USERNAME, password=settings.MAIL_PASSWORD)
         else:
             logger.info('Would have sent an email to {}'.format(participant))
 
