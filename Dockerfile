@@ -78,6 +78,7 @@ COPY ./requirements/ /code/requirements/
 COPY ./addons/box/requirements.txt /code/addons/box/
 COPY ./addons/dataverse/requirements.txt /code/addons/dataverse/
 COPY ./addons/dropbox/requirements.txt /code/addons/dropbox/
+COPY ./addons/fedora/requirements.txt /code/addons/fedora/
 COPY ./addons/github/requirements.txt /code/addons/github/
 COPY ./addons/mendeley/requirements.txt /code/addons/mendeley/
 COPY ./addons/owncloud/requirements.txt /code/addons/owncloud/
@@ -91,6 +92,7 @@ RUN pip install --no-cache-dir -c /code/requirements/constraints.txt -r /code/re
 RUN pip install --no-cache-dir -c /code/requirements/constraints.txt -r /code/addons/box/requirements.txt \
     && pip install --no-cache-dir -c /code/requirements/constraints.txt -r /code/addons/dataverse/requirements.txt \
     && pip install --no-cache-dir -c /code/requirements/constraints.txt -r /code/addons/dropbox/requirements.txt \
+    && pip install --no-cache-dir -c /code/requirements/constraints.txt -r /code/addons/fedora/requirements.txt \
     && pip install --no-cache-dir -c /code/requirements/constraints.txt -r /code/addons/github/requirements.txt \
     && pip install --no-cache-dir -c /code/requirements/constraints.txt -r /code/addons/mendeley/requirements.txt \
     && pip install --no-cache-dir -c /code/requirements/constraints.txt -r /code/addons/owncloud/requirements.txt \
@@ -125,10 +127,12 @@ RUN mv /code/website/settings/local-dist.py /code/website/settings/local.py \
 
 COPY ./webpack* /code/
 COPY ./website/static /code/website/static/
+
 COPY ./addons/box/static/ /code/addons/box/static/
 COPY ./addons/citations/static/ /code/addons/citations/static/
 COPY ./addons/dataverse/static/ /code/addons/dataverse/static/
 COPY ./addons/dropbox/static/ /code/addons/dropbox/static/
+COPY ./addons/fedora/static/ /code/addons/fedora/static/
 COPY ./addons/figshare/static/ /code/addons/figshare/static/
 COPY ./addons/forward/static/ /code/addons/forward/static/
 COPY ./addons/github/static/ /code/addons/github/static/
@@ -140,6 +144,7 @@ COPY ./addons/s3/static/ /code/addons/s3/static/
 COPY ./addons/twofactor/static/ /code/addons/twofactor/static/
 COPY ./addons/wiki/static/ /code/addons/wiki/static/
 COPY ./addons/zotero/static/ /code/addons/zotero/static/
+
 RUN mkdir -p /code/website/static/built/ \
     && invoke build_js_config_files \
     && node ./node_modules/webpack/bin/webpack.js --config webpack.prod.config.js \

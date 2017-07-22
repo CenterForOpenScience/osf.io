@@ -11,6 +11,10 @@
         "fullName": "Dropbox",
         "externalView": false
     },
+    "fedora": {
+        "fullName": "Dropbox",
+        "externalView": false
+    },
     "figshare": {
         "fullName": "figshare",
         "externalView": true
