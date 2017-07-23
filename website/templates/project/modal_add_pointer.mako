@@ -63,16 +63,14 @@
                                   <tr class="pointer-tow">
                                       <td class="osf-icon-td">
                                           <div data-bind="if:!($root.selected($data))">
-                                              <a
-                                                    class="btn btn-success contrib-button"
-                                                    data-bind="click:$root.add.bind($root), attr: {disabled: $root.processing()}"
-                                                ><i class="fa fa-plus"></i></a>
+                                              <a class="btn btn-success contrib-button" data-bind="click:$root.add.bind($root), attr: {disabled: $root.processing()}">
+                                                <i class="fa fa-plus"></i>
+                                              </a>
                                           </div>
                                           <div data-bind="if:($root.selected($data))">
-                                              <a
-                                                class="btn btn-default contrib-button"
-                                                data-bind="click:$root.remove.bind($root), attr: {disabled: $root.processing()}"
-                                                ><i class="fa fa-minus"></i></a>
+                                              <a class="btn btn-default contrib-button" data-bind="click:$root.remove.bind($root), attr: {disabled: $root.processing()}">
+                                                <i class="fa fa-minus"></i>
+                                              </a>
                                           </div>
                                       </td>
                                       <td data-bind="text:attributes.title" class="overflow"></td>

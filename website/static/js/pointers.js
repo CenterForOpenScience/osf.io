@@ -14,7 +14,13 @@ var Raven = require('raven-js');
 // Grab nodeID from global context (mako)
 var nodeApiUrl = window.contextVars.node.urls.api;
 var nodeId = window.contextVars.node.id;
-var nodeLinksUrl = osfHelpers.apiV2Url('nodes/' + nodeId + '/node_links/');
+var nodeLinksUrl = osfHelpers.apiV2Url(
+  'nodes/' + nodeId + '/node_links/', {
+    query : {
+      'fields[nodes]' : 'relationships'
+    }
+  }
+);
 
 var SEARCH_ALL_SUBMIT_TEXT = 'Search all projects';
 var SEARCH_MY_PROJECTS_SUBMIT_TEXT = 'Search my projects';
@@ -128,7 +134,8 @@ var AddPointerViewModel = oop.extend(Paginator, {
                 var embedNodeIds = [];
                 for (var i = 0; i < responseNodelinks.data.length; i++){
                     var target_node = responseNodelinks.data[i].embeds.target_node;
-                    var embedId = target_node.data ? target_node.data.id : responseNodelinks.data[i]['relationships']['target_node']['links']['related']['href'].split('/')[5];
+                    var embedId = target_node.data ? target_node.data.id :
+                    responseNodelinks.data[i]['relationships']['target_node']['links']['related']['href'].split('/')[5];
                     embedNodeIds.push(embedId);
                 }
                 nodes.forEach(function(each){
@@ -172,8 +179,8 @@ var AddPointerViewModel = oop.extend(Paginator, {
                     error: error
                 }
             });
-            var typeProjects = self.includePublic() ? 'all projects' : 'user projects';
-            self.logErrors(url, status, error, 'Unable to retrieve ' + typeProjects);
+            var typeProjects = self.includePublic() ? 'all' : 'user';
+            self.logErrors(url, status, error, 'Unable to retrieve ' + typeProjects + ' projects');
             self.doneSearching();
         });
     },
@@ -223,8 +230,7 @@ var AddPointerViewModel = oop.extend(Paginator, {
             var nodeLinkId;
             for (var i = 0; i < response.data.length; i++){
                 var target_node = response.data[i].embeds.target_node;
-                var embedId = target_node.data ?
-                    target_node.data.id :
+                var embedId = target_node.data ? target_node.data.id :
                     response.data[i]['relationships']['target_node']['links']['related']['href'].split('/')[5];
                 if (embedId === data.id){
                     nodeLinkId = response.data[i].id;
