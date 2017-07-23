@@ -185,7 +185,8 @@ class TestSearchComponents(ApiSearchTestCase):
         assert res.status_code == 200
         num_results = len(res.json['data'])
         total = res.json['links']['meta']['total']
-        assert num_results == total, 2
+        assert num_results == 2
+        assert total == 2
         assert component_public.title in res
         assert component.title in res
 
@@ -194,7 +195,8 @@ class TestSearchComponents(ApiSearchTestCase):
         assert res.status_code == 200
         num_results = len(res.json['data'])
         total = res.json['links']['meta']['total']
-        assert num_results == total, 2
+        assert num_results == 2
+        assert total == 2
         assert component_public.title in res
         assert component.title in res
 
@@ -203,7 +205,8 @@ class TestSearchComponents(ApiSearchTestCase):
         assert res.status_code == 200
         num_results = len(res.json['data'])
         total = res.json['links']['meta']['total']
-        assert num_results == total, 2
+        assert num_results == 2
+        assert total == 2
         assert component_public.title in res
         assert component.title in res
 
@@ -228,7 +231,8 @@ class TestSearchComponents(ApiSearchTestCase):
         assert res.status_code == 200
         num_results = len(res.json['data'])
         total = res.json['links']['meta']['total']
-        assert num_results == total, 1
+        assert num_results == 1
+        assert total == 1
         assert component_public.title == res.json['data'][0]['attributes']['title']
 
         #test_search_component_by_description(self, all, app, url_component_search, component_public):
@@ -237,7 +241,8 @@ class TestSearchComponents(ApiSearchTestCase):
         assert res.status_code == 200
         num_results = len(res.json['data'])
         total = res.json['links']['meta']['total']
-        assert num_results == total, 1
+        assert num_results == 1
+        assert total == 1
         assert component_public.title == res.json['data'][0]['attributes']['title']
 
         #test_search_component_by_tags(self, app, all, url_component_search, component_public):
@@ -246,7 +251,8 @@ class TestSearchComponents(ApiSearchTestCase):
         assert res.status_code == 200
         num_results = len(res.json['data'])
         total = res.json['links']['meta']['total']
-        assert num_results == total, 1
+        assert num_results == 1
+        assert total == 1
         assert component_public.title == res.json['data'][0]['attributes']['title']
 
         #test_search_component_by_contributor(self, app, all, url_component_search, component_public):
@@ -255,7 +261,8 @@ class TestSearchComponents(ApiSearchTestCase):
         assert res.status_code == 200
         num_results = len(res.json['data'])
         total = res.json['links']['meta']['total']
-        assert num_results == total, 1
+        assert num_results == 1
+        assert total == 1
         assert component_public.title == res.json['data'][0]['attributes']['title']
 
         #test_search_component_no_results(self, app, all, url_component_search):
@@ -264,7 +271,8 @@ class TestSearchComponents(ApiSearchTestCase):
         assert res.status_code == 200
         num_results = len(res.json['data'])
         total = res.json['links']['meta']['total']
-        assert num_results == total, 0
+        assert num_results == 0
+        assert total == 0
 
         #test_search_component_bad_query(self, app, all, url_component_search):
         url = '{}?q={}'.format(url_component_search, 'www.spam.com/help/twitter/')
@@ -284,7 +292,8 @@ class TestSearchFiles(ApiSearchTestCase):
         assert res.status_code == 200
         num_results = len(res.json['data'])
         total = res.json['links']['meta']['total']
-        assert num_results == total, 2
+        assert num_results == 2
+        assert total == 2
         assert file_public.name in res
         assert file_component.name in res
 
@@ -293,7 +302,8 @@ class TestSearchFiles(ApiSearchTestCase):
         assert res.status_code == 200
         num_results = len(res.json['data'])
         total = res.json['links']['meta']['total']
-        assert num_results == total, 2
+        assert num_results == 2
+        assert total == 2
         assert file_public.name in res
         assert file_component.name in res
 
@@ -302,7 +312,8 @@ class TestSearchFiles(ApiSearchTestCase):
         assert res.status_code == 200
         num_results = len(res.json['data'])
         total = res.json['links']['meta']['total']
-        assert num_results == total, 2
+        assert num_results == 2
+        assert total == 2
         assert file_public.name in res
         assert file_component.name in res
 
@@ -327,7 +338,8 @@ class TestSearchFiles(ApiSearchTestCase):
         assert res.status_code == 200
         num_results = len(res.json['data'])
         total = res.json['links']['meta']['total']
-        assert num_results == total, 1
+        assert num_results == 1
+        assert total == 1
         assert file_component.name == res.json['data'][0]['attributes']['name']
 
 
@@ -344,7 +356,8 @@ class TestSearchProjects(ApiSearchTestCase):
         assert res.status_code == 200
         num_results = len(res.json['data'])
         total = res.json['links']['meta']['total']
-        assert num_results == total, 2
+        assert num_results == 2
+        assert total == 2
         assert project_public.title in res
         assert project.title in res
 
@@ -353,7 +366,8 @@ class TestSearchProjects(ApiSearchTestCase):
         assert res.status_code == 200
         num_results = len(res.json['data'])
         total = res.json['links']['meta']['total']
-        assert num_results == total, 2
+        assert num_results == 2
+        assert total == 2
         assert project_public.title in res
         assert project.title in res
 
@@ -362,7 +376,8 @@ class TestSearchProjects(ApiSearchTestCase):
         assert res.status_code == 200
         num_results = len(res.json['data'])
         total = res.json['links']['meta']['total']
-        assert num_results == total, 2
+        assert num_results == 2
+        assert total == 2
         assert project_public.title in res
         assert project.title in res
 
@@ -387,7 +402,8 @@ class TestSearchProjects(ApiSearchTestCase):
         assert res.status_code == 200
         num_results = len(res.json['data'])
         total = res.json['links']['meta']['total']
-        assert num_results == total, 1
+        assert num_results == 1
+        assert total == 1
         assert project_public.title == res.json['data'][0]['attributes']['title']
 
         #test_search_project_by_description(self, app, all, url_project_search, project_public):
@@ -396,7 +412,8 @@ class TestSearchProjects(ApiSearchTestCase):
         assert res.status_code == 200
         num_results = len(res.json['data'])
         total = res.json['links']['meta']['total']
-        assert num_results == total, 1
+        assert num_results == 1
+        assert total == 1
         assert project_public.title == res.json['data'][0]['attributes']['title']
 
         #test_search_project_by_tags(self, app, all, url_project_search, project_public):
@@ -405,7 +422,8 @@ class TestSearchProjects(ApiSearchTestCase):
         assert res.status_code == 200
         num_results = len(res.json['data'])
         total = res.json['links']['meta']['total']
-        assert num_results == total, 1
+        assert num_results == 1
+        assert total == 1
         assert project_public.title == res.json['data'][0]['attributes']['title']
 
         #test_search_project_by_contributor(self, app, all, url_project_search, project_public, project):
@@ -414,7 +432,8 @@ class TestSearchProjects(ApiSearchTestCase):
         assert res.status_code == 200
         num_results = len(res.json['data'])
         total = res.json['links']['meta']['total']
-        assert num_results == total, 2
+        assert num_results == 2
+        assert total == 2
         assert project_public.title in res
         assert project.title in res
 
@@ -424,7 +443,8 @@ class TestSearchProjects(ApiSearchTestCase):
         assert res.status_code == 200
         num_results = len(res.json['data'])
         total = res.json['links']['meta']['total']
-        assert num_results == total, 0
+        assert num_results == 0
+        assert total == 0
 
         #test_search_project_bad_query(self, app, all, url_project_search):
         url = '{}?q={}'.format(url_project_search, 'www.spam.com/help/facebook/')
@@ -470,7 +490,8 @@ class TestSearchRegistrations(ApiSearchTestCase):
         assert res.status_code == 200
         num_results = len(res.json['data'])
         total = res.json['links']['meta']['total']
-        assert num_results == total, 2
+        assert num_results == 2
+        assert total == 2
         assert registration_public.title in res
         assert registration.title in res
 
@@ -479,7 +500,8 @@ class TestSearchRegistrations(ApiSearchTestCase):
         assert res.status_code == 200
         num_results = len(res.json['data'])
         total = res.json['links']['meta']['total']
-        assert num_results == total, 2
+        assert num_results == 2
+        assert total == 2
         assert registration_public.title in res
         assert registration.title in res
 
@@ -488,7 +510,8 @@ class TestSearchRegistrations(ApiSearchTestCase):
         assert res.status_code == 200
         num_results = len(res.json['data'])
         total = res.json['links']['meta']['total']
-        assert num_results == total, 2
+        assert num_results == 2
+        assert total == 2
         assert registration_public.title in res
         assert registration.title in res
 
@@ -513,7 +536,8 @@ class TestSearchRegistrations(ApiSearchTestCase):
         assert res.status_code == 200
         num_results = len(res.json['data'])
         total = res.json['links']['meta']['total']
-        assert num_results == total, 1
+        assert num_results == 1
+        assert total == 1
         assert registration.title == res.json['data'][0]['attributes']['title']
 
         #test_search_registration_by_description(self, app, all, url_registration_search, registration_public):
@@ -522,7 +546,8 @@ class TestSearchRegistrations(ApiSearchTestCase):
         assert res.status_code == 200
         num_results = len(res.json['data'])
         total = res.json['links']['meta']['total']
-        assert num_results == total, 1
+        assert num_results == 1
+        assert total == 1
         assert registration_public.title == res.json['data'][0]['attributes']['title']
 
         #test_search_registration_by_tags(self, app, all, url_registration_search, registration_public):
@@ -531,7 +556,8 @@ class TestSearchRegistrations(ApiSearchTestCase):
         assert res.status_code == 200
         num_results = len(res.json['data'])
         total = res.json['links']['meta']['total']
-        assert num_results == total, 1
+        assert num_results == 1
+        assert total == 1
         assert registration_public.title == res.json['data'][0]['attributes']['title']
 
         #test_search_registration_by_contributor(self, app, all, url_registration_search, registration_public, registration):
@@ -540,7 +566,8 @@ class TestSearchRegistrations(ApiSearchTestCase):
         assert res.status_code == 200
         num_results = len(res.json['data'])
         total = res.json['links']['meta']['total']
-        assert num_results == total, 2
+        assert num_results == 2
+        assert total == 2
         assert registration_public.title in res
         assert registration.title in res
 
@@ -550,7 +577,8 @@ class TestSearchRegistrations(ApiSearchTestCase):
         assert res.status_code == 200
         num_results = len(res.json['data'])
         total = res.json['links']['meta']['total']
-        assert num_results == total, 0
+        assert num_results == 0
+        assert total == 0
 
         #test_search_registration_bad_query(self, app, all, url_registration_search):
         url = '{}?q={}'.format(url_registration_search, 'www.spam.com/help/snapchat/')
@@ -563,14 +591,15 @@ class TestSearchUsers(ApiSearchTestCase):
     def url_user_search(self):
         return '/{}search/users/'.format(API_BASE)
 
-    def test_search_user(self, app, all, user, user_one, url_user_search):
+    def test_search_user(self, app, all, url_user_search, user, user_one):
 
-        #test_search_users_no_auth(self, app, all, user, url_user_search):
+        #test_search_users_no_auth(self, app, all, url_user_search, user):
         res = app.get(url_user_search)
         assert res.status_code == 200
         num_results = len(res.json['data'])
         total = res.json['links']['meta']['total']
-        assert num_results == total, 2
+        assert num_results == 3
+        assert total == 3
         assert user.fullname in res
 
         #test_search_users_auth(self, app, all, url_user_search, user):
@@ -578,7 +607,8 @@ class TestSearchUsers(ApiSearchTestCase):
         assert res.status_code == 200
         num_results = len(res.json['data'])
         total = res.json['links']['meta']['total']
-        assert num_results == total, 2
+        assert num_results == 3
+        assert total == 3
         assert user.fullname in res
 
         #test_search_users_by_given_name(self, app, all, url_user_search, user_one):
@@ -587,7 +617,8 @@ class TestSearchUsers(ApiSearchTestCase):
         assert res.status_code == 200
         num_results = len(res.json['data'])
         total = res.json['links']['meta']['total']
-        assert num_results == total, 1
+        assert num_results == 1
+        assert total == 1
         assert user_one.given_name == res.json['data'][0]['attributes']['given_name']
 
         #test_search_users_by_middle_name(self, app, all, url_user_search, user_one):
@@ -596,7 +627,8 @@ class TestSearchUsers(ApiSearchTestCase):
         assert res.status_code == 200
         num_results = len(res.json['data'])
         total = res.json['links']['meta']['total']
-        assert num_results == total, 1
+        assert num_results == 1
+        assert total == 1
         assert user_one.middle_names[0] == res.json['data'][0]['attributes']['middle_names'][0]
 
         #test_search_users_by_family_name(self, app, all, url_user_search, user_one):
@@ -605,7 +637,8 @@ class TestSearchUsers(ApiSearchTestCase):
         assert res.status_code == 200
         num_results = len(res.json['data'])
         total = res.json['links']['meta']['total']
-        assert num_results == total, 1
+        assert num_results == 1
+        assert total == 1
         assert user_one.family_name == res.json['data'][0]['attributes']['family_name']
 
         #test_search_users_by_job(self, app, all, url_user_search, user_one):
@@ -614,7 +647,8 @@ class TestSearchUsers(ApiSearchTestCase):
         assert res.status_code == 200
         num_results = len(res.json['data'])
         total = res.json['links']['meta']['total']
-        assert num_results == total, 1
+        assert num_results == 1
+        assert total == 1
         assert user_one.fullname == res.json['data'][0]['attributes']['full_name']
 
         #test_search_users_by_school(self, app, all, url_user_search, user_one):
@@ -623,7 +657,8 @@ class TestSearchUsers(ApiSearchTestCase):
         assert res.status_code == 200
         num_results = len(res.json['data'])
         total = res.json['links']['meta']['total']
-        assert num_results == total, 1
+        assert num_results == 1
+        assert total == 1
         assert user_one.fullname == res.json['data'][0]['attributes']['full_name']
 
 class TestSearchInstitutions(ApiSearchTestCase):
@@ -639,7 +674,8 @@ class TestSearchInstitutions(ApiSearchTestCase):
         assert res.status_code == 200
         num_results = len(res.json['data'])
         total = res.json['links']['meta']['total']
-        assert num_results == total, 1
+        assert num_results == 1
+        assert total == 1
         assert institution.name in res
 
         #test_search_institutions_auth(self, app, all, user, url_institution_search, institution):
@@ -647,7 +683,8 @@ class TestSearchInstitutions(ApiSearchTestCase):
         assert res.status_code == 200
         num_results = len(res.json['data'])
         total = res.json['links']['meta']['total']
-        assert num_results == total, 1
+        assert num_results == 1
+        assert total == 1
         assert institution.name in res
 
         #test_search_institutions_by_name(self, app, all, url_institution_search, institution):
@@ -656,5 +693,6 @@ class TestSearchInstitutions(ApiSearchTestCase):
         assert res.status_code == 200
         num_results = len(res.json['data'])
         total = res.json['links']['meta']['total']
-        assert num_results == total, 1
+        assert num_results == 1
+        assert total == 1
         assert institution.name == res.json['data'][0]['attributes']['name']
