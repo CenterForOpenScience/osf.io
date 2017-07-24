@@ -1,7 +1,5 @@
 from nose.tools import *  # noqa
 
-from modularodm import Q
-
 from osf.models import MetaSchema
 from website.prereg import prereg_landing_page as landing_page
 from website.prereg.utils import drafts_for_user, get_prereg_schema
@@ -40,9 +38,7 @@ class TestPreregLandingPage(OsfTestCase):
         )
 
     def test_has_project_and_draft_registration(self):
-        prereg_schema = MetaSchema.find_one(
-            Q('name', 'eq', 'Prereg Challenge')
-        )
+        prereg_schema = MetaSchema.objects.get(name='Prereg Challenge')
         factories.DraftRegistrationFactory(
             initiator=self.user,
             registration_schema=prereg_schema
@@ -59,10 +55,7 @@ class TestPreregLandingPage(OsfTestCase):
         )
 
     def test_drafts_for_user_omits_registered(self):
-        prereg_schema = MetaSchema.find_one(
-            Q('name', 'eq', 'Prereg Challenge') &
-            Q('schema_version', 'eq', 2)
-        )
+        prereg_schema = MetaSchema.objects.get(name='Prereg Challenge', schema_version=2)
 
         d1 = factories.DraftRegistrationFactory(
             initiator=self.user,

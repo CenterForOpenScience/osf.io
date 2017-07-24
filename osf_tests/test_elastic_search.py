@@ -8,7 +8,6 @@ import functools
 
 from nose.tools import *  # flake8: noqa (PEP8 asserts)
 import mock
-from modularodm import Q
 
 from framework.auth.core import Auth
 
@@ -234,9 +233,7 @@ class TestNodeSearch(OsfTestCase):
     @unittest.skip("Elasticsearch latency seems to be causing theses tests to fail randomly.")
     @retry_assertion(retries=10)
     def test_node_license_updates_correctly(self):
-        other_license = NodeLicense.find_one(
-            Q('name', 'eq', 'MIT License')
-        )
+        other_license = NodeLicense.objects.get(name='MIT License')
         new_license = factories.NodeLicenseRecordFactory(node_license=other_license)
         self.node.node_license = new_license
         self.node.save()
@@ -965,7 +962,7 @@ class TestSearchFiles(OsfTestCase):
 
     def test_file_download_url_no_guid(self):
         file_ = self.root.append_file('Timber.mp3')
-        path = OsfStorageFile.find_one( Q('node', 'eq', file_.node_id)).path
+        path = OsfStorageFile.objects.get(node=file_.node).path
         deep_url = '/' + file_.node._id + '/files/osfstorage' + path + '/'
         find = query_file('Timber.mp3')['results']
         assert_not_equal(file_.path, '')

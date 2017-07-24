@@ -1,9 +1,8 @@
 import datetime
 
 from django.utils import timezone
-from django.core.exceptions import ValidationError as DjangoValidationError
-from modularodm import Q
-from modularodm.exceptions import ValidationError as MODMValidationError
+from django.core.exceptions import ValidationError
+from django.db.models import Q
 import mock
 import pytest
 import pytz
@@ -451,7 +450,7 @@ class TestRoot:
         NodeFactory()
 
         family_ids = [project._id] + [r._id for r in project.get_descendants_recursive()]
-        family_nodes = Node.find(Q('root', 'eq', project))
+        family_nodes = Node.objects.filter(root=project)
         number_of_nodes = family_nodes.count()
 
         assert number_of_nodes == 5
@@ -488,27 +487,25 @@ class TestNodeMODMCompat:
         results = Node.find()
         assert len(results) == 2
 
-        private = Node.find(Q('is_public', 'eq', False))
+        private = Node.objects.filter(is_public=False)
         assert node_1 in private
         assert node_2 not in private
 
     def test_compound_query(self):
         node = NodeFactory(is_public=True, title='foo')
 
-        assert node in Node.find(Q('is_public', 'eq', True) & Q('title', 'eq', 'foo'))
-        assert node not in Node.find(Q('is_public', 'eq', False) & Q('title', 'eq', 'foo'))
+        assert node in Node.objects.filter(is_public=True, title='foo')
+        assert node not in Node.objects.filter(is_public=False, title='foo')
 
     def test_title_validation(self):
         node = NodeFactory.build(title='')
-        with pytest.raises(MODMValidationError):
-            node.save()
-        with pytest.raises(DjangoValidationError) as excinfo:
+        with pytest.raises(ValidationError) as excinfo:
             node.save()
         assert excinfo.value.message_dict == {'title': ['This field cannot be blank.']}
 
         too_long = 'a' * 201
         node = NodeFactory.build(title=too_long)
-        with pytest.raises(DjangoValidationError) as excinfo:
+        with pytest.raises(ValidationError) as excinfo:
             node.save()
         assert excinfo.value.message_dict == {'title': ['Title cannot exceed 200 characters.']}
 
@@ -523,7 +520,7 @@ class TestNodeMODMCompat:
     def test_querying_on_guid_id(self):
         node = NodeFactory()
         assert len(node._id) == 5
-        assert node in Node.find(Q('_id', 'eq', node._id))
+        assert node in Node.objects.filter(guids___id=node._id)
 
 
 # copied from tests/test_models.py
@@ -1096,7 +1093,7 @@ class TestNodeAddContributorRegisteredOrNot:
         assert contributor.is_registered is True
 
     def test_add_contributor_user_id_already_contributor(self, user, node):
-        with pytest.raises(MODMValidationError) as excinfo:
+        with pytest.raises(ValidationError) as excinfo:
             node.add_contributor_registered_or_not(auth=Auth(user), user_id=user._id, save=True)
         assert 'is already a contributor' in excinfo.value.message
 
@@ -1645,10 +1642,8 @@ class TestRegisterNode:
         c1 = ProjectFactory(creator=user, parent=root)
         ProjectFactory(creator=user, parent=c1)
 
-        meta_schema = MetaSchema.find_one(
-            Q('name', 'eq', 'Open-Ended Registration') &
-            Q('schema_version', 'eq', 1)
-        )
+        meta_schema = MetaSchema.objects.get(name='Open-Ended Registration', schema_version=1)
+
         data = {'some': 'data'}
         reg = root.register_node(
             schema=meta_schema,
@@ -1718,8 +1713,8 @@ def test_find_for_user():
     assert node2 in Node.find_for_user(contrib)
     assert node1 not in Node.find_for_user(noncontrib)
 
-    assert node1 in Node.find_for_user(contrib, Q('is_public', 'eq', False))
-    assert node2 not in Node.find_for_user(contrib, Q('is_public', 'eq', False))
+    assert node1 in Node.find_for_user(contrib, Q(is_public=False))
+    assert node2 not in Node.find_for_user(contrib, Q(is_public=False))
 
 
 def test_find_by_institutions():
@@ -2299,7 +2294,7 @@ class TestNodeTraversals:
         reg_ids = [reg._id] + [r._id for r in reg.get_descendants_recursive()]
         orig_call_count = mock_update_search.call_count
         reg.delete_registration_tree(save=True)
-        assert Node.find(Q('_id', 'in', reg_ids) & Q('is_deleted', 'eq', False)).count() == 0
+        assert Node.objects.filter(guids___id__in=reg_ids, is_deleted=False).count() == 0
         assert mock_update_search.call_count == orig_call_count + len(reg_ids)
 
     def test_delete_registration_tree_sets_draft_registration_approvals_to_none(self, user):
@@ -2969,11 +2964,11 @@ def test_querying_on_contributors(node, user, auth):
     deleted = NodeFactory(is_deleted=True)
     deleted.add_contributor(user, auth=auth)
     deleted.save()
-    result = list(Node.find(Q('contributors', 'eq', user)).all())
+    result = Node.objects.filter(_contributors=user)
     assert node in result
     assert deleted in result
 
-    result2 = list(Node.find(Q('contributors', 'eq', user) & Q('is_deleted', 'eq', False)).all())
+    result2 = Node.objects.filter(_contributors=user, is_deleted=False)
     assert node in result2
     assert deleted not in result2
 

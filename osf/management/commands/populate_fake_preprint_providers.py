@@ -95,13 +95,10 @@ PREPRINT_PROVIDERS = [
 
 def get_subject_id(name):
     if name not in SUBJECTS_CACHE:
-        subject = None
         try:
-            subject = Subject.objects.get(text=name)
+            SUBJECTS_CACHE[name] = Subject.objects.filter(text=name).values_list('_id', flat=True).get()
         except Subject.DoesNotExist:
             raise Exception('Subject: "{}" not found'.format(name))
-        else:
-            SUBJECTS_CACHE[name] = subject._id
 
     return SUBJECTS_CACHE[name]
 

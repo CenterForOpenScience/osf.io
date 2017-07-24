@@ -12,9 +12,8 @@ import celery
 import httpretty
 import mock  # noqa
 from django.utils import timezone
+from django.db import IntegrityError
 from mock import call
-from modularodm import Q
-from modularodm.exceptions import KeyExistsException
 import pytest
 from nose.tools import *  # flake8: noqa
 
@@ -282,7 +281,7 @@ def generate_schema_from_data(data):
     )
     try:
         schema.save()
-    except KeyExistsException:
+    except IntegrityError:
 
         # Unfortunately, we don't have db isolation between test cases for some
         # reason. Update the doc currently in the db rather than saving a new
