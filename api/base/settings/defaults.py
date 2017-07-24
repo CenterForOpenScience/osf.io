@@ -154,6 +154,7 @@ REST_FRAMEWORK = {
         '2.3',
         '2.4',
         '2.5',
+        '2.6',
     ),
     'DEFAULT_FILTER_BACKENDS': ('api.base.filters.ODMOrderingFilter',),
     'DEFAULT_PAGINATION_CLASS': 'api.base.pagination.JSONAPIPagination',

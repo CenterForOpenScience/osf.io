@@ -67,3 +67,7 @@ class TestTaxonomy(ApiTestCase):
             for parent in subject['attributes']['parents']:
                 parents_ids.append(parent['id'])
             assert_in(self.subject1._id, parents_ids)
+
+    def test_is_deprecated(self):
+        res = self.app.get('{}?version=2.6'.format(self.url), expect_errors=True)
+        assert res.status_code == 404
