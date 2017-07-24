@@ -179,7 +179,9 @@ class TestDraftRegistrationApprovals:
         approval.save()
         with mock.patch.object(approval, '_on_complete') as mock_on_complete:
             authorizer1 = factories.AuthUserFactory()
-            authorizer1.add_system_tag(settings.PREREG_ADMIN_TAG)
+            administer_permission = Permission.objects.get(codename='administer_prereg')
+            authorizer1.user_permissions.add(administer_permission)
+            authorizer1.save()
             approval.approve(authorizer1)
             assert mock_on_complete.called
             assert approval.is_approved
