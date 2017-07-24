@@ -1,6 +1,7 @@
 import pytz
 
 import logging
+import requests
 from dateutil.parser import parse
 from datetime import datetime, timedelta
 
@@ -28,22 +29,42 @@ class PreprintSummary(SummaryAnalytics):
         timestamp_datetime = datetime(date.year, date.month, date.day).replace(tzinfo=pytz.UTC)
         query_datetime = timestamp_datetime + timedelta(1)
 
+        elastic_query = {
+            "query": {
+                "bool": {
+                    "must": {
+                        "match": {
+                            "type": "preprints"
+                        },
+                        "match": {
+                            "sources": None
+                        }
+                    },
+                    'filter': [
+                        {
+                            "range": {
+                                "date": {
+                                    "lte": "{}||/d".format(query_datetime.strftime('%Y-%m-%d'))
+                                }
+                            }
+                        }
+                    ]
+                }
+            }
+        }
+
         counts = []
         for preprint_provider in PreprintProvider.objects.all():
-            preprint_for_provider_count = PreprintService.objects.filter(Q(
-                node__isnull=False,
-                node__is_deleted=False,
-                provider___id=preprint_provider._id,
-                date_created__lte=query_datetime)
-            ).count()
-
+            name = preprint_provider.name if  preprint_provider.name != 'Open Science Framework' else 'OSF'
+            elastic_query['query']['bool']['must']['match']['sources'] = name
+            resp = requests.post('https://share.osf.io/api/v2/search/creativeworks/_search', json=elastic_query).json()
             counts.append({
                 'keen': {
                     'timestamp': timestamp_datetime.isoformat()
                 },
                 'provider': {
                     'name': preprint_provider.name,
-                    'total': preprint_for_provider_count,
+                    'total': resp['hits']['total'],
                 },
             })
 
