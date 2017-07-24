@@ -321,11 +321,11 @@ class TestNodeUpdate(NodeCRUDTestCase):
     def test_node_update_invalid_data(self, app, user, url_public):
         res = app.put_json_api(url_public, 'Incorrect data', auth=user.auth, expect_errors=True)
         assert res.status_code == 400
-        assert res.json['errors'][0]['detail'] == 'Malformed request.'
+        assert res.json['errors'][0]['detail'] == exceptions.ParseError.default_detail
 
         res = app.put_json_api(url_public, ['Incorrect data'], auth=user.auth, expect_errors=True)
         assert res.status_code == 400
-        assert res.json['errors'][0]['detail'] == 'Malformed request.'
+        assert res.json['errors'][0]['detail'] == exceptions.ParseError.default_detail
 
     # @assert_not_logs(NodeLog.MADE_PUBLIC, 'private_project')
     # def test_cannot_make_project_public_if_non_contributor(self):
@@ -1438,7 +1438,7 @@ class TestNodeUpdateLicense:
 
         res = make_request(url_node, data, auth=user_write_contrib.auth, expect_errors=True)
         assert res.status_code == 403
-        assert res.json['errors'][0]['detail'] == 'You do not have permission to perform this action.'
+        assert res.json['errors'][0]['detail'] == exceptions.PermissionDenied.default_detail
 
     # def test_read_contributor_cannot_update_license(self):
         data = make_payload(
@@ -1448,7 +1448,7 @@ class TestNodeUpdateLicense:
 
         res = make_request(url_node, data, auth=user_read_contrib.auth, expect_errors=True)
         assert res.status_code == 403
-        assert res.json['errors'][0]['detail'] == 'You do not have permission to perform this action.'
+        assert res.json['errors'][0]['detail'] == exceptions.PermissionDenied.default_detail
 
     # def test_non_contributor_cannot_update_license(self):
         data = make_payload(
@@ -1458,7 +1458,7 @@ class TestNodeUpdateLicense:
 
         res = make_request(url_node, data, auth=user_non_contrib.auth, expect_errors=True)
         assert res.status_code == 403
-        assert res.json['errors'][0]['detail'] == 'You do not have permission to perform this action.'
+        assert res.json['errors'][0]['detail'] == exceptions.PermissionDenied.default_detail
 
     # def test_unauthenticated_user_cannot_update_license(self):
         data = make_payload(
@@ -1468,7 +1468,7 @@ class TestNodeUpdateLicense:
 
         res = make_request(url_node, data, expect_errors=True)
         assert res.status_code == 401
-        assert res.json['errors'][0]['detail'] == 'Authentication credentials were not provided.'
+        assert res.json['errors'][0]['detail'] == exceptions.NotAuthenticated.default_detail
 
     def test_update_node_with_existing_license_year_attribute_only(self, user_admin_contrib, node, make_payload, make_request, license_no, url_node):
         node.set_node_license(
