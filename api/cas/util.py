@@ -1,11 +1,53 @@
-from rest_framework.exceptions import PermissionDenied
+import json
 
+import jwe
+import jwt
+
+from rest_framework.exceptions import ParseError, PermissionDenied
+
+from api.base import settings
 from api.base.authentication.drf import check_user
 from api.base.exceptions import (UnconfirmedAccountError, UnclaimedAccountError, DeactivatedAccountError,
                                  MergedAccountError, InvalidAccountError)
-from api.cas import errors
+from api.cas import messages, errors
+
+from framework import sentry
 
 from osf.models import OSFUser
+
+
+def load_request_body_data(request):
+    """
+    Decrypt and decode the request body and return the data in JSON.
+
+    :param request: the request
+    :return: the decrypted body
+    :raise: ParseError, Http 400
+    """
+
+    try:
+        request.body = jwt.decode(
+            jwe.decrypt(request.body, settings.JWE_SECRET),
+            settings.JWT_SECRET,
+            options={'verify_exp': False},
+            algorithm='HS256'
+        )
+        return json.loads(request.body.get('data'))
+    except (AttributeError, TypeError, jwt.exceptions.InvalidTokenError,
+            jwt.exceptions.InvalidKeyError, jwe.exceptions.PyJWEException):
+        sentry.log_message('Error: fail to decrypt or decode CAS request.')
+        raise ParseError(detail=messages.INVALID_REQUEST)
+
+
+def check_user_status(user):
+    """
+    Check if the user is inactive.
+
+    :param user: the user instance
+    :return: the user's status in String if inactive
+    """
+
+    check_user(user)
 
 
 def is_user_inactive(user):

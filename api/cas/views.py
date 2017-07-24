@@ -1,111 +1,98 @@
-import json
-
-from rest_framework import generics
 from rest_framework import status
-from rest_framework.exceptions import ValidationError
 from rest_framework.response import Response
 
 from api.base.views import JSONAPIBaseView
-from api.cas import login, account, messages, permissions, service
-from api.cas.mixins import APICASMixin
+from api.cas import account, login, service, util
 
 
-class LoginOsf(APICASMixin, generics.CreateAPIView, JSONAPIBaseView):
-    """ Default login through OSF. Authentication Required.
+class APICASView(JSONAPIBaseView):
+    """ JSON API CAS View.
     """
 
     view_category = 'cas'
-    view_name = 'login-osf'
-    permission_classes = (permissions.IsCasLogin,)
-    authentication_classes = (login.CasLoginAuthentication,)
+    authentication_classes = ()
+    permission_classes = ()
+    serializer_class = None
 
-    def post(self, request, *args, **kwargs):
+
+class LoginOSF(APICASView):
+    """ Default login through OSF.
+    """
+    view_name = 'login-osf'
+
+    def post(self, request):
+
+        data = util.load_request_body_data(request)
+        user = login.handle_login_osf(data.get('user', None))
 
         content = {
-            'userId': request.user._id,
+            'userId': user._id,
             'attributes': {
-                'username': request.user.username,
-                'givenName': request.user.given_name,
-                'familyName': request.user.family_name,
+                'username': user.username,
+                'givenName': user.given_name,
+                'familyName': user.family_name,
             }
         }
 
         return Response(data=content, status=status.HTTP_200_OK)
 
 
-class LoginInstitution(APICASMixin, generics.CreateAPIView, JSONAPIBaseView):
-    """ Login through institutions. Authentication Required.
+class LoginInstitution(APICASView):
+    """ Login through institutions.
     """
 
-    view_category = 'cas'
     view_name = 'login-institution'
-    permission_classes = (permissions.IsCasLogin,)
-    authentication_classes = (login.CasLoginAuthentication,)
 
-    def post(self, request, *args, **kwargs):
+    def post(self, request):
+
+        data = util.load_request_body_data(request)
+        user = login.handle_login_institution(data.get('provider', None))
 
         return Response(status=status.HTTP_204_NO_CONTENT)
 
 
-class LoginExternal(APICASMixin, generics.CreateAPIView, JSONAPIBaseView):
-    """ Login through non-institution external IdP. Authentication Required.
+class LoginExternal(APICASView):
+    """ Login through non-institution external IdP.
     """
 
-    view_category = 'cas'
     view_name = 'login-external'
-    permission_classes = (permissions.IsCasLogin,)
-    authentication_classes = (login.CasLoginAuthentication,)
 
-    def post(self, request, *args, **kwargs):
+    def post(self, request):
+
+        data = util.load_request_body_data(request)
+        user = login.handle_login_institution(data.get('user', None))
 
         content = {
-            'username': request.user.username
+            'username': user.username
         }
 
         return Response(data=content, status=status.HTTP_200_OK)
 
 
-class AccountRegisterOsf(APICASMixin, generics.CreateAPIView, JSONAPIBaseView):
+class AccountRegisterOSF(APICASView):
     """ Default account creation through OSF.
     """
 
-    view_category = 'cas'
     view_name = 'account-register-osf'
-    permission_classes = ()
-    authentication_classes = ()
 
-    def post(self, request, *args, **kwargs):
+    def post(self, request):
 
-        self.load_request_body_data(request)
-        body_data = json.loads(request.body['data'])
-        account_action = body_data.get('accountAction')
-
-        if account_action != 'REGISTER_OSF':
-            raise ValidationError(detail=messages.INVALID_REQUEST)
-
-        account.handle_register_osf(body_data.get('user'))
+        data = util.load_request_body_data(request)
+        account.create_unregistered_user(data.get('user', None))
 
         return Response(status=status.HTTP_204_NO_CONTENT)
 
 
-class AccountVerifyOsf(APICASMixin, generics.CreateAPIView, JSONAPIBaseView):
+class AccountVerifyOSF(APICASView):
     """ Verify email for account creation through OSF.
     """
 
-    view_category = 'cas'
     view_name = 'account-verify-osf'
-    permission_classes = ()
-    authentication_classes = ()
 
-    def post(self, request, *args, **kwargs):
+    def post(self, request):
 
-        body_data = self.load_request_body_data(request)
-        account_action = body_data.get('accountAction')
-
-        if account_action != 'VERIFY_OSF':
-            raise ValidationError(detail=messages.INVALID_REQUEST)
-
-        user = account.handle_verify_osf(body_data.get('user'))
+        data = util.load_request_body_data(request)
+        user = account.register_user(data.get('user', None))
 
         content = {
             'verificationKey': user.verification_key,
@@ -118,46 +105,30 @@ class AccountVerifyOsf(APICASMixin, generics.CreateAPIView, JSONAPIBaseView):
         return Response(data=content, status=status.HTTP_200_OK)
 
 
-class AccountVerifyOsfResend(APICASMixin, generics.CreateAPIView, JSONAPIBaseView):
+class AccountVerifyOSFResend(APICASView):
     """ Find user by email and resend verification email for account creation.
     """
 
-    view_category = 'cas'
     view_name = 'account-verify-osf-resend'
-    permission_classes = ()
-    authentication_classes = ()
 
-    def post(self, request, *args, **kwargs):
+    def post(self, request):
 
-        body_data = self.load_request_body_data(request)
-        account_action = body_data.get('accountAction')
-
-        if account_action != 'VERIFY_OSF_RESEND':
-            raise ValidationError(detail=messages.INVALID_REQUEST)
-
-        account.handle_verify_osf_resend(body_data.get('user'))
+        data = util.load_request_body_data(request)
+        account.resend_confirmation(data.get('user', None))
 
         return Response(status=status.HTTP_204_NO_CONTENT)
 
 
-class AccountRegisterExternal(APICASMixin, generics.CreateAPIView, JSONAPIBaseView):
+class AccountRegisterExternal(APICASView):
     """ Account creation (or link) though non-institution external identity provider.
     """
 
-    view_category = 'cas'
     view_name = 'account-register-external'
-    permission_classes = ()
-    authentication_classes = ()
 
-    def post(self, request, *args, **kwargs):
+    def post(self, request):
 
-        body_data = self.load_request_body_data(request)
-        account_action = body_data.get('accountAction')
-
-        if account_action != 'REGISTER_EXTERNAL':
-            raise ValidationError(detail=messages.INVALID_REQUEST)
-
-        user, create_or_link = account.handle_register_external(body_data.get('user'))
+        data = util.load_request_body_data(request)
+        user, create_or_link = account.create_or_link_external_user(data.get('user', None))
 
         content = {
             'username': user.username,
@@ -167,24 +138,16 @@ class AccountRegisterExternal(APICASMixin, generics.CreateAPIView, JSONAPIBaseVi
         return Response(data=content, status=status.HTTP_200_OK)
 
 
-class AccountVerifyExternal(APICASMixin, generics.CreateAPIView, JSONAPIBaseView):
+class AccountVerifyExternal(APICASView):
     """ Verify email for account creation (or link) though non-institution external identity provider.
     """
 
-    view_category = 'cas'
     view_name = 'account-verify-external'
-    permission_classes = ()
-    authentication_classes = ()
 
-    def post(self, request, *args, **kwargs):
+    def post(self, request):
 
-        body_data = self.load_request_body_data(request)
-        account_action = body_data.get('accountAction')
-
-        if account_action != 'VERIFY_EXTERNAL':
-            raise ValidationError(detail=messages.INVALID_REQUEST)
-
-        user, create_or_link = account.handle_verify_external(body_data.get('user'))
+        data = util.load_request_body_data(request)
+        user, create_or_link = account.register_external_user(data.get('user', None))
 
         content = {
             'verificationKey': user.verification_key,
@@ -197,117 +160,89 @@ class AccountVerifyExternal(APICASMixin, generics.CreateAPIView, JSONAPIBaseView
         return Response(data=content, status=status.HTTP_200_OK)
 
 
-class AccountPasswordForgot(APICASMixin, generics.CreateAPIView, JSONAPIBaseView):
+class AccountPasswordForgot(APICASView):
     """ Find user by email and (re)send verification email for password reset.
     """
 
-    view_category = 'cas'
     view_name = 'account-password-forgot'
-    permission_classes = ()
-    authentication_classes = ()
 
-    def post(self, request, *args, **kwargs):
+    def post(self, request):
 
-        body_data = self.load_request_body_data(request)
-        account_action = body_data.get('accountAction')
-
-        if account_action != 'PASSWORD_FORGOT':
-            raise ValidationError(detail=messages.INVALID_REQUEST)
-
-        account.handle_password_forgot(body_data.get('user'))
+        data = util.load_request_body_data(request)
+        account.send_password_reset_email(data.get('user', None))
 
         return Response(status=status.HTTP_204_NO_CONTENT)
 
 
-class AccountPasswordReset(APICASMixin, generics.CreateAPIView, JSONAPIBaseView):
-    """ Reset the password for an osf account.
+class AccountPasswordReset(APICASView):
+    """ Reset the password for an eligible OSF account.
     """
 
-    view_category = 'cas'
     view_name = 'account-password-reset'
-    permission_classes = ()
-    authentication_classes = ()
 
-    def post(self, request, *args, **kwargs):
+    def post(self, request):
 
-        body_data = self.load_request_body_data(request)
-        account_action = body_data.get('accountAction')
-
-        if account_action != 'PASSWORD_RESET':
-            raise ValidationError(detail=messages.INVALID_REQUEST)
-
-        user = account.handle_password_reset(body_data.get('user'))
+        data = util.load_request_body_data(request)
+        user = account.reset_password(data.get('user', None))
 
         content = {
             'verificationKey': user.verification_key,
             'userId': user._id,
             'username': user.username,
-            'casAction': 'account-password-meetings' if body_data.get('meetings') else 'account-password-reset',
+            'casAction': 'account-password-meetings' if data.get('meetings') else 'account-password-reset',
             'nextUrl': False,
         }
 
         return Response(data=content, status=status.HTTP_200_OK)
 
 
-class ServiceOauthToken(APICASMixin, generics.CreateAPIView, JSONAPIBaseView):
+class ServiceOauthToken(APICASView):
     """ Get the owner and scopes of a personal access token by token id.
     """
 
-    view_category = 'cas'
     view_name = 'service-oauth-token'
-    permission_classes = ()
-    authentication_classes = ()
 
-    def post(self, request, *args, **kwargs):
+    def post(self, request):
 
-        body_data = self.load_request_body_data(request)
+        body_data = util.load_request_body_data(request)
         content = service.get_oauth_token(body_data)
         return Response(data=content, status=status.HTTP_200_OK)
 
 
-class ServiceOauthScope(APICASMixin, generics.CreateAPIView, JSONAPIBaseView):
+class ServiceOauthScope(APICASView):
     """ Get the description of the oauth scope by scope name.
     """
 
-    view_category = 'cas'
     view_name = 'service-oauth-scope'
-    permission_classes = ()
-    authentication_classes = ()
 
-    def post(self, request, *args, **kwargs):
+    def post(self, request):
 
-        body_data = self.load_request_body_data(request)
+        body_data = util.load_request_body_data(request)
         content = service.get_oauth_scope(body_data)
         return Response(data=content, status=status.HTTP_200_OK)
 
 
-class ServiceOauthApps(APICASMixin, generics.CreateAPIView, JSONAPIBaseView):
+class ServiceOauthApps(APICASView):
     """ Load all active developer applications.
     """
 
-    view_category = 'cas'
     view_name = 'service-oauth-apps'
-    permission_classes = ()
-    authentication_classes = ()
 
-    def post(self, request, *args, **kwargs):
+    def post(self, request):
 
-        body_data = self.load_request_body_data(request)
+        body_data = util.load_request_body_data(request)
         content = service.load_oauth_apps(body_data)
         return Response(data=content, status=status.HTTP_200_OK)
 
 
-class ServiceInstitutions(APICASMixin, generics.CreateAPIView, JSONAPIBaseView):
+class ServiceInstitutions(APICASView):
     """ Load institutions that provide authentication delegation.
     """
 
-    view_category = 'cas'
     view_name = 'service-institutions'
-    permission_classes = ()
-    authentication_classes = ()
 
-    def post(self, request, *args, **kwargs):
+    def post(self, request):
 
-        body_data = self.load_request_body_data(request)
+        body_data = util.load_request_body_data(request)
         content = service.load_institutions(body_data)
         return Response(data=content, status=status.HTTP_200_OK)

@@ -1,10 +1,9 @@
-from rest_framework.exceptions import ValidationError, AuthenticationFailed, PermissionDenied
-from rest_framework.authentication import BaseAuthentication
+from rest_framework.exceptions import ValidationError
 
 from addons.twofactor.models import UserSettings as TwoFactorUserSettings
 
-from api.cas import util, messages, errors
-from api.cas.mixins import APICASMixin
+from api.cas import messages, errors
+from api.cas import util
 
 from framework import sentry
 from framework.auth import get_or_create_user
@@ -12,50 +11,10 @@ from framework.auth.cas import validate_external_credential
 
 from osf.models import Institution, OSFUser
 
-from website.mails import send_mail, WELCOME_OSF4I
+from website.mails import send_mail
+from website.mails import WELCOME_OSF4I
 
-
-class CasLoginAuthentication(APICASMixin, BaseAuthentication):
-
-    def authenticate(self, request):
-        """
-        Handle Authentication for CAS Login Request. If authentication succeeds, return the user. Otherwise, raise
-        respective API exceptions with detailed error message for CAS:
-
-        HTTP 401 or HTTP 403: expected authentication failures which can be handled by CAS
-        HTTP 400: OSF fails to understand CAS request. Inform Sentry, something wrong with CAS.
-        HTTP 500: OSF understands CAS request but fails to complete it. Inform Sentry, something wrong with OSF.
-
-        :param request: the HTTP POST request
-        :return: the authenticated user, or
-        :raises: APIException, ValidationError, AuthenticationFailed, PermissionDenied
-        """
-
-        body_data = self.load_request_body_data(request)
-        login_type = body_data.get('loginType')
-
-        # default OSF login
-        if login_type == 'OSF':
-            user, error_message, user_status_exception = handle_login_osf(body_data.get('user'))
-            if user and not error_message:
-                if user_status_exception:
-                    # authentication fails due to invalid user status, raise 403
-                    raise PermissionDenied(detail=user_status_exception)
-                # authentication succeeds
-                return user, None
-            # authentication fails due to invalid ro incomplete credential, raise 401
-            raise AuthenticationFailed(detail=error_message)
-
-        # institution login
-        if login_type == 'INSTITUTION':
-            return handle_login_institution(body_data.get('provider'))
-
-        # non-institution external login
-        if login_type == 'EXTERNAL':
-            return handle_login_external(body_data.get('user'))
-
-        # invalid login type
-        raise ValidationError(detail=messages.INVALID_REQUEST)
+# TODO: raise API exception, use error_code for CAS, keep error_detail
 
 
 def handle_login_osf(data_user):
@@ -74,29 +33,32 @@ def handle_login_osf(data_user):
 
     # check if credentials are provided
     if not email or not (remote_authenticated or verification_key or password):
-        # something is wrong with CAS, raise 400
         raise ValidationError(detail=messages.INVALID_REQUEST)
 
     # retrieve the user
     user = util.find_user_by_email_or_guid(None, email, username_only=False)
     if not user:
-        return None, errors.ACCOUNT_NOT_FOUND, None
+        raise ValidationError(detail=errors.ACCOUNT_NOT_FOUND)
 
     # authenticated by remote authentication
     if remote_authenticated:
-        return user, verify_two_factor(user, one_time_password), util.is_user_inactive(user)
+        verify_two_factor_authentication(user, one_time_password)
+        util.check_user(user)
+        return user
 
     # authenticated by verification key
     if verification_key:
         if verification_key == user.verification_key:
-            return user, verify_two_factor(user, one_time_password), util.is_user_inactive(user)
-        return None, errors.INVALID_VERIFICATION_KEY, None
+            verify_two_factor_authentication(user, one_time_password)
+            util.check_user(user)
+        raise ValidationError(detail=errors.INVALID_VERIFICATION_KEY)
 
     # authenticated by password
     if password:
         if user.check_password(password):
-            return user, verify_two_factor(user, one_time_password), util.is_user_inactive(user)
-        return None, errors.INVALID_PASSWORD, None
+            verify_two_factor_authentication(user, one_time_password)
+            util.check_user(user)
+        raise ValidationError(detail=errors.INVALID_PASSWORD)
 
 
 def handle_login_institution(provider):
@@ -124,7 +86,7 @@ def handle_login_institution(provider):
     if not username:
         message = 'Institution login failed: username required'
         sentry.log_message(message)
-        raise ValidationError(detail='Institution login failed: username required')
+        raise ValidationError(detail=message)
 
     # check fullname
     fullname = institution_user.get('fullname', '')
@@ -161,7 +123,7 @@ def handle_login_institution(provider):
         user.affiliated_institutions.add(institution)
         user.save()
 
-    return user, None
+    return user
 
 
 def handle_login_external(data_user):
@@ -176,7 +138,7 @@ def handle_login_external(data_user):
     # parse external credential
     external_credential = validate_external_credential(data_user.get('externalIdWithProvider'))
     if not external_credential:
-        raise PermissionDenied(detail=errors.INVALID_EXTERNAL_IDENTITY)
+        raise ValidationError(detail=errors.INVALID_EXTERNAL_IDENTITY)
 
     try:
         user = OSFUser.objects.filter(
@@ -188,13 +150,13 @@ def handle_login_external(data_user):
         ).get()
     except OSFUser.DoesNotExist:
         # external identity not found, CAS should redirect the users to create or link their OSF account
-        raise PermissionDenied(errors.ACCOUNT_NOT_FOUND)
+        raise ValidationError(errors.ACCOUNT_NOT_FOUND)
 
     # external identity found, return username for CAS to use default login with username and remote principal
-    return user, None
+    return user
 
 
-def verify_two_factor(user, one_time_password):
+def verify_two_factor_authentication(user, one_time_password):
     """
     Check users' two factor settings after they successful pass the initial verification.
 
@@ -206,11 +168,14 @@ def verify_two_factor(user, one_time_password):
     try:
         two_factor = TwoFactorUserSettings.objects.get(owner_id=user.pk)
     except TwoFactorUserSettings.DoesNotExist:
-        return None
+        return
 
     # two factor required
     if not one_time_password:
-        return errors.TWO_FACTOR_AUTHENTICATION_REQUIRED
+        raise ValidationError(detail=errors.TWO_FACTOR_AUTHENTICATION_REQUIRED)
 
     # verify two factor
-    return None if two_factor.verify_code(one_time_password) else errors.INVALID_TIME_BASED_ONE_TIME_PASSWORD
+    if not two_factor.verify_code(one_time_password):
+        raise ValidationError(detail=errors.INVALID_TIME_BASED_ONE_TIME_PASSWORD)
+
+    return

@@ -17,25 +17,27 @@ from website.mails import send_mail
 from website.mails import WELCOME, EXTERNAL_LOGIN_LINK_SUCCESS, FORGOT_PASSWORD
 from website.util.time import throttle_period_expired
 
+# TODO: raise API exception, use error_code for CAS, keep error_detail
 
-def handle_register_osf(data_user):
+
+def create_unregistered_user(credentials):
     """
     Handle new account creation through OSF.
 
-    :param data_user: the user's information
+    :param credentials: the user's information
     :return: the newly created but unconfirmed user
     :raises: APIException, ValidationError, PermissionDenied
     """
 
     # check required fields
-    fullname = data_user.get('fullname')
-    email = data_user.get('email')
-    password = data_user.get('password')
+    fullname = credentials.get('fullname')
+    email = credentials.get('email')
+    password = credentials.get('password')
     if not (fullname and email and password):
         raise ValidationError(detail=messages.INVALID_REQUEST)
 
     # check and update campaign
-    campaign = data_user.get('campaign')
+    campaign = credentials.get('campaign')
     if campaign and campaign not in campaigns.get_campaigns():
         campaign = None
 
@@ -43,16 +45,16 @@ def handle_register_osf(data_user):
         user = register_unconfirmed(email, password, fullname, campaign=campaign)
     except DuplicateEmailError:
         # user already exists
-        raise PermissionDenied(detail=messages.ALREADY_REGISTERED)
+        raise ValidationError(detail=messages.ALREADY_REGISTERED)
     except ChangePasswordError:
         # password is same as email
-        raise PermissionDenied(detail=messages.PASSWORD_SAME_AS_EMAIL)
+        raise ValidationError(detail=messages.PASSWORD_SAME_AS_EMAIL)
     except OSFValidationError:
         # email is invalid or its domain is blacklisted
-        raise PermissionDenied(detail=messages.INVALID_EMAIL)
+        raise ValidationError(detail=messages.INVALID_EMAIL)
     except ValueError:
         # email has already been confirmed to this user
-        raise PermissionDenied(detail=messages.EMAIL_ALREADY_CONFIRMED)
+        raise ValidationError(detail=messages.EMAIL_ALREADY_CONFIRMED)
 
     try:
         send_confirm_email(user, email=user.username, renew=False, external_id_provider=None, external_id=None)
@@ -62,27 +64,28 @@ def handle_register_osf(data_user):
     return user
 
 
-def handle_verify_osf(data_user):
+def register_user(credentials):
     """
     Handle email verification for account creation through OSF.
 
-    :param data_user: the user's information
+    :param credentials: the user's information
     :return: the user
     :raises: ValidationError, PermissionDenied
     """
 
     # check required fields
-    email = data_user.get('email')
-    token = data_user.get('verificationCode')
+    email = credentials.get('email')
+    token = credentials.get('verificationCode')
     if not email or not token:
+        # TODO: raise API exception, use error_code for CAS, keep error_detail
         raise ValidationError(detail=messages.INVALID_REQUEST)
 
     # retrieve the user (the email must be primary)
     user = util.find_user_by_email_or_guid(None, email, username_only=True)
     if not user:
-        raise APIException(detail=messages.EMAIL_NOT_FOUND)
+        raise ValidationError(detail=messages.EMAIL_NOT_FOUND)
     if user.date_confirmed:
-        raise PermissionDenied(detail=messages.ALREADY_VERIFIED)
+        raise ValidationError(detail=messages.ALREADY_VERIFIED)
 
     # verify token, register user and send welcome email
     try:
@@ -104,35 +107,35 @@ def handle_verify_osf(data_user):
     return user
 
 
-def handle_verify_osf_resend(data_user):
+def resend_confirmation(credential):
 
     """
     Find OSF account by email. Verify that the user is eligible for resend new account verification. Resend the
     email if the user hasn't recently make the same request.
 
-    :param data_user: the user
+    :param credential: the user
     :return: the user
     :raises: ValidationError, PermissionDenied, APIException
     """
 
     # check required fields
-    email = data_user.get('email')
+    email = credential.get('email')
     if not email:
         raise ValidationError(detail=messages.INVALID_REQUEST)
 
     # retrieve the user
     user = util.find_user_by_email_or_guid(None, email, username_only=False)
     if not user:
-        raise PermissionDenied(detail=messages.EMAIL_NOT_FOUND)
+        raise ValidationError(detail=messages.EMAIL_NOT_FOUND)
     inactive_status = util.is_user_inactive(user)
     if not inactive_status:
-        raise PermissionDenied(detail=messages.ALREADY_VERIFIED)
+        raise ValidationError(detail=messages.ALREADY_VERIFIED)
     if inactive_status != 'ACCOUNT_NOT_VERIFIED':
-        raise PermissionDenied(detail=messages.ACCOUNT_NOT_ELIGIBLE)
+        raise ValidationError(detail=messages.ACCOUNT_NOT_ELIGIBLE)
 
     # check throttle
     if not throttle_period_expired(user.email_last_sent, web_settings.SEND_EMAIL_THROTTLE):
-        raise PermissionDenied(detail=messages.EMAIL_THROTTLE_ACTIVE)
+        raise ValidationError(detail=messages.EMAIL_THROTTLE_ACTIVE)
 
     # resend email
     try:
@@ -145,30 +148,31 @@ def handle_verify_osf_resend(data_user):
     return user
 
 
-def handle_register_external(data_user):
+def create_or_link_external_user(credentials):
     """
     Handle account creation or link through external identity provider.
 
-    :param data_user: the user
+    :param credentials: the user
     :return: the newly created or linked user and pending status for external identity
     :raises: ValidationError, PermissionDenied, APIException
     """
 
     # check required fields
-    email = data_user.get('email')
-    provider = data_user.get('externalIdProvider')
-    identity = data_user.get('externalId')
+    email = credentials.get('email')
+    provider = credentials.get('externalIdProvider')
+    identity = credentials.get('externalId')
     fullname = '{} {}'.format(
-        data_user.get('attributes').get('given-names', ''),
-        data_user.get('attributes').get('family-name', '')
+        credentials.get('attributes').get('given-names', ''),
+        credentials.get('attributes').get('family-name', '')
     ).strip()
-    if not fullname:  # user's ORCiD privacy settings may prevent releasing names, use the identity instead
+    # user's ORCiD privacy settings may prevent releasing names, use the identity instead
+    if not fullname:
         fullname = identity
     if not (email and fullname and provider and identity):
         raise ValidationError(detail=messages.INVALID_REQUEST)
 
     # check and update campaign
-    campaign = data_user.get('campaign')
+    campaign = credentials.get('campaign')
     if campaign and campaign not in campaigns.get_campaigns():
         campaign = None
 
@@ -230,18 +234,18 @@ def handle_register_external(data_user):
     return user, external_identity[provider][identity]
 
 
-def handle_verify_external(data_user):
+def register_external_user(credentials):
     """
     Handle email verification for account creation or link through external identity provider.
 
-    :param data_user: the user
+    :param credentials: the user
     :return: the created or linked user and the previous pending status
     :raises: ValidationError, PermissionDenied, APIException
     """
 
     # check required fields
-    email = data_user.get('email')
-    token = data_user.get('verificationCode')
+    email = credentials.get('email')
+    token = credentials.get('verificationCode')
     if not email or not token:
         raise ValidationError(detail=messages.INVALID_REQUEST)
 
@@ -284,18 +288,18 @@ def handle_verify_external(data_user):
     return user, external_identity_status
 
 
-def handle_password_forgot(data_user):
+def send_password_reset_email(credential):
     """
     Find account by email and verify if the user is eligible for reset password. If so, send the verification email
     if user hasn't recently make the same request.
 
-    :param data_user: the user
+    :param credential: the user
     :return: the user with updated pending password reset verification
     :raises: ValidationError, PermissionDenied, APIException
     """
 
     # check required fields
-    email = data_user.get('email')
+    email = credential.get('email')
     if not email:
         raise ValidationError(detail=messages.INVALID_REQUEST)
 
@@ -322,27 +326,27 @@ def handle_password_forgot(data_user):
     return user, None
 
 
-def handle_password_reset(data_user):
+def reset_password(credentials):
     """
-    Handle password reset for eligible OSF account.
+    Reset password for eligible OSF account.
 
-    :param data_user: the user
+    :param credentials: the user's information
     :return: the user
     :raises: ValidationError, PermissionDenied, APIException
     """
 
     # check required fields
-    user_id = data_user.get('userId')
-    email = data_user.get('email')
-    token = data_user.get('verificationCode')
-    password = data_user.get('password')
+    user_id = credentials.get('userId')
+    email = credentials.get('email')
+    token = credentials.get('verificationCode')
+    password = credentials.get('password')
     if not ((email or user_id) and token and password):
         raise ValidationError(detail=messages.INVALID_REQUEST)
 
     # retrieve the user
     user = util.find_user_by_email_or_guid(user_id, email, username_only=False)
     if not user:
-        raise APIException(detail=messages.USER_NOT_FOUND)
+        raise ValidationError(detail=messages.USER_NOT_FOUND)
 
     # check to token
     if not user.verify_password_token(token):
@@ -352,7 +356,7 @@ def handle_password_reset(data_user):
     try:
         user.set_password(password)
     except ChangePasswordError:
-        raise PermissionDenied(detail=messages.PASSWORD_SAME_AS_EMAIL)
+        raise ValidationError(detail=messages.PASSWORD_SAME_AS_EMAIL)
 
     # clear v2 key for password reset
     user.verification_key_v2 = {}
