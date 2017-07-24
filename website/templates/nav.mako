@@ -48,12 +48,12 @@
 
             % if user_name and display_name:
             <li class="dropdown">
-            <button class="dropdown-toggle nav-user-dropdown btn-link" data-toggle="dropdown" role="button" aria-expanded="false" aria-label="Toggle auth dropdown">
+            <a class="dropdown-toggle nav-user-dropdown btn-link" data-toggle="dropdown" role="button" aria-expanded="false" aria-label="Toggle auth dropdown">
                 <span class="osf-gravatar">
                     <img src="${user_gravatar}" alt="User gravatar">
                 </span> ${display_name}
                 <span class="caret"></span>
-            </button>
+            </a>
 
             <ul class="dropdown-menu auth-dropdown" role="menu">
                 <li><a href="${domain}profile/"><i class="fa fa-user fa-lg p-r-xs"></i> My Profile</a></li>
