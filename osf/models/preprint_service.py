@@ -18,10 +18,12 @@ from website.util import api_v2_url
 from website.util.permissions import ADMIN
 from website import settings
 
+from reviews.models.mixins import ReviewableMixin
+
 from osf.models.base import BaseModel, GuidMixin
 from osf.models.identifiers import IdentifierMixin, Identifier
 
-class PreprintService(DirtyFieldsMixin, GuidMixin, IdentifierMixin, BaseModel):
+class PreprintService(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin, BaseModel):
     date_created = NonNaiveDateTimeField(auto_now_add=True)
     date_modified = NonNaiveDateTimeField(auto_now=True)
     provider = models.ForeignKey('osf.PreprintProvider',
