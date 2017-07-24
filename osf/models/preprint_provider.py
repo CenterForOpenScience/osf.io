@@ -2,8 +2,6 @@
 from django.db import models
 from django.contrib.postgres import fields
 
-from modularodm import Q
-
 from osf.models.base import BaseModel, ObjectIDMixin
 from osf.models.licenses import NodeLicense
 from osf.models.subject import Subject
@@ -94,12 +92,13 @@ def rules_to_subjects(rules):
         return Subject.objects.filter(provider___id='osf')
     q = []
     for rule in rules:
+        parent_from_rule = Subject.load(rule[0][-1])
         if rule[1]:
-            q.append(Q('parent', 'eq', Subject.load(rule[0][-1])))
+            q.append(models.Q(parent=parent_from_rule))
             if len(rule[0]) == 1:
-                potential_parents = Subject.find(Q('parent', 'eq', Subject.load(rule[0][-1])))
+                potential_parents = Subject.objects.filter(parent=parent_from_rule)
                 for parent in potential_parents:
-                    q.append(Q('parent', 'eq', parent))
+                    q.append(models.Q(parent=parent))
         for sub in rule[0]:
-            q.append(Q('_id', 'eq', sub))
-    return Subject.find(reduce(lambda x, y: x | y, q)) if len(q) > 1 else (Subject.find(q[0]) if len(q) else Subject.find())
+            q.append(models.Q(_id=sub))
+    return Subject.objects.filter(reduce(lambda x, y: x | y, q)) if len(q) > 1 else (Subject.objects.filter(q[0]) if len(q) else Subject.objects.all())
