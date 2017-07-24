@@ -5,7 +5,6 @@ import pytest
 import datetime
 
 from django.utils import timezone
-from django.contrib.auth.models import Permission
 
 from osf.modm_compat import Q
 from osf.models import DraftRegistrationApproval, MetaSchema, NodeLog
@@ -110,9 +109,7 @@ class TestDraftRegistrationApprovals:
     @mock.patch('framework.celery_tasks.handlers.enqueue_task')
     def test_approval_after_initiator_is_merged_into_another_user(self, mock_enqueue):
         approver = factories.UserFactory()
-        administer_permission = Permission.objects.get(codename='administer_prereg')
-        approver.user_permissions.add(administer_permission)
-        approver.save()
+        approver.add_system_tag(settings.PREREG_ADMIN_TAG)
 
         mergee = factories.UserFactory(fullname='Manny Mergee')
         merger = factories.UserFactory(fullname='Merve Merger')
@@ -179,9 +176,7 @@ class TestDraftRegistrationApprovals:
         approval.save()
         with mock.patch.object(approval, '_on_complete') as mock_on_complete:
             authorizer1 = factories.AuthUserFactory()
-            administer_permission = Permission.objects.get(codename='administer_prereg')
-            authorizer1.user_permissions.add(administer_permission)
-            authorizer1.save()
+            authorizer1.add_system_tag(settings.PREREG_ADMIN_TAG)
             approval.approve(authorizer1)
             assert mock_on_complete.called
             assert approval.is_approved
