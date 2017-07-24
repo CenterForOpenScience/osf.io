@@ -19,6 +19,6 @@
     "raven-js": "2.1.0",
     "clipboard": "^1.6.1",
     "At.js": "CenterForOpenScience/At.js#cos",
-    "academicons": "1.7.0"
+    "academicons": "1.8.0"
   }
 }
