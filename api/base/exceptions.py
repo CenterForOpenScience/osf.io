@@ -2,7 +2,7 @@ import httplib as http
 from django.utils.translation import ugettext_lazy as _
 
 from rest_framework import status
-from rest_framework.exceptions import APIException, AuthenticationFailed
+from rest_framework.exceptions import APIException, AuthenticationFailed, ParseError, Throttled
 
 
 def dict_error_formatting(errors, index=None):
@@ -66,7 +66,12 @@ def json_api_exception_handler(exc, context):
             response['X-OSF-OTP'] = 'required; app'
 
         if isinstance(exc, JSONAPIException):
-            errors.extend([{'source': exc.source or {}, 'detail': exc.detail, 'meta': exc.meta or {}}])
+            errors.extend([{
+                'source': exc.source or {},
+                'detail': exc.detail,
+                'meta': exc.meta or {},
+                'code': exc.code or {},
+            }])
         elif isinstance(message, dict):
             errors.extend(dict_error_formatting(message, None))
         else:
@@ -104,10 +109,11 @@ class JSONAPIException(APIException):
     """
     status_code = status.HTTP_400_BAD_REQUEST
 
-    def __init__(self, detail=None, source=None, meta=None):
+    def __init__(self, detail=None, source=None, meta=None, code=None):
         super(JSONAPIException, self).__init__(detail=detail)
         self.source = source
         self.meta = meta
+        self.code = code
 
 
 # Custom Exceptions the Django Rest Framework does not support
@@ -209,34 +215,179 @@ class InvalidFilterFieldError(JSONAPIParameterException):
         super(InvalidFilterFieldError, self).__init__(detail=detail, parameter=parameter)
 
 
+class CASJSONWebEncryptionError(AuthenticationFailed):
+    """ Raised when client tries to make a request to CAS endpoint without proper JWE/JWT encryption.
+    """
+    status_code = status.HTTP_401_UNAUTHORIZED
+    code = 40101
+    default_detail = _('API CAS endpoint fails to verify the JWE/JWT encryption of the request.')
+
+
+class InvalidPasswordError(AuthenticationFailed):
+    """ Raised when CAS provides an invalid password for username/password login.
+    """
+    code = 40102
+    default_detail = _('Invalid password.')
+
+
+class InvalidVerificationKeyError(AuthenticationFailed):
+    """ Raised when CAS provides an invalid verification key for username/verification_key login.
+    """
+    code = 40103
+    default_detail = _('Invalid verification key.')
+
+
+class InvalidVerificationCodeError(AuthenticationFailed):
+    """ Raised when CAS provides an invalid verification code for account management verification.
+    """
+    code = 40104
+    default_detail = _('Invalid verification code.')
+
+
+class InvalidExternalIdentityError(AuthenticationFailed):
+    """ Raised when CAS provides an invalid external identity for login through external identity provider.
+    """
+    code = 40105
+    default_detail = _('Invalid External Identity.')
+
+
+class TwoFactorRequiredError(AuthenticationFailed):
+    """ Raised when two factor is required for API authentication or any type CAS login.
+    """
+    code = 40106
+    default_detail = _('Must specify two-factor authentication OTP code.')
+
+
+class TwoFactorFailedError(AuthenticationFailed):
+    """ Raised when two factor fails for any CAS login.
+    """
+    code = 40107
+    default_detail = _('Two factor authentication failed for login.')
+
+
+class MalformedRequestError(ParseError):
+    """ Raised when the API server fails parse the successfully decrypted request body.
+    """
+    code = 40001
+    default_detail = _('Fail to parse the CAS request body.')
+
+
+class OauthScopeError(APIException):
+    """ Raised when CAS provides an invalid or inactive scope.
+    """
+    status_code = status.HTTP_400_BAD_REQUEST
+    code = 40002
+    default_detail = _('The scope requested is not found or inactive.')
+
+
+class OauthPersonalAccessTokenError(APIException):
+    """ Raised when CAS provides an invalid personal access token
+    """
+    status_code = status.HTTP_400_BAD_REQUEST
+    code = 40003
+    default_detail = _('The personal access token requested is not found or invalid.')
+
+
+class EmailAlreadyRegisteredError(APIException):
+    """ Raised when CAS tries to create an account with an email that has already been registered.
+    """
+    status_code = status.HTTP_400_BAD_REQUEST
+    code = 40004
+    default_detail = _('This email has already been registered with OSF.')
+
+
+class EmailAlreadyConfirmedError(APIException):
+    """ Raise when CAS tries to confirm an email that has already been confirmed.
+    """
+    status_code = status.HTTP_400_BAD_REQUEST
+    code = 40005
+    default_detail = _('This email has already been confirmed.')
+
+
+class InvalidOrBlacklistedEmailError(APIException):
+    """ Raised when CAS tries to create and account with an email that is invalid or has been blacklisted.
+    """
+    status_code = status.HTTP_400_BAD_REQUEST
+    code = 40006
+    default_detail = _('This email is invalid or blacklisted')
+
+
+class PasswordSameAsEmailError(APIException):
+    """ Raised when CAS tries to set a password which is the same as one of the user's email address.
+    """
+    status_code = status.HTTP_400_BAD_REQUEST
+    code = 40007
+    default_detail = _('Password cannot be the same as your email address.')
+
+
+class AccountNotEligibleError(APIException):
+    """ Raise when an account is not eligible for the requested action.
+    """
+    status_code = status.HTTP_400_BAD_REQUEST
+    code = 40008
+    default_detail = _('The OSF account associated with this email is not eligible for the requested action.')
+
+
+class AccountNotFoundError(APIException):
+    """ Raised when the account associated with an email, a GUID or an external identity is not found.
+    """
+    status_code = status.HTTP_400_BAD_REQUEST
+    code = 4009
+    default_detail = _('Account not found.')
+
+
 class UnconfirmedAccountError(APIException):
-    status_code = 400
+    """ Raised when the account is created but not confirmed.
+    """
+    status_code = status.HTTP_400_BAD_REQUEST
+    code = 40010
     default_detail = _('Please confirm your account before using the API.')
 
 
 class UnclaimedAccountError(APIException):
-    status_code = 400
+    """ Raised when the account is created but not claimed.
+    """
+    status_code = status.HTTP_400_BAD_REQUEST
+    code = 40011
     default_detail = _('Please claim your account before using the API.')
 
 
 class DeactivatedAccountError(APIException):
-    status_code = 400
+    """ Raised when the account is disabled.
+    """
+    status_code = status.HTTP_400_BAD_REQUEST
+    code = 40012
     default_detail = _('Making API requests with credentials associated with a deactivated account is not allowed.')
 
 
 class MergedAccountError(APIException):
-    status_code = 400
+    """ Raised when the account has already been merged by another one.
+    """
+    status_code = status.HTTP_400_BAD_REQUEST
+    code = 40013
     default_detail = _('Making API requests with credentials associated with a merged account is not allowed.')
 
 
 class InvalidAccountError(APIException):
-    status_code = 400
+    """ Raised when the account is in an invalid status that is unexpected.
+    """
+    status_code = status.HTTP_400_BAD_REQUEST
+    code = 40014
     default_detail = _('Making API requests with credentials associated with an invalid account is not allowed.')
 
 
-class TwoFactorRequiredError(AuthenticationFailed):
-    default_detail = _('Must specify two-factor authentication OTP code.')
-    pass
+class ExternalIdentityAlreadyClaimedError(APIException):
+    """ Raised when CAS tries to register an external identity that has already been claimed.
+    """
+    status_code = status.HTTP_400_BAD_REQUEST
+    code = 40015
+    default_detail = _('The external identity has already been claimed by another user.')
+
+
+class EmailThrottleActiveError(Throttled):
+    status_code = status.HTTP_429_TOO_MANY_REQUESTS
+    code = 42901
+    default_detail = _('You have recently make the same request. Please wait a few minutes before trying again.')
 
 
 class InvalidModelValueError(JSONAPIException):
@@ -247,6 +398,7 @@ class InvalidModelValueError(JSONAPIException):
 class TargetNotSupportedError(Exception):
     """Raised if a TargetField is used for a resource that isn't supported."""
     pass
+
 
 class RelationshipPostMakesNoChanges(Exception):
     """Raised when a post is on a relationship that already exists, so view can return a 204"""
