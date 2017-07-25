@@ -74,7 +74,7 @@ class TestCorsMiddleware(MiddlewareTestCase):
     def test_cross_origin_request_with_Authorization_gets_cors_headers(self):
         url = api_v2_url('users/me/')
         domain = urlparse("https://dinosaurs.sexy")
-        request = self.request_factory.delete(
+        request = self.request_factory.get(
             url,
             HTTP_ORIGIN=domain.geturl(),
             HTTP_AUTHORIZATION="Bearer aqweqweohuweglbiuwefq"
