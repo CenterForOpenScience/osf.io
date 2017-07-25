@@ -211,9 +211,7 @@ class PreprintSerializer(JSONAPISerializer):
             func(val, auth)
         except PermissionsError as e:
             raise exceptions.PermissionDenied(detail=e.message)
-        except ValidationError as e:
-            raise exceptions.ValidationError(detail=e.message)
-        except NodeStateError as e:
+        except (ValueError, ValidationError, NodeStateError) as e:
             raise exceptions.ValidationError(detail=e.message)
 
 
