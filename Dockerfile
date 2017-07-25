@@ -13,6 +13,7 @@ RUN apt-get update \
         libxml2-dev \
         libxslt1-dev \
         zlib1g-dev \
+        curl \
         # matplotlib
         libfreetype6-dev \
         libxft-dev \
@@ -34,8 +35,6 @@ RUN apt-get update \
 # grab gosu for easy step-down from root
 ENV GOSU_VERSION 1.4
 RUN apt-get update \
-    && apt-get install -y \
-        curl \
     && gpg --keyserver pool.sks-keyservers.net --recv-keys B42F6819007F00F88E364FD4036A9C25BF357DD4 \
     && curl -o /usr/local/bin/gosu -SL "https://github.com/tianon/gosu/releases/download/$GOSU_VERSION/gosu-$(dpkg --print-architecture)" \
     && curl -o /usr/local/bin/gosu.asc -SL "https://github.com/tianon/gosu/releases/download/$GOSU_VERSION/gosu-$(dpkg --print-architecture).asc" \
@@ -43,28 +42,11 @@ RUN apt-get update \
     && rm /usr/local/bin/gosu.asc \
     && chmod +x /usr/local/bin/gosu \
     && apt-get clean \
-    && apt-get autoremove -y \
-        curl \
     && rm -rf /var/lib/apt/lists/*
 
-# Node : https://registry.hub.docker.com/u/library/node/
-ENV NODE_VERSION 0.12.4
-ENV NPM_VERSION 2.10.1
-RUN apt-get update \
-    && apt-get install -y \
-        curl \
-    && gpg --keyserver pool.sks-keyservers.net --recv-keys 7937DFD2AB06298B2293C3187D33FF9D0246406D 114F43EE0176B71C7BC219DD50A3051F888C628D \
-    && curl -SLO "http://nodejs.org/dist/v$NODE_VERSION/node-v$NODE_VERSION-linux-x64.tar.gz" \
-    && curl -SLO "http://nodejs.org/dist/v$NODE_VERSION/SHASUMS256.txt.asc" \
-    && gpg --verify SHASUMS256.txt.asc \
-    && grep " node-v$NODE_VERSION-linux-x64.tar.gz\$" SHASUMS256.txt.asc | sha256sum -c - \
-    && tar -xzf "node-v$NODE_VERSION-linux-x64.tar.gz" -C /usr/local --strip-components=1 \
-    && rm "node-v$NODE_VERSION-linux-x64.tar.gz" SHASUMS256.txt.asc \
-    && npm install -g npm@"$NPM_VERSION" \
-    && npm cache clear \
+RUN curl -sL https://deb.nodesource.com/setup_8.x | bash - \
+    && apt-get install -y nodejs \
     && apt-get clean \
-    && apt-get autoremove -y \
-        curl \
     && rm -rf /var/lib/apt/lists/*
 
 RUN mkdir -p /code
@@ -111,7 +93,7 @@ RUN npm install bower \
     && ./node_modules/bower/bin/bower install --allow-root \
     && ./node_modules/bower/bin/bower cache clean --allow-root
 
-COPY ./package.json /code/
+COPY ./package.json ./.npmrc /code/
 RUN npm install --production
 
 COPY ./tasks /code/tasks
@@ -146,7 +128,7 @@ RUN mkdir -p /code/website/static/built/ \
     # && rm -rf /code/node_modules \ (needed for sharejs)
     && npm install list-of-licenses \
     && rm -rf /root/.npm \
-    && npm cache clean
+    && npm cache clean --force
 # /OSF: Assets
 
 # Admin: Assets
@@ -167,7 +149,7 @@ COPY ./admin/static /code/admin/static/
 
 RUN node ./node_modules/webpack/bin/webpack.js --config webpack.prod.config.js \
     && rm -rf /root/.npm \
-    && npm cache clean
+    && npm cache clean --force
 
 WORKDIR /code
 # /Admin: Assets
