@@ -139,9 +139,9 @@ class TestNodeIdentifierList:
     def identifier_registration(self, registration):
         return IdentifierFactory(referent=registration)
 
-    # def test_identifier_list_success(self, res_node_identifiers):
-    #     assert res_node_identifiers.status_code == 200
-    #     assert res_node_identifiers.content_type == 'application/vnd.api+json'
+    def test_identifier_list_success(self, res_node_identifiers):
+        assert res_node_identifiers.status_code == 200
+        assert res_node_identifiers.content_type == 'application/vnd.api+json'
 
     def test_identifier_list_returns_correct_number_and_referent(self, node, identifier_node, res_node_identifiers, data_node_identifiers, all_identifiers):
         # test_identifier_list_returns_correct_number
