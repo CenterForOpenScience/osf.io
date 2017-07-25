@@ -6,7 +6,6 @@ import datetime
 import gzip
 import os
 import shutil
-import sys
 import urlparse
 import xml
 
@@ -24,26 +23,6 @@ from website.app import init_app
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO)
 
-class Progress(object):
-    def __init__(self, bar_len=50):
-        self.bar_len = bar_len
-
-    def start(self, total, prefix):
-        self.total = total
-        self.count = 0
-        self.prefix = prefix
-
-    def increment(self, inc=1):
-        self.count += inc
-        filled_len = int(round(self.bar_len * self.count / float(self.total)))
-        percents = round(100.0 * self.count / float(self.total), 1)
-        bar = '=' * filled_len + '-' * (self.bar_len - filled_len)
-        sys.stdout.flush()
-        sys.stdout.write('{}[{}] {}{} ... {}\r'.format(self.prefix, bar, percents, '%', str(self.total)))
-
-    def stop(self):
-        # To preserve line, there is probably a better way to do this
-        print('')
 
 class Sitemap(object):
     def __init__(self):
@@ -166,7 +145,7 @@ class Sitemap(object):
         print('Generating Sitemap')
 
         # Progress bar
-        progress = Progress()
+        progress = script_utils.Progress()
 
         # Static urls
         progress.start(len(settings.SITEMAP_STATIC_URLS), 'STAT: ')

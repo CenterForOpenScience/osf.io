@@ -193,7 +193,7 @@ class PreprintService(DirtyFieldsMixin, GuidMixin, IdentifierMixin, BaseModel):
                 )
 
             # This should be called after all fields for EZID metadta have been set
-            enqueue_task(get_and_set_preprint_identifiers.s(self._id))
+            enqueue_task(get_and_set_preprint_identifiers.s(self))
 
         if save:
             self.node.save()
@@ -230,5 +230,5 @@ class PreprintService(DirtyFieldsMixin, GuidMixin, IdentifierMixin, BaseModel):
         ret = super(PreprintService, self).save(*args, **kwargs)
 
         if (not first_save and 'is_published' in saved_fields) or self.is_published:
-            enqueue_task(on_preprint_updated.s(self._id, old_subjects))
+            enqueue_task(on_preprint_updated.s(self._id, old_subjects=old_subjects))
         return ret

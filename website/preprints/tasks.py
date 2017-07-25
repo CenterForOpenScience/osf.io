@@ -118,10 +118,7 @@ def format_preprint(preprint, old_subjects=None):
 
 
 @celery_app.task(ignore_results=True)
-def get_and_set_preprint_identifiers(preprint_id):
-    from osf.models import PreprintService
-
-    preprint = PreprintService.load(preprint_id)
+def get_and_set_preprint_identifiers(preprint):
     ezid_response = request_identifiers_from_ezid(preprint)
     id_dict = parse_identifiers(ezid_response)
     preprint.set_identifier_values(doi=id_dict['doi'], ark=id_dict['ark'])
