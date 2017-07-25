@@ -16,7 +16,7 @@
 <%def name="newPrereg(size=None)">
 <% size = size or '' %>
 <div id="newPrereg${size}" class="prereg-new-prereg p-md osf-box box-round clearfix m-b-lg" style="display:none">
-  <p>Please provide a title for your project: </p>
+  <p class="prereg-text-left">Please provide a title for your project: </p>
   <input type="text" class="new-project-title form-control" placeholder="Title">
   <button type="submit" id="newProject${size}" class="btn btn-primary pull-right m-t-md">Continue <i class="fa fa-angle-right"></i></button>
 </div>
@@ -25,7 +25,7 @@
 <%def name="existingPrereg(size=None)">
 <% size = size or '' %>
 <div id="existingPrereg${size}" class="prereg-existing-prereg p-md osf-box box-round clearfix m-b-lg" style="display:none; width: 100%;">
-  <p>Go to an existing preregistration:</p>
+  <p class="prereg-text-left">Go to an existing preregistration:</p>
     <input id="regDraftSearch${size}" class="form-control"></input>
     <div class="p-xs"><a href="#" class="regDraftButton btn btn-primary disabled pull-right">Preregister</a></div>
 </div>
@@ -34,7 +34,7 @@
 <%def name="existingProject(size=None)">
 <% size = size or '' %>
 <div id="existingProject${size}" class="prereg-existing-project p-md osf-box box-round clearfix m-b-lg" style="display:none">
-  <p>Preregister an existing project:</p>
+  <p class="prereg-text-left">Preregister an existing project:</p>
   <input id="projectSearch${size}" class="form-control" ></input>
   <div class="p-xs"><a href="#" class="projectRegButton btn btn-primary disabled pull-right">Preregister</a></div>
 </div>
@@ -52,7 +52,7 @@
       %if is_logged_in:
       <div class="row">
         <div class="prereg-button-xs prereg-button prereg-button-qtoggle m-b-md p-md osf-box-lt p-md box-round prereg" data-qtoggle-group="prereg" data-qtoggle-target="#newPreregXS">Start a new preregistration</div>
-        <div class="col-md-12 prereg-button-content-xs">  
+        <div class="prereg-button-content-xs">  
           ${newPrereg('XS')}
         </div>
       </div>
@@ -63,8 +63,8 @@
       %endif
       %if has_draft_registrations:
       <div class="row">
-        <div class="prereg-button-xs prereg-button prereg-button-qtoggle m-b-md p-md osf-box-lt p-md box-round" data-qtoggle-group="prereg" data-qtoggle-target="#existingPreregXS">Continue working on an existing preregistration</div>
-        <div class="col-md-12 prereg-button-content-xs">
+        <div class="prereg-button-xs prereg-button prereg-button-qtoggle m-b-md p-md osf-box-lt p-md box-round" data-qtoggle-group="prereg" data-qtoggle-target="#existingPreregXS">Continue working on an existing draft preregistration</div>
+        <div class="prereg-button-content-xs">
           ${existingPrereg('XS')}
         </div>
       </div>
@@ -73,70 +73,75 @@
       <div class="row">
         <div class="prereg-button-xs prereg-button prereg-button-qtoggle m-b-md p-md osf-box-lt p-md box-round" data-qtoggle-group="prereg" data-qtoggle-target="#existingProjectXS">Preregister a project you already have on the OSF
         </div>
-        <div class="col-md-12 prereg-button-content-xs">
+        <div class="prereg-button-content-xs">
           ${existingProject('XS')}
         </div>
       </div>
       %endif      
     </div>
-    % if campaign_short != 'erpc':
-        <div class="row hidden-xs">
-          <%
-               if has_draft_registrations and has_projects:
-                   # all three buttons
-                   num_cols = 3
-               elif has_draft_registrations or has_projects:
-                   # two buttons
-                   num_cols = 2
-               else:
-                   # one button
-                   num_cols = 1
-          %>
-          <table class="prereg-button-row">
-            <tbody>
-              <tr>
-                %if is_logged_in:
-                <td class="col-sm-${ num_cols } prereg-button-col">
-                  <div class="prereg-button prereg-button-qtoggle m-b-md p-md osf-box-lt p-md box-round prereg" data-qtoggle-group="prereg" data-qtoggle-target="#newPrereg">Start a new pregistration</div>
-                </td>
-                %else:
-                <td class="col-sm-1 prereg-button-col">
-                  <a href="${domain}login/?campaign=prereg">
-                    <div class="prereg-button m-b-md p-md osf-box-lt p-md box-round">Preregister</div>  
-                  </a>
-                </td>
-                %endif
-                %if has_draft_registrations:
-                <td class="col-sm-${ num_cols } prereg-button-col">
-                  <div class="prereg-button prereg-button-qtoggle m-b-md p-md osf-box-lt p-md box-round" data-qtoggle-group="prereg" data-qtoggle-target="#existingPrereg">Continue working on an existing preregistration</div>
-                </td>
-                %endif
-                %if has_projects:
-                <td class="col-sm-${ num_cols } prereg-button-col">
-                  <div class="prereg-button prereg-button-qtoggle m-b-md p-md osf-box-lt p-md box-round" data-qtoggle-group="prereg" data-qtoggle-target="#existingProject">Preregister a project you already have on the OSF</div>
-                </td>
-                %endif
-              </tr>
-              <tr>
-                ## Always displayed
-                <td class="col-sm-${ num_cols } prereg-button-contents">
-                  ${newPrereg()}
-                </td>
-                %if has_draft_registrations:
-                <td class="col-sm-${ num_cols } prereg-button-contents">
-                  ${existingPrereg()}
-                </td>
-                %endif
-                %if has_projects:
-                <td class="col-sm-${ num_cols } prereg-button-contents">
-                  ${existingProject()}
-                </td>
-                %endif
-              </tr>
-            </tbody>
-          </table>
+    <div class="row hidden-xs">
+      <%
+          if has_draft_registrations and has_projects:
+              # all three buttons
+              num_cols = 3
+          elif has_draft_registrations or has_projects:
+              # two buttons
+              num_cols = 2
+          else:
+              # one button
+              num_cols = 1
+      %>
+      <table class="prereg-button-row">
+        <tbody>
+          <tr>
+            %if is_logged_in:
+            <div>
+            <td class="col-sm-${ num_cols } prereg-button-col">
+              <div class="prereg-button prereg-button-qtoggle m-b-md p-md osf-box-lt p-md box-round prereg" data-qtoggle-group="prereg" data-qtoggle-target="#newPrereg">Start a new pregistration</div>
+            </td>
+            %else:
+            <td class="col-sm-${ num_cols } prereg-button-col">
+              <a href="${domain}login/?campaign=prereg">
+                <div class="prereg-button m-b-md p-md osf-box-lt p-md box-round">Preregister</div>  
+              </a>
+            </td>
+            %endif
+            %if has_draft_registrations:
+            <td class="col-sm-${ num_cols } prereg-button-col">
+              <div class="prereg-button prereg-button-qtoggle m-b-md p-md osf-box-lt p-md box-round" data-qtoggle-group="prereg" data-qtoggle-target="#existingPrereg">Continue working on an existing draft preregistration</div>
+            </td>
+            %endif
+            %if has_projects:
+            <td class="col-sm-${ num_cols } prereg-button-col">
+              <div class="prereg-button prereg-button-qtoggle m-b-md p-md osf-box-lt p-md box-round" data-qtoggle-group="prereg" data-qtoggle-target="#existingProject">Preregister a project you already have on the OSF</div>
+            </td>
+            %endif
+          </tr>
+          <tr>
+            ## Always displayed
+            <td class="col-sm-${ num_cols } prereg-button-contents">
+              <div class="prereg-action"> 
+                ${newPrereg()}
+              </div>
+            </td>
+            %if has_draft_registrations:
+            <td class="col-sm-${ num_cols } prereg-button-contents">
+              <div class="prereg-action"> 
+                ${existingPrereg()}
+              </div>
+            </td>
+            %endif
+            %if has_projects:
+            <td class="col-sm-${ num_cols } prereg-button-contents">
+              <div class="prereg-action"> 
+                ${existingProject()}
+              </div>
+            </td>
+            %endif
+          </tr>
+        </tbody>
+      </table>
     </div>
-    % endif
 </div>
 <%include file="components/autocomplete.mako"/>
 <script type="text/javascript">
