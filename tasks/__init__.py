@@ -326,7 +326,8 @@ def mailserver(ctx, port=1025):
 def jshint(ctx):
     """Run JSHint syntax check"""
     js_folder = os.path.join(HERE, 'website', 'static', 'js')
-    cmd = 'jshint {}'.format(js_folder)
+    jshint_bin = os.path.join(HERE, 'node_modules', '.bin', 'jshint')
+    cmd = '{} {}'.format(jshint_bin, js_folder)
     ctx.run(cmd, echo=True)
 
 

@@ -164,7 +164,7 @@ def _render_conference_node(node, idx, conf):
         'nodeUrl': node.url,
         'author': author.family_name if author.family_name else author.fullname,
         'authorUrl': author.url,
-        'category': conf.field_names['submission1'] if conf.field_names['submission1'] in node.system_tags else conf.field_names['submission2'],
+        'category': conf.field_names['submission1'] if conf.field_names['submission1'] in tags else conf.field_names['submission2'],
         'download': download_count,
         'downloadUrl': download_url,
         'dateCreated': node.date_created.isoformat(),
