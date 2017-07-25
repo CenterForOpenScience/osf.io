@@ -89,9 +89,14 @@ class ApiSearchTestCase:
         return utils.create_test_file(component_private, user_one, filename='Wavves.mp3')
 
     @pytest.fixture()
-    def all(self, user, user_one, user_two, institution, component, component_private,
-        component_public, file_component, file_private, file_public, project, project_public, project_private):
-        yield all
+    def cleanup(self):
+        # Cleanup needed only for the first test to make sure no cached results returned.
+        search.delete_all()
+
+    @pytest.fixture()
+    def delete_all(self):
+        # Delete all search results at the end of each test method.
+        yield
         search.delete_all()
 
 class TestSearch(ApiSearchTestCase):
@@ -100,9 +105,12 @@ class TestSearch(ApiSearchTestCase):
     def url_search(self):
         return '/{}search/'.format(API_BASE)
 
-    def test_search_results(self, app, all, url_search, user):
+    def test_search_results(
+        self, app, cleanup, url_search, user, user_one, user_two,
+        institution, component, component_private, component_public, file_component,
+        file_private, file_public, project, project_public, project_private, delete_all):
 
-        #test_search_no_auth(self, app, all, url_search, user):
+        #test_search_no_auth
         res = app.get(url_search)
         assert res.status_code == 200
 
@@ -119,7 +127,7 @@ class TestSearch(ApiSearchTestCase):
         assert components_found == 2
         assert registrations_found == 0
 
-        #test_search_auth(self, app, all, url_search, user):
+        #test_search_auth
         res = app.get(url_search, auth=user.auth)
         assert res.status_code == 200
 
@@ -136,7 +144,7 @@ class TestSearch(ApiSearchTestCase):
         assert components_found == 2
         assert registrations_found == 0
 
-        #test_search_fields_links(self, app, all, url_search):
+        #test_search_fields_links
         res = app.get(url_search)
         assert res.status_code == 200
 
@@ -153,7 +161,7 @@ class TestSearch(ApiSearchTestCase):
         assert '/{}search/components/?q=%2A'.format(API_BASE) in components_link
         assert '/{}search/registrations/?q=%2A'.format(API_BASE) in registrations_link
 
-        #test_search_fields_links_with_query(self, app, all, url_search):
+        #test_search_fields_links_with_query
         url = '{}?q=science'.format(url_search)
         res = app.get(url)
         assert res.status_code == 200
@@ -178,9 +186,11 @@ class TestSearchComponents(ApiSearchTestCase):
     def url_component_search(self):
         return '/{}search/components/'.format(API_BASE)
 
-    def test_search_components(self, app, all, user, user_one, user_two, component, component_public, component_private, url_component_search):
+    def test_search_components(
+        self, app, url_component_search, user, user_one, user_two,
+        component, component_public, component_private, delete_all):
 
-        #test_search_public_component_no_auth(self, app, all, url_component_search, component, component_public):
+        #test_search_public_component_no_auth
         res = app.get(url_component_search)
         assert res.status_code == 200
         num_results = len(res.json['data'])
@@ -190,7 +200,7 @@ class TestSearchComponents(ApiSearchTestCase):
         assert component_public.title in res
         assert component.title in res
 
-        #test_search_public_component_auth(self, app, all, url_component_search, user, component, component_public):
+        #test_search_public_component_auth
         res = app.get(url_component_search, auth=user)
         assert res.status_code == 200
         num_results = len(res.json['data'])
@@ -200,7 +210,7 @@ class TestSearchComponents(ApiSearchTestCase):
         assert component_public.title in res
         assert component.title in res
 
-        #test_search_public_component_contributor(self, app, all, url_component_search, user_two, component, component_public):
+        #test_search_public_component_contributor
         res = app.get(url_component_search, auth=user_two)
         assert res.status_code == 200
         num_results = len(res.json['data'])
@@ -210,22 +220,22 @@ class TestSearchComponents(ApiSearchTestCase):
         assert component_public.title in res
         assert component.title in res
 
-        #test_search_private_component_no_auth(self, app, all, url_component_search, component_private):
+        #test_search_private_component_no_auth
         res = app.get(url_component_search)
         assert res.status_code == 200
         assert component_private.title not in res
 
-        #test_search_private_component_auth(self, app, all, url_component_search, user, component_private):
+        #test_search_private_component_auth
         res = app.get(url_component_search, auth=user)
         assert res.status_code == 200
         assert component_private.title not in res
 
-        #test_search_private_component_contributor(self, app, all, url_component_search, user_two, component_private):
+        #test_search_private_component_contributor
         res = app.get(url_component_search, auth=user_two)
         assert res.status_code == 200
         assert component_private.title not in res
 
-        #test_search_component_by_title(self, app, all, url_component_search, component_public):
+        #test_search_component_by_title
         url = '{}?q={}'.format(url_component_search, 'beam')
         res = app.get(url)
         assert res.status_code == 200
@@ -235,7 +245,7 @@ class TestSearchComponents(ApiSearchTestCase):
         assert total == 1
         assert component_public.title == res.json['data'][0]['attributes']['title']
 
-        #test_search_component_by_description(self, all, app, url_component_search, component_public):
+        #test_search_component_by_description
         url = '{}?q={}'.format(url_component_search, 'speak')
         res = app.get(url)
         assert res.status_code == 200
@@ -245,7 +255,7 @@ class TestSearchComponents(ApiSearchTestCase):
         assert total == 1
         assert component_public.title == res.json['data'][0]['attributes']['title']
 
-        #test_search_component_by_tags(self, app, all, url_component_search, component_public):
+        #test_search_component_by_tags
         url = '{}?q={}'.format(url_component_search, 'trumpets')
         res = app.get(url)
         assert res.status_code == 200
@@ -255,7 +265,7 @@ class TestSearchComponents(ApiSearchTestCase):
         assert total == 1
         assert component_public.title == res.json['data'][0]['attributes']['title']
 
-        #test_search_component_by_contributor(self, app, all, url_component_search, component_public):
+        #test_search_component_by_contributor
         url = '{}?q={}'.format(url_component_search, 'Chance')
         res = app.get(url)
         assert res.status_code == 200
@@ -265,7 +275,7 @@ class TestSearchComponents(ApiSearchTestCase):
         assert total == 1
         assert component_public.title == res.json['data'][0]['attributes']['title']
 
-        #test_search_component_no_results(self, app, all, url_component_search):
+        #test_search_component_no_results
         url = '{}?q={}'.format(url_component_search, 'Ocean')
         res = app.get(url)
         assert res.status_code == 200
@@ -274,10 +284,11 @@ class TestSearchComponents(ApiSearchTestCase):
         assert num_results == 0
         assert total == 0
 
-        #test_search_component_bad_query(self, app, all, url_component_search):
+        #test_search_component_bad_query
         url = '{}?q={}'.format(url_component_search, 'www.spam.com/help/twitter/')
         res = app.get(url, expect_errors=True)
         assert res.status_code == 400
+
 
 class TestSearchFiles(ApiSearchTestCase):
 
@@ -285,9 +296,9 @@ class TestSearchFiles(ApiSearchTestCase):
     def url_file_search(self):
         return '/{}search/files/'.format(API_BASE)
 
-    def test_search_files(self, app, all, user, user_one, file_public, file_component, file_private, url_file_search):
+    def test_search_files(self, app, url_file_search, user, user_one, file_public, file_component, file_private, delete_all):
 
-        #test_search_public_file_no_auth(self, app, all, url_file_search, file_public, file_component):
+        #test_search_public_file_no_auth
         res = app.get(url_file_search)
         assert res.status_code == 200
         num_results = len(res.json['data'])
@@ -297,7 +308,7 @@ class TestSearchFiles(ApiSearchTestCase):
         assert file_public.name in res
         assert file_component.name in res
 
-        #test_search_public_file_auth(self, app, all, url_file_search, user, file_public, file_component):
+        #test_search_public_file_auth
         res = app.get(url_file_search, auth=user)
         assert res.status_code == 200
         num_results = len(res.json['data'])
@@ -307,7 +318,7 @@ class TestSearchFiles(ApiSearchTestCase):
         assert file_public.name in res
         assert file_component.name in res
 
-        #test_search_public_file_contributor(self, app, all, url_file_search, user_one, file_public, file_component):
+        #test_search_public_file_contributor
         res = app.get(url_file_search, auth= user_one)
         assert res.status_code == 200
         num_results = len(res.json['data'])
@@ -317,22 +328,22 @@ class TestSearchFiles(ApiSearchTestCase):
         assert file_public.name in res
         assert file_component.name in res
 
-        #test_search_private_file_no_auth(self, app, all, url_file_search, file_private):
+        #test_search_private_file_no_auth
         res = app.get(url_file_search)
         assert res.status_code == 200
         assert file_private.name not in res
 
-        #test_search_private_file_auth(self, app, url_file_search, user, file_private):
+        #test_search_private_file_auth
         res = app.get(url_file_search, auth=user)
         assert res.status_code == 200
         assert file_private.name not in res
 
-        #test_search_private_file_contributor(self, app, url_file_search, user_one, file_private):
+        #test_search_private_file_contributor
         res = app.get(url_file_search, auth=user_one)
         assert res.status_code == 200
         assert file_private.name not in res
 
-        #test_search_file_by_name(self, app, all, file_component, url_file_search):
+        #test_search_file_by_name
         url = '{}?q={}'.format(url_file_search, 'highlights')
         res = app.get(url)
         assert res.status_code == 200
@@ -349,9 +360,9 @@ class TestSearchProjects(ApiSearchTestCase):
     def url_project_search(self):
         return '/{}search/projects/'.format(API_BASE)
 
-    def test_search_projects(self, app, all, user, user_one, user_two, project, project_public, project_private, url_project_search):
+    def test_search_projects(self, app, url_project_search, user, user_one, user_two, project, project_public, project_private, delete_all):
 
-        #test_search_public_project_no_auth(self, app, all, url_project_search, project_public, project):
+        #test_search_public_project_no_auth
         res = app.get(url_project_search)
         assert res.status_code == 200
         num_results = len(res.json['data'])
@@ -361,7 +372,7 @@ class TestSearchProjects(ApiSearchTestCase):
         assert project_public.title in res
         assert project.title in res
 
-        #test_search_public_project_auth(self, app, all, url_project_search, user, project_public, project):
+        #test_search_public_project_auth
         res = app.get(url_project_search, auth=user)
         assert res.status_code == 200
         num_results = len(res.json['data'])
@@ -371,7 +382,7 @@ class TestSearchProjects(ApiSearchTestCase):
         assert project_public.title in res
         assert project.title in res
 
-        #test_search_public_project_contributor(self, app, all, url_project_search, user_one, project_public, project):
+        #test_search_public_project_contributor
         res = app.get(url_project_search, auth=user_one)
         assert res.status_code == 200
         num_results = len(res.json['data'])
@@ -381,22 +392,22 @@ class TestSearchProjects(ApiSearchTestCase):
         assert project_public.title in res
         assert project.title in res
 
-        #test_search_private_project_no_auth(self, app, all, url_project_search, project_private):
+        #test_search_private_project_no_auth
         res = app.get(url_project_search)
         assert res.status_code == 200
         assert project_private.title not in res
 
-        #test_search_private_project_auth(self, app, all, url_project_search, user, project_private):
+        #test_search_private_project_auth
         res = app.get(url_project_search, auth=user)
         assert res.status_code == 200
         assert project_private.title not in res
 
-        #test_search_private_project_contributor(self, app, all, url_project_search, user_two, project_private):
+        #test_search_private_project_contributor
         res = app.get(url_project_search, auth=user_two)
         assert res.status_code == 200
         assert project_private.title not in res
 
-        #test_search_project_by_title(self, app, all, url_project_search, project_public):
+        #test_search_project_by_title
         url = '{}?q={}'.format(url_project_search, 'pablo')
         res = app.get(url)
         assert res.status_code == 200
@@ -406,7 +417,7 @@ class TestSearchProjects(ApiSearchTestCase):
         assert total == 1
         assert project_public.title == res.json['data'][0]['attributes']['title']
 
-        #test_search_project_by_description(self, app, all, url_project_search, project_public):
+        #test_search_project_by_description
         url = '{}?q={}'.format(url_project_search, 'genius')
         res = app.get(url)
         assert res.status_code == 200
@@ -416,7 +427,7 @@ class TestSearchProjects(ApiSearchTestCase):
         assert total == 1
         assert project_public.title == res.json['data'][0]['attributes']['title']
 
-        #test_search_project_by_tags(self, app, all, url_project_search, project_public):
+        #test_search_project_by_tags
         url = '{}?q={}'.format(url_project_search, 'Yeezus')
         res = app.get(url)
         assert res.status_code == 200
@@ -426,7 +437,7 @@ class TestSearchProjects(ApiSearchTestCase):
         assert total == 1
         assert project_public.title == res.json['data'][0]['attributes']['title']
 
-        #test_search_project_by_contributor(self, app, all, url_project_search, project_public, project):
+        #test_search_project_by_contributor
         url = '{}?q={}'.format(url_project_search, 'kanye')
         res = app.get(url)
         assert res.status_code == 200
@@ -437,7 +448,7 @@ class TestSearchProjects(ApiSearchTestCase):
         assert project_public.title in res
         assert project.title in res
 
-        #test_search_project_no_results(self, app, all, url_project_search):
+        #test_search_project_no_results
         url = '{}?q={}'.format(url_project_search, 'chicago')
         res = app.get(url)
         assert res.status_code == 200
@@ -446,10 +457,11 @@ class TestSearchProjects(ApiSearchTestCase):
         assert num_results == 0
         assert total == 0
 
-        #test_search_project_bad_query(self, app, all, url_project_search):
+        #test_search_project_bad_query
         url = '{}?q={}'.format(url_project_search, 'www.spam.com/help/facebook/')
         res = app.get(url, expect_errors=True)
         assert res.status_code == 400
+
 
 @pytest.mark.django_db
 class TestSearchRegistrations(ApiSearchTestCase):
@@ -483,9 +495,9 @@ class TestSearchRegistrations(ApiSearchTestCase):
             registration_private.update_search()
             return registration_private
 
-    def test_search_registrations(self, app, all, user, user_one, user_two, registration, registration_public, registration_private, url_registration_search):
+    def test_search_registrations(self, app, url_registration_search, user, user_one, user_two, registration, registration_public, registration_private, delete_all):
 
-        #test_search_public_registration_no_auth(self, app, all, registration_public, registration, url_registration_search):
+        #test_search_public_registration_no_auth
         res = app.get(url_registration_search)
         assert res.status_code == 200
         num_results = len(res.json['data'])
@@ -495,7 +507,7 @@ class TestSearchRegistrations(ApiSearchTestCase):
         assert registration_public.title in res
         assert registration.title in res
 
-        #test_search_public_registration_auth(self, app, all, url_registration_search, registration_public, registration, user):
+        #test_search_public_registration_auth
         res = app.get(url_registration_search, auth=user)
         assert res.status_code == 200
         num_results = len(res.json['data'])
@@ -505,7 +517,7 @@ class TestSearchRegistrations(ApiSearchTestCase):
         assert registration_public.title in res
         assert registration.title in res
 
-        #test_search_public_registration_contributor(self, app, all, url_registration_search, registration_public, registration, user_one):
+        #test_search_public_registration_contributor
         res = app.get(url_registration_search, auth=user_one)
         assert res.status_code == 200
         num_results = len(res.json['data'])
@@ -515,22 +527,22 @@ class TestSearchRegistrations(ApiSearchTestCase):
         assert registration_public.title in res
         assert registration.title in res
 
-        #test_search_private_registration_no_auth(self, app, all, url_registration_search, registration_private):
+        #test_search_private_registration_no_auth
         res = app.get(url_registration_search)
         assert res.status_code == 200
         assert registration_private.title not in res
 
-        #test_search_private_registration_auth(self, app, all, url_registration_search, user, registration_private):
+        #test_search_private_registration_auth
         res = app.get(url_registration_search, auth=user)
         assert res.status_code == 200
         assert registration_private.title not in res
 
-        #test_search_private_registration_contributor(self, app, all, url_registration_search, user_two, registration_private):
+        #test_search_private_registration_contributor
         res = app.get(url_registration_search, auth=user_two)
         assert res.status_code == 200
         assert registration_private.title not in res
 
-        #test_search_registration_by_title(self, app, all, url_registration_search, registration):
+        #test_search_registration_by_title
         url = '{}?q={}'.format(url_registration_search, 'graduation')
         res = app.get(url)
         assert res.status_code == 200
@@ -540,7 +552,7 @@ class TestSearchRegistrations(ApiSearchTestCase):
         assert total == 1
         assert registration.title == res.json['data'][0]['attributes']['title']
 
-        #test_search_registration_by_description(self, app, all, url_registration_search, registration_public):
+        #test_search_registration_by_description
         url = '{}?q={}'.format(url_registration_search, 'crazy')
         res = app.get(url)
         assert res.status_code == 200
@@ -550,7 +562,7 @@ class TestSearchRegistrations(ApiSearchTestCase):
         assert total == 1
         assert registration_public.title == res.json['data'][0]['attributes']['title']
 
-        #test_search_registration_by_tags(self, app, all, url_registration_search, registration_public):
+        #test_search_registration_by_tags
         url = '{}?q={}'.format(url_registration_search, 'yeezus')
         res = app.get(url)
         assert res.status_code == 200
@@ -560,7 +572,7 @@ class TestSearchRegistrations(ApiSearchTestCase):
         assert total == 1
         assert registration_public.title == res.json['data'][0]['attributes']['title']
 
-        #test_search_registration_by_contributor(self, app, all, url_registration_search, registration_public, registration):
+        #test_search_registration_by_contributor
         url = '{}?q={}'.format(url_registration_search, 'west')
         res = app.get(url)
         assert res.status_code == 200
@@ -571,7 +583,7 @@ class TestSearchRegistrations(ApiSearchTestCase):
         assert registration_public.title in res
         assert registration.title in res
 
-        #test_search_registration_no_results(self, app, all, url_registration_search):
+        #test_search_registration_no_results
         url = '{}?q={}'.format(url_registration_search, '79th')
         res = app.get(url)
         assert res.status_code == 200
@@ -580,10 +592,11 @@ class TestSearchRegistrations(ApiSearchTestCase):
         assert num_results == 0
         assert total == 0
 
-        #test_search_registration_bad_query(self, app, all, url_registration_search):
+        #test_search_registration_bad_query
         url = '{}?q={}'.format(url_registration_search, 'www.spam.com/help/snapchat/')
         res = app.get(url, expect_errors=True)
         assert res.status_code == 400
+
 
 class TestSearchUsers(ApiSearchTestCase):
 
@@ -591,9 +604,9 @@ class TestSearchUsers(ApiSearchTestCase):
     def url_user_search(self):
         return '/{}search/users/'.format(API_BASE)
 
-    def test_search_user(self, app, all, url_user_search, user, user_one):
+    def test_search_user(self, app, url_user_search, user, user_one, user_two, delete_all):
 
-        #test_search_users_no_auth(self, app, all, url_user_search, user):
+        #test_search_users_no_auth
         res = app.get(url_user_search)
         assert res.status_code == 200
         num_results = len(res.json['data'])
@@ -602,7 +615,7 @@ class TestSearchUsers(ApiSearchTestCase):
         assert total == 3
         assert user.fullname in res
 
-        #test_search_users_auth(self, app, all, url_user_search, user):
+        #test_search_users_auth
         res = app.get(url_user_search, auth=user)
         assert res.status_code == 200
         num_results = len(res.json['data'])
@@ -611,7 +624,7 @@ class TestSearchUsers(ApiSearchTestCase):
         assert total == 3
         assert user.fullname in res
 
-        #test_search_users_by_given_name(self, app, all, url_user_search, user_one):
+        #test_search_users_by_given_name
         url = '{}?q={}'.format(url_user_search, 'Kanye')
         res = app.get(url)
         assert res.status_code == 200
@@ -621,7 +634,7 @@ class TestSearchUsers(ApiSearchTestCase):
         assert total == 1
         assert user_one.given_name == res.json['data'][0]['attributes']['given_name']
 
-        #test_search_users_by_middle_name(self, app, all, url_user_search, user_one):
+        #test_search_users_by_middle_name
         url = '{}?q={}'.format(url_user_search, 'Omari')
         res = app.get(url)
         assert res.status_code == 200
@@ -631,7 +644,7 @@ class TestSearchUsers(ApiSearchTestCase):
         assert total == 1
         assert user_one.middle_names[0] == res.json['data'][0]['attributes']['middle_names'][0]
 
-        #test_search_users_by_family_name(self, app, all, url_user_search, user_one):
+        #test_search_users_by_family_name
         url = '{}?q={}'.format(url_user_search, 'West')
         res = app.get(url)
         assert res.status_code == 200
@@ -641,7 +654,7 @@ class TestSearchUsers(ApiSearchTestCase):
         assert total == 1
         assert user_one.family_name == res.json['data'][0]['attributes']['family_name']
 
-        #test_search_users_by_job(self, app, all, url_user_search, user_one):
+        #test_search_users_by_job
         url = '{}?q={}'.format(url_user_search, 'producer')
         res = app.get(url)
         assert res.status_code == 200
@@ -651,7 +664,7 @@ class TestSearchUsers(ApiSearchTestCase):
         assert total == 1
         assert user_one.fullname == res.json['data'][0]['attributes']['full_name']
 
-        #test_search_users_by_school(self, app, all, url_user_search, user_one):
+        #test_search_users_by_school
         url = '{}?q={}'.format(url_user_search, 'Chicago')
         res = app.get(url)
         assert res.status_code == 200
@@ -661,15 +674,16 @@ class TestSearchUsers(ApiSearchTestCase):
         assert total == 1
         assert user_one.fullname == res.json['data'][0]['attributes']['full_name']
 
+
 class TestSearchInstitutions(ApiSearchTestCase):
 
     @pytest.fixture()
     def url_institution_search(self):
         return '/{}search/institutions/'.format(API_BASE)
 
-    def test_search_institutions(self, app, all, user, institution, url_institution_search):
+    def test_search_institutions(self, app, url_institution_search, user, institution, delete_all):
 
-        #test_search_institutions_no_auth(self, app, all, url_institution_search, institution):
+        #test_search_institutions_no_auth
         res = app.get(url_institution_search)
         assert res.status_code == 200
         num_results = len(res.json['data'])
@@ -678,7 +692,7 @@ class TestSearchInstitutions(ApiSearchTestCase):
         assert total == 1
         assert institution.name in res
 
-        #test_search_institutions_auth(self, app, all, user, url_institution_search, institution):
+        #test_search_institutions_auth
         res = app.get(url_institution_search, auth=user)
         assert res.status_code == 200
         num_results = len(res.json['data'])
@@ -687,7 +701,7 @@ class TestSearchInstitutions(ApiSearchTestCase):
         assert total == 1
         assert institution.name in res
 
-        #test_search_institutions_by_name(self, app, all, url_institution_search, institution):
+        #test_search_institutions_by_name
         url = '{}?q={}'.format(url_institution_search, 'Social')
         res = app.get(url)
         assert res.status_code == 200
