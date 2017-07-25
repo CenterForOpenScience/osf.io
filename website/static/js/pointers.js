@@ -135,7 +135,7 @@ var AddPointerViewModel = oop.extend(Paginator, {
                 for (var i = 0; i < responseNodelinks.data.length; i++){
                     var target_node = responseNodelinks.data[i].embeds.target_node;
                     var embedId = target_node.data ? target_node.data.id :
-                    responseNodelinks.data[i]['relationships']['target_node']['links']['related']['href'].split('/')[5];
+                    responseNodelinks.data[i].relationships.target_node.links.related.href.split('/')[5];
                     embedNodeIds.push(embedId);
                 }
                 nodes.forEach(function(each){
@@ -231,7 +231,7 @@ var AddPointerViewModel = oop.extend(Paginator, {
             for (var i = 0; i < response.data.length; i++){
                 var target_node = response.data[i].embeds.target_node;
                 var embedId = target_node.data ? target_node.data.id :
-                    response.data[i]['relationships']['target_node']['links']['related']['href'].split('/')[5];
+                    response.data[i].relationships.target_node.links.related.href.split('/')[5];
                 if (embedId === data.id){
                     nodeLinkId = response.data[i].id;
                     break;
