@@ -31,15 +31,12 @@ class TaxonomySerializer(JSONAPISerializer):
     )
     parent = TaxonomyField()
     child_count = ser.IntegerField()
-    is_bepress = ser.SerializerMethodField()
+    share_title = ser.CharField(source='provider.share_title', read_only=True)
 
     links = LinksField({
         'parents': 'get_parent_urls',
         'self': 'get_absolute_url',
     })
-
-    def get_is_bepress(self, obj):
-        return not bool(obj.bepress_subject)
 
     def get_parents(self, obj):
         if not obj.parent:
