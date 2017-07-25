@@ -3,7 +3,6 @@ from nose.tools import *  # flake8: noqa
 from osf.models import MetaSchema
 from website.project.metadata.schemas import LATEST_SCHEMA_VERSION
 from website.project.metadata.utils import create_jsonschema_from_metaschema
-from modularodm import Q
 from website.util import permissions
 from website.settings import PREREG_ADMIN_TAG
 
@@ -52,10 +51,7 @@ class TestDraftRegistrationList(DraftRegistrationTestCase):
 
     def setUp(self):
         super(TestDraftRegistrationList, self).setUp()
-        self.schema = MetaSchema.find_one(
-            Q('name', 'eq', 'Open-Ended Registration') &
-            Q('schema_version', 'eq', LATEST_SCHEMA_VERSION)
-        )
+        self.schema = MetaSchema.objects.get(name='Open-Ended Registration', schema_version=LATEST_SCHEMA_VERSION)
 
         self.draft_registration = DraftRegistrationFactory(
             initiator=self.user,
@@ -118,10 +114,7 @@ class TestDraftRegistrationCreate(DraftRegistrationTestCase):
     def setUp(self):
         super(TestDraftRegistrationCreate, self).setUp()
         self.url = '/{}nodes/{}/draft_registrations/'.format(API_BASE, self.public_project._id)
-        self.open_ended_metaschema = MetaSchema.find_one(
-            Q('name', 'eq', 'Open-Ended Registration') &
-            Q('schema_version', 'eq', LATEST_SCHEMA_VERSION)
-        )
+        self.open_ended_metaschema = MetaSchema.objects.get(name='Open-Ended Registration', schema_version=LATEST_SCHEMA_VERSION)
 
         self.payload = {
             "data": {
@@ -199,10 +192,7 @@ class TestDraftRegistrationCreate(DraftRegistrationTestCase):
         assert_equal(res.json['errors'][0]['detail'], 'Registration supplement must be an active schema.')
 
     def test_registration_supplement_must_be_most_recent_metaschema(self):
-        schema =  MetaSchema.find_one(
-            Q('name', 'eq', 'Open-Ended Registration') &
-            Q('schema_version', 'eq', 1)
-        )
+        schema = MetaSchema.objects.get(name='Open-Ended Registration', schema_version=1)
         draft_data = {
             "data": {
                 "type": "draft_registrations",
@@ -249,11 +239,7 @@ class TestDraftRegistrationCreate(DraftRegistrationTestCase):
         assert_equal(res.status_code, 404)
 
     def test_required_metaschema_questions_not_required_on_post(self):
-        prereg_schema = MetaSchema.find_one(
-            Q('name', 'eq', 'Prereg Challenge') &
-            Q('schema_version', 'eq', LATEST_SCHEMA_VERSION)
-        )
-
+        prereg_schema = MetaSchema.objects.get(name='Prereg Challenge', schema_version=LATEST_SCHEMA_VERSION)
         prereg_draft_registration = DraftRegistrationFactory(
             initiator=self.user,
             registration_schema=prereg_schema,
@@ -294,10 +280,7 @@ class TestDraftRegistrationCreate(DraftRegistrationTestCase):
         assert_equal(errors['detail'], 'Expected a dictionary of items but got type "unicode".')
 
     def test_registration_metadata_question_values_must_be_dictionaries(self):
-        self.schema = MetaSchema.find_one(
-            Q('name', 'eq', 'OSF-Standard Pre-Data Collection Registration') &
-            Q('schema_version', 'eq', LATEST_SCHEMA_VERSION)
-        )
+        self.schema = MetaSchema.objects.get(name='OSF-Standard Pre-Data Collection Registration', schema_version=LATEST_SCHEMA_VERSION)
         self.payload['data']['attributes']['registration_supplement'] = self.schema._id
         self.payload['data']['attributes']['registration_metadata'] = {}
         self.payload['data']['attributes']['registration_metadata']['datacompletion'] = 'No, data collection has not begun'
@@ -308,10 +291,7 @@ class TestDraftRegistrationCreate(DraftRegistrationTestCase):
         assert_equal(errors['detail'], "u'No, data collection has not begun' is not of type 'object'")
 
     def test_registration_metadata_question_keys_must_be_value(self):
-        self.schema = MetaSchema.find_one(
-            Q('name', 'eq', 'OSF-Standard Pre-Data Collection Registration') &
-            Q('schema_version', 'eq', LATEST_SCHEMA_VERSION)
-        )
+        self.schema = MetaSchema.objects.get(name='OSF-Standard Pre-Data Collection Registration', schema_version=LATEST_SCHEMA_VERSION)
         self.payload['data']['attributes']['registration_supplement'] = self.schema._id
         self.payload['data']['attributes']['registration_metadata'] = {}
         self.payload['data']['attributes']['registration_metadata']['datacompletion'] = {
@@ -324,10 +304,7 @@ class TestDraftRegistrationCreate(DraftRegistrationTestCase):
         assert_equal(errors['detail'], "Additional properties are not allowed (u'incorrect_key' was unexpected)")
 
     def test_question_in_registration_metadata_must_be_in_schema(self):
-        self.schema = MetaSchema.find_one(
-            Q('name', 'eq', 'OSF-Standard Pre-Data Collection Registration') &
-            Q('schema_version', 'eq', LATEST_SCHEMA_VERSION)
-        )
+        self.schema = MetaSchema.objects.get(name='OSF-Standard Pre-Data Collection Registration', schema_version=LATEST_SCHEMA_VERSION)
         self.payload['data']['attributes']['registration_supplement'] = self.schema._id
         self.payload['data']['attributes']['registration_metadata'] = {}
         self.payload['data']['attributes']['registration_metadata']['q11'] = {
@@ -340,11 +317,7 @@ class TestDraftRegistrationCreate(DraftRegistrationTestCase):
         assert_equal(errors['detail'], "Additional properties are not allowed (u'q11' was unexpected)")
 
     def test_multiple_choice_question_value_must_match_value_in_schema(self):
-        self.schema = MetaSchema.find_one(
-            Q('name', 'eq', 'OSF-Standard Pre-Data Collection Registration') &
-            Q('schema_version', 'eq', LATEST_SCHEMA_VERSION)
-        )
-
+        self.schema = MetaSchema.objects.get(name='OSF-Standard Pre-Data Collection Registration', schema_version=LATEST_SCHEMA_VERSION)
         self.payload['data']['attributes']['registration_supplement'] = self.schema._id
         self.payload['data']['attributes']['registration_metadata'] = {}
         self.payload['data']['attributes']['registration_metadata']['datacompletion'] = {

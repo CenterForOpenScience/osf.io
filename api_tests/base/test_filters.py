@@ -8,8 +8,6 @@ import pytz
 from dateutil import parser
 from django.utils import timezone
 
-from modularodm import Q
-
 from nose.tools import *  # flake8: noqa
 
 from rest_framework import serializers as ser

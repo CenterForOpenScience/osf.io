@@ -8,8 +8,6 @@ from nose.tools import *  # flake8: noqa
 import unittest
 import urlparse
 
-from modularodm import Q
-
 from tests.base import ApiTestCase
 from osf_tests.factories import AuthUserFactory, UserFactory, ProjectFactory, Auth
 
@@ -284,7 +282,8 @@ class TestUsersCreate(ApiTestCase):
 
     @mock.patch('framework.auth.views.mails.send_mail')
     def test_logged_in_user_with_basic_auth_cannot_create_other_user_or_send_mail(self, mock_mail):
-        assert_equal(User.find(Q('username', 'eq', self.unconfirmed_email)).count(), 0)
+        with assert_raises(User.DoesNotExist):
+            User.objects.get(username=self.unconfirmed_email)
         res = self.app.post_json_api(
             '{}?send_email=true'.format(self.base_url),
             self.data,
@@ -293,12 +292,14 @@ class TestUsersCreate(ApiTestCase):
         )
 
         assert_equal(res.status_code, 403)
-        assert_equal(User.find(Q('username', 'eq', self.unconfirmed_email)).count(), 0)
+        with assert_raises(User.DoesNotExist):
+            User.objects.get(username=self.unconfirmed_email)
         assert_equal(mock_mail.call_count, 0)
 
     @mock.patch('framework.auth.views.mails.send_mail')
     def test_logged_out_user_cannot_create_other_user_or_send_mail(self, mock_mail):
-        assert_equal(User.find(Q('username', 'eq', self.unconfirmed_email)).count(), 0)
+        with assert_raises(User.DoesNotExist):
+            User.objects.get(username=self.unconfirmed_email)
         res = self.app.post_json_api(
             '{}?send_email=true'.format(self.base_url),
             self.data,
@@ -306,7 +307,8 @@ class TestUsersCreate(ApiTestCase):
         )
 
         assert_equal(res.status_code, 401)
-        assert_equal(User.find(Q('username', 'eq', self.unconfirmed_email)).count(), 0)
+        with assert_raises(User.DoesNotExist):
+            User.objects.get(username=self.unconfirmed_email)
         assert_equal(mock_mail.call_count, 0)
 
     @pytest.mark.skip
@@ -317,13 +319,14 @@ class TestUsersCreate(ApiTestCase):
         cookie = itsdangerous.Signer(settings.SECRET_KEY).sign(session._id)
         self.app.set_cookie(settings.COOKIE_NAME, str(cookie))
 
-        assert_equal(User.find(Q('username', 'eq', self.unconfirmed_email)).count(), 0)
+        with assert_raises(User.DoesNotExist):
+            User.objects.get(username=self.unconfirmed_email)
         res = self.app.post_json_api(
             '{}?send_email=true'.format(self.base_url),
             self.data
         )
         assert_equal(res.status_code, 201)
-        assert_equal(User.find(Q('username', 'eq', self.unconfirmed_email)).count(), 1)
+        assert_equal(User.objects.filter(username=self.unconfirmed_email).count(), 1)
         assert_equal(mock_mail.call_count, 1)
 
     @pytest.mark.skip
@@ -347,7 +350,8 @@ class TestUsersCreate(ApiTestCase):
         )
         mock_auth.return_value = self.user, mock_cas_resp
 
-        assert_equal(User.find(Q('username', 'eq', self.unconfirmed_email)).count(), 0)
+        with assert_raises(User.DoesNotExist):
+            User.objects.get(username=self.unconfirmed_email)
         res = self.app.post_json_api(
             '{}?send_email=true'.format(self.base_url),
             self.data,
@@ -356,7 +360,7 @@ class TestUsersCreate(ApiTestCase):
 
         assert_equal(res.status_code, 201)
         assert_equal(res.json['data']['attributes']['username'], self.unconfirmed_email)
-        assert_equal(User.find(Q('username', 'eq', self.unconfirmed_email)).count(), 1)
+        assert_equal(User.objects.filter(username=self.unconfirmed_email).count(), 1)
         assert_equal(mock_mail.call_count, 1)
 
     @pytest.mark.skip
@@ -380,7 +384,8 @@ class TestUsersCreate(ApiTestCase):
         )
         mock_auth.return_value = self.user, mock_cas_resp
 
-        assert_equal(User.find(Q('username', 'eq', self.unconfirmed_email)).count(), 0)
+        with assert_raises(User.DoesNotExist):
+            User.objects.get(username=self.unconfirmed_email)
         res = self.app.post_json_api(
             self.base_url,
             self.data,
@@ -389,7 +394,7 @@ class TestUsersCreate(ApiTestCase):
 
         assert_equal(res.status_code, 201)
         assert_equal(res.json['data']['attributes']['username'], self.unconfirmed_email)
-        assert_equal(User.find(Q('username', 'eq', self.unconfirmed_email)).count(), 1)
+        assert_equal(User.objects.filter(username=self.unconfirmed_email).count(), 1)
         assert_equal(mock_mail.call_count, 0)
 
     @pytest.mark.skip
@@ -415,7 +420,7 @@ class TestUsersCreate(ApiTestCase):
 
         self.data['data']['attributes'] = {'full_name': 'No Email'}
 
-        assert_equal(User.find(Q('fullname', 'eq', 'No Email')).count(), 0)
+        assert_equal(User.objects.filter(fullname='No Email').count(), 0)
         res = self.app.post_json_api(
             '{}?send_email=true'.format(self.base_url),
             self.data,
@@ -428,7 +433,7 @@ class TestUsersCreate(ApiTestCase):
             no_failure = UUID(username)
         except ValueError:
             raise AssertionError('Username is not a valid UUID')
-        assert_equal(User.find(Q('fullname', 'eq', 'No Email')).count(), 1)
+        assert_equal(User.objects.filter(fullname='No Email').count(), 1)
         assert_equal(mock_mail.call_count, 0)
 
     @mock.patch('framework.auth.views.mails.send_mail')
@@ -450,7 +455,8 @@ class TestUsersCreate(ApiTestCase):
         )
         mock_auth.return_value = self.user, mock_cas_resp
 
-        assert_equal(User.find(Q('username', 'eq', self.unconfirmed_email)).count(), 0)
+        with assert_raises(User.DoesNotExist):
+            User.objects.get(username=self.unconfirmed_email)
         res = self.app.post_json_api(
             '{}?send_email=true'.format(self.base_url),
             self.data,
@@ -459,7 +465,8 @@ class TestUsersCreate(ApiTestCase):
         )
 
         assert_equal(res.status_code, 403)
-        assert_equal(User.find(Q('username', 'eq', self.unconfirmed_email)).count(), 0)
+        with assert_raises(User.DoesNotExist):
+            User.objects.get(username=self.unconfirmed_email)
         assert_equal(mock_mail.call_count, 0)
 
     @pytest.mark.skip
@@ -483,7 +490,8 @@ class TestUsersCreate(ApiTestCase):
         )
         mock_auth.return_value = self.user, mock_cas_resp
 
-        assert_equal(User.find(Q('username', 'eq', self.unconfirmed_email)).count(), 0)
+        with assert_raises(User.DoesNotExist):
+            User.objects.get(username=self.unconfirmed_email)
         res = self.app.post_json_api(
             '{}?send_email=true'.format(self.base_url),
             self.data,
@@ -492,5 +500,5 @@ class TestUsersCreate(ApiTestCase):
 
         assert_equal(res.status_code, 201)
         assert_equal(res.json['data']['attributes']['username'], self.unconfirmed_email)
-        assert_equal(User.find(Q('username', 'eq', self.unconfirmed_email)).count(), 1)
+        assert_equal(User.objects.filter(username=self.unconfirmed_email).count(), 1)
         assert_equal(mock_mail.call_count, 1)

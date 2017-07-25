@@ -1,6 +1,5 @@
 # -*- coding: utf-8 -*-
 import urlparse
-from modularodm import Q
 from nose.tools import *  # flake8: noqa
 
 from api.base.settings.defaults import API_BASE
@@ -72,7 +71,7 @@ class TestRegistrationIdentifierList(ApiTestCase):
         filter_url = self.url + '?filter[category]=carpid'
         new_res = self.app.get(filter_url)
 
-        carpid_total = len(Identifier.find(Q('category', 'eq', 'carpid')))
+        carpid_total = Identifier.objects.filter(category='carpid').count()
 
         total = new_res.json['links']['meta']['total']
         assert_equal(total, carpid_total)
@@ -145,8 +144,8 @@ class TestNodeIdentifierList(ApiTestCase):
 
     def test_identifier_filter_by_category(self):
         IdentifierFactory(referent=self.node, category='nopeid')
-        identifiers_for_node = Identifier.find(Q('referent', 'eq', self.node))
-        assert_equal(len(identifiers_for_node), 2)
+        identifiers_for_node = self.node.identifiers.all()
+        assert_equal(identifiers_for_node.count(), 2)
         assert_items_equal(
             [identifier.category for identifier in identifiers_for_node],
             ['carpid', 'nopeid']
@@ -155,7 +154,7 @@ class TestNodeIdentifierList(ApiTestCase):
         filter_url = self.url + '?filter[category]=carpid'
         new_res = self.app.get(filter_url)
 
-        carpid_total = len(Identifier.find(Q('category', 'eq', 'carpid')))
+        carpid_total = Identifier.objects.filter(category='carpid').count()
 
         total = new_res.json['links']['meta']['total']
         assert_equal(total, carpid_total)

@@ -1,4 +1,3 @@
-from modularodm import Q
 from nose.tools import *  # flake8: noqa
 
 from api.search.serializers import SearchSerializer
@@ -27,10 +26,7 @@ class TestSearchSerializer(DbTestCase):
         self.component = NodeFactory(parent=self.project, creator=self.user, is_public=True)
         self.file = utils.create_test_file(self.component, self.user)
 
-        self.schema = MetaSchema.find_one(
-            Q('name', 'eq', 'Replication Recipe (Brandt et al., 2013): Post-Completion') &
-            Q('schema_version', 'eq', LATEST_SCHEMA_VERSION)
-        )
+        self.schema = MetaSchema.objects.get(name='Replication Recipe (Brandt et al., 2013): Post-Completion', schema_version=LATEST_SCHEMA_VERSION)
 
         with mock_archive(self.project, autocomplete=True, autoapprove=True, schema=self.schema) as registration:
             self.registration = registration

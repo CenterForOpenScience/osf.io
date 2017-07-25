@@ -5,7 +5,6 @@ from nose.tools import *  # flake8: noqa
 import functools
 
 from framework.auth.core import Auth
-from modularodm import Q
 import pytest
 
 from osf.models import NodeLog
@@ -1088,9 +1087,7 @@ class TestNodeLicense(ApiTestCase):
         self.public_url = '/{}nodes/{}/'.format(API_BASE, self.public_project._id)
         self.private_url = '/{}nodes/{}/'.format(API_BASE, self.private_project._id)
         self.LICENSE_NAME = 'MIT License'
-        self.node_license = NodeLicense.find_one(
-            Q('name', 'eq', self.LICENSE_NAME)
-        )
+        self.node_license = NodeLicense.objects.get(name=self.LICENSE_NAME)
         self.YEAR = '2105'
         self.COPYRIGHT_HOLDERS = ['Foo', 'Bar']
         self.public_project.node_license = NodeLicenseRecordFactory(
@@ -1153,9 +1150,9 @@ class TestNodeUpdateLicense(ApiTestCase):
         self.node.add_contributor(self.read_contributor, auth=Auth(self.admin_contributor), permissions=['read'])
         self.node.save()
 
-        self.cc0_license = NodeLicense.find_one(Q('name', 'eq', 'CC0 1.0 Universal'))
-        self.mit_license = NodeLicense.find_one(Q('name', 'eq', 'MIT License'))
-        self.no_license = NodeLicense.find_one(Q('name', 'eq', 'No license'))
+        self.cc0_license = NodeLicense.objects.get(name='CC0 1.0 Universal')
+        self.mit_license = NodeLicense.objects.get(name='MIT License')
+        self.no_license = NodeLicense.objects.get(name='No license')
 
         self.url = '/{}nodes/{}/'.format(API_BASE, self.node._id)
 

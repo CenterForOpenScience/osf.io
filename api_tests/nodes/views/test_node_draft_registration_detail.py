@@ -1,7 +1,6 @@
 import hashlib, binascii
 from nose.tools import *  # flake8: noqa
 
-from modularodm import Q
 from osf.models import MetaSchema
 from website.project.metadata.schemas import LATEST_SCHEMA_VERSION
 from api.base.settings.defaults import API_BASE
@@ -21,10 +20,7 @@ class TestDraftRegistrationDetail(DraftRegistrationTestCase):
     def setUp(self):
         super(TestDraftRegistrationDetail, self).setUp()
 
-        self.schema = MetaSchema.find_one(
-            Q('name', 'eq', 'OSF-Standard Pre-Data Collection Registration') &
-            Q('schema_version', 'eq', LATEST_SCHEMA_VERSION)
-        )
+        self.schema = MetaSchema.objects.get(name='OSF-Standard Pre-Data Collection Registration', schema_version=LATEST_SCHEMA_VERSION)
 
         self.draft_registration = DraftRegistrationFactory(
             initiator=self.user,
@@ -82,10 +78,7 @@ class TestDraftRegistrationUpdate(DraftRegistrationTestCase):
     def setUp(self):
         super(TestDraftRegistrationUpdate, self).setUp()
 
-        self.schema = MetaSchema.find_one(
-            Q('name', 'eq', 'OSF-Standard Pre-Data Collection Registration') &
-            Q('schema_version', 'eq', LATEST_SCHEMA_VERSION)
-        )
+        self.schema = MetaSchema.objects.get(name='OSF-Standard Pre-Data Collection Registration', schema_version=LATEST_SCHEMA_VERSION)
 
         self.draft_registration = DraftRegistrationFactory(
             initiator=self.user,
@@ -93,10 +86,7 @@ class TestDraftRegistrationUpdate(DraftRegistrationTestCase):
             branched_from=self.public_project
         )
 
-        self.prereg_schema = MetaSchema.find_one(
-            Q('name', 'eq', 'Prereg Challenge') &
-            Q('schema_version', 'eq', LATEST_SCHEMA_VERSION)
-        )
+        self.prereg_schema = MetaSchema.objects.get(name='Prereg Challenge', schema_version=LATEST_SCHEMA_VERSION)
 
         self.prereg_draft_registration = DraftRegistrationFactory(
             initiator=self.user,
@@ -379,10 +369,7 @@ class TestDraftRegistrationPatch(DraftRegistrationTestCase):
     def setUp(self):
         super(TestDraftRegistrationPatch, self).setUp()
 
-        self.schema = MetaSchema.find_one(
-            Q('name', 'eq', 'OSF-Standard Pre-Data Collection Registration') &
-            Q('schema_version', 'eq', LATEST_SCHEMA_VERSION)
-        )
+        self.schema = MetaSchema.objects.get(name='OSF-Standard Pre-Data Collection Registration', schema_version=LATEST_SCHEMA_VERSION)
 
         self.draft_registration = DraftRegistrationFactory(
             initiator=self.user,
@@ -390,10 +377,7 @@ class TestDraftRegistrationPatch(DraftRegistrationTestCase):
             branched_from=self.public_project
         )
 
-        self.prereg_schema = MetaSchema.find_one(
-            Q('name', 'eq', 'Prereg Challenge') &
-            Q('schema_version', 'eq', LATEST_SCHEMA_VERSION)
-        )
+        self.prereg_schema = MetaSchema.objects.get(name='Prereg Challenge', schema_version=LATEST_SCHEMA_VERSION)
 
         self.prereg_draft_registration = DraftRegistrationFactory(
             initiator=self.user,
@@ -454,10 +438,7 @@ class TestDraftRegistrationDelete(DraftRegistrationTestCase):
     def setUp(self):
         super(TestDraftRegistrationDelete, self).setUp()
 
-        schema = MetaSchema.find_one(
-            Q('name', 'eq', 'OSF-Standard Pre-Data Collection Registration') &
-            Q('schema_version', 'eq', LATEST_SCHEMA_VERSION)
-        )
+        schema = MetaSchema.objects.get(name='OSF-Standard Pre-Data Collection Registration', schema_version=LATEST_SCHEMA_VERSION)
 
         self.draft_registration = DraftRegistrationFactory(
             initiator=self.user,
@@ -510,10 +491,7 @@ class TestDraftPreregChallengeRegistrationMetadataValidation(DraftRegistrationTe
     def setUp(self):
         super(TestDraftPreregChallengeRegistrationMetadataValidation, self).setUp()
 
-        self.prereg_schema = MetaSchema.find_one(
-            Q('name', 'eq', 'Prereg Challenge') &
-            Q('schema_version', 'eq', LATEST_SCHEMA_VERSION)
-        )
+        self.prereg_schema = MetaSchema.objects.get(name='Prereg Challenge', schema_version=LATEST_SCHEMA_VERSION)
 
         self.prereg_draft_registration = DraftRegistrationFactory(
             initiator=self.user,

@@ -460,10 +460,7 @@ class TestRegistrationCreate(DraftRegistrationTestCase):
     def setUp(self):
         super(TestRegistrationCreate, self).setUp()
 
-        self.schema = MetaSchema.find_one(
-            Q('name', 'eq', 'Replication Recipe (Brandt et al., 2013): Post-Completion') &
-            Q('schema_version', 'eq', LATEST_SCHEMA_VERSION)
-        )
+        self.schema = MetaSchema.objects.get(name='Replication Recipe (Brandt et al., 2013): Post-Completion', schema_version=LATEST_SCHEMA_VERSION)
 
         self.draft_registration = DraftRegistrationFactory(
             initiator=self.user,
@@ -564,11 +561,7 @@ class TestRegistrationCreate(DraftRegistrationTestCase):
 
     @mock.patch('framework.celery_tasks.handlers.enqueue_task')
     def test_required_top_level_questions_must_be_answered_on_draft(self, mock_enqueue):
-        prereg_schema = MetaSchema.find_one(
-            Q('name', 'eq', 'Prereg Challenge') &
-            Q('schema_version', 'eq', LATEST_SCHEMA_VERSION)
-        )
-
+        prereg_schema = MetaSchema.objects.get(name='Prereg Challenge', schema_version=LATEST_SCHEMA_VERSION)
         prereg_draft_registration = DraftRegistrationFactory(
             initiator=self.user,
             registration_schema=prereg_schema,
@@ -596,11 +589,7 @@ class TestRegistrationCreate(DraftRegistrationTestCase):
 
     @mock.patch('framework.celery_tasks.handlers.enqueue_task')
     def test_required_top_level_questions_must_be_answered_on_draft(self, mock_enqueue):
-        prereg_schema = MetaSchema.find_one(
-            Q('name', 'eq', 'Prereg Challenge') &
-            Q('schema_version', 'eq', LATEST_SCHEMA_VERSION)
-        )
-
+        prereg_schema = MetaSchema.objects.get(name='Prereg Challenge', schema_version=LATEST_SCHEMA_VERSION)
         prereg_draft_registration = DraftRegistrationFactory(
             initiator=self.user,
             registration_schema=prereg_schema,
@@ -628,11 +617,7 @@ class TestRegistrationCreate(DraftRegistrationTestCase):
 
     @mock.patch('framework.celery_tasks.handlers.enqueue_task')
     def test_required_second_level_questions_must_be_answered_on_draft(self, mock_enqueue):
-        prereg_schema = MetaSchema.find_one(
-            Q('name', 'eq', 'Prereg Challenge') &
-            Q('schema_version', 'eq', LATEST_SCHEMA_VERSION)
-        )
-
+        prereg_schema = MetaSchema.objects.get(name='Prereg Challenge', schema_version=LATEST_SCHEMA_VERSION)
         prereg_draft_registration = DraftRegistrationFactory(
             initiator=self.user,
             registration_schema=prereg_schema,
@@ -660,11 +645,7 @@ class TestRegistrationCreate(DraftRegistrationTestCase):
 
     @mock.patch('framework.celery_tasks.handlers.enqueue_task')
     def test_required_third_level_questions_must_be_answered_on_draft(self, mock_enqueue):
-        prereg_schema = MetaSchema.find_one(
-            Q('name', 'eq', 'Prereg Challenge') &
-            Q('schema_version', 'eq', LATEST_SCHEMA_VERSION)
-        )
-
+        prereg_schema = MetaSchema.objects.get(name='Prereg Challenge', schema_version=LATEST_SCHEMA_VERSION)
         prereg_draft_registration = DraftRegistrationFactory(
             initiator=self.user,
             registration_schema=prereg_schema,

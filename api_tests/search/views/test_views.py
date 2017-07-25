@@ -1,4 +1,3 @@
-from modularodm import Q
 from nose.tools import *  # flake8: noqa
 
 from api.base.settings.defaults import API_BASE
@@ -403,10 +402,7 @@ class TestSearchRegistrations(ApiSearchTestCase):
         super(TestSearchRegistrations, self).setUp()
         self.url = '/{}search/registrations/'.format(API_BASE)
 
-        self.schema = MetaSchema.find_one(
-            Q('name', 'eq', 'Replication Recipe (Brandt et al., 2013): Post-Completion') &
-            Q('schema_version', 'eq', LATEST_SCHEMA_VERSION)
-        )
+        self.schema = MetaSchema.objects.get(name='Replication Recipe (Brandt et al., 2013): Post-Completion', schema_version=LATEST_SCHEMA_VERSION)
 
         with mock_archive(self.project, autocomplete=True, autoapprove=True, schema=self.schema) as registration:
             self.registration = registration
