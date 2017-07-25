@@ -9,11 +9,12 @@ var $osf = require('js/osfHelpers');
     */
 var NavbarViewModel = function() {
     var self = this;
-
-    $('#primary-navigation').on('click', function () {
-        $('.navbar-collapse').collapse('hide');
-    });
-
+    self.trackClick = function(label){
+        if (label === 'Dropdown Arrow'){
+            $('.navbar-collapse').collapse('hide');
+        }
+        return $osf.trackClick('link', 'click', 'Navbar - ' + label);
+    }
 };
 
 function NavbarControl (selector, data, options) {
