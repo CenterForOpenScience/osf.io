@@ -300,7 +300,6 @@ var _githubItemButtons = {
 
 function changeBranch(item, ref){
     item.data.branch = ref;
-    item.data.urls.repo = item.data.urls.repo.substring(0, item.data.urls.repo.lastIndexOf('/tree/') + 1) + 'tree/' + ref;
     this.updateFolder(null, item);
 }
 
