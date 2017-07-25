@@ -1,92 +1,93 @@
-from rest_framework.exceptions import ValidationError
-
-from addons.twofactor.models import UserSettings as TwoFactorUserSettings
-
-from api.cas import messages, errors
-from api.cas import util
+from api.base import exceptions as api_exceptions
+from api.cas.util import check_user_status, verify_two_factor_authentication, find_user_by_email_or_guid
 
 from framework import sentry
 from framework.auth import get_or_create_user
-from framework.auth.cas import validate_external_credential
+from framework.auth.cas import parse_external_credential
 
 from osf.models import Institution, OSFUser
 
 from website.mails import send_mail
 from website.mails import WELCOME_OSF4I
 
-# TODO: raise API exception, use error_code for CAS, keep error_detail
 
-
-def handle_login_osf(data_user):
+def osf_login(user_data):
     """
     Handle default login through OSF.
 
-    :param data_user: the user object in decrypted data payload
-    :return: a verified user or None, an error message or None, the user's status or None
+    :param user_data: the user's credential
+    :return: the user if credentials validates
+    :raises: MalformedRequestError, AccountNotFoundError, InvalidVerificationKeyError, InvalidPasswordError,
+             UnconfirmedAccountError, UnclaimedAccountError, DeactivatedAccountError, MergedAccountError,
+             InvalidAccountError, TwoFactorRequiredError, TwoFactorFailedError
     """
 
-    email = data_user.get('email')
-    remote_authenticated = data_user.get('remoteAuthenticated')
-    verification_key = data_user.get('verificationKey')
-    password = data_user.get('password')
-    one_time_password = data_user.get('oneTimePassword')
+    email = user_data.get('email')
+    remote_authenticated = user_data.get('remoteAuthenticated')
+    verification_key = user_data.get('verificationKey')
+    password = user_data.get('password')
+    one_time_password = user_data.get('oneTimePassword')
 
-    # check if credentials are provided
+    # check if required credentials are provided
     if not email or not (remote_authenticated or verification_key or password):
-        raise ValidationError(detail=messages.INVALID_REQUEST)
+        raise api_exceptions.MalformedRequestError
 
     # retrieve the user
-    user = util.find_user_by_email_or_guid(None, email, username_only=False)
+    user = find_user_by_email_or_guid(None, email, username_only=False)
     if not user:
-        raise ValidationError(detail=errors.ACCOUNT_NOT_FOUND)
+        raise api_exceptions.AccountNotFoundError
 
     # authenticated by remote authentication
     if remote_authenticated:
         verify_two_factor_authentication(user, one_time_password)
-        util.check_user(user)
+        check_user_status(user)
         return user
 
     # authenticated by verification key
     if verification_key:
         if verification_key == user.verification_key:
             verify_two_factor_authentication(user, one_time_password)
-            util.check_user(user)
-        raise ValidationError(detail=errors.INVALID_VERIFICATION_KEY)
+            check_user_status(user)
+            return user
+        raise api_exceptions.InvalidVerificationKeyError
 
     # authenticated by password
     if password:
         if user.check_password(password):
             verify_two_factor_authentication(user, one_time_password)
-            util.check_user(user)
-        raise ValidationError(detail=errors.INVALID_PASSWORD)
+            check_user_status(user)
+            return user
+        raise api_exceptions.InvalidPasswordError
 
 
-def handle_login_institution(provider):
+def institution_login(provider_data):
     """
     Handle login through institution identity provider.
 
-    :param provider: the decrypted provider object
-    :return: the user
-    :raises: ValidationError
+    :param provider_data: the provider's credential
+    :return: the user if credentials validates
+    :raises: MalformedRequestError, InvalidInstitutionLoginError
     """
 
     # check required fields
-    institution_id = provider.get('id', '')
-    institution_user = provider.get('user', '')
+    institution_id = provider_data.get('id', '')
+    institution_user = provider_data.get('user', '')
     if not (institution_id and institution_user):
-        raise ValidationError(detail=messages.INVALID_REQUEST)
+        raise api_exceptions.MalformedRequestError
 
     # check institution
     institution = Institution.load(institution_id)
     if not institution:
-        raise ValidationError(detail='Invalid institution id specified "{}"'.format(institution_id))
+        detail = 'Invalid institution for institution login: institution={}.'.format(institution_id)
+        sentry.log_message(detail)
+        raise api_exceptions.InvalidInstitutionLoginError(detail=detail)
 
     # check username (email)
     username = institution_user.get('username', '')
     if not username:
-        message = 'Institution login failed: username required'
-        sentry.log_message(message)
-        raise ValidationError(detail=message)
+        detail = 'Username (email) required for institution login: institution={}'.format(institution_id)
+        sentry.log_message(detail)
+        raise api_exceptions.InvalidInstitutionLoginError(detail=detail)
 
     # check fullname
     fullname = institution_user.get('fullname', '')
@@ -95,10 +96,9 @@ def handle_login_institution(provider):
     if not fullname:
         fullname = '{} {}'.format(given_name, family_name).strip()
     if not fullname:
-        message = 'Institution login failed: fullname required for user {} from institution {}'\
-            .format(username, institution_id)
-        sentry.log_message(message)
-        raise ValidationError(detail=message)
+        detail = 'Fullname required for institution login: user={}, institution={}'.format(username, institution_id)
+        sentry.log_message(detail)
+        raise api_exceptions.InvalidInstitutionLoginError(detail=detail)
 
     middle_names = institution_user.get('middleNames')
     suffix = institution_user.get('suffix')
@@ -126,19 +126,19 @@ def handle_login_institution(provider):
     return user
 
 
-def handle_login_external(data_user):
+def external_login(user_data):
     """
     Handle authentication through non-institution external identity provider
 
-    :param data_user: the decrypted user object
-    :return: the user with verified external identity
-    :raises: PermissionDenied
+    :param user_data: the user's external credential
+    :return: the user if credential validates
+    :raises: InvalidExternalIdentityError, AccountNotFoundError
     """
 
     # parse external credential
-    external_credential = validate_external_credential(data_user.get('externalIdWithProvider'))
+    external_credential = parse_external_credential(user_data.get('externalIdWithProvider'))
     if not external_credential:
-        raise ValidationError(detail=errors.INVALID_EXTERNAL_IDENTITY)
+        raise api_exceptions.InvalidExternalIdentityError
 
     try:
         user = OSFUser.objects.filter(
@@ -150,32 +150,7 @@ def handle_login_external(data_user):
         ).get()
     except OSFUser.DoesNotExist:
         # external identity not found, CAS should redirect the users to create or link their OSF account
-        raise ValidationError(errors.ACCOUNT_NOT_FOUND)
+        raise api_exceptions.AccountNotFoundError
 
     # external identity found, return username for CAS to use default login with username and remote principal
     return user
-
-
-def verify_two_factor_authentication(user, one_time_password):
-    """
-    Check users' two factor settings after they successful pass the initial verification.
-
-    :param user: the OSF user
-    :param one_time_password: the time-based one time password
-    :return: None, TWO_FACTOR_AUTHENTICATION_REQUIRED or INVALID_ONE_TIME_PASSWORD
-    """
-
-    try:
-        two_factor = TwoFactorUserSettings.objects.get(owner_id=user.pk)
-    except TwoFactorUserSettings.DoesNotExist:
-        return
-
-    # two factor required
-    if not one_time_password:
-        raise ValidationError(detail=errors.TWO_FACTOR_AUTHENTICATION_REQUIRED)
-
-    # verify two factor
-    if not two_factor.verify_code(one_time_password):
-        raise ValidationError(detail=errors.INVALID_TIME_BASED_ONE_TIME_PASSWORD)
-
-    return

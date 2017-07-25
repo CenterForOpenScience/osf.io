@@ -23,7 +23,7 @@ class LoginOSF(APICASView):
     def post(self, request):
 
         data = util.load_request_body_data(request)
-        user = login.handle_login_osf(data.get('user', None))
+        user = login.osf_login(data.get('user', None))
 
         content = {
             'userId': user._id,
@@ -46,7 +46,7 @@ class LoginInstitution(APICASView):
     def post(self, request):
 
         data = util.load_request_body_data(request)
-        user = login.handle_login_institution(data.get('provider', None))
+        login.institution_login(data.get('provider', None))
 
         return Response(status=status.HTTP_204_NO_CONTENT)
 
@@ -60,7 +60,7 @@ class LoginExternal(APICASView):
     def post(self, request):
 
         data = util.load_request_body_data(request)
-        user = login.handle_login_institution(data.get('user', None))
+        user = login.external_login(data.get('user', None))
 
         content = {
             'username': user.username

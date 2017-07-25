@@ -265,6 +265,17 @@ class TwoFactorFailedError(AuthenticationFailed):
     default_detail = _('Two factor authentication failed for login.')
 
 
+class InvalidInstitutionLoginError(AuthenticationFailed):
+    """ Raised when CAS provides an invalid institution or user for institution login.
+    """
+    code = 40108
+    default_detail = _('Institution Login Failed')
+
+    def __init__(self, detail=None):
+        if detail:
+            super(AuthenticationFailed, self).__init__(detail=detail)
+
+
 class MalformedRequestError(ParseError):
     """ Raised when the API server fails parse the successfully decrypted request body.
     """

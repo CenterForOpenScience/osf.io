@@ -324,10 +324,10 @@ def get_user_from_cas_resp(cas_resp):
     return None
 
 
-def validate_external_credential(external_credential):
+def parse_external_credential(external_credential):
     """
-    Validate the external credential, a string which is composed of the profile name and the technical identifier
-    of the external provider, separated by `#`. Return the provider and id on success.
+    Parse the external credential, a string which is composed of the profile name and the technical
+    identifier of the external provider, separated by `#`. Return the provider and id on success.
 
     :param external_credential: the external credential string
     :return: a dictionary of provider and technical id
