@@ -675,7 +675,7 @@ class Retraction(EmailApprovableSanction):
             node.update_search()
         # force a save before sending data to share or retraction will not be updated
         self.save()
-        project_tasks.update_share(parent_registration)
+        project_tasks.update_node_share(parent_registration)
 
     def approve_retraction(self, user, token):
         self.approve(user, token)

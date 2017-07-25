@@ -32,36 +32,36 @@ def on_node_updated(node_id, user_id, first_save, saved_fields, request_headers=
 
     if need_update:
         node.update_search()
-        update_share(node)
+        update_node_share(node)
 
-def update_share(node):
+def update_node_share(node):
     # Wrapper that ensures share_url and token exist
     if settings.SHARE_URL:
         if not settings.SHARE_API_TOKEN:
             return logger.warning('SHARE_API_TOKEN not set. Could not send "{}" to SHARE.'.format(node._id))
-        _update_share(node)
+        _update_node_share(node)
 
-def _update_share(node):
-    # Any modifications to this function may need to change _async_update_share
-    data = serialize_share_data(node)
-    resp = send_share_data(data)
+def _update_node_share(node):
+    # Any modifications to this function may need to change _async_update_node_share
+    data = serialize_share_node_data(node)
+    resp = send_share_node_data(data)
     try:
         resp.raise_for_status()
     except Exception:
         if resp.status_code >= 500:
-            _async_update_share.delay(node._id)
+            _async_update_node_share.delay(node._id)
         else:
             send_desk_share_error(node, resp, 0)
 
 @celery_app.task(bind=True, max_retries=4, acks_late=True)
-def _async_update_share(self, node_id):
-    # Any modifications to this function may need to change _async_update_share
+def _async_update_node_share(self, node_id):
+    # Any modifications to this function may need to change _update_node_share
     # Takes node_id to ensure async retries push fresh data
     AbstractNode = apps.get_model('osf.AbstractNode')
     node = AbstractNode.load(node_id)
 
-    data = serialize_share_data(node)
-    resp = send_share_data(data)
+    data = serialize_share_node_data(node)
+    resp = send_share_node_data(data)
     try:
         resp.raise_for_status()
     except Exception as e:
@@ -75,12 +75,12 @@ def _async_update_share(self, node_id):
         else:
             send_desk_share_error(node, resp, self.request.retries)
 
-def send_share_data(data):
+def send_share_node_data(data):
     resp = requests.post('{}api/normalizeddata/'.format(settings.SHARE_URL), json=data, headers={'Authorization': 'Bearer {}'.format(settings.SHARE_API_TOKEN), 'Content-Type': 'application/vnd.api+json'})
     logger.debug(resp.content)
     return resp
 
-def serialize_share_data(node):
+def serialize_share_node_data(node):
     return {
         'data': {
             'type': 'NormalizedData',

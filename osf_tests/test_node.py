@@ -17,7 +17,7 @@ from website.exceptions import NodeStateError
 from website.util import permissions, disconnected_from_listeners, api_url_for, web_url_for
 from website.citations.utils import datetime_to_csl
 from website import language, settings
-from website.project.tasks import on_node_updated, update_share
+from website.project.tasks import on_node_updated
 
 from osf.models import (
     AbstractNode,
@@ -3416,7 +3416,7 @@ class TestOnNodeUpdate:
 
     @mock.patch('website.project.tasks.settings.SHARE_URL', 'a_real_url')
     @mock.patch('website.project.tasks.settings.SHARE_API_TOKEN', 'a_real_token')
-    @mock.patch('website.project.tasks._async_update_share.delay')
+    @mock.patch('website.project.tasks._async_update_node_share.delay')
     @mock.patch('website.project.tasks.requests')
     def test_call_async_update_on_500_failure(self, requests, mock_async, node, user, request_context):
         requests.post.return_value = MockShareResponse(501)
@@ -3426,7 +3426,7 @@ class TestOnNodeUpdate:
     @mock.patch('website.project.tasks.settings.SHARE_URL', 'a_real_url')
     @mock.patch('website.project.tasks.settings.SHARE_API_TOKEN', 'a_real_token')
     @mock.patch('website.project.tasks.send_desk_share_error')
-    @mock.patch('website.project.tasks._async_update_share.delay')
+    @mock.patch('website.project.tasks._async_update_node_share.delay')
     @mock.patch('website.project.tasks.requests')
     def test_no_call_async_update_on_400_failure(self, requests, mock_async, mock_mail, node, user, request_context):
         requests.post.return_value = MockShareResponse(400)

@@ -42,12 +42,11 @@ def update_preprint_share(preprint, old_subjects=None):
         _update_preprint_share(preprint, old_subjects)
 
 def _update_preprint_share(preprint, old_subjects):
+    # Any modifications to this function may need to change _async_update_preprint_share
     data = serialize_share_preprint_data(preprint, old_subjects)
     resp = send_share_preprint_data(preprint, data)
     try:
-        assert False
         resp.raise_for_status()
-    # any exception gets sent to deskk
     except Exception:
         if resp.status_code >= 500:
             _async_update_preprint_share.delay(preprint._id, old_subjects)
@@ -56,7 +55,7 @@ def _update_preprint_share(preprint, old_subjects):
 
 @celery_app.task(bind=True, max_retries=4, acks_late=True)
 def _async_update_preprint_share(self, preprint_id, old_subjects):
-    # Any modifications to this function may need to change _async_update_share
+    # Any modifications to this function may need to change _update_preprint_share
     # Takes preprint_id to ensure async retries push fresh data
     PreprintService = apps.get_model('osf.PreprintService')
     preprint = PreprintService.load(preprint_id)
