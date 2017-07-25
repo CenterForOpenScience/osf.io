@@ -14,7 +14,7 @@ var NavbarViewModel = function() {
             $('.navbar-collapse').collapse('hide');
         }
         return $osf.trackClick('link', 'click', 'Navbar - ' + label);
-    }
+    };
 };
 
 function NavbarControl (selector, data, options) {
