@@ -263,7 +263,7 @@ class TestNodeReindex(AdminTestCase):
     @mock.patch('website.project.tasks.format_registration')
     @mock.patch('website.project.tasks.settings.SHARE_URL', 'ima_real_website')
     @mock.patch('website.project.tasks.settings.SHARE_API_TOKEN', 'totaly_real_token')
-    @mock.patch('website.project.tasks.send_share_data')
+    @mock.patch('website.project.tasks.send_share_node_data')
     def test_reindex_node_share(self, mock_update_share, mock_format_registration, mock_format_node):
         count = AdminLogEntry.objects.count()
         view = NodeReindexShare()
@@ -279,7 +279,7 @@ class TestNodeReindex(AdminTestCase):
     @mock.patch('website.project.tasks.format_registration')
     @mock.patch('website.project.tasks.settings.SHARE_URL', 'ima_real_website')
     @mock.patch('website.project.tasks.settings.SHARE_API_TOKEN', 'totaly_real_token')
-    @mock.patch('website.project.tasks.send_share_data')
+    @mock.patch('website.project.tasks.send_share_node_data')
     def test_reindex_registration_share(self, mock_update_share, mock_format_registration, mock_format_node):
         count = AdminLogEntry.objects.count()
         view = NodeReindexShare()
