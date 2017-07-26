@@ -1419,10 +1419,8 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
 
     @classmethod
     def find_for_user(cls, user, subquery=None):
-        combined_query = Q('contributors', 'eq', user)
-        if subquery is not None:
-            combined_query = combined_query & subquery
-        return cls.find(combined_query)
+        queryset = cls.objects.filter(_contributors=user)
+        return queryset.filter(subquery) if subquery else queryset
 
     def can_comment(self, auth):
         if self.comment_level == 'public':

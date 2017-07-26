@@ -1,11 +1,11 @@
 import unittest
+
+from django.core.exceptions import ValidationError
 from nose.tools import *  # flake8: noqa (PEP8 asserts)
 
 from framework.auth.core import Auth
 
 from osf.models import AlternativeCitation
-
-from modularodm.exceptions import ValidationError
 
 from tests.base import OsfTestCase
 

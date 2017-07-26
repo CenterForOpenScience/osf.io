@@ -1,6 +1,6 @@
 import pytest
 
-from modularodm import Q
+from django.db.models import Q
 
 from tests.base import DbTestCase
 from osf_tests import factories
@@ -23,22 +23,19 @@ class FrameworkUtilsTestCase(DbTestCase):
 
     def test_get_or_http_error_by_query_found(self):
         n = factories.NodeFactory()
-        found = get_or_http_error(
-            Node,
-            (Q('title', 'eq', n.title) & Q('_id', 'eq', n._id))
-        )
+        found = get_or_http_error(Node, Q(title=n.title, guids___id=n._id))
         assert found == n
 
     def test_get_or_http_error_by_query_not_found(self):
         with pytest.raises(HTTPError):
-            get_or_http_error(Node, Q('_id', 'eq', 'blah'))
+            get_or_http_error(Node, Q(guids___id='blah'))
 
     def test_get_or_http_error_by_query_not_unique(self):
         title = 'TITLE'
         factories.NodeFactory(title=title)
         factories.NodeFactory(title=title)
         with pytest.raises(HTTPError):
-            get_or_http_error(Node, Q('title', 'eq', title))
+            get_or_http_error(Node, Q(title=title))
 
     def test_autoload(self):
 

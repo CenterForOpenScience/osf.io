@@ -2,6 +2,7 @@ import datetime
 
 from django.utils import timezone
 from django.core.exceptions import ValidationError as DjangoValidationError
+from django.db.models import Q as DQ
 from modularodm import Q
 from modularodm.exceptions import ValidationError as MODMValidationError
 import mock
@@ -1714,12 +1715,17 @@ def test_find_for_user():
     noncontrib = UserFactory()
     Contributor.objects.create(node=node1, user=contrib)
     Contributor.objects.create(node=node2, user=contrib)
-    assert node1 in Node.find_for_user(contrib)
-    assert node2 in Node.find_for_user(contrib)
-    assert node1 not in Node.find_for_user(noncontrib)
 
-    assert node1 in Node.find_for_user(contrib, Q('is_public', 'eq', False))
-    assert node2 not in Node.find_for_user(contrib, Q('is_public', 'eq', False))
+    contrib_nodes = Node.find_for_user(contrib)
+    noncontrib_nodes = Node.find_for_user(noncontrib)
+    contrib_private_nodes = Node.find_for_user(contrib, DQ(is_public=False))
+
+    assert node1 in contrib_nodes
+    assert node2 in contrib_nodes
+    assert node1 not in noncontrib_nodes
+
+    assert node1 in contrib_private_nodes
+    assert node2 not in contrib_private_nodes
 
 
 def test_find_by_institutions():

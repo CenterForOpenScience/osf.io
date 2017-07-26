@@ -1,4 +1,4 @@
-from modularodm.exceptions import ValidationError
+from django.core.exceptions import ValidationError
 from modularodm import Q
 from rest_framework import exceptions
 from rest_framework import serializers as ser
@@ -212,7 +212,7 @@ class PreprintSerializer(JSONAPISerializer):
             func(val, auth)
         except PermissionsError as e:
             raise exceptions.PermissionDenied(detail=e.message)
-        except ValueError as e:
+        except (ValueError, ValidationError) as e:
             raise exceptions.ValidationError(detail=e.message)
         except NodeStateError as e:
             raise exceptions.ValidationError(detail=e.message)

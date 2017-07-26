@@ -2,13 +2,10 @@
 import functools
 import httplib as http
 
-from django.core.paginator import Paginator
-from django.db.models import QuerySet
-
 import markupsafe
 import pymongo
-from modularodm.query import QueryBase
-from modularodm.exceptions import NoResultsFound, MultipleResultsFound
+from django.core.paginator import Paginator
+from django.db.models import Q, QuerySet
 
 from framework.exceptions import HTTPError
 
@@ -79,14 +76,14 @@ def get_or_http_error(Model, pk_or_query, allow_deleted=False, display_name=None
     # FIXME: Not everything that uses this decorator needs to be markupsafe, but OsfWebRenderer error.mako does...
     safe_name = markupsafe.escape(display_name)
 
-    if isinstance(pk_or_query, QueryBase):
+    if isinstance(pk_or_query, Q):
         try:
-            instance = Model.find_one(pk_or_query)
-        except NoResultsFound:
+            instance = Model.objects.get(pk_or_query)
+        except Model.DoesNotExist:
             raise HTTPError(http.NOT_FOUND, data=dict(
                 message_long='No {name} record matching that query could be found'.format(name=safe_name)
             ))
-        except MultipleResultsFound:
+        except Model.MultipleObjectsReturned:
             raise HTTPError(http.BAD_REQUEST, data=dict(
                 message_long='The query must match exactly one {name} record'.format(name=safe_name)
             ))
@@ -150,10 +147,12 @@ def paginated(model, query=None, increment=200, each=True, include=None):
     :param bool each: If True, each record is yielded. If False, pages
         are yielded.
     """
-    if include:
-        queryset = model.find(query).include(*include)
+    if include and query:
+        queryset = model.objects.filter(query).include(*include)
+    elif query:
+        queryset = model.objects.filter(query)
     else:
-        queryset = model.find(query)
+        queryset = model.objects.all()
 
     # Pagination requires an order by clause, especially when using Postgres.
     # see: https://docs.djangoproject.com/en/1.10/topics/pagination/#required-arguments

@@ -3,9 +3,7 @@ import logging
 import re
 
 from django.apps import apps
-
-from modularodm import Q
-from modularodm.exceptions import ValidationValueError
+from django.core.exceptions import ValidationError
 
 from website import settings
 from website.util import sanitize
@@ -29,9 +27,9 @@ def validate_contributor(guid, contributors):
     OSFUser = apps.get_model('osf.OSFUser')
     user = OSFUser.load(guid)
     if not user or not user.is_claimed:
-        raise ValidationValueError('User does not exist or is not active.')
+        raise ValidationError('User does not exist or is not active.')
     elif user not in contributors:
-        raise ValidationValueError('Mentioned user is not a contributor.')
+        raise ValidationError('Mentioned user is not a contributor.')
     return True
 
 def get_valid_mentioned_users_guids(comment, contributors):
@@ -66,7 +64,7 @@ def validate_category(value):
     categories defined in NODE_CATEGORY_MAP.
     """
     if value not in settings.NODE_CATEGORY_MAP.keys():
-        raise ValidationValueError('Invalid value for category.')
+        raise ValidationError('Invalid value for category.')
     return True
 
 
@@ -75,15 +73,15 @@ def validate_title(value):
     above 200 characters.
     """
     if value is None or not value.strip():
-        raise ValidationValueError('Title cannot be blank.')
+        raise ValidationError('Title cannot be blank.')
 
     value = sanitize.strip_html(value)
 
     if value is None or not value.strip():
-        raise ValidationValueError('Invalid title.')
+        raise ValidationError('Invalid title.')
 
     if len(value) > 200:
-        raise ValidationValueError('Title cannot exceed 200 characters.')
+        raise ValidationError('Title cannot exceed 200 characters.')
 
     return True
 
@@ -92,8 +90,10 @@ def validate_user(value):
     OSFUser = apps.get_model('osf.OSFUser')
     if value != {}:
         user_id = value.iterkeys().next()
-        if OSFUser.find(Q('_id', 'eq', user_id)).count() != 1:
-            raise ValidationValueError('User does not exist.')
+        try:
+            OSFUser.objects.get(_id=user_id)
+        except OSFUser.DoesNotExist:
+            raise ValidationError('User does not exist.')
     return True
 
 
@@ -106,5 +106,5 @@ class NodeUpdateError(Exception):
 
 def validate_doi(value):
     if value and not re.match(r'\b(10\.\d{4,}(?:\.\d+)*/\S+(?:(?!["&\'<>])\S))\b', value):
-        raise ValidationValueError('"{}" is not a valid DOI'.format(value))
+        raise ValidationError('"{}" is not a valid DOI'.format(value))
     return True

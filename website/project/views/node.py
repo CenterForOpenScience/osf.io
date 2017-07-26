@@ -5,10 +5,9 @@ import math
 from itertools import islice
 
 from flask import request
-from modularodm import Q
-from modularodm.exceptions import ModularOdmException, ValidationError
 from django.apps import apps
-from django.db.models import Count
+from django.core.exceptions import ValidationError
+from django.db.models import Count, Q
 
 from framework import status
 from framework.utils import iso8601format
@@ -35,7 +34,7 @@ from website.util.rubeus import collect_addon_js
 from website.project.model import has_anonymous_link, NodeUpdateError, validate_title
 from website.project.forms import NewNodeForm
 from website.project.metadata.utils import serialize_meta_schemas
-from osf.models import AbstractNode as Node, PrivateLink, Comment
+from osf.models import AbstractNode as Node, PrivateLink
 from osf.models.licenses import serialize_node_license_record
 from website import settings
 from website.views import find_bookmark_collection, validate_page_num
@@ -508,27 +507,26 @@ def remove_private_link(*args, **kwargs):
     link_id = request.json['private_link_id']
 
     try:
-        link = PrivateLink.load(link_id)
-        link.is_deleted = True
-        link.save()
-
-        for node in link.nodes.all():
-            log_dict = {
-                'project': node.parent_id,
-                'node': node._id,
-                'user': kwargs.get('auth').user._id,
-                'anonymous_link': link.anonymous,
-            }
-
-            node.add_log(
-                NodeLog.VIEW_ONLY_LINK_REMOVED,
-                log_dict,
-                auth=kwargs.get('auth', None)
-            )
-
-    except ModularOdmException:
+        link = PrivateLink.objects.get(_id=link_id)
+    except PrivateLink.DoesNotExist:
         raise HTTPError(http.NOT_FOUND)
 
+    link.is_deleted = True
+    link.save()
+
+    for node in link.nodes.all():
+        log_dict = {
+            'project': node.parent_id,
+            'node': node._id,
+            'user': kwargs.get('auth').user._id,
+            'anonymous_link': link.anonymous,
+        }
+
+        node.add_log(
+            NodeLog.VIEW_ONLY_LINK_REMOVED,
+            log_dict,
+            auth=kwargs.get('auth', None)
+        )
 
 # TODO: Split into separate functions
 def _render_addon(node):
@@ -647,8 +645,8 @@ def _view_project(node, auth, primary=False,
             'anonymous': anonymous,
             'points': len(node.get_points(deleted=False, folders=False)),
             'comment_level': node.comment_level,
-            'has_comments': bool(Comment.find(Q('node', 'eq', node))),
-            'has_children': bool(Comment.find(Q('node', 'eq', node))),
+            'has_comments': bool(node.comment_set.count()),
+            'has_children': bool(node.comment_set.count()),
             'identifiers': {
                 'doi': node.get_identifier_value('doi'),
                 'ark': node.get_identifier_value('ark'),
@@ -986,18 +984,16 @@ def search_node(auth, **kwargs):
     if not query:
         return {'nodes': []}
 
-    # Build ODM query
-    title_query = Q('title', 'icontains', query)
-    not_deleted_query = Q('is_deleted', 'eq', False)
-    visibility_query = Q('contributors', 'eq', auth.user)
-    if include_public:
-        visibility_query = visibility_query | Q('is_public', 'eq', True)
-    odm_query = title_query & not_deleted_query & visibility_query
-
     # Exclude current node from query if provided
     nin = [node.id] + list(node._nodes.values_list('pk', flat=True)) if node else []
 
-    nodes = Node.find(odm_query).exclude(id__in=nin).exclude(type='osf.collection')
+    nodes = Node.objects.filter(
+        Q(contributors=auth.user) |
+        Q(is_public=bool(include_public)),
+        title__icontains=query,
+        is_deleted=False
+    ).exclude(id__in=nin, type='osf.collection')
+
     count = nodes.count()
     pages = math.ceil(count / size)
     validate_page_num(page, pages)

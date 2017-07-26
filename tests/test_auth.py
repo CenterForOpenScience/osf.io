@@ -8,7 +8,6 @@ import urlparse
 import httplib as http
 
 from flask import Flask
-from modularodm import Q
 from werkzeug.wrappers import BaseResponse
 
 from framework import auth
@@ -109,11 +108,7 @@ class TestAuthUtils(OsfTestCase):
         assert_equal(res.status_code, 302)
         assert_equal('/', urlparse.urlparse(res.location).path)
         assert_equal(len(mock_mail.call_args_list), 1)
-        session = Session.find(
-            Q('data.auth_user_id', 'eq', user._id)
-        ).order_by(
-            '-date_modified'
-        ).first()
+        session = Session.objects.filter(data__auth_user_id=user._id).order_by('-date_modified').first()
         assert_equal(len(session.data['status']), 1)
 
     def test_get_user_by_id(self):

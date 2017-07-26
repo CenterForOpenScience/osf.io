@@ -1,8 +1,7 @@
 import pytest
 from collections import OrderedDict
 
-from modularodm.exceptions import ValidationError
-
+from django.core.exceptions import ValidationError
 
 from addons.box.models import BoxFile
 from addons.dropbox.models import DropboxFile
