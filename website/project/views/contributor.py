@@ -213,7 +213,6 @@ def finalize_invitation(node, contributor, auth, email_template='default'):
 @must_not_be_registration
 def project_contributors_post(auth, node, **kwargs):
     """ Add contributors to a node. """
-
     user_dicts = request.json.get('users')
     node_ids = request.json.get('node_ids')
     if node._id in node_ids:
@@ -789,6 +788,12 @@ def invite_contributor_post(node, **kwargs):
         elif node.is_contributor(user):
             msg = 'User with this email address is already a contributor to this project.'
             return {'status': 400, 'message': msg}, 400
+        elif not user.is_confirmed:
+            user.fullname = fullname
+            user.update_guessed_names()
+            user.unclaimed_records[node._id]['name'] = fullname
+            user.save()
+            serialized = profile_utils.serialize_unregistered(fullname, email)
         else:
             serialized = profile_utils.add_contributor_json(user)
             # use correct display name

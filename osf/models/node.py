@@ -1204,6 +1204,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
             contributor = existing_user
             if not contributor.is_confirmed:
                 contributor.fullname = fullname
+                contributor.update_guessed_names()
         else:
             contributor = OSFUser.create_unregistered(fullname=fullname, email=email)
 
