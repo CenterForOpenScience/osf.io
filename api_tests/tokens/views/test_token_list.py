@@ -82,7 +82,7 @@ class TestTokenList:
         assert res.json['data']['attributes'].has_key('token_id')
 
     def test_field_content_is_sanitized_upon_submission(self, app, data_sample, user_one, url_token_list):
-        bad_text = '<a href='http://sanitized.name'>User_text</a>'
+        bad_text = '<a href="http://sanitized.name">User_text</a>'
         cleaned_text = sanitize.strip_html(bad_text)
 
         payload = copy.deepcopy(data_sample)
