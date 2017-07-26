@@ -74,13 +74,4 @@ class TestGenerateSitemap:
         namespace = '{http://www.sitemaps.org/schemas/sitemap/0.9}'
         urls = [element.text for element in tree.iter(namespace + 'loc')]
 
-        #assert list_of_static_links in urls
-        for items in list_of_urls:
-            print(items)
-
-        print("=========")
-
-        for items in urls:
-            print(items)
-
         assert set(list_of_urls) == set(urls)
