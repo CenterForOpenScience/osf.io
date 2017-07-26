@@ -156,12 +156,12 @@ class Sitemap(object):
         progress.stop()
 
         # User urls
-        objs = OSFUser.objects.filter(is_active=True).values_list('guids___id', flat=True)
+        objs = OSFUser.objects.filter(is_active=True)
         progress.start(objs.count(), 'USER: ')
         for obj in objs:
             try:
                 config = settings.SITEMAP_USER_CONFIG
-                config['loc'] = urlparse.urljoin(settings.DOMAIN, '/{}/'.format(obj))
+                config['loc'] = urlparse.urljoin(settings.DOMAIN, obj.url)
                 self.add_url(config)
             except Exception as e:
                 self.log_errors('USER', obj, e)
@@ -171,14 +171,14 @@ class Sitemap(object):
         # AbstractNode urls (Nodes and Registrations, no Collections)
         objs = (AbstractNode.objects
             .filter(is_public=True, is_deleted=False, retraction_id__isnull=True)
-            .exclude(type="osf.collection")
-            .values('guids___id', 'date_modified'))
+            .exclude(type="osf.collection"))
+
         progress.start(objs.count(), 'NODE: ')
         for obj in objs:
             try:
                 config = settings.SITEMAP_NODE_CONFIG
-                config['loc'] = urlparse.urljoin(settings.DOMAIN, obj['guids___id'])
-                config['lastmod'] = obj['date_modified'].strftime('%Y-%m-%d')
+                config['loc'] = urlparse.urljoin(settings.DOMAIN, obj.url)
+                config['lastmod'] = obj.date_modified.strftime('%Y-%m-%d')
                 self.add_url(config)
             except Exception as e:
                 self.log_errors('NODE', obj['guids___id'], e)
