@@ -86,6 +86,16 @@ def assert_latest_log(log_action, node_key, index=0):
     assert new_log.action == log_action
 
 @contextlib.contextmanager
+def assert_latest_log_not(log_action, node_key, index=0):
+    node = node_key
+    last_log = node.logs.latest()
+    node.reload()
+    yield
+    new_log = node.logs.order_by('-date')[index]
+    assert new_log.action != log_action
+    assert last_log._id == new_log._id
+
+@contextlib.contextmanager
 def mock_archive(project, schema=None, auth=None, data=None, parent=None,
                  embargo=False, embargo_end_date=None,
                  retraction=False, justification=None, autoapprove_retraction=False,
