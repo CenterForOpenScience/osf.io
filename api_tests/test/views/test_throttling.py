@@ -1,5 +1,5 @@
-import pytest
 import mock
+import pytest
 
 from api.base.settings.defaults import API_BASE
 from osf_tests.factories import AuthUserFactory
