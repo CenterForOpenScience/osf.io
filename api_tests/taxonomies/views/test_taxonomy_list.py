@@ -77,8 +77,12 @@ class TestTaxonomy:
         data = res.json['data']
         assert len(children_subjects) == len(data)
 
-        for subject in data:
+        for subject_ in data:
             parents_ids = []
-            for parent in subject['attributes']['parents']:
+            for parent in subject_['attributes']['parents']:
                 parents_ids.append(parent['id'])
             assert subject._id in parents_ids
+
+    def test_is_deprecated(self, app, url_subject_list):
+        res = app.get('{}?version=2.6'.format(url_subject_list), expect_errors=True)
+        assert res.status_code == 404
