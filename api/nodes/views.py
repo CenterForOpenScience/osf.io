@@ -105,6 +105,7 @@ from osf.models import NodeRelation, AlternativeCitation, Guid
 from osf.models import BaseFileNode
 from osf.models.files import File, Folder
 from addons.wiki.models import NodeWikiPage
+from website import mails
 from website.exceptions import NodeStateError
 from website.util.permissions import ADMIN, PERMISSIONS
 
@@ -1652,7 +1653,9 @@ class NodeForksList(JSONAPIBaseView, generics.ListCreateAPIView, NodeMixin, Node
 
     # overrides ListCreateAPIView
     def perform_create(self, serializer):
-        serializer.save(node=self.get_node())
+        fork = serializer.save(node=self.get_node())
+        user = get_user_auth(self.request).user
+        mails.send_mail(user.email, mails.FORK_COMPLETED, title=fork.title, guid=fork._id, mimetype='html')
 
     # overrides ListCreateAPIView
     def get_parser_context(self, http_request):

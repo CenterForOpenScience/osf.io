@@ -149,6 +149,12 @@ EXTERNAL_LOGIN_CONFIRM_EMAIL_CREATE = Mail(
     'external_confirm_create',
     subject='Open Science Framework Account Verification'
 )
+
+FORK_COMPLETED = Mail(
+    'fork_completed',
+    subject='Your Fork has Completed'
+)
+
 EXTERNAL_LOGIN_CONFIRM_EMAIL_LINK = Mail(
     'external_confirm_link',
     subject='Open Science Framework Account Verification'
