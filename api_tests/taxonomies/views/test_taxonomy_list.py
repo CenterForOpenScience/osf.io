@@ -12,11 +12,11 @@ class TestTaxonomy:
         return SubjectFactory()
 
     @pytest.fixture()
-    def child_one_subject(self, subject):
+    def subject_child_one(self, subject):
         return SubjectFactory(parent=subject)
 
     @pytest.fixture()
-    def child_two_subject(self, subject):
+    def subject_child_two(self, subject):
         return SubjectFactory(parent=subject)
 
     @pytest.fixture()
@@ -35,7 +35,7 @@ class TestTaxonomy:
     def data_subject_list(self, app, res_subject_list):
         return res_subject_list.json['data']
 
-    def test_taxonomy_success(self, subject,  child_one_subject, child_two_subject, subjects, res_subject_list):
+    def test_taxonomy_success(self, subject,  subject_child_one, subject_child_two, subjects, res_subject_list):
         assert len(subjects) > 0  # make sure there are subjects to filter through
         assert res_subject_list.status_code == 200
         assert res_subject_list.content_type == 'application/vnd.api+json'
@@ -54,9 +54,9 @@ class TestTaxonomy:
             if subject.parent:
                 assert subject.parent._id in parents_ids
 
-    def test_taxonomy_filter_top_level(self, app, subject, child_one_subject, child_two_subject, url_subject_list):
+    def test_taxonomy_filter_top_level(self, app, subject, subject_child_one, subject_child_two, url_subject_list):
         top_level_subjects = Subject.objects.filter(parent__isnull=True)
-        top_level_url = url_subject_list + '?filter[parents]=null'
+        top_level_url = '{}?filter[parents]=null'.format(url_subject_list)
 
         res = app.get(top_level_url)
         assert res.status_code == 200
@@ -69,7 +69,7 @@ class TestTaxonomy:
 
     def test_taxonomy_filter_by_parent(self, app, url_subject_list, subject):
         children_subjects = Subject.objects.filter(parent__id=subject.id)
-        children_url = url_subject_list + '?filter[parents]={}'.format(subject._id)
+        children_url = '{}?filter[parents]={}'.format(url_subject_list, subject._id)
 
         res = app.get(children_url)
         assert res.status_code == 200
