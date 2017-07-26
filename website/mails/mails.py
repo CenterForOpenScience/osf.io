@@ -155,6 +155,11 @@ FORK_COMPLETED = Mail(
     subject='Your Fork has Completed'
 )
 
+FORK_FAILED = Mail(
+    'fork_failed',
+    subject='Your Fork has Failed'
+)
+
 EXTERNAL_LOGIN_CONFIRM_EMAIL_LINK = Mail(
     'external_confirm_link',
     subject='Open Science Framework Account Verification'

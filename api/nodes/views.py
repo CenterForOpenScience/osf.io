@@ -1653,9 +1653,14 @@ class NodeForksList(JSONAPIBaseView, generics.ListCreateAPIView, NodeMixin, Node
 
     # overrides ListCreateAPIView
     def perform_create(self, serializer):
-        fork = serializer.save(node=self.get_node())
         user = get_user_auth(self.request).user
-        mails.send_mail(user.email, mails.FORK_COMPLETED, title=fork.title, guid=fork._id, mimetype='html')
+        node = self.get_node()
+        try:
+            fork = serializer.save(node=node)
+            mails.send_mail(user.email, mails.FORK_COMPLETED, title=fork.title, guid=fork._id, mimetype='html')
+        except Exception, exc:
+            mails.send_mail(user.email, mails.FORK_FAILED, title=node.title, mimetype='html')
+            raise exc
 
     # overrides ListCreateAPIView
     def get_parser_context(self, http_request):
