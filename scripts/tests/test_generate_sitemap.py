@@ -12,11 +12,11 @@ class TestGenerateSitemap:
 
     def test_all_links_are_included(self):
         # Create temporary directory for the sitemaps to be generated
-        self.temp_dir = tempfile.mkdtemp()
+        temp_dir = tempfile.mkdtemp()
 
         # Set static folder to the path of temp_dir, so that the generator would store the sitemaps under
         # <path_to_temp_dir>/sitemaps/
-        settings.STATIC_FOLDER = self.temp_dir
+        settings.STATIC_FOLDER = temp_dir
 
         # Test setup
         user_1 = AuthUserFactory()
@@ -66,12 +66,48 @@ class TestGenerateSitemap:
         main()
 
         # Parse the generated XML sitemap file
-        with open(self.temp_dir + '/sitemaps' + '/sitemap_0.xml') as f:
+        with open(temp_dir + '/sitemaps' + '/sitemap_0.xml') as f:
             tree = xml.etree.ElementTree.parse(f)
+
+        # Remove the temp directory
+        shutil.rmtree(temp_dir)
 
         # Get all the urls in the sitemap
         # Note: namespace was defined in the XML file, therefore necessary to include in tag
         namespace = '{http://www.sitemaps.org/schemas/sitemap/0.9}'
         urls = [element.text for element in tree.iter(namespace + 'loc')]
 
+        # Check and see if all urls are included
         assert set(list_of_urls) == set(urls)
+
+    def test_collection_links_not_included(self):
+        # Create temporary directory for the sitemaps to be generated
+        temp_dir = tempfile.mkdtemp()
+
+        # Set static folder to the path of temp_dir, so that the generator would store the sitemaps under
+        # <path_to_temp_dir>/sitemaps/
+        settings.STATIC_FOLDER = temp_dir
+
+        # Generation script requires at least one PreprintProvider with id = osf
+        provider = PreprintProviderFactory(_id='osf', name='osfprovider')
+
+        # Create a collection, whose link should not be included in the sitemap
+        collection = CollectionFactory()
+        collection_link = urljoin(settings.DOMAIN, collection.url)
+
+        # Run the script
+        main()
+
+        # Parse the generated XML sitemap file
+        with open(temp_dir + '/sitemaps' + '/sitemap_0.xml') as f:
+            tree = xml.etree.ElementTree.parse(f)
+
+        # Remove the temp directory
+        shutil.rmtree(temp_dir)
+
+        # Get all the urls in the sitemap
+        # Note: namespace was defined in the XML file, therefore necessary to include in tag
+        namespace = '{http://www.sitemaps.org/schemas/sitemap/0.9}'
+        urls = [element.text for element in tree.iter(namespace + 'loc')]
+
+        assert collection not in urls
