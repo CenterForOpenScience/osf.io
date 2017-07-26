@@ -7,6 +7,7 @@ from osf_tests.factories import (
     AuthUserFactory,
     ProjectFactory,
     NodeFactory,
+    RegistrationFactory,
 )
 
 
@@ -65,6 +66,16 @@ class TestInstitutionNodeList:
         assert public_node._id in ids
         assert user_private_node._id not in ids
         assert private_node._id not in ids
+
+    def test_registration_not_returned(self, app, institution, public_node, institution_node_url):
+        registration = RegistrationFactory(project=public_node, is_public=True)
+        res = app.get(institution_node_url)
+
+        assert res.status_code == 200
+        ids = [each['id'] for each in res.json['data']]
+
+        assert public_node._id in ids
+        assert registration._id not in ids
 
     def test_affiliated_component_with_affiliated_parent_not_returned(self, app, user, institution, public_node, institution_node_url):
         # version < 2.2

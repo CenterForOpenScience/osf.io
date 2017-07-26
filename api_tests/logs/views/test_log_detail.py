@@ -1,142 +1,195 @@
-# -*- coding: utf-8 -*-
+import pytest
 
-from nose.tools import *  # noqa
-
-from tests.base import ApiTestCase
+from api.base.settings.defaults import API_BASE
+from api_tests import utils as api_utils
+from framework.auth.core import Auth
 from osf_tests.factories import (
     ProjectFactory,
     AuthUserFactory,
     NodeFactory,
 )
-
-from framework.auth.core import Auth
-
-from osf.models import NodeLog
 from website.util import permissions as osf_permissions
-from api.base.settings.defaults import API_BASE
-from api_tests import utils as api_utils
 
+@pytest.mark.django_db
+class LogsTestCase:
 
-class LogsTestCase(ApiTestCase):
+    @pytest.fixture()
+    def user_one(self):
+        return AuthUserFactory()
 
-    def setUp(self):
-        super(LogsTestCase, self).setUp()
+    @pytest.fixture()
+    def user_two(self):
+        return AuthUserFactory()
 
-        self.user = AuthUserFactory()
-        self.user_two = AuthUserFactory()
+    @pytest.fixture()
+    def node_private(self, user_one):
+        node_private = ProjectFactory(is_public=False)
+        node_private.add_contributor(user_one, permissions=[osf_permissions.READ], auth=Auth(node_private.creator), log=True, save=True)
+        return node_private
 
-        self.action_set = NodeLog.actions
-        self.node = ProjectFactory(is_public=False)
+    @pytest.fixture()
+    def node_public(self, user_one):
+        node_public = ProjectFactory(is_public=True)
+        node_public.add_contributor(user_one, permissions=[osf_permissions.READ], auth=Auth(node_public.creator), log=True, save=True)
+        return node_public
 
-        self.node.add_contributor(self.user, permissions=[osf_permissions.READ], auth=Auth(self.node.creator), log=True, save=True)
+    @pytest.fixture()
+    def logs_public(self, node_public):
+        return list(node_public.logs.order_by('date'))
 
-        logs = list(self.node.logs.order_by('date'))
-        self.log = logs[0]
-        self.log_add_contributor = logs[1]
+    @pytest.fixture()
+    def log_public(self, logs_public):
+        return logs_public[0]
 
-        self.public_node = ProjectFactory(is_public=True)
-        self.public_node.add_contributor(self.user, permissions=[osf_permissions.READ], auth=Auth(self.public_node.creator), log=True, save=True)
+    @pytest.fixture()
+    def contributor_log_public(self, logs_public):
+        return logs_public[1]
 
-        public_logs = list(self.public_node.logs.order_by('date'))
-        self.public_log = public_logs[0]
-        self.public_log_add_contributor = public_logs[1]
+    @pytest.fixture()
+    def logs_private(self, node_private):
+        return list(node_private.logs.order_by('date'))
 
-        self.node_log_url = '/{}nodes/{}/logs/'.format(API_BASE, self.node._id)
-        self.url = '/{}logs/'.format(API_BASE)
-        self.log_nodes_url = self.url + '{}/nodes/'.format(self.log._id)
-        self.private_log_detail = self.url + '{}/'.format(self.log._id)
-        self.log_public_nodes_url = self.url + '{}/nodes/'.format(self.public_log._id)
-        self.public_log_detail = self.url + '{}/'.format(self.public_log._id)
+    @pytest.fixture()
+    def log_private(self, logs_private):
+        return logs_private[0]
 
+    @pytest.fixture()
+    def contributor_log_private(self, logs_private):
+        return logs_private[1]
 
+    @pytest.fixture()
+    def url_node_private_log(self, node_private):
+        return '/{}nodes/{}/logs/'.format(API_BASE, node_private._id)
+
+    @pytest.fixture()
+    def url_logs(self):
+        return '/{}logs/'.format(API_BASE)
+
+    @pytest.fixture()
+    def url_log_private_nodes(self, log_private, url_logs):
+        return '{}{}/nodes/'.format(url_logs, log_private._id)
+
+    @pytest.fixture()
+    def url_log_public_nodes(self, log_public, url_logs):
+        return '{}{}/nodes/'.format(url_logs, log_public._id)
+
+    @pytest.fixture()
+    def url_log_detail_private(self, log_private, url_logs):
+        return '{}{}/'.format(url_logs, log_private._id)
+
+    @pytest.fixture()
+    def url_log_detail_public(self, log_public, url_logs):
+        return '{}{}/'.format(url_logs, log_public._id)
+
+@pytest.mark.django_db
 class TestLogDetail(LogsTestCase):
 
-    def test_log_detail_returns_data(self):
-        res = self.app.get(self.private_log_detail, auth=self.user.auth)
-        assert_equal(res.status_code, 200)
+    def test_log_detail_private(self, app, url_log_detail_private, user_one, user_two, log_private):
+        #test_log_detail_returns_data
+        res = app.get(url_log_detail_private, auth=user_one.auth)
+        assert res.status_code == 200
         json_data = res.json['data']
-        assert_equal(json_data['id'], self.log._id)
+        assert json_data['id'] == log_private._id
 
-    def test_log_detail_private_not_logged_in_cannot_access_logs(self):
-        res = self.app.get(self.private_log_detail, expect_errors=True)
-        assert_equal(res.status_code, 401)
+        #test_log_detail_private_not_logged_in_cannot_access_logs
+        res = app.get(url_log_detail_private, expect_errors=True)
+        assert res.status_code == 401
 
-    def test_log_detail_private_non_contributor_cannot_access_logs(self):
-        res = self.app.get(self.private_log_detail, auth=self.user_two.auth, expect_errors=True)
-        assert_equal(res.status_code, 403)
+        #test_log_detail_private_non_contributor_cannot_access_logs
+        res = app.get(url_log_detail_private, auth=user_two.auth, expect_errors=True)
+        assert res.status_code == 403
 
-    def test_log_detail_public_not_logged_in_can_access_logs(self):
-        res = self.app.get(self.public_log_detail, expect_errors=True)
-        assert_equal(res.status_code, 200)
-        json_data = res.json['data']
-        assert_equal(json_data['id'], self.public_log._id)
+    def test_log_detail_public(self, app, url_log_detail_public, log_public, user_two, user_one):
+        #test_log_detail_public_not_logged_in_can_access_logs
+        res = app.get(url_log_detail_public, expect_errors=True)
+        assert res.status_code == 200
+        data = res.json['data']
+        assert data['id'] == log_public._id
 
-    def test_log_detail_public_non_contributor_can_access_logs(self):
-        res = self.app.get(self.public_log_detail, auth=self.user_two.auth, expect_errors=True)
-        assert_equal(res.status_code, 200)
-        json_data = res.json['data']
-        assert_equal(json_data['id'], self.public_log._id)
+        #test_log_detail_public_non_contributor_can_access_logs
+        res = app.get(url_log_detail_public, auth=user_two.auth, expect_errors=True)
+        assert res.status_code == 200
+        data = res.json['data']
+        assert data['id'] == log_public._id
 
-    def test_log_detail_data_format_api(self):
-        res = self.app.get(self.public_log_detail + '?format=api', auth=self.user.auth)
-        assert_equal(res.status_code, 200)
-        assert_in(self.public_log._id, unicode(res.body, 'utf-8'))
+        #test_log_detail_data_format_api
+        res = app.get('{}?format=api'.format(url_log_detail_public), auth=user_one.auth)
+        assert res.status_code == 200
+        assert log_public._id in unicode(res.body, 'utf-8')
 
+@pytest.mark.django_db
+class TestNodeFileLogDetail:
 
-class TestNodeFileLogDetail(ApiTestCase):
+    @pytest.fixture()
+    def user_one(self):
+        return AuthUserFactory()
 
-    def setUp(self):
-        super(TestNodeFileLogDetail, self).setUp()
+    @pytest.fixture()
+    def user_two(self):
+        return AuthUserFactory()
 
-        self.user_one = AuthUserFactory()
-        self.user_two = AuthUserFactory()
+    @pytest.fixture()
+    def node(self, user_one, user_two):
+        node = ProjectFactory(creator=user_one)
+        node.add_contributor(user_two)
+        return node
 
-        self.node = ProjectFactory(creator=self.user_one)
-        self.node.add_contributor(self.user_two)
+    @pytest.fixture()
+    def component(self, user_one, node):
+        return NodeFactory(parent=node, creator=user_one)
 
-        self.component = NodeFactory(parent=self.node, creator=self.user_one)
+    @pytest.fixture()
+    def file_component(self, user_one, component):
+        return api_utils.create_test_file(node=component, user=user_one)
 
-        self.file = api_utils.create_test_file(node=self.component, user=self.user_one)
-        self.node.add_log(
+    @pytest.fixture()
+    def url_node_logs(self, node):
+        return '/{}nodes/{}/logs/'.format(API_BASE, node._id)
+
+    @pytest.fixture()
+    def url_component_logs(self, component):
+        return '/{}nodes/{}/logs/'.format(API_BASE, component._id)
+
+    @pytest.fixture()
+    def node_with_log(self, node, user_one, file_component, component):
+        node.add_log(
             'osf_storage_file_moved',
-            auth=Auth(self.user_one),
+            auth=Auth(user_one),
             params={
-                'node': self.node._id,
-                'project': self.node.parent_id,
-                'path': self.file.materialized_path,
+                'node': node._id,
+                'project': node.parent_id,
+                'path': file_component.materialized_path,
                 'source': {
-                    'materialized': self.file.materialized_path,
+                    'materialized': file_component.materialized_path,
                     'addon': 'osfstorage',
                     'node': {
-                        '_id': self.component._id,
-                        'url': self.component.url,
-                        'title': self.component.title,
+                        '_id': component._id,
+                        'url': component.url,
+                        'title': component.title,
                     }
                 },
                 'destination': {
-                    'materialized': self.file.materialized_path,
+                    'materialized': file_component.materialized_path,
                     'addon': 'osfstorage',
                     'node': {
-                        '_id': self.node._id,
-                        'url': self.node.url,
-                        'title': self.node.title,
+                        '_id': node._id,
+                        'url': node.url,
+                        'title': node.title,
                     }
                 }
             },
         )
+        node.save()
+        return node
 
-        self.node.save()
+    def test_title_visibility_in_file_move(self, app, url_node_logs, user_two, component, node_with_log):
+        #test_title_not_hidden_from_contributor_in_file_move
+        res = app.get(url_node_logs, auth=user_two.auth)
+        assert res.status_code == 200
+        assert res.json['data'][0]['attributes']['params']['destination']['node_title'] == node_with_log.title
 
-        self.node_logs_url = '/{}nodes/{}/logs/'.format(API_BASE, self.node._id)
-        self.component_logs_url = '/{}nodes/{}/logs/'.format(API_BASE, self.component._id)
-
-    def test_title_not_hidden_from_contributor_in_file_move(self):
-        res = self.app.get(self.node_logs_url, auth=self.user_two.auth)
-        assert_equal(res.status_code, 200)
-        assert_equal(res.json['data'][0]['attributes']['params']['destination']['node_title'], self.node.title)
-
-    def test_title_hidden_from_non_contributor_in_file_move(self):
-        res = self.app.get(self.node_logs_url, auth=self.user_two.auth)
-        assert_equal(res.status_code, 200)
-        assert_not_in(self.component.title, res.json['data'])
-        assert_equal(res.json['data'][0]['attributes']['params']['source']['node_title'], 'Private Component')
+        #test_title_hidden_from_non_contributor_in_file_move
+        res = app.get(url_node_logs, auth=user_two.auth)
+        assert res.status_code == 200
+        assert component.title not in res.json['data']
+        assert res.json['data'][0]['attributes']['params']['source']['node_title'] == 'Private Component'
