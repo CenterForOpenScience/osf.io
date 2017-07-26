@@ -1,6 +1,7 @@
 import logging
 
-from django.db import transaction, Q
+from django.db import transaction
+from django.db.models import Q
 from django.utils import timezone
 
 from framework.celery_tasks import app as celery_app
