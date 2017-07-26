@@ -789,9 +789,10 @@ def invite_contributor_post(node, **kwargs):
             msg = 'User with this email address is already a contributor to this project.'
             return {'status': 400, 'message': msg}, 400
         elif not user.is_confirmed:
-            user.fullname = fullname
-            user.update_guessed_names()
-            user.unclaimed_records[node._id]['name'] = fullname
+            try:
+                user.unclaimed_records[node._id]['name'] = fullname
+            except KeyError:
+                pass
             user.save()
             serialized = profile_utils.serialize_unregistered(fullname, email)
         else:

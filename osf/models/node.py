@@ -1200,13 +1200,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         :raises: DuplicateEmailError if user with given email is already in the database.
         """
         # Create a new user record if you weren't passed an existing user
-        if existing_user:
-            contributor = existing_user
-            if not contributor.is_confirmed:
-                contributor.fullname = fullname
-                contributor.update_guessed_names()
-        else:
-            contributor = OSFUser.create_unregistered(fullname=fullname, email=email)
+        contributor = existing_user if existing_user else OSFUser.create_unregistered(fullname=fullname, email=email)
 
         contributor.add_unclaimed_record(node=self, referrer=auth.user,
                                          given_name=fullname, email=email)
@@ -1218,8 +1212,16 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
             # only raise error if user is registered.
             if contributor.is_registered or self.is_contributor(contributor):
                 raise
-            contributor.add_unclaimed_record(node=self, referrer=auth.user,
-                                             given_name=fullname, email=email)
+            try:
+                record = contributor.unclaimed_records[self._id]
+            except KeyError:
+                record = None
+            if record:
+                record['name'] = fullname
+            else:
+                contributor.add_unclaimed_record(
+                    node=self, referrer=auth.user, given_name=fullname, email=email
+                )
             contributor.save()
 
         self.add_contributor(
