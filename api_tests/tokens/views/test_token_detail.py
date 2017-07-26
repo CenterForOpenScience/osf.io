@@ -1,6 +1,6 @@
-import pytest
 import copy
 import mock
+import pytest
 
 from osf.models import ApiOAuth2PersonalToken
 from osf_tests.factories import (
@@ -39,7 +39,7 @@ class TestTokenDetail:
 
     @pytest.fixture()
     def url_token_detail(self, user_one, token_user_one):
-        path = "tokens/{}/".format(token_user_one._id)
+        path = 'tokens/{}/'.format(token_user_one._id)
         return api_v2_url(path, base_route='/')
 
     @pytest.fixture()
@@ -48,16 +48,16 @@ class TestTokenDetail:
 
     def test_token_detail_who_can_view(self, app, url_token_detail, user_one, user_two, token_user_one):
 
-        #test_owner_can_view(self, app, url_token_detail, user_one, token_user_one):
+        #test_owner_can_view
         res = app.get(url_token_detail, auth=user_one.auth)
         assert res.status_code == 200
         assert res.json['data']['id'] == token_user_one._id
 
-        #test_non_owner_cant_view(self, app, url_token_detail, user_two):
+        #test_non_owner_cant_view
         res = app.get(url_token_detail, auth=user_two.auth, expect_errors=True)
         assert res.status_code == 403
 
-        #test_returns_401_when_not_logged_in(self, app, url_token_detail):
+        #test_returns_401_when_not_logged_in
         res = app.get(url_token_detail, expect_errors=True)
         assert res.status_code == 401
 
@@ -78,7 +78,7 @@ class TestTokenDetail:
     def test_updating_one_field_should_not_blank_others_on_patch_update(self, mock_revoke, app, token_user_one, url_token_detail, user_one):
         mock_revoke.return_value = True
         user_one_token = token_user_one
-        new_name = "The token formerly known as Prince"
+        new_name = 'The token formerly known as Prince'
         res = app.patch_json_api(url_token_detail,
                              {'data': {'attributes':
                                   {'name': new_name, 'scopes':'osf.full_write'},
@@ -98,10 +98,10 @@ class TestTokenDetail:
     @mock.patch('framework.auth.cas.CasClient.revoke_tokens')
     def test_updating_an_instance_does_not_change_the_number_of_instances(self, mock_revoke, app, url_token_detail, url_token_list, token_user_one, user_one):
         mock_revoke.return_value = True
-        new_name = "The token formerly known as Prince"
+        new_name = 'The token formerly known as Prince'
         res = app.patch_json_api(url_token_detail,
                                     {'data': {
-                                        'attributes': {"name": new_name, 'scopes':'osf.full_write'},
+                                        'attributes': {'name': new_name, 'scopes':'osf.full_write'},
                                         'id': token_user_one._id,
                                         'type': 'tokens'}}, auth=user_one.auth)
         assert res.status_code == 200
@@ -140,58 +140,58 @@ class TestTokenDetail:
 
     def test_token_detail_crud_with_wrong_payload(self, app, url_token_list, url_token_detail, token_user_one, user_one, user_two):
 
-        #test_non_owner_cant_delete(self, app, url_token_detail, user_two):
+        #test_non_owner_cant_delete
         res = app.delete(url_token_detail,
                         auth=user_two.auth,
                         expect_errors=True)
         assert res.status_code == 403
 
-        #test_create_with_admin_scope_fails(self, app, url_token_list, user_one):
+        #test_create_with_admin_scope_fails
         injected_scope = post_payload(name='A shiny invalid token', scopes='osf.admin')
         res = app.post_json_api(url_token_list, injected_scope, auth=user_one.auth, expect_errors=True)
         assert res.status_code == 400
 
-        #test_create_with_fake_scope_fails(self, app, url_token_list, user_one):
+        #test_create_with_fake_scope_fails
         nonsense_scope = post_payload(name='A shiny invalid token', scopes='osf.nonsense')
         res = app.post_json_api(url_token_list, nonsense_scope, auth=user_one.auth, expect_errors=True)
         assert res.status_code == 400
 
-        #test_update_with_admin_scope_fails(self, app, url_token_detail, user_one):
+        #test_update_with_admin_scope_fails
         injected_scope = post_payload(name='A shiny invalid token', scopes='osf.admin')
         res = app.put_json_api(url_token_detail, injected_scope, auth=user_one.auth, expect_errors=True)
         assert res.status_code == 400
 
-        #test_update_with_fake_scope_fails(self, app, url_token_detail, user_one):
+        #test_update_with_fake_scope_fails
         nonsense_scope = post_payload(name='A shiny invalid token', scopes='osf.nonsense')
         res = app.put_json_api(url_token_detail, nonsense_scope, auth=user_one.auth, expect_errors=True)
         assert res.status_code == 400
 
-        #test_update_token_incorrect_type(self, app, url_token_detail, user_one):
+        #test_update_token_incorrect_type
         incorrect_type = post_payload(type_payload='Wrong type.')
         res = app.put_json_api(url_token_detail, incorrect_type, auth=user_one.auth, expect_errors=True)
         assert res.status_code == 409
 
-        #test_update_token_no_type(self, app, url_token_detail, user_one):
+        #test_update_token_no_type
         missing_type = post_payload(type_payload='')
         res = app.put_json_api(url_token_detail, missing_type, auth=user_one.auth, expect_errors=True)
         assert res.status_code == 400
 
-        #test_update_token_no_attributes(self, app, token_user_one, url_token_detail, user_one):
+        #test_update_token_no_attributes
         payload = {'id': token_user_one._id, 'type': 'tokens', 'name': 'The token formerly known as Prince'}
         res = app.put_json_api(url_token_detail, payload, auth=user_one.auth, expect_errors=True)
         assert res.status_code == 400
 
-        #test_partial_update_token_incorrect_type(self, app, url_token_detail, user_one):
+        #test_partial_update_token_incorrect_type
         incorrect_type = post_payload(type_payload='Wrong type.')
         res = app.patch_json_api(url_token_detail, incorrect_type, auth=user_one.auth, expect_errors=True)
         assert res.status_code == 409
 
-        #test_partial_update_token_no_type(self, app, url_token_detail, user_one):
+        #test_partial_update_token_no_type
         missing_type = post_payload(type_payload='')
         res = app.patch_json_api(url_token_detail, missing_type, auth=user_one.auth, expect_errors=True)
         assert res.status_code == 400
 
-        #test_partial_update_token_no_attributes(self, app, token_user_one, url_token_detail, user_one):
+        #test_partial_update_token_no_attributes
         payload = {
             'data':
                 {'id': token_user_one._id,
