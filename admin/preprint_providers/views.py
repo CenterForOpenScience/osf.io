@@ -179,7 +179,7 @@ class ExportPreprintProvider(PermissionRequiredMixin, View):
         return response
 
     def serialize_subjects(self, provider):
-        if provider._id != "osf":
+        if provider._id != 'osf':
             result = {}
             result['include'] = []
             result['exclude'] = []
@@ -235,7 +235,7 @@ class ImportPreprintProvider(PermissionRequiredMixin, View):
             # make sure not to import an exported access token for SHARE
             cleaned_result = {key: value for key, value in file_json['fields'].iteritems() if key not in FIELDS_TO_NOT_IMPORT_EXPORT}
             preprint_provider = self.create_or_update_provider(cleaned_result)
-            return redirect('preprint_providers:detail', preprint_provider_id = preprint_provider.id)
+            return redirect('preprint_providers:detail', preprint_provider_id=preprint_provider.id)
 
     def parse_file(self, f):
         parsed_file = ''
