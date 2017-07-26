@@ -619,6 +619,7 @@ class TestPreprintSaveShareHook(OsfTestCase):
         self.preprint.is_published = True
         self.preprint.set_subjects([[self.subject_two._id]], auth=self.auth)
         assert mock_on_preprint_updated.called
+        assert {'old_subjects': [self.subject.id]} in mock_on_preprint_updated.call_args
 
     @mock.patch('website.preprints.tasks.on_preprint_updated.s')
     def test_save_unpublished_subject_change_not_called(self, mock_on_preprint_updated):

@@ -103,9 +103,9 @@ class CitationsUserTestCase(OsfTestCase):
         )
         if user.is_registered:
             assert bool(
-                user.csl_name(user._id) ==
+                user.csl_name() ==
                 {
-                    'given': user.given_name,
+                    'given': user.csl_given_name,
                     'family': user.family_name,
                 }
             )
@@ -115,9 +115,8 @@ class CitationsUserTestCase(OsfTestCase):
         referrer = UserFactory()
         project = NodeFactory(creator=referrer)
         user = UnregUserFactory()
-        given_name = 'Fredd Merkury'
         user.add_unclaimed_record(node=project,
-            given_name=given_name, referrer=referrer,
+            given_name=user.fullname, referrer=referrer,
             email=fake.email())
         user.save()
         name = user.unclaimed_records[project._primary_key]['name'].split(' ')
