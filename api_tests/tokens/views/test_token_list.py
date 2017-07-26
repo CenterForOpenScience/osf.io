@@ -1,6 +1,6 @@
-import pytest
 import copy
 import mock
+import pytest
 
 from osf.models import ApiOAuth2PersonalToken
 from osf_tests.factories import (
@@ -34,7 +34,7 @@ class TestTokenList:
         return api_v2_url('tokens/', base_route='/')
 
     @pytest.fixture()
-    def sample_data(self):
+    def data_sample(self):
         return {
             'data': {
                 'type': 'tokens',
@@ -59,7 +59,7 @@ class TestTokenList:
     def test_deleting_token_should_hide_it_from_api_list(self, mock_method, app, user_one, tokens_user_one, url_token_list):
         mock_method.return_value(True)
         api_token = tokens_user_one[0]
-        url = api_v2_url("tokens/{}/".format(api_token._id), base_route='/')
+        url = api_v2_url('tokens/{}/'.format(api_token._id), base_route='/')
 
         res = app.delete(url, auth=user_one.auth)
         assert res.status_code == 204
@@ -68,32 +68,32 @@ class TestTokenList:
         assert res.status_code == 200
         assert (len(res.json['data']) == len(tokens_user_one) - 1)
 
-    def test_created_tokens_are_tied_to_request_user_with_data_specified(self, app, url_token_list, sample_data, user_one):
-        res = app.post_json_api(url_token_list, sample_data, auth=user_one.auth)
+    def test_created_tokens_are_tied_to_request_user_with_data_specified(self, app, url_token_list, data_sample, user_one):
+        res = app.post_json_api(url_token_list, data_sample, auth=user_one.auth)
         assert res.status_code == 201
 
         assert res.json['data']['attributes']['owner'] == user_one._id
         # Some fields aren't writable; make sure user can't set these
-        assert (res.json['data']['attributes']['token_id'] != sample_data['data']['attributes']['token_id'])
+        assert (res.json['data']['attributes']['token_id'] != data_sample['data']['attributes']['token_id'])
 
-    def test_create_returns_token_id(self, app, url_token_list, sample_data, user_one):
-        res = app.post_json_api(url_token_list, sample_data, auth=user_one.auth)
+    def test_create_returns_token_id(self, app, url_token_list, data_sample, user_one):
+        res = app.post_json_api(url_token_list, data_sample, auth=user_one.auth)
         assert res.status_code == 201
         assert res.json['data']['attributes'].has_key('token_id')
 
-    def test_field_content_is_sanitized_upon_submission(self, app, sample_data, user_one, url_token_list):
-        bad_text = "<a href='http://sanitized.name'>User_text</a>"
+    def test_field_content_is_sanitized_upon_submission(self, app, data_sample, user_one, url_token_list):
+        bad_text = '<a href='http://sanitized.name'>User_text</a>'
         cleaned_text = sanitize.strip_html(bad_text)
 
-        payload = copy.deepcopy(sample_data)
+        payload = copy.deepcopy(data_sample)
         payload['data']['attributes']['name'] = bad_text
 
         res = app.post_json_api(url_token_list, payload, auth=user_one.auth)
         assert res.status_code == 201
         assert res.json['data']['attributes']['name'] == cleaned_text
 
-    def test_created_tokens_show_up_in_api_list(self, app, url_token_list, sample_data, user_one, tokens_user_one):
-        res = app.post_json_api(url_token_list, sample_data, auth=user_one.auth)
+    def test_created_tokens_show_up_in_api_list(self, app, url_token_list, data_sample, user_one, tokens_user_one):
+        res = app.post_json_api(url_token_list, data_sample, auth=user_one.auth)
         assert res.status_code == 201
 
         res = app.get(url_token_list, auth=user_one.auth)
@@ -103,20 +103,20 @@ class TestTokenList:
         res = app.get(url_token_list, expect_errors=True)
         assert res.status_code == 401
 
-    def test_cannot_create_admin_token(self, app, url_token_list, sample_data, user_one):
-        sample_data['data']['attributes']['scopes'] = 'osf.admin'
+    def test_cannot_create_admin_token(self, app, url_token_list, data_sample, user_one):
+        data_sample['data']['attributes']['scopes'] = 'osf.admin'
         res = app.post_json_api(url_token_list,
-            sample_data,
+            data_sample,
             auth=user_one.auth,
             expect_errors=True
         )
         assert res.status_code == 400
         assert res.json['errors'][0]['detail'] == 'User requested invalid scope'
 
-    def test_cannot_create_usercreate_token(self, app, url_token_list, sample_data, user_one):
-        sample_data['data']['attributes']['scopes'] = 'osf.users.create'
+    def test_cannot_create_usercreate_token(self, app, url_token_list, data_sample, user_one):
+        data_sample['data']['attributes']['scopes'] = 'osf.users.create'
         res = app.post_json_api(url_token_list,
-            sample_data,
+            data_sample,
             auth=user_one.auth,
             expect_errors=True
         )
