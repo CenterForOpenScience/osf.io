@@ -7,7 +7,7 @@ import mock
 import pytest
 from nose.tools import *  # flake8: noqa
 
-from framework.auth import cas, core
+from framework.auth import cas, core, oauth_scopes
 from website.util import api_v2_url
 from addons.twofactor.tests import _valid_code
 from website.settings import API_DOMAIN
@@ -248,9 +248,9 @@ class TestOAuthScopedAccess(ApiTestCase):
 
     @mock.patch('framework.auth.cas.CasClient.profile')
     def test_user_email_scope_can_read_email(self, mock_user_info):
-        mock_user_info.return_value = self._scoped_response(['osf.users.user_email', 'osf.users.profile_read'])
+        mock_user_info.return_value = self._scoped_response(['osf.users.profile_read', 'osf.users.email_read'])
         url = api_v2_url('users/me/', base_route='/', base_prefix='v2/')
-        res = self.app.get(url, auth='some_valid_token', auth_type='jwt', expect_errors=True)
+        res = self.app.get(url, auth='some_valid_token', auth_type='jwt')
         assert_equal(res.status_code, 200)
         assert_equal(res.json['data']['attributes']['email'], self.user.username)
 
@@ -258,16 +258,16 @@ class TestOAuthScopedAccess(ApiTestCase):
     def test_non_user_email_scope_cannot_read_email(self, mock_user_info):
         mock_user_info.return_value = self._scoped_response(['osf.users.profile_read'])
         url = api_v2_url('users/me/', base_route='/', base_prefix='v2/')
-        res = self.app.get(url, auth='some_valid_token', auth_type='jwt', expect_errors=True)
+        res = self.app.get(url, auth='some_valid_token', auth_type='jwt')
         assert_equal(res.status_code, 200)
         assert_not_in('email', res.json['data']['attributes'])
         assert_not_in(self.user.username, res.json)
 
     @mock.patch('framework.auth.cas.CasClient.profile')
     def test_user_email_scope_cannot_read_other_email(self, mock_user_info):
-        mock_user_info.return_value = self._scoped_response(['osf.users.user_email', 'osf.users.profile_read'])
+        mock_user_info.return_value = self._scoped_response(['osf.users.profile_read', 'osf.users.email_read'])
         url = api_v2_url('users/{}/'.format(self.user2._id), base_route='/', base_prefix='v2/')
-        res = self.app.get(url, auth='some_valid_token', auth_type='jwt', expect_errors=True)
+        res = self.app.get(url, auth='some_valid_token', auth_type='jwt')
         assert_equal(res.status_code, 200)
         assert_not_in('email', res.json['data']['attributes'])
         assert_not_in(self.user2.username, res.json)

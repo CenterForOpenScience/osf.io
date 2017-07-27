@@ -30,7 +30,8 @@ class CoreScopes(object):
     USERS_READ = 'users_read'
     USERS_WRITE = 'users_write'
     USERS_CREATE = 'users_create'
-    USERS_EMAIL = 'users_email'
+
+    USER_EMAIL_READ = 'users.email_read'
 
     USER_ADDON_READ = 'users.addon_read'
 
@@ -121,13 +122,15 @@ class ComposedScopes(object):
     # All views should be based on selections from CoreScopes, above
 
     # Users collection
-    USERS_READ = (CoreScopes.USERS_READ, CoreScopes.ALWAYS_PUBLIC, )
+    USERS_READ = (CoreScopes.USERS_READ, )
     USERS_WRITE = USERS_READ + (CoreScopes.USERS_WRITE,)
     USERS_CREATE = USERS_READ + (CoreScopes.USERS_CREATE, )
-    USERS_EMAIL = (CoreScopes.USERS_EMAIL, )
+
+    # User extensions
+    USER_EMAIL_READ = (CoreScopes.USER_EMAIL_READ, )
 
     # Applications collection
-    APPLICATIONS_READ = (CoreScopes.APPLICATIONS_READ, CoreScopes.ALWAYS_PUBLIC, )
+    APPLICATIONS_READ = (CoreScopes.APPLICATIONS_READ, )
     APPLICATIONS_WRITE = APPLICATIONS_READ + (CoreScopes.APPLICATIONS_WRITE,)
 
     # Tokens collection
@@ -189,7 +192,7 @@ class ComposedScopes(object):
 
     # Admin permissions- includes functionality not intended for third-party use
     ADMIN_LEVEL = FULL_WRITE + APPLICATIONS_WRITE + TOKENS_WRITE + COMMENT_REPORTS_WRITE + USERS_CREATE +\
-                    (CoreScopes.USER_ADDON_READ, CoreScopes.NODE_ADDON_READ, CoreScopes.NODE_ADDON_WRITE, )
+                    (CoreScopes.USER_EMAIL_READ, CoreScopes.USER_ADDON_READ, CoreScopes.NODE_ADDON_READ, CoreScopes.NODE_ADDON_WRITE, )
 
 # List of all publicly documented scopes, mapped to composed scopes defined above.
 #   Return as sets to enable fast comparisons of provided scopes vs those required by a given node
@@ -210,9 +213,9 @@ public_scopes = {
 
 if settings.DEV_MODE:
     public_scopes.update({
-        'osf.users.email_read': scope(parts_=frozenset(ComposedScopes.USERS_EMAIL),
-                                    description='Read your primary email address.',
-                                    is_public=True),
+        'osf.users.email_read': scope(parts_=frozenset(ComposedScopes.USER_EMAIL_READ),
+                                          description='Read your primary email address.',
+                                          is_public=True),
         'osf.users.profile_write': scope(parts_=frozenset(ComposedScopes.USERS_WRITE),
                                      description='Read and edit your profile data',
                                      is_public=True),
