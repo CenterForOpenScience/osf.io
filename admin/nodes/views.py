@@ -244,7 +244,7 @@ class NodeSpamList(PermissionRequiredMixin, ListView):
         query = (
             Q('spam_status', 'eq', self.SPAM_STATE)
         )
-        return Node.find(query).sort(self.ordering)
+        return Node.find(query).order_by(self.ordering)
 
     def get_context_data(self, **kwargs):
         query_set = kwargs.pop('object_list', self.object_list)

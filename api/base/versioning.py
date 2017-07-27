@@ -105,3 +105,18 @@ class BaseVersioning(drf_versioning.BaseVersioning):
         return utils.absolute_reverse(
             viewname, query_kwargs=query_kwargs, args=args, kwargs=kwargs
         )
+
+class DeprecatedEndpointMixin(object):
+    @property
+    def min_version(self):
+        return '2.0'
+
+    @property
+    def max_version(self):
+        raise NotImplementedError('Deprecated endpoints must define `max_version`')
+
+    def determine_version(self, request, *args, **kwargs):
+        version, scheme = super(DeprecatedEndpointMixin, self).determine_version(request, *args, **kwargs)
+        if utils.is_deprecated(version, self.min_version, self.max_version):
+            raise drf_exceptions.NotFound()
+        return version, scheme

@@ -1,18 +1,14 @@
-import pytest
 import mock
-
 from nose.tools import *  # flake8: noqa
+import pytest
 
 from addons.github.models import GithubFile
-from framework.auth.core import Auth
 from api.base.settings.defaults import API_BASE
+from api_tests import utils as test_utils
 from api_tests.preprints.filters.test_filters import PreprintsListFilteringMixin
 from api_tests.preprints.views.test_preprint_list_mixin import PreprintIsPublishedListMixin, PreprintIsValidListMixin
-from website.util import permissions
+from framework.auth.core import Auth
 from osf.models import PreprintService, Node
-from website.project import signals as project_signals
-from tests.base import ApiTestCase, capture_signals
-from api_tests import utils as test_utils
 from osf_tests.factories import (
     ProjectFactory,
     PreprintFactory,
@@ -20,6 +16,9 @@ from osf_tests.factories import (
     SubjectFactory,
     PreprintProviderFactory
 )
+from tests.base import ApiTestCase, capture_signals
+from website.project import signals as project_signals
+from website.util import permissions
 
 def build_preprint_create_payload(node_id=None, provider_id=None, file_id=None, attrs={}):
     payload = {
@@ -76,27 +75,46 @@ class TestPreprintList(ApiTestCase):
         assert_in(self.preprint._id, ids)
         assert_not_in(self.project._id, ids)
 
-class TestPreprintsListFiltering(PreprintsListFilteringMixin, ApiTestCase):
+class TestPreprintsListFiltering(PreprintsListFilteringMixin):
 
-    def setUp(self):
-        self.mock_change_identifier = mock.patch('website.identifiers.client.EzidClient.change_status_identifier')
-        self.mock_change_identifier.start()
-        self.user = AuthUserFactory()
-        self.provider = PreprintProviderFactory(name='Sockarxiv')
-        self.provider_two = PreprintProviderFactory(name='Piratearxiv')
-        self.provider_three = self.provider
-        self.project = ProjectFactory(creator=self.user)
-        self.project_two = ProjectFactory(creator=self.user)
-        self.project_three = ProjectFactory(creator=self.user)
-        self.url = '/{}preprints/?version=2.2&'.format(API_BASE)
-        super(TestPreprintsListFiltering, self).setUp()
+    @pytest.fixture()
+    def user(self):
+        return AuthUserFactory()
 
-    def test_provider_filter_equals_returns_one(self):
-        expected = [self.preprint_two._id]
-        res = self.app.get('{}{}'.format(self.provider_url, self.provider_two._id), auth=self.user.auth)
+    @pytest.fixture()
+    def provider_one(self):
+        return PreprintProviderFactory(name='Sockarxiv')
+
+    @pytest.fixture()
+    def provider_two(self):
+        return PreprintProviderFactory(name='Piratearxiv')
+
+    @pytest.fixture()
+    def provider_three(self, provider_one):
+        return provider_one
+
+    @pytest.fixture()
+    def project_one(self, user):
+        return ProjectFactory(creator=user)
+
+    @pytest.fixture()
+    def project_two(self, user):
+        return ProjectFactory(creator=user)
+
+    @pytest.fixture()
+    def project_three(self, user):
+        return ProjectFactory(creator=user)
+
+    @pytest.fixture()
+    def url(self):
+        return '/{}preprints/?version=2.2&'.format(API_BASE)
+
+    @mock.patch('website.identifiers.client.EzidClient.change_status_identifier')
+    def test_provider_filter_equals_returns_one(self, mock_change_identifier, app, user, provider_two, preprint_two, provider_url):
+        expected = [preprint_two._id]
+        res = app.get('{}{}'.format(provider_url, provider_two._id), auth=user.auth)
         actual = [preprint['id'] for preprint in res.json['data']]
-        assert_equal(expected, actual)
-
+        assert expected == actual
 
 class TestPreprintCreate(ApiTestCase):
     def setUp(self):
@@ -123,7 +141,8 @@ class TestPreprintCreate(ApiTestCase):
 
         assert_equal(res.status_code, 201)
 
-    def test_create_preprint_from_private_project(self):
+    @mock.patch('website.preprints.tasks.get_and_set_preprint_identifiers.si')
+    def test_create_preprint_from_private_project(self, mock_create_identifiers):
         private_project_payload = build_preprint_create_payload(self.private_project._id, self.provider._id, self.file_one_private_project._id, attrs={
                 'subjects': [[SubjectFactory()._id]],
                 'is_published': True
@@ -241,7 +260,8 @@ class TestPreprintCreate(ApiTestCase):
         assert_equal(res.status_code, 400)
         assert_equal(res.json['errors'][0]['detail'], 'Cannot create a preprint from a deleted node.')
 
-    def test_create_preprint_adds_log_if_published(self):
+    @mock.patch('website.preprints.tasks.get_and_set_preprint_identifiers.si')
+    def test_create_preprint_adds_log_if_published(self, mock_get_identifiers):
         public_project_payload = build_preprint_create_payload(
             self.public_project._id,
             self.provider._id,
@@ -259,8 +279,9 @@ class TestPreprintCreate(ApiTestCase):
         assert_equal(log.action, 'preprint_initiated')
         assert_equal(log.params.get('preprint'), preprint_id)
 
-    @mock.patch('website.preprints.tasks.on_preprint_updated.s')
-    def test_create_preprint_from_project_published_hits_update(self, mock_on_preprint_updated):
+    @mock.patch('website.preprints.tasks.get_and_set_preprint_identifiers.si')
+    @mock.patch('website.preprints.tasks.on_preprint_updated.si')
+    def test_create_preprint_from_project_published_hits_update(self, mock_on_preprint_updated, mock_get_identifiers):
         private_project_payload = build_preprint_create_payload(self.private_project._id, self.provider._id, self.file_one_private_project._id, attrs={
                 'subjects': [[SubjectFactory()._id]],
                 'is_published': True
@@ -268,7 +289,7 @@ class TestPreprintCreate(ApiTestCase):
         res = self.app.post_json_api(self.url, private_project_payload, auth=self.user.auth)
         assert mock_on_preprint_updated.called
 
-    @mock.patch('website.preprints.tasks.on_preprint_updated.s')
+    @mock.patch('website.preprints.tasks.on_preprint_updated.si')
     def test_create_preprint_from_project_unpublished_does_not_hit_update(self, mock_on_preprint_updated):
         private_project_payload = build_preprint_create_payload(self.private_project._id, self.provider._id, self.file_one_private_project._id, attrs={
                 'subjects': [[SubjectFactory()._id]],

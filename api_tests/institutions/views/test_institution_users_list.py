@@ -1,29 +1,31 @@
-from nose.tools import *  # flake8: noqa
-
-from tests.base import ApiTestCase
-from osf_tests.factories import InstitutionFactory, UserFactory
+import pytest
 
 from api.base.settings.defaults import API_BASE
+from osf_tests.factories import (
+    InstitutionFactory,
+    UserFactory,
+)
 
-class TestInstitutionUsersList(ApiTestCase):
-    def setUp(self):
-        super(TestInstitutionUsersList, self).setUp()
-        self.institution = InstitutionFactory()
-        self.user1 = UserFactory()
-        self.user1.affiliated_institutions.add(self.institution)
-        self.user1.save()
-        self.user2 = UserFactory()
-        self.user2.affiliated_institutions.add(self.institution)
-        self.user2.save()
+@pytest.mark.django_db
+class TestInstitutionUsersList:
 
-        self.institution_user_url = '/{0}institutions/{1}/users/'.format(API_BASE, self.institution._id)
+    def test_return_all_users(self, app):
+        institution = InstitutionFactory()
 
-    def test_return_all_users(self):
-        res = self.app.get(self.institution_user_url)
+        user_one = UserFactory()
+        user_one.affiliated_institutions.add(institution)
+        user_one.save()
 
-        assert_equal(res.status_code, 200)
+        user_two = UserFactory()
+        user_two.affiliated_institutions.add(institution)
+        user_two.save()
+
+        url = '/{0}institutions/{1}/users/'.format(API_BASE, institution._id)
+        res = app.get(url)
+
+        assert res.status_code == 200
 
         ids = [each['id'] for each in res.json['data']]
-        assert_equal(len(res.json['data']), 2)
-        assert_in(self.user1._id, ids)
-        assert_in(self.user2._id, ids)
+        assert len(res.json['data']) == 2
+        assert user_one._id in ids
+        assert user_two._id in ids
