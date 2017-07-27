@@ -14,6 +14,7 @@ from framework.exceptions import PermissionsError
 
 from website import settings
 from website.identifiers.utils import get_doi_and_metadata_for_object
+from website.preprints.tasks import update_preprint_share
 from osf.models import NodeLog, Subject
 
 from tests.base import OsfTestCase
