@@ -27,7 +27,6 @@ from osf_tests.factories import (
 from osf_tests.utils import MockShareResponse
 from tests.utils import assert_logs
 from api_tests import utils as api_test_utils
-from website.preprints.tasks import update_preprint_share
 from website.project.views.contributor import find_preprint_provider
 
 
@@ -637,33 +636,34 @@ class TestPreprintSaveShareHook(OsfTestCase):
 
         assert mock_requests.post.called
 
-    @mock.patch('website.preprints.tasks.update_preprint_share')
-    @mock.patch('website.preprints.tasks.settings.SHARE_URL', 'ima_real_website')
-    def test_node_contributor_changes_updates_preprints_share(self, mock_update_preprint_share):
+    @mock.patch('website.preprints.tasks.on_preprint_updated.si')
+    def test_node_contributor_changes_updates_preprints_share(self, mock_on_preprint_updated):
         # A user is added as a contributor
         self.preprint.is_published = True
         self.preprint.save()
 
+        assert mock_on_preprint_updated.call_count == 1
+        
         user = AuthUserFactory()
         node = self.preprint.node
         node.preprint_file = self.file
 
         node.add_contributor(contributor=user, auth=self.auth)
-        assert mock_update_preprint_share.call_count == 1
+        assert mock_on_preprint_updated.call_count == 2
         
         node.move_contributor(contributor=user, index=0, auth=self.auth)
-        assert mock_update_preprint_share.call_count == 2
+        assert mock_on_preprint_updated.call_count == 3
 
         data = [{'id': self.admin._id, 'permission': 'admin', 'visible': True},
                 {'id': user._id, 'permission': 'write', 'visible': False}]
         node.manage_contributors(data, auth=self.auth, save=True)
-        assert mock_update_preprint_share.call_count == 3
+        assert mock_on_preprint_updated.call_count == 4
         
         node.update_contributor(user, 'read', True, auth=self.auth, save=True)
-        assert mock_update_preprint_share.call_count == 4
+        assert mock_on_preprint_updated.call_count == 5
 
         node.remove_contributor(contributor=user, auth=self.auth)
-        assert mock_update_preprint_share.call_count == 5
+        assert mock_on_preprint_updated.call_count == 6
 
     @mock.patch('website.preprints.tasks.settings.SHARE_URL', 'a_real_url')
     @mock.patch('website.preprints.tasks._async_update_preprint_share.delay')
