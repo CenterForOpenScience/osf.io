@@ -22,7 +22,7 @@ from osf_tests.factories import (
 )
 from rest_framework import exceptions
 from tests.base import fake
-from tests.utils import assert_items_equal, assert_latest_log
+from tests.utils import assert_items_equal, assert_latest_log, assert_latest_log_not
 from website.views import find_bookmark_collection
 from website.util import permissions
 from website.util.sanitize import strip_html
@@ -327,15 +327,15 @@ class TestNodeUpdate(NodeCRUDTestCase):
         assert res.status_code == 400
         assert res.json['errors'][0]['detail'] == exceptions.ParseError.default_detail
 
-    # @assert_not_logs(NodeLog.MADE_PUBLIC, 'private_project')
-    # def test_cannot_make_project_public_if_non_contributor(self):
-    #     non_contrib = AuthUserFactory()
-    #     res = self.app.patch_json(
-    #         self.private_url,
-    #         make_node_payload(self.project_private, {'public': True}),
-    #         auth=non_contrib.auth, expect_errors=True
-    #     )
-    #     assert res.status_code == 403
+    def test_cannot_make_project_public_if_non_contributor(self, app, project_private, url_private, make_node_payload):
+        with assert_latest_log_not(NodeLog.MADE_PUBLIC, project_private):
+            non_contrib = AuthUserFactory()
+            res = app.patch_json(
+                url_private,
+                make_node_payload(project_private, {'public': True}),
+                auth=non_contrib.auth, expect_errors=True
+            )
+            assert res.status_code == 403
 
     def test_cannot_make_project_public_if_non_admin_contributor(self, app, project_private, url_private, make_node_payload):
         non_admin = AuthUserFactory()
