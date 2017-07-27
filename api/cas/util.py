@@ -1,7 +1,9 @@
 import json
 
-import jwe
-import jwt
+from jwe import decrypt
+from jwe import exceptions as jwe_exception
+from jwt import decode
+from jwt import exceptions as jwt_exception
 
 from addons.twofactor.models import UserSettings as TwoFactorUserSettings
 
@@ -25,22 +27,22 @@ def load_request_body_data(request):
     """
 
     try:
-        request.body = jwt.decode(
-            jwe.decrypt(request.body, settings.JWE_SECRET),
+        request.body = decode(
+            decrypt(request.body, settings.JWE_SECRET),
             settings.JWT_SECRET,
             options={'verify_exp': False},
             algorithm='HS256'
         )
         return json.loads(request.body.get('data'))
-    except (AttributeError, TypeError, jwt.exceptions.InvalidTokenError,
-            jwt.exceptions.InvalidKeyError, jwe.exceptions.PyJWEException):
+    except (jwt_exception.InvalidTokenError, jwt_exception.InvalidKeyError,
+            jwe_exception.PyJWEException, AttributeError, ValueError):
         sentry.log_message('Error: fail to decrypt or decode CAS request.')
         raise api_exceptions.CASJSONWebEncryptionError
 
 
 def check_user_status(user):
     """
-    Check if the user is inactive.
+    Helper method that checks if the user is inactive.
 
     :param user: the user instance
     :return: the user's status in String if inactive
@@ -53,7 +55,7 @@ def check_user_status(user):
 
 def verify_two_factor_authentication(user, one_time_password):
     """
-    Check users' two factor settings after they successful pass the initial verification.
+    Helper method that checks users' two factor authentication settings.
 
     :param user: the user object
     :param one_time_password: the time-based one time password
@@ -79,11 +81,10 @@ def verify_two_factor_authentication(user, one_time_password):
 
 def ensure_external_identity_uniqueness(provider, identity, user):
     """
-    Ensure the uniqueness of external identity. User A is the user that tries to link or create an OSF account.
-    1. If there is an existing user B with this identity as "VERIFIED", remove the pending identity from the user A.
-       Do not raise 400s or 500s because it rolls back transactions. What's the best practice?
-    2. If there is any existing user B with this identity as "CREATE" or "LINK", remove this pending identity from the
-       user B and remove the provider if there is no other identity for it.
+    Helper method that ensures the uniqueness of external identity. Let A be the user that attempts to link or create an
+    OSF account. If there is an existing user (denoted as B) with this exact identity as "VERIFIED", remove the pending
+    identity from A. If there are any existing users (denoted as Cs) with this identity as "CREATE" or "LINK", remove
+    this pending identity from Cs and remove the provider if there is no other identity for it.
 
     :param provider: the external identity provider
     :param identity: the external identity of the user
@@ -114,11 +115,9 @@ def ensure_external_identity_uniqueness(provider, identity, user):
     return
 
 
-# TODO: remove this helper method, use framework.auth.core.get_user()
-def find_user_by_email_or_guid(user_id, email, username_only=False):
+def find_user_by_email_or_guid(user_id=None, email=None, username_only=False):
     """
-    Find the OSF user by user's guid, by email or by username only. In the case of email/username, query on username
-    first, and do not combine both queries performance concern.
+    Helper method that find the OSF user by user's guid, by email or by username only.
 
     :param user_id: the user's GUID
     :param email: the user's email
@@ -127,28 +126,14 @@ def find_user_by_email_or_guid(user_id, email, username_only=False):
     """
 
     if user_id:
-        OSFUser.load(user_id)
-    elif email:
-        get_user(email)
+        return OSFUser.load(user_id)
 
-    raise NotImplementedError
+    if email:
+        if username_only:
+            try:
+                return OSFUser.objects.filter(username=email).get()
+            except OSFUser.DoesNotExist:
+                return None
+        return get_user(email)
 
-    # if user_id:
-    #     try:
-    #         user = OSFUser.objects.filter(guids___id=user_id).get()
-    #     except OSFUser.DoesNotExist:
-    #         user = None
-    # elif email:
-    #     try:
-    #         user = OSFUser.objects.filter(username=email).get()
-    #     except OSFUser.DoesNotExist:
-    #         user = None
-    #     if not username_only and not user:
-    #         try:
-    #             user = OSFUser.objects.filter(emails__address__contains=email).get()
-    #         except OSFUser.DoesNotExist:
-    #             user = None
-    # else:
-    #     user = None
-    #
-    # return user
+    return None
