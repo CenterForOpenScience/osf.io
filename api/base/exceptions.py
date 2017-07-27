@@ -237,38 +237,31 @@ class InvalidVerificationKeyError(AuthenticationFailed):
     default_detail = _('Invalid verification key.')
 
 
-class InvalidVerificationCodeError(AuthenticationFailed):
-    """ Raised when CAS provides an invalid verification code for account management verification.
-    """
-    code = 40104
-    default_detail = _('Invalid verification code.')
-
-
 class InvalidExternalIdentityError(AuthenticationFailed):
     """ Raised when CAS provides an invalid external identity for login through external identity provider.
     """
-    code = 40105
+    code = 40104
     default_detail = _('Invalid External Identity.')
 
 
 class TwoFactorRequiredError(AuthenticationFailed):
     """ Raised when two factor is required for API authentication or any type CAS login.
     """
-    code = 40106
+    code = 40105
     default_detail = _('Must specify two-factor authentication OTP code.')
 
 
 class TwoFactorFailedError(AuthenticationFailed):
     """ Raised when two factor fails for any CAS login.
     """
-    code = 40107
+    code = 40106
     default_detail = _('Two factor authentication failed for login.')
 
 
 class InvalidInstitutionLoginError(AuthenticationFailed):
     """ Raised when CAS provides an invalid institution or user for institution login.
     """
-    code = 40108
+    code = 40107
     default_detail = _('Institution Login Failed')
 
     def __init__(self, detail=None):
@@ -395,10 +388,31 @@ class ExternalIdentityAlreadyClaimedError(APIException):
     default_detail = _('The external identity has already been claimed by another user.')
 
 
+class InvalidVerificationCodeError(AuthenticationFailed):
+    """ Raised when CAS provides an invalid verification code for account management.
+    """
+    code = 40016
+    default_detail = _('The verification code is invalid.')
+
+
+class ExpiredVerificationCodeError(APIException):
+    """ Raised when CAS provides an expired verification code for account management.
+    """
+    code = 40017
+    default_detail = _('The verification code has expired.')
+
+
 class EmailThrottleActiveError(Throttled):
     status_code = status.HTTP_429_TOO_MANY_REQUESTS
     code = 42901
     default_detail = _('You have recently make the same request. Please wait a few minutes before trying again.')
+
+
+class CASRequestFailedError(APIException):
+    """ Raised when an unexpected error occurs when API processing the CAS request.
+    """
+    code = 50001
+    default_detail = _('Request failed! A server error has occurred.')
 
 
 class InvalidModelValueError(JSONAPIException):

@@ -1,32 +1,32 @@
 from django.utils import timezone
 
-from rest_framework.exceptions import APIException, ValidationError, PermissionDenied
+from rest_framework import exceptions as drf_exceptions
 
-from api.cas import util, messages, errors
+from api.base import exceptions as api_exceptions
+from api.cas import util
 
+from framework.auth import exceptions as auth_exceptions
 from framework.auth import register_unconfirmed, campaigns
 from framework.auth.core import generate_verification_key
-from framework.auth.exceptions import DuplicateEmailError, ChangePasswordError, InvalidTokenError, ExpiredTokenError
 from framework.auth.views import send_confirm_email
 
+from osf import exceptions as osf_exceptions
 from osf.models import OSFUser
-from osf.exceptions import ValidationError as OSFValidationError
 
 from website import settings as web_settings
 from website.mails import send_mail
 from website.mails import WELCOME, EXTERNAL_LOGIN_LINK_SUCCESS, FORGOT_PASSWORD
 from website.util.time import throttle_period_expired
 
-# TODO: raise API exception, use error_code for CAS, keep error_detail
-
 
 def create_unregistered_user(credentials):
     """
-    Handle new account creation through OSF.
+    Create an new unregistered account through OSF and send confirmation email.
 
     :param credentials: the user's information
-    :return: the newly created but unconfirmed user
-    :raises: APIException, ValidationError, PermissionDenied
+    :return: the newly created but unregistered user
+    :raises: MalformedRequestError, EmailAlreadyRegisteredError, PasswordSameAsEmailError
+             InvalidOrBlacklistedEmailError, EmailAlreadyConfirmedError, CASRequestFailedError
     """
 
     # check required fields
@@ -34,7 +34,7 @@ def create_unregistered_user(credentials):
     email = credentials.get('email')
     password = credentials.get('password')
     if not (fullname and email and password):
-        raise ValidationError(detail=messages.INVALID_REQUEST)
+        raise api_exceptions.MalformedRequestError
 
     # check and update campaign
     campaign = credentials.get('campaign')
@@ -43,64 +43,72 @@ def create_unregistered_user(credentials):
 
     try:
         user = register_unconfirmed(email, password, fullname, campaign=campaign)
-    except DuplicateEmailError:
+    except auth_exceptions.DuplicateEmailError:
         # user already exists
-        raise ValidationError(detail=messages.ALREADY_REGISTERED)
-    except ChangePasswordError:
+        raise api_exceptions.EmailAlreadyRegisteredError
+    except auth_exceptions.ChangePasswordError:
         # password is same as email
-        raise ValidationError(detail=messages.PASSWORD_SAME_AS_EMAIL)
-    except OSFValidationError:
+        raise api_exceptions.PasswordSameAsEmailError
+    except osf_exceptions.ValidationError:
         # email is invalid or its domain is blacklisted
-        raise ValidationError(detail=messages.INVALID_EMAIL)
+        raise api_exceptions.InvalidOrBlacklistedEmailError
     except ValueError:
         # email has already been confirmed to this user
-        raise ValidationError(detail=messages.EMAIL_ALREADY_CONFIRMED)
+        raise api_exceptions.EmailAlreadyConfirmedError
 
     try:
         send_confirm_email(user, email=user.username, renew=False, external_id_provider=None, external_id=None)
     except KeyError:
-        raise APIException(detail=messages.REQUEST_FAILED)
+        raise api_exceptions.CASRequestFailedError
 
     return user
 
 
 def register_user(credentials):
     """
-    Handle email verification for account creation through OSF.
+    Verify and register the new user that was created through OSF.
 
     :param credentials: the user's information
-    :return: the user
-    :raises: ValidationError, PermissionDenied
+    :return: the registered user
+    :raises: MalformedRequestError, AccountNotFoundError, EmailAlreadyConfirmedError
+             InvalidVerificationCodeError, ExpiredVerificationCodeError
     """
 
     # check required fields
     email = credentials.get('email')
     token = credentials.get('verificationCode')
     if not email or not token:
-        # TODO: raise API exception, use error_code for CAS, keep error_detail
-        raise ValidationError(detail=messages.INVALID_REQUEST)
+        raise api_exceptions.MalformedRequestError
 
     # retrieve the user (the email must be primary)
     user = util.find_user_by_email_or_guid(None, email, username_only=True)
     if not user:
-        raise ValidationError(detail=messages.EMAIL_NOT_FOUND)
+        raise api_exceptions.AccountNotFoundError
     if user.date_confirmed:
-        raise ValidationError(detail=messages.ALREADY_VERIFIED)
+        raise api_exceptions.EmailAlreadyConfirmedError
 
     # verify token, register user and send welcome email
     try:
         email = user.get_unconfirmed_email_for_token(token)
-    except (ExpiredTokenError, InvalidTokenError):
-        raise PermissionDenied(detail=messages.INVALID_CODE)
+    except auth_exceptions.InvalidTokenError:
+        # invalid token
+        raise api_exceptions.InvalidVerificationCodeError
+    except auth_exceptions.ExpiredTokenError:
+        # expired token
+        raise api_exceptions.ExpiredVerificationCodeError
+
     user.register(email)
     send_mail(to_addr=user.username, mail=WELCOME, mimetype='html', user=user)
 
-    # clear unclaimed records, email verifications and pending v2 key for password reset
+    # TODO: as discussed with @Steve in person, the following clean up code should be moved into the `.register()`
+    # clear email verifications for pending emails (new account, new email, account merge, etc.)
     user.email_verifications = {}
+    # clear unclaimed records for unregistered contributors or pending self-claim
     user.unclaimed_records = {}
+    # clear verification key v2 for pending password reset
     user.verification_key_v2 = {}
 
-    # generate v1 key for CAS login
+    # generate verification key v1 for automatic CAS login
     user.verification_key = generate_verification_key(verification_type=None)
     user.save()
 
@@ -113,48 +121,54 @@ def resend_confirmation(credential):
     Find OSF account by email. Verify that the user is eligible for resend new account verification. Resend the
     email if the user hasn't recently make the same request.
 
-    :param credential: the user
+    :param credential: the user's information
     :return: the user
-    :raises: ValidationError, PermissionDenied, APIException
+    :raises: MalformedRequestError, AccountNotFoundError, Throttled
+             CASRequestFailedError, AccountNotEligibleError, EmailAlreadyConfirmedError
     """
 
     # check required fields
     email = credential.get('email')
     if not email:
-        raise ValidationError(detail=messages.INVALID_REQUEST)
+        raise api_exceptions.MalformedRequestError
 
     # retrieve the user
     user = util.find_user_by_email_or_guid(None, email, username_only=False)
     if not user:
-        raise ValidationError(detail=messages.EMAIL_NOT_FOUND)
-    inactive_status = util.is_user_inactive(user)
-    if not inactive_status:
-        raise ValidationError(detail=messages.ALREADY_VERIFIED)
-    if inactive_status != 'ACCOUNT_NOT_VERIFIED':
-        raise ValidationError(detail=messages.ACCOUNT_NOT_ELIGIBLE)
+        raise api_exceptions.AccountNotFoundError
 
-    # check throttle
-    if not throttle_period_expired(user.email_last_sent, web_settings.SEND_EMAIL_THROTTLE):
-        raise ValidationError(detail=messages.EMAIL_THROTTLE_ACTIVE)
-
-    # resend email
     try:
-        send_confirm_email(user, email, renew=True, external_id_provider=None, external_id=None)
-    except KeyError:
-        raise APIException(detail=messages.REQUEST_FAILED)
-    user.email_last_sent = timezone.now()
-    user.save()
+        util.check_user_status(user)
+    # user must have unconfirmed status
+    except api_exceptions.UnconfirmedAccountError:
+        # check email throttle
+        if not throttle_period_expired(user.email_last_sent, web_settings.SEND_EMAIL_THROTTLE):
+            raise api_exceptions.Throttled
+        # resend email
+        try:
+            send_confirm_email(user, email, renew=True, external_id_provider=None, external_id=None)
+        except KeyError:
+            raise api_exceptions.CASRequestFailedError
+        user.email_last_sent = timezone.now()
+        user.save()
+        return user
+    # account with other inactive status are not eligible
+    except drf_exceptions.APIException:
+        raise api_exceptions.AccountNotEligibleError
 
-    return user
+    # cannot confirm an active user
+    raise api_exceptions.EmailAlreadyConfirmedError
 
 
 def create_or_link_external_user(credentials):
     """
-    Handle account creation or link through external identity provider.
+    Create an unregistered account or link (pending) an existing account to an external identity.
 
-    :param credentials: the user
-    :return: the newly created or linked user and pending status for external identity
-    :raises: ValidationError, PermissionDenied, APIException
+    :param credentials: the user's information
+    :return: the newly created unregistered user or the target existing user for link
+             both have pending status for external identity to be verified
+    :raises: MalformedRequestError, AccountNotEligibleError, CASRequestFailedError
+             ExternalIdentityAlreadyClaimedError
     """
 
     # check required fields
@@ -165,11 +179,10 @@ def create_or_link_external_user(credentials):
         credentials.get('attributes').get('given-names', ''),
         credentials.get('attributes').get('family-name', '')
     ).strip()
-    # user's ORCiD privacy settings may prevent releasing names, use the identity instead
     if not fullname:
-        fullname = identity
+        fullname = identity  # ORCiD's privacy settings may prevent names from being released, use identity instead
     if not (email and fullname and provider and identity):
-        raise ValidationError(detail=messages.INVALID_REQUEST)
+        raise api_exceptions.MalformedRequestError
 
     # check and update campaign
     campaign = credentials.get('campaign')
@@ -186,21 +199,25 @@ def create_or_link_external_user(credentials):
     util.ensure_external_identity_uniqueness(provider, identity, user)
 
     if user:
-        inactive_status = util.is_user_inactive(user)
-        if inactive_status:
-            # user not active but in database
-            if inactive_status == errors.ACCOUNT_NOT_VERIFIED or inactive_status == errors.ACCOUNT_NOT_CLAIMED:
-                user.fullname = fullname
-                user.update_guessed_names()
-                user.email_verifications = {}
-                user.unclaimed_records = {}
-                user.verification_key = {}
-                external_identity[provider][identity] = 'CREATE'
-            else:
-                raise PermissionDenied(detail=messages.ACCOUNT_NOT_ELIGIBLE)
+        try:
+            # check user status
+            util.check_user_status(user)
+        except api_exceptions.UnconfirmedAccountError or api_exceptions.UnclaimedAccountError:
+            # user not confirmed or claimed but in database, create instead of link
+            user.fullname = fullname
+            user.update_guessed_names()
+            user.email_verifications = {}
+            user.unclaimed_records = {}
+            user.verification_key = {}
+            external_identity[provider][identity] = 'CREATE'
+        except drf_exceptions.APIException:
+            # account with other inactive status are not eligible
+            raise api_exceptions.AccountNotEligibleError
         else:
-            # existing user
+            # existing user, link
             external_identity[provider][identity] = 'LINK'
+
+        # add or update external identity
         if provider in user.external_identity:
             user.external_identity[provider].update(external_identity[provider])
         else:
@@ -220,7 +237,7 @@ def create_or_link_external_user(credentials):
         user.save()
 
     try:
-        # renew is not compatible for external identity, must be set to `False`
+        # TODO: renew is not compatible for external identity, must be set to `False`, fix this?
         send_confirm_email(
             user,
             email,
@@ -229,42 +246,43 @@ def create_or_link_external_user(credentials):
             external_id=identity
         )
     except KeyError:
-        raise APIException(detail=messages.REQUEST_FAILED)
+        raise api_exceptions.CASRequestFailedError
 
     return user, external_identity[provider][identity]
 
 
 def register_external_user(credentials):
     """
-    Handle email verification for account creation or link through external identity provider.
+    Verify and register (link) new (existing) users and update external identity.
 
-    :param credentials: the user
-    :return: the created or linked user and the previous pending status
-    :raises: ValidationError, PermissionDenied, APIException
+    :param credentials: the user's information
+    :return: the user and whether created or linked
+    :raises: MalformedRequestError, AccountNotFoundError, InvalidVerificationCodeError
+             CASRequestFailedError, ExternalIdentityAlreadyClaimedError
     """
 
     # check required fields
     email = credentials.get('email')
     token = credentials.get('verificationCode')
     if not email or not token:
-        raise ValidationError(detail=messages.INVALID_REQUEST)
+        raise api_exceptions.MalformedRequestError
 
     # retrieve the user
     user = util.find_user_by_email_or_guid(None, email, username_only=False)
     if not user:
-        raise APIException(detail=messages.EMAIL_NOT_FOUND)
+        raise api_exceptions.AccountNotFoundError
 
     # check the token and its verification
     if token not in user.email_verifications:
-        raise PermissionDenied(detail=messages.INVALID_CODE)
+        raise api_exceptions.InvalidVerificationCodeError
     verification = user.email_verifications[token]
     email = verification['email']
     provider = verification['external_identity'].keys()[0]
     identity = verification['external_identity'][provider].keys()[0]
     if provider not in user.external_identity:
-        raise PermissionDenied(detail=messages.INVALID_CODE)
+        raise api_exceptions.CASRequestFailedError
 
-    external_identity_status = user.external_identity[provider][identity]
+    created_or_linked = user.external_identity[provider][identity]
     util.ensure_external_identity_uniqueness(provider, identity, user)
 
     # register/update user, set identity status to verified, clear pending verifications and send emails
@@ -276,16 +294,16 @@ def register_external_user(credentials):
     user.external_identity[provider][identity] = 'VERIFIED'
     user.social[provider.lower()] = identity
     del user.email_verifications[token]
-    if external_identity_status == 'CREATE':
+    if created_or_linked == 'CREATE':
         send_mail(to_addr=user.username, mail=WELCOME, mimetype='html', user=user)
-    elif external_identity_status == 'LINK':
+    elif created_or_linked == 'LINK':
         send_mail(to_addr=user.username, mail=EXTERNAL_LOGIN_LINK_SUCCESS, user=user, external_id_provider=provider)
 
-    # generate v1 key for CAS login
+    # generate verification key v1 for automatic CAS login
     user.verification_key = generate_verification_key(verification_type=None)
     user.save()
 
-    return user, external_identity_status
+    return user, created_or_linked
 
 
 def send_password_reset_email(credential):
@@ -293,30 +311,33 @@ def send_password_reset_email(credential):
     Find account by email and verify if the user is eligible for reset password. If so, send the verification email
     if user hasn't recently make the same request.
 
-    :param credential: the user
-    :return: the user with updated pending password reset verification
-    :raises: ValidationError, PermissionDenied, APIException
+    :param credential: the user's information
+    :return: the user with pending password reset verification
+    :raises: MalformedRequestError, AccountNotFoundError, Throttled
+             AccountNotEligibleError
     """
 
     # check required fields
     email = credential.get('email')
     if not email:
-        raise ValidationError(detail=messages.INVALID_REQUEST)
+        raise api_exceptions.MalformedRequestError
 
     # retrieve the user
     user = util.find_user_by_email_or_guid(None, email, username_only=False)
     if not user:
-        raise PermissionDenied(detail=messages.EMAIL_NOT_FOUND)
+        raise api_exceptions.AccountNotFoundError
 
     # check throttle
     if not throttle_period_expired(user.email_last_sent, web_settings.SEND_EMAIL_THROTTLE):
-        raise PermissionDenied(detail=messages.EMAIL_THROTTLE_ACTIVE)
+        raise api_exceptions.Throttled
 
     # check user status
-    if util.is_user_inactive(user):
-        raise PermissionDenied(detail=messages.ACCOUNT_NOT_ELIGIBLE)
+    try:
+        util.check_user_status()
+    except drf_exceptions.APIException:
+        raise api_exceptions.AccountNotEligibleError
 
-    # generate v2 key for reset password and send
+    # generate verification key v2 for reset password and send email
     user.verification_key_v2 = generate_verification_key(verification_type='password')
     token = user.verification_key_v2.get('token')
     send_mail(to_addr=email, mail=FORGOT_PASSWORD, user=user, verification_code=token)
@@ -328,11 +349,12 @@ def send_password_reset_email(credential):
 
 def reset_password(credentials):
     """
-    Reset password for eligible OSF account.
+    Verify and Reset password for eligible OSF account.
 
     :param credentials: the user's information
     :return: the user
-    :raises: ValidationError, PermissionDenied, APIException
+    :raises: MalformedRequestError, AccountNotFoundError,
+             InvalidVerificationCodeError, PasswordSameAsEmailError
     """
 
     # check required fields
@@ -341,27 +363,27 @@ def reset_password(credentials):
     token = credentials.get('verificationCode')
     password = credentials.get('password')
     if not ((email or user_id) and token and password):
-        raise ValidationError(detail=messages.INVALID_REQUEST)
+        raise api_exceptions.MalformedRequestError
 
     # retrieve the user
     user = util.find_user_by_email_or_guid(user_id, email, username_only=False)
     if not user:
-        raise ValidationError(detail=messages.USER_NOT_FOUND)
+        raise api_exceptions.AccountNotFoundError
 
     # check to token
     if not user.verify_password_token(token):
-        raise PermissionDenied(detail=messages.INVALID_CODE)
+        raise api_exceptions.InvalidVerificationCodeError
 
     # reset password
     try:
         user.set_password(password)
-    except ChangePasswordError:
-        raise ValidationError(detail=messages.PASSWORD_SAME_AS_EMAIL)
+    except auth_exceptions.ChangePasswordError:
+        raise api_exceptions.PasswordSameAsEmailError
 
-    # clear v2 key for password reset
+    # clear verification key v2 for password reset
     user.verification_key_v2 = {}
 
-    # generate v1 key for CAS login
+    # generate verification key v1 for automatic CAS login
     user.verification_key = generate_verification_key(verification_type=None)
     user.save()
 
