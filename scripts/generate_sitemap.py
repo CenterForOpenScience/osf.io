@@ -161,7 +161,7 @@ class Sitemap(object):
         for obj in objs:
             try:
                 config = settings.SITEMAP_USER_CONFIG
-                config['loc'] = urlparse.urljoin(settings.DOMAIN, '/{}/'.format(obj))
+                config['loc'] = urlparse.urljoin(settings.DOMAIN, '/{}'.format(obj))
                 self.add_url(config)
             except Exception as e:
                 self.log_errors('USER', obj, e)
