@@ -32,11 +32,11 @@ class TestGenerateSitemap:
 
         # Constructed list of urls that should be included
         list_of_urls = [urljoin(settings.DOMAIN, item['loc']) for item in settings.SITEMAP_STATIC_URLS]
-        list_of_urls.extend([urljoin(settings.DOMAIN, user_1.url), urljoin(settings.DOMAIN, user_2.url)])
-        list_of_urls.extend([urljoin(settings.DOMAIN, project_1.url),
-                             urljoin(settings.DOMAIN, project_2.url),
-                             urljoin(settings.DOMAIN, registration_1.url),
-                             urljoin(settings.DOMAIN, registration_2.url)])
+        list_of_urls.extend([urljoin(settings.DOMAIN, user_1._id), urljoin(settings.DOMAIN, user_2._id)])
+        list_of_urls.extend([urljoin(settings.DOMAIN, project_1._id),
+                             urljoin(settings.DOMAIN, project_2._id),
+                             urljoin(settings.DOMAIN, registration_1._id),
+                             urljoin(settings.DOMAIN, registration_2._id)])
         list_of_urls.extend([settings.DOMAIN + 'preprints/' + preprint_1._id + '/',
                              settings.DOMAIN + 'preprints/' + provider_2._id + '/' + preprint_2._id + '/'])
 
@@ -93,7 +93,7 @@ class TestGenerateSitemap:
 
         # Create a collection, whose link should not be included in the sitemap
         collection = CollectionFactory()
-        collection_link = urljoin(settings.DOMAIN, collection.url)
+        collection_link = urljoin(settings.DOMAIN, collection._id)
 
         # Run the script
         main()
