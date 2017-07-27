@@ -1,29 +1,30 @@
-from rest_framework.exceptions import ValidationError, PermissionDenied
-
-from api.cas import messages
+from api.base import exceptions as api_exception
 
 from osf.models import ApiOAuth2Application, ApiOAuth2PersonalToken, ApiOAuth2Scope, Institution, OSFUser
 
 
-def get_oauth_token(body_data):
-    """ Get the owner and scopes of a personal access token by token id.
+def get_oauth_token(data):
     """
+    Get the owner and scopes of a personal access token by token id.
 
-    service_type = body_data.get('serviceType')
-    token_id = body_data.get('tokenId')
+    :param data: the request data
+    :return: the response body
+    :raises: MalformedRequestError, OauthPersonalAccessTokenError
+    """
+    token_id = data.get('tokenId')
 
-    if service_type != 'OAUTH_TOKEN' or not token_id:
-        raise ValidationError(detail=messages.INVALID_REQUEST)
+    if not token_id:
+        raise api_exception.MalformedRequestError
 
     try:
         token = ApiOAuth2PersonalToken.objects.get(token_id=token_id)
     except ApiOAuth2PersonalToken.DoesNotExist:
-        raise PermissionDenied(detail=messages.TOKEN_NOT_FOUND)
+        raise api_exception.OauthPersonalAccessTokenError
 
     try:
         user = OSFUser.objects.get(pk=token.owner_id)
     except OSFUser.DoesNotExist:
-        raise PermissionDenied(detail=messages.TOKEN_OWNER_NOT_FOUND)
+        raise api_exception.OauthPersonalAccessTokenError
 
     return {
         'tokenId': token.token_id,
@@ -32,35 +33,35 @@ def get_oauth_token(body_data):
     }
 
 
-def get_oauth_scope(body_data):
-    """ Get the description of the oauth scope by scope name.
+def get_oauth_scope(data):
+    """
+    Get the description of the oauth scope by scope name.
+
+    :param data: the request data
+    :return: the response body
+    :raises: MalformedRequestError, OauthScopeError
     """
 
-    service_type = body_data.get('serviceType')
-    scope_name = body_data.get('scopeName')
+    scope_name = data.get('scopeName')
 
-    if service_type != 'OAUTH_SCOPE' or not scope_name:
-        raise ValidationError(detail=messages.INVALID_REQUEST)
+    if not scope_name:
+        raise api_exception.MalformedRequestError
 
     try:
         scope = ApiOAuth2Scope.objects.get(name=scope_name)
         if not scope.is_active:
-            raise PermissionDenied(detail=messages.SCOPE_NOT_ACTIVE)
+            raise api_exception.OauthScopeError
     except ApiOAuth2Scope.DoesNotExist:
-        raise PermissionDenied(detail=messages.SCOPE_NOT_FOUND)
+            raise api_exception.OauthScopeError
 
     return {
         'scopeDescription': scope.description,
     }
 
 
-def load_oauth_apps(body_data):
+def load_oauth_apps():
     """ Load all active developer applications.
     """
-
-    service_type = body_data.get('serviceType')
-    if service_type != 'OAUTH_APPS':
-        raise ValidationError(detail=messages.INVALID_REQUEST)
 
     oauth_applications = ApiOAuth2Application.objects.filter(is_active=True)
 
@@ -79,14 +80,9 @@ def load_oauth_apps(body_data):
     return content
 
 
-def load_institutions(body_data):
+def load_institutions():
     """ Load institutions that provide authentication delegation.
     """
-
-    service_type = body_data.get('serviceType')
-
-    if service_type != 'INSTITUTIONS':
-        raise ValidationError(detail=messages.INVALID_REQUEST)
 
     institutions = Institution.objects \
         .exclude(delegation_protocol__isnull=True) \

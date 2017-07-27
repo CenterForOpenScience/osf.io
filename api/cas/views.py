@@ -197,28 +197,28 @@ class AccountPasswordReset(APICASView):
 
 
 class ServiceOauthToken(APICASView):
-    """ Get the owner and scopes of a personal access token by token id.
+    """ Return the owner and scopes of a personal access token by token id.
     """
 
     view_name = 'service-oauth-token'
 
     def post(self, request):
 
-        body_data = util.load_request_body_data(request)
-        content = service.get_oauth_token(body_data)
+        data = util.load_request_body_data(request)
+        content = service.get_oauth_token(data)
         return Response(data=content, status=status.HTTP_200_OK)
 
 
 class ServiceOauthScope(APICASView):
-    """ Get the description of the oauth scope by scope name.
+    """ Return the description of the oauth scope by scope name.
     """
 
     view_name = 'service-oauth-scope'
 
     def post(self, request):
 
-        body_data = util.load_request_body_data(request)
-        content = service.get_oauth_scope(body_data)
+        data = util.load_request_body_data(request)
+        content = service.get_oauth_scope(data)
         return Response(data=content, status=status.HTTP_200_OK)
 
 
@@ -230,8 +230,8 @@ class ServiceOauthApps(APICASView):
 
     def post(self, request):
 
-        body_data = util.load_request_body_data(request)
-        content = service.load_oauth_apps(body_data)
+        util.load_request_body_data(request)
+        content = service.load_oauth_apps()
         return Response(data=content, status=status.HTTP_200_OK)
 
 
@@ -243,6 +243,6 @@ class ServiceInstitutions(APICASView):
 
     def post(self, request):
 
-        body_data = util.load_request_body_data(request)
-        content = service.load_institutions(body_data)
+        util.load_request_body_data(request)
+        content = service.load_institutions()
         return Response(data=content, status=status.HTTP_200_OK)
