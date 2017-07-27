@@ -142,19 +142,6 @@ class PreprintIsValidListMixin:
     def preprint(self, user_admin_contrib, project, provider, subject):
         return PreprintFactory(creator=user_admin_contrib, filename='saor.pdf', provider=provider, subjects=[[subject._id]], project=project, is_published=True)
 
-    # def setUp(self):
-    #     assert self.admin, 'Subclasses of PreprintIsValidListMixin must define self.admin'
-    #     assert self.project, 'Subclasses of PreprintIsValidListMixin must define self.project'
-    #     assert self.provider, 'Subclasses of PreprintIsValidListMixin must define self.provider'
-    #     assert self.url, 'Subclasses of PreprintIsValidListMixin must define self.url'
-    #     self.write_contrib = AuthUserFactory()
-    #     self.user_non_contrib = AuthUserFactory()
-    #     self.subject = SubjectFactory()
-
-    #     self.project.add_contributor(self.write_contrib, permissions=permissions.DEFAULT_CONTRIBUTOR_PERMISSIONS, save=True)
-    #     test_utils.create_test_file(self.project, self.admin, 'saor.pdf')
-    #     self.preprint = PreprintFactory(creator=self.admin, filename='saor.pdf', provider=self.provider, subjects=[[self.subject._id]], project=self.project, is_published=True)
-
     def test_preprint_private_invisible_no_auth(self, app, project, preprint, url):
         res = app.get(url)
         assert len(res.json['data']) == 1
@@ -207,6 +194,7 @@ class PreprintIsValidListMixin:
     def test_preprint_node_null_invisible(self, mock_preprint_updated, app, user_admin_contrib, user_write_contrib, user_non_contrib, preprint, url):
         preprint.node = None
         preprint.save()
+
         # unauth
         res = app.get(url)
         assert len(res.json['data']) == 0
