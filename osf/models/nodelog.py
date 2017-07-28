@@ -1,3 +1,5 @@
+from include import IncludeManager
+
 from django.apps import apps
 from django.db import models
 from django.utils import timezone
@@ -14,6 +16,8 @@ class NodeLog(ObjectIDMixin, BaseModel):
         'user': 'user__guids___id',
         'original_node': 'original_node__guids___id'
     }
+
+    objects = IncludeManager()
 
     DATE_FORMAT = '%m/%d/%Y %H:%M UTC'
 
@@ -140,7 +144,7 @@ class NodeLog(ObjectIDMixin, BaseModel):
     # TODO build action choices on the fly with the addon stuff
     action = models.CharField(max_length=255, db_index=True)  # , choices=action_choices)
     params = DateTimeAwareJSONField(default=dict)
-    should_hide = models.BooleanField(default=False)
+    should_hide = models.BooleanField(default=False, db_index=True)
     user = models.ForeignKey('OSFUser', related_name='logs', db_index=True, null=True, blank=True)
     foreign_user = models.CharField(max_length=255, null=True, blank=True)
     node = models.ForeignKey('AbstractNode', related_name='logs',
@@ -154,6 +158,7 @@ class NodeLog(ObjectIDMixin, BaseModel):
     class Meta:
         ordering = ['-date']
         get_latest_by = 'date'
+        indexes = [models.Index(fields=['node', 'should_hide', '-date'])]
 
     @property
     def absolute_api_v2_url(self):
