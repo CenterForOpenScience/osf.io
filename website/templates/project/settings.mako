@@ -220,7 +220,6 @@
                         </form>
                     %endif
 
-                        % if include_wiki_settings:
                             <h3>Configure</h3>
                             <div style="padding-left: 15px">
                                 %if  node['is_public']:
@@ -241,9 +240,6 @@
                                     <p id="configureWikiMessage"></p>
                                 </div>
                             </form>
-                        % else:
-                            <p class="text">To allow all OSF users to edit the wiki, <b>${node['title']}</b> must be public and the wiki enabled.</p>
-                        %endif
                     </div>
                 </div>
             %endif

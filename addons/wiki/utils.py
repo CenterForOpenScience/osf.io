@@ -174,7 +174,7 @@ def serialize_wiki_settings(user, nodes):
         children = node.get_nodes(**{'is_deleted': False, 'is_node_link': False})
         children_tree = []
 
-        if node.admin_public_wiki(user):
+        if node.admin_of_wiki(user):
             children_tree.append({
                 'select': {
                     'title': 'permission',
@@ -192,6 +192,7 @@ def serialize_wiki_settings(user, nodes):
                 'id': node._id,
                 'url': node.url if can_read else '',
                 'title': node.title if can_read else 'Private Project',
+                'is_public': node.is_public
             },
             'children': children_tree,
             'kind': 'folder' if not node.parent_node or not node.parent_node.has_permission(user, 'read') else 'node',

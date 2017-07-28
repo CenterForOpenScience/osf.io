@@ -106,7 +106,8 @@ function ProjectWiki(data) {
                     css : iconcss,
                     sortInclude : false,
                     custom : function() {
-                        return 'Who can edit';
+
+                        return item.parent().data.node.is_public ? 'Select who can edit' : 'This feature disabled for wikis of private nodes';
                     }
                 },
                 {
@@ -118,7 +119,9 @@ function ProjectWiki(data) {
                             [m('select.form-control', {
                                 onchange: function(ev) {
                                     beforeChangePermissions(item, ev.target.value);
-                                }},
+                                },
+                                disabled: !item.parent().data.node.is_public
+                                },
                                 [
                                     m('option', {value: 'private', selected : item.data.select.permission === 'public' ? 'selected': ''}, 'Contributors (with write access)'),
                                     m('option', {value: 'public', selected : item.data.select.permission === 'public' ? 'selected': '' }, 'All OSF users')
