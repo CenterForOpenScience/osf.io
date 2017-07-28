@@ -2642,7 +2642,6 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
             self.has_permission(user, 'admin')
         )
 
-
     def include_wiki_settings(self, user):
         """Check if node meets requirements to make publicly editable."""
         return (
