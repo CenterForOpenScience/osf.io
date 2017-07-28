@@ -187,6 +187,7 @@ class TestRegistrationUpdate:
     def test_update_registration(self, app, user, read_only_contributor, read_write_contributor, public_registration, public_url, private_url, make_payload):
 
         private_registration_payload = make_payload()
+        non_contributor = AuthUserFactory()
 
     #   test_update_private_registration_logged_out
         res = app.put_json_api(private_url, private_registration_payload, expect_errors=True)
@@ -209,6 +210,10 @@ class TestRegistrationUpdate:
         public_to_private_payload = make_payload(id=public_registration._id, attributes={'public': False})
 
         res = app.put_json_api(public_url, public_to_private_payload, auth=user.auth, expect_errors=True)
+        assert res.status_code == 400
+        assert res.json['errors'][0]['detail'] == 'Registrations can only be turned from private to public.'
+
+        res = app.put_json_api(public_url, public_to_private_payload, auth=non_contributor.auth, expect_errors=True)
         assert res.status_code == 403
         assert res.json['errors'][0]['detail'] == 'You do not have permission to perform this action.'
 
