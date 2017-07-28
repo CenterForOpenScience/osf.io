@@ -284,7 +284,10 @@ class BaseRegistrationSerializer(NodeSerializer):
             except NodeStateError as err:
                 raise exceptions.ValidationError(err.message)
         else:
-            raise exceptions.PermissionDenied('You do not have permission to perform this action.')
+            if 'admin' in self.get_current_user_permissions(registration):
+                raise exceptions.ValidationError('Registrations can only be turned from private to public.')
+            else:
+                raise exceptions.PermissionDenied('You do not have permission to perform this action.')
         return registration
 
     class Meta:
