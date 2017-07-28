@@ -90,12 +90,12 @@ class ApiSearchTestCase:
 
     @pytest.fixture()
     def cleanup(self):
-        # Cleanup needed only for the first test to make sure no cached results returned.
+        # Cleanup needed before first test to make sure no cached results returned.
         search.delete_all()
 
     @pytest.fixture()
     def delete_all(self):
-        # Delete all search results at the end of each test method.
+        # Delete search engine cache at the end of each test method.
         yield
         search.delete_all()
 

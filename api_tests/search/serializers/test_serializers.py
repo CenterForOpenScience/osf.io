@@ -26,23 +26,23 @@ class TestSearchSerializer:
             name='Replication Recipe (Brandt et al., 2013): Post-Completion',
             schema_version=LATEST_SCHEMA_VERSION).first()
 
-        #test_search_serializer_mixed_model_project(self, project, context):
+        #test_search_serializer_mixed_model_project
         result = SearchSerializer(project, context=context).data
         assert result['data']['type'] == 'nodes'
 
-        #test_search_serializer_mixed_model_component(self, component, context):
+        #test_search_serializer_mixed_model_component
         result = SearchSerializer(component, context=context).data
         assert result['data']['type'] == 'nodes'
 
-        #test_search_serializer_mixed_model_registration(self, registration, context):
+        #test_search_serializer_mixed_model_registration
         with mock_archive(project, autocomplete=True, autoapprove=True, schema=schema) as registration:
             result = SearchSerializer(registration, context=context).data
             assert result['data']['type'] == 'registrations'
 
-        #test_search_serializer_mixed_model_file(self, file_component, context):
+        #test_search_serializer_mixed_model_file
         result = SearchSerializer(file_component, context=context).data
         assert result['data']['type'] == 'files'
 
-        #test_search_serializer_mixed_model_user(self, user, context):
+        #test_search_serializer_mixed_model_user
         result = SearchSerializer(user, context=context).data
         assert result['data']['type'] == 'users'
