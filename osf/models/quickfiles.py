@@ -45,14 +45,16 @@ class QuickFiles(AbstractNode):
     def set_privacy(self, permissions, *args, **kwargs):
         raise NodeStateError('You may not set privacy for QuickFiles.')
 
-    def register_node(self, *args, **kwargs):
-        raise NodeStateError('A QuickFiles node may not be registered.')
-
-    def fork_node(self, *args, **kwargs):
-        raise NodeStateError('A QuickFiles node may not be forked.')
-
     def add_contributor(self, contributor, *args, **kwargs):
         raise NodeStateError('A QuickFiles node may not have additional contributors.')
+
+    def clone(self):
+        raise NodeStateError('QuickFiles may not be forked, used as a template, or registered.')
+
+    def add_addon(self, name, auth, log=True):
+        if name != 'osfstorage':
+            raise NodeStateError('QuickFiles can only have the osfstorage addon.')
+        return super(QuickFiles, self).add_addon(name, auth, log)
 
     @property
     def is_registration(self):

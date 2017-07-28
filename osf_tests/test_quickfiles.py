@@ -4,6 +4,7 @@ from framework.auth.core import Auth
 from osf.models import QuickFiles, BaseFileNode
 from api_tests.utils import create_test_file
 from tests.utils import assert_items_equal
+from tests.base import get_default_metaschema
 
 from . import factories
 from website.exceptions import NodeStateError
@@ -63,11 +64,19 @@ class TestQuickFiles:
 
     def test_quickfiles_cannot_be_registered(self, quickfiles, auth):
         with pytest.raises(NodeStateError):
-            quickfiles.register_node(auth=auth)
+            quickfiles.register_node(get_default_metaschema(), auth, '', None)
 
     def test_quickfiles_cannot_be_forked(self, quickfiles, auth):
         with pytest.raises(NodeStateError):
             quickfiles.fork_node(auth=auth)
+
+    def test_quickfiles_cannot_be_used_as_template(self, quickfiles, auth):
+        with pytest.raises(NodeStateError):
+            quickfiles.use_as_template(auth=auth)
+
+    def test_quickfiles_cannot_have_other_addons(self, quickfiles, auth):
+        with pytest.raises(NodeStateError):
+            quickfiles.add_addon('github', auth=auth)
 
     def test_quickfiles_title_has_users_fullname(self, quickfiles, user):
         plain_user = factories.UserFactory(fullname='Kenny Omega')
