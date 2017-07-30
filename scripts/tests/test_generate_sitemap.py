@@ -1,113 +1,172 @@
-import pytest
+import os
 
-import shutil, tempfile, xml, os
-from urlparse import urljoin
+import pytest
+import mock
+import shutil, xml, urlparse
+
+from scripts import generate_sitemap
+from osf_tests import factories
 from website import settings
-from scripts.generate_sitemap import main
-from osf_tests.factories import AuthUserFactory, PreprintProviderFactory, PreprintFactory, ProjectFactory, \
-    RegistrationFactory, CollectionFactory
+
+
+def get_all_sitemap_urls():
+    # Create temporary directory for the sitemaps to be generated
+
+    generate_sitemap.main()
+
+    # Parse the generated XML sitemap file
+    with open('sitemaptmpfolder' + '/sitemaps' + '/sitemap_0.xml') as f:
+        tree = xml.etree.ElementTree.parse(f)
+
+    # Remove the temp directory
+    shutil.rmtree('sitemaptmpfolder')
+
+    # Get all the urls in the sitemap
+    # Note: namespace was defined in the XML file, therefore necessary to include in tag
+    namespace = '{http://www.sitemaps.org/schemas/sitemap/0.9}'
+    urls = [element.text for element in tree.iter(namespace + 'loc')]
+
+    return urls
+
 
 @pytest.mark.django_db
 class TestGenerateSitemap:
 
-    def test_all_links_are_included(self):
-        # Create temporary directory for the sitemaps to be generated
-        temp_dir = tempfile.mkdtemp()
+    @pytest.fixture(autouse=True)
+    def public_project_owner(self):
+        return factories.AuthUserFactory()
 
-        # Set static folder to the path of temp_dir, so that the generator would store the sitemaps under
-        # <path_to_temp_dir>/sitemaps/
-        settings.STATIC_FOLDER = temp_dir
+    @pytest.fixture(autouse=True)
+    def private_project_owner(self):
+        return factories.AuthUserFactory()
 
-        # Test setup
-        user_1 = AuthUserFactory()
-        user_2 = AuthUserFactory()
-        project_1 = ProjectFactory(creator=user_1)
-        project_2 = ProjectFactory(creator=user_2)
-        registration_1 = RegistrationFactory(project=project_1, creator=user_1, is_public=True)
-        registration_2 = RegistrationFactory(project=project_2, creator=user_2, is_public=True)
-        provider_1 = PreprintProviderFactory(_id='osf', name='osfprovider')
-        provider_2 = PreprintProviderFactory(_id='adl', name="anotherprovider")
-        preprint_1 = PreprintFactory(provider=provider_1, project=project_1, creator=user_1)
-        preprint_2 = PreprintFactory(provider=provider_2, project=project_2, creator=user_2)
+    @pytest.fixture(autouse=True)
+    def public_project_for_active_registration(self, public_project_owner):
+        return factories.ProjectFactory(creator=public_project_owner, is_public=True)
 
-        # Constructed list of urls that should be included
-        list_of_urls = [urljoin(settings.DOMAIN, item['loc']) for item in settings.SITEMAP_STATIC_URLS]
-        list_of_urls.extend([urljoin(settings.DOMAIN, user_1._id), urljoin(settings.DOMAIN, user_2._id)])
-        list_of_urls.extend([urljoin(settings.DOMAIN, project_1._id),
-                             urljoin(settings.DOMAIN, project_2._id),
-                             urljoin(settings.DOMAIN, registration_1._id),
-                             urljoin(settings.DOMAIN, registration_2._id)])
-        list_of_urls.extend([settings.DOMAIN + 'preprints/' + preprint_1._id + '/',
-                             settings.DOMAIN + 'preprints/' + provider_2._id + '/' + preprint_2._id + '/'])
+    @pytest.fixture(autouse=True)
+    def project_for_osf_preprint(self, public_project_owner):
+        return factories.ProjectFactory(creator=public_project_owner, is_public=True)
 
-        url_preprint_file_1 = os.path.join(
-                            settings.DOMAIN,
-                            'project',
-                            preprint_1.node._id,   # Parent node id
-                            'files',
-                            'osfstorage',
-                            preprint_1.primary_file._id,  # Preprint file deep_url
-                            '?action=download'
-                        )
+    @pytest.fixture(autouse=True)
+    def project_for_other_preprint(self, public_project_owner):
+        return factories.ProjectFactory(creator=public_project_owner, is_public=True)
 
-        url_preprint_file_2 = os.path.join(
-                            settings.DOMAIN,
-                            'project',
-                            preprint_2.node._id,   # Parent node id
-                            'files',
-                            'osfstorage',
-                            preprint_2.primary_file._id,  # Preprint file deep_url
-                            '?action=download'
-                        )
+    @pytest.fixture(autouse=True)
+    def private_project(self, private_project_owner):
+        return factories.ProjectFactory(creator=private_project_owner, is_public=False)
 
-        list_of_urls.extend([url_preprint_file_1, url_preprint_file_2])
+    @pytest.fixture(autouse=True)
+    def active_registration(self, public_project_owner, public_project_for_active_registration):
+        return factories.RegistrationFactory(project=public_project_for_active_registration,
+                                             creator=public_project_owner,
+                                             is_public=True)
 
-        # Run the script
-        main()
+    @pytest.fixture(autouse=True)
+    def collection(self, public_project_owner):
+        return factories.CollectionFactory(creator=public_project_owner)
 
-        # Parse the generated XML sitemap file
-        with open(temp_dir + '/sitemaps' + '/sitemap_0.xml') as f:
-            tree = xml.etree.ElementTree.parse(f)
+    @pytest.fixture(autouse=True)
+    def osf_provider(self):
+        # Note: at least a provider whose _id == 'osf' have to exist for the script to work
+        return factories.PreprintProviderFactory(_id='osf', name='osfprovider')
 
-        # Remove the temp directory
-        shutil.rmtree(temp_dir)
+    @pytest.fixture(autouse=True)
+    def other_provider(self):
+        return factories.PreprintProviderFactory(_id='adl', name="anotherprovider")
 
-        # Get all the urls in the sitemap
-        # Note: namespace was defined in the XML file, therefore necessary to include in tag
-        namespace = '{http://www.sitemaps.org/schemas/sitemap/0.9}'
-        urls = [element.text for element in tree.iter(namespace + 'loc')]
+    @pytest.fixture(autouse=True)
+    def osf_preprint(self, project_for_osf_preprint, public_project_owner, osf_provider):
+        return factories.PreprintFactory(project=project_for_osf_preprint,
+                                             creator=public_project_owner,
+                                             provider=osf_provider)
 
-        # Check and see if all urls are included
-        assert set(list_of_urls) == set(urls)
+    @pytest.fixture(autouse=True)
+    def other_preprint(self, project_for_other_preprint, public_project_owner, other_provider):
+        return factories.PreprintFactory(project=project_for_other_preprint,
+                                             creator=public_project_owner,
+                                             provider=other_provider)
 
-    def test_collection_links_not_included(self):
-        # Create temporary directory for the sitemaps to be generated
-        temp_dir = tempfile.mkdtemp()
 
-        # Set static folder to the path of temp_dir, so that the generator would store the sitemaps under
-        # <path_to_temp_dir>/sitemaps/
-        settings.STATIC_FOLDER = temp_dir
+    def generate_all_links(self):
+    def static_urls(self):
+        # Returns a list of static urls that should be included
+        return [urlparse.urljoin(settings.DOMAIN, item['loc']) for item in settings.SITEMAP_STATIC_URLS]
 
-        # Generation script requires at least one PreprintProvider with id = osf
-        provider = PreprintProviderFactory(_id='osf', name='osfprovider')
 
-        # Create a collection, whose link should not be included in the sitemap
-        collection = CollectionFactory()
-        collection_link = urljoin(settings.DOMAIN, collection._id)
+    def user_urls(self, public_project_owner, private_project_owner):
+        # Returns a list of user urls that should be included
+        list = [
+            public_project_owner.url,
+            private_project_owner.url,
+        ]
+        return [urlparse.urljoin(settings.DOMAIN, item) for item in list]
 
-        # Run the script
-        main()
 
-        # Parse the generated XML sitemap file
-        with open(temp_dir + '/sitemaps' + '/sitemap_0.xml') as f:
-            tree = xml.etree.ElementTree.parse(f)
+    def public_project_urls(self, public_project_for_active_registration, project_for_osf_preprint,
+                            project_for_other_preprint):
+        # Returns a list of public project urls that should be included
+        list = [
+            public_project_for_active_registration.url,
+            project_for_osf_preprint.url,
+            project_for_other_preprint.url
+        ]
+        return [urlparse.urljoin(settings.DOMAIN, item) for item in list]
 
-        # Remove the temp directory
-        shutil.rmtree(temp_dir)
 
-        # Get all the urls in the sitemap
-        # Note: namespace was defined in the XML file, therefore necessary to include in tag
-        namespace = '{http://www.sitemaps.org/schemas/sitemap/0.9}'
-        urls = [element.text for element in tree.iter(namespace + 'loc')]
+    def private_project_url(self, private_project):
+        # Returns the private project url that should NOT be included
+        return urlparse.urljoin(settings.DOMAIN, private_project.url)
 
-        assert collection not in urls
+
+    def active_registration_urls(self, active_registration):
+        # Returns a list of active registration urls that should be included
+        return [urlparse.urljoin(settings.DOMAIN, active_registration.url)]
+
+
+    def collection_url(self, collection):
+        # Returns the retracted registration url that should NOT be included
+        return urlparse.urljoin(settings.DOMAIN, collection.url)
+
+
+    def preprint_related_urls(self, osf_preprint, other_preprint, other_provider):
+        # Returns a list of preprint related urls that should be included
+        list = [
+            '/preprints/{}/'.format(osf_preprint._id),
+            '/preprints/{}/{}/'.format(other_provider._id, other_preprint._id),
+            '/project/{}/files/osfstorage/{}/?action=download'.format(osf_preprint.node._id,
+                                                                      osf_preprint.primary_file._id),
+            '/project/{}/files/osfstorage/{}/?action=download'.format(other_preprint.node._id,
+                                                                      other_preprint.primary_file._id),
+        ]
+        return [urlparse.urljoin(settings.DOMAIN, item) for item in list]
+
+
+    def test_all_links_included(self):
+
+        with mock.patch('website.settings.STATIC_FOLDER', 'sitemaptmpfolder'):
+            urls = get_all_sitemap_urls()
+
+        urls_to_include = [item['loc'] for item in settings.SITEMAP_STATIC_URLS]
+        urls_to_include.extend([
+            public_project_owner.url,
+            private_project_owner.url,
+            public_project_for_active_registration.url,
+            project_for_osf_preprint.url,
+            project_for_other_preprint.url,
+            active_registration.url,
+            '/preprints/{}/'.format(osf_preprint._id),
+            '/preprints/{}/{}/'.format(other_provider._id, other_preprint._id),
+            '/project/{}/files/osfstorage/{}/?action=download'.format(osf_preprint.node._id,
+                                                                      osf_preprint.primary_file._id),
+            '/project/{}/files/osfstorage/{}/?action=download'.format(other_preprint.node._id,
+                                                                      other_preprint.primary_file._id),
+        ])
+        urls_to_include = [urlparse.urljoin(settings.DOMAIN, item) for item in urls_to_include]
+        assert len(urls_to_include) == len(urls)
+        assert set(urls_to_include) == set(urls)
+
+    #def test_collection_links_included(self, public_project_owner, private_project_owner,
+    #                            public_project_for_active_registration, project_for_osf_preprint,
+    #                            project_for_other_preprint, active_registration,
+    #                            osf_preprint, osf_provider, other_preprint, other_provider):
