@@ -2,7 +2,7 @@ import os
 
 import pytest
 import mock
-import shutil, xml, urlparse
+import shutil, tempfile, xml, urlparse
 
 from scripts import generate_sitemap
 from osf_tests import factories
@@ -15,11 +15,10 @@ def get_all_sitemap_urls():
     generate_sitemap.main()
 
     # Parse the generated XML sitemap file
-    with open('sitemaptmpfolder' + '/sitemaps' + '/sitemap_0.xml') as f:
+    with open(settings.STATIC_FOLDER + '/sitemaps' + '/sitemap_0.xml') as f:
         tree = xml.etree.ElementTree.parse(f)
 
-    # Remove the temp directory
-    shutil.rmtree('sitemaptmpfolder')
+    shutil.rmtree(settings.STATIC_FOLDER)
 
     # Get all the urls in the sitemap
     # Note: namespace was defined in the XML file, therefore necessary to include in tag
@@ -41,7 +40,7 @@ class TestGenerateSitemap:
         return factories.AuthUserFactory()
 
     @pytest.fixture(autouse=True)
-    def public_project_for_active_registration(self, public_project_owner):
+    def public_project_for_registration(self, public_project_owner):
         return factories.ProjectFactory(creator=public_project_owner, is_public=True)
 
     @pytest.fixture(autouse=True)
@@ -57,10 +56,20 @@ class TestGenerateSitemap:
         return factories.ProjectFactory(creator=private_project_owner, is_public=False)
 
     @pytest.fixture(autouse=True)
-    def active_registration(self, public_project_owner, public_project_for_active_registration):
-        return factories.RegistrationFactory(project=public_project_for_active_registration,
+    def deleted_project(self, public_project_owner):
+        return factories.ProjectFactory(creator=public_project_owner, is_deleted=True)
+
+    @pytest.fixture(autouse=True)
+    def active_registration(self, public_project_owner, public_project_for_registration):
+        return factories.RegistrationFactory(project=public_project_for_registration,
                                              creator=public_project_owner,
                                              is_public=True)
+
+    @pytest.fixture(autouse=True)
+    def embargoed_registration(self, public_project_owner, public_project_for_registration):
+        return factories.RegistrationFactory(project=public_project_for_registration,
+                                             creator=public_project_owner,
+                                             embargo=factories.EmbargoFactory(user=public_project_owner))
 
     @pytest.fixture(autouse=True)
     def collection(self, public_project_owner):
@@ -87,71 +96,17 @@ class TestGenerateSitemap:
                                              creator=public_project_owner,
                                              provider=other_provider)
 
-
-    def generate_all_links(self):
-    def static_urls(self):
-        # Returns a list of static urls that should be included
-        return [urlparse.urljoin(settings.DOMAIN, item['loc']) for item in settings.SITEMAP_STATIC_URLS]
-
-
-    def user_urls(self, public_project_owner, private_project_owner):
-        # Returns a list of user urls that should be included
-        list = [
-            public_project_owner.url,
-            private_project_owner.url,
-        ]
-        return [urlparse.urljoin(settings.DOMAIN, item) for item in list]
-
-
-    def public_project_urls(self, public_project_for_active_registration, project_for_osf_preprint,
-                            project_for_other_preprint):
-        # Returns a list of public project urls that should be included
-        list = [
-            public_project_for_active_registration.url,
-            project_for_osf_preprint.url,
-            project_for_other_preprint.url
-        ]
-        return [urlparse.urljoin(settings.DOMAIN, item) for item in list]
-
-
-    def private_project_url(self, private_project):
-        # Returns the private project url that should NOT be included
-        return urlparse.urljoin(settings.DOMAIN, private_project.url)
-
-
-    def active_registration_urls(self, active_registration):
-        # Returns a list of active registration urls that should be included
-        return [urlparse.urljoin(settings.DOMAIN, active_registration.url)]
-
-
-    def collection_url(self, collection):
-        # Returns the retracted registration url that should NOT be included
-        return urlparse.urljoin(settings.DOMAIN, collection.url)
-
-
-    def preprint_related_urls(self, osf_preprint, other_preprint, other_provider):
-        # Returns a list of preprint related urls that should be included
-        list = [
-            '/preprints/{}/'.format(osf_preprint._id),
-            '/preprints/{}/{}/'.format(other_provider._id, other_preprint._id),
-            '/project/{}/files/osfstorage/{}/?action=download'.format(osf_preprint.node._id,
-                                                                      osf_preprint.primary_file._id),
-            '/project/{}/files/osfstorage/{}/?action=download'.format(other_preprint.node._id,
-                                                                      other_preprint.primary_file._id),
-        ]
-        return [urlparse.urljoin(settings.DOMAIN, item) for item in list]
-
-
-    def test_all_links_included(self):
-
-        with mock.patch('website.settings.STATIC_FOLDER', 'sitemaptmpfolder'):
-            urls = get_all_sitemap_urls()
-
+    @pytest.fixture(autouse=True)
+    def all_included_links(self, public_project_owner, private_project_owner, public_project_for_registration,
+                             project_for_osf_preprint, project_for_other_preprint,
+                             active_registration, other_provider, osf_preprint,
+                             other_preprint):
+        # Return urls of all fixtures
         urls_to_include = [item['loc'] for item in settings.SITEMAP_STATIC_URLS]
         urls_to_include.extend([
             public_project_owner.url,
             private_project_owner.url,
-            public_project_for_active_registration.url,
+            public_project_for_registration.url,
             project_for_osf_preprint.url,
             project_for_other_preprint.url,
             active_registration.url,
@@ -163,10 +118,47 @@ class TestGenerateSitemap:
                                                                       other_preprint.primary_file._id),
         ])
         urls_to_include = [urlparse.urljoin(settings.DOMAIN, item) for item in urls_to_include]
+
+        return urls_to_include
+
+    @pytest.fixture()
+    def create_tmp_directory(self):
+        return tempfile.mkdtemp()
+
+    def test_all_links_included(self, all_included_links, create_tmp_directory):
+
+        with mock.patch('website.settings.STATIC_FOLDER', create_tmp_directory):
+            urls = get_all_sitemap_urls()
+
+        urls_to_include = all_included_links
+
         assert len(urls_to_include) == len(urls)
         assert set(urls_to_include) == set(urls)
 
-    #def test_collection_links_included(self, public_project_owner, private_project_owner,
-    #                            public_project_for_active_registration, project_for_osf_preprint,
-    #                            project_for_other_preprint, active_registration,
-    #                            osf_preprint, osf_provider, other_preprint, other_provider):
+    def test_collection_link_not_included(self, collection, create_tmp_directory):
+
+        with mock.patch('website.settings.STATIC_FOLDER', create_tmp_directory):
+            urls = get_all_sitemap_urls()
+
+        assert urlparse.urljoin(settings.DOMAIN, collection.url) not in urls
+
+    def test_private_project_link_not_included(self, private_project, create_tmp_directory):
+
+        with mock.patch('website.settings.STATIC_FOLDER', create_tmp_directory):
+            urls = get_all_sitemap_urls()
+
+        assert urlparse.urljoin(settings.DOMAIN, private_project.url) not in urls
+
+    def test_embargoed_registration_link_not_included(self, embargoed_registration, create_tmp_directory):
+
+        with mock.patch('website.settings.STATIC_FOLDER', create_tmp_directory):
+            urls = get_all_sitemap_urls()
+
+        assert urlparse.urljoin(settings.DOMAIN, embargoed_registration.url) not in urls
+
+    def test_deleted_project_link_not_included(self, deleted_project, create_tmp_directory):
+
+        with mock.patch('website.settings.STATIC_FOLDER', create_tmp_directory):
+            urls = get_all_sitemap_urls()
+
+        assert urlparse.urljoin(settings.DOMAIN, deleted_project.url) not in urls
