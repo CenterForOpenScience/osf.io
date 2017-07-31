@@ -54,6 +54,8 @@ class NodeLogParamsSerializer(RestrictedDictSerializer):
     forward_url = ser.CharField(read_only=True)
     github_user = ser.CharField(read_only=True, source='github.user')
     github_repo = ser.CharField(read_only=True, source='github.repo')
+    bitbucket_user = ser.CharField(read_only=True, source='bitbucket.user')
+    bitbucket_repo = ser.CharField(read_only=True, source='bitbucket.repo')
     file = ser.DictField(read_only=True)
     filename = ser.CharField(read_only=True)
     kind = ser.CharField(read_only=True)
@@ -121,14 +123,20 @@ class NodeLogParamsSerializer(RestrictedDictSerializer):
         params_node = obj.get('node', None)
 
         if contributor_ids:
-            for contrib_id in contributor_ids:
-                user = OSFUser.load(contrib_id)
+            users = (
+                OSFUser.objects.filter(guids___id__in=contributor_ids)
+                .only('fullname', 'given_name',
+                      'middle_names', 'family_name',
+                      'unclaimed_records', 'is_active')
+                .order_by('fullname')
+            )
+            for user in users:
                 unregistered_name = None
                 if user.unclaimed_records.get(params_node):
                     unregistered_name = user.unclaimed_records[params_node].get('name', None)
 
                 contributor_info.append({
-                    'id': contrib_id,
+                    'id': user._id,
                     'full_name': user.fullname,
                     'given_name': user.given_name,
                     'middle_names': user.middle_names,
