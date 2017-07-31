@@ -4,6 +4,7 @@ from framework import auth
 from website import settings
 from website.filters import gravatar
 from osf.models import Node, Contributor
+from osf.models.contributor import get_contributor_permissions
 from website.util.permissions import reduce_permissions
 
 
@@ -48,9 +49,10 @@ def serialize_user(user, node=None, admin=False, full=False, is_profile=False, i
                 'permission': 'read',
             }
         else:
+            is_contributor_obj = isinstance(contrib, Contributor)
             flags = {
-                'visible': contrib.visible if isinstance(contrib, Contributor) else node.contributor_set.filter(user=user, visible=True).exists(),
-                'permission': reduce_permissions(node.get_permissions(user)),
+                'visible': contrib.visible if is_contributor_obj else node.contributor_set.filter(user=user, visible=True).exists(),
+                'permission': get_contributor_permissions(contrib, as_list=False) if is_contributor_obj else reduce_permissions(node.get_permissions(user)),
             }
         ret.update(flags)
     if user.is_registered:
