@@ -35,5 +35,20 @@ keenAnalysis.ready(function() {
     $('#preprints-tab')[0].onclick = function() {
         Metrics.PreprintMetrics();
     };
+    $('#preprints-range')[0].onclick = function() {
+        var preprint_created = new keenAnalysis.Query('sum', {
+            eventCollection: 'preprint_summary',
+            targetProperty: 'provider.total',
+            groupBy: ['provider.name'],
+            interval: 'daily',
+            timeframe: {
+                'start': $('#start-date')[0].value,
+                'end': $('#end-date')[0].value
+            },
+            timezone: "UTC"
+        });
+
+        Metrics.KeenRenderMetrics("#preprints-added", "line", preprint_created, 200);
+    };
 
 });

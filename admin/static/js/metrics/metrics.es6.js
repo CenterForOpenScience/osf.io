@@ -968,5 +968,7 @@ module.exports = {
     HealthyUserMetrics:HealthyUserMetrics,
     RawNumberMetrics: RawNumberMetrics,
     AddonMetrics: AddonMetrics,
-    PreprintMetrics: PreprintMetrics
+    PreprintMetrics: PreprintMetrics,
+    KeenRenderMetrics: renderKeenMetric
+
 };
