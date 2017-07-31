@@ -2,8 +2,6 @@ import pytest
 import mock
 
 from framework.auth.core import Auth
-from osf.models import AbstractNode as Node
-from website.util import permissions
 from api.base.settings.defaults import API_BASE
 from rest_framework import exceptions
 from osf_tests.factories import (

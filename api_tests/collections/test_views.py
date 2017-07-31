@@ -1,9 +1,8 @@
 from urlparse import urlparse
 
-import pytest
 from nose.tools import *  # flake8: noqa
 
-from osf.models import AbstractNode as Node, NodeLog
+from osf.models import AbstractNode, NodeLog
 from website.util.sanitize import strip_html
 from website.util import disconnected_from_listeners
 from website.project.signals import contributor_removed
@@ -108,7 +107,7 @@ class TestCollectionCreate(ApiTestCase):
         res = self.app.get(self.url+'?filter[title]={}'.format(self.title), auth=self.user_one.auth)
         ids = [each['id'] for each in res.json['data']]
         assert_in(pid, ids)
-        collection = Node.load(pid)
+        collection = AbstractNode.load(pid)
         assert_equal(collection.logs.order_by('date').first().action, NodeLog.PROJECT_CREATED)
         assert_equal(collection.title, self.title)
 
@@ -127,7 +126,7 @@ class TestCollectionCreate(ApiTestCase):
         assert_equal(res.status_code, 201)
         assert_equal(res.content_type, 'application/vnd.api+json')
 
-        collection = Node.load(collection_id)
+        collection = AbstractNode.load(collection_id)
         assert_equal(collection.logs.latest().action, NodeLog.PROJECT_CREATED)
         assert_equal(collection.title, strip_html(title))
 

@@ -8,7 +8,7 @@ from framework.auth.decorators import must_be_signed
 from framework.exceptions import HTTPError
 
 from addons.osfstorage.models import OsfStorageFileNode, OsfStorageFolder
-from osf.models import OSFUser as User, AbstractNode as Node
+from osf.models import OSFUser, AbstractNode
 from website.files import exceptions
 from website.project.decorators import (
     must_not_be_registration, must_have_addon,
@@ -69,8 +69,8 @@ def waterbutler_opt_hook(func):
     @functools.wraps(func)
     def wrapped(payload, *args, **kwargs):
         try:
-            user = User.load(payload['user'])
-            dest_node = Node.load(payload['destination']['node'])
+            user = OSFUser.load(payload['user'])
+            dest_node = AbstractNode.load(payload['destination']['node'])
             source = OsfStorageFileNode.get(payload['source'], kwargs['node'])
             dest_parent = OsfStorageFolder.get(payload['destination']['parent'], dest_node)
 
