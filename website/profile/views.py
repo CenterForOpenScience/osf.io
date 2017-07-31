@@ -4,8 +4,9 @@ import httplib
 import httplib as http  # TODO: Inconsistent usage of aliased import
 from dateutil.parser import parse as parse_date
 
-from django.utils import timezone
 from django.core.exceptions import ValidationError
+from django.shortcuts import get_object_or_404
+from django.utils import timezone
 from flask import request
 import mailchimp
 
@@ -401,12 +402,7 @@ def oauth_application_detail(auth, **kwargs):
     client_id = kwargs.get('client_id')
 
     # The client ID must be an active and existing record, and the logged-in user must have permission to view it.
-    try:
-        record = ApiOAuth2Application.objects.get(client_id=client_id)
-    except ApiOAuth2Application.DoesNotExist:
-        raise HTTPError(http.NOT_FOUND)
-    except ValueError:  # Invalid client ID -- ApiOAuth2Application will not exist
-        raise HTTPError(http.NOT_FOUND)
+    record = get_object_or_404(ApiOAuth2Application, client_id=client_id)
     if record.owner != auth.user:
         raise HTTPError(http.FORBIDDEN)
     if record.is_active is False:
@@ -438,10 +434,7 @@ def personal_access_token_detail(auth, **kwargs):
     _id = kwargs.get('_id')
 
     # The ID must be an active and existing record, and the logged-in user must have permission to view it.
-    try:
-        record = ApiOAuth2PersonalToken.objects.get(_id=_id)
-    except ApiOAuth2PersonalToken.DoesNotExist:
-        raise HTTPError(http.NOT_FOUND)
+    record = get_object_or_404(ApiOAuth2PersonalToken, _id=_id)
     if record.owner != auth.user:
         raise HTTPError(http.FORBIDDEN)
     if record.is_active is False:
@@ -603,10 +596,8 @@ def serialize_names(**kwargs):
 
 
 def get_target_user(auth, uid=None):
-    target = User.load(uid) if uid else auth.user
-    if target is None:
-        raise HTTPError(http.NOT_FOUND)
-    return target
+    user_id = uid if uid else auth.user
+    return get_object_or_404(User, _id=user_id)
 
 
 def fmt_date_or_none(date, fmt='%Y-%m-%d'):

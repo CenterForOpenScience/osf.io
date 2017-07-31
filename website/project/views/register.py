@@ -2,6 +2,7 @@
 import httplib as http
 import itertools
 
+from django.shortcuts import get_object_or_404
 from flask import request
 
 from framework import status
@@ -246,10 +247,7 @@ def get_referent_by_identifier(category, value):
     """Look up identifier by `category` and `value` and redirect to its referent
     if found.
     """
-    try:
-        identifier = Identifier.objects.get(category=category, value=value)
-    except Identifier.DoesNotExist:
-        raise HTTPError(http.NOT_FOUND)
+    identifier = get_object_or_404(Identifier, category=category, value=value)
     if identifier.referent.url:
         return redirect(identifier.referent.url)
     raise HTTPError(http.NOT_FOUND)
