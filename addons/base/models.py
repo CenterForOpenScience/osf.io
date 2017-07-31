@@ -13,7 +13,6 @@ from osf.models.base import BaseModel, ObjectIDMixin
 from osf.models.external import ExternalAccount
 from osf.models.node import AbstractNode
 from osf.models.user import OSFUser
-from osf.modm_compat import Q
 from osf.utils.datetime_aware_jsonfield import DateTimeAwareJSONField
 from website import settings
 from addons.base import logger, serializer
@@ -319,10 +318,7 @@ class BaseOAuthUserSettings(BaseUserSettings):
         except KeyError:
             pass
         else:
-            connected = Model.find(Q('user_settings', 'eq', user_settings))
-            for node_settings in connected:
-                node_settings.user_settings = self
-                node_settings.save()
+            Model.objects.filter(user_settings=user_settings).update(user_settings=self)
 
         self.save()
 

@@ -7,7 +7,6 @@ from django.core.exceptions import ValidationError
 from django.db import IntegrityError
 from django.db import connection
 from django.db import transaction
-from modularodm import Q
 
 from flask import request
 
@@ -27,7 +26,6 @@ from website.files import exceptions
 from addons.osfstorage import utils
 from addons.osfstorage import decorators
 from addons.osfstorage import settings as osf_storage_settings
-from addons.osfstorage.models import OsfStorageFolder
 
 
 logger = logging.getLogger(__name__)
@@ -107,9 +105,6 @@ def osfstorage_move_hook(source, destination, name=None, **kwargs):
 @must_be_signed
 @decorators.autoload_filenode(default_root=True)
 def osfstorage_get_lineage(file_node, node_addon, **kwargs):
-    #TODO Profile
-    list(OsfStorageFolder.find(Q('node', 'eq', node_addon.owner)))
-
     lineage = []
 
     while file_node:
