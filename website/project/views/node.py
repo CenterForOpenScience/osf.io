@@ -645,10 +645,8 @@ def _view_project(node, auth, primary=False,
             'private_links': [x.to_json() for x in node.private_links_active],
             'link': view_only_link,
             'anonymous': anonymous,
-            'points': len(node.get_points(deleted=False, folders=False)),
             'comment_level': node.comment_level,
-            'has_comments': bool(Comment.find(Q('node', 'eq', node))),
-            'has_children': bool(Comment.find(Q('node', 'eq', node))),
+            'has_comments': Comment.objects.filter(node=node).exists(),
             'identifiers': {
                 'doi': node.get_identifier_value('doi'),
                 'ark': node.get_identifier_value('ark'),
@@ -656,7 +654,6 @@ def _view_project(node, auth, primary=False,
             'institutions': get_affiliated_institutions(node) if node else [],
             'alternative_citations': [citation.to_json() for citation in node.alternative_citations.all()],
             'has_draft_registrations': node.has_active_draft_registrations,
-            'contributors': list(node.contributors.values_list('guids___id', flat=True)),
             'is_preprint': node.is_preprint,
             'is_preprint_orphan': node.is_preprint_orphan,
             'has_published_preprint': node.preprints.filter(is_published=True).exists() if node else False,
@@ -705,6 +702,8 @@ def _view_project(node, auth, primary=False,
     }
     if embed_contributors and not anonymous:
         data['node']['contributors'] = utils.serialize_visible_contributors(node)
+    else:
+        data['node']['contributors'] = list(node.contributors.values_list('guids___id', flat=True))
     if embed_descendants:
         descendants, all_readable = _get_readable_descendants(auth=auth, node=node)
         data['user']['can_sort'] = all_readable
