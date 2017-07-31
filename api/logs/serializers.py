@@ -123,14 +123,20 @@ class NodeLogParamsSerializer(RestrictedDictSerializer):
         params_node = obj.get('node', None)
 
         if contributor_ids:
-            for contrib_id in contributor_ids:
-                user = OSFUser.load(contrib_id)
+            users = (
+                OSFUser.objects.filter(guids___id__in=contributor_ids)
+                .only('fullname', 'given_name',
+                      'middle_names', 'family_name',
+                      'unclaimed_records', 'is_active')
+                .order_by('fullname')
+            )
+            for user in users:
                 unregistered_name = None
                 if user.unclaimed_records.get(params_node):
                     unregistered_name = user.unclaimed_records[params_node].get('name', None)
 
                 contributor_info.append({
-                    'id': contrib_id,
+                    'id': user._id,
                     'full_name': user.fullname,
                     'given_name': user.given_name,
                     'middle_names': user.middle_names,
