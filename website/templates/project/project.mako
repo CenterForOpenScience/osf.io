@@ -523,7 +523,6 @@ ${parent.javascript_bottom()}
         },
         node: {
             id: ${node['id'] | sjson, n},
-            hasChildren: ${ node['has_children'] | sjson, n },
             isRegistration: ${ node['is_registration'] | sjson, n },
             tags: ${ node['tags'] | sjson, n },
             institutions: ${node['institutions'] | sjson, n},
