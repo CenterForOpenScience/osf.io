@@ -10,9 +10,6 @@ from django.contrib.auth.mixins import PermissionRequiredMixin
 from django.forms.models import model_to_dict
 from django.shortcuts import redirect
 
-from modularodm import Q
-from modularodm.exceptions import NoResultsFound
-
 from admin.base import settings
 from admin.base.forms import ImportFileForm
 from admin.preprint_providers.forms import PreprintProviderForm
@@ -170,7 +167,7 @@ class ExportPreprintProvider(PermissionRequiredMixin, View):
         data = serializers.serialize('json', [preprint_provider])
         cleaned_data = json.loads(data)[0]
         cleaned_fields = {key: value for key, value in cleaned_data['fields'].iteritems() if key not in FIELDS_TO_NOT_IMPORT_EXPORT}
-        cleaned_fields['licenses_acceptable'] = [license.license_id for license in preprint_provider.licenses_acceptable.all()]
+        cleaned_fields['licenses_acceptable'] = [node_license.license_id for node_license in preprint_provider.licenses_acceptable.all()]
         cleaned_fields['subjects'] = self.serialize_subjects(preprint_provider)
         cleaned_data['fields'] = cleaned_fields
         filename = '{}_export.json'.format(preprint_provider.name)
@@ -243,13 +240,6 @@ class ImportPreprintProvider(PermissionRequiredMixin, View):
             parsed_file += str(chunk)
         return parsed_file
 
-    def get_license(self, license_id):
-        try:
-            license = NodeLicense.find_one(Q('license_id', 'eq', license_id))
-        except NoResultsFound:
-            raise Exception('License: "{}" not found'.format(license_id))
-        return license
-
     def get_page_provider(self):
         page_provider_id = self.kwargs.get('preprint_provider_id', '')
         if page_provider_id:
@@ -261,7 +251,7 @@ class ImportPreprintProvider(PermissionRequiredMixin, View):
 
     def create_or_update_provider(self, provider_data):
         provider = self.get_page_provider()
-        licenses = [self.get_license(license_id) for license_id in provider_data.pop('licenses_acceptable', [])]
+        licenses = [NodeLicense.objects.get(license_id=license_id) for license_id in provider_data.pop('licenses_acceptable', [])]
         default_license = provider_data.pop('default_license', False)
         subject_data = provider_data.pop('subjects', False)
 
@@ -276,7 +266,7 @@ class ImportPreprintProvider(PermissionRequiredMixin, View):
         if licenses:
             provider.licenses_acceptable = licenses
         if default_license:
-            provider.default_license = self.get_license(default_license)
+            provider.default_license = NodeLicense.objects.get(license_id=default_license)
         # Only adds the JSON taxonomy if there is no existing taxonomy data
         if subject_data and not provider.subjects.count():
             self.add_subjects(provider, subject_data)

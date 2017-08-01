@@ -13,7 +13,7 @@ from osf_tests.factories import (
     PreprintFactory,
     SubjectFactory,
 )
-from osf.models import PreprintProvider
+from osf.models import PreprintProvider, NodeLicense
 from admin_tests.utilities import setup_form_view, setup_user_view
 from admin.preprint_providers import views
 from admin.preprint_providers.forms import PreprintProviderForm
@@ -213,7 +213,7 @@ class TestPreprintProviderExportImport(AdminTestCase):
         self.import_view = views.ImportPreprintProvider()
         self.import_view = setup_user_view(self.import_view, self.import_request, user=self.user)
 
-        self.preprint_provider.licenses_acceptable = [self.import_view.get_license('NONE')]
+        self.preprint_provider.licenses_acceptable = [NodeLicense.objects.get(license_id='NONE')]
         self.subject = SubjectFactory(provider=self.preprint_provider)
 
     def test_post(self):
@@ -230,14 +230,14 @@ class TestPreprintProviderExportImport(AdminTestCase):
             nt.assert_not_in(field, content_dict['fields'].keys())
 
     def test_export_to_import_new_provider(self):
-        update_taxonomies('bepress_taxonomy.json')
+        update_taxonomies('test_bepress_taxonomy.json')
 
         res = self.view.get(self.request)
         content_dict = json.loads(res.content)
 
         content_dict['fields']['_id'] = 'new_id'
-        file = StringIO(u'' + json.dumps(content_dict))
-        self.import_request.FILES['file'] = InMemoryUploadedFile(file, None, 'data', 'application/json', 500, None, {})
+        data = StringIO(unicode(json.dumps(content_dict), 'utf-8'))
+        self.import_request.FILES['file'] = InMemoryUploadedFile(data, None, 'data', 'application/json', 500, None, {})
 
         res = self.import_view.post(self.import_request)
 
@@ -262,14 +262,14 @@ class TestPreprintProviderExportImport(AdminTestCase):
         new_subject_data['custom'] = {
             'TestSubject1': {
                 'parent': '',
-                'bepress': 'Kinesiology'
+                'bepress': 'Law'
             }
         }
 
         content_dict['fields']['subjects'] = json.dumps(new_subject_data)
         content_dict['fields']['licenses_acceptable'] = ['CCBY']
-        file = StringIO(u'' + json.dumps(content_dict))
-        self.import_request.FILES['file'] = InMemoryUploadedFile(file, None, 'data', 'application/json', 500, None, {})
+        data = StringIO(unicode(json.dumps(content_dict), 'utf-8'))
+        self.import_request.FILES['file'] = InMemoryUploadedFile(data, None, 'data', 'application/json', 500, None, {})
 
         res = self.import_view.post(self.import_request)
 
