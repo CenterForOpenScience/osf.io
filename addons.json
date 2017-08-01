@@ -13,7 +13,8 @@
         "s3",
         "twofactor",
         "wiki",
-        "googledrive"
+        "googledrive",
+        "bitbucket"
     ],
     "addons_archivable": {
         "osfstorage": "full",
@@ -26,7 +27,8 @@
         "github": "partial",
         "owncloud": "partial",
         "s3": "partial",
-        "wiki": "full"
+        "wiki": "full",
+        "bitbucket": "partial"
     },
     "addons_commentable": [
         "osfstorage",
@@ -37,7 +39,8 @@
         "github",
         "googledrive",
         "owncloud",
-        "s3"
+        "s3",
+        "bitbucket"
     ],
     "addons_based_on_ids": [
         "osfstorage",
@@ -57,7 +60,8 @@
         "s3": "Amazon S3 is a file storage add-on. Connect your S3 account to an OSF project to interact with files hosted on S3 via the OSF.",
         "twofactor": "Two-factor authentication is a security add-on. By using two-factor authentication, you'll protect your OSF account with both your password and your mobile phone.",
         "wiki": "The wiki is a versatile communication tool. Wikis can be used to explain the main points of your project and can contain information like lab notes or contact information.",
-        "googledrive": "Google Drive is a file storage add-on. Connect your Google Drive account to an OSF project to interact with files hosted on Google Drive via the OSF."
+        "googledrive": "Google Drive is a file storage add-on. Connect your Google Drive account to an OSF project to interact with files hosted on Google Drive via the OSF.",
+        "bitbucket": "Bitbucket is a web-based Git repository hosting service. Connect your Bitbucket repo to your OSF project to share your code alongside other materials in your OSF project."
     },
     "addons_url": {
         "box": "http://www.box.com",
@@ -69,6 +73,7 @@
         "owncloud": "https://owncloud.org/",
         "zotero": "http://www.zotero.org",
         "s3": "https://aws.amazon.com/s3/",
-        "googledrive": "https://drive.google.com"
+        "googledrive": "https://drive.google.com",
+        "bitbucket": "https://bitbucket.org/"
     }
 }

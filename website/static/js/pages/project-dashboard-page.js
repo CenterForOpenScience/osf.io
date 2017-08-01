@@ -59,7 +59,6 @@ if ($comments.length) {
         rootId: window.contextVars.node.id,
         fileId: null,
         canComment: window.contextVars.currentUser.canComment,
-        hasChildren: window.contextVars.node.hasChildren,
         currentUser: window.contextVars.currentUser,
         pageTitle: window.contextVars.node.title,
         inputSelector: '.atwho-input'
