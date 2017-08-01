@@ -2,10 +2,14 @@ import os
 
 import pytest
 import mock
-import shutil, tempfile, xml, urlparse
+import shutil
+import tempfile
+import xml
+import urlparse
 
 from scripts import generate_sitemap
-from osf_tests import factories
+from osf_tests.factories import (AuthUserFactory, ProjectFactory, RegistrationFactory, CollectionFactory,
+                                 PreprintFactory, PreprintProviderFactory, EmbargoFactory)
 from website import settings
 
 
@@ -15,7 +19,7 @@ def get_all_sitemap_urls():
     generate_sitemap.main()
 
     # Parse the generated XML sitemap file
-    with open(settings.STATIC_FOLDER + '/sitemaps' + '/sitemap_0.xml') as f:
+    with open(os.path.join(settings.STATIC_FOLDER, 'sitemaps/sitemap_0.xml')) as f:
         tree = xml.etree.ElementTree.parse(f)
 
     shutil.rmtree(settings.STATIC_FOLDER)
@@ -32,80 +36,80 @@ def get_all_sitemap_urls():
 class TestGenerateSitemap:
 
     @pytest.fixture(autouse=True)
-    def public_project_owner(self):
-        return factories.AuthUserFactory()
+    def user_admin_project_public(self):
+        return AuthUserFactory()
 
     @pytest.fixture(autouse=True)
-    def private_project_owner(self):
-        return factories.AuthUserFactory()
+    def user_admin_project_private(self):
+        return AuthUserFactory()
 
     @pytest.fixture(autouse=True)
-    def public_project_for_registration(self, public_project_owner):
-        return factories.ProjectFactory(creator=public_project_owner, is_public=True)
+    def public_project_for_registration(self, user_admin_project_public):
+        return ProjectFactory(creator=user_admin_project_public, is_public=True)
 
     @pytest.fixture(autouse=True)
-    def project_for_osf_preprint(self, public_project_owner):
-        return factories.ProjectFactory(creator=public_project_owner, is_public=True)
+    def project_for_osf_preprint(self, user_admin_project_public):
+        return ProjectFactory(creator=user_admin_project_public, is_public=True)
 
     @pytest.fixture(autouse=True)
-    def project_for_other_preprint(self, public_project_owner):
-        return factories.ProjectFactory(creator=public_project_owner, is_public=True)
+    def project_for_other_preprint(self, user_admin_project_public):
+        return ProjectFactory(creator=user_admin_project_public, is_public=True)
 
     @pytest.fixture(autouse=True)
-    def private_project(self, private_project_owner):
-        return factories.ProjectFactory(creator=private_project_owner, is_public=False)
+    def private_project(self, user_admin_project_private):
+        return ProjectFactory(creator=user_admin_project_private, is_public=False)
 
     @pytest.fixture(autouse=True)
-    def deleted_project(self, public_project_owner):
-        return factories.ProjectFactory(creator=public_project_owner, is_deleted=True)
+    def deleted_project(self, user_admin_project_public):
+        return ProjectFactory(creator=user_admin_project_public, is_deleted=True)
 
     @pytest.fixture(autouse=True)
-    def active_registration(self, public_project_owner, public_project_for_registration):
-        return factories.RegistrationFactory(project=public_project_for_registration,
-                                             creator=public_project_owner,
+    def active_registration(self, user_admin_project_public, public_project_for_registration):
+        return RegistrationFactory(project=public_project_for_registration,
+                                             creator=user_admin_project_public,
                                              is_public=True)
 
     @pytest.fixture(autouse=True)
-    def embargoed_registration(self, public_project_owner, public_project_for_registration):
-        return factories.RegistrationFactory(project=public_project_for_registration,
-                                             creator=public_project_owner,
-                                             embargo=factories.EmbargoFactory(user=public_project_owner))
+    def embargoed_registration(self, user_admin_project_public, public_project_for_registration):
+        return RegistrationFactory(project=public_project_for_registration,
+                                             creator=user_admin_project_public,
+                                             embargo=EmbargoFactory(user=user_admin_project_public))
 
     @pytest.fixture(autouse=True)
-    def collection(self, public_project_owner):
-        return factories.CollectionFactory(creator=public_project_owner)
+    def collection(self, user_admin_project_public):
+        return CollectionFactory(creator=user_admin_project_public)
 
     @pytest.fixture(autouse=True)
     def osf_provider(self):
         # Note: at least a provider whose _id == 'osf' have to exist for the script to work
-        return factories.PreprintProviderFactory(_id='osf', name='osfprovider')
+        return PreprintProviderFactory(_id='osf', name='osfprovider')
 
     @pytest.fixture(autouse=True)
     def other_provider(self):
-        return factories.PreprintProviderFactory(_id='adl', name="anotherprovider")
+        return PreprintProviderFactory(_id='adl', name='anotherprovider')
 
     @pytest.fixture(autouse=True)
-    def osf_preprint(self, project_for_osf_preprint, public_project_owner, osf_provider):
-        return factories.PreprintFactory(project=project_for_osf_preprint,
-                                             creator=public_project_owner,
+    def osf_preprint(self, project_for_osf_preprint, user_admin_project_public, osf_provider):
+        return PreprintFactory(project=project_for_osf_preprint,
+                                             creator=user_admin_project_public,
                                              provider=osf_provider)
 
     @pytest.fixture(autouse=True)
-    def other_preprint(self, project_for_other_preprint, public_project_owner, other_provider):
-        return factories.PreprintFactory(project=project_for_other_preprint,
-                                             creator=public_project_owner,
+    def other_preprint(self, project_for_other_preprint, user_admin_project_public, other_provider):
+        return PreprintFactory(project=project_for_other_preprint,
+                                             creator=user_admin_project_public,
                                              provider=other_provider)
 
     @pytest.fixture(autouse=True)
-    def all_included_links(self, public_project_owner, private_project_owner, public_project_for_registration,
+    def all_included_links(self, user_admin_project_public, user_admin_project_private, public_project_for_registration,
                              project_for_osf_preprint, project_for_other_preprint,
                              active_registration, other_provider, osf_preprint,
                              other_preprint):
         # Return urls of all fixtures
         urls_to_include = [item['loc'] for item in settings.SITEMAP_STATIC_URLS]
         urls_to_include.extend([
-            public_project_owner.url,
-            private_project_owner.url,
+            user_admin_project_public.url,
+            user_admin_project_private.url,
             public_project_for_registration.url,
             project_for_osf_preprint.url,
             project_for_other_preprint.url,
