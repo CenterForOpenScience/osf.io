@@ -124,6 +124,11 @@ class PreprintSerializer(JSONAPISerializer):
         read_only=False
     )
 
+    review_logs = RelationshipField(
+        related_view='preprints:reviewable-review_log-list',
+        related_view_kwargs={'preprint_id': '<_id>'}
+    )
+
     links = LinksField(
         {
             'self': 'get_preprint_url',
