@@ -795,13 +795,7 @@ def main(env):
     init_app(routes=False)
     with transaction.atomic():
         for inst_data in INSTITUTIONS:
-            new_inst, inst_created = update_or_create(inst_data)
-            # update the nodes elastic docs, to have current names of institutions. This will
-            # only work properly if this file is the only thing changing institution attributes
-            if not inst_created:
-                nodes = Node.find_by_institutions(new_inst, query=Q('is_deleted', 'ne', True))
-                for node in nodes:
-                    update_node(node, async=False)
+            update_or_create(inst_data)
         for extra_inst in Institution.objects.exclude(_id__in=[x['_id'] for x in INSTITUTIONS]):
             logger.warn('Extra Institution : {} - {}'.format(extra_inst._id, extra_inst.name))
 
