@@ -27,7 +27,7 @@ from scripts import utils as scripts_utils
 # App must be init'd before django models are imported
 init_app(set_backends=True, routes=False)
 
-from osf.models import BaseFileNode, FileVersion, OSFUser as User, AbstractNode as Node
+from osf.models import BaseFileNode, FileVersion, OSFUser, AbstractNode
 
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO)
@@ -79,7 +79,7 @@ def main(send_email=False):
     projects = {}
     users = defaultdict(lambda: (0, 0))
 
-    top_level_nodes = Node.objects.get_roots()
+    top_level_nodes = AbstractNode.objects.get_roots()
     progress_bar = progressbar.ProgressBar(maxval=top_level_nodes.count()).start()
     top_level_nodes = top_level_nodes.iterator()
 
@@ -96,7 +96,7 @@ def main(send_email=False):
             gc.collect()
     progress_bar.finish()
 
-    for model, collection, limit in ((User, users, USER_LIMIT), (Node, projects, PROJECT_LIMIT)):
+    for model, collection, limit in ((OSFUser, users, USER_LIMIT), (AbstractNode, projects, PROJECT_LIMIT)):
         for item, (used, deleted) in filter(functools.partial(limit_filter, limit), collection.items()):
             line = '{!r} has exceeded the limit {:.2f}GBs ({}b) with {:.2f}GBs ({}b) used and {:.2f}GBs ({}b) deleted.'.format(model.load(item), limit / GBs, limit, used / GBs, used, deleted / GBs, deleted)
             logger.info(line)

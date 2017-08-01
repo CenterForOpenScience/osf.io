@@ -34,10 +34,10 @@ from osf.models import (Subject, NotificationSubscription, NotificationDigest,
                         ArchiveJob, ArchiveTarget, Identifier, NodeLicense,
                         NodeLicenseRecord, Embargo, RegistrationApproval,
                         Retraction, Sanction, Comment, DraftRegistration,
-                        MetaSchema, AbstractNode as Node, NodeLog,
+                        MetaSchema, AbstractNode, NodeLog,
                         PrivateLink, Tag, AlternativeCitation, Institution,
                         ApiOAuth2PersonalToken, ApiOAuth2Application, ExternalAccount,
-                        ExternalProvider, OSFUser as User, PreprintService,
+                        ExternalProvider, OSFUser, PreprintService,
                         PreprintProvider, Session, Guid)
 from website.archiver import ARCHIVER_SUCCESS
 from website.util import permissions
@@ -98,7 +98,7 @@ class PreprintProviderFactory(ModularOdmFactory):
 
 class UserFactory(ModularOdmFactory):
     class Meta:
-        model = User
+        model = OSFUser
         abstract = False
 
     username = Sequence(lambda n: 'fred{0}@mail.com'.format(n))
@@ -189,7 +189,7 @@ class PrivateLinkFactory(ModularOdmFactory):
 
 class AbstractNodeFactory(ModularOdmFactory):
     class Meta:
-        model = Node
+        model = AbstractNode
 
     title = 'The meaning of life'
     description = 'The meaning of life is 42.'
@@ -407,7 +407,7 @@ class WithdrawnRegistrationFactory(AbstractNodeFactory):
 
 class ForkFactory(ModularOdmFactory):
     class Meta:
-        model = Node
+        model = AbstractNode
 
     @classmethod
     def _create(cls, *args, **kwargs):
@@ -511,7 +511,7 @@ class UnregUserFactory(ModularOdmFactory):
 
     """
     class Meta:
-        model = User
+        model = OSFUser
         abstract = False
     email = Sequence(lambda n: "brian{0}@queen.com".format(n))
     fullname = Sequence(lambda n: "Brian May{0}".format(n))
@@ -532,7 +532,7 @@ class UnconfirmedUserFactory(ModularOdmFactory):
     address (username).
     """
     class Meta:
-        model = User
+        model = OSFUser
     username = Sequence(lambda n: 'roger{0}@queen.com'.format(n))
     fullname = Sequence(lambda n: 'Roger Taylor{0}'.format(n))
     password = 'killerqueen'

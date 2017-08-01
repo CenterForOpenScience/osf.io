@@ -7,7 +7,7 @@ from framework import sentry
 from framework.celery_tasks import app
 from framework.celery_tasks.handlers import queued_task
 from framework.auth.signals import user_confirmed
-from osf.models import OSFUser as User
+from osf.models import OSFUser
 from website import settings
 
 
@@ -35,7 +35,7 @@ def get_list_name_from_id(list_id):
 @app.task
 @transaction.atomic
 def subscribe_mailchimp(list_name, user_id):
-    user = User.load(user_id)
+    user = OSFUser.load(user_id)
     m = get_mailchimp_api()
     list_id = get_list_id_from_name(list_name=list_name)
 
@@ -73,7 +73,7 @@ def unsubscribe_mailchimp(list_name, user_id, username=None, send_goodbye=True):
 
     :raises: ListNotSubscribed if user not already subscribed
     """
-    user = User.load(user_id)
+    user = OSFUser.load(user_id)
     m = get_mailchimp_api()
     list_id = get_list_id_from_name(list_name=list_name)
     m.lists.unsubscribe(id=list_id, email={'email': username or user.username}, send_goodbye=send_goodbye)

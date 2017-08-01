@@ -292,7 +292,8 @@ class TestPreprintUpdate:
 
         assert not preprint.subjects.filter(_id=subject._id).exists()
 
-    def test_update_published(self, app, user):
+    @mock.patch('website.preprints.tasks.get_and_set_preprint_identifiers.si')
+    def test_update_published(self, mock_get_identifiers, app, user):
         unpublished = PreprintFactory(creator=user, is_published=False)
         url = '/{}preprints/{}/'.format(API_BASE, unpublished._id)
         payload = build_preprint_update_payload(unpublished._id, attributes={'is_published': True})

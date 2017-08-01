@@ -23,7 +23,7 @@ from osf_tests.factories import (
 
 from framework.auth import Auth
 from framework.auth.decorators import must_be_logged_in
-from osf.models import OSFUser as User, Session
+from osf.models import OSFUser, Session
 from website import mails
 from website import settings
 from website.util import permissions
@@ -49,7 +49,7 @@ class TestAuthUtils(OsfTestCase):
         user.middle_names = ''
         user.suffix = ''
         user.save()
-        resp = user.csl_name(user._id)
+        resp = user.csl_name()
         family_name = resp['family']
         given_name = resp['given']
         assert_equal(family_name, 'King')
@@ -118,7 +118,7 @@ class TestAuthUtils(OsfTestCase):
 
     def test_get_user_by_id(self):
         user = UserFactory()
-        assert_equal(User.load(user._id), user)
+        assert_equal(OSFUser.load(user._id), user)
 
     def test_get_user_by_email(self):
         user = UserFactory()
@@ -261,7 +261,7 @@ class TestAuthObject(OsfTestCase):
 
     def test_factory(self):
         auth_obj = AuthFactory()
-        assert_true(isinstance(auth_obj.user, User))
+        assert_true(isinstance(auth_obj.user, OSFUser))
 
     def test_from_kwargs(self):
         user = UserFactory()
