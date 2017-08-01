@@ -39,6 +39,8 @@ class TokenList(JSONAPIBaseView, generics.ListCreateAPIView, ListFilterMixin):
     # solution for hiding this api endpoint
     renderer_classes = [JSONRendererWithESISupport, JSONAPIRenderer, ]  # Hide from web-browsable API tool
 
+    ordering = ('-id',)
+
     def get_default_queryset(self):
         return ApiOAuth2PersonalToken.objects.filter(owner=self.request.user, is_active=True)
 

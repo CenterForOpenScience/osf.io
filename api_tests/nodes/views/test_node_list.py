@@ -3,7 +3,7 @@ import pytest
 from api.base.settings.defaults import API_BASE, MAX_PAGE_SIZE
 from api_tests.nodes.filters.test_filters import NodesListFilteringMixin, NodesListDateFilteringMixin
 from framework.auth.core import Auth
-from osf.models import AbstractNode as Node, NodeLog
+from osf.models import AbstractNode, Node, NodeLog
 from osf_tests.factories import (
     CollectionFactory,
     ProjectFactory,
@@ -116,7 +116,7 @@ class TestNodeList:
         res = app.get(url + '?embed=root&embed=parent', auth=user.auth)
 
         for project_json in res.json['data']:
-            project = Node.load(project_json['id'])
+            project = AbstractNode.load(project_json['id'])
             assert project_json['embeds']['root']['data']['id'] == project.root._id
 
 
@@ -603,7 +603,7 @@ class TestNodeFiltering:
         res = app.get(url, auth=user_one.auth)
         assert res.status_code == 200
 
-        root_nodes = Node.objects.filter(root__guids___id=root._id)
+        root_nodes = AbstractNode.objects.filter(root__guids___id=root._id)
 
         assert len(res.json['data']) == root_nodes.count()
 
@@ -812,7 +812,7 @@ class TestNodeCreate:
         assert res.json['data']['attributes']['category'] == public_project['data']['attributes']['category']
         assert res.content_type == 'application/vnd.api+json'
         pid = res.json['data']['id']
-        project = Node.load(pid)
+        project = AbstractNode.load(pid)
         assert project.logs.latest().action == NodeLog.PROJECT_CREATED
 
     def test_creates_private_project_logged_in_contributor(self, app, user_one, private_project, url):
@@ -823,7 +823,7 @@ class TestNodeCreate:
         assert res.json['data']['attributes']['description'] == private_project['data']['attributes']['description']
         assert res.json['data']['attributes']['category'] == private_project['data']['attributes']['category']
         pid = res.json['data']['id']
-        project = Node.load(pid)
+        project = AbstractNode.load(pid)
         assert project.logs.latest().action == NodeLog.PROJECT_CREATED
 
     def test_create_from_template_errors(self, app, user_one, user_two, url):
@@ -881,7 +881,7 @@ class TestNodeCreate:
         json_data = res.json['data']
 
         new_project_id = json_data['id']
-        new_project = Node.load(new_project_id)
+        new_project = AbstractNode.load(new_project_id)
         assert new_project.title == templated_project_title
         assert new_project.description == ''
         assert not new_project.is_public
@@ -908,7 +908,7 @@ class TestNodeCreate:
         assert res.content_type == 'application/vnd.api+json'
         url = '/{}nodes/{}/'.format(API_BASE, project_id)
 
-        project = Node.load(project_id)
+        project = AbstractNode.load(project_id)
         assert project.logs.latest().action == NodeLog.PROJECT_CREATED
 
         res = app.get(url, auth=user_one.auth)
@@ -934,7 +934,7 @@ class TestNodeCreate:
         json_data = res.json['data']
 
         new_component_id = json_data['id']
-        new_component = Node.load(new_component_id)
+        new_component = AbstractNode.load(new_component_id)
         assert len(new_component.contributors) == 2
         assert len(new_component.contributors) == len(parent_project.contributors)
 
@@ -956,7 +956,7 @@ class TestNodeCreate:
         json_data = res.json['data']
 
         new_component_id = json_data['id']
-        new_component = Node.load(new_component_id)
+        new_component = AbstractNode.load(new_component_id)
 
         assert len(new_component.tags.all()) == 2
         tag1, tag2 = new_component.tags.all()
@@ -984,7 +984,7 @@ class TestNodeCreate:
         json_data = res.json['data']
 
         new_component_id = json_data['id']
-        new_component = Node.load(new_component_id)
+        new_component = AbstractNode.load(new_component_id)
         assert len(new_component.contributors) == 2
         assert len(new_component.contributors) == len(parent_project.contributors)
 

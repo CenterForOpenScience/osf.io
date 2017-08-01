@@ -3,7 +3,7 @@ import pytest
 from framework.sessions import utils
 from tests.base import DbTestCase
 from osf_tests.factories import SessionFactory, UserFactory
-from osf.models import OSFUser as User, Session
+from osf.models import OSFUser, Session
 from osf.modm_compat import Q
 
 @pytest.mark.django_db
@@ -41,7 +41,7 @@ class SessionUtilsTestCase(DbTestCase):
 
     def tearDown(self, *args, **kwargs):
         super(SessionUtilsTestCase, self).tearDown(*args, **kwargs)
-        User.remove()
+        OSFUser.remove()
         Session.remove()
 
     def test_remove_session_for_user(self):

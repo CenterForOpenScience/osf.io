@@ -52,6 +52,8 @@ class ApplicationList(JSONAPIBaseView, generics.ListCreateAPIView, ListFilterMix
     # solution for hiding this api endpoint
     renderer_classes = [JSONRendererWithESISupport, JSONAPIRenderer, ]  # Hide from web-browsable API tool
 
+    ordering = ('-date_created',)
+
     def get_default_queryset(self):
         return ApiOAuth2Application.objects.filter(owner=self.request.user, is_active=True)
 

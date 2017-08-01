@@ -6,7 +6,7 @@ from rest_framework.response import Response
 
 from framework.auth.oauth_scopes import CoreScopes
 
-from osf.models import OSFUser as User, Node, Institution
+from osf.models import OSFUser, Node, Institution
 from website.util import permissions as osf_permissions
 
 from api.base import permissions as base_permissions
@@ -174,11 +174,13 @@ class InstitutionUserList(JSONAPIBaseView, ListFilterMixin, generics.ListAPIView
 
     required_read_scopes = [CoreScopes.INSTITUTION_READ, CoreScopes.USERS_READ]
     required_write_scopes = [CoreScopes.NULL]
-    model_class = User
+    model_class = OSFUser
 
     serializer_class = UserSerializer
     view_category = 'institutions'
     view_name = 'institution-users'
+
+    ordering = ('-id',)
 
     def get_default_queryset(self):
         institution = self.get_institution()

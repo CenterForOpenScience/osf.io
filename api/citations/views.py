@@ -40,6 +40,8 @@ class CitationStyleList(JSONAPIBaseView, generics.ListAPIView, ListFilterMixin):
     view_category = 'citations'
     view_name = 'citation-list'
 
+    ordering = ('-date_modified',)
+
     # overrides ListAPIView
     def get_default_queryset(self):
         return CitationStyle.objects.all()

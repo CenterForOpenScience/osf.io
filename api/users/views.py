@@ -31,7 +31,7 @@ from django.db.models import Q
 from rest_framework import permissions as drf_permissions
 from rest_framework import generics
 from rest_framework.exceptions import NotAuthenticated, NotFound
-from osf.models import Contributor, ExternalAccount, AbstractNode as Node, PreprintService, OSFUser as User
+from osf.models import Contributor, ExternalAccount, AbstractNode, PreprintService, OSFUser
 
 
 class UserMixin(object):
@@ -61,7 +61,7 @@ class UserMixin(object):
                 return user
 
         if self.kwargs.get('is_embedded') is True:
-            if key in self.request.parents[User]:
+            if key in self.request.parents[OSFUser]:
                 return self.request.parents[key]
 
         current_user = self.request.user
@@ -72,7 +72,7 @@ class UserMixin(object):
             else:
                 return self.request.user
 
-        obj = get_object_or_error(User, key, 'user')
+        obj = get_object_or_error(OSFUser, key, 'user')
         if check_permissions:
             # May raise a permission denied
             self.check_object_permissions(self.request, obj)
@@ -144,8 +144,8 @@ class UserList(JSONAPIBaseView, generics.ListAPIView, ListFilterMixin):
 
     def get_default_queryset(self):
         if self.request.version >= '2.3':
-            return User.objects.filter(is_registered=True, date_disabled__isnull=True, merged_by__isnull=True)
-        return User.objects.filter(is_registered=True, date_disabled__isnull=True)
+            return OSFUser.objects.filter(is_registered=True, date_disabled__isnull=True, merged_by__isnull=True)
+        return OSFUser.objects.filter(is_registered=True, date_disabled__isnull=True)
 
     # overrides ListCreateAPIView
     def get_queryset(self):
@@ -308,6 +308,8 @@ class UserAddonList(JSONAPIBaseView, generics.ListAPIView, ListFilterMixin, User
     view_category = 'users'
     view_name = 'user-addons'
 
+    ordering = ('-date_last_refreshed',)
+
     def get_queryset(self):
         qs = [addon for addon in self.get_user().get_addons() if 'accounts' in addon.config.configs]
         qs.sort()
@@ -396,6 +398,8 @@ class UserAddonAccountList(JSONAPIBaseView, generics.ListAPIView, UserMixin, Add
     serializer_class = AddonAccountSerializer
     view_category = 'users'
     view_name = 'user-external_accounts'
+
+    ordering = ('-date_last_refreshed',)
 
     def get_queryset(self):
         return self.get_addon_settings(check_object_permissions=False).external_accounts
@@ -516,6 +520,8 @@ class UserNodes(JSONAPIBaseView, generics.ListAPIView, UserMixin, NodesFilterMix
     view_category = 'users'
     view_name = 'user-nodes'
 
+    ordering = ('-date_modified',)
+
     # overrides NodesFilterMixin
     def get_default_queryset(self):
         user = self.get_user()
@@ -527,7 +533,7 @@ class UserNodes(JSONAPIBaseView, generics.ListAPIView, UserMixin, NodesFilterMix
     # overrides ListAPIView
     def get_queryset(self):
         return (
-            Node.objects.filter(id__in=set(self.get_queryset_from_request().values_list('id', flat=True)))
+            AbstractNode.objects.filter(id__in=set(self.get_queryset_from_request().values_list('id', flat=True)))
             .select_related('node_license')
             .order_by('-date_modified', )
             .include('guids', 'contributor__user__guids', 'root__guids', limit_includes=10)
@@ -541,7 +547,7 @@ class UserPreprints(JSONAPIBaseView, generics.ListAPIView, UserMixin, PreprintFi
     )
 
     ordering = ('-date_created')
-    model_class = Node
+    model_class = AbstractNode
 
     required_read_scopes = [CoreScopes.USERS_READ, CoreScopes.NODE_PREPRINTS_READ]
     required_write_scopes = [CoreScopes.USERS_WRITE, CoreScopes.NODE_PREPRINTS_WRITE]
@@ -586,6 +592,8 @@ class UserInstitutions(JSONAPIBaseView, generics.ListAPIView, UserMixin):
     serializer_class = InstitutionSerializer
     view_category = 'users'
     view_name = 'user-institutions'
+
+    ordering = ('-date_modified',)
 
     def get_default_odm_query(self):
         return None
@@ -689,6 +697,8 @@ class UserRegistrations(JSONAPIBaseView, generics.ListAPIView, UserMixin, NodesF
     serializer_class = RegistrationSerializer
     view_category = 'users'
     view_name = 'user-registrations'
+
+    ordering = ('-date_modified',)
 
     # overrides NodesFilterMixin
     def get_default_queryset(self):

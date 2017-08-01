@@ -1,7 +1,7 @@
 from rest_framework import serializers as ser
 from rest_framework import exceptions
 
-from osf.models import AbstractNode as Node
+from osf.models import AbstractNode
 from website.util import permissions as osf_permissions
 
 from api.base.serializers import JSONAPISerializer, RelationshipField, LinksField, JSONAPIRelationshipSerializer, \
@@ -75,9 +75,9 @@ class InstitutionNodesRelationshipSerializer(BaseAPISerializer):
 
         changes_flag = False
         for node_dict in node_dicts:
-            node = Node.load(node_dict['_id'])
+            node = AbstractNode.load(node_dict['_id'])
             if not node:
-                raise exceptions.NotFound(detail='Node with id "{}" was not found'.format(node_dict['_id']))
+                raise exceptions.NotFound(detail='AbstractNode with id "{}" was not found'.format(node_dict['_id']))
             if not node.has_permission(user, osf_permissions.WRITE):
                 raise exceptions.PermissionDenied(detail='Write permission on node {} required'.format(node_dict['_id']))
             if not node.is_affiliated_with_institution(inst):

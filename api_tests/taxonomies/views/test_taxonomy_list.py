@@ -15,7 +15,7 @@ class TestTaxonomy(ApiTestCase):
         self.subject1_child1 = SubjectFactory(parent=self.subject1)
         self.subject1_child2 = SubjectFactory(parent=self.subject1)
 
-        self.subjects = Subject.find()
+        self.subjects = Subject.objects.all().order_by('-id')
         self.url = '/{}taxonomies/'.format(API_BASE)
         self.res = self.app.get(self.url)
         self.data = self.res.json['data']

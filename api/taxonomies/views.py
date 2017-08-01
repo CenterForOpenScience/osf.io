@@ -50,6 +50,8 @@ class TaxonomyList(DeprecatedEndpointMixin, JSONAPIBaseView, generics.ListAPIVie
     view_name = 'taxonomy-list'
     max_version = '2.5'
 
+    ordering = ('-id',)
+
     def get_default_queryset(self):
         return Subject.objects.all()
 

@@ -2,7 +2,7 @@ from rest_framework import generics, permissions as drf_permissions
 from rest_framework.exceptions import ValidationError, NotFound
 from framework.auth.oauth_scopes import CoreScopes
 
-from osf.models import AbstractNode as Node
+from osf.models import AbstractNode
 from api.base import permissions as base_permissions
 from api.base.filters import ListFilterMixin
 from api.base.views import JSONAPIBaseView, BaseContributorDetail, BaseContributorList, BaseNodeLinksDetail, BaseNodeLinksList
@@ -60,7 +60,7 @@ class RegistrationMixin(NodeMixin):
 
     def get_node(self, check_object_permissions=True):
         node = get_object_or_error(
-            Node,
+            AbstractNode,
             self.kwargs[self.node_lookup_url_kwarg],
             display_name='node'
 
@@ -150,6 +150,8 @@ class RegistrationList(JSONAPIBaseView, generics.ListAPIView, NodesFilterMixin):
     serializer_class = RegistrationSerializer
     view_category = 'registrations'
     view_name = 'registration-list'
+
+    ordering = ('-date_modified',)
 
     # overrides NodesFilterMixin
     def get_default_queryset(self):
@@ -501,6 +503,8 @@ class RegistrationChildrenList(JSONAPIBaseView, generics.ListAPIView, ListFilter
 
     required_read_scopes = [CoreScopes.NODE_REGISTRATIONS_READ]
     required_write_scopes = [CoreScopes.NULL]
+
+    ordering = ('-date_modified',)
 
     def get_default_queryset(self):
         return default_registration_list_queryset() & default_registration_permission_queryset(self.request.user)

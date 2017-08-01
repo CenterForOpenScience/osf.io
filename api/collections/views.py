@@ -339,6 +339,8 @@ class LinkedNodesList(BaseLinkedList, CollectionMixin):
     view_category = 'collections'
     view_name = 'linked-nodes'
 
+    ordering = ('-date_modified',)
+
     def get_queryset(self):
         return super(LinkedNodesList, self).get_queryset().exclude(type='osf.registration')
 
@@ -420,6 +422,8 @@ class LinkedRegistrationsList(BaseLinkedList, CollectionMixin):
     view_category = 'collections'
     view_name = 'linked-registrations'
 
+    ordering = ('-date_modified',)
+
     def get_queryset(self):
         return super(LinkedRegistrationsList, self).get_queryset().filter(type='osf.registration')
 
@@ -498,6 +502,8 @@ class NodeLinksList(JSONAPIBaseView, bulk_views.BulkDestroyJSONAPIView, bulk_vie
     view_category = 'collections'
     view_name = 'node-pointers'
     model_class = NodeRelation
+
+    ordering = ('-date_modified',)
 
     def get_queryset(self):
         return self.get_node().node_relations.select_related('child').filter(child__is_deleted=False).exclude(child__type='osf.collection')

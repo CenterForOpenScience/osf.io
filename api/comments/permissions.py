@@ -3,16 +3,16 @@ from rest_framework import permissions
 
 from api.base.utils import get_user_auth
 from api.comments.serializers import CommentReport
-from osf.models import AbstractNode as Node, Comment
+from osf.models import AbstractNode, Comment
 
 class CanCommentOrPublic(permissions.BasePermission):
 
     def has_object_permission(self, request, view, obj):
-        assert isinstance(obj, (Node, Comment)), 'obj must be a Node or Comment, got {}'.format(obj)
+        assert isinstance(obj, (AbstractNode, Comment)), 'obj must be a Node or Comment, got {}'.format(obj)
         auth = get_user_auth(request)
         if isinstance(obj, Comment):
             node = obj.node
-        elif isinstance(obj, Node):
+        elif isinstance(obj, AbstractNode):
             node = obj
 
         if request.method in permissions.SAFE_METHODS:
