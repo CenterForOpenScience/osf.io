@@ -29,16 +29,6 @@ api_routes = {
             json_renderer,
         ),
 
-        Rule(
-            [
-                '/project/<pid>/forward/widget/',
-                '/project/<pid>/node/<nid>/forward/widget/',
-            ],
-            'get',
-            views.widget.forward_widget,
-            OsfWebRenderer('../addons/forward/templates/forward_widget.mako', trust=False),
-        )
-
     ],
 
     'prefix': '/api/v1',
