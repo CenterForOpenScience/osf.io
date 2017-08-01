@@ -117,7 +117,7 @@ class TestNodeContributorList(NodeCRUDTestCase):
         assert res.status_code == 200
 
         assert res.json['data'][0]['id'].split('-')[0] == project_public._id
-        assert res.json['data'][0]['id'].split('-')[1] == user._id
+        assert res.json['data'][0]['id'] == '{}-{}'.format(project_public._id, user._id)
 
     def test_permissions_work_with_many_users(self, app, user, project_private, url_private):
         users = {
@@ -1573,7 +1573,6 @@ class TestNodeContributorBulkUpdate(NodeCRUDTestCase):
 
     #   test_bulk_update_contributors_blank_request
         res = app.patch_json_api(url_public, auth=user.auth, expect_errors=True, bulk=True)
-        print res.body
         assert res.status_code == 400
 
     #   test_bulk_update_contributors_dict_instead_of_list

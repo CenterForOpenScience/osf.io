@@ -1,23 +1,17 @@
-import mock
 import datetime
 import dateutil.relativedelta
+from django.utils import timezone
+import mock
+from nose.tools import *  # flake8: noqa
 import pytest
 from urlparse import urlparse
 
-from django.utils import timezone
-from nose.tools import *  # flake8: noqa
-
-from website.project.metadata.schemas import LATEST_SCHEMA_VERSION
-from osf.models import AbstractNode as Node, MetaSchema, DraftRegistration
-from website.views import find_bookmark_collection
-from framework.auth.core import Auth, Q
-from django.db.models import Q
 from api.base.settings.defaults import API_BASE
-
-from api_tests.registrations.filters.test_filters import RegistrationListFilteringMixin
 from api_tests.nodes.views.test_node_draft_registration_list import DraftRegistrationTestCase
-
-from tests.base import ApiTestCase
+from api_tests.registrations.filters.test_filters import RegistrationListFilteringMixin
+from django.db.models import Q
+from framework.auth.core import Auth
+from osf.models import AbstractNode as Node, MetaSchema, DraftRegistration
 from osf_tests.factories import (
     ProjectFactory,
     RegistrationFactory,
@@ -25,8 +19,11 @@ from osf_tests.factories import (
     CollectionFactory,
     BookmarkCollectionFactory,
     DraftRegistrationFactory,
-    NodeFactory
+    NodeFactory,
 )
+from tests.base import ApiTestCase
+from website.project.metadata.schemas import LATEST_SCHEMA_VERSION
+from website.views import find_bookmark_collection
 
 
 class TestRegistrationList(ApiTestCase):
@@ -462,7 +459,7 @@ class TestRegistrationCreate(DraftRegistrationTestCase):
 
     @pytest.fixture()
     def schema(self):
-        return MetaSchema.objects.filter(name='Replication Recipe (Brandt et al., 2013): Post-Completion', schema_version=LATEST_SCHEMA_VERSION).first()
+        return MetaSchema.objects.get(name='Replication Recipe (Brandt et al., 2013): Post-Completion', schema_version=LATEST_SCHEMA_VERSION)
 
     @pytest.fixture()
     def draft_registration(self, user, project_public, schema):
@@ -571,7 +568,7 @@ class TestRegistrationCreate(DraftRegistrationTestCase):
 
     @mock.patch('framework.celery_tasks.handlers.enqueue_task')
     def test_required_top_level_questions_must_be_answered_on_draft(self, mock_enqueue, app, user, project_public, prereg_metadata, url_registrations):
-        prereg_schema = MetaSchema.objects.filter(name='Prereg Challenge', schema_version=LATEST_SCHEMA_VERSION).first()
+        prereg_schema = MetaSchema.objects.get(name='Prereg Challenge', schema_version=LATEST_SCHEMA_VERSION)
 
 
         prereg_draft_registration = DraftRegistrationFactory(
@@ -601,7 +598,7 @@ class TestRegistrationCreate(DraftRegistrationTestCase):
 
     @mock.patch('framework.celery_tasks.handlers.enqueue_task')
     def test_required_top_level_questions_must_be_answered_on_draft(self, mock_enqueue, app, user, project_public, prereg_metadata, url_registrations):
-        prereg_schema = MetaSchema.objects.filter(name='Prereg Challenge', schema_version=LATEST_SCHEMA_VERSION).first()
+        prereg_schema = MetaSchema.objects.get(name='Prereg Challenge', schema_version=LATEST_SCHEMA_VERSION)
 
         prereg_draft_registration = DraftRegistrationFactory(
             initiator=user,
@@ -630,7 +627,7 @@ class TestRegistrationCreate(DraftRegistrationTestCase):
 
     @mock.patch('framework.celery_tasks.handlers.enqueue_task')
     def test_required_second_level_questions_must_be_answered_on_draft(self, mock_enqueue, app, user, project_public, prereg_metadata, url_registrations):
-        prereg_schema = MetaSchema.objects.filter(name='Prereg Challenge', schema_version=LATEST_SCHEMA_VERSION).first()
+        prereg_schema = MetaSchema.objects.get(name='Prereg Challenge', schema_version=LATEST_SCHEMA_VERSION)
 
         prereg_draft_registration = DraftRegistrationFactory(
             initiator=user,
@@ -659,7 +656,7 @@ class TestRegistrationCreate(DraftRegistrationTestCase):
 
     @mock.patch('framework.celery_tasks.handlers.enqueue_task')
     def test_required_third_level_questions_must_be_answered_on_draft(self, mock_enqueue, app, user, project_public, prereg_metadata, url_registrations):
-        prereg_schema = MetaSchema.objects.filter(name='Prereg Challenge', schema_version=LATEST_SCHEMA_VERSION).first()
+        prereg_schema = MetaSchema.objects.get(name='Prereg Challenge', schema_version=LATEST_SCHEMA_VERSION)
 
         prereg_draft_registration = DraftRegistrationFactory(
             initiator=user,

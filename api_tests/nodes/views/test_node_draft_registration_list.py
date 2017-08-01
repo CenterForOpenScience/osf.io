@@ -1,7 +1,6 @@
 import pytest
 
 from api.base.settings.defaults import API_BASE
-from django.db.models import Q
 from osf.models import MetaSchema
 from osf_tests.factories import (
     ProjectFactory,
@@ -67,7 +66,7 @@ class TestDraftRegistrationList(DraftRegistrationTestCase):
 
     @pytest.fixture()
     def schema(self):
-        return MetaSchema.objects.filter(name='Open-Ended Registration', schema_version=LATEST_SCHEMA_VERSION).first()
+        return MetaSchema.objects.get(name='Open-Ended Registration', schema_version=LATEST_SCHEMA_VERSION)
     
     @pytest.fixture()
     def draft_registration(self, user, project_public, schema):
@@ -137,7 +136,7 @@ class TestDraftRegistrationCreate(DraftRegistrationTestCase):
 
     @pytest.fixture()
     def metaschema_open_ended(self):
-        return MetaSchema.objects.filter(name='Open-Ended Registration', schema_version=LATEST_SCHEMA_VERSION).first()
+        return MetaSchema.objects.get(name='Open-Ended Registration', schema_version=LATEST_SCHEMA_VERSION)
 
     @pytest.fixture()
     def payload(self, metaschema_open_ended):
@@ -225,7 +224,7 @@ class TestDraftRegistrationCreate(DraftRegistrationTestCase):
         assert res.json['errors'][0]['detail'] == 'Registration supplement must be an active schema.'
 
     #   test_registration_supplement_must_be_most_recent_metaschema
-        schema = MetaSchema.objects.filter(name='Open-Ended Registration', schema_version=1).first()
+        schema = MetaSchema.objects.get(name='Open-Ended Registration', schema_version=1)
         draft_data = {
             'data': {
                 'type': 'draft_registrations',
@@ -262,7 +261,7 @@ class TestDraftRegistrationCreate(DraftRegistrationTestCase):
         assert res.status_code == 404
 
     def test_required_metaschema_questions_not_required_on_post(self, app, user, project_public, prereg_metadata):
-        prereg_schema = MetaSchema.objects.filter(name='Prereg Challenge', schema_version=LATEST_SCHEMA_VERSION).first()
+        prereg_schema = MetaSchema.objects.get(name='Prereg Challenge', schema_version=LATEST_SCHEMA_VERSION)
 
         prereg_draft_registration = DraftRegistrationFactory(
             initiator=user,
@@ -318,7 +317,7 @@ class TestDraftRegistrationCreate(DraftRegistrationTestCase):
         assert errors['detail'] == 'Expected a dictionary of items but got type "unicode".'
 
     def test_registration_metadata_question_values_must_be_dictionaries(self, app, user, payload, url_draft_registrations):
-        schema = MetaSchema.objects.filter(name='OSF-Standard Pre-Data Collection Registration', schema_version=LATEST_SCHEMA_VERSION).first()
+        schema = MetaSchema.objects.get(name='OSF-Standard Pre-Data Collection Registration', schema_version=LATEST_SCHEMA_VERSION)
         payload['data']['attributes']['registration_supplement'] = schema._id
         payload['data']['attributes']['registration_metadata'] = {}
         payload['data']['attributes']['registration_metadata']['datacompletion'] = 'No, data collection has not begun'
@@ -329,7 +328,7 @@ class TestDraftRegistrationCreate(DraftRegistrationTestCase):
         assert errors['detail'] == 'u\'No, data collection has not begun\' is not of type \'object\''
 
     def test_registration_metadata_question_keys_must_be_value(self, app, user, payload, url_draft_registrations):
-        schema = MetaSchema.objects.filter(name='OSF-Standard Pre-Data Collection Registration', schema_version=LATEST_SCHEMA_VERSION).first()
+        schema = MetaSchema.objects.get(name='OSF-Standard Pre-Data Collection Registration', schema_version=LATEST_SCHEMA_VERSION)
 
         payload['data']['attributes']['registration_supplement'] = schema._id
         payload['data']['attributes']['registration_metadata'] = {}
@@ -343,7 +342,7 @@ class TestDraftRegistrationCreate(DraftRegistrationTestCase):
         assert errors['detail'] == 'Additional properties are not allowed (u\'incorrect_key\' was unexpected)'
 
     def test_question_in_registration_metadata_must_be_in_schema(self, app, user, payload, url_draft_registrations):
-        schema = MetaSchema.objects.filter(name='OSF-Standard Pre-Data Collection Registration', schema_version=LATEST_SCHEMA_VERSION).first()
+        schema = MetaSchema.objects.get(name='OSF-Standard Pre-Data Collection Registration', schema_version=LATEST_SCHEMA_VERSION)
 
         payload['data']['attributes']['registration_supplement'] = schema._id
         payload['data']['attributes']['registration_metadata'] = {}
@@ -357,7 +356,7 @@ class TestDraftRegistrationCreate(DraftRegistrationTestCase):
         assert errors['detail'] == 'Additional properties are not allowed (u\'q11\' was unexpected)'
 
     def test_multiple_choice_question_value_must_match_value_in_schema(self, app, user, payload, url_draft_registrations):
-        schema = MetaSchema.objects.filter(name='OSF-Standard Pre-Data Collection Registration', schema_version=LATEST_SCHEMA_VERSION).first()
+        schema = MetaSchema.objects.get(name='OSF-Standard Pre-Data Collection Registration', schema_version=LATEST_SCHEMA_VERSION)
 
         payload['data']['attributes']['registration_supplement'] = schema._id
         payload['data']['attributes']['registration_metadata'] = {}

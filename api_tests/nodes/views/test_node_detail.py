@@ -6,7 +6,6 @@ from urlparse import urlparse
 
 from api.base.settings.defaults import API_BASE
 from framework.auth.core import Auth
-from django.db.models import Q
 from osf.models import NodeLog
 from osf.models.licenses import NodeLicense
 from osf_tests.factories import (
@@ -136,7 +135,8 @@ class TestNodeDetail:
     def test_top_level_project_has_no_parent(self, app, url_public):
         res = app.get(url_public)
         assert res.status_code == 200
-        assert 'parent' not in res.json['data']['relationships'].keys()
+        assert 'parent' not in res.json['data']['relationships']
+        assert 'id' in res.json['data']
         assert res.content_type == 'application/vnd.api+json'
 
     def test_child_project_has_parent(self, app, user, project_public, url_public):
@@ -152,31 +152,31 @@ class TestNodeDetail:
     #   test_node_has_children_link
         res = app.get(url_public)
         url = res.json['data']['relationships']['children']['links']['related']['href']
-        expected_url = url_public + 'children/'
+        expected_url = '{}children/'.format(url_public)
         assert urlparse(url).path == expected_url
 
     #   test_node_has_contributors_link
         res = app.get(url_public)
         url = res.json['data']['relationships']['contributors']['links']['related']['href']
-        expected_url = url_public + 'contributors/'
+        expected_url = '{}contributors/'.format(url_public)
         assert urlparse(url).path == expected_url
 
     #   test_node_has_node_links_link
         res = app.get(url_public)
         url = res.json['data']['relationships']['node_links']['links']['related']['href']
-        expected_url = url_public + 'node_links/'
+        expected_url = '{}node_links/'.format(url_public)
         assert urlparse(url).path == expected_url
 
     #   test_node_has_registrations_link
         res = app.get(url_public)
         url = res.json['data']['relationships']['registrations']['links']['related']['href']
-        expected_url = url_public + 'registrations/'
+        expected_url = '{}registrations/'.format(url_public)
         assert urlparse(url).path == expected_url
 
     #   test_node_has_files_link
         res = app.get(url_public)
         url = res.json['data']['relationships']['files']['links']['related']['href']
-        expected_url = url_public + 'files/'
+        expected_url = '{}files/'.format(url_public)
         assert urlparse(url).path == expected_url
 
     def test_node_has_comments_link(self, app, user, project_public, url_public):
@@ -207,16 +207,16 @@ class TestNodeDetail:
         contributor = AuthUserFactory()
         project_public.add_contributor(contributor=contributor, auth=Auth(user), save=True)
         comment = CommentFactory(node=project_public, user=contributor, page='node')
-        res = app.get(url_public + '?related_counts=True', auth=user.auth)
+        res = app.get('{}?related_counts=True'.format(url_public), auth=user.auth)
         unread = res.json['data']['relationships']['comments']['links']['related']['meta']['unread']
         unread_comments_node = unread['node']
         assert unread_comments_node == 1
 
     def test_node_properties(self, app, url_public):
         res = app.get(url_public)
-        assert res.json['data']['attributes']['public'] == True
-        assert res.json['data']['attributes']['registration'] == False
-        assert res.json['data']['attributes']['collection'] == False
+        assert res.json['data']['attributes']['public'] is True
+        assert res.json['data']['attributes']['registration'] is False
+        assert res.json['data']['attributes']['collection'] is False
         assert res.json['data']['attributes']['tags'] == []
 
     def test_requesting_folder_returns_error(self, app, user):
@@ -838,7 +838,7 @@ class TestNodeDelete(NodeCRUDTestCase):
         res = app.delete_json_api(url_public, auth=user_two.auth, expect_errors=True)
         project_public.reload()
         assert res.status_code == 403
-        assert project_public.is_deleted == False
+        assert project_public.is_deleted is False
         assert 'detail' in res.json['errors'][0]
 
     #   test_deletes_private_node_logged_out
@@ -850,7 +850,7 @@ class TestNodeDelete(NodeCRUDTestCase):
         res = app.delete(url_private, auth=user_two.auth, expect_errors=True)
         project_private.reload()
         assert res.status_code == 403
-        assert project_private.is_deleted == False
+        assert project_private.is_deleted is False
         assert 'detail' in res.json['errors'][0]
 
     #   test_deletes_invalid_node
@@ -864,7 +864,7 @@ class TestNodeDelete(NodeCRUDTestCase):
         res = app.delete(url_private, auth=user_two.auth, expect_errors=True)
         project_private.reload()
         assert res.status_code == 403
-        assert project_private.is_deleted == False
+        assert project_private.is_deleted is False
         assert 'detail' in res.json['errors'][0]
 
     def test_delete_project_with_component_returns_error(self, app, user):
@@ -906,7 +906,7 @@ class TestNodeDelete(NodeCRUDTestCase):
             res = app.delete_json_api(url_public, auth=user.auth, expect_errors=True)
             project_public.reload()
             assert res.status_code == 204
-            assert project_public.is_deleted == True
+            assert project_public.is_deleted is True
 
     def test_requesting_deleted_returns_410(self, app, project_public, url_public):
         project_public.is_deleted = True
@@ -920,7 +920,7 @@ class TestNodeDelete(NodeCRUDTestCase):
             res = app.delete(url_private, auth=user.auth, expect_errors=True)
             project_private.reload()
             assert res.status_code == 204
-            assert project_private.is_deleted == True
+            assert project_private.is_deleted is True
 
 
 @pytest.mark.django_db
@@ -1319,7 +1319,7 @@ class TestNodeUpdateLicense:
 
     @pytest.fixture()
     def license_no(self):
-        return NodeLicense.objects.filter(name='No license').first()
+        return NodeLicense.objects.get(name='No license')
 
     @pytest.fixture()
     def url_node(self, node):
@@ -1385,14 +1385,14 @@ class TestNodeUpdateLicense:
             license_id='thisisafakelicenseid'
         )
 
-        assert node.node_license == None
+        assert node.node_license is None
 
         res = make_request(url_node, data, auth=user_admin_contrib.auth, expect_errors=True)
         assert res.status_code == 404
         assert res.json['errors'][0]['detail'] == 'Unable to find specified license.'
 
         node.reload()
-        assert node.node_license == None
+        assert node.node_license is None
 
     def test_admin_can_update_license(self, user_admin_contrib, node, make_payload, make_request, license_cc0, url_node):
         data = make_payload(
@@ -1400,14 +1400,14 @@ class TestNodeUpdateLicense:
             license_id=license_cc0._id
         )
 
-        assert node.node_license == None
+        assert node.node_license is None
 
         res = make_request(url_node, data, auth=user_admin_contrib.auth)
         assert res.status_code == 200
         node.reload()
 
         assert node.node_license.node_license == license_cc0
-        assert node.node_license.year == None
+        assert node.node_license.year is None
         assert node.node_license.copyright_holders == []
 
     def test_admin_can_update_license_record(self, user_admin_contrib, node, make_payload, make_request, license_no, url_node):
@@ -1418,7 +1418,7 @@ class TestNodeUpdateLicense:
             copyright_holders=['Mr. Monument', 'Princess OSF']
         )
 
-        assert node.node_license == None
+        assert node.node_license is None
 
         res = make_request(url_node, data, auth=user_admin_contrib.auth)
         assert res.status_code == 200
