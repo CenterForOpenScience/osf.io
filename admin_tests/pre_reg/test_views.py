@@ -340,6 +340,7 @@ class TestPreregFiles(AdminTestCase):
             }
         self.draft = DraftRegistrationFactory(
             initiator=self.user,
+            branched_from=self.node,
             registration_schema=prereg_schema,
             registration_metadata=data
         )
