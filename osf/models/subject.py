@@ -76,11 +76,11 @@ class Subject(ObjectIDMixin, BaseModel, DirtyFieldsMixin):
         saved_fields = self.get_dirty_fields() or []
         validate_subject_provider_mapping(self.provider, self.bepress_subject)
         validate_subject_highlighted_count(self.provider, bool('highlighted' in saved_fields and self.highlighted))
-        if 'text' in saved_fields and self.pk and self.preprint_services.exists():
+        if 'text' in saved_fields and self.pk and (self.preprintservices.exists() or self.abstractnodes.exists()):
             raise ValidationError('Cannot edit a used Subject')
         return super(Subject, self).save()
 
     def delete(self, *args, **kwargs):
-        if self.preprint_services.exists():
+        if self.preprintservices.exists() or self.abstractnodes.exists():
             raise ValidationError('Cannot delete a used Subject')
         return super(Subject, self).delete()
