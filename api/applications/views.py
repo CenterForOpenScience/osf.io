@@ -1,6 +1,7 @@
 """
 Views related to OAuth2 platform applications. Intended for OSF internal use only
 """
+from django.shortcuts import get_object_or_404
 from rest_framework.exceptions import APIException, NotFound
 from rest_framework import generics
 from rest_framework import permissions as drf_permissions
@@ -23,10 +24,7 @@ class ApplicationMixin(object):
     current URL. By default, fetches the current application based on the client_id kwarg.
     """
     def get_app(self):
-        try:
-            app = ApiOAuth2Application.objects.get(client_id=self.kwargs['client_id'], is_active=True)
-        except ApiOAuth2Application.DoesNotExist:
-            raise NotFound
+        app = get_object_or_404(ApiOAuth2Application, client_id=self.kwargs['client_id'], is_active=True)
         self.check_object_permissions(self.request, app)
         return app
 

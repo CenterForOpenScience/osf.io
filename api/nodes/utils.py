@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+from django.shortcuts import get_object_or_404
 from rest_framework.exceptions import PermissionDenied, NotFound
 from rest_framework.status import is_server_error
 import requests
@@ -20,11 +21,8 @@ def get_file_object(node, path, provider, request):
                 model = OsfStorageFolder
             else:
                 model = OsfStorageFile
-            try:
-                obj = model.objects.get(node=node.pk, _id=path.strip('/'))
-            except model.DoesNotExist:
-                raise NotFound
-        return obj
+
+        return get_object_or_404(model, node=node.pk, _id=path.strip('/'))
 
     if not node.get_addon(provider) or not node.get_addon(provider).configured:
         raise NotFound('The {} provider is not configured for this project.'.format(provider))

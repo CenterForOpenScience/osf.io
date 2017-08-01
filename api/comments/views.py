@@ -1,3 +1,4 @@
+from django.shortcuts import get_object_or_404
 from rest_framework import generics, permissions as drf_permissions
 from rest_framework.exceptions import NotFound, ValidationError, PermissionDenied
 
@@ -33,10 +34,7 @@ class CommentMixin(object):
 
     def get_comment(self, check_permissions=True):
         pk = self.kwargs[self.comment_lookup_url_kwarg]
-        try:
-            comment = Comment.objects.filter(guids___id=pk).exclude(root_target=None).get()
-        except Comment.DoesNotExist:
-            raise NotFound
+        comment = get_object_or_404(Comment, guids___id=pk, root_target__isnull=False)
 
         # Deleted root targets still appear as tuples in the database and are included in
         # the above query, requiring an additional check
