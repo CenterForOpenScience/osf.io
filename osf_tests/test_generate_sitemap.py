@@ -44,34 +44,34 @@ class TestGenerateSitemap:
         return AuthUserFactory()
 
     @pytest.fixture(autouse=True)
-    def public_project_for_registration(self, user_admin_project_public):
+    def project_registration_public(self, user_admin_project_public):
         return ProjectFactory(creator=user_admin_project_public, is_public=True)
 
     @pytest.fixture(autouse=True)
-    def project_for_osf_preprint(self, user_admin_project_public):
+    def project_preprint_osf(self, user_admin_project_public):
         return ProjectFactory(creator=user_admin_project_public, is_public=True)
 
     @pytest.fixture(autouse=True)
-    def project_for_other_preprint(self, user_admin_project_public):
+    def project_preprint_other(self, user_admin_project_public):
         return ProjectFactory(creator=user_admin_project_public, is_public=True)
 
     @pytest.fixture(autouse=True)
-    def private_project(self, user_admin_project_private):
+    def project_private(self, user_admin_project_private):
         return ProjectFactory(creator=user_admin_project_private, is_public=False)
 
     @pytest.fixture(autouse=True)
-    def deleted_project(self, user_admin_project_public):
+    def project_deleted(self, user_admin_project_public):
         return ProjectFactory(creator=user_admin_project_public, is_deleted=True)
 
     @pytest.fixture(autouse=True)
-    def active_registration(self, user_admin_project_public, public_project_for_registration):
-        return RegistrationFactory(project=public_project_for_registration,
+    def registration_active(self, user_admin_project_public, project_registration_public):
+        return RegistrationFactory(project=project_registration_public,
                                              creator=user_admin_project_public,
                                              is_public=True)
 
     @pytest.fixture(autouse=True)
-    def embargoed_registration(self, user_admin_project_public, public_project_for_registration):
-        return RegistrationFactory(project=public_project_for_registration,
+    def registration_embargoed(self, user_admin_project_public, project_registration_public):
+        return RegistrationFactory(project=project_registration_public,
                                              creator=user_admin_project_public,
                                              embargo=EmbargoFactory(user=user_admin_project_public))
 
@@ -80,46 +80,46 @@ class TestGenerateSitemap:
         return CollectionFactory(creator=user_admin_project_public)
 
     @pytest.fixture(autouse=True)
-    def osf_provider(self):
+    def provider_osf(self):
         # Note: at least a provider whose _id == 'osf' have to exist for the script to work
         return PreprintProviderFactory(_id='osf', name='osfprovider')
 
     @pytest.fixture(autouse=True)
-    def other_provider(self):
+    def provider_other(self):
         return PreprintProviderFactory(_id='adl', name='anotherprovider')
 
     @pytest.fixture(autouse=True)
-    def osf_preprint(self, project_for_osf_preprint, user_admin_project_public, osf_provider):
-        return PreprintFactory(project=project_for_osf_preprint,
+    def preprint_osf(self, project_preprint_osf, user_admin_project_public, provider_osf):
+        return PreprintFactory(project=project_preprint_osf,
                                              creator=user_admin_project_public,
-                                             provider=osf_provider)
+                                             provider=provider_osf)
 
     @pytest.fixture(autouse=True)
-    def other_preprint(self, project_for_other_preprint, user_admin_project_public, other_provider):
-        return PreprintFactory(project=project_for_other_preprint,
+    def preprint_other(self, project_preprint_other, user_admin_project_public, provider_other):
+        return PreprintFactory(project=project_preprint_other,
                                              creator=user_admin_project_public,
-                                             provider=other_provider)
+                                             provider=provider_other)
 
     @pytest.fixture(autouse=True)
-    def all_included_links(self, user_admin_project_public, user_admin_project_private, public_project_for_registration,
-                             project_for_osf_preprint, project_for_other_preprint,
-                             active_registration, other_provider, osf_preprint,
-                             other_preprint):
+    def all_included_links(self, user_admin_project_public, user_admin_project_private, project_registration_public,
+                             project_preprint_osf, project_preprint_other,
+                             registration_active, provider_other, preprint_osf,
+                             preprint_other):
         # Return urls of all fixtures
         urls_to_include = [item['loc'] for item in settings.SITEMAP_STATIC_URLS]
         urls_to_include.extend([
             user_admin_project_public.url,
             user_admin_project_private.url,
-            public_project_for_registration.url,
-            project_for_osf_preprint.url,
-            project_for_other_preprint.url,
-            active_registration.url,
-            '/preprints/{}/'.format(osf_preprint._id),
-            '/preprints/{}/{}/'.format(other_provider._id, other_preprint._id),
-            '/project/{}/files/osfstorage/{}/?action=download'.format(osf_preprint.node._id,
-                                                                      osf_preprint.primary_file._id),
-            '/project/{}/files/osfstorage/{}/?action=download'.format(other_preprint.node._id,
-                                                                      other_preprint.primary_file._id),
+            project_registration_public.url,
+            project_preprint_osf.url,
+            project_preprint_other.url,
+            registration_active.url,
+            '/preprints/{}/'.format(preprint_osf._id),
+            '/preprints/{}/{}/'.format(provider_other._id, preprint_other._id),
+            '/project/{}/files/osfstorage/{}/?action=download'.format(preprint_osf.node._id,
+                                                                      preprint_osf.primary_file._id),
+            '/project/{}/files/osfstorage/{}/?action=download'.format(preprint_other.node._id,
+                                                                      preprint_other.primary_file._id),
         ])
         urls_to_include = [urlparse.urljoin(settings.DOMAIN, item) for item in urls_to_include]
 
@@ -146,23 +146,23 @@ class TestGenerateSitemap:
 
         assert urlparse.urljoin(settings.DOMAIN, collection.url) not in urls
 
-    def test_private_project_link_not_included(self, private_project, create_tmp_directory):
+    def test_private_project_link_not_included(self, project_private, create_tmp_directory):
 
         with mock.patch('website.settings.STATIC_FOLDER', create_tmp_directory):
             urls = get_all_sitemap_urls()
 
-        assert urlparse.urljoin(settings.DOMAIN, private_project.url) not in urls
+        assert urlparse.urljoin(settings.DOMAIN, project_private.url) not in urls
 
-    def test_embargoed_registration_link_not_included(self, embargoed_registration, create_tmp_directory):
-
-        with mock.patch('website.settings.STATIC_FOLDER', create_tmp_directory):
-            urls = get_all_sitemap_urls()
-
-        assert urlparse.urljoin(settings.DOMAIN, embargoed_registration.url) not in urls
-
-    def test_deleted_project_link_not_included(self, deleted_project, create_tmp_directory):
+    def test_embargoed_registration_link_not_included(self, registration_embargoed, create_tmp_directory):
 
         with mock.patch('website.settings.STATIC_FOLDER', create_tmp_directory):
             urls = get_all_sitemap_urls()
 
-        assert urlparse.urljoin(settings.DOMAIN, deleted_project.url) not in urls
+        assert urlparse.urljoin(settings.DOMAIN, registration_embargoed.url) not in urls
+
+    def test_deleted_project_link_not_included(self, project_deleted, create_tmp_directory):
+
+        with mock.patch('website.settings.STATIC_FOLDER', create_tmp_directory):
+            urls = get_all_sitemap_urls()
+
+        assert urlparse.urljoin(settings.DOMAIN, project_deleted.url) not in urls
