@@ -1,7 +1,6 @@
 import pytest
 
 from api.base.settings.defaults import API_BASE
-from osf.models import AbstractNode as Node
 from osf_tests.factories import (
     ProjectFactory,
     AuthUserFactory,

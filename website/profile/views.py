@@ -10,7 +10,7 @@ from django.utils import timezone
 from flask import request
 import mailchimp
 
-from osf.models import Node, NodeRelation, OSFUser as User
+from osf.models import Node, NodeRelation, OSFUser
 
 from framework import sentry
 from framework.auth import Auth
@@ -42,7 +42,7 @@ logger = logging.getLogger(__name__)
 
 
 def get_public_projects(uid=None, user=None):
-    user = user or User.load(uid)
+    user = user or OSFUser.load(uid)
     # In future redesign, should be limited for users with many projects / components
     node_ids = (
         Node.find_for_user(user, PROJECT_QUERY)
@@ -65,7 +65,7 @@ def get_public_projects(uid=None, user=None):
 
 
 def get_public_components(uid=None, user=None):
-    user = user or User.load(uid)
+    user = user or OSFUser.load(uid)
 
     rel_child_ids = (
         NodeRelation.objects.filter(
@@ -295,7 +295,7 @@ def profile_view_json(auth):
 @collect_auth
 @must_be_confirmed
 def profile_view_id_json(uid, auth):
-    user = User.load(uid)
+    user = OSFUser.load(uid)
     is_profile = auth and auth.user == user
     # Do NOT embed nodes, they aren't necessary
     return _profile_view(user, is_profile, embed_nodes=False)
@@ -308,7 +308,7 @@ def profile_view(auth):
 @collect_auth
 @must_be_confirmed
 def profile_view_id(uid, auth):
-    user = User.load(uid)
+    user = OSFUser.load(uid)
     is_profile = auth and auth.user == user
     # Embed node data, so profile node lists can be rendered
     return _profile_view(user, is_profile, embed_nodes=False, include_node_counts=True)
@@ -552,8 +552,8 @@ def sync_data_from_mailchimp(**kwargs):
         username = r.values['data[email]']
 
         try:
-            user = User.objects.get(username=username)
-        except User.DoesNotExist:
+            user = OSFUser.objects.get(username=username)
+        except OSFUser.DoesNotExist:
             sentry.log_exception()
             sentry.log_message('A user with this username does not exist.')
             raise HTTPError(404, data=dict(message_short='User not found',
@@ -597,7 +597,7 @@ def serialize_names(**kwargs):
 
 def get_target_user(auth, uid=None):
     user_id = uid if uid else auth.user
-    return get_object_or_404(User, _id=user_id)
+    return get_object_or_404(OSFUser, _id=user_id)
 
 
 def fmt_date_or_none(date, fmt='%Y-%m-%d'):

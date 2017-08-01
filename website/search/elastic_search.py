@@ -20,8 +20,8 @@ from elasticsearch import (ConnectionError, Elasticsearch, NotFoundError,
                            RequestError, TransportError, helpers)
 from framework.celery_tasks import app as celery_app
 from framework.mongo.utils import paginated
-from osf.models import AbstractNode as Node
-from osf.models import OSFUser as User
+from osf.models import AbstractNode
+from osf.models import OSFUser
 from osf.models import BaseFileNode
 from osf.models import Institution
 from website import settings
@@ -48,13 +48,13 @@ ALIASES = {
 }
 
 DOC_TYPE_TO_MODEL = {
-    'component': Node,
-    'project': Node,
-    'registration': Node,
-    'user': User,
+    'component': AbstractNode,
+    'project': AbstractNode,
+    'registration': AbstractNode,
+    'user': OSFUser,
     'file': BaseFileNode,
     'institution': Institution,
-    'preprint': Node,
+    'preprint': AbstractNode,
 }
 
 # Prevent tokenizing and stop word removal.
@@ -279,7 +279,7 @@ def format_result(result, parent_id=None):
 
 
 def load_parent(parent_id):
-    parent = Node.load(parent_id)
+    parent = AbstractNode.load(parent_id)
     if parent is None:
         return None
     parent_info = {}
@@ -673,7 +673,7 @@ def search_contributor(query, page=0, size=10, exclude=None, current_user=None):
     users = []
     for doc in docs:
         # TODO: use utils.serialize_user
-        user = User.load(doc['id'])
+        user = OSFUser.load(doc['id'])
 
         if current_user and current_user._id == user._id:
             n_projects_in_common = -1

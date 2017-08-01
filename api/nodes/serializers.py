@@ -24,7 +24,7 @@ from rest_framework import exceptions
 from addons.base.exceptions import InvalidAuthError, InvalidFolderError
 from website.exceptions import NodeStateError
 from osf.models import (Comment, DraftRegistration, Institution,
-                        MetaSchema, AbstractNode as Node, PrivateLink)
+                        MetaSchema, AbstractNode, PrivateLink)
 from osf.models.external import ExternalAccount
 from osf.models.licenses import NodeLicense
 from osf.models.preprint_service import PreprintService
@@ -467,7 +467,7 @@ class NodeSerializer(JSONAPISerializer):
         """Update instance with the validated data. Requires
         the request to be in the serializer context.
         """
-        assert isinstance(node, Node), 'node must be a Node'
+        assert isinstance(node, AbstractNode), 'node must be a Node'
         auth = get_user_auth(self.context['request'])
         old_tags = set(node.tags.values_list('name', flat=True))
         if 'tags' in validated_data:
@@ -930,7 +930,7 @@ class NodeLinksSerializer(JSONAPISerializer):
         auth = Auth(user)
         node = self.context['view'].get_node()
         target_node_id = validated_data['_id']
-        pointer_node = Node.load(target_node_id)
+        pointer_node = AbstractNode.load(target_node_id)
         if not pointer_node or pointer_node.is_collection:
             raise InvalidModelValueError(
                 source={'pointer': '/data/relationships/node_links/data/id'},

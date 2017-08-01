@@ -12,7 +12,7 @@ from elasticsearch import helpers
 import website.search.search as search
 from framework.mongo.utils import paginated
 from scripts import utils as script_utils
-from osf.models import OSFUser as User, Institution, AbstractNode as Node
+from osf.models import OSFUser, Institution, AbstractNode
 from website import settings
 from website.app import init_app
 from website.search.elastic_search import client as es_client
@@ -25,14 +25,14 @@ def migrate_nodes(index, query=None):
     node_query = Q(is_public=True, is_deleted=False)
     if query:
         node_query = query & node_query
-    total = Node.objects.filter(node_query).count()
+    total = AbstractNode.objects.filter(node_query).count()
     increment = 200
     total_pages = (total // increment) + 1
-    pages = paginated(Node, query=node_query, increment=increment, each=False, include=['contributor__user__guids'])
+    pages = paginated(AbstractNode, query=node_query, increment=increment, each=False, include=['contributor__user__guids'])
 
     for page_number, page in enumerate(pages):
         logger.info('Updating page {} / {}'.format(page_number + 1, total_pages))
-        Node.bulk_update_search(page, index=index)
+        AbstractNode.bulk_update_search(page, index=index)
 
     logger.info('Nodes migrated: {}'.format(total))
 
@@ -41,7 +41,7 @@ def migrate_users(index):
     logger.info('Migrating users to index: {}'.format(index))
     n_migr = 0
     n_iter = 0
-    users = paginated(User, query=None, each=True)
+    users = paginated(OSFUser, query=None, each=True)
     for user in users:
         if user.is_active:
             search.update_user(user, index=index)

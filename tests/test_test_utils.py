@@ -5,7 +5,7 @@ from nose.tools import *  # flake8: noqa
 import unittest
 
 from framework.auth import Auth
-from osf.models import AbstractNode as Node, NodeLog
+from osf.models import AbstractNode, NodeLog
 
 from tests.base import OsfTestCase
 from tests.factories import ProjectFactory

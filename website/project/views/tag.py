@@ -4,7 +4,7 @@ from flask import request
 from django.core.exceptions import ValidationError
 
 from framework.auth.decorators import collect_auth
-from osf.models import AbstractNode as Node
+from osf.models import AbstractNode
 from website.exceptions import InvalidTagError, NodeStateError, TagNotFoundError
 from website.project.decorators import (
     must_be_valid_project, must_have_permission, must_not_be_registration
@@ -15,7 +15,7 @@ from website.project.decorators import (
 # nodes serialized, before re-enabling.
 @collect_auth
 def project_tag(tag, auth, **kwargs):
-    nodes = Node.objects.filter(tags___id=tag).can_view(auth.user).values('title', 'url')
+    nodes = AbstractNode.objects.filter(tags___id=tag).can_view(auth.user).values('title', 'url')
     return {
         'nodes': [
             {
