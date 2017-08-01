@@ -13,7 +13,7 @@ from api.base.exceptions import Gone, UserGone
 from framework.auth import Auth
 from framework.auth.cas import CasResponse
 from framework.auth.oauth_scopes import ComposedScopes, normalize_scopes
-from osf.models import OSFUser as User
+from osf.models import OSFUser
 from osf.models.base import GuidMixin
 from osf.modm_compat import to_django_query
 from website import settings as website_settings
@@ -114,9 +114,9 @@ def get_object_or_error(model_cls, query_or_pk, display_name=None):
     # The User model is an exception because we still want to allow
     # users who are unconfirmed or unregistered, but not users who have been
     # disabled.
-    if model_cls is User and obj.is_disabled:
+    if model_cls is OSFUser and obj.is_disabled:
         raise UserGone(user=obj)
-    elif model_cls is not User and not getattr(obj, 'is_active', True) or getattr(obj, 'is_deleted', False):
+    elif model_cls is not OSFUser and not getattr(obj, 'is_active', True) or getattr(obj, 'is_deleted', False):
         if display_name is None:
             raise Gone
         else:

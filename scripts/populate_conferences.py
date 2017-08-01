@@ -9,7 +9,7 @@ from modularodm import Q
 from modularodm.exceptions import ModularOdmException
 django.setup()
 
-from osf.models import Conference, OSFUser as User
+from osf.models import Conference, OSFUser
 
 from website import settings
 from website.app import init_app
@@ -994,7 +994,7 @@ def populate_conferences(dev=False):
         if not dev:
             for email in admin_emails:
                 try:
-                    user = User.find_one(Q('username', 'iexact', email))
+                    user = OSFUser.find_one(Q('username', 'iexact', email))
                     admin_objs.append(user)
                 except ModularOdmException:
                     raise RuntimeError('Username {0!r} is not registered.'.format(email))

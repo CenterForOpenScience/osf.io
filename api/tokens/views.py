@@ -41,6 +41,8 @@ class TokenList(JSONAPIBaseView, generics.ListCreateAPIView, ODMFilterMixin):
     # solution for hiding this api endpoint
     renderer_classes = [JSONRendererWithESISupport, JSONAPIRenderer, ]  # Hide from web-browsable API tool
 
+    ordering = ('-id',)
+
     def get_default_odm_query(self):
 
         owner = self.request.user

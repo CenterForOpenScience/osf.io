@@ -16,7 +16,7 @@ from framework.exceptions import HTTPError
 from framework.flask import redirect  # VOL-aware redirect
 from framework.sessions import session
 from framework.transactions.handlers import no_auto_transaction
-from osf.models import AbstractNode as Node, OSFUser as User, PreprintService
+from osf.models import AbstractNode, OSFUser, PreprintService
 from website import mails, language, settings
 from website.notifications.utils import check_if_all_global_subscriptions_are_none
 from website.profile import utils as profile_utils
@@ -39,7 +39,7 @@ def get_node_contributors_abbrev(auth, node, **kwargs):
     max_count = kwargs.get('max_count', 3)
     if 'user_ids' in kwargs:
         users = [
-            User.load(user_id) for user_id in kwargs['user_ids']
+            OSFUser.load(user_id) for user_id in kwargs['user_ids']
             if node.contributor_set.filter(user__guid__guid=user_id).exists()
         ]
     else:
@@ -170,10 +170,10 @@ def deserialize_contributors(node, user_dicts, auth, validate=False):
                 validate_email(email)  # Will raise a ValidationError if email invalid
 
         if contrib_dict['id']:
-            contributor = User.load(contrib_dict['id'])
+            contributor = OSFUser.load(contrib_dict['id'])
         else:
             try:
-                contributor = User.create_unregistered(
+                contributor = OSFUser.create_unregistered(
                     fullname=fullname,
                     email=email)
                 contributor.save()
@@ -239,7 +239,7 @@ def project_contributors_post(auth, node, **kwargs):
     unreg_contributor_added.disconnect(finalize_invitation)
 
     for child_id in node_ids:
-        child = Node.load(child_id)
+        child = AbstractNode.load(child_id)
         # Only email unreg users once
         try:
             child_contribs = deserialize_contributors(
@@ -321,14 +321,14 @@ def project_remove_contributor(auth, **kwargs):
     """
     contributor_id = request.get_json()['contributorID']
     node_ids = request.get_json()['nodeIDs']
-    contributor = User.load(contributor_id)
+    contributor = OSFUser.load(contributor_id)
     if contributor is None:
         raise HTTPError(http.BAD_REQUEST, data={'message_long': 'Contributor not found.'})
     redirect_url = {}
     parent_id = node_ids[0]
     for node_id in node_ids:
         # Update permissions and order
-        node = Node.load(node_id)
+        node = AbstractNode.load(node_id)
 
         # Forbidden unless user is removing herself
         if not node.has_permission(auth.user, 'admin'):
@@ -391,7 +391,7 @@ def send_claim_registered_email(claimer, unclaimed_user, node, throttle=24 * 360
     unclaimed_record['claimer_email'] = claimer.username
     unclaimed_user.save()
 
-    referrer = User.load(unclaimed_record['referrer_id'])
+    referrer = OSFUser.load(unclaimed_record['referrer_id'])
     claim_url = web_url_for(
         'claim_user_registered',
         uid=unclaimed_user._primary_key,
@@ -443,7 +443,7 @@ def send_claim_email(email, unclaimed_user, node, notify=True, throttle=24 * 360
 
     claimer_email = email.lower().strip()
     unclaimed_record = unclaimed_user.get_unclaimed_record(node._primary_key)
-    referrer = User.load(unclaimed_record['referrer_id'])
+    referrer = OSFUser.load(unclaimed_record['referrer_id'])
     claim_url = unclaimed_user.get_claim_url(node._primary_key, external=True)
 
     # Option 1:
@@ -620,7 +620,7 @@ def claim_user_registered(auth, node, **kwargs):
         raise HTTPError(http.BAD_REQUEST, data=data)
 
     uid, pid, token = kwargs['uid'], kwargs['pid'], kwargs['token']
-    unreg_user = User.load(uid)
+    unreg_user = OSFUser.load(uid)
     if not verify_claim_token(unreg_user, token, pid=node._primary_key):
         error_data = {
             'message_short': 'Invalid url.',
@@ -673,9 +673,9 @@ def replace_unclaimed_user_with_registered(user):
     """
     unreg_user_info = session.data.get('unreg_user')
     if unreg_user_info:
-        unreg_user = User.load(unreg_user_info['uid'])
+        unreg_user = OSFUser.load(unreg_user_info['uid'])
         pid = unreg_user_info['pid']
-        node = Node.load(pid)
+        node = AbstractNode.load(pid)
         node.replace_contributor(old=unreg_user, new=user)
         node.save()
         status.push_status_message(
@@ -694,7 +694,7 @@ def claim_user_form(auth, **kwargs):
 
     uid, pid = kwargs['uid'], kwargs['pid']
     token = request.form.get('token') or request.args.get('token')
-    user = User.load(uid)
+    user = OSFUser.load(uid)
 
     # If unregistered user is not in database, or url bears an invalid token raise HTTP 400 error
     if not user or not verify_claim_token(user, token, pid):
@@ -716,8 +716,8 @@ def claim_user_form(auth, **kwargs):
     claimer_email = unclaimed_record.get('claimer_email') or unclaimed_record.get('email')
     # If there is a registered user with this email, redirect to 're-enter password' page
     try:
-        user_from_email = User.objects.get(emails__address=claimer_email.lower().strip()) if claimer_email else None
-    except User.DoesNotExist:
+        user_from_email = OSFUser.objects.get(emails__address=claimer_email.lower().strip()) if claimer_email else None
+    except OSFUser.DoesNotExist:
         user_from_email = None
     if user_from_email and user_from_email.is_registered:
         return redirect(web_url_for('claim_user_registered', uid=uid, pid=pid, token=token))
@@ -812,7 +812,7 @@ def claim_user_post(node, **kwargs):
     request_data = request.json
 
     # The unclaimed user
-    unclaimed_user = User.load(request_data['pk'])
+    unclaimed_user = OSFUser.load(request_data['pk'])
     unclaimed_data = unclaimed_user.get_unclaimed_record(node._primary_key)
 
     # Claimer is not logged in and submit her/his email through X-editable, stored in `request_data['value']`
@@ -828,7 +828,7 @@ def claim_user_post(node, **kwargs):
     # Claimer is logged in with confirmed identity stored in `request_data['claimerId']`
     elif 'claimerId' in request_data:
         claimer_id = request_data['claimerId']
-        claimer = User.load(claimer_id)
+        claimer = OSFUser.load(claimer_id)
         send_claim_registered_email(claimer, unclaimed_user, node)
         email = claimer.username
     else:

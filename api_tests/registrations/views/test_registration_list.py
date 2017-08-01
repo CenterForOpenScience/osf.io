@@ -11,15 +11,13 @@ from api_tests.nodes.views.test_node_draft_registration_list import DraftRegistr
 from api_tests.registrations.filters.test_filters import RegistrationListFilteringMixin
 from django.db.models import Q
 from framework.auth.core import Auth
-from osf.models import AbstractNode as Node, MetaSchema, DraftRegistration
+from osf.models import MetaSchema, DraftRegistration
 from osf_tests.factories import (
     ProjectFactory,
     RegistrationFactory,
     AuthUserFactory,
     CollectionFactory,
-    BookmarkCollectionFactory,
     DraftRegistrationFactory,
-    NodeFactory,
 )
 from tests.base import ApiTestCase
 from website.project.metadata.schemas import LATEST_SCHEMA_VERSION
