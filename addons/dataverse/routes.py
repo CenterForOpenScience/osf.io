@@ -88,15 +88,6 @@ api_routes = {
         ),
         Rule(
             [
-                '/project/<pid>/dataverse/widget/',
-                '/project/<pid>/node/<nid>/dataverse/widget/',
-            ],
-            'get',
-            views.dataverse_widget,
-            OsfWebRenderer('../addons/dataverse/templates/dataverse_widget.mako', trust=False),
-        ),
-        Rule(
-            [
                 '/project/<pid>/dataverse/widget/contents/',
                 '/project/<pid>/node/<nid>/dataverse/widget/contents/',
             ],
