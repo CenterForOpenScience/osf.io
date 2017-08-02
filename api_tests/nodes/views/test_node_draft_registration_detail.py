@@ -5,7 +5,7 @@ from modularodm import Q
 from osf.models import MetaSchema
 from website.project.metadata.schemas import LATEST_SCHEMA_VERSION
 from api.base.settings.defaults import API_BASE
-from website.settings import PREREG_ADMIN_TAG
+from django.contrib.auth.models import Permission
 from test_node_draft_registration_list import DraftRegistrationTestCase
 
 from osf_tests.factories import (
@@ -67,7 +67,8 @@ class TestDraftRegistrationDetail(DraftRegistrationTestCase):
 
     def test_reviewer_can_see_draft_registration(self):
         user = AuthUserFactory()
-        user.add_system_tag(PREREG_ADMIN_TAG)
+        administer_permission = Permission.objects.get(codename='administer_prereg')
+        user.user_permissions.add(administer_permission)
         user.save()
         res = self.app.get(self.url, auth=user.auth)
         assert_equal(res.status_code, 200)
@@ -81,6 +82,7 @@ class TestDraftRegistrationUpdate(DraftRegistrationTestCase):
 
     def setUp(self):
         super(TestDraftRegistrationUpdate, self).setUp()
+        self.administer_permission = Permission.objects.get(codename='administer_prereg')
 
         self.schema = MetaSchema.find_one(
             Q('name', 'eq', 'OSF-Standard Pre-Data Collection Registration') &
@@ -265,7 +267,7 @@ class TestDraftRegistrationUpdate(DraftRegistrationTestCase):
 
     def test_reviewer_can_update_draft_registration(self):
         user = AuthUserFactory()
-        user.add_system_tag(PREREG_ADMIN_TAG)
+        user.user_permissions.add(self.administer_permission)
         user.save()
 
         payload = {
@@ -292,7 +294,7 @@ class TestDraftRegistrationUpdate(DraftRegistrationTestCase):
 
     def test_reviewer_can_only_update_comment_fields_draft_registration(self):
         user = AuthUserFactory()
-        user.add_system_tag(PREREG_ADMIN_TAG)
+        user.user_permissions.add(self.administer_permission)
         user.save()
 
         payload = {
@@ -317,7 +319,7 @@ class TestDraftRegistrationUpdate(DraftRegistrationTestCase):
 
     def test_reviewer_can_update_nested_comment_fields_draft_registration(self):
         user = AuthUserFactory()
-        user.add_system_tag(PREREG_ADMIN_TAG)
+        user.user_permissions.add(self.administer_permission)
         user.save()
 
         payload = {
@@ -346,7 +348,7 @@ class TestDraftRegistrationUpdate(DraftRegistrationTestCase):
 
     def test_reviewer_cannot_update_nested_value_fields_draft_registration(self):
         user = AuthUserFactory()
-        user.add_system_tag(PREREG_ADMIN_TAG)
+        user.user_permissions.add(self.administer_permission)
         user.save()
 
         payload = {
@@ -497,7 +499,8 @@ class TestDraftRegistrationDelete(DraftRegistrationTestCase):
 
     def test_reviewer_cannot_delete_draft_registration(self):
         user = AuthUserFactory()
-        user.add_system_tag(PREREG_ADMIN_TAG)
+        administer_permission = Permission.objects.get(codename='administer_prereg')
+        user.user_permissions.add(administer_permission)
         user.save()
 
         res = self.app.delete_json_api(self.url, auth=user.auth, expect_errors=True)

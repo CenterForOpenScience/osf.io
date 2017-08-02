@@ -194,7 +194,7 @@ def check_access(node, auth, action, cas_resp):
                 return True
             parent = parent.parent_node
 
-    # Users with the PREREG_ADMIN_TAG should be allowed to download files
+    # Users with the prereg admin permission should be allowed to download files
     # from prereg challenge draft registrations.
     try:
         prereg_schema = MetaSchema.find_one(

@@ -5,8 +5,7 @@ from website.project.metadata.schemas import LATEST_SCHEMA_VERSION
 from website.project.metadata.utils import create_jsonschema_from_metaschema
 from modularodm import Q
 from website.util import permissions
-from website.settings import PREREG_ADMIN_TAG
-
+from django.contrib.auth.models import Permission
 from api.base.settings.defaults import API_BASE
 
 from tests.base import ApiTestCase
@@ -358,7 +357,8 @@ class TestDraftRegistrationCreate(DraftRegistrationTestCase):
 
     def test_reviewer_cannot_create_draft_registration(self):
         user = AuthUserFactory()
-        user.add_system_tag(PREREG_ADMIN_TAG)
+        administer_permission = Permission.objects.get(codename='administer_prereg')
+        user.user_permissions.add(administer_permission)
         user.save()
 
         assert_in(self.read_only_user, self.public_project.contributors.all())

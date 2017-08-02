@@ -10,6 +10,7 @@ import jwe
 import jwt
 import mock
 from django.utils import timezone
+from django.contrib.auth.models import Permission
 from framework.auth import cas, signing
 from framework.auth.core import Auth
 from framework.exceptions import HTTPError
@@ -363,7 +364,8 @@ class TestCheckPreregAuth(OsfTestCase):
         super(TestCheckPreregAuth, self).setUp()
 
         self.prereg_challenge_admin_user = AuthUserFactory()
-        self.prereg_challenge_admin_user.add_system_tag(settings.PREREG_ADMIN_TAG)
+        administer_permission = Permission.objects.get(codename='administer_prereg')
+        self.prereg_challenge_admin_user.user_permissions.add(administer_permission)
         self.prereg_challenge_admin_user.save()
         prereg_schema = MetaSchema.find_one(
             Q('name', 'eq', 'Prereg Challenge') &
