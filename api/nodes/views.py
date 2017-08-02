@@ -2058,7 +2058,7 @@ class NodeAddonList(JSONAPIBaseView, generics.ListAPIView, ListFilterMixin, Node
     view_category = 'nodes'
     view_name = 'node-addons'
 
-    ordering = ('-date_modified',)
+    ordering = ('-id',)
 
     def get_default_queryset(self):
         qs = []
