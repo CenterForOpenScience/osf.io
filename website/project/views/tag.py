@@ -19,8 +19,8 @@ def project_tag(tag, auth, **kwargs):
     return {
         'nodes': [
             {
-                'title': node.title,
-                'url': node.url,
+                'title': node['title'],
+                'url': node['url'],
             }
             for node in nodes
         ],

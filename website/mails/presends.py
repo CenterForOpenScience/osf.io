@@ -9,7 +9,7 @@ def no_addon(email):
 def no_login(email):
     from osf.models.queued_mail import QueuedMail, NO_LOGIN_TYPE
     sent = QueuedMail.objects.filter(user=email.user, email_type=NO_LOGIN_TYPE).exclude(_id=email._id)
-    if sent.count():
+    if sent.exists():
         return False
     return email.user.date_last_login < timezone.now() - settings.NO_LOGIN_WAIT_TIME
 

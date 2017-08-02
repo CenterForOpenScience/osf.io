@@ -188,11 +188,10 @@ def conference_data(meeting):
 
     nodes = AbstractNode.objects.filter(tags__id__in=Tag.objects.filter(name__iexact=meeting, system=False).values_list('id', flat=True), is_public=True, is_deleted=False)
 
-    ret = [
+    return [
         _render_conference_node(each, idx, conf)
         for idx, each in enumerate(nodes)
     ]
-    return ret
 
 
 def redirect_to_meetings(**kwargs):

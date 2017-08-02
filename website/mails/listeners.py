@@ -32,7 +32,7 @@ def queue_first_public_project_email(user, node, meeting_creation):
     from osf.models.queued_mail import queue_mail, QueuedMail, NEW_PUBLIC_PROJECT_TYPE, NEW_PUBLIC_PROJECT
     if not meeting_creation:
         sent_mail = QueuedMail.objects.filter(user=user, sent_at__isnull=False, email_type=NEW_PUBLIC_PROJECT_TYPE)
-        if not sent_mail.count():
+        if not sent_mail.exists():
             queue_mail(
                 to_addr=user.username,
                 mail=NEW_PUBLIC_PROJECT,

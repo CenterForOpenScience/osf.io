@@ -57,7 +57,7 @@ def get_globals():
     location = geolite2.lookup(request.remote_addr) if request.remote_addr else None
     if request.host_url != settings.DOMAIN:
         try:
-            inst_id = (Institution.objects.get(domains__contains=[request.host.lower()]))._id
+            inst_id = (Institution.objects.get(domains__icontains=[request.host]))._id
             request_login_url = '{}institutions/{}'.format(settings.DOMAIN, inst_id)
         except Institution.DoesNotExist:
             request_login_url = request.url.replace(request.host_url, settings.DOMAIN)
