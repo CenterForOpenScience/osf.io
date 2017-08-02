@@ -516,9 +516,8 @@ class TestOSFUser:
         project.save()
         u.reload()
         project.reload()
-        new_name_list = [contrib.fullname for contrib in project.contributors]
-        assert old_name not in new_name_list
-        assert new_name in new_name_list
+        unregistered_name = user.unclaimed_records[project._id].get('name', None)
+        assert new_name == unregistered_name
 
     def test_username_is_automatically_lowercased(self):
         user = UserFactory(username='nEoNiCon@bet.com')
