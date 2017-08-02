@@ -951,7 +951,7 @@ var PreprintMetrics = function() {
         targetProperty: "provider.total",
         groupBy: ["provider.name"],
         interval: "daily",
-        timeframe: "this_365_days",
+        timeframe: "previous_30_days",
         timezone: "UTC"
     });
 
