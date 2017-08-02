@@ -1705,6 +1705,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         registered.registered_schema.add(schema)
         registered.copy_contributors_from(self)
         registered.tags.add(*self.all_tags.values_list('pk', flat=True))
+        registered.subjects.add(*self.subjects.values_list('pk', flat=True))
         registered.affiliated_institutions.add(*self.affiliated_institutions.values_list('pk', flat=True))
 
         # Clone each log from the original node for this registration.
@@ -1895,6 +1896,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         forked.save()
 
         forked.tags.add(*self.all_tags.values_list('pk', flat=True))
+        forked.subjects.add(*self.subjects.values_list('pk', flat=True))
 
         if parent:
             node_relation = NodeRelation.objects.get(parent=parent.forked_from, child=original)
@@ -2326,6 +2328,9 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
 
     def save(self, *args, **kwargs):
         first_save = not bool(self.pk)
+        if 'old_subjects' in kwargs.keys():
+            # TODO: send this data to SHARE
+            kwargs.pop('old_subjects')
         if 'suppress_log' in kwargs.keys():
             self._suppress_log = kwargs['suppress_log']
             del kwargs['suppress_log']

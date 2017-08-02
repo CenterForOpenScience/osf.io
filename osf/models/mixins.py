@@ -691,8 +691,12 @@ class TaxonomizableMixin(models.Model):
             s.object_hierarchy for s in self.subjects.exclude(children__in=self.subjects.all())
         ]
 
-    def set_subjects(self, preprint_subjects, auth):
-        if not self.node.has_permission(auth.user, ADMIN):
+    def set_subjects(self, preprint_subjects, auth, add_log=True):
+        if getattr(self, 'is_registration', False):
+            raise PermissionsError('Registrations may not be modified.')
+        if getattr(self, 'is_collection', False):
+            raise NodeStateError('Collections may not have subjects')
+        if not self.has_permission(auth.user, ADMIN):
             raise PermissionsError('Only admins can change subjects.')
 
         old_subjects = list(self.subjects.values_list('id', flat=True))
@@ -705,6 +709,17 @@ class TaxonomizableMixin(models.Model):
                 validate_subject_hierarchy(subj_hierarchy)
                 for s_id in subj_hierarchy:
                     self.subjects.add(Subject.load(s_id))
+
+        if add_log and hasattr(self, 'add_log'):
+            self.add_log(
+                action=NodeLog.SUBJECTS_UPDATED,
+                params={
+                    'subjects': list(self.subjects.values('_id', 'text')),
+                    'old_subjects': list(Subject.objects.filter(id__in=old_subjects).values('_id', 'text'))
+                },
+                auth=auth,
+                save=False,
+            )
 
         self.save(old_subjects=old_subjects)
 

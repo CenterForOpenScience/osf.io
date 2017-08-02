@@ -12,6 +12,7 @@ from api.base.serializers import (VersionedDateTimeField, HideIfRegistration, ID
 from api.base.settings import ADDONS_FOLDER_CONFIGURABLE
 from api.base.utils import (absolute_reverse, get_object_or_error,
                             get_user_auth, is_truthy)
+from api.taxonomies.serializers import TaxonomyField
 from django.apps import apps
 from django.conf import settings
 from django.core.exceptions import ValidationError
@@ -163,7 +164,8 @@ class NodeSerializer(JSONAPISerializer):
         'root',
         'parent',
         'contributors',
-        'preprint'
+        'preprint',
+        'subjects'
     ])
 
     non_anonymized_fields = [
@@ -186,7 +188,8 @@ class NodeSerializer(JSONAPISerializer):
         'parent',
         'root',
         'logs',
-        'wikis'
+        'wikis',
+        'subjects'
     ]
 
     id = IDField(source='_id', read_only=True)
@@ -218,6 +221,7 @@ class NodeSerializer(JSONAPISerializer):
     current_user_can_comment = ser.SerializerMethodField(help_text='Whether the current user is allowed to post comments')
     current_user_permissions = ser.SerializerMethodField(help_text='List of strings representing the permissions '
                                                                    'for the current user on this node.')
+    subjects = ser.SerializerMethodField()
 
     # Public is only write-able by admins--see update method
     public = ser.BooleanField(source='is_public', required=False,
@@ -383,6 +387,13 @@ class NodeSerializer(JSONAPISerializer):
         auth = Auth(user if not user.is_anonymous else None)
         return obj.can_comment(auth)
 
+    def get_subjects(self, obj):
+        return [
+            [
+                TaxonomyField().to_representation(subj) for subj in hier
+            ] for hier in obj.subject_hierarchy
+        ]
+
     class Meta:
         type_ = 'nodes'
 
@@ -463,6 +474,14 @@ class NodeSerializer(JSONAPISerializer):
             'node': node_comments
         }
 
+    def run_validation(self, *args, **kwargs):
+        # Overrides construtor for validated_data to allow writes to a SerializerMethodField
+        # Validation for `subjects` happens in the model
+        _validated_data = super(NodeSerializer, self).run_validation(*args, **kwargs)
+        if 'subjects' in self.initial_data:
+            _validated_data['subjects'] = self.initial_data['subjects']
+        return _validated_data
+
     def create(self, validated_data):
         request = self.context['request']
         user = request.user
@@ -515,6 +534,10 @@ class NodeSerializer(JSONAPISerializer):
                         permissions=parent.get_permissions(contributor.user), existing_user=contributor.user
                     )
             node.add_contributors(contributors, auth=auth, log=True, save=True)
+        if is_truthy(request.GET.get('inherit_subjects')) and validated_data['parent'].has_permission(user, 'write'):
+            parent = validated_data['parent']
+            node.subjects.add(parent.subjects.all())
+            node.save()
         return node
 
     def update(self, node, validated_data):
@@ -538,6 +561,16 @@ class NodeSerializer(JSONAPISerializer):
 
                 update_institutions(node, new_institutions, user)
                 node.save()
+            if 'subjects' in validated_data:
+                subjects = validated_data.pop('subjects', None)
+                try:
+                    node.set_subjects(subjects, auth)
+                except PermissionsError as e:
+                    raise exceptions.PermissionDenied(detail=e.message)
+                except ValueError as e:
+                    raise exceptions.ValidationError(detail=e.message)
+                except NodeStateError as e:
+                    raise exceptions.ValidationError(detail=e.message)
 
             try:
                 node.update(validated_data, auth=auth)
