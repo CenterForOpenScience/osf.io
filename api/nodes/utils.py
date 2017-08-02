@@ -21,8 +21,8 @@ def get_file_object(node, path, provider, request):
                 model = OsfStorageFolder
             else:
                 model = OsfStorageFile
-
-        return get_object_or_404(model, node=node.pk, _id=path.strip('/'))
+            obj = get_object_or_404(model, node=node.pk, _id=path.strip('/'))
+        return obj
 
     if not node.get_addon(provider) or not node.get_addon(provider).configured:
         raise NotFound('The {} provider is not configured for this project.'.format(provider))

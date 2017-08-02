@@ -2,7 +2,7 @@
 Views related to OAuth2 platform applications. Intended for OSF internal use only
 """
 from django.shortcuts import get_object_or_404
-from rest_framework.exceptions import APIException, NotFound
+from rest_framework.exceptions import APIException
 from rest_framework import generics
 from rest_framework import permissions as drf_permissions
 

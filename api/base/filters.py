@@ -362,16 +362,13 @@ class ListFilterMixin(FilterMixin):
                                 for operation in operations
                             ])
                         )
-                try:
+                if not isinstance(queryset, list):
                     sub_query = functools.reduce(operator.or_, sub_query_parts)
                     query_parts.append(sub_query)
-                except TypeError:
-                    continue
-            try:
+
+            if not isinstance(queryset, list):
                 query = functools.reduce(operator.and_, query_parts)
                 queryset = queryset.filter(query)
-            except TypeError:
-                queryset = queryset
 
         return queryset
 
