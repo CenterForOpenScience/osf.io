@@ -182,8 +182,7 @@ def deserialize_contributors(node, user_dicts, auth, validate=False):
                 contributor = get_user(email=email)
 
         # Add unclaimed record if necessary
-        if (not contributor.is_registered
-                and node._primary_key not in contributor.unclaimed_records):
+        if not contributor.is_registered:
             contributor.add_unclaimed_record(node=node, referrer=auth.user,
                 given_name=fullname,
                 email=email)
