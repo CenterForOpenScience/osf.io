@@ -1210,9 +1210,9 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         except KeyError:
             record = None
         if record:
-            record['name'] = fullname
-        else:
-            contributor.add_unclaimed_record(node=self, referrer=auth.user,
+            del record
+
+        contributor.add_unclaimed_record(node=self, referrer=auth.user,
                                          given_name=fullname, email=email)
         try:
             contributor.save()
