@@ -44,7 +44,7 @@ def get_valid_mentioned_users_guids(comment, contributors):
     new_mentions = set(re.findall(r"\[[@|\+].*?\]\(htt[ps]{1,2}:\/\/[a-z\d:.]+?\/([a-z\d]{5})\/\)", comment.content))
     new_mentions = [
         m for m in new_mentions if
-        m not in comment.ever_mentioned and
+        m not in comment.ever_mentioned.values_list('guids___id', flat=True) and
         validate_contributor(m, contributors)
     ]
     return new_mentions

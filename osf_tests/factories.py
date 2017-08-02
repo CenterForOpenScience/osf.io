@@ -556,7 +556,7 @@ class PreprintFactory(DjangoModelFactory):
 
     @classmethod
     def _create(cls, target_class, *args, **kwargs):
-        update_task_patcher = mock.patch('website.preprints.tasks.on_preprint_updated.s')
+        update_task_patcher = mock.patch('website.preprints.tasks.on_preprint_updated.si')
         update_task_patcher.start()
 
         finish = kwargs.pop('finish', True)
@@ -604,7 +604,7 @@ class PreprintFactory(DjangoModelFactory):
             if license_details:
                 instance.set_preprint_license(license_details, auth=auth)
 
-            create_task_patcher = mock.patch('website.preprints.tasks.get_and_set_preprint_identifiers.s')
+            create_task_patcher = mock.patch('website.preprints.tasks.get_and_set_preprint_identifiers.si')
             mock_create_identifier = create_task_patcher.start()
             if is_published:
                 mock_create_identifier.side_effect = sync_set_identifiers(instance)

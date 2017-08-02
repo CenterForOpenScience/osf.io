@@ -97,6 +97,8 @@ class ViewOnlyLinkNodes(JSONAPIBaseView, generics.ListAPIView):
     view_category = 'view-only-links'
     view_name = 'view-only-link-nodes'
 
+    ordering = ('-date_modified',)
+
     def get_serializer_class(self):
         if 'link_id' in self.kwargs:
             view_only_link = PrivateLink.load(self.kwargs['link_id'])

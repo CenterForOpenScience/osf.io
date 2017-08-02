@@ -8,7 +8,7 @@ from api.base.exceptions import InvalidFilterError, InvalidFilterOperator, Inval
 from api.base.filters import ListFilterMixin, ODMFilterMixin
 from api.base import utils
 
-from osf.models import NodeRelation, AbstractNode as Node
+from osf.models import NodeRelation, AbstractNode
 
 
 class NodeODMFilterMixin(ODMFilterMixin):
@@ -63,7 +63,7 @@ class NodesFilterMixin(ListFilterMixin):
             if operation['op'] == 'eq':
                 if operation['value']:
                     # filter[parent]=<nid>
-                    parent = utils.get_object_or_error(Node, operation['value'], display_name='parent')
+                    parent = utils.get_object_or_error(AbstractNode, operation['value'], display_name='parent')
                     node_ids = NodeRelation.objects.filter(parent=parent, is_node_link=False).values_list('child_id', flat=True)
                     return queryset.filter(id__in=node_ids)
                 # else filter[parent]=null
