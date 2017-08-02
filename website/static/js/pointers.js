@@ -38,7 +38,7 @@ var AddPointerViewModel = oop.extend(Paginator, {
         this.errorMsg = ko.observable('');
         this.totalPages = ko.observable(0);
         this.includePublic = ko.observable(false);
-        this.processing = ko.observable(false);
+        this.processing = ko.observable('');
         this.dirty = false;
         this.searchWarningMsg = ko.observable('');
         this.submitWarningMsg = ko.observable('');
@@ -96,7 +96,7 @@ var AddPointerViewModel = oop.extend(Paginator, {
         self.loadingResults(true);
         self.errorMsg('');
         self.searchWarningMsg('');
-        // self.results([]); // clears page for spinner
+        self.results([]); // clears page for spinner
         self.selection([]);
         var pageNum = self.pageToGet() + 1;
         var userOrPublicNodes = self.includePublic() ? '' : 'users/me/';
@@ -186,7 +186,7 @@ var AddPointerViewModel = oop.extend(Paginator, {
     },
     add: function(data){
         var self = this;
-        self.processing(true);
+        self.processing('disabled');
         var addUrl = osfHelpers.apiV2Url('nodes/' + nodeId + '/node_links/');
         var request = osfHelpers.ajaxJSON(
             'POST',
@@ -210,17 +210,17 @@ var AddPointerViewModel = oop.extend(Paginator, {
         );
         request.done(function (response){
             self.selection.push(data);
-            self.processing(false);
+            self.processing('');
             self.dirty = true;
         });
         request.fail(function(xhr, status, error){
             self.logErrors(addUrl, status, error, 'Unable to link project');
-            self.processing(false);
+            self.processing('');
         });
     },
     remove: function(data){
         var self = this;
-        self.processing(true);
+        self.processing('disabled');
         var requestNodeLinks = osfHelpers.ajaxJSON(
             'GET',
             nodeLinksUrl,
@@ -246,11 +246,11 @@ var AddPointerViewModel = oop.extend(Paginator, {
                 self.selection.splice(
                     self.selection.indexOf(data), 1
                 );
-                self.processing(false);
+                self.processing('');
                 self.dirty = true;
             }).fail(function(xhr, status, error){
                 self.logErrors(deleteUrl, status, error, 'Unable to remove nodelink');
-                self.processing(false);
+                self.processing('');
             });
         });
         requestNodeLinks.fail(function(xhr, status, error){
@@ -304,7 +304,7 @@ var AddPointerViewModel = oop.extend(Paginator, {
     clear: function (){
         var self = this;
         if (self.dirty){
-          window.location.reload();
+            window.location.reload();
         }
     },
     done: function(){

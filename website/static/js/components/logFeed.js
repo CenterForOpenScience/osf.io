@@ -59,7 +59,7 @@ var LogFeed = {
                 var page = params.page || 1;
                 self.currentPage(parseInt(page));
                 self.totalPages(Math.ceil(result.links.meta.total / result.links.meta.per_page));
-                $('#linkProjects').attr('disabled', false);
+                $('#linkProjects').toggleClass('disabled');
                 if (!window.contextVars.node.isRetracted && !$(location).attr('href').includes('profile')) {
                     m.endComputation(); //paired with m.startComputation in project-dashboard-page; prevents redraw of mithril components.
                 }
