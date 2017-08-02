@@ -282,7 +282,7 @@ class TestUsersCreate(ApiTestCase):
 
     @mock.patch('framework.auth.views.mails.send_mail')
     def test_logged_in_user_with_basic_auth_cannot_create_other_user_or_send_mail(self, mock_mail):
-        with assert_raises(User.DoesNotExist):
+        with assert_raises(OSFUser.DoesNotExist):
             OSFUser.objects.get(username=self.unconfirmed_email)
         res = self.app.post_json_api(
             '{}?send_email=true'.format(self.base_url),
@@ -292,13 +292,13 @@ class TestUsersCreate(ApiTestCase):
         )
 
         assert_equal(res.status_code, 403)
-        with assert_raises(User.DoesNotExist):
+        with assert_raises(OSFUser.DoesNotExist):
             OSFUser.objects.get(username=self.unconfirmed_email)
         assert_equal(mock_mail.call_count, 0)
 
     @mock.patch('framework.auth.views.mails.send_mail')
     def test_logged_out_user_cannot_create_other_user_or_send_mail(self, mock_mail):
-        with assert_raises(User.DoesNotExist):
+        with assert_raises(OSFUser.DoesNotExist):
             OSFUser.objects.get(username=self.unconfirmed_email)
         res = self.app.post_json_api(
             '{}?send_email=true'.format(self.base_url),
@@ -307,7 +307,7 @@ class TestUsersCreate(ApiTestCase):
         )
 
         assert_equal(res.status_code, 401)
-        with assert_raises(User.DoesNotExist):
+        with assert_raises(OSFUser.DoesNotExist):
             OSFUser.objects.get(username=self.unconfirmed_email)
         assert_equal(mock_mail.call_count, 0)
 
@@ -455,7 +455,7 @@ class TestUsersCreate(ApiTestCase):
         )
         mock_auth.return_value = self.user, mock_cas_resp
 
-        with assert_raises(User.DoesNotExist):
+        with assert_raises(OSFUser.DoesNotExist):
             OSFUser.objects.get(username=self.unconfirmed_email)
         res = self.app.post_json_api(
             '{}?send_email=true'.format(self.base_url),
@@ -465,7 +465,7 @@ class TestUsersCreate(ApiTestCase):
         )
 
         assert_equal(res.status_code, 403)
-        with assert_raises(User.DoesNotExist):
+        with assert_raises(OSFUser.DoesNotExist):
             OSFUser.objects.get(username=self.unconfirmed_email)
         assert_equal(mock_mail.call_count, 0)
 

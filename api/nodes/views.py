@@ -935,7 +935,7 @@ class NodeDraftRegistrationsList(JSONAPIBaseView, generics.ListCreateAPIView, No
     view_category = 'nodes'
     view_name = 'node-draft-registrations'
 
-    ordering = ('-date_modified',)
+    ordering = ('-datetime_updated',)
 
     # overrides ListCreateAPIView
     def get_queryset(self):
@@ -3577,4 +3577,4 @@ class NodePreprintsList(JSONAPIBaseView, generics.ListAPIView, NodeMixin, Prepri
         return node.preprints.filter(is_published=True)
 
     def get_queryset(self):
-        return self.get_queryset_from_request()
+        return self.get_queryset_from_request().distinct()
