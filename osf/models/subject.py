@@ -49,8 +49,7 @@ class Subject(ObjectIDMixin, BaseModel, DirtyFieldsMixin):
 
     @cached_property
     def path(self):
-        provider_id = self.provider._id if bool(self.bepress_subject) else 'bepress'
-        return '{}/{}'.format(provider_id, '/'.join([s.text for s in self.object_hierarchy]))
+        return '{}/{}'.format(self.provider.share_title, '/'.join([s.text for s in self.object_hierarchy]))
 
     @cached_property
     def bepress_text(self):
