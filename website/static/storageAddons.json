@@ -1,4 +1,8 @@
 {
+    "bitbucket": {
+        "fullName": "Bitbucket",
+        "externalView": true
+    },
     "box": {
         "fullName": "Box",
         "externalView": false

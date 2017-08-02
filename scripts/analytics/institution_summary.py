@@ -4,7 +4,7 @@ from modularodm import Q
 from dateutil.parser import parse
 from datetime import datetime, timedelta
 
-from osf.models import OSFUser as User, AbstractNode as Node, Institution
+from osf.models import OSFUser, AbstractNode, Institution, Registration
 from website.app import init_app
 from scripts.analytics.base import SummaryAnalytics
 
@@ -25,7 +25,6 @@ class InstitutionSummary(SummaryAnalytics):
 
     def get_events(self, date):
         super(InstitutionSummary, self).get_events(date)
-        from osf.models import AbstractNode, Registration
 
         institutions = self.get_institutions()
         counts = []
@@ -54,7 +53,7 @@ class InstitutionSummary(SummaryAnalytics):
                     'name': institution.name,
                 },
                 'users': {
-                    'total': User.find(user_query).count(),
+                    'total': OSFUser.find(user_query).count(),
                 },
                 'nodes': {
                     'total': AbstractNode.find_by_institutions(institution, node_query).count(),
@@ -62,9 +61,9 @@ class InstitutionSummary(SummaryAnalytics):
                     'private': AbstractNode.find_by_institutions(institution, node_private_query).count(),
                 },
                 'projects': {
-                    'total': Node.find_by_institutions(institution, project_query).count(),
-                    'public': Node.find_by_institutions(institution, project_public_query).count(),
-                    'private': Node.find_by_institutions(institution, project_private_query).count(),
+                    'total': AbstractNode.find_by_institutions(institution, project_query).count(),
+                    'public': AbstractNode.find_by_institutions(institution, project_public_query).count(),
+                    'private': AbstractNode.find_by_institutions(institution, project_private_query).count(),
                 },
                 'registered_nodes': {
                     'total': Registration.find_by_institutions(institution, node_query).count(),
