@@ -2237,8 +2237,6 @@ class NodeAddonFolderList(JSONAPIBaseView, generics.ListAPIView, NodeMixin, Addo
     view_category = 'nodes'
     view_name = 'node-addon-folders'
 
-    ordering = ('-date_modified',)
-
     def get_queryset(self):
         # TODO: [OSF-6120] refactor this/NS models to be generalizable
         node_addon = self.get_addon_settings()
