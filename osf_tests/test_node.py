@@ -3525,6 +3525,11 @@ class TestTemplateNode:
         assert new.license.node_license._id == license.node_license._id
         self._verify_log(new)
 
+    def test_can_template_a_registration(self, auth):
+        registration = RegistrationFactory(creator=user)
+        new = registration.use_as_template(auth=auth)
+        assert new.is_registration is False
+        
     @pytest.fixture()
     def pointee(self, project, user, auth):
         pointee = ProjectFactory(creator=user)
