@@ -20,7 +20,11 @@ from tests.base import ApiTestCase, capture_signals
 from website.project import signals as project_signals
 from website.util import permissions
 
-def build_preprint_create_payload(node_id=None, provider_id=None, file_id=None, attrs={}):
+def build_preprint_create_payload(node_id=None, provider_id=None, file_id=None, attrs=None):
+
+    if not attrs:
+        attrs = {}
+
     payload = {
         "data": {
             "attributes": attrs,
