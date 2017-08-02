@@ -57,57 +57,57 @@ class TestNodeLinkDetail:
     def public_url(self, public_project, public_pointer):
         return '/{}nodes/{}/node_links/{}/'.format(API_BASE, public_project._id, public_pointer._id)
 
-    # def test_node_link_detail(self, app, user, non_contrib, private_pointer_project, public_pointer_project, public_url, private_url):
-    #
-    # #   test_returns_embedded_public_node_pointer_detail_logged_out
-    #     res = app.get(public_url)
-    #     assert res.status_code == 200
-    #     assert res.content_type == 'application/vnd.api+json'
-    #     res_json = res.json['data']
-    #     embedded = res_json['embeds']['target_node']['data']['id']
-    #     assert embedded == public_pointer_project._id
-    #
-    # #   test_returns_public_node_pointer_detail_logged_in
-    #     res = app.get(public_url, auth=user.auth)
-    #     res_json = res.json['data']
-    #     assert res.status_code == 200
-    #     assert res.content_type == 'application/vnd.api+json'
-    #     embedded = res_json['embeds']['target_node']['data']['id']
-    #     assert embedded == public_pointer_project._id
-    #
-    # #   test_returns_private_node_pointer_detail_logged_out
-    #     res = app.get(private_url, expect_errors=True)
-    #     assert res.status_code == 200
-    #     target_node = res.json['data']['embeds']['target_node']
-    #     assert 'errors' in target_node
-    #     assert target_node['errors'][0]['detail'] == exceptions.PermissionDenied.default_detail
-    #
-    # #   test_returns_private_node_pointer_detail_logged_in_contributor
-    #     res = app.get(private_url, auth=user.auth)
-    #     res_json = res.json['data']
-    #     assert res.status_code == 200
-    #     assert res.content_type == 'application/vnd.api+json'
-    #     embedded = res_json['embeds']['target_node']['data']['id']
-    #     assert embedded == private_pointer_project._id
-    #
-    # #   test_returns_private_node_pointer_detail_logged_in_non_contrib
-    #     res = app.get(private_url, auth=non_contrib.auth, expect_errors=True)
-    #     assert res.status_code == 200
-    #     target_node = res.json['data']['embeds']['target_node']
-    #     assert 'errors' in target_node
-    #     assert target_node['errors'][0]['detail'] == exceptions.PermissionDenied.default_detail
-    #
-    # #   test_self_link_points_to_node_link_detail_url
-    #     res = app.get(public_url, auth=user.auth)
-    #     assert res.status_code == 200
-    #     url = res.json['data']['links']['self']
-    #     assert public_url in url
-    #
-    # #   test_node_links_bad_version
-    #     url = '{}?version=2.1'.format(public_url)
-    #     res = app.get(url, auth=user.auth, expect_errors=True)
-    #     assert res.status_code == 404
-    #     assert res.json['errors'][0]['detail'] == 'This feature is deprecated as of version 2.1'
+    def test_node_link_detail(self, app, user, non_contrib, private_pointer_project, public_pointer_project, public_url, private_url):
+
+    #   test_returns_embedded_public_node_pointer_detail_logged_out
+        res = app.get(public_url)
+        assert res.status_code == 200
+        assert res.content_type == 'application/vnd.api+json'
+        res_json = res.json['data']
+        embedded = res_json['embeds']['target_node']['data']['id']
+        assert embedded == public_pointer_project._id
+
+    #   test_returns_public_node_pointer_detail_logged_in
+        res = app.get(public_url, auth=user.auth)
+        res_json = res.json['data']
+        assert res.status_code == 200
+        assert res.content_type == 'application/vnd.api+json'
+        embedded = res_json['embeds']['target_node']['data']['id']
+        assert embedded == public_pointer_project._id
+
+    #   test_returns_private_node_pointer_detail_logged_out
+        res = app.get(private_url, expect_errors=True)
+        assert res.status_code == 200
+        target_node = res.json['data']['embeds']['target_node']
+        assert 'errors' in target_node
+        assert target_node['errors'][0]['detail'] == exceptions.PermissionDenied.default_detail
+
+    #   test_returns_private_node_pointer_detail_logged_in_contributor
+        res = app.get(private_url, auth=user.auth)
+        res_json = res.json['data']
+        assert res.status_code == 200
+        assert res.content_type == 'application/vnd.api+json'
+        embedded = res_json['embeds']['target_node']['data']['id']
+        assert embedded == private_pointer_project._id
+
+    #   test_returns_private_node_pointer_detail_logged_in_non_contrib
+        res = app.get(private_url, auth=non_contrib.auth, expect_errors=True)
+        assert res.status_code == 200
+        target_node = res.json['data']['embeds']['target_node']
+        assert 'errors' in target_node
+        assert target_node['errors'][0]['detail'] == exceptions.PermissionDenied.default_detail
+
+    #   test_self_link_points_to_node_link_detail_url
+        res = app.get(public_url, auth=user.auth)
+        assert res.status_code == 200
+        url = res.json['data']['links']['self']
+        assert public_url in url
+
+    #   test_node_links_bad_version
+        url = '{}?version=2.1'.format(public_url)
+        res = app.get(url, auth=user.auth, expect_errors=True)
+        assert res.status_code == 404
+        assert res.json['errors'][0]['detail'] == 'This feature is deprecated as of version 2.1'
 
 @pytest.mark.django_db
 class TestDeleteNodeLink:
