@@ -220,25 +220,37 @@ var LogPieces = {
         view: function (ctrl, logObject) {
             var contributors = logObject.attributes.params.contributors;
             if(paramIsReturned(contributors, logObject)) {
-                return m('span', contributors.map(function(item, index, arr){
-                    var comma = ' ';
-                    if(index !== arr.length - 1){
-                        comma = ', ';
-                    }
-                    if(index === arr.length-2){
-                        comma = ' and ';
-                    }
+                return m('span', (function (){
+                    var contribList = [];
+                    var numContribShown = 15;
 
-                    if (item.active) {
-                        return [ m('a', {href: '/' + item.id + '/'}, item.full_name), comma];
-                    }
-                    else {
-                        if (item.unregistered_name) {
-                            return [item.unregistered_name, comma];
+                    var justOneMore = numContribShown === contributors.length -1;
+                    for(var i = 0; i < contributors.length; i++){
+                        var item = contributors[i];
+                        var comma = ' ';
+                        if(i !== contributors.length -1 && ((i !== numContribShown -1) || justOneMore)){
+                            comma = ', ';
                         }
-                        return [item.full_name, comma];
-                    }
-                }));
+                        if(i === contributors.length -2 || ((i === numContribShown -1) && !justOneMore)){
+                            comma = ' and ';
+                        }
+
+                        if (i === numContribShown && !justOneMore){
+                            contribList.push([((contributors.length - i).toString() + ' others'), '']);
+                            return contribList;
+                        }
+
+                        if (item.active) {
+                            contribList.push([ m('a', {href: '/' + item.id + '/'}, item.full_name), comma]);
+                        }
+                        else {
+                            if (item.unregistered_name) {
+                                contribList.push([item.unregistered_name, comma]);
+                            }
+                            contribList.push([item.full_name, comma]);
+                    }}
+                    return contribList;
+                }()));
             }
             return m('span', 'some users');
         }
