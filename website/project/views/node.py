@@ -8,7 +8,6 @@ from flask import request
 from django.apps import apps
 from django.core.exceptions import ValidationError
 from django.db.models import Count, Q
-from django.shortcuts import get_object_or_404
 
 from framework import status
 from framework.utils import iso8601format
@@ -506,7 +505,12 @@ def component_remove(auth, node, **kwargs):
 @must_have_permission(ADMIN)
 def remove_private_link(*args, **kwargs):
     link_id = request.json['private_link_id']
-    link = get_object_or_404(PrivateLink, _id=link_id)
+
+    try:
+        link = PrivateLink.objects.get(_id=link_id)
+    except PrivateLink.DoesNotExist:
+        raise HTTPError(http.NOT_FOUND)
+
     link.is_deleted = True
     link.save()
 
