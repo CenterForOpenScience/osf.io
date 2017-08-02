@@ -51,6 +51,11 @@ class Subject(ObjectIDMixin, BaseModel, DirtyFieldsMixin):
         return self.absolute_api_v2_url
 
     @cached_property
+    def path(self):
+        provider_id = self.provider._id if bool(self.bepress_subject) else 'bepress'
+        return '{}/{}'.format(provider_id, '/'.join([s.text for s in self.object_hierarchy]))
+
+    @cached_property
     def bepress_text(self):
         if self.bepress_subject:
             return self.bepress_subject.text
