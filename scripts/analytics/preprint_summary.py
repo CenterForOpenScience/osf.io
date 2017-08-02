@@ -55,7 +55,9 @@ class PreprintSummary(SummaryAnalytics):
 
         counts = []
         for preprint_provider in PreprintProvider.objects.all():
-            name = preprint_provider.name if  preprint_provider.name != 'Open Science Framework' else 'OSF'
+            name = preprint_provider.name if preprint_provider.name != 'Open Science Framework' else 'OSF'
+            if name == '???':
+                continue
             elastic_query['query']['bool']['must']['match']['sources'] = name
             resp = requests.post('https://share.osf.io/api/v2/search/creativeworks/_search', json=elastic_query).json()
             counts.append({
