@@ -297,7 +297,7 @@ ViewModel.prototype.setInfo = function() {
     }).fail(function(xhr, textStatus, error) {
         self.submitting(false);
         var errorMessage = (xhr.status === 410) ? self.messages.datasetDeaccessioned :
-            (xhr.status = 406) ? self.messages.forbiddenCharacters : self.messages.setDatasetError;
+            (xhr.status === 406) ? self.messages.forbiddenCharacters : self.messages.setDatasetError;
         self.changeMessage(errorMessage, 'text-danger');
         Raven.captureMessage('Could not authenticate with Dataverse', {
             extra: {
