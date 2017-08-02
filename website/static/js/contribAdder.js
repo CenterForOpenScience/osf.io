@@ -72,7 +72,7 @@ AddContributorViewModel = oop.extend(Paginator, {
             {value: 'write', text: 'Read + Write'},
             {value: 'admin', text: 'Administrator'}
         ];
-
+        self.visible = ko.observable(true);
         self.page = ko.observable('whom');
         self.pageTitle = ko.computed(function () {
             return {
@@ -351,7 +351,7 @@ AddContributorViewModel = oop.extend(Paginator, {
         var self = this;
         data.permission = ko.observable(self.permissionList[1]); //default permission write
         // All manually added contributors are visible
-        data.visible = true;
+        data.visible = ko.observable(self.visible());
         this.selection.push(data);
         // Hack: Hide and refresh tooltips
         $('.tooltip').hide();

@@ -166,6 +166,16 @@
                                                 data-html="true"
                                             ></i>
                                     </th>
+##                                     <th>
+##                                         Bibliographic Contributor
+##                                         <i class="fa fa-question-circle visibility-info"
+##                                             data-toggle="popover"
+##                                             data-title="Bibliographic Contributor Information"
+##                                             data-container="#addContributors"
+##                                             data-placement="right"
+##                                             data-html="true"
+##                                         ></i>
+##                                     </th>
                                 </thead>
                                 <tbody data-bind="foreach:{data:selection, as: 'contributor', afterRender:makeAfterRender()}">
                                     <tr>
@@ -194,6 +204,12 @@
                                                 value: permission,
                                                 optionsText: 'text'">
                                             </select>
+                                        </td>
+                                        <td>
+                                            <input
+                                                type="checkbox" class="biblio visible-filter"
+                                                data-bind="checked: visible"
+                                            />
                                         </td>
                                     </tr>
                                 </tbody>
