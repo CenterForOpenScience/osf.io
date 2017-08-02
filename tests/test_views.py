@@ -38,7 +38,7 @@ from tests.factories import MockAddonNodeSettings
 from website import mailchimp_utils
 from website import mails, settings
 from addons.osfstorage import settings as osfstorage_settings
-from osf.models import AbstractNode as Node, NodeLog
+from osf.models import AbstractNode, NodeLog
 from website.profile.utils import add_contributor_json, serialize_unregistered
 from website.profile.views import fmt_date_or_none, update_osf_help_mails_subscription
 from website.project.decorators import check_can_access
@@ -55,7 +55,7 @@ from website.util import api_url_for, web_url_for
 from website.util import permissions, rubeus
 from website.views import index
 from osf.models import Comment
-from osf.models import OSFUser as User
+from osf.models import OSFUser
 from tests.base import (
     assert_is_redirect,
     capture_signals,
@@ -123,9 +123,9 @@ def no_auto_transact():
 
 class TestViewsAreAtomic(OsfTestCase):
     def test_error_response_rolls_back_transaction(self):
-        original_user_count  = User.objects.count()
+        original_user_count  = OSFUser.objects.count()
         self.app.get('/error500', expect_errors=True)
-        assert_equal(User.objects.count(), original_user_count)
+        assert_equal(OSFUser.objects.count(), original_user_count)
 
         # Need to set debug = False in order to rollback transactions in transaction_teardown_request
         mock_app.debug = False
@@ -136,7 +136,7 @@ class TestViewsAreAtomic(OsfTestCase):
         mock_app.debug = True
 
         self.app.get('/noautotransact', expect_errors=True)
-        assert_equal(User.objects.count(), original_user_count + 1)
+        assert_equal(OSFUser.objects.count(), original_user_count + 1)
 
 
 class TestViewingProjectWithPrivateLink(OsfTestCase):
@@ -2981,7 +2981,7 @@ class TestAuthViews(OsfTestCase):
                 'password': password,
             }
         )
-        user = User.find_one(Q('username', 'eq', email))
+        user = OSFUser.find_one(Q('username', 'eq', email))
         assert_equal(user.fullname, name)
 
     # Regression test for https://github.com/CenterForOpenScience/osf.io/issues/2902
@@ -2998,7 +2998,7 @@ class TestAuthViews(OsfTestCase):
                 'password': password,
             }
         )
-        user = User.find_one(Q('username', 'eq', email))
+        user = OSFUser.find_one(Q('username', 'eq', email))
         assert_equal(user.fullname, name)
 
     @mock.patch('framework.auth.views.send_confirm_email')
@@ -3017,7 +3017,7 @@ class TestAuthViews(OsfTestCase):
         )
 
         expected_scrub_username = "Eunice O' \"Cornwallis\"cornify_add()"
-        user = User.find_one(Q('username', 'eq', email))
+        user = OSFUser.find_one(Q('username', 'eq', email))
 
         assert_equal(res.status_code, http.OK)
         assert_equal(user.fullname, expected_scrub_username)
@@ -3036,7 +3036,7 @@ class TestAuthViews(OsfTestCase):
             expect_errors=True,
         )
         assert_equal(res.status_code, http.BAD_REQUEST)
-        users = User.find(Q('username', 'eq', email))
+        users = OSFUser.find(Q('username', 'eq', email))
         assert_equal(users.count(), 0)
 
     def test_register_blacklisted_email_domain(self):
@@ -3052,7 +3052,7 @@ class TestAuthViews(OsfTestCase):
             expect_errors=True
         )
         assert_equal(res.status_code, http.BAD_REQUEST)
-        users = User.find(Q('username', 'eq', email))
+        users = OSFUser.find(Q('username', 'eq', email))
         assert_equal(users.count(), 0)
 
     @mock.patch('framework.auth.views.validate_recaptcha', return_value=True)
@@ -3074,7 +3074,7 @@ class TestAuthViews(OsfTestCase):
             )
             validate_recaptcha.assert_called_with(captcha, remote_ip=None)
             assert_equal(resp.status_code, http.OK)
-            user = User.find_one(Q('username', 'eq', email))
+            user = OSFUser.find_one(Q('username', 'eq', email))
             assert_equal(user.fullname, name)
 
     @mock.patch('framework.auth.views.validate_recaptcha', return_value=False)
@@ -3131,7 +3131,7 @@ class TestAuthViews(OsfTestCase):
         project.save()
 
         # The new, unregistered user
-        new_user = User.find_one(Q('username', 'eq', email))
+        new_user = OSFUser.find_one(Q('username', 'eq', email))
 
         # Instead of following the invitation link, they register at the regular
         # registration page
@@ -3396,7 +3396,7 @@ class TestAuthViews(OsfTestCase):
         assert_equal(len(unclaimed_user.email_verifications.keys()), 0)
 
     def test_confirmation_link_registers_user(self):
-        user = User.create_unconfirmed('brian@queen.com', 'bicycle123', 'Brian May')
+        user = OSFUser.create_unconfirmed('brian@queen.com', 'bicycle123', 'Brian May')
         assert_false(user.is_registered)  # sanity check
         user.save()
         confirmation_url = user.get_confirmation_url('brian@queen.com', external=False)
@@ -3653,8 +3653,8 @@ class TestAuthLogout(OsfTestCase):
 
     def tearDown(self):
         super(TestAuthLogout, self).tearDown()
-        User.objects.all().delete()
-        assert_equal(User.objects.count(), 0)
+        OSFUser.objects.all().delete()
+        assert_equal(OSFUser.objects.count(), 0)
 
     def test_logout_with_valid_next_url_logged_in(self):
         logout_url = web_url_for('auth_logout', _absolute=True, next=self.valid_next_url)
@@ -3704,7 +3704,7 @@ class TestExternalAuthViews(OsfTestCase):
                 self.provider_id: 'CREATE'
             }
         }
-        self.user = User.create_unconfirmed(
+        self.user = OSFUser.create_unconfirmed(
             username=email,
             password=str(fake.password()),
             fullname=name,
@@ -4192,7 +4192,7 @@ class TestProjectCreation(OsfTestCase):
             'title': 'no html <b>here</b>'
         }
         res = self.app.post_json(self.url, payload, auth=self.creator.auth)
-        node = Node.load(res.json['projectUrl'].replace('/', ''))
+        node = AbstractNode.load(res.json['projectUrl'].replace('/', ''))
         assert_true(node)
         assert_equal('no html here', node.title)
 
@@ -4233,7 +4233,7 @@ class TestProjectCreation(OsfTestCase):
         }
         res = self.app.post_json(self.url, payload, auth=self.creator.auth)
         assert_equal(res.status_code, 201)
-        node = Node.load(res.json['projectUrl'].replace('/', ''))
+        node = AbstractNode.load(res.json['projectUrl'].replace('/', ''))
         assert_true(node)
         assert_true(node.title, 'Im a real title')
 
@@ -4304,7 +4304,7 @@ class TestProjectCreation(OsfTestCase):
         }
         res = self.app.post_json(self.url, payload, auth=self.creator.auth)
         assert_equal(res.status_code, 201)
-        node = Node.load(res.json['projectUrl'].replace('/', ''))
+        node = AbstractNode.load(res.json['projectUrl'].replace('/', ''))
         assert_true(node)
         assert_true(node.description, 'I describe things!')
 
@@ -4316,7 +4316,7 @@ class TestProjectCreation(OsfTestCase):
         }
         res = self.app.post_json(self.url, payload, auth=self.creator.auth)
         assert_equal(res.status_code, 201)
-        node = Node.load(res.json['projectUrl'].replace('/', ''))
+        node = AbstractNode.load(res.json['projectUrl'].replace('/', ''))
         assert_true(node)
         assert_true(node.template_node, other_node)
 
@@ -4753,7 +4753,7 @@ class TestConfirmationViewBlockBingPreview(OsfTestCase):
     # new user confirm account should fail with BingPreview
     def test_confirm_email_get_new_user_returns_403(self):
 
-        user = User.create_unconfirmed('unconfirmed@cos.io', 'abCD12#$', 'Unconfirmed User')
+        user = OSFUser.create_unconfirmed('unconfirmed@cos.io', 'abCD12#$', 'Unconfirmed User')
         user.save()
         confirm_url = user.get_confirmation_url('unconfirmed@cos.io', external=False)
         res = self.app.get(
@@ -4856,7 +4856,7 @@ class TestConfirmationViewBlockBingPreview(OsfTestCase):
                 provider_id: 'CREATE'
             }
         }
-        user = User.create_unconfirmed(
+        user = OSFUser.create_unconfirmed(
             username=email,
             password=str(fake.password()),
             fullname=name,

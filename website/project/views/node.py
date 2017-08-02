@@ -35,7 +35,7 @@ from website.util.rubeus import collect_addon_js
 from website.project.model import has_anonymous_link, NodeUpdateError, validate_title
 from website.project.forms import NewNodeForm
 from website.project.metadata.utils import serialize_meta_schemas
-from osf.models import AbstractNode as Node, PrivateLink, Comment
+from osf.models import AbstractNode, PrivateLink, Comment
 from osf.models.licenses import serialize_node_license_record
 from website import settings
 from website.views import find_bookmark_collection, validate_page_num
@@ -107,7 +107,7 @@ def project_new_post(auth, **kwargs):
     new_project = {}
 
     if template:
-        original_node = Node.load(template)
+        original_node = AbstractNode.load(template)
         changes = {
             'title': title,
             'category': category,
@@ -565,7 +565,7 @@ def _view_project(node, auth, primary=False,
     """Build a JSON object containing everything needed to render
     project.view.mako.
     """
-    node = Node.objects.filter(pk=node.pk).include('contributor__user__guids').get()
+    node = AbstractNode.objects.filter(pk=node.pk).include('contributor__user__guids').get()
     user = auth.user
 
     parent = node.find_readable_antecedent(auth)
@@ -645,10 +645,8 @@ def _view_project(node, auth, primary=False,
             'private_links': [x.to_json() for x in node.private_links_active],
             'link': view_only_link,
             'anonymous': anonymous,
-            'points': len(node.get_points(deleted=False, folders=False)),
             'comment_level': node.comment_level,
-            'has_comments': bool(Comment.find(Q('node', 'eq', node))),
-            'has_children': bool(Comment.find(Q('node', 'eq', node))),
+            'has_comments': Comment.objects.filter(node=node).exists(),
             'identifiers': {
                 'doi': node.get_identifier_value('doi'),
                 'ark': node.get_identifier_value('ark'),
@@ -656,7 +654,6 @@ def _view_project(node, auth, primary=False,
             'institutions': get_affiliated_institutions(node) if node else [],
             'alternative_citations': [citation.to_json() for citation in node.alternative_citations.all()],
             'has_draft_registrations': node.has_active_draft_registrations,
-            'contributors': list(node.contributors.values_list('guids___id', flat=True)),
             'is_preprint': node.is_preprint,
             'is_preprint_orphan': node.is_preprint_orphan,
             'has_published_preprint': node.preprints.filter(is_published=True).exists() if node else False,
@@ -692,7 +689,6 @@ def _view_project(node, auth, primary=False,
             'dashboard_id': bookmark_collection_id,
             'institutions': get_affiliated_institutions(user) if user else [],
         },
-        'badges': _get_badge(user),
         # TODO: Namespace with nested dicts
         'addons_enabled': node.get_addon_names(),
         'addons': configs,
@@ -706,6 +702,8 @@ def _view_project(node, auth, primary=False,
     }
     if embed_contributors and not anonymous:
         data['node']['contributors'] = utils.serialize_visible_contributors(node)
+    else:
+        data['node']['contributors'] = list(node.contributors.values_list('guids___id', flat=True))
     if embed_descendants:
         descendants, all_readable = _get_readable_descendants(auth=auth, node=node)
         data['user']['can_sort'] = all_readable
@@ -734,17 +732,6 @@ def get_affiliated_institutions(obj):
             'id': institution._id,
         })
     return ret
-
-def _get_badge(user):
-    if user:
-        badger = user.get_addon('badges')
-        if badger:
-            return {
-                'can_award': badger.can_award,
-                'badges': badger.get_badges_json()
-            }
-    return {}
-
 
 def _get_children(node, auth, indent=0):
 
@@ -901,7 +888,7 @@ def project_generate_private_link_post(auth, node, **kwargs):
     if node._id not in node_ids:
         node_ids.insert(0, node._id)
 
-    nodes = [Node.load(node_id) for node_id in node_ids]
+    nodes = [AbstractNode.load(node_id) for node_id in node_ids]
 
     try:
         new_link = new_private_link(
@@ -976,7 +963,7 @@ def search_node(auth, **kwargs):
 
     """
     # Get arguments
-    node = Node.load(request.json.get('nodeId'))
+    node = AbstractNode.load(request.json.get('nodeId'))
     include_public = request.json.get('includePublic')
     size = float(request.json.get('size', '5').strip())
     page = request.json.get('page', 0)
@@ -997,7 +984,7 @@ def search_node(auth, **kwargs):
     # Exclude current node from query if provided
     nin = [node.id] + list(node._nodes.values_list('pk', flat=True)) if node else []
 
-    nodes = Node.find(odm_query).exclude(id__in=nin).exclude(type='osf.collection')
+    nodes = AbstractNode.find(odm_query).exclude(id__in=nin).exclude(type='osf.collection')
     count = nodes.count()
     pages = math.ceil(count / size)
     validate_page_num(page, pages)
@@ -1041,8 +1028,8 @@ def add_pointer(auth):
     if not (to_node_id and pointer_to_move):
         raise HTTPError(http.BAD_REQUEST)
 
-    pointer = Node.load(pointer_to_move)
-    to_node = Node.load(to_node_id)
+    pointer = AbstractNode.load(pointer_to_move)
+    to_node = AbstractNode.load(to_node_id)
     try:
         _add_pointers(to_node, [pointer], auth)
     except ValueError:
@@ -1061,7 +1048,7 @@ def add_pointers(auth, node, **kwargs):
         raise HTTPError(http.BAD_REQUEST)
 
     nodes = [
-        Node.load(node_id)
+        AbstractNode.load(node_id)
         for node_id in node_ids
     ]
 
@@ -1086,7 +1073,7 @@ def remove_pointer(auth, node, **kwargs):
     if pointer_id is None:
         raise HTTPError(http.BAD_REQUEST)
 
-    pointer = Node.load(pointer_id)
+    pointer = AbstractNode.load(pointer_id)
     if pointer is None:
         raise HTTPError(http.BAD_REQUEST)
 

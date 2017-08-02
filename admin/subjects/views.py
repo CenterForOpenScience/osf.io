@@ -28,7 +28,7 @@ class SubjectListView(PermissionRequiredMixin, ListView):
 class SubjectUpdateView(PermissionRequiredMixin, UpdateView):
     form_class = SubjectForm
     model = SubjectForm.Meta.model
-    permission_required = 'osf.edit_subject'
+    permission_required = 'osf.change_subject'
     raise_exception = True
 
     def get_success_url(self, *args, **kwargs):

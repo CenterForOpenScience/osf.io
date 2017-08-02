@@ -832,7 +832,6 @@ function initAtMention(nodeId, selectorOrElem) {
  *      rootId: Node._id,
  *      fileId: StoredFileNode._id,
  *      canComment: User.canComment,
- *      hasChildren: Node.hasChildren,
  *      currentUser: window.contextVars.currentUser,
  *      pageTitle: Node.title
  * }
