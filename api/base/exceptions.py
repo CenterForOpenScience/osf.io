@@ -2,7 +2,7 @@ import httplib as http
 from django.utils.translation import ugettext_lazy as _
 
 from rest_framework import status
-from rest_framework.exceptions import APIException, AuthenticationFailed, ParseError, Throttled
+from rest_framework.exceptions import APIException
 
 
 def dict_error_formatting(errors, index=None):
@@ -215,200 +215,282 @@ class InvalidFilterFieldError(JSONAPIParameterException):
         super(InvalidFilterFieldError, self).__init__(detail=detail, parameter=parameter)
 
 
-class CASJSONWebEncryptionError(AuthenticationFailed):
+class CASJSONWebEncryptionError(JSONAPIException):
     """ Raised when client tries to make a request to CAS endpoint without proper JWE/JWT encryption.
     """
     status_code = status.HTTP_401_UNAUTHORIZED
-    code = 40101
+    error_code = 40101
     default_detail = _('API CAS endpoint fails to verify the JWE/JWT encryption of the request.')
 
+    def __init__(self, detail=None, source=None, meta=None, code=error_code):
+        super(CASJSONWebEncryptionError, self).__init__(detail=detail, source=source, meta=meta, code=code)
 
-class InvalidPasswordError(AuthenticationFailed):
+
+class InvalidPasswordError(JSONAPIException):
     """ Raised when CAS provides an invalid password for username/password login.
     """
-    code = 40102
+    status_code = status.HTTP_401_UNAUTHORIZED
+    error_code = 40102
     default_detail = _('Invalid password.')
 
+    def __init__(self, detail=None, source=None, meta=None, code=error_code):
+        super(InvalidPasswordError, self).__init__(detail=detail, source=source, meta=meta, code=code)
 
-class InvalidVerificationKeyError(AuthenticationFailed):
+
+class InvalidVerificationKeyError(JSONAPIException):
     """ Raised when CAS provides an invalid verification key for username/verification_key login.
     """
-    code = 40103
+    status_code = status.HTTP_401_UNAUTHORIZED
+    error_code = 40103
     default_detail = _('Invalid verification key.')
 
+    def __init__(self, detail=None, source=None, meta=None, code=error_code):
+        super(InvalidVerificationKeyError, self).__init__(detail=detail, source=source, meta=meta, code=code)
 
-class InvalidExternalIdentityError(AuthenticationFailed):
+
+class InvalidExternalIdentityError(JSONAPIException):
     """ Raised when CAS provides an invalid external identity for login through external identity provider.
     """
-    code = 40104
+    status_code = status.HTTP_401_UNAUTHORIZED
+    error_code = 40104
     default_detail = _('Invalid External Identity.')
 
+    def __init__(self, detail=None, source=None, meta=None, code=error_code):
+        super(InvalidExternalIdentityError, self).__init__(detail=detail, source=source, meta=meta, code=code)
 
-class TwoFactorRequiredError(AuthenticationFailed):
+
+class TwoFactorRequiredError(JSONAPIException):
     """ Raised when two factor is required for API authentication or any type CAS login.
     """
-    code = 40105
+    status_code = status.HTTP_401_UNAUTHORIZED
+    error_code = 40105
     default_detail = _('Must specify two-factor authentication OTP code.')
 
+    def __init__(self, detail=None, source=None, meta=None, code=error_code):
+        super(TwoFactorRequiredError, self).__init__(detail=detail, source=source, meta=meta, code=code)
 
-class TwoFactorFailedError(AuthenticationFailed):
+
+class TwoFactorFailedError(JSONAPIException):
     """ Raised when two factor fails for any CAS login.
     """
-    code = 40106
+    status_code = status.HTTP_401_UNAUTHORIZED
+    error_code = 40106
     default_detail = _('Two factor authentication failed for login.')
 
+    def __init__(self, detail=None, source=None, meta=None, code=error_code):
+        super(TwoFactorFailedError, self).__init__(detail=detail, source=source, meta=meta, code=code)
 
-class InvalidInstitutionLoginError(AuthenticationFailed):
+
+class InvalidInstitutionLoginError(JSONAPIException):
     """ Raised when CAS provides an invalid institution or user for institution login.
     """
-    code = 40107
+    status_code = status.HTTP_401_UNAUTHORIZED
+    error_code = 40107
     default_detail = _('Institution Login Failed')
 
-    def __init__(self, detail=None):
-        if detail:
-            super(AuthenticationFailed, self).__init__(detail=detail)
+    def __init__(self, detail=None, source=None, meta=None, code=error_code):
+        super(InvalidInstitutionLoginError, self).__init__(detail=detail, source=source, meta=meta, code=code)
 
 
-class MalformedRequestError(ParseError):
+class MalformedRequestError(JSONAPIException):
     """ Raised when the API server fails parse the successfully decrypted request body.
     """
-    code = 40001
+    status_code = status.HTTP_400_BAD_REQUEST
+    error_code = 40001
     default_detail = _('Fail to parse the CAS request body.')
 
+    def __init__(self, detail=None, source=None, meta=None, code=error_code):
+        super(MalformedRequestError, self).__init__(detail=detail, source=source, meta=meta, code=code)
 
-class OauthScopeError(APIException):
+
+class OauthScopeError(JSONAPIException):
     """ Raised when CAS provides an invalid or inactive scope.
     """
     status_code = status.HTTP_400_BAD_REQUEST
-    code = 40002
+    error_code = 40002
     default_detail = _('The scope requested is not found or inactive.')
 
+    def __init__(self, detail=None, source=None, meta=None, code=error_code):
+        super(OauthScopeError, self).__init__(detail=detail, source=source, meta=meta, code=code)
 
-class OauthPersonalAccessTokenError(APIException):
+
+class OauthPersonalAccessTokenError(JSONAPIException):
     """ Raised when CAS provides an invalid personal access token
     """
     status_code = status.HTTP_400_BAD_REQUEST
-    code = 40003
+    error_code = 40003
     default_detail = _('The personal access token requested is not found or invalid.')
 
+    def __init__(self, detail=None, source=None, meta=None, code=error_code):
+        super(OauthPersonalAccessTokenError, self).__init__(detail=detail, source=source, meta=meta, code=code)
 
-class EmailAlreadyRegisteredError(APIException):
+
+class EmailAlreadyRegisteredError(JSONAPIException):
     """ Raised when CAS tries to create an account with an email that has already been registered.
     """
     status_code = status.HTTP_400_BAD_REQUEST
-    code = 40004
+    error_code = 40004
     default_detail = _('This email has already been registered with OSF.')
 
+    def __init__(self, detail=None, source=None, meta=None, code=error_code):
+        super(EmailAlreadyRegisteredError, self).__init__(detail=detail, source=source, meta=meta, code=code)
 
-class EmailAlreadyConfirmedError(APIException):
+
+class EmailAlreadyConfirmedError(JSONAPIException):
     """ Raise when CAS tries to confirm an email that has already been confirmed.
     """
     status_code = status.HTTP_400_BAD_REQUEST
-    code = 40005
+    error_code = 40005
     default_detail = _('This email has already been confirmed.')
 
+    def __init__(self, detail=None, source=None, meta=None, code=error_code):
+        super(EmailAlreadyConfirmedError, self).__init__(detail=detail, source=source, meta=meta, code=code)
 
-class InvalidOrBlacklistedEmailError(APIException):
+
+class InvalidOrBlacklistedEmailError(JSONAPIException):
     """ Raised when CAS tries to create and account with an email that is invalid or has been blacklisted.
     """
     status_code = status.HTTP_400_BAD_REQUEST
-    code = 40006
+    error_code = 40006
     default_detail = _('This email is invalid or blacklisted')
 
+    def __init__(self, detail=None, source=None, meta=None, code=error_code):
+        super(InvalidOrBlacklistedEmailError, self).__init__(detail=detail, source=source, meta=meta, code=code)
 
-class PasswordSameAsEmailError(APIException):
+
+class PasswordSameAsEmailError(JSONAPIException):
     """ Raised when CAS tries to set a password which is the same as one of the user's email address.
     """
     status_code = status.HTTP_400_BAD_REQUEST
-    code = 40007
+    error_code = 40007
     default_detail = _('Password cannot be the same as your email address.')
 
+    def __init__(self, detail=None, source=None, meta=None, code=error_code):
+        super(PasswordSameAsEmailError, self).__init__(detail=detail, source=source, meta=meta, code=code)
 
-class AccountNotEligibleError(APIException):
+
+class AccountNotEligibleError(JSONAPIException):
     """ Raise when an account is not eligible for the requested action.
     """
     status_code = status.HTTP_400_BAD_REQUEST
-    code = 40008
+    error_code = 40008
     default_detail = _('The OSF account associated with this email is not eligible for the requested action.')
 
+    def __init__(self, detail=None, source=None, meta=None, code=error_code):
+        super(AccountNotEligibleError, self).__init__(detail=detail, source=source, meta=meta, code=code)
 
-class AccountNotFoundError(APIException):
+
+class AccountNotFoundError(JSONAPIException):
     """ Raised when the account associated with an email, a GUID or an external identity is not found.
     """
     status_code = status.HTTP_400_BAD_REQUEST
-    code = 4009
+    error_code = 40009
     default_detail = _('Account not found.')
 
+    def __init__(self, detail=None, source=None, meta=None, code=error_code):
+        super(AccountNotFoundError, self).__init__(detail=detail, source=source, meta=meta, code=code)
 
-class UnconfirmedAccountError(APIException):
+
+class UnconfirmedAccountError(JSONAPIException):
     """ Raised when the account is created but not confirmed.
     """
     status_code = status.HTTP_400_BAD_REQUEST
-    code = 40010
+    error_code = 40010
     default_detail = _('Please confirm your account before using the API.')
 
+    def __init__(self, detail=None, source=None, meta=None, code=error_code):
+        super(UnconfirmedAccountError, self).__init__(detail=detail, source=source, meta=meta, code=code)
 
-class UnclaimedAccountError(APIException):
+
+class UnclaimedAccountError(JSONAPIException):
     """ Raised when the account is created but not claimed.
     """
     status_code = status.HTTP_400_BAD_REQUEST
-    code = 40011
+    error_code = 40011
     default_detail = _('Please claim your account before using the API.')
 
+    def __init__(self, detail=None, source=None, meta=None, code=error_code):
+        super(UnclaimedAccountError, self).__init__(detail=detail, source=source, meta=meta, code=code)
 
-class DeactivatedAccountError(APIException):
+
+class DeactivatedAccountError(JSONAPIException):
     """ Raised when the account is disabled.
     """
     status_code = status.HTTP_400_BAD_REQUEST
-    code = 40012
+    error_code = 40012
     default_detail = _('Making API requests with credentials associated with a deactivated account is not allowed.')
 
+    def __init__(self, detail=None, source=None, meta=None, code=error_code):
+        super(DeactivatedAccountError, self).__init__(detail=detail, source=source, meta=meta, code=code)
 
-class MergedAccountError(APIException):
+
+class MergedAccountError(JSONAPIException):
     """ Raised when the account has already been merged by another one.
     """
     status_code = status.HTTP_400_BAD_REQUEST
-    code = 40013
+    error_code = 40013
     default_detail = _('Making API requests with credentials associated with a merged account is not allowed.')
 
+    def __init__(self, detail=None, source=None, meta=None, code=error_code):
+        super(MergedAccountError, self).__init__(detail=detail, source=source, meta=meta, code=code)
 
-class InvalidAccountError(APIException):
+
+class InvalidAccountError(JSONAPIException):
     """ Raised when the account is in an invalid status that is unexpected.
     """
     status_code = status.HTTP_400_BAD_REQUEST
-    code = 40014
+    error_code = 40014
     default_detail = _('Making API requests with credentials associated with an invalid account is not allowed.')
 
+    def __init__(self, detail=None, source=None, meta=None, code=error_code):
+        super(InvalidAccountError, self).__init__(detail=detail, source=source, meta=meta, code=code)
 
-class ExternalIdentityAlreadyClaimedError(APIException):
+
+class ExternalIdentityAlreadyClaimedError(JSONAPIException):
     """ Raised when CAS tries to register an external identity that has already been claimed.
     """
     status_code = status.HTTP_400_BAD_REQUEST
-    code = 40015
+    error_code = 40015
     default_detail = _('The external identity has already been claimed by another user.')
 
+    def __init__(self, detail=None, source=None, meta=None, code=error_code):
+        super(ExternalIdentityAlreadyClaimedError, self).__init__(detail=detail, source=source, meta=meta, code=code)
 
-class InvalidVerificationCodeError(AuthenticationFailed):
+
+class InvalidVerificationCodeError(JSONAPIException):
     """ Raised when CAS provides an invalid verification code for account management.
     """
-    code = 40016
+    status_code = status.HTTP_400_BAD_REQUEST
+    error_code = 40016
     default_detail = _('The verification code is invalid.')
 
+    def __init__(self, detail=None, source=None, meta=None, code=error_code):
+        super(InvalidVerificationCodeError, self).__init__(detail=detail, source=source, meta=meta, code=code)
 
-class ExpiredVerificationCodeError(APIException):
+
+class ExpiredVerificationCodeError(JSONAPIException):
     """ Raised when CAS provides an expired verification code for account management.
     """
-    code = 40017
+    status_code = status.HTTP_400_BAD_REQUEST
+    error_code = 40017
     default_detail = _('The verification code has expired.')
 
+    def __init__(self, detail=None, source=None, meta=None, code=error_code):
+        super(ExpiredVerificationCodeError, self).__init__(detail=detail, source=source, meta=meta, code=code)
 
-class EmailThrottleActiveError(Throttled):
-    status_code = status.HTTP_429_TOO_MANY_REQUESTS
-    code = 42901
+
+class EmailThrottleActiveError(JSONAPIException):
+    """ Raised when a user tries to resend confirmation email or request password reset too frequently
+    """
+    status_code = status.HTTP_400_BAD_REQUEST
+    error_code = 40018
     default_detail = _('You have recently make the same request. Please wait a few minutes before trying again.')
 
+    def __init__(self, detail=None, source=None, meta=None, code=error_code):
+        super(EmailThrottleActiveError, self).__init__(detail=detail, source=source, meta=meta, code=code)
 
-class CASRequestFailedError(APIException):
+
+class CASRequestFailedError(JSONAPIException):
     """ Raised when an unexpected error occurs when API processing the CAS request.
     """
     code = 50001

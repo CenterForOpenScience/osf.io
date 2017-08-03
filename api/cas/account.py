@@ -333,7 +333,7 @@ def send_password_reset_email(credential):
 
     # check user status
     try:
-        util.check_user_status()
+        util.check_user_status(user)
     except drf_exceptions.APIException:
         raise api_exceptions.AccountNotEligibleError
 
