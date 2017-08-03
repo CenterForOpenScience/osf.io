@@ -3,17 +3,16 @@
 
 <%def name="content_wrap()">
     <div class="watermarked">
-        ## Maintenance alerts
-        % for maintenance in maintenance_states:
-            ${maintenance}
-            <div id="maintenance-${maintenance['_id']}" class="scripted alert alert-info alert-dismissible" role="alert">
-                <button type="button" class="close" data-dismiss="alert" aria-label="Close">
-                    <span aria-hidden="true">&times;</span></button>
-                <strong>Notice:</strong> The site will undergo maintenance between
-                <span id="maintenance-time-${maintenance['_id']}"></span>.
-                Thank you for your patience.
-            </div>
-        % endfor
+        ## Maintenance alert
+        % if maintenance:
+        <div id="maintenance" class="scripted alert alert-info alert-dismissible" role="alert">
+            <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                <span aria-hidden="true">&times;</span></button>
+            <strong>Notice:</strong> The site will undergo maintenance between
+            <span id="maintenanceTime"></span>.
+            Thank you for your patience.
+        </div>
+        % endif
         ## End Maintenance alert
         <div class="home-page-alert">
             % if status:

@@ -224,27 +224,26 @@ $(function() {
     confirmEmails(window.contextVars.currentUser.emailsToAdd);
 
     // Maintenance alert
-    var maintenanceStates = window.contextVars.maintenanceStates;
-    maintenanceStates.forEach(function(maintenance) {
-        var m_id = maintenance._id;
-        var $maintenance = $('#maintenance-' + m_id).on('closed.bs.alert', function() {
-            Cookie.set(m_id, '0', { expires: 1, path: '/'});
+    if (window.contextVars.maintenance) {
+        var maintenancePersistKey = 'maintenance';
+        var $maintenance = $('#maintenance').on('closed.bs.alert', function() {
+            Cookie.set(maintenancePersistKey, '0', { expires: 1, path: '/'});
         });
-        var dismissed = Cookie.get(m_id) === '0';
+        var dismissed = Cookie.get(maintenancePersistKey) === '0';
         if (!dismissed) {
             $maintenance.show();
         }
         // Localize maintenance period datetimes
-        var startMaintenance = moment(maintenance.start);
-        var endMaintenance = moment(maintenance.end);
-        $('#maintenance-time-' + m_id).html(
+        var startMaintenance = moment(window.contextVars.maintenance.start);
+        var endMaintenance = moment(window.contextVars.maintenance.end);
+        $('#maintenanceTime').html(
             '<strong>' +
             startMaintenance.format('lll') +
                 ' and ' +
                     endMaintenance.format('lll') + '</strong>' +
                         ' (' + startMaintenance.format('ZZ') + ' UTC)'
         );
-    });
+    }
     // END Maintenance alert
 
 });

@@ -991,13 +991,13 @@ def usage(ctx):
 ### Maintenance Tasks ###
 
 @task
-def set_maintenance(ctx, id, message, level=1, start=None, end=None):
+def set_maintenance(ctx, message, level=1, start=None, end=None):
     from website.app import setup_django
     setup_django()
     from website.maintenance import set_maintenance
     """Creates a maintenance notice.
 
-    ID and message are required.
+    Message is required.
     Level defaults to 1. Valid levels are 1 (info), 2 (warning), and 3 (danger).
 
     Set the time period for the maintenance notice to be displayed.
@@ -1009,19 +1009,18 @@ def set_maintenance(ctx, id, message, level=1, start=None, end=None):
     will be changed to be 24 hours before the end time.
 
     Examples:
-        invoke set_maintenance --id 'maintenance' --message 'OSF down for scheduled maintenance.' --start 2016-03-16T15:41:00-04:00
-        invoke set_maintenance --id 'rackspace' --message 'Third party outage' --level 2
-        invoke set_maintenance --id 'apocalypse' --message 'Run' --level 3 --end 2016-03-16T15:41:00-04:00
+        invoke set_maintenance --message 'OSF down for scheduled maintenance.' --start 2016-03-16T15:41:00-04:00
+        invoke set_maintenance --message 'Apocalypse' --level 3 --end 2016-03-16T15:41:00-04:00
     """
-    state = set_maintenance(id, message, level, start, end)
-    print('Maintenance notice re:{} up from {} to {}.'.format(state['_id'], state['start'], state['end']))
+    state = set_maintenance(message, level, start, end)
+    print('Maintenance notice up {} to {}.'.format(state['start'], state['end']))
 
 
 @task
-def unset_maintenance(ctx, _id):
+def unset_maintenance(ctx):
     from website.app import setup_django
     setup_django()
     from website.maintenance import unset_maintenance
-    print("Taking down '{}' maintenance notice...".format(_id))
-    unset_maintenance(_id)
+    print('Taking down maintenance notice...')
+    unset_maintenance()
     print('...Done.')

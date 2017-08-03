@@ -1543,11 +1543,6 @@ class LinkedRegistrationsRelationshipSerializer(BaseAPISerializer):
 
 class MaintenanceStateSerializer(ser.ModelSerializer):
 
-    level = ser.SerializerMethodField()
-
-    def get_level(self, obj):
-        return obj.get_level_display()
-
     class Meta:
         model = MaintenanceState
-        exclude = ('id', )
+        fields = ('level', 'message', 'start', 'end')

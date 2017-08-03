@@ -173,7 +173,7 @@
                 },
                 popular: ${ popular_links_node | sjson, n },
                 newAndNoteworthy: ${ noteworthy_links_node | sjson, n },
-                maintenanceStates: ${ maintenance_states | sjson, n},
+                maintenance: ${ maintenance | sjson, n},
                 analyticsMeta: {},
             });
         </script>
@@ -252,15 +252,15 @@
     <div class="watermarked">
         <div class="container ${self.container_class()}">
             ## Maintenance alert
-            % for maintenance in maintenance_states:
-                <div id="maintenance-${maintenance['_id']}" class="scripted alert alert-info alert-dismissible" role="alert">
+            % if maintenance:
+                <div id="maintenance" class="scripted alert alert-info alert-dismissible" role="alert">
                 <button type="button" class="close" data-dismiss="alert" aria-label="Close">
                     <span aria-hidden="true">&times;</span></button>
                 <strong>Notice:</strong> The site will undergo maintenance between
-                <span id="maintenance-time-${maintenance['_id']}"></span>.
+                <span id="maintenanceTime"></span>.
                 Thank you for your patience.
-                </div>
-            % endfor
+            </div>
+            % endif
             ## End Maintenance alert
 
             % if status:

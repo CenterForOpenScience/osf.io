@@ -10,7 +10,6 @@ LEVELS = [
 
 class MaintenanceState(models.Model):
 
-    _id = models.CharField(unique=True, max_length=255, help_text="An identifier for this maintenance state, i.e. 'rackspace', 'maintenance'")
     level = models.IntegerField(choices=LEVELS, default=1)
     start = NonNaiveDateTimeField()
     end = NonNaiveDateTimeField()

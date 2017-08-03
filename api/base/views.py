@@ -772,10 +772,10 @@ def root(request, format=None, **kwargs):
 @api_view(('GET',))
 @throttle_classes([RootAnonThrottle, UserRateThrottle])
 def status_check(request, format=None, **kwargs):
-    return Response([
-        MaintenanceStateSerializer(maintenance).data
-        for maintenance in MaintenanceState.objects.all()
-    ])
+    maintenance = MaintenanceState.objects.all().first()
+    return Response({
+        'maintenance': MaintenanceStateSerializer(maintenance).data if maintenance else None
+    })
 
 
 def error_404(request, format=None, *args, **kwargs):
