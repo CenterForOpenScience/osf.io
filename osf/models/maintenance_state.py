@@ -13,4 +13,4 @@ class MaintenanceState(models.Model):
     level = models.IntegerField(choices=LEVELS, default=1)
     start = NonNaiveDateTimeField()
     end = NonNaiveDateTimeField()
-    message = models.TextField()
+    message = models.TextField(blank=True)
