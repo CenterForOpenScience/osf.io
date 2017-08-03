@@ -31,7 +31,7 @@ from framework.auth.exceptions import (ChangePasswordError, ExpiredTokenError,
                                        MergeConflictError)
 from framework.exceptions import PermissionsError
 from framework.sessions.utils import remove_sessions_for_user
-from framework.mongo import get_cache_key
+from osf.utils.requests import get_current_request
 from modularodm.exceptions import NoResultsFound
 from osf.exceptions import reraise_django_validation_errors
 from osf.models.base import BaseModel, GuidMixin, GuidMixinQuerySet
@@ -732,7 +732,7 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
 
         # we must call both methods to ensure the current session is cleared and all existing
         # sessions are revoked.
-        req = get_cache_key()
+        req = get_current_request()
         if isinstance(req, FlaskRequest):
             logout()
         remove_sessions_for_user(self)

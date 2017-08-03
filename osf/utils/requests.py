@@ -1,5 +1,4 @@
 # -*- coding: utf-8 -*-
-
 from flask import Request as FlaskRequest
 from flask import request
 from api.base.api_globals import api_globals
@@ -10,7 +9,7 @@ class DummyRequest(object):
 dummy_request = DummyRequest()
 
 
-def get_cache_key():
+def get_current_request():
     """
     Fetch a request key from either a Django or Flask request. Fall back on a process-global dummy object
     if we are not in either type of request
@@ -33,7 +32,7 @@ def get_request_and_user_id():
     # TODO: This should be consolidated into framework
     from framework.sessions import get_session
 
-    req = get_cache_key()
+    req = get_current_request()
     user_id = None
     if isinstance(req, FlaskRequest):
         session = get_session()

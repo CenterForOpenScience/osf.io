@@ -24,7 +24,6 @@ from include import IncludeQuerySet, IncludeManager
 from framework import status
 from framework.celery_tasks.handlers import enqueue_task
 from framework.exceptions import PermissionsError
-from framework.mongo import DummyRequest, get_request_and_user_id
 from framework.sentry import log_exception
 from addons.wiki.utils import to_mongo_key
 from osf.exceptions import ValidationValueError
@@ -47,6 +46,7 @@ from osf.modm_compat import Q as MODMQ
 from osf.utils.auth import Auth, get_user
 from osf.utils.datetime_aware_jsonfield import DateTimeAwareJSONField
 from osf.utils.fields import NonNaiveDateTimeField
+from osf.utils.requests import DummyRequest, get_request_and_user_id
 from website import language, settings
 from website.citations.utils import datetime_to_csl
 from website.exceptions import (InvalidTagError, NodeStateError,
