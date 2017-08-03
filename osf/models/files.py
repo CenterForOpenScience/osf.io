@@ -445,7 +445,7 @@ class File(models.Model):
                 break
         else:
             # Insert into history if there is no matching etag
-            if data.get('modified'):
+            if data.get('modified') and None not in [ item['modified'] for item in self.history ]:
                 utils.insort(self.history, data, lambda x: x['modified'])
             # If modified not included in the metadata, insert at the end of the history
             else:
