@@ -529,7 +529,7 @@ class TestGithubSettings(OsfTestCase):
             expect_errors=True
         ).maybe_follow()
 
-        assert_equal(res.status_code, 400)
+        assert_equal(res.status_code, 404)
 
     @mock.patch('addons.github.models.NodeSettings.delete_hook')
     def test_deauthorize(self, mock_delete_hook):

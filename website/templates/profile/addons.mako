@@ -51,6 +51,10 @@
     ${ tpl | n }
 </%def>
 
+% for name, capabilities in addon_capabilities.iteritems():
+    <script id="capabilities-${name}" type="text/html">${ capabilities | n }</script>
+% endfor
+
 <%def name="stylesheets()">
   ${parent.stylesheets()}
   % for stylesheet in addons_css:

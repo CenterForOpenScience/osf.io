@@ -12,7 +12,7 @@ var bootbox = require('bootbox');
 var $osf = require('js/osfHelpers');
 var oop = require('js/oop');
 var FolderPickerViewModel = require('js/folderPickerNodeConfig');
-
+var ctx = window.contextVars;
 
 /**
  * View model to support instances of AddonNodeConfig (folder picker widget)
@@ -34,6 +34,7 @@ var OauthAddonFolderPickerViewModel = oop.extend(FolderPickerViewModel, {
         // Broken out from `constructor` due to recursive scoping issue with oop super calls
         // TODO: [OSF-7069]
         var self = this;
+        this.addon_short_name = $osf.addonNameMap()[self.addonName];
         // externalAccounts
         self.accounts = ko.observableArray();
         self.selectedFolderType = ko.pureComputed(function() {
@@ -41,6 +42,17 @@ var OauthAddonFolderPickerViewModel = oop.extend(FolderPickerViewModel, {
             var selected = self.selected();
             return (userHasAuth && selected) ? selected.type : '';
         });
+
+        /** Whether or not to show the Connect Account button */
+        self.showEnableAddonButton = ko.pureComputed(function() {
+            // Invoke the observables to ensure dependency tracking
+            var userHasAuth = self.userHasAuth();
+            var nodeHasAuth = self.nodeHasAuth();
+            var loaded = self.loadedSettings();
+            return loaded && !userHasAuth && !nodeHasAuth;
+        });
+
+
         self.messages.submitSettingsSuccess =  ko.pureComputed(function() {
             return 'Successfully linked "' + $osf.htmlEscape(self.options.decodeFolder(self.folder().name)) + '". Go to the <a href="' +
                 self.urls().files + '">Files page</a> to view your content.';
@@ -207,11 +219,59 @@ var OauthAddonFolderPickerViewModel = oop.extend(FolderPickerViewModel, {
             });
         });
     },
-   formatExternalName: function(item) {
+    formatExternalName: function(item) {
         return {
             text: $osf.htmlEscape(item.name),
             value: item.id
         };
+    },
+    showCapabilities : function() {
+        var self = this;
+        var capabilities = $('#capabilities-' + self.addon_short_name).html();
+        if (capabilities) {
+            bootbox.confirm({
+                message: capabilities,
+                callback: function (result) {
+                    if (result) {
+                        self.enableAddon();
+                    }
+                },
+                buttons: {
+                    confirm: {
+                        label: 'Continue'
+                    }
+                }
+            });
+        } else {
+            self.enableAddon();
+        }
+    },
+    enableAddon : function() {
+        var self = this;
+        var data = {};
+        data[self.addon_short_name] = true;
+        bootbox.confirm({
+            title: 'Connect Add-on?',
+            message: 'Are you sure you want to add ' + self.addonName + ' from your addons?',
+            callback: function (result) {
+                if (result) {
+                    var request = $osf.postJSON(ctx.node.urls.api + 'settings/addons/', data);
+                    request.done(function () {
+                        self.updateFromData().then(function () {
+                                self.connectAccount();
+                            }
+                        );
+                    });
+                    request.fail();
+                }
+            },
+            buttons: {
+                confirm: {
+                    label: 'Add',
+                    className: 'btn-success'
+                }
+            }
+        });
     }
 });
 

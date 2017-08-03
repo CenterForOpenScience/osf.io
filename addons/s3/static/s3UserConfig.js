@@ -38,8 +38,11 @@ function ViewModel(url) {
         self.accessKey(null);
         self.secretKey(null);
     };
+    self._connectAccount = function() {
+        $('#s3InputCredentials').modal('show');
+    };
     /** Send POST request to authorize S3 */
-    self.connectAccount = function() {
+    self._connectAccount = function() {
         // Selection should not be empty
         if( !self.accessKey() && !self.secretKey() ){
             self.changeMessage('Please enter both an API access key and secret key.', 'text-danger');

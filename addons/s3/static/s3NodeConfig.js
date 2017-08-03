@@ -49,6 +49,9 @@ var s3FolderPickerViewModel = oop.extend(OauthAddonFolderPicker, {
     },
 
     connectAccount: function() {
+        $('#s3InputCredentials').modal('show');
+    },
+    _connectAccount: function() {
         var self = this;
         if( !self.accessKey() && !self.secretKey() ){
             self.changeMessage('Please enter both an API access key and secret key.', 'text-danger');
@@ -253,7 +256,30 @@ var s3FolderPickerViewModel = oop.extend(OauthAddonFolderPicker, {
                 }
             }
         });
-    }
+    },
+
+    showCapabilities : function() {
+        var self = this;
+        var capabilities = $('#capabilities-' + self.addon_short_name).html();
+        if (capabilities) {
+            bootbox.confirm({
+                message: capabilities,
+                callback: function (result) {
+                    if (result) {
+                        self.enableAddon();
+                    }
+                },
+                buttons: {
+                    confirm: {
+                        label: 'Continue'
+                    }
+                }
+            });
+        } else {
+            self.enableAddon();
+        }
+    },
+
 });
 
 // Public API

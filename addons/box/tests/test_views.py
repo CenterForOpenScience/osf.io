@@ -205,7 +205,7 @@ class TestRestrictions(BoxAddonTestCase, OsfTestCase):
         url = api_url_for('box_set_config', pid=self.project._primary_key)
         res = self.app.put_json(url, {'selected': {'path': 'foo'}},
             auth=self.contrib.auth, expect_errors=True)
-        assert_equal(res.status_code, httplib.BAD_REQUEST)
+        assert_equal(res.status_code, httplib.NOT_FOUND)
 
     def test_restricted_config_contrib_not_owner(self):
         # Contributor has box auth, but is not the node authorizer

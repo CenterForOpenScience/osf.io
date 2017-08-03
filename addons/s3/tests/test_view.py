@@ -74,7 +74,7 @@ class TestS3Views(S3AddonTestCase, OAuthAddonConfigViewsTestCaseMixin, OsfTestCa
             url, {'s3_bucket': 'hammertofall'}, auth=user.auth,
             expect_errors=True
         )
-        assert_equal(res.status_code, http.BAD_REQUEST)
+        assert_equal(res.status_code, http.NOT_FOUND)
 
     def test_s3_set_bucket_no_auth(self):
 
@@ -99,7 +99,7 @@ class TestS3Views(S3AddonTestCase, OAuthAddonConfigViewsTestCaseMixin, OsfTestCa
             expect_errors=True,
         )
 
-        assert_equal(res.status_code, http.BAD_REQUEST)
+        assert_equal(res.status_code, http.NOT_FOUND)
 
     @mock.patch('addons.s3.views.utils.can_list', return_value=False)
     def test_user_settings_cant_list(self, mock_can_list):

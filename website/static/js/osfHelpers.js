@@ -1030,6 +1030,21 @@ function linkifyText(content) {
     return linkify(content);
 }
 
+var addonNameMap = function () {
+    return {
+        'Mendeley': 'mendeley',
+        'Zotero' : 'zotero',
+        'Amazon S3': 's3',
+        'Box' : 'box',
+        'Dataverse' : 'dataverse',
+        'Dropbox' : 'dropbox',
+        'owncloud' : 'owncloud',
+        'figshare' : 'figshare',
+        'GitHub' : 'github',
+        'Google Drive' : 'googledrive'
+    };
+};
+
 // Also export these to the global namespace so that these can be used in inline
 // JS. This is used on the /goodbye page at the moment.
 module.exports = window.$.osf = {
@@ -1079,4 +1094,5 @@ module.exports = window.$.osf = {
     linkifyText: linkifyText,
     getConfirmationString: getConfirmationString,
     decodeText: decodeText,
+    addonNameMap: addonNameMap
 };
