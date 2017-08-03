@@ -71,3 +71,11 @@ class TestTaxonomy(ApiTestCase):
     def test_is_deprecated(self):
         res = self.app.get('{}?version=2.6'.format(self.url), expect_errors=True)
         assert res.status_code == 404
+
+    def test_taxonomy_path(self):
+        for item in self.data:
+            subj = Subject.objects.get(_id=item['id'])
+            path_parts = item['attributes']['path'].split('|')
+            assert path_parts[0] == subj.provider.share_title
+            for index, text in enumerate([s.text for s in subj.object_hierarchy]):
+                assert path_parts[index + 1] == text
