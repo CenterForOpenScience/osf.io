@@ -98,6 +98,8 @@ function ProjectWiki(data) {
             }
 
             else {
+                console.log(item.parent().data.permissions);
+
                 columns.push(
                 {
                     data : 'project',  // Data field name
@@ -107,7 +109,11 @@ function ProjectWiki(data) {
                     sortInclude : false,
                     custom : function() {
 
-                        return item.parent().data.node.is_public ? 'Select who can edit' : 'This feature disabled for wikis of private nodes';
+                        if(!item.parent().data.permissions.admin){
+                            return 'Only admins may change permissions of this wiki.';
+                        } else {
+                            return item.parent().data.node.is_public ? 'Select who can edit' : 'This feature disabled for wikis of private '  + item.parent().data.nodeType + 's.';
+                        }
                     }
                 },
                 {
@@ -120,7 +126,7 @@ function ProjectWiki(data) {
                                 onchange: function(ev) {
                                     beforeChangePermissions(item, ev.target.value);
                                 },
-                                disabled: !item.parent().data.node.is_public
+                                disabled: !item.parent().data.node.is_public || !item.parent().data.permissions.admin
                                 },
                                 [
                                     m('option', {value: 'private', selected : item.data.select.permission === 'public' ? 'selected': ''}, 'Contributors (with write access)'),
