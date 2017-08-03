@@ -516,7 +516,7 @@ class TestOSFUser:
         project.save()
         u.reload()
         project.reload()
-        unregistered_name = user.unclaimed_records[project._id].get('name', None)
+        unregistered_name = u.unclaimed_records[project._id].get('name', None)
         assert new_name == unregistered_name
 
     def test_username_is_automatically_lowercased(self):
