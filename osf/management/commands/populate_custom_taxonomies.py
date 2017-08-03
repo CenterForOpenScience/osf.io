@@ -20,13 +20,17 @@ def validate_input(custom_provider, data):
     excludes = data.get('exclude', [])
     customs = data.get('custom', {})
     merges = data.get('merge', {})
+    assert not set(includes) & set(excludes), 'There must be no overlap between includes and excludes'
     for text in includes:
         assert Subject.objects.filter(provider=BEPRESS_PROVIDER, text=text).exists(), 'Unable to find included subject with text {}'.format(text)
     included_subjects = Subject.objects.filter(provider=BEPRESS_PROVIDER, text__in=includes).include_children()
     logger.info('Successfully validated `include`')
     for text in excludes:
-        excluded = Subject.objects.get(provider=BEPRESS_PROVIDER, text=text)  # May raise not found error
-        assert excluded.object_hierarchy[0].text in includes, 'Excluded subject with text {} was not included'.format(text)
+        try:
+            Subject.objects.get(provider=BEPRESS_PROVIDER, text=text)
+        except Subject.DoesNotExist:
+            raise RuntimeError('Unable to find excluded subject with text {}'.format(text))
+        assert included_subjects.filter(text=text).exists(), 'Excluded subject with text {} was not included'.format(text)
     included_subjects.exclude(text__in=excludes)
     logger.info('Successfully validated `exclude`')
     for cust_name, map_dict in customs.iteritems():
@@ -101,12 +105,13 @@ def map_preprints_to_custom_subjects(custom_provider, merge_dict):
         subject_ids_to_map = set(s.id for s in subjects_to_map if s.text not in merge_dict.keys())
         aliased_subject_ids = set(Subject.objects.filter(bepress_subject__id__in=subject_ids_to_map, provider=custom_provider).values_list('id', flat=True)) | merged_subject_ids
         aliased_hiers = [s.object_hierarchy for s in Subject.objects.filter(id__in=aliased_subject_ids)]
+        old_subjects = list(preprint.subjects.values_list('id', flat=True))
         preprint.subjects.clear()
         for hier in aliased_hiers:
             validate_subject_hierarchy([s._id for s in hier])
             for s in hier:
                 preprint.subjects.add(s)
-        preprint.save()
+        preprint.save(old_subjects=old_subjects)
         preprint.reload()
         new_hier = [s.object_hierarchy for s in preprint.subjects.exclude(children__in=preprint.subjects.all())]
         logger.info('Successfully migrated preprint {}.\n\tOld hierarchy:{}\n\tNew hierarchy:{}'.format(preprint.id, old_hier, new_hier))
