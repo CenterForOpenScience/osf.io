@@ -35,20 +35,9 @@ class TestUserInstititutionRelationship:
     def url(self, user):
         return '/{}users/{}/relationships/institutions/'.format(API_BASE, user._id)
 
-    # def setUp(self):
-    #     super(TestUserInstititutionRelationship, self).setUp()
-    #     self.user = AuthUserFactory()
-    #     self.user2 = AuthUserFactory()
-    #     self.url = '/{}users/{}/relationships/institutions/'.format(API_BASE, self.user._id)
-    #     self.institution_one = InstitutionFactory()
-    #     self.institution_two = InstitutionFactory()
-    #     self.user.affiliated_institutions.add(self.institution_one)
-    #     self.user.affiliated_institutions.add(self.institution_two)
-    #     self.user.save()
-
     def test_get(self, app, user, institution_one, institution_two, url):
 
-    # def test_get_relationship_institutions(self):
+    #   test_get_relationship_institutions
         res = app.get(
             url, auth=user.auth
         )
@@ -62,7 +51,7 @@ class TestUserInstititutionRelationship:
         assert institution_one._id in ids
         assert institution_two._id in ids
 
-    # def test_get_institutions_relationship_while_logged_out(self):
+    #   test_get_institutions_relationship_while_logged_out
         res = app.get(
             url
         )
@@ -124,7 +113,7 @@ class TestUserInstititutionRelationship:
 
     def test_institution_relationship_errors(self, app, user, user_two, institution_one, institution_two, url):
 
-    # def test_type_mistyped(self):
+    #   test_type_mistyped
         res = app.delete_json_api(
             url,
             {'data': [
@@ -135,7 +124,7 @@ class TestUserInstititutionRelationship:
 
         assert res.status_code == 409
 
-    # def test_post_with_auth(self):
+    #   test_post_with_auth
         res = app.post_json_api(
             url, {},
             auth=user.auth,
@@ -144,7 +133,7 @@ class TestUserInstititutionRelationship:
 
         assert res.status_code == 405
 
-    # def test_put_with_auth(self):
+    #   test_put_with_auth
         res = app.put_json_api(
             url, {},
             auth=user.auth,
@@ -153,21 +142,21 @@ class TestUserInstititutionRelationship:
 
         assert res.status_code == 405
 
-    # def test_post_without_auth(self):
+    #   test_post_without_auth
         res = app.post_json_api(
             url, {}, expect_errors=True
         )
 
         assert res.status_code == 401
 
-    # def test_put_without_auth(self):
+    #   test_put_without_auth
         res = app.put_json_api(
             url, {}, expect_errors=True
         )
 
         assert res.status_code == 401
 
-    # def test_delete_no_auth(self):
+    #   test_delete_no_auth
         res = app.delete_json_api(
             url,
             {'data': [
@@ -178,7 +167,7 @@ class TestUserInstititutionRelationship:
 
         assert res.status_code == 401
 
-    # def test_delete_wrong_auth(self):
+    #   test_delete_wrong_auth
         res = app.delete_json_api(
             url,
             {'data': [
@@ -189,7 +178,7 @@ class TestUserInstititutionRelationship:
 
         assert res.status_code == 403
 
-    # def test_attempt_payload_not_in_array(self):
+    #   test_attempt_payload_not_in_array
         res = app.delete_json_api(
             url,
             {'data':
@@ -200,7 +189,7 @@ class TestUserInstititutionRelationship:
 
         assert res.status_code == 400
 
-    # def test_attempt_with_no_type_field(self):
+    #   test_attempt_with_no_type_field
         res = app.delete_json_api(
             url,
             {'data': [
@@ -211,7 +200,7 @@ class TestUserInstititutionRelationship:
 
         assert res.status_code == 400
 
-    # def test_attempt_with_no_id_field(self):
+    #   test_attempt_with_no_id_field
         res = app.delete_json_api(
             url,
             {'data': [
