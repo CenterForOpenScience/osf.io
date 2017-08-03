@@ -5,7 +5,7 @@ from modularodm.exceptions import ValidationValueError, ValidationError
 from website import util as website_utils
 from api.base.exceptions import InvalidModelValueError
 from api.files.serializers import OsfStorageFileSerializer
-from api.base.serializers import JSONAPIRelationshipSerializer, HideIfDisabled, BaseAPISerializer
+from api.base.serializers import JSONAPIRelationshipSerializer, HideIfDisabled, BaseAPISerializer, WaterbutlerLink, Link
 from osf.models import OSFUser, QuickFiles
 
 from api.base.serializers import (
