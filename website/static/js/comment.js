@@ -397,9 +397,7 @@ var CommentModel = function(data, $parent, $root) {
     self.hasChildren = ko.observable(data.attributes.has_children);
     self.hasReport = ko.observable(data.attributes.has_report);
     self.isHam = ko.observable(data.attributes.is_ham);
-    self.canSeeDeleted = ko.pureComputed(function() {
-        return !self.isDeleted() || (self.isDeleted() && self.canEdit());
-    });
+
     self.isDeletedAbuse = ko.pureComputed(function() {
         return self.isDeleted() && self.isAbuse();
     });
