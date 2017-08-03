@@ -47,10 +47,7 @@ def get_user(email=None, password=None, verification_key=None):
     if verification_key:
         query_list.append(Q(verification_key=verification_key))
     try:
-        query = query_list[0]
-        for query_part in query_list[1:]:
-            query = query & query_part
-        user = User.objects.get(query)
+        user = User.objects.get(query_list[0])
         return user
     except Exception as err:
         logger.error(err)
