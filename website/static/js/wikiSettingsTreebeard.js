@@ -98,8 +98,6 @@ function ProjectWiki(data) {
             }
 
             else {
-                console.log(item.parent().data.permissions);
-
                 columns.push(
                 {
                     data : 'project',  // Data field name
