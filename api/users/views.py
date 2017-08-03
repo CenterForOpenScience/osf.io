@@ -21,15 +21,16 @@ from api.users.permissions import (CurrentUser, ReadOnlyOrCurrentUser,
 from api.users.serializers import (UserAddonSettingsSerializer,
                                    UserDetailSerializer,
                                    UserInstitutionsRelationshipSerializer,
-                                   UserSerializer)
+                                   UserSerializer,
+                                   ReadEmailUserDetailSerializer,)
 from django.contrib.auth.models import AnonymousUser
-from framework.auth.oauth_scopes import CoreScopes
+from framework.auth.oauth_scopes import CoreScopes, normalize_scopes
 from modularodm import Q as MQ
 from django.db.models import Q
 from rest_framework import permissions as drf_permissions
 from rest_framework import generics
 from rest_framework.exceptions import NotAuthenticated, NotFound
-from osf.models import Contributor, ExternalAccount, AbstractNode as Node, PreprintService, OSFUser as User
+from osf.models import Contributor, ExternalAccount, AbstractNode, PreprintService, OSFUser
 
 
 class UserMixin(object):
@@ -59,7 +60,7 @@ class UserMixin(object):
                 return user
 
         if self.kwargs.get('is_embedded') is True:
-            if key in self.request.parents[User]:
+            if key in self.request.parents[OSFUser]:
                 return self.request.parents[key]
 
         current_user = self.request.user
@@ -70,7 +71,7 @@ class UserMixin(object):
             else:
                 return self.request.user
 
-        obj = get_object_or_error(User, key, 'user')
+        obj = get_object_or_error(OSFUser, key, 'user')
         if check_permissions:
             # May raise a permission denied
             self.check_object_permissions(self.request, obj)
@@ -154,7 +155,7 @@ class UserList(JSONAPIBaseView, generics.ListAPIView, ODMFilterMixin):
     def get_queryset(self):
         # TODO: sort
         query = self.get_query_from_request()
-        return User.find(query)
+        return OSFUser.find(query)
 
 
 class UserDetail(JSONAPIBaseView, generics.RetrieveUpdateAPIView, UserMixin):
@@ -251,6 +252,13 @@ class UserDetail(JSONAPIBaseView, generics.RetrieveUpdateAPIView, UserMixin):
     view_name = 'user-detail'
 
     serializer_class = UserDetailSerializer
+
+    def get_serializer_class(self):
+        if self.request.auth:
+            scopes = self.request.auth.attributes['accessTokenScope']
+            if (CoreScopes.USER_EMAIL_READ in normalize_scopes(scopes) and self.request.user == self.get_user()):
+                return ReadEmailUserDetailSerializer
+        return UserDetailSerializer
 
     # overrides RetrieveAPIView
     def get_object(self):
@@ -526,12 +534,12 @@ class UserNodes(JSONAPIBaseView, generics.ListAPIView, UserMixin, NodesFilterMix
         query = MQ('contributors', 'eq', user) & default_node_list_query()
         if user != self.request.user:
             query &= default_node_permission_query(self.request.user)
-        return Node.find(query)
+        return AbstractNode.find(query)
 
     # overrides ListAPIView
     def get_queryset(self):
         return (
-            Node.objects.filter(id__in=set(self.get_queryset_from_request().values_list('id', flat=True)))
+            AbstractNode.objects.filter(id__in=set(self.get_queryset_from_request().values_list('id', flat=True)))
             .select_related('node_license')
             .order_by('-date_modified', )
             .include('guids', 'contributor__user__guids', 'root__guids', limit_includes=10)
@@ -545,7 +553,7 @@ class UserPreprints(JSONAPIBaseView, generics.ListAPIView, UserMixin, PreprintFi
     )
 
     ordering = ('-date_created')
-    model_class = Node
+    model_class = AbstractNode
 
     required_read_scopes = [CoreScopes.USERS_READ, CoreScopes.NODE_PREPRINTS_READ]
     required_write_scopes = [CoreScopes.USERS_WRITE, CoreScopes.NODE_PREPRINTS_WRITE]
@@ -712,7 +720,7 @@ class UserRegistrations(JSONAPIBaseView, generics.ListAPIView, UserMixin, NodesF
         if not current_user.is_anonymous:
             permission_query = (permission_query | MQ('contributors', 'eq', current_user))
         query = query & permission_query
-        return Node.find(query)
+        return AbstractNode.find(query)
 
     # overrides ListAPIView
     def get_queryset(self):

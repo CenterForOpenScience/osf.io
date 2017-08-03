@@ -150,7 +150,7 @@ var convertMentionMarkdownToHtml = function(commentContent) {
 
             content = content.replace(
                 match[0],
-                '<span class="atwho-inserted" contenteditable="false" data-atwho-guid="' +
+                '<span class="atwho-inserted" contenteditable="true" data-atwho-guid="' +
                     guid + '" data-atwho-at-query="' + atwho + '">' +
                     atwho + mention + '</span>'
             );
@@ -830,7 +830,6 @@ function initAtMention(nodeId, selectorOrElem) {
  *      rootId: Node._id,
  *      fileId: StoredFileNode._id,
  *      canComment: User.canComment,
- *      hasChildren: Node.hasChildren,
  *      currentUser: window.contextVars.currentUser,
  *      pageTitle: Node.title
  * }

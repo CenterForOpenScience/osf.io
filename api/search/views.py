@@ -16,7 +16,7 @@ from api.institutions.serializers import InstitutionSerializer
 
 from framework.auth.oauth_scopes import CoreScopes
 
-from osf.models import Institution, BaseFileNode, AbstractNode as Node, OSFUser as User
+from osf.models import Institution, BaseFileNode, AbstractNode, OSFUser
 from website.search import search
 from website.search.exceptions import MalformedQueryError
 from website.search.util import build_query
@@ -193,7 +193,7 @@ class SearchComponents(BaseSearchView):
 
     """
 
-    model_class = Node
+    model_class = AbstractNode
     serializer_class = NodeSerializer
 
     doc_type = 'component'
@@ -422,7 +422,7 @@ class SearchProjects(BaseSearchView):
 
     """
 
-    model_class = Node
+    model_class = AbstractNode
     serializer_class = NodeSerializer
 
     doc_type = 'project'
@@ -511,7 +511,7 @@ class SearchRegistrations(BaseSearchView):
 
     """
 
-    model_class = Node
+    model_class = AbstractNode
     serializer_class = RegistrationSerializer
 
     doc_type = 'registration'
@@ -575,7 +575,7 @@ class SearchUsers(BaseSearchView):
 
     """
 
-    model_class = User
+    model_class = OSFUser
     serializer_class = UserSerializer
 
     doc_type = 'user'

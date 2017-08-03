@@ -7,6 +7,9 @@ from admin.nodes.views import (
     NodeView,
     NodeReindexShare,
     NodeReindexElastic,
+    NodeFlaggedSpamList,
+    NodeKnownSpamList,
+    NodeKnownHamList,
 )
 from admin_tests.utilities import setup_log_view, setup_view
 
@@ -21,6 +24,33 @@ from osf_tests.factories import AuthUserFactory, ProjectFactory, RegistrationFac
 
 
 class TestNodeView(AdminTestCase):
+
+    def test_get_flagged_spam(self):
+        user = AuthUserFactory()
+        user.is_superuser = True
+        user.save()
+        request = RequestFactory().get(reverse('nodes:flagged-spam'))
+        request.user = user
+        response = NodeFlaggedSpamList.as_view()(request)
+        nt.assert_equal(response.status_code, 200)
+
+    def test_get_known_spam(self):
+        user = AuthUserFactory()
+        user.is_superuser = True
+        user.save()
+        request = RequestFactory().get(reverse('nodes:known-spam'))
+        request.user = user
+        response = NodeKnownSpamList.as_view()(request)
+        nt.assert_equal(response.status_code, 200)
+
+    def test_get_known_ham(self):
+        user = AuthUserFactory()
+        user.is_superuser = True
+        user.save()
+        request = RequestFactory().get(reverse('nodes:known-ham'))
+        request.user = user
+        response = NodeKnownHamList.as_view()(request)
+        nt.assert_equal(response.status_code, 200)
 
     def test_no_guid(self):
         request = RequestFactory().get('/fake_path')
