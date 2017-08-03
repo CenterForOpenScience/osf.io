@@ -524,6 +524,21 @@ class PreprintProviderFactory(DjangoModelFactory):
     class Meta:
         model = models.PreprintProvider
 
+    @classmethod
+    def _build(cls, target_class, *args, **kwargs):
+        instance = super(PreprintProviderFactory, cls)._build(target_class, *args, **kwargs)
+        if not instance.share_title:
+            instance.share_title = instance._id
+        return instance
+
+    @classmethod
+    def _create(cls, target_class, *args, **kwargs):
+        instance = super(PreprintProviderFactory, cls)._create(target_class, *args, **kwargs)
+        if not instance.share_title:
+            instance.share_title = instance._id
+            instance.save()
+        return instance
+
 
 def sync_set_identifiers(preprint):
     ezid_return_value ={
