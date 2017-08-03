@@ -15,6 +15,8 @@ volumes:
     external: false
   registries_dist_vol:
     external: false
+  reviews_dist_vol:
+    external: false
   mfr_requirements_vol:
     external: false
   mfr_requirements_local_bin_vol:
@@ -243,6 +245,27 @@ services:
       - registries_dist_vol:/code/dist
     stdin_open: true
 
+  ##############
+  # Reviews #
+  ##############
+
+  reviews:
+    image: quay.io/centerforopenscience/ember-osf-reviews:develop-development-local
+    command: /bin/bash -c "yarn --pure-lockfile --no-progress --no-emoji && ./node_modules/bower/bin/bower install --allow-root --config.interactive=false && ./node_modules/ember-cli/bin/ember serve --host 0.0.0.0 --port 4400"
+    restart: unless-stopped
+    depends_on:
+      - api
+      - web
+    environment:
+      - BACKEND=local
+    expose:
+      - 4400
+    ports:
+      - 4400:4400
+    volumes:
+      - reviews_dist_vol:/code/dist
+    stdin_open: true
+
   #######
   # OSF #
   #######
@@ -399,4 +422,5 @@ services:
       - osf_node_modules_vol:/code/node_modules
       - preprints_dist_vol:/preprints
       - registries_dist_vol:/registries
+      - reviews_dist_vol:/reviews
     stdin_open: true
