@@ -2658,7 +2658,7 @@ class NodeLogList(JSONAPIBaseView, generics.ListAPIView, NodeMixin, ListFilterMi
         return queryset
 
 
-class NodeCommentsList(JSONAPIBaseView, generics.ListCreateAPIView, ODMFilterMixin, NodeMixin):
+class NodeCommentsList(JSONAPIBaseView, generics.ListCreateAPIView, ListFilterMixin, NodeMixin):
     """List of comments on a node. *Writeable*.
 
     Paginated list of comments ordered by their `date_created.` Each resource contains the full representation of the
@@ -2763,9 +2763,11 @@ class NodeCommentsList(JSONAPIBaseView, generics.ListCreateAPIView, ODMFilterMix
 
     ordering = ('-date_created', )  # default ordering
 
-    # overrides ODMFilterMixin
-    def get_default_odm_query(self):
-        return MQ('node', 'eq', self.get_node()) & MQ('root_target', 'ne', None)
+    def get_default_queryset(self):
+        default_query=Q(node=self.get_node(), root_target__isnull=False)
+        not_deleted_query = Q(is_deleted=False)
+        authored_deleted_query = Q(is_deleted=True, user=self.request.user)
+        return Comment.objects.filter( default_query & (not_deleted_query | authored_deleted_query) )
 
     # Hook to make filtering on 'target' work
     def postprocess_query_param(self, key, field_name, operation):
@@ -2773,15 +2775,14 @@ class NodeCommentsList(JSONAPIBaseView, generics.ListCreateAPIView, ODMFilterMix
             operation['value'] = Guid.load(operation['value'])
 
     def get_queryset(self):
-        comments = Comment.find(self.get_query_from_request())
+        comments = self.get_queryset_from_request()
         for comment in comments:
             # Deleted root targets still appear as tuples in the database,
             # but need to be None in order for the query to be correct.
             if comment.root_target.referent.is_deleted:
                 comment.root_target = None
                 comment.save()
-
-        return Comment.find(self.get_query_from_request())
+        return comments
 
     def get_serializer_class(self):
         if self.request.method == 'POST':
