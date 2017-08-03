@@ -2766,7 +2766,7 @@ class NodeCommentsList(JSONAPIBaseView, generics.ListCreateAPIView, ListFilterMi
     def get_default_queryset(self):
         auth = get_user_auth(self.request)
         auth_user = getattr(auth, 'user', None)
-        default_query=Q(node=self.get_node(), root_target__isnull=False)
+        default_query = Q(node=self.get_node(), root_target__isnull=False)
         not_deleted_query = Q(is_deleted=False)
         if auth_user:
             authored_deleted_query = Q(is_deleted=True, user=auth_user)
