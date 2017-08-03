@@ -11,6 +11,7 @@ from osf_tests.factories import (
     ProjectFactory,
     RegistrationFactory,
 )
+from tests.base import ApiTestCase
 from website.views import find_bookmark_collection
 
 
