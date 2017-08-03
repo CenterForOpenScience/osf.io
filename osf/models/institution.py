@@ -109,13 +109,13 @@ class Institution(DirtyFieldsMixin, Loggable, base.ObjectIDMixin, base.BaseModel
         from website.search.search import update_institution, update_node
         from website.search.exceptions import SearchUnavailableError
 
-        try:
-            update_institution(self)
-        except SearchUnavailableError as e:
-            logger.exception(e)
-
         saved_fields = self.get_dirty_fields()
         if saved_fields and bool(self.pk):
+            try:
+                update_institution(self)
+            except SearchUnavailableError as e:
+                logger.exception(e)
+
             for node in self.nodes.filter(is_deleted=False):
                 try:
                     update_node(node, async=False)
