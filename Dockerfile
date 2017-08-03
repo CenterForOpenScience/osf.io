@@ -10,7 +10,7 @@ RUN set -ex \
     && mkdir -p /var/www \
     && chown www-data:www-data /var/www \
     # GOSU
-    && gpg --keyserver pool.sks-keyservers.net --recv-keys B42F6819007F00F88E364FD4036A9C25BF357DD4 \
+    && gpg --keyserver hkp://pool.sks-keyservers.net:80 --recv-keys B42F6819007F00F88E364FD4036A9C25BF357DD4 \
     && for key in \
       # https://github.com/nodejs/docker-node/blob/9c25cbe93f9108fd1e506d14228afe4a3d04108f/8.2/Dockerfile
       # gpg keys listed at https://github.com/nodejs/node#release-team
