@@ -389,8 +389,6 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
     title = models.TextField(
         validators=[validate_title]
     )  # this should be a charfield but data from mongo didn't fit in 255
-    # TODO why is this here if it's empty
-    users_watching_node = models.ManyToManyField(OSFUser, related_name='watching')
     wiki_pages_current = DateTimeAwareJSONField(default=dict, blank=True)
     wiki_pages_versions = DateTimeAwareJSONField(default=dict, blank=True)
     # Dictionary field mapping node wiki page to sharejs private uuid.
