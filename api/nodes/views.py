@@ -2659,93 +2659,93 @@ class NodeLogList(JSONAPIBaseView, generics.ListAPIView, NodeMixin, ListFilterMi
 
 
 class NodeCommentsList(JSONAPIBaseView, generics.ListCreateAPIView, ListFilterMixin, NodeMixin):
-    """List of comments on a node. *Writeable*.
-
-    Paginated list of comments ordered by their `date_created.` Each resource contains the full representation of the
-    comment, meaning additional requests to an individual comment's detail view are not necessary.
-
-    Note that if an anonymous view_only key is being used, the user relationship will not be exposed.
-
-    ###Permissions
-
-    Comments on public nodes are given read-only access to everyone. If the node comment-level is "private",
-    only contributors have permission to comment. If the comment-level is "public" any logged-in OSF user can comment.
-    Comments on private nodes are only visible to contributors and administrators on the parent node.
-
-    ##Attributes
-
-    OSF comment entities have the "comments" `type`.
-
-        name           type               description
-        =================================================================================
-        content        string             content of the comment
-        date_created   iso8601 timestamp  timestamp that the comment was created
-        date_modified  iso8601 timestamp  timestamp when the comment was last updated
-        modified       boolean            has this comment been edited?
-        deleted        boolean            is this comment deleted?
-        is_abuse       boolean            has this comment been reported by the current user?
-        has_children   boolean            does this comment have replies?
-        can_edit       boolean            can the current user edit this comment?
-
-    ##Links
-
-    See the [JSON-API spec regarding pagination](http://jsonapi.org/format/1.0/#fetching-pagination).
-
-    ##Actions
-
-    ###Create
-
-        Method:        POST
-        URL:           /links/self
-        Query Params:  <none>
-        Body (JSON):   {
-                         "data": {
-                           "type": "comments",   # required
-                           "attributes": {
-                             "content":       {content},        # mandatory
-                           },
-                           "relationships": {
-                             "target": {
-                               "data": {
-                                  "type": {target type}         # mandatory
-                                  "id": {target._id}            # mandatory
-                               }
-                             }
-                           }
-                         }
-                       }
-        Success:       201 CREATED + comment representation
-
-    To create a comment on this node, issue a POST request against this endpoint. The comment target id and target type
-    must be specified. To create a comment on the node overview page, the target `type` would be "nodes" and the `id`
-    would be the node id. To reply to a comment on this node, the target `type` would be "comments" and the `id` would
-    be the id of the comment to reply to. The `content` field is mandatory.
-
-    If the comment creation is successful the API will return
-    a 201 response with the representation of the new comment in the body. For the new comment's canonical URL, see the
-    `/links/self` field of the response.
-
-    ##Query Params
-
-    + `filter[deleted]=True|False` -- filter comments based on whether or not they are deleted.
-
-    The list of node comments includes deleted comments by default. The `deleted` field is a boolean and can be
-    filtered using truthy values, such as `true`, `false`, `0`, or `1`. Note that quoting `true` or `false` in
-    the query will cause the match to fail regardless.
-
-    + `filter[date_created][comparison_operator]=YYYY-MM-DDTH:M:S` -- filter comments based on date created.
-
-    Comments can also be filtered based on their `date_created` and `date_modified` fields. Possible comparison
-    operators include 'gt' (greater than), 'gte'(greater than or equal to), 'lt' (less than) and 'lte'
-    (less than or equal to). The date must be in the format YYYY-MM-DD and the time is optional.
-
-    + `filter[target]=target_id` -- filter comments based on their target id.
-
-    The list of comments can be filtered by target id. For example, to get all comments with target = project,
-    the target_id would be the project_id.
-
-    #This Request/Response
-    """
+    # """List of comments on a node. *Writeable*.
+    #
+    # Paginated list of comments ordered by their `date_created.` Each resource contains the full representation of the
+    # comment, meaning additional requests to an individual comment's detail view are not necessary.
+    #
+    # Note that if an anonymous view_only key is being used, the user relationship will not be exposed.
+    #
+    # ###Permissions
+    #
+    # Comments on public nodes are given read-only access to everyone. If the node comment-level is "private",
+    # only contributors have permission to comment. If the comment-level is "public" any logged-in OSF user can comment.
+    # Comments on private nodes are only visible to contributors and administrators on the parent node.
+    #
+    # ##Attributes
+    #
+    # OSF comment entities have the "comments" `type`.
+    #
+    #     name           type               description
+    #     =================================================================================
+    #     content        string             content of the comment
+    #     date_created   iso8601 timestamp  timestamp that the comment was created
+    #     date_modified  iso8601 timestamp  timestamp when the comment was last updated
+    #     modified       boolean            has this comment been edited?
+    #     deleted        boolean            is this comment deleted?
+    #     is_abuse       boolean            has this comment been reported by the current user?
+    #     has_children   boolean            does this comment have replies?
+    #     can_edit       boolean            can the current user edit this comment?
+    #
+    # ##Links
+    #
+    # See the [JSON-API spec regarding pagination](http://jsonapi.org/format/1.0/#fetching-pagination).
+    #
+    # ##Actions
+    #
+    # ###Create
+    #
+    #     Method:        POST
+    #     URL:           /links/self
+    #     Query Params:  <none>
+    #     Body (JSON):   {
+    #                      "data": {
+    #                        "type": "comments",   # required
+    #                        "attributes": {
+    #                          "content":       {content},        # mandatory
+    #                        },
+    #                        "relationships": {
+    #                          "target": {
+    #                            "data": {
+    #                               "type": {target type}         # mandatory
+    #                               "id": {target._id}            # mandatory
+    #                            }
+    #                          }
+    #                        }
+    #                      }
+    #                    }
+    #     Success:       201 CREATED + comment representation
+    #
+    # To create a comment on this node, issue a POST request against this endpoint. The comment target id and target type
+    # must be specified. To create a comment on the node overview page, the target `type` would be "nodes" and the `id`
+    # would be the node id. To reply to a comment on this node, the target `type` would be "comments" and the `id` would
+    # be the id of the comment to reply to. The `content` field is mandatory.
+    #
+    # If the comment creation is successful the API will return
+    # a 201 response with the representation of the new comment in the body. For the new comment's canonical URL, see the
+    # `/links/self` field of the response.
+    #
+    # ##Query Params
+    #
+    # + `filter[deleted]=True|False` -- filter comments based on whether or not they are deleted.
+    #
+    # The list of node comments includes deleted comments by default. The `deleted` field is a boolean and can be
+    # filtered using truthy values, such as `true`, `false`, `0`, or `1`. Note that quoting `true` or `false` in
+    # the query will cause the match to fail regardless.
+    #
+    # + `filter[date_created][comparison_operator]=YYYY-MM-DDTH:M:S` -- filter comments based on date created.
+    #
+    # Comments can also be filtered based on their `date_created` and `date_modified` fields. Possible comparison
+    # operators include 'gt' (greater than), 'gte'(greater than or equal to), 'lt' (less than) and 'lte'
+    # (less than or equal to). The date must be in the format YYYY-MM-DD and the time is optional.
+    #
+    # + `filter[target]=target_id` -- filter comments based on their target id.
+    #
+    # The list of comments can be filtered by target id. For example, to get all comments with target = project,
+    # the target_id would be the project_id.
+    #
+    # #This Request/Response
+    # """
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
         CanCommentOrPublic,
@@ -2764,10 +2764,14 @@ class NodeCommentsList(JSONAPIBaseView, generics.ListCreateAPIView, ListFilterMi
     ordering = ('-date_created', )  # default ordering
 
     def get_default_queryset(self):
+        auth = get_user_auth(self.request)
+        auth_user = getattr(auth, 'user', None)
         default_query=Q(node=self.get_node(), root_target__isnull=False)
         not_deleted_query = Q(is_deleted=False)
-        authored_deleted_query = Q(is_deleted=True, user=self.request.user)
-        return Comment.objects.filter( default_query & (not_deleted_query | authored_deleted_query) )
+        if auth_user:
+            authored_deleted_query = Q(is_deleted=True, user=auth_user)
+            return Comment.objects.filter(default_query & (not_deleted_query | authored_deleted_query))
+        return Comment.objects.filter(default_query & not_deleted_query)
 
     # Hook to make filtering on 'target' work
     def postprocess_query_param(self, key, field_name, operation):
