@@ -93,6 +93,27 @@ class NodeCommentsListMixin(object):
         assert project_private_dict['comment']._id in comment_ids
         assert deleted_comment._id in comment_ids
 
+    def test_return_deleted_comments_only_user_authored(self, app, user, project_private_dict):
+        contrib_user = AuthUserFactory()
+
+        project_private_dict['project'].add_contributor(contrib_user, permissions=['read', 'write'], save=True)
+        deleted_comment = CommentFactory(node=project_private_dict['project'], user=user, is_deleted=True)
+        deleted_reply = CommentFactory(node=project_private_dict['project'], user=contrib_user, target=project_private_dict['comment'].target, is_deleted=True)
+
+        res = app.get(project_private_dict['url'], auth=user.auth)
+        assert res.status_code == 200
+        comment_json = res.json['data']
+        comment_ids = [comment['id'] for comment in comment_json]
+        assert deleted_comment._id in comment_ids
+        assert deleted_reply._id not in comment_ids
+
+        res = app.get(project_private_dict['url'], auth=contrib_user.auth)
+        assert res.status_code == 200
+        comment_json = res.json['data']
+        comment_ids = [comment['id'] for comment in comment_json]
+        assert deleted_comment._id not in comment_ids
+        assert deleted_reply._id in comment_ids
+
     def test_node_comments_pagination(self, app, user, project_public_dict):
 
     #   test_node_comments_list_pagination
