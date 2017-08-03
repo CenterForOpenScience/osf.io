@@ -644,7 +644,7 @@ def _view_project(node, auth, primary=False,
             'link': view_only_link,
             'anonymous': anonymous,
             'comment_level': node.comment_level,
-            'has_comments': bool(node.comment_set.count()),
+            'has_comments': node.comment_set.exists(),
             'identifiers': {
                 'doi': node.get_identifier_value('doi'),
                 'ark': node.get_identifier_value('ark'),
