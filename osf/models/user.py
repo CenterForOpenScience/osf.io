@@ -1414,9 +1414,6 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
 
         return cls.load(user_session.data.get('auth_user_id'))
 
-    def is_watching(self, node):
-        return self.watched.filter(id=node.id).exists()
-
     def get_node_comment_timestamps(self, target_id):
         """ Returns the timestamp for when comments were last viewed on a node, file or wiki.
         """
