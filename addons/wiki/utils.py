@@ -167,6 +167,7 @@ def serialize_wiki_settings(user, nodes):
         assert node, '{} is not a valid Node.'.format(node._id)
 
         can_read = node.has_permission(user, 'read')
+        is_admin = node.has_permission(user, 'admin')
         include_wiki_settings = node.include_wiki_settings(user)
 
         if not include_wiki_settings:
@@ -174,16 +175,15 @@ def serialize_wiki_settings(user, nodes):
         children = node.get_nodes(**{'is_deleted': False, 'is_node_link': False})
         children_tree = []
 
-        if node.admin_of_wiki(user):
-            children_tree.append({
-                'select': {
-                    'title': 'permission',
-                    'permission':
-                        'public'
-                        if node.get_addon('wiki').is_publicly_editable
-                        else 'private'
-                },
-            })
+        children_tree.append({
+            'select': {
+                'title': 'permission',
+                'permission':
+                    'public'
+                    if node.get_addon('wiki').is_publicly_editable
+                    else 'private'
+            },
+        })
 
         children_tree.extend(serialize_wiki_settings(user, children))
 
@@ -200,6 +200,7 @@ def serialize_wiki_settings(user, nodes):
             'category': node.category,
             'permissions': {
                 'view': can_read,
+                'admin': is_admin,
             },
         }
 
