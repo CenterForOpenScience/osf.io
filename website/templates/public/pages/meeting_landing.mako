@@ -22,7 +22,6 @@
 </%def>
 
 <%def name="content()">
-    <div id="osfDonateBanner"></div>
     <div class="osf-meeting-header-img">
         <div class="osf-meeting-header">
             <div class="container ">
