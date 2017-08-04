@@ -21,7 +21,7 @@ class TestTaxonomy:
 
     @pytest.fixture()
     def subjects(self):
-        return Subject.objects.all()
+        return Subject.objects.all().order_by('-id')
 
     @pytest.fixture()
     def url_subject_list(self):
@@ -86,3 +86,11 @@ class TestTaxonomy:
     def test_is_deprecated(self, app, url_subject_list):
         res = app.get('{}?version=2.6'.format(url_subject_list), expect_errors=True)
         assert res.status_code == 404
+
+    def test_taxonomy_path(self, data_subject_list):
+        for item in data_subject_list:
+            subj = Subject.objects.get(_id=item['id'])
+            path_parts = item['attributes']['path'].split('|')
+            assert path_parts[0] == subj.provider.share_title
+            for index, text in enumerate([s.text for s in subj.object_hierarchy]):
+                assert path_parts[index + 1] == text

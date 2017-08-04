@@ -89,7 +89,7 @@ def format_preprint(preprint, old_subjects=None):
     ]
 
     current_subjects = [
-        GraphNode('throughsubjects', creative_work=preprint_graph, subject=format_subject(s))
+        GraphNode('throughsubjects', creative_work=preprint_graph, is_deleted=False, subject=format_subject(s))
         for s in preprint.subjects.all()
     ]
     deleted_subjects = [

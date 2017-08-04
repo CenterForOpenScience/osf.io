@@ -64,7 +64,7 @@ def build_addon_root(node_settings, name, permissions=None,
     :param dict or Auth permissions: Dictionary of permissions for the addon's content or Auth for use in node.can_X methods
     :param dict urls: Hgrid related urls
     :param String extra: Html to be appened to the addon folder name
-        eg. Branch switcher for github
+        eg. Branch switcher for github/bitbucket
     :param list of dicts buttons: List of buttons to appear in HGrid row. Each
         dict must have 'text', a string that will appear on the button, and
         'action', the name of a function in

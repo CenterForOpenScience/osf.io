@@ -7,8 +7,8 @@ from modularodm import Q
 from website.app import init_app
 init_app()
 
-from osf.models import OSFUser as User, AbstractNode as Node
-from framework.mongo.utils import paginated
+from osf.models import OSFUser, AbstractNode
+from framework.database import paginated
 from scripts.analytics.base import SnapshotAnalytics
 from website.settings import ADDONS_AVAILABLE
 
@@ -33,7 +33,7 @@ def get_enabled_authorized_linked(user_settings_list, has_external_account, shor
 
     # osfstorage and wiki don't have user_settings, so always assume they're enabled, authorized, linked
     if short_name == 'osfstorage' or short_name == 'wiki':
-        num_enabled = num_authorized = num_linked = User.find(
+        num_enabled = num_authorized = num_linked = OSFUser.find(
             Q('is_registered', 'eq', True) &
             Q('password', 'ne', None) &
             Q('merged_by', 'eq', None) &
@@ -51,10 +51,10 @@ def get_enabled_authorized_linked(user_settings_list, has_external_account, shor
             if has_external_account:
                 if user_settings.has_auth:
                     num_enabled += 1
-                    node_settings_list = [Node.load(guid).get_addon(short_name) for guid in user_settings.oauth_grants.keys()]
+                    node_settings_list = [AbstractNode.load(guid).get_addon(short_name) for guid in user_settings.oauth_grants.keys()]
             else:
                 num_enabled += 1
-                node_settings_list = [Node.load(guid).get_addon(short_name) for guid in user_settings.nodes_authorized]
+                node_settings_list = [AbstractNode.load(guid).get_addon(short_name) for guid in user_settings.nodes_authorized]
             if any([ns.has_auth for ns in node_settings_list if ns]):
                 num_authorized += 1
                 if any([(ns.complete and ns.configured) for ns in node_settings_list if ns]):

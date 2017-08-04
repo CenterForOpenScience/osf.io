@@ -6,7 +6,7 @@ from framework.auth import Auth
 from website import settings
 
 from tests.base import OsfTestCase
-from tests.factories import AuthUserFactory, ProjectFactory
+from osf_tests.factories import AuthUserFactory, ProjectFactory
 
 
 class AddonTestCase(OsfTestCase):
