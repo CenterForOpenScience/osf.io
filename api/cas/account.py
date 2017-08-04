@@ -7,6 +7,7 @@ from api.cas import util
 
 from framework.auth import exceptions as auth_exceptions
 from framework.auth import register_unconfirmed, campaigns
+from framework.auth.cas import get_set_password_url
 from framework.auth.core import generate_verification_key
 from framework.auth.views import send_confirm_email
 
@@ -340,7 +341,14 @@ def send_password_reset_email(credential):
     # generate verification key v2 for reset password and send email
     user.verification_key_v2 = generate_verification_key(verification_type='password')
     token = user.verification_key_v2.get('token')
-    send_mail(to_addr=email, mail=FORGOT_PASSWORD, user=user, verification_code=token)
+    set_password_url = get_set_password_url(user._id, meetings=False)
+    send_mail(
+        to_addr=email,
+        mail=FORGOT_PASSWORD,
+        user=user,
+        verification_code=token,
+        reset_password_url=set_password_url
+    )
     user.email_last_sent = timezone.now()
     user.save()
 

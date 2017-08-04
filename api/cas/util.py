@@ -35,8 +35,8 @@ def load_request_body_data(request):
         )
         return json.loads(request.body.get('data'))
     except (jwt_exception.InvalidTokenError, jwt_exception.InvalidKeyError,
-            jwe_exception.PyJWEException, AttributeError, ValueError):
-        sentry.log_message('Error: fail to decrypt or decode CAS request.')
+            jwe_exception.PyJWEException, AttributeError, ValueError) as error:
+        sentry.log_message('Fail to decrypt or decode CAS request due to error {!r}.'.format(error))
         raise api_exceptions.CASJSONWebEncryptionError
 
 

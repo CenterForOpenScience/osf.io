@@ -17,12 +17,12 @@ def get_oauth_token(data):
         raise api_exception.MalformedRequestError
 
     try:
-        token = ApiOAuth2PersonalToken.objects.get(token_id=token_id)
+        token = ApiOAuth2PersonalToken.objects.filter(token_id=token_id).only('token_id', 'scopes').get()
     except ApiOAuth2PersonalToken.DoesNotExist:
         raise api_exception.OauthPersonalAccessTokenError
 
     try:
-        user = OSFUser.objects.get(pk=token.owner_id)
+        user = OSFUser.objects.filter(pk=token.owner_id).only('guids').get()
     except OSFUser.DoesNotExist:
         raise api_exception.OauthPersonalAccessTokenError
 
