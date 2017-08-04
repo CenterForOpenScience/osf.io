@@ -137,11 +137,11 @@ class TestMetadataGeneration(OsfTestCase):
                 else:
                     guid_identifiers.append(name_identifier.text)
                     assert name_identifier.attrib['nameIdentifierScheme'] == 'OSF'
-                    assert name_identifier.attrib['schemeURI'] == 'https://osf.io'
+                    assert name_identifier.attrib['schemeURI'] == settings.DOMAIN
 
         assert contributors_with_orcids >= 1
         assert len(formatted_creators) == len(self.node.visible_contributors)
-        assert sorted(guid_identifiers) == sorted(['https://osf.io/{}'.format(contrib._id) for contrib in self.node.visible_contributors])
+        assert sorted(guid_identifiers) == sorted([contrib.absolute_url for contrib in self.node.visible_contributors])
 
     def test_format_subjects_for_preprint(self):
         subject = SubjectFactory()
