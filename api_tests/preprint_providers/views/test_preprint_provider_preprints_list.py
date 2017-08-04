@@ -56,7 +56,7 @@ class TestPreprintProviderPreprintsListFiltering(PreprintsListFilteringMixin):
 class TestPreprintProviderPreprintIsPublishedList(PreprintIsPublishedListMixin):
 
     @pytest.fixture()
-    def user_admin(self):
+    def user_admin_contrib(self):
         return AuthUserFactory()
 
     @pytest.fixture()
@@ -68,12 +68,12 @@ class TestPreprintProviderPreprintIsPublishedList(PreprintIsPublishedListMixin):
         return provider_one
 
     @pytest.fixture()
-    def project_published(self, user_admin):
-        return ProjectFactory(creator=user_admin, is_public=True)
+    def project_published(self, user_admin_contrib):
+        return ProjectFactory(creator=user_admin_contrib, is_public=True)
 
     @pytest.fixture()
-    def project_public(self, user_admin, user_write_contrib):
-        project_public = ProjectFactory(creator=user_admin, is_public=True)
+    def project_public(self, user_admin_contrib, user_write_contrib):
+        project_public = ProjectFactory(creator=user_admin_contrib, is_public=True)
         project_public.add_contributor(user_write_contrib, permissions=permissions.DEFAULT_CONTRIBUTOR_PERMISSIONS, save=True)
         return project_public
 
@@ -84,12 +84,12 @@ class TestPreprintProviderPreprintIsPublishedList(PreprintIsPublishedListMixin):
 class TestPreprintProviderPreprintIsValidList(PreprintIsValidListMixin):
 
     @pytest.fixture()
-    def user_admin(self):
+    def user_admin_contrib(self):
         return AuthUserFactory()
 
     @pytest.fixture()
-    def project(self, user_admin, user_write_contrib):
-        project = ProjectFactory(creator=user_admin, is_public=True)
+    def project(self, user_admin_contrib, user_write_contrib):
+        project = ProjectFactory(creator=user_admin_contrib, is_public=True)
         project.add_contributor(user_write_contrib, permissions=permissions.DEFAULT_CONTRIBUTOR_PERMISSIONS, save=True)
         return project
 

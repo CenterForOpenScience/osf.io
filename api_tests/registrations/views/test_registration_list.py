@@ -1,20 +1,17 @@
-import mock
+import datetime
 import dateutil.relativedelta
+from django.utils import timezone
+import mock
+from nose.tools import *  # flake8: noqa
+import pytest
 from urlparse import urlparse
 
-from django.utils import timezone
-from nose.tools import *  # flake8: noqa
-
-from website.project.metadata.schemas import LATEST_SCHEMA_VERSION
-from osf.models import MetaSchema, DraftRegistration
-from website.views import find_bookmark_collection
-from framework.auth.core import Auth, Q
 from api.base.settings.defaults import API_BASE
-
-from api_tests.registrations.filters.test_filters import RegistrationListFilteringMixin
 from api_tests.nodes.views.test_node_draft_registration_list import DraftRegistrationTestCase
-
-from tests.base import ApiTestCase
+from api_tests.registrations.filters.test_filters import RegistrationListFilteringMixin
+from django.db.models import Q
+from framework.auth.core import Auth
+from osf.models import MetaSchema, DraftRegistration
 from osf_tests.factories import (
     ProjectFactory,
     RegistrationFactory,
@@ -22,6 +19,9 @@ from osf_tests.factories import (
     CollectionFactory,
     DraftRegistrationFactory,
 )
+from tests.base import ApiTestCase
+from website.project.metadata.schemas import LATEST_SCHEMA_VERSION
+from website.views import find_bookmark_collection
 
 
 class TestRegistrationList(ApiTestCase):
@@ -454,381 +454,375 @@ class TestRegistrationFiltering(ApiTestCase):
 
 
 class TestRegistrationCreate(DraftRegistrationTestCase):
-    def setUp(self):
-        super(TestRegistrationCreate, self).setUp()
 
-        self.schema = MetaSchema.find_one(
-            Q('name', 'eq', 'Replication Recipe (Brandt et al., 2013): Post-Completion') &
-            Q('schema_version', 'eq', LATEST_SCHEMA_VERSION)
-        )
+    @pytest.fixture()
+    def schema(self):
+        return MetaSchema.objects.get(name='Replication Recipe (Brandt et al., 2013): Post-Completion', schema_version=LATEST_SCHEMA_VERSION)
 
-        self.draft_registration = DraftRegistrationFactory(
-            initiator=self.user,
-            registration_schema=self.schema,
-            branched_from=self.public_project,
+    @pytest.fixture()
+    def draft_registration(self, user, project_public, schema):
+        return DraftRegistrationFactory(
+            initiator=user,
+            registration_schema=schema,
+            branched_from=project_public,
             registration_metadata = {
                 'item29': {'value': 'Yes'},
                 'item33': {'value': 'success'}
             }
         )
 
-        self.url = '/{}nodes/{}/registrations/'.format(API_BASE, self.public_project._id)
+    @pytest.fixture()
+    def url_registrations(self, project_public):
+        return '/{}nodes/{}/registrations/'.format(API_BASE, project_public._id)
 
-        self.payload = {
-            "data": {
-                "type": "registrations",
-                "attributes": {
-                    "draft_registration": self.draft_registration._id,
-                    "registration_choice": "immediate"
+    @pytest.fixture()
+    def payload(self, draft_registration):
+        return {
+            'data': {
+                'type': 'registrations',
+                'attributes': {
+                    'draft_registration': draft_registration._id,
+                    'registration_choice': 'immediate'
                     }
                 }
         }
 
     @mock.patch('framework.celery_tasks.handlers.enqueue_task')
-    def test_admin_can_create_registration(self, mock_enqueue):
-        res = self.app.post_json_api(self.url, self.payload, auth=self.user.auth)
+    def test_admin_can_create_registration(self, mock_enqueue, app, user, payload, url_registrations):
+        res = app.post_json_api(url_registrations, payload, auth=user.auth)
         data = res.json['data']['attributes']
-        assert_equal(res.status_code, 201)
-        assert_equal(data['registration'], True)
-        assert_equal(data['pending_registration_approval'], True)
-        assert_equal(data['public'], False)
+        assert res.status_code == 201
+        assert data['registration'] is True
+        assert data['pending_registration_approval'] is True
+        assert data['public'] is False
 
-    def test_write_only_contributor_cannot_create_registration(self):
-        res = self.app.post_json_api(self.url, self.payload, auth=self.read_write_user.auth, expect_errors=True)
-        assert_equal(res.status_code, 403)
+    def test_cannot_create_registration(self, app, user_write_contrib, user_read_contrib, payload, url_registrations):
 
-    def test_read_only_contributor_cannot_create_registration(self):
-        res = self.app.post_json_api(self.url, self.payload, auth=self.read_only_user.auth, expect_errors=True)
-        assert_equal(res.status_code, 403)
+    # def test_write_only_contributor_cannot_create_registration(self):
+        res = app.post_json_api(url_registrations, payload, auth=user_write_contrib.auth, expect_errors=True)
+        assert res.status_code == 403
 
-    def test_non_authenticated_user_cannot_create_registration(self):
-        res = self.app.post_json_api(self.url, self.payload, expect_errors=True)
-        assert_equal(res.status_code, 401)
+    # def test_read_only_contributor_cannot_create_registration(self):
+        res = app.post_json_api(url_registrations, payload, auth=user_read_contrib.auth, expect_errors=True)
+        assert res.status_code == 403
+
+    # def test_non_authenticated_user_cannot_create_registration(self):
+        res = app.post_json_api(url_registrations, payload, expect_errors=True)
+        assert res.status_code == 401
 
     @mock.patch('framework.celery_tasks.handlers.enqueue_task')
-    def test_registration_draft_must_be_specified(self, mock_enqueue):
+    def test_registration_draft_must_be_specified(self, mock_enqueue, app, user, url_registrations):
         payload = {
-            "data": {
-                "type": "registrations",
-                "attributes": {
-                    "registration_choice": "immediate"
+            'data': {
+                'type': 'registrations',
+                'attributes': {
+                    'registration_choice': 'immediate'
                     }
                 }
         }
-        res = self.app.post_json_api(self.url, payload, auth=self.user.auth, expect_errors=True)
-        assert_equal(res.status_code, 400)
-        assert_equal(res.json['errors'][0]['source']['pointer'], '/data/attributes/draft_registration')
-        assert_equal(res.json['errors'][0]['detail'], 'This field is required.')
+        res = app.post_json_api(url_registrations, payload, auth=user.auth, expect_errors=True)
+        assert res.status_code == 400
+        assert res.json['errors'][0]['source']['pointer'] == '/data/attributes/draft_registration'
+        assert res.json['errors'][0]['detail'] == 'This field is required.'
 
     @mock.patch('framework.celery_tasks.handlers.enqueue_task')
-    def test_registration_draft_must_be_valid(self, mock_enqueue):
+    def test_registration_draft_must_be_valid(self, mock_enqueue, app, user, url_registrations):
         payload = {
-            "data": {
-                "type": "registrations",
-                "attributes": {
-                    "registration_choice": "immediate",
-                    "draft_registration": "12345"
+            'data': {
+                'type': 'registrations',
+                'attributes': {
+                    'registration_choice': 'immediate',
+                    'draft_registration': '12345'
                     }
                 }
         }
-        res = self.app.post_json_api(self.url, payload, auth=self.user.auth, expect_errors=True)
-        assert_equal(res.status_code, 404)
+        res = app.post_json_api(url_registrations, payload, auth=user.auth, expect_errors=True)
+        assert res.status_code == 404
 
     @mock.patch('framework.celery_tasks.handlers.enqueue_task')
-    def test_registration_draft_must_be_draft_of_current_node(self, mock_enqueue):
-        new_project = ProjectFactory(creator=self.user)
+    def test_registration_draft_must_be_draft_of_current_node(self, mock_enqueue, app, user, schema, url_registrations):
+        project_new = ProjectFactory(creator=user)
         draft_registration = DraftRegistrationFactory(
-            initiator=self.user,
-            registration_schema=self.schema,
-            branched_from=new_project,
+            initiator=user,
+            registration_schema=schema,
+            branched_from=project_new,
             registration_metadata = {
                 'item29': {'value': 'Yes'},
                 'item33': {'value': 'success'}
             }
         )
         payload = {
-            "data": {
-                "type": "registrations",
-                "attributes": {
-                    "registration_choice": "immediate",
-                    "draft_registration": draft_registration._id
+            'data': {
+                'type': 'registrations',
+                'attributes': {
+                    'registration_choice': 'immediate',
+                    'draft_registration': draft_registration._id
                     }
                 }
         }
-        res = self.app.post_json_api(self.url, payload, auth=self.user.auth, expect_errors=True)
-        assert_equal(res.status_code, 400)
-        assert_equal(res.json['errors'][0]['detail'], 'This draft registration is not created from the given node.')
+        res = app.post_json_api(url_registrations, payload, auth=user.auth, expect_errors=True)
+        assert res.status_code == 400
+        assert res.json['errors'][0]['detail'] == 'This draft registration is not created from the given node.'
 
     @mock.patch('framework.celery_tasks.handlers.enqueue_task')
-    def test_required_top_level_questions_must_be_answered_on_draft(self, mock_enqueue):
-        prereg_schema = MetaSchema.find_one(
-            Q('name', 'eq', 'Prereg Challenge') &
-            Q('schema_version', 'eq', LATEST_SCHEMA_VERSION)
-        )
+    def test_required_top_level_questions_must_be_answered_on_draft(self, mock_enqueue, app, user, project_public, prereg_metadata, url_registrations):
+        prereg_schema = MetaSchema.objects.get(name='Prereg Challenge', schema_version=LATEST_SCHEMA_VERSION)
+
 
         prereg_draft_registration = DraftRegistrationFactory(
-            initiator=self.user,
+            initiator=user,
             registration_schema=prereg_schema,
-            branched_from=self.public_project
+            branched_from=project_public
         )
 
-        registration_metadata = self.prereg_metadata(prereg_draft_registration)
+        registration_metadata = prereg_metadata(prereg_draft_registration)
         del registration_metadata['q1']
         prereg_draft_registration.registration_metadata = registration_metadata
         prereg_draft_registration.save()
 
         payload = {
-            "data": {
-                "type": "registrations",
-                "attributes": {
-                    "registration_choice": "immediate",
-                    "draft_registration": prereg_draft_registration._id,
+            'data': {
+                'type': 'registrations',
+                'attributes': {
+                    'registration_choice': 'immediate',
+                    'draft_registration': prereg_draft_registration._id,
                     }
                 }
         }
 
-        res = self.app.post_json_api(self.url, payload, auth=self.user.auth, expect_errors=True)
-        assert_equal(res.status_code, 400)
-        assert_equal(res.json['errors'][0]['detail'], "u'q1' is a required property")
+        res = app.post_json_api(url_registrations, payload, auth=user.auth, expect_errors=True)
+        assert res.status_code == 400
+        assert res.json['errors'][0]['detail'] == 'u\'q1\' is a required property'
 
     @mock.patch('framework.celery_tasks.handlers.enqueue_task')
-    def test_required_top_level_questions_must_be_answered_on_draft(self, mock_enqueue):
-        prereg_schema = MetaSchema.find_one(
-            Q('name', 'eq', 'Prereg Challenge') &
-            Q('schema_version', 'eq', LATEST_SCHEMA_VERSION)
-        )
+    def test_required_top_level_questions_must_be_answered_on_draft(self, mock_enqueue, app, user, project_public, prereg_metadata, url_registrations):
+        prereg_schema = MetaSchema.objects.get(name='Prereg Challenge', schema_version=LATEST_SCHEMA_VERSION)
 
         prereg_draft_registration = DraftRegistrationFactory(
-            initiator=self.user,
+            initiator=user,
             registration_schema=prereg_schema,
-            branched_from=self.public_project
+            branched_from=project_public
         )
 
-        registration_metadata = self.prereg_metadata(prereg_draft_registration)
+        registration_metadata = prereg_metadata(prereg_draft_registration)
         del registration_metadata['q1']
         prereg_draft_registration.registration_metadata = registration_metadata
         prereg_draft_registration.save()
 
         payload = {
-            "data": {
-                "type": "registrations",
-                "attributes": {
-                    "registration_choice": "immediate",
-                    "draft_registration": prereg_draft_registration._id,
+            'data': {
+                'type': 'registrations',
+                'attributes': {
+                    'registration_choice': 'immediate',
+                    'draft_registration': prereg_draft_registration._id,
                     }
                 }
         }
 
-        res = self.app.post_json_api(self.url, payload, auth=self.user.auth, expect_errors=True)
-        assert_equal(res.status_code, 400)
-        assert_equal(res.json['errors'][0]['detail'], "u'q1' is a required property")
+        res = app.post_json_api(url_registrations, payload, auth=user.auth, expect_errors=True)
+        assert res.status_code == 400
+        assert res.json['errors'][0]['detail'] == 'u\'q1\' is a required property'
 
     @mock.patch('framework.celery_tasks.handlers.enqueue_task')
-    def test_required_second_level_questions_must_be_answered_on_draft(self, mock_enqueue):
-        prereg_schema = MetaSchema.find_one(
-            Q('name', 'eq', 'Prereg Challenge') &
-            Q('schema_version', 'eq', LATEST_SCHEMA_VERSION)
-        )
+    def test_required_second_level_questions_must_be_answered_on_draft(self, mock_enqueue, app, user, project_public, prereg_metadata, url_registrations):
+        prereg_schema = MetaSchema.objects.get(name='Prereg Challenge', schema_version=LATEST_SCHEMA_VERSION)
 
         prereg_draft_registration = DraftRegistrationFactory(
-            initiator=self.user,
+            initiator=user,
             registration_schema=prereg_schema,
-            branched_from=self.public_project
+            branched_from=project_public
         )
 
-        registration_metadata = self.prereg_metadata(prereg_draft_registration)
+        registration_metadata = prereg_metadata(prereg_draft_registration)
         registration_metadata['q11'] = {'value': {}}
         prereg_draft_registration.registration_metadata = registration_metadata
         prereg_draft_registration.save()
 
         payload = {
-            "data": {
-                "type": "registrations",
-                "attributes": {
-                    "registration_choice": "immediate",
-                    "draft_registration": prereg_draft_registration._id,
+            'data': {
+                'type': 'registrations',
+                'attributes': {
+                    'registration_choice': 'immediate',
+                    'draft_registration': prereg_draft_registration._id,
                     }
                 }
         }
 
-        res = self.app.post_json_api(self.url, payload, auth=self.user.auth, expect_errors=True)
-        assert_equal(res.status_code, 400)
-        assert_equal(res.json['errors'][0]['detail'], "u'question' is a required property")
+        res = app.post_json_api(url_registrations, payload, auth=user.auth, expect_errors=True)
+        assert res.status_code == 400
+        assert res.json['errors'][0]['detail'] == 'u\'question\' is a required property'
 
     @mock.patch('framework.celery_tasks.handlers.enqueue_task')
-    def test_required_third_level_questions_must_be_answered_on_draft(self, mock_enqueue):
-        prereg_schema = MetaSchema.find_one(
-            Q('name', 'eq', 'Prereg Challenge') &
-            Q('schema_version', 'eq', LATEST_SCHEMA_VERSION)
-        )
+    def test_required_third_level_questions_must_be_answered_on_draft(self, mock_enqueue, app, user, project_public, prereg_metadata, url_registrations):
+        prereg_schema = MetaSchema.objects.get(name='Prereg Challenge', schema_version=LATEST_SCHEMA_VERSION)
 
         prereg_draft_registration = DraftRegistrationFactory(
-            initiator=self.user,
+            initiator=user,
             registration_schema=prereg_schema,
-            branched_from=self.public_project
+            branched_from=project_public
         )
 
-        registration_metadata = self.prereg_metadata(prereg_draft_registration)
+        registration_metadata = prereg_metadata(prereg_draft_registration)
         registration_metadata['q11'] = {'value': {"question": {}}}
 
         prereg_draft_registration.registration_metadata = registration_metadata
         prereg_draft_registration.save()
 
         payload = {
-            "data": {
-                "type": "registrations",
-                "attributes": {
-                    "registration_choice": "immediate",
-                    "draft_registration": prereg_draft_registration._id,
+            'data': {
+                'type': 'registrations',
+                'attributes': {
+                    'registration_choice': 'immediate',
+                    'draft_registration': prereg_draft_registration._id,
                     }
                 }
         }
 
-        res = self.app.post_json_api(self.url, payload, auth=self.user.auth, expect_errors=True)
-        assert_equal(res.status_code, 400)
-        assert_equal(res.json['errors'][0]['detail'], "'value' is a required property")
+        res = app.post_json_api(url_registrations, payload, auth=user.auth, expect_errors=True)
+        assert res.status_code == 400
+        assert res.json['errors'][0]['detail'] == '\'value\' is a required property'
 
     @mock.patch('framework.celery_tasks.handlers.enqueue_task')
-    def test_multiple_choice_in_registration_schema_must_match_one_of_choices(self, mock_enqueue):
+    def test_multiple_choice_in_registration_schema_must_match_one_of_choices(self, mock_enqueue, app, user, project_public, schema, payload, url_registrations):
         draft_registration = DraftRegistrationFactory(
-            initiator=self.user,
-            registration_schema=self.schema,
-            branched_from=self.public_project,
+            initiator=user,
+            registration_schema=schema,
+            branched_from=project_public,
             registration_metadata = {
                 'item29': {'value': 'Yes'},
                 'item33': {'value': 'success!'}
             }
         )
-        self.payload['data']['attributes']['draft_registration'] = draft_registration._id
-        res = self.app.post_json_api(self.url, self.payload, auth=self.user.auth, expect_errors=True)
-        assert_equal(res.status_code, 400)
-        assert_equal(res.json['errors'][0]['detail'], "u'success!' is not one of [u'success', u'informative failure to replicate',"
-                                                      " u'practical failure to replicate', u'inconclusive']")
+        payload['data']['attributes']['draft_registration'] = draft_registration._id
+        res = app.post_json_api(url_registrations, payload, auth=user.auth, expect_errors=True)
+        assert res.status_code == 400
+        assert (res.json['errors'][0]['detail'] == 'u\'success!\' is not one of [u\'success\', u\'informative failure to replicate\','
+                                                      ' u\'practical failure to replicate\', u\'inconclusive\']')
 
-    def test_invalid_registration_choice(self):
-        self.payload = {
-            "data": {
-                "type": "registrations",
-                "attributes": {
-                    "draft_registration": self.draft_registration._id,
-                    "registration_choice": "tomorrow"
-                    }
-                }
-        }
-        res = self.app.post_json_api(self.url, self.payload, auth=self.user.auth, expect_errors=True)
-        assert_equal(res.status_code, 400)
-        assert_equal(res.json['errors'][0]['source']['pointer'], '/data/attributes/registration_choice')
-        assert_equal(res.json['errors'][0]['detail'], '"tomorrow" is not a valid choice.')
-
-    @mock.patch('framework.celery_tasks.handlers.enqueue_task')
-    def test_embargo_end_date_provided_if_registration_choice_is_embargo(self, mock_enqueue):
+    def test_invalid_registration_choice(self, app, user, draft_registration, payload, url_registrations):
         payload = {
-            "data": {
-                "type": "registrations",
-                "attributes": {
-                    "draft_registration": self.draft_registration._id,
-                    "registration_choice": "embargo"
+            'data': {
+                'type': 'registrations',
+                'attributes': {
+                    'draft_registration': draft_registration._id,
+                    'registration_choice': 'tomorrow'
                     }
                 }
         }
+        res = app.post_json_api(url_registrations, payload, auth=user.auth, expect_errors=True)
+        assert res.status_code == 400
+        assert res.json['errors'][0]['source']['pointer'] == '/data/attributes/registration_choice'
+        assert res.json['errors'][0]['detail'] == '"tomorrow" is not a valid choice.'
 
-        res = self.app.post_json_api(self.url, payload, auth=self.user.auth, expect_errors=True)
-        assert_equal(res.status_code, 400)
-        assert_equal(res.json['errors'][0]['detail'], 'lift_embargo must be specified.')
+        @mock.patch('framework.celery_tasks.handlers.enqueue_task')
+        def test_embargo_end_date_provided_if_registration_choice_is_embargo(self, mock_enqueue, app, user, draft_registration, url_registrations):
+            payload = {
+                'data': {
+                    'type': 'registrations',
+                    'attributes': {
+                        'draft_registration': draft_registration._id,
+                        'registration_choice': 'embargo'
+                        }
+                    }
+            }
+
+            res = app.post_json_api(url_registrations, payload, auth=user.auth, expect_errors=True)
+            assert res.status_code == 400
+            assert res.json['errors'][0]['detail'] == 'lift_embargo must be specified.'
 
     @mock.patch('framework.celery_tasks.handlers.enqueue_task')
-    def test_embargo_must_be_less_than_four_years(self, mock_enqueue):
+    def test_embargo_must_be_less_than_four_years(self, mock_enqueue, app, user, draft_registration, url_registrations):
         today = timezone.now()
         five_years = (today + dateutil.relativedelta.relativedelta(years=5)).strftime('%Y-%m-%dT%H:%M:%S')
         payload = {
-            "data": {
-                "type": "registrations",
-                "attributes": {
-                    "draft_registration": self.draft_registration._id,
-                    "registration_choice": "embargo",
-                    "lift_embargo": five_years
+            'data': {
+                'type': 'registrations',
+                'attributes': {
+                    'draft_registration': draft_registration._id,
+                    'registration_choice': 'embargo',
+                    'lift_embargo': five_years
                     }
                 }
         }
 
-        res = self.app.post_json_api(self.url, payload, auth=self.user.auth, expect_errors=True)
-        assert_equal(res.status_code, 400)
-        assert_equal(res.json['errors'][0]['detail'], 'Registrations can only be embargoed for up to four years.')
+        res = app.post_json_api(url_registrations, payload, auth=user.auth, expect_errors=True)
+        assert res.status_code == 400
+        assert res.json['errors'][0]['detail'] == 'Registrations can only be embargoed for up to four years.'
 
     @mock.patch('framework.celery_tasks.handlers.enqueue_task')
-    def test_embargo_registration(self, mock_enqueue):
+    def test_embargo_registration(self, mock_enqueue, app, user, draft_registration, url_registrations):
         today = timezone.now()
         next_week = (today + dateutil.relativedelta.relativedelta(months=1)).strftime('%Y-%m-%dT%H:%M:%S')
         payload = {
-            "data": {
-                "type": "registrations",
-                "attributes": {
-                    "draft_registration": self.draft_registration._id,
-                    "registration_choice": "embargo",
-                    "lift_embargo": next_week
+            'data': {
+                'type': 'registrations',
+                'attributes': {
+                    'draft_registration': draft_registration._id,
+                    'registration_choice': 'embargo',
+                    'lift_embargo': next_week
                     }
                 }
         }
 
-        res = self.app.post_json_api(self.url, payload, auth=self.user.auth, expect_errors=True)
-        assert_equal(res.status_code, 201)
+        res = app.post_json_api(url_registrations, payload, auth=user.auth, expect_errors=True)
+        assert res.status_code == 201
         data = res.json['data']['attributes']
-        assert_equal(data['registration'], True)
-        assert_equal(data['pending_embargo_approval'], True)
+        assert data['registration'] is True
+        assert data['pending_embargo_approval'] is True
 
-    def test_embargo_end_date_must_be_in_the_future(self):
+    def test_embargo_end_date_must_be_in_the_future(self, app, user, draft_registration, url_registrations):
         today = timezone.now().strftime('%Y-%m-%dT%H:%M:%S')
         payload = {
-            "data": {
-                "type": "registrations",
-                "attributes": {
-                    "draft_registration": self.draft_registration._id,
-                    "registration_choice": "embargo",
-                    "lift_embargo": today
+            'data': {
+                'type': 'registrations',
+                'attributes': {
+                    'draft_registration': draft_registration._id,
+                    'registration_choice': 'embargo',
+                    'lift_embargo': today
                     }
                 }
         }
 
-        res = self.app.post_json_api(self.url, payload, auth=self.user.auth, expect_errors=True)
-        assert_equal(res.status_code, 400)
-        assert_equal(res.json['errors'][0]['detail'], 'Embargo end date must be at least three days in the future.')
+        res = app.post_json_api(url_registrations, payload, auth=user.auth, expect_errors=True)
+        assert res.status_code == 400
+        assert res.json['errors'][0]['detail'] == 'Embargo end date must be at least three days in the future.'
 
-    def test_invalid_embargo_end_date_format(self):
+    def test_invalid_embargo_end_date_format(self, app, user, draft_registration, url_registrations):
         today = timezone.now().isoformat()
         payload = {
-            "data": {
-                "type": "registrations",
-                "attributes": {
-                    "draft_registration": self.draft_registration._id,
-                    "registration_choice": "embargo",
-                    "lift_embargo": today
+            'data': {
+                'type': 'registrations',
+                'attributes': {
+                    'draft_registration': draft_registration._id,
+                    'registration_choice': 'embargo',
+                    'lift_embargo': today
                     }
                 }
         }
 
-        res = self.app.post_json_api(self.url, payload, auth=self.user.auth, expect_errors=True)
-        assert_equal(res.status_code, 400)
-        assert_equal(res.json['errors'][0]['detail'], 'Datetime has wrong format. Use one of these formats instead: YYYY-MM-DDThh:mm:ss.')
+        res = app.post_json_api(url_registrations, payload, auth=user.auth, expect_errors=True)
+        assert res.status_code == 400
+        assert res.json['errors'][0]['detail'] == 'Datetime has wrong format. Use one of these formats instead: YYYY-MM-DDThh:mm:ss.'
 
     @mock.patch('framework.celery_tasks.handlers.enqueue_task')
-    def test_cannot_register_draft_that_has_already_been_registered(self, mock_enqueue):
-        self.draft_registration.register(auth=Auth(self.user), save=True)
-        res = self.app.post_json_api(self.url, self.payload, auth=self.user.auth, expect_errors=True)
-        assert_equal(res.status_code, 403)
-        assert_equal(res.json['errors'][0]['detail'], 'This draft has already been registered and cannot be modified.')
+    def test_cannot_register_draft_that_has_already_been_registered(self, mock_enqueue, app, user, payload, draft_registration, url_registrations):
+        draft_registration.register(auth=Auth(user), save=True)
+        res = app.post_json_api(url_registrations, payload, auth=user.auth, expect_errors=True)
+        assert res.status_code == 403
+        assert res.json['errors'][0]['detail'] == 'This draft has already been registered and cannot be modified.'
 
     @mock.patch('framework.celery_tasks.handlers.enqueue_task')
-    def test_cannot_register_draft_that_is_pending_review(self, mock_enqueue):
+    def test_cannot_register_draft_that_is_pending_review(self, mock_enqueue, app, user, payload, url_registrations):
         with mock.patch.object(DraftRegistration, 'is_pending_review', mock.PropertyMock(return_value=True)):
-            res = self.app.post_json_api(self.url, self.payload, auth=self.user.auth, expect_errors=True)
-        assert_equal(res.status_code, 403)
-        assert_equal(res.json['errors'][0]['detail'], 'This draft is pending review and cannot be modified.')
+            res = app.post_json_api(url_registrations, payload, auth=user.auth, expect_errors=True)
+        assert res.status_code == 403
+        assert res.json['errors'][0]['detail'] == 'This draft is pending review and cannot be modified.'
 
-    def test_cannot_register_draft_that_has_already_been_approved(self):
+    def test_cannot_register_draft_that_has_already_been_approved(self, app, user, payload, url_registrations):
         with mock.patch.object(DraftRegistration, 'requires_approval', mock.PropertyMock(return_value=True)), mock.patch.object(DraftRegistration, 'is_approved', mock.PropertyMock(return_value=True)):
-            res = self.app.post_json_api(self.url, self.payload, auth=self.user.auth, expect_errors=True)
-        assert_equal(res.status_code, 403)
-        assert_equal(res.json['errors'][0]['detail'], 'This draft has already been approved and cannot be modified.')
+            res = app.post_json_api(url_registrations, payload, auth=user.auth, expect_errors=True)
+        assert res.status_code == 403
+        assert res.json['errors'][0]['detail'] == 'This draft has already been approved and cannot be modified.'
 
 
 class TestRegistrationListFiltering(RegistrationListFilteringMixin, ApiTestCase):

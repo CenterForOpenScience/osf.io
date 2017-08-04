@@ -59,7 +59,7 @@ class TestNodePreprintsListFiltering(PreprintsListFilteringMixin):
 class TestNodePreprintIsPublishedList(PreprintIsPublishedListMixin):
 
     @pytest.fixture()
-    def user_admin(self):
+    def user_admin_contrib(self):
         return AuthUserFactory()
 
     @pytest.fixture()
@@ -71,28 +71,28 @@ class TestNodePreprintIsPublishedList(PreprintIsPublishedListMixin):
         return PreprintProviderFactory()
 
     @pytest.fixture()
-    def project_published(self, user_admin):
-        return ProjectFactory(creator=user_admin, is_public=True)
+    def project_published(self, user_admin_contrib):
+        return ProjectFactory(creator=user_admin_contrib, is_public=True)
 
     @pytest.fixture()
     def project_public(self, user_write_contrib, project_published):
-        project_public = project_published
-        project_public.add_contributor(user_write_contrib, permissions=permissions.DEFAULT_CONTRIBUTOR_PERMISSIONS, save=True)
-        return project_public
+        project_published.add_contributor(user_write_contrib, permissions=permissions.DEFAULT_CONTRIBUTOR_PERMISSIONS, save=True)
+        return project_published
 
     @pytest.fixture()
     def url(self, project_published):
         return '/{}nodes/{}/preprints/?version=2.2&'.format(API_BASE, project_published._id)
 
+
 class TestNodePreprintIsValidList(PreprintIsValidListMixin):
 
     @pytest.fixture()
-    def user_admin(self):
+    def user_admin_contrib(self):
         return AuthUserFactory()
 
     @pytest.fixture()
-    def project(self, user_admin, user_write_contrib):
-        project = ProjectFactory(creator=user_admin, is_public=True)
+    def project(self, user_admin_contrib, user_write_contrib):
+        project = ProjectFactory(creator=user_admin_contrib, is_public=True)
         project.add_contributor(user_write_contrib, permissions=permissions.DEFAULT_CONTRIBUTOR_PERMISSIONS, save=True)
         return project
 
@@ -123,7 +123,7 @@ class TestNodePreprintIsValidList(PreprintIsValidListMixin):
         assert res.status_code == 403
 
     # test override: custom exception checks because of node permission failures
-    def test_preprint_node_deleted_invisible(self, app, user_admin, user_write_contrib, user_non_contrib, project, preprint, url):
+    def test_preprint_node_deleted_invisible(self, app, user_admin_contrib, user_write_contrib, user_non_contrib, project, preprint, url):
         project.is_deleted = True
         project.save()
         # no auth
@@ -136,5 +136,5 @@ class TestNodePreprintIsValidList(PreprintIsValidListMixin):
         res = app.get(url, auth=user_write_contrib.auth, expect_errors=True)
         assert res.status_code == 410
         # admin
-        res = app.get(url, auth=user_admin.auth, expect_errors=True)
+        res = app.get(url, auth=user_admin_contrib.auth, expect_errors=True)
         assert res.status_code == 410
