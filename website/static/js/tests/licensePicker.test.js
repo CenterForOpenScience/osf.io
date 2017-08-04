@@ -4,7 +4,7 @@ var assert = require('chai').assert;
 var utils = require('tests/utils');
 var faker = require('faker');
 
-var licenses = require('json!list-of-licenses');
+var licenses = require('json!@centerforopenscience/list-of-licenses');
 var $ = require('jquery');
 var bootbox = require('bootbox');  // TODO: Why is this required? Is it? See [#OSF-6100]
 
