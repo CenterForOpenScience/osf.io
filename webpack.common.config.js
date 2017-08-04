@@ -31,6 +31,7 @@ var entry = {
     'project-dashboard': staticPath('js/pages/project-dashboard-page.js'),
     'project-base-page': staticPath('js/pages/project-base-page.js'),
     'project-settings-page': staticPath('js/pages/project-settings-page.js'),
+    'project-addons-page': staticPath('js/pages/project-addons-page.js'),
     'project-registrations-page': staticPath('js/pages/project-registrations-page.js'),
     'registration-retraction-page': staticPath('js/pages/registration-retraction-page.js'),
     'registration-edit-page': staticPath('js/pages/registration-edit-page.js'),

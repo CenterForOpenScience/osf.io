@@ -17,12 +17,6 @@
                     % if not node['is_registration']:
                         <li><a href="#configureNodeAnchor">${node['node_type'].capitalize()}</a></li>
 
-                        <li><a href="#selectAddonsAnchor">Select Add-ons</a></li>
-
-                        % if addon_enabled_settings:
-                            <li><a href="#configureAddonsAnchor">Configure Add-ons</a></li>
-                        % endif
-
                         <li><a href="#configureWikiAnchor">Wiki</a></li>
 
                         % if 'admin' in user['permissions']:
@@ -106,87 +100,6 @@
             % endif
 
         % endif  ## End Configure Project
-
-        % if 'write' in user['permissions']:  ## Begin Select Addons
-
-            % if not node['is_registration']:
-
-                <div class="panel panel-default">
-                    <span id="selectAddonsAnchor" class="anchor"></span>
-                    <div class="panel-heading clearfix">
-                        <h3 class="panel-title">Select Add-ons</h3>
-                    </div>
-                    <div class="panel-body">
-                        <form id="selectAddonsForm">
-
-                            % for category in addon_categories:
-
-                                <%
-                                    addons = [
-                                        addon
-                                        for addon in addons_available
-                                        if category in addon.categories
-                                    ]
-                                %>
-
-                                % if addons:
-                                    <h3>${category.capitalize()}</h3>
-
-                                    % for addon in addons:
-                                        <div>
-                                            <label>
-                                                <input
-                                                    type="checkbox"
-                                                    name="${addon.short_name}"
-                                                    class="addon-select"
-                                                    ${'checked' if addon.short_name in addons_enabled else ''}
-                                                    ${'disabled' if (node['is_registration'] or bool(addon.added_mandatory)) else ''}
-                                                />
-                                                ${addon.full_name}
-                                            </label>
-                                        </div>
-                                    % endfor
-
-                                % endif
-
-                            % endfor
-
-                            <br />
-
-                            <div class="addon-settings-message text-success" style="padding-top: 10px;"></div>
-
-                        </form>
-
-                    </div>
-                </div>
-
-                % if addon_enabled_settings:
-                    <span id="configureAddonsAnchor" class="anchor"></span>
-
-                    <div id="configureAddons" class="panel panel-default">
-
-                        <div class="panel-heading clearfix">
-                            <h3 class="panel-title">Configure Add-ons</h3>
-                        </div>
-                        <div class="panel-body">
-
-                        % for node_settings_dict in addon_enabled_settings or []:
-                            ${render_node_settings(node_settings_dict)}
-
-                                % if not loop.last:
-                                    <hr />
-                                % endif
-
-                        % endfor
-
-                        </div>
-                    </div>
-
-                % endif
-
-            % endif
-
-        % endif  ## End Select Addons
 
         % if 'write' in user['permissions']:  ## Begin Wiki Config
             % if not node['is_registration']:
@@ -513,18 +426,6 @@
 
 </div>
 
-<%def name="render_node_settings(data)">
-    <%
-       template_name = data['node_settings_template']
-       tpl = data['template_lookup'].get_template(template_name).render(**data)
-    %>
-    ${ tpl | n }
-</%def>
-
-% for name, capabilities in addon_capabilities.iteritems():
-    <script id="capabilities-${name}" type="text/html">${ capabilities | n }</script>
-% endfor
-
 <%def name="stylesheets()">
     ${parent.stylesheets()}
 
@@ -541,7 +442,7 @@
       window.contextVars.node.institutions = ${ node['institutions'] | sjson, n };
       window.contextVars.nodeCategories = ${ categories | sjson, n };
       window.contextVars.wiki = window.contextVars.wiki || {};
-      window.contextVars.wiki.isEnabled = ${wiki.short_name in addons_enabled | sjson, n };
+      window.contextVars.wiki.isEnabled = ${wiki_enabled | sjson, n };
       window.contextVars.currentUser = window.contextVars.currentUser || {};
       window.contextVars.currentUser.institutions = ${ user['institutions'] | sjson, n };
       window.contextVars.analyticsMeta = $.extend(true, {}, window.contextVars.analyticsMeta, {
@@ -554,9 +455,4 @@
 
     <script type="text/javascript" src=${"/static/public/js/project-settings-page.js" | webpack_asset}></script>
     <script type="text/javascript" src=${"/static/public/js/forward/node-cfg.js" | webpack_asset}></script>
-
-    % for js_asset in addon_js:
-        <script src="${js_asset | webpack_asset}"></script>
-    % endfor
-
 </%def>
