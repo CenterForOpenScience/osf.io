@@ -10,6 +10,7 @@ var currentDate = new Date();
 var bannerOptions = [
     {
         startDate: new Date('August 7, 2017'),
+        endDate: new Date('August 14, 2017'),
         beforeLink: 'The Center for Open Science (COS) created the OSF and a suite of of free products to advance the ' +
             'work of the research community. If you value these tools, please make a gift to support COS’s efforts to ' +
             'improve and scale these services. ',
@@ -18,6 +19,7 @@ var bannerOptions = [
         background:'.donate-banner.week-1'
     }, {
         startDate: new Date('August 14, 2017'),
+        endDate: new Date('August 21, 2017'),
         beforeLink: 'Thousands of researchers use the OSF and its related services daily. If you value the OSF, ',
         linkText: 'make a donation',
         afterLink: ' to support the Center for Open Science and its ongoing efforts to improve and advance these ' +
@@ -26,6 +28,7 @@ var bannerOptions = [
 
     }, {
         startDate: new Date('August 21, 2017'),
+        endDate: new Date('August 28, 2017'),
         beforeLink: 'The Center for Open Science (COS) created the OSF and its related services as public goods. While' +
             ' these services will always be free to use they are not free to build, improve and maintain. Please ',
         linkText: 'support the OSF and COS with a donation today.',
@@ -34,6 +37,7 @@ var bannerOptions = [
 
     }, {
         startDate: new Date('August 28, 2017'),
+        endDate: new Date('September 4, 2017'),
         beforeLink: 'The Center for Open Science launched the OSF with the goal of creating a service where the entire' +
             ' research cycle is supported and barriers to accessing data are removed. ',
         linkText: 'Support COS’s efforts',
@@ -42,6 +46,7 @@ var bannerOptions = [
 
     }, {
         startDate: new Date('September 4, 2017'),
+        endDate: new Date('September 11, 2017'),
         beforeLink: 'At the Center for Open Science (COS), we envision a future in which ideas, processes and ' +
             'outcomes of research are free and open to all. COS relies on contributions to build the free products you' +
             ' use and love. Help make the vision a reality with a ',
@@ -52,31 +57,34 @@ var bannerOptions = [
 ];
 
 function pickBanner(bannerOptions, date) {
-    bannerOptions.sort(function (a,b){
+    bannerOptions.sort(function (a, b) {
         return a.startDate - b.startDate;
     });
 
     var i;
-    for (i = 0; i < bannerOptions.length -1; i++) {
-        if (bannerOptions[i].startDate <= date && bannerOptions[i + 1].startDate > date)
+    for (i = 0; i < bannerOptions.length; i++) {
+        if (bannerOptions[i].startDate <= date && bannerOptions[i].endDate > date)
             return i;
     }
-    return i;
+    return -1;
 }
 
-bannerAttributes = bannerOptions[pickBanner(bannerOptions, currentDate)];
+bannerPicked = pickBanner(bannerOptions, currentDate);
 
 var Banner = {
     view: function(ctrl) {
+        if (bannerPicked === -1) {
+            return m('');
+        }
         return m('.p-v-sm',
             m('.row',
                 [
                     m('.col-md-12.m-v-sm',
                             m('div.conference-centering',
-                                m('p', bannerAttributes.beforeLink,
+                                m('p', bannerOptions[bannerPicked].beforeLink,
                                     m('a.donate-text', { href:'https://cos.io/donate', onclick: function() {
                                         $osf.trackClick('link', 'click', 'DonateBanner - Donate now');
-                                    }}, bannerAttributes.linkText), bannerAttributes.afterLink)
+                                    }}, bannerOptions[bannerPicked].linkText), bannerOptions[bannerPicked].afterLink)
                             )
                     )
                 ]
@@ -85,7 +93,12 @@ var Banner = {
     }
 };
 
-var background = bannerAttributes.background;
+
+var background = '.hidden';
+
+if (bannerPicked > -1) {
+    background = bannerOptions[bannerPicked].background;
+}
 
 module.exports = {
     Banner: Banner,
