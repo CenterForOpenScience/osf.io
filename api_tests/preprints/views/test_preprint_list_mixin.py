@@ -67,27 +67,6 @@ class PreprintIsPublishedListMixin:
     def preprint_published(self, user_admin, provider_two, project_published, subject):
         return PreprintFactory(creator=user_admin, filename='saor.pdf', provider=provider_two, subjects=[[subject._id]], project=project_published, is_published=True)
 
-    # def setUp(self):
-    #     super(PreprintIsPublishedListMixin, self).setUp()
-    #     assert self.admin, 'Subclasses of PreprintIsPublishedMixin must define self.admin'
-    #     assert self.provider_one, 'Subclasses of PreprintIsPublishedMixin must define self.provider_one'
-    #     assert self.provider_two, 'Subclasses of PreprintIsPublishedMixin must define self.provider_two'
-    #     assert self.published_project, 'Subclasses of PreprintIsPublishedMixin must define self.published_project'
-    #     assert self.public_project, 'Subclasses of PreprintIsPublishedMixin must define self.public_project'
-    #     assert self.url, 'Subclasses of PreprintIsPublishedMixin must define self.url'
-
-    #     self.write_contrib = AuthUserFactory()
-    #     self.non_contrib = AuthUserFactory()
-
-    #     self.public_project.add_contributor(self.write_contrib, permissions=permissions.DEFAULT_CONTRIBUTOR_PERMISSIONS, save=True)
-    #     self.subject = SubjectFactory()
-
-    #     self.file_one_public_project = test_utils.create_test_file(self.public_project, self.admin, 'mgla.pdf')
-    #     self.file_one_published_project = test_utils.create_test_file(self.published_project, self.admin, 'saor.pdf')
-
-    #     self.unpublished_preprint = PreprintFactory(creator=self.admin, filename='mgla.pdf', provider=self.provider_one, subjects=[[self.subject._id]], project=self.public_project, is_published=False)
-    #     self.published_preprint = PreprintFactory(creator=self.admin, filename='saor.pdf', provider=self.provider_two, subjects=[[self.subject._id]], project=self.published_project, is_published=True)
-
     def test_unpublished_visible_to_admins(self, app, user_admin, preprint_unpublished, preprint_published, url):
         res = app.get(url, auth=user_admin.auth)
         assert len(res.json['data']) == 2
@@ -163,20 +142,6 @@ class PreprintIsValidListMixin:
     @pytest.fixture()
     def preprint(self, user_admin, provider, project, subject):
         return PreprintFactory(creator=user_admin, filename='saor.pdf', provider=provider, subjects=[[subject._id]], project=project, is_published=True)
-
-    # def setUp(self):
-    #     assert self.admin, 'Subclasses of PreprintIsValidListMixin must define self.admin'
-    #     assert self.project, 'Subclasses of PreprintIsValidListMixin must define self.project'
-    #     assert self.provider, 'Subclasses of PreprintIsValidListMixin must define self.provider'
-    #     assert self.url, 'Subclasses of PreprintIsValidListMixin must define self.url'
-    #     self.app = JSONAPITestApp()
-    #     self.write_contrib = AuthUserFactory()
-    #     self.non_contrib = AuthUserFactory()
-    #     self.subject = SubjectFactory()
-
-    #     self.project.add_contributor(self.write_contrib, permissions=permissions.DEFAULT_CONTRIBUTOR_PERMISSIONS, save=True)
-    #     test_utils.create_test_file(self.project, self.admin, 'saor.pdf')
-    #     self.preprint = PreprintFactory(creator=self.admin, filename='saor.pdf', provider=self.provider, subjects=[[self.subject._id]], project=self.project, is_published=True)
 
     def test_preprint_private_invisible_no_auth(self, app, project, preprint, file_project, url):
         res = app.get(url)
