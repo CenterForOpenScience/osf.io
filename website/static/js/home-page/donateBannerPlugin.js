@@ -9,8 +9,8 @@ var currentDate = new Date();
 
 var bannerOptions = [
     {
-        startDate: new Date('August 7, 2017'),
-        endDate: new Date('August 14, 2017'),
+        startDate: new Date(2017, 7, 7),
+        endDate: new Date(2017, 7, 14),
         beforeLink: 'The Center for Open Science (COS) created the OSF and a suite of of free products to advance the ' +
             'work of the research community. If you value these tools, please make a gift to support COS’s efforts to ' +
             'improve and scale these services. ',
@@ -18,8 +18,8 @@ var bannerOptions = [
         afterLink: '',
         background:'.donate-banner.week-1'
     }, {
-        startDate: new Date('August 14, 2017'),
-        endDate: new Date('August 21, 2017'),
+        startDate: new Date(2017, 7, 14),
+        endDate: new Date(2017, 7, 21),
         beforeLink: 'Thousands of researchers use the OSF and its related services daily. If you value the OSF, ',
         linkText: 'make a donation',
         afterLink: ' to support the Center for Open Science and its ongoing efforts to improve and advance these ' +
@@ -27,8 +27,8 @@ var bannerOptions = [
         background:'.donate-banner.week-2'
 
     }, {
-        startDate: new Date('August 21, 2017'),
-        endDate: new Date('August 28, 2017'),
+        startDate: new Date(2017, 7, 21),
+        endDate: new Date(2017, 7, 28),
         beforeLink: 'The Center for Open Science (COS) created the OSF and its related services as public goods. While' +
             ' these services will always be free to use they are not free to build, improve and maintain. Please ',
         linkText: 'support the OSF and COS with a donation today.',
@@ -36,8 +36,8 @@ var bannerOptions = [
         background:'.donate-banner.week-3'
 
     }, {
-        startDate: new Date('August 28, 2017'),
-        endDate: new Date('September 4, 2017'),
+        startDate: new Date(2017, 7, 28),
+        endDate: new Date(2017, 8, 4),
         beforeLink: 'The Center for Open Science launched the OSF with the goal of creating a service where the entire' +
             ' research cycle is supported and barriers to accessing data are removed. ',
         linkText: 'Support COS’s efforts',
@@ -45,8 +45,8 @@ var bannerOptions = [
         background:'.donate-banner.week-4'
 
     }, {
-        startDate: new Date('September 4, 2017'),
-        endDate: new Date('September 11, 2017'),
+        startDate: new Date(2017, 8, 4),
+        endDate: new Date(2017, 8, 11),
         beforeLink: 'At the Center for Open Science (COS), we envision a future in which ideas, processes and ' +
             'outcomes of research are free and open to all. COS relies on contributions to build the free products you' +
             ' use and love. Help make the vision a reality with a ',
