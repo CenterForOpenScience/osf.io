@@ -250,7 +250,6 @@ ADDON_CATEGORIES = [
 ]
 
 SYSTEM_ADDED_ADDONS = {
-    # 'user': ['badges'],
     'user': [],
     'node': [],
 }

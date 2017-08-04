@@ -397,6 +397,8 @@ class FileVersionsList(JSONAPIBaseView, generics.ListAPIView, FileMixin):
     view_category = 'files'
     view_name = 'file-versions'
 
+    ordering = ('-modified',)
+
     def get_queryset(self):
         return self.get_file().versions.all()
 

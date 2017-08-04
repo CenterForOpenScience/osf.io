@@ -9,13 +9,14 @@ from modularodm import Q
 from modularodm.exceptions import ModularOdmException
 
 from addons.osfstorage.models import OsfStorageFile
+
 from framework.auth import get_or_create_user
 from framework.auth.cas import get_set_password_url
 from framework.exceptions import HTTPError
 from framework.flask import redirect
 from framework.transactions.handlers import no_auto_transaction
 
-from osf.models import AbstractNode as Node, Conference, Tag
+from osf.models import AbstractNode, Conference, Tag
 
 from website import settings
 from website.conferences import utils, signals
@@ -181,7 +182,7 @@ def conference_data(meeting):
     except ModularOdmException:
         raise HTTPError(httplib.NOT_FOUND)
 
-    nodes = Node.objects.filter(tags__id__in=Tag.objects.filter(name__iexact=meeting, system=False).values_list('id', flat=True), is_public=True, is_deleted=False)
+    nodes = AbstractNode.objects.filter(tags__id__in=Tag.objects.filter(name__iexact=meeting, system=False).values_list('id', flat=True), is_public=True, is_deleted=False)
 
     ret = [
         _render_conference_node(each, idx, conf)
@@ -234,6 +235,7 @@ def conference_results(meeting):
         'settings': settings,
     }
 
+
 def conference_submissions(**kwargs):
     """Return data for all OSF4M submissions.
 
@@ -248,7 +250,7 @@ def conference_submissions(**kwargs):
         projects = set()
 
         tags = Tag.find(Q('system', 'eq', False) & Q('name', 'iexact', conf.endpoint.lower())).values_list('pk', flat=True)
-        nodes = Node.find(
+        nodes = AbstractNode.find(
             Q('tags', 'in', tags) &
             Q('is_public', 'eq', True) &
             Q('is_deleted', 'ne', True)
@@ -259,6 +261,7 @@ def conference_submissions(**kwargs):
         conf.num_submissions = num_submissions
     bulk_update(conferences, update_fields=['num_submissions'])
     return {'success': True}
+
 
 def conference_view(**kwargs):
     meetings = []

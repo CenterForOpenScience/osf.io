@@ -208,7 +208,7 @@ def get_file_map(node, file_map):
             yield (key, value, node_id)
 
 def find_registration_file(value, node):
-    from osf.models import AbstractNode as Node
+    from osf.models import AbstractNode
     orig_sha256 = value['sha256']
     orig_name = sanitize.unescape_entities(
         value['selectedFileName'],
@@ -220,7 +220,7 @@ def find_registration_file(value, node):
     orig_node = value['nodeId']
     file_map = get_file_map(node)
     for sha256, value, node_id in file_map:
-        registered_from_id = Node.load(node_id).registered_from._id
+        registered_from_id = AbstractNode.load(node_id).registered_from._id
         if sha256 == orig_sha256 and registered_from_id == orig_node and orig_name == value['name']:
             return value, node_id
     return None, None

@@ -84,7 +84,7 @@ class TestCommentModel:
         assert comment.target == first_comment.target
         assert comment.node.logs.count() == 2
         assert comment.node.logs.latest().action == NodeLog.COMMENT_ADDED
-        assert [] == first_comment.ever_mentioned
+        assert not first_comment.ever_mentioned.exists()
 
     def test_create_comment_content_cannot_exceed_max_length_simple(self, node, user, auth):
         with pytest.raises(ValidationError):
@@ -292,7 +292,7 @@ class TestCommentModel:
         comment = CommentFactory()
         auth = Auth(comment.user)
         with capture_signals() as mock_signals:
-            comment.ever_mentioned = [comment.user._id]
+            comment.ever_mentioned.add(comment.user)
             comment.edit(
                 auth=auth,
                 content='This is a comment with a bad mention [@Already Mentioned User](http://localhost:5000/' + comment.user._id + '/).',

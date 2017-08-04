@@ -9,7 +9,6 @@ from flask import Request as FlaskRequest
 from framework import analytics
 
 # OSF imports
-import framework.mongo
 import itsdangerous
 import pytz
 from dirtyfields import DirtyFieldsMixin
@@ -32,7 +31,7 @@ from framework.auth.exceptions import (ChangePasswordError, ExpiredTokenError,
                                        MergeConflictError)
 from framework.exceptions import PermissionsError
 from framework.sessions.utils import remove_sessions_for_user
-from framework.mongo import get_cache_key
+from osf.utils.requests import get_current_request
 from modularodm.exceptions import NoResultsFound
 from osf.exceptions import reraise_django_validation_errors
 from osf.models.base import BaseModel, GuidMixin, GuidMixinQuerySet
@@ -733,7 +732,7 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
 
         # we must call both methods to ensure the current session is cleared and all existing
         # sessions are revoked.
-        req = get_cache_key()
+        req = get_current_request()
         if isinstance(req, FlaskRequest):
             logout()
         remove_sessions_for_user(self)
@@ -1363,9 +1362,8 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
             self.affiliated_institutions.remove(inst)
             return True
 
-    def get_activity_points(self, db=None):
-        db = db or framework.mongo.database
-        return analytics.get_total_activity_count(self._primary_key, db=db)
+    def get_activity_points(self):
+        return analytics.get_total_activity_count(self._id)
 
     def get_or_create_cookie(self, secret=None):
         """Find the cookie for the given user
@@ -1413,9 +1411,6 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
             return None
 
         return cls.load(user_session.data.get('auth_user_id'))
-
-    def is_watching(self, node):
-        return self.watched.filter(id=node.id).exists()
 
     def get_node_comment_timestamps(self, target_id):
         """ Returns the timestamp for when comments were last viewed on a node, file or wiki.

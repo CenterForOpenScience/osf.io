@@ -21,11 +21,13 @@ from framework.auth.utils import validate_recaptcha
 from framework.exceptions import HTTPError
 from framework.flask import redirect  # VOL-aware redirect
 from framework.sessions.utils import remove_sessions_for_user
-from osf.models import OSFUser as User
+
+from osf.models import OSFUser
+from osf.models.preprint_provider import PreprintProvider
+
 from website import settings, mails, language
 from website.util import web_url_for
 from website.util.sanitize import strip_html
-from osf.models.preprint_provider import PreprintProvider
 
 
 @collect_auth
@@ -342,7 +344,7 @@ def auth_email_logout(token, user):
             'message_long': 'The private link you used is expired.'
         })
     try:
-        user_merge = User.find_one(Q('emails__address', 'eq', unconfirmed_email))
+        user_merge = OSFUser.find_one(Q('emails__address', 'eq', unconfirmed_email))
     except NoResultsFound:
         user_merge = False
     if user_merge:
@@ -364,7 +366,7 @@ def confirm_email_get(token, auth=None, **kwargs):
     HTTP Method: GET
     """
 
-    user = User.load(kwargs['uid'])
+    user = OSFUser.load(kwargs['uid'])
     is_merge = 'confirm_merge' in request.args
     is_initial_confirmation = not user.date_confirmed
     log_out = request.args.get('logout', None)
@@ -512,7 +514,7 @@ def send_confirm_email(user, email, renew=False, external_id_provider=None, exte
     verification_code = user.get_confirmation_token(email, force=True, renew=renew)
 
     try:
-        merge_target = User.find_one(Q('emails__address', 'eq', email))
+        merge_target = OSFUser.find_one(Q('emails__address', 'eq', email))
     except NoResultsFound:
         merge_target = None
 
