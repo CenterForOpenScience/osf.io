@@ -510,7 +510,7 @@ class TestOSFUser:
         assert unreg_user not in project.contributors
         new_name = fake.name()
         project.add_unregistered_contributor(
-            fullname=new_name, email=u.username,
+            fullname=new_name, email=unreg_user.username,
             auth=Auth(project.creator)
         )
         project.save()
