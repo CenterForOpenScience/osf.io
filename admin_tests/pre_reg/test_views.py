@@ -4,7 +4,7 @@ from django.test import RequestFactory
 from django.db import transaction
 from django.http import Http404
 from django.core.urlresolvers import reverse
-from django.contrib.auth.models import Permission
+from django.contrib.auth.models import Group, Permission
 from django.core.exceptions import PermissionDenied
 
 from tests.base import AdminTestCase
@@ -26,6 +26,7 @@ from admin.pre_reg.views import (
     DraftListView,
     DraftDetailView,
     DraftFormView,
+    CheckoutCheckupView,
     CommentUpdateView,
     get_metadata_files,
     get_file_questions,
@@ -339,11 +340,17 @@ class TestPreregFiles(AdminTestCase):
             }
         self.draft = DraftRegistrationFactory(
             initiator=self.user,
+            branched_from=self.node,
             registration_schema=prereg_schema,
             registration_metadata=data
         )
+
         self.prereg_user.save()
         self.admin_user = UserFactory()
+        self.admin_user.is_superuser = True
+        self.admin_user.groups.add(Group.objects.get(name='prereg_admin'))
+        self.admin_user.groups.add(Group.objects.get(name='prereg_view'))
+        self.admin_user.save()
 
     def test_checkout_files(self):
         self.draft.submit_for_review(self.user, {}, save=True)
@@ -368,6 +375,54 @@ class TestPreregFiles(AdminTestCase):
         view2.checkin_files(self.draft)
         for q, f in self.d_of_qs.iteritems():
             nt.assert_equal(None, f.checkout)
+
+    def test_checkout_checkup_approved_removes_checkout(self):
+        self.draft.submit_for_review(self.user, {}, save=True)
+        request = RequestFactory().get('/fake_path')
+        self.draft.approval.state = 'approved'
+        self.draft.approval.save()
+
+        file_q7 = self.d_of_qs['q7']
+        file_q7.checkout = self.admin_user
+        file_q7.save()
+
+        view = CheckoutCheckupView()
+        view = setup_user_view(view, request, user=self.admin_user)
+        view.delete(request, user=self.admin_user)
+        file_q7.refresh_from_db()
+        assert file_q7.checkout is None
+
+    def test_checkout_checkup_rejected_removes_checkout(self):
+        self.draft.submit_for_review(self.user, {}, save=True)
+        request = RequestFactory().get('/fake_path')
+        self.draft.approval.state = 'rejected'
+        self.draft.approval.save()
+
+        file_q7 = self.d_of_qs['q7']
+        file_q7.checkout = self.admin_user
+        file_q7.save()
+
+        view = CheckoutCheckupView()
+        view = setup_user_view(view, request, user=self.admin_user)
+        view.delete(request, user=self.admin_user)
+        file_q7.refresh_from_db()
+        assert file_q7.checkout is None
+
+    def test_checkout_checkup_unapproved_does_not_remove_checkout(self):
+        self.draft.submit_for_review(self.user, {}, save=True)
+        request = RequestFactory().get('/fake_path')
+        self.draft.approval.state = 'unapproved'
+        self.draft.approval.save()
+
+        file_q7 = self.d_of_qs['q7']
+        file_q7.checkout = self.admin_user
+        file_q7.save()
+
+        view = CheckoutCheckupView()
+        view = setup_user_view(view, request, user=self.admin_user)
+        view.delete(request, user=self.admin_user)
+        file_q7.refresh_from_db()
+        assert file_q7.checkout == self.admin_user
 
     def test_get_meta_data_files(self):
         for item in get_metadata_files(self.draft):
