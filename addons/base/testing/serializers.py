@@ -8,7 +8,7 @@ from framework.auth import Auth
 
 from website.util import web_url_for
 
-from tests.factories import AuthUserFactory, ProjectFactory
+from osf_tests.factories import AuthUserFactory, ProjectFactory
 from tests.utils import mock_auth
 
 class AddonSerializerTestSuiteMixin(object):
