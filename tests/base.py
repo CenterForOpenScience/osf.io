@@ -13,7 +13,6 @@ import httpretty
 import mock
 import pytest
 
-from django.test.utils import override_settings
 from django.test import TestCase as DjangoTestCase
 from django.test import override_settings
 from faker import Factory

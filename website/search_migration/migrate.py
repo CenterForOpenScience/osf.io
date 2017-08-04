@@ -10,7 +10,7 @@ from elasticsearch import helpers
 from modularodm.query.querydialect import DefaultQueryDialect as Q
 
 import website.search.search as search
-from framework.mongo.utils import paginated
+from framework.database import paginated
 from scripts import utils as script_utils
 from osf.models import OSFUser, Institution, AbstractNode
 from website import settings

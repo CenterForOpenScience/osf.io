@@ -158,7 +158,7 @@ class TestSubjectProperties(OsfTestCase):
     def setUp(self):
         super(TestSubjectProperties, self).setUp()
 
-        self.osf_provider = PreprintProviderFactory(_id='osf')
+        self.osf_provider = PreprintProviderFactory(_id='osf', share_title='bepress')
         self.asdf_provider = PreprintProviderFactory(_id='asdf')
         self.bepress_subj = SubjectFactory(text='BePress Text', provider=self.osf_provider)
         self.other_subj = SubjectFactory(text='Other Text', bepress_subject=self.bepress_subj, provider=self.asdf_provider)
@@ -171,7 +171,7 @@ class TestSubjectProperties(OsfTestCase):
         self.bepress_child = SubjectFactory(text='BePress Child', provider=self.osf_provider, parent=self.bepress_subj)
         self.other_child = SubjectFactory(text='Other Child', bepress_subject=self.bepress_subj, provider=self.asdf_provider, parent=self.other_subj)
 
-        assert self.bepress_subj.path == 'bepress/BePress Text'
-        assert self.bepress_child.path == 'bepress/BePress Text/BePress Child'
-        assert self.other_subj.path == 'asdf/Other Text'
-        assert self.other_child.path == 'asdf/Other Text/Other Child'
+        assert self.bepress_subj.path == 'bepress|BePress Text'
+        assert self.bepress_child.path == 'bepress|BePress Text|BePress Child'
+        assert self.other_subj.path == 'asdf|Other Text'
+        assert self.other_child.path == 'asdf|Other Text|Other Child'

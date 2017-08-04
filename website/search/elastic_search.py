@@ -18,7 +18,7 @@ from django.core.paginator import Paginator
 from elasticsearch import (ConnectionError, Elasticsearch, NotFoundError,
                            RequestError, TransportError, helpers)
 from framework.celery_tasks import app as celery_app
-from framework.mongo.utils import paginated
+from framework.database import paginated
 from modularodm import Q
 from osf.models import AbstractNode
 from osf.models import OSFUser
