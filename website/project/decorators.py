@@ -13,7 +13,7 @@ from framework.auth import Auth, cas
 from framework.flask import redirect  # VOL-aware redirect
 from framework.exceptions import HTTPError
 from framework.auth.decorators import collect_auth
-from framework.mongo.utils import get_or_http_error
+from framework.database import get_or_http_error
 
 from osf.models import AbstractNode
 from website import settings

@@ -2,7 +2,7 @@ import unittest
 
 import pytest
 from nose.tools import assert_true  # noqa (PEP8 asserts)
-from tests.factories import UserFactory
+from osf_tests.factories import UserFactory
 from addons.dropbox.models import UserSettings
 
 pytestmark = pytest.mark.django_db
