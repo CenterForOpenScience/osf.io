@@ -7,7 +7,9 @@ import logging
 from django.db import migrations, models
 from django.core.paginator import Paginator
 
+from addons.osfstorage.models import NodeSettings as OSFSNodeSettings, OsfStorageFolder
 from osf.models import OSFUser, QuickFiles, Contributor
+from osf.models.base import ensure_guid
 from osf.models.quickfiles import get_quickfiles_project_title
 
 logger = logging.getLogger(__name__)
@@ -37,11 +39,16 @@ def add_quickfiles(*args, **kwargs):
             total_created += 1
 
         all_quickfiles = QuickFiles.objects.bulk_create(quickfiles_to_create)
+        logger.info('Created {}/{} QuickFiles'.format(total_created, total_quickfiles_to_create))
+        logger.info('Preparing to create contributors and folders')
 
         contributors_to_create = []
+        osfs_folders_to_create = []
         for quickfiles in all_quickfiles:
-            quickfiles.add_addon('osfstorage', auth=None, log=False)
-            quickfiles.save()
+            ensure_guid(QuickFiles, quickfiles, True)
+            osfs_folders_to_create.append(
+                OsfStorageFolder(provider='osfstorage', name='', node=quickfiles)
+            )
 
             contributors_to_create.append(
                 Contributor(
@@ -56,9 +63,17 @@ def add_quickfiles(*args, **kwargs):
             )
 
         Contributor.objects.bulk_create(contributors_to_create)
+        OsfStorageFolder.objects.bulk_create(osfs_folders_to_create)
 
-        logger.info('Created {}/{} QuickFiles'.format(total_created, total_quickfiles_to_create))
+        logger.info('Contributors and addons folders')
+        logger.info('Adding storage addons')
+        osfs_to_create = []
+        for folder in osfs_folders_to_create:
+            osfs_to_create.append(
+                OSFSNodeSettings(owner=folder.node, root_node=folder)
+            )
 
+        OSFSNodeSettings.objects.bulk_create(osfs_to_create)
 
 def remove_quickfiles(*args, **kwargs):
     QuickFiles.objects.all().delete()
@@ -87,4 +102,16 @@ class Migration(migrations.Migration):
             field=models.CharField(choices=[('osf.node', 'node'), ('osf.collection', 'collection'), ('osf.registration', 'registration'), ('osf.quickfiles', 'quickfiles')], db_index=True, max_length=255),
         ),
         migrations.RunPython(add_quickfiles, remove_quickfiles),
+        migrations.RunSQL(
+            [
+                """
+                CREATE UNIQUE INDEX one_quickfiles_per_user ON osf_abstractnode (creator_id, type, is_deleted)
+                WHERE type='osf.quickfiles' AND is_deleted=FALSE;
+                """
+            ], [
+                """
+                DROP INDEX IF EXISTS one_quickfiles_per_user RESTRICT;
+                """
+            ]
+        ),
     ]
