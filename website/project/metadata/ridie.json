@@ -197,9 +197,16 @@
         }, {
             "qid": "q19",
             "nav": "Funding Proposal",
-            "type": "file",
+            "type": "object",
             "title": "Funding Proposal",
             "description": "If you have a funding proposal that you would like to include as part of this registration, upload it here.",
+            "properties": [
+                {
+                    "id": "uploader",
+                    "type": "osf-upload",
+                    "format": "osf-upload-toggle"
+                }
+            ],
             "help": "",
             "required": false
         }, {
@@ -214,7 +221,8 @@
         }, {
             "qid": "q21",
             "nav": "Type of Organization",
-            "type": " checkbox",
+            "type": "choose",
+            "format": "singleselect",
             "title": "Type of Organization",
             "description": "What type of institution is your research partner? ",
             "options": [
@@ -274,7 +282,8 @@
         }, {
             "qid": "q26",
             "nav": "Treatment Arms",
-            "type": "checkbox",
+            "type": "choose",
+            "format": "singleselect",
             "title": "Treatment Arms",
             "description": "Does this intervention or program have multiple treatment arms or program types under evaluation? ",
             "options": [
@@ -295,7 +304,8 @@
         }, {
             "qid": "q28",
             "nav": "Type of Organization",
-            "type": "select",
+            "type": "choose",
+            "format": "singleselect",
             "title": "Type of Organization",
             "description": "What type of organization is this?",
             "options": [
@@ -339,7 +349,8 @@
         "questions": [{
             "qid": "q31",
             "nav": "Primary (or First) Evaluation Method",
-            "type": "checkbox",
+            "type": "choose",
+            "format": "singleselect",
             "title": "Primary (or First) Evaluation Method",
             "description": "What is the main methodological approach you will use to estimate the causal impacts of the intervention or program? (If more than one, enter the first here. You will have the opportunity to enter a second method later.) Where more than one approach is planned, please indicate the main approach.",
             "options":[
@@ -366,7 +377,8 @@
         }, {
             "qid": "q33",
             "nav": "Additional Evaluation Method (If Any)",
-            "type": "checkbox",
+            "type": "choose",
+            "format": "singleselect",
             "title": "Additional Evaluation Method (If Any)",
             "description": "What is the main methodological approach you will use to estimate the causal impacts of the intervention or program? (If more than one, enter the first here. You will have the opportunity to enter a second method later.) Where more than one approach is planned, please indicate the main approach.",
             "options":[
