@@ -52,7 +52,7 @@ class Subject(ObjectIDMixin, BaseModel, DirtyFieldsMixin):
 
     @cached_property
     def path(self):
-        return '{}/{}'.format(self.provider.share_title, '/'.join([s.text for s in self.object_hierarchy]))
+        return '{}|{}'.format(self.provider.share_title, '|'.join([s.text for s in self.object_hierarchy]))
 
     @cached_property
     def bepress_text(self):

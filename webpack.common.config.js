@@ -58,7 +58,6 @@ var entry = {
     'claimaccount-page': staticPath('js/pages/claimaccount-page.js'),
     'login-page': staticPath('js/pages/login-page.js'),
     'notifications-config-page': staticPath('js/pages/notifications-config-page.js'),
-    'faq-page' : staticPath('js/pages/faq-page.js'),
     'render-nodes': staticPath('js/pages/render-nodes.js'),
     'institution-page': staticPath('js/pages/institution-page.js'),
     // Commons chunk
