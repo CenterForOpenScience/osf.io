@@ -31,7 +31,7 @@ def serialize_user(user, node=None, admin=False, full=False, is_profile=False, i
         user = contrib.user
     fullname = user.display_full_name(node=node)
     ret = {
-        'id': str(user._primary_key),
+        'id': str(user._id),
         'registered': user.is_registered,
         'surname': user.family_name,
         'fullname': fullname,
