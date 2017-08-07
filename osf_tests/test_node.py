@@ -3535,6 +3535,11 @@ class TestTemplateNode:
         registration = RegistrationFactory(creator=user)
         new = registration.use_as_template(auth=auth)
         assert new.is_registration is False
+
+    def test_cannot_template_deleted_registration(self, user, auth):
+        registration = RegistrationFactory(creator=user, is_deleted=True)
+        new = registration.use_as_template(auth=auth)
+        assert not new.nodes
         
     @pytest.fixture()
     def pointee(self, project, user, auth):
