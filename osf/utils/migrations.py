@@ -40,7 +40,7 @@ def ensure_licenses(*args, **kwargs):
     with open(
             os.path.join(
                 settings.APP_PATH,
-                'node_modules', 'list-of-licenses', 'dist', 'list-of-licenses.json'
+                'node_modules', '@centerforopenscience', 'list-of-licenses', 'dist', 'list-of-licenses.json'
             )
     ) as fp:
         licenses = json.loads(fp.read())
