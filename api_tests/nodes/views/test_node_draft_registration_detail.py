@@ -40,6 +40,10 @@ class TestDraftRegistrationDetail(DraftRegistrationTestCase):
     def url_draft_registrations(self, project_public, draft_registration):
         return '/{}nodes/{}/draft_registrations/{}/'.format(API_BASE, project_public._id, draft_registration._id)
 
+    @pytest.fixture()
+    def administer_permission(self):
+        return Permission.objects.get(codename='administer_prereg')
+
     def test_admin_can_view_draft(self, app, user, draft_registration, schema, url_draft_registrations):
         res = app.get(url_draft_registrations, auth=user.auth)
         assert res.status_code == 200
@@ -73,9 +77,8 @@ class TestDraftRegistrationDetail(DraftRegistrationTestCase):
         errors = res.json['errors'][0]
         assert errors['detail'] == 'This draft registration is not created from the given node.'
 
-    def test_reviewer_can_see_draft_registration(self, app, schema, draft_registration, url_draft_registrations):
+    def test_reviewer_can_see_draft_registration(self, app, schema, draft_registration, url_draft_registrations, administer_permission):
         user = AuthUserFactory()
-        administer_permission = Permission.objects.get(codename='administer_prereg')
         user.user_permissions.add(administer_permission)
         user.save()
         res = app.get(url_draft_registrations, auth=user.auth)
@@ -283,9 +286,8 @@ class TestDraftRegistrationUpdate(DraftRegistrationTestCase):
         assert res.json['data']['attributes']['registration_metadata']['q2']['value'] == 'New response'
         assert 'q1' not in res.json['data']['attributes']['registration_metadata']
 
-    def test_reviewer_can_update_draft_registration(self, app, project_public, draft_registration_prereg):
+    def test_reviewer_can_update_draft_registration(self, app, project_public, draft_registration_prereg, administer_permission):
         user = AuthUserFactory()
-        administer_permission = Permission.objects.get(codename='administer_prereg')
         user.user_permissions.add(administer_permission)
         user.save()
 
@@ -311,9 +313,8 @@ class TestDraftRegistrationUpdate(DraftRegistrationTestCase):
         assert res.json['data']['attributes']['registration_metadata']['q2']['comments'][0]['value'] == 'This is incomplete.'
         assert 'q1' not in res.json['data']['attributes']['registration_metadata']
 
-    def test_reviewer_can_only_update_comment_fields_draft_registration(self, app, project_public, draft_registration_prereg):
+    def test_reviewer_can_only_update_comment_fields_draft_registration(self, app, project_public, draft_registration_prereg, administer_permission):
         user = AuthUserFactory()
-        administer_permission = Permission.objects.get(codename='administer_prereg')
         user.user_permissions.add(administer_permission)
         user.save()
 
@@ -337,9 +338,8 @@ class TestDraftRegistrationUpdate(DraftRegistrationTestCase):
         assert res.status_code == 400
         assert res.json['errors'][0]['detail'] == 'Additional properties are not allowed (u\'value\' was unexpected)'
 
-    def test_reviewer_can_update_nested_comment_fields_draft_registration(self, app, project_public, draft_registration_prereg):
+    def test_reviewer_can_update_nested_comment_fields_draft_registration(self, app, project_public, draft_registration_prereg, administer_permission):
         user = AuthUserFactory()
-        administer_permission = Permission.objects.get(codename='administer_prereg')
         user.user_permissions.add(administer_permission)
         user.save()
 
@@ -367,9 +367,8 @@ class TestDraftRegistrationUpdate(DraftRegistrationTestCase):
         assert res.status_code == 200
         assert res.json['data']['attributes']['registration_metadata']['q7']['value']['question']['comments'][0]['value'] == 'Add some clarity here.'
 
-    def test_reviewer_cannot_update_nested_value_fields_draft_registration(self, app, project_public, draft_registration_prereg):
+    def test_reviewer_cannot_update_nested_value_fields_draft_registration(self, app, project_public, draft_registration_prereg, administer_permission):
         user = AuthUserFactory()
-        administer_permission = Permission.objects.get(codename='administer_prereg')
         user.user_permissions.add(administer_permission)
         user.save()
 
