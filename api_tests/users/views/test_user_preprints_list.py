@@ -10,7 +10,7 @@ from osf_tests.factories import (
     PreprintFactory,
     AuthUserFactory,
     SubjectFactory,
-    PreprintProviderFactory
+    PreprintProviderFactory,
 )
 from tests.base import ApiTestCase
 from website.util import permissions
@@ -110,30 +110,60 @@ class TestUserPreprintsListFiltering(PreprintsListFilteringMixin):
         actual = [preprint['id'] for preprint in res.json['data']]
         assert expected == actual
 
-class TestUserPreprintIsPublishedList(PreprintIsPublishedListMixin, ApiTestCase):
-    def setUp(self):
-        self.admin = AuthUserFactory()
-        self.provider_one = PreprintProviderFactory()
-        self.provider_two = self.provider_one
-        self.published_project = ProjectFactory(creator=self.admin, is_public=True)
-        self.public_project = ProjectFactory(creator=self.admin, is_public=True)
-        self.url = '/{}users/{}/preprints/?version=2.2&'.format(API_BASE, self.admin._id)
-        super(TestUserPreprintIsPublishedList, self).setUp()
+
+class TestUserPreprintIsPublishedList(PreprintIsPublishedListMixin):
+
+    @pytest.fixture()
+    def user_admin_contrib(self):
+        return AuthUserFactory()
+
+    @pytest.fixture()
+    def provider_one(self):
+        return PreprintProviderFactory()
+
+    @pytest.fixture()
+    def provider_two(self, provider_one):
+        return provider_one
+
+    @pytest.fixture()
+    def project_published(self, user_admin_contrib):
+        return ProjectFactory(creator=user_admin_contrib, is_public=True)
+
+    @pytest.fixture()
+    def project_public(self, user_admin_contrib, user_write_contrib):
+        project_public = ProjectFactory(creator=user_admin_contrib, is_public=True)
+        project_public.add_contributor(user_write_contrib, permissions=permissions.DEFAULT_CONTRIBUTOR_PERMISSIONS, save=True)
+        return project_public
+
+    @pytest.fixture()
+    def url(self, user_admin_contrib):
+        return '/{}users/{}/preprints/?version=2.2&'.format(API_BASE, user_admin_contrib._id)
 
 class TestUserPreprintIsValidList(PreprintIsValidListMixin):
-    @pytest.fixture(autouse=True)
-    def setUp(self):
-        self.admin = AuthUserFactory()
-        self.project = ProjectFactory(creator=self.admin, is_public=True)
-        self.provider = PreprintProviderFactory()
-        self.url = '/{}users/{}/preprints/?version=2.2&'.format(API_BASE, self.admin._id)
-        super(TestUserPreprintIsValidList, self).setUp()
+
+    @pytest.fixture()
+    def user_admin_contrib(self):
+        return AuthUserFactory()
+
+    @pytest.fixture()
+    def project(self, user_admin_contrib, user_write_contrib):
+        project = ProjectFactory(creator=user_admin_contrib, is_public=True)
+        project.add_contributor(user_write_contrib, permissions=permissions.DEFAULT_CONTRIBUTOR_PERMISSIONS, save=True)
+        return project
+
+    @pytest.fixture()
+    def provider(self):
+        return PreprintProviderFactory()
+
+    @pytest.fixture()
+    def url(self, user_admin_contrib):
+        return '/{}users/{}/preprints/?version=2.2&'.format(API_BASE, user_admin_contrib._id)
 
     # test override: user nodes/preprints routes do not show private nodes to anyone but the self
-    def test_preprint_private_visible_write(self):
-        res = self.app.get(self.url, auth=self.write_contrib.auth)
+    def test_preprint_private_visible_write(self, app, user_write_contrib, project, preprint, url):
+        res = app.get(url, auth=user_write_contrib.auth)
         assert len(res.json['data']) == 1
-        self.project.is_public = False
-        self.project.save()
-        res = self.app.get(self.url, auth=self.write_contrib.auth)
+        project.is_public = False
+        project.save()
+        res = app.get(url, auth=user_write_contrib.auth)
         assert len(res.json['data']) == 0

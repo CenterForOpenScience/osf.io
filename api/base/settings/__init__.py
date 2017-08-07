@@ -7,6 +7,7 @@
     'v2/'
 '''
 import os
+from urlparse import urlparse
 import warnings
 import itertools
 
@@ -35,4 +36,4 @@ def load_origins_whitelist():
 
     preprintprovider_origins = tuple(preprintprovider.domain.lower() for preprintprovider in PreprintProvider.objects.exclude(domain=''))
 
-    ORIGINS_WHITELIST = institution_origins + preprintprovider_origins
+    ORIGINS_WHITELIST = tuple(urlparse(url).geturl().lower().split('{}://'.format(urlparse(url).scheme))[-1] for url in institution_origins + preprintprovider_origins)

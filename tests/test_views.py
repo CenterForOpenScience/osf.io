@@ -34,7 +34,6 @@ from framework.auth.views import login_and_register_handler
 from framework.celery_tasks import handlers
 from framework.exceptions import HTTPError
 from framework.transactions.handlers import no_auto_transaction
-from tests.factories import MockAddonNodeSettings
 from website import mailchimp_utils
 from website import mails, settings
 from addons.osfstorage import settings as osfstorage_settings
@@ -88,23 +87,6 @@ from osf_tests.factories import (
     PreprintProviderFactory,
 )
 
-class Addon(MockAddonNodeSettings):
-    @property
-    def complete(self):
-        return True
-
-    def archive_errors(self):
-        return 'Error'
-
-
-class Addon2(MockAddonNodeSettings):
-    @property
-    def complete(self):
-        return True
-
-    def archive_errors(self):
-        return 'Error'
-
 @mock_app.route('/errorexc')
 def error_exc():
     UserFactory()
@@ -123,7 +105,7 @@ def no_auto_transact():
 
 class TestViewsAreAtomic(OsfTestCase):
     def test_error_response_rolls_back_transaction(self):
-        original_user_count  = OSFUser.objects.count()
+        original_user_count = OSFUser.objects.count()
         self.app.get('/error500', expect_errors=True)
         assert_equal(OSFUser.objects.count(), original_user_count)
 
@@ -2509,99 +2491,6 @@ class TestClaimViews(OsfTestCase):
         # Response is a 400
         assert_equal(res.status_code, 400)
 
-
-@pytest.mark.skip('Watching no longer supported')
-class TestWatchViews(OsfTestCase):
-
-    def setUp(self):
-        super(TestWatchViews, self).setUp()
-        self.user = AuthUserFactory()
-        self.consolidate_auth = Auth(user=self.user)
-        self.auth = self.user.auth  # used for requests auth
-        # A public project
-        self.project = ProjectFactory(is_public=True)
-        self.project.save()
-        # Manually reset log date to 100 days ago so it won't show up in feed
-        latest_log = self.project.logs.latest()
-        latest_log.date = timezone.now() - dt.timedelta(days=100)
-        latest_log.save()
-        # A log added now
-        self.last_log = self.project.add_log(
-            NodeLog.TAG_ADDED,
-            params={'node': self.project._primary_key},
-            auth=self.consolidate_auth,
-            log_date=timezone.now(),
-            save=True,
-        )
-        # Clear watched list
-        WatchConfig = apps.get_model('osf.WatchConfig')
-        WatchConfig.objects.filter(user=self.user).delete()
-
-    def test_watching_a_project_appends_to_users_watched_list(self):
-        n_watched_then = self.user.watched.count()
-        url = '/api/v1/project/{0}/watch/'.format(self.project._id)
-        res = self.app.post_json(url,
-                                 params={'digest': True},
-                                 auth=self.auth)
-        assert_equal(res.json['watchCount'], 1)
-        self.user.reload()
-        n_watched_now = self.user.watched.count()
-        assert_equal(res.status_code, 200)
-        assert_equal(n_watched_now, n_watched_then + 1)
-        assert_true(self.user.watched.last().digest)
-
-    def test_watching_project_twice_returns_400(self):
-        url = '/api/v1/project/{0}/watch/'.format(self.project._id)
-        res = self.app.post_json(url,
-                                 params={},
-                                 auth=self.auth)
-        assert_equal(res.status_code, 200)
-        # User tries to watch a node she's already watching
-        res2 = self.app.post_json(url,
-                                  params={},
-                                  auth=self.auth,
-                                  expect_errors=True)
-        assert_equal(res2.status_code, http.BAD_REQUEST)
-
-    def test_unwatching_a_project_removes_from_watched_list(self):
-        # The user has already watched a project
-        watch_config = WatchConfigFactory(node=self.project)
-        self.user.watch(watch_config)
-        self.user.save()
-        n_watched_then = len(self.user.watched)
-        url = '/api/v1/project/{0}/unwatch/'.format(self.project._id)
-        res = self.app.post_json(url, {}, auth=self.auth)
-        self.user.reload()
-        n_watched_now = len(self.user.watched)
-        assert_equal(res.status_code, 200)
-        assert_equal(n_watched_now, n_watched_then - 1)
-        assert_false(self.user.is_watching(self.project))
-
-    def test_toggle_watch(self):
-        # The user is not watching project
-        assert_false(self.user.is_watching(self.project))
-        url = '/api/v1/project/{0}/togglewatch/'.format(self.project._id)
-        res = self.app.post_json(url, {}, auth=self.auth)
-        # The response json has a watchcount and watched property
-        assert_equal(res.json['watchCount'], 1)
-        assert_true(res.json['watched'])
-        assert_equal(res.status_code, 200)
-        self.user.reload()
-        # The user is now watching the project
-        assert_true(res.json['watched'])
-        assert_true(self.user.is_watching(self.project))
-
-    def test_toggle_watch_node(self):
-        # The project has a public sub-node
-        node = NodeFactory(creator=self.user, parent=self.project, is_public=True)
-        url = "/api/v1/project/{}/node/{}/togglewatch/".format(self.project._id,
-                                                               node._id)
-        res = self.app.post_json(url, {}, auth=self.auth)
-        assert_equal(res.status_code, 200)
-        self.user.reload()
-        # The user is now watching the sub-node
-        assert_true(res.json['watched'])
-        assert_true(self.user.is_watching(node))
 
 class TestPointerViews(OsfTestCase):
 

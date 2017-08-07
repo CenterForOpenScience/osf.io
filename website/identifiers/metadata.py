@@ -76,7 +76,7 @@ def format_creators(preprint):
         creator = CREATOR(E.creatorName(format_contributor(contributor)))
         creator.append(E.givenName(remove_control_characters(contributor.given_name)))
         creator.append(E.familyName(remove_control_characters(contributor.family_name)))
-        creator.append(E.nameIdentifier('https://osf.io/{}'.format(contributor._id), nameIdentifierScheme='OSF', schemeURI='https://osf.io'))
+        creator.append(E.nameIdentifier(contributor.absolute_url, nameIdentifierScheme='OSF', schemeURI=settings.DOMAIN))
 
         # contributor.external_identity = {'ORCID': {'1234-1234-1234-1234': 'VERIFIED'}}
         if contributor.external_identity.get('ORCID'):
