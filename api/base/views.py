@@ -801,7 +801,7 @@ class BaseContributorList(JSONAPIBaseView, generics.ListAPIView, ListFilterMixin
     def get_default_queryset(self):
         node = self.get_node()
 
-        return node.contributor_set.all()
+        return node.contributor_set.all().include('user__guids')
 
     def get_queryset(self):
         queryset = self.get_queryset_from_request()
