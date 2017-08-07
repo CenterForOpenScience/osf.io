@@ -813,7 +813,8 @@ var onOpen = function(page, rootId, nodeApiUrl, currentUserId) {
 function initAtMention(nodeId, selectorOrElem) {
     var url = osfHelpers.apiV2Url('nodes/' + nodeId + '/contributors/', {
         query: {
-            'page[size]': 50
+            'page[size]': 50,
+            'fields[users]': 'given_name,full_name,active',
         }
     });
     return getContributorList(url)
