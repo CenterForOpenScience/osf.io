@@ -76,8 +76,12 @@ def unsubscribe_mailchimp(list_name, user_id, username=None, send_goodbye=True):
     user = OSFUser.load(user_id)
     m = get_mailchimp_api()
     list_id = get_list_id_from_name(list_name=list_name)
+    
     try:
-        m.lists.unsubscribe(id=list_id, email={'email': username or user.username}, send_goodbye=send_goodbye)
+        m.lists.unsubscribe(
+            id=list_id, email={'email': username or user.username},
+            send_goodbye=send_goodbye
+        )
     except mailchimp.ListNotSubscribedError:
         pass
 
