@@ -40,10 +40,6 @@ class TestDraftRegistrationDetail(DraftRegistrationTestCase):
     def url_draft_registrations(self, project_public, draft_registration):
         return '/{}nodes/{}/draft_registrations/{}/'.format(API_BASE, project_public._id, draft_registration._id)
 
-    @pytest.fixture()
-    def administer_permission(self):
-        return Permission.objects.get(codename='administer_prereg')
-
     def test_admin_can_view_draft(self, app, user, draft_registration, schema, url_draft_registrations):
         res = app.get(url_draft_registrations, auth=user.auth)
         assert res.status_code == 200
@@ -77,8 +73,9 @@ class TestDraftRegistrationDetail(DraftRegistrationTestCase):
         errors = res.json['errors'][0]
         assert errors['detail'] == 'This draft registration is not created from the given node.'
 
-    def test_reviewer_can_see_draft_registration(self, app, schema, draft_registration, url_draft_registrations, administer_permission):
+    def test_reviewer_can_see_draft_registration(self, app, schema, draft_registration, url_draft_registrations):
         user = AuthUserFactory()
+        administer_permission = Permission.objects.get(codename='administer_prereg')
         user.user_permissions.add(administer_permission)
         user.save()
         res = app.get(url_draft_registrations, auth=user.auth)
@@ -149,6 +146,10 @@ class TestDraftRegistrationUpdate(DraftRegistrationTestCase):
                 }
             }
         }
+
+    @pytest.fixture()
+    def administer_permission(self):
+        return Permission.objects.get(codename='administer_prereg')
 
     def test_id_required_in_payload(self, app, user, url_draft_registrations):
         payload = {
