@@ -3536,7 +3536,7 @@ class TestTemplateNode:
         new = registration.use_as_template(auth=auth)
         assert new.is_registration is False
 
-    def test_cannot_template_deleted_registration(self, user, auth):
+    def test_cannot_template_deleted_registration(self, project, auth):
         registration = RegistrationFactory(project=project, is_deleted=True)
         new = registration.use_as_template(auth=auth)
         assert not new.nodes
