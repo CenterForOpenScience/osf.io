@@ -1349,7 +1349,6 @@ BLACKLISTED_DOMAINS = [
     'nowhere.org',
     'nowmymail.com',
     'nurfuerspam.de',
-    'nus.edu.sg',
     'nwldx.com',
     'objectmail.com',
     'obobbo.com',
