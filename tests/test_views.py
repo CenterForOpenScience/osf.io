@@ -34,7 +34,6 @@ from framework.auth.views import login_and_register_handler
 from framework.celery_tasks import handlers
 from framework.exceptions import HTTPError
 from framework.transactions.handlers import no_auto_transaction
-from tests.factories import MockAddonNodeSettings
 from website import mailchimp_utils
 from website import mails, settings
 from addons.osfstorage import settings as osfstorage_settings
@@ -88,23 +87,6 @@ from osf_tests.factories import (
     PreprintProviderFactory,
 )
 
-class Addon(MockAddonNodeSettings):
-    @property
-    def complete(self):
-        return True
-
-    def archive_errors(self):
-        return 'Error'
-
-
-class Addon2(MockAddonNodeSettings):
-    @property
-    def complete(self):
-        return True
-
-    def archive_errors(self):
-        return 'Error'
-
 @mock_app.route('/errorexc')
 def error_exc():
     UserFactory()
@@ -123,7 +105,7 @@ def no_auto_transact():
 
 class TestViewsAreAtomic(OsfTestCase):
     def test_error_response_rolls_back_transaction(self):
-        original_user_count  = OSFUser.objects.count()
+        original_user_count = OSFUser.objects.count()
         self.app.get('/error500', expect_errors=True)
         assert_equal(OSFUser.objects.count(), original_user_count)
 
@@ -4052,16 +4034,17 @@ class TestWikiWidgetViews(OsfTestCase):
         self.project2.update_node_wiki(name='home', content='', auth=Auth(self.project.creator))
 
     def test_show_wiki_for_contributors_when_no_wiki_or_content(self):
-        assert_true(_should_show_wiki_widget(self.project, self.project.creator))
-        assert_true(_should_show_wiki_widget(self.project2, self.project.creator))
+        contrib = self.project.contributor_set.get(user=self.project.creator)
+        assert_true(_should_show_wiki_widget(self.project, contrib))
+        assert_true(_should_show_wiki_widget(self.project2, contrib))
 
     def test_show_wiki_is_false_for_read_contributors_when_no_wiki_or_content(self):
-        assert_false(_should_show_wiki_widget(self.project, self.read_only_contrib))
-        assert_false(_should_show_wiki_widget(self.project2, self.read_only_contrib))
+        contrib = self.project.contributor_set.get(user=self.read_only_contrib)
+        assert_false(_should_show_wiki_widget(self.project, contrib))
+        assert_false(_should_show_wiki_widget(self.project2, contrib))
 
     def test_show_wiki_is_false_for_noncontributors_when_no_wiki_or_content(self):
-        assert_false(_should_show_wiki_widget(self.project, self.noncontributor))
-        assert_false(_should_show_wiki_widget(self.project2, self.read_only_contrib))
+        assert_false(_should_show_wiki_widget(self.project, None))
 
 
 class TestProjectCreation(OsfTestCase):

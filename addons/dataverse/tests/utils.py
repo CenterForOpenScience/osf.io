@@ -2,7 +2,7 @@ import mock
 
 from dataverse import Connection, Dataverse, Dataset, DataverseFile
 
-from tests.factories import ExternalAccountFactory
+from osf_tests.factories import ExternalAccountFactory
 from addons.base.tests.base import OAuthAddonTestCaseMixin, AddonTestCase
 from addons.dataverse.models import DataverseProvider
 from addons.dataverse.tests.factories import DataverseAccountFactory
