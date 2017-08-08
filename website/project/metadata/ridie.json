@@ -407,7 +407,7 @@
             "nav": "Details of Evaluation Approach",
             "type": "string",
             "format": "textarea",
-            "title": "Other Method",
+            "title": "Details of Evaluation Approach",
             "description": "Please provide details of your methodological approach(es). Describe your study design. The field will be public as soon as the trial is registered. Limit this description to those aspects of your study that you want to have public before the study is over.",
             "help": "",
             "required": true
@@ -416,7 +416,7 @@
             "nav": "Private Details of Evaluation Approach",
             "type": "string",
             "format": "textarea",
-            "title": "Other Method",
+            "title": "Private Details of Evaluation Approach",
             "description": "Please provide any details of your methodological approach(es) that you do not want to be made public at this time.",
             "help": "",
             "required": false
@@ -425,7 +425,7 @@
             "nav": "Outcomes (Endpoints)",
             "type": "string",
             "format": "textarea",
-            "title": "Other Method",
+            "title": "Outcomes (Endpoints)",
             "description": "What are the outcome variables (endpoints) of interest in this evaluation? (You may distinguish primary and secondary outcomes as well as final and intermediate outcomes. If you do, indicate to which category each outcome belongs. See help text for definitions.)",
             "help": "",
             "required": true
@@ -649,6 +649,34 @@
                 }
             ],
             "required": false
-        }]
+        }, {
+            "qid": "q57",
+            "nav": "Links",
+            "type": "string",
+            "format": "text",
+            "title": "Links",
+            "description": "",
+            "help": "",
+            "required": true
+        }, {
+            "qid": "q58",
+            "nav": "Links Description",
+            "type": "string",
+            "format": "text",
+            "title": "Links Description",
+            "description": "",
+            "help": "",
+            "required": true
+        }, {
+            "qid": "q59",
+            "nav": "Registration Category Comments",
+            "type": "string",
+            "format": "text",
+            "title": "Registration Category Comments",
+            "description": "If you believe this categorization of your registration is inaccurate, please explain here.",
+            "help": "",
+            "required": true
+        }
+        ]
     }]
 }
