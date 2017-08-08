@@ -125,28 +125,6 @@ $(document).ready(function() {
         return false;
 
     });
-    
-    /* Before closing the page, Check whether the newly checked addon are updated or not */
-    $(window).on('beforeunload',function() {
-      //new checked items but not updated
-      var checked = uncheckedOnLoad.filter('#selectAddonsForm input:checked');
-      //new unchecked items but not updated
-      var unchecked = checkedOnLoad.filter('#selectAddonsForm input:not(:checked)');
-
-      if(unchecked.length > 0 || checked.length > 0) {
-          return 'The changes on addon setting are not submitted!';
-      }
-
-        if (projectSettingsVM) {
-            /* Before closing the page, check whether changes made to category, title or
-               description are updated or not */
-            if (projectSettingsVM.title() !== projectSettingsVM.titlePlaceholder ||
-                projectSettingsVM.description() !== projectSettingsVM.descriptionPlaceholder ||
-                projectSettingsVM.selectedCategory() !== projectSettingsVM.categoryPlaceholder) {
-                return 'There are unsaved changes in your project settings.';
-            }
-        }
-    });
 });
 
 var WikiSettingsViewModel = {
