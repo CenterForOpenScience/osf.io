@@ -1,5 +1,7 @@
 import json
 
+from cryptography import exceptions as crypt_exceptions
+
 from jwe import decrypt
 from jwe import exceptions as jwe_exception
 from jwt import decode
@@ -34,8 +36,8 @@ def load_request_body_data(request):
             algorithm='HS256'
         )
         return json.loads(request.body.get('data'))
-    except (jwt_exception.InvalidTokenError, jwt_exception.InvalidKeyError,
-            jwe_exception.PyJWEException, AttributeError, ValueError) as error:
+    except (jwt_exception.InvalidTokenError, jwt_exception.InvalidKeyError, jwe_exception.PyJWEException,
+            crypt_exceptions.InvalidTag, AttributeError, ValueError) as error:
         sentry.log_message('Fail to decrypt or decode CAS request due to error {!r}.'.format(error))
         raise api_exceptions.CASJSONWebEncryptionError
 
