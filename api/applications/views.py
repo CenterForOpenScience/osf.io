@@ -55,6 +55,8 @@ class ApplicationList(JSONAPIBaseView, generics.ListCreateAPIView, ODMFilterMixi
     # solution for hiding this api endpoint
     renderer_classes = [JSONRendererWithESISupport, JSONAPIRenderer, ]  # Hide from web-browsable API tool
 
+    ordering = ('-date_created',)
+
     def get_default_odm_query(self):
         return (
             Q('owner', 'eq', self.request.user) &

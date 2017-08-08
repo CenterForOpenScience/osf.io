@@ -124,15 +124,24 @@ class TestMetadataGeneration(OsfTestCase):
         formatted_creators = metadata.format_creators(preprint)
 
         contributors_with_orcids = 0
+        guid_identifiers = []
         for creator_xml in formatted_creators:
             assert creator_xml.find('creatorName').text != u'{}, {}'.format(self.invisible_contrib.family_name, self.invisible_contrib.given_name)
-            if creator_xml.find('nameIdentifier') is not None:
-                assert creator_xml.find('nameIdentifier').attrib['nameIdentifierScheme'] == 'ORCID'
-                assert creator_xml.find('nameIdentifier').attrib['schemeURI'] == 'http://orcid.org/'
-                contributors_with_orcids += 1
+
+            name_identifiers = creator_xml.findall('nameIdentifier')
+
+            for name_identifier in name_identifiers:
+                if name_identifier.attrib['nameIdentifierScheme'] == 'ORCID':
+                    assert name_identifier.attrib['schemeURI'] == 'http://orcid.org/'
+                    contributors_with_orcids += 1
+                else:
+                    guid_identifiers.append(name_identifier.text)
+                    assert name_identifier.attrib['nameIdentifierScheme'] == 'OSF'
+                    assert name_identifier.attrib['schemeURI'] == settings.DOMAIN
 
         assert contributors_with_orcids >= 1
         assert len(formatted_creators) == len(self.node.visible_contributors)
+        assert sorted(guid_identifiers) == sorted([contrib.absolute_url for contrib in self.node.visible_contributors])
 
     def test_format_subjects_for_preprint(self):
         subject = SubjectFactory()

@@ -7,10 +7,10 @@ import unittest
 from modularodm import Q
 
 from framework.auth import Auth
-from osf.models import AbstractNode as Node, NodeLog
+from osf.models import AbstractNode, NodeLog
 
 from tests.base import OsfTestCase
-from tests.factories import ProjectFactory
+from osf_tests.factories import ProjectFactory
 from tests import utils as test_utils
 
 class TestUtilsTests(OsfTestCase):

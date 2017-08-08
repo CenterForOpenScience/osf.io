@@ -4,11 +4,11 @@ from modularodm.exceptions import ValidationValueError
 
 from api.base.exceptions import InvalidModelValueError
 from api.base.serializers import JSONAPIRelationshipSerializer, HideIfDisabled, BaseAPISerializer
-from osf.models import OSFUser as User
+from osf.models import OSFUser
 
 from api.base.serializers import (
     JSONAPISerializer, LinksField, RelationshipField, DevOnly, IDField, TypeField, ListDictField,
-    DateByVersion, EmailScopeRequired,
+    DateByVersion,
 )
 from api.base.utils import absolute_reverse, get_user_auth
 
@@ -34,7 +34,6 @@ class UserSerializer(JSONAPISerializer):
     timezone = HideIfDisabled(ser.CharField(required=False, help_text="User's timezone, e.g. 'Etc/UTC"))
     locale = HideIfDisabled(ser.CharField(required=False, help_text="User's locale, e.g.  'en_US'"))
     social = ListDictField(required=False)
-    email = EmailScopeRequired(ser.CharField(source='username', read_only=True))
 
     links = HideIfDisabled(LinksField(
         {
@@ -86,7 +85,7 @@ class UserSerializer(JSONAPISerializer):
         return user.profile_image_url(size=size)
 
     def update(self, instance, validated_data):
-        assert isinstance(instance, User), 'instance must be a User'
+        assert isinstance(instance, OSFUser), 'instance must be a User'
         for attr, value in validated_data.items():
             if 'social' == attr:
                 for key, val in value.items():
@@ -155,6 +154,11 @@ class UserDetailSerializer(UserSerializer):
     Overrides UserSerializer to make id required.
     """
     id = IDField(source='_id', required=True)
+
+
+class ReadEmailUserDetailSerializer(UserDetailSerializer):
+
+    email = ser.CharField(source='username', read_only=True)
 
 
 class RelatedInstitution(JSONAPIRelationshipSerializer):

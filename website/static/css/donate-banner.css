@@ -1,0 +1,38 @@
+/*Background photo © Nestlé*/
+.donate-banner {
+    background-size: cover;
+    color: #FFF;
+    font-weight: bold;
+}
+
+.donate-text {
+    color: #043348;
+    font-weight: bold;
+}
+
+/*Backgrounds change based on the week*/
+
+/*Background photo © Nestlé*/
+.donate-banner.week-1 {
+    background: #08a3ed url(/static/img/front-page/bg-donate-1.jpg) no-repeat  top;
+}
+
+/*Background photo © Pressmaster/Shutterstock*/
+.donate-banner.week-2 {
+    background: #08a3ed url(/static/img/front-page/bg-donate-2.jpg) no-repeat top;
+}
+
+/*Background photo © joker1991/Shutterstock*/
+.donate-banner.week-3 {
+    background: #08a3ed url(/static/img/front-page/bg-donate-3.jpg) no-repeat top;
+}
+
+
+.donate-banner.week-4 {
+    background: #08a3ed url(/static/img/front-page/bg-donate-4.jpg) no-repeat top;
+}
+
+/*Background photo Acc. 90-105 - Science Service, Records, 1920s-1970s, Smithsonian Institution Archives*/
+.donate-banner.week-5 {
+    background: #08a3ed url(/static/img/front-page/bg-donate-5.jpg) no-repeat top;
+}

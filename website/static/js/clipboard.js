@@ -1,26 +1,33 @@
 'use strict';
 
 var $ = require('jquery');
-var ZeroClipboard = require('zeroclipboard');
+var Clipboard = require('clipboard');
 
-ZeroClipboard.config({
-    swfPath: '/static/vendor/bower_components/zeroclipboard/dist/ZeroClipboard.swf'
-});
+var setTooltip = function (elm, message) {
+    $(elm).tooltip('hide')
+    .attr('title', message)
+    .tooltip('show');
+};
+
+var hideTooltip = function (elm) {
+    setTimeout(function() {
+        $(elm).tooltip('hide');
+    }, 2000);
+};
 
 var makeClient = function(elm) {
     var $elm = $(elm);
-    var client = new ZeroClipboard(elm);
 
-    $elm.on('mouseover', function() {
-        $elm.addClass('active');
-    });
-    $elm.on('mouseout', function() {
-        $elm.removeClass('active');
+    var client = new Clipboard(elm);
+
+    client.on('success', function(e){
+        setTooltip(e.trigger, 'Copied!');
+        hideTooltip(e.trigger);
     });
 
-    client.on('aftercopy', function() {
-        $elm.blur();
-        $elm.tooltip('hide');
+    client.on('error', function(e){
+        setTooltip(e.trigger, 'Copy failed!');
+        hideTooltip(e.trigger);
     });
 
     return client;
