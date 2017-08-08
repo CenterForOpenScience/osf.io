@@ -49,7 +49,7 @@ class TestCorsMiddleware(MiddlewareTestCase):
         url = api_v2_url('users/me/')
         domain = urlparse("https://dinoprints.sexy")
         preprintprovider = factories.PreprintProviderFactory(
-            domain=domain.netloc.lower(),
+            domain=domain.geturl().lower(),
             _id="DinoXiv"
         )
         settings.load_origins_whitelist()

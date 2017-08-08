@@ -31,6 +31,9 @@ class Subject(ObjectIDMixin, BaseModel, DirtyFieldsMixin):
     class Meta:
         base_manager_name = 'objects'
         unique_together = ('text', 'provider')
+        permissions = (
+            ('view_subject', 'Can view subject details'),
+        )
 
     def __unicode__(self):
         return '{} with id {}'.format(self.text, self.id)
@@ -46,6 +49,10 @@ class Subject(ObjectIDMixin, BaseModel, DirtyFieldsMixin):
 
     def get_absolute_url(self):
         return self.absolute_api_v2_url
+
+    @cached_property
+    def path(self):
+        return '{}|{}'.format(self.provider.share_title, '|'.join([s.text for s in self.object_hierarchy]))
 
     @cached_property
     def bepress_text(self):

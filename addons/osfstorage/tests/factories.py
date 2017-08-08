@@ -1,13 +1,14 @@
 #!/usr/bin/env python
 # encoding: utf-8
+from django.apps import apps
 from django.utils import timezone
 from factory import SubFactory, post_generation
+from factory.django import DjangoModelFactory
 
-from tests.factories import ModularOdmFactory, AuthUserFactory
+from osf_tests.factories import AuthUserFactory
 
 from osf import models
 
-from django.apps import apps
 
 settings = apps.get_app_config('addons_osfstorage')
 
@@ -19,7 +20,7 @@ generic_location = {
 }
 
 
-class FileVersionFactory(ModularOdmFactory):
+class FileVersionFactory(DjangoModelFactory):
     class Meta:
         model = models.FileVersion
 

@@ -1,6 +1,5 @@
 from nose.tools import *  # flake8: noqa
 
-from modularodm import Q
 from tests.base import ApiTestCase
 from osf_tests.factories import SubjectFactory
 from osf.models import Subject
@@ -16,7 +15,7 @@ class TestTaxonomy(ApiTestCase):
         self.subject1_child1 = SubjectFactory(parent=self.subject1)
         self.subject1_child2 = SubjectFactory(parent=self.subject1)
 
-        self.subjects = Subject.find()
+        self.subjects = Subject.objects.all().order_by('-id')
         self.url = '/{}taxonomies/'.format(API_BASE)
         self.res = self.app.get(self.url)
         self.data = self.res.json['data']
@@ -72,3 +71,11 @@ class TestTaxonomy(ApiTestCase):
     def test_is_deprecated(self):
         res = self.app.get('{}?version=2.6'.format(self.url), expect_errors=True)
         assert res.status_code == 404
+
+    def test_taxonomy_path(self):
+        for item in self.data:
+            subj = Subject.objects.get(_id=item['id'])
+            path_parts = item['attributes']['path'].split('|')
+            assert path_parts[0] == subj.provider.share_title
+            for index, text in enumerate([s.text for s in subj.object_hierarchy]):
+                assert path_parts[index + 1] == text

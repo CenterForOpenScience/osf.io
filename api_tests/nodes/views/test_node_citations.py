@@ -3,7 +3,7 @@ import pytest
 from api.base.settings.defaults import API_BASE
 from framework.auth.core import Auth
 from rest_framework import exceptions
-from tests.factories import (
+from osf_tests.factories import (
     ProjectFactory,
     AuthUserFactory,
 )

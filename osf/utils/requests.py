@@ -1,14 +1,6 @@
 # -*- coding: utf-8 -*-
-
 from flask import Request as FlaskRequest
 from flask import request
-from modularodm.storedobject import StoredObject as GenericStoredObject
-from modularodm.ext.concurrency import with_proxies, proxied_members
-
-from bson import ObjectId
-from .handlers import client, database
-
-
 from api.base.api_globals import api_globals
 
 
@@ -17,7 +9,7 @@ class DummyRequest(object):
 dummy_request = DummyRequest()
 
 
-def get_cache_key():
+def get_current_request():
     """
     Fetch a request key from either a Django or Flask request. Fall back on a process-global dummy object
     if we are not in either type of request
@@ -40,7 +32,7 @@ def get_request_and_user_id():
     # TODO: This should be consolidated into framework
     from framework.sessions import get_session
 
-    req = get_cache_key()
+    req = get_current_request()
     user_id = None
     if isinstance(req, FlaskRequest):
         session = get_session()
@@ -49,16 +41,3 @@ def get_request_and_user_id():
         # admin module can return a user w/o an id
         user_id = getattr(req.user, '_id', None)
     return req, user_id
-
-
-@with_proxies(proxied_members, get_cache_key)
-class StoredObject(GenericStoredObject):
-    pass
-
-
-__all__ = [
-    'StoredObject',
-    'ObjectId',
-    'client',
-    'database',
-]

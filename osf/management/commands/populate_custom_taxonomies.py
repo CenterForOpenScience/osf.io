@@ -105,12 +105,13 @@ def map_preprints_to_custom_subjects(custom_provider, merge_dict):
         subject_ids_to_map = set(s.id for s in subjects_to_map if s.text not in merge_dict.keys())
         aliased_subject_ids = set(Subject.objects.filter(bepress_subject__id__in=subject_ids_to_map, provider=custom_provider).values_list('id', flat=True)) | merged_subject_ids
         aliased_hiers = [s.object_hierarchy for s in Subject.objects.filter(id__in=aliased_subject_ids)]
+        old_subjects = list(preprint.subjects.values_list('id', flat=True))
         preprint.subjects.clear()
         for hier in aliased_hiers:
             validate_subject_hierarchy([s._id for s in hier])
             for s in hier:
                 preprint.subjects.add(s)
-        preprint.save()
+        preprint.save(old_subjects=old_subjects)
         preprint.reload()
         new_hier = [s.object_hierarchy for s in preprint.subjects.exclude(children__in=preprint.subjects.all())]
         logger.info('Successfully migrated preprint {}.\n\tOld hierarchy:{}\n\tNew hierarchy:{}'.format(preprint.id, old_hier, new_hier))
