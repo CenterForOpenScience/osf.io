@@ -555,22 +555,6 @@ class WebRenderer(Renderer):
         except IOError:
             return '<div>Template {} not found.</div>'.format(template_name)
 
-        html = lxml.html.fragment_fromstring(rendered, create_parent='remove')
-
-        for element in html.findall('.//*[@mod-meta]'):
-
-            # Render nested template
-            template_rendered, is_replace = self.render_element(element, data)
-
-            original = lxml.html.tostring(element)
-            if is_replace:
-                replacement = template_rendered
-            else:
-                replacement = original
-                replacement = replacement.replace('><', '>' + template_rendered + '<')
-
-            rendered = rendered.replace(original, replacement)
-
         ## Parse HTML using html5lib; lxml is too strict and e.g. throws
         ## errors if missing parent container; htmlparser mangles whitespace
         ## and breaks replacement
