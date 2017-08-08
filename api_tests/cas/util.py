@@ -28,6 +28,37 @@ def make_payload_login_institution(institution_id, username='', fullname='', giv
     return encrypt_request_data(data, bad_secret=bad_secret)
 
 
+def make_payload_service_institutions():
+
+    data = {
+        'description': 'load institutions as registered services'
+    }
+    return encrypt_request_data(data)
+
+
+def make_payload_service_oauth_apps():
+
+    data = {
+        'description': 'load OSF developer apps as registered services'
+    }
+    return encrypt_request_data(data)
+
+
+def make_payload_service_oauth_token(token_id):
+
+    data = {
+        'tokenId': token_id
+    }
+    return encrypt_request_data(data)
+
+
+def make_payload_service_oauth_scope(scope_name):
+    data = {
+        'scopeName': scope_name
+    }
+    return encrypt_request_data(data)
+
+
 def encrypt_request_data(data, bad_secret=False):
 
     jwe_secret = JWE_SECRET if not bad_secret else bad_jwe_secret

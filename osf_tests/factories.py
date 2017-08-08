@@ -221,11 +221,13 @@ class NodeFactory(BaseNodeFactory):
 
 class InstitutionFactory(DjangoModelFactory):
     name = factory.Faker('company')
+    banner_name = factory.Faker('file_name')
+    delegation_protocol = ''
+    logo_name = factory.Faker('file_name')
     login_url = factory.Faker('url')
     logout_url = factory.Faker('url')
     domains = FakeList('url', n=3)
     email_domains = FakeList('domain_name', n=1)
-    logo_name = factory.Faker('file_name')
 
     class Meta:
         model = models.Institution
@@ -640,6 +642,14 @@ class TagFactory(DjangoModelFactory):
 
     name = factory.Faker('word')
     system = False
+
+
+class ApiOAuth2ScopeFactory(DjangoModelFactory):
+    class Meta:
+        model = models.ApiOAuth2Scope
+
+    name = factory.Sequence(lambda n: 'example.scope.#{}'.format(n))
+    description = factory.Sequence(lambda n: 'Example Description for OAuth2 Scope #{}'.format(n))
 
 
 class ApiOAuth2PersonalTokenFactory(DjangoModelFactory):
