@@ -28,6 +28,19 @@ def make_payload_login_institution(institution_id, username='', fullname='', giv
     return encrypt_request_data(data, bad_secret=bad_secret)
 
 
+def make_payload_login_osf(email, password=None, remote_authenticated=False, verification_key=None, one_time_password=None):
+    data = {
+        'user': {
+            'email': email,
+            'password': password,
+            'remoteAuthenticated': remote_authenticated,
+            'verificationKey': verification_key,
+            'oneTimePassword': one_time_password,
+        }
+    }
+    return encrypt_request_data(data)
+
+
 def make_payload_service_institutions():
 
     data = {
