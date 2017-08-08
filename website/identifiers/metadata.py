@@ -76,6 +76,7 @@ def format_creators(preprint):
         creator = CREATOR(E.creatorName(format_contributor(contributor)))
         creator.append(E.givenName(remove_control_characters(contributor.given_name)))
         creator.append(E.familyName(remove_control_characters(contributor.family_name)))
+        creator.append(E.nameIdentifier(contributor.absolute_url, nameIdentifierScheme='OSF', schemeURI=settings.DOMAIN))
 
         # contributor.external_identity = {'ORCID': {'1234-1234-1234-1234': 'VERIFIED'}}
         if contributor.external_identity.get('ORCID'):
@@ -104,6 +105,11 @@ def datacite_metadata_for_preprint(preprint, doi, pretty_print=False):
     :param preprint -- the preprint
     :param str doi
     """
+    # NOTE: If you change *ANYTHING* here be 100% certain that the
+    # changes you make are also made to the SHARE serialization code.
+    # If the data sent out is not EXCATLY the same all the data will get jumbled up in SHARE.
+    # And then search results will be wrong and broken. And it will be your fault. And you'll have caused many sleepless nights.
+    # Don't be that person.
     root = E.resource(
         E.resourceType('Preprint', resourceTypeGeneral='Text'),
         E.identifier(doi, identifierType='DOI'),

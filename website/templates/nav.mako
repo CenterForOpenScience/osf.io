@@ -45,7 +45,7 @@
             <li class="dropdown">
             <a href="${service_support_url}">Support</a>
             </li>
-
+            <li class="navbar-donate-button"><a href="https://cos.io/donate">Donate</a></li>
             % if user_name and display_name:
             <li class="dropdown">
             <button class="dropdown-toggle nav-user-dropdown btn-link" data-toggle="dropdown" role="button" aria-expanded="false" aria-label="Toggle auth dropdown">
