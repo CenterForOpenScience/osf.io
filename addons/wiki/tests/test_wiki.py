@@ -1231,6 +1231,7 @@ class TestPublicWiki(OsfTestCase):
                 'id': node._id,
                 'title': node.title,
                 'url': node.url,
+                'is_public': True
             },
             'children': [
                 {
@@ -1243,7 +1244,8 @@ class TestPublicWiki(OsfTestCase):
             'kind': 'folder',
             'nodeType': 'component',
             'category': 'hypothesis',
-            'permissions': {'view': True}
+            'permissions': {'view': True,
+                            'admin': True}
         }]
 
         assert_equal(data, expected)
