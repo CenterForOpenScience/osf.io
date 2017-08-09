@@ -1,3 +1,4 @@
+import mock
 import pytest
 
 from framework.auth.core import Auth
@@ -174,3 +175,14 @@ class TestQuickFiles:
         actual_filenames = [stored_file.name for stored_file in stored_files]
 
         assert_items_equal(actual_filenames, expected_filenames)
+
+    @mock.patch('osf.models.user.MAX_QUICKFILES_MERGE_RENAME_ATTEMPTS', 1)
+    def test_quickfiles_moves_errors_after_max_renames(self, user, quickfiles):
+        create_test_file(quickfiles, user, filename='Woo (1).pdf')
+        create_test_file(quickfiles, user, filename='Woo (2).pdf')
+
+        other_user = factories.UserFactory()
+        create_test_file(QuickFiles.objects.get(creator=other_user), other_user, filename='Woo (1).pdf')
+
+        with pytest.raises(ValueError):
+            user.merge_user(other_user)

@@ -53,6 +53,7 @@ from website.project import new_bookmark_collection
 
 logger = logging.getLogger(__name__)
 
+MAX_QUICKFILES_MERGE_RENAME_ATTEMPTS = 1000
 
 def get_default_mailing_lists():
     return {'Open Science Framework Help': True}
@@ -691,12 +692,13 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
 
         # - move files in the merged user's quickfiles node, checking for name conflicts
         from osf.models import QuickFiles
+        from addons.osfstorage.models import OsfStorageFileNode
         primary_quickfiles = QuickFiles.objects.get(creator=self)
         merging_user_quickfiles = QuickFiles.objects.get(creator=user)
 
         files_in_merging_user_quickfiles = merging_user_quickfiles.files.filter(type='osf.osfstoragefile')
         for merging_user_file in files_in_merging_user_quickfiles:
-            if BaseFileNode.objects.filter(node=primary_quickfiles, name=merging_user_file.name, type='osf.osfstoragefile').exists():
+            if OsfStorageFileNode.objects.filter(node=primary_quickfiles, name=merging_user_file.name).exists():
                 digit = 1
                 split_filename = splitext(merging_user_file.name)
                 name_without_extension = split_filename[0]
@@ -709,10 +711,14 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
                 new_name_format = '{} ({}){}'
                 new_name = new_name_format.format(name_without_extension, digit, extension)
 
-                # check if new name conflicts, update til it does not
-                while BaseFileNode.objects.filter(node=primary_quickfiles, name=new_name, type='osf.osfstoragefile').exists():
+                # check if new name conflicts, update til it does not (try up to 1000 times)
+                rename_count = 0
+                while OsfStorageFileNode.objects.filter(node=primary_quickfiles, name=new_name).exists():
                     digit += 1
                     new_name = new_name_format.format(name_without_extension, digit, extension)
+                    rename_count += 1
+                    if rename_count >= MAX_QUICKFILES_MERGE_RENAME_ATTEMPTS:
+                        raise ValueError('Maximum number of rename attempts has been reached')
 
                 merging_user_file.name = new_name
                 merging_user_file.save()
