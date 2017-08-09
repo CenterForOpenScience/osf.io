@@ -8,7 +8,6 @@ import logging
 import os
 
 from flask import request, make_response
-import lxml.html
 from mako.lookup import TemplateLookup
 from mako.template import Template
 import markupsafe
