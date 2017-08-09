@@ -38,14 +38,6 @@
 
 <script>
 
-    ## TODO: Move this logic into badges add-on
-    % if 'badges' in addons_enabled and badges and badges['can_award']:
-    ## TODO: port to commonjs
-    ## $script(['/static/addons/badges/badge-awarder.js'], function() {
-    ##     attachDropDown('${'{}badges/json/'.format(user_api_url)}');
-    ## });
-    % endif
-
     var nodeId = ${ node['id'] |sjson, n };
     var userApiUrl = ${ user_api_url | sjson, n };
     var nodeApiUrl = ${ node['api_url'] | sjson, n };

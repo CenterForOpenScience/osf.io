@@ -51,6 +51,8 @@ class ActiveFileNodeManager(Manager):
     Note: We do not use this as the default manager for BaseFileNode because
     that would prevent TrashedFileNodes from accessing their `parent` field if
     the parent was not a TrashedFileNode.
+
+    WARNING: Do NOT use .active on BaseFileNode subclasses. Use .objects instead.
     """
 
     def get_queryset(self):

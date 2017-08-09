@@ -13,7 +13,6 @@ import httpretty
 import mock
 import pytest
 
-from django.test.utils import override_settings
 from django.test import TestCase as DjangoTestCase
 from django.test import override_settings
 from faker import Factory
@@ -59,7 +58,6 @@ SILENT_LOGGERS = [
     'factory.containers',
     'framework.analytics',
     'framework.auth.core',
-    'framework.celery_tasks.signals',
     'website.app',
     'website.archiver.tasks',
     'website.mails',

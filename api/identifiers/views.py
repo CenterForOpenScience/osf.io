@@ -65,6 +65,8 @@ class IdentifierList(JSONAPIBaseView, generics.ListAPIView, ODMFilterMixin):
     view_category = 'identifiers'
     view_name = 'identifier-list'
 
+    ordering = ('-id',)
+
     def get_object(self, *args, **kwargs):
         raise NotImplementedError
 
