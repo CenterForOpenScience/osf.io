@@ -504,6 +504,7 @@ var FileViewPage = {
             // Special case whether or not to show the delete button for published Dataverse files
             // Special case to not show delete if file is preprint primary file
             // Special case to not show delete for public figshare files
+            // Special case to not show force check-in for read-only providers
             (
                 ctrl.canEdit() &&
                 (ctrl.node.preprintFileId !== ctrl.file.id) &&
@@ -513,7 +514,7 @@ var FileViewPage = {
             ) ? m('.btn-group.m-l-xs.m-t-xs', [
                         ctrl.isLatestVersion ? m('button.btn.btn-sm.btn-danger.file-delete', {onclick: $(document).trigger.bind($(document), 'fileviewpage:delete') }, 'Delete') : null
             ]) : '',
-            ctrl.context.currentUser.canEdit && (!ctrl.canEdit()) && (ctrl.context.currentUser.isAdmin) ? m('.btn-group.m-l-xs.m-t-xs', [
+            ctrl.context.currentUser.canEdit && (ctrl.file.provider !== 'bitbucket') && (!ctrl.canEdit()) && (ctrl.context.currentUser.isAdmin) ? m('.btn-group.m-l-xs.m-t-xs', [
                 ctrl.isLatestVersion ? m('.btn.btn-sm.btn-danger', {onclick: $(document).trigger.bind($(document), 'fileviewpage:force_checkin')}, 'Force check in') : null
             ]) : '',
             ctrl.canEdit() && (!ctrl.file.checkoutUser) && (ctrl.file.provider === 'osfstorage') ? m('.btn-group.m-l-xs.m-t-xs', [

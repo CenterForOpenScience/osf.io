@@ -1,11 +1,6 @@
 <%inherit file="base.mako"/>
 <%def name="title()">Notifications</%def>
 
-<%def name="stylesheets()">
-   ${parent.stylesheets()}
-   <link rel="stylesheet" href='/static/css/pages/account-setting-page.css'>
-</%def>
-
 <%def name="content()">
 <% from website import settings%>
 <h2 class="page-header">Settings</h2>

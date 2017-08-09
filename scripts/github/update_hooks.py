@@ -11,10 +11,7 @@ from nose.tools import *
 from tests.base import OsfTestCase
 from tests.factories import ProjectFactory
 
-from framework.mongo import StoredObject
-
 from website.app import init_app
-from website.models import Node
 
 from addons.github.api import GitHub
 from addons.github import utils

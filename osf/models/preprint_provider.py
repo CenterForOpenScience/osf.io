@@ -33,6 +33,14 @@ class PreprintProvider(ObjectIDMixin, BaseModel):
     allow_submissions = models.BooleanField(default=True)
     additional_providers = fields.ArrayField(models.CharField(max_length=200), default=list, blank=True)
 
+    PREPRINT_WORD_CHOICES = (
+        ('preprint', 'Preprint'),
+        ('paper', 'Paper'),
+        ('thesis', 'Thesis'),
+        ('none', 'None')
+    )
+    preprint_word = models.CharField(max_length=10, choices=PREPRINT_WORD_CHOICES, default='preprint')
+
     subjects_acceptable = DateTimeAwareJSONField(blank=True, default=list)
     licenses_acceptable = models.ManyToManyField(NodeLicense, blank=True, related_name='licenses_acceptable')
     default_license = models.ForeignKey(NodeLicense, blank=True, related_name='default_license', null=True)

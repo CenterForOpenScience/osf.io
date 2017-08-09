@@ -3,30 +3,33 @@ from nose.tools import *  # flake8: noqa (PEP8 asserts)
 import mock
 import urlparse
 
-from framework.celery_tasks import handlers
 from addons.osfstorage.models import OsfStorageFile
-from website.preprints.tasks import format_preprint
-from website.preprints.tasks import on_preprint_updated
-from website.util import permissions
-
-from framework.auth import Auth
-from framework.exceptions import PermissionsError
+from osf.models import NodeLog, Subject
 
 from website import settings
 from website.identifiers.utils import get_doi_and_metadata_for_object
-from osf.models import NodeLog, Subject
+from website.preprints.tasks import format_preprint
+from website.preprints.tasks import on_preprint_updated
+from website.project.views.contributor import find_preprint_provider
+from website.util import permissions
+from website.util.share import format_user
 
+from framework.auth import Auth
+from framework.celery_tasks import handlers
+from framework.exceptions import PermissionsError
+
+from tests.utils import assert_logs
 from tests.base import OsfTestCase
+from api_tests import utils as api_test_utils
 from osf_tests.factories import (
     AuthUserFactory,
-    ProjectFactory,
     PreprintFactory,
     PreprintProviderFactory,
-    SubjectFactory
+    ProjectFactory,
+    SubjectFactory,
+    UserFactory,
 )
-from tests.utils import assert_logs
-from api_tests import utils as api_test_utils
-from website.project.views.contributor import find_preprint_provider
+
 
 
 class TestPreprintFactory(OsfTestCase):
@@ -443,7 +446,7 @@ class TestOnPreprintUpdatedTask(OsfTestCase):
             'mailto:' + self.preprint.node.creator.username,
             self.user.profile_image_url(),
             self.preprint.node.creator.profile_image_url(),
-        ]) | set(urlparse.urljoin(settings.DOMAIN, user.profile_url) for user in self.preprint.node.contributors if user.is_registered)
+        ]) | set(user.absolute_url for user in self.preprint.node.contributors)
 
         related_work = next(nodes.pop(k) for k, v in nodes.items() if v['@type'] == 'creativework')
         assert set(related_work.keys()) == {'@id', '@type'}  # Empty except @id and @type
@@ -532,7 +535,7 @@ class TestOnPreprintUpdatedTask(OsfTestCase):
             'mailto:' + self.preprint.node.creator.username,
             self.user.profile_image_url(),
             self.preprint.node.creator.profile_image_url(),
-        ]) | set(urlparse.urljoin(settings.DOMAIN, user.profile_url) for user in self.preprint.node.contributors if user.is_registered)
+        ]) | set(user.absolute_url for user in self.preprint.node.contributors)
 
         workidentifiers = {nodes.pop(k)['uri'] for k, v in nodes.items() if v['@type'] == 'workidentifier'}
         # URLs should *always* be osf.io/guid/
@@ -576,6 +579,29 @@ class TestOnPreprintUpdatedTask(OsfTestCase):
         res = format_preprint(self.preprint)
         preprint = next(v for v in res if v['@type'] == 'preprint')
         assert preprint['is_deleted'] is True
+
+    def test_unregistered_users_guids(self):
+        user = UserFactory.build(is_registered=False)
+        user.save()
+
+        node = format_user(user)
+        assert {x.attrs['uri'] for x in node.get_related()} == {user.absolute_url}
+
+    def test_verified_orcid(self):
+        user = UserFactory.build(is_registered=True)
+        user.external_identity = {'ORCID': {'fake-orcid': 'VERIFIED'}}
+        user.save()
+
+        node = format_user(user)
+        assert {x.attrs['uri'] for x in node.get_related()} == {'fake-orcid', user.absolute_url, user.profile_image_url()}
+
+    def test_unverified_orcid(self):
+        user = UserFactory.build(is_registered=True)
+        user.external_identity = {'ORCID': {'fake-orcid': 'SOMETHINGELSE'}}
+        user.save()
+
+        node = format_user(user)
+        assert {x.attrs['uri'] for x in node.get_related()} == {user.absolute_url, user.profile_image_url()}
 
 
 class TestPreprintSaveShareHook(OsfTestCase):
