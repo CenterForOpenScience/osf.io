@@ -454,7 +454,7 @@ def update_user(user, index=None):
             # update files in their quickfiles node if the user has been marked as spam
             if 'spam_confirmed' in user.system_tags:
                 quickfiles = QuickFiles.objects.get_for_user(user)
-                for quickfile_id in BaseFileNode.objects.filter(node=quickfiles).values_list('_id', flat=True):
+                for quickfile_id in quickfiles.files.values_list('_id', flat=True):
                     client().delete(
                         index=index,
                         doc_type='file',
