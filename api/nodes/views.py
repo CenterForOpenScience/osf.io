@@ -2058,7 +2058,7 @@ class NodeAddonList(JSONAPIBaseView, generics.ListAPIView, ListFilterMixin, Node
     view_category = 'nodes'
     view_name = 'node-addons'
 
-    ordering = ('-date_modified',)
+    ordering = ('-id',)
 
     def get_default_queryset(self):
         qs = []
@@ -2236,8 +2236,6 @@ class NodeAddonFolderList(JSONAPIBaseView, generics.ListAPIView, NodeMixin, Addo
     serializer_class = NodeAddonFolderSerializer
     view_category = 'nodes'
     view_name = 'node-addon-folders'
-
-    ordering = ('-date_modified',)
 
     def get_queryset(self):
         # TODO: [OSF-6120] refactor this/NS models to be generalizable
