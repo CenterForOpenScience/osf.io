@@ -21,15 +21,13 @@ class QuickFilesRelationshipField(RelationshipField):
         relationship_links = super(QuickFilesRelationshipField, self).to_representation(value)
         quickfiles_guid = QuickFiles.objects.get_for_user(value)._id
         upload_url = website_utils.waterbutler_api_url_for(quickfiles_guid, 'osfstorage')
-        relationship_links['links'] = {
-            'upload': {
-                'href': upload_url,
-                'meta': {}
-            },
-            'download': {
-                'href': '{}?zip='.format(upload_url),
-                'meta': {}
-            }
+        relationship_links['links']['upload'] = {
+            'href': upload_url,
+            'meta': {}
+        }
+        relationship_links['links']['download'] = {
+            'href': '{}?zip='.format(upload_url),
+            'meta': {}
         }
         return relationship_links
 
@@ -192,11 +190,8 @@ class UserQuickFilesSerializer(OsfStorageFileSerializer):
         'download': WaterbutlerLink(must_be_file=True),
     })
 
-    def to_representation(self, obj, envelope='data'):
-        # Remove the node relationship for QuickFiles as they don't have a detail view
-        results = super(UserQuickFilesSerializer, self).to_representation(obj, envelope)
-        del results['relationships']['node']
-        return results
+    # Don't serialize node relationship for QuickFiles as they don't have a detail view
+    node = None
 
 
 class ReadEmailUserDetailSerializer(UserDetailSerializer):
