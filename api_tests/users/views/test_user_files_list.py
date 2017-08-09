@@ -19,33 +19,28 @@ def quickfiles(user):
 @pytest.mark.django_db
 class TestUserQuickFiles:
 
-    @pytest.fixture()
+    @pytest.fixture(autouse=True)
     def add_quickfiles(self, quickfiles):
-        def func(**attrs):
-            osfstorage = quickfiles.get_addon('osfstorage')
-            root = osfstorage.get_root()
+        osfstorage = quickfiles.get_addon('osfstorage')
+        root = osfstorage.get_root()
 
-            root.append_file('Follow.txt')
-            root.append_file('The.txt')
-            root.append_file('Buzzards.txt')
+        root.append_file('Follow.txt')
+        root.append_file('The.txt')
+        root.append_file('Buzzards.txt')
 
-        return func
-
-    def test_authorized_gets_200(self, app, user, add_quickfiles):
-        add_quickfiles()
+    def test_authorized_gets_200(self, app, user):
         url = "/{}users/{}/files/".format(API_BASE, user._id)
         res = app.get(url, auth=user.auth)
         assert res.status_code == 200
         assert res.content_type == 'application/vnd.api+json'
 
-    def test_anonymous_gets_200(self, app, user, add_quickfiles):
-        add_quickfiles()
+    def test_anonymous_gets_200(self, app, user):
         url = "/{}users/{}/files/".format(API_BASE, user._id)
         res = app.get(url)
         assert res.status_code == 200
         assert res.content_type == 'application/vnd.api+json'
 
-    def test_get_files_logged_in(self, app, user, add_quickfiles):
+    def test_get_files_logged_in(self, app, user):
         url = "/{}users/{}/files/".format(API_BASE, user._id)
         res = app.get(url, auth=user.auth)
         node_json = res.json['data']
@@ -54,7 +49,7 @@ class TestUserQuickFiles:
 
         assert len(ids) == BaseFileNode.objects.filter(type='osf.osfstoragefile').count()
 
-    def test_get_files_not_logged_in(self, app, user, add_quickfiles):
+    def test_get_files_not_logged_in(self, app, user):
         url = "/{}users/{}/files/".format(API_BASE, user._id)
         res = app.get(url)
         node_json = res.json['data']
@@ -62,8 +57,7 @@ class TestUserQuickFiles:
         ids = [each['id'] for each in node_json]
         assert len(ids) == BaseFileNode.objects.filter(type='osf.osfstoragefile').count()
 
-    def test_get_files_logged_in_as_different_user(self, app, user, add_quickfiles):
-        add_quickfiles()
+    def test_get_files_logged_in_as_different_user(self, app, user):
         user_two = AuthUserFactory()
         url = "/{}users/{}/files/".format(API_BASE, user._id)
         res = app.get(url, auth=user_two.auth)
@@ -72,8 +66,7 @@ class TestUserQuickFiles:
         ids = [each['id'] for each in node_json]
         assert len(ids) == BaseFileNode.objects.filter(type='osf.osfstoragefile').count()
 
-    def test_get_files_me(self, app, user, add_quickfiles):
-        add_quickfiles()
+    def test_get_files_me(self, app, user):
         user_two = AuthUserFactory()
         quickfiles_two = QuickFiles.objects.get(creator=user_two)
         osf_storage_two = quickfiles_two.get_addon('osfstorage')
