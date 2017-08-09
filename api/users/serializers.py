@@ -6,7 +6,7 @@ from website import util as website_utils
 from api.base.exceptions import InvalidModelValueError
 from api.files.serializers import OsfStorageFileSerializer
 from api.base.serializers import JSONAPIRelationshipSerializer, HideIfDisabled, BaseAPISerializer, WaterbutlerLink, Link
-from osf.models import OSFUser, QuickFiles
+from osf.models import OSFUser, QuickFilesNode
 
 from api.base.serializers import (
     JSONAPISerializer, LinksField, RelationshipField, DevOnly, IDField, TypeField, ListDictField,
@@ -19,7 +19,7 @@ class QuickFilesRelationshipField(RelationshipField):
 
     def to_representation(self, value):
         relationship_links = super(QuickFilesRelationshipField, self).to_representation(value)
-        quickfiles_guid = QuickFiles.objects.get_for_user(value)._id
+        quickfiles_guid = QuickFilesNode.objects.get_for_user(value)._id
         upload_url = website_utils.waterbutler_api_url_for(quickfiles_guid, 'osfstorage')
         relationship_links['links']['upload'] = {
             'href': upload_url,

@@ -24,7 +24,7 @@ from osf.models import AbstractNode
 from osf.models import OSFUser
 from osf.models import BaseFileNode
 from osf.models import Institution
-from osf.models import QuickFiles
+from osf.models import QuickFilesNode
 from website import settings
 from website.filters import gravatar
 from osf.models.licenses import serialize_node_license_record
@@ -453,7 +453,7 @@ def update_user(user, index=None):
             client().delete(index=index, doc_type='user', id=user._id, refresh=True, ignore=[404])
             # update files in their quickfiles node if the user has been marked as spam
             if 'spam_confirmed' in user.system_tags:
-                quickfiles = QuickFiles.objects.get_for_user(user)
+                quickfiles = QuickFilesNode.objects.get_for_user(user)
                 for quickfile_id in quickfiles.files.values_list('_id', flat=True):
                     client().delete(
                         index=index,

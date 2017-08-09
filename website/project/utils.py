@@ -19,7 +19,7 @@ PROJECT_QUERY = (
     # Note: is_bookmark collection(s) are implicitly assumed to also be collections; that flag intentionally omitted
     Q('is_deleted', 'eq', False) &
     Q('type', 'ne', 'osf.collection') &
-    Q('type', 'ne', 'osf.quickfiles')
+    Q('type', 'ne', 'osf.quickfilesnode')
 )
 
 def recent_public_registrations(n=10):

@@ -5,7 +5,7 @@ from django.core.exceptions import ValidationError
 from website.project import new_private_link
 
 from .factories import PrivateLinkFactory, NodeFactory, AuthUserFactory
-from osf.models import MetaSchema, DraftRegistration, NodeLog, QuickFiles
+from osf.models import MetaSchema, DraftRegistration, NodeLog, QuickFilesNode
 
 @pytest.mark.django_db
 def test_factory():
@@ -66,7 +66,7 @@ class TestPrivateLink:
     def test_cannot_be_added_for_quickfiles(self):
         link = PrivateLinkFactory()
         user = AuthUserFactory()
-        quickfiles = QuickFiles.objects.get(creator=user)
+        quickfiles = QuickFilesNode.objects.get(creator=user)
 
         with pytest.raises(ValidationError):
             link.nodes.add(quickfiles)

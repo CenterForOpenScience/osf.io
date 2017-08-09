@@ -3,7 +3,7 @@ import pytest
 
 from osf_tests.factories import AuthUserFactory
 from api.base.settings.defaults import API_BASE
-from osf.models import QuickFiles, BaseFileNode
+from osf.models import QuickFilesNode, BaseFileNode
 
 
 @pytest.fixture()
@@ -13,7 +13,7 @@ def user():
 
 @pytest.fixture()
 def quickfiles(user):
-    return QuickFiles.objects.get(creator=user)
+    return QuickFilesNode.objects.get(creator=user)
 
 
 @pytest.mark.django_db
@@ -68,7 +68,7 @@ class TestUserQuickFiles:
 
     def test_get_files_me(self, app, user):
         user_two = AuthUserFactory()
-        quickfiles_two = QuickFiles.objects.get(creator=user_two)
+        quickfiles_two = QuickFilesNode.objects.get(creator=user_two)
         osf_storage_two = quickfiles_two.get_addon('osfstorage')
         root_two = osf_storage_two.get_root()
 

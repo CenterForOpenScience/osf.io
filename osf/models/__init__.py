@@ -34,4 +34,4 @@ from osf.models.analytics import UserActivityCounter, PageCounter  # noqa
 from osf.models.admin_profile import AdminProfile  # noqa
 from osf.models.admin_log_entry import AdminLogEntry  # noqa
 from osf.models.maintenance_state import MaintenanceState  # noqa
-from osf.models.quickfiles import QuickFiles  # noqa
+from osf.models.quickfiles import QuickFilesNode  # noqa

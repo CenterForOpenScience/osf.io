@@ -2,7 +2,7 @@ import mock
 import pytest
 
 from framework.auth.core import Auth
-from osf.models import QuickFiles, BaseFileNode
+from osf.models import QuickFilesNode, BaseFileNode
 from api_tests.utils import create_test_file
 from tests.utils import assert_items_equal
 from tests.base import get_default_metaschema
@@ -30,15 +30,15 @@ def auth(user):
     return Auth(user)
 
 
-class TestQuickFiles:
+class TestQuickFilesNode:
 
     @pytest.fixture()
     def quickfiles(self, user):
-        return QuickFiles.objects.get(creator=user)
+        return QuickFilesNode.objects.get(creator=user)
 
     def test_new_user_has_quickfiles(self):
         user = factories.UserFactory()
-        quickfiles_node = QuickFiles.objects.filter(creator=user)
+        quickfiles_node = QuickFilesNode.objects.filter(creator=user)
         assert quickfiles_node.exists()
 
     def test_quickfiles_is_public(self, quickfiles):
@@ -83,8 +83,8 @@ class TestQuickFiles:
         plain_user = factories.UserFactory(fullname='Kenny Omega')
         s_user = factories.UserFactory(fullname='Cody Runnels')
 
-        plain_user_quickfiles = QuickFiles.objects.get(creator=plain_user)
-        s_user_quickfiles = QuickFiles.objects.get(creator=s_user)
+        plain_user_quickfiles = QuickFilesNode.objects.get(creator=plain_user)
+        s_user_quickfiles = QuickFilesNode.objects.get(creator=s_user)
 
         assert plain_user_quickfiles.title == "Kenny Omega's Quick Files"
         assert s_user_quickfiles.title == "Cody Runnels' Quick Files"
@@ -102,7 +102,7 @@ class TestQuickFiles:
     def test_quickfiles_moves_files_on_merge(self, user, quickfiles):
         create_test_file(quickfiles, user, filename='Guerrillas_of_Destiny.pdf')
         other_user = factories.UserFactory()
-        other_quickfiles = QuickFiles.objects.get(creator=other_user)
+        other_quickfiles = QuickFilesNode.objects.get(creator=other_user)
         create_test_file(other_quickfiles, user, filename='Young_Bucks.pdf')
 
         user.merge_user(other_user)
@@ -119,8 +119,8 @@ class TestQuickFiles:
         third_user = factories.UserFactory()
 
         create_test_file(quickfiles, user, filename=name)
-        create_test_file(QuickFiles.objects.get(creator=other_user), other_user, filename=name)
-        create_test_file(QuickFiles.objects.get(creator=third_user), third_user, filename=name)
+        create_test_file(QuickFilesNode.objects.get(creator=other_user), other_user, filename=name)
+        create_test_file(QuickFilesNode.objects.get(creator=third_user), third_user, filename=name)
 
         user.merge_user(other_user)
         user.save()
@@ -140,8 +140,8 @@ class TestQuickFiles:
         third_user = factories.UserFactory()
 
         create_test_file(quickfiles, user, filename=name)
-        create_test_file(QuickFiles.objects.get(creator=other_user), other_user, filename=name)
-        create_test_file(QuickFiles.objects.get(creator=third_user), third_user, filename=name)
+        create_test_file(QuickFilesNode.objects.get(creator=other_user), other_user, filename=name)
+        create_test_file(QuickFilesNode.objects.get(creator=third_user), third_user, filename=name)
 
         user.merge_user(other_user)
         user.save()
@@ -161,8 +161,8 @@ class TestQuickFiles:
         create_test_file(quickfiles, user, filename='Woo (1).pdf')
         create_test_file(quickfiles, user, filename='Woo (3).pdf')
 
-        create_test_file(QuickFiles.objects.get(creator=other_user), other_user, filename='Woo.pdf')
-        create_test_file(QuickFiles.objects.get(creator=third_user), other_user, filename='Woo.pdf')
+        create_test_file(QuickFilesNode.objects.get(creator=other_user), other_user, filename='Woo.pdf')
+        create_test_file(QuickFilesNode.objects.get(creator=third_user), other_user, filename='Woo.pdf')
 
         user.merge_user(other_user)
         user.save()
@@ -182,7 +182,7 @@ class TestQuickFiles:
         create_test_file(quickfiles, user, filename='Woo (2).pdf')
 
         other_user = factories.UserFactory()
-        create_test_file(QuickFiles.objects.get(creator=other_user), other_user, filename='Woo (1).pdf')
+        create_test_file(QuickFilesNode.objects.get(creator=other_user), other_user, filename='Woo (1).pdf')
 
         with pytest.raises(ValueError):
             user.merge_user(other_user)

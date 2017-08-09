@@ -17,7 +17,7 @@ import website.search.search as search
 from website.search import elastic_search
 from website.search.util import build_query
 from website.search_migration.migrate import migrate
-from osf.models import Retraction, NodeLicense, Tag, QuickFiles
+from osf.models import Retraction, NodeLicense, Tag, QuickFilesNode
 from addons.osfstorage.models import OsfStorageFile
 
 from scripts.populate_institutions import main as populate_institutions
@@ -974,7 +974,7 @@ class TestSearchFiles(OsfTestCase):
         assert_equal(find[0]['deep_url'], deep_url)
 
     def test_quickfiles_files_appear_in_search(self):
-        quickfiles = QuickFiles.objects.get(creator=self.node.creator)
+        quickfiles = QuickFilesNode.objects.get(creator=self.node.creator)
         quickfiles_osf_storage = quickfiles.get_addon('osfstorage')
         quickfiles_root = quickfiles_osf_storage.get_root()
 
@@ -983,7 +983,7 @@ class TestSearchFiles(OsfTestCase):
         assert_equal(len(find), 1)
 
     def test_quickfiles_spam_user_files_do_not_appear_in_search(self):
-        quickfiles = QuickFiles.objects.get(creator=self.node.creator)
+        quickfiles = QuickFilesNode.objects.get(creator=self.node.creator)
         quickfiles_osf_storage = quickfiles.get_addon('osfstorage')
         quickfiles_root = quickfiles_osf_storage.get_root()
         quickfiles_root.append_file('GreenLight.mp3')

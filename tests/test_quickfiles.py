@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 import pytest
 
-from osf.models import QuickFiles, BaseFileNode
+from osf.models import QuickFilesNode, BaseFileNode
 from osf_tests.factories import AuthUserFactory
 
 from tests.base import test_app
@@ -18,7 +18,7 @@ def user():
 
 @pytest.fixture()
 def quickfiles(user):
-    return QuickFiles.objects.get(creator=user)
+    return QuickFilesNode.objects.get(creator=user)
 
 
 @pytest.fixture()
@@ -42,7 +42,7 @@ def post_to_quickfiles(quickfiles, user, flask_app, **kwargs):
 
 
 @pytest.mark.django_db
-class TestUserQuickFilesFileCreation:
+class TestUserQuickFilesNodeFileCreation:
 
     def test_create_file(self, quickfiles, user, post_to_quickfiles):
         name = 'WoopThereItIs.pdf'

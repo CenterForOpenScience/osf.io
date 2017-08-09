@@ -31,7 +31,7 @@ from django.db.models import Q
 from rest_framework import permissions as drf_permissions
 from rest_framework import generics
 from rest_framework.exceptions import NotAuthenticated, NotFound
-from osf.models import Contributor, ExternalAccount, QuickFiles, AbstractNode, PreprintService, OSFUser
+from osf.models import Contributor, ExternalAccount, QuickFilesNode, AbstractNode, PreprintService, OSFUser
 
 
 class UserMixin(object):
@@ -564,7 +564,7 @@ class UserQuickFiles(JSONAPIBaseView, generics.ListAPIView, WaterButlerMixin, Us
     view_name = 'user-files'
 
     def get_node(self, check_object_permissions):
-        return QuickFiles.objects.get_for_user(self.get_user(check_permissions=False))
+        return QuickFilesNode.objects.get_for_user(self.get_user(check_permissions=False))
 
     def get_default_queryset(self):
         self.kwargs[self.path_lookup_url_kwarg] = '/'

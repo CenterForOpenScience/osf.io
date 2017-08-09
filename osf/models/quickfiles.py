@@ -9,12 +9,12 @@ from website.exceptions import NodeStateError
 logger = logging.getLogger(__name__)
 
 
-class QuickFilesManager(AbstractNodeManager):
+class QuickFilesNodeManager(AbstractNodeManager):
 
     def create_for_user(self, user):
         possessive_title = get_quickfiles_project_title(user)
 
-        quickfiles, created = QuickFiles.objects.get_or_create(
+        quickfiles, created = QuickFilesNode.objects.get_or_create(
             title=possessive_title,
             creator=user
         )
@@ -27,34 +27,34 @@ class QuickFilesManager(AbstractNodeManager):
         return quickfiles
 
     def get_for_user(self, user):
-        return QuickFiles.objects.get(creator=user)
+        return QuickFilesNode.objects.get(creator=user)
 
 
-class QuickFiles(AbstractNode):
+class QuickFilesNode(AbstractNode):
     __guid_min_length__ = 10
 
-    objects = QuickFilesManager()
+    objects = QuickFilesNodeManager()
 
     def __init__(self, *args, **kwargs):
         kwargs['is_public'] = True
-        super(QuickFiles, self).__init__(*args, **kwargs)
+        super(QuickFilesNode, self).__init__(*args, **kwargs)
 
     def remove_node(self, auth, date=None):
-        raise NodeStateError('A QuickFiles node may not be deleted.')
+        raise NodeStateError('A QuickFilesNode may not be deleted.')
 
     def set_privacy(self, permissions, *args, **kwargs):
-        raise NodeStateError('You may not set privacy for QuickFiles.')
+        raise NodeStateError('You may not set privacy for a QuickFilesNode.')
 
     def add_contributor(self, contributor, *args, **kwargs):
-        raise NodeStateError('A QuickFiles node may not have additional contributors.')
+        raise NodeStateError('A QuickFilesNode may not have additional contributors.')
 
     def clone(self):
-        raise NodeStateError('QuickFiles may not be forked, used as a template, or registered.')
+        raise NodeStateError('A QuickFilesNode may not be forked, used as a template, or registered.')
 
     def add_addon(self, name, auth, log=True):
         if name != 'osfstorage':
-            raise NodeStateError('QuickFiles can only have the osfstorage addon.')
-        return super(QuickFiles, self).add_addon(name, auth, log)
+            raise NodeStateError('A QuickFilesNode can only have the osfstorage addon.')
+        return super(QuickFilesNode, self).add_addon(name, auth, log)
 
     @property
     def is_registration(self):

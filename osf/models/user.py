@@ -682,7 +682,7 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
             node.save()
 
         # - projects where the user was the creator
-        user.created.filter(is_bookmark_collection=False).exclude(type='osf.quickfiles').update(creator=self)
+        user.created.filter(is_bookmark_collection=False).exclude(type='osf.quickfilesnode').update(creator=self)
 
         # - file that the user has checked_out, import done here to prevent import error
         from osf.models import BaseFileNode
@@ -691,10 +691,10 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
             file_node.save()
 
         # - move files in the merged user's quickfiles node, checking for name conflicts
-        from osf.models import QuickFiles
+        from osf.models import QuickFilesNode
         from addons.osfstorage.models import OsfStorageFileNode
-        primary_quickfiles = QuickFiles.objects.get(creator=self)
-        merging_user_quickfiles = QuickFiles.objects.get(creator=user)
+        primary_quickfiles = QuickFilesNode.objects.get(creator=self)
+        merging_user_quickfiles = QuickFilesNode.objects.get(creator=user)
 
         files_in_merging_user_quickfiles = merging_user_quickfiles.files.filter(type='osf.osfstoragefile')
         for merging_user_file in files_in_merging_user_quickfiles:
@@ -803,9 +803,9 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
             self.update_search()
             self.update_search_nodes_contributors()
         if 'fullname' in dirty_fields:
-            from osf.models.quickfiles import get_quickfiles_project_title, QuickFiles
+            from osf.models.quickfiles import get_quickfiles_project_title, QuickFilesNode
 
-            quickfiles = QuickFiles.objects.filter(creator=self).first()
+            quickfiles = QuickFilesNode.objects.filter(creator=self).first()
             if quickfiles:
                 quickfiles.title = get_quickfiles_project_title(self)
                 quickfiles.save()
@@ -1484,7 +1484,7 @@ def create_bookmark_collection(sender, instance, created, **kwargs):
 
 @receiver(post_save, sender=OSFUser)
 def create_quickfiles_project(sender, instance, created, **kwargs):
-    from osf.models.quickfiles import QuickFiles
+    from osf.models.quickfiles import QuickFilesNode
 
     if created:
-        QuickFiles.objects.create_for_user(instance)
+        QuickFilesNode.objects.create_for_user(instance)
