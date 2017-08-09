@@ -1908,7 +1908,7 @@ var ActivityLogs = {
                 }
                 return m('.db-activity-item', [
                 m('', [ m('.db-log-avatar.m-r-xs', image),
-                    m.component(LogText, item)]),
+                    m.component(LogText.LogText, item)]),
                 m('.text-right', m('span.text-muted.m-r-xs', item.attributes.formattableDate.local))]);
 
             }) : '',
