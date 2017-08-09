@@ -78,7 +78,9 @@
                                                                  <b>${addon['full_name']}</b>
                                                              </div>
                                                              <div class="col-md-7">
-                                                                 % if addon.get('enabled'):
+                                                                 % if addon.get('default'):
+                                                                    <div class="text-muted">(This is a default addon)</div>
+                                                                 % elif addon.get('enabled'):
                                                                     <a class="text-muted">(already connected)</a>
                                                                  % else:
                                                                      <a>connect</a>
@@ -99,7 +101,7 @@
             % endif
         % endif  ## End Select Addons
 
-        % if any(addon['enabled'] for addon in addon_settings): ## Begin Configure Addons
+        % if any(addon['enabled'] and not addon['default'] for addon in addon_settings): ## Begin Configure Addons
             <div class="panel panel-default" id="configureAddon">
                 <span id="configureAddonsAnchor" class="anchor"></span>
                 <div class="panel-heading clearfix">

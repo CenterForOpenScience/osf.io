@@ -282,7 +282,7 @@ def node_addons(auth, node, **kwargs):
     addon_settings = []
     addons_available = [addon for addon in settings.ADDONS_AVAILABLE
                         if addon not in settings.SYSTEM_ADDED_ADDONS['node']
-                        and addon.short_name not in ('wiki', 'forward', 'twofactor', 'osfstorage')]
+                        and addon.short_name not in ('wiki', 'forward', 'twofactor')]
 
     for addon in addons_available:
         addon_config = apps.get_app_config('addons_{}'.format(addon.short_name))
@@ -294,6 +294,7 @@ def node_addons(auth, node, **kwargs):
         config['addon_full_name'] = addon.full_name
         config['categories'] = addon.categories
         config['enabled'] = node.has_addon(addon.short_name)
+        config['default'] = addon.short_name in ['osfstorage']
         addon_settings.append(config)
 
     addon_settings = sorted(addon_settings, key=lambda addon: addon['full_name'].lower())
