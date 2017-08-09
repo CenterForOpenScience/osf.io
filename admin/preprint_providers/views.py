@@ -18,7 +18,8 @@ from osf.models.preprint_provider import rules_to_subjects
 
 # When preprint_providers exclusively use Subject relations for creation, set this to False
 SHOW_TAXONOMIES_IN_PREPRINT_PROVIDER_CREATE = True
-FIELDS_TO_NOT_IMPORT_EXPORT = ['access_token', 'share_source']
+#TODO: Add subjects back in when custom taxonomies are fully integrated
+FIELDS_TO_NOT_IMPORT_EXPORT = ['access_token', 'share_source', 'subjects_acceptable', 'subjects']
 
 
 class PreprintProviderList(PermissionRequiredMixin, ListView):
@@ -168,6 +169,7 @@ class ExportPreprintProvider(PermissionRequiredMixin, View):
         cleaned_data = json.loads(data)[0]
         cleaned_fields = {key: value for key, value in cleaned_data['fields'].iteritems() if key not in FIELDS_TO_NOT_IMPORT_EXPORT}
         cleaned_fields['licenses_acceptable'] = [node_license.license_id for node_license in preprint_provider.licenses_acceptable.all()]
+        cleaned_fields['default_license'] = preprint_provider.default_license.license_id if preprint_provider.default_license else ''
         cleaned_fields['subjects'] = self.serialize_subjects(preprint_provider)
         cleaned_data['fields'] = cleaned_fields
         filename = '{}_export.json'.format(preprint_provider.name)
@@ -237,7 +239,7 @@ class ImportPreprintProvider(PermissionRequiredMixin, View):
     def parse_file(self, f):
         parsed_file = ''
         for chunk in f.chunks():
-            parsed_file += str(chunk)
+            parsed_file += chunk.decode('utf-8')
         return parsed_file
 
     def get_page_provider(self):
