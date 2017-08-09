@@ -1,9 +1,12 @@
+import faker
 import json
 
 import jwt
 import jwe
 
 from api.base.settings.defaults import JWE_SECRET, JWT_SECRET
+
+fake = faker.Factory.create()
 
 bad_jwe_secret = 'b23_terces_twj_nigol_sac_ipa_fso'
 bad_jwt_secret = 'b23_terces_ewj_nigol_sac_ipa_fso'
@@ -29,6 +32,7 @@ def make_payload_login_institution(institution_id, username='', fullname='', giv
 
 
 def make_payload_login_osf(email, password=None, remote_authenticated=False, verification_key=None, one_time_password=None):
+
     data = {
         'user': {
             'email': email,
@@ -37,6 +41,18 @@ def make_payload_login_osf(email, password=None, remote_authenticated=False, ver
             'verificationKey': verification_key,
             'oneTimePassword': one_time_password,
         }
+    }
+    return encrypt_request_data(data)
+
+
+def make_payload_login_external():
+    pass
+
+
+def make_payload_account(user_credentials):
+
+    data = {
+        'user': user_credentials
     }
     return encrypt_request_data(data)
 
