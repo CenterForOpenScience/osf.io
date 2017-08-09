@@ -81,7 +81,7 @@
 
                 % endif
 
-                % if addon_name == "forward":
+                % if addon_name == 'forward':
                     <div id="forwardScope" class="scripted">
 
                         <div id="forwardModal" class="p-lg" style="display: none;">
@@ -114,7 +114,7 @@
                     </div>
                 % endif
 
-                % if addon_name == "zotero" or addon_name == "mendeley":
+                % if addon_name == 'zotero' or addon_name == 'mendeley':
                     <script type="text/javascript">
                         window.contextVars = $.extend(true, {}, window.contextVars, {
                             ${addon_data['short_name'] | sjson , n }: {
