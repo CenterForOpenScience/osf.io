@@ -194,20 +194,6 @@ class TestViewProject(OsfTestCase):
         self.user = UserFactory()
         self.node = ProjectFactory(creator=self.user)
 
-    # related to https://github.com/CenterForOpenScience/openscienceframework.org/issues/1109
-    def test_view_project_pointer_count_excludes_folders(self):
-        pointer_project = ProjectFactory(is_public=True)  # project that points to another project
-        pointed_project = self.node  # project that other project points to
-        pointer_project.add_pointer(pointed_project, Auth(pointer_project.creator), save=True)
-
-        # Project is in a organizer collection
-        folder = CollectionFactory(creator=pointed_project.creator)
-        folder.add_pointer(pointed_project, Auth(pointed_project.creator), save=True)
-
-        result = _view_project(pointed_project, Auth(pointed_project.creator))
-        # pointer_project is included in count, but not folder
-        assert_equal(result['node']['points'], 1)
-
     def test_view_project_pending_registration_for_admin_contributor_does_contain_cancel_link(self):
         pending_reg = RegistrationFactory(project=self.node, archive=True)
         assert_true(pending_reg.is_pending_registration)

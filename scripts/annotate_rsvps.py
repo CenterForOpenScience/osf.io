@@ -18,8 +18,7 @@ from dateutil.parser import parse as parse_date
 from modularodm import Q
 from modularodm.exceptions import ModularOdmException
 
-from osf.models import OSFUser as User
-from website.models import Node, NodeLog
+from osf.models import OSFUser, AbstractNode, NodeLog
 
 
 logging.basicConfig(level=logging.INFO)
@@ -28,7 +27,7 @@ logger = logging.getLogger(__name__)
 
 def find_by_email(email):
     try:
-        return User.find_one(Q('username', 'iexact', email))
+        return OSFUser.find_one(Q('username', 'iexact', email))
     except ModularOdmException:
         return None
 
@@ -40,7 +39,7 @@ def find_by_name(name):
         return None
     if len(parts) < 2:
         return None
-    users = User.find(
+    users = OSFUser.find(
         reduce(
             lambda acc, value: acc & value,
             [
@@ -64,7 +63,7 @@ def logs_since(user, date):
 
 
 def nodes_since(user, date):
-    return Node.find(
+    return AbstractNode.find(
         Q('creator', 'eq', user._id) &
         Q('date_created', 'gt', date)
     )

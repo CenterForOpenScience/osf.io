@@ -13,7 +13,7 @@ from addons.dataverse.tests.utils import (
     create_mock_connection, DataverseAddonTestCase, create_external_account,
 )
 from framework.auth.decorators import Auth
-from tests.factories import AuthUserFactory
+from osf_tests.factories import AuthUserFactory
 from tests.base import OsfTestCase
 from addons.dataverse.serializer import DataverseSerializer
 from website.util import api_url_for
@@ -44,7 +44,7 @@ class TestAuthViews(DataverseAddonTestCase, OsfTestCase, unittest.TestCase):
 
     def test_user_config_get(self):
         url = api_url_for('dataverse_user_config_get')
-        new_user = AuthUserFactory.build()
+        new_user = AuthUserFactory()
         res = self.app.get(url, auth=new_user.auth)
 
         result = res.json.get('result')

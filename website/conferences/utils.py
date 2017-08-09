@@ -9,7 +9,7 @@ from framework.auth import Auth
 from website import util
 from website import settings
 from website.project import new_node
-from osf.models import AbstractNode as Node, MailRecord
+from osf.models import AbstractNode, MailRecord
 
 
 def record_message(message, nodes_created, users_created):
@@ -29,7 +29,7 @@ def get_or_create_node(title, user):
     :return: Tuple of (node, created)
     """
     try:
-        node = Node.find_one(
+        node = AbstractNode.find_one(
             Q('title', 'iexact', title)
             & Q('is_deleted', 'ne', True)
             & Q('contributors', 'eq', user)

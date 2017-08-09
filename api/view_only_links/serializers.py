@@ -9,7 +9,7 @@ from api.base.serializers import (
     BaseAPISerializer)
 from api.base.utils import absolute_reverse
 
-from osf.models import AbstractNode as Node
+from osf.models import AbstractNode
 
 
 class ViewOnlyLinkDetailSerializer(JSONAPISerializer):
@@ -80,7 +80,7 @@ class ViewOnlyLinkNodesSerializer(BaseAPISerializer):
 
         nodes_to_add = []
         for node_id in diff['add']:
-            node = Node.load(node_id)
+            node = AbstractNode.load(node_id)
             if not node:
                 raise NotFound
             nodes_to_add.append(node)
