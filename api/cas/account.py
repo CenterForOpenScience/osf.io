@@ -330,7 +330,7 @@ def send_password_reset_email(credential):
 
     # check throttle
     if not throttle_period_expired(user.email_last_sent, web_settings.SEND_EMAIL_THROTTLE):
-        raise api_exceptions.Throttled
+        raise api_exceptions.EmailThrottleActiveError
 
     # check user status
     try:
