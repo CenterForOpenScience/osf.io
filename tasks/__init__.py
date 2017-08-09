@@ -520,6 +520,7 @@ def test(ctx, all=False, syntax=False):
         flake(ctx)
         jshint(ctx)
 
+    test_js(ctx)
     test_osf(ctx)
     test_api1(ctx)
     test_api2(ctx)
