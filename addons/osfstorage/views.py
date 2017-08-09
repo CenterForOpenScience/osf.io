@@ -209,7 +209,7 @@ def osfstorage_create_child(file_node, payload, node_addon, **kwargs):
         raise HTTPError(httplib.BAD_REQUEST)
 
     if file_node.node.is_quickfiles and is_folder:
-        raise HTTPError(httplib.FORBIDDEN, data={'message_long': 'You may not create a folder for QuickFiles'})
+        raise HTTPError(httplib.BAD_REQUEST, data={'message_long': 'You may not create a folder for QuickFiles'})
 
     try:
         # Create a save point so that we can rollback and unlock

@@ -57,4 +57,4 @@ class TestUserQuickFilesFileCreation:
         name = 'new_illegal_folder'
         res = post_to_quickfiles(name, kind='folder', expect_errors=True)
 
-        assert res.status_code == 403
+        assert res.status_code == 400
