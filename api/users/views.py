@@ -567,8 +567,8 @@ class UserQuickFiles(JSONAPIBaseView, generics.ListAPIView, WaterButlerMixin, Us
         return QuickFiles.objects.get_for_user(self.get_user(check_permissions=False))
 
     def get_default_queryset(self):
-        self.kwargs['path'] = '/'
-        self.kwargs['provider'] = 'osfstorage'
+        self.kwargs[self.path_lookup_url_kwarg] = '/'
+        self.kwargs[self.provider_lookup_url_kwarg] = 'osfstorage'
         files_list = self.fetch_from_waterbutler()
 
         return files_list.children.all()
