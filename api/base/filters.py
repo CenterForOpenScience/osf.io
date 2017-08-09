@@ -541,10 +541,12 @@ class ListFilterMixin(FilterMixin):
         if filters:
             for key, field_names in filters.iteritems():
                 for field_name, data in field_names.iteritems():
-                    if isinstance(queryset, list):
-                        queryset = self.get_filtered_queryset(field_name, data, queryset)
-                    else:
-                        queryset = self.filter_by_field(queryset, field_name=field_name, operation=data)
+                    operations = data if isinstance(data, list) else [data]
+                    for operation in operations:
+                        if isinstance(queryset, list):
+                            queryset = self.get_filtered_queryset(field_name, operation, queryset)
+                        else:
+                            queryset = self.filter_by_field(queryset, field_name, operation)
         return queryset
 
     def filter_by_field(self, queryset, field_name, operation):
@@ -581,7 +583,7 @@ class ListFilterMixin(FilterMixin):
             if operation['value'] not in (list(), tuple()):
                 operation['source_field_name'] = '_contributors__guids___id'
                 operation['op'] = 'iexact'
-        if operation['source_field_name'] == 'kind':
+        if field_name == 'kind':
             operation['source_field_name'] = 'is_file'
             # The value should be boolean
             operation['value'] = operation['value'] == 'file'

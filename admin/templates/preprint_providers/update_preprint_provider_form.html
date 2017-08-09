@@ -9,8 +9,9 @@
             var DESCRIPTION_CONFIG = $.extend({
                 selector:'textarea[name=description]',
                 valid_elements: '*[*]',
-                plugins: 'link preview',
-                toolbar: 'bold italic underline | undo redo | link | preview',
+                plugins: 'link preview code',
+                end_container_on_empty_block: true,
+                toolbar: 'bold italic underline | undo redo | link | code | preview',
                 forced_root_block: ''
             }, TINYMCE_BASE_CONFIG);
 
@@ -18,8 +19,13 @@
                 selector:'textarea[name=advisory_board]',
                 content_css: 'https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css',
                 valid_elements: '*[*]',
-                plugins: 'link lists preview',
-                toolbar: 'bold italic underline | undo redo | link | bullist | preview'
+                style_formats: [
+                    {title: 'two column', block: 'div', classes: 'col-xs-6', wrapper: true, exact: false},
+                ],
+                style_formats_merge: true,
+                end_container_on_empty_block: true,
+                plugins: 'link lists advlist preview code',
+                toolbar: 'bold italic underline | undo redo | link | bullist | code | preview'
             }, TINYMCE_BASE_CONFIG);
 
             var FOOTER_LINKS_CONFIG = $.extend({
@@ -33,6 +39,7 @@
                     {title: 'fontawesome 2x', selector: 'span.fa', classes: 'fa-2x'},
                 ],
                 style_formats_merge: true,
+                end_container_on_empty_block: true,
                 plugins: 'link image preview code fontawesome',
                 toolbar: 'bold italic underline | undo redo | link | image | fontawesome | code | preview ',
                 external_plugins: {
@@ -90,7 +97,11 @@
             <h4>Import from JSON</h4>
             <p>Choose a JSON file that has been previously exported from another Preprint Provider detail page. This will
                 pre-populate the Preprint Provider change form with those details.</p>
-            <form id="import-form" action = {% url 'preprint_providers:import' %} method="post" enctype="multipart/form-data">
+            {% if preprint_provider %}
+                <form action = {% url 'preprint_providers:import' preprint_provider_id=preprint_provider.id %} method="post" enctype="multipart/form-data" >
+            {% else %}
+                <form action = {% url 'preprint_providers:import' %} method="post" enctype="multipart/form-data" >
+            {% endif %}
                 {% csrf_token %}
                 {{ import_form.as_p }}
                 <input class="form-button" type="submit" value="Import" />

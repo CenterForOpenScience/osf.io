@@ -13,7 +13,7 @@ from django.shortcuts import redirect
 from admin.base import settings
 from admin.base.forms import ImportFileForm
 from admin.preprint_providers.forms import PreprintProviderForm
-from osf.models import PreprintProvider, Subject
+from osf.models import PreprintProvider, Subject, NodeLicense
 from osf.models.preprint_provider import rules_to_subjects
 
 # When preprint_providers exclusively use Subject relations for creation, set this to False
@@ -86,7 +86,12 @@ class PreprintProviderDisplay(PermissionRequiredMixin, DetailView):
         preprint_provider_attributes = model_to_dict(preprint_provider)
         kwargs.setdefault('page_number', self.request.GET.get('page', '1'))
 
-        preprint_provider_attributes['licenses_acceptable'] = preprint_provider.licenses_acceptable.values_list('name', flat=True)
+        licenses_acceptable = list(preprint_provider.licenses_acceptable.values_list('name', flat=True))
+        licenses_html = '<ul>'
+        for license in licenses_acceptable:
+            licenses_html += '<li>{}</li>'.format(license)
+        licenses_html += '</ul>'
+        preprint_provider_attributes['licenses_acceptable'] = licenses_html
 
         subject_html = '<ul class="three-cols">'
         for parent in preprint_provider.top_level_subjects:
@@ -162,12 +167,27 @@ class ExportPreprintProvider(PermissionRequiredMixin, View):
         data = serializers.serialize('json', [preprint_provider])
         cleaned_data = json.loads(data)[0]
         cleaned_fields = {key: value for key, value in cleaned_data['fields'].iteritems() if key not in FIELDS_TO_NOT_IMPORT_EXPORT}
+        cleaned_fields['licenses_acceptable'] = [node_license.license_id for node_license in preprint_provider.licenses_acceptable.all()]
+        cleaned_fields['subjects'] = self.serialize_subjects(preprint_provider)
         cleaned_data['fields'] = cleaned_fields
         filename = '{}_export.json'.format(preprint_provider.name)
         response = HttpResponse(json.dumps(cleaned_data), content_type='text/json')
         response['Content-Disposition'] = 'attachment; filename={}'.format(filename)
         return response
 
+    def serialize_subjects(self, provider):
+        if provider._id != 'osf':
+            result = {}
+            result['include'] = []
+            result['exclude'] = []
+            result['custom'] = {
+                subject.text: {
+                    'parent': subject.parent.text if subject.parent else '',
+                    'bepress': subject.bepress_subject.text
+                }
+                for subject in provider.subjects.all()
+            }
+            return result
 
 class DeletePreprintProvider(PermissionRequiredMixin, DeleteView):
     permission_required = 'osf.delete_preprintprovider'
@@ -211,13 +231,46 @@ class ImportPreprintProvider(PermissionRequiredMixin, View):
             file_json = json.loads(file_str)
             # make sure not to import an exported access token for SHARE
             cleaned_result = {key: value for key, value in file_json['fields'].iteritems() if key not in FIELDS_TO_NOT_IMPORT_EXPORT}
-            return JsonResponse(cleaned_result)
+            preprint_provider = self.create_or_update_provider(cleaned_result)
+            return redirect('preprint_providers:detail', preprint_provider_id=preprint_provider.id)
 
     def parse_file(self, f):
         parsed_file = ''
         for chunk in f.chunks():
             parsed_file += str(chunk)
         return parsed_file
+
+    def get_page_provider(self):
+        page_provider_id = self.kwargs.get('preprint_provider_id', '')
+        if page_provider_id:
+            return PreprintProvider.objects.get(id=page_provider_id)
+
+    def add_subjects(self, provider, subject_data):
+        from osf.management.commands.populate_custom_taxonomies import migrate
+        migrate(provider._id, subject_data)
+
+    def create_or_update_provider(self, provider_data):
+        provider = self.get_page_provider()
+        licenses = [NodeLicense.objects.get(license_id=license_id) for license_id in provider_data.pop('licenses_acceptable', [])]
+        default_license = provider_data.pop('default_license', False)
+        subject_data = provider_data.pop('subjects', False)
+
+        if provider:
+            for key, val in provider_data.iteritems():
+                setattr(provider, key, val)
+        else:
+            provider = PreprintProvider(**provider_data)
+
+        provider.save()
+
+        if licenses:
+            provider.licenses_acceptable = licenses
+        if default_license:
+            provider.default_license = NodeLicense.objects.get(license_id=default_license)
+        # Only adds the JSON taxonomy if there is no existing taxonomy data
+        if subject_data and not provider.subjects.count():
+            self.add_subjects(provider, subject_data)
+        return provider
 
 
 class SubjectDynamicUpdateView(PermissionRequiredMixin, View):

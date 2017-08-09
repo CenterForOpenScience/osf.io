@@ -24,10 +24,10 @@ from website.exceptions import (
     InvalidSanctionRejectionToken, InvalidSanctionApprovalToken, NodeStateError,
 )
 from website import tokens
-from osf.models import AbstractNode as Node
+from osf.models import AbstractNode
 from osf.models.sanctions import PreregCallbackMixin, Embargo
 from website.util import permissions
-from osf.models import Registration, Contributor, OSFUser as User, SpamStatus
+from osf.models import Registration, Contributor, OSFUser, SpamStatus
 
 DUMMY_TOKEN = tokens.encode({
     'dummy': 'token'
@@ -853,7 +853,7 @@ class RegistrationEmbargoViewsTestCase(OsfTestCase):
         assert_equal(res.json['urls']['registrations'], self.project.web_url_for('node_registrations'))
 
         # Last node directly registered from self.project
-        registration = Node.find(
+        registration = AbstractNode.find(
             Q('registered_from', 'eq', self.project)
         ).order_by('-registered_date')[0]
 
@@ -946,7 +946,7 @@ class RegistrationEmbargoViewsTestCase(OsfTestCase):
         assert_equal(res.json['urls']['registrations'], self.project.web_url_for('node_registrations'))
 
         # Last node directly registered from self.project
-        registration = Node.find(
+        registration = AbstractNode.find(
             Q('registered_from', 'eq', self.project)
         ).order_by('-registered_date')[0]
 
@@ -997,14 +997,10 @@ class RegistrationEmbargoViewsTestCase(OsfTestCase):
         )
         for user_id, embargo_tokens in self.registration.embargo.approval_state.iteritems():
             approval_token = embargo_tokens['approval_token']
-            self.registration.embargo.approve_embargo(User.load(user_id), approval_token)
+            self.registration.embargo.approve_embargo(OSFUser.load(user_id), approval_token)
         self.registration.save()
 
-        res = self.app.post(
-            self.registration.api_url_for('project_set_privacy', permissions='public'),
-            auth=self.user.auth,
-        )
-        assert_equal(res.status_code, 200)
+        self.registration.set_privacy('public', Auth(self.registration.creator))
         for reg in self.registration.node_and_primary_descendants():
             reg.reload()
             assert_false(reg.is_public)
@@ -1035,14 +1031,10 @@ class RegistrationEmbargoViewsTestCase(OsfTestCase):
         )
         for user_id, embargo_tokens in self.registration.embargo.approval_state.iteritems():
             approval_token = embargo_tokens['approval_token']
-            self.registration.embargo.approve_embargo(User.load(user_id), approval_token)
+            self.registration.embargo.approve_embargo(OSFUser.load(user_id), approval_token)
         self.registration.save()
 
-        res = self.app.post(
-            self.registration.api_url_for('project_set_privacy', permissions='public'),
-            auth=self.user.auth,
-        )
-        assert_equal(res.status_code, 200)
+        self.registration.set_privacy('public', Auth(self.registration.creator))
         for admin in self.registration.admin_contributors:
             assert_true(any([each[0][0] == admin.username for each in mock_send_mail.call_args_list]))
 
@@ -1062,14 +1054,10 @@ class RegistrationEmbargoViewsTestCase(OsfTestCase):
         )
         for user_id, embargo_tokens in registration.embargo.approval_state.iteritems():
             approval_token = embargo_tokens['approval_token']
-            registration.embargo.approve_embargo(User.load(user_id), approval_token)
+            registration.embargo.approve_embargo(OSFUser.load(user_id), approval_token)
         self.registration.save()
 
-        res = self.app.post(
-            registration.api_url_for('project_set_privacy', permissions='public'),
-            auth=self.user.auth
-        )
-        assert_equal(res.status_code, 200)
+        registration.set_privacy('public', Auth(self.registration.creator))
         asked_admins = [(admin._id, n._id) for admin, n in mock_ask.call_args[0][0]]
         for admin, node in registration.get_admin_contributors_recursive():
             assert_in((admin._id, node._id), asked_admins)

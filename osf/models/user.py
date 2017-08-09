@@ -9,7 +9,6 @@ from flask import Request as FlaskRequest
 from framework import analytics
 
 # OSF imports
-import framework.mongo
 import itsdangerous
 import pytz
 from dirtyfields import DirtyFieldsMixin
@@ -22,8 +21,9 @@ from django.dispatch import receiver
 from django.db.models.signals import post_save
 from django.db import models
 from django.utils import timezone
+
 from django_extensions.db.models import TimeStampedModel
-from framework.auth import Auth, signals
+from framework.auth import Auth, signals, utils
 from framework.auth.core import generate_verification_key
 from framework.auth.exceptions import (ChangePasswordError, ExpiredTokenError,
                                        InvalidTokenError,
@@ -31,7 +31,7 @@ from framework.auth.exceptions import (ChangePasswordError, ExpiredTokenError,
                                        MergeConflictError)
 from framework.exceptions import PermissionsError
 from framework.sessions.utils import remove_sessions_for_user
-from framework.mongo import get_cache_key
+from osf.utils.requests import get_current_request
 from modularodm.exceptions import NoResultsFound
 from osf.exceptions import reraise_django_validation_errors
 from osf.models.base import BaseModel, GuidMixin, GuidMixinQuerySet
@@ -150,7 +150,8 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
         'researchGate': u'https://researchgate.net/profile/{}',
         'academiaInstitution': u'https://{}',
         'academiaProfileID': u'.academia.edu/{}',
-        'baiduScholar': u'http://xueshu.baidu.com/scholarID/{}'
+        'baiduScholar': u'http://xueshu.baidu.com/scholarID/{}',
+        'ssrn': u'http://papers.ssrn.com/sol3/cf_dev/AbsByAuth.cfm?per_id={}'
     }
 
     # The primary email address for the account.
@@ -467,17 +468,32 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
 
     @property
     def csl_given_name(self):
-        parts = [self.given_name]
-        if self.middle_names:
-            parts.extend(each[0] for each in re.split(r'\s+', self.middle_names))
-        return ' '.join(parts)
+        return utils.generate_csl_given_name(self.given_name, self.middle_names, self.suffix)
 
-    @property
-    def csl_name(self):
-        return {
-            'family': self.family_name,
-            'given': self.csl_given_name,
-        }
+    def csl_name(self, node_id=None):
+        if self.is_registered:
+            name = self.fullname
+        else:
+            name = self.get_unclaimed_record(node_id)['name']
+
+        if self.family_name and self.given_name:
+            """If the user has a family and given name, use those"""
+            return {
+                'family': self.family_name,
+                'given': self.csl_given_name,
+            }
+        else:
+            """ If the user doesn't autofill his family and given name """
+            parsed = utils.impute_names(name)
+            given_name = parsed['given']
+            middle_names = parsed['middle']
+            family_name = parsed['family']
+            suffix = parsed['suffix']
+            csl_given_name = utils.generate_csl_given_name(given_name, middle_names, suffix)
+            return {
+                'family': family_name,
+                'given': csl_given_name,
+            }
 
     @property
     def contributor_to(self):
@@ -716,7 +732,7 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
 
         # we must call both methods to ensure the current session is cleared and all existing
         # sessions are revoked.
-        req = get_cache_key()
+        req = get_current_request()
         if isinstance(req, FlaskRequest):
             logout()
         remove_sessions_for_user(self)
@@ -1346,9 +1362,8 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
             self.affiliated_institutions.remove(inst)
             return True
 
-    def get_activity_points(self, db=None):
-        db = db or framework.mongo.database
-        return analytics.get_total_activity_count(self._primary_key, db=db)
+    def get_activity_points(self):
+        return analytics.get_total_activity_count(self._id)
 
     def get_or_create_cookie(self, secret=None):
         """Find the cookie for the given user
@@ -1396,9 +1411,6 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
             return None
 
         return cls.load(user_session.data.get('auth_user_id'))
-
-    def is_watching(self, node):
-        return self.watched.filter(id=node.id).exists()
 
     def get_node_comment_timestamps(self, target_id):
         """ Returns the timestamp for when comments were last viewed on a node, file or wiki.

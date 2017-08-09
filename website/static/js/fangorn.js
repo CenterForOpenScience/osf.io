@@ -375,7 +375,7 @@ function inheritFromParent(item, parent, fields) {
         item.data[field] = item.data[field] || parent.data[field];
     });
 
-    if(item.data.provider === 'github'){
+    if(item.data.provider === 'github' || item.data.provider === 'bitbucket'){
         item.data.branch = parent.data.branch;
     }
 }
@@ -544,7 +544,7 @@ function doItemOp(operation, to, from, rename, conflict) {
     }
 
     var options = {};
-    if(from.data.provider === 'github'){
+    if(from.data.provider === 'github' || from.data.provider === 'bitbucket'){
         options.branch = from.data.branch;
         moveSpec.branch = from.data.branch;
     }
@@ -1378,6 +1378,12 @@ function _fangornTitleColumnHelper(tb, item, col, nameTitle, toUrl, classNameOpt
             attrs = {
                 className: classNameOption,
                 onclick: function(event) {
+                    // Prevent gotoFileEvent from getting
+                    // called more than once after user has clicked once
+                    if (item.loading) {
+                        return false;
+                    }
+                    item.loading = true;
                     event.stopImmediatePropagation();
                     gotoFileEvent.call(tb, item, toUrl);
                 }
@@ -2513,7 +2519,8 @@ function allowedToMove(folder, item, mustBeIntra) {
     return (
         item.data.permissions.edit &&
         (!mustBeIntra || (item.data.provider === folder.data.provider && item.data.nodeId === folder.data.nodeId)) &&
-            !(item.data.provider === 'figshare' && item.data.extra && item.data.extra.status === 'public')
+        !(item.data.provider === 'figshare' && item.data.extra && item.data.extra.status === 'public') &&
+        (item.data.provider !== 'bitbucket')
     );
 }
 

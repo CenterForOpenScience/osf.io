@@ -21,7 +21,7 @@ from framework.routing import proxy_url
 from framework.auth.core import get_current_user_id
 from website.institutions.views import serialize_institution
 
-from osf.models import BaseFileNode, Guid, Institution, PreprintService
+from osf.models import BaseFileNode, Guid, Institution, PreprintService, AbstractNode
 from website.settings import EXTERNAL_EMBER_APPS, INSTITUTION_DISPLAY_NODE_THRESHOLD
 from website.project.model import has_anonymous_link
 from website.util import permissions
@@ -60,23 +60,27 @@ def serialize_contributors_for_summary(node, max_count=3):
 
 
 def serialize_node_summary(node, auth, primary=True, show_path=False):
+    is_registration = node.is_registration
     summary = {
         'id': node._id,
         'primary': primary,
         'is_registration': node.is_registration,
         'is_fork': node.is_fork,
-        'is_pending_registration': node.is_pending_registration,
-        'is_retracted': node.is_retracted,
-        'is_pending_retraction': node.is_pending_retraction,
-        'embargo_end_date': node.embargo_end_date.strftime('%A, %b. %d, %Y') if node.embargo_end_date else False,
-        'is_pending_embargo': node.is_pending_embargo,
-        'is_embargoed': node.is_embargoed,
-        'archiving': node.archiving,
+        'is_pending_registration': node.is_pending_registration if is_registration else False,
+        'is_retracted': node.is_retracted if is_registration else False,
+        'is_pending_retraction': node.is_pending_retraction if is_registration else False,
+        'embargo_end_date': node.embargo_end_date.strftime('%A, %b. %d, %Y') if is_registration and node.embargo_end_date else False,
+        'is_pending_embargo': node.is_pending_embargo if is_registration else False,
+        'is_embargoed': node.is_embargoed if is_registration else False,
+        'archiving': node.archiving if is_registration else False,
     }
-    contributor_data = serialize_contributors_for_summary(node)
 
     parent_node = node.parent_node
+    user = auth.user
     if node.can_view(auth):
+        # Re-query node with contributor guids included to prevent N contributor queries
+        node = AbstractNode.objects.filter(pk=node.pk).include('contributor__user__guids').get()
+        contributor_data = serialize_contributors_for_summary(node)
         summary.update({
             'can_view': True,
             'can_edit': node.can_edit(auth),
@@ -86,9 +90,14 @@ def serialize_node_summary(node, auth, primary=True, show_path=False):
             'api_url': node.api_url,
             'title': node.title,
             'category': node.category,
+            'isPreprint': bool(node.preprint_file_id),
+            'childExists': node.nodes_active.exists(),
+            'is_admin': node.has_permission(user, permissions.ADMIN),
+            'is_contributor': node.is_contributor(user),
+            'logged_in': auth.logged_in,
             'node_type': node.project_or_component,
             'is_fork': node.is_fork,
-            'is_registration': node.is_registration,
+            'is_registration': is_registration,
             'anonymous': has_anonymous_link(node, auth),
             'registered_date': node.registered_date.strftime('%Y-%m-%d %H:%M UTC')
             if node.is_registration
@@ -246,7 +255,7 @@ def resolve_guid(guid, suffix=None):
         #   expected.
         if not hasattr(guid_object.referent, 'deep_url'):
             sentry.log_message(
-                'Guid `{}` resolved to an object with no deep_url'.format(guid)
+                'Guid resolved to an object with no deep_url', dict(guid=guid)
             )
             raise HTTPError(http.NOT_FOUND)
         referent = guid_object.referent

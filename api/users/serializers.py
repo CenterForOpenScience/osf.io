@@ -4,7 +4,7 @@ from modularodm.exceptions import ValidationValueError
 
 from api.base.exceptions import InvalidModelValueError
 from api.base.serializers import JSONAPIRelationshipSerializer, HideIfDisabled, BaseAPISerializer
-from osf.models import OSFUser as User
+from osf.models import OSFUser
 
 from api.base.serializers import (
     JSONAPISerializer, LinksField, RelationshipField, DevOnly, IDField, TypeField, ListDictField,
@@ -85,7 +85,7 @@ class UserSerializer(JSONAPISerializer):
         return user.profile_image_url(size=size)
 
     def update(self, instance, validated_data):
-        assert isinstance(instance, User), 'instance must be a User'
+        assert isinstance(instance, OSFUser), 'instance must be a User'
         for attr, value in validated_data.items():
             if 'social' == attr:
                 for key, val in value.items():
@@ -154,6 +154,11 @@ class UserDetailSerializer(UserSerializer):
     Overrides UserSerializer to make id required.
     """
     id = IDField(source='_id', required=True)
+
+
+class ReadEmailUserDetailSerializer(UserDetailSerializer):
+
+    email = ser.CharField(source='username', read_only=True)
 
 
 class RelatedInstitution(JSONAPIRelationshipSerializer):

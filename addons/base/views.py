@@ -32,7 +32,7 @@ from website import settings
 from addons.base import exceptions
 from addons.base import signals as file_signals
 from osf.models import (BaseFileNode, TrashedFileNode,
-                        OSFUser as User, AbstractNode as Node,
+                        OSFUser, AbstractNode,
                         NodeLog, DraftRegistration, MetaSchema)
 from website.profile.utils import get_gravatar
 from website.project import decorators
@@ -243,7 +243,7 @@ def get_auth(auth, **kwargs):
                 # NOTE: We assume that the request is an AJAX request
                 return json_renderer(err)
             if cas_resp.authenticated:
-                auth.user = User.load(cas_resp.user)
+                auth.user = OSFUser.load(cas_resp.user)
 
     try:
         data = jwt.decode(
@@ -256,7 +256,7 @@ def get_auth(auth, **kwargs):
         raise HTTPError(httplib.FORBIDDEN)
 
     if not auth.user:
-        auth.user = User.from_cookie(data.get('cookie', ''))
+        auth.user = OSFUser.from_cookie(data.get('cookie', ''))
 
     try:
         action = data['action']
@@ -265,7 +265,7 @@ def get_auth(auth, **kwargs):
     except KeyError:
         raise HTTPError(httplib.BAD_REQUEST)
 
-    node = Node.load(node_id)
+    node = AbstractNode.load(node_id)
     if not node:
         raise HTTPError(httplib.NOT_FOUND)
 
@@ -319,7 +319,7 @@ def create_waterbutler_log(payload, **kwargs):
         except KeyError:
             raise HTTPError(httplib.BAD_REQUEST)
 
-        user = User.load(auth['id'])
+        user = OSFUser.load(auth['id'])
         if user is None:
             raise HTTPError(httplib.BAD_REQUEST)
 
@@ -351,7 +351,7 @@ def create_waterbutler_log(payload, **kwargs):
                     action = LOG_ACTION_MAP['rename']
 
             destination_node = node  # For clarity
-            source_node = Node.load(payload['source']['nid'])
+            source_node = AbstractNode.load(payload['source']['nid'])
 
             source = source_node.get_addon(payload['source']['provider'])
             destination = node.get_addon(payload['destination']['provider'])
@@ -656,7 +656,7 @@ def addon_view_or_download_file(auth, path, provider, **kwargs):
 
     # TODO clean up these urls and unify what is used as a version identifier
     if request.method == 'HEAD':
-        return make_response(('', 200, {
+        return make_response(('', httplib.FOUND, {
             'Location': file_node.generate_waterbutler_url(**dict(extras, direct=None, version=version.identifier, _internal=extras.get('mode') == 'render'))
         }))
 
@@ -748,12 +748,23 @@ def addon_view_file(auth, node, file_node, version):
         'file_tags': list(file_node.tags.filter(system=False).values_list('name', flat=True)) if not file_node._state.adding else [],  # Only access ManyRelatedManager if saved
         'file_guid': file_node.get_guid()._id,
         'file_id': file_node._id,
-        'allow_comments': file_node.provider in settings.ADDONS_COMMENTABLE
+        'allow_comments': file_node.provider in settings.ADDONS_COMMENTABLE,
+        'checkout_user': file_node.checkout._id if file_node.checkout else None,
+        'pre_reg_checkout': is_pre_reg_checkout(node, file_node),
     })
 
     ret.update(rubeus.collect_addon_assets(node))
     return ret
 
+def is_pre_reg_checkout(node, file_node):
+    checkout_user = file_node.checkout
+    if not checkout_user:
+        return False
+    if checkout_user in node.contributors:
+        return False
+    if checkout_user.has_perm('osf.prereg_view'):
+        return node.draft_registrations_active.filter(registration_schema__name='Prereg Challenge').exists()
+    return False
 
 def get_archived_from_url(node, file_node):
     if file_node.copied_from:
