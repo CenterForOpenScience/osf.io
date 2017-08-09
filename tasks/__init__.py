@@ -538,6 +538,11 @@ def test_js(ctx):
     jshint(ctx)
     karma(ctx, single=True, browsers='PhantomJS')
 
+@task
+def test_travis_js(ctx):
+    jshint(ctx)
+    test_js(ctx)
+
 
 @task
 def test_travis_osf(ctx, numprocesses=None):

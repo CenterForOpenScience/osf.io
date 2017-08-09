@@ -25,6 +25,7 @@ env:
     - VARNISH_DEB="varnish_4.1.0-1~trusty_amd64.deb"
     - OSF_DB_PORT="54321"
   matrix:
+    - TEST_BUILD="js"
     - TEST_BUILD="osf"
     - TEST_BUILD="else"
     - TEST_BUILD="api1"
