@@ -1,52 +1,52 @@
-from nose.tools import *  # flake8: noqa
-
-from website.project.metadata.schemas import LATEST_SCHEMA_VERSION
-from website.project.model import Q
-from osf.models import MetaSchema
+import pytest
 
 from api.base.settings.defaults import API_BASE
-
-from tests.base import ApiTestCase
+from osf.models import MetaSchema
 from osf_tests.factories import (
-    AuthUserFactory
+    AuthUserFactory,
 )
-class TestMetaSchemaDetail(ApiTestCase):
-    def setUp(self):
-        super(TestMetaSchemaDetail, self).setUp()
-        self.user = AuthUserFactory()
-        self.schema = MetaSchema.find_one(Q('name', 'eq', 'Prereg Challenge') & Q('schema_version', 'eq', LATEST_SCHEMA_VERSION))
-        self.url = '/{}metaschemas/{}/'.format(API_BASE, self.schema._id)
+from website.project.metadata.schemas import LATEST_SCHEMA_VERSION
 
-    def test_pass_authenticated_user_can_retrieve_schema(self):
-        res = self.app.get(self.url, auth=self.user.auth)
-        assert_equal(res.status_code, 200)
+
+@pytest.mark.django_db
+class TestMetaSchemaDetail:
+
+    def test_metaschemas_detail_visibility(self, app):
+
+        user = AuthUserFactory()
+        schema = MetaSchema.objects.filter(name='Prereg Challenge', schema_version=LATEST_SCHEMA_VERSION).first()
+
+        #test_pass_authenticated_user_can_retrieve_schema
+        url = '/{}metaschemas/{}/'.format(API_BASE, schema._id)
+        res = app.get(url, auth=user.auth)
+        assert res.status_code == 200
         data = res.json['data']['attributes']
-        assert_equal(data['name'], 'Prereg Challenge')
-        assert_equal(data['schema_version'], 2)
-        assert_true(data['active'])
-        assert_equal(res.json['data']['id'], self.schema._id)
+        assert data['name'] == 'Prereg Challenge'
+        assert data['schema_version'] == 2
+        assert data['active']
+        assert res.json['data']['id'] == schema._id
 
-    def test_pass_unauthenticated_user_can_view_schemas(self):
-        res = self.app.get(self.url)
-        assert_equal(res.status_code, 200)
+        #test_pass_unauthenticated_user_can_view_schemas
+        res = app.get(url)
+        assert res.status_code == 200
 
-    def test_inactive_metaschema_returned(self):
+        #test_inactive_metaschema_returned
         inactive_schema = MetaSchema.objects.get(name='Election Research Preacceptance Competition', active=False)
         url = '/{}metaschemas/{}/'.format(API_BASE, inactive_schema._id)
-        res = self.app.get(url)
-        assert_equal(res.status_code, 200)
-        assert_equal(res.json['data']['attributes']['name'], 'Election Research Preacceptance Competition')
-        assert_equal(res.json['data']['attributes']['active'], False)
+        res = app.get(url)
+        assert res.status_code == 200
+        assert res.json['data']['attributes']['name'] == 'Election Research Preacceptance Competition'
+        assert res.json['data']['attributes']['active'] is False
 
-    def test_non_latest_version_metaschema_returned(self):
+        #test_non_latest_version_metaschema_returned
         old_schema = MetaSchema.objects.get(name='OSF-Standard Pre-Data Collection Registration', schema_version=1)
         url = '/{}metaschemas/{}/'.format(API_BASE, old_schema._id)
-        res = self.app.get(url)
-        assert_equal(res.status_code, 200)
-        assert_equal(res.json['data']['attributes']['name'], 'OSF-Standard Pre-Data Collection Registration')
-        assert_equal(res.json['data']['attributes']['schema_version'], 1)
+        res = app.get(url)
+        assert res.status_code == 200
+        assert res.json['data']['attributes']['name'] == 'OSF-Standard Pre-Data Collection Registration'
+        assert res.json['data']['attributes']['schema_version'] == 1
 
-    def test_invalid_metaschema_not_found(self):
-        self.url = '/{}metaschemas/garbage/'.format(API_BASE)
-        res = self.app.get(self.url, auth=self.user.auth, expect_errors=True)
-        assert_equal(res.status_code, 404)
+        #test_invalid_metaschema_not_found
+        url = '/{}metaschemas/garbage/'.format(API_BASE)
+        res = app.get(url, auth=user.auth, expect_errors=True)
+        assert res.status_code == 404

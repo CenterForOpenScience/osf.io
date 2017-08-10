@@ -1,10 +1,8 @@
 import pytest
-
 from urlparse import urlparse
 
 from api.base.settings.defaults import API_BASE
 from framework.auth.core import Auth
-from osf.models import AbstractNode as Node, NodeLog
 from osf_tests.factories import (
     CollectionFactory,
     NodeFactory,
@@ -12,6 +10,7 @@ from osf_tests.factories import (
     ProjectFactory,
     AuthUserFactory,
 )
+from osf.models import AbstractNode, NodeLog
 from tests.utils import assert_logs
 from website.project.signals import contributor_removed
 from website.util.sanitize import strip_html
@@ -127,7 +126,7 @@ class TestCollectionCreate:
         res = app.get('{}?filter[title]={}'.format(url_collection_list, title_collection), auth=user_one.auth)
         ids = [each['id'] for each in res.json['data']]
         assert pid in ids
-        collection = Node.load(pid)
+        collection = AbstractNode.load(pid)
         assert collection.logs.order_by('date').first().action == NodeLog.PROJECT_CREATED
         assert collection.title == title_collection
 
@@ -146,7 +145,7 @@ class TestCollectionCreate:
         assert res.status_code == 201
         assert res.content_type == 'application/vnd.api+json'
 
-        collection = Node.load(collection_id)
+        collection = AbstractNode.load(collection_id)
         assert collection.logs.latest().action == NodeLog.PROJECT_CREATED
         assert collection.title == strip_html(title)
 

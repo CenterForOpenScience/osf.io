@@ -5,6 +5,7 @@ import mock
 import pytest
 from nose.tools import *  # flake8: noqa
 
+from addons.bitbucket.tests.factories import BitbucketAccountFactory, BitbucketNodeSettingsFactory
 from addons.box.tests.factories import BoxAccountFactory, BoxNodeSettingsFactory
 from addons.dataverse.tests.factories import DataverseAccountFactory, DataverseNodeSettingsFactory
 from addons.dropbox.tests.factories import DropboxAccountFactory, DropboxNodeSettingsFactory
@@ -625,6 +626,18 @@ class TestNodeWikiAddon(NodeUnmanageableAddonTestSuiteMixin, ApiAddonTestCase):
 
 # OAUTH
 
+class TestNodeBitbucketAddon(NodeOAuthAddonTestSuiteMixin, ApiAddonTestCase):
+    short_name = 'bitbucket'
+    AccountFactory = BitbucketAccountFactory
+    NodeSettingsFactory = BitbucketNodeSettingsFactory
+
+    def _settings_kwargs(self, node, user_settings):
+        return {
+            'user_settings': self.user_settings,
+            'repo': 'mock',
+            'user': 'abc',
+            'owner': self.node
+        }
 
 class TestNodeDataverseAddon(NodeOAuthAddonTestSuiteMixin, ApiAddonTestCase):
     short_name = 'dataverse'

@@ -6,7 +6,7 @@ from datetime import datetime, timedelta
 
 from osf.models import OSFUser
 from website.app import init_app
-from framework.mongo.utils import paginated
+from framework.database import paginated
 from scripts.analytics.base import EventAnalytics
 
 logger = logging.getLogger(__name__)

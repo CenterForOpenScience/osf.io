@@ -2,7 +2,7 @@
 # encoding: utf-8
 
 from website.conferences.model import Conference
-from osf.models import OSFUser as User
+from osf.models import OSFUser
 from modularodm import Q
 from modularodm.exceptions import ModularOdmException
 from website.app import init_app
@@ -26,7 +26,7 @@ def add_conference(endpoint, name, active, admins, info_url=None,
                     logo_url=None, public_projects=None):
     try:
         admin_users = [
-            User.find_one(Q('username', 'iexact', admin))
+            OSFUser.find_one(Q('username', 'iexact', admin))
             for admin in admins
         ]
     except ModularOdmException:

@@ -1,41 +1,35 @@
-from nose.tools import *  # flake8: noqa
+import pytest
 
-from tests.base import ApiTestCase
-from osf.models.licenses import NodeLicense
 from api.base.settings.defaults import API_BASE
+from osf.models.licenses import NodeLicense
 
+@pytest.mark.django_db
+class TestLicenseList:
 
-class TestLicenseList(ApiTestCase):
-    def setUp(self):
-        super(TestLicenseList, self).setUp()
-        self.licenses = NodeLicense.find()
+    def test_license_list(self, app):
+        licenses = NodeLicense.objects.all()
+        license_node = licenses[0]
+        url_licenses = '/{}licenses/'.format(API_BASE)
+        res_licenses = app.get(url_licenses)
 
-    def test_license_list_success(self):
-        url = '/{}licenses/'.format(API_BASE)
-        res = self.app.get(url)
-        assert_equal(res.status_code, 200)
-        assert_equal(res.content_type, 'application/vnd.api+json')
+        #test_license_list_success
+        assert res_licenses.status_code == 200
+        assert res_licenses.content_type == 'application/vnd.api+json'
 
-    def test_license_list_count_correct(self):
-        url = '/{}licenses/'.format(API_BASE)
-        res = self.app.get(url)
-        total = res.json['links']['meta']['total']
-        assert_equal(total, self.licenses.count())
+        #test_license_list_count_correct
+        total = res_licenses.json['links']['meta']['total']
+        assert total == licenses.count()
 
-    def test_license_list_name_filter(self):
-        license = self.licenses[0]
-        name = license.name
-        url = '/{}licenses/?filter[name]={}'.format(API_BASE, name)
-        res = self.app.get(url)
+        #test_license_list_name_filter
+        url = '/{}licenses/?filter[name]={}'.format(API_BASE, license_node.name)
+        res = app.get(url)
         data = res.json['data'][0]
-        assert_equal(data['attributes']['name'], name)
-        assert_equal(data['id'], license._id)
+        assert data['attributes']['name'] == license_node.name
+        assert data['id'] == license_node._id
 
-    def test_license_list_id_filter(self):
-        license = self.licenses[0]
-        id = license._id
-        url = '/{}licenses/?filter[id]={}'.format(API_BASE, id)
-        res = self.app.get(url)
+        #test_license_list_id_filter(self, licenses):
+        url = '/{}licenses/?filter[id]={}'.format(API_BASE, license_node._id)
+        res = app.get(url)
         data = res.json['data'][0]
-        assert_equal(data['attributes']['name'], license.name)
-        assert_equal(data['id'], id)
+        assert data['attributes']['name'] == license_node.name
+        assert data['id'] == license_node._id

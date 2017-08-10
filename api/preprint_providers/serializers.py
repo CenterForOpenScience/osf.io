@@ -24,6 +24,7 @@ class PreprintProviderSerializer(JSONAPISerializer):
     footer_links = ser.CharField(required=False)
     share_source = ser.CharField(read_only=True)
     email_support = ser.CharField(required=False, allow_null=True)
+    preprint_word = ser.CharField(required=False, allow_null=True)
     allow_submissions = ser.BooleanField(read_only=True)
     additional_providers = ser.ListField(child=ser.CharField(), read_only=True)
 
@@ -34,6 +35,11 @@ class PreprintProviderSerializer(JSONAPISerializer):
 
     taxonomies = RelationshipField(
         related_view='preprint_providers:taxonomy-list',
+        related_view_kwargs={'provider_id': '<_id>'}
+    )
+
+    highlighted_taxonomies = RelationshipField(
+        related_view='preprint_providers:highlighted-taxonomy-list',
         related_view_kwargs={'provider_id': '<_id>'}
     )
 
