@@ -226,7 +226,6 @@ def auth_register(auth):
     :raise: http.BAD_REQUEST
     """
 
-    context = {}
     # a target campaign in `auth.campaigns`
     campaign = request.args.get('campaign')
     # the service url for CAS login or redirect url for OSF
@@ -242,22 +241,10 @@ def auth_register(auth):
 
     # land on register page
     if data['status_code'] == http.OK:
-        if data['must_login_warning']:
-            status.push_status_message(language.MUST_LOGIN, trust=False)
-        destination = cas.get_login_url(data['next_url'])
-        # "Already have and account?" link
-        context['non_institution_login_url'] = destination
-        # "Sign In" button in navigation bar, overwrite the default value set in routes.py
-        context['login_url'] = destination
-        # "Login through your institution" link
-        context['institution_login_url'] = cas.get_login_url(data['next_url'], campaign='institution')
-        context['preprint_campaigns'] = {k._id + '-preprints': {
-            'id': k._id,
-            'name': k.name,
-            'logo_path': settings.PREPRINTS_ASSETS + k._id + '/square_color_no_transparent.png'
-        } for k in PreprintProvider.objects.all() if k._id != 'osf'}
-        context['campaign'] = data['campaign']
-        return context, http.OK
+        # TODO: port this warning to CAS
+        # if data['must_login_warning']:
+        #     status.push_status_message(language.MUST_LOGIN, trust=False)
+        return redirect(cas.get_account_register_url(data['next_url']))
     # redirect to url
     elif data['status_code'] == http.FOUND:
         return redirect(data['next_url'])
@@ -266,6 +253,7 @@ def auth_register(auth):
         return auth_logout(redirect_url=data['next_url'])
 
     raise HTTPError(http.BAD_REQUEST)
+
 
 @collect_auth
 def auth_logout(auth, redirect_url=None, next_url=None):

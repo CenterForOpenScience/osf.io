@@ -575,7 +575,7 @@ def make_url_map(app):
             '/register/',
             'get',
             auth_views.auth_register,
-            OsfWebRenderer('public/register.mako', trust=False)
+            notemplate
         ),
 
         # osf login and campaign login

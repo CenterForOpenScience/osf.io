@@ -58,6 +58,15 @@ class CasClient(object):
     def __init__(self, base_url):
         self.BASE_URL = base_url
 
+    def get_account_register_url(self, service_url=None):
+
+        url = furl.furl(self.BASE_URL)
+        url.path.segments.append('account')
+        url.path.segments.append('register')
+        url.args.add('service', service_url if service_url else '')
+
+        return url.url
+
     def get_set_password_url(self, user_id, meetings=False):
         """
         Get CAS password set URL (for OSF4Meetings) or reset URL (for Forgot/Reset Password).
@@ -244,6 +253,17 @@ def parse_auth_header(header):
 
 def get_client():
     return CasClient(settings.CAS_SERVER_URL)
+
+
+def get_account_register_url(*arg, **kwargs):
+    """
+    Convenience function for getting the register URL for account creation.
+
+    :param arg: Same args that `CasClient.get_account_register_url` receives
+    :param kwargs: Same kwargs that `CasClient.get_account_register_url` receives
+    """
+
+    return get_client().get_account_register_url(*arg, **kwargs)
 
 
 def get_set_password_url(*arg, **kwargs):
