@@ -2,6 +2,7 @@ from __future__ import unicode_literals
 import logging
 
 from django.core.management.base import BaseCommand
+from django.db.models import F
 
 from scripts import utils as script_utils
 from osf.models import PreprintService
@@ -10,17 +11,16 @@ from website.preprints.tasks import on_preprint_updated
 logger = logging.getLogger(__name__)
 
 def update_share_preprint_modified_dates(dry_run=False):
-    dates_updated = 0
-    for preprint in PreprintService.objects.filter():
-        if preprint.node.date_modified > preprint.date_modified:
-            if not dry_run:
-                on_preprint_updated(preprint._id)
-            dates_updated += 1
-    return dates_updated
+    for preprint in PreprintService.objects.filter(date_modified__lt=F('node__date_modified')):
+        if dry_run:
+            logger.info('Would have sent ' + preprint._id + ' data to SHARE')
+        else:
+            on_preprint_updated(preprint._id)
+            logger.info(preprint._id + ' data sent to SHARE')
 
 class Command(BaseCommand):
     """
-    Send more accurate preprint modified dates to Share (max of node.date_modified and preprint.date_modified)
+    Send more accurate preprint modified dates to SHARE (sends updates if preprint.date_modified < node.date_modified)
     """
     def add_arguments(self, parser):
         super(Command, self).add_arguments(parser)
@@ -28,16 +28,11 @@ class Command(BaseCommand):
             '--dry',
             action='store_true',
             dest='dry_run',
-            help='Say how many preprint updates would be sent to share',
+            help='Say how many preprint updates would be sent to SHARE',
         )
 
     def handle(self, *args, **options):
         dry_run = options.get('dry_run', False)
         if not dry_run:
             script_utils.add_file_logger(logger, __file__)
-            dates_updated = update_share_preprint_modified_dates()
-            logger.info('Sent %d new preprint modified dates to Share' % dates_updated)
-
-        else:
-            dates_updated = update_share_preprint_modified_dates(dry_run=True)
-            logger.info('Would have sent %d new preprint modified dates to Share' % dates_updated)
+        update_share_preprint_modified_dates(dry_run)
