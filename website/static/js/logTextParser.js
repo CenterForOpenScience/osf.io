@@ -101,7 +101,9 @@ var returnTextParams = function (param, text, logObject, view_url) {
  * Returns a list of contributors to show in log as well as the trailing punctuation/text after each contributor.
  * If a contributor has a OSF profile, contributor is returned as a mithril link to user.
  * @param contributors {string} The list of contributors (OSF users or unregistered)
- * @returns [[]]
+ * @param maxShown {int} the number of contributors shown before saying "and # others"
+ * Note: if there is only 1 over maxShown, all contributors are shown
+ * @returns {array}
  */
 var getContributorList = function (contributors, maxShown){
        var contribList = [];
