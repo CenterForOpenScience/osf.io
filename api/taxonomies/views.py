@@ -50,6 +50,8 @@ class TaxonomyList(DeprecatedEndpointMixin, JSONAPIBaseView, generics.ListAPIVie
     view_name = 'taxonomy-list'
     max_version = '2.5'
 
+    ordering = ('-id',)
+
     # overrides ListAPIView
     def get_default_odm_query(self):
         return

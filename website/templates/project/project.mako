@@ -115,13 +115,6 @@
 
                     </div>
                     <!-- /ko -->
-                    % if 'badges' in addons_enabled and badges and badges['can_award']:
-                        <div class="btn-group">
-                            <button class="btn btn-primary" id="awardBadge" style="border-bottom-right-radius: 4px;border-top-right-radius: 4px;">
-                                <i class="fa fa-plus"></i> Award
-                            </button>
-                        </div>
-                    % endif
                     % if node["is_public"]:
                         <div class="btn-group" id="shareButtonsPopover"></div>
                     % endif

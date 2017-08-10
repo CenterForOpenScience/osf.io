@@ -27,7 +27,7 @@ from framework.exceptions import HTTPError
 from framework.flask import redirect  # VOL-aware redirect
 from framework.sessions.utils import remove_sessions_for_user, remove_session
 from framework.sessions import get_session
-from osf.models import OSFUser as User
+from osf.models import OSFUser
 from website import settings, mails, language
 from website.util import web_url_for
 from website.util.time import throttle_period_expired
@@ -53,7 +53,7 @@ def reset_password_get(auth, uid=None, token=None):
         return auth_logout(redirect_url=request.url)
 
     # Check if request bears a valid pair of `uid` and `token`
-    user_obj = User.load(uid)
+    user_obj = OSFUser.load(uid)
     if not (user_obj and user_obj.verify_password_token(token=token)):
         error_data = {
             'message_short': 'Invalid Request.',
@@ -85,7 +85,7 @@ def reset_password_post(uid=None, token=None):
     form = ResetPasswordForm(request.form)
 
     # Check if request bears a valid pair of `uid` and `token`
-    user_obj = User.load(uid)
+    user_obj = OSFUser.load(uid)
     if not (user_obj and user_obj.verify_password_token(token=token)):
         error_data = {
             'message_short': 'Invalid Request.',
@@ -464,7 +464,7 @@ def auth_email_logout(token, user):
             'message_long': 'The private link you used is expired.'
         })
     try:
-        user_merge = User.find_one(Q('emails__address', 'eq', unconfirmed_email))
+        user_merge = OSFUser.find_one(Q('emails__address', 'eq', unconfirmed_email))
     except NoResultsFound:
         user_merge = False
     if user_merge:
@@ -493,7 +493,7 @@ def external_login_confirm_email_get(auth, uid, token):
     :param token: the verification token
     """
 
-    user = User.load(uid)
+    user = OSFUser.load(uid)
     if not user:
         raise HTTPError(http.BAD_REQUEST)
 
@@ -583,7 +583,7 @@ def confirm_email_get(token, auth=None, **kwargs):
     HTTP Method: GET
     """
 
-    user = User.load(kwargs['uid'])
+    user = OSFUser.load(kwargs['uid'])
     is_merge = 'confirm_merge' in request.args
     is_initial_confirmation = not user.date_confirmed
     log_out = request.args.get('logout', None)
@@ -727,7 +727,7 @@ def send_confirm_email(user, email, renew=False, external_id_provider=None, exte
     )
 
     try:
-        merge_target = User.find_one(Q('emails__address', 'eq', email))
+        merge_target = OSFUser.find_one(Q('emails__address', 'eq', email))
     except NoResultsFound:
         merge_target = None
 
@@ -996,7 +996,7 @@ def external_login_email_post():
         else:
             # 1. create unconfirmed user with pending status
             external_identity[external_id_provider][external_id] = 'CREATE'
-            user = User.create_unconfirmed(
+            user = OSFUser.create_unconfirmed(
                 username=clean_email,
                 password=None,
                 fullname=fullname,

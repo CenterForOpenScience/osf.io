@@ -19,7 +19,7 @@ from framework.mongo import StoredObject
 
 from website import settings
 from addons.base import serializer, logger
-from osf.models import OSFUser as User, AbstractNode as Node
+from osf.models import OSFUser, AbstractNode
 from website.util import waterbutler_url_for
 
 from website.oauth.signals import oauth_complete
@@ -216,7 +216,7 @@ class AddonOAuthUserSettingsBase(AddonUserSettingsBase):
                 # Remove grant in `for` loop below
                 pass
 
-        if User.find(Q('external_accounts', 'eq', external_account._id)).count() == 1:
+        if OSFUser.find(Q('external_accounts', 'eq', external_account._id)).count() == 1:
             # Only this user is using the account, so revoke remote access as well.
             self.revoke_remote_oauth_access(external_account)
 
@@ -268,7 +268,7 @@ class AddonOAuthUserSettingsBase(AddonUserSettingsBase):
     def get_nodes_with_oauth_grants(self, external_account):
         # Generator of nodes which have grants for this external account
         for node_id, grants in self.oauth_grants.iteritems():
-            node = Node.load(node_id)
+            node = AbstractNode.load(node_id)
             if external_account._id in grants.keys() and not node.is_deleted:
                 yield node
 
@@ -337,7 +337,7 @@ class AddonOAuthUserSettingsBase(AddonUserSettingsBase):
         """When the user deactivates the addon, clear auth for connected nodes.
         """
         super(AddonOAuthUserSettingsBase, self).on_delete()
-        nodes = [Node.load(node_id) for node_id in self.oauth_grants.keys()]
+        nodes = [AbstractNode.load(node_id) for node_id in self.oauth_grants.keys()]
         for node in nodes:
             node_addon = node.get_addon(self.oauth_provider.short_name)
             if node_addon and node_addon.user_settings == self:

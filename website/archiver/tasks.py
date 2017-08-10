@@ -28,7 +28,7 @@ from website import settings
 from website.app import init_addons
 from osf.models import (
     ArchiveJob,
-    AbstractNode as Node,
+    AbstractNode,
     DraftRegistration,
 )
 
@@ -301,7 +301,7 @@ def archive_success(dst_pk, job_pk):
     seemingly redundant calls.
     """
     create_app_context()
-    dst = Node.load(dst_pk)
+    dst = AbstractNode.load(dst_pk)
     # The filePicker extension addded with the Prereg Challenge registration schema
     # allows users to select files in OSFStorage as their response to some schema
     # questions. These files are references to files on the unregistered Node, and

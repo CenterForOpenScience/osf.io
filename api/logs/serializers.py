@@ -9,7 +9,7 @@ from api.base.serializers import (
     DateByVersion,
 )
 
-from osf.models import OSFUser, AbstractNode as Node, PreprintService
+from osf.models import OSFUser, AbstractNode, PreprintService
 from website.util import permissions as osf_permissions
 
 
@@ -34,7 +34,7 @@ class NodeLogFileParamsSerializer(RestrictedDictSerializer):
     def get_node_title(self, obj):
         user = self.context['request'].user
         node_title = obj['node']['title']
-        node = Node.load(obj['node']['_id'])
+        node = AbstractNode.load(obj['node']['_id'])
         if not user.is_authenticated:
             if node.is_public:
                 return node_title
@@ -54,6 +54,8 @@ class NodeLogParamsSerializer(RestrictedDictSerializer):
     forward_url = ser.CharField(read_only=True)
     github_user = ser.CharField(read_only=True, source='github.user')
     github_repo = ser.CharField(read_only=True, source='github.repo')
+    bitbucket_user = ser.CharField(read_only=True, source='bitbucket.user')
+    bitbucket_repo = ser.CharField(read_only=True, source='bitbucket.repo')
     file = ser.DictField(read_only=True)
     filename = ser.CharField(read_only=True)
     kind = ser.CharField(read_only=True)
@@ -99,14 +101,14 @@ class NodeLogParamsSerializer(RestrictedDictSerializer):
     def get_params_node(self, obj):
         node_id = obj.get('node', None)
         if node_id:
-            node = Node.objects.filter(guids___id=node_id).values('title').get()
+            node = AbstractNode.objects.filter(guids___id=node_id).values('title').get()
             return {'id': node_id, 'title': node['title']}
         return None
 
     def get_params_project(self, obj):
         project_id = obj.get('project', None)
         if project_id:
-            node = Node.objects.filter(guids___id=project_id).values('title').get()
+            node = AbstractNode.objects.filter(guids___id=project_id).values('title').get()
             return {'id': project_id, 'title': node['title']}
         return None
 

@@ -250,7 +250,6 @@ ADDON_CATEGORIES = [
 ]
 
 SYSTEM_ADDED_ADDONS = {
-    # 'user': ['badges'],
     'user': [],
     'node': [],
 }
@@ -404,7 +403,6 @@ CELERY_RESULT_BACKEND = 'amqp://'
 # Modules to import when celery launches
 CELERY_IMPORTS = (
     'framework.celery_tasks',
-    'framework.celery_tasks.signals',
     'framework.email.tasks',
     'website.mailchimp_utils',
     'website.notifications.tasks',

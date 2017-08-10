@@ -12,7 +12,7 @@ import mock
 from nose.tools import *  # flake8: noqa (PEP8 asserts)
 import re
 
-from framework.mongo.utils import to_mongo_key
+from addons.wiki.utils import to_mongo_key
 from framework.auth import exceptions as auth_exc
 from framework.auth.core import Auth
 from tests.base import OsfTestCase
@@ -21,7 +21,6 @@ from osf_tests.factories import (UserFactory, AuthUserFactory, ProjectFactory, N
                              RegistrationFactory,  UnregUserFactory, UnconfirmedUserFactory,
                              PrivateLinkFactory, PreprintFactory, PreprintProviderFactory, SubjectFactory)
 from addons.wiki.tests.factories import NodeWikiFactory
-from osf.models import AbstractNode as Node
 from website import settings, language
 from addons.osfstorage.models import OsfStorageFile
 from website.util import web_url_for, api_url_for, permissions
@@ -136,25 +135,6 @@ class TestAUser(OsfTestCase):
             save=True)
         res = self.app.get('/{0}/settings/'.format(project._primary_key), auth=self.auth, auto_follow=True)
         assert_in('OSF Storage', res)
-
-    @unittest.skip("Can't test this, since logs are dynamically loaded")
-    def test_sees_log_events_on_watched_projects(self):
-        # Another user has a public project
-        u2 = UserFactory(username='bono@u2.com', fullname='Bono')
-        project = ProjectFactory(creator=u2, is_public=True)
-        project.add_contributor(u2)
-        auth = Auth(user=u2)
-        project.save()
-        # User watches the project
-        watch_config = WatchConfigFactory(node=project)
-        self.user.watch(watch_config)
-        self.user.save()
-        # Goes to her dashboard, already logged in
-        res = self.app.get('/dashboard/', auth=self.auth, auto_follow=True)
-        # Sees logs for the watched project
-        assert_in('Watched Projects', res)  # Watched Projects header
-        # The log action is in the feed
-        assert_in(project.title, res)
 
     def test_sees_correct_title_home_page(self):
         # User goes to homepage
