@@ -154,7 +154,7 @@
                             <!-- TODO: Duplication here: Put this in a KO template -->
                             <table class="table-condensed">
                                 <thead data-bind="visible: selection().length">
-                                    <th width="6%"></th>
+                                    <th width="5%"></th>
                                     <th width="10%"></th>
                                     <th>Name</th>
                                     <th>
@@ -206,10 +206,12 @@
                                             </select>
                                         </td>
                                         <td>
-                                            <input
-                                                type="checkbox" class="biblio visible-filter"
-                                                data-bind="checked: visible"
-                                            />
+                                            <span class="m-l-sm">
+                                                <input
+                                                    type="checkbox" class="biblio visible-filter"
+                                                    data-bind="checked: visible"
+                                                />
+                                            </span>
                                         </td>
                                     </tr>
                                 </tbody>
