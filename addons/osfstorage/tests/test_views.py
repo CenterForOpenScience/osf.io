@@ -26,7 +26,7 @@ from addons.osfstorage import utils
 from addons.base.views import make_auth
 from addons.osfstorage import settings as storage_settings
 
-from tests.factories import ProjectFactory
+from osf_tests.factories import ProjectFactory
 
 def create_record_with_version(path, node_settings, **kwargs):
     version = factories.FileVersionFactory(**kwargs)

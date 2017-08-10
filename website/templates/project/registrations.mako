@@ -16,7 +16,7 @@
   <div role="tabpanel" class="tab-pane active" id="registrations">
     <div class="row" style="min-height: 150px; padding-top:20px;">
       <div class="col-xs-9 col-sm-8">
-        % if node["registration_count"]:
+        % if node["registrations"]:
           ${render_nodes.render_nodes(nodes=node['registrations'], sortable=False, user=user, pluralized_node_type='registrations', show_path=False, include_js=True)}
     ## Uncomment to disable registering Components
     ##% elif node['node_type'] != 'project':
