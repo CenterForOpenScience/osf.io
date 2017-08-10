@@ -159,59 +159,60 @@
 
                     </div>
                 </div>
+            % endif  ## End Select Addons
+        % endif
 
-                % if addon_enabled_settings:
-                    <span id="configureAddonsAnchor" class="anchor"></span>
+% if addon_enabled_settings:
+    <span id="configureAddonsAnchor" class="anchor"></span>
 
-                    <div id="configureAddons" class="panel panel-default">
+    <div id="configureAddons" class="panel panel-default">
 
-                        <div class="panel-heading clearfix">
-                            <h3 class="panel-title">Configure Add-ons</h3>
-                        </div>
-                        <div class="panel-body">
+        <div class="panel-heading clearfix">
+            <h3 class="panel-title">Configure Add-ons</h3>
+        </div>
+        <div class="panel-body">
 
-                        % for node_settings_dict in addon_enabled_settings or []:
-                            ${render_node_settings(node_settings_dict)}
+            % for node_settings_dict in addon_enabled_settings or []:
+                %if 'write' in user['permissions'] or (node_settings_dict.get('is_owner', None) is not None and node_settings_dict['is_owner']):
+                    ${render_node_settings(node_settings_dict)}
+                    % if not loop.last:
+                        <hr />
+                    % endif
+                %endif
+            % endfor
 
-                                % if not loop.last:
-                                    <hr />
-                                % endif
+        </div>
+    </div>
 
-                        % endfor
+% endif
 
-                        </div>
-                    </div>
 
-                % endif
 
-            % endif
 
-        % endif  ## End Select Addons
-
-        % if 'write' in user['permissions']:  ## Begin Wiki Config
+% if 'write' in user['permissions']:  ## Begin Wiki Config
             % if not node['is_registration']:
-                <div class="panel panel-default">
-                    <span id="configureWikiAnchor" class="anchor"></span>
-                    <div class="panel-heading clearfix">
-                        <h3 class="panel-title">Wiki</h3>
-                    </div>
+    <div class="panel panel-default">
+        <span id="configureWikiAnchor" class="anchor"></span>
+        <div class="panel-heading clearfix">
+            <h3 class="panel-title">Wiki</h3>
+        </div>
 
-                <div class="panel-body">
-                    %if wiki:
-                        <form id="selectWikiForm">
-                            <div>
-                                <label>
-                                    <input
-                                            type="checkbox"
-                                            name="${wiki.short_name}"
-                                            class="wiki-select"
-                                            data-bind="checked: enabled"
-                                    />
-                                    Enable the wiki in <b>${node['title']}</b>.
-                                </label>
+        <div class="panel-body">
+            %if wiki:
+                <form id="selectWikiForm">
+                    <div>
+                        <label>
+                            <input
+                                    type="checkbox"
+                                    name="${wiki.short_name}"
+                                    class="wiki-select"
+                                    data-bind="checked: enabled"
+                            />
+                            Enable the wiki in <b>${node['title']}</b>.
+                        </label>
 
-                                <div data-bind="visible: enabled()" class="text-success" style="padding-left: 15px">
-                                    <p data-bind="text: wikiMessage"></p>
+                        <div data-bind="visible: enabled()" class="text-success" style="padding-left: 15px">
+                            <p data-bind="text: wikiMessage"></p>
                                 </div>
                                 <div data-bind="visible: !enabled()" class="text-danger" style="padding-left: 15px">
                                     <p data-bind="text: wikiMessage"></p>
