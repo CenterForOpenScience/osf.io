@@ -922,8 +922,6 @@ def make_url_map(app):
             notemplate
         ),
 
-        # # TODO: Add API endpoint for tags
-        # Rule('/tags/<tag>/', 'get', project_views.tag.project_tag, OsfWebRenderer('tags.mako', trust=False)),
         Rule('/project/new/<pid>/beforeTemplate/', 'get',
              project_views.node.project_before_template, json_renderer),
 

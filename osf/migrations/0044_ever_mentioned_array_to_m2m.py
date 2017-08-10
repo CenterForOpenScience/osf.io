@@ -4,6 +4,7 @@ from __future__ import unicode_literals
 
 from django.conf import settings
 from django.db import migrations, models
+from osf.utils.migrations import disable_auto_now_fields
 
 
 def migrate_user_guid_array_to_m2m(state, schema):
@@ -13,13 +14,13 @@ def migrate_user_guid_array_to_m2m(state, schema):
     for comment in Comment.objects.exclude(_ever_mentioned=[]).all():
         for user in AddableOSFUser.objects.filter(id__in=[FindableOSFUser.objects.get(guids___id=_id).id for _id in comment._ever_mentioned]):
             comment.ever_mentioned.add(user)
-        comment.save()
 
 def unmigrate_user_guid_array_from_m2m(state, schema):
     Comment = state.get_model('osf', 'comment')
-    for comment in Comment.objects.exclude(ever_mentioned__isnull=False).all():
-        comment._ever_mentioned = list(comment.ever_mentioned.values_list('guids___id', flat=True))
-        comment.save()
+    with disable_auto_now_fields(Comment):
+        for comment in Comment.objects.exclude(ever_mentioned__isnull=False).all():
+            comment._ever_mentioned = list(comment.ever_mentioned.values_list('guids___id', flat=True))
+            comment.save()
 
 class Migration(migrations.Migration):
 

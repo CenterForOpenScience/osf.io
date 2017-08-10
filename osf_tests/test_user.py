@@ -1756,7 +1756,9 @@ class TestUserValidation(OsfTestCase):
         self.user.social = {
             'foo': 'bar',
         }
-        self.user.save()
+        with pytest.raises(ValidationError) as exc_info:
+            self.user.save()
+        assert isinstance(exc_info.value.args[0], dict)
         assert self.user.social_links == {}
 
     def test_validate_jobs_valid(self):

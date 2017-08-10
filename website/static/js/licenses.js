@@ -1,6 +1,6 @@
 var $ = require('jquery');
 
-var licenses = require('json!list-of-licenses');
+var licenses = require('json!@centerforopenscience/list-of-licenses');
 delete licenses.AFL3;
 var DEFAULT_LICENSE, OTHER_LICENSE;
 var list = $.map(licenses, function(value, key) {
