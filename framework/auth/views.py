@@ -14,7 +14,7 @@ from framework import auth as framework_auth
 from framework.auth import exceptions
 from framework.auth import cas, campaigns
 from framework.auth import logout as osf_logout
-from framework.auth.exceptions import DuplicateEmailError, ExpiredTokenError, InvalidTokenError
+from framework.auth.exceptions import DuplicateEmailError, ExpiredTokenError, InvalidTokenError, ChangePasswordError
 from framework.auth.core import generate_verification_key
 from framework.auth.decorators import block_bing_preview, collect_auth, must_be_logged_in
 from framework.auth.utils import validate_recaptcha
@@ -512,6 +512,7 @@ def send_confirm_email(user, email, renew=False, external_id_provider=None, exte
 
     # best-of-practice design: ask user to submit the verification code
     verification_code = user.get_confirmation_token(email, force=True, renew=renew)
+    cas_confirmation_url = cas.get_confirmation_url(user._id)
 
     try:
         merge_target = OSFUser.find_one(Q('emails__address', 'eq', email))
@@ -552,6 +553,7 @@ def send_confirm_email(user, email, renew=False, external_id_provider=None, exte
         user=user,
         confirmation_url=confirmation_url,
         verification_code=verification_code,
+        cas_confirmation_url=cas_confirmation_url,
         email=email,
         merge_target=merge_target,
         external_id_provider=external_id_provider,
@@ -561,7 +563,9 @@ def send_confirm_email(user, email, renew=False, external_id_provider=None, exte
 
 def register_user(**kwargs):
     """
-    Register new user account.
+    Register a new unconfirmed user.
+    Note: this is a V1 API, only used for user sign up on the OSF home page.
+
     HTTP Method: POST
 
     :param-json str email1:
@@ -569,19 +573,10 @@ def register_user(**kwargs):
     :param-json str password:
     :param-json str fullName:
     :param-json str campaign:
-
     :raises: HTTPError(http.BAD_REQUEST) if validation fails or user already exists
     """
 
-    # Verify that email address match.
-    # Note: Both `landing.mako` and `register.mako` already have this check on the form. Users can not submit the form
-    # if emails do not match. However, this check should not be removed given we may use the raw api call directly.
     json_data = request.get_json()
-    if str(json_data['email1']).lower() != str(json_data['email2']).lower():
-        raise HTTPError(
-            http.BAD_REQUEST,
-            data=dict(message_long='Email addresses must match.')
-        )
 
     # Verify that captcha is valid
     if settings.RECAPTCHA_SITE_KEY and not validate_recaptcha(json_data.get('g-recaptcha-response'), remote_ip=request.remote_addr):
@@ -590,42 +585,49 @@ def register_user(**kwargs):
             data=dict(message_long='Invalid Captcha')
         )
 
-    try:
-        full_name = request.json['fullName']
-        full_name = strip_html(full_name)
+    fullname = json_data.get('fullName', None)
+    email1 = json_data.get('email1', None)
+    email2 = json_data.get('email2', None)
+    password = json_data.get('password', None)
+    campaign = json_data.get('campaign', None)
 
-        campaign = json_data.get('campaign')
-        if campaign and campaign not in campaigns.get_campaigns():
-            campaign = None
-
-        user = framework_auth.register_unconfirmed(
-            request.json['email1'],
-            request.json['password'],
-            full_name,
-            campaign=campaign,
+    # check all required information is provided
+    if not (fullname and email1 and email2 and password):
+        raise HTTPError(
+            http.BAD_REQUEST,
+            data=dict(message_long='Missing credentials')
         )
-        framework_auth.signals.user_registered.send(user)
+
+    # verify that emails match
+    if str(email1).lower().strip() != str(email2).lower().strip():
+        raise HTTPError(
+            http.BAD_REQUEST,
+            data=dict(message_long='Email addresses must match')
+        )
+
+    # sanitize fullname
+    fullname = strip_html(fullname)
+
+    try:
+        user = framework_auth.register_unconfirmed(email1, password, fullname, campaign=campaign)
     except (ValidationValueError, DuplicateEmailError):
         raise HTTPError(
             http.BAD_REQUEST,
-            data=dict(
-                message_long=language.ALREADY_REGISTERED.format(
-                    email=markupsafe.escape(request.json['email1'])
-                )
-            )
+            data=dict(message_long=language.ALREADY_REGISTERED.format(email=markupsafe.escape(request.json['email1'])))
         )
     except ValidationError as e:
-        raise HTTPError(
-            http.BAD_REQUEST,
-            data=dict(message_long=e.message)
-        )
+        raise HTTPError(http.BAD_REQUEST, data=dict(message_long=e.message))
+    except ChangePasswordError as e:
+        raise HTTPError(http.BAD_REQUEST, data=dict(message_long='Password cannot be the same as your email'))
 
-    if settings.CONFIRM_REGISTRATIONS_BY_EMAIL:
-        send_confirm_email(user, email=user.username)
-        message = language.REGISTRATION_SUCCESS.format(email=user.username)
-        return {'message': message}
-    else:
-        return {'message': 'You may now log in.'}
+    # TODO: is this correct? `register_unconfirmed()` already sends a signal of the creation of an unconfirmed user
+    framework_auth.signals.user_registered.send(user)
+    try:
+        send_confirm_email(user, email=user.username, renew=False, external_id_provider=None, external_id=None)
+    except KeyError:
+        raise HTTPError(http.INTERNAL_SERVER_ERROR, data=dict(message_long='Request failed. Please try again later.'))
+
+    return {'message': language.REGISTRATION_SUCCESS.format(email=user.username)}
 
 
 def validate_campaign(campaign):

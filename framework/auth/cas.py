@@ -77,6 +77,22 @@ class CasClient(object):
 
         return url.url
 
+    def get_confirmation_url(self, user_id):
+        """
+        Get CAS confirmation URL for confirm new account creation and verify user's email.
+
+        :param user_id: the user's GUID
+        :return:  the CAS confirmation URL
+        """
+
+        url = furl.furl(self.BASE_URL)
+        url.path.segments.append('account')
+        url.path.segments.append('findAccount')
+        url.args.add('target', 'VERIFY_EMAIL')
+        url.args.add('user', user_id)
+
+        return url.url
+
     def get_login_url(self, service_url, campaign=None, username=None, verification_key=None):
         """
         Get CAS login url with `service_url` as redirect location. There are three options:
@@ -239,6 +255,17 @@ def get_set_password_url(*arg, **kwargs):
     """
 
     return get_client().get_set_password_url(*arg, **kwargs)
+
+
+def get_confirmation_url(*arg, **kwargs):
+    """
+    Convenience function for getting the confirmation URL for new account verification.
+
+    :param arg: Same args that `CasClient.get_confirmation_url` receives
+    :param kwargs: Same kwargs that `CasClient.get_confirmation_url` receives
+    """
+
+    return get_client().get_confirmation_url(*arg, **kwargs)
 
 
 def get_login_url(*args, **kwargs):

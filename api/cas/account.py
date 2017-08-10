@@ -18,6 +18,7 @@ from website import settings as web_settings
 from website.mails import send_mail
 from website.mails import WELCOME, EXTERNAL_LOGIN_LINK_SUCCESS, FORGOT_PASSWORD
 from website.util.time import throttle_period_expired
+from website.util.sanitize import strip_html
 
 
 def create_unregistered_user(credentials):
@@ -42,6 +43,7 @@ def create_unregistered_user(credentials):
     if campaign and campaign not in campaigns.get_campaigns():
         campaign = None
 
+    fullname = strip_html(fullname)
     try:
         user = register_unconfirmed(email, password, fullname, campaign=campaign)
     except auth_exceptions.DuplicateEmailError:
@@ -76,13 +78,14 @@ def register_user(credentials):
     """
 
     # check required fields
+    user_id = credentials.get('userId')
     email = credentials.get('email')
     token = credentials.get('verificationCode')
-    if not email or not token:
+    if not ((email or user_id) and token):
         raise api_exceptions.MalformedRequestError
 
     # retrieve the user (the email must be primary)
-    user = util.find_user_by_email_or_guid(None, email, username_only=True)
+    user = util.find_user_by_email_or_guid(user_id, email, username_only=True)
     if not user:
         raise api_exceptions.AccountNotFoundError
     if user.date_confirmed:
