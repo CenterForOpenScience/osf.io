@@ -115,7 +115,7 @@ var getContributorList = function (contributors, maxShown){
                comma = ', ';
            }
            if(i === contributors.length -2 || ((i === maxShown -1) && !justOneMore)){
-               comma = ' and ';
+               comma = ', and ';
            }
 
            if (i === maxShown && !justOneMore){
