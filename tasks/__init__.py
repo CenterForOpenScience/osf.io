@@ -520,7 +520,6 @@ def test(ctx, all=False, syntax=False):
         flake(ctx)
         jshint(ctx)
 
-    test_js(ctx)
     test_osf(ctx)
     test_api1(ctx)
     test_api2(ctx)
@@ -569,6 +568,7 @@ def test_travis_else(ctx, numprocesses=None):
 def test_travis_api1(ctx, numprocesses=None):
     flake(ctx)
     jshint(ctx)
+    karma(ctx, single=True, browsers='PhantomJS')
     test_api1(ctx, numprocesses=numprocesses)
 
 
