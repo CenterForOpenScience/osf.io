@@ -6,12 +6,12 @@ import logging
 from bs4 import BeautifulSoup
 from flask import request
 
-from framework.mongo.utils import to_mongo_key
 from framework.exceptions import HTTPError
 from framework.auth.utils import privacy_info_handle
 from framework.auth.decorators import must_be_logged_in
 from framework.flask import redirect
 
+from addons.wiki.utils import to_mongo_key
 from addons.wiki import settings
 from addons.wiki import utils as wiki_utils
 from website.profile.utils import get_gravatar

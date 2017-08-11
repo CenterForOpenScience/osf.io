@@ -4,11 +4,14 @@ import pytz
 from dateutil.parser import parse
 from django.utils import timezone
 
+from api.base.serializers import MaintenanceStateSerializer
 from osf.models.maintenance_state import MaintenanceState
 
 
-def set_maintenance(start=None, end=None):
-    """Set the time period for the maintenance notice to be displayed.
+def set_maintenance(message, level=1, start=None, end=None):
+    """Creates maintenance state obj with the given params.
+
+    Set the time period for the maintenance notice to be displayed.
     If no start or end values are given, default to starting now in UTC
     and ending 24 hours from now.
 
@@ -31,27 +34,20 @@ def set_maintenance(start=None, end=None):
     unset_maintenance()
 
     state = MaintenanceState.objects.create(
+        level=level,
         start=start,
-        end=end
+        end=end,
+        message=message
     )
 
     return {'start': state.start, 'end': state.end}
-
 
 def get_maintenance():
     """Get the current start and end times for the maintenance state.
     Return None if there is no current maintenance state.
     """
-    maintenance_state = MaintenanceState.objects.first()
-
-    if maintenance_state:
-        return {
-            'start': maintenance_state.start.isoformat(),
-            'end': maintenance_state.end.isoformat(),
-        }
-    else:
-        return None
-
+    maintenance = MaintenanceState.objects.all().first()
+    return MaintenanceStateSerializer(maintenance).data if maintenance else None
 
 def unset_maintenance():
     MaintenanceState.objects.all().delete()

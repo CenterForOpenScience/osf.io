@@ -15,7 +15,7 @@ from modularodm.exceptions import ValidationError
 from framework.auth import get_or_create_user
 from framework.auth.core import Auth
 
-from osf.models import OSFUser as User, AbstractNode as Node
+from osf.models import OSFUser, AbstractNode
 from website import settings
 from website.conferences import views
 from website.conferences import utils, message
@@ -452,7 +452,7 @@ class TestConferenceEmailViews(OsfTestCase):
         assert_equal(res.request.path, '/meetings/')
 
     def test_conference_submissions(self):
-        Node.remove()
+        AbstractNode.remove()
         conference1 = ConferenceFactory()
         conference2 = ConferenceFactory()
         # Create conference nodes
@@ -589,9 +589,9 @@ class TestConferenceIntegration(ContextTestCase):
             ],
         )
         assert_true(mock_upload.called)
-        users = User.find(Q('username', 'eq', username))
+        users = OSFUser.find(Q('username', 'eq', username))
         assert_equal(users.count(), 1)
-        nodes = Node.find(Q('title', 'eq', title))
+        nodes = AbstractNode.find(Q('title', 'eq', title))
         assert_equal(nodes.count(), 1)
         node = nodes[0]
         assert_equal(node.get_wiki_page('home').content, body)
@@ -678,9 +678,9 @@ class TestConferenceIntegration(ContextTestCase):
             ],
         )
         assert_true(mock_upload.called)
-        users = User.find(Q('username', 'eq', username))
+        users = OSFUser.find(Q('username', 'eq', username))
         assert_equal(users.count(), 1)
-        nodes = Node.find(Q('title', 'eq', title))
+        nodes = AbstractNode.find(Q('title', 'eq', title))
         assert_equal(nodes.count(), 1)
         node = nodes[0]
         assert_equal(node.get_wiki_page('home').content, body)

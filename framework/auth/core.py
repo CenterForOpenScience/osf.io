@@ -7,7 +7,6 @@ import logging
 from django.utils import timezone
 from django.db.models import Q as DQ
 from django.db.models import Subquery
-from framework.mongo.validators import string_required
 from framework.sessions import session
 from modularodm import Q
 
@@ -45,24 +44,6 @@ def generate_verification_key(verification_type=None):
         'token': token,
         'expires': expires,
     }
-
-
-def validate_history_item(item):
-    string_required(item.get('institution'))
-    startMonth = item.get('startMonth')
-    startYear = item.get('startYear')
-    endMonth = item.get('endMonth')
-    endYear = item.get('endYear')
-
-    validate_year(startYear)
-    validate_year(endYear)
-
-    if startYear and endYear:
-        if endYear < startYear:
-            raise ValidationValueError('End date must be later than start date.')
-        elif endYear == startYear:
-            if endMonth and startMonth and endMonth < startMonth:
-                raise ValidationValueError('End date must be later than start date.')
 
 
 def validate_year(item):

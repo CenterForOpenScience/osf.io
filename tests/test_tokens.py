@@ -13,7 +13,7 @@ from tests.utils import mock_auth
 from framework.exceptions import HTTPError
 
 from website import settings
-from osf.models import AbstractNode as Node, Embargo, RegistrationApproval, Retraction, Sanction
+from osf.models import AbstractNode, Embargo, RegistrationApproval, Retraction, Sanction
 from website.tokens import decode, encode, TokenHandler
 from website.tokens.exceptions import TokenHandlerNotFound
 
@@ -83,7 +83,7 @@ class SanctionTokenHandlerBase(OsfTestCase):
         if not self.kind:
             return
         self.sanction = self.Factory()
-        self.reg = Node.find_one(Q(self.Model.SHORT_NAME, 'eq', self.sanction))
+        self.reg = AbstractNode.find_one(Q(self.Model.SHORT_NAME, 'eq', self.sanction))
         self.user = self.reg.creator
 
     def test_sanction_handler(self):

@@ -177,7 +177,7 @@ class Sitemap(object):
         for obj in objs:
             try:
                 config = settings.SITEMAP_NODE_CONFIG
-                config['loc'] = urlparse.urljoin(settings.DOMAIN, obj['guids___id'])
+                config['loc'] = urlparse.urljoin(settings.DOMAIN, '/{}/'.format(obj['guids___id']))
                 config['lastmod'] = obj['date_modified'].strftime('%Y-%m-%d')
                 self.add_url(config)
             except Exception as e:
@@ -196,9 +196,11 @@ class Sitemap(object):
                 preprint_date = obj.date_modified.strftime('%Y-%m-%d')
                 config = settings.SITEMAP_PREPRINT_CONFIG
                 preprint_url = obj.url
-                if obj.provider == osf:
+                provider = obj.provider
+                domain = provider.domain if (provider.domain_redirect_enabled and provider.domain) else settings.DOMAIN
+                if provider == osf:
                     preprint_url = '/preprints/{}/'.format(obj._id)
-                config['loc'] = urlparse.urljoin(settings.DOMAIN, preprint_url)
+                config['loc'] = urlparse.urljoin(domain, preprint_url)
                 config['lastmod'] = preprint_date
                 self.add_url(config)
 
