@@ -13,6 +13,10 @@ var lodashGet = require('lodash.get');
 
 var ravenMessagesCache = []; // Cache messages to avoid sending multiple times in one page view
 var nodeCategories = require('json!built/nodeCategories.json');
+
+//Used when calling getContributorList to limit the number of contributors shown in a single log when many are mentioned
+var numContributorsShown = 3;
+
 /**
  * Utility function to not repeat logging errors to Sentry
  * @param message {String} Custom message for error
@@ -91,6 +95,44 @@ var returnTextParams = function (param, text, logObject, view_url) {
         return view_url ? m('a', {href: $osf.toRelativeUrl(view_url, window)}, source) : m('span', source);
     }
     return m('span', text);
+};
+
+/**
+ * Returns a list of contributors to show in log as well as the trailing punctuation/text after each contributor.
+ * If a contributor has a OSF profile, contributor is returned as a mithril link to user.
+ * @param contributors {string} The list of contributors (OSF users or unregistered)
+ * @param maxShown {int} the number of contributors shown before saying "and # others"
+ * Note: if there is only 1 over maxShown, all contributors are shown
+ * @returns {array}
+ */
+var getContributorList = function (contributors, maxShown){
+       var contribList = [];
+       var justOneMore = numContributorsShown === contributors.length -1;
+       for(var i = 0; i < contributors.length; i++){
+           var item = contributors[i];
+           var comma = ' ';
+           if(i !== contributors.length -1 && ((i !== maxShown -1) || justOneMore)){
+               comma = ', ';
+           }
+           if(i === contributors.length -2 || ((i === maxShown -1) && !justOneMore)){
+               comma = ', and ';
+           }
+
+           if (i === maxShown && !justOneMore){
+               contribList.push([((contributors.length - i).toString() + ' others'), '']);
+               return contribList;
+           }
+
+           if (item.active) {
+               contribList.push([ m('a', {href: '/' + item.id + '/'}, item.full_name), comma]);
+           }
+           else {
+               if (item.unregistered_name) {
+                   contribList.push([item.unregistered_name, comma]);
+               }
+               contribList.push([item.full_name, comma]);
+       }}
+       return contribList;
 };
 
 var LogText = {
@@ -220,25 +262,7 @@ var LogPieces = {
         view: function (ctrl, logObject) {
             var contributors = logObject.attributes.params.contributors;
             if(paramIsReturned(contributors, logObject)) {
-                return m('span', contributors.map(function(item, index, arr){
-                    var comma = ' ';
-                    if(index !== arr.length - 1){
-                        comma = ', ';
-                    }
-                    if(index === arr.length-2){
-                        comma = ' and ';
-                    }
-
-                    if (item.active) {
-                        return [ m('a', {href: '/' + item.id + '/'}, item.full_name), comma];
-                    }
-                    else {
-                        if (item.unregistered_name) {
-                            return [item.unregistered_name, comma];
-                        }
-                        return [item.full_name, comma];
-                    }
-                }));
+                return m('span', getContributorList(contributors, numContributorsShown));
             }
             return m('span', 'some users');
         }
@@ -693,4 +717,7 @@ var LogPieces = {
     }
 };
 
-module.exports = LogText;
+module.exports = {
+    LogText:LogText,
+    getContributorList: getContributorList
+};
