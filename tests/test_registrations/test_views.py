@@ -15,7 +15,7 @@ from modularodm import Q
 from framework.exceptions import HTTPError
 
 from osf.models import MetaSchema, DraftRegistration
-from website.project.metadata.schemas import ACTIVE_META_SCHEMAS, _name_to_id
+from website.project.metadata.schemas import _name_to_id, LATEST_SCHEMA_VERSION
 from website.util import permissions, api_url_for
 from website.project.views import drafts as draft_views
 
@@ -231,7 +231,7 @@ class TestDraftRegistrationViews(RegistrationsTestBase):
 
         assert_equal(res.status_code, http.ACCEPTED)
 
-        registration = Registration.find().sort('-registered_date').first()
+        registration = Registration.find().order_by('-registered_date').first()
 
         assert_false(registration.is_public)
         assert_true(registration.is_pending_embargo)
@@ -453,18 +453,19 @@ class TestDraftRegistrationViews(RegistrationsTestBase):
     def test_get_metaschemas(self):
         url = api_url_for('get_metaschemas')
         res = self.app.get(url).json
-        assert_equal(len(res['meta_schemas']), len(ACTIVE_META_SCHEMAS))
+        assert_equal(
+            len(res['meta_schemas']),
+            MetaSchema.objects.filter(active=True, schema_version=LATEST_SCHEMA_VERSION).count()
+        )
 
     def test_get_metaschemas_all(self):
         url = api_url_for('get_metaschemas', include='all')
         res = self.app.get(url)
         assert_equal(res.status_code, http.OK)
-        assert_equal(len(res.json['meta_schemas']), len(
-            [
-                schema for schema in MetaSchema.find()
-                if schema.name in ACTIVE_META_SCHEMAS
-            ]
-        ))
+        assert_equal(
+            len(res.json['meta_schemas']),
+            MetaSchema.objects.filter(active=True).count()
+        )
 
     def test_validate_embargo_end_date_too_soon(self):
         registration = RegistrationFactory(project=self.node)

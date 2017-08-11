@@ -7,7 +7,7 @@ from django.utils import timezone
 from django.utils.functional import cached_property
 from django.contrib.contenttypes.fields import GenericRelation
 
-from framework.celery_tasks.handlers import enqueue_task
+from framework.postcommit_tasks.handlers import enqueue_postcommit_task
 from framework.exceptions import PermissionsError
 from osf.models import NodeLog, Subject
 from osf.models.validators import validate_subject_hierarchy
@@ -84,7 +84,7 @@ class PreprintService(DirtyFieldsMixin, GuidMixin, IdentifierMixin, BaseModel):
 
     @property
     def url(self):
-        if self.provider.domain_redirect_enabled or self.provider._id == 'osf':
+        if (self.provider.domain_redirect_enabled and self.provider.domain) or self.provider._id == 'osf':
             return '/{}/'.format(self._id)
 
         return '/preprints/{}/{}/'.format(self.provider._id, self._id)
@@ -115,10 +115,11 @@ class PreprintService(DirtyFieldsMixin, GuidMixin, IdentifierMixin, BaseModel):
                 ret.append(subj_hierarchy)
         return ret
 
-    def set_subjects(self, preprint_subjects, auth, save=False):
+    def set_subjects(self, preprint_subjects, auth):
         if not self.node.has_permission(auth.user, ADMIN):
             raise PermissionsError('Only admins can change a preprint\'s subjects.')
 
+        old_subjects = list(self.subjects.values_list('id', flat=True))
         self.subjects.clear()
         for subj_list in preprint_subjects:
             subj_hierarchy = []
@@ -129,8 +130,7 @@ class PreprintService(DirtyFieldsMixin, GuidMixin, IdentifierMixin, BaseModel):
                 for s_id in subj_hierarchy:
                     self.subjects.add(Subject.load(s_id))
 
-        if save:
-            self.save()
+        self.save(old_subjects=old_subjects)
 
     def set_primary_file(self, preprint_file, auth, save=False):
         if not self.node.has_permission(auth.user, ADMIN):
@@ -193,7 +193,7 @@ class PreprintService(DirtyFieldsMixin, GuidMixin, IdentifierMixin, BaseModel):
                 )
 
             # This should be called after all fields for EZID metadta have been set
-            enqueue_task(get_and_set_preprint_identifiers.s(self._id))
+            enqueue_postcommit_task(get_and_set_preprint_identifiers, (), {'preprint': self}, celery=True)
 
         if save:
             self.node.save()
@@ -226,8 +226,9 @@ class PreprintService(DirtyFieldsMixin, GuidMixin, IdentifierMixin, BaseModel):
     def save(self, *args, **kwargs):
         first_save = not bool(self.pk)
         saved_fields = self.get_dirty_fields() or []
+        old_subjects = kwargs.pop('old_subjects', [])
         ret = super(PreprintService, self).save(*args, **kwargs)
 
         if (not first_save and 'is_published' in saved_fields) or self.is_published:
-            enqueue_task(on_preprint_updated.s(self._id))
+            enqueue_postcommit_task(on_preprint_updated, (self._id,), {'old_subjects': old_subjects}, celery=True)
         return ret

@@ -13,7 +13,7 @@ from framework.auth import get_or_create_user
 from framework.exceptions import HTTPError
 from framework.flask import redirect
 from framework.transactions.handlers import no_auto_transaction
-from osf.models import AbstractNode as Node, Conference, Tag
+from osf.models import AbstractNode, Conference, Tag
 from website import settings
 from website.conferences import utils, signals
 from website.conferences.message import ConferenceMessage, ConferenceError
@@ -163,8 +163,8 @@ def _render_conference_node(node, idx, conf):
         'title': node.title,
         'nodeUrl': node.url,
         'author': author.family_name if author.family_name else author.fullname,
-        'authorUrl': node.creator.url,
-        'category': conf.field_names['submission1'] if conf.field_names['submission1'] in node.system_tags else conf.field_names['submission2'],
+        'authorUrl': author.url,
+        'category': conf.field_names['submission1'] if conf.field_names['submission1'] in tags else conf.field_names['submission2'],
         'download': download_count,
         'downloadUrl': download_url,
         'dateCreated': node.date_created.isoformat(),
@@ -180,7 +180,7 @@ def conference_data(meeting):
     except ModularOdmException:
         raise HTTPError(httplib.NOT_FOUND)
 
-    nodes = Node.objects.filter(tags__id__in=Tag.objects.filter(name__iexact=meeting, system=False).values_list('id', flat=True), is_public=True, is_deleted=False)
+    nodes = AbstractNode.objects.filter(tags__id__in=Tag.objects.filter(name__iexact=meeting, system=False).values_list('id', flat=True), is_public=True, is_deleted=False)
 
     ret = [
         _render_conference_node(each, idx, conf)
@@ -247,7 +247,7 @@ def conference_submissions(**kwargs):
         projects = set()
 
         tags = Tag.find(Q('system', 'eq', False) & Q('name', 'iexact', conf.endpoint.lower())).values_list('pk', flat=True)
-        nodes = Node.find(
+        nodes = AbstractNode.find(
             Q('tags', 'in', tags) &
             Q('is_public', 'eq', True) &
             Q('is_deleted', 'ne', True)

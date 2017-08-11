@@ -20,7 +20,7 @@ class TestExceptionFormatting(ApiTestCase):
             social=dict(
                 github='userOneGithub',
                 scholar='userOneScholar',
-                personal='http://www.useronepersonalwebsite.com',
+                profileWebsites=['http://www.useronepersonalwebsite.com'],
                 twitter='userOneTwitter',
                 linkedIn='userOneLinkedIn',
                 impactStory='userOneImpactStory',

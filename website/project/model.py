@@ -3,13 +3,11 @@ import logging
 import re
 
 from django.apps import apps
-from django.core.exceptions import ValidationError
 
 from modularodm import Q
-from modularodm.exceptions import KeyExistsException, ValidationValueError
+from modularodm.exceptions import ValidationValueError
 
 from website import settings
-from website.project.metadata.schemas import OSF_META_SCHEMAS
 from website.util import sanitize
 
 logger = logging.getLogger(__name__)
@@ -25,30 +23,6 @@ def has_anonymous_link(node, auth):
     if auth.private_link:
         return auth.private_link.anonymous
     return False
-
-
-def ensure_schema(schema, name, version=1):
-    MetaSchema = apps.get_model('osf.MetaSchema')
-    try:
-        MetaSchema(
-            name=name,
-            schema_version=version,
-            schema=schema
-        ).save()
-    except (KeyExistsException, ValidationError):
-        schema_obj = MetaSchema.find_one(
-            Q('name', 'eq', name) &
-            Q('schema_version', 'eq', version)
-        )
-        schema_obj.schema = schema
-        schema_obj.save()
-
-
-def ensure_schemas():
-    """Import meta-data schemas from JSON to database if not already loaded
-    """
-    for schema in OSF_META_SCHEMAS:
-        ensure_schema(schema, schema['name'], version=schema.get('version', 1))
 
 
 def validate_contributor(guid, contributors):
@@ -70,7 +44,7 @@ def get_valid_mentioned_users_guids(comment, contributors):
     new_mentions = set(re.findall(r"\[[@|\+].*?\]\(htt[ps]{1,2}:\/\/[a-z\d:.]+?\/([a-z\d]{5})\/\)", comment.content))
     new_mentions = [
         m for m in new_mentions if
-        m not in comment.ever_mentioned and
+        m not in comment.ever_mentioned.values_list('guids___id', flat=True) and
         validate_contributor(m, contributors)
     ]
     return new_mentions

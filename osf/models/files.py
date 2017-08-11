@@ -51,6 +51,8 @@ class ActiveFileNodeManager(Manager):
     Note: We do not use this as the default manager for BaseFileNode because
     that would prevent TrashedFileNodes from accessing their `parent` field if
     the parent was not a TrashedFileNode.
+
+    WARNING: Do NOT use .active on BaseFileNode subclasses. Use .objects instead.
     """
 
     def get_queryset(self):
@@ -671,15 +673,14 @@ class FileVersion(ObjectIDMixin, BaseModel):
             # Shouldn't ever happen, but we already have an archive
             return True  # We've found ourself
 
-        qs = self.__class__.find(
+        other = self.__class__.find(
             Q('_id', 'ne', self._id) &
             Q('metadata.sha256', 'eq', self.metadata['sha256']) &
             Q('metadata.archive', 'ne', None) &
             Q('metadata.vault', 'ne', None)
-        ).limit(1)
-        if qs.count() < 1:
+        ).first()
+        if not other:
             return False
-        other = qs[0]
         try:
             self.metadata['vault'] = other.metadata['vault']
             self.metadata['archive'] = other.metadata['archive']

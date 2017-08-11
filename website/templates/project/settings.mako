@@ -35,6 +35,8 @@
 
                         <li><a href="#configureNotificationsAnchor">Email Notifications</a></li>
 
+                        <li><a href="#redirectLink">Redirect Link</a></li>
+
                     % endif
 
                     % if node['is_registration']:
@@ -388,6 +390,76 @@
 
         % endif ## End Configure Email Notifications
 
+        % if 'write' in user['permissions']:  ## Begin Redirect Link Config
+            % if not node['is_registration']:
+
+                <div class="panel panel-default">
+                    <span id="redirectLink" class="anchor"></span>
+                    <div class="panel-heading clearfix">
+                        <h3 class="panel-title">Redirect Link</h3>
+                    </div>
+                    <div class="panel-body" id="configureForward">
+                        <div>
+                            <label>
+                                <input
+                                    type="checkbox"
+                                    name="forward"
+                                    data-bind="checked: enabled, disable: pendingRequest"
+                                    ${'disabled' if node['is_registration'] else ''}
+                                />
+                                Redirect visitors from your project page to an external webpage
+                            </label>
+                        </div>
+
+                        <div data-bind="visible: enabled" style="display: none">
+
+                            <div class="forward-settings">
+
+                                <form class="form" data-bind="submit: submitSettings">
+
+                                    <div class="form-group">
+                                        <label for="forwardUrl">URL</label>
+                                        <input
+                                            id="forwardUrl"
+                                            class="form-control"
+                                            data-bind="value: url"
+                                            placeholder="Send people who visit your OSF project page to this link instead"
+                                        />
+                                    </div>
+
+                                    <div class="form-group">
+                                        <label for="forwardLabel">Label</label>
+                                        <input
+                                            id="forwardLabel"
+                                            class="form-control"
+                                            data-bind="value: label"
+                                            placeholder="Optional"
+                                        />
+                                    </div>
+
+                                    <div class="row">
+                                        <div class="col-md-10 overflow">
+                                            <p data-bind="html: message, attr: {class: messageClass}"></p>
+                                        </div>
+                                        <div class="col-md-2">
+                                            <input
+                                                type="submit"
+                                               class="btn btn-success pull-right"
+                                               value="Save"
+                                            />
+                                        </div>
+                                    </div>
+
+                                </form>
+
+                            </div><!-- end .forward-settings -->
+                        </div><!-- end #configureForward -->
+
+                    </div>
+                </div>
+            %endif
+        %endif ## End Redirect Link Config
+
         % if 'admin' in user['permissions']:  ## Begin Retract Registration
 
             % if node['is_registration']:
@@ -441,8 +513,6 @@
 
 </div>
 
-
-
 <%def name="render_node_settings(data)">
     <%
        template_name = data['node_settings_template']
@@ -483,10 +553,10 @@
     </script>
 
     <script type="text/javascript" src=${"/static/public/js/project-settings-page.js" | webpack_asset}></script>
+    <script type="text/javascript" src=${"/static/public/js/forward/node-cfg.js" | webpack_asset}></script>
 
     % for js_asset in addon_js:
-    <script src="${js_asset | webpack_asset}"></script>
+        <script src="${js_asset | webpack_asset}"></script>
     % endfor
-
 
 </%def>

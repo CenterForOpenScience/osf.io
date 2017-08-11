@@ -326,7 +326,8 @@ def mailserver(ctx, port=1025):
 def jshint(ctx):
     """Run JSHint syntax check"""
     js_folder = os.path.join(HERE, 'website', 'static', 'js')
-    cmd = 'jshint {}'.format(js_folder)
+    jshint_bin = os.path.join(HERE, 'node_modules', '.bin', 'jshint')
+    cmd = '{} {}'.format(jshint_bin, js_folder)
     ctx.run(cmd, echo=True)
 
 
@@ -991,9 +992,16 @@ def usage(ctx):
 ### Maintenance Tasks ###
 
 @task
-def set_maintenance(ctx, start=None, end=None):
-    from website.maintenance import set_maintenance, get_maintenance
-    """Set the time period for the maintenance notice to be displayed.
+def set_maintenance(ctx, message='', level=1, start=None, end=None):
+    from website.app import setup_django
+    setup_django()
+    from website.maintenance import set_maintenance
+    """Creates a maintenance notice.
+
+    Message is required.
+    Level defaults to 1. Valid levels are 1 (info), 2 (warning), and 3 (danger).
+
+    Set the time period for the maintenance notice to be displayed.
     If no start or end values are displayed, default to starting now
     and ending 24 hours from now. If no timezone info is passed along,
     everything will be converted to UTC.
@@ -1002,17 +1010,17 @@ def set_maintenance(ctx, start=None, end=None):
     will be changed to be 24 hours before the end time.
 
     Examples:
-        invoke set_maintenance_state
-        invoke set_maintenance_state --start 2016-03-16T15:41:00-04:00
-        invoke set_maintenance_state --end 2016-03-16T15:41:00-04:00
+        invoke set_maintenance --message 'OSF down for scheduled maintenance.' --start 2016-03-16T15:41:00-04:00
+        invoke set_maintenance --message 'Apocalypse' --level 3 --end 2016-03-16T15:41:00-04:00
     """
-    set_maintenance(start, end)
-    state = get_maintenance()
-    print('Maintenance notice up for {} to {}.'.format(state['start'], state['end']))
+    state = set_maintenance(message, level, start, end)
+    print('Maintenance notice up {} to {}.'.format(state['start'], state['end']))
 
 
 @task
 def unset_maintenance(ctx):
+    from website.app import setup_django
+    setup_django()
     from website.maintenance import unset_maintenance
     print('Taking down maintenance notice...')
     unset_maintenance()

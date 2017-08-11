@@ -5,6 +5,7 @@ import re
 import urlparse
 import warnings
 
+from django.db.models import Q
 from dirtyfields import DirtyFieldsMixin
 from django.apps import apps
 from django.contrib.contenttypes.fields import GenericRelation
@@ -23,9 +24,8 @@ from include import IncludeQuerySet, IncludeManager
 from framework import status
 from framework.celery_tasks.handlers import enqueue_task
 from framework.exceptions import PermissionsError
-from framework.mongo import DummyRequest, get_request_and_user_id
-from framework.mongo.utils import to_mongo_key
 from framework.sentry import log_exception
+from addons.wiki.utils import to_mongo_key
 from osf.exceptions import ValidationValueError
 from osf.models.citation import AlternativeCitation
 from osf.models.contributor import (Contributor, RecentlyAddedContributor,
@@ -42,10 +42,11 @@ from osf.models.spam import SpamMixin
 from osf.models.tag import Tag
 from osf.models.user import OSFUser
 from osf.models.validators import validate_doi, validate_title
-from osf.modm_compat import Q
+from osf.modm_compat import Q as MODMQ
 from osf.utils.auth import Auth, get_user
 from osf.utils.datetime_aware_jsonfield import DateTimeAwareJSONField
 from osf.utils.fields import NonNaiveDateTimeField
+from osf.utils.requests import DummyRequest, get_request_and_user_id
 from website import language, settings
 from website.citations.utils import datetime_to_csl
 from website.exceptions import (InvalidTagError, NodeStateError,
@@ -62,13 +63,13 @@ from website.util.permissions import (ADMIN, CREATOR_PERMISSIONS,
                                       DEFAULT_CONTRIBUTOR_PERMISSIONS, READ,
                                       WRITE, expand_permissions,
                                       reduce_permissions)
-from .base import BaseModel, Guid, GuidMixin, MODMCompatibilityQuerySet
+from .base import BaseModel, Guid, GuidMixin
 
 
 logger = logging.getLogger(__name__)
 
 
-class AbstractNodeQuerySet(MODMCompatibilityQuerySet, IncludeQuerySet):
+class AbstractNodeQuerySet(IncludeQuerySet):
 
     def get_roots(self):
         return self.filter(id__in=self.exclude(type='osf.collection').values_list('root_id', flat=True))
@@ -159,17 +160,6 @@ class AbstractNodeManager(TypedModelManager, IncludeManager):
         qs = AbstractNodeQuerySet(self.model, using=self._db)
         # Filter by typedmodels type
         return self._filter_by_type(qs)
-
-    # MODMCompatibilityQuerySet methods
-
-    def eager(self, *fields):
-        return self.get_queryset().eager(*fields)
-
-    def sort(self, *fields):
-        return self.get_queryset().sort(*fields)
-
-    def limit(self, n):
-        return self.get_queryset().limit(n)
 
     # AbstractNodeQuerySet methods
 
@@ -399,8 +389,6 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
     title = models.TextField(
         validators=[validate_title]
     )  # this should be a charfield but data from mongo didn't fit in 255
-    # TODO why is this here if it's empty
-    users_watching_node = models.ManyToManyField(OSFUser, related_name='watching')
     wiki_pages_current = DateTimeAwareJSONField(default=dict, blank=True)
     wiki_pages_versions = DateTimeAwareJSONField(default=dict, blank=True)
     # Dictionary field mapping node wiki page to sharejs private uuid.
@@ -455,6 +443,8 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         """For v1 compat"""
         if (not self.is_preprint) and self._is_preprint_orphan:
             return True
+        if self.preprint_file:
+            return self.preprint_file.is_deleted
         return False
 
     @property
@@ -647,7 +637,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
             'id': self._id,
             'title': sanitize.unescape_entities(self.title),
             'author': [
-                contributor.csl_name  # method in auth/model.py which parses the names of authors
+                contributor.csl_name(self._id)  # method in auth/model.py which parses the names of authors
                 for contributor in self.visible_contributors
             ],
             'publisher': 'Open Science Framework',
@@ -696,7 +686,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
 
     @classmethod
     def find_by_institutions(cls, inst, query=None):
-        base_query = Q('affiliated_institutions', 'eq', inst)
+        base_query = MODMQ('affiliated_institutions', 'eq', inst)
         if query:
             final_query = base_query & query
         else:
@@ -787,15 +777,17 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
 
     def get_aggregate_logs_query(self, auth):
         return (
-            (   # TODO: remove `list` call during phase 2
-                Q('node_id', 'in', list(Node.objects.get_children(self).can_view(user=auth.user, private_link=auth.private_link).values_list('id', flat=True))) |
-                Q('node_id', 'eq', self.id)
-            ) & Q('should_hide', 'eq', False)
+            (
+                Q(node_id__in=list(Node.objects.get_children(self).can_view(user=auth.user, private_link=auth.private_link).values_list('id', flat=True))) |
+                Q(node_id=self.id)
+            ) & Q(should_hide=False)
         )
 
     def get_aggregate_logs_queryset(self, auth):
         query = self.get_aggregate_logs_query(auth)
-        return NodeLog.find(query).sort('-date')
+        return NodeLog.objects.filter(query).order_by('-date').include(
+            'node__guids', 'user__guids', 'original_node__guids', limit_includes=10
+        )
 
     def get_absolute_url(self):
         return self.absolute_api_v2_url
@@ -1144,7 +1136,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
             if save:
                 self.save()
 
-            if self._id and send_email != 'false':
+            if self._id:
                 project_signals.contributor_added.send(self,
                                                        contributor=contributor,
                                                        auth=auth, email_template=send_email)
@@ -1240,6 +1232,11 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
             contributor = OSFUser.load(user_id)
             if not contributor:
                 raise ValueError('User with id {} was not found.'.format(user_id))
+            if not contributor.is_registered:
+                raise ValueError(
+                    'Cannot add unconfirmed user {} to node {} by guid. Add an unregistered contributor with fullname and email.'
+                    .format(user_id, self._id)
+                )
             if self.contributor_set.filter(user=contributor).exists():
                 raise ValidationValueError('{} is already a contributor.'.format(contributor.fullname))
             contributor, _ = self.add_contributor(contributor=contributor, auth=auth, visible=bibliographic,
@@ -1423,7 +1420,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
 
     @classmethod
     def find_for_user(cls, user, subquery=None):
-        combined_query = Q('contributors', 'eq', user)
+        combined_query = MODMQ('contributors', 'eq', user)
         if subquery is not None:
             combined_query = combined_query & subquery
         return cls.find(combined_query)
@@ -1948,7 +1945,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         forked.save()
 
         # Need to call this after save for the notifications to be created with the _primary_key
-        project_signals.contributor_added.send(forked, contributor=user, auth=auth)
+        project_signals.contributor_added.send(forked, contributor=user, auth=auth, email_template='false')
 
         forked.add_log(
             action=NodeLog.NODE_FORKED,
@@ -2030,6 +2027,9 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         new.date_created = timezone.now()
 
         new.save(suppress_log=True)
+
+        # Need to call this after save for the notifications to be created with the _primary_key
+        project_signals.contributor_added.send(new, contributor=auth.user, auth=auth, email_template='false')
 
         # Log the creation
         new.add_log(

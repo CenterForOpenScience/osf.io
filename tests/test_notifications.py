@@ -1417,6 +1417,13 @@ class TestSendEmails(NotificationTestCase):
                                       self.node, time_now)
 
     @mock.patch('website.notifications.emails.store_emails')
+    def test_notify_does_not_send_to_exclude(self, mock_store):
+        time_now = timezone.now()
+        context = {'exclude':[self.project.creator._id]}
+        emails.notify('comments', user=self.user, node=self.node, timestamp=time_now, **context)
+        assert_equal(mock_store.call_count, 0)
+
+    @mock.patch('website.notifications.emails.store_emails')
     def test_notify_does_not_send_to_users_subscribed_to_none(self, mock_store):
         node = factories.NodeFactory()
         user = factories.UserFactory()
@@ -1541,6 +1548,37 @@ class TestSendEmails(NotificationTestCase):
         assert_true(mock_notify.called)
         assert_equal(mock_notify.call_count, 2)
 
+    @mock.patch('website.project.views.comment.notify')
+    def test_check_user_comment_reply_only_calls_once(self, mock_notify):
+        # user subscribed to comment replies
+        user = factories.UserFactory()
+        user_subscription = factories.NotificationSubscriptionFactory(
+            _id=user._id + '_comments',
+            user=user,
+            event_name='comment_replies'
+        )
+        user_subscription.email_transactional.add(user)
+        user_subscription.save()
+
+        project = factories.ProjectFactory()
+
+        # user comments on project
+        target = factories.CommentFactory(node=project, user=user)
+        content = 'P-Hacking: A user guide'
+
+        mock_notify.return_value = [user._id]
+        # reply to user (note: notify is called from Comment.create)
+        reply = Comment.create(
+            auth=Auth(project.creator),
+            user=project.creator,
+            node=project,
+            content=content,
+            target=Guid.load(target._id),
+            root_target=Guid.load(project._id),
+        )
+        assert_true(mock_notify.called)
+        assert_equal(mock_notify.call_count, 1)
+
     def test_get_settings_url_for_node(self):
         url = emails.get_settings_url(self.project._id, self.user)
         assert_equal(url, self.project.absolute_url + 'settings/')
@@ -1636,7 +1674,7 @@ class TestSendDigest(OsfTestCase):
             node_lineage=[self.project._id]
         )
         d3.save()
-        user_groups = get_users_emails(send_type)
+        user_groups = list(get_users_emails(send_type))
         expected = [
             {
                 u'user_id': self.user_1._id,
@@ -1645,8 +1683,8 @@ class TestSendDigest(OsfTestCase):
                     u'node_lineage': [unicode(self.project._id)],
                     u'_id': d._id
                 }]
-                },
-                {
+            },
+            {
                 u'user_id': self.user_2._id,
                 u'info': [{
                     u'message': u'Hello',
@@ -1688,7 +1726,7 @@ class TestSendDigest(OsfTestCase):
             node_lineage=[self.project._id]
         )
         d3.save()
-        user_groups = get_users_emails(send_type)
+        user_groups = list(get_users_emails(send_type))
         expected = [
             {
                 u'user_id': unicode(self.user_1._id),
@@ -1724,14 +1762,13 @@ class TestSendDigest(OsfTestCase):
             node_lineage=[factories.ProjectFactory()._id]
         )
         d.save()
-        user_groups = get_users_emails(send_type)
+        user_groups = list(get_users_emails(send_type))
         send_users_email(send_type)
         assert_true(mock_send_mail.called)
         assert_equals(mock_send_mail.call_count, len(user_groups))
 
         last_user_index = len(user_groups) - 1
         user = OSFUser.load(user_groups[last_user_index]['user_id'])
-        email_notification_ids = [message['_id'] for message in user_groups[last_user_index]['info']]
 
         args, kwargs = mock_send_mail.call_args
 
@@ -1741,7 +1778,6 @@ class TestSendDigest(OsfTestCase):
         assert_equal(kwargs['name'], user.fullname)
         message = group_by_node(user_groups[last_user_index]['info'])
         assert_equal(kwargs['message'], message)
-        assert_equal(kwargs['callback'], remove_notifications(email_notification_ids=email_notification_ids))
 
     def test_remove_sent_digest_notifications(self):
         d = factories.NotificationDigestFactory(

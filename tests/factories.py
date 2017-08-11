@@ -13,8 +13,6 @@ Example usage: ::
 Factory boy docs: http://factoryboy.readthedocs.org/
 
 """
-import functools
-
 from django.utils import timezone
 from factory import base, Sequence, SubFactory, post_generation, LazyAttribute
 import mock
@@ -29,23 +27,19 @@ from tests.base import fake
 from tests.base import get_default_metaschema
 from tests import mock_addons as addons_base
 from addons.wiki.models import NodeWikiPage
-from website.project.model import ensure_schemas
 from addons.osfstorage.models import OsfStorageFile
 from osf.models import (Subject, NotificationSubscription, NotificationDigest,
                         ArchiveJob, ArchiveTarget, Identifier, NodeLicense,
                         NodeLicenseRecord, Embargo, RegistrationApproval,
                         Retraction, Sanction, Comment, DraftRegistration,
-                        MetaSchema, AbstractNode as Node, NodeLog,
+                        MetaSchema, AbstractNode, NodeLog,
                         PrivateLink, Tag, AlternativeCitation, Institution,
                         ApiOAuth2PersonalToken, ApiOAuth2Application, ExternalAccount,
-                        ExternalProvider, OSFUser as User, PreprintService,
+                        ExternalProvider, OSFUser, PreprintService,
                         PreprintProvider, Session, Guid)
 from website.archiver import ARCHIVER_SUCCESS
-from website.project.licenses import ensure_licenses
 from website.util import permissions
 from website.exceptions import InvalidSanctionApprovalToken
-
-ensure_licenses = functools.partial(ensure_licenses, warn=False)
 
 
 # TODO: This is a hack. Check whether FactoryBoy can do this better
@@ -102,7 +96,7 @@ class PreprintProviderFactory(ModularOdmFactory):
 
 class UserFactory(ModularOdmFactory):
     class Meta:
-        model = User
+        model = OSFUser
         abstract = False
 
     username = Sequence(lambda n: 'fred{0}@mail.com'.format(n))
@@ -193,7 +187,7 @@ class PrivateLinkFactory(ModularOdmFactory):
 
 class AbstractNodeFactory(ModularOdmFactory):
     class Meta:
-        model = Node
+        model = AbstractNode
 
     title = 'The meaning of life'
     description = 'The meaning of life is 42.'
@@ -411,7 +405,7 @@ class WithdrawnRegistrationFactory(AbstractNodeFactory):
 
 class ForkFactory(ModularOdmFactory):
     class Meta:
-        model = Node
+        model = AbstractNode
 
     @classmethod
     def _create(cls, *args, **kwargs):
@@ -515,7 +509,7 @@ class UnregUserFactory(ModularOdmFactory):
 
     """
     class Meta:
-        model = User
+        model = OSFUser
         abstract = False
     email = Sequence(lambda n: "brian{0}@queen.com".format(n))
     fullname = Sequence(lambda n: "Brian May{0}".format(n))
@@ -536,7 +530,7 @@ class UnconfirmedUserFactory(ModularOdmFactory):
     address (username).
     """
     class Meta:
-        model = User
+        model = OSFUser
     username = Sequence(lambda n: 'roger{0}@queen.com'.format(n))
     fullname = Sequence(lambda n: 'Roger Taylor{0}'.format(n))
     password = 'killerqueen'
@@ -836,10 +830,7 @@ class DraftRegistrationFactory(ModularOdmFactory):
                 project_params['creator'] = initiator
             branched_from = ProjectFactory(**project_params)
         initiator = branched_from.creator
-        try:
-            registration_schema = registration_schema or MetaSchema.find()[0]
-        except IndexError:
-            ensure_schemas()
+        registration_schema = registration_schema or MetaSchema.find()[0]
         registration_metadata = registration_metadata or {}
         draft = DraftRegistration.create_from_node(
             branched_from,
@@ -855,12 +846,9 @@ class NodeLicenseRecordFactory(ModularOdmFactory):
 
     @classmethod
     def _create(cls, *args, **kwargs):
-        try:
-            NodeLicense.find_one(
-                Q('name', 'eq', 'No license')
-            )
-        except NoResultsFound:
-            ensure_licenses()
+        NodeLicense.find_one(
+            Q('name', 'eq', 'No license')
+        )
         kwargs['node_license'] = kwargs.get(
             'node_license',
             NodeLicense.find_one(

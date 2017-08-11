@@ -3,7 +3,7 @@ from rest_framework.exceptions import ValidationError, NotFound
 from framework.auth.oauth_scopes import CoreScopes
 from modularodm import Q
 
-from osf.models import AbstractNode as Node
+from osf.models import AbstractNode
 from api.base import permissions as base_permissions
 from api.base.views import JSONAPIBaseView, BaseContributorDetail, BaseContributorList, BaseNodeLinksDetail, BaseNodeLinksList
 
@@ -33,7 +33,7 @@ from api.registrations.serializers import (
     RegistrationProviderSerializer
 )
 
-from api.nodes.filters import NodesListFilterMixin
+from api.nodes.filters import NodesFilterMixin
 
 from api.nodes.views import (
     NodeMixin, ODMFilterMixin, NodeRegistrationsList,
@@ -60,7 +60,7 @@ class RegistrationMixin(NodeMixin):
 
     def get_node(self, check_object_permissions=True):
         node = get_object_or_error(
-            Node,
+            AbstractNode,
             self.kwargs[self.node_lookup_url_kwarg],
             display_name='node'
 
@@ -75,7 +75,7 @@ class RegistrationMixin(NodeMixin):
         return node
 
 
-class RegistrationList(JSONAPIBaseView, generics.ListAPIView, NodesListFilterMixin):
+class RegistrationList(JSONAPIBaseView, generics.ListAPIView, NodesFilterMixin):
     """Node Registrations.
 
     Registrations are read-only snapshots of a project. This view is a list of all current registrations for which a user
@@ -151,8 +151,10 @@ class RegistrationList(JSONAPIBaseView, generics.ListAPIView, NodesListFilterMix
     view_category = 'registrations'
     view_name = 'registration-list'
 
-    # overrides ODMFilterMixin
-    def get_default_odm_query(self):
+    ordering = ('-date_modified',)
+
+    # overrides NodesFilterMixin
+    def get_default_queryset(self):
         base_query = (
             Q('is_deleted', 'ne', True) &
             Q('type', 'eq', 'osf.registration')
@@ -163,45 +165,28 @@ class RegistrationList(JSONAPIBaseView, generics.ListAPIView, NodesListFilterMix
             permission_query = (permission_query | Q('contributors', 'eq', user))
 
         query = base_query & permission_query
-        return query
+        return AbstractNode.find(query)
 
-    def is_blacklisted(self, query):
-        for query_param in query.nodes:
-            field_name = getattr(query_param, 'attribute', None)
-            if not field_name:
-                continue
-            field = self.serializer_class._declared_fields.get(field_name)
-            if isinstance(field, HideIfWithdrawal):
-                return True
+    def is_blacklisted(self):
+        query_params = self.parse_query_params(self.request.query_params)
+        for key, field_names in query_params.iteritems():
+            for field_name, data in field_names.iteritems():
+                field = self.serializer_class._declared_fields.get(field_name)
+                if isinstance(field, HideIfWithdrawal):
+                    return True
         return False
 
     # overrides ListAPIView
     def get_queryset(self):
-        query = self.get_query_from_request()
-        blacklisted = self.is_blacklisted(query)
-        nodes = Node.find(query).distinct()
+        blacklisted = self.is_blacklisted()
+        nodes = self.get_queryset_from_request().distinct()
         # If attempting to filter on a blacklisted field, exclude withdrawals.
         if blacklisted:
             non_withdrawn_list = [node._id for node in nodes if not node.is_retracted]
-            non_withdrawn_nodes = Node.find(Q('_id', 'in', non_withdrawn_list))
+            non_withdrawn_nodes = AbstractNode.find(Q('_id', 'in', non_withdrawn_list))
             return non_withdrawn_nodes
         return nodes
 
-    # overrides FilterMixin
-    def postprocess_query_param(self, key, field_name, operation):
-        # tag queries will usually be on Tag.name,
-        # ?filter[tags]=foo should be translated to Q('tags__name', 'eq', 'foo')
-        # But queries on lists should be tags, e.g.
-        # ?filter[tags]=foo,bar should be translated to Q('tags', 'isnull', True)
-        # ?filter[tags]=[] should be translated to Q('tags', 'isnull', True)
-        if field_name == 'tags':
-            if operation['value'] not in (list(), tuple()):
-                operation['source_field_name'] = 'tags__name'
-                operation['op'] = 'iexact'
-        if field_name == 'contributors':
-            if operation['value'] not in (list(), tuple()):
-                operation['source_field_name'] = '_contributors__guids___id'
-                operation['op'] = 'iexact'
 
 class RegistrationDetail(JSONAPIBaseView, generics.RetrieveUpdateAPIView, RegistrationMixin, WaterButlerMixin):
     """Node Registrations.
@@ -531,6 +516,8 @@ class RegistrationChildrenList(JSONAPIBaseView, generics.ListAPIView, ODMFilterM
     required_read_scopes = [CoreScopes.NODE_REGISTRATIONS_READ]
     required_write_scopes = [CoreScopes.NULL]
 
+    ordering = ('-date_modified',)
+
     def get_default_odm_query(self):
         base_query = (
             Q('is_deleted', 'ne', True) &
@@ -554,10 +541,10 @@ class RegistrationChildrenList(JSONAPIBaseView, generics.ListAPIView, ODMFilterM
             Q('pk', 'in', node_pks) &
             req_query
         )
-        nodes = Node.find(query).order_by('-date_modified')
+        nodes = AbstractNode.find(query).order_by('-date_modified')
         auth = get_user_auth(self.request)
         pks = [each.pk for each in nodes if each.can_view(auth)]
-        return Node.objects.filter(pk__in=pks).order_by('-date_modified')
+        return AbstractNode.objects.filter(pk__in=pks).order_by('-date_modified')
 
 
 class RegistrationCitationDetail(NodeCitationDetail, RegistrationMixin):

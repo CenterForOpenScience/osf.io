@@ -17,7 +17,6 @@ import lxml.etree
 
 from website import settings
 from website.identifiers.utils import to_anvl
-from website.project.licenses import ensure_licenses
 from website.identifiers import metadata
 from osf.models import Identifier, Subject, NodeLicense
 
@@ -68,8 +67,6 @@ class TestMetadataGeneration(OsfTestCase):
         assert_equal(pub_year.text, str(self.node.registered_date.year))
 
     def test_metadata_for_preprint_has_correct_structure(self):
-        ensure_licenses()
-
         provider = PreprintProviderFactory()
         license = NodeLicense.objects.get(name="CC-By Attribution 4.0 International")
         license_details = {
@@ -127,15 +124,24 @@ class TestMetadataGeneration(OsfTestCase):
         formatted_creators = metadata.format_creators(preprint)
 
         contributors_with_orcids = 0
+        guid_identifiers = []
         for creator_xml in formatted_creators:
             assert creator_xml.find('creatorName').text != u'{}, {}'.format(self.invisible_contrib.family_name, self.invisible_contrib.given_name)
-            if creator_xml.find('nameIdentifier') is not None:
-                assert creator_xml.find('nameIdentifier').attrib['nameIdentifierScheme'] == 'ORCID'
-                assert creator_xml.find('nameIdentifier').attrib['schemeURI'] == 'http://orcid.org/'
-                contributors_with_orcids += 1
+
+            name_identifiers = creator_xml.findall('nameIdentifier')
+
+            for name_identifier in name_identifiers:
+                if name_identifier.attrib['nameIdentifierScheme'] == 'ORCID':
+                    assert name_identifier.attrib['schemeURI'] == 'http://orcid.org/'
+                    contributors_with_orcids += 1
+                else:
+                    guid_identifiers.append(name_identifier.text)
+                    assert name_identifier.attrib['nameIdentifierScheme'] == 'OSF'
+                    assert name_identifier.attrib['schemeURI'] == settings.DOMAIN
 
         assert contributors_with_orcids >= 1
         assert len(formatted_creators) == len(self.node.visible_contributors)
+        assert sorted(guid_identifiers) == sorted([contrib.absolute_url for contrib in self.node.visible_contributors])
 
     def test_format_subjects_for_preprint(self):
         subject = SubjectFactory()
@@ -199,13 +205,6 @@ class TestIdentifierViews(OsfTestCase):
         super(TestIdentifierViews, self).setUp()
         self.user = AuthUserFactory()
         self.node = RegistrationFactory(creator=self.user, is_public=True)
-
-    def test_get_identifiers(self):
-        self.node.set_identifier_value('doi', 'FK424601')
-        self.node.set_identifier_value('ark', 'fk224601')
-        res = self.app.get(self.node.api_url_for('node_identifiers_get'))
-        assert_equal(res.json['doi'], 'FK424601')
-        assert_equal(res.json['ark'], 'fk224601')
 
     @httpretty.activate
     def test_create_identifiers_not_exists(self):

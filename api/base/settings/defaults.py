@@ -94,6 +94,7 @@ INSTALLED_APPS = (
 
     # Addons
     'addons.osfstorage',
+    'addons.bitbucket',
     'addons.box',
     'addons.dataverse',
     'addons.dropbox',
@@ -151,6 +152,9 @@ REST_FRAMEWORK = {
         '2.1',
         '2.2',
         '2.3',
+        '2.4',
+        '2.5',
+        '2.6',
     ),
     'DEFAULT_FILTER_BACKENDS': ('api.base.filters.ODMOrderingFilter',),
     'DEFAULT_PAGINATION_CLASS': 'api.base.pagination.JSONAPIPagination',
@@ -276,7 +280,7 @@ VARNISH_SERVERS = osf_settings.VARNISH_SERVERS
 ESI_MEDIA_TYPES = osf_settings.ESI_MEDIA_TYPES
 
 ADDONS_FOLDER_CONFIGURABLE = ['box', 'dropbox', 's3', 'googledrive', 'figshare', 'owncloud']
-ADDONS_OAUTH = ADDONS_FOLDER_CONFIGURABLE + ['dataverse', 'github', 'mendeley', 'zotero', 'forward']
+ADDONS_OAUTH = ADDONS_FOLDER_CONFIGURABLE + ['dataverse', 'github', 'bitbucket', 'mendeley', 'zotero', 'forward']
 
 BYPASS_THROTTLE_TOKEN = 'test-token'
 

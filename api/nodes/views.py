@@ -57,7 +57,7 @@ from api.identifiers.serializers import NodeIdentifierSerializer
 from api.identifiers.views import IdentifierList
 from api.institutions.serializers import InstitutionSerializer
 from api.logs.serializers import NodeLogSerializer
-from api.nodes.filters import NodeODMFilterMixin, NodesListFilterMixin
+from api.nodes.filters import NodeODMFilterMixin, NodesFilterMixin
 from api.nodes.permissions import (
     IsAdmin,
     IsPublic,
@@ -99,8 +99,8 @@ from api.wikis.serializers import NodeWikiSerializer
 from framework.auth.oauth_scopes import CoreScopes
 from framework.postcommit_tasks.handlers import enqueue_postcommit_task
 from osf.models import AbstractNode
-from osf.models import (Node, PrivateLink, NodeLog, Institution, Comment, DraftRegistration, PreprintService)
-from osf.models import OSFUser as User
+from osf.models import (Node, PrivateLink, Institution, Comment, DraftRegistration, PreprintService)
+from osf.models import OSFUser
 from osf.models import NodeRelation, AlternativeCitation, Guid
 from osf.models import BaseFileNode
 from osf.models.files import File, Folder
@@ -203,7 +203,7 @@ class WaterButlerMixin(object):
         return obj
 
 
-class NodeList(JSONAPIBaseView, bulk_views.BulkUpdateJSONAPIView, bulk_views.BulkDestroyJSONAPIView, bulk_views.ListBulkCreateJSONAPIView, NodeODMFilterMixin, NodesListFilterMixin, WaterButlerMixin):
+class NodeList(JSONAPIBaseView, bulk_views.BulkUpdateJSONAPIView, bulk_views.BulkDestroyJSONAPIView, bulk_views.ListBulkCreateJSONAPIView, NodesFilterMixin, WaterButlerMixin):
     """Nodes that represent projects and components. *Writeable*.
 
     Paginated list of nodes ordered by their `date_modified`.  Each resource contains the full representation of the
@@ -308,29 +308,12 @@ class NodeList(JSONAPIBaseView, bulk_views.BulkUpdateJSONAPIView, bulk_views.Bul
 
     ordering = ('-date_modified', )  # default ordering
 
-    # overrides FilterMixin
-    def postprocess_query_param(self, key, field_name, operation):
-        # tag queries will usually be on Tag.name,
-        # ?filter[tags]=foo should be translated to MQ('tags__name', 'eq', 'foo')
-        # But queries on lists should be tags, e.g.
-        # ?filter[tags]=foo,bar should be translated to MQ('tags', 'isnull', True)
-        # ?filter[tags]=[] should be translated to MQ('tags', 'isnull', True)
-        if field_name == 'tags':
-            if operation['value'] not in (list(), tuple()):
-                operation['source_field_name'] = 'tags__name'
-                operation['op'] = 'iexact'
-        # contributors iexact because guid matching
-        if field_name == 'contributors':
-            if operation['value'] not in (list(), tuple()):
-                operation['source_field_name'] = '_contributors__guids___id'
-                operation['op'] = 'iexact'
-
-    # overrides ODMFilterMixin
-    def get_default_odm_query(self):
+    # overrides NodesFilterMixin
+    def get_default_queryset(self):
         user = self.request.user
         base_query = default_node_list_query()
         permissions_query = default_node_permission_query(user)
-        return base_query & permissions_query
+        return Node.find(base_query & permissions_query)
 
     # overrides ListBulkCreateJSONAPIView, BulkUpdateJSONAPIView
     def get_queryset(self):
@@ -357,8 +340,7 @@ class NodeList(JSONAPIBaseView, bulk_views.BulkUpdateJSONAPIView, bulk_views.Bul
                     raise PermissionDenied
             return nodes
         else:
-            query = self.get_query_from_request()
-            return AbstractNode.find(query).distinct()
+            return self.get_queryset_from_request().distinct()
 
     # overrides ListBulkCreateJSONAPIView, BulkUpdateJSONAPIView, BulkDestroyJSONAPIView
     def get_serializer_class(self):
@@ -687,7 +669,7 @@ class NodeContributorsList(BaseContributorList, bulk_views.BulkUpdateJSONAPIView
 
     required_read_scopes = [CoreScopes.NODE_CONTRIBUTORS_READ]
     required_write_scopes = [CoreScopes.NODE_CONTRIBUTORS_WRITE]
-    model_class = User
+    model_class = OSFUser
 
     throttle_classes = (AddContributorThrottle, UserRateThrottle, NonCookieAuthThrottle, )
 
@@ -762,7 +744,7 @@ class NodeContributorsList(BaseContributorList, bulk_views.BulkUpdateJSONAPIView
             except IndexError:
                 raise ValidationError('Contributor identifier incorrectly formatted.')
 
-        resource_object_list = User.find(MQ('_id', 'in', requested_ids))
+        resource_object_list = OSFUser.find(MQ('_id', 'in', requested_ids))
         for resource in resource_object_list:
             if getattr(resource, 'is_deleted', None):
                 raise Gone
@@ -963,6 +945,8 @@ class NodeDraftRegistrationsList(JSONAPIBaseView, generics.ListCreateAPIView, No
     serializer_class = DraftRegistrationSerializer
     view_category = 'nodes'
     view_name = 'node-draft-registrations'
+
+    ordering = ('-date_modified',)
 
     # overrides ListCreateAPIView
     def get_queryset(self):
@@ -1184,6 +1168,8 @@ class NodeRegistrationsList(JSONAPIBaseView, generics.ListCreateAPIView, NodeMix
     view_category = 'nodes'
     view_name = 'node-registrations'
 
+    ordering = ('-date_modified',)
+
     # overrides ListCreateAPIView
     # TODO: Filter out withdrawals by default
     def get_queryset(self):
@@ -1291,6 +1277,8 @@ class NodeChildrenList(JSONAPIBaseView, bulk_views.ListBulkCreateJSONAPIView, No
     serializer_class = NodeSerializer
     view_category = 'nodes'
     view_name = 'node-children'
+
+    ordering = ('-date_modified',)
 
     # overrides NodeODMFilterMixin
     def get_default_odm_query(self):
@@ -1660,9 +1648,11 @@ class NodeForksList(JSONAPIBaseView, generics.ListCreateAPIView, NodeMixin, Node
     view_category = 'nodes'
     view_name = 'node-forks'
 
+    ordering = ('-forked_date',)
+
     # overrides ListCreateAPIView
     def get_queryset(self):
-        all_forks = self.get_node().forks.sort('-forked_date')
+        all_forks = self.get_node().forks.order_by('-forked_date')
         auth = get_user_auth(self.request)
 
         node_pks = [node.pk for node in all_forks if node.can_view(auth)]
@@ -2068,6 +2058,8 @@ class NodeAddonList(JSONAPIBaseView, generics.ListAPIView, ListFilterMixin, Node
     view_category = 'nodes'
     view_name = 'node-addons'
 
+    ordering = ('-id',)
+
     def get_default_queryset(self):
         qs = []
         for addon in ADDONS_OAUTH:
@@ -2271,6 +2263,7 @@ class NodeProvider(object):
         self.provider = provider
         self.node_id = node._id
         self.pk = node._id
+        self.id = node.id
 
 
 class NodeProvidersList(JSONAPIBaseView, generics.ListAPIView, NodeMixin):
@@ -2400,6 +2393,8 @@ class NodeProvidersList(JSONAPIBaseView, generics.ListAPIView, NodeMixin):
     view_category = 'nodes'
     view_name = 'node-providers'
 
+    ordering = ('-id',)
+
     def get_provider_item(self, provider):
         return NodeProvider(provider, self.get_node())
 
@@ -2428,7 +2423,7 @@ class NodeProviderDetail(JSONAPIBaseView, generics.RetrieveAPIView, NodeMixin):
     view_name = 'node-provider-detail'
 
     def get_object(self):
-        return NodeProvider(self.kwargs['provider'], Node.load(self.kwargs['node_id']))
+        return NodeProvider(self.kwargs['provider'], self.get_node())
 
 
 class NodeAlternativeCitationsList(JSONAPIBaseView, generics.ListCreateAPIView, NodeMixin):
@@ -2464,6 +2459,8 @@ class NodeAlternativeCitationsList(JSONAPIBaseView, generics.ListCreateAPIView, 
     serializer_class = NodeAlternativeCitationSerializer
     view_category = 'nodes'
     view_name = 'alternative-citations'
+
+    ordering = ('-id',)
 
     def get_queryset(self):
         return self.get_node().alternative_citations.all()
@@ -2519,7 +2516,7 @@ class NodeAlternativeCitationDetail(JSONAPIBaseView, generics.RetrieveUpdateDest
         self.get_node().remove_citation(get_user_auth(self.request), instance, save=True)
 
 
-class NodeLogList(JSONAPIBaseView, generics.ListAPIView, NodeMixin, ODMFilterMixin):
+class NodeLogList(JSONAPIBaseView, generics.ListAPIView, NodeMixin, ListFilterMixin):
     """List of Logs associated with a given Node. *Read-only*.
 
     <!--- Copied Description from NodeLogDetail -->
@@ -2647,13 +2644,15 @@ class NodeLogList(JSONAPIBaseView, generics.ListAPIView, NodeMixin, ODMFilterMix
         ExcludeWithdrawals
     )
 
-    def get_default_odm_query(self):
+    def get_default_queryset(self):
         auth = get_user_auth(self.request)
-        query = self.get_node().get_aggregate_logs_query(auth)
-        return query
+        queryset = self.get_node().get_aggregate_logs_queryset(auth)
+        return queryset
 
     def get_queryset(self):
-        queryset = NodeLog.find(self.get_query_from_request()).select_related('node', 'original_node', 'user')
+        queryset = self.get_queryset_from_request().include(
+            'node__guids', 'user__guids', 'original_node__guids', limit_includes=10
+        )
         return queryset
 
 
@@ -2836,6 +2835,8 @@ class NodeInstitutionsList(JSONAPIBaseView, generics.ListAPIView, ODMFilterMixin
     model = Institution
     view_category = 'nodes'
     view_name = 'node-institutions'
+
+    ordering = ('-id',)
 
     def get_queryset(self):
         node = self.get_node()
@@ -3367,6 +3368,8 @@ class NodeViewOnlyLinksList(JSONAPIBaseView, generics.ListCreateAPIView, ListFil
     view_category = 'nodes'
     view_name = 'node-view-only-links'
 
+    ordering = ('-date_created',)
+
     def get_default_queryset(self):
         return self.get_node().private_links.filter(is_deleted=False)
 
@@ -3579,6 +3582,8 @@ class NodePreprintsList(JSONAPIBaseView, generics.ListAPIView, NodeMixin, Prepri
 
     view_category = 'nodes'
     view_name = 'node-preprints'
+
+    ordering = ('-date_modified',)
 
     # overrides DjangoFilterMixin
     def get_default_django_query(self):

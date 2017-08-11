@@ -18,8 +18,6 @@ from modularodm.exceptions import NoResultsFound
 from website import settings
 from website.notifications.constants import NOTIFICATION_TYPES
 from website.util import permissions
-from website.project.licenses import ensure_licenses
-from website.project.model import ensure_schemas
 from website.archiver import ARCHIVER_SUCCESS
 from website.identifiers.utils import parse_identifiers
 from framework.auth.core import Auth
@@ -31,15 +29,10 @@ from osf.modm_compat import Q
 from addons.osfstorage.models import OsfStorageFile
 
 fake = Factory.create()
-ensure_licenses = functools.partial(ensure_licenses, warn=False)
 
 def get_default_metaschema():
     """This needs to be a method so it gets called after the test database is set up"""
-    try:
-        return models.MetaSchema.find()[0]
-    except IndexError:
-        ensure_schemas()
-        return models.MetaSchema.find()[0]
+    return models.MetaSchema.objects.first()
 
 def FakeList(provider, n, *args, **kwargs):
     func = getattr(fake, provider)
@@ -247,12 +240,6 @@ class NodeLicenseRecordFactory(DjangoModelFactory):
 
     @classmethod
     def _create(cls, *args, **kwargs):
-        try:
-            models.NodeLicense.find_one(
-                Q('name', 'eq', 'No license')
-            )
-        except NoResultsFound:
-            ensure_licenses()
         kwargs['node_license'] = kwargs.get(
             'node_license',
             models.NodeLicense.find_one(
@@ -452,10 +439,7 @@ class DraftRegistrationFactory(DjangoModelFactory):
                 project_params['creator'] = initiator
             branched_from = ProjectFactory(**project_params)
         initiator = branched_from.creator
-        try:
-            registration_schema = registration_schema or models.MetaSchema.find()[0]
-        except IndexError:
-            ensure_schemas()
+        registration_schema = registration_schema or models.MetaSchema.objects.first()
         registration_metadata = registration_metadata or {}
         draft = models.DraftRegistration.create_from_node(
             branched_from,
@@ -536,11 +520,24 @@ class PreprintProviderFactory(DjangoModelFactory):
     name = factory.Faker('company')
     description = factory.Faker('bs')
     external_url = factory.Faker('url')
-    logo_name = factory.Faker('file_name', category='image')
-    banner_name = factory.Faker('file_name', category='image')
 
     class Meta:
         model = models.PreprintProvider
+
+    @classmethod
+    def _build(cls, target_class, *args, **kwargs):
+        instance = super(PreprintProviderFactory, cls)._build(target_class, *args, **kwargs)
+        if not instance.share_title:
+            instance.share_title = instance._id
+        return instance
+
+    @classmethod
+    def _create(cls, target_class, *args, **kwargs):
+        instance = super(PreprintProviderFactory, cls)._create(target_class, *args, **kwargs)
+        if not instance.share_title:
+            instance.share_title = instance._id
+            instance.save()
+        return instance
 
 
 def sync_set_identifiers(preprint):
@@ -574,7 +571,7 @@ class PreprintFactory(DjangoModelFactory):
 
     @classmethod
     def _create(cls, target_class, *args, **kwargs):
-        update_task_patcher = mock.patch('website.preprints.tasks.on_preprint_updated.s')
+        update_task_patcher = mock.patch('website.preprints.tasks.on_preprint_updated.si')
         update_task_patcher.start()
 
         finish = kwargs.pop('finish', True)
@@ -622,7 +619,7 @@ class PreprintFactory(DjangoModelFactory):
             if license_details:
                 instance.set_preprint_license(license_details, auth=auth)
 
-            create_task_patcher = mock.patch('website.preprints.tasks.get_and_set_preprint_identifiers.s')
+            create_task_patcher = mock.patch('website.preprints.tasks.get_and_set_preprint_identifiers.si')
             mock_create_identifier = create_task_patcher.start()
             if is_published:
                 mock_create_identifier.side_effect = sync_set_identifiers(instance)

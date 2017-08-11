@@ -10,7 +10,6 @@ syncs:
 
 #  wb-sync:
 #    src: '../waterbutler'
-#    dest: '/code'
 #    sync_strategy: 'unison'
 #    sync_args: [ '-prefer newer' ]
 #    sync_excludes_type: 'Name'
@@ -19,7 +18,6 @@ syncs:
 
 #  mfr-sync:
 #    src: '../modular-file-renderer'
-#    dest: '/code'
 #    sync_strategy: 'unison'
 #    sync_args: [ '-prefer newer' ]
 #    sync_excludes_type: 'Name'
@@ -28,7 +26,6 @@ syncs:
 
 #  preprints-sync:
 #    src: '../ember-preprints'
-#    dest: '/code'
 #    sync_strategy: 'unison'
 #    sync_args: [ '-prefer newer' ]
 #    sync_excludes_type: 'Name'
@@ -37,7 +34,6 @@ syncs:
 
 #  emberosf-sync:
 #    src: '../ember-osf/'
-#    dest: '/code'
 #    sync_strategy: 'unison'
 #    sync_args: [ '-prefer newer' ]
 #    sync_excludes_type: 'Name'
@@ -46,7 +42,6 @@ syncs:
 
 #  registries-sync:
 #    src: '../ember-osf-registries'
-#    dest: '/code'
 #    sync_strategy: 'unison'
 #    sync_args: [ '-prefer newer' ]
 #    sync_excludes_type: 'Name'
@@ -55,9 +50,8 @@ syncs:
 
   osf-sync:
     src: './'
-    dest: '/code'
     sync_strategy: 'unison'
-    sync_args: [ '-prefer newer' ]
     sync_excludes_type: 'Name'
-    sync_excludes: ['.DS_Store', '*.map', '*.pyc', '*.tmp', 'etree.py', '.git', '.idea', 'bower_components', 'node_modules']
-    watch_excludes: ['.*\.DS_Store', '.*\.map', '.*\.pyc', '.*\.tmp', '.*/etree\.py', '.*/\.git', '.*/\.idea', '.*/bower_components', '.*/node_modules']
+    sync_prefer: 'default'
+    sync_excludes: ['.DS_Store', '*.map', '*.pyc', '*.tmp', 'etree.py', '.git', '.idea', 'bower_components', 'node_modules', '.docker-sync']
+    watch_excludes: ['.*\.DS_Store', '.*\.map', '.*\.pyc', '.*\.tmp', '.*/etree\.py', '.*/\.git', '.*/\.idea', '.*/bower_components', '.*/node_modules', '.*/.docker-sync']

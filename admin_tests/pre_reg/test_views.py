@@ -17,7 +17,6 @@ from osf_tests.factories import (
 from osf.models.registrations import DraftRegistration
 from addons.osfstorage.models import OsfStorageFile, OsfStorageFileNode
 
-from website.project.model import ensure_schemas
 from website.prereg.utils import get_prereg_schema
 
 from admin_tests.utilities import setup_view, setup_form_view, setup_user_view
@@ -292,7 +291,6 @@ class TestPreregFiles(AdminTestCase):
         self.user = AuthUserFactory()
         self.node = ProjectFactory(creator=self.user)
 
-        ensure_schemas()
         prereg_schema = get_prereg_schema()
         self.d_of_qs = {
             'q7': OsfStorageFileNode(node=self.node, name='7'),

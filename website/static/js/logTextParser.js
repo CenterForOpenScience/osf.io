@@ -446,7 +446,7 @@ var LogPieces = {
                     'github_file_added', 'github_file_updated', 'box_file_added', 'box_file_updated', 'dropbox_file_added', 'dropbox_file_updated',
                     's3_file_added', 's3_file_updated', 'figshare_file_added', 'checked_in', 'checked_out'];
                     if (acceptableLinkedItems.indexOf(action) !== -1 && logObject.attributes.params.urls) {
-                         return logObject.attributes.params.urls.view;
+                       return logObject.attributes.params.urls.view;
                     }
                 }
                 return null;
@@ -490,6 +490,17 @@ var LogPieces = {
             var github_repo = logObject.attributes.params.github_repo;
             if (paramIsReturned(github_repo, logObject) && paramIsReturned(github_user, logObject)){
                 return m('span', github_user + '/' + github_repo);
+            }
+            return m('span', '');
+        }
+    },
+
+    bitbucket_repo: {
+        view: function(ctrl, logObject) {
+            var bitbucketUser = logObject.attributes.params.bitbucket_user;
+            var bitbucketRepo = logObject.attributes.params.bitbucket_repo;
+            if (paramIsReturned(bitbucketRepo, logObject) && paramIsReturned(bitbucketUser, logObject)){
+                return m('span', bitbucketUser + '/' + bitbucketRepo);
             }
             return m('span', '');
         }
@@ -671,7 +682,7 @@ var LogPieces = {
             return m('span', '');
         }
     },
-    
+
     anonymous_link: {
         view: function(ctrl, logObject) {
             if (logObject.attributes.params.anonymous_link) {

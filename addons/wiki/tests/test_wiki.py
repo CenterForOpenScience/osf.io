@@ -28,7 +28,7 @@ from addons.wiki.utils import (
     migrate_uuid, format_wiki_version, serialize_wiki_settings,
 )
 from framework.auth import Auth
-from framework.mongo.utils import to_mongo_key
+from addons.wiki.utils import to_mongo_key
 
 from .config import EXAMPLE_DOCS, EXAMPLE_OPS
 

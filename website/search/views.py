@@ -151,14 +151,14 @@ def search_projects_by_title(**kwargs):
         my_projects = AbstractNode.find(
             matching_title &
             Q('contributors', 'eq', user)  # user is a contributor
-        ).limit(max_results)
+        )[:max_results]
         my_project_count = my_project_count
 
     if my_project_count < max_results and include_public == 'yes':
         public_projects = AbstractNode.find(
             matching_title &
             Q('is_public', 'eq', True)  # is public
-        ).limit(max_results - my_project_count)
+        )[:max_results - my_project_count]
 
     results = list(my_projects) + list(public_projects)
     ret = process_project_search_results(results, **kwargs)

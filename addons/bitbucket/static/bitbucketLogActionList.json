@@ -1,0 +1,10 @@
+{
+  "bitbucket_file_added" : "${user} added file ${path} to Bitbucket repo ${bitbucket_repo} in ${node}",
+  "bitbucket_file_removed" : "${user} removed ${path_type} ${path} in Bitbucket repo ${bitbucket_repo} in ${node}",
+  "bitbucket_file_updated" : "${user} updated file ${path} in Bitbucket repo ${bitbucket_repo} in ${node}",
+  "bitbucket_folder_created" : "${user} created folder ${path} in Bitbucket repo ${bitbucket_repo} in ${node}",
+  "bitbucket_node_authorized" : "${user} authorized the Bitbucket addon for ${node}",
+  "bitbucket_node_deauthorized" : "${user} deauthorized the Bitbucket addon for ${node}",
+  "bitbucket_node_deauthorized_no_user" : "Bitbucket addon for ${node} deauthorized",
+  "bitbucket_repo_linked" : "${user} linked Bitbucket repo ${bitbucket_repo} to ${node}"
+}

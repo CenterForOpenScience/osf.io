@@ -24,13 +24,12 @@ from rest_framework import exceptions
 from addons.base.exceptions import InvalidAuthError, InvalidFolderError
 from website.exceptions import NodeStateError
 from osf.models import (Comment, DraftRegistration, Institution,
-                        MetaSchema, AbstractNode as Node, PrivateLink)
+                        MetaSchema, AbstractNode, PrivateLink)
 from osf.models.external import ExternalAccount
 from osf.models.licenses import NodeLicense
 from osf.models.preprint_service import PreprintService
 from website.project import new_private_link
-from website.project.metadata.schemas import (ACTIVE_META_SCHEMAS,
-                                              LATEST_SCHEMA_VERSION)
+from website.project.metadata.schemas import LATEST_SCHEMA_VERSION
 from website.project.metadata.utils import is_prereg_admin_not_project_admin
 from website.project.model import NodeUpdateError
 from website.util import permissions as osf_permissions
@@ -444,7 +443,8 @@ class NodeSerializer(JSONAPISerializer):
         except ValidationError as e:
             raise InvalidModelValueError(detail=e.messages[0])
         if len(tag_instances):
-            node.tags.add(*tag_instances)
+            for tag in tag_instances:
+                node.tags.add(tag)
         if is_truthy(request.GET.get('inherit_contributors')) and validated_data['parent'].has_permission(user, 'write'):
             auth = get_user_auth(request)
             parent = validated_data['parent']
@@ -467,7 +467,7 @@ class NodeSerializer(JSONAPISerializer):
         """Update instance with the validated data. Requires
         the request to be in the serializer context.
         """
-        assert isinstance(node, Node), 'node must be a Node'
+        assert isinstance(node, AbstractNode), 'node must be a Node'
         auth = get_user_auth(self.context['request'])
         old_tags = set(node.tags.values_list('name', flat=True))
         if 'tags' in validated_data:
@@ -514,8 +514,8 @@ class NodeAddonSettingsSerializerBase(JSONAPISerializer):
     folder_path = ser.CharField(required=False, allow_null=True)
 
     # Forward-specific
-    label = ser.CharField(required=False, allow_null=True)
-    url = ser.CharField(required=False, allow_null=True)
+    label = ser.CharField(required=False, allow_blank=True)
+    url = ser.CharField(required=False, allow_blank=True)
 
     links = LinksField({
         'self': 'get_absolute_url',
@@ -930,7 +930,7 @@ class NodeLinksSerializer(JSONAPISerializer):
         auth = Auth(user)
         node = self.context['view'].get_node()
         target_node_id = validated_data['_id']
-        pointer_node = Node.load(target_node_id)
+        pointer_node = AbstractNode.load(target_node_id)
         if not pointer_node or pointer_node.is_collection:
             raise InvalidModelValueError(
                 source={'pointer': '/data/relationships/node_links/data/id'},
@@ -1167,7 +1167,7 @@ class DraftRegistrationSerializer(JSONAPISerializer):
 
         schema_id = validated_data.pop('registration_schema').get('_id')
         schema = get_object_or_error(MetaSchema, schema_id)
-        if schema.schema_version != LATEST_SCHEMA_VERSION or schema.name not in ACTIVE_META_SCHEMAS:
+        if schema.schema_version != LATEST_SCHEMA_VERSION or not schema.active:
             raise exceptions.ValidationError('Registration supplement must be an active schema.')
 
         draft = DraftRegistration.create_from_node(node=node, user=initiator, schema=schema)
