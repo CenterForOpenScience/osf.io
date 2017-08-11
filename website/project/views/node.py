@@ -9,6 +9,7 @@ from modularodm import Q
 from modularodm.exceptions import ModularOdmException, ValidationError
 from django.apps import apps
 from django.db.models import Count
+from bs4 import BeautifulSoup
 
 from framework import status
 from framework.utils import iso8601format
@@ -44,6 +45,7 @@ from website.views import serialize_node_summary
 from website.profile import utils
 from website.util.sanitize import strip_html
 from website.util import rapply
+from addons.forward.utils import serialize_settings, settings_complete
 
 
 r_strip_html = lambda collection: rapply(collection, strip_html)
@@ -368,6 +370,82 @@ def view_project(auth, node, **kwargs):
         config_entry='widget'
     ))
     ret.update(rubeus.collect_addon_assets(node))
+
+    addons_widget_data = {
+        'wiki': None,
+        'mendeley': None,
+        'zotero': None,
+        'forward': None,
+        'dataverse': None
+    }
+
+    if 'wiki' in ret['addons']:
+        wiki = node.get_addon('wiki')
+        wiki_page = node.get_wiki_page('home')
+
+        # Show "Read more" link if there are multiple pages or has > 400 characters
+        more = len(node.wiki_pages_current.keys()) >= 2
+        MAX_DISPLAY_LENGTH = 400
+        rendered_before_update = False
+        if wiki_page and wiki_page.html(node):
+            wiki_html = wiki_page.html(node)
+            if len(wiki_html) > MAX_DISPLAY_LENGTH:
+                wiki_html = BeautifulSoup(wiki_html[:MAX_DISPLAY_LENGTH] + '...', 'html.parser')
+                more = True
+            else:
+                wiki_html = BeautifulSoup(wiki_html)
+            rendered_before_update = wiki_page.rendered_before_update
+        else:
+            wiki_html = None
+
+        wiki_widget_data = {
+            'complete': True,
+            'wiki_content': unicode(wiki_html) if wiki_html else None,
+            'wiki_content_url': node.api_url_for('wiki_page_content', wname='home'),
+            'rendered_before_update': rendered_before_update,
+            'more': more,
+            'include': False,
+        }
+        wiki_widget_data.update(wiki.config.to_json())
+        addons_widget_data['wiki'] = wiki_widget_data
+
+    if 'dataverse' in ret['addons']:
+        node_addon = node.get_addon('dataverse')
+        widget_url = node.api_url_for('dataverse_get_widget_contents')
+
+        dataverse_widget_data = {
+            'complete': node_addon.complete,
+            'widget_url': widget_url,
+        }
+        dataverse_widget_data.update(node_addon.config.to_json())
+        addons_widget_data['dataverse'] = dataverse_widget_data
+
+    if 'forward' in ret['addons']:
+        node_addon = node.get_addon('forward')
+        forward_widget_data = serialize_settings(node_addon)
+        forward_widget_data['complete'] = settings_complete(node_addon)
+        forward_widget_data.update(node_addon.config.to_json())
+        addons_widget_data['forward'] = forward_widget_data
+
+    if 'zotero' in ret['addons']:
+        node_addon = node.get_addon('zotero')
+        zotero_widget_data = node_addon.config.to_json()
+        zotero_widget_data.update({
+            'complete': node_addon.complete,
+            'list_id': node_addon.list_id,
+        })
+        addons_widget_data['zotero'] = zotero_widget_data
+
+    if 'mendeley' in ret['addons']:
+        node_addon = node.get_addon('mendeley')
+        mendeley_widget_data = node_addon.config.to_json()
+        mendeley_widget_data.update({
+            'complete': node_addon.complete,
+            'list_id': node_addon.list_id,
+        })
+        addons_widget_data['mendeley'] = mendeley_widget_data
+
+    ret.update({'addons_widget_data': addons_widget_data})
     return ret
 
 # Reorder components
