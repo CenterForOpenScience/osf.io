@@ -403,7 +403,6 @@ CELERY_RESULT_BACKEND = 'amqp://'
 # Modules to import when celery launches
 CELERY_IMPORTS = (
     'framework.celery_tasks',
-    'framework.celery_tasks.signals',
     'framework.email.tasks',
     'website.mailchimp_utils',
     'website.notifications.tasks',
@@ -1350,7 +1349,6 @@ BLACKLISTED_DOMAINS = [
     'nowhere.org',
     'nowmymail.com',
     'nurfuerspam.de',
-    'nus.edu.sg',
     'nwldx.com',
     'objectmail.com',
     'obobbo.com',

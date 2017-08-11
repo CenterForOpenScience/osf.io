@@ -24,9 +24,8 @@ from include import IncludeQuerySet, IncludeManager
 from framework import status
 from framework.celery_tasks.handlers import enqueue_task
 from framework.exceptions import PermissionsError
-from framework.mongo import DummyRequest, get_request_and_user_id
-from framework.mongo.utils import to_mongo_key
 from framework.sentry import log_exception
+from addons.wiki.utils import to_mongo_key
 from osf.exceptions import ValidationValueError
 from osf.models.citation import AlternativeCitation
 from osf.models.contributor import (Contributor, RecentlyAddedContributor,
@@ -47,6 +46,7 @@ from osf.modm_compat import Q as MODMQ
 from osf.utils.auth import Auth, get_user
 from osf.utils.datetime_aware_jsonfield import DateTimeAwareJSONField
 from osf.utils.fields import NonNaiveDateTimeField
+from osf.utils.requests import DummyRequest, get_request_and_user_id
 from website import language, settings
 from website.citations.utils import datetime_to_csl
 from website.exceptions import (InvalidTagError, NodeStateError,
@@ -389,8 +389,6 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
     title = models.TextField(
         validators=[validate_title]
     )  # this should be a charfield but data from mongo didn't fit in 255
-    # TODO why is this here if it's empty
-    users_watching_node = models.ManyToManyField(OSFUser, related_name='watching')
     wiki_pages_current = DateTimeAwareJSONField(default=dict, blank=True)
     wiki_pages_versions = DateTimeAwareJSONField(default=dict, blank=True)
     # Dictionary field mapping node wiki page to sharejs private uuid.
@@ -1215,8 +1213,11 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
             # only raise error if user is registered.
             if contributor.is_registered or self.is_contributor(contributor):
                 raise
-            contributor.add_unclaimed_record(node=self, referrer=auth.user,
-                                             given_name=fullname, email=email)
+
+            contributor.add_unclaimed_record(
+                node=self, referrer=auth.user, given_name=fullname, email=email
+            )
+
             contributor.save()
 
         self.add_contributor(
@@ -1924,6 +1925,9 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         else:
             forked.title = title
 
+        if len(forked.title) > 200:
+            forked.title = forked.title[:200]
+
         # TODO: Optimize me
         for citation in self.alternative_citations.all():
             cloned_citation = citation.clone()
@@ -2024,6 +2028,9 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
             language.TEMPLATED_FROM_PREFIX not in new.title
         ):
             new.title = ''.join((language.TEMPLATED_FROM_PREFIX, new.title,))
+
+        if len(new.title) > 200:
+            new.title = new.title[:200]
 
         # Slight hack - date_created is a read-only field.
         new.date_created = timezone.now()

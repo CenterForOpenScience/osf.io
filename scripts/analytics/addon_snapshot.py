@@ -8,7 +8,7 @@ from website.app import init_app
 init_app()
 
 from osf.models import OSFUser, AbstractNode
-from framework.mongo.utils import paginated
+from framework.database import paginated
 from scripts.analytics.base import SnapshotAnalytics
 from website.settings import ADDONS_AVAILABLE
 

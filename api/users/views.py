@@ -314,7 +314,7 @@ class UserAddonList(JSONAPIBaseView, generics.ListAPIView, ListFilterMixin, User
     view_category = 'users'
     view_name = 'user-addons'
 
-    ordering = ('-date_last_refreshed',)
+    ordering = ('-id',)
 
     def get_queryset(self):
         qs = [addon for addon in self.get_user().get_addons() if 'accounts' in addon.config.configs]

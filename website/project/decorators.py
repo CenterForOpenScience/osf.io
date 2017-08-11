@@ -13,7 +13,7 @@ from framework.auth import Auth, cas
 from framework.flask import redirect  # VOL-aware redirect
 from framework.exceptions import HTTPError
 from framework.auth.decorators import collect_auth
-from framework.mongo.utils import get_or_http_error
+from framework.database import get_or_http_error
 
 from osf.models import AbstractNode
 from website import settings
@@ -177,11 +177,17 @@ def check_can_access(node, user, key=None, api_node=None):
     if user is None:
         return False
     if not node.can_view(Auth(user=user)) and api_node != node:
+        error_data = {
+            'message_long': ('User has restricted access to this page. '
+            'If this should not have occurred and the issue persists, please report it to '
+            '<a href="mailto:support@osf.io">support@osf.io</a>.')
+        }
         if key in node.private_link_keys_deleted:
             status.push_status_message('The view-only links you used are expired.', trust=False)
-        raise HTTPError(http.FORBIDDEN, data={'message_long': ('User has restricted access to this page. '
-            'If this should not have occurred and the issue persists, please report it to '
-            '<a href="mailto:support@osf.io">support@osf.io</a>.')})
+        elif node.embargo and not node.is_pending_embargo:
+            error_data['message_short'] = 'Resource under embargo'
+            error_data['message_long'] = 'This resource is currently under embargo, please check back when it opens {}.'.format(node.embargo_end_date.strftime('%A, %b. %d, %Y'))
+        raise HTTPError(http.FORBIDDEN, data=error_data)
     return True
 
 
@@ -248,6 +254,7 @@ def _must_be_contributor_factory(include_public, include_view_only_anon=True):
         return wrapped
 
     return wrapper
+
 
 # Create authorization decorators
 must_be_contributor = _must_be_contributor_factory(False)

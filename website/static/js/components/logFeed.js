@@ -220,7 +220,7 @@ var LogFeed = {
                     image = m('img', { src : item.embeds.user.errors[0].meta.profile_image});
                 }
                 return m('.db-activity-item', [
-                    m('', [m('.db-log-avatar.m-r-xs', image), m.component(LogText, item)]),
+                    m('', [m('.db-log-avatar.m-r-xs', image), m.component(LogText.LogText, item)]),
                     m('.text-right', m('span.text-muted.m-r-xs', item.attributes.formattableDate.local))
                 ]);
             }) : '',
