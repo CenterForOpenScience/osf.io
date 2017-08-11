@@ -376,6 +376,34 @@ class TestPreregFiles(AdminTestCase):
         for q, f in self.d_of_qs.iteritems():
             nt.assert_equal(None, f.checkout)
 
+    def test_approved_does_not_checkout_files(self):
+        self.draft.submit_for_review(self.user, {}, save=True)
+        self.draft.approval.state = 'approved'
+        self.draft.approval.save()
+
+        request = RequestFactory().get('/fake_path')
+        view = DraftDetailView()
+        view = setup_user_view(view, request, self.admin_user,
+                               draft_pk=self.draft._id)
+        view.checkout_files(self.draft)
+
+        for q, f in self.d_of_qs.iteritems():
+            nt.assert_equal(None, f.checkout)
+
+    def test_rejected_does_not_checkout_files(self):
+        self.draft.submit_for_review(self.user, {}, save=True)
+        self.draft.approval.state = 'rejected'
+        self.draft.approval.save()
+
+        request = RequestFactory().get('/fake_path')
+        view = DraftDetailView()
+        view = setup_user_view(view, request, self.admin_user,
+                               draft_pk=self.draft._id)
+        view.checkout_files(self.draft)
+
+        for q, f in self.d_of_qs.iteritems():
+            nt.assert_equal(None, f.checkout)
+
     def test_checkout_checkup_approved_removes_checkout(self):
         self.draft.submit_for_review(self.user, {}, save=True)
         request = RequestFactory().get('/fake_path')

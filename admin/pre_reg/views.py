@@ -154,7 +154,7 @@ class DraftDetailView(PermissionRequiredMixin, DetailView):
     raise_exception = True
 
     def get_object(self, queryset=None):
-        draft = DraftRegistration.load(self.kwargs.get('draft_pk'))
+        draft = DraftRegistration.objects.select_related('approval').get(_id=self.kwargs.get('draft_pk'))
         self.checkout_files(draft)
         try:
             return serializers.serialize_draft_registration(draft)
@@ -165,10 +165,12 @@ class DraftDetailView(PermissionRequiredMixin, DetailView):
             ))
 
     def checkout_files(self, draft):
-        prereg_user = self.request.user
-        for item in get_metadata_files(draft):
-            item.checkout = prereg_user
-            item.save()
+        # Do not check out files if rejected or approved
+        if not draft.approval or draft.approval.state == 'unapproved':
+            prereg_user = self.request.user
+            for item in get_metadata_files(draft):
+                item.checkout = prereg_user
+                item.save()
 
 
 class DraftFormView(PermissionRequiredMixin, FormView):
