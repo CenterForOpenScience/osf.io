@@ -530,6 +530,8 @@ def notify_added_contributor(node, contributor, auth=None, throttle=None, email_
             if not email_template or not preprint_provider:
                 return
             email_template = getattr(mails, 'CONTRIBUTOR_ADDED_PREPRINT')(email_template, preprint_provider.name)
+        elif node.is_preprint:
+            email_template = getattr(mails, 'CONTRIBUTOR_ADDED_PREPRINT_NODE_FROM_OSF'.format(email_template.upper()))
         else:
             email_template = getattr(mails, 'CONTRIBUTOR_ADDED_DEFAULT'.format(email_template.upper()))
 
