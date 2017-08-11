@@ -1922,6 +1922,9 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         else:
             forked.title = title
 
+        if len(forked.title) > 200:
+            forked.title = forked.title[:200]
+
         # TODO: Optimize me
         for citation in self.alternative_citations.all():
             cloned_citation = citation.clone()
@@ -2022,6 +2025,9 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
             language.TEMPLATED_FROM_PREFIX not in new.title
         ):
             new.title = ''.join((language.TEMPLATED_FROM_PREFIX, new.title,))
+
+        if len(new.title) > 200:
+            new.title = new.title[:200]
 
         # Slight hack - date_created is a read-only field.
         new.date_created = timezone.now()
