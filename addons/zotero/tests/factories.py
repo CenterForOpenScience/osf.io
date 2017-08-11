@@ -3,7 +3,7 @@ from django.utils import timezone
 from factory import SubFactory, Sequence
 
 from factory.django import DjangoModelFactory
-from tests.factories import UserFactory, ProjectFactory, ExternalAccountFactory
+from osf_tests.factories import UserFactory, ProjectFactory, ExternalAccountFactory
 
 from dateutil.relativedelta import relativedelta
 

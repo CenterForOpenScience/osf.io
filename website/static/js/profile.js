@@ -597,7 +597,7 @@ var SocialViewModel = function(urls, modes, preventUnsaved) {
     );
     self.impactStory = extendLink(
         ko.observable().extend({trimmed: true, cleanup: cleanByRule(socialRules.impactStory)}),
-        self, 'impactStory', 'https://www.impactstory.org/u/'
+        self, 'impactStory', 'https://impactstory.org/u/'
     );
     self.github = extendLink(
         ko.observable().extend({trimmed: true, cleanup: cleanByRule(socialRules.github)}),
@@ -731,6 +731,14 @@ SocialViewModel.prototype.unserialize = function(data) {
     var self = this;
     var websiteValue = [];
     $.each(data || {}, function(key, value) {
+        if (key === 'profileWebsites') {
+            value = value.map(function(website) {
+                return $osf.decodeText(website);
+            });
+        } else {
+            value = $osf.decodeText(value);
+        }
+
         if (ko.isObservable(self[key]) && key === 'profileWebsites') {
             if (value && value.length === 0) {
                 value.push(ko.observable('').extend({
@@ -924,6 +932,9 @@ ListViewModel.prototype.unserialize = function(data) {
         self.editable(false);
     }
     self.contents(ko.utils.arrayMap(data.contents || [], function (each) {
+        for (var attr in each) {
+            each[attr] = $osf.decodeText(each[attr]);
+        }
         return new self.ContentModel(self).unserialize(each);
     }));
 

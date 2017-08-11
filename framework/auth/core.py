@@ -5,9 +5,11 @@ import datetime as dt
 import logging
 
 from django.utils import timezone
-from framework.mongo.validators import string_required
+from django.db.models import Q as DQ
+from django.db.models import Subquery
 from framework.sessions import session
 from modularodm import Q
+
 from modularodm.exceptions import QueryException, ValidationError, ValidationValueError
 from modularodm.validators import URLValidator
 from website import security, settings
@@ -42,24 +44,6 @@ def generate_verification_key(verification_type=None):
         'token': token,
         'expires': expires,
     }
-
-
-def validate_history_item(item):
-    string_required(item.get('institution'))
-    startMonth = item.get('startMonth')
-    startYear = item.get('startYear')
-    endMonth = item.get('endMonth')
-    endYear = item.get('endYear')
-
-    validate_year(startYear)
-    validate_year(endYear)
-
-    if startYear and endYear:
-        if endYear < startYear:
-            raise ValidationValueError('End date must be later than start date.')
-        elif endYear == startYear:
-            if endMonth and startMonth and endMonth < startMonth:
-                raise ValidationValueError('End date must be later than start date.')
 
 
 def validate_year(item):
@@ -118,24 +102,24 @@ def get_user(email=None, password=None, token=None, external_id_provider=None, e
     :param external_id: the external id
     :rtype User or None
     """
-    from osf.models import OSFUser
+    from osf.models import OSFUser, Email
+
+    if not any([email, password, token, external_id_provider, external_id_provider]):
+        return None
 
     if password and not email:
         raise AssertionError('If a password is provided, an email must also be provided.')
 
-    query_list = []
+    qs = OSFUser.objects.filter()
 
     if email:
         email = email.strip().lower()
-        query_list.append(Q('emails__address', 'eq', email) | Q('username', 'eq', email))
+        qs = qs.filter(DQ(DQ(username=email) | DQ(id=Subquery(Email.objects.filter(address=email).values('user_id')))))
 
     if password:
         password = password.strip()
         try:
-            query = query_list[0]
-            for query_part in query_list[1:]:
-                query = query & query_part
-            user = OSFUser.find_one(query)
+            user = qs.get()
         except Exception as err:
             logger.error(err)
             user = None
@@ -144,16 +128,13 @@ def get_user(email=None, password=None, token=None, external_id_provider=None, e
         return user
 
     if token:
-        query_list.append(Q('verification_key', 'eq', token))
+        qs = qs.filter(verification_key=token)
 
     if external_id_provider and external_id:
-        query_list.append(Q('external_identity.{}.{}'.format(external_id_provider, external_id), 'eq', 'VERIFIED'))
+        qs = qs.filter(**{'external_identity__{}__{}'.format(external_id_provider, external_id): 'VERIFIED'})
 
     try:
-        query = query_list[0]
-        for query_part in query_list[1:]:
-            query = query & query_part
-        user = OSFUser.find_one(query)
+        user = qs.get()
         return user
     except Exception as err:
         logger.error(err)

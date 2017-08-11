@@ -17,13 +17,13 @@
 
 % else:
 
-    <div mod-meta='{
-            "tpl": "project/addon/config_error.mako",
-            "kwargs": {
-                "short_name": "${short_name}",
-                "full_name": "${full_name}"
-            }
-        }'></div>
+    <div class='addon-config-error p-sm'>
+        ${full_name} add-on is not configured properly.
+        % if user['is_contributor']:
+            Configure this add-on on the <a href="${node['url']}settings/">settings</a> page.
+        % endif
+    </div>
+
 
 % endif
 

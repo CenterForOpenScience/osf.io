@@ -209,7 +209,7 @@ class PreprintSerializer(JSONAPISerializer):
 
     def set_field(self, func, val, auth, save=False):
         try:
-            func(val, auth, save=save)
+            func(val, auth)
         except PermissionsError as e:
             raise exceptions.PermissionDenied(detail=e.message)
         except ValueError as e:
@@ -246,7 +246,8 @@ class PreprintCreateSerializer(PreprintSerializer):
             raise Conflict('Only one preprint per provider can be submitted for a node. Check `meta[existing_resource_id]`.', meta={'existing_resource_id': conflict._id})
 
         preprint = PreprintService(node=node, provider=provider)
-        self.set_field(preprint.set_primary_file, primary_file, auth, save=True)
+        self.set_field(preprint.set_primary_file, primary_file, auth)
+        preprint.save()
         preprint.node._has_abandoned_preprint = True
         preprint.node.save()
 

@@ -1,20 +1,19 @@
+from nose.tools import *  # flake8: noqa
 import pytest
 
-from nose.tools import *  # flake8: noqa
-
-from tests.base import ApiTestCase
-from osf.models import PreprintService, Node
-from website.util import permissions
 from api.base.settings.defaults import API_BASE
 from api_tests.preprints.filters.test_filters import PreprintsListFilteringMixin
 from api_tests.preprints.views.test_preprint_list_mixin import PreprintIsPublishedListMixin, PreprintIsValidListMixin
+from osf.models import PreprintService, Node
 from osf_tests.factories import (
     ProjectFactory,
     PreprintFactory,
     AuthUserFactory,
     SubjectFactory,
-    PreprintProviderFactory
+    PreprintProviderFactory,
 )
+from tests.base import ApiTestCase
+from website.util import permissions
 
 class TestUserPreprints(ApiTestCase):
 
@@ -71,50 +70,100 @@ class TestUserPreprints(ApiTestCase):
         assert_not_in(self.public_project._id, ids)
         assert_not_in(self.private_project._id, ids)
 
-class TestUserPreprintsListFiltering(PreprintsListFilteringMixin, ApiTestCase):
+class TestUserPreprintsListFiltering(PreprintsListFilteringMixin):
 
-    def setUp(self):
-        self.user = AuthUserFactory()
-        self.provider = PreprintProviderFactory(name='Sockarxiv')
-        self.provider_two = PreprintProviderFactory(name='Piratearxiv')
-        self.provider_three = self.provider
-        self.project = ProjectFactory(creator=self.user)
-        self.project_two = ProjectFactory(creator=self.user)
-        self.project_three = ProjectFactory(creator=self.user)
-        self.url = '/{}users/{}/preprints/?version=2.2&'.format(API_BASE, self.user._id)
-        super(TestUserPreprintsListFiltering, self).setUp()
+    @pytest.fixture()
+    def user(self):
+        return AuthUserFactory()
 
-    def test_provider_filter_equals_returns_one(self):
-        expected = [self.preprint_two._id]
-        res = self.app.get('{}{}'.format(self.provider_url, self.provider_two._id), auth=self.user.auth)
+    @pytest.fixture()
+    def provider_one(self):
+        return PreprintProviderFactory(name='Sockarxiv')
+
+    @pytest.fixture()
+    def provider_two(self):
+        return PreprintProviderFactory(name='Piratearxiv')
+
+    @pytest.fixture()
+    def provider_three(self, provider_one):
+        return provider_one
+
+    @pytest.fixture()
+    def project_one(self, user):
+        return ProjectFactory(creator=user)
+
+    @pytest.fixture()
+    def project_two(self, user):
+        return ProjectFactory(creator=user)
+
+    @pytest.fixture()
+    def project_three(self, user):
+        return ProjectFactory(creator=user)
+
+    @pytest.fixture()
+    def url(self, user):
+        return '/{}users/{}/preprints/?version=2.2&'.format(API_BASE, user._id)
+
+    def test_provider_filter_equals_returns_one(self, app, user, provider_two, preprint_two, provider_url):
+        expected = [preprint_two._id]
+        res = app.get('{}{}'.format(provider_url, provider_two._id), auth=user.auth)
         actual = [preprint['id'] for preprint in res.json['data']]
-        assert_equal(expected, actual)
+        assert expected == actual
 
 
-class TestUserPreprintIsPublishedList(PreprintIsPublishedListMixin, ApiTestCase):
-    def setUp(self):
-        self.admin = AuthUserFactory()
-        self.provider_one = PreprintProviderFactory()
-        self.provider_two = self.provider_one
-        self.published_project = ProjectFactory(creator=self.admin, is_public=True)
-        self.public_project = ProjectFactory(creator=self.admin, is_public=True)
-        self.url = '/{}users/{}/preprints/?version=2.2&'.format(API_BASE, self.admin._id)
-        super(TestUserPreprintIsPublishedList, self).setUp()
+class TestUserPreprintIsPublishedList(PreprintIsPublishedListMixin):
+
+    @pytest.fixture()
+    def user_admin_contrib(self):
+        return AuthUserFactory()
+
+    @pytest.fixture()
+    def provider_one(self):
+        return PreprintProviderFactory()
+
+    @pytest.fixture()
+    def provider_two(self, provider_one):
+        return provider_one
+
+    @pytest.fixture()
+    def project_published(self, user_admin_contrib):
+        return ProjectFactory(creator=user_admin_contrib, is_public=True)
+
+    @pytest.fixture()
+    def project_public(self, user_admin_contrib, user_write_contrib):
+        project_public = ProjectFactory(creator=user_admin_contrib, is_public=True)
+        project_public.add_contributor(user_write_contrib, permissions=permissions.DEFAULT_CONTRIBUTOR_PERMISSIONS, save=True)
+        return project_public
+
+    @pytest.fixture()
+    def url(self, user_admin_contrib):
+        return '/{}users/{}/preprints/?version=2.2&'.format(API_BASE, user_admin_contrib._id)
 
 class TestUserPreprintIsValidList(PreprintIsValidListMixin):
-    @pytest.fixture(autouse=True)
-    def setUp(self):
-        self.admin = AuthUserFactory()
-        self.project = ProjectFactory(creator=self.admin, is_public=True)
-        self.provider = PreprintProviderFactory()
-        self.url = '/{}users/{}/preprints/?version=2.2&'.format(API_BASE, self.admin._id)
-        super(TestUserPreprintIsValidList, self).setUp()
+
+    @pytest.fixture()
+    def user_admin_contrib(self):
+        return AuthUserFactory()
+
+    @pytest.fixture()
+    def project(self, user_admin_contrib, user_write_contrib):
+        project = ProjectFactory(creator=user_admin_contrib, is_public=True)
+        project.add_contributor(user_write_contrib, permissions=permissions.DEFAULT_CONTRIBUTOR_PERMISSIONS, save=True)
+        return project
+
+    @pytest.fixture()
+    def provider(self):
+        return PreprintProviderFactory()
+
+    @pytest.fixture()
+    def url(self, user_admin_contrib):
+        return '/{}users/{}/preprints/?version=2.2&'.format(API_BASE, user_admin_contrib._id)
 
     # test override: user nodes/preprints routes do not show private nodes to anyone but the self
-    def test_preprint_private_visible_write(self):
-        res = self.app.get(self.url, auth=self.write_contrib.auth)
+    def test_preprint_private_visible_write(self, app, user_write_contrib, project, preprint, url):
+        res = app.get(url, auth=user_write_contrib.auth)
         assert len(res.json['data']) == 1
-        self.project.is_public = False
-        self.project.save()
-        res = self.app.get(self.url, auth=self.write_contrib.auth)
+        project.is_public = False
+        project.save()
+        res = app.get(url, auth=user_write_contrib.auth)
         assert len(res.json['data']) == 0

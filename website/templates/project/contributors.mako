@@ -1,7 +1,6 @@
 <%inherit file="project/project_base.mako"/>
 <%def name="title()">${node['title']} Contributors</%def>
 
-<%include file="project/modal_generate_private_link.mako"/>
 <%include file="project/modal_add_contributor.mako"/>
 <%include file="project/modal_remove_contributor.mako"/>
 
@@ -146,85 +145,12 @@
             </a>
         </h3>
         <p>Create a link to share this project so those who have the link can view&mdash;but not edit&mdash;the project.</p>
-        <div class="scripted" id="linkScope">
-            <table id="privateLinkTable" class="table responsive-table responsive-table-xs"
-                    data-bind="visible: visible">
-                <thead>
-                    <tr>
-                        <th class="responsive-table-hide">Link Name</th>
-                        <th class="shared-comp">Shared Components</th>
-                        <th>Created Date</th>
-                        <th>Created By</th>
-                        <th class="min-width">Anonymous</th>
-                        <th class="min-width"></th>
-                    </tr>
-                </thead>
-                <tbody data-bind="template: {
-                            name: 'linkTbl',
-                            foreach: privateLinks,
-                            afterRender: afterRenderLink
-                        }">
-                </tbody>
-            </table>
-        </div>
+        <%include file="project/private_links.mako"/>
     % endif
 </div>
 
 <link rel="stylesheet" href="/static/css/pages/contributor-page.css">
-
-<script id="linkTbl" type="text/html">
-    <tr>
-        <td data-bind="attr: {class: expanded() ? 'expanded' : null,
-                                role: $root.collapsed() ? 'button' : null},
-                       click: $root.collapsed() ? toggleExpand : null">
-            <span class="link-name m-b-xs" data-bind="text: name"></span>
-            <span data-bind="attr: {class: expanded() ? 'fa toggle-icon fa-angle-up' : 'fa toggle-icon fa-angle-down'}"></span>
-            <div>
-                <div class="btn-group">
-                    <button title="Copy to clipboard" class="btn btn-default btn-sm m-r-xs copy-button"
-                            data-bind="attr: {'data-clipboard-text': linkUrl}" >
-                        <i class="fa fa-copy"></i>
-                    </button>
-                    <input class="link-url" type="text" data-bind="value: linkUrl, attr:{readonly: readonly}, click: toggle, clickBubble: false"  />
-                </div>
-            </div>
-        </td>
-        <td>
-            <div class="header" data-bind="visible: $root.collapsed() && expanded()"></div>
-            <div class="td-content" data-bind="visible: !$root.collapsed() || expanded()">
-                <ul class="private-link-list narrow-list" data-bind="foreach: nodesList">
-                    <li class="private-link-list-node">
-                        <span data-bind="getIcon: $data.category"></span>
-                        <a data-bind="text:$data.title, attr: {href: $data.url}"></a>
-                    </li>
-                </ul>
-            </div>
-        </td>
-        <td>
-            <div class="header" data-bind="visible: $root.collapsed() && expanded()"></div>
-            <div class="td-content" data-bind="visible: !$root.collapsed() || expanded()">
-                <span class="link-create-date" data-bind="text: dateCreated.local, tooltip: {title: dateCreated.utc}"></span>
-            </div>
-        </td>
-        <td>
-            <div class="header" data-bind="visible: $root.collapsed() && expanded()"></div>
-            <div class="td-content" data-bind="visible: !$root.collapsed() || expanded()">
-                <a data-bind="text: creator.fullname, attr: {href: creator.url}" class="overflow-block"></a>
-            </div>
-        </td>
-        <td>
-            <div class="header" data-bind="visible: $root.collapsed() && expanded()"></div>
-            <div class="td-content" data-bind="visible: !$root.collapsed() || expanded()">
-                <span data-bind="html: anonymousDisplay"></span>
-            </div>
-        </td>
-        <td>
-            <div class="td-content" data-bind="visible: expanded() || !$root.collapsed()">
-                <button data-bind="click:  $root.removeLink" type="button" class="btn btn-danger to-top-element">Remove</button>
-            </div>
-        </td>
-    </tr>
-</script>
+<link rel="stylesheet" href="/static/css/responsive-tables.css">
 
 <script id="contribTable" type="text/html">
     <thead>
@@ -366,7 +292,8 @@
 
     <script type="text/javascript">
       window.contextVars = window.contextVars || {};
-      window.contextVars.user = ${ user | sjson, n };
+      window.contextVars.currentUser = window.contextVars.currentUser || {};
+      window.contextVars.currentUser.permissions = ${ user['permissions'] | sjson, n } ;
       window.contextVars.isRegistration = ${ node['is_registration'] | sjson, n };
       window.contextVars.contributors = ${ contributors | sjson, n };
       window.contextVars.adminContributors = ${ adminContributors | sjson, n };

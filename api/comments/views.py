@@ -22,7 +22,7 @@ from api.comments.serializers import (
 from framework.auth.core import Auth
 from framework.auth.oauth_scopes import CoreScopes
 from framework.exceptions import PermissionsError
-from osf.models import AbstractNode as Node, Comment, BaseFileNode
+from osf.models import AbstractNode, Comment, BaseFileNode
 from addons.wiki.models import NodeWikiPage
 
 
@@ -170,7 +170,7 @@ class CommentDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView, Comm
         comment = self.get_comment()
         comment_node = None
 
-        if isinstance(comment.target.referent, Node):
+        if isinstance(comment.target.referent, AbstractNode):
             comment_node = comment.target.referent
         elif isinstance(comment.target.referent, (NodeWikiPage,
                                                   BaseFileNode)):
@@ -258,6 +258,8 @@ class CommentReportsList(JSONAPIBaseView, generics.ListCreateAPIView, CommentMix
 
     view_category = 'comments'
     view_name = 'comment-reports'
+
+    ordering = ('-date_modified',)
 
     def get_queryset(self):
         user_id = self.request.user._id
