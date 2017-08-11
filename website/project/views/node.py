@@ -1177,7 +1177,7 @@ def fork_pointer(auth, node, **kwargs):
     NodeRelation = apps.get_model('osf.NodeRelation')
 
     linked_node_id = request.json.get('nodeId')
-    linked_node = Node.load(linked_node_id)
+    linked_node = AbstractNode.load(linked_node_id)
     pointer = NodeRelation.objects.filter(child=linked_node, is_node_link=True, parent=node).first()
 
     if pointer is None:
