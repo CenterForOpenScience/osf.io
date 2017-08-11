@@ -1,0 +1,32 @@
+#privateLinkTable th.shared-comp {
+    width: 120px;
+}
+
+#privateLinkTable .tooltip{
+    word-wrap: break-word;
+}
+
+#privateLinkTable .btn-group {
+    width: 100%;
+    display: flex;
+    display: -webkit-flex;
+    display: -ms-flex;
+}
+
+.private-link-list-node {
+    width: 100px;
+    margin-left: -40px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+#generate-private-link {
+    margin: 20px 20px;
+}
+
+@media screen and (max-width: 768px) {
+  #privateLinkTable.table {
+    margin-top: 12px;
+  }
+}
