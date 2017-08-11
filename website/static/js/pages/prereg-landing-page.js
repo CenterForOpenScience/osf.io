@@ -9,8 +9,8 @@ require('js/projectsSelect.js');
 
 $(function(){
     var campaignShort = window.contextVars.campaign || 'prereg';
-    $('.prereg-button').qToggle();
-    $('.prereg-button').click(function(){
+    $('.prereg-button-qtoggle').qToggle();
+    $('.prereg-button-qtoggle').click(function(){
         var target = $(this).attr('data-qToggle-target');
         var input = $(target).find('input').first().focus();
     });
