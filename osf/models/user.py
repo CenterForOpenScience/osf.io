@@ -35,7 +35,7 @@ from framework.exceptions import PermissionsError
 from framework.sessions.utils import remove_sessions_for_user
 from osf.utils.requests import get_current_request
 from modularodm.exceptions import NoResultsFound
-from osf.exceptions import reraise_django_validation_errors
+from osf.exceptions import reraise_django_validation_errors, MaxRetriesError
 from osf.models.base import BaseModel, GuidMixin, GuidMixinQuerySet
 from osf.models.contributor import RecentlyAddedContributor
 from osf.models.institution import Institution
@@ -718,7 +718,7 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
                     new_name = new_name_format.format(name_without_extension, digit, extension)
                     rename_count += 1
                     if rename_count >= MAX_QUICKFILES_MERGE_RENAME_ATTEMPTS:
-                        raise ValueError('Maximum number of rename attempts has been reached')
+                        raise MaxRetriesError('Maximum number of rename attempts has been reached')
 
                 merging_user_file.name = new_name
                 merging_user_file.save()

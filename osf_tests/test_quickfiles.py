@@ -3,6 +3,7 @@ import pytest
 
 from framework.auth.core import Auth
 from osf.models import QuickFilesNode, BaseFileNode
+from osf.exceptions import MaxRetriesError
 from api_tests.utils import create_test_file
 from tests.utils import assert_items_equal
 from tests.base import get_default_metaschema
@@ -184,5 +185,5 @@ class TestQuickFilesNode:
         other_user = factories.UserFactory()
         create_test_file(QuickFilesNode.objects.get(creator=other_user), other_user, filename='Woo (1).pdf')
 
-        with pytest.raises(ValueError):
+        with pytest.raises(MaxRetriesError):
             user.merge_user(other_user)
