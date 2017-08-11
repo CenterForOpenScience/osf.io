@@ -177,7 +177,7 @@ class Sitemap(object):
         for obj in objs:
             try:
                 config = settings.SITEMAP_NODE_CONFIG
-                config['loc'] = urlparse.urljoin(settings.DOMAIN, obj['guids___id'])
+                config['loc'] = urlparse.urljoin(settings.DOMAIN, '/{}/'.format(obj['guids___id']))
                 config['lastmod'] = obj['date_modified'].strftime('%Y-%m-%d')
                 self.add_url(config)
             except Exception as e:
