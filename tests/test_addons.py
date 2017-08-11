@@ -888,6 +888,19 @@ class TestAddonFileViews(OsfTestCase):
         assert_equal(len(file_node.history), 1)
         assert_equal(file_node.history[0], file_data)
 
+    @mock.patch('website.archiver.tasks.archive')
+    def test_missing_modified_date_in_file_history(self, mock_archive):
+        file_node = self.get_test_file()
+        file_node.history.append({'modified': None})
+        file_data = {
+            'name': 'Test File Update',
+            'materialized': file_node.materialized_path,
+            'modified': None
+        }
+        file_node.update(revision=None, data=file_data)
+        assert_equal(len(file_node.history), 2)
+        assert_equal(file_node.history[1], file_data)
+
 
 class TestLegacyViews(OsfTestCase):
 
