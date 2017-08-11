@@ -1213,8 +1213,11 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
             # only raise error if user is registered.
             if contributor.is_registered or self.is_contributor(contributor):
                 raise
-            contributor.add_unclaimed_record(node=self, referrer=auth.user,
-                                             given_name=fullname, email=email)
+
+            contributor.add_unclaimed_record(
+                node=self, referrer=auth.user, given_name=fullname, email=email
+            )
+
             contributor.save()
 
         self.add_contributor(

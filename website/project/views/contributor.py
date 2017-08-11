@@ -182,8 +182,7 @@ def deserialize_contributors(node, user_dicts, auth, validate=False):
                 contributor = get_user(email=email)
 
         # Add unclaimed record if necessary
-        if (not contributor.is_registered
-                and node._primary_key not in contributor.unclaimed_records):
+        if not contributor.is_registered:
             contributor.add_unclaimed_record(node=node, referrer=auth.user,
                 given_name=fullname,
                 email=email)
@@ -213,7 +212,6 @@ def finalize_invitation(node, contributor, auth, email_template='default'):
 @must_not_be_registration
 def project_contributors_post(auth, node, **kwargs):
     """ Add contributors to a node. """
-
     user_dicts = request.json.get('users')
     node_ids = request.json.get('node_ids')
     if node._id in node_ids:
@@ -789,6 +787,8 @@ def invite_contributor_post(node, **kwargs):
         elif node.is_contributor(user):
             msg = 'User with this email address is already a contributor to this project.'
             return {'status': 400, 'message': msg}, 400
+        elif not user.is_confirmed:
+            serialized = profile_utils.serialize_unregistered(fullname, email)
         else:
             serialized = profile_utils.add_contributor_json(user)
             # use correct display name
