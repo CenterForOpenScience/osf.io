@@ -262,8 +262,8 @@ def node_setting(auth, node, **kwargs):
 
     addons_enabled = []
     addon_enabled_settings = []
-
     addons = list(node.get_addons())
+
     for addon in addons:
         addons_enabled.append(addon.config.short_name)
         if 'node' in addon.config.configs:
@@ -272,6 +272,10 @@ def node_setting(auth, node, **kwargs):
             # TODO inject only short_name and render fully client side
             config['template_lookup'] = addon.config.template_lookup
             config['addon_icon_url'] = addon.config.icon_url
+            if addon.user_settings is not None and config.get('is_owner', None) is None:
+                config.update({
+                    'is_owner': auth.user == addon.user_settings.owner
+                })
             addon_enabled_settings.append(config)
 
     addon_enabled_settings = sorted(addon_enabled_settings, key=lambda addon: addon['addon_full_name'].lower())
@@ -304,6 +308,7 @@ def node_setting(auth, node, **kwargs):
     ret['categories'].update({
         'project': 'Project'
     })
+
 
     return ret
 def collect_node_config_js(addons):

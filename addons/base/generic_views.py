@@ -113,7 +113,7 @@ def set_config(addon_short_name, addon_full_name, Serializer, set_folder):
 def deauthorize_node(addon_short_name):
     @must_not_be_registration
     @must_have_addon(addon_short_name, 'node')
-    @must_have_permission(permissions.WRITE)
+    @must_be_addon_authorizer(addon_short_name)
     def _deauthorize_node(auth, node_addon, **kwargs):
         node_addon.deauthorize(auth=auth)
         node_addon.save()
