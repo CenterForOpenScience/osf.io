@@ -1,9 +1,9 @@
 from api.base import exceptions as api_exceptions
-from api.cas.util import check_user_status, verify_two_factor_authentication, find_user_by_email_or_guid
+from api.cas.util import (check_user_status, verify_two_factor_authentication,
+                          find_user_by_email_or_guid, parse_external_credential)
 
 from framework import sentry
 from framework.auth import get_or_create_user
-from framework.auth.cas import parse_external_credential
 
 from osf.models import Institution, OSFUser
 
@@ -66,7 +66,7 @@ def institution_login(provider_data):
 
     :param provider_data: the provider's credential
     :return: the user if credentials validates
-    :raises: MalformedRequestError, InvalidInstitutionLoginError
+    :raises: MalformedRequestError, InstitutionLoginFailedError
     """
 
     # check required fields
@@ -80,14 +80,14 @@ def institution_login(provider_data):
     if not institution:
         detail = 'Invalid institution for institution login: institution={}.'.format(institution_id)
         sentry.log_message(detail)
-        raise api_exceptions.InvalidInstitutionLoginError(detail=detail)
+        raise api_exceptions.InstitutionLoginFailedError(detail=detail)
 
     # check username (email)
     username = institution_user.get('username', '')
     if not username:
         detail = 'Username (email) required for institution login: institution={}'.format(institution_id)
         sentry.log_message(detail)
-        raise api_exceptions.InvalidInstitutionLoginError(detail=detail)
+        raise api_exceptions.InstitutionLoginFailedError(detail=detail)
 
     # check fullname
     fullname = institution_user.get('fullname', '')
@@ -98,7 +98,7 @@ def institution_login(provider_data):
     if not fullname:
         detail = 'Fullname required for institution login: user={}, institution={}'.format(username, institution_id)
         sentry.log_message(detail)
-        raise api_exceptions.InvalidInstitutionLoginError(detail=detail)
+        raise api_exceptions.InstitutionLoginFailedError(detail=detail)
 
     middle_names = institution_user.get('middleNames')
     suffix = institution_user.get('suffix')

@@ -4,7 +4,7 @@ from rest_framework import status
 
 from api.base.settings import API_BASE
 
-from api_tests.cas.util import fake, make_payload_account
+from api_tests.cas.util import fake, make_request_payload
 
 from framework.auth import signals
 from framework.auth.core import generate_verification_key
@@ -36,7 +36,7 @@ class TestAccountVerifyOSF(object):
 
     def test_verify_and_register_new_user(self, app, endpoint_url, unconfirmed_user, user_credentials):
 
-        payload = make_payload_account(user_credentials)
+        payload = make_request_payload(user_credentials)
 
         with capture_signals() as mock_signals:
             res = app.post(endpoint_url, payload)
@@ -61,7 +61,7 @@ class TestAccountVerifyOSF(object):
     def test_account_not_found(self, app, endpoint_url, user_credentials):
 
         user_credentials.update({'email': fake.email()})
-        payload = make_payload_account(user_credentials)
+        payload = make_request_payload(user_credentials)
 
         with capture_signals() as mock_signals:
             res = app.post(endpoint_url, payload, expect_errors=True)
@@ -74,7 +74,7 @@ class TestAccountVerifyOSF(object):
     def test_invalid_verification_code(self, app, endpoint_url, user_credentials):
 
         user_credentials.update({'verificationCode': generate_verification_key(verification_type=None)})
-        payload = make_payload_account(user_credentials)
+        payload = make_request_payload(user_credentials)
 
         with capture_signals() as mock_signals:
             res = app.post(endpoint_url, payload, expect_errors=True)
@@ -89,7 +89,7 @@ class TestAccountVerifyOSF(object):
         unconfirmed_user.register(unconfirmed_user.username)
         unconfirmed_user.save()
 
-        payload = make_payload_account(user_credentials)
+        payload = make_request_payload(user_credentials)
 
         with capture_signals() as mock_signals:
             res = app.post(endpoint_url, payload, expect_errors=True)

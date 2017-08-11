@@ -18,6 +18,8 @@ from framework.auth.core import get_user
 
 from osf.models import OSFUser
 
+from website import settings as osf_settings
+
 
 def load_request_body_data(request):
     """
@@ -139,3 +141,33 @@ def find_user_by_email_or_guid(user_id=None, email=None, username_only=False):
         return get_user(email)
 
     return None
+
+
+def parse_external_credential(external_credential):
+    """
+    Parse the external credential, a string which is composed of the profile name and the technical
+    identifier of the external provider, separated by `#`. Return the provider and id on success.
+
+    :param external_credential: the external credential string
+    :return: a dictionary of provider and technical id
+    """
+    # wrong format
+    if not external_credential or '#' not in external_credential:
+        return None
+
+    profile_name, technical_id = external_credential.split('#', 1)
+
+    # invalid external identity provider
+    if profile_name not in osf_settings.EXTERNAL_IDENTITY_PROFILE:
+        return None
+
+    # invalid external id
+    if len(technical_id) <= 0:
+        return None
+
+    provider = osf_settings.EXTERNAL_IDENTITY_PROFILE[profile_name]
+
+    return {
+        'provider': provider,
+        'id': technical_id,
+    }

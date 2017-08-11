@@ -3,7 +3,7 @@ import pytest
 from rest_framework import status
 
 from api.base.settings.defaults import API_BASE
-from api_tests.cas.util import make_payload_login_institution
+from api_tests.cas.util import fake, make_payload_login_institution
 
 from framework.auth import signals
 
@@ -13,9 +13,15 @@ from osf.models import OSFUser
 
 from tests.base import capture_signals
 
+# TODO 0: add tests for JWE/JWT failure and malformed request
+
 
 @pytest.mark.django_db
 class TestLoginInstitution(object):
+
+    @pytest.fixture()
+    def endpoint_url(self):
+        return '/{0}cas/login/institution/'.format(API_BASE)
 
     @pytest.fixture()
     def user(self):
@@ -26,149 +32,143 @@ class TestLoginInstitution(object):
         return InstitutionFactory()
 
     @pytest.fixture()
-    def login_url(self):
-        return '/{0}cas/login/institution/'.format(API_BASE)
-
-    @pytest.fixture()
     def invalid_institution_id(self):
         return 'abc123'
 
     @pytest.fixture()
-    def username_new_user(self):
-        return 'testuser0001@cos.io'
+    def email(self):
+        return fake.email()
 
     @pytest.fixture()
-    def fullname_new_user(self):
-        return 'User0001 Test'
+    def fullname(self):
+        return fake.name()
 
-    def test_new_user(self, app, institution, login_url, username_new_user, fullname_new_user):
+    # test that first time institution login with new user creates the user confirmed and affiliated and returns 204
+    def test_new_user_created(self, app, endpoint_url, institution, email, fullname):
 
-        assert OSFUser.objects.filter(username=username_new_user).count() == 0
+        assert OSFUser.objects.filter(username=email).count() == 0
 
-        payload_new_user = make_payload_login_institution(institution._id, username=username_new_user, fullname=fullname_new_user)
+        payload = make_payload_login_institution(institution._id, username=email, fullname=fullname)
         with capture_signals() as mock_signals:
-            res = app.post(login_url, payload_new_user)
+            res = app.post(endpoint_url, payload)
 
         assert res.status_code == status.HTTP_204_NO_CONTENT
         assert mock_signals.signals_sent() == set([signals.user_confirmed])
 
         try:
-            user = OSFUser.objects.filter(username=username_new_user).get()
+            user = OSFUser.objects.filter(username=email).get()
         except OSFUser.DoesNotExist:
             user = None
 
         assert user is not None
         assert institution in user.affiliated_institutions.all()
 
-    def test_existing_user(self, app, user, institution, login_url):
+    # test that first time institution login with existing user affiliates the user and returns 204
+    def test_existing_user_affiliated(self, app, endpoint_url, user, institution):
 
-        assert OSFUser.objects.filter(username=user.username).count() == 1
         assert user.affiliated_institutions.count() == 0
 
-        payload_existing_user = make_payload_login_institution(institution._id, username=user.username, fullname=user.fullname)
-        with capture_signals() as mock_signals:
-            res = app.post(login_url, payload_existing_user)
+        payload = make_payload_login_institution(institution._id, username=user.username, fullname=user.fullname)
+        res = app.post(endpoint_url, payload)
+        user.reload()
 
         assert res.status_code == status.HTTP_204_NO_CONTENT
-        assert mock_signals.signals_sent() == set()
-
-        user.reload()
         assert institution in user.affiliated_institutions.all()
         assert user.affiliated_institutions.count() == 1
 
-    def test_affiliated_user(self, app, user, institution, login_url):
+    # test that institution login with existing affiliated user should return 204
+    def test_affiliated_user(self, app, endpoint_url, user, institution):
 
-        assert OSFUser.objects.filter(username=user.username).count() == 1
         user.affiliated_institutions.add(institution)
         user.reload()
         assert user.affiliated_institutions.count() == 1
 
-        payload_existing_user = make_payload_login_institution(institution._id, username=user.username, fullname=user.fullname)
-        with capture_signals() as mock_signals:
-            res = app.post(login_url, payload_existing_user)
+        payload = make_payload_login_institution(institution._id, username=user.username, fullname=user.fullname)
+        res = app.post(endpoint_url, payload)
 
         assert res.status_code == 204
-        assert mock_signals.signals_sent() == set()
 
-    def test_invalid_institution_id(self, app, login_url, invalid_institution_id, username_new_user, fullname_new_user):
+    # test that institution login with invalid institution id should raise 401
+    def test_invalid_institution_id(self, app, endpoint_url, invalid_institution_id, email, fullname):
 
-        assert OSFUser.objects.filter(username=username_new_user).count() == 0
+        assert OSFUser.objects.filter(username=email).count() == 0
 
-        payload_new_user = make_payload_login_institution(invalid_institution_id, username=username_new_user, fullname=fullname_new_user)
-        with capture_signals() as mock_signals:
-            res = app.post(login_url, payload_new_user, expect_errors=True)
+        payload = make_payload_login_institution(invalid_institution_id, username=email, fullname=fullname)
+        res = app.post(endpoint_url, payload, expect_errors=True)
 
         assert res.status_code == status.HTTP_401_UNAUTHORIZED
-        assert (mock_signals.signals_sent() != set([signals.user_confirmed]))
+        assert len(res.json.get('errors')) == 1
+        assert res.json.get('errors')[0].get('code') == 40107
 
-        try:
-            user = OSFUser.objects.filter(username=username_new_user).get()
-        except OSFUser.DoesNotExist:
-            user = None
+    # test that institution login without username should raise 401
+    def test_missing_username(self, app, endpoint_url, institution, fullname):
 
-        assert user is None
+        payload = make_payload_login_institution(institution._id, fullname=fullname)
+        res = app.post(endpoint_url, payload, expect_errors=True)
 
-    def test_missing_username(self, app, institution, login_url, fullname_new_user):
-
-        payload_new_user_no_username = make_payload_login_institution(institution._id, fullname=fullname_new_user)
-        res = app.post(login_url, payload_new_user_no_username, expect_errors=True)
         assert res.status_code == status.HTTP_401_UNAUTHORIZED
+        assert len(res.json.get('errors')) == 1
+        assert res.json.get('errors')[0].get('code') == 40107
 
-    def test_missing_name(self, app, institution, login_url, username_new_user):
+    # test that institution login without names should raise 401
+    def test_missing_name(self, app, endpoint_url, institution, email):
 
-        payload_new_user_no_name = make_payload_login_institution(institution._id, username=username_new_user)
-        res = app.post(login_url, payload_new_user_no_name, expect_errors=True)
+        payload = make_payload_login_institution(institution._id, username=email)
+        res = app.post(endpoint_url, payload, expect_errors=True)
+
         assert res.status_code == status.HTTP_401_UNAUTHORIZED
+        assert len(res.json.get('errors')) == 1
+        assert res.json.get('errors')[0].get('code') == 40107
 
-    def test_bad_request_data(self, app, user, institution, login_url):
+    # test that institution login with only fullname should guess given name and family name
+    def test_user_names_guessed_if_not_provided(self, app, endpoint_url, institution, email):
 
-        payload = make_payload_login_institution(
-            institution._id,
-            username=user.username,
-            fullname=user.fullname,
-            bad_secret=True
-        )
-        res = app.post(login_url, payload, expect_errors=True)
-        assert res.status_code == status.HTTP_401_UNAUTHORIZED
-
-    def test_user_names_guessed_if_not_provided(self, app, login_url, institution, username_new_user, fullname_new_user):
+        given_name = 'User0001'
+        family_name = 'Test'
+        fullname = '{} {}'.format(given_name, family_name)
 
         payload = make_payload_login_institution(
             institution_id=institution._id,
-            username=username_new_user,
-            fullname=fullname_new_user,
+            username=email,
+            fullname=fullname
         )
-        res = app.post(login_url, payload)
+        res = app.post(endpoint_url, payload)
 
         assert res.status_code == status.HTTP_204_NO_CONTENT
+
         try:
-            user = OSFUser.objects.filter(username=username_new_user).get()
+            user = OSFUser.objects.filter(username=email).get()
         except OSFUser.DoesNotExist:
             user = None
 
         assert user is not None
-        assert user.fullname == fullname_new_user
-        assert user.given_name == 'User0001'
-        assert user.family_name == 'Test'
+        assert user.fullname == fullname
+        assert user.given_name == given_name
+        assert user.family_name == family_name
 
-    def test_user_names_used_when_provided(self, app, login_url, institution, username_new_user, fullname_new_user):
+    # test that institution login with given name and family name should override guessed names
+    def test_user_names_used_when_provided(self, app, endpoint_url, institution, email, fullname):
+
+        given_name = 'User0001'
+        family_name = 'Test'
 
         payload = make_payload_login_institution(
             institution_id=institution._id,
-            username=username_new_user,
-            fullname=fullname_new_user,
-            given_name='0001User',
-            family_name='0001Test'
+            username=email,
+            fullname=fullname,
+            given_name=given_name,
+            family_name=family_name
         )
-        res = app.post(login_url, payload)
+        res = app.post(endpoint_url, payload)
 
         assert res.status_code == status.HTTP_204_NO_CONTENT
+
         try:
-            user = OSFUser.objects.filter(username=username_new_user).get()
+            user = OSFUser.objects.filter(username=email).get()
         except OSFUser.DoesNotExist:
             user = None
 
         assert user is not None
-        assert user.fullname == fullname_new_user
-        assert user.given_name == '0001User'
-        assert user.family_name == '0001Test'
+        assert user.fullname == fullname
+        assert user.given_name == given_name
+        assert user.family_name == family_name

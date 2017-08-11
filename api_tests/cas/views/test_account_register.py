@@ -4,7 +4,7 @@ from rest_framework import status
 
 from api.base.settings import API_BASE
 
-from api_tests.cas.util import fake, make_payload_account
+from api_tests.cas.util import fake, make_request_payload
 
 from framework.auth import signals
 
@@ -68,7 +68,7 @@ class TestAccountRegisterOSF(object):
 
         assert OSFUser.objects.filter(username=new_user.get('email')).count() == 0
 
-        payload = make_payload_account(new_user)
+        payload = make_request_payload(new_user)
 
         with capture_signals() as mock_signals:
             res = app.post(endpoint_url, payload)
@@ -82,7 +82,7 @@ class TestAccountRegisterOSF(object):
 
         assert OSFUser.objects.filter(username=existing_user.get('email')).count() == 1
 
-        payload = make_payload_account(existing_user)
+        payload = make_request_payload(existing_user)
         with capture_signals() as mock_signals:
             res = app.post(endpoint_url, payload, expect_errors=True)
             assert len(mock_signals.signals_sent()) == 0
@@ -94,7 +94,7 @@ class TestAccountRegisterOSF(object):
     def test_create_new_user_invalid_email(self, app, endpoint_url, new_user_invalid_email):
         assert OSFUser.objects.filter(username=new_user_invalid_email.get('email')).count() == 0
 
-        payload = make_payload_account(new_user_invalid_email)
+        payload = make_request_payload(new_user_invalid_email)
         with capture_signals() as mock_signals:
             res = app.post(endpoint_url, payload, expect_errors=True)
 
@@ -106,7 +106,7 @@ class TestAccountRegisterOSF(object):
     def test_create_new_user_blacklisted_email(self, app, endpoint_url, new_user_blacklisted_email):
         assert OSFUser.objects.filter(username=new_user_blacklisted_email.get('email')).count() == 0
 
-        payload = make_payload_account(new_user_blacklisted_email)
+        payload = make_request_payload(new_user_blacklisted_email)
         with capture_signals() as mock_signals:
             res = app.post(endpoint_url, payload, expect_errors=True)
 
@@ -118,7 +118,7 @@ class TestAccountRegisterOSF(object):
     def test_create_new_user_invalid_password(self, app, endpoint_url, new_user_invalid_password):
         assert OSFUser.objects.filter(username=new_user_invalid_password.get('email')).count() == 0
 
-        payload = make_payload_account(new_user_invalid_password)
+        payload = make_request_payload(new_user_invalid_password)
         with capture_signals() as mock_signals:
             res = app.post(endpoint_url, payload, expect_errors=True)
 

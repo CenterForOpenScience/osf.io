@@ -5,11 +5,34 @@ import jwt
 import jwe
 
 from api.base.settings.defaults import JWE_SECRET, JWT_SECRET
+from api.cas.util import parse_external_credential
 
 fake = faker.Factory.create()
 
 bad_jwe_secret = 'b23_terces_twj_nigol_sac_ipa_fso'
 bad_jwt_secret = 'b23_terces_ewj_nigol_sac_ipa_fso'
+
+
+def make_request_payload(user_credentials, bad_secret=False):
+
+    data = {
+        'user': user_credentials
+    }
+    return encrypt_request_data(data, bad_secret=bad_secret)
+
+
+def make_payload_login_osf(email, password=None, remote_authenticated=False, verification_key=None, one_time_password=None):
+
+    data = {
+        'user': {
+            'email': email,
+            'password': password,
+            'remoteAuthenticated': remote_authenticated,
+            'verificationKey': verification_key,
+            'oneTimePassword': one_time_password,
+        }
+    }
+    return encrypt_request_data(data)
 
 
 def make_payload_login_institution(institution_id, username='', fullname='', given_name='', family_name='', bad_secret=False):
@@ -31,30 +54,14 @@ def make_payload_login_institution(institution_id, username='', fullname='', giv
     return encrypt_request_data(data, bad_secret=bad_secret)
 
 
-def make_payload_login_osf(email, password=None, remote_authenticated=False, verification_key=None, one_time_password=None):
+def make_payload_login_external(external_id_with_provider, bad_secret=False):
 
     data = {
         'user': {
-            'email': email,
-            'password': password,
-            'remoteAuthenticated': remote_authenticated,
-            'verificationKey': verification_key,
-            'oneTimePassword': one_time_password,
+            'externalIdWithProvider': external_id_with_provider
         }
     }
-    return encrypt_request_data(data)
-
-
-def make_payload_login_external():
-    pass
-
-
-def make_payload_account(user_credentials):
-
-    data = {
-        'user': user_credentials
-    }
-    return encrypt_request_data(data)
+    return encrypt_request_data(data, bad_secret)
 
 
 def make_payload_service_institutions():
@@ -103,3 +110,20 @@ def encrypt_request_data(data, bad_secret=False):
         ),
         jwe_secret
     )
+
+
+def add_external_identity_to_user(user, external_identity_with_provider, status='VERIFIED'):
+
+    parsed_external_identity = parse_external_credential(external_identity_with_provider)
+    if not parsed_external_identity:
+        return None
+
+    user.external_identity = {
+        parsed_external_identity['provider']: {
+            parsed_external_identity['id']: status
+        }
+    }
+    # TODO: add unconfirmed email for 'LINK' and 'CREATE'
+    user.save()
+    user.reload()
+    return user

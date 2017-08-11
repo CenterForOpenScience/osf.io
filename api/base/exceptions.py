@@ -281,7 +281,7 @@ class TwoFactorFailedError(JSONAPIException):
         super(TwoFactorFailedError, self).__init__(detail=detail, source=source, meta=meta, code=code)
 
 
-class InvalidInstitutionLoginError(JSONAPIException):
+class InstitutionLoginFailedError(JSONAPIException):
     """ Raised when CAS provides an invalid institution or user for institution login.
     """
     status_code = status.HTTP_401_UNAUTHORIZED
@@ -289,7 +289,7 @@ class InvalidInstitutionLoginError(JSONAPIException):
     default_detail = _('Institution Login Failed')
 
     def __init__(self, detail=None, source=None, meta=None, code=error_code):
-        super(InvalidInstitutionLoginError, self).__init__(detail=detail, source=source, meta=meta, code=code)
+        super(InstitutionLoginFailedError, self).__init__(detail=detail, source=source, meta=meta, code=code)
 
 
 class MalformedRequestError(JSONAPIException):

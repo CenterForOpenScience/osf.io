@@ -369,33 +369,3 @@ def get_user_from_cas_resp(cas_resp):
         return OSFUser.load(cas_resp.user)
 
     return None
-
-
-def parse_external_credential(external_credential):
-    """
-    Parse the external credential, a string which is composed of the profile name and the technical
-    identifier of the external provider, separated by `#`. Return the provider and id on success.
-
-    :param external_credential: the external credential string
-    :return: a dictionary of provider and technical id
-    """
-    # wrong format
-    if not external_credential or '#' not in external_credential:
-        return False
-
-    profile_name, technical_id = external_credential.split('#', 1)
-
-    # invalid external identity provider
-    if profile_name not in settings.EXTERNAL_IDENTITY_PROFILE:
-        return False
-
-    # invalid external id
-    if len(technical_id) <= 0:
-        return False
-
-    provider = settings.EXTERNAL_IDENTITY_PROFILE[profile_name]
-
-    return {
-        'provider': provider,
-        'id': technical_id,
-    }
