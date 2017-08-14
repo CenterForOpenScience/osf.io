@@ -11,26 +11,23 @@ from osf_tests.factories import (
     AuthUserFactory,
 )
 from osf.models import AbstractNode, NodeLog
-from tests.utils import assert_logs
-from tests.utils import assert_items_equal
+from tests.utils import assert_logs, assert_items_equal
 from website.project.signals import contributor_removed
 from website.util.sanitize import strip_html
 from website.util import disconnected_from_listeners
 from website.views import find_bookmark_collection
 
-def node_url_for(node_id):
-    return '/{}nodes/{}/'.format(API_BASE, node_id)
 
 @pytest.fixture()
 def url_collection_list():
     return '/{}collections/'.format(API_BASE)
 
+@pytest.fixture()
+def user_one():
+    return AuthUserFactory()
+
 @pytest.mark.django_db
 class TestCollectionList:
-
-    @pytest.fixture()
-    def user_one(self):
-        return AuthUserFactory()
 
     @pytest.fixture()
     def user_two(self):
@@ -66,10 +63,6 @@ class TestCollectionList:
 
 @pytest.mark.django_db
 class TestCollectionCreate:
-
-    @pytest.fixture()
-    def user_one(self):
-        return AuthUserFactory()
 
     @pytest.fixture()
     def user_two(self):
@@ -213,7 +206,9 @@ class TestCollectionCreate:
         assert res.json['data']['attributes']['title'] == 'Bookmarks'
         assert res.json['data']['attributes']['bookmarks']
 
-    def test_cannot_create_multiple_bookmark_collection(self, app, bookmark_user_one, data_collection, url_collection_list, user_one, title_collection):
+    def test_cannot_create_multiple_bookmark_collection(
+        self, app, bookmark_user_one, data_collection, url_collection_list, user_one, title_collection):
+
         collection = {
             'data': {
                 'type': 'collections',
@@ -229,7 +224,9 @@ class TestCollectionCreate:
         assert res.status_code == 400
         assert res.json['errors'][0]['detail'] == 'Each user cannot have more than one Bookmark collection.'
 
-    def test_create_bookmark_collection_with_wrong_title(self, app, bookmark_user_one, data_collection, url_collection_list, user_one):
+    def test_create_bookmark_collection_with_wrong_title(
+        self, app, bookmark_user_one, data_collection, url_collection_list, user_one):
+
         collection = {
             'data': {
                 'type': 'collections',
@@ -265,10 +262,6 @@ class TestCollectionCreate:
 
 @pytest.mark.django_db
 class TestCollectionFiltering:
-
-    @pytest.fixture()
-    def user_one(self):
-        return AuthUserFactory()
 
     @pytest.fixture()
     def user_two(self):
@@ -373,10 +366,6 @@ class TestCollectionFiltering:
 class TestCollectionDetail:
 
     @pytest.fixture()
-    def user_one(self):
-        return AuthUserFactory()
-
-    @pytest.fixture()
     def user_two(self):
         return AuthUserFactory()
 
@@ -414,16 +403,11 @@ class TestCollectionDetail:
         res = app.get(
             '/{}collections/{}/'.format(API_BASE, node._id),
             auth=user_one.auth,
-            expect_errors=True
-        )
+            expect_errors=True)
         assert res.status_code == 404
 
 @pytest.mark.django_db
 class CollectionCRUDTestCase:
-
-    @pytest.fixture()
-    def user_one(self):
-        return AuthUserFactory()
 
     @pytest.fixture()
     def user_two(self):
@@ -537,7 +521,9 @@ class TestCollectionUpdate(CollectionCRUDTestCase):
         collection.reload()
         assert collection.title == strip_html(new_title)
 
-    def test_multiple_patch_requests_with_same_title_generates_one_log(self, app, url_collection_detail, collection, new_title_collection, user_one, payload_collection):
+    def test_multiple_patch_requests_with_same_title_generates_one_log(
+        self, app, url_collection_detail, collection, new_title_collection, user_one, payload_collection):
+
         payload = payload_collection(attributes={'title': new_title_collection})
         original_n_logs = collection.logs.count()
 
@@ -776,10 +762,6 @@ class TestCollectionDelete(CollectionCRUDTestCase):
 class TestCollectionNodeLinksList:
 
     @pytest.fixture()
-    def user_one(self):
-        return AuthUserFactory()
-
-    @pytest.fixture()
     def user_two(self):
         return AuthUserFactory()
 
@@ -834,7 +816,9 @@ class TestCollectionNodeLinksList:
         # node_links end point does not handle registrations correctly
         third_embedded = res_json[2]['embeds']['target_node']['errors'][0]['detail']
         fourth_embedded = res_json[3]['embeds']['target_node']['errors'][0]['detail']
-        assert_items_equal([first_embedded, second_embedded, third_embedded, fourth_embedded], [project_private._id, project_public._id, 'Not found.', 'Not found.'])
+        assert_items_equal(
+            [first_embedded, second_embedded, third_embedded, fourth_embedded],
+            [project_private._id, project_public._id, 'Not found.', 'Not found.'])
 
         #test_return_private_node_pointers_logged_in_non_contributor
         res = app.get(url_collection_nodelinks, auth=user_two.auth, expect_errors=True)
@@ -855,10 +839,6 @@ class TestCollectionNodeLinksList:
 
 @pytest.mark.django_db
 class TestCollectionNodeLinkCreate:
-
-    @pytest.fixture()
-    def user_one(self):
-        return AuthUserFactory()
 
     @pytest.fixture()
     def user_two(self):
@@ -943,7 +923,10 @@ class TestCollectionNodeLinkCreate:
         def logs(collection_one):
             return collection_one
 
-    def test_creates_node_link_to_public_project_logged_in(self, app, logs_collection, url_collection_nodelinks, make_post_payload, project_public_user_one, user_one):
+    def test_creates_node_link_to_public_project_logged_in(
+        self, app, logs_collection, url_collection_nodelinks,
+        make_post_payload, project_public_user_one, user_one):
+
         res = app.post_json_api(url_collection_nodelinks, make_post_payload(project_public_user_one._id), auth=user_one.auth)
         assert res.status_code == 201
         assert res.content_type == 'application/vnd.api+json'
@@ -951,7 +934,10 @@ class TestCollectionNodeLinkCreate:
         embedded_node_id = res_json['embeds']['target_node']['data']['id']
         assert embedded_node_id == project_public_user_one._id
 
-    def test_creates_node_link_to_public_registration_logged_in(self, app, logs_collection, url_collection_nodelinks, make_post_payload, registration_public_user_one, user_one):
+    def test_creates_node_link_to_public_registration_logged_in(
+        self, app, logs_collection, url_collection_nodelinks, make_post_payload,
+        registration_public_user_one, user_one):
+
         res = app.post_json_api(url_collection_nodelinks, make_post_payload(registration_public_user_one._id), auth=user_one.auth)
         assert res.status_code == 201
         assert res.content_type == 'application/vnd.api+json'
@@ -960,14 +946,20 @@ class TestCollectionNodeLinkCreate:
         embedded_node_id = res_json['embeds']['target_node']['errors'][0]['detail']
         assert embedded_node_id == 'Not found.'
 
-    def test_creates_node_link_to_private_project_logged_in(self, app, logs_collection, url_collection_nodelinks, make_post_payload, user_one, project_private_user_one):
+    def test_creates_node_link_to_private_project_logged_in(
+        self, app, logs_collection, url_collection_nodelinks, make_post_payload,
+        user_one, project_private_user_one):
+
         res = app.post_json_api(url_collection_nodelinks, make_post_payload(project_private_user_one._id), auth=user_one.auth)
         assert res.status_code == 201
         res_json = res.json['data']
         embedded_node_id = res_json['embeds']['target_node']['data']['id']
         assert embedded_node_id == project_private_user_one._id
 
-    def test_creates_node_link_to_private_registration_logged_in(self, app, logs_collection, url_collection_nodelinks, make_post_payload, registration_private_user_one, user_one):
+    def test_creates_node_link_to_private_registration_logged_in(
+        self, app, logs_collection, url_collection_nodelinks, make_post_payload,
+        registration_private_user_one, user_one):
+
         res = app.post_json_api(url_collection_nodelinks, make_post_payload(registration_private_user_one._id), auth=user_one.auth)
         assert res.status_code == 201
         res_json = res.json['data']
@@ -975,7 +967,10 @@ class TestCollectionNodeLinkCreate:
         embedded_node_id = res_json['embeds']['target_node']['errors'][0]['detail']
         assert embedded_node_id == 'Not found.'
 
-    def test_create_node_link_to_non_contributing_node(self, app, logs_collection, url_collection_nodelinks, make_post_payload, project_public_user_two, user_one):
+    def test_create_node_link_to_non_contributing_node(
+        self, app, logs_collection, url_collection_nodelinks, make_post_payload,
+        project_public_user_two, user_one):
+
         res = app.post_json_api(url_collection_nodelinks, make_post_payload(project_public_user_two._id), auth=user_one.auth)
         assert res.status_code == 201
         assert res.content_type == 'application/vnd.api+json'
@@ -983,7 +978,10 @@ class TestCollectionNodeLinkCreate:
         embedded_node_id = res_json['embeds']['target_node']['data']['id']
         assert embedded_node_id == project_public_user_two._id
 
-    def test_create_node_link_to_non_contributing_registration(self, app, logs_collection, url_collection_nodelinks, make_post_payload, registration_public_user_two, user_one):
+    def test_create_node_link_to_non_contributing_registration(
+        self, app, logs_collection, url_collection_nodelinks, make_post_payload,
+        registration_public_user_two, user_one):
+
         res = app.post_json_api(url_collection_nodelinks, make_post_payload(registration_public_user_two._id), auth=user_one.auth)
         assert res.status_code == 201
         assert res.content_type == 'application/vnd.api+json'
@@ -992,7 +990,10 @@ class TestCollectionNodeLinkCreate:
         embedded_node_id = res_json['embeds']['target_node']['errors'][0]['detail']
         assert embedded_node_id == 'Not found.'
 
-    def test_create_node_pointer_already_connected(self, app, logs_collection, url_collection_nodelinks, make_post_payload, project_private_user_one, user_one, collection_one):
+    def test_create_node_pointer_already_connected(
+        self, app, logs_collection, url_collection_nodelinks, make_post_payload,
+        project_private_user_one, user_one, collection_one):
+
         res = app.post_json_api(url_collection_nodelinks, make_post_payload(project_private_user_one._id), auth=user_one.auth)
         assert res.status_code == 201
         assert res.content_type == 'application/vnd.api+json'
@@ -1010,8 +1011,8 @@ class TestCollectionNodeLinkCreate:
         assert '/data/relationships/node_links/data/id' == error['source']['pointer']
 
     def test_non_mutational_collection_nodelink_create_tests(
-        self, app, user_one, user_two, collection_one, make_post_payload, url_collection_nodelinks, url_fake_collection_nodelinks, id_fake_node,
-        project_public_user_one, project_private_user_one, project_public_user_two, project_private_user_two,
+        self, app, user_one, user_two, collection_one, make_post_payload, url_collection_nodelinks, url_fake_collection_nodelinks,
+        id_fake_node, project_public_user_one, project_private_user_one, project_public_user_two, project_private_user_two,
         registration_public_user_one, registration_private_user_one, registration_public_user_two, registration_private_user_two):
 
         #test_create_node_pointer_no_type
@@ -1079,10 +1080,6 @@ class TestCollectionNodeLinkCreate:
 class TestCollectionNodeLinkDetail:
 
     @pytest.fixture()
-    def user_one(self):
-        return AuthUserFactory()
-
-    @pytest.fixture()
     def user_two(self):
         return AuthUserFactory()
 
@@ -1137,7 +1134,6 @@ class TestCollectionNodeLinkDetail:
     @pytest.fixture()
     def url_registration_link_public(self, collection, registration_link_public):
         return '/{}collections/{}/node_links/{}/'.format(API_BASE, collection._id, registration_link_public._id)
-        '/{}collections/{}/node_links/{}/'.format(API_BASE, self.collection._id, self.registration_link_public._id)
 
     @pytest.fixture()
     def logs_collection(self, collection):
@@ -1355,10 +1351,6 @@ class TestReturnDeletedCollection:
 class TestCollectionBulkCreate:
 
     @pytest.fixture()
-    def user_one(self):
-        return AuthUserFactory()
-
-    @pytest.fixture()
     def user_two(self):
         return AuthUserFactory()
 
@@ -1421,9 +1413,9 @@ class TestCollectionBulkCreate:
         id_one = res.json['data'][0]['id']
         id_two = res.json['data'][1]['id']
 
-        res = app.delete_json_api(url_collections, {'data': [{'id': id_one, 'type': 'collections'},
-                                                           {'id': id_two, 'type': 'collections'}]},
-                                       auth=user_one.auth, bulk=True)
+        res = app.delete_json_api(
+                url_collections, {'data': [{'id': id_one, 'type': 'collections'}, {'id': id_two, 'type': 'collections'}]},
+                auth=user_one.auth, bulk=True)
         assert res.status_code == 204
 
     def test_bulk_create_collections_blank_request(self, app, url_collections, user_one):
@@ -1431,21 +1423,29 @@ class TestCollectionBulkCreate:
         assert res.status_code == 400
 
     def test_bulk_create_error_formatting(self, app, url_collections, collection_empty, user_one):
-        res = app.post_json_api(url_collections, {'data': [collection_empty, collection_empty]}, bulk=True, auth=user_one.auth, expect_errors=True)
+        res = app.post_json_api(
+            url_collections, {'data': [collection_empty, collection_empty]},
+            bulk=True, auth=user_one.auth, expect_errors=True)
         assert res.status_code == 400
         assert len(res.json['errors']) == 2
         errors = res.json['errors']
-        assert_items_equal([errors[0]['source'], errors[1]['source']],
-                           [{'pointer': '/data/0/attributes/title'}, {'pointer': '/data/1/attributes/title'}])
-        assert_items_equal([errors[0]['detail'], errors[1]['detail']],
-                           ['This field may not be blank.', 'This field may not be blank.'])
+        assert_items_equal(
+            [errors[0]['source'], errors[1]['source']],
+            [{'pointer': '/data/0/attributes/title'}, {'pointer': '/data/1/attributes/title'}])
+        assert_items_equal(
+            [errors[0]['detail'], errors[1]['detail']],
+            ['This field may not be blank.', 'This field may not be blank.'])
 
     def test_non_mutational_collection_bulk_create_tests(
         self, app, bookmark_user_one, url_collections, collection_one,
         collection_two, collection_empty, user_one, title_one):
 
         #test_bulk_create_all_or_nothing
-        res = app.post_json_api(url_collections, {'data': [collection_one, collection_empty]}, bulk=True, auth=user_one.auth, expect_errors=True)
+        res = app.post_json_api(
+            url_collections,
+            {'data': [collection_one, collection_empty]},
+            bulk=True, auth=user_one.auth, expect_errors=True)
+
         assert res.status_code == 400
 
         res = app.get(url_collections, auth=user_one.auth)
@@ -1513,10 +1513,6 @@ class TestCollectionBulkCreate:
 class TestCollectionBulkUpdate:
 
     @pytest.fixture()
-    def user(self):
-        return AuthUserFactory()
-
-    @pytest.fixture()
     def title(self):
         return 'Cool Project'
 
@@ -1525,12 +1521,12 @@ class TestCollectionBulkUpdate:
         return 'Super Cool Project'
 
     @pytest.fixture()
-    def collection_one(self, title, user):
-        return CollectionFactory(title=title, creator=user)
+    def collection_one(self, title, user_one):
+        return CollectionFactory(title=title, creator=user_one)
 
     @pytest.fixture()
-    def collection_two(self, title, user):
-        return CollectionFactory(title=title, creator=user)
+    def collection_two(self, title, user_one):
+        return CollectionFactory(title=title, creator=user_one)
 
     @pytest.fixture()
     def payload_collection(self, collection_one, title_new, collection_two):
@@ -1572,10 +1568,10 @@ class TestCollectionBulkUpdate:
 
     def test_non_mutational_collection_bulk_update_tests(
         self, app, payload_collection, url_collections, base_url_collections,
-        user, title, title_new, collection_one, collection_two, empty_payload_collection):
+        user_one, title, title_new, collection_one, collection_two, empty_payload_collection):
 
         #test_bulk_update_nodes_blank_request
-        res = app.put_json_api(url_collections, auth=user.auth, expect_errors=True, bulk=True)
+        res = app.put_json_api(url_collections, auth=user_one.auth, expect_errors=True, bulk=True)
         assert res.status_code == 400
 
         #test_bulk_update_blank_but_not_empty_title
@@ -1598,9 +1594,9 @@ class TestCollectionBulkUpdate:
               ]
             }
         url = base_url_collections.format(API_BASE, collection_one._id)
-        res = app.put_json_api(url, payload, auth=user.auth, expect_errors=True, bulk=True)
+        res = app.put_json_api(url, payload, auth=user_one.auth, expect_errors=True, bulk=True)
         assert res.status_code == 400
-        res = app.get(url, auth=user.auth)
+        res = app.get(url, auth=user_one.auth)
         assert res.json['data']['attributes']['title'] == title
 
         #test_bulk_update_collections_one_not_found
@@ -1614,12 +1610,12 @@ class TestCollectionBulkUpdate:
             }, payload_collection['data'][0]
         ]}
 
-        res = app.put_json_api(url_collections, empty_payload, auth=user.auth, expect_errors=True, bulk=True)
+        res = app.put_json_api(url_collections, empty_payload, auth=user_one.auth, expect_errors=True, bulk=True)
         assert res.status_code == 400
         assert res.json['errors'][0]['detail'] == 'Could not find all objects to update.'
 
         url = base_url_collections.format(API_BASE, collection_one._id)
-        res = app.get(url, auth=user.auth)
+        res = app.get(url, auth=user_one.auth)
         assert res.json['data']['attributes']['title'] == title
 
         #test_bulk_update_collections_logged_out
@@ -1630,21 +1626,21 @@ class TestCollectionBulkUpdate:
         url = base_url_collections.format(API_BASE, collection_one._id)
         url_two = base_url_collections.format(API_BASE, collection_two._id)
 
-        res = app.get(url, auth=user.auth)
+        res = app.get(url, auth=user_one.auth)
         assert res.json['data']['attributes']['title'] == title
 
-        res = app.get(url_two, auth=user.auth)
+        res = app.get(url_two, auth=user_one.auth)
         assert res.json['data']['attributes']['title'] == title
 
         #test_bulk_update_collections_send_dictionary_not_list
         res = app.put_json_api(url_collections, {'data': {'id': collection_one._id, 'type': 'nodes',
                                                         'attributes': {'title': title_new}}},
-                                    auth=user.auth, expect_errors=True, bulk=True)
+                                    auth=user_one.auth, expect_errors=True, bulk=True)
         assert res.status_code == 400
         assert res.json['errors'][0]['detail'] == 'Expected a list of items but got type "dict".'
 
         #test_bulk_update_error_formatting
-        res = app.put_json_api(url_collections, empty_payload_collection, auth=user.auth, expect_errors=True, bulk=True)
+        res = app.put_json_api(url_collections, empty_payload_collection, auth=user_one.auth, expect_errors=True, bulk=True)
         assert res.status_code == 400
         assert len(res.json['errors']) == 2
         errors = res.json['errors']
@@ -1655,7 +1651,7 @@ class TestCollectionBulkUpdate:
 
         #test_bulk_update_id_not_supplied
         res = app.put_json_api(url_collections, {'data': [payload_collection['data'][1], {'type': 'collections', 'attributes':
-            {'title': title_new}}]}, auth=user.auth, expect_errors=True, bulk=True)
+            {'title': title_new}}]}, auth=user_one.auth, expect_errors=True, bulk=True)
         assert res.status_code == 400
         assert len(res.json['errors']) == 1
         assert res.json['errors'][0]['source']['pointer'] == '/data/1/id'
@@ -1663,12 +1659,12 @@ class TestCollectionBulkUpdate:
 
         url = base_url_collections.format(API_BASE, collection_two._id)
 
-        res = app.get(url, auth=user.auth)
+        res = app.get(url, auth=user_one.auth)
         assert res.json['data']['attributes']['title'] == title
 
         #test_bulk_update_type_not_supplied
         res = app.put_json_api(url_collections, {'data': [payload_collection['data'][1], {'id': collection_one._id, 'attributes':
-            {'title': title_new}}]}, auth=user.auth, expect_errors=True, bulk=True)
+            {'title': title_new}}]}, auth=user_one.auth, expect_errors=True, bulk=True)
         assert res.status_code == 400
         assert len(res.json['errors']) == 1
         assert res.json['errors'][0]['source']['pointer'] == '/data/1/type'
@@ -1676,36 +1672,39 @@ class TestCollectionBulkUpdate:
 
         url = base_url_collections.format(API_BASE, collection_two._id)
 
-        res = app.get(url, auth=user.auth)
+        res = app.get(url, auth=user_one.auth)
         assert res.json['data']['attributes']['title'] == title
 
         #test_bulk_update_incorrect_type
         res = app.put_json_api(url_collections, {'data': [payload_collection['data'][1], {'id': collection_one._id, 'type': 'Incorrect', 'attributes':
-            {'title': title_new}}]}, auth=user.auth, expect_errors=True, bulk=True)
+            {'title': title_new}}]}, auth=user_one.auth, expect_errors=True, bulk=True)
         assert res.status_code == 409
 
         url = base_url_collections.format(API_BASE, collection_two._id)
 
-        res = app.get(url, auth=user.auth)
+        res = app.get(url, auth=user_one.auth)
         assert res.json['data']['attributes']['title'] == title
 
         #test_bulk_update_limits
         node_update_list = {'data': [payload_collection['data'][0]] * 101}
-        res = app.put_json_api(url_collections, node_update_list, auth=user.auth, expect_errors=True, bulk=True)
+        res = app.put_json_api(url_collections, node_update_list, auth=user_one.auth, expect_errors=True, bulk=True)
         assert res.json['errors'][0]['detail'] == 'Bulk operation limit is 100, got 101.'
         assert res.json['errors'][0]['source']['pointer'] == '/data'
 
         #test_bulk_update_no_title
         new_payload = {'id': collection_one._id, 'type': 'collections', 'attributes': {}}
-        res = app.put_json_api(url_collections, {'data': [payload_collection['data'][1], new_payload]}, auth=user.auth, expect_errors=True, bulk=True)
+        res = app.put_json_api(url_collections, {'data': [payload_collection['data'][1], new_payload]}, auth=user_one.auth, expect_errors=True, bulk=True)
         assert res.status_code == 400
         url = base_url_collections.format(API_BASE, collection_two._id)
 
-        res = app.get(url, auth=user.auth)
+        res = app.get(url, auth=user_one.auth)
         assert res.json['data']['attributes']['title'] == title
 
-    def test_bulk_update_collections_logged_in(self, app, url_collections, user, title_new, payload_collection, collection_one, collection_two):
-        res = app.put_json_api(url_collections, payload_collection, auth=user.auth, bulk=True)
+    def test_bulk_update_collections_logged_in(
+        self, app, url_collections, user_one, title_new, payload_collection,
+        collection_one, collection_two):
+
+        res = app.put_json_api(url_collections, payload_collection, auth=user_one.auth, bulk=True)
         assert res.status_code == 200
         assert ({collection_one._id, collection_two._id} ==
                      {res.json['data'][0]['id'], res.json['data'][1]['id']})
@@ -1715,10 +1714,6 @@ class TestCollectionBulkUpdate:
 
 @pytest.mark.django_db
 class TestNodeBulkDelete:
-
-    @pytest.fixture()
-    def user_one(self):
-        return AuthUserFactory()
 
     @pytest.fixture()
     def user_two(self):
@@ -1765,7 +1760,10 @@ class TestNodeBulkDelete:
     def payload_two(self, collection_three):
         return {'data': [{'id': collection_three._id, 'type': 'collections'}]}
 
-    def test_bulk_delete_collections_logged_in(self, app, url_collections, payload_one, user_one, url_project_one, collection_one, collection_two):
+    def test_bulk_delete_collections_logged_in(
+        self, app, url_collections, payload_one, user_one, url_project_one,
+        collection_one, collection_two):
+
         res = app.delete_json_api(url_collections, payload_one, auth=user_one.auth, bulk=True)
         assert res.status_code == 204
 
@@ -1785,7 +1783,10 @@ class TestNodeBulkDelete:
         res = app.get(url_project_two, auth=user_one.auth, expect_errors=True)
         assert res.status_code == 200
 
-    def test_bulk_delete_collections_logged_in_non_contributor(self, app, url_collections, payload_two, user_two, user_one, url_project_private):
+    def test_bulk_delete_collections_logged_in_non_contributor(
+        self, app, url_collections, payload_two, user_two, user_one,
+        url_project_private):
+
         res = app.delete_json_api(url_collections, payload_two,
                                        auth=user_two.auth, expect_errors=True, bulk=True)
         assert res.status_code == 403
@@ -1795,8 +1796,10 @@ class TestNodeBulkDelete:
         assert res.status_code == 200
 
     def test_bulk_delete_all_or_nothing(self, app, collection_user_two, collection_three, url_collections, user_one, user_two, url_project_private):
-        new_payload = {'data': [{'id': collection_three._id, 'type': 'collections'}, {'id': collection_user_two
-            ._id, 'type': 'collections'}]}
+        new_payload = {
+            'data': [
+                {'id': collection_three._id, 'type': 'collections'},
+                {'id': collection_user_two._id, 'type': 'collections'}]}
         res = app.delete_json_api(url_collections, new_payload,
                                        auth=user_one.auth, expect_errors=True, bulk=True)
         assert res.status_code == 403
@@ -1809,7 +1812,9 @@ class TestNodeBulkDelete:
         res = app.get(url, auth=user_two.auth)
         assert res.status_code == 200
 
-    def test_non_mutational_node_bulk_delete_tests(self, app, url_collections, user_one, collection_one, collection_two, collection_three, url_project_one, payload_one):
+    def test_non_mutational_node_bulk_delete_tests(
+        self, app, url_collections, user_one, collection_one, collection_two,
+        collection_three, url_project_one, payload_one):
 
         #test_bulk_delete_nodes_blank_request
         res = app.delete_json_api(url_collections, auth=user_one.auth, expect_errors=True, bulk=True)
@@ -1869,10 +1874,6 @@ class TestCollectionLinksBulkCreate:
 
     ### User_one
     @pytest.fixture()
-    def user_one(self):
-        return AuthUserFactory()
-
-    @pytest.fixture()
     def collection_one(self, user_one):
         return CollectionFactory(is_public=False, creator=user_one)
 
@@ -1897,7 +1898,9 @@ class TestCollectionLinksBulkCreate:
         return '/{}collections/{}/node_links/'.format(API_BASE, collection_one._id)
 
     @pytest.fixture()
-    def payload_collection_one(self, project_one_pointer_private, project_two_pointer_private, reg_one_pointer_private, reg_two_pointer_private):
+    def payload_collection_one(
+        self, project_one_pointer_private, project_two_pointer_private,
+        reg_one_pointer_private, reg_two_pointer_private):
         return {
             'data': [{
                 'type': 'node_links',
@@ -2002,7 +2005,10 @@ class TestCollectionLinksBulkCreate:
                     }]
                 }
 
-    def test_bulk_creates_collection_node_pointer_logged_in_contrib(self, app, url_collection_one, payload_collection_one, user_one, project_one_pointer_private, project_two_pointer_private):
+    def test_bulk_creates_collection_node_pointer_logged_in_contrib(
+        self, app, url_collection_one, payload_collection_one, user_one,
+        project_one_pointer_private, project_two_pointer_private):
+
         res = app.post_json_api(url_collection_one, payload_collection_one, auth=user_one.auth, bulk=True)
         assert res.status_code == 201
         assert res.content_type == 'application/vnd.api+json'
@@ -2021,7 +2027,9 @@ class TestCollectionLinksBulkCreate:
         embedded = res_json[3]['embeds']['target_node']['errors'][0]['detail']
         assert embedded == 'Not found.'
 
-    def test_bulk_creates_node_pointers_collection_to_non_contributing_node(self, app, project_user_two, url_collection_one, payload_user_two, user_one):
+    def test_bulk_creates_node_pointers_collection_to_non_contributing_node(
+        self, app, project_user_two, url_collection_one, payload_user_two, user_one):
+
         res = app.post_json_api(url_collection_one, payload_user_two, auth=user_one.auth, bulk=True)
         assert res.status_code == 201
         assert res.content_type == 'application/vnd.api+json'
@@ -2037,7 +2045,11 @@ class TestCollectionLinksBulkCreate:
         assert embedded == project_user_two._id
         embedded = res_json[1]['embeds']['target_node']['errors'][0]['detail']
         assert embedded == 'Not found.'
-    def test_bulk_creates_node_pointer_already_connected(self, app, url_collection_one, payload_collection_one, user_one, collection_one, project_one_pointer_private, project_two_pointer_private):
+
+    def test_bulk_creates_node_pointer_already_connected(
+        self, app, url_collection_one, payload_collection_one, user_one,
+        collection_one, project_one_pointer_private, project_two_pointer_private):
+
         res = app.post_json_api(url_collection_one, payload_collection_one, auth=user_one.auth, bulk=True)
         assert res.status_code == 201
         assert res.content_type == 'application/vnd.api+json'
@@ -2142,10 +2154,6 @@ class TestCollectionLinksBulkCreate:
 class TestBulkDeleteCollectionNodeLinks:
 
         @pytest.fixture()
-        def user_one(self):
-            return AuthUserFactory()
-
-        @pytest.fixture()
         def user_two(self):
             return AuthUserFactory()
 
@@ -2217,7 +2225,9 @@ class TestBulkDeleteCollectionNodeLinks:
         def url_collection_two(self, collection_two):
             return '/{}collections/{}/node_links/'.format(API_BASE, collection_two._id)
 
-        def test_bulk_deletes_collection_node_pointers_succeeds_as_owner(self, app, collection_two, url_collection_two, payload_collection_two, user_one):
+        def test_bulk_deletes_collection_node_pointers_succeeds_as_owner(
+            self, app, collection_two, url_collection_two, payload_collection_two, user_one):
+
             node_count_before = collection_two.nodes_pointer.count()
             res = app.delete_json_api(url_collection_two, payload_collection_two, auth=user_one.auth, bulk=True)
             collection_two.reload()
@@ -2225,7 +2235,10 @@ class TestBulkDeleteCollectionNodeLinks:
             assert node_count_before - 2 == collection_two.nodes_pointer.count()
             collection_two.reload()
 
-        def test_return_bulk_deleted_collection_node_pointer(self, app, url_collection_two, collection_two, payload_collection_two, user_one, collection_two_pointer_one):
+        def test_return_bulk_deleted_collection_node_pointer(
+            self, app, url_collection_two, collection_two, payload_collection_two,
+            user_one, collection_two_pointer_one):
+
             res = app.delete_json_api(url_collection_two, payload_collection_two, auth=user_one.auth, bulk=True)
             collection_two.reload()  # Update the model to reflect changes made by post request
             assert res.status_code == 204
@@ -2328,10 +2341,6 @@ class TestBulkDeleteCollectionNodeLinks:
 class TestCollectionRelationshipNodeLinks:
 
     @pytest.fixture()
-    def user_one(self):
-        return AuthUserFactory()
-
-    @pytest.fixture()
     def user_two(self):
         return AuthUserFactory()
 
@@ -2414,23 +2423,15 @@ class TestCollectionRelationshipNodeLinks:
         return payload
 
     def test_get_relationship_linked_nodes(self, app, url_private_linked_nodes, user_one, collection_private, node_private):
-        res = app.get(
-            url_private_linked_nodes, auth=user_one.auth
-        )
-
+        res = app.get( url_private_linked_nodes, auth=user_one.auth)
         assert res.status_code == 200
-
         assert collection_private.linked_nodes_self_url in res.json['links']['self']
         assert collection_private.linked_nodes_related_url in res.json['links']['html']
         assert res.json['data'][0]['id'] == node_private._id
 
     def test_get_relationship_linked_registrations(self, app, registration_private, url_private_linked_regs, user_one, collection_private):
-        res = app.get(
-            url_private_linked_regs, auth=user_one.auth
-        )
-
+        res = app.get(url_private_linked_regs, auth=user_one.auth)
         assert res.status_code == 200
-
         assert collection_private.linked_registrations_self_url in res.json['links']['self']
         assert collection_private.linked_registrations_related_url in res.json['links']['html']
         assert res.json['data'][0]['id'] == registration_private._id
@@ -2505,7 +2506,10 @@ class TestCollectionRelationshipNodeLinks:
         assert node_contributor._id in ids
         assert node_private._id not in ids
 
-    def test_delete_with_put_empty_array(self, app, user_one, url_private_linked_nodes, make_payload, collection_private, node_admin, auth_user_one):
+    def test_delete_with_put_empty_array(
+        self, app, user_one, url_private_linked_nodes, make_payload,
+        collection_private, node_admin, auth_user_one):
+
         collection_private.add_pointer(node_admin, auth=auth_user_one)
         payload = make_payload()
         payload['data'].pop()
@@ -2516,7 +2520,10 @@ class TestCollectionRelationshipNodeLinks:
         assert res.status_code == 200
         assert res.json['data'] == payload['data']
 
-    def test_delete_one(self, app, make_payload, url_private_linked_nodes, node_admin, node_private, user_one, auth_user_one, collection_private):
+    def test_delete_one(
+        self, app, make_payload, url_private_linked_nodes, node_admin,
+        node_private, user_one, auth_user_one, collection_private):
+
         collection_private.add_pointer(node_admin, auth=auth_user_one)
         res = app.delete_json_api(
             url_private_linked_nodes, make_payload([node_private._id]),
@@ -2530,7 +2537,10 @@ class TestCollectionRelationshipNodeLinks:
         assert node_admin._id in ids
         assert node_private._id not in ids
 
-    def test_delete_multiple(self, app, url_private_linked_nodes, user_one, collection_private, node_private, make_payload, node_admin, auth_user_one):
+    def test_delete_multiple(
+        self, app, url_private_linked_nodes, user_one, collection_private,
+        node_private, make_payload, node_admin, auth_user_one):
+
         collection_private.add_pointer(node_admin, auth=auth_user_one)
         res = app.delete_json_api(
             url_private_linked_nodes, make_payload([node_private._id, node_admin._id]),
@@ -2541,21 +2551,16 @@ class TestCollectionRelationshipNodeLinks:
         res = app.get(url_private_linked_nodes, auth=user_one.auth)
         assert res.json['data'] == []
 
-    def test_delete_not_present(self, app, make_payload, url_private_linked_nodes, url_private_linked_regs, collection_private, node, user_one):
+    def test_delete_not_present(
+        self, app, make_payload, url_private_linked_nodes, url_private_linked_regs,
+        collection_private, node, user_one):
+
         number_of_links = collection_private.linked_nodes.count()
-        res = app.delete_json_api(
-            url_private_linked_nodes, make_payload([node._id]),
-            auth=user_one.auth
-        )
+        res = app.delete_json_api(url_private_linked_nodes, make_payload([node._id]), auth=user_one.auth)
         assert res.status_code == 204
 
-        res = app.get(
-            url_private_linked_nodes, auth=user_one.auth
-        )
-
-        reg_res = app.get(
-            url_private_linked_regs, auth=user_one.auth
-        )
+        res = app.get(url_private_linked_nodes, auth=user_one.auth)
+        reg_res = app.get(url_private_linked_regs, auth=user_one.auth)
         assert len(res.json['data']) + len(reg_res.json['data']) == number_of_links
 
     def test_node_links_and_relationship_represent_same_nodes(
@@ -2564,13 +2569,8 @@ class TestCollectionRelationshipNodeLinks:
 
         collection_private.add_pointer(node_admin, auth=auth_user_one)
         collection_private.add_pointer(node_contributor, auth=auth_user_one)
-        res_relationship = app.get(
-            url_private_linked_nodes, auth=user_one.auth
-        )
-        res_node_links = app.get(
-            '/{}collections/{}/node_links/'.format(API_BASE, collection_private._id),
-            auth=user_one.auth
-        )
+        res_relationship = app.get(url_private_linked_nodes, auth=user_one.auth)
+        res_node_links = app.get('/{}collections/{}/node_links/'.format(API_BASE, collection_private._id), auth=user_one.auth)
         node_links_id = []
         for data in res_node_links.json['data']:
             try:
@@ -2601,13 +2601,10 @@ class TestCollectionRelationshipNodeLinks:
         res = app.post_json_api(
             url_private_linked_nodes, make_payload([node._id]),
             auth=user_one.auth,
-            expect_errors=True
-        )
+            expect_errors=True)
         assert res.status_code == 403
 
-        res = app.get(
-            url_private_linked_nodes, auth=user_one.auth
-        )
+        res = app.get(url_private_linked_nodes, auth=user_one.auth)
 
         ids = [data['id'] for data in res.json['data']]
         assert node._id not in ids
@@ -2617,15 +2614,10 @@ class TestCollectionRelationshipNodeLinks:
         res = app.post_json_api(
             url_private_linked_nodes, make_payload([node._id, node_contributor._id]),
             auth=user_one.auth,
-            expect_errors=True
-        )
-
+            expect_errors=True)
         assert res.status_code == 403
 
-        res = app.get(
-            url_private_linked_nodes, auth=user_one.auth
-        )
-
+        res = app.get(url_private_linked_nodes, auth=user_one.auth)
         ids = [data['id'] for data in res.json['data']]
         assert node._id not in ids
         assert node_contributor._id not in ids
@@ -2635,15 +2627,10 @@ class TestCollectionRelationshipNodeLinks:
         res = app.put_json_api(
             url_private_linked_nodes, make_payload([node._id]),
             auth=user_one.auth,
-            expect_errors=True
-        )
-
+            expect_errors=True)
         assert res.status_code == 403
 
-        res = app.get(
-            url_private_linked_nodes, auth=user_one.auth
-        )
-
+        res = app.get(url_private_linked_nodes, auth=user_one.auth)
         ids = [data['id'] for data in res.json['data']]
         assert node._id not in ids
         assert node_private._id in ids
@@ -2652,15 +2639,10 @@ class TestCollectionRelationshipNodeLinks:
         res = app.put_json_api(
             url_private_linked_nodes, make_payload([node._id, node_contributor._id]),
             auth=user_one.auth,
-            expect_errors=True
-        )
-
+            expect_errors=True)
         assert res.status_code == 403
 
-        res = app.get(
-            url_private_linked_nodes, auth=user_one.auth
-        )
-
+        res = app.get(url_private_linked_nodes, auth=user_one.auth)
         ids = [data['id'] for data in res.json['data']]
         assert node._id not in ids
         assert node_contributor._id not in ids
@@ -2669,20 +2651,14 @@ class TestCollectionRelationshipNodeLinks:
         #test_access_other_collection
         collection = CollectionFactory(creator=user_two)
         url = '/{}collections/{}/relationships/linked_nodes/'.format(API_BASE, collection._id)
-        res = app.get(
-            url, auth=user_one.auth,
-            expect_errors=True
-        )
-
+        res = app.get(url, auth=user_one.auth, expect_errors=True)
         assert res.status_code == 403
 
         #test_node_doesnt_exist
         res = app.post_json_api(
             url_private_linked_nodes, make_payload(['aquarela']),
             auth=user_one.auth,
-            expect_errors=True
-        )
-
+            expect_errors=True)
         assert res.status_code == 404
 
         #test_type_mistyped
@@ -2692,82 +2668,44 @@ class TestCollectionRelationshipNodeLinks:
                 'data': [{'type': 'not_linked_nodes', 'id': node_contributor._id}]
             },
             auth=user_one.auth,
-            expect_errors=True
-        )
-
+            expect_errors=True)
         assert res.status_code == 409
 
         #test_creates_public_linked_node_relationship_logged_out
-        res = app.post_json_api(
-                url_public_linked_nodes, make_payload([node_public._id]),
-                expect_errors=True
-        )
-
+        res = app.post_json_api(url_public_linked_nodes, make_payload([node_public._id]), expect_errors=True)
         assert res.status_code == 401
 
         #test_creates_public_linked_node_relationship_logged_in
-        res = app.post_json_api(
-                url_public_linked_nodes, make_payload([node_public._id]),
-                auth=user_one.auth, expect_errors=True
-        )
-
+        res = app.post_json_api(url_public_linked_nodes, make_payload([node_public._id]), auth=user_one.auth, expect_errors=True)
         assert res.status_code == 403
 
         #test_creates_private_linked_node_relationship_logged_out
-        res = app.post_json_api(
-                url_private_linked_nodes, make_payload([node._id]),
-                expect_errors=True
-        )
-
+        res = app.post_json_api(url_private_linked_nodes, make_payload([node._id]), expect_errors=True)
         assert res.status_code == 401
 
         #test_put_public_nodes_relationships_logged_out
-        res = app.put_json_api(
-                url_public_linked_nodes, make_payload([node_public._id]),
-                expect_errors=True
-        )
-
+        res = app.put_json_api(url_public_linked_nodes, make_payload([node_public._id]), expect_errors=True)
         assert res.status_code == 401
 
         #test_put_public_nodes_relationships_logged_in
-        res = app.put_json_api(
-                url_public_linked_nodes, make_payload([node_private._id]),
-                auth=user_one.auth, expect_errors=True
-        )
-
+        res = app.put_json_api(url_public_linked_nodes, make_payload([node_private._id]), auth=user_one.auth, expect_errors=True)
         assert res.status_code == 403
 
         #test_delete_public_nodes_relationships_logged_out
-        res = app.delete_json_api(
-            url_public_linked_nodes, make_payload([node_public._id]),
-            expect_errors=True
-        )
-
+        res = app.delete_json_api(url_public_linked_nodes, make_payload([node_public._id]), expect_errors=True)
         assert res.status_code == 401
 
         #test_delete_public_nodes_relationships_logged_in
-        res = app.delete_json_api(
-                url_public_linked_nodes, make_payload([node_private._id]),
-                auth=user_one.auth, expect_errors=True
-        )
-
+        res = app.delete_json_api(url_public_linked_nodes, make_payload([node_private._id]), auth=user_one.auth, expect_errors=True)
         assert res.status_code == 403
 
         #test_attempt_to_add_collection_to_collection
         collection = CollectionFactory(creator=user_one)
-        res = app.post_json_api(
-            url_private_linked_nodes, make_payload([collection._id]),
-            auth=user_one.auth, expect_errors=True
-        )
-
+        res = app.post_json_api(url_private_linked_nodes, make_payload([collection._id]), auth=user_one.auth, expect_errors=True)
         assert res.status_code == 404
 
 @pytest.mark.django_db
 class TestCollectionLinkedNodes:
-
-    @pytest.fixture()
-    def user_one(self):
-        return AuthUserFactory()
 
     @pytest.fixture()
     def auth_user(self, user_one):
@@ -2824,7 +2762,10 @@ class TestCollectionLinkedNodes:
     def id_linked_nodes(self, collection):
         return list(collection.linked_nodes.values_list('guids___id', flat=True))
 
-    def test_linked_nodes_returns_everything(self, app, url_collection_linked_nodes, url_collection_linked_regs, user_one, id_linked_nodes):
+    def test_linked_nodes_returns_everything(
+        self, app, url_collection_linked_nodes, url_collection_linked_regs,
+        user_one, id_linked_nodes):
+
         res = app.get(url_collection_linked_nodes, auth=user_one.auth)
         reg_res = app.get(url_collection_linked_regs, auth=user_one.auth)
 
@@ -2858,14 +2799,8 @@ class TestCollectionLinkedNodes:
         collection.add_pointer(registration_public, auth=Auth(user))
         collection.save()
 
-        res = app.get(
-            '/{}collections/{}/linked_nodes/'.format(API_BASE, collection._id),
-            auth=user.auth
-        )
-        reg_res = app.get(
-            '/{}collections/{}/linked_registrations/'.format(API_BASE, collection._id),
-            auth=user.auth
-        )
+        res = app.get('/{}collections/{}/linked_nodes/'.format(API_BASE, collection._id), auth=user.auth)
+        reg_res = app.get('/{}collections/{}/linked_registrations/'.format(API_BASE, collection._id), auth=user.auth)
 
         assert res.status_code == 200
         assert reg_res.status_code == 200
@@ -2886,18 +2821,13 @@ class TestCollectionLinkedNodes:
             linked_registration_two.remove_contributor(user, auth=auth_user)
             registration_public.remove_contributor(user, auth=auth_user)
 
-        res = app.get(
-            '/{}collections/{}/linked_nodes/'.format(API_BASE, collection._id),
-            auth=user.auth
-        )
-        reg_res = app.get(
-            '/{}collections/{}/linked_registrations/'.format(API_BASE, collection._id),
-            auth=user.auth
-        )
+        res = app.get('/{}collections/{}/linked_nodes/'.format(API_BASE, collection._id), auth=user.auth)
+        reg_res = app.get('/{}collections/{}/linked_registrations/'.format(API_BASE, collection._id), auth=user.auth)
+
         nodes_returned = [linked_node['id'] for linked_node in res.json['data']]
         registrations_returned = [linked_registration['id'] for linked_registration in reg_res.json['data']]
-        assert len(nodes_returned) + len(registrations_returned) == len(id_linked_nodes) - 2
 
+        assert len(nodes_returned) + len(registrations_returned) == len(id_linked_nodes) - 2
         assert linked_node_one._id in nodes_returned
         assert node_public._id in nodes_returned
         assert linked_registration_one._id in registrations_returned
@@ -2935,8 +2865,6 @@ class TestCollectionLinkedNodes:
         assert registration_public._id in registrations_returned
 
     def test_attempt_to_return_linked_nodes_logged_out(self, app, url_collection_linked_nodes):
-        res = app.get(
-            url_collection_linked_nodes, auth=None,
-            expect_errors=True
-        )
+
+        res = app.get(url_collection_linked_nodes, auth=None, expect_errors=True)
         assert res.status_code == 401
