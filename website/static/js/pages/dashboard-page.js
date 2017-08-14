@@ -46,8 +46,7 @@ $(document).ready(function() {
     // Appears in 10 second if the spinner is still there.
     setTimeout(function(){
         if($('#dashboard>.ball-scale').length > 0) {
-            $('#dashboard').append('<div class="text-danger text-center text-bigger">This is taking longer than normal. <br>  Try reloading the page. If the problem persists, please contact us at support@cos.io.</div>');
+            $('#dashboard').append('<div class="text-danger text-center text-bigger">This is taking longer than normal. <br>  Try reloading the page. If the problem persists, please contact us at support@osf.io.</div>');
         }
     }, 10000);
 });
-
