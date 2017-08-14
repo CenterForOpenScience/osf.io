@@ -53,9 +53,9 @@
                     </div>
                     <div class="support-col-body">
                         <p> For emails about technical support:</p>
-                        <p> <a href="mailto:support@cos.io" class="text-bigger">support@cos.io</a></p>
+                        <p> <a href="mailto:support@osf.io" class="text-bigger">support@osf.io</a></p>
                         <p> For all other questions or comments: </p>
-                        <p><a href="mailto:contact@cos.io" class="text-bigger">contact@cos.io</a></p>
+                        <p><a href="mailto:contact@osf.io" class="text-bigger">contact@osf.io</a></p>
                     </div>
                 </div>
             </div>

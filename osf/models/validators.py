@@ -81,16 +81,22 @@ def validate_profile_websites(profile_websites):
             # Reraise with a better message
             raise ValidationError('Invalid personal URL.')
 
-
 def validate_social(value):
     validate_profile_websites(value.get('profileWebsites'))
-
+    from osf.models import OSFUser
+    for soc_key in value.keys():
+        if soc_key not in OSFUser.SOCIAL_FIELDS:
+            raise ValidationError('{} is not a valid key for social.'.format(soc_key))
 
 def validate_email(value):
     with reraise_django_validation_errors():
         django_validate_email(value)
     if value.split('@')[1].lower() in settings.BLACKLISTED_DOMAINS:
         raise ValidationError('Invalid Email')
+
+def validate_subject_highlighted_count(provider, is_highlighted_addition):
+    if is_highlighted_addition and provider.subjects.filter(highlighted=True).count() >= 10:
+        raise DjangoValidationError('Too many highlighted subjects for PreprintProvider {}'.format(provider._id))
 
 def validate_subject_hierarchy_length(parent):
     from osf.models import Subject

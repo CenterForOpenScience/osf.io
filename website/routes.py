@@ -49,6 +49,7 @@ from website.preprints import views as preprint_views
 from website.registries import views as registries_views
 from website.institutions import views as institution_views
 from website.notifications import views as notification_views
+from website.closed_challenges import views as closed_challenges_views
 
 
 def get_globals():
@@ -397,10 +398,14 @@ def make_url_map(app):
         ),
 
         Rule(
-            [
-                '/prereg/',
-                '/erpc/',
-            ],
+            '/erpc/',
+            'get',
+            closed_challenges_views.erpc_landing_page,
+            OsfWebRenderer('erpc_landing_page.mako', trust=False)
+        ),
+
+        Rule(
+            '/prereg/',
             'get',
             prereg.prereg_landing_page,
             OsfWebRenderer('prereg_landing_page.mako', trust=False)
@@ -987,8 +992,6 @@ def make_url_map(app):
             notemplate
         ),
 
-        # # TODO: Add API endpoint for tags
-        # Rule('/tags/<tag>/', 'get', project_views.tag.project_tag, OsfWebRenderer('tags.mako', trust=False)),
         Rule('/project/new/<pid>/beforeTemplate/', 'get',
              project_views.node.project_before_template, json_renderer),
 
@@ -1390,6 +1393,17 @@ def make_url_map(app):
             ],
             'put',
             project_views.node.update_node,
+            json_renderer,
+        ),
+
+        # Remove
+        Rule(
+            [
+                '/project/<pid>/',
+                '/project/<pid>/node/<nid>/',
+            ],
+            'delete',
+            project_views.node.component_remove,
             json_renderer,
         ),
 

@@ -7,7 +7,7 @@
 
 <div class="row project-page">
     <!-- Begin left column -->
-    <div class="col-sm-3 affix-parent scrollspy">
+    <div class="col-md-3 col-xs-12 affix-parent scrollspy">
 
         % if 'write' in user['permissions']:
 
@@ -23,6 +23,9 @@
                             <li><a href="#configureAddonsAnchor">Configure Add-ons</a></li>
                         % endif
 
+                        % if 'admin' in user['permissions']:
+                            <li><a href="#createVolsAnchor">View-Only Links</a></li>
+                        % endif
                         <li><a href="#configureWikiAnchor">Wiki</a></li>
 
                         % if 'admin' in user['permissions']:
@@ -34,6 +37,8 @@
                         % endif
 
                         <li><a href="#configureNotificationsAnchor">Email Notifications</a></li>
+
+                        <li><a href="#redirectLink">Redirect Link</a></li>
 
                     % endif
 
@@ -53,7 +58,7 @@
     <!-- End left column -->
 
     <!-- Begin right column -->
-    <div class="col-sm-9">
+    <div class="col-md-9 col-xs-12">
 
         % if 'write' in user['permissions']:  ## Begin Configure Project
 
@@ -185,6 +190,26 @@
             % endif
 
         % endif  ## End Select Addons
+
+        % if 'admin' in user['permissions']:  ## Begin create VOLS
+            % if not node['is_registration']:
+                <div class="panel panel-default">
+                    <span id="createVolsAnchor" class="anchor"></span>
+                    <div class="panel-heading clearfix">
+                        <h3 class="panel-title">View-Only Links</h3>
+                    </div>
+                    <div class="panel-body">
+                        <p>
+                            Create a link to share this project so those who have the link can view&mdash;but not edit&mdash;the project.
+                        </p>
+                        <a href="#addPrivateLink" data-toggle="modal" class="btn btn-success btn-sm">
+                          <i class="fa fa-plus"></i> Add
+                        </a>
+                        <%include file="project/private_links.mako"/>
+                    </div>
+                </div>
+            % endif
+        % endif ## End create vols
 
         % if 'write' in user['permissions']:  ## Begin Wiki Config
             % if not node['is_registration']:
@@ -388,6 +413,76 @@
 
         % endif ## End Configure Email Notifications
 
+        % if 'write' in user['permissions']:  ## Begin Redirect Link Config
+            % if not node['is_registration']:
+
+                <div class="panel panel-default">
+                    <span id="redirectLink" class="anchor"></span>
+                    <div class="panel-heading clearfix">
+                        <h3 class="panel-title">Redirect Link</h3>
+                    </div>
+                    <div class="panel-body" id="configureForward">
+                        <div>
+                            <label>
+                                <input
+                                    type="checkbox"
+                                    name="forward"
+                                    data-bind="checked: enabled, disable: pendingRequest"
+                                    ${'disabled' if node['is_registration'] else ''}
+                                />
+                                Redirect visitors from your project page to an external webpage
+                            </label>
+                        </div>
+
+                        <div data-bind="visible: enabled" style="display: none">
+
+                            <div class="forward-settings">
+
+                                <form class="form" data-bind="submit: submitSettings">
+
+                                    <div class="form-group">
+                                        <label for="forwardUrl">URL</label>
+                                        <input
+                                            id="forwardUrl"
+                                            class="form-control"
+                                            data-bind="value: url"
+                                            placeholder="Send people who visit your OSF project page to this link instead"
+                                        />
+                                    </div>
+
+                                    <div class="form-group">
+                                        <label for="forwardLabel">Label</label>
+                                        <input
+                                            id="forwardLabel"
+                                            class="form-control"
+                                            data-bind="value: label"
+                                            placeholder="Optional"
+                                        />
+                                    </div>
+
+                                    <div class="row">
+                                        <div class="col-md-10 overflow">
+                                            <p data-bind="html: message, attr: {class: messageClass}"></p>
+                                        </div>
+                                        <div class="col-md-2">
+                                            <input
+                                                type="submit"
+                                               class="btn btn-success pull-right"
+                                               value="Save"
+                                            />
+                                        </div>
+                                    </div>
+
+                                </form>
+
+                            </div><!-- end .forward-settings -->
+                        </div><!-- end #configureForward -->
+
+                    </div>
+                </div>
+            %endif
+        %endif ## End Redirect Link Config
+
         % if 'admin' in user['permissions']:  ## Begin Retract Registration
 
             % if node['is_registration']:
@@ -441,8 +536,6 @@
 
 </div>
 
-
-
 <%def name="render_node_settings(data)">
     <%
        template_name = data['node_settings_template']
@@ -457,8 +550,8 @@
 
 <%def name="stylesheets()">
     ${parent.stylesheets()}
-
     <link rel="stylesheet" href="/static/css/pages/project-page.css">
+    <link rel="stylesheet" href="/static/css/responsive-tables.css">
 </%def>
 
 <%def name="javascript_bottom()">
@@ -474,6 +567,7 @@
       window.contextVars.wiki.isEnabled = ${wiki.short_name in addons_enabled | sjson, n };
       window.contextVars.currentUser = window.contextVars.currentUser || {};
       window.contextVars.currentUser.institutions = ${ user['institutions'] | sjson, n };
+      window.contextVars.currentUser.permissions = ${ user['permissions'] | sjson, n } ;
       window.contextVars.analyticsMeta = $.extend(true, {}, window.contextVars.analyticsMeta, {
           pageMeta: {
               title: 'Settings',
@@ -483,10 +577,11 @@
     </script>
 
     <script type="text/javascript" src=${"/static/public/js/project-settings-page.js" | webpack_asset}></script>
-
+    <script src=${"/static/public/js/sharing-page.js" | webpack_asset}></script>
+    <script type="text/javascript" src=${"/static/public/js/forward/node-cfg.js" | webpack_asset}></script>
+    
     % for js_asset in addon_js:
-    <script src="${js_asset | webpack_asset}"></script>
+        <script src="${js_asset | webpack_asset}"></script>
     % endfor
-
 
 </%def>

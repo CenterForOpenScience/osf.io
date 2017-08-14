@@ -746,21 +746,23 @@ class TestAddonFileViews(OsfTestCase):
 
         assert_equals(resp.status_code, 400)
 
-    def test_head_returns_url(self):
+    def test_head_returns_url_and_redriect(self):
         file_node = self.get_test_file()
         guid = file_node.get_guid(create=True)
 
         resp = self.app.head('/{}/'.format(guid._id), auth=self.user.auth)
         location = furl.furl(resp.location)
+        assert_equals(resp.status_code, 302)
         assert_urls_equal(location.url, file_node.generate_waterbutler_url(direct=None, version=''))
 
-    def test_head_returns_url_with_version(self):
+    def test_head_returns_url_with_version_and_redirect(self):
         file_node = self.get_test_file()
         guid = file_node.get_guid(create=True)
 
         resp = self.app.head('/{}/?revision=1&foo=bar'.format(guid._id), auth=self.user.auth)
         location = furl.furl(resp.location)
         # Note: version is added but us but all other url params are added as well
+        assert_equals(resp.status_code, 302)
         assert_urls_equal(location.url, file_node.generate_waterbutler_url(direct=None, revision=1, version='', foo='bar'))
 
     def test_nonexistent_addons_raise(self):
@@ -885,6 +887,19 @@ class TestAddonFileViews(OsfTestCase):
         file_node.update(revision=None, data=file_data)
         assert_equal(len(file_node.history), 1)
         assert_equal(file_node.history[0], file_data)
+
+    @mock.patch('website.archiver.tasks.archive')
+    def test_missing_modified_date_in_file_history(self, mock_archive):
+        file_node = self.get_test_file()
+        file_node.history.append({'modified': None})
+        file_data = {
+            'name': 'Test File Update',
+            'materialized': file_node.materialized_path,
+            'modified': None
+        }
+        file_node.update(revision=None, data=file_data)
+        assert_equal(len(file_node.history), 2)
+        assert_equal(file_node.history[1], file_data)
 
 
 class TestLegacyViews(OsfTestCase):

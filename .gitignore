@@ -148,7 +148,6 @@ logs/*
 src/
 website/mfrtemp/
 docs/_build
-website/static/img/badges
 
 # Scripts
 scripts/guid_blacklist.txt
