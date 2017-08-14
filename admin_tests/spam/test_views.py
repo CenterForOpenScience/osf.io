@@ -10,7 +10,7 @@ from osf.models import Comment, SpamStatus
 from osf.models.admin_log_entry import AdminLogEntry
 from admin.spam.forms import ConfirmForm
 from tests.base import AdminTestCase
-from tests.factories import AuthUserFactory, ProjectFactory
+from osf_tests.factories import AuthUserFactory, ProjectFactory
 from osf_tests.factories import CommentFactory, UserFactory
 from admin_tests.utilities import setup_view, setup_form_view
 

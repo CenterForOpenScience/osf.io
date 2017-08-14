@@ -72,7 +72,7 @@ services:
 ##      - ../ember-osf:/ember-osf
 ##    depends_on:
 ##      - emberosf
-##    command: /bin/bash -c "cd /ember-osf && yarn link && cd /code && yarn link ember-osf && yarn --pure-lockfile && ./node_modules/bower/bin/bower install --allow-root --config.interactive=false && ./node_modules/ember-cli/bin/ember serve --host 0.0.0.0 --port 4200"
+##    command: /bin/bash -c "cd /ember-osf && yarn link && cd /code && yarn link ember-osf && yarn --pure-lockfile --ignore-engines && ./node_modules/bower/bin/bower install --allow-root --config.interactive=false && ./node_modules/ember-cli/bin/ember serve --host 0.0.0.0 --port 4200"
 
 #  registries:
 #    volumes:
@@ -83,11 +83,11 @@ services:
 ##      - ../ember-osf:/ember-osf
 ##    depends_on:
 ##      - emberosf
-##    command: /bin/bash -c "cd /ember-osf && yarn link && cd /code && yarn link ember-osf && yarn --pure-lockfile && ./node_modules/bower/bin/bower install --allow-root --config.interactive=false && ./node_modules/ember-cli/bin/ember serve --host 0.0.0.0 --port 4300"
+##    command: /bin/bash -c "cd /ember-osf && yarn link && cd /code && yarn link ember-osf && yarn --pure-lockfile --ignore-engines && ./node_modules/bower/bin/bower install --allow-root --config.interactive=false && ./node_modules/ember-cli/bin/ember serve --host 0.0.0.0 --port 4300"
 
 #  # Use this for ember-osf linked development:
 #  emberosf:
 #    build: ../ember-osf
 #    command: /bin/bash -c "yarn --pure-lockfile && ./node_modules/bower/bin/bower install --allow-root --config.interactive=false"
 #    volumes:
-#      - ../ember-osf:/code/
+#      - ../emberosf:/code/

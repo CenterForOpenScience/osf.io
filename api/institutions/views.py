@@ -9,7 +9,7 @@ from modularodm import Q
 
 from framework.auth.oauth_scopes import CoreScopes
 
-from osf.models import OSFUser as User, Node, Institution
+from osf.models import OSFUser, Node, Institution
 from website.util import permissions as osf_permissions
 
 from api.base import permissions as base_permissions
@@ -26,6 +26,7 @@ from api.base.exceptions import RelationshipPostMakesNoChanges
 from api.nodes.serializers import NodeSerializer
 from api.nodes.filters import NodesFilterMixin
 from api.users.serializers import UserSerializer
+from api.registrations.serializers import RegistrationSerializer
 
 from api.institutions.authentication import InstitutionAuthentication
 from api.institutions.serializers import InstitutionSerializer, InstitutionNodesRelationshipSerializer
@@ -183,11 +184,13 @@ class InstitutionUserList(JSONAPIBaseView, ODMFilterMixin, generics.ListAPIView,
 
     required_read_scopes = [CoreScopes.INSTITUTION_READ, CoreScopes.USERS_READ]
     required_write_scopes = [CoreScopes.NULL]
-    model_class = User
+    model_class = OSFUser
 
     serializer_class = UserSerializer
     view_category = 'institutions'
     view_name = 'institution-users'
+
+    ordering = ('-id',)
 
     # overrides ODMFilterMixin
     def get_default_odm_query(self):
@@ -198,7 +201,7 @@ class InstitutionUserList(JSONAPIBaseView, ODMFilterMixin, generics.ListAPIView,
     # overrides RetrieveAPIView
     def get_queryset(self):
         query = self.get_query_from_request()
-        return User.find(query)
+        return OSFUser.find(query)
 
 
 class InstitutionAuth(JSONAPIBaseView, generics.CreateAPIView):
@@ -222,7 +225,7 @@ class InstitutionAuth(JSONAPIBaseView, generics.CreateAPIView):
 class InstitutionRegistrationList(InstitutionNodeList):
     """Registrations have selected an institution as their primary institution.
     """
-
+    serializer_class = RegistrationSerializer
     view_name = 'institution-registrations'
 
     base_node_query = (

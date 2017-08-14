@@ -96,7 +96,7 @@ NodeActions.forkNode = function() {
     });
 };
 
-NodeActions.forkPointer = function(pointerId) {
+NodeActions.forkPointer = function(nodeId) {
     bootbox.confirm({
         title: 'Fork this project?',
         message: 'Are you sure you want to fork this project?',
@@ -108,7 +108,7 @@ NodeActions.forkPointer = function(pointerId) {
                 // Fork pointer
                 $osf.postJSON(
                     ctx.node.urls.api + 'pointer/fork/',
-                    {pointerId: pointerId}
+                    {nodeId: nodeId}
                 ).done(function() {
                     window.location.reload();
                 }).fail(function() {
