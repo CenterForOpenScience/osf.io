@@ -16,11 +16,12 @@ logger = logging.getLogger(__name__)
 
 
 @celery_app.task(ignore_results=True)
-def on_preprint_updated(preprint_id, update_share=True, old_subjects=None):
+def on_preprint_updated(preprint_id, update_share=True, share_type=None, old_subjects=None):
     # WARNING: Only perform Read-Only operations in an asynchronous task, until Repeatable Read/Serializable
     # transactions are implemented in View and Task application layers.
     from osf.models import PreprintService
     preprint = PreprintService.load(preprint_id)
+    share_type = share_type or preprint.provider.share_publish_type
     if old_subjects is None:
         old_subjects = []
     if preprint.node:
@@ -40,19 +41,19 @@ def on_preprint_updated(preprint_id, update_share=True, old_subjects=None):
                 'attributes': {
                     'tasks': [],
                     'raw': None,
-                    'data': {'@graph': format_preprint(preprint, old_subjects)}
+                    'data': {'@graph': format_preprint(preprint, share_type, old_subjects)}
                 }
             }
         }, headers={'Authorization': 'Bearer {}'.format(preprint.provider.access_token), 'Content-Type': 'application/vnd.api+json'})
         logger.debug(resp.content)
         resp.raise_for_status()
 
-def format_preprint(preprint, old_subjects=None):
+def format_preprint(preprint, share_type, old_subjects=None):
     if old_subjects is None:
         old_subjects = []
     from osf.models import Subject
     old_subjects = [Subject.objects.get(id=s) for s in old_subjects]
-    preprint_graph = GraphNode('preprint', **{
+    preprint_graph = GraphNode(share_type, **{
         'title': preprint.node.title,
         'description': preprint.node.description or '',
         'is_deleted': (
