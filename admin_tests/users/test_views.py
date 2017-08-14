@@ -87,16 +87,27 @@ class TestUserView(AdminTestCase):
 
 
 class TestResetPasswordView(AdminTestCase):
-    def test_reset_password_context(self):
-        user = UserFactory()
+    def setUp(self):
+        super(TestResetPasswordView, self).setUp()
+        self.user = UserFactory()
+        self.request = RequestFactory().get('/fake_path')
+        self.request.user = self.user
+        self.plain_view = views.ResetPasswordView
+        self.view = setup_view(self.plain_view(), self.request, guid=self.user._id)
 
-        guid = user._id
-        request = RequestFactory().get('/fake_path')
-        view = views.ResetPasswordView(initial={})
-        view = setup_view(view, request, guid=guid)
-        res = view.get_context_data()
+    def test_get_initial(self):
+        self.view.user = self.user
+        self.view.get_initial()
+        res = self.view.initial
         nt.assert_is_instance(res, dict)
-        nt.assert_in((user.emails.first().address, user.emails.first().address), view.initial['emails'])
+        nt.assert_equal(res['guid'], self.user._id)
+        nt.assert_equal(res['emails'], [(r, r) for r in self.user.emails.values_list('address', flat=True)])
+
+    def test_reset_password_context(self):
+        self.view.user = self.user
+        res = self.view.get_context_data()
+        nt.assert_is_instance(res, dict)
+        nt.assert_in((self.user.emails.first().address, self.user.emails.first().address), self.view.initial['emails'])
 
     def test_no_user_permissions_raises_error(self):
         user = UserFactory()
@@ -286,7 +297,6 @@ class SpamUserListMixin(object):
 
         response = self.plain_view.as_view()(request, guid=guid)
         self.assertEqual(response.status_code, 200)
-
 
 class TestFlaggedSpamUserList(SpamUserListMixin, AdminTestCase):
     def setUp(self):
@@ -695,3 +705,21 @@ class TestGetLinkView(AdminTestCase):
 
         nt.assert_in(project._id, link)
         nt.assert_in(unregistered_contributor.unclaimed_records[project._id]['token'], link)
+
+
+class TestUserReindex(AdminTestCase):
+    def setUp(self):
+        super(TestUserReindex, self).setUp()
+        self.request = RequestFactory().post('/fake_path')
+
+        self.user = AuthUserFactory()
+
+    @mock.patch('website.search.search.update_user')
+    def test_reindex_user_elastic(self, mock_reindex_elastic):
+        count = AdminLogEntry.objects.count()
+        view = views.UserReindexElastic()
+        view = setup_log_view(view, self.request, guid=self.user._id)
+        view.delete(self.request)
+
+        nt.assert_true(mock_reindex_elastic.called)
+        nt.assert_equal(AdminLogEntry.objects.count(), count + 1)

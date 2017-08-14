@@ -29,7 +29,7 @@ var ProjectSettings = oop.extend(
             self.categoryOptions = params.categoryOptions;
             self.categoryPlaceholder = params.category;
             self.selectedCategory = ko.observable(params.category);
-            
+
             if (!params.updateUrl) {
                 throw new Error(language.instantiationErrorMessage);
             }
@@ -79,7 +79,7 @@ var ProjectSettings = oop.extend(
                     xhrFields: {withCredentials: true},
                     processData: false,
                     data: requestPayload
-                });            
+                });
             request.done(function(response) {
                 self.categoryPlaceholder = response.data.attributes.category;
                 self.titlePlaceholder = response.data.attributes.title;

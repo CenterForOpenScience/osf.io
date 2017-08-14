@@ -237,3 +237,35 @@ class TestPreprintProviderSpecificSubjects(ApiTestCase):
         assert_equal(res_2.status_code, 200)
         assert_equal(res_1.json['links']['meta']['total'], 0)
         assert_equal(res_2.json['links']['meta']['total'], 0)
+
+class TestPreprintProviderHighlightedSubjects(ApiTestCase):
+    def setUp(self):
+        super(TestPreprintProviderHighlightedSubjects, self).setUp()
+        self.provider = PreprintProviderFactory()
+        self.subj_a = SubjectFactory(provider=self.provider, text='A')
+        self.subj_aa = SubjectFactory(provider=self.provider, text='AA', parent=self.subj_a, highlighted=True)
+        self.url = '/{}preprint_providers/{}/taxonomies/highlighted/'.format(API_BASE, self.provider._id)
+
+    def test_mapped_subjects_filter_wrong_provider(self):
+        res = self.app.get(self.url)
+
+        assert res.status_code == 200
+        assert len(res.json['data']) == 1
+        assert res.json['data'][0]['id'] == self.subj_aa._id
+
+class TestCustomTaxonomy(ApiTestCase):
+    def setUp(self):
+        super(TestCustomTaxonomy, self).setUp()
+        self.osf_provider = PreprintProviderFactory(_id='osf', share_title='bepress')
+        self.asdf_provider = PreprintProviderFactory(_id='asdf', share_title='ASDF')
+        bepress_subj = SubjectFactory(text='BePress Text', provider=self.osf_provider)
+        other_subj = SubjectFactory(text='Other Text', bepress_subject=bepress_subj, provider=self.asdf_provider)
+        self.url = '/{}preprint_providers/{}/taxonomies/'
+
+    def test_taxonomy_share_title(self):
+        bepress_res = self.app.get(self.url.format(API_BASE, self.osf_provider._id))
+        asdf_res = self.app.get(self.url.format(API_BASE, self.asdf_provider._id))
+
+        assert len(bepress_res.json['data']) == len(asdf_res.json['data']) == 1
+        assert bepress_res.json['data'][0]['attributes']['share_title'] == self.osf_provider.share_title
+        assert asdf_res.json['data'][0]['attributes']['share_title'] == self.asdf_provider.share_title

@@ -47,14 +47,12 @@ from osf.models import MetaSchema
 from addons.base.models import BaseStorageAddon
 
 from osf_tests import factories
-from tests.factories import MockOAuthAddonNodeSettings
 from tests.base import OsfTestCase, fake
 from tests import utils as test_utils
 from tests.utils import unique as _unique
 
 SILENT_LOGGERS = (
     'framework.celery_tasks.utils',
-    'framework.celery_tasks.signals',
     'website.app',
     'website.archiver.tasks',
 )
@@ -150,10 +148,13 @@ FILE_TREE = {
     ],
 }
 
-class MockAddon(MockOAuthAddonNodeSettings):
+class MockAddon(object):
 
     complete = True
     config = mock.MagicMock()
+
+    def __init__(self, **kwargs):
+        self._id = fake.md5()
 
     def _get_file_tree(self, user, version):
         return FILE_TREE

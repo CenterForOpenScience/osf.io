@@ -5,6 +5,7 @@ import mock
 import pytest
 from nose.tools import *  # flake8: noqa
 
+from addons.bitbucket.tests.factories import BitbucketAccountFactory, BitbucketNodeSettingsFactory
 from addons.box.tests.factories import BoxAccountFactory, BoxNodeSettingsFactory
 from addons.dataverse.tests.factories import DataverseAccountFactory, DataverseNodeSettingsFactory
 from addons.dropbox.tests.factories import DropboxAccountFactory, DropboxNodeSettingsFactory
@@ -625,6 +626,18 @@ class TestNodeWikiAddon(NodeUnmanageableAddonTestSuiteMixin, ApiAddonTestCase):
 
 # OAUTH
 
+class TestNodeBitbucketAddon(NodeOAuthAddonTestSuiteMixin, ApiAddonTestCase):
+    short_name = 'bitbucket'
+    AccountFactory = BitbucketAccountFactory
+    NodeSettingsFactory = BitbucketNodeSettingsFactory
+
+    def _settings_kwargs(self, node, user_settings):
+        return {
+            'user_settings': self.user_settings,
+            'repo': 'mock',
+            'user': 'abc',
+            'owner': self.node
+        }
 
 class TestNodeDataverseAddon(NodeOAuthAddonTestSuiteMixin, ApiAddonTestCase):
     short_name = 'dataverse'
@@ -1020,8 +1033,8 @@ class TestNodeForwardAddon(NodeUnmanageableAddonTestSuiteMixin, ApiAddonTestCase
                 'id': self.short_name,
                 'type': 'node_addons',
                 'attributes': {
-                    'url': None,
-                    'label': None
+                    'url': '',
+                    'label': ''
                     }
                 }
             }, auth=self.user.auth)
@@ -1037,14 +1050,14 @@ class TestNodeForwardAddon(NodeUnmanageableAddonTestSuiteMixin, ApiAddonTestCase
                 'id': self.short_name,
                 'type': 'node_addons',
                 'attributes': {
-                    'url': None,
+                    'url': '',
                     'label': 'A Link'
                     }
                 }
             }, auth=self.user.auth,
             expect_errors=True)
-
         assert_equal(res.status_code, 400)
+        assert_equal(res.json['errors'][0]['detail'], 'Cannot set label without url')
 
     def test_settings_detail_PUT_only_url_sets_settings(self):
         self.node_settings.reset()

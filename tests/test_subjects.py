@@ -148,12 +148,30 @@ class TestSubjectEditValidation(OsfTestCase):
         with assert_raises(ValidationError):
             self.subject.delete()
 
-class TestSubjectProperties(OsfTestCase):
-    def test_bepress_text(self):
-        osf_provider = PreprintProviderFactory(_id='osf')
-        asdf_provider = PreprintProviderFactory(_id='asdf')
-        bepress_subj = SubjectFactory(text='BePress Text', provider=osf_provider)
-        other_subj = SubjectFactory(text='Other Text', bepress_subject=bepress_subj, provider=asdf_provider)
+    def test_max_highlighted_count(self):
+        highlights = [SubjectFactory(provider=self.subject.provider, highlighted=True) for _ in range(10)]
+        with assert_raises(ValidationError):
+            self.subject.highlighted=True
+            self.subject.save()
 
-        assert other_subj.bepress_text == 'BePress Text'
-        assert bepress_subj.bepress_text == 'BePress Text'
+class TestSubjectProperties(OsfTestCase):
+    def setUp(self):
+        super(TestSubjectProperties, self).setUp()
+
+        self.osf_provider = PreprintProviderFactory(_id='osf', share_title='bepress')
+        self.asdf_provider = PreprintProviderFactory(_id='asdf')
+        self.bepress_subj = SubjectFactory(text='BePress Text', provider=self.osf_provider)
+        self.other_subj = SubjectFactory(text='Other Text', bepress_subject=self.bepress_subj, provider=self.asdf_provider)
+
+    def test_bepress_text(self):
+        assert self.other_subj.bepress_text == 'BePress Text'
+        assert self.bepress_subj.bepress_text == 'BePress Text'
+
+    def test_path(self):
+        self.bepress_child = SubjectFactory(text='BePress Child', provider=self.osf_provider, parent=self.bepress_subj)
+        self.other_child = SubjectFactory(text='Other Child', bepress_subject=self.bepress_subj, provider=self.asdf_provider, parent=self.other_subj)
+
+        assert self.bepress_subj.path == 'bepress|BePress Text'
+        assert self.bepress_child.path == 'bepress|BePress Text|BePress Child'
+        assert self.other_subj.path == 'asdf|Other Text'
+        assert self.other_child.path == 'asdf|Other Text|Other Child'

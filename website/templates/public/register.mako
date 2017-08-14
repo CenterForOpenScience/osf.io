@@ -44,7 +44,14 @@
         <div id="signUpScope" class="col-sm-10 col-sm-offset-1 col-md-9 col-md-offset-2 col-lg-8 signup-form p-b-md m-b-m bg-color-light">
             <form data-bind="submit: submit" class="form-horizontal">
 
-                %if campaign == "osf-registries":
+                %if campaign == "prereg":
+                     <table style="border-collapse: separate; border-spacing: 30px 0; margin-top: 20px;  margin-bottom: 10px;">
+                        <tr>
+                            <td><img src="/static/img/registries/osf-prereg-black.png" style="width: 200px; margin-top: 15px" /></td>
+                            <td><h3>Create a free OSF account</h3></td>
+                        </tr>
+                    </table>
+                %elif campaign == "osf-registries":
                      <table style="border-collapse: separate; border-spacing: 30px 0; margin-top: 20px;  margin-bottom: 10px;">
                         <tr>
                             <td><img src="/static/img/registries/osf-registries-black.png" style="width: 200px; margin-top: 15px" /></td>

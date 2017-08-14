@@ -49,6 +49,7 @@ from website.preprints import views as preprint_views
 from website.registries import views as registries_views
 from website.institutions import views as institution_views
 from website.notifications import views as notification_views
+from website.closed_challenges import views as closed_challenges_views
 
 
 def get_globals():
@@ -397,10 +398,14 @@ def make_url_map(app):
         ),
 
         Rule(
-            [
-                '/prereg/',
-                '/erpc/',
-            ],
+            '/erpc/',
+            'get',
+            closed_challenges_views.erpc_landing_page,
+            OsfWebRenderer('erpc_landing_page.mako', trust=False)
+        ),
+
+        Rule(
+            '/prereg/',
             'get',
             prereg.prereg_landing_page,
             OsfWebRenderer('prereg_landing_page.mako', trust=False)
@@ -987,8 +992,6 @@ def make_url_map(app):
             notemplate
         ),
 
-        # # TODO: Add API endpoint for tags
-        # Rule('/tags/<tag>/', 'get', project_views.tag.project_tag, OsfWebRenderer('tags.mako', trust=False)),
         Rule('/project/new/<pid>/beforeTemplate/', 'get',
              project_views.node.project_before_template, json_renderer),
 
@@ -1114,17 +1117,6 @@ def make_url_map(app):
             '/ids/<category>/<path:value>/',
             'get',
             project_views.register.get_referent_by_identifier,
-            notemplate,
-        ),
-
-        # Statistics
-        Rule(
-            [
-                '/project/<pid>/statistics/',
-                '/project/<pid>/node/<nid>/statistics/',
-            ],
-            'get',
-            project_views.node.project_statistics_redirect,
             notemplate,
         ),
 
@@ -1279,6 +1271,15 @@ def make_url_map(app):
             ],
             'get',
             project_views.node.get_pointed,
+            json_renderer,
+        ),
+        Rule(
+            [
+                '/project/<pid>/pointer/',
+                '/project/<pid>/node/<nid>/pointer/',
+            ],
+            'post',
+            project_views.node.add_pointers,
             json_renderer,
         ),
         Rule(
@@ -1448,11 +1449,6 @@ def make_url_map(app):
                 '/project/<pid>/node/<nid>/pointer/fork/',
             ], 'post', project_views.node.fork_pointer, json_renderer,
         ),
-        # View forks
-        Rule([
-            '/project/<pid>/forks/',
-            '/project/<pid>/node/<nid>/forks/',
-        ], 'get', project_views.node.node_forks, json_renderer),
 
         # Registrations
         Rule([
@@ -1464,10 +1460,6 @@ def make_url_map(app):
             '/project/<pid>/node/<nid>/drafts/<draft_id>/register/',
         ], 'post', project_views.drafts.register_draft_registration, json_renderer),
         Rule([
-            '/project/<pid>/register/<template>/',
-            '/project/<pid>/node/<nid>/register/<template>/',
-        ], 'get', project_views.register.node_register_template_page, json_renderer),
-        Rule([
             '/project/<pid>/withdraw/',
             '/project/<pid>/node/<nid>/withdraw/'
         ], 'post', project_views.register.node_registration_retraction_post, json_renderer),
@@ -1477,46 +1469,8 @@ def make_url_map(app):
                 '/project/<pid>/identifiers/',
                 '/project/<pid>/node/<nid>/identifiers/',
             ],
-            'get',
-            project_views.register.node_identifiers_get,
-            json_renderer,
-        ),
-
-        Rule(
-            [
-                '/project/<pid>/identifiers/',
-                '/project/<pid>/node/<nid>/identifiers/',
-            ],
             'post',
             project_views.register.node_identifiers_post,
-            json_renderer,
-        ),
-
-        # Statistics
-        Rule([
-            '/project/<pid>/statistics/',
-            '/project/<pid>/node/<nid>/statistics/',
-        ], 'get', project_views.node.project_statistics, json_renderer),
-
-        # Permissions
-        Rule([
-            '/project/<pid>/permissions/<permissions>/',
-            '/project/<pid>/node/<nid>/permissions/<permissions>/',
-        ], 'post', project_views.node.project_set_privacy, json_renderer),
-
-        Rule([
-            '/project/<pid>/permissions/beforepublic/',
-            '/project/<pid>/node/<nid>/permissions/beforepublic/',
-        ], 'get', project_views.node.project_before_set_public, json_renderer),
-
-        # Combined files
-        Rule(
-            [
-                '/project/<pid>/files/',
-                '/project/<pid>/node/<nid>/files/'
-            ],
-            'get',
-            project_views.file.collect_file_trees,
             json_renderer,
         ),
 

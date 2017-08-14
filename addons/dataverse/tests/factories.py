@@ -2,7 +2,7 @@
 """Factory boy factories for the Dataverse addon."""
 import factory
 from factory.django import DjangoModelFactory
-from tests.factories import UserFactory, ProjectFactory, ExternalAccountFactory
+from osf_tests.factories import UserFactory, ProjectFactory, ExternalAccountFactory
 
 from addons.dataverse.models import UserSettings, NodeSettings
 

@@ -25,8 +25,9 @@ from addons.osfstorage.apps import osf_storage_root
 from addons.osfstorage import utils
 from addons.base.views import make_auth
 from addons.osfstorage import settings as storage_settings
+from api_tests.utils import create_test_file
 
-from tests.factories import ProjectFactory
+from osf_tests.factories import ProjectFactory
 
 def create_record_with_version(path, node_settings, **kwargs):
     version = factories.FileVersionFactory(**kwargs)
@@ -958,3 +959,26 @@ class TestFileTags(StorageTestCase):
 
         assert_equal(res.status_code, 400)
         mock_log.assert_not_called()
+
+
+@pytest.mark.django_db
+class TestFileViews(StorageTestCase):
+
+    def test_file_views(self):
+        file = create_test_file(node=self.node, user=self.user)
+        url = self.node.web_url_for('addon_view_or_download_file', path=file._id, provider=file.provider)
+        # Test valid url file 200 on redirect
+        redirect = self.app.get(url, auth=self.user.auth)
+        assert redirect.status_code == 302
+        res = redirect.follow(auth=self.user.auth)
+        assert res.status_code == 200
+
+        # Test invalid node but valid deep_url redirects (moved log urls)
+        project_two = ProjectFactory(creator=self.user)
+        url = project_two.web_url_for('addon_view_or_download_file', path=file._id, provider=file.provider)
+        redirect = self.app.get(url, auth=self.user.auth)
+        assert redirect.status_code == 302
+        redirect_two = redirect.follow(auth=self.user.auth)
+        assert redirect_two.status_code == 302
+        res = redirect_two.follow(auth=self.user.auth)
+        assert res.status_code == 200
