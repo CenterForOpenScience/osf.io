@@ -343,29 +343,34 @@ class TestOnPreprintUpdatedTask(OsfTestCase):
 
         self.auth = Auth(user=self.user)
         self.preprint = PreprintFactory()
+        thesis_provider = PreprintProviderFactory(share_publish_type='Thesis')
+        self.thesis = PreprintFactory(provider=thesis_provider)
 
-        self.preprint.node.add_tag('preprint', self.auth, save=False)
-        self.preprint.node.add_tag('spoderman', self.auth, save=False)
-        self.preprint.node.add_unregistered_contributor('BoJack Horseman', 'horse@man.org', Auth(self.preprint.node.creator))
-        self.preprint.node.add_contributor(self.user, visible=False)
-        self.preprint.node.save()
+        for pp in [self.preprint, self.thesis]:
 
-        self.preprint.node.creator.given_name = u'ZZYZ'
-        if len(self.preprint.node.creator.fullname.split(' ')) > 2:
-            # Prevent unexpected keys ('suffix', 'additional_name')
-            self.preprint.node.creator.fullname = 'David Davidson'
-            self.preprint.node.creator.middle_names = ''
-            self.preprint.node.creator.suffix = ''
-        self.preprint.node.creator.save()
+            pp.node.add_tag('preprint', self.auth, save=False)
+            pp.node.add_tag('spoderman', self.auth, save=False)
+            pp.node.add_unregistered_contributor('BoJack Horseman', 'horse@man.org', Auth(pp.node.creator))
+            pp.node.add_contributor(self.user, visible=False)
+            pp.node.save()
 
-        self.preprint.set_subjects([[SubjectFactory()._id]], auth=Auth(self.preprint.node.creator))
+            pp.node.creator.given_name = u'ZZYZ'
+            if len(pp.node.creator.fullname.split(' ')) > 2:
+                # Prevent unexpected keys ('suffix', 'additional_name')
+                pp.node.creator.fullname = 'David Davidson'
+                pp.node.creator.middle_names = ''
+                pp.node.creator.suffix = ''
+            pp.node.creator.save()
+
+            pp.set_subjects([[SubjectFactory()._id]], auth=Auth(pp.node.creator))
+
 
     def tearDown(self):
         handlers.celery_before_request()
         super(TestOnPreprintUpdatedTask, self).tearDown()
 
     def test_format_preprint(self):
-        res = format_preprint(self.preprint)
+        res = format_preprint(self.preprint, self.preprint.provider.share_publish_type)
 
         assert set(gn['@type'] for gn in res) == {'creator', 'contributor', 'throughsubjects', 'subject', 'throughtags', 'tag', 'workidentifier', 'agentidentifier', 'person', 'preprint', 'workrelation', 'creativework'}
 
@@ -465,13 +470,23 @@ class TestOnPreprintUpdatedTask(OsfTestCase):
 
         assert nodes == {}
 
+    def test_format_thesis(self):
+        res = format_preprint(self.thesis, self.thesis.provider.share_publish_type)
+
+        assert set(gn['@type'] for gn in res) == {'creator', 'contributor', 'throughsubjects', 'subject', 'throughtags', 'tag', 'workidentifier', 'agentidentifier', 'person', 'thesis', 'workrelation', 'creativework'}
+
+        nodes = dict(enumerate(res))
+        thesis = nodes.pop(next(k for k, v in nodes.items() if v['@type'] == 'thesis'))
+        assert thesis['title'] == self.thesis.node.title
+        assert thesis['description'] == self.thesis.node.description
+
     def test_format_preprint_nones(self):
         self.preprint.node.tags = []
         self.preprint.date_published = None
         self.preprint.node.preprint_article_doi = None
         self.preprint.set_subjects([], auth=Auth(self.preprint.node.creator))
 
-        res = format_preprint(self.preprint)
+        res = format_preprint(self.preprint, self.preprint.provider.share_publish_type)
 
         assert self.preprint.provider != 'osf'
         assert set(gn['@type'] for gn in res) == {'creator', 'contributor', 'workidentifier', 'agentidentifier', 'person', 'preprint'}
@@ -562,7 +577,7 @@ class TestOnPreprintUpdatedTask(OsfTestCase):
             orig_val = getattr(target, key.split('.')[-1])
             setattr(target, key.split('.')[-1], value)
 
-            res = format_preprint(self.preprint)
+            res = format_preprint(self.preprint, self.preprint.provider.share_publish_type)
 
             preprint = next(v for v in res if v['@type'] == 'preprint')
             assert preprint['is_deleted'] is is_deleted
@@ -570,13 +585,13 @@ class TestOnPreprintUpdatedTask(OsfTestCase):
             setattr(target, key.split('.')[-1], orig_val)
 
     def test_format_preprint_is_deleted_true_if_qatest_tag_is_added(self):
-        res = format_preprint(self.preprint)
+        res = format_preprint(self.preprint, self.preprint.provider.share_publish_type)
         preprint = next(v for v in res if v['@type'] == 'preprint')
         assert preprint['is_deleted'] is False
 
         self.preprint.node.add_tag('qatest', auth=self.auth, save=True)
 
-        res = format_preprint(self.preprint)
+        res = format_preprint(self.preprint, self.preprint.provider.share_publish_type)
         preprint = next(v for v in res if v['@type'] == 'preprint')
         assert preprint['is_deleted'] is True
 
