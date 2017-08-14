@@ -7,6 +7,13 @@
                 <span class="person" style="font-weight: bold;">${user.fullname} </span>
                 ${message}
             </span>
+            <tr style="border-collapse: collapse;" align="left">
+                <br>
+                Center for Open Science<br>
+                210 Ridge McIntire Road<br>
+                Suite 500<br>
+                Charlottesville, VA 22903-5083<br>
+            </tr>
         </td>
         <td width="25" style="text-align:center;border-collapse: collapse;font-size: 24px;border-left: 1px solid #ddd;">
             <a href="${url}" style="margin: 0;border: none;list-style: none;color: #008de5;text-decoration: none;">
