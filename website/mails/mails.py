@@ -362,3 +362,13 @@ PREREG_CHALLENGE_ACCEPTED = Mail(
 )
 
 EMPTY = Mail('empty', subject='${subject}')
+
+SHARE_ERROR_DESK = Mail(
+    'send_data_share_error_desk',
+    subject='Share Error'
+)
+
+SHARE_PREPRINT_ERROR_DESK = Mail(
+    'send_data_share_preprint_error_desk',
+    subject='Share Error'
+)
