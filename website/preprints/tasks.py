@@ -18,7 +18,7 @@ logger = logging.getLogger(__name__)
 
 
 @celery_app.task(ignore_results=True)
-def on_preprint_updated(preprint_id, update_share=True, old_subjects=None):
+def on_preprint_updated(preprint_id, update_share=True, share_type=None, old_subjects=None):
     # WARNING: Only perform Read-Only operations in an asynchronous task, until Repeatable Read/Serializable
     # transactions are implemented in View and Task application layers.
     from osf.models import PreprintService
@@ -33,17 +33,18 @@ def on_preprint_updated(preprint_id, update_share=True, old_subjects=None):
             sentry.log_exception()
             sentry.log_message(err.args[0])
     if update_share:
-        update_preprint_share(preprint, old_subjects)
+        update_preprint_share(preprint, old_subjects, share_type)
 
-def update_preprint_share(preprint, old_subjects=None):
+def update_preprint_share(preprint, old_subjects=None, share_type=None):
     if settings.SHARE_URL:
         if not preprint.provider.access_token:
             raise ValueError('No access_token for {}. Unable to send {} to SHARE.'.format(preprint.provider, preprint))
-        _update_preprint_share(preprint, old_subjects)
+        share_type = share_type or preprint.provider.share_publish_type
+        _update_preprint_share(preprint, old_subjects, share_type)
 
-def _update_preprint_share(preprint, old_subjects):
+def _update_preprint_share(preprint, old_subjects, share_type):
     # Any modifications to this function may need to change _async_update_preprint_share
-    data = serialize_share_preprint_data(preprint, old_subjects)
+    data = serialize_share_preprint_data(preprint, share_type, old_subjects)
     resp = send_share_preprint_data(preprint, data)
     try:
         resp.raise_for_status()
@@ -54,15 +55,26 @@ def _update_preprint_share(preprint, old_subjects):
             send_desk_share_preprint_error(preprint, resp, 0)
 
 @celery_app.task(bind=True, max_retries=4, acks_late=True)
-def _async_update_preprint_share(self, preprint_id, old_subjects):
+def _async_update_preprint_share(self, preprint_id, old_subjects, share_type):
     # Any modifications to this function may need to change _update_preprint_share
     # Takes preprint_id to ensure async retries push fresh data
     PreprintService = apps.get_model('osf.PreprintService')
     preprint = PreprintService.load(preprint_id)
 
-    data = serialize_share_preprint_data(preprint, old_subjects)
+    data = serialize_share_preprint_data(preprint, share_type, old_subjects)
     resp = send_share_preprint_data(preprint, data)
     try:
+        resp = requests.post('{}api/v2/normalizeddata/'.format(settings.SHARE_URL), json={
+            'data': {
+                'type': 'NormalizedData',
+                'attributes': {
+                    'tasks': [],
+                    'raw': None,
+                    'data': {'@graph': format_preprint(preprint, share_type, old_subjects)}
+                }
+            }
+        }, headers={'Authorization': 'Bearer {}'.format(preprint.provider.access_token), 'Content-Type': 'application/vnd.api+json'})
+        logger.debug(resp.content)
         resp.raise_for_status()
     except Exception as e:
         if resp.status_code >= 500:
@@ -75,14 +87,14 @@ def _async_update_preprint_share(self, preprint_id, old_subjects):
         else:
             send_desk_share_preprint_error(preprint, resp, self.request.retries)
 
-def serialize_share_preprint_data(preprint, old_subjects):
+def serialize_share_preprint_data(preprint, share_type, old_subjects):
     return {
         'data': {
             'type': 'NormalizedData',
             'attributes': {
                 'tasks': [],
                 'raw': None,
-                'data': {'@graph': format_preprint(preprint, old_subjects)}
+                'data': {'@graph': format_preprint(preprint, share_type, old_subjects)}
             }
         }
     }
@@ -92,12 +104,12 @@ def send_share_preprint_data(preprint, data):
     logger.debug(resp.content)
     return resp
 
-def format_preprint(preprint, old_subjects=None):
+def format_preprint(preprint, share_type, old_subjects=None):
     if old_subjects is None:
         old_subjects = []
     from osf.models import Subject
     old_subjects = [Subject.objects.get(id=s) for s in old_subjects]
-    preprint_graph = GraphNode('preprint', **{
+    preprint_graph = GraphNode(share_type, **{
         'title': preprint.node.title,
         'description': preprint.node.description or '',
         'is_deleted': (
