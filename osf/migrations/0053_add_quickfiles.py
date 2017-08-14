@@ -82,7 +82,7 @@ def remove_quickfiles(*args, **kwargs):
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('osf', '0051_remove_invalid_social_entries'),
+        ('osf', '0052_preprintprovider_share_publish_type'),
     ]
 
     operations = [
