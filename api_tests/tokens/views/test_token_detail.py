@@ -120,7 +120,7 @@ class TestTokenDetail:
     def test_read_does_not_return_token_id(self, app, url_token_detail, user_one):
         res = app.get(url_token_detail, auth=user_one.auth)
         assert res.status_code == 200
-        assert not res.json['data']['attributes'].has_key('token_id')
+        assert 'token_id' not in res.json['data']['attributes']
 
 
     @mock.patch('framework.auth.cas.CasClient.revoke_tokens')
@@ -129,7 +129,7 @@ class TestTokenDetail:
         correct = post_payload()
         res = app.put_json_api(url_token_detail, correct, auth=user_one.auth, expect_errors=True)
         assert res.status_code == 200
-        assert not res.json['data']['attributes'].has_key('token_id')
+        assert 'token_id' not in res.json['data']['attributes']
 
     @mock.patch('framework.auth.cas.CasClient.revoke_tokens')
     def test_update_token(self, mock_revoke, app, user_one, url_token_detail):
