@@ -125,6 +125,10 @@ class TestPreprintUpdate:
         return '/{}preprints/{}/'.format(API_BASE, preprint._id)
 
     @pytest.fixture()
+    def node_url(self, preprint):
+        return '/{}nodes/{}/'.format(API_BASE, preprint.node._id)
+
+    @pytest.fixture()
     def subject(self):
         return SubjectFactory()
 
@@ -309,6 +313,35 @@ class TestPreprintUpdate:
         preprint.node.reload()
 
         assert mock_on_preprint_updated.called
+
+    def test_update_date_modified_when_preprint_modified(self, preprint, subject, app, url, user):
+        old_date_modified = preprint.date_modified
+        update_subjects_payload = build_preprint_update_payload(preprint._id,
+                                                                attributes={"subjects": [[subject._id]]})
+
+        res = app.patch_json_api(url, update_subjects_payload, auth=user.auth)
+        assert (res.status_code == 200)
+
+        preprint.reload()
+
+        assert preprint.date_modified > old_date_modified
+
+    def test_update_preprint_date_modified_when_node_modified(self, app, node_url, preprint, user):
+        res = app.put_json_api(node_url, {
+            'data': {
+                'id': preprint.node._id,
+                'type': 'nodes',
+                'attributes': {
+                    'title': "New title",
+                    'description': preprint.node.description,
+                    'category': preprint.node.category,
+                    'public': True
+                }
+            }
+        }, auth=user.auth)
+        assert (res.status_code == 200)
+
+        assert preprint.date_modified > preprint.node.date_modified
 
 @pytest.mark.django_db
 class TestPreprintUpdateLicense:

@@ -2334,12 +2334,10 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
 
         if self.preprint_file:
             # avoid circular imports
-            from website.preprints.tasks import on_preprint_updated
             PreprintService = apps.get_model('osf.PreprintService')
-            update_share = bool(self.SEARCH_UPDATE_FIELDS.intersection(saved_fields))
             # .preprints wouldn't return a single deleted preprint
             for preprint in PreprintService.objects.filter(node_id=self.id, is_published=True):
-                enqueue_task(on_preprint_updated.s(preprint._id, update_share=update_share))
+                preprint.save()
 
         user = User.load(user_id)
         if user and self.check_spam(user, saved_fields, request_headers):
