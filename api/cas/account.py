@@ -147,7 +147,7 @@ def resend_confirmation(credential):
     except api_exceptions.UnconfirmedAccountError:
         # check email throttle
         if not throttle_period_expired(user.email_last_sent, web_settings.SEND_EMAIL_THROTTLE):
-            raise api_exceptions.Throttled
+            raise api_exceptions.EmailThrottleActiveError
         # resend email
         try:
             send_confirm_email(user, email, renew=True, external_id_provider=None, external_id=None)

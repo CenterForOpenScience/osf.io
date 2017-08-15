@@ -14,6 +14,9 @@ from osf_tests.factories import UserFactory
 
 from tests.base import capture_signals
 
+# TODO 0: add tests for JWE/JWT failure and malformed request
+# TODO 1: how to mock methods and check if they are called
+
 
 @pytest.mark.django_db
 class TestAccountRegisterOSF(object):
@@ -64,6 +67,7 @@ class TestAccountRegisterOSF(object):
             'password': email,
         }
 
+    # test that an unconfirmed new user is created with pending email verifications
     def test_create_new_user(self, app, endpoint_url, new_user):
 
         assert OSFUser.objects.filter(username=new_user.get('email')).count() == 0
@@ -76,63 +80,54 @@ class TestAccountRegisterOSF(object):
         assert res.status_code == status.HTTP_204_NO_CONTENT
         assert mock_signals.signals_sent() == set([signals.unconfirmed_user_created])
 
-        assert OSFUser.objects.filter(username=new_user.get('email')).count() == 1
+        try:
+            user = OSFUser.objects.filter(username=new_user.get('email')).get()
+        except OSFUser.DoesNotExist:
+            user = None
 
+        assert user is not None
+        assert not user.is_confirmed
+        assert user.get_confirmation_token(user.username) is not None
+
+    # test that user already exists raises 400
     def test_create_new_user_already_exists(self, app, endpoint_url, existing_user):
 
-        assert OSFUser.objects.filter(username=existing_user.get('email')).count() == 1
-
         payload = make_request_payload(existing_user)
-        with capture_signals() as mock_signals:
-            res = app.post(endpoint_url, payload, expect_errors=True)
-            assert len(mock_signals.signals_sent()) == 0
+        res = app.post(endpoint_url, payload, expect_errors=True)
 
         assert res.status_code == status.HTTP_400_BAD_REQUEST
         assert len(res.json.get('errors')) == 1
         assert res.json.get('errors')[0].get('code') == 40004
 
+    # test that invalid email raises 400
     def test_create_new_user_invalid_email(self, app, endpoint_url, new_user_invalid_email):
         assert OSFUser.objects.filter(username=new_user_invalid_email.get('email')).count() == 0
 
         payload = make_request_payload(new_user_invalid_email)
-        with capture_signals() as mock_signals:
-            res = app.post(endpoint_url, payload, expect_errors=True)
+        res = app.post(endpoint_url, payload, expect_errors=True)
 
         assert res.status_code == status.HTTP_400_BAD_REQUEST
         assert len(res.json.get('errors')) == 1
         assert res.json.get('errors')[0].get('code') == 40006
-        assert len(mock_signals.signals_sent()) == 0
 
+    # test that blacked-listed email raises 400
     def test_create_new_user_blacklisted_email(self, app, endpoint_url, new_user_blacklisted_email):
         assert OSFUser.objects.filter(username=new_user_blacklisted_email.get('email')).count() == 0
 
         payload = make_request_payload(new_user_blacklisted_email)
-        with capture_signals() as mock_signals:
-            res = app.post(endpoint_url, payload, expect_errors=True)
+        res = app.post(endpoint_url, payload, expect_errors=True)
 
         assert res.status_code == status.HTTP_400_BAD_REQUEST
         assert len(res.json.get('errors')) == 1
         assert res.json.get('errors')[0].get('code') == 40006
-        assert len(mock_signals.signals_sent()) == 0
 
+    # test that invalid password raises 400
     def test_create_new_user_invalid_password(self, app, endpoint_url, new_user_invalid_password):
         assert OSFUser.objects.filter(username=new_user_invalid_password.get('email')).count() == 0
 
         payload = make_request_payload(new_user_invalid_password)
-        with capture_signals() as mock_signals:
-            res = app.post(endpoint_url, payload, expect_errors=True)
+        res = app.post(endpoint_url, payload, expect_errors=True)
 
         assert res.status_code == status.HTTP_400_BAD_REQUEST
         assert len(res.json.get('errors')) == 1
         assert res.json.get('errors')[0].get('code') == 40007
-        assert len(mock_signals.signals_sent()) == 0
-
-
-@pytest.mark.django_db
-class TestAccountRegisterExternal(object):
-
-    def test_create_new_user(self):
-        pass
-
-    def test_link_existing_user(self):
-        pass

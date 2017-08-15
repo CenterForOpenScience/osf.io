@@ -12,6 +12,9 @@ from framework.auth.core import generate_verification_key
 
 from osf_tests.factories import UserFactory
 
+# TODO 0: add tests for JWE/JWT failure and malformed request
+# TODO 1: how to mock methods and check if they are called
+
 
 @pytest.mark.django_db
 class TestAccountPasswordForgot(object):
@@ -30,9 +33,11 @@ class TestAccountPasswordForgot(object):
             'email': user.username,
         }
 
+    # test that password reset email is successfully sent and user updated
     def test_send_password_reset_email(self, app, endpoint_url, user, user_credentials):
 
         assert user.verification_key_v2 == {}
+        assert user.email_last_sent is None
 
         payload = make_request_payload(user_credentials)
         res = app.post(endpoint_url, payload)
@@ -40,7 +45,9 @@ class TestAccountPasswordForgot(object):
 
         assert res.status_code == status.HTTP_204_NO_CONTENT
         assert user.verification_key_v2 is not None
+        assert user.email_last_sent is not None
 
+    # test that account not found raises 400
     def test_account_not_found(self, app, endpoint_url, user_credentials):
 
         user_credentials.update({'email': fake.email()})
@@ -51,6 +58,7 @@ class TestAccountPasswordForgot(object):
         assert len(res.json.get('errors')) == 1
         assert res.json.get('errors')[0].get('code') == 40009
 
+    # test that account not eligible raises 400
     def test_account_not_eligible(self, app, endpoint_url, user, user_credentials):
 
         user.disable_account()
@@ -62,9 +70,10 @@ class TestAccountPasswordForgot(object):
         assert len(res.json.get('errors')) == 1
         assert res.json.get('errors')[0].get('code') == 40008
 
+    # test that active throttle raises 400
     def test_email_throttle_active(self, app, endpoint_url, user, user_credentials):
 
-        user.email_last_sent = timezone.now() + timezone.timedelta(seconds=30)
+        user.email_last_sent = timezone.now() + timezone.timedelta(seconds=5)
         user.save()
         payload = make_request_payload(user_credentials)
         res = app.post(endpoint_url, payload, expect_errors=True)
@@ -97,13 +106,11 @@ class TestAccountPasswordReset(object):
             'password': fake.password(),
         }
 
+    # test that password is successfully reset, user updated and expected response is sent back to CAS
     def test_reset_password(self, app, endpoint_url, user_password_pending, user_credentials):
 
         payload = make_request_payload(user_credentials)
         res = app.post(endpoint_url, payload)
-
-        assert res.status_code == status.HTTP_200_OK
-
         user_password_pending.reload()
         updated_user = user_password_pending
 
@@ -117,8 +124,10 @@ class TestAccountPasswordReset(object):
             'casAction': 'account-password-reset',
             'nextUrl': False,
         }
+        assert res.status_code == status.HTTP_200_OK
         assert res.json == expected_response
 
+    # test that account not found raises 400
     def test_account_not_found(self, app, endpoint_url, user_credentials):
 
         user_credentials.update({'email': fake.email()})
@@ -130,6 +139,7 @@ class TestAccountPasswordReset(object):
         assert len(res.json.get('errors')) == 1
         assert res.json.get('errors')[0].get('code') == 40009
 
+    # test that invalid verification code raises 400
     def test_invalid_verification_code(self, app, endpoint_url, user_credentials):
 
         user_credentials.update({'verificationCode': generate_verification_key(verification_type=None)})
@@ -141,6 +151,7 @@ class TestAccountPasswordReset(object):
         assert len(res.json.get('errors')) == 1
         assert res.json.get('errors')[0].get('code') == 40016
 
+    # test that invalid password (password that is the same with user's email) raises 400
     def test_invalid_password(self, app, endpoint_url, user_credentials):
 
         user_credentials.update({'password': user_credentials.get('email')})
