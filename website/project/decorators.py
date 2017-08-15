@@ -86,7 +86,7 @@ def must_be_valid_project(func=None, retractions_valid=False):
 
             _inject_nodes(kwargs)
 
-            if getattr(kwargs['node'], 'is_collection', True):
+            if getattr(kwargs['node'], 'is_collection', True) or getattr(kwargs['node'], 'is_quickfiles', True):
                 raise HTTPError(
                     http.NOT_FOUND
                 )

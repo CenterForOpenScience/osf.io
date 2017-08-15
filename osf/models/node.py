@@ -72,7 +72,7 @@ logger = logging.getLogger(__name__)
 class AbstractNodeQuerySet(IncludeQuerySet):
 
     def get_roots(self):
-        return self.filter(id__in=self.exclude(type='osf.collection').values_list('root_id', flat=True))
+        return self.filter(id__in=self.exclude(type='osf.collection').exclude(type='osf.quickfilesnode').values_list('root_id', flat=True))
 
     def get_children(self, root, active=False):
         # If `root` is a root node, we can use the 'descendants' related name
@@ -421,6 +421,10 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
     @property
     def is_registration(self):
         """For v1 compat."""
+        return False
+
+    @property
+    def is_quickfiles(self):
         return False
 
     @property
@@ -2410,7 +2414,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
 
             # Make public nodes private from this contributor
             for node in user.contributed:
-                if self._id != node._id and len(node.contributors) == 1 and node.is_public:
+                if self._id != node._id and len(node.contributors) == 1 and node.is_public and not node.is_quickfiles:
                     node.set_privacy('private', log=False, save=True)
 
     def flag_spam(self):
@@ -2526,10 +2530,10 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
                 raise NodeUpdateError(reason='Registered content cannot be updated', key=key)
             # Title and description have special methods for logging purposes
             if key == 'title':
-                if not self.is_bookmark_collection:
+                if not self.is_bookmark_collection or not self.is_quickfiles:
                     self.set_title(title=value, auth=auth, save=False)
                 else:
-                    raise NodeUpdateError(reason='Bookmark collections cannot be renamed.', key=key)
+                    raise NodeUpdateError(reason='Bookmark collections or QuickFilesNodes cannot be renamed.', key=key)
             elif key == 'description':
                 self.set_description(description=value, auth=auth, save=False)
             elif key == 'is_public':
@@ -2970,6 +2974,7 @@ class Collection(AbstractNode):
 ##### Signal listeners #####
 @receiver(post_save, sender=Collection)
 @receiver(post_save, sender=Node)
+@receiver(post_save, sender='osf.QuickFilesNode')
 def add_creator_as_contributor(sender, instance, created, **kwargs):
     if created:
         Contributor.objects.get_or_create(
@@ -3023,6 +3028,7 @@ def add_default_node_addons(sender, instance, created, **kwargs):
 @receiver(post_save, sender=Collection)
 @receiver(post_save, sender=Node)
 @receiver(post_save, sender='osf.Registration')
+@receiver(post_save, sender='osf.QuickFilesNode')
 def set_parent_and_root(sender, instance, created, *args, **kwargs):
     if getattr(instance, '_parent', None):
         NodeRelation.objects.get_or_create(

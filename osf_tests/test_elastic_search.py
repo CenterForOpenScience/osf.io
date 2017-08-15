@@ -17,7 +17,7 @@ import website.search.search as search
 from website.search import elastic_search
 from website.search.util import build_query
 from website.search_migration.migrate import migrate
-from osf.models import Retraction, NodeLicense, Tag
+from osf.models import Retraction, NodeLicense, Tag, QuickFilesNode
 from addons.osfstorage.models import OsfStorageFile
 
 from scripts.populate_institutions import main as populate_institutions
@@ -972,3 +972,25 @@ class TestSearchFiles(OsfTestCase):
         assert_equal(file_.path, path)
         assert_equal(find[0]['guid_url'], None)
         assert_equal(find[0]['deep_url'], deep_url)
+
+    def test_quickfiles_files_appear_in_search(self):
+        quickfiles = QuickFilesNode.objects.get(creator=self.node.creator)
+        quickfiles_osf_storage = quickfiles.get_addon('osfstorage')
+        quickfiles_root = quickfiles_osf_storage.get_root()
+
+        quickfiles_root.append_file('GreenLight.mp3')
+        find = query_file('GreenLight.mp3')['results']
+        assert_equal(len(find), 1)
+
+    def test_quickfiles_spam_user_files_do_not_appear_in_search(self):
+        quickfiles = QuickFilesNode.objects.get(creator=self.node.creator)
+        quickfiles_osf_storage = quickfiles.get_addon('osfstorage')
+        quickfiles_root = quickfiles_osf_storage.get_root()
+        quickfiles_root.append_file('GreenLight.mp3')
+
+        self.node.creator.disable_account()
+        self.node.creator.add_system_tag('spam_confirmed')
+        self.node.creator.save()
+
+        find = query_file('GreenLight.mp3')['results']
+        assert_equal(len(find), 0)
