@@ -140,7 +140,7 @@
           "type": "string",
           "format": "text",
           "title": "Paper Citation",
-          "description": "",
+          "description": "Enter the citations.",
           "help": "",
           "required": false
         },
@@ -152,9 +152,9 @@
           "title": "Data Availability (Primary Data)",
           "description": "Is the data set you used available for other researchers (whether access is free or restricted), or will it be in the future?",
           "options":[
-            "1. Yes--Available now",
-            "2. Yes--Available in the future",
-            "3. No--Data not expected to be available"
+            "Yes--Available now",
+            "Yes--Available in the future",
+            "No--Data not expected to be available"
           ],
           "help": "",
           "required": true
