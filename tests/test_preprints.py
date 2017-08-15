@@ -476,6 +476,13 @@ class TestOnPreprintUpdatedTask(OsfTestCase):
         assert thesis['title'] == self.thesis.node.title
         assert thesis['description'] == self.thesis.node.description
 
+    def test_format_preprint_date_modified_node_updated(self):
+        self.preprint.node.save()
+        res = format_preprint(self.preprint)
+        nodes = dict(enumerate(res))
+        preprint = nodes.pop(next(k for k, v in nodes.items() if v['@type'] == 'preprint'))
+        assert preprint['date_updated'] == self.preprint.node.date_modified.isoformat()
+
     def test_format_preprint_nones(self):
         self.preprint.node.tags = []
         self.preprint.date_published = None
