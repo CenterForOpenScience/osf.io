@@ -63,13 +63,15 @@
                                   <tr class="pointer-tow">
                                       <td class="osf-icon-td">
                                           <div data-bind="if:!($root.selected($data))">
-                                              <a class="btn btn-success contrib-button" data-bind="click:$root.add.bind($root), css: $root.processing()">
-                                                <i class="fa fa-plus"></i>
+                                              <a class="btn btn-success contrib-button" data-bind="click:$root.add.bind($root), css: $root.disableButtons()">
+                                                  <i class="fa fa-plus"></i>
+                                                  <i data-bind="visible: $root.processing() && $root.isClicked() == $data.id" class="fa fa-spinner fa-lg fa-spin"></i>
                                               </a>
                                           </div>
                                           <div data-bind="if:($root.selected($data))">
-                                              <a class="btn btn-default contrib-button" data-bind="click:$root.remove.bind($root), css: $root.processing()">
-                                                <i class="fa fa-minus"></i>
+                                              <a class="btn btn-default contrib-button" data-bind="click:$root.remove.bind($root), css: $root.disableButtons()">
+                                                  <i class="fa fa-minus"></i>
+                                                  <i data-bind="visible: $root.processing() && $root.isClicked() == $data.id" class="fa fa-spinner fa-lg fa-spin"></i>
                                               </a>
                                           </div>
                                       </td>
@@ -80,7 +82,7 @@
                               </tbody>
                           </table>
                         </div>
-                        <div style="z-index: 10000;" data-bind='if: loadingResults'>
+                        <div data-bind='if: loadingResults'>
                             <div class="ball-pulse ball-scale-blue text-center">
                               <div></div>
                               <div></div>

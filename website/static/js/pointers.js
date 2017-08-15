@@ -38,7 +38,11 @@ var AddPointerViewModel = oop.extend(Paginator, {
         this.errorMsg = ko.observable('');
         this.totalPages = ko.observable(0);
         this.includePublic = ko.observable(false);
-        this.processing = ko.observable('');
+        this.processing = ko.observable(false);
+        this.disableButtons = ko.pureComputed(function(){
+            return self.processing() ? 'disabled' : '';
+        });
+        this.isClicked = ko.observable('');
         this.dirty = false;
         this.searchWarningMsg = ko.observable('');
         this.submitWarningMsg = ko.observable('');
@@ -52,13 +56,13 @@ var AddPointerViewModel = oop.extend(Paginator, {
         });
         this.searchAllProjectsSubmitText = ko.pureComputed(function(){
             if (self.loadingResults() && self.includePublic()){
-              return SEARCHING_TEXT;
+                return SEARCHING_TEXT;
             }
             return SEARCH_ALL_SUBMIT_TEXT;
         });
         this.searchMyProjectsSubmitText = ko.pureComputed(function(){
             if (self.loadingResults() && ! self.includePublic()){
-              return SEARCHING_TEXT;
+                return SEARCHING_TEXT;
             }
             return SEARCH_MY_PROJECTS_SUBMIT_TEXT;
         });
@@ -102,12 +106,13 @@ var AddPointerViewModel = oop.extend(Paginator, {
         var userOrPublicNodes = self.includePublic() ? '' : 'users/me/';
         var url = osfHelpers.apiV2Url(
              userOrPublicNodes + self.inputType() + '/', {
-              query : {
-                'filter[title]' : self.query(),
-                'page' : pageNum,
-                'embed' : 'contributors',
-                'page[size]' : '4'
-              }
+                query : {
+                  'filter[title]' : self.query(),
+                  'page' : pageNum,
+                  'embed' : 'contributors',
+                  'page[size]' : '4',
+                  'filter[root][ne]' : nodeId
+                }
             }
         );
         var requestNodes = osfHelpers.ajaxJSON(
@@ -116,9 +121,7 @@ var AddPointerViewModel = oop.extend(Paginator, {
             {'isCors': true}
         );
         requestNodes.done(function(response){
-            var nodes = response.data.filter(function(node){
-                return node.id !== nodeId;
-            });
+            var nodes = response.data;
             var count = nodes.length;
             if (!count){
                 self.errorMsg('No results found.');
@@ -186,7 +189,8 @@ var AddPointerViewModel = oop.extend(Paginator, {
     },
     add: function(data){
         var self = this;
-        self.processing('disabled');
+        self.processing(true);
+        self.isClicked(data.id);
         var addUrl = osfHelpers.apiV2Url('nodes/' + nodeId + '/node_links/');
         var request = osfHelpers.ajaxJSON(
             'POST',
@@ -210,17 +214,18 @@ var AddPointerViewModel = oop.extend(Paginator, {
         );
         request.done(function (response){
             self.selection.push(data);
-            self.processing('');
+            self.processing(false);
             self.dirty = true;
         });
         request.fail(function(xhr, status, error){
             self.logErrors(addUrl, status, error, 'Unable to link project');
-            self.processing('');
+            self.processing(false);
         });
     },
     remove: function(data){
         var self = this;
-        self.processing('disabled');
+        self.processing(true);
+        self.isClicked(data.id);
         var requestNodeLinks = osfHelpers.ajaxJSON(
             'GET',
             nodeLinksUrl,
@@ -246,11 +251,11 @@ var AddPointerViewModel = oop.extend(Paginator, {
                 self.selection.splice(
                     self.selection.indexOf(data), 1
                 );
-                self.processing('');
+                self.processing(false);
                 self.dirty = true;
             }).fail(function(xhr, status, error){
                 self.logErrors(deleteUrl, status, error, 'Unable to remove nodelink');
-                self.processing('');
+                self.processing(false);
             });
         });
         requestNodeLinks.fail(function(xhr, status, error){
