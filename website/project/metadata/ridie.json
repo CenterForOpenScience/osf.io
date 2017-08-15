@@ -738,7 +738,7 @@
             "type": "string",
             "format": "textarea",
             "title": "Data Access",
-            "description": "Is this a restricted access data set? Examples for \"minimal restrictions\" include data that is freely available or can be downloaded after registering on a website; or data that is available from colleagues. Examples for \"formal process\" includes applications that are reviewed and approved."
+            "description": "Is this a restricted access data set? Examples for \"minimal restrictions\" include data that is freely available or can be downloaded after registering on a website; or data that is available from colleagues. Examples for \"formal process\" includes applications that are reviewed and approved.",
             "options": [
                 "Not restricted - access with no requirements or minimal requirements (e.g. web registration)",
                 "Restricted  -- Access requires a formal  approval process"
