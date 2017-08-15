@@ -13,7 +13,7 @@ from nose.tools import *  # flake8: noqa (PEP8 asserts)
 import re
 
 from addons.wiki.utils import to_mongo_key
-from framework.auth import exceptions as auth_exc
+from framework.auth import exceptions as auth_exc, cas
 from framework.auth.core import Auth
 from tests.base import OsfTestCase
 from tests.base import fake
@@ -96,9 +96,12 @@ class TestAUser(OsfTestCase):
         res = res.follow(auth=self.user.auth)
         assert_equal(res.request.path, '/dashboard/')
 
+    # TODO: @longze this test is updated for CAS, remove the comment when passed code review
     def test_register_page(self):
         res = self.app.get('/register/')
-        assert_equal(res.status_code, 200)
+        redirect_url = cas.get_account_register_url(service_url=web_url_for('dashboard'))
+        assert_equal(res.status_code, http.FOUND)
+        assert_equal(redirect_url, res.headers['Location'])
 
     def test_is_redirected_to_dashboard_if_already_logged_in_at_register_page(self):
         res = self.app.get('/register/', auth=self.user.auth)

@@ -208,20 +208,20 @@ def auth_login(auth):
 @collect_auth
 def auth_register(auth):
     """
-    View for OSF register. Land on the register page, redirect or go to `auth_logout`
-    depending on `data` returned by `login_and_register_handler`.
+    View for OSF register. Final destination depends on the `data` object returned by login_and_register_handler().
+    "/register/" only takes a valid campaign, a valid next url, the logout flag or no query parameter. Please refer to
+     login_and_register_handler() for further information.
 
-    `/register` only takes a valid campaign, a valid next, the logout flag or no query parameter
-    `login_and_register_handler()` handles the following cases:
-        if campaign and logged in, go to campaign landing page (or valid next_url if presents)
-        if campaign and logged out, go to campaign register page (with next_url if presents)
-        if next_url and logged in, go to next url
-        if next_url and logged out, go to cas login page with current request url as service parameter
-        if next_url and logout flag, log user out first and then go to the next_url
-        if none, go to `/dashboard` which is decorated by `@must_be_logged_in`
+    1. Redirect to CAS register page with data['next_url'] as service, if data[status_code] is http.OK
+        1.1 When we moved the register page form OSF to CAS, anything of which the final destination was the register
+        page should be redirected to the new CAS register page. The campaign and final destination information is
+        carried over with the data[`next_url`] which can be identified by CAS through registered service matching.
+        data[`campaign`] became deprecated.
+    2. Redirect to data['next_url'], if data['status_code'] is http.Found
+    3. Redirect to auth_logout() with data['next_url'] as redirect url, if data['status_code'] is 'auth_logout'
 
     :param auth: the auth context
-    :return: land, redirect or `auth_logout`
+    :return: redirect
     :raise: http.BAD_REQUEST
     """
 
@@ -240,7 +240,7 @@ def auth_register(auth):
 
     # land on register page
     if data['status_code'] == http.OK:
-        # TODO: port this warning to CAS
+        # TODO: should we port this warning to CAS?
         # if data['must_login_warning']:
         #     status.push_status_message(language.MUST_LOGIN, trust=False)
         return redirect(cas.get_account_register_url(data['next_url']))
