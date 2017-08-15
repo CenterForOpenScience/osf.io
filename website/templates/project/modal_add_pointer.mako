@@ -12,7 +12,7 @@
 
                 <form role='form'>
                     <div class="form-group">
-                        <input class="form-control" placeholder="Search projects" style="margin-bottom: 8px;" data-bind="value:query" />
+                        <input class="form-control" placeholder="Search projects" data-bind="value:query" />
 
                         <div class="help-block">
                             <span class="text-danger" data-bind="html: searchWarningMsg"></span>
@@ -77,7 +77,7 @@
                                       </td>
                                       <td data-bind="text:attributes.title" class="overflow"></td>
                                       <td class="node-dates" data-bind="text:$root.getDates($data)"></td>
-                                      <td style="width: 20%" data-bind="text:$root.authorText($data)"></td>
+                                      <td data-bind="text:$root.authorText($data)"></td>
                                   </tr>
                               </tbody>
                           </table>
