@@ -1298,6 +1298,12 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
         else:
             clean_email = None
         verification_key = generate_verification_key(verification_type='claim')
+        try:
+            record = self.unclaimed_records[node._id]
+        except KeyError:
+            record = None
+        if record:
+            del record
         record = {
             'name': given_name,
             'referrer_id': referrer_id,

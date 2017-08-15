@@ -1,13 +1,15 @@
-<%def name="kind()">
-    preregistered analysis plan
+<%inherit file="base.mako"/>
+
+<%def name="title()">OSF Election Research Preacceptance Competition</%def>
+
+<%def name="stylesheets()">
+    ${ parent.stylesheets() }
+    <link rel="stylesheet" href="/static/css/prereg.css">
 </%def>
 
-<%def name="challenge_word()">competition</%def>
-
-<%def name="description()">
-</%def>
-
-<%def name="steps()">
+<%def name="content()">
+<div class="prereg-container">
+    <h1 class="m-t-xl m-b-lg text-center">The Election Research Preacceptance Competition is Now Closed</h1>
     <p>With the release of the <a href="http://www.electionstudies.org/">American National Election Studies</a>
         2016 survey dataset, no additional preregistrations are being accepted for this competition.
         To read more about this competition and its current status, please visit <a href="https://www.erpc2016.com">www.erpc2016.com</a>.</p>
@@ -23,4 +25,6 @@
         <a href="https://cos.io/prereg/">information page</a> or get started on your next preregistration
         <a href="https://osf.io/prereg/">now</a>.
     </p>
+
+</div>
 </%def>

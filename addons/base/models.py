@@ -391,18 +391,6 @@ class BaseNodeSettings(BaseAddonSettings):
         })
         return ret
 
-    def render_config_error(self, data):
-        """
-
-        """
-        # Note: `config` is added to `self` in `AddonConfig::__init__`.
-        template = lookup.get_template('project/addon/config_error.mako')
-        return template.get_def('config_error').render(
-            title=self.config.full_name,
-            name=self.config.short_name,
-            **data
-        )
-
     #############
     # Callbacks #
     #############

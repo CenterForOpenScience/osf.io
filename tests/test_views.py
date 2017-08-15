@@ -2738,10 +2738,10 @@ class TestPointerViews(OsfTestCase):
     def test_fork_pointer(self):
         url = self.project.api_url + 'pointer/fork/'
         node = NodeFactory(creator=self.user)
-        pointer = self.project.add_pointer(node, auth=self.consolidate_auth)
+        self.project.add_pointer(node, auth=self.consolidate_auth)
         self.app.post_json(
             url,
-            {'pointerId': pointer._id},
+            {'nodeId': node._id},
             auth=self.user.auth
         )
 
@@ -2755,7 +2755,7 @@ class TestPointerViews(OsfTestCase):
         url = self.project.api_url + 'pointer/fork/'
         res = self.app.post_json(
             url,
-            {'pointerId': None},
+            {'nodeId': None},
             auth=self.user.auth,
             expect_errors=True
         )
@@ -2765,7 +2765,7 @@ class TestPointerViews(OsfTestCase):
         url = self.project.api_url + 'pointer/fork/'
         res = self.app.post_json(
             url,
-            {'pointerId': 'somefakeid'},
+            {'nodeId': 'somefakeid'},
             auth=self.user.auth,
             expect_errors=True
         )
