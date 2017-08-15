@@ -8,7 +8,6 @@ import logging
 import os
 
 from flask import request, make_response
-import lxml.html
 from mako.lookup import TemplateLookup
 from mako.template import Template
 import markupsafe
@@ -554,22 +553,6 @@ class WebRenderer(Renderer):
             rendered = renderer(self.template_dir, template_name, data, trust=self.trust)
         except IOError:
             return '<div>Template {} not found.</div>'.format(template_name)
-
-        html = lxml.html.fragment_fromstring(rendered, create_parent='remove')
-
-        for element in html.findall('.//*[@mod-meta]'):
-
-            # Render nested template
-            template_rendered, is_replace = self.render_element(element, data)
-
-            original = lxml.html.tostring(element)
-            if is_replace:
-                replacement = template_rendered
-            else:
-                replacement = original
-                replacement = replacement.replace('><', '>' + template_rendered + '<')
-
-            rendered = rendered.replace(original, replacement)
 
         ## Parse HTML using html5lib; lxml is too strict and e.g. throws
         ## errors if missing parent container; htmlparser mangles whitespace

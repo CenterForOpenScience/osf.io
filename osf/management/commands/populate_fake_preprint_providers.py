@@ -42,11 +42,13 @@ def format_domain_url(domain):
     return ''.join((PREPRINT_PROVIDER_DOMAINS['prefix'], str(domain), PREPRINT_PROVIDER_DOMAINS['suffix'])) if \
         PREPRINT_PROVIDER_DOMAINS['enabled'] else ''
 
+
 SUBJECTS_CACHE = {}
 PREPRINT_PROVIDERS = [
     {
         '_id': 'lawarxiv',
         'name': '[TEST] LawArXiv',
+        'share_publish_type': 'Preprint',
         'default_license': 'CC0 1.0 Universal',
         'licenses_acceptable': ['CC0 1.0 Universal', 'No license'],
         'description': 'Straight bepress taxonomy, no custom domain, two licenses',
@@ -54,6 +56,7 @@ PREPRINT_PROVIDERS = [
     {
         '_id': 'socarxiv',
         'name': '[TEST] SocArXiv',
+        'share_publish_type': 'Preprint',
         'domain': format_domain_url('socarxiv.org'),
         'domain_redirect_enabled': True,
         'default_license': 'CC0 1.0 Universal',
@@ -63,6 +66,7 @@ PREPRINT_PROVIDERS = [
     {
         '_id': 'psyarxiv',
         'name': '[TEST] PsyArXiv',
+        'share_publish_type': 'Preprint',
         'domain': format_domain_url('psyarxiv.com'),
         'domain_redirect_enabled': False,
         'default_license': 'No license',
@@ -76,6 +80,7 @@ PREPRINT_PROVIDERS = [
     {
         '_id': 'engrxiv',
         'name': '[TEST] engrXiv',
+        'share_publish_type': 'Preprint',
         'external_url': 'http://engrxiv.com',
         'default_license': 'CC0 1.0 Universal',
         'licenses_acceptable': ['CC0 1.0 Universal', 'CC-By Attribution 4.0 International', 'No license'],
