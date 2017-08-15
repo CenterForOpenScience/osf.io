@@ -58,6 +58,10 @@ class NodesListFilteringMixin(object):
         return '{}filter[root]='.format(url)
 
     @pytest.fixture()
+    def root_ne_url(self, url):
+        return '{}filter[root][ne]='.format(url)
+
+    @pytest.fixture()
     def tags_url(self, url):
         return '{}filter[tags]='.format(url)
 
@@ -65,7 +69,10 @@ class NodesListFilteringMixin(object):
     def contributors_url(self, url):
         return '{}filter[contributors]='.format(url)
 
-    def test_non_mutating_list_filtering_tests(self, app, user, contrib, parent_project, child_node_one, child_node_two, grandchild_node_one, grandchild_node_two, great_grandchild_node_two, parent_url, root_url, contributors_url):
+    def test_non_mutating_list_filtering_tests(
+        self, app, user, contrib, parent_project, child_node_one, child_node_two,
+        grandchild_node_one, grandchild_node_two, great_grandchild_node_two,
+        root_ne_url, parent_url, root_url, contributors_url):
 
     #   test_parent_filter_null
         expected = [parent_project._id]
@@ -107,6 +114,19 @@ class NodesListFilteringMixin(object):
         res = app.get('{}{}'.format(contributors_url, contrib._id), auth=user.auth)
         actual = [node['id'] for node in res.json['data']]
         assert expected == actual
+
+    #   test_root_ne_excludes_nodes_with_root
+        node = NodeFactory(is_public=True)
+        url = '{}{}'.format(root_ne_url, parent_project._id)
+        res = app.get(url, auth=user.auth)
+        assert res.status_code == 200
+
+        ids = [node_['id'] for node_ in res.json['data']]
+
+        assert parent_project._id not in ids
+        assert child_node_one._id not in ids
+        assert child_node_two._id not in ids
+        assert node._id in ids
 
     def test_parent_filter_excludes_linked_nodes(self, app, user, parent_project, child_node_one, child_node_two, parent_url):
         linked_node = NodeFactory()
@@ -242,4 +262,3 @@ class NodesListDateFilteringMixin(object):
         res = app.get('{}{}'.format(res_url, node_may.date_created), auth=user.auth)
         actual = [node['id'] for node in res.json['data']]
         assert expected == actual
-

@@ -91,7 +91,10 @@ class NodesFilterMixin(ListFilterMixin):
         if field_name == 'root':
             if None in operation['value']:
                 raise InvalidFilterValue(value=operation['value'])
-            return queryset.filter(root__guids___id__in=operation['value'])
+            query = Q(root__guids___id__in=operation['value'])
+            if operation['op'] == 'ne':
+                return queryset.exclude(query)
+            return queryset.filter(query)
 
         if field_name == 'preprint':
             preprint_filters = (
