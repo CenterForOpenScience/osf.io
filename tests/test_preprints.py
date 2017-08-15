@@ -478,7 +478,7 @@ class TestOnPreprintUpdatedTask(OsfTestCase):
 
     def test_format_preprint_date_modified_node_updated(self):
         self.preprint.node.save()
-        res = format_preprint(self.preprint)
+        res = format_preprint(self.preprint, self.preprint.provider.share_publish_type)
         nodes = dict(enumerate(res))
         preprint = nodes.pop(next(k for k, v in nodes.items() if v['@type'] == 'preprint'))
         assert preprint['date_updated'] == self.preprint.node.date_modified.isoformat()
