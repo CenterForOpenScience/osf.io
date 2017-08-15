@@ -598,7 +598,7 @@ class UserInstitutions(JSONAPIBaseView, generics.ListAPIView, UserMixin):
     view_category = 'users'
     view_name = 'user-institutions'
 
-    ordering = ('-date_modified',)
+    ordering = ('-pk', )
 
     def get_default_odm_query(self):
         return None

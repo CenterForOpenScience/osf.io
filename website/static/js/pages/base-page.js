@@ -229,6 +229,14 @@ $(function() {
         var $maintenance = $('#maintenance').on('closed.bs.alert', function() {
             Cookie.set(maintenancePersistKey, '0', { expires: 1, path: '/'});
         });
+
+        var levelMap = {
+            1: 'info',
+            2: 'warning',
+            3: 'danger'
+        };
+        $('#maintenance').addClass('alert-' + levelMap[window.contextVars.maintenance.level]);
+
         var dismissed = Cookie.get(maintenancePersistKey) === '0';
         if (!dismissed) {
             $maintenance.show();

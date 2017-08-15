@@ -492,6 +492,33 @@ class TestOSFUser:
         u.reload()
         assert u.display_full_name(node=project) == name
 
+    def test_repeat_add_same_unreg_user_with_diff_name(self):
+        unreg_user = UnregUserFactory()
+        project = NodeFactory()
+        old_name = unreg_user.fullname
+        project.add_unregistered_contributor(
+            fullname=old_name, email=unreg_user.username,
+            auth=Auth(project.creator)
+        )
+        project.save()
+        unreg_user.reload()
+        name_list = [contrib.fullname for contrib in project.contributors]
+        assert unreg_user.fullname in name_list
+        project.remove_contributor(contributor=unreg_user, auth=Auth(project.creator))
+        project.save()
+        project.reload()
+        assert unreg_user not in project.contributors
+        new_name = fake.name()
+        project.add_unregistered_contributor(
+            fullname=new_name, email=unreg_user.username,
+            auth=Auth(project.creator)
+        )
+        project.save()
+        unreg_user.reload()
+        project.reload()
+        unregistered_name = unreg_user.unclaimed_records[project._id].get('name', None)
+        assert new_name == unregistered_name
+
     def test_username_is_automatically_lowercased(self):
         user = UserFactory(username='nEoNiCon@bet.com')
         assert user.username == 'neonicon@bet.com'
@@ -1756,7 +1783,9 @@ class TestUserValidation(OsfTestCase):
         self.user.social = {
             'foo': 'bar',
         }
-        self.user.save()
+        with pytest.raises(ValidationError) as exc_info:
+            self.user.save()
+        assert isinstance(exc_info.value.args[0], dict)
         assert self.user.social_links == {}
 
     def test_validate_jobs_valid(self):

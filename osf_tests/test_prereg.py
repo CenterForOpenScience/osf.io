@@ -15,6 +15,18 @@ class TestPreregLandingPage(OsfTestCase):
         super(TestPreregLandingPage, self).setUp()
         self.user = factories.UserFactory()
 
+    def test_not_logged_in(self):
+        assert_equal(
+            landing_page(),
+            {
+                'has_projects': False,
+                'has_draft_registrations': False,
+                'campaign_long': 'Prereg Challenge',
+                'campaign_short': 'prereg',
+                'is_logged_in': False,
+            }
+        )
+
     def test_no_projects(self):
         assert_equal(
             landing_page(user=self.user),
@@ -23,6 +35,7 @@ class TestPreregLandingPage(OsfTestCase):
                 'has_draft_registrations': False,
                 'campaign_long': 'Prereg Challenge',
                 'campaign_short': 'prereg',
+                'is_logged_in': True,
             }
         )
 
@@ -36,6 +49,7 @@ class TestPreregLandingPage(OsfTestCase):
                 'has_draft_registrations': False,
                 'campaign_long': 'Prereg Challenge',
                 'campaign_short': 'prereg',
+                'is_logged_in': True,
             }
         )
 
@@ -55,6 +69,7 @@ class TestPreregLandingPage(OsfTestCase):
                 'has_draft_registrations': True,
                 'campaign_long': 'Prereg Challenge',
                 'campaign_short': 'prereg',
+                'is_logged_in': True,
             }
         )
 
@@ -93,11 +108,6 @@ class TestPreregUtils(OsfTestCase):
         schema = get_prereg_schema()
         assert_is_instance(schema, MetaSchema)
         assert_equal(schema.name, 'Prereg Challenge')
-
-    def test_get_prereg_schema_can_return_erpc_metaschema(self):
-        schema = get_prereg_schema('erpc')
-        assert_is_instance(schema, MetaSchema)
-        assert_equal(schema.name, 'Election Research Preacceptance Competition')
 
     def test_get_prereg_schema_raises_error_for_invalid_campaign(self):
         with assert_raises(ValueError):
