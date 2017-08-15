@@ -23,7 +23,6 @@ from framework.flask import redirect  # VOL-aware redirect
 from framework.sessions.utils import remove_sessions_for_user
 
 from osf.models import OSFUser
-from osf.models.preprint_provider import PreprintProvider
 
 from website import settings, mails, language
 from website.util import web_url_for

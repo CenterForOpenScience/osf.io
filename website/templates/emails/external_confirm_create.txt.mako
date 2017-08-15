@@ -1,15 +1,15 @@
-Dear ${user.fullname},
+Hello ${user.fullname},
 
-Thank you for register with ${external_id_provider} for an account on the Open Science Framework. To finish the process, you must verify this email.
+Thank you for registering with ${external_id_provider} for an account on the Open Science Framework.
 
-If you initiated this process, it is asking you to enter the verification code that appears below.
-
-If you did not initiate this process, it is possible that someone else is trying to use this email to register an OSF account with ${external_id_provider}. Do not forward or give this code to anyone and the account will not be created.
+To finish the registration, you must verify this email. If you initiated this process, it is asking you to enter the verification code that appears below.
 
 OSF Verification Code: ${verification_code}
 
+If you did not initiate this process, it is possible that someone else is trying to use this email to register an OSF account with ${external_id_provider}. Do not forward or give this code to anyone and the account will not be created.
+
 Sincerely,
-The Open Science Framework Team
+The OSF Team
 
 Center for Open Science
 210 Ridge McIntire Road
