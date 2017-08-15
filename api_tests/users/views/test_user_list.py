@@ -1,5 +1,4 @@
 # -*- coding: utf-8 -*-
-from django.db.models import Q
 import itsdangerous
 import mock
 import pytest
@@ -154,8 +153,8 @@ class TestUsers:
             assert meta['projects_in_common'] == 1
 
     def test_users_projects_in_common_exclude_deleted_projects(self, app, user_one, user_two):
-        project_list=[]
-        for x in range(1,10):
+        project_list = []
+        for x in range(1, 10):
             project = ProjectFactory(creator=user_one)
             project.add_contributor(
                 contributor=user_two,
@@ -164,7 +163,7 @@ class TestUsers:
             )
             project.save()
             project_list.append(project)
-        for x in range(1,5):
+        for x in range(1, 5):
             project = project_list[x]
             project.reload()
             project.remove_node(auth=Auth(user=user_one))
@@ -319,7 +318,7 @@ class TestUsersCreate:
         assert OSFUser.objects.filter(username=email_unconfirmed).count() == 0
         assert mock_mail.call_count == 0
 
-    @pytest.mark.skip # failing locally post converision
+    @pytest.mark.skip  # failing locally post converision
     @mock.patch('framework.auth.views.mails.send_mail')
     def test_cookied_requests_can_create_and_email(self, mock_mail, app, user, email_unconfirmed, data, url_base):
         session = Session(data={'auth_user_id': user._id})
@@ -336,7 +335,7 @@ class TestUsersCreate:
         assert OSFUser.objects.filter(username=email_unconfirmed).count() == 1
         assert mock_mail.call_count == 1
 
-    @pytest.mark.skip # failing locally post converision
+    @pytest.mark.skip  # failing locally post converision
     @mock.patch('framework.auth.views.mails.send_mail')
     @mock.patch('api.base.authentication.drf.OSFCASAuthentication.authenticate')
     @unittest.skipIf(not settings.DEV_MODE, 'DEV_MODE disabled, osf.users.create unavailable')  # TODO: Remove when available outside of DEV_MODE
@@ -369,7 +368,7 @@ class TestUsersCreate:
         assert OSFUser.objects.filter(username=email_unconfirmed).count() == 1
         assert mock_mail.call_count == 1
 
-    @pytest.mark.skip # failing locally post converision
+    @pytest.mark.skip  # failing locally post converision
     @mock.patch('framework.auth.views.mails.send_mail')
     @mock.patch('api.base.authentication.drf.OSFCASAuthentication.authenticate')
     @unittest.skipIf(not settings.DEV_MODE, 'DEV_MODE disabled, osf.users.create unavailable')  # TODO: Remove when available outside of DEV_MODE
@@ -403,7 +402,7 @@ class TestUsersCreate:
         assert OSFUser.objects.filter(username=email_unconfirmed).count() == 1
         assert mock_mail.call_count == 0
 
-    @pytest.mark.skip # failing locally post converision
+    @pytest.mark.skip  # failing locally post converision
     @mock.patch('framework.auth.views.mails.send_mail')
     @mock.patch('api.base.authentication.drf.OSFCASAuthentication.authenticate')
     @unittest.skipIf(not settings.DEV_MODE, 'DEV_MODE disabled, osf.users.create unavailable')  # TODO: Remove when available outside of DEV_MODE
@@ -436,7 +435,7 @@ class TestUsersCreate:
         assert res.status_code == 201
         username = res.json['data']['attributes']['username']
         try:
-            no_failure = UUID(username)
+            UUID(username)
         except ValueError:
             raise AssertionError('Username is not a valid UUID')
         assert OSFUser.objects.filter(fullname='No Email').count() == 1
@@ -473,7 +472,7 @@ class TestUsersCreate:
         assert OSFUser.objects.filter(username=email_unconfirmed).count() == 0
         assert mock_mail.call_count == 0
 
-    @pytest.mark.skip # failing locally post converision
+    @pytest.mark.skip  # failing locally post converision
     @mock.patch('framework.auth.views.mails.send_mail')
     @mock.patch('api.base.authentication.drf.OSFCASAuthentication.authenticate')
     @unittest.skipIf(not settings.DEV_MODE, 'DEV_MODE disabled, osf.admin unavailable')  # TODO: Remove when available outside of DEV_MODE
