@@ -352,7 +352,7 @@ class TestPreregFiles(AdminTestCase):
         self.admin_user.groups.add(Group.objects.get(name='prereg_view'))
         self.admin_user.save()
 
-    def test_checkout_files(self):
+    def test_checkout_checkin_files(self):
         self.draft.submit_for_review(self.user, {}, save=True)
         request = RequestFactory().get('/fake_path')
         view = DraftDetailView()
@@ -363,21 +363,32 @@ class TestPreregFiles(AdminTestCase):
             f.refresh_from_db()
             nt.assert_equal(self.admin_user, f.checkout)
 
-    def test_checkin_files(self):
+        view2 = DraftFormView()
+        view2 = setup_view(view2, request, draft_pk=self.draft._id)
+        view2.checkin_files(self.draft)
+
+        for q, f in self.d_of_qs.iteritems():
+            f.refresh_from_db()
+            nt.assert_equal(None, f.checkout)
+
+    def test_rejected_approved_checkouts(self):
         self.draft.submit_for_review(self.user, {}, save=True)
+
+        # Test rejected does not checkout files
+        self.draft.approval.state = 'rejected'
+        self.draft.approval.save()
+
         request = RequestFactory().get('/fake_path')
         view = DraftDetailView()
         view = setup_user_view(view, request, self.admin_user,
                                draft_pk=self.draft._id)
         view.checkout_files(self.draft)
-        view2 = DraftFormView()
-        view2 = setup_view(view2, request, draft_pk=self.draft._id)
-        view2.checkin_files(self.draft)
+
         for q, f in self.d_of_qs.iteritems():
+            f.refresh_from_db()
             nt.assert_equal(None, f.checkout)
 
-    def test_approved_does_not_checkout_files(self):
-        self.draft.submit_for_review(self.user, {}, save=True)
+        # Test approved does not checkout files
         self.draft.approval.state = 'approved'
         self.draft.approval.save()
 
@@ -388,6 +399,7 @@ class TestPreregFiles(AdminTestCase):
         view.checkout_files(self.draft)
 
         for q, f in self.d_of_qs.iteritems():
+            f.refresh_from_db()
             nt.assert_equal(None, f.checkout)
 
     def test_rejected_does_not_checkout_files(self):
@@ -402,11 +414,14 @@ class TestPreregFiles(AdminTestCase):
         view.checkout_files(self.draft)
 
         for q, f in self.d_of_qs.iteritems():
+            f.refresh_from_db()
             nt.assert_equal(None, f.checkout)
 
-    def test_checkout_checkup_approved_removes_checkout(self):
+    def test_checkout_checkup(self):
         self.draft.submit_for_review(self.user, {}, save=True)
         request = RequestFactory().get('/fake_path')
+
+        # Test Approved removes checkout
         self.draft.approval.state = 'approved'
         self.draft.approval.save()
 
@@ -420,9 +435,7 @@ class TestPreregFiles(AdminTestCase):
         file_q7.refresh_from_db()
         assert file_q7.checkout is None
 
-    def test_checkout_checkup_rejected_removes_checkout(self):
-        self.draft.submit_for_review(self.user, {}, save=True)
-        request = RequestFactory().get('/fake_path')
+        # Test Rejected removes checkout
         self.draft.approval.state = 'rejected'
         self.draft.approval.save()
 
@@ -436,9 +449,7 @@ class TestPreregFiles(AdminTestCase):
         file_q7.refresh_from_db()
         assert file_q7.checkout is None
 
-    def test_checkout_checkup_unapproved_does_not_remove_checkout(self):
-        self.draft.submit_for_review(self.user, {}, save=True)
-        request = RequestFactory().get('/fake_path')
+        # Test Unapprove does not remove checkout
         self.draft.approval.state = 'unapproved'
         self.draft.approval.save()
 
