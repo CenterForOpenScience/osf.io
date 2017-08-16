@@ -18,9 +18,7 @@ from website.util import disconnected_from_listeners
 from website.views import find_bookmark_collection
 
 
-@pytest.fixture()
-def url_collection_list():
-    return '/{}collections/'.format(API_BASE)
+url_collection_list = '/{}collections/'.format(API_BASE)
 
 @pytest.fixture()
 def user_one():
@@ -41,7 +39,7 @@ class TestCollectionList:
     def collection_deleted(self, user_one):
         return CollectionFactory(creator=user_one, is_deleted=True)
 
-    def test_user_get_own_collections(self, app, url_collection_list, user_one, user_two, collection_deleted, collection):
+    def test_user_get_own_collections(self, app, user_one, user_two, collection_deleted, collection):
 
         #test_user_one_gets_user_one_collections
         res = app.get(url_collection_list, auth=user_one.auth)
@@ -98,7 +96,7 @@ class TestCollectionCreate:
         bookmark_user_two.save()
         return bookmark_user_two
 
-    def test_create_collection_fails(self, app, data_collection, url_collection_list, user_one, title_collection):
+    def test_create_collection_fails(self, app, data_collection, user_one, title_collection):
 
         #test_collection_create_invalid_data
         res = app.post_json_api(url_collection_list, 'Incorrect data', auth=user_one.auth, expect_errors=True)
@@ -191,7 +189,7 @@ class TestCollectionCreate:
         assert res.status_code == 400
         assert res.json['errors'][0]['detail'] == 'Title cannot exceed 200 characters.'
 
-    def test_create_bookmark_collection(self, app, bookmark_user_one, data_collection, url_collection_list, user_one):
+    def test_create_bookmark_collection(self, app, bookmark_user_one, data_collection, user_one):
         collection = {
             'data': {
                 'type': 'collections',
@@ -207,7 +205,7 @@ class TestCollectionCreate:
         assert res.json['data']['attributes']['bookmarks']
 
     def test_cannot_create_multiple_bookmark_collection(
-        self, app, bookmark_user_one, data_collection, url_collection_list, user_one, title_collection):
+        self, app, bookmark_user_one, data_collection, user_one, title_collection):
 
         collection = {
             'data': {
@@ -225,7 +223,7 @@ class TestCollectionCreate:
         assert res.json['errors'][0]['detail'] == 'Each user cannot have more than one Bookmark collection.'
 
     def test_create_bookmark_collection_with_wrong_title(
-        self, app, bookmark_user_one, data_collection, url_collection_list, user_one):
+        self, app, bookmark_user_one, data_collection, user_one):
 
         collection = {
             'data': {
@@ -241,7 +239,7 @@ class TestCollectionCreate:
         assert res.json['data']['attributes']['title'] == 'Bookmarks'
         assert res.json['data']['attributes']['bookmarks']
 
-    def test_create_collection_creates_collection_and_sanitizes_html(self, app, data_collection, url_collection_list, user_one):
+    def test_create_collection_creates_collection_and_sanitizes_html(self, app, data_collection, user_one):
         title = '<em>Cool</em> <script>alert("even cooler")</script> <strong>Project</strong>'
 
         res = app.post_json_api(url_collection_list, {
@@ -280,7 +278,7 @@ class TestCollectionFiltering:
         return CollectionFactory(title='Three', creator=user_one)
 
     def test_collection_filtering(
-        self, app, url_collection_list, user_one, user_two,
+        self, app, user_one, user_two,
         collection_one, collection_two, collection_three):
 
         #test_get_all_projects_with_no_filter_logged_in
@@ -837,6 +835,24 @@ class TestCollectionNodeLinksList:
         res_json = res.json['data']
         assert len(res_json) == original_length - 1
 
+def make_post_payload(target_node_id, outer_type='node_links', inner_type='nodes'):
+    payload = {
+        'data': {
+            'relationships': {
+                'nodes': {
+                    'data': {
+                        'id': target_node_id,
+                    }
+                }
+            }
+        }
+    }
+    if outer_type:
+        payload['data']['type'] = outer_type
+    if inner_type:
+        payload['data']['relationships']['nodes']['data']['type'] = inner_type
+    return payload
+
 @pytest.mark.django_db
 class TestCollectionNodeLinkCreate:
 
@@ -897,35 +913,13 @@ class TestCollectionNodeLinkCreate:
         return '/{}collections/{}/node_links/'.format(API_BASE, id_fake_node)
 
     @pytest.fixture()
-    def make_post_payload(self):
-        def post_payload(target_node_id, outer_type='node_links', inner_type='nodes'):
-            payload = {
-                'data': {
-                    'relationships': {
-                        'nodes': {
-                            'data': {
-                                'id': target_node_id,
-                            }
-                        }
-                    }
-                }
-            }
-            if outer_type:
-                payload['data']['type'] = outer_type
-            if inner_type:
-                payload['data']['relationships']['nodes']['data']['type'] = inner_type
-            return payload
-        return post_payload
-
-    @pytest.fixture()
     def logs_collection(self, collection_one):
         @assert_logs(NodeLog.POINTER_CREATED, 'collection')
         def logs(collection_one):
             return collection_one
 
     def test_creates_node_link_to_public_project_logged_in(
-        self, app, logs_collection, url_collection_nodelinks,
-        make_post_payload, project_public_user_one, user_one):
+        self, app, logs_collection, url_collection_nodelinks, project_public_user_one, user_one):
 
         res = app.post_json_api(url_collection_nodelinks, make_post_payload(project_public_user_one._id), auth=user_one.auth)
         assert res.status_code == 201
@@ -935,8 +929,7 @@ class TestCollectionNodeLinkCreate:
         assert embedded_node_id == project_public_user_one._id
 
     def test_creates_node_link_to_public_registration_logged_in(
-        self, app, logs_collection, url_collection_nodelinks, make_post_payload,
-        registration_public_user_one, user_one):
+        self, app, logs_collection, url_collection_nodelinks, registration_public_user_one, user_one):
 
         res = app.post_json_api(url_collection_nodelinks, make_post_payload(registration_public_user_one._id), auth=user_one.auth)
         assert res.status_code == 201
@@ -947,7 +940,7 @@ class TestCollectionNodeLinkCreate:
         assert embedded_node_id == 'Not found.'
 
     def test_creates_node_link_to_private_project_logged_in(
-        self, app, logs_collection, url_collection_nodelinks, make_post_payload,
+        self, app, logs_collection, url_collection_nodelinks,
         user_one, project_private_user_one):
 
         res = app.post_json_api(url_collection_nodelinks, make_post_payload(project_private_user_one._id), auth=user_one.auth)
@@ -957,7 +950,7 @@ class TestCollectionNodeLinkCreate:
         assert embedded_node_id == project_private_user_one._id
 
     def test_creates_node_link_to_private_registration_logged_in(
-        self, app, logs_collection, url_collection_nodelinks, make_post_payload,
+        self, app, logs_collection, url_collection_nodelinks,
         registration_private_user_one, user_one):
 
         res = app.post_json_api(url_collection_nodelinks, make_post_payload(registration_private_user_one._id), auth=user_one.auth)
@@ -968,7 +961,7 @@ class TestCollectionNodeLinkCreate:
         assert embedded_node_id == 'Not found.'
 
     def test_create_node_link_to_non_contributing_node(
-        self, app, logs_collection, url_collection_nodelinks, make_post_payload,
+        self, app, logs_collection, url_collection_nodelinks,
         project_public_user_two, user_one):
 
         res = app.post_json_api(url_collection_nodelinks, make_post_payload(project_public_user_two._id), auth=user_one.auth)
@@ -979,7 +972,7 @@ class TestCollectionNodeLinkCreate:
         assert embedded_node_id == project_public_user_two._id
 
     def test_create_node_link_to_non_contributing_registration(
-        self, app, logs_collection, url_collection_nodelinks, make_post_payload,
+        self, app, logs_collection, url_collection_nodelinks,
         registration_public_user_two, user_one):
 
         res = app.post_json_api(url_collection_nodelinks, make_post_payload(registration_public_user_two._id), auth=user_one.auth)
@@ -991,7 +984,7 @@ class TestCollectionNodeLinkCreate:
         assert embedded_node_id == 'Not found.'
 
     def test_create_node_pointer_already_connected(
-        self, app, logs_collection, url_collection_nodelinks, make_post_payload,
+        self, app, logs_collection, url_collection_nodelinks,
         project_private_user_one, user_one, collection_one):
 
         res = app.post_json_api(url_collection_nodelinks, make_post_payload(project_private_user_one._id), auth=user_one.auth)
@@ -1011,7 +1004,7 @@ class TestCollectionNodeLinkCreate:
         assert '/data/relationships/node_links/data/id' == error['source']['pointer']
 
     def test_non_mutational_collection_nodelink_create_tests(
-        self, app, user_one, user_two, collection_one, make_post_payload, url_collection_nodelinks, url_fake_collection_nodelinks,
+        self, app, user_one, user_two, collection_one, url_collection_nodelinks, url_fake_collection_nodelinks,
         id_fake_node, project_public_user_one, project_private_user_one, project_public_user_two, project_private_user_two,
         registration_public_user_one, registration_private_user_one, registration_public_user_two, registration_private_user_two):
 
