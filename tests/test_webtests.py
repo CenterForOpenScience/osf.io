@@ -97,9 +97,9 @@ class TestAUser(OsfTestCase):
         assert_equal(res.request.path, '/dashboard/')
 
     # TODO: @longze this test is updated for CAS, remove the comment when passed code review
-    def test_register_page(self):
+    def test_osf_register_redirect_to_cas_register_page(self):
         res = self.app.get('/register/')
-        redirect_url = cas.get_account_register_url(service_url=web_url_for('dashboard'))
+        redirect_url = cas.get_account_register_url(service_url=web_url_for('dashboard', _absolute=True))
         assert_equal(res.status_code, http.FOUND)
         assert_equal(redirect_url, res.headers['Location'])
 
