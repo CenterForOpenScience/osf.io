@@ -1,65 +1,48 @@
-from modularodm import Q
-from nose.tools import *  # flake8: noqa
+import pytest
 
 from api.search.serializers import SearchSerializer
 from api_tests import utils
-
-from tests.base import DbTestCase
+from osf.models import MetaSchema
 from osf_tests.factories import (
     AuthUserFactory,
     NodeFactory,
     ProjectFactory,
 )
 from tests.utils import make_drf_request_with_version, mock_archive
-
-from osf.models import MetaSchema
 from website.project.metadata.schemas import LATEST_SCHEMA_VERSION
 from website.search import search
 
+@pytest.mark.django_db
+class TestSearchSerializer:
 
-class TestSearchSerializer(DbTestCase):
+    def test_search_serializer_mixed_model(self):
 
-    def setUp(self):
-        super(TestSearchSerializer, self).setUp()
+        user = AuthUserFactory()
+        project = ProjectFactory(creator=user, is_public=True)
+        component = NodeFactory(parent=project, creator=user, is_public=True)
+        file_component = utils.create_test_file(component, user)
+        context = {'request': make_drf_request_with_version(version='2.0')}
+        schema = MetaSchema.objects.filter(
+            name='Replication Recipe (Brandt et al., 2013): Post-Completion',
+            schema_version=LATEST_SCHEMA_VERSION).first()
 
-        self.user = AuthUserFactory()
-        self.project = ProjectFactory(creator=self.user, is_public=True)
-        self.component = NodeFactory(parent=self.project, creator=self.user, is_public=True)
-        self.file = utils.create_test_file(self.component, self.user)
+        #test_search_serializer_mixed_model_project
+        result = SearchSerializer(project, context=context).data
+        assert result['data']['type'] == 'nodes'
 
-        self.schema = MetaSchema.find_one(
-            Q('name', 'eq', 'Replication Recipe (Brandt et al., 2013): Post-Completion') &
-            Q('schema_version', 'eq', LATEST_SCHEMA_VERSION)
-        )
+        #test_search_serializer_mixed_model_component
+        result = SearchSerializer(component, context=context).data
+        assert result['data']['type'] == 'nodes'
 
-        with mock_archive(self.project, autocomplete=True, autoapprove=True, schema=self.schema) as registration:
-            self.registration = registration
+        #test_search_serializer_mixed_model_registration
+        with mock_archive(project, autocomplete=True, autoapprove=True, schema=schema) as registration:
+            result = SearchSerializer(registration, context=context).data
+            assert result['data']['type'] == 'registrations'
 
-    def tearDown(self):
-        super(TestSearchSerializer, self).tearDown()
-        search.delete_all()
+        #test_search_serializer_mixed_model_file
+        result = SearchSerializer(file_component, context=context).data
+        assert result['data']['type'] == 'files'
 
-    def test_search_serializer_mixed_model_project(self):
-        req = make_drf_request_with_version(version='2.0')
-        result = SearchSerializer(self.project, context={'request': req}).data
-        assert_equal(result['data']['type'], 'nodes')
-
-    def test_search_serializer_mixed_model_component(self):
-        req = make_drf_request_with_version(version='2.0')
-        result = SearchSerializer(self.component, context={'request': req}).data
-        assert_equal(result['data']['type'], 'nodes')
-
-    def test_search_serializer_mixed_model_registration(self):
-        req = make_drf_request_with_version(version='2.0')
-        result = SearchSerializer(self.registration, context={'request': req}).data
-        assert_equal(result['data']['type'], 'registrations')
-
-    def test_search_serializer_mixed_model_file(self):
-        req = make_drf_request_with_version(version='2.0')
-        result = SearchSerializer(self.file, context={'request': req}).data
-        assert_equal(result['data']['type'], 'files')
-
-    def test_search_serializer_mixed_model_user(self):
-        req = make_drf_request_with_version(version='2.0')
-        result = SearchSerializer(self.user, context={'request': req}).data
-        assert_equal(result['data']['type'], 'users')
+        #test_search_serializer_mixed_model_user
+        result = SearchSerializer(user, context=context).data
+        assert result['data']['type'] == 'users'

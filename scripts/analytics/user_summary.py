@@ -5,9 +5,9 @@ from datetime import datetime, timedelta
 
 from modularodm import Q
 
-from osf.models import OSFUser as User, NodeLog
+from osf.models import OSFUser, NodeLog
 from website.app import init_app
-from framework.mongo.utils import paginated
+from framework.database import paginated
 from scripts.analytics.base import SummaryAnalytics
 
 logger = logging.getLogger(__name__)
@@ -52,7 +52,7 @@ class UserSummary(SummaryAnalytics):
         active_users = 0
         depth_users = 0
         profile_edited = 0
-        user_pages = paginated(User, query=active_user_query)
+        user_pages = paginated(OSFUser, query=active_user_query)
         for user in user_pages:
             active_users += 1
             log_count = count_user_logs(user)
@@ -68,15 +68,15 @@ class UserSummary(SummaryAnalytics):
             'status': {
                 'active': active_users,
                 'depth': depth_users,
-                'unconfirmed': User.find(
+                'unconfirmed': OSFUser.find(
                     Q('date_registered', 'lt', query_datetime) &
                     Q('date_confirmed', 'eq', None)
                 ).count(),
-                'deactivated': User.find(
+                'deactivated': OSFUser.find(
                     Q('date_disabled', 'ne', None) &
                     Q('date_disabled', 'lt', query_datetime)
                 ).count(),
-                'merged': User.find(
+                'merged': OSFUser.find(
                     Q('date_registered', 'lt', query_datetime) &
                     Q('merged_by', 'ne', None)
                 ).count(),

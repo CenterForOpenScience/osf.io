@@ -81,10 +81,12 @@ def validate_profile_websites(profile_websites):
             # Reraise with a better message
             raise ValidationError('Invalid personal URL.')
 
-
 def validate_social(value):
     validate_profile_websites(value.get('profileWebsites'))
-
+    from osf.models import OSFUser
+    for soc_key in value.keys():
+        if soc_key not in OSFUser.SOCIAL_FIELDS:
+            raise ValidationError('{} is not a valid key for social.'.format(soc_key))
 
 def validate_email(value):
     with reraise_django_validation_errors():

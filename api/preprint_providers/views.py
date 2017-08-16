@@ -6,7 +6,7 @@ from django.db.models import Q
 
 from framework.auth.oauth_scopes import CoreScopes
 
-from osf.models import AbstractNode as Node, Subject, PreprintService, PreprintProvider
+from osf.models import AbstractNode, Subject, PreprintService, PreprintProvider
 
 from api.base import permissions as base_permissions
 from api.base.filters import PreprintFilterMixin, ODMFilterMixin
@@ -189,7 +189,7 @@ class PreprintProviderPreprintList(JSONAPIBaseView, generics.ListAPIView, Prepri
     ordering = ('-date_created')
 
     serializer_class = PreprintSerializer
-    model_class = Node
+    model_class = AbstractNode
 
     required_read_scopes = [CoreScopes.NODE_PREPRINTS_READ]
     required_write_scopes = [CoreScopes.NULL]
@@ -231,6 +231,8 @@ class PreprintProviderTaxonomies(JSONAPIBaseView, generics.ListAPIView):
     required_write_scopes = [CoreScopes.NULL]
 
     serializer_class = TaxonomySerializer
+
+    ordering = ('-id',)
 
     def is_valid_subject(self, allows_children, allowed_parents, sub):
         # TODO: Delet this when all PreprintProviders have a mapping
@@ -281,7 +283,7 @@ class PreprintProviderHighlightedSubjectList(JSONAPIBaseView, generics.ListAPIVi
 
 
 class PreprintProviderLicenseList(LicenseList):
-    ordering = ()
+    ordering = ()  # TODO: should be ordered once the frontend for selecting default licenses no longer relies on order
     view_category = 'preprint_providers'
 
     def get_queryset(self):

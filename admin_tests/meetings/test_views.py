@@ -7,7 +7,7 @@ from django.contrib.auth.models import Permission
 from django.core.exceptions import PermissionDenied
 
 from tests.base import AdminTestCase
-from tests.factories import AuthUserFactory
+from osf_tests.factories import AuthUserFactory
 from tests.test_conferences import ConferenceFactory
 from osf.models.conference import Conference, DEFAULT_FIELD_NAMES
 

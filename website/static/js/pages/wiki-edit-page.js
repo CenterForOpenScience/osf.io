@@ -183,7 +183,6 @@ if ($comments.length && window.contextVars.wiki.wikiID !== null) {
         rootId: window.contextVars.wiki.wikiID,
         fileId: null,
         canComment: window.contextVars.currentUser.canComment,
-        hasChildren: window.contextVars.node.hasChildren,
         currentUser: window.contextVars.currentUser,
         pageTitle: window.contextVars.wiki.wikiName,
         inputSelector: '.atwho-input'

@@ -5,6 +5,7 @@ import re
 import urlparse
 import warnings
 
+from django.db.models import Q
 from dirtyfields import DirtyFieldsMixin
 from django.apps import apps
 from django.contrib.contenttypes.fields import GenericRelation
@@ -23,9 +24,8 @@ from include import IncludeQuerySet, IncludeManager
 from framework import status
 from framework.celery_tasks.handlers import enqueue_task
 from framework.exceptions import PermissionsError
-from framework.mongo import DummyRequest, get_request_and_user_id
-from framework.mongo.utils import to_mongo_key
 from framework.sentry import log_exception
+from addons.wiki.utils import to_mongo_key
 from osf.exceptions import ValidationValueError
 from osf.models.citation import AlternativeCitation
 from osf.models.contributor import (Contributor, RecentlyAddedContributor,
@@ -42,10 +42,11 @@ from osf.models.spam import SpamMixin
 from osf.models.tag import Tag
 from osf.models.user import OSFUser
 from osf.models.validators import validate_doi, validate_title
-from osf.modm_compat import Q
+from osf.modm_compat import Q as MODMQ
 from osf.utils.auth import Auth, get_user
 from osf.utils.datetime_aware_jsonfield import DateTimeAwareJSONField
 from osf.utils.fields import NonNaiveDateTimeField
+from osf.utils.requests import DummyRequest, get_request_and_user_id
 from website import language, settings
 from website.citations.utils import datetime_to_csl
 from website.exceptions import (InvalidTagError, NodeStateError,
@@ -388,8 +389,6 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
     title = models.TextField(
         validators=[validate_title]
     )  # this should be a charfield but data from mongo didn't fit in 255
-    # TODO why is this here if it's empty
-    users_watching_node = models.ManyToManyField(OSFUser, related_name='watching')
     wiki_pages_current = DateTimeAwareJSONField(default=dict, blank=True)
     wiki_pages_versions = DateTimeAwareJSONField(default=dict, blank=True)
     # Dictionary field mapping node wiki page to sharejs private uuid.
@@ -687,7 +686,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
 
     @classmethod
     def find_by_institutions(cls, inst, query=None):
-        base_query = Q('affiliated_institutions', 'eq', inst)
+        base_query = MODMQ('affiliated_institutions', 'eq', inst)
         if query:
             final_query = base_query & query
         else:
@@ -778,15 +777,17 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
 
     def get_aggregate_logs_query(self, auth):
         return (
-            (   # TODO: remove `list` call during phase 2
-                Q('node_id', 'in', list(Node.objects.get_children(self).can_view(user=auth.user, private_link=auth.private_link).values_list('id', flat=True))) |
-                Q('node_id', 'eq', self.id)
-            ) & Q('should_hide', 'eq', False)
+            (
+                Q(node_id__in=list(Node.objects.get_children(self).can_view(user=auth.user, private_link=auth.private_link).values_list('id', flat=True))) |
+                Q(node_id=self.id)
+            ) & Q(should_hide=False)
         )
 
     def get_aggregate_logs_queryset(self, auth):
         query = self.get_aggregate_logs_query(auth)
-        return NodeLog.find(query).order_by('-date')
+        return NodeLog.objects.filter(query).order_by('-date').include(
+            'node__guids', 'user__guids', 'original_node__guids', limit_includes=10
+        )
 
     def get_absolute_url(self):
         return self.absolute_api_v2_url
@@ -1140,6 +1141,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
                                                        contributor=contributor,
                                                        auth=auth, email_template=send_email)
             self.update_search()
+            self.save_node_preprints()
             return contrib_to_add, True
 
         # Permissions must be overridden if changed when contributor is
@@ -1212,8 +1214,11 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
             # only raise error if user is registered.
             if contributor.is_registered or self.is_contributor(contributor):
                 raise
-            contributor.add_unclaimed_record(node=self, referrer=auth.user,
-                                             given_name=fullname, email=email)
+
+            contributor.add_unclaimed_record(
+                node=self, referrer=auth.user, given_name=fullname, email=email
+            )
+
             contributor.save()
 
         self.add_contributor(
@@ -1310,6 +1315,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         if self._id in old.unclaimed_records:
             del old.unclaimed_records[self._id]
             old.save()
+        self.save_node_preprints()
         return True
 
     def remove_contributor(self, contributor, auth, log=True):
@@ -1363,6 +1369,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         # send signal to remove this user from project subscriptions
         project_signals.contributor_removed.send(self, user=contributor)
 
+        self.save_node_preprints()
         return True
 
     def remove_contributors(self, contributors, auth=None, log=True, save=False):
@@ -1416,10 +1423,11 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         )
         if save:
             self.save()
+        self.save_node_preprints()
 
     @classmethod
     def find_for_user(cls, user, subquery=None):
-        combined_query = Q('contributors', 'eq', user)
+        combined_query = MODMQ('contributors', 'eq', user)
         if subquery is not None:
             combined_query = combined_query & subquery
         return cls.find(combined_query)
@@ -1528,6 +1536,12 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
             }],
             'allowed_operations': ['read']
         })
+
+    def save_node_preprints(self):
+        if self.preprint_file:
+            PreprintService = apps.get_model('osf.PreprintService')
+            for preprint in PreprintService.objects.filter(node_id=self.id, is_published=True):
+                preprint.save()
 
     @property
     def private_links_active(self):
@@ -1921,6 +1935,9 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         else:
             forked.title = title
 
+        if len(forked.title) > 200:
+            forked.title = forked.title[:200]
+
         # TODO: Optimize me
         for citation in self.alternative_citations.all():
             cloned_citation = citation.clone()
@@ -2021,6 +2038,9 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
             language.TEMPLATED_FROM_PREFIX not in new.title
         ):
             new.title = ''.join((language.TEMPLATED_FROM_PREFIX, new.title,))
+
+        if len(new.title) > 200:
+            new.title = new.title[:200]
 
         # Slight hack - date_created is a read-only field.
         new.date_created = timezone.now()
@@ -2228,6 +2248,8 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
             if save:
                 self.save()
 
+            self.save_node_preprints()
+
         with transaction.atomic():
             if to_remove or permissions_changed and ['read'] in permissions_changed.values():
                 project_signals.write_permissions_revoked.send(self)
@@ -2275,6 +2297,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
                         project_signals.write_permissions_revoked.send(self)
         if visible is not None:
             self.set_visible(user, visible, auth=auth)
+            self.save_node_preprints()
 
     def save(self, *args, **kwargs):
         first_save = not bool(self.pk)
@@ -2313,10 +2336,9 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
             # avoid circular imports
             from website.preprints.tasks import on_preprint_updated
             PreprintService = apps.get_model('osf.PreprintService')
-            update_share = bool(self.SEARCH_UPDATE_FIELDS.intersection(saved_fields))
             # .preprints wouldn't return a single deleted preprint
             for preprint in PreprintService.objects.filter(node_id=self.id, is_published=True):
-                enqueue_task(on_preprint_updated.s(preprint._id, update_share=update_share))
+                enqueue_task(on_preprint_updated.s(preprint._id))
 
         user = User.load(user_id)
         if user and self.check_spam(user, saved_fields, request_headers):

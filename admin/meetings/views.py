@@ -23,7 +23,7 @@ class MeetingListView(PermissionRequiredMixin, ListView):
     raise_exception = True
 
     def get_queryset(self):
-        return Conference.find()
+        return Conference.objects.all().order_by('name')
 
     def get_context_data(self, **kwargs):
         queryset = kwargs.pop('object_list', self.object_list)

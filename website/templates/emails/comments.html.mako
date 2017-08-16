@@ -1,4 +1,4 @@
-<% from osf.models import OSFUser as User %>
+<% from osf.models import OSFUser %>
 
 <table class="comment-row" border="0" cellpadding="8" cellspacing="0" width="100%" align="center" style="font-size: 13px;background: #fff;border: 1px solid #eee;border-radius: 5px;margin-bottom: 10px;padding: 0px !important;">
     <tr>
