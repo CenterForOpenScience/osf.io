@@ -119,7 +119,13 @@ def format_preprint(preprint, share_type, old_subjects=None):
             preprint.node.tags.filter(name='qatest').exists() or
             preprint.node.is_deleted
         ),
-        'date_updated': preprint.date_modified.isoformat(),
+        # Note: Changing any preprint attribute that is pulled from the node, like title, will NOT bump
+        # the preprint's date modified but will bump the node's date_modified.
+        # We have to send the latest date to SHARE to actually get the result to be updated.
+        # If we send a date_updated that is <= the one we previously sent, SHARE will ignore any changes
+        # because it looks like a race condition that arose from preprints being resent to SHARE on
+        # every step of preprint creation.
+        'date_updated': max(preprint.date_modified, preprint.node.date_modified).isoformat(),
         'date_published': preprint.date_published.isoformat() if preprint.date_published else None
     })
 
