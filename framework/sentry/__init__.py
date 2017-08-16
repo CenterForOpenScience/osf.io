@@ -35,13 +35,17 @@ def log_exception():
     })
 
 
-def log_message(message):
+def log_message(message, extra_data=None):
     if not enabled:
         logger.warning(
             'Sentry called to log message, but is not active: %s' % message
         )
         return None
-
-    return sentry.captureMessage(message, extra={
+    extra = {
         'session': get_session_data(),
-    })
+    }
+    if extra_data is None:
+        extra_data = {}
+    extra.update(extra_data)
+
+    return sentry.captureMessage(message, extra=extra)

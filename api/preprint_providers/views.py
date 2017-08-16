@@ -6,7 +6,7 @@ from django.db.models import Q
 
 from framework.auth.oauth_scopes import CoreScopes
 
-from osf.models import AbstractNode as Node, Subject, PreprintService, PreprintProvider
+from osf.models import AbstractNode, Subject, PreprintService, PreprintProvider
 
 from api.base import permissions as base_permissions
 from api.base.filters import PreprintFilterMixin, ODMFilterMixin
@@ -39,7 +39,6 @@ class PreprintProviderList(JSONAPIBaseView, generics.ListAPIView, ODMFilterMixin
         advisory_board           string              HTML for the advisory board/steering committee section
         email_contact            string              the contact email for the preprint provider
         email_support            string              the support email for the preprint provider
-        subjects_acceptable      [[string],boolean]  the list of acceptable subjects for the preprint provider
         social_facebook          string              the preprint provider's Facebook account
         social_instagram         string              the preprint provider's Instagram account
         social_twitter           string              the preprint provider's Twitter account
@@ -103,7 +102,6 @@ class PreprintProviderDetail(JSONAPIBaseView, generics.RetrieveAPIView):
         advisory_board           string              HTML for the advisory board/steering committee section
         email_contact            string              the contact email for the preprint provider
         email_support            string              the support email for the preprint provider
-        subjects_acceptable      [[string],boolean]  the list of acceptable subjects for the preprint provider
         social_facebook          string              the preprint provider's Facebook account
         social_instagram         string              the preprint provider's Instagram account
         social_twitter           string              the preprint provider's Twitter account
@@ -191,7 +189,7 @@ class PreprintProviderPreprintList(JSONAPIBaseView, generics.ListAPIView, Prepri
     ordering = ('-date_created')
 
     serializer_class = PreprintSerializer
-    model_class = Node
+    model_class = AbstractNode
 
     required_read_scopes = [CoreScopes.NODE_PREPRINTS_READ]
     required_write_scopes = [CoreScopes.NULL]
@@ -220,7 +218,7 @@ class PreprintProviderPreprintList(JSONAPIBaseView, generics.ListAPIView, Prepri
         return PreprintService.objects.filter(self.get_query_from_request()).distinct()
 
 
-class PreprintProviderSubjectList(JSONAPIBaseView, generics.ListAPIView):
+class PreprintProviderTaxonomies(JSONAPIBaseView, generics.ListAPIView):
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
         base_permissions.TokenHasScope,
@@ -233,6 +231,8 @@ class PreprintProviderSubjectList(JSONAPIBaseView, generics.ListAPIView):
     required_write_scopes = [CoreScopes.NULL]
 
     serializer_class = TaxonomySerializer
+
+    ordering = ('-id',)
 
     def is_valid_subject(self, allows_children, allowed_parents, sub):
         # TODO: Delet this when all PreprintProviders have a mapping
@@ -263,8 +263,27 @@ class PreprintProviderSubjectList(JSONAPIBaseView, generics.ListAPIView):
         return provider.all_subjects
 
 
+class PreprintProviderHighlightedSubjectList(JSONAPIBaseView, generics.ListAPIView):
+    permission_classes = (
+        drf_permissions.IsAuthenticatedOrReadOnly,
+        base_permissions.TokenHasScope,
+    )
+
+    view_category = 'preprint_providers'
+    view_name = 'highlighted-taxonomy-list'
+
+    required_read_scopes = [CoreScopes.ALWAYS_PUBLIC]
+    required_write_scopes = [CoreScopes.NULL]
+
+    serializer_class = TaxonomySerializer
+
+    def get_queryset(self):
+        provider = get_object_or_error(PreprintProvider, self.kwargs['provider_id'], display_name='PreprintProvider')
+        return Subject.objects.filter(id__in=[s.id for s in provider.highlighted_subjects]).order_by('text')
+
+
 class PreprintProviderLicenseList(LicenseList):
-    ordering = ()
+    ordering = ()  # TODO: should be ordered once the frontend for selecting default licenses no longer relies on order
     view_category = 'preprint_providers'
 
     def get_queryset(self):

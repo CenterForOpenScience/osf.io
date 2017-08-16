@@ -1,22 +1,11 @@
-# -*- coding: utf-8 -*-
-from nose.tools import *  # flake8: noqa
-import pytest
-
-from django.db.models import F
 from modularodm import Q
-from framework.auth.core import Auth
-
-from osf.models import AbstractNode as Node, NodeLog
-from website.util import permissions
-from website.util.sanitize import strip_html
-from website.views import find_bookmark_collection
+import pytest
 
 from api.base.settings.defaults import API_BASE, MAX_PAGE_SIZE
 from api_tests.nodes.filters.test_filters import NodesListFilteringMixin, NodesListDateFilteringMixin
-
-from tests.base import ApiTestCase
+from framework.auth.core import Auth
+from osf.models import AbstractNode, NodeLog
 from osf_tests.factories import (
-    BookmarkCollectionFactory,
     CollectionFactory,
     ProjectFactory,
     NodeFactory,
@@ -25,632 +14,678 @@ from osf_tests.factories import (
     UserFactory,
     PreprintFactory,
 )
+from rest_framework import exceptions
+from tests.utils import assert_items_equal
+from website.util import permissions
+from website.util.sanitize import strip_html
+from website.views import find_bookmark_collection
 
 
-class TestNodeList(ApiTestCase):
-    def setUp(self):
-        super(TestNodeList, self).setUp()
-        self.user = AuthUserFactory()
+@pytest.fixture()
+def user():
+    return AuthUserFactory()
 
-        self.non_contrib = AuthUserFactory()
+@pytest.fixture()
+def non_contrib():
+    return AuthUserFactory()
 
-        self.deleted = ProjectFactory(is_deleted=True)
-        self.private = ProjectFactory(is_public=False, creator=self.user)
-        self.public = ProjectFactory(is_public=True, creator=self.user)
+@pytest.mark.django_db
+class TestNodeList:
 
-        self.url = '/{}nodes/'.format(API_BASE)
+    @pytest.fixture()
+    def deleted_project(self):
+        return ProjectFactory(is_deleted=True)
 
-    def test_only_returns_non_deleted_public_projects(self):
-        res = self.app.get(self.url)
+    @pytest.fixture()
+    def private_project(self, user):
+        return ProjectFactory(is_public=False, creator=user)
+
+    @pytest.fixture()
+    def public_project(self, user):
+        return ProjectFactory(is_public=True, creator=user)
+
+    @pytest.fixture()
+    def url(self, user):
+        return '/{}nodes/'.format(API_BASE)
+
+    def test_return(self, app, user, non_contrib, deleted_project, private_project, public_project, url):
+
+        #   test_only_returns_non_deleted_public_projects
+        res = app.get(url)
         node_json = res.json['data']
 
         ids = [each['id'] for each in node_json]
-        assert_in(self.public._id, ids)
-        assert_not_in(self.deleted._id, ids)
-        assert_not_in(self.private._id, ids)
+        assert public_project._id in ids
+        assert deleted_project._id not in ids
+        assert private_project._id not in ids
 
-    def test_return_public_node_list_logged_out_user(self):
-        res = self.app.get(self.url, expect_errors=True)
-        assert_equal(res.status_code, 200)
-        assert_equal(res.content_type, 'application/vnd.api+json')
+    #   test_return_public_node_list_logged_out_user
+        res = app.get(url, expect_errors=True)
+        assert res.status_code == 200
+        assert res.content_type == 'application/vnd.api+json'
         ids = [each['id'] for each in res.json['data']]
-        assert_in(self.public._id, ids)
-        assert_not_in(self.private._id, ids)
+        assert public_project._id in ids
+        assert private_project._id not in ids
 
-    def test_return_public_node_list_logged_in_user(self):
-        res = self.app.get(self.url, auth=self.non_contrib)
-        assert_equal(res.status_code, 200)
-        assert_equal(res.content_type, 'application/vnd.api+json')
+    #   test_return_public_node_list_logged_in_user
+        res = app.get(url, auth=non_contrib)
+        assert res.status_code == 200
+        assert res.content_type == 'application/vnd.api+json'
         ids = [each['id'] for each in res.json['data']]
-        assert_in(self.public._id, ids)
-        assert_not_in(self.private._id, ids)
+        assert public_project._id in ids
+        assert private_project._id not in ids
 
-    def test_return_private_node_list_logged_out_user(self):
-        res = self.app.get(self.url)
+    #   test_return_private_node_list_logged_out_user
+        res = app.get(url)
         ids = [each['id'] for each in res.json['data']]
-        assert_in(self.public._id, ids)
-        assert_not_in(self.private._id, ids)
+        assert public_project._id in ids
+        assert private_project._id not in ids
 
-    def test_return_private_node_list_logged_in_contributor(self):
-        res = self.app.get(self.url, auth=self.user.auth)
-        assert_equal(res.status_code, 200)
-        assert_equal(res.content_type, 'application/vnd.api+json')
+    #   test_return_private_node_list_logged_in_contributor
+        res = app.get(url, auth=user.auth)
+        assert res.status_code == 200
+        assert res.content_type == 'application/vnd.api+json'
         ids = [each['id'] for each in res.json['data']]
-        assert_in(self.public._id, ids)
-        assert_in(self.private._id, ids)
+        assert public_project._id in ids
+        assert private_project._id in ids
 
-    def test_return_private_node_list_logged_in_non_contributor(self):
-        res = self.app.get(self.url, auth=self.non_contrib.auth)
+    #   test_return_private_node_list_logged_in_non_contributor
+        res = app.get(url, auth=non_contrib.auth)
         ids = [each['id'] for each in res.json['data']]
-        assert_in(self.public._id, ids)
-        assert_not_in(self.private._id, ids)
+        assert public_project._id in ids
+        assert private_project._id not in ids
 
-    def test_node_list_does_not_returns_registrations(self):
-        registration = RegistrationFactory(project=self.public, creator=self.user)
-        res = self.app.get(self.url, auth=self.user.auth)
+    def test_node_list_does_not_returns_registrations(self, app, user, public_project, url):
+        registration = RegistrationFactory(project=public_project, creator=user)
+        res = app.get(url, auth=user.auth)
         ids = [each['id'] for each in res.json['data']]
-        assert_not_in(registration._id, ids)
+        assert registration._id not in ids
 
-    def test_node_list_has_root(self):
-        res = self.app.get(self.url, auth=self.user.auth)
+    def test_node_list_has_root(self, app, user, url, public_project, private_project, deleted_project):
+        res = app.get(url, auth=user.auth)
         projects_with_root = 0
         for project in res.json['data']:
             if project['relationships'].get('root', None):
                 projects_with_root += 1
-        assert_not_equal(projects_with_root, 0)
-        assert_true(
-            all([each['relationships'].get(
-                'root'
-            ) is not None for each in res.json['data']])
-        )
+        assert projects_with_root != 0
+        assert all([each['relationships'].get('root') is not None for each in res.json['data']])
 
-
-    def test_node_list_has_proper_root(self):
-        project_one = ProjectFactory(title="Project One", is_public=True)
+    def test_node_list_has_proper_root(self, app, user, url):
+        project_one = ProjectFactory(title='Project One', is_public=True)
         ProjectFactory(parent=project_one, is_public=True)
 
-        res = self.app.get(self.url+'?embed=root&embed=parent', auth=self.user.auth)
+        res = app.get(url + '?embed=root&embed=parent', auth=user.auth)
 
         for project_json in res.json['data']:
-            project = Node.load(project_json['id'])
-            assert_equal(project_json['embeds']['root']['data']['id'], project.root._id)
+            project = AbstractNode.load(project_json['id'])
+            assert project_json['embeds']['root']['data']['id'] == project.root._id
 
 
-class TestNodeFiltering(ApiTestCase):
+@pytest.mark.django_db
+class TestNodeFiltering:
 
-    def setUp(self):
-        super(TestNodeFiltering, self).setUp()
-        self.user_one = AuthUserFactory()
-        self.user_two = AuthUserFactory()
-        self.project_one = ProjectFactory(title="Project One", is_public=True)
-        self.project_two = ProjectFactory(title="Project Two", description="One Three", is_public=True)
-        self.project_three = ProjectFactory(title="Three", is_public=True)
-        self.private_project_user_one = ProjectFactory(title="Private Project User One",
-                                                       is_public=False,
-                                                       creator=self.user_one)
-        self.private_project_user_two = ProjectFactory(title="Private Project User Two",
-                                                       is_public=False,
-                                                       creator=self.user_two)
-        self.folder = CollectionFactory()
-        self.bookmark_collection = find_bookmark_collection(self.user_one)
+    @pytest.fixture()
+    def user_one(self):
+        return AuthUserFactory()
 
-        self.url = "/{}nodes/".format(API_BASE)
+    @pytest.fixture()
+    def user_two(self):
+        return AuthUserFactory()
 
-        self.tag1, self.tag2 = 'tag1', 'tag2'
-        self.project_one.add_tag(self.tag1, Auth(self.project_one.creator), save=False)
-        self.project_one.add_tag(self.tag2, Auth(self.project_one.creator), save=False)
-        self.project_one.save()
+    @pytest.fixture()
+    def tag_one(self):
+        return 'tag_one'
 
-        self.project_two.add_tag(self.tag1, Auth(self.project_two.creator), save=True)
+    @pytest.fixture()
+    def tag_two(self):
+        return 'tag_two'
 
-        self.preprint = PreprintFactory(creator=self.user_one)
+    @pytest.fixture()
+    def public_project_one(self, tag_one, tag_two):
+        public_project_one = ProjectFactory(title='Public Project One', is_public=True)
+        public_project_one.add_tag(tag_one, Auth(public_project_one.creator), save=False)
+        public_project_one.add_tag(tag_two, Auth(public_project_one.creator), save=False)
+        public_project_one.save()
+        return public_project_one
 
-    def test_filtering_by_id(self):
-        url = '/{}nodes/?filter[id]={}'.format(API_BASE, self.project_one._id)
-        res = self.app.get(url, auth=self.user_one.auth)
-        assert_equal(res.status_code, 200)
+    @pytest.fixture()
+    def public_project_two(self, tag_one):
+        public_project_two = ProjectFactory(title='Public Project Two', description='reason is shook', is_public=True)
+        public_project_two.add_tag(tag_one, Auth(public_project_two.creator), save=True)
+        return public_project_two
+
+    @pytest.fixture()
+    def public_project_three(self):
+        return ProjectFactory(title='Unique Test Title', is_public=True)
+
+    @pytest.fixture()
+    def user_one_private_project(self, user_one):
+        return ProjectFactory(title='User One Private Project', is_public=False, creator=user_one)
+
+    @pytest.fixture()
+    def user_two_private_project(self, user_two):
+        return ProjectFactory(title='User Two Private Project', is_public=False, creator=user_two)
+
+    @pytest.fixture()
+    def preprint(self, user_one):
+        return PreprintFactory(creator=user_one)
+
+    @pytest.fixture()
+    def folder(self):
+        return CollectionFactory()
+
+    @pytest.fixture()
+    def bookmark_collection(self, user_one):
+        return find_bookmark_collection(user_one)
+
+    @pytest.fixture()
+    def url(self):
+        return '/{}nodes/'.format(API_BASE)
+
+    def test_filtering(self, app, user_one, public_project_one, public_project_two, public_project_three, user_one_private_project, user_two_private_project, preprint):
+
+        #   test_filtering_by_id
+        url = '/{}nodes/?filter[id]={}'.format(API_BASE, public_project_one._id)
+        res = app.get(url, auth=user_one.auth)
+        assert res.status_code == 200
         ids = [each['id'] for each in res.json['data']]
 
-        assert_in(self.project_one._id, ids)
-        assert_equal(len(ids), 1)
+        assert public_project_one._id in ids
+        assert len(ids) == 1
 
-    def test_filtering_by_multiple_ids(self):
-        url = '/{}nodes/?filter[id]={},{}'.format(API_BASE, self.project_one._id, self.project_two._id)
-        res = self.app.get(url, auth=self.user_one.auth)
-        assert_equal(res.status_code, 200)
+    #   test_filtering_by_multiple_ids
+        url = '/{}nodes/?filter[id]={},{}'.format(API_BASE, public_project_one._id, public_project_two._id)
+        res = app.get(url, auth=user_one.auth)
+        assert res.status_code == 200
         ids = [each['id'] for each in res.json['data']]
 
-        assert_in(self.project_one._id, ids)
-        assert_in(self.project_two._id, ids)
-        assert_equal(len(ids), 2)
+        assert public_project_one._id in ids
+        assert public_project_two._id in ids
+        assert len(ids) == 2
 
-    def test_filtering_by_multiple_ids_one_private(self):
-        url = '/{}nodes/?filter[id]={},{}'.format(API_BASE, self.project_one._id, self.private_project_user_two._id)
-        res = self.app.get(url, auth=self.user_one.auth)
-        assert_equal(res.status_code, 200)
+    #   test_filtering_by_multiple_ids_one_private
+        url = '/{}nodes/?filter[id]={},{}'.format(API_BASE, public_project_one._id, user_two_private_project._id)
+        res = app.get(url, auth=user_one.auth)
+        assert res.status_code == 200
         ids = [each['id'] for each in res.json['data']]
 
-        assert_in(self.project_one._id, ids)
-        assert_not_in(self.private_project_user_two._id, ids)
-        assert_equal(len(ids), 1)
+        assert public_project_one._id in ids
+        assert user_two_private_project._id not in ids
+        assert len(ids) == 1
 
-    def test_filtering_by_multiple_ids_brackets_in_query_params(self):
-        url = '/{}nodes/?filter[id]=[{},   {}]'.format(API_BASE, self.project_one._id, self.project_two._id)
-        res = self.app.get(url, auth=self.user_one.auth)
-        assert_equal(res.status_code, 200)
+    #   test_filtering_by_multiple_ids_brackets_in_query_params
+        url = '/{}nodes/?filter[id]=[{},   {}]'.format(API_BASE, public_project_one._id, public_project_two._id)
+        res = app.get(url, auth=user_one.auth)
+        assert res.status_code == 200
         ids = [each['id'] for each in res.json['data']]
 
-        assert_in(self.project_one._id, ids)
-        assert_in(self.project_two._id, ids)
-        assert_equal(len(ids), 2)
+        assert public_project_one._id in ids
+        assert public_project_two._id in ids
+        assert len(ids) == 2
 
-    def test_filtering_by_category(self):
-        project = ProjectFactory(creator=self.user_one, category='hypothesis')
-        project2 = ProjectFactory(creator=self.user_one, category='procedure')
+    #   test_filtering_on_title_not_equal
+        url = '/{}nodes/?filter[title][ne]=Public%20Project%20One'.format(API_BASE)
+        res = app.get(url, auth=user_one.auth)
+        assert res.status_code == 200
+        data = res.json['data']
+        assert len(data) == 4
+
+        titles = [each['attributes']['title'] for each in data]
+
+        assert public_project_one.title not in titles
+        assert public_project_two.title in titles
+        assert public_project_three.title in titles
+        assert user_one_private_project.title in titles
+
+    #   test_filtering_on_description_not_equal
+        url = '/{}nodes/?filter[description][ne]=reason%20is%20shook'.format(API_BASE)
+        res = app.get(url, auth=user_one.auth)
+        assert res.status_code == 200
+        data = res.json['data']
+        assert len(data) == 4
+
+        descriptions = [each['attributes']['description'] for each in data]
+
+        assert public_project_two.description not in descriptions
+        assert public_project_one.description in descriptions
+        assert public_project_three.description in descriptions
+        assert user_one_private_project.description in descriptions
+
+    #   test_filtering_on_preprint
+        url = '/{}nodes/?filter[preprint]=true'.format(API_BASE)
+        res = app.get(url, auth=user_one.auth)
+        assert res.status_code == 200
+        data = res.json['data']
+        ids = [each['id'] for each in data]
+
+        preprints = AbstractNode.find(Q('preprint_file', 'ne', None) & Q('_is_preprint_orphan', 'ne', True))
+        assert len(data) == len(preprints)
+        assert preprint.node._id in ids
+        assert public_project_one._id not in ids
+        assert public_project_two._id not in ids
+        assert public_project_three._id not in ids
+
+    #   test_filtering_out_preprint
+        url = '/{}nodes/?filter[preprint]=false'.format(API_BASE)
+        res = app.get(url, auth=user_one.auth)
+        assert res.status_code == 200
+        data = res.json['data']
+
+        ids = [each['id'] for each in data]
+
+        assert preprint.node._id not in ids
+        assert public_project_one._id in ids
+        assert public_project_two._id in ids
+        assert public_project_three._id in ids
+
+    def test_filtering_by_category(self, app, user_one):
+        project_one = ProjectFactory(creator=user_one, category='hypothesis')
+        project_two = ProjectFactory(creator=user_one, category='procedure')
         url = '/{}nodes/?filter[category]=hypothesis'.format(API_BASE)
-        res = self.app.get(url, auth=self.user_one.auth)
+        res = app.get(url, auth=user_one.auth)
 
         node_json = res.json['data']
         ids = [each['id'] for each in node_json]
 
-        assert_in(project._id, ids)
-        assert_not_in(project2._id, ids)
+        assert project_one._id in ids
+        assert project_two._id not in ids
 
-    def test_filtering_by_public(self):
-        project = ProjectFactory(creator=self.user_one, is_public=True)
-        project2 = ProjectFactory(creator=self.user_one, is_public=False)
+    def test_filtering_by_public(self, app, user_one):
+        public_project = ProjectFactory(creator=user_one, is_public=True)
+        private_project = ProjectFactory(creator=user_one, is_public=False)
 
         url = '/{}nodes/?filter[public]=false'.format(API_BASE)
-        res = self.app.get(url, auth=self.user_one.auth)
+        res = app.get(url, auth=user_one.auth)
         node_json = res.json['data']
 
         # No public projects returned
-        assert_false(
-            any([each['attributes']['public'] for each in node_json])
-        )
+        assert not any([each['attributes']['public'] for each in node_json])
 
         ids = [each['id'] for each in node_json]
-        assert_not_in(project._id, ids)
-        assert_in(project2._id, ids)
+        assert public_project._id not in ids
+        assert private_project._id in ids
 
         url = '/{}nodes/?filter[public]=true'.format(API_BASE)
-        res = self.app.get(url, auth=self.user_one.auth)
+        res = app.get(url, auth=user_one.auth)
         node_json = res.json['data']
 
         # No private projects returned
-        assert_true(
-            all([each['attributes']['public'] for each in node_json])
-        )
+        assert all([each['attributes']['public'] for each in node_json])
 
         ids = [each['id'] for each in node_json]
-        assert_not_in(project2._id, ids)
-        assert_in(project._id, ids)
+        assert private_project._id not in ids
+        assert public_project._id in ids
 
-    def test_filtering_tags(self):
-        # both project_one and project_two have tag1
-        url = '/{}nodes/?filter[tags]={}'.format(API_BASE, self.tag1)
+    def test_filtering_tags(self, app, public_project_one, public_project_two, tag_one, tag_two):
+        url = '/{}nodes/?filter[tags]={}'.format(API_BASE, tag_one)
 
-        res = self.app.get(url, auth=self.project_one.creator.auth)
+        res = app.get(url, auth=public_project_one.creator.auth)
         node_json = res.json['data']
 
         ids = [each['id'] for each in node_json]
-        assert_in(self.project_one._id, ids)
-        assert_in(self.project_two._id, ids)
+        assert public_project_one._id in ids
+        assert public_project_two._id in ids
 
-        # filtering two tags
-        # project_one has both tags; project_two only has one
-        url = '/{}nodes/?filter[tags]={}&filter[tags]={}'.format(API_BASE, self.tag1, self.tag2)
+    #   test_filter_two_tags
+        url = '/{}nodes/?filter[tags]={}&filter[tags]={}'.format(API_BASE, tag_one, tag_two)
 
-        res = self.app.get(url, auth=self.project_one.creator.auth)
+        res = app.get(url, auth=public_project_one.creator.auth)
         node_json = res.json['data']
 
         ids = [each['id'] for each in node_json]
-        assert_in(self.project_one._id, ids)
-        assert_not_in(self.project_two._id, ids)
+        assert public_project_one._id in ids
+        assert public_project_two._id not in ids
 
-    def test_filter_no_tags(self):
-        project_no_tag = ProjectFactory(title="Project One", is_public=True)
+    #   test_filter_no_tags
+        project_no_tag = ProjectFactory(title='Project No Tags', is_public=True)
 
         url = '/{}nodes/?filter[tags]=null'.format(API_BASE)
 
-        res = self.app.get(url, auth=project_no_tag.creator.auth)
+        res = app.get(url, auth=project_no_tag.creator.auth)
         node_json = res.json['data']
 
         ids = [each['id'] for each in node_json]
-        assert_not_in(self.project_one._id, ids)
-        assert_not_in(self.project_two._id, ids)
-        assert_in(project_no_tag._id, ids)
+        assert public_project_one._id not in ids
+        assert public_project_two._id not in ids
+        assert project_no_tag._id in ids
 
-    def test_filtering_tags_exact(self):
-        self.project_one.add_tag('cats', Auth(self.user_one))
-        self.project_two.add_tag('cats', Auth(self.user_one))
-        self.project_one.add_tag('cat', Auth(self.user_one))
-        res = self.app.get(
+    def test_filtering_tags_exact(self, app, user_one, public_project_one, public_project_two):
+        public_project_one.add_tag('logic', Auth(user_one))
+        public_project_two.add_tag('logic', Auth(user_one))
+        public_project_one.add_tag('reason', Auth(user_one))
+        res = app.get(
+            '/{}nodes/?filter[tags]=reason'.format(
+                API_BASE
+            ),
+            auth=user_one.auth
+        )
+        assert len(res.json.get('data')) == 1
+
+    def test_filtering_tags_capitalized_query(self, app, user_one, public_project_one):
+        public_project_one.add_tag('covfefe', Auth(user_one))
+        res = app.get(
+            '/{}nodes/?filter[tags]=COVFEFE'.format(
+                API_BASE
+            ),
+            auth=user_one.auth
+        )
+        assert len(res.json.get('data')) == 1
+
+    def test_filtering_tags_capitalized_tag(self, app, user_one, public_project_one):
+        public_project_one.add_tag('COVFEFE', Auth(user_one))
+        res = app.get(
+            '/{}nodes/?filter[tags]=covfefe'.format(
+                API_BASE
+            ),
+            auth=user_one.auth
+        )
+        assert len(res.json.get('data')) == 1
+
+    def test_filtering_on_multiple_tags(self, app, user_one, public_project_one):
+        public_project_one.add_tag('lovechild', Auth(user_one))
+        public_project_one.add_tag('flowerchild', Auth(user_one))
+        res = app.get(
+            '/{}nodes/?filter[tags]=lovechild&filter[tags]=flowerchild'.format(
+                API_BASE
+            ),
+            auth=user_one.auth
+        )
+        assert len(res.json.get('data')) == 1
+
+    def test_filtering_on_multiple_tags_must_match_both(self, app, user_one, public_project_one):
+        public_project_one.add_tag('lovechild', Auth(user_one))
+        res = app.get(
+            '/{}nodes/?filter[tags]=lovechild&filter[tags]=flowerchild'.format(
+                API_BASE
+            ),
+            auth=user_one.auth
+        )
+        assert len(res.json.get('data')) == 0
+
+    def test_filtering_tags_returns_distinct(self, app, user_one, public_project_one):
+        # regression test for returning multiple of the same file
+        public_project_one.add_tag('cat', Auth(user_one))
+        public_project_one.add_tag('cAt', Auth(user_one))
+        public_project_one.add_tag('caT', Auth(user_one))
+        public_project_one.add_tag('CAT', Auth(user_one))
+        res = app.get(
             '/{}nodes/?filter[tags]=cat'.format(
                 API_BASE
             ),
-            auth=self.user_one.auth
+            auth=user_one.auth
         )
-        assert_equal(len(res.json.get('data')), 1)
+        assert len(res.json.get('data')) == 1
 
-    def test_filtering_tags_capitalized_query(self):
-        self.project_one.add_tag('cat', Auth(self.user_one))
-        res = self.app.get(
-            '/{}nodes/?filter[tags]=CAT'.format(
-                API_BASE
-            ),
-            auth=self.user_one.auth
-        )
-        assert_equal(len(res.json.get('data')), 1)
-
-    def test_filtering_tags_capitalized_tag(self):
-        self.project_one.add_tag('CAT', Auth(self.user_one))
-        res = self.app.get(
-            '/{}nodes/?filter[tags]=cat'.format(
-                API_BASE
-            ),
-            auth=self.user_one.auth
-        )
-        assert_equal(len(res.json.get('data')), 1)
-
-    def test_filtering_on_multiple_tags(self):
-        self.project_one.add_tag('cat', Auth(self.user_one))
-        self.project_one.add_tag('sand', Auth(self.user_one))
-        res = self.app.get(
-            '/{}nodes/?filter[tags]=cat&filter[tags]=sand'.format(
-                API_BASE
-            ),
-            auth=self.user_one.auth
-        )
-        assert_equal(len(res.json.get('data')), 1)
-
-    def test_filtering_on_multiple_tags_must_match_both(self):
-        self.project_one.add_tag('cat', Auth(self.user_one))
-        res = self.app.get(
-            '/{}nodes/?filter[tags]=cat&filter[tags]=sand'.format(
-                API_BASE
-            ),
-            auth=self.user_one.auth
-        )
-        assert_equal(len(res.json.get('data')), 0)
-
-    def test_filtering_tags_returns_distinct(self):
-       # regression test for returning multiple of the same file
-        self.project_one.add_tag('cat', Auth(self.user_one))
-        self.project_one.add_tag('cAt', Auth(self.user_one))
-        self.project_one.add_tag('caT', Auth(self.user_one))
-        self.project_one.add_tag('CAT', Auth(self.user_one))
-        res = self.app.get(
-            '/{}nodes/?filter[tags]=cat'.format(
-                API_BASE
-            ),
-            auth=self.user_one.auth
-        )
-        assert_equal(len(res.json.get('data')), 1)
-
-    def test_filtering_contributors(self):
-        res = self.app.get(
+    def test_filtering_contributors(self, app, user_one, user_one_private_project, preprint):
+        res = app.get(
             '/{}nodes/?filter[contributors]={}'.format(
-                API_BASE, self.user_one._id
+                API_BASE, user_one._id
             ),
-            auth=self.user_one.auth
+            auth=user_one.auth
         )
-        assert_equal(len(res.json.get('data')), 2)
+        assert len(res.json.get('data')) == 2
 
-    def test_filtering_contributors_bad_id(self):
-        res = self.app.get(
-            '/{}nodes/?filter[contributors]=acatdresseduplikeahuman'.format(
+    def test_filtering_contributors_bad_id(self, app, user_one):
+        res = app.get(
+            '/{}nodes/?filter[contributors]=alovechilddresseduplikeaflowerchild'.format(
                 API_BASE
             ),
-            auth=self.user_one.auth
+            auth=user_one.auth
         )
-        assert_equal(len(res.json.get('data')), 0)
+        assert len(res.json.get('data')) == 0
 
-    def test_get_all_projects_with_no_filter_logged_in(self):
-        res = self.app.get(self.url, auth=self.user_one.auth)
+    def test_get_projects(self, app, user_one, public_project_one, public_project_two, public_project_three, user_one_private_project, user_two_private_project, folder, bookmark_collection, url):
+
+        #   test_get_all_projects_with_no_filter_logged_in
+        res = app.get(url, auth=user_one.auth)
         node_json = res.json['data']
 
         ids = [each['id'] for each in node_json]
-        assert_in(self.project_one._id, ids)
-        assert_in(self.project_two._id, ids)
-        assert_in(self.project_three._id, ids)
-        assert_in(self.private_project_user_one._id, ids)
-        assert_not_in(self.private_project_user_two._id, ids)
-        assert_not_in(self.folder._id, ids)
-        assert_not_in(self.bookmark_collection._id, ids)
+        assert public_project_one._id in ids
+        assert public_project_two._id in ids
+        assert public_project_three._id in ids
+        assert user_one_private_project._id in ids
+        assert user_two_private_project._id not in ids
+        assert folder._id not in ids
+        assert bookmark_collection._id not in ids
 
-    def test_get_all_projects_with_no_filter_not_logged_in(self):
-        res = self.app.get(self.url)
+    #   test_get_all_projects_with_no_filter_not_logged_in
+        res = app.get(url)
         node_json = res.json['data']
         ids = [each['id'] for each in node_json]
-        assert_in(self.project_one._id, ids)
-        assert_in(self.project_two._id, ids)
-        assert_in(self.project_three._id, ids)
-        assert_not_in(self.private_project_user_one._id, ids)
-        assert_not_in(self.private_project_user_two._id, ids)
-        assert_not_in(self.folder._id, ids)
-        assert_not_in(self.bookmark_collection._id, ids)
+        assert public_project_one._id in ids
+        assert public_project_two._id in ids
+        assert public_project_three._id in ids
+        assert user_one_private_project._id not in ids
+        assert user_two_private_project._id not in ids
+        assert folder._id not in ids
+        assert bookmark_collection._id not in ids
 
-    def test_get_one_project_with_exact_filter_logged_in(self):
-        url = "/{}nodes/?filter[title]=Project%20One".format(API_BASE)
+    #   test_get_one_project_with_exact_filter_logged_in
+        url = '/{}nodes/?filter[title]=Project%20One'.format(API_BASE)
 
-        res = self.app.get(url, auth=self.user_one.auth)
-        node_json = res.json['data']
-
-        ids = [each['id'] for each in node_json]
-        assert_in(self.project_one._id, ids)
-        assert_not_in(self.project_two._id, ids)
-        assert_not_in(self.project_three._id, ids)
-        assert_not_in(self.private_project_user_one._id, ids)
-        assert_not_in(self.private_project_user_two._id, ids)
-        assert_not_in(self.folder._id, ids)
-        assert_not_in(self.bookmark_collection._id, ids)
-
-    def test_get_one_project_with_exact_filter_not_logged_in(self):
-        url = "/{}nodes/?filter[title]=Project%20One".format(API_BASE)
-
-        res = self.app.get(url)
+        res = app.get(url, auth=user_one.auth)
         node_json = res.json['data']
 
         ids = [each['id'] for each in node_json]
-        assert_in(self.project_one._id, ids)
-        assert_not_in(self.project_two._id, ids)
-        assert_not_in(self.project_three._id, ids)
-        assert_not_in(self.private_project_user_one._id, ids)
-        assert_not_in(self.private_project_user_two._id, ids)
-        assert_not_in(self.folder._id, ids)
-        assert_not_in(self.bookmark_collection._id, ids)
+        assert public_project_one._id in ids
+        assert public_project_two._id not in ids
+        assert public_project_three._id not in ids
+        assert user_one_private_project._id not in ids
+        assert user_two_private_project._id not in ids
+        assert folder._id not in ids
+        assert bookmark_collection._id not in ids
 
-    def test_get_some_projects_with_substring_logged_in(self):
-        url = "/{}nodes/?filter[title]=Two".format(API_BASE)
+    #   test_get_one_project_with_exact_filter_not_logged_in
+        url = '/{}nodes/?filter[title]=Project%20One'.format(API_BASE)
 
-        res = self.app.get(url, auth=self.user_one.auth)
+        res = app.get(url)
         node_json = res.json['data']
 
         ids = [each['id'] for each in node_json]
-        assert_not_in(self.project_one._id, ids)
-        assert_in(self.project_two._id, ids)
-        assert_not_in(self.project_three._id, ids)
-        assert_not_in(self.private_project_user_one._id, ids)
-        assert_not_in(self.private_project_user_two._id, ids)
-        assert_not_in(self.folder._id, ids)
-        assert_not_in(self.bookmark_collection._id, ids)
+        assert public_project_one._id in ids
+        assert public_project_two._id not in ids
+        assert public_project_three._id not in ids
+        assert user_one_private_project._id not in ids
+        assert user_two_private_project._id not in ids
+        assert folder._id not in ids
+        assert bookmark_collection._id not in ids
 
-    def test_get_some_projects_with_substring_not_logged_in(self):
-        url = "/{}nodes/?filter[title]=Two".format(API_BASE)
+    #   test_get_some_projects_with_substring_logged_in
+        url = '/{}nodes/?filter[title]=Two'.format(API_BASE)
 
-        res = self.app.get(url, auth=self.user_one.auth)
+        res = app.get(url, auth=user_one.auth)
         node_json = res.json['data']
 
         ids = [each['id'] for each in node_json]
-        assert_not_in(self.project_one._id, ids)
-        assert_in(self.project_two._id, ids)
-        assert_not_in(self.project_three._id, ids)
-        assert_not_in(self.private_project_user_one._id, ids)
-        assert_not_in(self.private_project_user_two._id, ids)
-        assert_not_in(self.folder._id, ids)
-        assert_not_in(self.bookmark_collection._id, ids)
+        assert public_project_one._id not in ids
+        assert public_project_two._id in ids
+        assert public_project_three._id not in ids
+        assert user_one_private_project._id not in ids
+        assert user_two_private_project._id not in ids
+        assert folder._id not in ids
+        assert bookmark_collection._id not in ids
 
-    def test_get_only_public_or_my_projects_with_filter_logged_in(self):
-        url = "/{}nodes/?filter[title]=Project".format(API_BASE)
+    #   test_get_some_projects_with_substring_not_logged_in
+        url = '/{}nodes/?filter[title]=Two'.format(API_BASE)
 
-        res = self.app.get(url, auth=self.user_one.auth)
+        res = app.get(url, auth=user_one.auth)
         node_json = res.json['data']
 
         ids = [each['id'] for each in node_json]
-        assert_in(self.project_one._id, ids)
-        assert_in(self.project_two._id, ids)
-        assert_not_in(self.project_three._id, ids)
-        assert_in(self.private_project_user_one._id, ids)
-        assert_not_in(self.private_project_user_two._id, ids)
-        assert_not_in(self.folder._id, ids)
-        assert_not_in(self.bookmark_collection._id, ids)
+        assert public_project_one._id not in ids
+        assert public_project_two._id in ids
+        assert public_project_three._id not in ids
+        assert user_one_private_project._id not in ids
+        assert user_two_private_project._id not in ids
+        assert folder._id not in ids
+        assert bookmark_collection._id not in ids
 
-    def test_get_only_public_projects_with_filter_not_logged_in(self):
-        url = "/{}nodes/?filter[title]=Project".format(API_BASE)
+    #   test_get_only_public_or_my_projects_with_filter_logged_in
+        url = '/{}nodes/?filter[title]=Project'.format(API_BASE)
 
-        res = self.app.get(url)
+        res = app.get(url, auth=user_one.auth)
         node_json = res.json['data']
 
         ids = [each['id'] for each in node_json]
-        assert_in(self.project_one._id, ids)
-        assert_in(self.project_two._id, ids)
-        assert_not_in(self.project_three._id, ids)
-        assert_not_in(self.private_project_user_one._id, ids)
-        assert_not_in(self.private_project_user_two._id, ids)
-        assert_not_in(self.folder._id, ids)
-        assert_not_in(self.bookmark_collection._id, ids)
+        assert public_project_one._id in ids
+        assert public_project_two._id in ids
+        assert public_project_three._id not in ids
+        assert user_one_private_project._id in ids
+        assert user_two_private_project._id not in ids
+        assert folder._id not in ids
+        assert bookmark_collection._id not in ids
 
-    def test_alternate_filtering_field_logged_in(self):
-        url = "/{}nodes/?filter[description]=Three".format(API_BASE)
+    #   test_get_only_public_projects_with_filter_not_logged_in
+        url = '/{}nodes/?filter[title]=Project'.format(API_BASE)
 
-        res = self.app.get(url, auth=self.user_one.auth)
+        res = app.get(url)
         node_json = res.json['data']
 
         ids = [each['id'] for each in node_json]
-        assert_not_in(self.project_one._id, ids)
-        assert_in(self.project_two._id, ids)
-        assert_not_in(self.project_three._id, ids)
-        assert_not_in(self.private_project_user_one._id, ids)
-        assert_not_in(self.private_project_user_two._id, ids)
-        assert_not_in(self.folder._id, ids)
-        assert_not_in(self.bookmark_collection._id, ids)
+        assert public_project_one._id in ids
+        assert public_project_two._id in ids
+        assert public_project_three._id not in ids
+        assert user_one_private_project._id not in ids
+        assert user_two_private_project._id not in ids
+        assert folder._id not in ids
+        assert bookmark_collection._id not in ids
 
-    def test_alternate_filtering_field_not_logged_in(self):
-        url = "/{}nodes/?filter[description]=Three".format(API_BASE)
+    #   test_alternate_filtering_field_logged_in
+        url = '/{}nodes/?filter[description]=shook'.format(API_BASE)
 
-        res = self.app.get(url)
+        res = app.get(url, auth=user_one.auth)
         node_json = res.json['data']
 
         ids = [each['id'] for each in node_json]
-        assert_not_in(self.project_one._id, ids)
-        assert_in(self.project_two._id, ids)
-        assert_not_in(self.project_three._id, ids)
-        assert_not_in(self.private_project_user_one._id, ids)
-        assert_not_in(self.private_project_user_two._id, ids)
-        assert_not_in(self.folder._id, ids)
-        assert_not_in(self.bookmark_collection._id, ids)
+        assert public_project_one._id not in ids
+        assert public_project_two._id in ids
+        assert public_project_three._id not in ids
+        assert user_one_private_project._id not in ids
+        assert user_two_private_project._id not in ids
+        assert folder._id not in ids
+        assert bookmark_collection._id not in ids
 
-    def test_incorrect_filtering_field_not_logged_in(self):
+    #   test_alternate_filtering_field_not_logged_in
+        url = '/{}nodes/?filter[description]=reason'.format(API_BASE)
+
+        res = app.get(url)
+        node_json = res.json['data']
+
+        ids = [each['id'] for each in node_json]
+        assert public_project_one._id not in ids
+        assert public_project_two._id in ids
+        assert public_project_three._id not in ids
+        assert user_one_private_project._id not in ids
+        assert user_two_private_project._id not in ids
+        assert folder._id not in ids
+        assert bookmark_collection._id not in ids
+
+    def test_incorrect_filtering_field_not_logged_in(self, app):
         url = '/{}nodes/?filter[notafield]=bogus'.format(API_BASE)
 
-        res = self.app.get(url, expect_errors=True)
-        assert_equal(res.status_code, 400)
+        res = app.get(url, expect_errors=True)
+        assert res.status_code == 400
         errors = res.json['errors']
-        assert_equal(len(errors), 1)
-        assert_equal(errors[0]['detail'], "'notafield' is not a valid field for this endpoint.")
+        assert len(errors) == 1
+        assert errors[0]['detail'] == '\'notafield\' is not a valid field for this endpoint.'
 
-    def test_filtering_on_root(self):
+    def test_filtering_on_root(self, app, user_one):
         root = ProjectFactory(is_public=True)
         child = ProjectFactory(parent=root, is_public=True)
         ProjectFactory(parent=root, is_public=True)
         ProjectFactory(parent=child, is_public=True)
         # create some unrelated projects
-        ProjectFactory(title="Road Dogg Jesse James", is_public=True)
-        ProjectFactory(title="Badd *** Billy Gunn", is_public=True)
+        ProjectFactory(title='A theory on why reason has a ridiculously large project', is_public=True)
+        ProjectFactory(title='How one intern changed thousands of lines within a codebase', is_public=True)
 
         url = '/{}nodes/?filter[root]={}'.format(API_BASE, root._id)
 
-        res = self.app.get(url, auth=self.user_one.auth)
-        assert_equal(res.status_code, 200)
+        res = app.get(url, auth=user_one.auth)
+        assert res.status_code == 200
 
-        root_nodes = Node.objects.filter(root__guids___id=root._id)
+        root_nodes = AbstractNode.objects.filter(root__guids___id=root._id)
 
-        assert_equal(len(res.json['data']), root_nodes.count())
+        assert len(res.json['data']) == root_nodes.count()
 
-    def test_filtering_on_parent(self):
+    def test_filtering_on_parent(self, app):
         root = ProjectFactory(is_public=True)
-        parent = NodeFactory(parent=root, is_public=True)
-        parent2 = NodeFactory(is_public=True, parent=root)
-        child = NodeFactory(parent=parent, is_public=True)
-        child2 = NodeFactory(parent=parent, is_public=True)
+        parent_one = NodeFactory(parent=root, is_public=True)
+        parent_two = NodeFactory(is_public=True, parent=root)
+        child_one = NodeFactory(parent=parent_one, is_public=True)
+        child_two = NodeFactory(parent=parent_one, is_public=True)
 
-        url = '/{}nodes/?filter[parent]={}'.format(API_BASE, parent._id)
-        res = self.app.get(url)
-        assert_equal(res.status_code, 200)
+        url = '/{}nodes/?filter[parent]={}'.format(API_BASE, parent_one._id)
+        res = app.get(url)
+        assert res.status_code == 200
 
         guids = [each['id'] for each in res.json['data']]
-        assert_in(child._id, guids)
-        assert_in(child2._id, guids)
-        assert_not_in(parent._id, guids)
-        assert_not_in(parent2._id, guids)
+        assert child_one._id in guids
+        assert child_two._id in guids
+        assert parent_one._id not in guids
+        assert parent_two._id not in guids
 
-    def test_filtering_on_null_parent(self):
+    def test_filtering_on_null_parent(self, app):
         # add some nodes TO be included
         new_user = AuthUserFactory()
         root = ProjectFactory(is_public=True)
-        root2 = ProjectFactory(is_public=True)
+        root_two = ProjectFactory(is_public=True)
         # Build up a some of nodes not to be included
-        child = ProjectFactory(parent=root, is_public=True)
-        child2 = ProjectFactory(parent=root, is_public=True)
-        grandchild = ProjectFactory(parent=child, is_public=True)
+        child_one = ProjectFactory(parent=root, is_public=True)
+        child_two = ProjectFactory(parent=root, is_public=True)
+        grandchild = ProjectFactory(parent=child_one, is_public=True)
 
         url = '/{}nodes/?filter[parent]=null'.format(API_BASE)
 
-        res = self.app.get(url, auth=new_user.auth)
-        assert_equal(res.status_code, 200)
+        res = app.get(url, auth=new_user.auth)
+        assert res.status_code == 200
 
-        public_root_nodes = Node.find(Q('is_public', 'eq', True)).get_roots()
-        assert_equal(len(res.json['data']), public_root_nodes.count())
+        public_root_nodes = AbstractNode.find(Q('is_public', 'eq', True)).get_roots()
+        assert len(res.json['data']) == public_root_nodes.count()
 
         guids = [each['id'] for each in res.json['data']]
-        assert_in(root._id, guids)
-        assert_in(root2._id, guids)
-        assert_not_in(child._id, guids)
-        assert_not_in(child2._id, guids)
-        assert_not_in(grandchild._id, guids)
+        assert root._id in guids
+        assert root_two._id in guids
+        assert child_one._id not in guids
+        assert child_two._id not in guids
+        assert grandchild._id not in guids
 
-    def test_filtering_on_title_not_equal(self):
-        url = '/{}nodes/?filter[title][ne]=Project%20One'.format(API_BASE)
-        res = self.app.get(url, auth=self.user_one.auth)
-        assert_equal(res.status_code, 200)
-        data = res.json['data']
-        assert_equal(len(data), 4)
-
-        titles = [each['attributes']['title'] for each in data]
-
-        assert_not_in(self.project_one.title, titles)
-        assert_in(self.project_two.title, titles)
-        assert_in(self.project_three.title, titles)
-        assert_in(self.private_project_user_one.title, titles)
-
-    def test_filtering_on_description_not_equal(self):
-        url = '/{}nodes/?filter[description][ne]=One%20Three'.format(API_BASE)
-        res = self.app.get(url, auth=self.user_one.auth)
-        assert_equal(res.status_code, 200)
-        data = res.json['data']
-        assert_equal(len(data), 4)
-
-        descriptions = [each['attributes']['description'] for each in data]
-
-        assert_not_in(self.project_two.description, descriptions)
-        assert_in(self.project_one.description, descriptions)
-        assert_in(self.project_three.description, descriptions)
-        assert_in(self.private_project_user_one.description, descriptions)
-
-    def test_filtering_on_preprint(self):
-        url = '/{}nodes/?filter[preprint]=true'.format(API_BASE)
-        res = self.app.get(url, auth=self.user_one.auth)
-        assert_equal(res.status_code, 200)
-        data = res.json['data']
-        ids = [each['id'] for each in data]
-
-        preprints = Node.find(Q('preprint_file', 'ne', None) & Q('_is_preprint_orphan', 'ne', True))
-        assert_equal(len(data), len(preprints))
-        assert_in(self.preprint.node._id, ids)
-        assert_not_in(self.project_one._id, ids)
-        assert_not_in(self.project_two._id, ids)
-        assert_not_in(self.project_three._id, ids)
-
-    def test_filtering_out_preprint(self):
-        url = '/{}nodes/?filter[preprint]=false'.format(API_BASE)
-        res = self.app.get(url, auth=self.user_one.auth)
-        assert_equal(res.status_code, 200)
-        data = res.json['data']
-
-        ids = [each['id'] for each in data]
-
-        assert_not_in(self.preprint.node._id, ids)
-        assert_in(self.project_one._id, ids)
-        assert_in(self.project_two._id, ids)
-        assert_in(self.project_three._id, ids)
-
-    def test_preprint_filter_excludes_orphans(self):
-        orphan = PreprintFactory(creator=self.preprint.node.creator)
+    def test_preprint_filter_excludes_orphans(self, app, user_one, preprint, public_project_one, public_project_two, public_project_three):
+        orphan = PreprintFactory(creator=preprint.node.creator)
         orphan._is_preprint_orphan = True
         orphan.save()
 
         url = '/{}nodes/?filter[preprint]=true'.format(API_BASE)
-        res = self.app.get(url, auth=self.user_one.auth)
-        assert_equal(res.status_code, 200)
+        res = app.get(url, auth=user_one.auth)
+        assert res.status_code == 200
         data = res.json['data']
 
         ids = [each['id'] for each in data]
 
-        assert_in(self.preprint.node._id, ids)
-        assert_not_in(orphan._id, ids)
-        assert_not_in(self.project_one._id, ids)
-        assert_not_in(self.project_two._id, ids)
-        assert_not_in(self.project_three._id, ids)
+        assert preprint.node._id in ids
+        assert orphan._id not in ids
+        assert public_project_one._id not in ids
+        assert public_project_two._id not in ids
+        assert public_project_three._id not in ids
 
-    def test_deleted_preprint_file_not_in_filtered_results(self):
-        orphan = PreprintFactory(creator=self.preprint.node.creator)
+    def test_deleted_preprint_file_not_in_filtered_results(self, app, user_one, preprint):
+        orphan = PreprintFactory(creator=preprint.node.creator)
 
         # orphan the preprint by deleting the file
         orphan.node.preprint_file = None
         orphan.node.save()
         url = '/{}nodes/?filter[preprint]=true'.format(API_BASE)
-        res = self.app.get(url, auth=self.user_one.auth)
-        assert_equal(res.status_code, 200)
+        res = app.get(url, auth=user_one.auth)
+        assert res.status_code == 200
         data = res.json['data']
 
         ids = [each['id'] for each in data]
 
-        assert_in(self.preprint.node._id, ids)
-        assert_not_in(orphan.node._id, ids)
+        assert preprint.node._id in ids
+        assert orphan.node._id not in ids
 
-    def test_deleted_preprint_file_in_preprint_false_filtered_results(self):
-        orphan = PreprintFactory(creator=self.preprint.node.creator)
+    def test_deleted_preprint_file_in_preprint_false_filtered_results(self, app, user_one, preprint):
+        orphan = PreprintFactory(creator=preprint.node.creator)
 
         # orphan the preprint by deleting the file
         orphan.node.preprint_file = None
@@ -658,148 +693,143 @@ class TestNodeFiltering(ApiTestCase):
         orphan.refresh_from_db()
 
         url = '/{}nodes/?filter[preprint]=false'.format(API_BASE)
-        res = self.app.get(url, auth=self.user_one.auth)
-        assert_equal(res.status_code, 200)
+        res = app.get(url, auth=user_one.auth)
+        assert res.status_code == 200
         data = res.json['data']
 
         ids = [each['id'] for each in data]
 
-        assert_not_in(self.preprint.node._id, ids)
-        assert_in(orphan.node._id, ids)
+        assert preprint.node._id not in ids
+        assert orphan.node._id in ids
 
-    def test_unpublished_preprint_not_in_preprint_true_filter_results(self):
-        unpublished = PreprintFactory(creator=self.preprint.node.creator, is_published=False)
-        assert_false(unpublished.is_published)
+    def test_unpublished_preprint_not_in_preprint_true_filter_results(self, app, user_one, preprint):
+        unpublished = PreprintFactory(creator=preprint.node.creator, is_published=False)
+        assert not unpublished.is_published
 
         url = '/{}nodes/?filter[preprint]=true'.format(API_BASE)
-        res = self.app.get(url, auth=self.user_one.auth)
-        assert_equal(res.status_code, 200)
+        res = app.get(url, auth=user_one.auth)
+        assert res.status_code == 200
         data = res.json['data']
         ids = [each['id'] for each in data]
 
-        assert_in(self.preprint.node._id, ids)
-        assert_not_in(unpublished.node._id, ids)
+        assert preprint.node._id in ids
+        assert unpublished.node._id not in ids
 
-    def test_unpublished_preprint_in_preprint_false_filter_results(self):
-        unpublished = PreprintFactory(creator=self.preprint.node.creator, is_published=False)
-        assert_false(unpublished.is_published)
+    def test_unpublished_preprint_in_preprint_false_filter_results(self, app, user_one, preprint):
+        unpublished = PreprintFactory(creator=preprint.node.creator, is_published=False)
+        assert not unpublished.is_published
 
         url = '/{}nodes/?filter[preprint]=false'.format(API_BASE)
-        res = self.app.get(url, auth=self.user_one.auth)
-        assert_equal(res.status_code, 200)
+        res = app.get(url, auth=user_one.auth)
+        assert res.status_code == 200
         data = res.json['data']
         ids = [each['id'] for each in data]
 
-        assert_not_in(self.preprint.node._id, ids)
-        assert_in(unpublished.node._id, ids)
+        assert preprint.node._id not in ids
+        assert unpublished.node._id in ids
 
 
-class TestNodeCreate(ApiTestCase):
+@pytest.mark.django_db
+class TestNodeCreate:
 
-    def setUp(self):
-        super(TestNodeCreate, self).setUp()
-        self.user_one = AuthUserFactory()
-        self.url = '/{}nodes/'.format(API_BASE)
+    @pytest.fixture()
+    def user_one(self):
+        return AuthUserFactory()
 
-        self.title = 'Cool Project'
-        self.description = 'A Properly Cool Project'
-        self.category = 'data'
+    @pytest.fixture()
+    def user_two(self):
+        return AuthUserFactory()
 
-        self.user_two = AuthUserFactory()
+    @pytest.fixture()
+    def url(self):
+        return '/{}nodes/'.format(API_BASE)
 
-        self.public_project = {
-            'data': {
-                'type': 'nodes',
-                'attributes':
-                    {
-                        'title': self.title,
-                        'description': self.description,
-                        'category': self.category,
-                        'public': True,
-                    }
-            }
-        }
-        self.private_project = {
+    @pytest.fixture()
+    def title(self):
+        return 'Rheisen is bored'
+
+    @pytest.fixture()
+    def description(self):
+        return 'Pytest conversions are tedious'
+
+    @pytest.fixture()
+    def category(self):
+        return 'data'
+
+    @pytest.fixture()
+    def public_project(self, title, description, category):
+        return {
             'data': {
                 'type': 'nodes',
                 'attributes': {
-                    'title': self.title,
-                    'description': self.description,
-                    'category': self.category,
+                    'title': title,
+                    'description': description,
+                    'category': category,
+                    'public': True,
+                }
+            }
+        }
+
+    @pytest.fixture()
+    def private_project(self, title, description, category):
+        return {
+            'data': {
+                'type': 'nodes',
+                'attributes': {
+                    'title': title,
+                    'description': description,
+                    'category': category,
                     'public': False
                 }
             }
         }
-    def test_node_create_invalid_data(self):
-        res = self.app.post_json_api(self.url, "Incorrect data", auth=self.user_one.auth, expect_errors=True)
-        assert_equal(res.status_code, 400)
-        assert_equal(res.json['errors'][0]['detail'], "Malformed request.")
 
-        res = self.app.post_json_api(self.url, ["Incorrect data"], auth=self.user_one.auth, expect_errors=True)
-        assert_equal(res.status_code, 400)
-        assert_equal(res.json['errors'][0]['detail'], "Malformed request.")
+    def test_create_node_errors(self, app, user_one, public_project, private_project, url):
 
-    def test_creates_public_project_logged_out(self):
-        res = self.app.post_json_api(self.url, self.public_project, expect_errors=True)
-        assert_equal(res.status_code, 401)
-        assert_in('detail', res.json['errors'][0])
+        #   test_node_create_invalid_data
+        res = app.post_json_api(url, 'Incorrect data', auth=user_one.auth, expect_errors=True)
+        assert res.status_code == 400
+        assert res.json['errors'][0]['detail'] == exceptions.ParseError.default_detail
 
-    def test_creates_public_project_logged_in(self):
-        res = self.app.post_json_api(self.url, self.public_project, expect_errors=True, auth=self.user_one.auth)
-        assert_equal(res.status_code, 201)
-        assert_equal(res.json['data']['attributes']['title'], self.public_project['data']['attributes']['title'])
-        assert_equal(res.json['data']['attributes']['description'], self.public_project['data']['attributes']['description'])
-        assert_equal(res.json['data']['attributes']['category'], self.public_project['data']['attributes']['category'])
-        assert_equal(res.content_type, 'application/vnd.api+json')
+        res = app.post_json_api(url, ['Incorrect data'], auth=user_one.auth, expect_errors=True)
+        assert res.status_code == 400
+        assert res.json['errors'][0]['detail'] == exceptions.ParseError.default_detail
+
+    #   test_creates_public_project_logged_out
+        res = app.post_json_api(url, public_project, expect_errors=True)
+        assert res.status_code == 401
+        assert 'detail' in res.json['errors'][0]
+
+    #   test_creates_private_project_logged_out
+        res = app.post_json_api(url, private_project, expect_errors=True)
+        assert res.status_code == 401
+        assert 'detail' in res.json['errors'][0]
+
+    def test_creates_public_project_logged_in(self, app, user_one, public_project, url):
+        res = app.post_json_api(url, public_project, expect_errors=True, auth=user_one.auth)
+        assert res.status_code == 201
+        assert res.json['data']['attributes']['title'] == public_project['data']['attributes']['title']
+        assert res.json['data']['attributes']['description'] == public_project['data']['attributes']['description']
+        assert res.json['data']['attributes']['category'] == public_project['data']['attributes']['category']
+        assert res.content_type == 'application/vnd.api+json'
         pid = res.json['data']['id']
-        project = Node.load(pid)
-        assert_equal(project.logs.latest().action, NodeLog.PROJECT_CREATED)
+        project = AbstractNode.load(pid)
+        assert project.logs.latest().action == NodeLog.PROJECT_CREATED
 
-    def test_creates_private_project_logged_out(self):
-        res = self.app.post_json_api(self.url, self.private_project, expect_errors=True)
-        assert_equal(res.status_code, 401)
-        assert_in('detail', res.json['errors'][0])
-
-    def test_creates_private_project_logged_in_contributor(self):
-        res = self.app.post_json_api(self.url, self.private_project, auth=self.user_one.auth)
-        assert_equal(res.status_code, 201)
-        assert_equal(res.content_type, 'application/vnd.api+json')
-        assert_equal(res.json['data']['attributes']['title'], self.private_project['data']['attributes']['title'])
-        assert_equal(res.json['data']['attributes']['description'], self.private_project['data']['attributes']['description'])
-        assert_equal(res.json['data']['attributes']['category'], self.private_project['data']['attributes']['category'])
+    def test_creates_private_project_logged_in_contributor(self, app, user_one, private_project, url):
+        res = app.post_json_api(url, private_project, auth=user_one.auth)
+        assert res.status_code == 201
+        assert res.content_type == 'application/vnd.api+json'
+        assert res.json['data']['attributes']['title'] == private_project['data']['attributes']['title']
+        assert res.json['data']['attributes']['description'] == private_project['data']['attributes']['description']
+        assert res.json['data']['attributes']['category'] == private_project['data']['attributes']['category']
         pid = res.json['data']['id']
-        project = Node.load(pid)
-        assert_equal(project.logs.latest().action, NodeLog.PROJECT_CREATED)
+        project = AbstractNode.load(pid)
+        assert project.logs.latest().action == NodeLog.PROJECT_CREATED
 
-    def test_creates_project_from_template(self):
-        template_from = ProjectFactory(creator=self.user_one, is_public=True)
-        template_component = ProjectFactory(creator=self.user_one, is_public=True, parent=template_from)
-        templated_project_title = 'Templated Project'
-        templated_project_data = {
-            'data': {
-                'type': 'nodes',
-                'attributes':
-                    {
-                        'title': templated_project_title,
-                        'category': self.category,
-                        'template_from': template_from._id,
-                    }
-            }
-        }
+    def test_create_from_template_errors(self, app, user_one, user_two, url):
 
-        res = self.app.post_json_api(self.url, templated_project_data, auth=self.user_one.auth)
-        assert_equal(res.status_code, 201)
-        json_data = res.json['data']
-
-        new_project_id = json_data['id']
-        new_project = Node.load(new_project_id)
-        assert_equal(new_project.title, templated_project_title)
-        assert_equal(new_project.description, '')
-        assert_false(new_project.is_public)
-        assert_equal(len(new_project.nodes), len(template_from.nodes))
-        assert_equal(new_project.nodes[0].title, template_component.title)
-
-    def test_404_on_create_from_template_of_nonexistent_project(self):
+        #   test_404_on_create_from_template_of_nonexistent_project
         template_from_id = 'thisisnotavalidguid'
         templated_project_data = {
             'data': {
@@ -812,11 +842,11 @@ class TestNodeCreate(ApiTestCase):
                     }
             }
         }
-        res = self.app.post_json_api(self.url, templated_project_data, auth=self.user_one.auth, expect_errors=True)
-        assert_equal(res.status_code, 404)
+        res = app.post_json_api(url, templated_project_data, auth=user_one.auth, expect_errors=True)
+        assert res.status_code == 404
 
-    def test_403_on_create_from_template_of_unauthorized_project(self):
-        template_from = ProjectFactory(creator=self.user_two, is_public=True)
+    #   test_403_on_create_from_template_of_unauthorized_project
+        template_from = ProjectFactory(creator=user_two, is_public=True)
         templated_project_data = {
             'data': {
                 'type': 'nodes',
@@ -828,1306 +858,1540 @@ class TestNodeCreate(ApiTestCase):
                     }
             }
         }
-        res = self.app.post_json_api(self.url, templated_project_data, auth=self.user_one.auth, expect_errors=True)
-        assert_equal(res.status_code, 403)
+        res = app.post_json_api(url, templated_project_data, auth=user_one.auth, expect_errors=True)
+        assert res.status_code == 403
 
-    def test_creates_project_creates_project_and_sanitizes_html(self):
+    def test_creates_project_from_template(self, app, user_one, category, url):
+        template_from = ProjectFactory(creator=user_one, is_public=True)
+        template_component = ProjectFactory(creator=user_one, is_public=True, parent=template_from)
+        templated_project_title = 'Templated Project'
+        templated_project_data = {
+            'data': {
+                'type': 'nodes',
+                'attributes':
+                    {
+                        'title': templated_project_title,
+                        'category': category,
+                        'template_from': template_from._id,
+                    }
+            }
+        }
+
+        res = app.post_json_api(url, templated_project_data, auth=user_one.auth)
+        assert res.status_code == 201
+        json_data = res.json['data']
+
+        new_project_id = json_data['id']
+        new_project = AbstractNode.load(new_project_id)
+        assert new_project.title == templated_project_title
+        assert new_project.description == ''
+        assert not new_project.is_public
+        assert len(new_project.nodes) == len(template_from.nodes)
+        assert new_project.nodes[0].title == template_component.title
+
+    def test_creates_project_creates_project_and_sanitizes_html(self, app, user_one, category, url):
         title = '<em>Cool</em> <strong>Project</strong>'
         description = 'An <script>alert("even cooler")</script> project'
 
-        res = self.app.post_json_api(self.url, {
+        res = app.post_json_api(url, {
             'data': {
                 'attributes': {
                     'title': title,
                     'description': description,
-                    'category': self.category,
+                    'category': category,
                     'public': True
                 },
                 'type': 'nodes'
             }
-        }, auth=self.user_one.auth)
+        }, auth=user_one.auth)
         project_id = res.json['data']['id']
-        assert_equal(res.status_code, 201)
-        assert_equal(res.content_type, 'application/vnd.api+json')
+        assert res.status_code == 201
+        assert res.content_type == 'application/vnd.api+json'
         url = '/{}nodes/{}/'.format(API_BASE, project_id)
 
-        project = Node.load(project_id)
-        assert_equal(project.logs.latest().action, NodeLog.PROJECT_CREATED)
+        project = AbstractNode.load(project_id)
+        assert project.logs.latest().action == NodeLog.PROJECT_CREATED
 
-        res = self.app.get(url, auth=self.user_one.auth)
-        assert_equal(res.json['data']['attributes']['title'], strip_html(title))
-        assert_equal(res.json['data']['attributes']['description'], strip_html(description))
-        assert_equal(res.json['data']['attributes']['category'], self.category)
+        res = app.get(url, auth=user_one.auth)
+        assert res.json['data']['attributes']['title'] == strip_html(title)
+        assert res.json['data']['attributes']['description'] == strip_html(description)
+        assert res.json['data']['attributes']['category'] == category
 
-    def test_create_component_inherit_contributors(self):
-        parent_project = ProjectFactory(creator=self.user_one)
-        parent_project.add_contributor(self.user_two, permissions=[permissions.READ], save=True)
+    def test_create_component_inherit_contributors(self, app, user_one, user_two, title, category):
+        parent_project = ProjectFactory(creator=user_one)
+        parent_project.add_contributor(user_two, permissions=[permissions.READ], save=True)
         url = '/{}nodes/{}/children/?inherit_contributors=true'.format(API_BASE, parent_project._id)
         component_data = {
             'data': {
                 'type': 'nodes',
                 'attributes': {
-                    'title': self.title,
-                    'category': self.category,
+                    'title': title,
+                    'category': category,
                 }
             }
         }
-        res = self.app.post_json_api(url, component_data, auth=self.user_one.auth)
-        assert_equal(res.status_code, 201)
+        res = app.post_json_api(url, component_data, auth=user_one.auth)
+        assert res.status_code == 201
         json_data = res.json['data']
 
         new_component_id = json_data['id']
-        new_component = Node.load(new_component_id)
-        assert_equal(len(new_component.contributors), 2)
-        assert_equal(len(new_component.contributors), len(parent_project.contributors))
+        new_component = AbstractNode.load(new_component_id)
+        assert len(new_component.contributors) == 2
+        assert len(new_component.contributors) == len(parent_project.contributors)
 
-    def test_create_component_inherit_contributors_with_unregistered_contributor(self):
-        parent_project = ProjectFactory(creator=self.user_one)
+    def test_create_component_with_tags(self, app, user_one, title, category):
+        parent_project = ProjectFactory(creator=user_one)
+        url = '/{}nodes/{}/children/'.format(API_BASE, parent_project._id)
+        component_data = {
+            'data': {
+                'type': 'nodes',
+                'attributes': {
+                    'title': title,
+                    'category': category,
+                    'tags': ['test tag 1', 'test tag 2']
+                }
+            }
+        }
+        res = app.post_json_api(url, component_data, auth=user_one.auth)
+        assert res.status_code == 201
+        json_data = res.json['data']
+
+        new_component_id = json_data['id']
+        new_component = AbstractNode.load(new_component_id)
+
+        assert len(new_component.tags.all()) == 2
+        tag1, tag2 = new_component.tags.all()
+        assert tag1.name == 'test tag 1'
+        assert tag2.name == 'test tag 2'
+
+    def test_create_component_inherit_contributors_with_unregistered_contributor(self, app, user_one, title, category):
+        parent_project = ProjectFactory(creator=user_one)
         parent_project.add_unregistered_contributor(
             fullname='far', email='foo@bar.baz', permissions=[permissions.READ],
-            auth= Auth(user=self.user_one), save=True
+            auth=Auth(user=user_one), save=True
         )
         url = '/{}nodes/{}/children/?inherit_contributors=true'.format(API_BASE, parent_project._id)
         component_data = {
             'data': {
                 'type': 'nodes',
                 'attributes': {
-                    'title': self.title,
-                    'category': self.category,
+                    'title': title,
+                    'category': category,
                 }
             }
         }
-        res = self.app.post_json_api(url, component_data, auth=self.user_one.auth)
-        assert_equal(res.status_code, 201)
+        res = app.post_json_api(url, component_data, auth=user_one.auth)
+        assert res.status_code == 201
         json_data = res.json['data']
 
         new_component_id = json_data['id']
-        new_component = Node.load(new_component_id)
-        assert_equal(len(new_component.contributors), 2)
-        assert_equal(len(new_component.contributors), len(parent_project.contributors))
+        new_component = AbstractNode.load(new_component_id)
+        assert len(new_component.contributors) == 2
+        assert len(new_component.contributors) == len(parent_project.contributors)
 
-    def test_creates_project_no_type(self):
+    def test_create_project_errors(self, app, user_one, title, description, category, url):
+
+        #   test_creates_project_no_type
         project = {
             'data': {
                 'attributes': {
-                    'title': self.title,
-                    'description': self.description,
-                    'category': self.category,
+                    'title': title,
+                    'description': description,
+                    'category': category,
                     'public': False
                 }
             }
         }
-        res = self.app.post_json_api(self.url, project, auth=self.user_one.auth, expect_errors=True)
-        assert_equal(res.status_code, 400)
-        assert_equal(res.json['errors'][0]['detail'], 'This field may not be null.')
-        assert_equal(res.json['errors'][0]['source']['pointer'], '/data/type')
+        res = app.post_json_api(url, project, auth=user_one.auth, expect_errors=True)
+        assert res.status_code == 400
+        assert res.json['errors'][0]['detail'] == 'This field may not be null.'
+        assert res.json['errors'][0]['source']['pointer'] == '/data/type'
 
-    def test_creates_project_incorrect_type(self):
+    #   test_creates_project_incorrect_type
         project = {
             'data': {
                 'attributes': {
-                    'title': self.title,
-                    'description': self.description,
-                    'category': self.category,
+                    'title': title,
+                    'description': description,
+                    'category': category,
                     'public': False
                 },
                 'type': 'Wrong type.'
             }
         }
-        res = self.app.post_json_api(self.url, project, auth=self.user_one.auth, expect_errors=True)
-        assert_equal(res.status_code, 409)
-        assert_equal(res.json['errors'][0]['detail'], 'This resource has a type of "nodes", but you set the json body\'s type field to "Wrong type.". You probably need to change the type field to match the resource\'s type.')
+        res = app.post_json_api(url, project, auth=user_one.auth, expect_errors=True)
+        assert res.status_code == 409
+        assert res.json['errors'][0]['detail'] == 'This resource has a type of "nodes", but you set the json body\'s type field to "Wrong type.". You probably need to change the type field to match the resource\'s type.'
 
-    def test_creates_project_properties_not_nested(self):
+    #   test_creates_project_properties_not_nested
         project = {
             'data': {
-                'title': self.title,
-                'description': self.description,
-                'category': self.category,
+                'title': title,
+                'description': description,
+                'category': category,
                 'public': False,
                 'type': 'nodes'
             }
         }
-        res = self.app.post_json_api(self.url, project, auth=self.user_one.auth, expect_errors=True)
-        assert_equal(res.status_code, 400)
-        assert_equal(res.json['errors'][0]['detail'], 'Request must include /data/attributes.')
-        assert_equal(res.json['errors'][0]['source']['pointer'], '/data/attributes')
+        res = app.post_json_api(url, project, auth=user_one.auth, expect_errors=True)
+        assert res.status_code == 400
+        assert res.json['errors'][0]['detail'] == 'Request must include /data/attributes.'
+        assert res.json['errors'][0]['source']['pointer'] == '/data/attributes'
 
-    def test_create_project_invalid_title(self):
+    #   test_create_project_invalid_title
         project = {
             'data': {
                 'type': 'nodes',
                 'attributes': {
                     'title': 'A' * 201,
-                    'description': self.description,
-                    'category': self.category,
+                    'description': description,
+                    'category': category,
                     'public': False,
                 }
             }
         }
-        res = self.app.post_json_api(self.url, project, auth=self.user_one.auth, expect_errors=True)
-        assert_equal(res.status_code, 400)
-        assert_equal(res.json['errors'][0]['detail'], 'Title cannot exceed 200 characters.')
+        res = app.post_json_api(url, project, auth=user_one.auth, expect_errors=True)
+        assert res.status_code == 400
+        assert res.json['errors'][0]['detail'] == 'Title cannot exceed 200 characters.'
 
 
-class TestNodeBulkCreate(ApiTestCase):
+@pytest.mark.django_db
+class TestNodeBulkCreate:
 
-    def setUp(self):
-        super(TestNodeBulkCreate, self).setUp()
-        self.user_one = AuthUserFactory()
-        self.url = '/{}nodes/'.format(API_BASE)
+    @pytest.fixture()
+    def user_one(self):
+        return AuthUserFactory()
 
-        self.title = 'Cool Project'
-        self.description = 'A Properly Cool Project'
-        self.category = 'data'
+    @pytest.fixture()
+    def user_two(self):
+        return AuthUserFactory()
 
-        self.user_two = AuthUserFactory()
+    @pytest.fixture()
+    def url(self):
+        return '/{}nodes/'.format(API_BASE)
 
-        self.public_project = {
-                'type': 'nodes',
-                'attributes': {
-                    'title': self.title,
-                    'description': self.description,
-                    'category': self.category,
-                    'public': True
-                }
+    @pytest.fixture()
+    def title(self):
+        return 'Rheisen is bored'
+
+    @pytest.fixture()
+    def description(self):
+        return 'Pytest conversions are tedious'
+
+    @pytest.fixture()
+    def category(self):
+        return 'data'
+
+    @pytest.fixture()
+    def public_project(self, title, description, category):
+        return {
+            'type': 'nodes',
+            'attributes': {
+                'title': title,
+                'description': description,
+                'category': category,
+                'public': True
+            }
         }
 
-        self.private_project = {
-                'type': 'nodes',
-                'attributes': {
-                    'title': self.title,
-                    'description': self.description,
-                    'category': self.category,
-                    'public': False
-                }
+    @pytest.fixture()
+    def private_project(self, title, description, category):
+        return {
+            'type': 'nodes',
+            'attributes': {
+                'title': title,
+                'description': description,
+                'category': category,
+                'public': False
+            }
         }
 
-        self.empty_project = {'type': 'nodes', 'attributes': {'title': "", 'description': "", "category": ""}}
+    @pytest.fixture()
+    def empty_project(self):
+        return {
+            'type': 'nodes',
+            'attributes': {
+                'title': '',
+                'description': '',
+                'category': ''
+            }
+        }
 
-    def test_bulk_create_nodes_blank_request(self):
-        res = self.app.post_json_api(self.url, auth=self.user_one.auth, expect_errors=True, bulk=True)
-        assert_equal(res.status_code, 400)
+    def test_bulk_create(self, app, user_one, public_project, private_project, empty_project, title, category, url):
 
-    def test_bulk_create_all_or_nothing(self):
-        res = self.app.post_json_api(self.url, {'data': [self.public_project, self.empty_project]}, bulk=True, auth=self.user_one.auth, expect_errors=True)
-        assert_equal(res.status_code, 400)
+        #   test_bulk_create_nodes_blank_request
+        res = app.post_json_api(url, auth=user_one.auth, expect_errors=True, bulk=True)
+        assert res.status_code == 400
 
-        res = self.app.get(self.url, auth=self.user_one.auth)
-        assert_equal(len(res.json['data']), 0)
+    #   test_bulk_create_all_or_nothing
+        res = app.post_json_api(url, {'data': [public_project, empty_project]}, bulk=True, auth=user_one.auth, expect_errors=True)
+        assert res.status_code == 400
 
-    def test_bulk_create_logged_out(self):
-        res = self.app.post_json_api(self.url, {'data': [self.public_project, self.private_project]}, bulk=True, expect_errors=True)
-        assert_equal(res.status_code, 401)
+        res = app.get(url, auth=user_one.auth)
+        assert len(res.json['data']) == 0
 
-        res = self.app.get(self.url, auth=self.user_one.auth)
-        assert_equal(len(res.json['data']), 0)
+    #   test_bulk_create_logged_out
+        res = app.post_json_api(url, {'data': [public_project, private_project]}, bulk=True, expect_errors=True)
+        assert res.status_code == 401
 
-    def test_bulk_create_error_formatting(self):
-        res = self.app.post_json_api(self.url, {'data': [self.empty_project, self.empty_project]}, bulk=True, auth=self.user_one.auth, expect_errors=True)
-        assert_equal(res.status_code, 400)
-        assert_equal(len(res.json['errors']), 2)
+        res = app.get(url, auth=user_one.auth)
+        assert len(res.json['data']) == 0
+
+    #   test_bulk_create_error_formatting
+        res = app.post_json_api(url, {'data': [empty_project, empty_project]}, bulk=True, auth=user_one.auth, expect_errors=True)
+        assert res.status_code == 400
+        assert len(res.json['errors']) == 2
         errors = res.json['errors']
-        assert_items_equal([errors[0]['source'], errors[1]['source']],
-                           [{'pointer': '/data/0/attributes/title'}, {'pointer': '/data/1/attributes/title'}])
-        assert_items_equal([errors[0]['detail'], errors[1]['detail']],
-                           ["This field may not be blank.", "This field may not be blank."])
+        assert errors[0]['source'] == {'pointer': '/data/0/attributes/title'}
+        assert errors[1]['source'] == {'pointer': '/data/1/attributes/title'}
+        assert errors[0]['detail'] == 'This field may not be blank.'
+        assert errors[1]['detail'] == 'This field may not be blank.'
 
-    def test_bulk_create_limits(self):
-        node_create_list = {'data': [self.public_project] * 101}
-        res = self.app.post_json_api(self.url, node_create_list, auth=self.user_one.auth, expect_errors=True, bulk=True)
-        assert_equal(res.json['errors'][0]['detail'], 'Bulk operation limit is 100, got 101.')
-        assert_equal(res.json['errors'][0]['source']['pointer'], '/data')
+    #   test_bulk_create_limits
+        node_create_list = {'data': [public_project] * 101}
+        res = app.post_json_api(url, node_create_list, auth=user_one.auth, expect_errors=True, bulk=True)
+        assert res.json['errors'][0]['detail'] == 'Bulk operation limit is 100, got 101.'
+        assert res.json['errors'][0]['source']['pointer'] == '/data'
 
-        res = self.app.get(self.url, auth=self.user_one.auth)
-        assert_equal(len(res.json['data']), 0)
+        res = app.get(url, auth=user_one.auth)
+        assert len(res.json['data']) == 0
 
-    def test_bulk_create_no_type(self):
-        payload = {'data': [{"attributes": {'category': self.category, 'title': self.title}}]}
-        res = self.app.post_json_api(self.url, payload, auth=self.user_one.auth, expect_errors=True, bulk=True)
-        assert_equal(res.status_code, 400)
-        assert_equal(res.json['errors'][0]['source']['pointer'], '/data/0/type')
+    #   test_bulk_create_no_type
+        payload = {'data': [{"attributes": {'category': category, 'title': title}}]}
+        res = app.post_json_api(url, payload, auth=user_one.auth, expect_errors=True, bulk=True)
+        assert res.status_code == 400
+        assert res.json['errors'][0]['source']['pointer'] == '/data/0/type'
 
-        res = self.app.get(self.url, auth=self.user_one.auth)
-        assert_equal(len(res.json['data']), 0)
+        res = app.get(url, auth=user_one.auth)
+        assert len(res.json['data']) == 0
 
-    def test_bulk_create_incorrect_type(self):
-        payload = {'data': [self.public_project, {'type': 'Incorrect type.', "attributes": {'category': self.category, 'title': self.title}}]}
-        res = self.app.post_json_api(self.url, payload, auth=self.user_one.auth, expect_errors=True, bulk=True)
-        assert_equal(res.status_code, 409)
+    #   test_bulk_create_incorrect_type
+        payload = {'data': [public_project, {'type': 'Incorrect type.', "attributes": {'category': category, 'title': title}}]}
+        res = app.post_json_api(url, payload, auth=user_one.auth, expect_errors=True, bulk=True)
+        assert res.status_code == 409
 
-        res = self.app.get(self.url, auth=self.user_one.auth)
-        assert_equal(len(res.json['data']), 0)
+        res = app.get(url, auth=user_one.auth)
+        assert len(res.json['data']) == 0
 
-    def test_bulk_create_no_attributes(self):
-        payload = {'data': [self.public_project, {'type': 'nodes', }]}
-        res = self.app.post_json_api(self.url, payload, auth=self.user_one.auth, expect_errors=True, bulk=True)
+    #   test_bulk_create_no_attributes
+        payload = {'data': [public_project, {'type': 'nodes', }]}
+        res = app.post_json_api(url, payload, auth=user_one.auth, expect_errors=True, bulk=True)
 
-        assert_equal(res.status_code, 400)
-        assert_equal(res.json['errors'][0]['source']['pointer'], '/data/attributes')
+        assert res.status_code == 400
+        assert res.json['errors'][0]['source']['pointer'] == '/data/attributes'
 
-        res = self.app.get(self.url, auth=self.user_one.auth)
-        assert_equal(len(res.json['data']), 0)
+        res = app.get(url, auth=user_one.auth)
+        assert len(res.json['data']) == 0
 
-    def test_bulk_create_no_title(self):
-        payload = {'data': [self.public_project, {'type': 'nodes', "attributes": {'category': self.category}}]}
-        res = self.app.post_json_api(self.url, payload, auth=self.user_one.auth, expect_errors=True, bulk=True)
+    #   test_bulk_create_no_title
+        payload = {'data': [public_project, {'type': 'nodes', 'attributes': {'category': category}}]}
+        res = app.post_json_api(url, payload, auth=user_one.auth, expect_errors=True, bulk=True)
 
-        assert_equal(res.status_code, 400)
-        assert_equal(res.json['errors'][0]['source']['pointer'], '/data/1/attributes/title')
+        assert res.status_code == 400
+        assert res.json['errors'][0]['source']['pointer'] == '/data/1/attributes/title'
 
-        res = self.app.get(self.url, auth=self.user_one.auth)
-        assert_equal(len(res.json['data']), 0)
+        res = app.get(url, auth=user_one.auth)
+        assert len(res.json['data']) == 0
 
-    def test_ugly_payload(self):
+    #   test_ugly_payload
         payload = 'sdf;jlasfd'
-        res = self.app.post_json_api(self.url, payload, auth=self.user_one.auth, expect_errors=True, bulk=True)
-        assert_equal(res.status_code, 400)
+        res = app.post_json_api(url, payload, auth=user_one.auth, expect_errors=True, bulk=True)
+        assert res.status_code == 400
 
-        res = self.app.get(self.url, auth=self.user_one.auth)
-        assert_equal(len(res.json['data']), 0)
+        res = app.get(url, auth=user_one.auth)
+        assert len(res.json['data']) == 0
 
-    def test_bulk_create_logged_in(self):
-        res = self.app.post_json_api(self.url, {'data': [self.public_project, self.private_project]}, auth=self.user_one.auth, expect_errors=True, bulk=True)
-        assert_equal(res.status_code, 201)
-        assert_equal(len(res.json['data']), 2)
-        assert_equal(res.json['data'][0]['attributes']['title'], self.public_project['attributes']['title'])
-        assert_equal(res.json['data'][0]['attributes']['category'], self.public_project['attributes']['category'])
-        assert_equal(res.json['data'][0]['attributes']['description'], self.public_project['attributes']['description'])
-        assert_equal(res.json['data'][1]['attributes']['title'], self.private_project['attributes']['title'])
-        assert_equal(res.json['data'][1]['attributes']['category'], self.public_project['attributes']['category'])
-        assert_equal(res.json['data'][1]['attributes']['description'], self.public_project['attributes']['description'])
-        assert_equal(res.content_type, 'application/vnd.api+json')
+    def test_bulk_create_logged_in(self, app, user_one, public_project, private_project, url):
+        res = app.post_json_api(url, {'data': [public_project, private_project]}, auth=user_one.auth, expect_errors=True, bulk=True)
+        assert res.status_code == 201
+        assert len(res.json['data']) == 2
+        assert res.json['data'][0]['attributes']['title'] == public_project['attributes']['title']
+        assert res.json['data'][0]['attributes']['category'] == public_project['attributes']['category']
+        assert res.json['data'][0]['attributes']['description'] == public_project['attributes']['description']
+        assert res.json['data'][1]['attributes']['title'] == private_project['attributes']['title']
+        assert res.json['data'][1]['attributes']['category'] == public_project['attributes']['category']
+        assert res.json['data'][1]['attributes']['description'] == public_project['attributes']['description']
+        assert res.content_type == 'application/vnd.api+json'
 
-        res = self.app.get(self.url, auth=self.user_one.auth)
-        assert_equal(len(res.json['data']), 2)
+        res = app.get(url, auth=user_one.auth)
+        assert len(res.json['data']) == 2
         id_one = res.json['data'][0]['id']
         id_two = res.json['data'][1]['id']
 
-        res = self.app.delete_json_api(self.url, {'data': [{'id': id_one, 'type': 'nodes'},
+        res = app.delete_json_api(url, {'data': [{'id': id_one, 'type': 'nodes'},
                                                            {'id': id_two, 'type': 'nodes'}]},
-                                       auth=self.user_one.auth, expect_errors=True, bulk=True)
-        assert_equal(res.status_code, 204)
+                                       auth=user_one.auth, expect_errors=True, bulk=True)
+        assert res.status_code == 204
 
 
-class TestNodeBulkUpdate(ApiTestCase):
+@pytest.mark.django_db
+class TestNodeBulkUpdate:
 
-    def setUp(self):
-        super(TestNodeBulkUpdate, self).setUp()
-        self.user = AuthUserFactory()
+    @pytest.fixture()
+    def title(self):
+        return 'Rheisen is bored'
 
-        self.title = 'Cool Project'
-        self.new_title = 'Super Cool Project'
-        self.description = 'A Properly Cool Project'
-        self.new_description = 'An even cooler project'
-        self.category = 'data'
+    @pytest.fixture()
+    def new_title(self):
+        return 'Rheisen is very bored'
 
-        self.new_category = 'project'
+    @pytest.fixture()
+    def description(self):
+        return 'Pytest conversions are tedious'
 
-        self.user_two = AuthUserFactory()
+    @pytest.fixture()
+    def new_description(self):
+        return 'Pytest conversions are death'
 
-        self.public_project = ProjectFactory(title=self.title,
-                                             description=self.description,
-                                             category=self.category,
-                                             is_public=True,
-                                             creator=self.user)
+    @pytest.fixture()
+    def category(self):
+        return 'data'
 
-        self.public_project_two = ProjectFactory(title=self.title,
-                                                description=self.description,
-                                                category=self.category,
-                                                is_public=True,
-                                                creator=self.user)
+    @pytest.fixture()
+    def new_category(self):
+        return 'project'
 
-        self.public_payload = {
+    @pytest.fixture()
+    def public_project_one(self, user, title, description, category):
+        return ProjectFactory(title=title, description=description, category=category, is_public=True, creator=user)
+
+    @pytest.fixture()
+    def public_project_two(self, user, title, description, category):
+        return ProjectFactory(title=title, description=description, category=category, is_public=True, creator=user)
+
+    @pytest.fixture()
+    def public_payload(self, public_project_one, public_project_two, new_title, new_description, new_category):
+        return {
             'data': [
                 {
-                    'id': self.public_project._id,
+                    'id': public_project_one._id,
                     'type': 'nodes',
                     'attributes': {
-                        'title': self.new_title,
-                        'description': self.new_description,
-                        'category': self.new_category,
+                        'title': new_title,
+                        'description': new_description,
+                        'category': new_category,
                         'public': True
                     }
                 },
                 {
-                    'id': self.public_project_two._id,
+                    'id': public_project_two._id,
                     'type': 'nodes',
                     'attributes': {
-                        'title': self.new_title,
-                        'description': self.new_description,
-                        'category': self.new_category,
+                        'title': new_title,
+                        'description': new_description,
+                        'category': new_category,
                         'public': True
                     }
                 }
             ]
         }
 
-        self.url = '/{}nodes/'.format(API_BASE)
+    @pytest.fixture()
+    def url(self):
+        return '/{}nodes/'.format(API_BASE)
 
-        self.private_project = ProjectFactory(title=self.title,
-                                              description=self.description,
-                                              category=self.category,
-                                              is_public=False,
-                                              creator=self.user)
+    @pytest.fixture()
+    def private_project_one(self, user, title, description, category):
+        return ProjectFactory(title=title, description=description, category=category, is_public=False, creator=user)
 
-        self.private_project_two = ProjectFactory(title=self.title,
-                                              description=self.description,
-                                              category=self.category,
-                                              is_public=False,
-                                              creator=self.user)
+    @pytest.fixture()
+    def private_project_two(self, user, title, description, category):
+        return ProjectFactory(title=title, description=description, category=category, is_public=False, creator=user)
 
-        self.private_payload = {'data': [
+    @pytest.fixture()
+    def private_payload(self, private_project_one, private_project_two, new_title, new_description, new_category):
+        return {
+            'data': [
                 {
-                    'id': self.private_project._id,
+                    'id': private_project_one._id,
                     'type': 'nodes',
                     'attributes': {
-                        'title': self.new_title,
-                        'description': self.new_description,
-                        'category': self.new_category,
+                        'title': new_title,
+                        'description': new_description,
+                        'category': new_category,
                         'public': False
                     }
                 },
                 {
-                    'id': self.private_project_two._id,
+                    'id': private_project_two._id,
                     'type': 'nodes',
                     'attributes': {
-                        'title': self.new_title,
-                        'description': self.new_description,
-                        'category': self.new_category,
+                        'title': new_title,
+                        'description': new_description,
+                        'category': new_category,
                         'public': False
                     }
                 }
             ]
         }
 
+    @pytest.fixture()
+    def empty_payload(self, public_project_one, public_project_two):
+        return {
+            'data': [
+                {
+                    'id': public_project_one._id,
+                    'type': 'nodes',
+                    'attributes': {
+                        'title': '',
+                        'description': '',
+                        'category': ''
+                    }
+                },
+                {
+                    'id': public_project_two._id,
+                    'type': 'nodes',
+                    'attributes': {
+                        'title': '',
+                        'description': '',
+                        'category': ''
+                    }
+                }
+            ]
+        }
 
-        self.empty_payload = {'data': [
-            {'id': self.public_project._id, 'type': 'nodes', 'attributes': {'title': "", 'description': "", "category": ""}},
-            {'id': self.public_project_two._id, 'type': 'nodes', 'attributes': {'title': "", 'description': "", "category": ""}}
-        ]}
+    def test_bulk_update_errors(self, app, user, public_project_one, public_project_two, private_project_one, private_project_two, public_payload, private_payload, empty_payload, title, new_title, new_category, url):
 
-    def test_bulk_update_nodes_blank_request(self):
-        res = self.app.put_json_api(self.url, auth=self.user.auth, expect_errors=True, bulk=True)
-        assert_equal(res.status_code, 400)
+        #   test_bulk_update_nodes_blank_request
+        res = app.put_json_api(url, auth=user.auth, expect_errors=True, bulk=True)
+        assert res.status_code == 400
 
-    def test_bulk_update_blank_but_not_empty_title(self):
+    #   test_bulk_update_blank_but_not_empty_title
         payload = {
             "data": [
                 {
-                  "id": self.public_project._id,
-                  "type": "nodes",
-                  "attributes": {
-                    "title": "This shouldn't update.",
-                    "category": "instrumentation"
-                  }
+                    "id": public_project_one._id,
+                    "type": "nodes",
+                    "attributes": {
+                        "title": "This shouldn't update.",
+                        "category": "instrumentation"
+                    }
                 },
                 {
-                  "id": self.public_project_two._id,
-                  "type": "nodes",
-                  "attributes": {
-                    "title": " ",
-                    "category": "hypothesis"
-                  }
+                    "id": public_project_two._id,
+                    "type": "nodes",
+                    "attributes": {
+                        "title": " ",
+                        "category": "hypothesis"
+                    }
                 }
-              ]
-            }
-        url = '/{}nodes/{}/'.format(API_BASE, self.public_project._id)
-        res = self.app.put_json_api(self.url, payload, auth=self.user.auth, expect_errors=True, bulk=True)
-        assert_equal(res.status_code, 400)
-
-        res = self.app.get(url)
-        assert_equal(res.json['data']['attributes']['title'], self.title)
-
-    def test_bulk_update_with_tags(self):
-        new_payload = {'data': [{'id': self.public_project._id, 'type': 'nodes', 'attributes': {'title': 'New title', 'category': 'project', 'tags': ['new tag']}}]}
-
-        res = self.app.put_json_api(self.url, new_payload, auth=self.user.auth, expect_errors=True, bulk=True)
-        assert_equal(res.status_code, 200)
-        assert_equal(res.json['data'][0]['attributes']['tags'], ['new tag'])
-
-    def test_bulk_update_public_projects_one_not_found(self):
-        empty_payload = {'data': [
-            {
-                'id': '12345',
-                'type': 'nodes',
-                'attributes': {
-                    'title': self.new_title,
-                    'category': self.new_category
-                }
-            }, self.public_payload['data'][0]
-        ]}
-
-        res = self.app.put_json_api(self.url, empty_payload, auth=self.user.auth, expect_errors=True, bulk=True)
-        assert_equal(res.status_code, 400)
-        assert_equal(res.json['errors'][0]['detail'], 'Could not find all objects to update.')
-
-
-        url = '/{}nodes/{}/'.format(API_BASE, self.public_project._id)
-        res = self.app.get(url)
-        assert_equal(res.json['data']['attributes']['title'], self.title)
-
-
-    def test_bulk_update_public_projects_logged_out(self):
-        res = self.app.put_json_api(self.url, self.public_payload, expect_errors=True, bulk=True)
-        assert_equal(res.status_code, 401)
-        assert_equal(res.json['errors'][0]['detail'], "Authentication credentials were not provided.")
-
-        url = '/{}nodes/{}/'.format(API_BASE, self.public_project._id)
-        url_two = '/{}nodes/{}/'.format(API_BASE, self.public_project_two._id)
-
-        res = self.app.get(url)
-        assert_equal(res.json['data']['attributes']['title'], self.title)
-
-        res = self.app.get(url_two)
-        assert_equal(res.json['data']['attributes']['title'], self.title)
-
-    def test_bulk_update_public_projects_logged_in(self):
-        res = self.app.put_json_api(self.url, self.public_payload, auth=self.user.auth, bulk=True)
-        assert_equal(res.status_code, 200)
-        assert_equal({self.public_project._id, self.public_project_two._id},
-                     {res.json['data'][0]['id'], res.json['data'][1]['id']})
-        assert_equal(res.json['data'][0]['attributes']['title'], self.new_title)
-        assert_equal(res.json['data'][1]['attributes']['title'], self.new_title)
-
-    def test_bulk_update_private_projects_logged_out(self):
-        res = self.app.put_json_api(self.url, self.private_payload, expect_errors=True, bulk=True)
-        assert_equal(res.status_code, 401)
-        assert_equal(res.json['errors'][0]['detail'], 'Authentication credentials were not provided.')
-
-
-        url = '/{}nodes/{}/'.format(API_BASE, self.private_project._id)
-        url_two = '/{}nodes/{}/'.format(API_BASE, self.private_project_two._id)
-
-        res = self.app.get(url, auth=self.user.auth)
-        assert_equal(res.json['data']['attributes']['title'], self.title)
-
-        res = self.app.get(url_two, auth=self.user.auth)
-        assert_equal(res.json['data']['attributes']['title'], self.title)
-
-    def test_bulk_update_private_projects_logged_in_contrib(self):
-        res = self.app.put_json_api(self.url, self.private_payload, auth=self.user.auth, bulk=True)
-        assert_equal(res.status_code, 200)
-        assert_equal({self.private_project._id, self.private_project_two._id},
-                     {res.json['data'][0]['id'], res.json['data'][1]['id']})
-        assert_equal(res.json['data'][0]['attributes']['title'], self.new_title)
-        assert_equal(res.json['data'][1]['attributes']['title'], self.new_title)
-
-    def test_bulk_update_private_projects_logged_in_non_contrib(self):
-        res = self.app.put_json_api(self.url, self.private_payload, auth=self.user_two.auth, expect_errors=True, bulk=True)
-        assert_equal(res.status_code, 403)
-        assert_equal(res.json['errors'][0]['detail'], 'You do not have permission to perform this action.')
-
-        url = '/{}nodes/{}/'.format(API_BASE, self.private_project._id)
-        url_two = '/{}nodes/{}/'.format(API_BASE, self.private_project_two._id)
-
-        res = self.app.get(url, auth=self.user.auth)
-        assert_equal(res.json['data']['attributes']['title'], self.title)
-
-        res = self.app.get(url_two, auth=self.user.auth)
-        assert_equal(res.json['data']['attributes']['title'], self.title)
-
-    def test_bulk_update_private_projects_logged_in_read_only_contrib(self):
-        self.private_project.add_contributor(self.user_two, permissions=[permissions.READ], save=True)
-        self.private_project_two.add_contributor(self.user_two, permissions=[permissions.READ], save=True)
-        res = self.app.put_json_api(self.url, self.private_payload, auth=self.user_two.auth, expect_errors=True, bulk=True)
-        assert_equal(res.status_code, 403)
-        assert_equal(res.json['errors'][0]['detail'], 'You do not have permission to perform this action.')
-
-        url = '/{}nodes/{}/'.format(API_BASE, self.private_project._id)
-        url_two = '/{}nodes/{}/'.format(API_BASE, self.private_project_two._id)
-
-        res = self.app.get(url, auth=self.user.auth)
-        assert_equal(res.json['data']['attributes']['title'], self.title)
-
-        res = self.app.get(url_two, auth=self.user.auth)
-        assert_equal(res.json['data']['attributes']['title'], self.title)
-
-    def test_bulk_update_projects_send_dictionary_not_list(self):
-        res = self.app.put_json_api(self.url, {'data': {'id': self.public_project._id, 'type': 'nodes',
-                                                        'attributes': {'title': self.new_title, 'category': "project"}}},
-                                    auth=self.user.auth, expect_errors=True, bulk=True)
-        assert_equal(res.status_code, 400)
-        assert_equal(res.json['errors'][0]['detail'], 'Expected a list of items but got type "dict".')
-
-    def test_bulk_update_error_formatting(self):
-        res = self.app.put_json_api(self.url, self.empty_payload, auth=self.user.auth, expect_errors=True, bulk=True)
-        assert_equal(res.status_code, 400)
-        assert_equal(len(res.json['errors']), 2)
-        errors = res.json['errors']
-        assert_items_equal([errors[0]['source'], errors[1]['source']],
-                           [{'pointer': '/data/0/attributes/title'}, {'pointer': '/data/1/attributes/title'}])
-        assert_items_equal([errors[0]['detail'], errors[1]['detail']],
-                           ['This field may not be blank.'] * 2)
-
-    def test_bulk_update_id_not_supplied(self):
-        res = self.app.put_json_api(self.url, {'data': [self.public_payload['data'][1], {'type': 'nodes', 'attributes':
-            {'title': self.new_title, 'category': self.new_category}}]}, auth=self.user.auth, expect_errors=True, bulk=True)
-        assert_equal(res.status_code, 400)
-        assert_equal(len(res.json['errors']), 1)
-        assert_equal(res.json['errors'][0]['source']['pointer'], '/data/1/id')
-        assert_equal(res.json['errors'][0]['detail'], "This field may not be null.")
-
-        url = '/{}nodes/{}/'.format(API_BASE, self.public_project_two._id)
-
-        res = self.app.get(url, auth=self.user.auth)
-        assert_equal(res.json['data']['attributes']['title'], self.title)
-
-    def test_bulk_update_type_not_supplied(self):
-        res = self.app.put_json_api(self.url, {'data': [self.public_payload['data'][1], {'id': self.public_project._id, 'attributes':
-            {'title': self.new_title, 'category': self.new_category}}]}, auth=self.user.auth, expect_errors=True, bulk=True)
-        assert_equal(res.status_code, 400)
-        assert_equal(len(res.json['errors']), 1)
-        assert_equal(res.json['errors'][0]['source']['pointer'], '/data/1/type')
-        assert_equal(res.json['errors'][0]['detail'], "This field may not be null.")
-
-        url = '/{}nodes/{}/'.format(API_BASE, self.public_project_two._id)
-
-        res = self.app.get(url, auth=self.user.auth)
-        assert_equal(res.json['data']['attributes']['title'], self.title)
-
-    def test_bulk_update_incorrect_type(self):
-        res = self.app.put_json_api(self.url, {'data': [self.public_payload['data'][1], {'id': self.public_project._id, 'type': 'Incorrect', 'attributes':
-            {'title': self.new_title, 'category': self.new_category}}]}, auth=self.user.auth, expect_errors=True, bulk=True)
-        assert_equal(res.status_code, 409)
-
-        url = '/{}nodes/{}/'.format(API_BASE, self.public_project_two._id)
-
-        res = self.app.get(url, auth=self.user.auth)
-        assert_equal(res.json['data']['attributes']['title'], self.title)
-
-    def test_bulk_update_limits(self):
-        node_update_list = {'data': [self.public_payload['data'][0]] * 101}
-        res = self.app.put_json_api(self.url, node_update_list, auth=self.user.auth, expect_errors=True, bulk=True)
-        assert_equal(res.json['errors'][0]['detail'], 'Bulk operation limit is 100, got 101.')
-        assert_equal(res.json['errors'][0]['source']['pointer'], '/data')
-
-    def test_bulk_update_no_title_or_category(self):
-        new_payload = {'id': self.public_project._id, 'type': 'nodes', 'attributes': {}}
-        res = self.app.put_json_api(self.url, {'data': [self.public_payload['data'][1], new_payload]}, auth=self.user.auth, expect_errors=True, bulk=True)
-        assert_equal(res.status_code, 400)
-
-        url = '/{}nodes/{}/'.format(API_BASE, self.public_project_two._id)
-
-        res = self.app.get(url, auth=self.user.auth)
-        assert_equal(res.json['data']['attributes']['title'], self.title)
-
-
-class TestNodeBulkPartialUpdate(ApiTestCase):
-
-    def setUp(self):
-        super(TestNodeBulkPartialUpdate, self).setUp()
-        self.user = AuthUserFactory()
-
-        self.title = 'Cool Project'
-        self.new_title = 'Super Cool Project'
-        self.description = 'A Properly Cool Project'
-        self.new_description = 'An even cooler project'
-        self.category = 'data'
-
-        self.new_category = 'project'
-
-        self.user_two = AuthUserFactory()
-
-        self.public_project = ProjectFactory(title=self.title,
-                                             description=self.description,
-                                             category=self.category,
-                                             is_public=True,
-                                             creator=self.user)
-
-        self.public_project_two = ProjectFactory(title=self.title,
-                                                description=self.description,
-                                                category=self.category,
-                                                is_public=True,
-                                                creator=self.user)
-
-        self.public_payload = {'data': [
-            {
-                'id': self.public_project._id,
-                'type': 'nodes',
-                'attributes': {
-                    'title': self.new_title
-                }
-            },
-            {
-                'id': self.public_project_two._id,
-                'type': 'nodes',
-                'attributes': {
-                    'title': self.new_title
-                }
-            }
-        ]}
-
-        self.url = '/{}nodes/'.format(API_BASE)
-
-        self.private_project = ProjectFactory(title=self.title,
-                                              description=self.description,
-                                              category=self.category,
-                                              is_public=False,
-                                              creator=self.user)
-
-        self.private_project_two = ProjectFactory(title=self.title,
-                                              description=self.description,
-                                              category=self.category,
-                                              is_public=False,
-                                              creator=self.user)
-
-        self.private_payload = {'data': [
-            {
-                'id': self.private_project._id,
-                'type': 'nodes',
-                'attributes': {
-                    'title': self.new_title
-                }
-            },
-            {
-                'id': self.private_project_two._id,
-                'type': 'nodes',
-                'attributes': {
-                    'title': self.new_title
-                }
-            }
-        ]}
-
-        self.empty_payload = {'data': [
-            {'id': self.public_project._id, 'type': 'nodes', 'attributes': {'title': ""}},
-            {'id': self.public_project_two._id, 'type': 'nodes', 'attributes': {'title': ""}}
-        ]
+            ]
         }
+        public_project_one_url = '/{}nodes/{}/'.format(API_BASE, public_project_one._id)
+        res = app.put_json_api(url, payload, auth=user.auth, expect_errors=True, bulk=True)
+        assert res.status_code == 400
 
-    def test_bulk_patch_nodes_blank_request(self):
-        res = self.app.patch_json_api(self.url, auth=self.user.auth, expect_errors=True, bulk=True)
-        assert_equal(res.status_code, 400)
+        res = app.get(public_project_one_url)
+        assert res.json['data']['attributes']['title'] == title
 
-    def test_bulk_partial_update_public_projects_one_not_found(self):
-        empty_payload = {'data': [
+    #   test_bulk_update_public_projects_one_not_found
+        payload = {'data': [
             {
                 'id': '12345',
                 'type': 'nodes',
                 'attributes': {
-                    'title': self.new_title
+                    'title': new_title,
+                    'category': new_category
                 }
-            },
-            self.public_payload['data'][0]
+            }, public_payload['data'][0]
         ]}
-        res = self.app.patch_json_api(self.url, empty_payload, auth=self.user.auth, expect_errors=True, bulk=True)
-        assert_equal(res.status_code, 400)
-        assert_equal(res.json['errors'][0]['detail'], 'Could not find all objects to update.')
 
-        url = '/{}nodes/{}/'.format(API_BASE, self.public_project._id)
-        res = self.app.get(url)
-        assert_equal(res.json['data']['attributes']['title'], self.title)
+        res = app.put_json_api(url, payload, auth=user.auth, expect_errors=True, bulk=True)
+        assert res.status_code == 400
+        assert res.json['errors'][0]['detail'] == 'Could not find all objects to update.'
 
-    def test_bulk_partial_update_public_projects_logged_out(self):
-        res = self.app.patch_json_api(self.url, self.public_payload, expect_errors=True, bulk=True)
-        assert_equal(res.status_code, 401)
-        assert_equal(res.json['errors'][0]['detail'], "Authentication credentials were not provided.")
+        public_project_one_url = '/{}nodes/{}/'.format(API_BASE, public_project_one._id)
+        res = app.get(public_project_one_url)
+        assert res.json['data']['attributes']['title'] == title
 
-        url = '/{}nodes/{}/'.format(API_BASE, self.public_project._id)
-        url_two = '/{}nodes/{}/'.format(API_BASE, self.public_project_two._id)
+    #   test_bulk_update_public_projects_logged_out
+        res = app.put_json_api(url, public_payload, expect_errors=True, bulk=True)
+        assert res.status_code == 401
+        assert res.json['errors'][0]['detail'] == exceptions.NotAuthenticated.default_detail
 
-        res = self.app.get(url)
-        assert_equal(res.json['data']['attributes']['title'], self.title)
+        public_project_one_url = '/{}nodes/{}/'.format(API_BASE, public_project_one._id)
+        public_project_two_url = '/{}nodes/{}/'.format(API_BASE, public_project_two._id)
 
-        res = self.app.get(url_two)
-        assert_equal(res.json['data']['attributes']['title'], self.title)
+        res = app.get(public_project_one_url)
+        assert res.json['data']['attributes']['title'] == title
 
-    def test_bulk_partial_update_public_projects_logged_in(self):
-        res = self.app.patch_json_api(self.url, self.public_payload, auth=self.user.auth, expect_errors=True, bulk=True)
-        assert_equal(res.status_code, 200)
-        assert_equal({self.public_project._id, self.public_project_two._id},
-                     {res.json['data'][0]['id'], res.json['data'][1]['id']})
-        assert_equal(res.json['data'][0]['attributes']['title'], self.new_title)
-        assert_equal(res.json['data'][1]['attributes']['title'], self.new_title)
+        res = app.get(public_project_two_url)
+        assert res.json['data']['attributes']['title'] == title
 
-    def test_bulk_partial_update_private_projects_logged_out(self):
-        res = self.app.patch_json_api(self.url, self.private_payload, expect_errors=True, bulk=True)
-        assert_equal(res.status_code, 401)
-        assert_equal(res.json['errors'][0]['detail'], 'Authentication credentials were not provided.')
+    #   test_bulk_update_private_projects_logged_out
+        res = app.put_json_api(url, private_payload, expect_errors=True, bulk=True)
+        assert res.status_code == 401
+        assert res.json['errors'][0]['detail'] == exceptions.NotAuthenticated.default_detail
 
+        private_project_one_url = '/{}nodes/{}/'.format(API_BASE, private_project_one._id)
+        private_project_two_url = '/{}nodes/{}/'.format(API_BASE, private_project_two._id)
 
-        url = '/{}nodes/{}/'.format(API_BASE, self.private_project._id)
-        url_two = '/{}nodes/{}/'.format(API_BASE, self.private_project_two._id)
+        res = app.get(private_project_one_url, auth=user.auth)
+        assert res.json['data']['attributes']['title'] == title
 
-        res = self.app.get(url, auth=self.user.auth)
-        assert_equal(res.json['data']['attributes']['title'], self.title)
+        res = app.get(private_project_two_url, auth=user.auth)
+        assert res.json['data']['attributes']['title'] == title
 
-        res = self.app.get(url_two, auth=self.user.auth)
-        assert_equal(res.json['data']['attributes']['title'], self.title)
+    #   test_bulk_update_private_projects_logged_in_non_contrib
+        non_contrib = AuthUserFactory()
+        res = app.put_json_api(url, private_payload, auth=non_contrib.auth, expect_errors=True, bulk=True)
+        assert res.status_code == 403
+        assert res.json['errors'][0]['detail'] == exceptions.PermissionDenied.default_detail
 
-    def test_bulk_partial_update_private_projects_logged_in_contrib(self):
-        res = self.app.patch_json_api(self.url, self.private_payload, auth=self.user.auth, bulk=True)
-        assert_equal(res.status_code, 200)
-        assert_equal({self.private_project._id, self.private_project_two._id},
-                     {res.json['data'][0]['id'], res.json['data'][1]['id']})
-        assert_equal(res.json['data'][0]['attributes']['title'], self.new_title)
-        assert_equal(res.json['data'][1]['attributes']['title'], self.new_title)
+        private_project_one_url = '/{}nodes/{}/'.format(API_BASE, private_project_one._id)
+        private_project_two_url = '/{}nodes/{}/'.format(API_BASE, private_project_two._id)
 
-    def test_bulk_partial_update_private_projects_logged_in_non_contrib(self):
-        res = self.app.patch_json_api(self.url, self.private_payload, auth=self.user_two.auth, expect_errors=True, bulk=True)
-        assert_equal(res.status_code, 403)
-        assert_equal(res.json['errors'][0]['detail'], 'You do not have permission to perform this action.')
+        res = app.get(private_project_one_url, auth=user.auth)
+        assert res.json['data']['attributes']['title'] == title
 
-        url = '/{}nodes/{}/'.format(API_BASE, self.private_project._id)
-        url_two = '/{}nodes/{}/'.format(API_BASE, self.private_project_two._id)
+        res = app.get(private_project_two_url, auth=user.auth)
+        assert res.json['data']['attributes']['title'] == title
 
-        res = self.app.get(url, auth=self.user.auth)
-        assert_equal(res.json['data']['attributes']['title'], self.title)
+    #   test_bulk_update_projects_send_dictionary_not_list
+        res = app.put_json_api(url, {'data': {'id': public_project_one._id, 'type': 'nodes',
+                                                        'attributes': {'title': new_title, 'category': "project"}}},
+                                    auth=user.auth, expect_errors=True, bulk=True)
+        assert res.status_code == 400
+        assert res.json['errors'][0]['detail'] == 'Expected a list of items but got type "dict".'
 
-        res = self.app.get(url_two, auth=self.user.auth)
-        assert_equal(res.json['data']['attributes']['title'], self.title)
-
-    def test_bulk_partial_update_private_projects_logged_in_read_only_contrib(self):
-        self.private_project.add_contributor(self.user_two, permissions=[permissions.READ], save=True)
-        self.private_project_two.add_contributor(self.user_two, permissions=[permissions.READ], save=True)
-        res = self.app.patch_json_api(self.url, self.private_payload, auth=self.user_two.auth, expect_errors=True, bulk=True)
-        assert_equal(res.status_code, 403)
-        assert_equal(res.json['errors'][0]['detail'], 'You do not have permission to perform this action.')
-
-        url = '/{}nodes/{}/'.format(API_BASE, self.private_project._id)
-        url_two = '/{}nodes/{}/'.format(API_BASE, self.private_project_two._id)
-
-        res = self.app.get(url, auth=self.user.auth)
-        assert_equal(res.json['data']['attributes']['title'], self.title)
-
-        res = self.app.get(url_two, auth=self.user.auth)
-        assert_equal(res.json['data']['attributes']['title'], self.title)
-
-    def test_bulk_partial_update_projects_send_dictionary_not_list(self):
-        res = self.app.patch_json_api(self.url, {'data': {'id': self.public_project._id, 'attributes': {'title': self.new_title, 'category': "project"}}},
-                                    auth=self.user.auth, expect_errors=True, bulk=True)
-        assert_equal(res.status_code, 400)
-        assert_equal(res.json['errors'][0]['detail'], 'Expected a list of items but got type "dict".')
-
-    def test_bulk_partial_update_error_formatting(self):
-        res = self.app.patch_json_api(self.url, self.empty_payload, auth=self.user.auth, expect_errors=True, bulk=True)
-        assert_equal(res.status_code, 400)
-        assert_equal(len(res.json['errors']), 2)
+    #   test_bulk_update_error_formatting
+        res = app.put_json_api(url, empty_payload, auth=user.auth, expect_errors=True, bulk=True)
+        assert res.status_code == 400
+        assert len(res.json['errors']) == 2
         errors = res.json['errors']
-        assert_items_equal([errors[0]['source'], errors[1]['source']],
-                           [{'pointer': '/data/0/attributes/title'}, {'pointer': '/data/1/attributes/title'}])
-        assert_items_equal([errors[0]['detail'], errors[1]['detail']],
-                           ['This field may not be blank.']*2)
+        assert errors[0]['source'] == {'pointer': '/data/0/attributes/title'}
+        assert errors[1]['source'] == {'pointer': '/data/1/attributes/title'}
+        assert errors[0]['detail'] == 'This field may not be blank.'
+        assert errors[1]['detail'] == 'This field may not be blank.'
 
-    def test_bulk_partial_update_id_not_supplied(self):
-        res = self.app.patch_json_api(self.url, {'data': [{'type': 'nodes', 'attributes': {'title': self.new_title}}]},
-                                      auth=self.user.auth, expect_errors=True, bulk=True)
-        assert_equal(res.status_code, 400)
-        assert_equal(len(res.json['errors']), 1)
-        assert_equal(res.json['errors'][0]['detail'], 'This field may not be null.')
+    #   test_bulk_update_id_not_supplied
+        res = app.put_json_api(url, {'data': [public_payload['data'][1], {'type': 'nodes', 'attributes':
+            {'title': new_title, 'category': new_category}}]}, auth=user.auth, expect_errors=True, bulk=True)
+        assert res.status_code == 400
+        assert len(res.json['errors']) == 1
+        assert res.json['errors'][0]['source']['pointer'] == '/data/1/id'
+        assert res.json['errors'][0]['detail'] == "This field may not be null."
 
-    def test_bulk_partial_update_limits(self):
-        node_update_list = {'data': [self.public_payload['data'][0]] * 101 }
-        res = self.app.patch_json_api(self.url, node_update_list, auth=self.user.auth, expect_errors=True, bulk=True)
-        assert_equal(res.json['errors'][0]['detail'], 'Bulk operation limit is 100, got 101.')
-        assert_equal(res.json['errors'][0]['source']['pointer'], '/data')
+        public_project_two_url = '/{}nodes/{}/'.format(API_BASE, public_project_two._id)
 
-    def test_bulk_partial_update_privacy_has_no_effect_on_tags(self):
-        self.public_project.add_tag('tag1', Auth(self.public_project.creator), save=True)
-        payload = {'id': self.public_project._id, 'type': 'nodes', 'attributes': {'public': False}}
-        res = self.app.patch_json_api(self.url, {'data': [payload]}, auth=self.user.auth, bulk=True)
-        assert_equal(res.status_code, 200)
-        self.public_project.reload()
-        assert_equal(list(self.public_project.tags.values_list('name', flat=True)), ['tag1'])
-        assert_equal(self.public_project.is_public, False)
+        res = app.get(public_project_two_url, auth=user.auth)
+        assert res.json['data']['attributes']['title'] == title
 
+    #   test_bulk_update_type_not_supplied
+        res = app.put_json_api(url, {'data': [public_payload['data'][1], {'id': public_project_one._id, 'attributes':
+            {'title': new_title, 'category': new_category}}]}, auth=user.auth, expect_errors=True, bulk=True)
+        assert res.status_code == 400
+        assert len(res.json['errors']) == 1
+        assert res.json['errors'][0]['source']['pointer'] == '/data/1/type'
+        assert res.json['errors'][0]['detail'] == "This field may not be null."
 
-class TestNodeBulkUpdateSkipUneditable(ApiTestCase):
+        public_project_two_url = '/{}nodes/{}/'.format(API_BASE, public_project_two._id)
 
-    def setUp(self):
-        super(TestNodeBulkUpdateSkipUneditable, self).setUp()
-        self.user = AuthUserFactory()
-        self.user_two = AuthUserFactory()
+        res = app.get(public_project_two_url, auth=user.auth)
+        assert res.json['data']['attributes']['title'] == title
 
-        self.title = 'Cool Project'
-        self.new_title = 'Super Cool Project'
-        self.description = 'A Properly Cool Project'
-        self.new_description = 'An even cooler project'
-        self.category = 'data'
-        self.new_category = 'project'
+    #   test_bulk_update_incorrect_type
+        res = app.put_json_api(url, {'data': [public_payload['data'][1], {'id': public_project_one._id, 'type': 'Incorrect', 'attributes':
+            {'title': new_title, 'category': new_category}}]}, auth=user.auth, expect_errors=True, bulk=True)
+        assert res.status_code == 409
 
-        self.public_project = ProjectFactory(title=self.title,
-                                             description=self.description,
-                                             category=self.category,
-                                             is_public=True,
-                                             creator=self.user)
+        public_project_two_url = '/{}nodes/{}/'.format(API_BASE, public_project_two._id)
 
-        self.public_project_two = ProjectFactory(title=self.title,
-                                                description=self.description,
-                                                category=self.category,
-                                                is_public=True,
-                                                creator=self.user)
+        res = app.get(public_project_two_url, auth=user.auth)
+        assert res.json['data']['attributes']['title'] == title
 
-        self.public_project_three = ProjectFactory(title=self.title,
-                                                description=self.description,
-                                                category=self.category,
-                                                is_public=True,
-                                                creator=self.user_two)
+    #   test_bulk_update_limits
+        node_update_list = {'data': [public_payload['data'][0]] * 101}
+        res = app.put_json_api(url, node_update_list, auth=user.auth, expect_errors=True, bulk=True)
+        assert res.json['errors'][0]['detail'] == 'Bulk operation limit is 100, got 101.'
+        assert res.json['errors'][0]['source']['pointer'] == '/data'
 
-        self.public_project_four = ProjectFactory(title=self.title,
-                                                description=self.description,
-                                                category=self.category,
-                                                is_public=True,
-                                                creator=self.user_two)
+    #   test_bulk_update_no_title_or_category
+        new_payload = {'id': public_project_one._id, 'type': 'nodes', 'attributes': {}}
+        res = app.put_json_api(url, {'data': [public_payload['data'][1], new_payload]}, auth=user.auth, expect_errors=True, bulk=True)
+        assert res.status_code == 400
 
-        self.public_payload = {
+        public_project_two_url = '/{}nodes/{}/'.format(API_BASE, public_project_two._id)
+
+        res = app.get(public_project_two_url, auth=user.auth)
+        assert res.json['data']['attributes']['title'] == title
+
+    def test_bulk_update_private_projects_logged_in_read_only_contrib(self, app, user, private_project_one, private_project_two, title, private_payload, url):
+        read_contrib = AuthUserFactory()
+        private_project_one.add_contributor(read_contrib, permissions=[permissions.READ], save=True)
+        private_project_two.add_contributor(read_contrib, permissions=[permissions.READ], save=True)
+        res = app.put_json_api(url, private_payload, auth=read_contrib.auth, expect_errors=True, bulk=True)
+        assert res.status_code == 403
+        assert res.json['errors'][0]['detail'] == exceptions.PermissionDenied.default_detail
+
+        private_project_one_url = '/{}nodes/{}/'.format(API_BASE, private_project_one._id)
+        private_project_two_url = '/{}nodes/{}/'.format(API_BASE, private_project_two._id)
+
+        res = app.get(private_project_one_url, auth=user.auth)
+        assert res.json['data']['attributes']['title'] == title
+
+        res = app.get(private_project_two_url, auth=user.auth)
+        assert res.json['data']['attributes']['title'] == title
+
+    def test_bulk_update_public_projects_logged_in(self, app, user, public_project_one, public_project_two, public_payload, new_title, url):
+        res = app.put_json_api(url, public_payload, auth=user.auth, bulk=True)
+        assert res.status_code == 200
+        assert ({public_project_one._id, public_project_two._id} ==
+                     {res.json['data'][0]['id'], res.json['data'][1]['id']})
+        assert res.json['data'][0]['attributes']['title'] == new_title
+        assert res.json['data'][1]['attributes']['title'] == new_title
+
+    def test_bulk_update_with_tags(self, app, user, public_project_one, url):
+        new_payload = {'data': [{'id': public_project_one._id, 'type': 'nodes', 'attributes': {'title': 'New title', 'category': 'project', 'tags': ['new tag']}}]}
+
+        res = app.put_json_api(url, new_payload, auth=user.auth, expect_errors=True, bulk=True)
+        assert res.status_code == 200
+        assert res.json['data'][0]['attributes']['tags'] == ['new tag']
+
+    def test_bulk_update_private_projects_logged_in_contrib(self, app, user, private_project_one, private_project_two, private_payload, new_title, url):
+        res = app.put_json_api(url, private_payload, auth=user.auth, bulk=True)
+        assert res.status_code == 200
+        assert ({private_project_one._id, private_project_two._id} == {res.json['data'][0]['id'], res.json['data'][1]['id']})
+        assert res.json['data'][0]['attributes']['title'] == new_title
+        assert res.json['data'][1]['attributes']['title'] == new_title
+
+@pytest.mark.django_db
+class TestNodeBulkPartialUpdate:
+
+    @pytest.fixture()
+    def title(self):
+        return 'Rachel is great'
+
+    @pytest.fixture()
+    def new_title(self):
+        return 'Rachel is awesome'
+
+    @pytest.fixture()
+    def description(self):
+        return 'Such a cool person'
+
+    @pytest.fixture()
+    def new_description(self):
+        return 'Such an amazing person'
+
+    @pytest.fixture()
+    def category(self):
+        return 'data'
+
+    @pytest.fixture()
+    def new_category(self):
+        return 'project'
+
+    @pytest.fixture()
+    def public_project_one(self, user, title, description, category):
+        return ProjectFactory(title=title, description=description, category=category, is_public=True, creator=user)
+
+    @pytest.fixture()
+    def public_project_two(self, user, title, description, category):
+        return ProjectFactory(title=title, description=description, category=category, is_public=True, creator=user)
+
+    @pytest.fixture()
+    def public_payload(self, public_project_one, public_project_two, new_title, new_description, new_category):
+        return {
             'data': [
                 {
-                    'id': self.public_project._id,
+                    'id': public_project_one._id,
                     'type': 'nodes',
                     'attributes': {
-                        'title': self.new_title,
-                        'description': self.new_description,
-                        'category': self.new_category,
+                        'title': new_title,
+                    }
+                },
+                {
+                    'id': public_project_two._id,
+                    'type': 'nodes',
+                    'attributes': {
+                        'title': new_title,
+                    }
+                }
+            ]
+        }
+
+    @pytest.fixture()
+    def url(self):
+        return '/{}nodes/'.format(API_BASE)
+
+    @pytest.fixture()
+    def private_project_one(self, user, title, description, category):
+        return ProjectFactory(title=title, description=description, category=category, is_public=False, creator=user)
+
+    @pytest.fixture()
+    def private_project_two(self, user, title, description, category):
+        return ProjectFactory(title=title, description=description, category=category, is_public=False, creator=user)
+
+    @pytest.fixture()
+    def private_payload(self, private_project_one, private_project_two, new_title, new_description, new_category):
+        return {
+            'data': [
+                {
+                    'id': private_project_one._id,
+                    'type': 'nodes',
+                    'attributes': {
+                        'title': new_title
+                    }
+                },
+                {
+                    'id': private_project_two._id,
+                    'type': 'nodes',
+                    'attributes': {
+                        'title': new_title
+                    }
+                }
+            ]
+        }
+
+    @pytest.fixture()
+    def empty_payload(self, public_project_one, public_project_two):
+        return {
+            'data': [
+                {
+                    'id': public_project_one._id,
+                    'type': 'nodes',
+                    'attributes': {
+                        'title': ''
+                    }
+                },
+                {
+                    'id': public_project_two._id,
+                    'type': 'nodes',
+                    'attributes': {
+                        'title': ''
+                    }
+                }
+            ]
+        }
+
+    def test_bulk_partial_update_errors(self, app, user, public_project_one, public_project_two, private_project_one, private_project_two, title, new_title, public_payload, private_payload, empty_payload, url):
+
+        #   test_bulk_patch_nodes_blank_request
+        res = app.patch_json_api(url, auth=user.auth, expect_errors=True, bulk=True)
+        assert res.status_code == 400
+
+    #   test_bulk_partial_update_public_projects_one_not_found
+        payload = {'data': [
+            {
+                'id': '12345',
+                'type': 'nodes',
+                'attributes': {
+                    'title': new_title
+                }
+            },
+            public_payload['data'][0]
+        ]}
+        res = app.patch_json_api(url, payload, auth=user.auth, expect_errors=True, bulk=True)
+        assert res.status_code == 400
+        assert res.json['errors'][0]['detail'] == 'Could not find all objects to update.'
+
+        public_project_one_url = '/{}nodes/{}/'.format(API_BASE, public_project_one._id)
+        res = app.get(public_project_one_url)
+        assert res.json['data']['attributes']['title'] == title
+
+    #   test_bulk_partial_update_public_projects_logged_out
+        res = app.patch_json_api(url, public_payload, expect_errors=True, bulk=True)
+        assert res.status_code == 401
+        assert res.json['errors'][0]['detail'] == exceptions.NotAuthenticated.default_detail
+
+        public_project_one_url = '/{}nodes/{}/'.format(API_BASE, public_project_one._id)
+        public_project_two_url = '/{}nodes/{}/'.format(API_BASE, public_project_two._id)
+
+        res = app.get(public_project_one_url)
+        assert res.json['data']['attributes']['title'] == title
+
+        res = app.get(public_project_two_url)
+        assert res.json['data']['attributes']['title'] == title
+
+    #   test_bulk_partial_update_private_projects_logged_out
+        res = app.patch_json_api(url, private_payload, expect_errors=True, bulk=True)
+        assert res.status_code == 401
+        assert res.json['errors'][0]['detail'] == exceptions.NotAuthenticated.default_detail
+
+        private_project_one_url = '/{}nodes/{}/'.format(API_BASE, private_project_one._id)
+        private_project_two_url = '/{}nodes/{}/'.format(API_BASE, private_project_two._id)
+
+        res = app.get(private_project_one_url, auth=user.auth)
+        assert res.json['data']['attributes']['title'] == title
+
+        res = app.get(private_project_two_url, auth=user.auth)
+        assert res.json['data']['attributes']['title'] == title
+
+    #   test_bulk_partial_update_private_projects_logged_in_non_contrib
+        non_contrib = AuthUserFactory()
+        res = app.patch_json_api(url, private_payload, auth=non_contrib.auth, expect_errors=True, bulk=True)
+        assert res.status_code == 403
+        assert res.json['errors'][0]['detail'] == exceptions.PermissionDenied.default_detail
+
+        private_project_one_url = '/{}nodes/{}/'.format(API_BASE, private_project_one._id)
+        private_project_two_url = '/{}nodes/{}/'.format(API_BASE, private_project_two._id)
+
+        res = app.get(private_project_one_url, auth=user.auth)
+        assert res.json['data']['attributes']['title'] == title
+
+        res = app.get(private_project_two_url, auth=user.auth)
+        assert res.json['data']['attributes']['title'] == title
+
+    #   test_bulk_partial_update_projects_send_dictionary_not_list
+        res = app.patch_json_api(url, {'data': {'id': public_project_one._id, 'attributes': {'title': new_title, 'category': "project"}}},
+                                    auth=user.auth, expect_errors=True, bulk=True)
+        assert res.status_code == 400
+        assert res.json['errors'][0]['detail'] == 'Expected a list of items but got type "dict".'
+
+    #   test_bulk_partial_update_error_formatting
+        res = app.patch_json_api(url, empty_payload, auth=user.auth, expect_errors=True, bulk=True)
+        assert res.status_code == 400
+        assert len(res.json['errors']) == 2
+        errors = res.json['errors']
+        assert errors[0]['source'] == {'pointer': '/data/0/attributes/title'}
+        assert errors[1]['source'] == {'pointer': '/data/1/attributes/title'}
+        assert errors[0]['detail'] == 'This field may not be blank.'
+        assert errors[1]['detail'] == 'This field may not be blank.'
+
+    #   test_bulk_partial_update_id_not_supplied
+        res = app.patch_json_api(url, {'data': [{'type': 'nodes', 'attributes': {'title': new_title}}]},
+                                      auth=user.auth, expect_errors=True, bulk=True)
+        assert res.status_code == 400
+        assert len(res.json['errors']) == 1
+        assert res.json['errors'][0]['detail'] == 'This field may not be null.'
+
+    #   test_bulk_partial_update_limits
+        node_update_list = {'data': [public_payload['data'][0]] * 101}
+        res = app.patch_json_api(url, node_update_list, auth=user.auth, expect_errors=True, bulk=True)
+        assert res.json['errors'][0]['detail'] == 'Bulk operation limit is 100, got 101.'
+        assert res.json['errors'][0]['source']['pointer'] == '/data'
+
+    def test_bulk_partial_update_public_projects_logged_in(self, app, user, public_project_one, public_project_two, new_title, public_payload, url):
+        res = app.patch_json_api(url, public_payload, auth=user.auth, expect_errors=True, bulk=True)
+        assert res.status_code == 200
+        assert ({public_project_one._id, public_project_two._id} ==
+                     {res.json['data'][0]['id'], res.json['data'][1]['id']})
+        assert res.json['data'][0]['attributes']['title'] == new_title
+        assert res.json['data'][1]['attributes']['title'] == new_title
+
+    def test_bulk_partial_update_private_projects_logged_in_contrib(self, app, user, private_project_one, private_project_two, new_title, private_payload, url):
+        res = app.patch_json_api(url, private_payload, auth=user.auth, bulk=True)
+        assert res.status_code == 200
+        assert ({private_project_one._id, private_project_two._id} ==
+                     {res.json['data'][0]['id'], res.json['data'][1]['id']})
+        assert res.json['data'][0]['attributes']['title'] == new_title
+        assert res.json['data'][1]['attributes']['title'] == new_title
+
+    def test_bulk_partial_update_private_projects_logged_in_read_only_contrib(self, app, user, private_project_one, private_project_two, title, private_payload, url):
+        read_contrib = AuthUserFactory()
+        private_project_one.add_contributor(read_contrib, permissions=[permissions.READ], save=True)
+        private_project_two.add_contributor(read_contrib, permissions=[permissions.READ], save=True)
+        res = app.patch_json_api(url, private_payload, auth=read_contrib.auth, expect_errors=True, bulk=True)
+        assert res.status_code == 403
+        assert res.json['errors'][0]['detail'] == exceptions.PermissionDenied.default_detail
+
+        private_project_one_url = '/{}nodes/{}/'.format(API_BASE, private_project_one._id)
+        private_project_two_url = '/{}nodes/{}/'.format(API_BASE, private_project_two._id)
+
+        res = app.get(private_project_one_url, auth=user.auth)
+        assert res.json['data']['attributes']['title'] == title
+
+        res = app.get(private_project_two_url, auth=user.auth)
+        assert res.json['data']['attributes']['title'] == title
+
+    def test_bulk_partial_update_privacy_has_no_effect_on_tags(self, app, user, public_project_one, url):
+        public_project_one.add_tag('tag1', Auth(public_project_one.creator), save=True)
+        payload = {'id': public_project_one._id, 'type': 'nodes', 'attributes': {'public': False}}
+        res = app.patch_json_api(url, {'data': [payload]}, auth=user.auth, bulk=True)
+        assert res.status_code == 200
+        public_project_one.reload()
+        assert list(public_project_one.tags.values_list('name', flat=True)) == ['tag1']
+        assert public_project_one.is_public is False
+
+@pytest.mark.django_db
+class TestNodeBulkUpdateSkipUneditable:
+
+    @pytest.fixture()
+    def user_one(self):
+        return AuthUserFactory()
+
+    @pytest.fixture()
+    def user_two(self):
+        return AuthUserFactory()
+
+    @pytest.fixture()
+    def title(self):
+        return 'A painting of reason'
+
+    @pytest.fixture()
+    def new_title(self):
+        return 'A reason for painting'
+
+    @pytest.fixture()
+    def description(self):
+        return 'Truly a masterful work of reasoning'
+
+    @pytest.fixture()
+    def new_description(self):
+        return 'An insight into the reason for art'
+
+    @pytest.fixture()
+    def category(self):
+        return 'data'
+
+    @pytest.fixture()
+    def new_category(self):
+        return 'project'
+
+    @pytest.fixture()
+    def user_one_public_project_one(self, user_one, title, description, category):
+        return ProjectFactory(title=title, description=description, category=category, is_public=True, creator=user_one)
+
+    @pytest.fixture()
+    def user_one_public_project_two(self, user_one, title, description, category):
+        return ProjectFactory(title=title, description=description, category=category, is_public=True, creator=user_one)
+
+    @pytest.fixture()
+    def user_two_public_project_one(self, user_two, title, description, category):
+        return ProjectFactory(title=title, description=description, category=category, is_public=True, creator=user_two)
+
+    @pytest.fixture()
+    def user_two_public_project_two(self, user_two, title, description, category):
+        return ProjectFactory(title=title, description=description, category=category, is_public=True, creator=user_two)
+
+    @pytest.fixture()
+    def public_payload(self, user_one_public_project_one, user_one_public_project_two, user_two_public_project_one, user_two_public_project_two, new_title, new_description, new_category):
+        return {
+            'data': [
+                {
+                    'id': user_one_public_project_one._id,
+                    'type': 'nodes',
+                    'attributes': {
+                        'title': new_title,
+                        'description': new_description,
+                        'category': new_category,
                         'public': True
                     }
                 },
                 {
-                    'id': self.public_project_two._id,
+                    'id': user_one_public_project_two._id,
                     'type': 'nodes',
                     'attributes': {
-                        'title': self.new_title,
-                        'description': self.new_description,
-                        'category': self.new_category,
+                        'title': new_title,
+                        'description': new_description,
+                        'category': new_category,
                         'public': True
                     }
                 },
-                 {
-                    'id': self.public_project_three._id,
+                {
+                    'id': user_two_public_project_one._id,
                     'type': 'nodes',
                     'attributes': {
-                        'title': self.new_title,
-                        'description': self.new_description,
-                        'category': self.new_category,
+                        'title': new_title,
+                        'description': new_description,
+                        'category': new_category,
                         'public': True
                     }
                 },
-                 {
-                    'id': self.public_project_four._id,
+                {
+                    'id': user_two_public_project_two._id,
                     'type': 'nodes',
                     'attributes': {
-                        'title': self.new_title,
-                        'description': self.new_description,
-                        'category': self.new_category,
+                        'title': new_title,
+                        'description': new_description,
+                        'category': new_category,
                         'public': True
                     }
                 }
             ]
         }
 
-        self.url = '/{}nodes/?skip_uneditable=True'.format(API_BASE)
+    @pytest.fixture()
+    def url(self):
+        return '/{}nodes/?skip_uneditable=True'.format(API_BASE)
 
-    def test_skip_uneditable_bulk_update(self):
-        res = self.app.put_json_api(self.url, self.public_payload, auth=self.user.auth, expect_errors=True, bulk=True)
-        assert_equal(res.status_code, 200)
+    def test_bulk_update_skips(self, app, user_one, user_one_public_project_one, user_one_public_project_two, user_two_public_project_one, user_two_public_project_two, title, public_payload):
+
+        #   test_skip_uneditable_bulk_update_query_param_required
+        nodes_url = '/{}nodes/'.format(API_BASE)
+        res = app.put_json_api(nodes_url, public_payload, auth=user_one.auth, expect_errors=True, bulk=True)
+        assert res.status_code == 403
+        user_one_public_project_one.reload()
+        user_one_public_project_two.reload()
+        user_two_public_project_one.reload()
+        user_two_public_project_two.reload()
+
+        assert user_one_public_project_one.title == title
+        assert user_one_public_project_two.title == title
+        assert user_two_public_project_one.title == title
+        assert user_two_public_project_two.title == title
+
+    #   test_skip_uneditable_equals_false_bulk_update
+        skip_uneditable_url = '/{}nodes/?skip_uneditable=False'.format(API_BASE)
+        res = app.put_json_api(skip_uneditable_url, public_payload, auth=user_one.auth, expect_errors=True, bulk=True)
+        assert res.status_code == 403
+        user_one_public_project_one.reload()
+        user_one_public_project_two.reload()
+        user_two_public_project_one.reload()
+        user_two_public_project_two.reload()
+
+        assert user_one_public_project_one.title == title
+        assert user_one_public_project_two.title == title
+        assert user_two_public_project_one.title == title
+        assert user_two_public_project_two.title == title
+
+    #   test_skip_uneditable_bulk_partial_update_query_param_required
+        url = '/{}nodes/'.format(API_BASE)
+        res = app.patch_json_api(url, public_payload, auth=user_one.auth, expect_errors=True, bulk=True)
+        assert res.status_code == 403
+        user_one_public_project_one.reload()
+        user_one_public_project_two.reload()
+        user_two_public_project_one.reload()
+        user_two_public_project_two.reload()
+
+        assert user_one_public_project_one.title == title
+        assert user_one_public_project_two.title == title
+        assert user_two_public_project_one.title == title
+        assert user_two_public_project_two.title == title
+
+    def test_skip_uneditable_bulk_update(self, app, user_one, user_one_public_project_one, user_one_public_project_two, user_two_public_project_one, user_two_public_project_two, title, new_title, public_payload, url):
+        res = app.put_json_api(url, public_payload, auth=user_one.auth, expect_errors=True, bulk=True)
+        assert res.status_code == 200
         edited = res.json['data']
         skipped = res.json['errors']
         assert_items_equal([edited[0]['id'], edited[1]['id']],
-                           [self.public_project._id, self.public_project_two._id])
+                           [user_one_public_project_one._id, user_one_public_project_two._id])
         assert_items_equal([skipped[0]['_id'], skipped[1]['_id']],
-                           [self.public_project_three._id, self.public_project_four._id])
-        self.public_project.reload()
-        self.public_project_two.reload()
-        self.public_project_three.reload()
-        self.public_project_four.reload()
+                           [user_two_public_project_one._id, user_two_public_project_two._id])
+        user_one_public_project_one.reload()
+        user_one_public_project_two.reload()
+        user_two_public_project_one.reload()
+        user_two_public_project_two.reload()
 
-        assert_equal(self.public_project.title, self.new_title)
-        assert_equal(self.public_project_two.title, self.new_title)
-        assert_equal(self.public_project_three.title, self.title)
-        assert_equal(self.public_project_four.title, self.title)
+        assert user_one_public_project_one.title == new_title
+        assert user_one_public_project_two.title == new_title
+        assert user_two_public_project_one.title == title
+        assert user_two_public_project_two.title == title
 
-
-    def test_skip_uneditable_bulk_update_query_param_required(self):
-        url = '/{}nodes/'.format(API_BASE)
-        res = self.app.put_json_api(url, self.public_payload, auth=self.user.auth, expect_errors=True, bulk=True)
-        assert_equal(res.status_code, 403)
-        self.public_project.reload()
-        self.public_project_two.reload()
-        self.public_project_three.reload()
-        self.public_project_four.reload()
-
-        assert_equal(self.public_project.title, self.title)
-        assert_equal(self.public_project_two.title, self.title)
-        assert_equal(self.public_project_three.title, self.title)
-        assert_equal(self.public_project_four.title, self.title)
-
-    def test_skip_uneditable_equals_false_bulk_update(self):
-        url = '/{}nodes/?skip_uneditable=False'.format(API_BASE)
-        res = self.app.put_json_api(url, self.public_payload, auth=self.user.auth, expect_errors=True, bulk=True)
-        assert_equal(res.status_code, 403)
-        self.public_project.reload()
-        self.public_project_two.reload()
-        self.public_project_three.reload()
-        self.public_project_four.reload()
-
-        assert_equal(self.public_project.title, self.title)
-        assert_equal(self.public_project_two.title, self.title)
-        assert_equal(self.public_project_three.title, self.title)
-        assert_equal(self.public_project_four.title, self.title)
-
-    def test_skip_uneditable_bulk_partial_update(self):
-        res = self.app.patch_json_api(self.url, self.public_payload, auth=self.user.auth, expect_errors=True, bulk=True)
-        assert_equal(res.status_code, 200)
+    def test_skip_uneditable_bulk_partial_update(self, app, user_one, user_one_public_project_one, user_one_public_project_two, user_two_public_project_one, user_two_public_project_two, title, new_title, public_payload, url):
+        res = app.patch_json_api(url, public_payload, auth=user_one.auth, expect_errors=True, bulk=True)
+        assert res.status_code == 200
         edited = res.json['data']
         skipped = res.json['errors']
         assert_items_equal([edited[0]['id'], edited[1]['id']],
-                           [self.public_project._id, self.public_project_two._id])
+                           [user_one_public_project_one._id, user_one_public_project_two._id])
         assert_items_equal([skipped[0]['_id'], skipped[1]['_id']],
-                           [self.public_project_three._id, self.public_project_four._id])
-        self.public_project.reload()
-        self.public_project_two.reload()
-        self.public_project_three.reload()
-        self.public_project_four.reload()
+                           [user_two_public_project_one._id, user_two_public_project_two._id])
+        user_one_public_project_one.reload()
+        user_one_public_project_two.reload()
+        user_two_public_project_one.reload()
+        user_two_public_project_two.reload()
 
-        assert_equal(self.public_project.title, self.new_title)
-        assert_equal(self.public_project_two.title, self.new_title)
-        assert_equal(self.public_project_three.title, self.title)
-        assert_equal(self.public_project_four.title, self.title)
-
-
-    def test_skip_uneditable_bulk_partial_update_query_param_required(self):
-        url = '/{}nodes/'.format(API_BASE)
-        res = self.app.patch_json_api(url, self.public_payload, auth=self.user.auth, expect_errors=True, bulk=True)
-        assert_equal(res.status_code, 403)
-        self.public_project.reload()
-        self.public_project_two.reload()
-        self.public_project_three.reload()
-        self.public_project_four.reload()
-
-        assert_equal(self.public_project.title, self.title)
-        assert_equal(self.public_project_two.title, self.title)
-        assert_equal(self.public_project_three.title, self.title)
-        assert_equal(self.public_project_four.title, self.title)
+        assert user_one_public_project_one.title == new_title
+        assert user_one_public_project_two.title == new_title
+        assert user_two_public_project_one.title == title
+        assert user_two_public_project_two.title == title
 
 
-class TestNodeBulkDelete(ApiTestCase):
+@pytest.mark.django_db
+class TestNodeBulkDelete:
 
-    def setUp(self):
-        super(TestNodeBulkDelete, self).setUp()
-        self.user_one = AuthUserFactory()
-        self.user_two = AuthUserFactory()
-        self.project_one = ProjectFactory(title="Project One", is_public=True, creator=self.user_one, category="project")
-        self.project_two = ProjectFactory(title="Project Two", description="One Three", is_public=True, creator=self.user_one)
-        self.private_project_user_one = ProjectFactory(title="Private Project User One",
-                                                       is_public=False,
-                                                       creator=self.user_one)
-        self.private_project_user_two = ProjectFactory(title="Private Project User Two",
-                                                       is_public=False,
-                                                       creator=self.user_two)
+    @pytest.fixture()
+    def user_one(self):
+        return AuthUserFactory()
 
-        self.url = "/{}nodes/".format(API_BASE)
-        self.project_one_url = '/{}nodes/{}/'.format(API_BASE, self.project_one._id)
-        self.project_two_url = '/{}nodes/{}/'.format(API_BASE, self.project_two._id)
-        self.private_project_url = "/{}nodes/{}/".format(API_BASE, self.private_project_user_one._id)
+    @pytest.fixture()
+    def user_two(self):
+        return AuthUserFactory()
 
-        self.public_payload = {'data': [{'id': self.project_one._id, 'type': 'nodes'}, {'id': self.project_two._id, 'type': 'nodes'}]}
-        self.public_query_params = 'id={},{}'.format(self.project_one._id, self.project_two._id)
-        self.type_query_param = 'type=nodes'
-        self.private_payload = {'data': [{'id': self.private_project_user_one._id, 'type': 'nodes'}]}
-        self.private_query_params = 'id={}'.format(self.private_project_user_one._id)
+    @pytest.fixture()
+    def public_project_one(self, user_one):
+        return ProjectFactory(title='Project One', is_public=True, creator=user_one, category='project')
 
-    def test_bulk_delete_with_query_params(self):
-        url = '{}?{}&{}'.format(self.url, self.type_query_param, self.public_query_params)
-        res = self.app.delete_json_api(url, auth=self.user_one.auth, bulk=True)
-        assert_equal(res.status_code, 204)
+    @pytest.fixture()
+    def public_project_two(self, user_one):
+        return ProjectFactory(title='Project Two', description='One Three', is_public=True, creator=user_one)
 
-    def test_bulk_delete_with_query_params_and_payload(self):
-        url = '{}?{}&{}'.format(self.url, self.type_query_param, self.public_query_params)
-        res = self.app.delete_json_api(url, self.public_payload, auth=self.user_one.auth, expect_errors=True, bulk=True)
-        assert_equal(res.status_code, 409)
-        assert_equal(
-            res.json['errors'][0]['detail'],
-            u'A bulk DELETE can only have a body or query parameters, not both.'
-        )
+    @pytest.fixture()
+    def user_one_private_project(self, user_one):
+        return ProjectFactory(title='User One Private Project', is_public=False, creator=user_one)
 
-    def test_bulk_delete_with_query_params_no_type(self):
-        url = '{}?{}'.format(self.url, self.public_query_params)
-        res = self.app.delete_json_api(url, auth=self.user_one.auth, expect_errors=True, bulk=True)
-        assert_equal(res.status_code, 400)
-        assert_equal(
-            res.json['errors'][0]['detail'],
-            u'Type query parameter is also required for a bulk DELETE using query parameters.'
-        )
+    @pytest.fixture()
+    def user_two_private_project(self, user_two):
+        return ProjectFactory(title='User Two Private Project', is_public=False, creator=user_two)
 
-    def test_bulk_delete_with_query_params_wrong_type(self):
-        url = '{}?{}&{}'.format(self.url, self.public_query_params, "type=node_not_nodes")
-        res = self.app.delete_json_api(url, auth=self.user_one.auth, expect_errors=True, bulk=True)
-        assert_equal(res.status_code, 409)
-        assert_equal(
-            res.json['errors'][0]['detail'],
-            u'Type needs to match type expected at this endpoint.'
-        )
+    @pytest.fixture()
+    def url(self):
+        return '/{}nodes/'.format(API_BASE)
 
-    def test_bulk_delete_nodes_blank_request(self):
-        res = self.app.delete_json_api(self.url, auth=self.user_one.auth, expect_errors=True, bulk=True)
-        assert_equal(res.status_code, 400)
+    @pytest.fixture()
+    def public_project_one_url(self, public_project_one):
+        return '/{}nodes/{}/'.format(API_BASE, public_project_one._id)
 
-    def test_bulk_delete_no_type(self):
+    @pytest.fixture()
+    def public_project_two_url(self, public_project_two):
+        return '/{}nodes/{}/'.format(API_BASE, public_project_two._id)
+
+    @pytest.fixture()
+    def user_one_private_project_url(self, user_one_private_project):
+        return '/{}nodes/{}/'.format(API_BASE, user_one_private_project._id)
+
+    @pytest.fixture()
+    def public_payload(self, public_project_one, public_project_two):
+        return {
+            'data': [
+                {
+                    'id': public_project_one._id,
+                    'type': 'nodes'
+                },
+                {
+                    'id': public_project_two._id,
+                    'type': 'nodes'
+                }
+            ]
+        }
+
+    @pytest.fixture()
+    def public_query_params(self, public_project_one, public_project_two):
+        return 'id={},{}'.format(public_project_one._id, public_project_two._id)
+
+    @pytest.fixture()
+    def type_query_param(self):
+        return 'type=nodes'
+
+    @pytest.fixture()
+    def private_payload(self, user_one_private_project):
+        return {
+            'data': [
+                {
+                    'id': user_one_private_project._id,
+                    'type': 'nodes'
+                }
+            ]
+        }
+
+    @pytest.fixture()
+    def private_query_params(self, user_one_private_project):
+        return 'id={}'.format(user_one_private_project._id)
+
+    def test_bulk_delete_errors(self, app, user_one, public_project_one, public_project_two, user_one_private_project, public_payload, private_payload, type_query_param, public_query_params, url):
+
+        #   test_bulk_delete_with_query_params_and_payload
+        res_url = '{}?{}&{}'.format(url, type_query_param, public_query_params)
+        res = app.delete_json_api(res_url, public_payload, auth=user_one.auth, expect_errors=True, bulk=True)
+        assert res.status_code == 409
+        assert res.json['errors'][0]['detail'] == u'A bulk DELETE can only have a body or query parameters, not both.'
+
+    #   test_bulk_delete_with_query_params_no_type
+        res_url = '{}?{}'.format(url, public_query_params)
+        res = app.delete_json_api(res_url, auth=user_one.auth, expect_errors=True, bulk=True)
+        assert res.status_code == 400
+        assert res.json['errors'][0]['detail'] == u'Type query parameter is also required for a bulk DELETE using query parameters.'
+
+    #   test_bulk_delete_with_query_params_wrong_type
+        res_url = '{}?{}&{}'.format(url, public_query_params, "type=node_not_nodes")
+        res = app.delete_json_api(res_url, auth=user_one.auth, expect_errors=True, bulk=True)
+        assert res.status_code == 409
+        assert res.json['errors'][0]['detail'] == u'Type needs to match type expected at this endpoint.'
+
+    #   test_bulk_delete_nodes_blank_request
+        res = app.delete_json_api(url, auth=user_one.auth, expect_errors=True, bulk=True)
+        assert res.status_code == 400
+
+    #   test_bulk_delete_no_type
         payload = {'data': [
-            {'id': self.project_one._id},
-            {'id': self.project_two._id}
+            {'id': public_project_one._id},
+            {'id': public_project_two._id}
         ]}
-        res = self.app.delete_json_api(self.url, payload, auth=self.user_one.auth, expect_errors=True, bulk=True)
-        assert_equal(res.status_code, 400)
-        assert_equal(res.json['errors'][0]['detail'], 'Request must include /type.')
+        res = app.delete_json_api(url, payload, auth=user_one.auth, expect_errors=True, bulk=True)
+        assert res.status_code == 400
+        assert res.json['errors'][0]['detail'] == 'Request must include /type.'
 
-    def test_bulk_delete_no_id(self):
+    #   test_bulk_delete_no_id
         payload = {'data': [
             {'type': 'nodes'},
             {'id': 'nodes'}
         ]}
-        res = self.app.delete_json_api(self.url, payload, auth=self.user_one.auth, expect_errors=True, bulk=True)
-        assert_equal(res.status_code, 400)
-        assert_equal(res.json['errors'][0]['detail'], 'Request must include /data/id.')
+        res = app.delete_json_api(url, payload, auth=user_one.auth, expect_errors=True, bulk=True)
+        assert res.status_code == 400
+        assert res.json['errors'][0]['detail'] == 'Request must include /data/id.'
 
-    def test_bulk_delete_dict_inside_data(self):
-        res = self.app.delete_json_api(self.url, {'data': {'id': self.project_one._id, 'type': 'nodes'}},
-                                       auth=self.user_one.auth, expect_errors=True, bulk=True)
-        assert_equal(res.status_code, 400)
-        assert_equal(res.json['errors'][0]['detail'], 'Expected a list of items but got type "dict".')
+    #   test_bulk_delete_dict_inside_data
+        res = app.delete_json_api(url, {'data': {'id': public_project_one._id, 'type': 'nodes'}},
+                                       auth=user_one.auth, expect_errors=True, bulk=True)
+        assert res.status_code == 400
+        assert res.json['errors'][0]['detail'] == 'Expected a list of items but got type "dict".'
 
-    def test_bulk_delete_invalid_type(self):
-        res = self.app.delete_json_api(self.url, {'data': [{'type': 'Wrong type', 'id': self.project_one._id}]},
-                                       auth=self.user_one.auth, expect_errors=True, bulk=True)
-        assert_equal(res.status_code, 409)
+    #   test_bulk_delete_invalid_type
+        res = app.delete_json_api(url, {'data': [{'type': 'Wrong type', 'id': public_project_one._id}]},
+                                       auth=user_one.auth, expect_errors=True, bulk=True)
+        assert res.status_code == 409
 
-    def test_bulk_delete_public_projects_logged_in(self):
-        res = self.app.delete_json_api(self.url, self.public_payload, auth=self.user_one.auth, bulk=True)
-        assert_equal(res.status_code, 204)
+    #   test_bulk_delete_private_projects_logged_out
+        res = app.delete_json_api(url, private_payload, expect_errors=True, bulk=True)
+        assert res.status_code == 401
+        assert res.json['errors'][0]['detail'] == exceptions.NotAuthenticated.default_detail
 
-        res = self.app.get(self.project_one_url, auth=self.user_one.auth, expect_errors=True)
-        assert_equal(res.status_code, 410)
-        self.project_one.reload()
-        self.project_two.reload()
+    #   test_bulk_delete_limits
+        new_payload = {'data': [{'id': user_one_private_project._id, 'type': 'nodes'}] * 101}
+        res = app.delete_json_api(url, new_payload,
+                                       auth=user_one.auth, expect_errors=True, bulk=True)
+        assert res.status_code == 400
+        assert res.json['errors'][0]['detail'] == 'Bulk operation limit is 100, got 101.'
+        assert res.json['errors'][0]['source']['pointer'] == '/data'
 
-    def test_bulk_delete_public_projects_logged_out(self):
-        res = self.app.delete_json_api(self.url, self.public_payload, expect_errors=True, bulk=True)
-        assert_equal(res.status_code, 401)
-        assert_equal(res.json['errors'][0]['detail'], 'Authentication credentials were not provided.')
+    #   test_bulk_delete_no_payload
+        res = app.delete_json_api(url, auth=user_one.auth, expect_errors=True, bulk=True)
+        assert res.status_code == 400
 
-        res = self.app.get(self.project_one_url, auth=self.user_one.auth, expect_errors=True)
-        assert_equal(res.status_code, 200)
+    def test_bulk_delete_with_query_params(self, app, user_one, url, type_query_param, public_query_params):
+        url = '{}?{}&{}'.format(url, type_query_param, public_query_params)
+        res = app.delete_json_api(url, auth=user_one.auth, bulk=True)
+        assert res.status_code == 204
 
-        res = self.app.get(self.project_two_url, auth=self.user_one.auth, expect_errors=True)
-        assert_equal(res.status_code, 200)
+    def test_bulk_delete_public_projects_logged_in(self, app, user_one, public_project_one, public_project_two, public_payload, url, public_project_one_url):
+        res = app.delete_json_api(url, public_payload, auth=user_one.auth, bulk=True)
+        assert res.status_code == 204
 
-    def test_bulk_delete_private_projects_logged_out(self):
-        res = self.app.delete_json_api(self.url, self.private_payload, expect_errors=True, bulk=True)
-        assert_equal(res.status_code, 401)
-        assert_equal(res.json['errors'][0]['detail'], 'Authentication credentials were not provided.')
+        res = app.get(public_project_one_url, auth=user_one.auth, expect_errors=True)
+        assert res.status_code == 410
+        public_project_one.reload()
+        public_project_two.reload()
 
-    def test_bulk_delete_private_projects_logged_in_contributor(self):
-        res = self.app.delete_json_api(self.url, self.private_payload,
-                                       auth=self.user_one.auth, expect_errors=True, bulk=True)
-        assert_equal(res.status_code, 204)
+    def test_bulk_delete_public_projects_logged_out(self, app, user_one, public_project_one, public_project_two, public_payload, url, public_project_one_url, public_project_two_url):
+        res = app.delete_json_api(url, public_payload, expect_errors=True, bulk=True)
+        assert res.status_code == 401
+        assert res.json['errors'][0]['detail'] == exceptions.NotAuthenticated.default_detail
 
-        res = self.app.get(self.private_project_url, auth=self.user_one.auth, expect_errors=True)
-        assert_equal(res.status_code, 410)
-        self.private_project_user_one.reload()
+        res = app.get(public_project_one_url, auth=user_one.auth, expect_errors=True)
+        assert res.status_code == 200
 
-    def test_bulk_delete_private_projects_logged_in_non_contributor(self):
-        res = self.app.delete_json_api(self.url, self.private_payload,
-                                       auth=self.user_two.auth, expect_errors=True, bulk=True)
-        assert_equal(res.status_code, 403)
-        assert_equal(res.json['errors'][0]['detail'], 'You do not have permission to perform this action.')
+        res = app.get(public_project_two_url, auth=user_one.auth, expect_errors=True)
+        assert res.status_code == 200
 
-        res = self.app.get(self.private_project_url, auth=self.user_one.auth)
-        assert_equal(res.status_code, 200)
+    def test_bulk_delete_private_projects_logged_in_contributor(self, app, user_one, user_one_private_project, private_payload, url, user_one_private_project_url):
+        res = app.delete_json_api(url, private_payload,
+                                       auth=user_one.auth, expect_errors=True, bulk=True)
+        assert res.status_code == 204
 
-    def test_bulk_delete_private_projects_logged_in_read_only_contributor(self):
-        self.private_project_user_one.add_contributor(self.user_two, permissions=[permissions.READ], save=True)
-        res = self.app.delete_json_api(self.url, self.private_payload,
-                                       auth=self.user_two.auth, expect_errors=True, bulk=True)
-        assert_equal(res.status_code, 403)
-        assert_equal(res.json['errors'][0]['detail'], 'You do not have permission to perform this action.')
+        res = app.get(user_one_private_project_url, auth=user_one.auth, expect_errors=True)
+        assert res.status_code == 410
+        user_one_private_project.reload()
 
-        res = self.app.get(self.private_project_url, auth=self.user_one.auth)
-        assert_equal(res.status_code, 200)
+    def test_bulk_delete_private_projects_logged_in_non_contributor(self, app, user_one, user_two, user_one_private_project, private_payload, url, user_one_private_project_url):
+        res = app.delete_json_api(url, private_payload,
+                                       auth=user_two.auth, expect_errors=True, bulk=True)
+        assert res.status_code == 403
+        assert res.json['errors'][0]['detail'] == exceptions.PermissionDenied.default_detail
 
-    def test_bulk_delete_all_or_nothing(self):
-        new_payload = {'data': [{'id': self.private_project_user_one._id, 'type': 'nodes'}, {'id': self.private_project_user_two._id, 'type': 'nodes'}]}
-        res = self.app.delete_json_api(self.url, new_payload,
-                                       auth=self.user_one.auth, expect_errors=True, bulk=True)
-        assert_equal(res.status_code, 403)
-        assert_equal(res.json['errors'][0]['detail'], 'You do not have permission to perform this action.')
+        res = app.get(user_one_private_project_url, auth=user_one.auth)
+        assert res.status_code == 200
 
-        res = self.app.get(self.private_project_url, auth=self.user_one.auth)
-        assert_equal(res.status_code, 200)
+    def test_bulk_delete_private_projects_logged_in_read_only_contributor(self, app, user_one, user_two, user_one_private_project, private_payload, url, user_one_private_project_url):
+        user_one_private_project.add_contributor(user_two, permissions=[permissions.READ], save=True)
+        res = app.delete_json_api(url, private_payload,
+                                       auth=user_two.auth, expect_errors=True, bulk=True)
+        assert res.status_code == 403
+        assert res.json['errors'][0]['detail'] == exceptions.PermissionDenied.default_detail
 
-        url = "/{}nodes/{}/".format(API_BASE, self.private_project_user_two._id)
-        res = self.app.get(url, auth=self.user_two.auth)
-        assert_equal(res.status_code, 200)
+        res = app.get(user_one_private_project_url, auth=user_one.auth)
+        assert res.status_code == 200
 
-    def test_bulk_delete_limits(self):
-        new_payload = {'data': [{'id': self.private_project_user_one._id, 'type':'nodes'}] * 101 }
-        res = self.app.delete_json_api(self.url, new_payload,
-                                       auth=self.user_one.auth, expect_errors=True, bulk=True)
-        assert_equal(res.status_code, 400)
-        assert_equal(res.json['errors'][0]['detail'], 'Bulk operation limit is 100, got 101.')
-        assert_equal(res.json['errors'][0]['source']['pointer'], '/data')
+    def test_bulk_delete_all_or_nothing(self, app, user_one, user_two, user_one_private_project, user_two_private_project, url, user_one_private_project_url):
+        new_payload = {'data': [{'id': user_one_private_project._id, 'type': 'nodes'}, {'id': user_two_private_project._id, 'type': 'nodes'}]}
+        res = app.delete_json_api(url, new_payload,
+                                       auth=user_one.auth, expect_errors=True, bulk=True)
+        assert res.status_code == 403
+        assert res.json['errors'][0]['detail'] == exceptions.PermissionDenied.default_detail
 
-    def test_bulk_delete_invalid_payload_one_not_found(self):
-        new_payload = {'data': [self.public_payload['data'][0], {'id': '12345', 'type': 'nodes'}]}
-        res = self.app.delete_json_api(self.url, new_payload, auth=self.user_one.auth, expect_errors=True, bulk=True)
-        assert_equal(res.status_code, 400)
-        assert_equal(res.json['errors'][0]['detail'], 'Could not find all objects to delete.')
+        res = app.get(user_one_private_project_url, auth=user_one.auth)
+        assert res.status_code == 200
 
-        res = self.app.get(self.project_one_url, auth=self.user_one.auth)
-        assert_equal(res.status_code, 200)
+        url = "/{}nodes/{}/".format(API_BASE, user_two_private_project._id)
+        res = app.get(url, auth=user_two.auth)
+        assert res.status_code == 200
 
-    def test_bulk_delete_no_payload(self):
-        res = self.app.delete_json_api(self.url, auth=self.user_one.auth, expect_errors=True, bulk=True)
-        assert_equal(res.status_code, 400)
+    def test_bulk_delete_invalid_payload_one_not_found(self, app, user_one, public_payload, public_project_one_url, url):
+        new_payload = {'data': [public_payload['data'][0], {'id': '12345', 'type': 'nodes'}]}
+        res = app.delete_json_api(url, new_payload, auth=user_one.auth, expect_errors=True, bulk=True)
+        assert res.status_code == 400
+        assert res.json['errors'][0]['detail'] == 'Could not find all objects to delete.'
+
+        res = app.get(public_project_one_url, auth=user_one.auth)
+        assert res.status_code == 200
 
 
-class TestNodeBulkDeleteSkipUneditable(ApiTestCase):
+@pytest.mark.django_db
+class TestNodeBulkDeleteSkipUneditable:
 
-    def setUp(self):
-        super(TestNodeBulkDeleteSkipUneditable, self).setUp()
-        self.user_one = AuthUserFactory()
-        self.user_two = AuthUserFactory()
-        self.project_one = ProjectFactory(title="Project One", is_public=True, creator=self.user_one)
-        self.project_two = ProjectFactory(title="Project Two",  is_public=True, creator=self.user_one)
-        self.project_three = ProjectFactory(title="Project Three", is_public=True, creator=self.user_two)
-        self.project_four = ProjectFactory(title="Project Four", is_public=True, creator=self.user_two)
+    @pytest.fixture()
+    def user_one(self):
+        return AuthUserFactory()
 
-        self.payload = {
+    @pytest.fixture()
+    def user_two(self):
+        return AuthUserFactory()
+
+    @pytest.fixture()
+    def public_project_one(self, user_one):
+        return ProjectFactory(title='Project One', is_public=True, creator=user_one)
+
+    @pytest.fixture()
+    def public_project_two(self, user_one):
+        return ProjectFactory(title='Project Two', is_public=True, creator=user_one)
+
+    @pytest.fixture()
+    def public_project_three(self, user_two):
+        return ProjectFactory(title='Project Three', is_public=True, creator=user_two)
+
+    @pytest.fixture()
+    def public_project_four(self, user_two):
+        return ProjectFactory(title='Project Four', is_public=True, creator=user_two)
+
+    @pytest.fixture()
+    def payload(self, public_project_one, public_project_two, public_project_three, public_project_four):
+        return {
             'data': [
                 {
-                    'id': self.project_one._id,
+                    'id': public_project_one._id,
                     'type': 'nodes',
                 },
                 {
-                    'id': self.project_two._id,
+                    'id': public_project_two._id,
                     'type': 'nodes',
                 },
-                 {
-                    'id': self.project_three._id,
+                {
+                    'id': public_project_three._id,
                     'type': 'nodes',
                 },
-                 {
-                    'id': self.project_four._id,
+                {
+                    'id': public_project_four._id,
                     'type': 'nodes',
                 }
             ]
         }
 
+    @pytest.fixture()
+    def url(self):
+        return '/{}nodes/?skip_uneditable=True'.format(API_BASE)
 
-
-        self.url = "/{}nodes/?skip_uneditable=True".format(API_BASE)
-
-    def test_skip_uneditable_bulk_delete(self):
-        res = self.app.delete_json_api(self.url, self.payload, auth=self.user_one.auth, bulk=True)
-        assert_equal(res.status_code, 200)
+    def test_skip_uneditable_bulk_delete(self, app, user_one, public_project_one, public_project_two, public_project_three, public_project_four, payload, url):
+        res = app.delete_json_api(url, payload, auth=user_one.auth, bulk=True)
+        assert res.status_code == 200
         skipped = res.json['errors']
         assert_items_equal([skipped[0]['id'], skipped[1]['id']],
-                           [self.project_three._id, self.project_four._id])
+                           [public_project_three._id, public_project_four._id])
 
-        res = self.app.get('/{}nodes/'.format(API_BASE), auth=self.user_one.auth)
+        res = app.get('/{}nodes/'.format(API_BASE), auth=user_one.auth)
         assert_items_equal([res.json['data'][0]['id'], res.json['data'][1]['id']],
-                           [self.project_three._id, self.project_four._id])
+                           [public_project_three._id, public_project_four._id])
 
-    def test_skip_uneditable_bulk_delete_query_param_required(self):
+    def test_skip_uneditable_bulk_delete_query_param_required(self, app, user_one, payload):
         url = '/{}nodes/'.format(API_BASE)
-        res = self.app.delete_json_api(url, self.payload, auth=self.user_one.auth, expect_errors=True, bulk=True)
-        assert_equal(res.status_code, 403)
+        res = app.delete_json_api(url, payload, auth=user_one.auth, expect_errors=True, bulk=True)
+        assert res.status_code == 403
 
-        res = self.app.get('/{}nodes/'.format(API_BASE), auth=self.user_one.auth)
-        assert_equal(res.status_code, 200)
-        assert_equal(len(res.json['data']), 4)
+        res = app.get('/{}nodes/'.format(API_BASE), auth=user_one.auth)
+        assert res.status_code == 200
+        assert len(res.json['data']) == 4
 
-    def test_skip_uneditable_has_admin_permission_for_all_nodes(self):
+    def test_skip_uneditable_has_admin_permission_for_all_nodes(self, app, user_one, public_project_one, public_project_two, url):
         payload = {
             'data': [
                 {
-                    'id': self.project_one._id,
+                    'id': public_project_one._id,
                     'type': 'nodes',
                 },
                 {
-                    'id': self.project_two._id,
+                    'id': public_project_two._id,
                     'type': 'nodes',
                 }
             ]
         }
 
-        res = self.app.delete_json_api(self.url, payload, auth=self.user_one.auth, bulk=True)
-        assert_equal(res.status_code, 204)
-        self.project_one.reload()
-        self.project_two.reload()
+        res = app.delete_json_api(url, payload, auth=user_one.auth, bulk=True)
+        assert res.status_code == 204
+        public_project_one.reload()
+        public_project_two.reload()
 
-        assert_equal(self.project_one.is_deleted, True)
-        assert_equal(self.project_two.is_deleted, True)
+        assert public_project_one.is_deleted is True
+        assert public_project_two.is_deleted is True
 
-    def test_skip_uneditable_does_not_have_admin_permission_for_any_nodes(self):
+    def test_skip_uneditable_does_not_have_admin_permission_for_any_nodes(self, app, user_one, public_project_three, public_project_four, url):
         payload = {
             'data': [
                 {
-                    'id': self.project_three._id,
+                    'id': public_project_three._id,
                     'type': 'nodes',
                 },
                 {
-                    'id': self.project_four._id,
+                    'id': public_project_four._id,
                     'type': 'nodes',
                 }
             ]
         }
 
-        res = self.app.delete_json_api(self.url, payload, auth=self.user_one.auth, expect_errors=True, bulk=True)
-        assert_equal(res.status_code, 403)
+        res = app.delete_json_api(url, payload, auth=user_one.auth, expect_errors=True, bulk=True)
+        assert res.status_code == 403
 
+@pytest.mark.django_db
+class TestNodeListPagination:
 
-class TestNodeListPagination(ApiTestCase):
+    @pytest.fixture()
+    def users(self):
+        return [UserFactory() for _ in range(11)]
 
-    def setUp(self):
-        super(TestNodeListPagination, self).setUp()
+    @pytest.fixture()
+    def projects(self, users):
+        return [ProjectFactory(is_public=True, creator=users[0]) for _ in range(11)]
 
-        # Ordered by date modified: oldest first
-        self.users = [UserFactory() for _ in range(11)]
-        self.projects = [ProjectFactory(is_public=True, creator=self.users[0]) for _ in range(11)]
+    @pytest.fixture()
+    def url(self, users):
+        return '/{}nodes/'.format(API_BASE)
 
-        self.url = '/{}nodes/'.format(API_BASE)
-
-    def test_default_pagination_size(self):
-        res = self.app.get(self.url, auth=Auth(self.users[0]))
+    def test_default_pagination_size(self, app, users, projects, url):
+        res = app.get(url, auth=Auth(users[0]))
         pids = [e['id'] for e in res.json['data']]
-        for project in self.projects[1:]:
-            assert_in(project._id, pids)
-        assert_not_in(self.projects[0]._id, pids)
-        assert_equal(res.json['links']['meta']['per_page'], 10)
+        for project in projects[1:]:
+            assert project._id in pids
+        assert projects[0]._id not in pids
+        assert res.json['links']['meta']['per_page'] == 10
 
-    def test_max_page_size_enforced(self):
-        url = '{}?page[size]={}'.format(self.url, MAX_PAGE_SIZE+1)
-        res = self.app.get(url, auth=Auth(self.users[0]))
+    def test_max_page_size_enforced(self, app, users, projects, url):
+        res_url = '{}?page[size]={}'.format(url, MAX_PAGE_SIZE + 1)
+        res = app.get(res_url, auth=Auth(users[0]))
         pids = [e['id'] for e in res.json['data']]
-        for project in self.projects:
-            assert_in(project._id, pids)
-        assert_equal(res.json['links']['meta']['per_page'], MAX_PAGE_SIZE)
+        for project in projects:
+            assert project._id in pids
+        assert res.json['links']['meta']['per_page'] == MAX_PAGE_SIZE
 
-    def test_embed_page_size_not_affected(self):
-        for user in self.users[1:]:
-            self.projects[-1].add_contributor(user, auth=Auth(self.users[0]), save=True)
+    def test_embed_page_size_not_affected(self, app, users, projects, url):
+        for user in users[1:]:
+            projects[-1].add_contributor(user, auth=Auth(users[0]), save=True)
 
-        url = '{}?page[size]={}&embed=contributors'.format(self.url, MAX_PAGE_SIZE+1)
-        res = self.app.get(url, auth=Auth(self.users[0]))
+        res_url = '{}?page[size]={}&embed=contributors'.format(url, MAX_PAGE_SIZE + 1)
+        res = app.get(res_url, auth=Auth(users[0]))
         pids = [e['id'] for e in res.json['data']]
-        for project in self.projects:
-            assert_in(project._id, pids)
-        assert_equal(res.json['links']['meta']['per_page'], MAX_PAGE_SIZE)
+        for project in projects:
+            assert project._id in pids
+        assert res.json['links']['meta']['per_page'] == MAX_PAGE_SIZE
 
         uids = [e['id'] for e in res.json['data'][0]['embeds']['contributors']['data']]
-        for user in self.users[:9]:
+        for user in users[:9]:
             contrib_id = '{}-{}'.format(res.json['data'][0]['id'], user._id)
-            assert_in(contrib_id, uids)
+            assert contrib_id in uids
 
-        assert_not_in('{}-{}'.format(res.json['data'][0]['id'], self.users[10]._id), uids)
-        assert_equal(res.json['data'][0]['embeds']['contributors']['links']['meta']['per_page'], 10)
-
-
-class TestNodeListFiltering(NodesListFilteringMixin, ApiTestCase):
-
-    url = '/{}nodes/?'.format(API_BASE)
+        assert '{}-{}'.format(res.json['data'][0]['id'], users[10]._id) not in uids
+        assert res.json['data'][0]['embeds']['contributors']['links']['meta']['per_page'] == 10
 
 
-class TestNodeListDateFiltering(NodesListDateFilteringMixin, ApiTestCase):
+@pytest.mark.django_db
+class TestNodeListFiltering(NodesListFilteringMixin):
 
-    url = '/{}nodes/?'.format(API_BASE)
+    @pytest.fixture()
+    def url(self):
+        return '/{}nodes/?'.format(API_BASE)
+
+
+@pytest.mark.django_db
+class TestNodeListDateFiltering(NodesListDateFilteringMixin):
+
+    @pytest.fixture()
+    def url(self):
+        return '/{}nodes/?'.format(API_BASE)

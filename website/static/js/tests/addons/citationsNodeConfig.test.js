@@ -7,7 +7,7 @@ var faker = require('faker');
 
 var $ = require('jquery');
 var $osf = require('js/osfHelpers');
-var ZeroClipboard = require('zeroclipboard');
+var Clipboard = require('clipboard');
 var CitationsNodeConfigVM = require('js/citationsNodeConfig')._CitationsNodeConfigViewModel;
 var testUtils = require('./folderPickerTestUtils.js');
 var FolderPicker = require('js/folderpicker');
@@ -33,7 +33,7 @@ describe('CitationsNodeConfig', () => {
         var activateStub;
         before(() => {
             // Never actually call doActivatePicker
-            activateStub = sinon.stub(vm, 'doActivatePicker');        
+            activateStub = sinon.stub(vm, 'doActivatePicker');
         });
         after(() => {
             activateStub.restore();

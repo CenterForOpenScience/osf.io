@@ -1,4 +1,18 @@
 import mock
+
+from osf.models import AdminLogEntry, OSFUser, Node, NodeLog
+from admin.nodes.views import (
+    NodeDeleteView,
+    NodeRemoveContributorView,
+    NodeView,
+    NodeReindexShare,
+    NodeReindexElastic,
+    NodeFlaggedSpamList,
+    NodeKnownSpamList,
+    NodeKnownHamList,
+)
+from admin_tests.utilities import setup_log_view, setup_view
+
 from nose import tools as nt
 from django.test import RequestFactory
 from django.core.urlresolvers import reverse
@@ -6,13 +20,37 @@ from django.core.exceptions import PermissionDenied
 from django.contrib.auth.models import Permission
 
 from tests.base import AdminTestCase
-from tests.factories import AuthUserFactory, ProjectFactory
-from osf.models import AdminLogEntry, OSFUser, Node, NodeLog
-from admin_tests.utilities import setup_log_view, setup_view
-from admin.nodes.views import (NodeDeleteView, NodeRemoveContributorView, NodeView)
+from osf_tests.factories import AuthUserFactory, ProjectFactory, RegistrationFactory
 
 
 class TestNodeView(AdminTestCase):
+
+    def test_get_flagged_spam(self):
+        user = AuthUserFactory()
+        user.is_superuser = True
+        user.save()
+        request = RequestFactory().get(reverse('nodes:flagged-spam'))
+        request.user = user
+        response = NodeFlaggedSpamList.as_view()(request)
+        nt.assert_equal(response.status_code, 200)
+
+    def test_get_known_spam(self):
+        user = AuthUserFactory()
+        user.is_superuser = True
+        user.save()
+        request = RequestFactory().get(reverse('nodes:known-spam'))
+        request.user = user
+        response = NodeKnownSpamList.as_view()(request)
+        nt.assert_equal(response.status_code, 200)
+
+    def test_get_known_ham(self):
+        user = AuthUserFactory()
+        user.is_superuser = True
+        user.save()
+        request = RequestFactory().get(reverse('nodes:known-ham'))
+        request.user = user
+        response = NodeKnownHamList.as_view()(request)
+        nt.assert_equal(response.status_code, 200)
 
     def test_no_guid(self):
         request = RequestFactory().get('/fake_path')
@@ -210,3 +248,65 @@ class TestRemoveContributor(AdminTestCase):
 
         response = self.view.as_view()(request, node_id=self.node._id, user_id=self.user._id)
         nt.assert_equal(response.status_code, 200)
+
+
+class TestNodeReindex(AdminTestCase):
+    def setUp(self):
+        super(TestNodeReindex, self).setUp()
+        self.request = RequestFactory().post('/fake_path')
+
+        self.user = AuthUserFactory()
+        self.node = ProjectFactory(creator=self.user)
+        self.registration = RegistrationFactory(project=self.node, creator=self.user)
+
+    @mock.patch('website.project.tasks.format_node')
+    @mock.patch('website.project.tasks.format_registration')
+    @mock.patch('website.project.tasks.settings.SHARE_URL', 'ima_real_website')
+    @mock.patch('website.project.tasks.settings.SHARE_API_TOKEN', 'totaly_real_token')
+    @mock.patch('website.project.tasks.send_share_node_data')
+    def test_reindex_node_share(self, mock_update_share, mock_format_registration, mock_format_node):
+        count = AdminLogEntry.objects.count()
+        view = NodeReindexShare()
+        view = setup_log_view(view, self.request, guid=self.node._id)
+        view.delete(self.request)
+
+        nt.assert_true(mock_update_share.called)
+        nt.assert_true(mock_format_node.called)
+        nt.assert_false(mock_format_registration.called)
+        nt.assert_equal(AdminLogEntry.objects.count(), count + 1)
+
+    @mock.patch('website.project.tasks.format_node')
+    @mock.patch('website.project.tasks.format_registration')
+    @mock.patch('website.project.tasks.settings.SHARE_URL', 'ima_real_website')
+    @mock.patch('website.project.tasks.settings.SHARE_API_TOKEN', 'totaly_real_token')
+    @mock.patch('website.project.tasks.send_share_node_data')
+    def test_reindex_registration_share(self, mock_update_share, mock_format_registration, mock_format_node):
+        count = AdminLogEntry.objects.count()
+        view = NodeReindexShare()
+        view = setup_log_view(view, self.request, guid=self.registration._id)
+        view.delete(self.request)
+
+        nt.assert_true(mock_update_share.called)
+        nt.assert_false(mock_format_node.called)
+        nt.assert_true(mock_format_registration.called)
+        nt.assert_equal(AdminLogEntry.objects.count(), count + 1)
+
+    @mock.patch('website.search.search.update_node')
+    def test_reindex_node_elastic(self, mock_update_search):
+        count = AdminLogEntry.objects.count()
+        view = NodeReindexElastic()
+        view = setup_log_view(view, self.request, guid=self.node._id)
+        view.delete(self.request)
+
+        nt.assert_true(mock_update_search.called)
+        nt.assert_equal(AdminLogEntry.objects.count(), count + 1)
+
+    @mock.patch('website.search.search.update_node')
+    def test_reindex_registration_elastic(self, mock_update_search):
+        count = AdminLogEntry.objects.count()
+        view = NodeReindexElastic()
+        view = setup_log_view(view, self.request, guid=self.registration._id)
+        view.delete(self.request)
+
+        nt.assert_true(mock_update_search.called)
+        nt.assert_equal(AdminLogEntry.objects.count(), count + 1)

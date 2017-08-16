@@ -41,6 +41,7 @@ var AddProject = {
         self.newProjectCategory = m.prop(self.defaultCat);
         self.newProjectTemplate = m.prop('');
         self.newProjectInheritContribs = m.prop(false);
+        self.newProjectInheritTags = m.prop(false);
         self.institutions = options.institutions || window.contextVars.currentUser.institutions || [];
         self.checkedInstitutions = {};
         self.institutions.map(
@@ -79,6 +80,9 @@ var AddProject = {
 
 
         self.add = function _add () {
+            if (! self.isValid()) {
+                return;
+            }
             if (self.isAdding()) {
                 return;
             }
@@ -101,6 +105,10 @@ var AddProject = {
                         }
                     }
                 };
+
+            if(self.newProjectInheritTags()){
+                data.data.attributes.tags = window.contextVars.node.tags;
+            }
 
             if (self.newProjectTemplate()) {
                 data.data.attributes.template_from = self.newProjectTemplate();
@@ -176,12 +184,12 @@ var AddProject = {
                             m('label[for="projectName].f-w-lg.text-bigger', 'Title'),
                             m('input[type="text"].form-control.project-name', {
                                 onkeyup: function(ev){
-                                    if (ev.which === 13) {
-                                         ctrl.add();
-                                    }
                                     var val = ev.target.value;
-                                    ctrl.newProjectName(val);
                                     ctrl.isValid(val.trim().length > 0);
+                                    if (ev.which === 13) {
+                                        ctrl.add();
+                                    }
+                                    ctrl.newProjectName(val);
                                 },
                                 onchange: function(ev) {
                                     //  This will not be reliably running!
@@ -233,6 +241,17 @@ var AddProject = {
                                 }), ' Add contributors from ', m('b', options.parentTitle),
                                 m('br'),
                                 m('i', ' Admins of ', m('b', options.parentTitle), ' will have read access to this component.')
+                            ),
+                            m('br'),
+                            m('label.f-w-md',
+
+                                m('input', {
+                                    type: 'checkbox',
+                                    name: 'inherit_tags',
+                                    onchange : function() {
+                                        ctrl.newProjectInheritTags(this.checked);
+                                    }
+                                }), ' Add tags from ', m('b', options.parentTitle)
                             )
                         ]) : '',
                         ctrl.options.parentID !== null ? m('.span', [

@@ -2,7 +2,7 @@ import pytest
 
 from api.base.settings.defaults import API_BASE
 from framework.auth.core import Auth
-from osf.models import AbstractNode as Node, NodeLog
+from osf.models import AbstractNode, NodeLog
 from osf_tests.factories import (
     NodeFactory,
     ProjectFactory,
@@ -258,7 +258,7 @@ class TestNodeChildCreate:
         project.reload()
         child_id = res.json['data']['id']
         assert child_id == project.nodes[0]._id
-        assert Node.load(child_id).logs.latest().action == NodeLog.PROJECT_CREATED
+        assert AbstractNode.load(child_id).logs.latest().action == NodeLog.PROJECT_CREATED
 
     def test_creates_child_logged_in_owner(self, app, user, project, child, url):
         res = app.post_json_api(url, child, auth=user.auth)
@@ -298,7 +298,7 @@ class TestNodeChildCreate:
         project.reload()
         child_id = res.json['data']['id']
         assert child_id == project.nodes[0]._id
-        assert Node.load(child_id).logs.latest().action == NodeLog.PROJECT_CREATED
+        assert AbstractNode.load(child_id).logs.latest().action == NodeLog.PROJECT_CREATED
 
     def test_cannot_create_child_on_a_registration(self, app, user, project):
         registration = RegistrationFactory(project=project, creator=user)
@@ -425,7 +425,7 @@ class TestNodeChildrenBulkCreate:
         assert child_id == nodes[0]._id
         assert child_two_id == nodes[1]._id
 
-        assert Node.load(child_id).logs.latest().action == NodeLog.PROJECT_CREATED
+        assert AbstractNode.load(child_id).logs.latest().action == NodeLog.PROJECT_CREATED
         assert nodes[1].logs.latest().action == NodeLog.PROJECT_CREATED
 
     def test_bulk_creates_children_and_sanitizes_html_logged_in_owner(self, app, user, project, url):
@@ -455,7 +455,7 @@ class TestNodeChildrenBulkCreate:
         project.reload()
         child_id = res.json['data']['id']
         assert child_id == project.nodes[0]._id
-        assert Node.load(child_id).logs.latest().action == NodeLog.PROJECT_CREATED
+        assert AbstractNode.load(child_id).logs.latest().action == NodeLog.PROJECT_CREATED
 
     def test_cannot_bulk_create_children_on_a_registration(self, app, user, project, child_two):
         registration = RegistrationFactory(project=project, creator=user)

@@ -1,7 +1,7 @@
 from nose import tools as nt
 
 from tests.base import AdminTestCase
-from tests.factories import AuthUserFactory
+from osf_tests.factories import AuthUserFactory
 from tests.test_conferences import ConferenceFactory
 
 from admin.meetings.forms import MeetingForm, MultiEmailField

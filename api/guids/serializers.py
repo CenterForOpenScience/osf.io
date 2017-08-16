@@ -1,6 +1,6 @@
 import urlparse
 
-from osf.models import OSFUser, AbstractNode as Node, Guid, BaseFileNode
+from osf.models import OSFUser, AbstractNode, Guid, BaseFileNode
 from website import settings as website_settings
 
 from api.base.utils import absolute_reverse
@@ -8,7 +8,7 @@ from api.base.utils import absolute_reverse
 from api.base.serializers import (JSONAPISerializer, IDField, TypeField, RelationshipField, LinksField)
 
 def get_type(record):
-    if isinstance(record, Node):
+    if isinstance(record, AbstractNode):
         return 'nodes'
     elif isinstance(record, OSFUser):
         return 'users'

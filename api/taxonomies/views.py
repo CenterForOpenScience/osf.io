@@ -5,12 +5,13 @@ from api.base.utils import get_object_or_error
 from api.base.filters import ODMFilterMixin
 from api.base.pagination import NoMaxPageSizePagination
 from api.base import permissions as base_permissions
+from api.base.versioning import DeprecatedEndpointMixin
 from api.taxonomies.serializers import TaxonomySerializer
 from osf.models import Subject
 from framework.auth.oauth_scopes import CoreScopes
 
 
-class TaxonomyList(JSONAPIBaseView, generics.ListAPIView, ODMFilterMixin):
+class TaxonomyList(DeprecatedEndpointMixin, JSONAPIBaseView, generics.ListAPIView, ODMFilterMixin):
     '''[BePress taxonomy subject](https://www.bepress.com/wp-content/uploads/2016/12/Digital-Commons-Disciplines-taxonomy-2017-01.pdf) instance. *Read-only*
 
     ##Note
@@ -47,6 +48,9 @@ class TaxonomyList(JSONAPIBaseView, generics.ListAPIView, ODMFilterMixin):
     pagination_class = NoMaxPageSizePagination
     view_category = 'taxonomies'
     view_name = 'taxonomy-list'
+    max_version = '2.5'
+
+    ordering = ('-id',)
 
     # overrides ListAPIView
     def get_default_odm_query(self):
