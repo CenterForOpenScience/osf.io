@@ -129,8 +129,9 @@ var getContributorList = function (contributors, maxShown){
            else {
                if (item.unregistered_name) {
                    contribList.push([item.unregistered_name, comma]);
+               } else {
+                   contribList.push([item.full_name, comma]);
                }
-               contribList.push([item.full_name, comma]);
        }}
        return contribList;
 };

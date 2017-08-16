@@ -9,15 +9,17 @@ var makeFakeContributor = function(active=true){
     return {
         name: faker.name.findName(),
         id: 'a1234',
-        active: active
+        active: active,
+        unregistered_name: faker.name.findName()
     };
 };
 
 describe('logTextParser', () => {
     describe('getContributorList', () => {
         var contributors = [];
-        for (var i = 0; i<10; i++) {
+        for (var i = 0; i<5; i++) {
             contributors.push(makeFakeContributor());
+            contributors.push(makeFakeContributor(false));
         }
         it('displays all contributors if under maxShown limit', () => {
             var logText = LogText.getContributorList(contributors, 11);
