@@ -188,6 +188,7 @@ a {
         margin-left: -15px;
     }
 }
+
 /* Allow search-bar and nav-bar to support mutiple size of screen */
 @media (max-width: 767px) {
     .navbar .search-query {
