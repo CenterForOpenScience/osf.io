@@ -1,6 +1,8 @@
 # -*- coding: utf-8 -*-
 import logging
 
+import os
+import urllib
 
 from modularodm import fields
 
@@ -73,8 +75,6 @@ class OneDriveNodeSettings(StorageAddonBase, AddonOAuthNodeSettingsBase):
         'onedriveusersettings', backref='authorized'
     )
     folder_id = fields.StringField(default=None)
-    onedrive_id = fields.StringField(default=None)
-    folder_name = fields.StringField()
     folder_path = fields.StringField()
 
     _folder_data = None
@@ -89,10 +89,6 @@ class OneDriveNodeSettings(StorageAddonBase, AddonOAuthNodeSettingsBase):
         return self._api
 
     @property
-    def display_name(self):
-        return '{0}: {1}'.format(self.config.full_name, self.folder_name)
-
-    @property
     def has_auth(self):
         """Whether an access token is associated with this node."""
         return bool(self.user_settings and self.user_settings.has_auth)
@@ -104,29 +100,24 @@ class OneDriveNodeSettings(StorageAddonBase, AddonOAuthNodeSettingsBase):
             external_account=self.external_account,
         ))
 
-    def fetch_folder_name(self):
-        self._update_folder_data()
-        return self.folder_name.replace('All Files', '/ (Full OneDrive)')
-
-    def fetch_full_folder_path(self):
-        self._update_folder_data()
-        return self.folder_path
-
-    def _update_folder_data(self):
-        if self.folder_id is None:
+    @property
+    def folder_name(self):
+        if not self.folder_id:
             return None
 
-        logger.debug('self::' + repr(self))
-        #request.json.get('selected')
+        if self.folder_path != '/':
+            # `urllib` does not properly handle unicode.
+            # encode input to `str`, decode output back to `unicode`
+            return urllib.unquote(os.path.split(self.folder_path)[1].encode('utf-8')).decode('utf-8')
+        else:
+            return '/ (Full OneDrive)'
 
-        if not self._folder_data:
-            self.path = self.folder_name
-            self.save()
+    def fetch_folder_name(self):
+        return self.folder_name
 
     def set_folder(self, folder, auth):
-        self.folder_id = folder['name']
-        self.onedrive_id = folder['id']
-        self.folder_name = folder['name']
+        self.folder_id = folder['id']
+        self.folder_path = folder['name']
         self.save()
 
         if not self.complete:
@@ -176,7 +167,7 @@ class OneDriveNodeSettings(StorageAddonBase, AddonOAuthNodeSettingsBase):
         logger.debug("in serialize_waterbutler_settings:: {}".format(repr(self)))
         if self.folder_id is None:
             raise exceptions.AddonError('Folder is not configured')
-        return {'folder': self.onedrive_id}
+        return {'folder': self.folder_id}
 
     def create_waterbutler_log(self, auth, action, metadata):
         self.owner.add_log(
@@ -186,7 +177,7 @@ class OneDriveNodeSettings(StorageAddonBase, AddonOAuthNodeSettingsBase):
                 'path': metadata['materialized'],
                 'project': self.owner.parent_id,
                 'node': self.owner._id,
-                'folder': self.folder_id,
+                'folder': self.folder_path,
                 'urls': {
                     'view': self.owner.web_url_for('addon_view_or_download_file', provider='onedrive', action='view', path=metadata['path']),
                     'download': self.owner.web_url_for('addon_view_or_download_file', provider='onedrive', action='download', path=metadata['path']),

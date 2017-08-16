@@ -20,7 +20,7 @@ class OneDriveAddonTestCase(AddonTestCase):
 
     def set_user_settings(self, settings):
         settings.access_token = '12345abc'
-        settings.onedrive_id = 'myonedriveid'
+        settings.folder_id = 'myonedriveid'
 
     def set_node_settings(self, settings):
         settings.folder = 'foo'
