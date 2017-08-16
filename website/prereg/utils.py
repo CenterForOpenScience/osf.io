@@ -3,7 +3,6 @@ from modularodm import Q
 
 PREREG_CAMPAIGNS = {
     'prereg': 'Prereg Challenge',
-    'erpc': 'Election Research Preacceptance Competition',
 }
 
 

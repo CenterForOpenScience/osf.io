@@ -16,8 +16,11 @@ from api.base.filters import ListFilterMixin
 from api.base.parsers import JSONAPIRelationshipParser
 from api.base.parsers import JSONAPIRelationshipParserForRegularJSON
 from api.base.requests import EmbeddedRequest
-from api.base.serializers import LinkedNodesRelationshipSerializer
-from api.base.serializers import LinkedRegistrationsRelationshipSerializer
+from api.base.serializers import (
+    MaintenanceStateSerializer,
+    LinkedNodesRelationshipSerializer,
+    LinkedRegistrationsRelationshipSerializer
+)
 from api.base.throttling import RootAnonThrottle, UserRateThrottle
 from api.base.utils import is_bulk_request, get_user_auth
 from api.nodes.permissions import ContributorOrPublic
@@ -25,8 +28,7 @@ from api.nodes.permissions import ContributorOrPublicForRelationshipPointers
 from api.nodes.permissions import ReadOnlyIfRegistration
 from api.users.serializers import UserSerializer
 from framework.auth.oauth_scopes import CoreScopes
-from osf.models.contributor import Contributor
-from website import maintenance
+from osf.models import Contributor, MaintenanceState
 
 
 class JSONAPIBaseView(generics.GenericAPIView):
@@ -770,8 +772,9 @@ def root(request, format=None, **kwargs):
 @api_view(('GET',))
 @throttle_classes([RootAnonThrottle, UserRateThrottle])
 def status_check(request, format=None, **kwargs):
+    maintenance = MaintenanceState.objects.all().first()
     return Response({
-        'maintenance': maintenance.get_maintenance(),
+        'maintenance': MaintenanceStateSerializer(maintenance).data if maintenance else None
     })
 
 
@@ -804,7 +807,7 @@ class BaseContributorList(JSONAPIBaseView, generics.ListAPIView, ListFilterMixin
     def get_default_queryset(self):
         node = self.get_node()
 
-        return node.contributor_set.all()
+        return node.contributor_set.all().include('user__guids')
 
     def get_queryset(self):
         queryset = self.get_queryset_from_request()

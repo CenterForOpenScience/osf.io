@@ -386,6 +386,18 @@ def main(env):
                 'email_domains': [],
                 'delegation_protocol': 'saml-shib',
             },
+            {
+                '_id': 'wustl',
+                'name': 'Washington University in St. Louis',
+                'description': 'This service is supported by the <a href="https://library.wustl.edu">Washington University in St. Louis Libraries</a>. Please abide by the University policy on <a href="https://informationsecurity.wustl.edu/resources/information-security-solutions/data-classification/">information security</a>. Do not use this service to store or transfer personally identifiable information (PII), personal health information (PHI), or any other controlled unclassified information (CUI). | For assistance please contact the <a href="http://gis.wustl.edu/dgs">WU Libraries Data & GIS Services</a>.',
+                'banner_name': 'wustl-banner.png',
+                'logo_name': 'wustl-shield.png',
+                'login_url': SHIBBOLETH_SP_LOGIN.format(encode_uri_component('https://login.wustl.edu/idp/shibboleth')),
+                'logout_url': SHIBBOLETH_SP_LOGOUT.format(encode_uri_component('https://osf.io/goodbye')),
+                'domains': ['osf.wustl.edu'],
+                'email_domains': [],
+                'delegation_protocol': 'saml-shib',
+            },
         ]
     if env == 'stage':
         INSTITUTIONS = [
@@ -790,18 +802,24 @@ def main(env):
                 'email_domains': [],
                 'delegation_protocol': 'saml-shib',
             },
+            {
+                '_id': 'wustl',
+                'name': 'Washington University in St. Louis [Test]',
+                'description': 'This service is supported by the <a href="https://library.wustl.edu">Washington University in St. Louis Libraries</a>. Please abide by the University policy on <a href="https://informationsecurity.wustl.edu/resources/information-security-solutions/data-classification/">information security</a>. Do not use this service to store or transfer personally identifiable information (PII), personal health information (PHI), or any other controlled unclassified information (CUI). | For assistance please contact the <a href="http://gis.wustl.edu/dgs">WU Libraries Data & GIS Services</a>.',
+                'banner_name': 'wustl-banner.png',
+                'logo_name': 'wustl-shield.png',
+                'login_url': SHIBBOLETH_SP_LOGIN.format(encode_uri_component('https://login.wustl.edu/idp/shibboleth')),
+                'logout_url': SHIBBOLETH_SP_LOGOUT.format(encode_uri_component('https://test.osf.io/goodbye')),
+                'domains': ['test-osf-wustl.cos.io'],
+                'email_domains': [],
+                'delegation_protocol': 'saml-shib',
+            },
         ]
 
     init_app(routes=False)
     with transaction.atomic():
         for inst_data in INSTITUTIONS:
-            new_inst, inst_created = update_or_create(inst_data)
-            # update the nodes elastic docs, to have current names of institutions. This will
-            # only work properly if this file is the only thing changing institution attributes
-            if not inst_created:
-                nodes = Node.find_by_institutions(new_inst, query=Q('is_deleted', 'ne', True))
-                for node in nodes:
-                    update_node(node, async=False)
+            update_or_create(inst_data)
         for extra_inst in Institution.objects.exclude(_id__in=[x['_id'] for x in INSTITUTIONS]):
             logger.warn('Extra Institution : {} - {}'.format(extra_inst._id, extra_inst.name))
 

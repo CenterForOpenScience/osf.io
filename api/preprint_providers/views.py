@@ -6,7 +6,7 @@ from django.db.models import Q
 
 from framework.auth.oauth_scopes import CoreScopes
 
-from osf.models import AbstractNode as Node, Subject, PreprintService, PreprintProvider
+from osf.models import AbstractNode, Subject, PreprintService, PreprintProvider
 
 from api.base import permissions as base_permissions
 from api.base.filters import PreprintFilterMixin, ODMFilterMixin
@@ -189,7 +189,7 @@ class PreprintProviderPreprintList(JSONAPIBaseView, generics.ListAPIView, Prepri
     ordering = ('-date_created')
 
     serializer_class = PreprintSerializer
-    model_class = Node
+    model_class = AbstractNode
 
     required_read_scopes = [CoreScopes.NODE_PREPRINTS_READ]
     required_write_scopes = [CoreScopes.NULL]

@@ -1,14 +1,13 @@
 import json
 import logging
 
-import django
-django.setup()
 from django.core.management.base import BaseCommand
 from django.db import transaction
 
 from osf.models import PreprintProvider, PreprintService, Subject
 from scripts import utils as script_utils
 from osf.models.validators import validate_subject_hierarchy
+from osf.utils.migrations import disable_auto_now_fields
 
 logger = logging.getLogger(__name__)
 
@@ -111,7 +110,8 @@ def map_preprints_to_custom_subjects(custom_provider, merge_dict):
             validate_subject_hierarchy([s._id for s in hier])
             for s in hier:
                 preprint.subjects.add(s)
-        preprint.save(old_subjects=old_subjects)
+        with disable_auto_now_fields(PreprintService):
+            preprint.save(old_subjects=old_subjects)
         preprint.reload()
         new_hier = [s.object_hierarchy for s in preprint.subjects.exclude(children__in=preprint.subjects.all())]
         logger.info('Successfully migrated preprint {}.\n\tOld hierarchy:{}\n\tNew hierarchy:{}'.format(preprint.id, old_hier, new_hier))

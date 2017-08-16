@@ -32,6 +32,7 @@ class TaxonomySerializer(JSONAPISerializer):
     parent = TaxonomyField()
     child_count = ser.IntegerField()
     share_title = ser.CharField(source='provider.share_title', read_only=True)
+    path = ser.CharField(read_only=True)
 
     links = LinksField({
         'parents': 'get_parent_urls',

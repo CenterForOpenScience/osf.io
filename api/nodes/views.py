@@ -99,8 +99,8 @@ from api.wikis.serializers import NodeWikiSerializer
 from framework.auth.oauth_scopes import CoreScopes
 from framework.postcommit_tasks.handlers import enqueue_postcommit_task
 from osf.models import AbstractNode
-from osf.models import (Node, PrivateLink, NodeLog, Institution, Comment, DraftRegistration, PreprintService)
-from osf.models import OSFUser as User
+from osf.models import (Node, PrivateLink, Institution, Comment, DraftRegistration, PreprintService)
+from osf.models import OSFUser
 from osf.models import NodeRelation, AlternativeCitation, Guid
 from osf.models import BaseFileNode
 from osf.models.files import File, Folder
@@ -669,7 +669,7 @@ class NodeContributorsList(BaseContributorList, bulk_views.BulkUpdateJSONAPIView
 
     required_read_scopes = [CoreScopes.NODE_CONTRIBUTORS_READ]
     required_write_scopes = [CoreScopes.NODE_CONTRIBUTORS_WRITE]
-    model_class = User
+    model_class = OSFUser
 
     throttle_classes = (AddContributorThrottle, UserRateThrottle, NonCookieAuthThrottle, )
 
@@ -744,7 +744,7 @@ class NodeContributorsList(BaseContributorList, bulk_views.BulkUpdateJSONAPIView
             except IndexError:
                 raise ValidationError('Contributor identifier incorrectly formatted.')
 
-        resource_object_list = User.find(MQ('_id', 'in', requested_ids))
+        resource_object_list = OSFUser.find(MQ('_id', 'in', requested_ids))
         for resource in resource_object_list:
             if getattr(resource, 'is_deleted', None):
                 raise Gone
@@ -2058,7 +2058,7 @@ class NodeAddonList(JSONAPIBaseView, generics.ListAPIView, ListFilterMixin, Node
     view_category = 'nodes'
     view_name = 'node-addons'
 
-    ordering = ('-date_modified',)
+    ordering = ('-id',)
 
     def get_default_queryset(self):
         qs = []
@@ -2236,8 +2236,6 @@ class NodeAddonFolderList(JSONAPIBaseView, generics.ListAPIView, NodeMixin, Addo
     serializer_class = NodeAddonFolderSerializer
     view_category = 'nodes'
     view_name = 'node-addon-folders'
-
-    ordering = ('-date_modified',)
 
     def get_queryset(self):
         # TODO: [OSF-6120] refactor this/NS models to be generalizable
@@ -2518,7 +2516,7 @@ class NodeAlternativeCitationDetail(JSONAPIBaseView, generics.RetrieveUpdateDest
         self.get_node().remove_citation(get_user_auth(self.request), instance, save=True)
 
 
-class NodeLogList(JSONAPIBaseView, generics.ListAPIView, NodeMixin, ODMFilterMixin):
+class NodeLogList(JSONAPIBaseView, generics.ListAPIView, NodeMixin, ListFilterMixin):
     """List of Logs associated with a given Node. *Read-only*.
 
     <!--- Copied Description from NodeLogDetail -->
@@ -2646,13 +2644,15 @@ class NodeLogList(JSONAPIBaseView, generics.ListAPIView, NodeMixin, ODMFilterMix
         ExcludeWithdrawals
     )
 
-    def get_default_odm_query(self):
+    def get_default_queryset(self):
         auth = get_user_auth(self.request)
-        query = self.get_node().get_aggregate_logs_query(auth)
-        return query
+        queryset = self.get_node().get_aggregate_logs_queryset(auth)
+        return queryset
 
     def get_queryset(self):
-        queryset = NodeLog.find(self.get_query_from_request()).select_related('node', 'original_node', 'user')
+        queryset = self.get_queryset_from_request().include(
+            'node__guids', 'user__guids', 'original_node__guids', limit_includes=10
+        )
         return queryset
 
 

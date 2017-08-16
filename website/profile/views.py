@@ -10,7 +10,7 @@ import markupsafe
 import mailchimp
 from modularodm.exceptions import ValidationError, NoResultsFound, MultipleResultsFound
 from modularodm import Q
-from osf.models import Node, NodeRelation, OSFUser as User
+from osf.models import Node, NodeRelation, OSFUser
 
 from framework import sentry
 from framework.auth import Auth
@@ -42,7 +42,7 @@ logger = logging.getLogger(__name__)
 
 
 def get_public_projects(uid=None, user=None):
-    user = user or User.load(uid)
+    user = user or OSFUser.load(uid)
     # In future redesign, should be limited for users with many projects / components
     node_ids = (
         Node.find_for_user(user, PROJECT_QUERY)
@@ -65,7 +65,7 @@ def get_public_projects(uid=None, user=None):
 
 
 def get_public_components(uid=None, user=None):
-    user = user or User.load(uid)
+    user = user or OSFUser.load(uid)
 
     rel_child_ids = (
         NodeRelation.objects.filter(
@@ -295,7 +295,7 @@ def profile_view_json(auth):
 @collect_auth
 @must_be_confirmed
 def profile_view_id_json(uid, auth):
-    user = User.load(uid)
+    user = OSFUser.load(uid)
     is_profile = auth and auth.user == user
     # Do NOT embed nodes, they aren't necessary
     return _profile_view(user, is_profile, embed_nodes=False)
@@ -308,7 +308,7 @@ def profile_view(auth):
 @collect_auth
 @must_be_confirmed
 def profile_view_id(uid, auth):
-    user = User.load(uid)
+    user = OSFUser.load(uid)
     is_profile = auth and auth.user == user
     # Embed node data, so profile node lists can be rendered
     return _profile_view(user, is_profile, embed_nodes=False, include_node_counts=True)
@@ -561,7 +561,7 @@ def sync_data_from_mailchimp(**kwargs):
         username = r.values['data[email]']
 
         try:
-            user = User.find_one(Q('username', 'eq', username))
+            user = OSFUser.find_one(Q('username', 'eq', username))
         except NoResultsFound:
             sentry.log_exception()
             sentry.log_message('A user with this username does not exist.')
@@ -605,7 +605,7 @@ def serialize_names(**kwargs):
 
 
 def get_target_user(auth, uid=None):
-    target = User.load(uid) if uid else auth.user
+    target = OSFUser.load(uid) if uid else auth.user
     if target is None:
         raise HTTPError(http.NOT_FOUND)
     return target
@@ -838,14 +838,14 @@ def redirect_to_twitter(twitter_handle):
     :return: Redirect to User's Twitter account page
     """
     try:
-        user = User.find_one(Q('social.twitter', 'iexact', twitter_handle))
+        user = OSFUser.find_one(Q('social.twitter', 'iexact', twitter_handle))
     except NoResultsFound:
         raise HTTPError(http.NOT_FOUND, data={
             'message_short': 'User Not Found',
             'message_long': 'There is no active user associated with the Twitter handle: {0}.'.format(twitter_handle)
         })
     except MultipleResultsFound:
-        users = User.find(Q('social.twitter', 'iexact', twitter_handle))
+        users = OSFUser.find(Q('social.twitter', 'iexact', twitter_handle))
         message_long = 'There are multiple OSF accounts associated with the ' \
                        'Twitter handle: <strong>{0}</strong>. <br /> Please ' \
                        'select from the accounts below. <br /><ul>'.format(markupsafe.escape(twitter_handle))
