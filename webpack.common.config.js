@@ -53,7 +53,6 @@ var entry = {
     'view-file-tree-page': staticPath('js/pages/view-file-tree-page.js'),
     'search-page': staticPath('js/pages/search-page.js'),
     'profile-settings-addons-page': staticPath('js/pages/profile-settings-addons-page.js'),
-    'twofactor-page': staticPath('js/pages/twofactor-page.js'),
     'forgotpassword-page': staticPath('js/pages/forgotpassword-page.js'),
     'resetpassword-page': staticPath('js/pages/resetpassword-page.js'),
     'claimaccount-page': staticPath('js/pages/claimaccount-page.js'),
@@ -84,8 +83,6 @@ var entry = {
         'js/osfHelpers',
         'js/osfToggleHeight',
         'mithril',
-        'js/qToggle',
-        'js/components/autocomplete',
         // Main CSS files that get loaded above the fold
         nodePath('select2/select2.css'),
         '@centerforopenscience/osf-style',

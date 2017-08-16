@@ -342,6 +342,9 @@ LOW_QUEUE = 'low'
 MED_QUEUE = 'med'
 HIGH_QUEUE = 'high'
 
+# Seconds, not an actual celery setting
+CELERY_RETRY_BACKOFF_BASE = 5
+
 LOW_PRI_MODULES = {
     'framework.analytics.tasks',
     'framework.celery_tasks',
@@ -1349,7 +1352,6 @@ BLACKLISTED_DOMAINS = [
     'nowhere.org',
     'nowmymail.com',
     'nurfuerspam.de',
-    'nus.edu.sg',
     'nwldx.com',
     'objectmail.com',
     'obobbo.com',

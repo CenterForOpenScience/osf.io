@@ -2,6 +2,28 @@
 Changelog
 *********
 
+0.119.0 (2017-08-10)
+====================
+
+- Add Bitbucket addon.
+- Prevent UnorderedObjectListWarning in API
+- Prevent invalid social fields from being passed to user endpoints.
+- Admin: Fix importing preprint providers on production
+- Remove "Watch project" code
+- Make ever_mentioned a ManyToMany field
+- Remove unused mongo code in framework.mongo
+- Reduce number of queries made by triggered mails script
+- Add a context manager to prevent auto_now fields from from getting updated during migrations
+- Remove model name aliasing in imports
+- Remove dead badges code
+- Add view OSF Subjects Permissions
+- Upgrade to Node.js 8
+- Checkouts and is_preprint checks need optimizing
+- Expand functionality of maintenance notice to allow custom message and severity level
+- Test optimizations
+- Add preprint_word field to preprint provider endpoints
+- Add event tracking to navbar
+
 0.118.0 (2017-08-03)
 ====================
 

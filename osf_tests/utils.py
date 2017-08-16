@@ -164,3 +164,14 @@ def mock_archive(project, schema=None, auth=None, data=None, parent=None,
         retraction.save()
         registration.save()
     yield registration
+
+class MockShareResponse:
+    def __init__(self, status_code):
+        self.status_code = status_code
+        self.content = 'data'
+        self.text = 'text'
+        self.json = {}
+
+    def raise_for_status(self):
+        if self.status_code >= 400:
+            raise Exception

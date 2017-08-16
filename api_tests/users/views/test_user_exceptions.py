@@ -1,18 +1,17 @@
 # -*- coding: utf-8 -*-
-from nose.tools import *  # flake8: noqa
-
-from tests.base import ApiTestCase
-from osf_tests.factories import AuthUserFactory
+import pytest
 
 from api.base.settings.defaults import API_BASE
+from osf_tests.factories import AuthUserFactory
+from rest_framework import exceptions
 
 
-class TestExceptionFormatting(ApiTestCase):
-    def setUp(self):
+@pytest.mark.django_db
+class TestExceptionFormatting:
 
-        super(TestExceptionFormatting, self).setUp()
-
-        self.user = AuthUserFactory(
+    @pytest.fixture()
+    def user(self):
+        return AuthUserFactory(
             fullname='Martin Luther King Jr.',
             given_name='Martin',
             family_name='King',
@@ -20,7 +19,7 @@ class TestExceptionFormatting(ApiTestCase):
             social=dict(
                 github='userOneGithub',
                 scholar='userOneScholar',
-                personal='http://www.useronepersonalwebsite.com',
+                profileWebsites=['http://www.useronepersonalwebsite.com'],
                 twitter='userOneTwitter',
                 linkedIn='userOneLinkedIn',
                 impactStory='userOneImpactStory',
@@ -28,37 +27,44 @@ class TestExceptionFormatting(ApiTestCase):
                 researcherId='userOneResearcherId'
             )
         )
-        self.url = '/{}users/{}/'.format(API_BASE, self.user._id)
 
-        self.user_two = AuthUserFactory()
+    @pytest.fixture()
+    def user_two(self):
+        return AuthUserFactory()
 
-    def test_updates_user_with_no_fullname(self):
-        res = self.app.put_json_api(self.url, {'data': {'id': self.user._id, 'type': 'users', 'attributes': {}}}, auth=self.user.auth, expect_errors=True)
+    @pytest.fixture()
+    def url(self, user):
+        return '/{}users/{}/'.format(API_BASE, user._id)
+
+    def test_user_errors(self, app, user, user_two, url):
+
+    #   test_updates_user_with_no_fullname
+        res = app.put_json_api(url, {'data': {'id': user._id, 'type': 'users', 'attributes': {}}}, auth=user.auth, expect_errors=True)
         errors = res.json['errors']
         assert(isinstance(errors, list))
-        assert_equal(res.json['errors'][0]['source'], {'pointer': '/data/attributes/full_name'})
-        assert_equal(res.json['errors'][0]['detail'], 'This field is required.')
+        assert res.json['errors'][0]['source'] == {'pointer': '/data/attributes/full_name'}
+        assert res.json['errors'][0]['detail'] == 'This field is required.'
 
-    def test_updates_user_unauthorized(self):
-        res = self.app.put_json_api(self.url, expect_errors=True)
+    #   test_updates_user_unauthorized
+        res = app.put_json_api(url, expect_errors=True)
         errors = res.json['errors']
         assert(isinstance(errors, list))
-        assert_equal(errors[0], {'detail': "Authentication credentials were not provided."})
+        assert errors[0] == {'detail': exceptions.NotAuthenticated.default_detail}
 
-    def test_updates_user_forbidden(self):
-        res = self.app.put_json_api(self.url, auth=self.user_two.auth, expect_errors=True)
+    #   test_updates_user_forbidden
+        res = app.put_json_api(url, auth=user_two.auth, expect_errors=True)
         errors = res.json['errors']
         assert(isinstance(errors, list))
-        assert_equal(errors[0], {'detail': 'You do not have permission to perform this action.'})
+        assert errors[0] == {'detail': exceptions.PermissionDenied.default_detail}
 
-    def test_user_does_not_exist_formatting(self):
+    #   test_user_does_not_exist_formatting
         url = '/{}users/{}/'.format(API_BASE, '12345')
-        res = self.app.get(url, auth=self.user.auth, expect_errors=True)
+        res = app.get(url, auth=user.auth, expect_errors=True)
         errors = res.json['errors']
         assert(isinstance(errors, list))
-        assert_equal(errors[0], {'detail': 'Not found.'})
+        assert errors[0] == {'detail': exceptions.NotFound.default_detail}
 
-    def test_basic_auth_me_wrong_password(self):
+    #   test_basic_auth_me_wrong_password
         url = '/{}users/{}/'.format(API_BASE, 'me')
-        res = self.app.get(url, auth=(self.user.username, 'nottherightone'), expect_errors=True)
-        assert_equal(res.status_code, 401)
+        res = app.get(url, auth=(user.username, 'nottherightone'), expect_errors=True)
+        assert res.status_code == 401
