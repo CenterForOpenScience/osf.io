@@ -18,6 +18,7 @@ from tests.base import AdminTestCase
 from website import settings
 from framework.auth import Auth
 from osf.models.user import OSFUser
+from osf.models.tag import Tag
 from osf_tests.factories import (
     UserFactory,
     AuthUserFactory,
@@ -195,11 +196,43 @@ class TestDisableUser(AdminTestCase):
         response = self.view.as_view()(request, guid=guid)
         self.assertEqual(response.status_code, 200)
 
+
+class TestHamUserRestore(AdminTestCase):
+    def setUp(self):
+        self.user = UserFactory()
+        self.request = RequestFactory().post('/fake_path')
+        self.view = views.HamUserRestoreView
+        self.view = setup_log_view(self.view, self.request, guid=self.user._id)
+
+        self.spam_confirmed, created = Tag.objects.get_or_create(name='spam_confirmed')
+        self.ham_confirmed, created = Tag.objects.get_or_create(name='ham_confirmed')
+
+    def test_get_object(self):
+        obj = self.view().get_object()
+        nt.assert_is_instance(obj, OSFUser)
+
+    def test_get_context(self):
+        res = self.view().get_context_data(object=self.user)
+        nt.assert_in('guid', res)
+        nt.assert_equal(res.get('guid'), self.user._id)
+
+    def test_enable_user(self):
+        self.user.disable_account()
+        nt.assert_true(self.user.is_disabled)
+
+        self.view().delete(self.request)
+        self.user.reload()
+
+        nt.assert_false(self.user.is_disabled)
+        nt.assert_false(self.user.all_tags.filter(name=self.spam_confirmed.name).exists())
+        nt.assert_true(self.user.all_tags.filter(name=self.ham_confirmed.name).exists())
+
+
 class TestDisableSpamUser(AdminTestCase):
     def setUp(self):
         self.user = UserFactory()
         self.public_node = ProjectFactory(creator=self.user, is_public=True)
-        self.public_node = ProjectFactory(creator=self.user, is_public=False)
+        self.private_node = ProjectFactory(creator=self.user, is_public=False)
         self.request = RequestFactory().post('/fake_path')
         self.view = views.SpamUserDeleteView
         self.view = setup_log_view(self.view, self.request, guid=self.user._id)
@@ -220,6 +253,7 @@ class TestDisableSpamUser(AdminTestCase):
         self.user.reload()
         self.public_node.reload()
         nt.assert_true(self.user.is_disabled)
+        nt.assert_true(self.user.all_tags.filter(name='spam_confirmed').exists())
         nt.assert_false(self.public_node.is_public)
         nt.assert_equal(AdminLogEntry.objects.count(), count + 3)
 
