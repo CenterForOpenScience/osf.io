@@ -40,7 +40,7 @@ class OneDriveClient(BaseClient):
         query = 'folder ne null'
 
         if folder_id != 'root':
-            folder_id = "items/{}".format(folder_id)
+            folder_id = 'items/{}'.format(folder_id)
 
         res = self._make_request(
             'GET',

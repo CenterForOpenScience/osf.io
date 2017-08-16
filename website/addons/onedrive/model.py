@@ -1,6 +1,4 @@
 # -*- coding: utf-8 -*-
-import logging
-
 import os
 import urllib
 
@@ -8,22 +6,16 @@ from modularodm import fields
 
 from framework.auth import Auth
 from framework.exceptions import HTTPError
+from website.oauth.models import ExternalProvider
 
 from website.addons.base import exceptions
-from website.addons.base import AddonOAuthUserSettingsBase, AddonOAuthNodeSettingsBase
 from website.addons.base import StorageAddonBase
+from website.addons.base import AddonOAuthUserSettingsBase, AddonOAuthNodeSettingsBase
 
 from website.addons.onedrive import settings
 from website.addons.onedrive.utils import OneDriveNodeLogger
 from website.addons.onedrive.serializer import OneDriveSerializer
-from website.addons.onedrive.client import OneDriveAuthClient
-from website.addons.onedrive.client import OneDriveClient
-
-from website.oauth.models import ExternalProvider
-
-logger = logging.getLogger(__name__)
-
-logging.getLogger('onedrive1').setLevel(logging.WARNING)
+from website.addons.onedrive.client import OneDriveAuthClient, OneDriveClient
 
 
 class OneDrive(ExternalProvider):
@@ -119,9 +111,8 @@ class OneDriveNodeSettings(StorageAddonBase, AddonOAuthNodeSettingsBase):
         node = self.owner
 
         #  Defaults exist when called by the API, but are `None`
-        path = kwargs.get('path') or ''
+        # path = kwargs.get('path') or ''
         folder_id = kwargs.get('folder_id') or 'root'
-
 
         if folder_id is None:
             return [{
@@ -175,7 +166,7 @@ class OneDriveNodeSettings(StorageAddonBase, AddonOAuthNodeSettingsBase):
 
         # Add log to node
         nodelogger = OneDriveNodeLogger(node=self.owner, auth=auth)  # AddonOAuthNodeSettingsBase.nodelogger(self)
-        nodelogger.log(action="folder_selected", save=True)
+        nodelogger.log(action='folder_selected', save=True)
 
     def deauthorize(self, auth=None, add_log=True):
         """Remove user authorization from this node and log the event."""
@@ -184,7 +175,7 @@ class OneDriveNodeSettings(StorageAddonBase, AddonOAuthNodeSettingsBase):
         if add_log:
             extra = {'folder_id': self.folder_id}
             nodelogger = OneDriveNodeLogger(node=node, auth=auth)
-            nodelogger.log(action="node_deauthorized", extra=extra, save=True)
+            nodelogger.log(action='node_deauthorized', extra=extra, save=True)
 
         self.folder_id = None
         self._update_folder_data()
@@ -193,13 +184,11 @@ class OneDriveNodeSettings(StorageAddonBase, AddonOAuthNodeSettingsBase):
         self.save()
 
     def serialize_waterbutler_credentials(self):
-        logger.debug("in serialize_waterbutler_credentials:: %s", repr(self))
         if not self.has_auth:
             raise exceptions.AddonError('Addon is not authorized')
         return {'token': self.fetch_access_token()}
 
     def serialize_waterbutler_settings(self):
-        logger.debug("in serialize_waterbutler_settings:: {}".format(repr(self)))
         if self.folder_id is None:
             raise exceptions.AddonError('Folder is not configured')
         return {'folder': self.folder_id}

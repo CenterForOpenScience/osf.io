@@ -62,7 +62,7 @@ class OneDriveNodeLogger(object):
             params.update(extra)
         # Prefix the action with onedrive_
         self.node.add_log(
-            action="onedrive_{0}".format(action),
+            action='onedrive_{0}'.format(action),
             params=params,
             auth=self.auth
         )
