@@ -180,7 +180,7 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
     #   the result of a bug, as they were all created over a small time span.
     is_claimed = models.BooleanField(default=False, db_index=True)
 
-    # a list of strings - for internal use
+    # for internal use
     tags = models.ManyToManyField('Tag', blank=True)
 
     # security emails that have been sent

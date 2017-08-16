@@ -218,8 +218,8 @@ class TestHamUserRestore(AdminTestCase):
 
     def test_enable_user(self):
         self.user.disable_account()
+        self.user.save()
         nt.assert_true(self.user.is_disabled)
-
         self.view().delete(self.request)
         self.user.reload()
 
