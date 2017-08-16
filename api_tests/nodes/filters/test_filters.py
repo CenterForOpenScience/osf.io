@@ -116,7 +116,7 @@ class NodesListFilteringMixin(object):
         assert expected == actual
 
     #   test_root_ne_excludes_nodes_with_root
-        node = NodeFactory(is_public=True)
+        node = NodeFactory(is_public=True, creator=user)
         url = '{}{}'.format(root_ne_url, parent_project._id)
         res = app.get(url, auth=user.auth)
         assert res.status_code == 200
