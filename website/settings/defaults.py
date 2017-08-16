@@ -82,6 +82,7 @@ PREPRINT_PROVIDER_DOMAINS = {
 }
 # External Ember App Local Development
 USE_EXTERNAL_EMBER = False
+PROXY_EMBER_APPS = False
 EXTERNAL_EMBER_APPS = {}
 
 LOG_PATH = os.path.join(APP_PATH, 'logs')
