@@ -891,47 +891,23 @@ var dialog = function(title, message, actionButtonLabel, options) {
 
 // Formats contributor family names for display.  Takes in project, number of contributors, and getFamilyName function
 var contribNameFormat = function(node, number, getFamilyName) {
-    var charLimit = 21;
-    var ellipses = '...';
-    var contribs = '';
-    var otherContribs = '';
-
-    // set base string to return
     if (number === 1) {
-        contribs = getFamilyName(0, node);
-    } else if (number === 2) {
-        contribs = `${getFamilyName(0, node)} and ${getFamilyName(1, node)}`;
-    } else {
-        contribs = `${getFamilyName(0, node)}, ${getFamilyName(1, node)}`;
-        otherContribs = ` + ${number - 2}`;
+        return getFamilyName(0, node);
     }
-
-    // handle charLimit overflow
-    if (number === 1 && contribs.length > charLimit) {
-        contribs.substring(0, charLimit - ellipses.length);
-    } else if (number === 2 && contribs.length > charLimit) {
-        contribs = contribs.substring(0, charLimit - (ellipses.length)).trim();
-        contribs = contribs.concat(ellipses);
-    } else if (number > 2 && (contribs.length + otherContribs.length) > charLimit) {
-        contribs = contribs.substring(0, charLimit - (ellipses.length + otherContribs.length)).trim();
-        contribs = contribs.concat(ellipses, otherContribs);
-    } else if (number > 2 && contribs.length < charLimit) {
-        contribs = contribs.substring(0, charLimit - (otherContribs.length)).trim();
-        contribs = contribs.concat(otherContribs);
+    else if (number === 2) {
+        return getFamilyName(0, node) + ' and ' +
+            getFamilyName(1, node);
     }
-
-    // handle long first name edge cases
-    if (number === 2 && getFamilyName(0, node).length > charLimit - 10) {
-        otherContribs = ` + ${number - 1}`;
-        contribs = getFamilyName(0, node).substring(0, charLimit - (ellipses.length + otherContribs.length));
-        contribs = contribs.concat(ellipses, otherContribs);
-    } else if (number === 3 && getFamilyName(0, node).length > charLimit - 10) {
-        otherContribs = ` + ${number - 1}`;
-        contribs = getFamilyName(0, node).substring(0, charLimit - (ellipses.length + otherContribs.length)).trim();
-        contribs = contribs.concat(ellipses, otherContribs);
+    else if (number === 3) {
+        return getFamilyName(0, node) + ', ' +
+            getFamilyName(1, node) + ', and ' +
+            getFamilyName(2, node);
     }
-
-    return contribs;
+    else {
+        return getFamilyName(0, node) + ', ' +
+            getFamilyName(1, node) + ', ' +
+            getFamilyName(2, node) + ' + ' + (number - 3);
+    }
 };
 
 // Returns single name representing contributor, First match found of family name, given name, middle names, full name.
