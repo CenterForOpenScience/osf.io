@@ -578,7 +578,10 @@
 
     <script type="text/javascript" src=${"/static/public/js/project-settings-page.js" | webpack_asset}></script>
     <script src=${"/static/public/js/sharing-page.js" | webpack_asset}></script>
-    <script type="text/javascript" src=${"/static/public/js/forward/node-cfg.js" | webpack_asset}></script>
+
+    % if not node['is_registration']:
+        <script type="text/javascript" src=${"/static/public/js/forward/node-cfg.js" | webpack_asset}></script>
+    % endif
     
     % for js_asset in addon_js:
         <script src="${js_asset | webpack_asset}"></script>
