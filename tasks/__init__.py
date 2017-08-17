@@ -538,12 +538,6 @@ def test_js(ctx):
     karma(ctx, single=True, browsers='PhantomJS')
 
 @task
-def test_travis_js(ctx, numprocesses=None):
-    jshint(ctx)
-    test_js(ctx)
-
-
-@task
 def test_travis_osf(ctx, numprocesses=None):
     """
     Run half of the tests to help travis go faster. Lints and Flakes happen everywhere to keep from wasting test time.
@@ -565,7 +559,7 @@ def test_travis_else(ctx, numprocesses=None):
 
 
 @task
-def test_travis_api1(ctx, numprocesses=None):
+def test_travis_api1_and_js(ctx, numprocesses=None):
     flake(ctx)
     jshint(ctx)
     karma(ctx, single=True, browsers='PhantomJS')
