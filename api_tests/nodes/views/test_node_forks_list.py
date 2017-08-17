@@ -327,7 +327,8 @@ class TestNodeForkCreate:
         res = app.post_json_api(public_project_url, fork_data_with_title, auth=user.auth)
         assert res.status_code == 201
         assert res.json['data']['id'] == public_project.forks.first()._id
-        assert mails.send_mail.called_with(user.email, mails.FORK_COMPLETED, title= res.json['data']['attributes']['title'], guid=res.json['data']['id'], mimetype='html')
+
+        mails.send_mail.assert_called_with(user.email, mails.FORK_COMPLETED, title=res.json['data']['attributes']['title'], guid=res.json['data']['id'], mimetype='html')
 
     def test_send_email_failed(self, app, user, public_project_url, fork_data_with_title, public_project):
         NodeForksSerializer.save = mock.MagicMock()
@@ -336,4 +337,4 @@ class TestNodeForkCreate:
         with pytest.raises(Exception):
             app.post_json_api(public_project_url, fork_data_with_title, auth=user.auth)
 
-        assert mails.send_mail.called_with(user.email, mails.FORK_COMPLETED, title= fork_data_with_title['data']['attributes']['title'], guid=public_project.id, mimetype='html')
+        mails.send_mail.assert_called_with(user.email, mails.FORK_FAILED, title=public_project.title, guid=public_project._id, mimetype='html')
