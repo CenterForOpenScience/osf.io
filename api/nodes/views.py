@@ -1570,7 +1570,8 @@ class NodeForksList(JSONAPIBaseView, generics.ListCreateAPIView, NodeMixin, Node
 
     Paginated list of the current node's forks ordered by their `forked_date`. Forks are copies of projects that you can
     change without affecting the original project.  When creating a fork, your fork will will only contain public components or those
-    for which you are a contributor.  Private components that you do not have access to will not be forked.
+    for which you are a contributor.  Private components that you do not have access to will not be forked. You will receive an email
+    when your fork completes.
 
     ##Node Fork Attributes
 
