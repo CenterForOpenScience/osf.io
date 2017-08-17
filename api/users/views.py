@@ -314,7 +314,7 @@ class UserAddonList(JSONAPIBaseView, generics.ListAPIView, ListFilterMixin, User
     view_category = 'users'
     view_name = 'user-addons'
 
-    ordering = ('-date_last_refreshed',)
+    ordering = ('-id',)
 
     def get_queryset(self):
         qs = [addon for addon in self.get_user().get_addons() if 'accounts' in addon.config.configs]
@@ -598,7 +598,7 @@ class UserInstitutions(JSONAPIBaseView, generics.ListAPIView, UserMixin):
     view_category = 'users'
     view_name = 'user-institutions'
 
-    ordering = ('-date_modified',)
+    ordering = ('-pk', )
 
     def get_default_odm_query(self):
         return None
