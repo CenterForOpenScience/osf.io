@@ -2,7 +2,8 @@ import mock
 import pytest
 
 from framework.auth.core import Auth
-from osf.models import QuickFilesNode, BaseFileNode
+from osf.models import QuickFilesNode
+from addons.osfstorage.models import OsfStorageFile
 from osf.exceptions import MaxRetriesError
 from api_tests.utils import create_test_file
 from tests.utils import assert_items_equal
@@ -109,7 +110,7 @@ class TestQuickFilesNode:
         user.merge_user(other_user)
         user.save()
 
-        stored_files = BaseFileNode.objects.filter(type='osf.osfstoragefile')
+        stored_files = OsfStorageFile.objects.all().prefetch_related('node')
         assert stored_files.count() == 2
         for stored_file in stored_files:
             assert stored_file.node == quickfiles
@@ -129,9 +130,8 @@ class TestQuickFilesNode:
         user.merge_user(third_user)
         user.save()
 
-        stored_files = BaseFileNode.objects.filter(type='osf.osfstoragefile')
+        actual_filenames = list(OsfStorageFile.objects.all().values_list('name', flat=True))
         expected_filenames = ['Woo.pdf', 'Woo (1).pdf', 'Woo (2).pdf']
-        actual_filenames = [stored_file.name for stored_file in stored_files]
 
         assert_items_equal(actual_filenames, expected_filenames)
 
@@ -150,9 +150,8 @@ class TestQuickFilesNode:
         user.merge_user(third_user)
         user.save()
 
-        stored_files = BaseFileNode.objects.filter(type='osf.osfstoragefile')
+        actual_filenames = list(OsfStorageFile.objects.all().values_list('name', flat=True))
         expected_filenames = ['Woo (1).pdf', 'Woo (2).pdf', 'Woo (3).pdf']
-        actual_filenames = [stored_file.name for stored_file in stored_files]
         assert_items_equal(actual_filenames, expected_filenames)
 
     def test_quickfiles_moves_destination_quickfiles_has_weird_numbers(self, user, quickfiles):
@@ -171,9 +170,8 @@ class TestQuickFilesNode:
         user.merge_user(third_user)
         user.save()
 
-        stored_files = BaseFileNode.objects.filter(type='osf.osfstoragefile', node=quickfiles)
+        actual_filenames = list(OsfStorageFile.objects.filter(node=quickfiles).values_list('name', flat=True))
         expected_filenames = ['Woo.pdf', 'Woo (1).pdf', 'Woo (2).pdf', 'Woo (3).pdf']
-        actual_filenames = [stored_file.name for stored_file in stored_files]
 
         assert_items_equal(actual_filenames, expected_filenames)
 

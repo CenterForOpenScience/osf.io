@@ -65,7 +65,7 @@ class TestUserQuickFiles:
         node_json = res.json['data']
 
         ids = [each['id'] for each in node_json]
-        assert len(ids) == OsfStorageFile.count()
+        assert len(ids) == OsfStorageFile.objects.count()
 
     def test_get_files_me(self, app, user):
         user_two = AuthUserFactory()
