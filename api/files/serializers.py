@@ -307,6 +307,7 @@ class BaseFileSerializer(JSONAPISerializer):
     def get_absolute_url(self, obj):
         return api_v2_url('files/{}/'.format(obj._id))
 
+
 class FileSerializer(BaseFileSerializer):
     node = RelationshipField(related_view='nodes:node-detail',
                              related_view_kwargs={'node_id': '<node._id>'},
@@ -339,13 +340,15 @@ class FileDetailSerializer(FileSerializer):
     id = IDField(source='_id', required=True)
 
 
-class QuickFilesFileDetailSerializer(BaseFileSerializer):
-    id = IDField(source='_id', required=True)
-
+class QuickFilesSerializer(BaseFileSerializer):
     user = RelationshipField(related_view='users:user-detail',
                              related_view_kwargs={'user_id': '<node.creator._id>'},
                              help_text='The user who updloaded this file'
                              )
+
+
+class QuickFilesDetailSerializer(QuickFilesSerializer):
+    id = IDField(source='_id', required=True)
 
 
 class FileVersionSerializer(JSONAPISerializer):

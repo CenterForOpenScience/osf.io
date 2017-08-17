@@ -561,7 +561,7 @@ class UserQuickFiles(JSONAPIBaseView, generics.ListAPIView, WaterButlerMixin, Us
 
     serializer_class = UserQuickFilesSerializer
     view_category = 'users'
-    view_name = 'user-files'
+    view_name = 'user-quickfiles'
 
     def get_node(self, check_object_permissions):
         return QuickFilesNode.objects.get_for_user(self.get_user(check_permissions=False))
