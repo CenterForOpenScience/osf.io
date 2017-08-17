@@ -29,15 +29,16 @@ PREPRINT_PROVIDER_DOMAINS = {
     'suffix': ':4200/'
 }
 USE_EXTERNAL_EMBER = True
+PROXY_EMBER_APPS = False
 EXTERNAL_EMBER_APPS = {
     'preprints': {
         'url': '/preprints/',
-        'server': 'http://localhost:4200',
+        'server': 'http://192.168.168.167:4200/',
         'path': '/preprints/'
     },
     'registries': {
         'url': '/registries/',
-        'server': 'http://localhost:4300',
+        'server': 'http://192.168.168.167:4300',
         'path': '/registries/'
     }
     # 'meetings': {
