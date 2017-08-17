@@ -4,7 +4,7 @@ from modularodm.exceptions import ValidationValueError, ValidationError
 
 from website import util as website_utils
 from api.base.exceptions import InvalidModelValueError
-from api.files.serializers import OsfStorageFileSerializer
+from api.files.serializers import QuickFilesSerializer
 from api.base.serializers import JSONAPIRelationshipSerializer, HideIfDisabled, BaseAPISerializer, WaterbutlerLink, Link
 from osf.models import OSFUser, QuickFilesNode
 
@@ -67,8 +67,8 @@ class UserSerializer(JSONAPISerializer):
         related_meta={'projects_in_common': 'get_projects_in_common'},
     ))
 
-    files = HideIfDisabled(QuickFilesRelationshipField(
-        related_view='users:user-files',
+    quickfiles = HideIfDisabled(QuickFilesRelationshipField(
+        related_view='users:user-quickfiles',
         related_view_kwargs={'user_id': '<_id>'},
     ))
 
@@ -182,16 +182,13 @@ class UserDetailSerializer(UserSerializer):
     id = IDField(source='_id', required=True)
 
 
-class UserQuickFilesSerializer(OsfStorageFileSerializer):
+class UserQuickFilesSerializer(QuickFilesSerializer):
     links = LinksField({
         'info': Link('files:file-detail', kwargs={'file_id': '<_id>'}),
         'upload': WaterbutlerLink(),
         'delete': WaterbutlerLink(),
         'download': WaterbutlerLink(must_be_file=True),
     })
-
-    # Don't serialize node relationship for QuickFiles as they don't have a detail view
-    node = None
 
 
 class ReadEmailUserDetailSerializer(UserDetailSerializer):

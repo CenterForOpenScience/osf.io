@@ -22,7 +22,7 @@ from api.nodes.permissions import ReadOnlyIfRegistration
 from api.files.permissions import IsPreprintFile
 from api.files.permissions import CheckedOutOrAdmin
 from api.files.serializers import FileSerializer
-from api.files.serializers import FileDetailSerializer, QuickFilesFileDetailSerializer
+from api.files.serializers import FileDetailSerializer, QuickFilesDetailSerializer
 from api.files.serializers import FileVersionSerializer
 
 
@@ -327,7 +327,7 @@ class FileDetail(JSONAPIBaseView, generics.RetrieveUpdateAPIView, FileMixin):
 
     def get_serializer_class(self):
         if isinstance(self.get_node(), QuickFilesNode):
-            return QuickFilesFileDetailSerializer
+            return QuickFilesDetailSerializer
         return FileDetailSerializer
 
     def get_node(self):

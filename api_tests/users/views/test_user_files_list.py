@@ -29,20 +29,21 @@ class TestUserQuickFiles:
         root.append_file('The.txt')
         root.append_file('Buzzards.txt')
 
-    def test_authorized_gets_200(self, app, user):
-        url = "/{}users/{}/files/".format(API_BASE, user._id)
+    @pytest.fixture()
+    def url(self, user):
+        return "/{}users/{}/quickfiles/".format(API_BASE, user._id)
+
+    def test_authorized_gets_200(self, app, user, url):
         res = app.get(url, auth=user.auth)
         assert res.status_code == 200
         assert res.content_type == 'application/vnd.api+json'
 
-    def test_anonymous_gets_200(self, app, user):
-        url = "/{}users/{}/files/".format(API_BASE, user._id)
+    def test_anonymous_gets_200(self, app, url):
         res = app.get(url)
         assert res.status_code == 200
         assert res.content_type == 'application/vnd.api+json'
 
-    def test_get_files_logged_in(self, app, user):
-        url = "/{}users/{}/files/".format(API_BASE, user._id)
+    def test_get_files_logged_in(self, app, user, url):
         res = app.get(url, auth=user.auth)
         node_json = res.json['data']
 
@@ -50,17 +51,15 @@ class TestUserQuickFiles:
 
         assert len(ids) == OsfStorageFile.objects.count()
 
-    def test_get_files_not_logged_in(self, app, user):
-        url = "/{}users/{}/files/".format(API_BASE, user._id)
+    def test_get_files_not_logged_in(self, app, url):
         res = app.get(url)
         node_json = res.json['data']
 
         ids = [each['id'] for each in node_json]
         assert len(ids) == OsfStorageFile.objects.count()
 
-    def test_get_files_logged_in_as_different_user(self, app, user):
+    def test_get_files_logged_in_as_different_user(self, app, user, url):
         user_two = AuthUserFactory()
-        url = "/{}users/{}/files/".format(API_BASE, user._id)
         res = app.get(url, auth=user_two.auth)
         node_json = res.json['data']
 
@@ -77,7 +76,7 @@ class TestUserQuickFiles:
         root_two.append_file('Sister.txt')
         root_two.append_file('Abigail.txt')
 
-        url = "/{}users/me/files/".format(API_BASE)
+        url = "/{}users/me/quickfiles/".format(API_BASE)
         res = app.get(url, auth=user.auth)
         node_json = res.json['data']
 

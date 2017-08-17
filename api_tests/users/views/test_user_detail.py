@@ -87,7 +87,7 @@ class TestUserDetail(ApiTestCase):
         res = self.app.get(url, auth=self.user_one)
         quickfiles = QuickFilesNode.objects.get(creator=self.user_one)
         user_json = res.json['data']
-        upload_url = user_json['relationships']['files']['links']['upload']['href']
+        upload_url = user_json['relationships']['quickfiles']['links']['upload']['href']
         waterbutler_upload = website_utils.waterbutler_api_url_for(quickfiles._id, 'osfstorage')
 
         assert_equal(upload_url, waterbutler_upload)
