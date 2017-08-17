@@ -2302,7 +2302,7 @@ class TestNodeTraversals:
         assert Node.find(Q('_id', 'in', reg_ids) & Q('is_deleted', 'eq', False)).count() == 0
         assert mock_update_search.call_count == orig_call_count + len(reg_ids)
 
-    def test_delete_registration_tree_sets_draft_registration_approvals_to_none(self, user):
+    def test_delete_registration_tree_does_not_set_draft_registration_approvals_to_none(self, user):
         reg = RegistrationFactory()
 
         dr = DraftRegistrationFactory(initiator=user)
@@ -2315,7 +2315,7 @@ class TestNodeTraversals:
         reg.delete_registration_tree(save=True)
 
         dr.reload()
-        assert dr.approval is None
+        assert dr.approval is not None
 
     @mock.patch('osf.models.node.AbstractNode.update_search')
     def test_delete_registration_tree_deletes_backrefs(self, mock_update_search):
