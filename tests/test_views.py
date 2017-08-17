@@ -17,6 +17,9 @@ from nose.tools import *  # noqa PEP8 asserts
 from django.utils import timezone
 from django.apps import apps
 from django.core.exceptions import ValidationError
+from django.db import connection, transaction
+from django.test import TransactionTestCase
+from django.test.utils import CaptureQueriesContext
 
 from addons.github.tests.factories import GitHubAccountFactory
 from framework.auth import cas
@@ -308,6 +311,29 @@ class TestProjectViews(OsfTestCase):
         res = self.app.post_json(url, {'name': 'title', 'value': '<a></a>'}, auth=self.user1.auth, expect_errors=True)
         assert_equal(res.status_code, 400)
         assert_in('Invalid title.', res.body)
+
+    def test_view_project_doesnt_select_for_update(self):
+        node = ProjectFactory(creator=self.user1)
+        url = node.api_url_for('view_project')
+
+        with transaction.atomic(), CaptureQueriesContext(connection) as ctx:
+            res = self.app.get(url, auth=self.user1.auth)
+
+        for_update_sql = connection.ops.for_update_sql()
+        assert_equal(res.status_code, 200)
+        assert not any(for_update_sql in query['sql'] for query in ctx.captured_queries)
+
+    def test_edit_node_uses_select_for_update(self):
+        node = ProjectFactory(creator=self.user1)
+        url = node.api_url_for('edit_node')
+
+        with transaction.atomic(), CaptureQueriesContext(connection) as ctx:
+            res = self.app.post_json(url, {'name': 'title', 'value': 'Seth Rollins'}, auth=self.user1.auth, expect_errors=False)
+
+        for_update_sql = connection.ops.for_update_sql()
+        assert_equal(res.status_code, 200)
+        assert_equal(res.body['newValue'], 'Seth Rollins')
+        assert any(for_update_sql in query['sql'] for query in ctx.captured_queries)
 
     def test_cannot_remove_only_visible_contributor(self):
         user1_contrib = self.project.contributor_set.get(user=self.user1)

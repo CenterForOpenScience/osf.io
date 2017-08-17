@@ -43,6 +43,7 @@ class PreprintMixin(NodeMixin):
         preprint = get_object_or_error(
             PreprintService,
             self.kwargs[self.preprint_lookup_url_kwarg],
+            self.request,
             display_name='preprint'
         )
         if not preprint or preprint.node.is_deleted:

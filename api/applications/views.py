@@ -1,7 +1,6 @@
 """
 Views related to OAuth2 platform applications. Intended for OSF internal use only
 """
-from django.shortcuts import get_object_or_404
 from rest_framework.exceptions import APIException
 from rest_framework import generics
 from rest_framework import permissions as drf_permissions
@@ -14,6 +13,7 @@ from framework.auth.oauth_scopes import CoreScopes
 from osf.models import ApiOAuth2Application
 
 from api.base.filters import ListFilterMixin
+from api.base.utils import get_object_or_error
 from api.base.views import JSONAPIBaseView
 from api.base import permissions as base_permissions
 from api.applications.serializers import ApiOAuth2ApplicationSerializer, ApiOAuth2ApplicationDetailSerializer, ApiOAuth2ApplicationResetSerializer
@@ -24,7 +24,7 @@ class ApplicationMixin(object):
     current URL. By default, fetches the current application based on the client_id kwarg.
     """
     def get_app(self):
-        app = get_object_or_404(ApiOAuth2Application, client_id=self.kwargs['client_id'], is_active=True)
+        app = get_object_or_error(ApiOAuth2Application, {'client_id': self.kwargs['client_id'], 'is_active': True}, self.request)
         self.check_object_permissions(self.request, app)
         return app
 

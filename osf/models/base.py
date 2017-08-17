@@ -74,19 +74,21 @@ class BaseModel(models.Model):
                      field.is_relation and field.many_to_many and not hasattr(field, 'field')]
 
     @classmethod
-    def load(cls, data):
+    def load(cls, data, select_for_update=False):
         try:
             if isinstance(data, basestring):
                 # Some models (CitationStyle) have an _id that is not a bson
                 # Looking up things by pk will never work with a basestring
-                return cls.objects.get(_id=data)
-            return cls.objects.get(pk=data)
+                return cls.objects.get(_id=data) if not select_for_update else cls.objects.filter(_id=data).select_for_update().get()
+            return cls.objects.get(pk=data) if not select_for_update else cls.objects.filter(pk=data).select_for_update().get()
         except cls.DoesNotExist:
             return None
 
     @classmethod
-    def find_one(cls, query):
+    def find_one(cls, query, select_for_update=False):
         try:
+            if select_for_update:
+                return cls.objects.filter(to_django_query(query, model_cls=cls)).select_for_update().get()
             return cls.objects.get(to_django_query(query, model_cls=cls))
         except cls.DoesNotExist:
             raise modularodm.exceptions.NoResultsFound()
@@ -174,9 +176,9 @@ class Guid(BaseModel):
 
     # Override load in order to load by GUID
     @classmethod
-    def load(cls, data):
+    def load(cls, data, select_for_update=False):
         try:
-            return cls.objects.get(_id=data)
+            return cls.objects.get(_id=data) if not select_for_update else cls.objects.filter(_id=data).select_for_update().get()
         except cls.DoesNotExist:
             return None
 
@@ -225,9 +227,9 @@ class ObjectIDMixin(BaseIDMixin):
         return '_id: {}'.format(self._id)
 
     @classmethod
-    def load(cls, q):
+    def load(cls, q, select_for_update=False):
         try:
-            return cls.objects.get(_id=q)
+            return cls.objects.get(_id=q) if not select_for_update else cls.objects.filter(_id=q).select_for_update().get()
         except cls.DoesNotExist:
             # modm doesn't throw exceptions when loading things that don't exist
             return None
@@ -323,12 +325,14 @@ class GuidMixin(BaseIDMixin):
     _primary_key = _id
 
     @classmethod
-    def load(cls, q):
+    def load(cls, q, select_for_update=False):
         # Minor optimization--no need to query if q is None or ''
         if not q:
             return None
         try:
             # guids___id__isnull=False forces an INNER JOIN
+            if select_for_update:
+                return cls.objects.filter(guids___id__isnull=False, guids___id=q).select_for_update().first()
             return cls.objects.filter(guids___id__isnull=False, guids___id=q).first()
         except cls.DoesNotExist:
             return None

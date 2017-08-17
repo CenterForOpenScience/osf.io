@@ -36,9 +36,9 @@ class FileMixin(object):
 
     def get_file(self, check_permissions=True):
         try:
-            obj = utils.get_object_or_error(BaseFileNode, self.kwargs[self.file_lookup_url_kwarg])
+            obj = utils.get_object_or_error(BaseFileNode, self.kwargs[self.file_lookup_url_kwarg], self.request)
         except (NotFound, Gone):
-            obj = utils.get_object_or_error(Guid, self.kwargs[self.file_lookup_url_kwarg]).referent
+            obj = utils.get_object_or_error(Guid, self.kwargs[self.file_lookup_url_kwarg], self.request).referent
             if not isinstance(obj, BaseFileNode):
                 raise NotFound
 
@@ -473,4 +473,4 @@ class FileVersionDetail(JSONAPIBaseView, generics.RetrieveAPIView, FileMixin):
         # May raise a permission denied
         # Kinda hacky but versions have no reference to node or file
         self.check_object_permissions(self.request, file)
-        return utils.get_object_or_error(FileVersion, getattr(maybe_version, '_id', ''))
+        return utils.get_object_or_error(FileVersion, getattr(maybe_version, '_id', ''), self.request)
