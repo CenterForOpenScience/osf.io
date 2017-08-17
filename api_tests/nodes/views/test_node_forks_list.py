@@ -1,4 +1,5 @@
 import pytest
+import mock
 
 from api.base.settings.defaults import API_BASE
 from framework.auth.core import Auth
@@ -10,8 +11,11 @@ from osf_tests.factories import (
     ForkFactory
 )
 from rest_framework import exceptions
+from website import mails
 from website.util import permissions
 
+from api.nodes.serializers import NodeForksSerializer
+mails.send_mail = mock.MagicMock()
 
 @pytest.fixture()
 def user():
@@ -318,3 +322,18 @@ class TestNodeForkCreate:
         assert res.status_code == 201
         assert res.json['data']['id'] == private_project.forks.first()._id
         assert res.json['data']['attributes']['title'] == 'Fork of ' + private_project.title
+
+    def test_send_email_success(self, app, user, public_project_url, fork_data_with_title, public_project):
+        res = app.post_json_api(public_project_url, fork_data_with_title, auth=user.auth)
+        assert res.status_code == 201
+        assert res.json['data']['id'] == public_project.forks.first()._id
+        assert mails.send_mail.called_with(user.email, mails.FORK_COMPLETED, title= res.json['data']['attributes']['title'], guid=res.json['data']['id'], mimetype='html')
+
+    def test_send_email_failed(self, app, user, public_project_url, fork_data_with_title, public_project):
+        NodeForksSerializer.save = mock.MagicMock()
+        NodeForksSerializer.save.side_effect = Exception()
+
+        with pytest.raises(Exception):
+            app.post_json_api(public_project_url, fork_data_with_title, auth=user.auth)
+
+        assert mails.send_mail.called_with(user.email, mails.FORK_COMPLETED, title= fork_data_with_title['data']['attributes']['title'], guid=public_project.id, mimetype='html')

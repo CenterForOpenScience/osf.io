@@ -1666,8 +1666,8 @@ class NodeForksList(JSONAPIBaseView, generics.ListCreateAPIView, NodeMixin, Node
         try:
             fork = serializer.save(node=node)
             mails.send_mail(user.email, mails.FORK_COMPLETED, title=fork.title, guid=fork._id, mimetype='html')
-        except Exception, exc:
-            mails.send_mail(user.email, mails.FORK_FAILED, title=node.title, mimetype='html')
+        except Exception as exc:
+            mails.send_mail(user.email, mails.FORK_FAILED, title=node.title, guid=fork._id, mimetype='html')
             raise exc
 
     # overrides ListCreateAPIView
