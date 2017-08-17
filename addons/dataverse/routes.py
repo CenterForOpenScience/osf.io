@@ -1,5 +1,4 @@
 from framework.routing import Rule, json_renderer
-from website.routes import OsfWebRenderer
 
 from . import views
 
@@ -85,15 +84,6 @@ api_routes = {
             'put',
             views.dataverse_publish_dataset,
             json_renderer,
-        ),
-        Rule(
-            [
-                '/project/<pid>/dataverse/widget/',
-                '/project/<pid>/node/<nid>/dataverse/widget/',
-            ],
-            'get',
-            views.dataverse_widget,
-            OsfWebRenderer('../addons/dataverse/templates/dataverse_widget.mako', trust=False),
         ),
         Rule(
             [
