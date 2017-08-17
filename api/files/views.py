@@ -8,6 +8,7 @@ from osf.models import (
     Guid,
     BaseFileNode,
     FileVersion,
+    QuickFilesNode
 )
 
 from api.base.exceptions import Gone
@@ -21,7 +22,7 @@ from api.nodes.permissions import ReadOnlyIfRegistration
 from api.files.permissions import IsPreprintFile
 from api.files.permissions import CheckedOutOrAdmin
 from api.files.serializers import FileSerializer
-from api.files.serializers import FileDetailSerializer
+from api.files.serializers import FileDetailSerializer, QuickFilesFileDetailSerializer
 from api.files.serializers import FileVersionSerializer
 
 
@@ -323,6 +324,11 @@ class FileDetail(JSONAPIBaseView, generics.RetrieveUpdateAPIView, FileMixin):
     throttle_classes = (CreateGuidThrottle, NonCookieAuthThrottle, UserRateThrottle, )
     view_category = 'files'
     view_name = 'file-detail'
+
+    def get_serializer_class(self):
+        if isinstance(self.get_node(), QuickFilesNode):
+            return QuickFilesFileDetailSerializer
+        return FileDetailSerializer
 
     def get_node(self):
         return self.get_file().node
