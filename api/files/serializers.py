@@ -131,7 +131,7 @@ class FileTagField(ser.Field):
         return data
 
 
-class FileSerializer(JSONAPISerializer):
+class BaseFileSerializer(JSONAPISerializer):
     filterable_fields = frozenset([
         'id',
         'name',
@@ -181,10 +181,7 @@ class FileSerializer(JSONAPISerializer):
                                             related_meta={'unread': 'get_unread_comments_count'},
                                             filter={'target': 'get_file_guid'}
                                             )
-    node = RelationshipField(related_view='nodes:node-detail',
-                             related_view_kwargs={'node_id': '<node._id>'},
-                             help_text='The project that this file belongs to'
-                             )
+
     links = LinksField({
         'info': Link('files:file-detail', kwargs={'file_id': '<_id>'}),
         'move': WaterbutlerLink(),
@@ -311,6 +308,13 @@ class FileSerializer(JSONAPISerializer):
         return api_v2_url('files/{}/'.format(obj._id))
 
 
+class FileSerializer(BaseFileSerializer):
+    node = RelationshipField(related_view='nodes:node-detail',
+                             related_view_kwargs={'node_id': '<node._id>'},
+                             help_text='The project that this file belongs to'
+                             )
+
+
 class OsfStorageFileSerializer(FileSerializer):
     """ Overrides `filterable_fields` to make `last_touched` non-filterable
     """
@@ -333,6 +337,17 @@ class FileDetailSerializer(FileSerializer):
     """
     Overrides FileSerializer to make id required.
     """
+    id = IDField(source='_id', required=True)
+
+
+class QuickFilesSerializer(BaseFileSerializer):
+    user = RelationshipField(related_view='users:user-detail',
+                             related_view_kwargs={'user_id': '<node.creator._id>'},
+                             help_text='The user who updloaded this file'
+                             )
+
+
+class QuickFilesDetailSerializer(QuickFilesSerializer):
     id = IDField(source='_id', required=True)
 
 

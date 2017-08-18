@@ -180,7 +180,7 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
     #   the result of a bug, as they were all created over a small time span.
     is_claimed = models.BooleanField(default=False, db_index=True)
 
-    # a list of strings - for internal use
+    # for internal use
     tags = models.ManyToManyField('Tag', blank=True)
 
     # security emails that have been sent
@@ -681,17 +681,18 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
 
             node.save()
 
+        from osf.models import QuickFilesNode
+        from osf.models import BaseFileNode
+
         # - projects where the user was the creator
-        user.created.filter(is_bookmark_collection=False).exclude(type='osf.quickfilesnode').update(creator=self)
+        user.created.filter(is_bookmark_collection=False).exclude(type=QuickFilesNode._typedmodels_type).update(creator=self)
 
         # - file that the user has checked_out, import done here to prevent import error
-        from osf.models import BaseFileNode
         for file_node in BaseFileNode.files_checked_out(user=user):
             file_node.checkout = self
             file_node.save()
 
         # - move files in the merged user's quickfiles node, checking for name conflicts
-        from osf.models import QuickFilesNode
         from addons.osfstorage.models import OsfStorageFileNode
         primary_quickfiles = QuickFilesNode.objects.get(creator=self)
         merging_user_quickfiles = QuickFilesNode.objects.get(creator=user)
