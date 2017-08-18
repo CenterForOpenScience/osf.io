@@ -543,7 +543,7 @@ class ListFilterMixin(FilterMixin):
                 match = self.QUERY_PATTERN.match(key)
                 fields = match.groupdict()['fields']
                 statement = len(re.findall(self.FILTER_FIELDS, fields)) > 1  # This indicates an OR statement
-                sub_query = Node.objects.none() if statement else Node.objects.all()
+                sub_query = default_queryset.model.objects.none() if statement else default_queryset.model.objects.all()
                 query_operator = operator.or_ if statement else operator.and_
                 for field_name, data in field_names.iteritems():
                     operations = data if isinstance(data, list) else [data]
