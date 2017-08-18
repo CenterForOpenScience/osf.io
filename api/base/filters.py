@@ -18,7 +18,7 @@ from modularodm import Q as MQ
 from modularodm.query import queryset as modularodm_queryset
 from rest_framework import serializers as ser
 from rest_framework.filters import OrderingFilter
-from osf.models import Subject, Node
+from osf.models import Subject
 
 
 def lowercase(lower):
