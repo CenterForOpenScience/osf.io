@@ -3951,21 +3951,21 @@ class TestAdminImplicitRead(object):
         return ProjectFactory(is_public=False, parent=lvl2component)
 
     def test_direct_child(self, admin_user, lvl1component):
-        assert AbstractNode.objects.filter(id=lvl1component.pk).can_view(admin_user).count() == 1
-        assert AbstractNode.objects.filter(id=lvl1component.pk).can_view(admin_user)[0] == lvl1component
+        assert Node.objects.filter(id=lvl1component.pk).can_view(admin_user).count() == 1
+        assert Node.objects.filter(id=lvl1component.pk).can_view(admin_user)[0] == lvl1component
 
     def test_rando(self, lvl1component, jane_doe):
-        assert AbstractNode.objects.filter(id=lvl1component.pk).can_view(jane_doe).count() == 0
+        assert Node.objects.filter(id=lvl1component.pk).can_view(jane_doe).count() == 0
 
     def test_includes_parent(self, project, admin_user, lvl1component):
-        assert AbstractNode.objects.filter(
+        assert Node.objects.filter(
             id__in=[lvl1component.pk, project.pk]
         ).can_view(admin_user).count() == 2
 
     def test_includes_public(self, admin_user, project, lvl1component):
         proj = ProjectFactory(is_public=True)
 
-        qs = AbstractNode.objects.can_view(admin_user)
+        qs = Node.objects.can_view(admin_user)
 
         assert proj in qs
         assert project in qs
@@ -3974,13 +3974,13 @@ class TestAdminImplicitRead(object):
     def test_empty_is_public(self):
         proj = ProjectFactory(is_public=True)
 
-        qs = AbstractNode.objects.can_view()
+        qs = Node.objects.can_view()
 
         assert proj in qs
         assert qs.count() == 1
 
     def test_generations(self, admin_user, project, lvl1component, lvl2component, lvl3component):
-        qs = AbstractNode.objects.can_view(admin_user)
+        qs = Node.objects.can_view(admin_user)
 
         assert project in qs
         assert lvl1component in qs
@@ -3991,7 +3991,7 @@ class TestAdminImplicitRead(object):
         pl = PrivateLinkFactory()
         lvl1component.private_links.add(pl)
 
-        qs = AbstractNode.objects.can_view(user=jane_doe, private_link=pl)
+        qs = Node.objects.can_view(user=jane_doe, private_link=pl)
 
         assert lvl1component in qs
         assert project not in qs

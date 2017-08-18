@@ -5,6 +5,8 @@ import urllib
 import urlparse
 import uuid
 from copy import deepcopy
+from os.path import splitext
+
 from flask import Request as FlaskRequest
 from framework import analytics
 
@@ -33,7 +35,7 @@ from framework.exceptions import PermissionsError
 from framework.sessions.utils import remove_sessions_for_user
 from osf.utils.requests import get_current_request
 from modularodm.exceptions import NoResultsFound
-from osf.exceptions import reraise_django_validation_errors
+from osf.exceptions import reraise_django_validation_errors, MaxRetriesError
 from osf.models.base import BaseModel, GuidMixin, GuidMixinQuerySet
 from osf.models.contributor import RecentlyAddedContributor
 from osf.models.institution import Institution
@@ -51,6 +53,7 @@ from website.project import new_bookmark_collection
 
 logger = logging.getLogger(__name__)
 
+MAX_QUICKFILES_MERGE_RENAME_ATTEMPTS = 1000
 
 def get_default_mailing_lists():
     return {'Open Science Framework Help': True}
@@ -497,11 +500,11 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
 
     @property
     def contributor_to(self):
-        return self.nodes.filter(is_deleted=False).exclude(type='osf.collection')
+        return self.nodes.filter(is_deleted=False, type__in=['osf.node', 'osf.registration'])
 
     @property
     def visible_contributor_to(self):
-        return self.nodes.filter(is_deleted=False, contributor__visible=True).exclude(type='osf.collection')
+        return self.nodes.filter(is_deleted=False, contributor__visible=True, type__in=['osf.node', 'osf.registration'])
 
     def set_unusable_username(self):
         """Sets username to an unusable value. Used for, e.g. for invited contributors
@@ -679,13 +682,49 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
             node.save()
 
         # - projects where the user was the creator
-        user.created.filter(is_bookmark_collection=False).update(creator=self)
+        user.created.filter(is_bookmark_collection=False).exclude(type='osf.quickfilesnode').update(creator=self)
 
         # - file that the user has checked_out, import done here to prevent import error
         from osf.models import BaseFileNode
         for file_node in BaseFileNode.files_checked_out(user=user):
             file_node.checkout = self
             file_node.save()
+
+        # - move files in the merged user's quickfiles node, checking for name conflicts
+        from osf.models import QuickFilesNode
+        from addons.osfstorage.models import OsfStorageFileNode
+        primary_quickfiles = QuickFilesNode.objects.get(creator=self)
+        merging_user_quickfiles = QuickFilesNode.objects.get(creator=user)
+
+        files_in_merging_user_quickfiles = merging_user_quickfiles.files.filter(type='osf.osfstoragefile')
+        for merging_user_file in files_in_merging_user_quickfiles:
+            if OsfStorageFileNode.objects.filter(node=primary_quickfiles, name=merging_user_file.name).exists():
+                digit = 1
+                split_filename = splitext(merging_user_file.name)
+                name_without_extension = split_filename[0]
+                extension = split_filename[1]
+                found_digit_in_parens = re.findall('(?<=\()(\d)(?=\))', name_without_extension)
+                if found_digit_in_parens:
+                    found_digit = int(found_digit_in_parens[0])
+                    digit = found_digit + 1
+                    name_without_extension = name_without_extension.replace('({})'.format(found_digit), '').strip()
+                new_name_format = '{} ({}){}'
+                new_name = new_name_format.format(name_without_extension, digit, extension)
+
+                # check if new name conflicts, update til it does not (try up to 1000 times)
+                rename_count = 0
+                while OsfStorageFileNode.objects.filter(node=primary_quickfiles, name=new_name).exists():
+                    digit += 1
+                    new_name = new_name_format.format(name_without_extension, digit, extension)
+                    rename_count += 1
+                    if rename_count >= MAX_QUICKFILES_MERGE_RENAME_ATTEMPTS:
+                        raise MaxRetriesError('Maximum number of rename attempts has been reached')
+
+                merging_user_file.name = new_name
+                merging_user_file.save()
+
+            merging_user_file.node = primary_quickfiles
+            merging_user_file.save()
 
         # finalize the merge
 
@@ -763,6 +802,13 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
         if self.SEARCH_UPDATE_FIELDS.intersection(dirty_fields) and self.is_confirmed:
             self.update_search()
             self.update_search_nodes_contributors()
+        if 'fullname' in dirty_fields:
+            from osf.models.quickfiles import get_quickfiles_project_title, QuickFilesNode
+
+            quickfiles = QuickFilesNode.objects.filter(creator=self).first()
+            if quickfiles:
+                quickfiles.title = get_quickfiles_project_title(self)
+                quickfiles.save()
         return ret
 
     # Legacy methods
@@ -1152,7 +1198,7 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
         registration or claiming.
 
         """
-        for node in self.contributed:
+        for node in self.contributor_to:
             node.update_search()
 
     def update_date_last_login(self):
@@ -1434,3 +1480,11 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
 def create_bookmark_collection(sender, instance, created, **kwargs):
     if created:
         new_bookmark_collection(instance)
+
+
+@receiver(post_save, sender=OSFUser)
+def create_quickfiles_project(sender, instance, created, **kwargs):
+    from osf.models.quickfiles import QuickFilesNode
+
+    if created:
+        QuickFilesNode.objects.create_for_user(instance)

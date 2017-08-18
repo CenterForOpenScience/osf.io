@@ -56,16 +56,16 @@ services:
 #    volumes:
 #      - mfr-sync:/code:nocopy
 
-#  preprints:
-#    volumes:
-#      - preprints-sync:/code:nocopy
-#
-##      # Use this for ember-osf linked development (with docker-sync):
-##      - preprints_dist_vol:/code/dist
-##      - emberosf-sync:/ember-osf
-##    depends_on:
-##      - emberosf
-##    command: /bin/bash -c "cd /ember-osf && yarn link && cd /code && yarn link @centerforopenscience/ember-osf && yarn --pure-lockfile --ignore-engines && ./node_modules/bower/bin/bower install --allow-root --config.interactive=false && ./node_modules/ember-cli/bin/ember serve --host 0.0.0.0 --port 4200"
+  preprints:
+    volumes:
+      - preprints-sync:/code:nocopy
+
+#      # Use this for ember-osf linked development (with docker-sync):
+      - preprints_dist_vol:/code/dist
+      - emberosf-sync:/ember-osf
+    depends_on:
+      - emberosf
+    command: /bin/bash -c "cd /code && npm link ../ember-osf && yarn --pure-lockfile --ignore-engines && ./node_modules/bower/bin/bower install --allow-root --config.interactive=false && ./node_modules/ember-cli/bin/ember serve --host 0.0.0.0 --port 4200"
 
 #  registries:
 #    volumes:
@@ -79,11 +79,11 @@ services:
 ##    command: /bin/bash -c "cd /ember-osf && yarn link && cd /code && yarn link @centerforopenscience/ember-osf && yarn --pure-lockfile --ignore-engines && ./node_modules/bower/bin/bower install --allow-root --config.interactive=false && ./node_modules/ember-cli/bin/ember serve --host 0.0.0.0 --port 4300"
 
 #  # Use this for ember-osf linked development (with docker-sync):
-#  emberosf:
-#    build: ../ember-osf
-#    command: /bin/bash -c "yarn --pure-lockfile --ignore-engines && ./node_modules/bower/bin/bower install --allow-root --config.interactive=false"
-#    volumes:
-#      - emberosf-sync:/code:nocopy
+  emberosf:
+    build: ../ember-osf
+    command: /bin/bash -c "yarn --pure-lockfile --ignore-engines && ./node_modules/bower/bin/bower install --allow-root --config.interactive=false"
+    volumes:
+      - emberosf-sync:/code:nocopy
 
 volumes:
   osf-sync:
@@ -95,11 +95,11 @@ volumes:
 #  mfr-sync:
 #    external: true
 
-#  emberosf-sync:
-#    external: true
+  emberosf-sync:
+    external: true
 
-#  preprints-sync:
-#    external: true
+  preprints-sync:
+    external: true
 
 #  registries-sync:
 #    external: true

@@ -24,21 +24,21 @@ syncs:
 #    sync_excludes: ['.DS_Store', '*.pyc', '*.tmp', '.git', '.idea']
 #    watch_excludes: ['.*\.DS_Store', '.*\.pyc', '.*\.tmp', '.*/\.git', '.*/\.idea']
 
-#  preprints-sync:
-#    src: '../ember-preprints'
-#    sync_strategy: 'unison'
-#    sync_args: [ '-prefer newer' ]
-#    sync_excludes_type: 'Name'
-#    sync_excludes: ['.DS_Store', '*.map', '*.pyc', '*.tmp', '.git', '.idea', 'bower_components', 'node_modules', 'tmp', 'dist']
-#    watch_excludes: ['.*\.DS_Store', '.*\.map', '.*\.pyc', '.*\.tmp', '.*/\.git', '.*/\.idea', '.*/bower_components', '.*/node_modules', '.*/tmp', '.*/dist']
+  preprints-sync:
+    src: '../ember-preprints'
+    sync_strategy: 'unison'
+    sync_args: [ '-prefer newer' ]
+    sync_excludes_type: 'Name'
+    sync_excludes: ['.DS_Store', '*.map', '*.pyc', '*.tmp', '.git', '.idea', 'bower_components', 'node_modules', 'tmp', 'dist']
+    watch_excludes: ['.*\.DS_Store', '.*\.map', '.*\.pyc', '.*\.tmp', '.*/\.git', '.*/\.idea', '.*/bower_components', '.*/node_modules', '.*/tmp', '.*/dist']
 
-#  emberosf-sync:
-#    src: '../ember-osf/'
-#    sync_strategy: 'unison'
-#    sync_args: [ '-prefer newer' ]
-#    sync_excludes_type: 'Name'
-#    sync_excludes: ['.DS_Store', '*.map', '*.pyc', '*.tmp', '.git', '.idea', 'bower_components', 'node_modules', 'tmp', 'dist']
-#    watch_excludes: ['.*\.DS_Store', '.*\.map', '.*\.pyc', '.*\.tmp', '.*/\.git', '.*/\.idea', '.*/bower_components', '.*/node_modules', '.*/tmp', '.*/dist']
+  emberosf-sync:
+    src: '../ember-osf/'
+    sync_strategy: 'unison'
+    sync_args: [ '-prefer newer' ]
+    sync_excludes_type: 'Name'
+    sync_excludes: ['.DS_Store', '*.map', '*.pyc', '*.tmp', '.git', '.idea', 'bower_components', 'node_modules', 'tmp', 'dist']
+    watch_excludes: ['.*\.DS_Store', '.*\.map', '.*\.pyc', '.*\.tmp', '.*/\.git', '.*/\.idea', '.*/bower_components', '.*/node_modules', '.*/tmp', '.*/dist']
 
 #  registries-sync:
 #    src: '../ember-osf-registries'
