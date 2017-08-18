@@ -24,7 +24,7 @@
                         % endif
 
                         % if 'admin' in user['permissions']:
-                            <li><a href="#createVolsAnchor">View-Only Links</a></li>
+                            <li><a href="#createVolsAnchor">View-only Links</a></li>
                         % endif
                         <li><a href="#configureWikiAnchor">Wiki</a></li>
 
@@ -196,7 +196,7 @@
                 <div class="panel panel-default">
                     <span id="createVolsAnchor" class="anchor"></span>
                     <div class="panel-heading clearfix">
-                        <h3 class="panel-title">View-Only Links</h3>
+                        <h3 class="panel-title">View-only Links</h3>
                     </div>
                     <div class="panel-body">
                         <p>
@@ -582,7 +582,7 @@
     % if not node['is_registration']:
         <script type="text/javascript" src=${"/static/public/js/forward/node-cfg.js" | webpack_asset}></script>
     % endif
-    
+
     % for js_asset in addon_js:
         <script src="${js_asset | webpack_asset}"></script>
     % endfor
