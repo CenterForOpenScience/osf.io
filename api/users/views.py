@@ -571,7 +571,7 @@ class UserQuickFiles(JSONAPIBaseView, generics.ListAPIView, WaterButlerMixin, Us
         self.kwargs[self.provider_lookup_url_kwarg] = 'osfstorage'
         files_list = self.fetch_from_waterbutler()
 
-        return files_list.children.all()
+        return files_list.children.all().prefetch_related('node')
 
     # overrides ListAPIView
     def get_queryset(self):
