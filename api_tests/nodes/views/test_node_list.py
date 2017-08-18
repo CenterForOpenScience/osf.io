@@ -732,19 +732,17 @@ class TestNodeFiltering:
 @pytest.mark.django_db
 class TestNodeCreate:
 
-    def test_nodes_list_filter_multiple_field(self):
-        url = "/{}nodes/?filter[title,description]=One".format(API_BASE)
+    @pytest.fixture()
+    def public_project_one(self):
+        return ProjectFactory(title='Project One', description='One', is_public=True)
 
-        res = self.app.get(url)
-        node_json = res.json['data']
+    @pytest.fixture()
+    def public_project_two(self):
+        return ProjectFactory(title='Project Two', description='One or Two', is_public=True)
 
-        ids = [each['id'] for each in node_json]
-        assert_in(self.project_one._id, ids)
-        assert_in('One', self.project_one.title)
-
-        assert_in(self.project_two._id, ids)
-        assert_in('One', self.project_two.description)
-        assert_not_in(self.project_three._id, ids)
+    @pytest.fixture()
+    def public_project_three(self):
+        return ProjectFactory(title='Project Three', description='Three', is_public=True)
 
     @pytest.fixture()
     def user_one(self):
@@ -1067,6 +1065,22 @@ class TestNodeCreate:
         res = app.post_json_api(url, project, auth=user_one.auth, expect_errors=True)
         assert res.status_code == 400
         assert res.json['errors'][0]['detail'] == 'Title cannot exceed 200 characters.'
+
+    def test_nodes_list_filter_multiple_field(self, app, public_project_one, public_project_two, public_project_three, user_one):
+
+        url = "/{}nodes/?filter[title,description]=One".format(API_BASE)
+
+        res = app.get(url, auth=user_one.auth)
+        node_json = res.json['data']
+
+        ids = [each['id'] for each in node_json]
+        assert public_project_one._id in ids
+        assert 'One' in public_project_one.title
+
+        assert public_project_two._id in ids
+        assert 'One' in public_project_two.description
+        assert public_project_three._id not in ids
+
 
 
 @pytest.mark.django_db
