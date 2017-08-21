@@ -21,6 +21,17 @@ def make_request_payload(user_credentials, bad_secret=False):
     return encrypt_request_data(data, bad_secret=bad_secret)
 
 
+def make_request_payload_register_external(email, external_id, external_id_provider, attributes):
+
+    user_credentials = {
+        'email': email,
+        'externalId': external_id,
+        'externalIdProvider': external_id_provider,
+        'attributes': attributes
+    }
+    return make_request_payload(user_credentials)
+
+
 def make_payload_login_osf(email, password=None, remote_authenticated=False, verification_key=None, one_time_password=None):
 
     user_credentials = {
