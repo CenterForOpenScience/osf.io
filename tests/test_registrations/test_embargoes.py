@@ -1107,6 +1107,10 @@ class TestEmbargoUnauthView(OsfTestCase):
         self.non_contrib = AuthUserFactory()
 
         self.project = ProjectFactory(creator=self.user)
+        self.child_project = NodeFactory(
+            creator=self.user,
+            parent=self.project,
+        )
         self.registration_embargo = RegistrationFactory(creator=self.user, project=self.project)
 
         self.registration_embargo.embargo_registration(
@@ -1140,3 +1144,77 @@ class TestEmbargoUnauthView(OsfTestCase):
         assert_false(self.registration_embargo.is_pending_embargo)
         assert_equal(res.status_code, 403)
         assert_in('Resource under embargo', res.body)
+
+        child_registration_embargo = self.registration_embargo.get_descendants_recursive().next()
+        assert_true(child_registration_embargo)
+
+        res = self.app.get(
+            child_registration_embargo.web_url_for('view_project'),
+            auth=self.non_contrib.auth,
+            expect_errors=True
+        )
+
+        assert_false(child_registration_embargo.is_pending_embargo)
+        assert_equal(res.status_code, 403)
+        assert_in('Resource under embargo', res.body)
+
+class TestEmbargoIdentifiersView(OsfTestCase):
+
+    def setUp(self):
+        super(TestEmbargoIdentifiersView, self).setUp()
+
+        self.user = AuthUserFactory()
+        self.contrib_rw = AuthUserFactory()
+        self.non_contrib = AuthUserFactory()
+        self.project = ProjectFactory(creator=self.user, is_public=False)
+        self.project.add_contributor(self.contrib_rw, permissions=['read', 'write'], save=True)
+        self.child_project = NodeFactory(
+            creator=self.user,
+            parent=self.project,
+            title='Total Solar Eclipse 2017, Aug. 21',
+            is_public=False
+        )
+        self.registration_embargo = RegistrationFactory(creator=self.user, project=self.project, is_public=False)
+        self.registration_embargo.embargo_registration(
+            self.user,
+            timezone.now() + timedelta(days=10)
+        )
+        self.registration_embargo.save()
+        self.url = self.registration_embargo.api_url_for('node_identifiers_post')
+
+    def test_cannot_create_doi_for_pending_embargo_nodes_or_without_admin_permissions(self):
+        res = self.app.post(self.url, auth=self.user.auth, expect_errors=True)
+        assert_true(self.registration_embargo.is_pending_embargo)
+        assert_equal(res.status_code, 400)
+
+        approval_token = self.registration_embargo.embargo.approval_state[self.user._id]['approval_token']
+        self.registration_embargo.embargo.approve_embargo(self.user, approval_token)
+        self.registration_embargo.save()
+
+        assert_false(self.registration_embargo.is_pending_embargo)
+
+        res_contrib_rw = self.app.post(self.url, auth=self.contrib_rw.auth, expect_errors=True)
+        res_non_contrib = self.app.post(self.url, auth=self.non_contrib.auth, expect_errors=True)
+
+        assert_equal(res_contrib_rw.status_code, 403)
+        assert_equal(res_non_contrib.status_code, 403)
+
+        res = self.app.post(self.url, auth=self.user.auth)
+
+        assert_equal(res.status_code, 201)
+        assert_true(res.json['ark'])
+        assert_true(res.json['doi'])
+
+    def test_can_create_dois_for_child_registrations(self):
+        approval_token = self.registration_embargo.embargo.approval_state[self.user._id]['approval_token']
+        self.registration_embargo.embargo.approve_embargo(self.user, approval_token)
+        self.registration_embargo.save()
+
+        child_registration_embargo = self.registration_embargo.get_descendants_recursive().next()
+        assert_true(child_registration_embargo)
+        assert_false(child_registration_embargo.is_pending_embargo)
+
+        res = self.app.post(child_registration_embargo.api_url_for('node_identifiers_post'), auth=self.user.auth)
+        assert_equal(res.status_code, 201)
+        assert_true(res.json['ark'])
+        assert_true(res.json['doi'])
