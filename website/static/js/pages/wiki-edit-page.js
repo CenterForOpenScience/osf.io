@@ -13,7 +13,7 @@ require('ace-ext-language_tools');
 require('addons/wiki/static/ace-markdown-snippets.js');
 require('../../vendor/ace-plugins/spellcheck_ace.js');
 
-var $osf = require('js/osfHelpers');
+var $osf = require('js/osfHelpers'); //TODO: [OSF-6100]
 
 var WikiMenu = require('../wikiMenu');
 var Comment = require('js/comment'); //jshint ignore:line

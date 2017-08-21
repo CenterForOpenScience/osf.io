@@ -10,7 +10,7 @@ var Raven = require('raven-js');
 var $osf = require('./osfHelpers');
 var osfHelpers = require('js/osfHelpers');
 var m = require('mithril');
-var Treebeard = require('treebeard');
+var Treebeard = require('treebeard'); //TODO: [OSF-6100]
 var NodesPrivacyTreebeard = require('js/nodesPrivacySettingsTreebeard');
 
 var MESSAGES = {

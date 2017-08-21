@@ -2,7 +2,7 @@
 var $ = require('jquery');
 var $osf = require('js/osfHelpers');
 var Raven = require('raven-js');
-var m = require('mithril');
+var m = require('mithril'); //TODO: [OSF-6100]
 require('js/qToggle');
 require('js/components/autocomplete');
 require('js/projectsSelect.js');

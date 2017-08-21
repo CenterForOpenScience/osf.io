@@ -5,8 +5,8 @@
 'use strict';
 var assert = require('chai').assert;
 
-var $ = require('jquery');
-var $osf = require('js/osfHelpers');
+var $ = require('jquery'); //TODO: [OSF-6100]
+var $osf = require('js/osfHelpers'); //TODO: [OSF-6100]
 var fb = require('js/myProjects.js');
 var m = require('mithril');
 

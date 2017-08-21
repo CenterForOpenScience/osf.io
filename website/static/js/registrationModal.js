@@ -4,7 +4,7 @@ require('pikaday');
 require('pikaday-css');
 var bootbox = require('bootbox');
 var $ = require('jquery');
-var $osf = require('js/osfHelpers');
+var $osf = require('js/osfHelpers'); //TODO: [OSF-6100]
 var language = require('js/osfLanguage').registrations;
 
 var template = require('raw!templates/registration-modal.html');

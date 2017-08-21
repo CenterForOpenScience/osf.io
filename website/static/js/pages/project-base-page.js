@@ -3,7 +3,7 @@ var $ = require('jquery');
 
 var pointers = require('js/pointers');
 var AccountClaimer = require('js/accountClaimer');
-var $osf = require('js/osfHelpers');
+var $osf = require('js/osfHelpers'); //TODO: [OSF-6100]
 
 // NodeActions is needed for rendering recent logs in nodelists (e.g. regsitrations and forks
 // pages

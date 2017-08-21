@@ -3,7 +3,7 @@
  */
 'use strict';
 
-var ko = require('knockout');
+var ko = require('knockout'); //TODO: [OSF-6100]
 
 var $osf = require('js/osfHelpers');
 var oop = require('js/oop');

@@ -6,7 +6,7 @@ var Raven = require('raven-js');
 var Treebeard = require('treebeard');
 var citations = require('js/citations');
 var clipboard = require('js/clipboard');
-var $osf = require('js/osfHelpers');
+var $osf = require('js/osfHelpers'); //TODO: [OSF-6100]
 
 var apaStyle = require('raw!styles/apa.csl');
 

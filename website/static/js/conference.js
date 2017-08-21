@@ -1,4 +1,4 @@
-var $ = require('jquery');
+var $ = require('jquery'); //TODO: [OSF-6100]
 var m = require('mithril');
 var osfHelpers = require('js/osfHelpers');
 var Treebeard = require('treebeard');

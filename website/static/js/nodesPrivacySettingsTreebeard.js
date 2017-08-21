@@ -4,7 +4,7 @@ var $ = require('jquery');
 var m = require('mithril');
 var ko = require('knockout');
 var Treebeard = require('treebeard');
-var $osf = require('js/osfHelpers');
+var $osf = require('js/osfHelpers'); //TODO: [OSF-6100]
 var projectSettingsTreebeardBase = require('js/projectSettingsTreebeardBase');
 
 function expandOnLoad() {

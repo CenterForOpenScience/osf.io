@@ -6,9 +6,9 @@
 
 var ko = require('knockout');
 var $ = require('jquery');
-var Raven = require('raven-js');
+var Raven = require('raven-js'); // TODO: [OSF-6100]
 
-var Clipboard = require('clipboard');
+var Clipboard = require('clipboard'); // TODO: [OSF-6100]
 var $osf = require('js/osfHelpers');
 var oop = require('js/oop');
 var FolderPickerViewModel = require('js/folderPickerNodeConfig');

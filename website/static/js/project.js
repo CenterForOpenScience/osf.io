@@ -6,9 +6,9 @@
 var $ = require('jquery');
 var bootbox = require('bootbox');
 var Raven = require('raven-js');
-var m = require('mithril');
+var m = require('mithril'); //TODO: [OSF-6100]
 var ko = require('knockout');
-var LogFeed = require('js/components/logFeed.js');
+var LogFeed = require('js/components/logFeed.js'); //TODO: [OSF-6100]
 
 
 var $osf = require('js/osfHelpers');
