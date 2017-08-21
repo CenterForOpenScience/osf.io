@@ -13,8 +13,6 @@ from osf.models import OSFUser
 
 from tests.base import capture_signals
 
-# TODO 0: add tests for JWE/JWT failure and malformed request
-
 
 @pytest.mark.django_db
 class TestLoginInstitution(object):

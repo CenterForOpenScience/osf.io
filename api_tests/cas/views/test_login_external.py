@@ -8,8 +8,6 @@ from api_tests.cas.util import fake, make_payload_login_external, add_external_i
 
 from osf_tests.factories import UserFactory
 
-# TODO 0: add tests for JWE/JWT failure and malformed request
-
 
 @pytest.mark.django_db
 class TestLoginExternal(object):

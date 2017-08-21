@@ -12,7 +12,6 @@ from framework.auth.core import generate_verification_key
 
 from osf_tests.factories import UserFactory
 
-# TODO 0: add tests for JWE/JWT failure and malformed request
 # TODO 1: how to mock methods and check if they are called
 
 

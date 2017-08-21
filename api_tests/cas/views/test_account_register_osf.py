@@ -14,7 +14,6 @@ from osf_tests.factories import UserFactory
 
 from tests.base import capture_signals
 
-# TODO 0: add tests for JWE/JWT failure and malformed request
 # TODO 1: how to mock methods and check if they are called
 
 

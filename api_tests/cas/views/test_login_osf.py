@@ -2,15 +2,14 @@ import pytest
 
 from rest_framework import status
 
+from addons.twofactor.tests.utils import _valid_code
+
 from api.base.settings.defaults import API_BASE
 from api_tests.cas.util import fake, make_payload_login_osf
 
 from framework.auth.core import generate_verification_key
 
 from osf_tests.factories import UserFactory, UnconfirmedUserFactory
-
-# TODO 0: add tests for JWE/JWT failure and malformed request
-# TODO 1: add tests for two factor
 
 
 @pytest.mark.django_db
@@ -59,6 +58,19 @@ class TestLoginOSF(object):
     @pytest.fixture()
     def remote_authenticated(self):
         return True
+
+    @pytest.fixture()
+    def totp_secret(self):
+        return 'b8f85986068f8079aa9d'
+
+    @pytest.fixture()
+    def user_with_2fa(self, user, totp_secret):
+        user.add_addon('twofactor')
+        two_factor = user.get_addon('twofactor')
+        two_factor.totp_secret = totp_secret
+        two_factor.save()
+        user.save()
+        return user
 
     # test that login with correct password should return 200 with user's guid and attributes
     def test_login_existing_user_with_password(self, app, user, endpoint_url, password):
@@ -171,3 +183,52 @@ class TestLoginOSF(object):
         assert res.status_code == status.HTTP_401_UNAUTHORIZED
         assert len(res.json.get('errors')) == 1
         assert res.json.get('errors')[0].get('code') == 40102
+
+    # test that login with a 2FA-enabled user with password but no one time password should raise 401
+    def test_login_with_2fa_user_and_password_but_no_totp(self, app, endpoint_url, user_with_2fa, password):
+
+        payload = make_payload_login_osf(user_with_2fa.username, password=password, one_time_password=None)
+        res = app.post(endpoint_url, payload, expect_errors=True)
+
+        assert res.status_code == status.HTTP_401_UNAUTHORIZED
+        assert len(res.json.get('errors')) == 1
+        assert res.json.get('errors')[0].get('code') == 40105
+
+    # test that login with a 2FA-enabled user with remote principal but no one time password should raise 401
+    def test_login_with_2fa_user_and_remote_principal_but_no_totp(self, app, endpoint_url, user_with_2fa, remote_authenticated):
+
+        payload = make_payload_login_osf(user_with_2fa.username, remote_authenticated=remote_authenticated, one_time_password=None)
+        res = app.post(endpoint_url, payload, expect_errors=True)
+
+        assert res.status_code == status.HTTP_401_UNAUTHORIZED
+        assert len(res.json.get('errors')) == 1
+        assert res.json.get('errors')[0].get('code') == 40105
+
+    # test that login with a 2FA-enabled user with verification key but no one time password should raise 401
+    def test_login_with_2fa_user_and_verification_key_but_no_totp(self, app, endpoint_url, user_with_2fa, verification_key):
+
+        payload = make_payload_login_osf(user_with_2fa.username, verification_key=verification_key, one_time_password=None)
+        res = app.post(endpoint_url, payload, expect_errors=True)
+
+        assert res.status_code == status.HTTP_401_UNAUTHORIZED
+        assert len(res.json.get('errors')) == 1
+        assert res.json.get('errors')[0].get('code') == 40105
+
+    # test that login with a 2FA-enabled user and wrong one time password should raise 401
+    def test_login_with_user_with_2fa_but_wrong_totp(self, app, endpoint_url, user_with_2fa, password):
+
+        payload = make_payload_login_osf(user_with_2fa.username, password=password, one_time_password="123456")
+        res = app.post(endpoint_url, payload, expect_errors=True)
+
+        assert res.status_code == status.HTTP_401_UNAUTHORIZED
+        assert len(res.json.get('errors')) == 1
+        assert res.json.get('errors')[0].get('code') == 40106
+
+    # test that login with a 2FA-enabled user and correct one time password should raise 401
+    def test_login_with_user_with_2fa_and_totp(self, app, endpoint_url, user_with_2fa, totp_secret, password):
+
+        assert user_with_2fa.get_addon('twofactor').totp_drift == 0
+        one_time_password = _valid_code(totp_secret)
+        payload = make_payload_login_osf(user_with_2fa.username, password=password, one_time_password=one_time_password)
+        res = app.post(endpoint_url, payload, expect_errors=True)
+        assert res.status_code == status.HTTP_200_OK
