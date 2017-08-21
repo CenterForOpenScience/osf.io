@@ -47,7 +47,7 @@ var ProjectViewModel = function(data, options) {
     self.user = data.user;
     self.nodeIsPublic = data.node.is_public;
     self.nodeType = data.node.node_type;
-    self.isEmbargoed = data.node.is_embargoed && !data.node.is_pending_embargo
+    self.isEmbargoed = data.node.is_embargoed && !data.node.is_pending_embargo;
     self.nodeIsPendingEmbargoTermination = ko.observable(data.node.is_pending_embargo_termination);
     self.makePublicTooltip = ko.computed(function() {
         if(self.nodeIsPendingEmbargoTermination()) {
