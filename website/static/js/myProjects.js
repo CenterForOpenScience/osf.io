@@ -44,10 +44,14 @@ var sparseRegistrationFields = String([
 ]);
 
 var sparseUserFields = String([
+    'family_name',
     'full_name',
+    'given_name',
+    'middle_names'
 ]);
 
 var sparseContributorFields = String([
+    'bibliographic',
     'unregistered_contributor',
     'users'
 ]);
