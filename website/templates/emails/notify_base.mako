@@ -39,13 +39,6 @@
             <table id="content" width="600" border="0" cellpadding="25" cellspacing="0" align="center" style="margin: 30px auto 0 auto;background: white;box-shadow: 0 0 2px #ccc;">
               <tbody>
                 ${self.content()}
-                <tr style="border-collapse: collapse;" align="left">
-                    <br>
-                    Center for Open Science<br>
-                    210 Ridge McIntire Road<br>
-                    Suite 500<br>
-                    Charlottesville, VA 22903-5083<br>
-                </tr>
               </tbody>
             </table>
 
