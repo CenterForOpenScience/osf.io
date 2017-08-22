@@ -68,7 +68,7 @@
                     <tbody>
                         <tr>
                             <td style="border-collapse: collapse;">
-                                <p class="text-smaller text-center" style="text-align: center;font-size: 12px;">Copyright &copy; 2016 Center For Open Science, All rights reserved. |
+                                <p class="text-smaller text-center" style="text-align: center;font-size: 12px;">Copyright &copy; 2017 Center For Open Science, All rights reserved. |
                                     <a href="https://github.com/CenterForOpenScience/centerforopenscience.org/blob/master/PRIVACY_POLICY.md">Privacy Policy</a>
                                 ${self.footer()}
                                 </p>
