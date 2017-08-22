@@ -2,7 +2,6 @@ import datetime
 
 from osf_tests.factories import PreprintFactory, PreprintProviderFactory
 from osf.models import PreprintService
-from nose.tools import *  # PEP8 asserts
 import mock
 import pytest
 import pytz
@@ -40,9 +39,9 @@ class TestPreprintCount:
         field.auto_now_add = True
         results = PreprintSummary().get_events(date.date())
 
-        assert_equal(len(results), 1)
+        assert len(results) == 1
 
         data = results[0]
-        assert_equal(data['provider']['name'], 'Test 1')
-        assert_equal(data['provider']['total'], 1)
+        assert data['provider']['name'] == 'Test 1'
+        assert data['provider']['total'] == 1
 
