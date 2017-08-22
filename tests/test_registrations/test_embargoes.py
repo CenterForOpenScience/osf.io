@@ -29,6 +29,7 @@ from osf.models import AbstractNode
 from osf.models.sanctions import PreregCallbackMixin, Embargo
 from website.util import permissions
 from osf.models import Registration, Contributor, OSFUser, SpamStatus
+from website import settings
 
 DUMMY_TOKEN = tokens.encode({
     'dummy': 'token'
@@ -1162,6 +1163,9 @@ class TestEmbargoIdentifiersView(OsfTestCase):
 
     def setUp(self):
         super(TestEmbargoIdentifiersView, self).setUp()
+
+        settings.EZID_USERNAME='apitest'
+        settings.EZID_PASSWORD='apitest'
 
         self.user = AuthUserFactory()
         self.contrib_rw = AuthUserFactory()
