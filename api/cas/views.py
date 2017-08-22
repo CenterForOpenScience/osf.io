@@ -169,12 +169,13 @@ class AccountVerifyExternal(JSONAPIBaseView):
     def post(self, request, *args, **kwargs):
 
         data = util.load_request_body_data(request)
-        user, create_or_link = account.register_external_user(data.get('user', None))
+        user, created_or_linked = account.register_external_user(data.get('user', None))
 
         content = {
             'verificationKey': user.verification_key,
             'userId': user._id,
             'username': user.username,
+            'createdOrLinked': created_or_linked,
             'casAction': 'account-verify-external',
             'nextUrl': True,
         }

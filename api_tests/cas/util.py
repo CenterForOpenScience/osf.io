@@ -27,7 +27,21 @@ def make_request_payload_register_external(email, external_id, external_id_provi
         'email': email,
         'externalId': external_id,
         'externalIdProvider': external_id_provider,
-        'attributes': attributes
+        'attributes': attributes,
+    }
+    return make_request_payload(user_credentials)
+
+
+def make_request_payload_verify(user, email=None, code=None):
+
+    if not email:
+        email = user.username
+    if not code:
+        code = user.get_confirmation_token(email, force=False, renew=False)
+    user.save()
+    user_credentials = {
+        'email': email,
+        'verificationCode': code
     }
     return make_request_payload(user_credentials)
 
@@ -136,3 +150,6 @@ def add_external_identity_to_user(user, external_identity_with_provider, status=
     user.save()
     user.reload()
     return user
+
+
+
