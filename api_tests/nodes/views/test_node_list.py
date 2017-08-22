@@ -1067,10 +1067,7 @@ class TestNodeCreate:
         assert res.status_code == 400
         assert res.json['errors'][0]['detail'] == 'Title cannot exceed 200 characters.'
 
-
-
-
-
+        
 @pytest.mark.django_db
 class TestNodeBulkCreate:
 
