@@ -18,7 +18,7 @@ from website.search.search import update_institution
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO)
 
-ENVS = ['prod', 'stage', 'stage2', 'test']
+ENVS = ['prod', 'stage', 'stage2', 'test', 'nii']
 SHIBBOLETH_SP_LOGIN = '{}/Shibboleth.sso/Login?entityID={{}}'.format(settings.CAS_SERVER_URL)
 SHIBBOLETH_SP_LOGOUT = '{}/Shibboleth.sso/Logout?return={{}}'.format(settings.CAS_SERVER_URL)
 
@@ -956,6 +956,34 @@ def main(env):
                 'domains': ['test-osf-wustl.cos.io'],
                 'email_domains': [],
                 'delegation_protocol': 'saml-shib',
+            },
+        ]
+    elif env == 'nii':
+        import os
+        url = os.environ.get('OSF_SERVICE_URL', 'https://localhost:5000')
+
+        INSTITUTIONS = [
+            {
+                '_id': 'gakunin',
+                'name': 'GakuNin',
+                'description': 'GakuNin gakunin.jp',
+                'banner_name': 'gakunin-logo.png',
+                'logo_name': 'gakunin-logo.png',
+                'login_url': '',
+                'logout_url': SHIBBOLETH_SP_LOGOUT.format(encode_uri_component(url + '/goodbye')),
+                'domains': [],
+                'email_domains': [],
+            },
+            {
+                '_id': 'openidp',
+                'name': 'OpenIdP',
+                'description': 'OpenIdP',
+                'banner_name': 'openidp-logo.png',
+                'logo_name': 'openidp-logo.png',
+                'login_url': SHIBBOLETH_SP_LOGIN.format(encode_uri_component('https://openidp.nii.ac.jp/idp/shibboleth')),
+                'logout_url': SHIBBOLETH_SP_LOGOUT.format(encode_uri_component(url + '/goodbye')),
+                'domains': ['openidp.nii.ac.jp'],
+                'email_domains': ['openidp.nii.ac.jp'],
             },
         ]
 
