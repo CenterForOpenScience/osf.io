@@ -442,8 +442,12 @@ class File(models.Model):
             version.save()
             self.versions.add(version)
         for entry in self.history:
-            if data['modified'] is not None and data['modified'] < entry['modified']:
-                sentry.log_message('update() receives metatdata older than the newest entry in file history.')
+            # Some entry might have an undefined modified field
+            try:
+                if data['modified'] is not None and data['modified'] < entry['modified']:
+                    sentry.log_message('update() receives metatdata older than the newest entry in file history.')
+            except TypeError:
+                pass
             if ('etag' in entry and 'etag' in data) and (entry['etag'] == data['etag']):
                 break
         else:
