@@ -914,7 +914,6 @@ class TestAddonFileViews(OsfTestCase):
             'modified': None
         }
         file_node.update(revision=None, data=file_data)
-        self.assertRaises(EOFError)
         assert_equal(len(file_node.history), 2)
         assert_equal(file_node.history[1], file_data)
 
