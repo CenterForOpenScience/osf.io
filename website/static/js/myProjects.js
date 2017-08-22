@@ -25,11 +25,6 @@ if (!window.fileBrowserCounter) {
     window.fileBrowserCounter = 0;
 }
 
-var nodesFieldType = 'fields[nodes]';
-var registrationsFieldType = 'fields[registrations]';
-var usersFieldType = 'fields[users]';
-var contributorsFieldType = 'fields[contributors]';
-
 var sparseNodeFields = String([
     'category',
     'children',
@@ -106,27 +101,24 @@ function NodeFetcher(type, link, handleOrphans, regType, regLink) {
         fetch : []
     };
 
-    var fieldsType = '';
-    var sparseFields = '';
+    var params = {'related_counts' : 'children', 'embed' : 'contributors', 'version': '2.2', 'fields[users]' : sparseUserFields, 'fields[contributors]' : sparseContributorFields};
 
     if (this.type === 'nodes') {
-        fieldsType = nodesFieldType;
-        sparseFields = sparseNodeFields;
+        params['fields[nodes]'] = sparseNodeFields;
     }
 
     if (this.type === 'registrations') {
-        fieldsType = registrationsFieldType;
-        sparseFields = sparseRegistrationFields;
+        params['fields[registrations]'] = sparseRegistrationFields;
     }
 
     // TODO Use sparse fields on preprints, users/contributors already added
     if (this.type === 'preprints') {
-        link = link ? link : $osf.apiV2Url('users/me/nodes/', { query : { 'filter[preprint]': true, 'related_counts' : 'children', 'embed' : ['contributors', 'preprints'], [usersFieldType] : sparseUserFields, [contributorsFieldType] : sparseContributorFields}});
+        link = link ? link : $osf.apiV2Url('users/me/nodes/', { query : { 'filter[preprint]': true, 'related_counts' : 'children', 'embed' : ['contributors', 'preprints'], 'fields[users]' : sparseUserFields, 'fields[contributors]' : sparseContributorFields}});
     }
 
     this.nextLink = link ? 
         link + '&version=2.2' :
-        $osf.apiV2Url('users/me/' + this.type + '/', { query: {'related_counts' : 'children', 'embed' : 'contributors', 'version': '2.2', [usersFieldType] : sparseUserFields, [contributorsFieldType] : sparseContributorFields, [fieldsType] : sparseFields}});
+        $osf.apiV2Url('users/me/' + this.type + '/', { query: params});
 }
 
 NodeFetcher.prototype = {
@@ -214,7 +206,7 @@ NodeFetcher.prototype = {
     // TODO This method is currently untested
     // this.type can be 'registrations' when it needs to be 'nodes' based on when this is called
     // TODO assess sparse field usage (some already implemented)
-    var url =  $osf.apiV2Url(this.type + '/' + id + '/', {query: {related_counts: 'children', embed: 'contributors', version: '2.2', [usersFieldType] : sparseUserFields, [contributorsFieldType] : sparseContributorFields}});
+    var url =  $osf.apiV2Url(this.type + '/' + id + '/', {query: {related_counts: 'children', embed: 'contributors', version: '2.2', 'fields[users]' : sparseUserFields, 'fields[contributors]' : sparseContributorFields}});
     return m.request({method: 'GET', url: url, config: mHelpers.apiV2Config({withCredentials: window.contextVars.isOnRootDomain}), background: true})
       .then((function(result) {
         this.add(result.data);
@@ -508,7 +500,7 @@ var MyProjects = {
                 if(!item.data.attributes.retracted){
                     var urlPrefix = item.data.attributes.registration ? 'registrations' : 'nodes';
                     // TODO assess sparse field usage (some already implemented)
-                    var url = $osf.apiV2Url(urlPrefix + '/' + id + '/logs/', { query : { 'page[size]' : 6, 'embed' : ['original_node', 'user', 'linked_node', 'template_node'], 'profile_image_size': PROFILE_IMAGE_SIZE, [usersFieldType] : sparseUserFields}});
+                    var url = $osf.apiV2Url(urlPrefix + '/' + id + '/logs/', { query : { 'page[size]' : 6, 'embed' : ['original_node', 'user', 'linked_node', 'template_node'], 'profile_image_size': PROFILE_IMAGE_SIZE, 'fields[users]' : sparseUserFields}});
                     var promise = self.getLogs(url);
                     return promise;
                 }
@@ -893,8 +885,8 @@ var MyProjects = {
                     var count = node.relationships.linked_registrations.links.related.meta.count + node.relationships.linked_nodes.links.related.meta.count;
                     self.collections().push(new LinkObject('collection', {nodeType : 'collection', node : node, count : m.prop(count), loaded: 1 }, $osf.decodeText(node.attributes.title)));
                     // TODO assess whether more sparse fields can be used
-                    var regLink = $osf.apiV2Url('collections/' + node.id + '/linked_registrations/', { query : { 'related_counts' : 'children', 'embed' : 'contributors', 'version': '2.2', [registrationsFieldType]: sparseRegistrationFields}});
-                    var link = $osf.apiV2Url('collections/' + node.id + '/linked_nodes/', { query : { 'related_counts' : 'children', 'embed' : 'contributors', [nodesFieldType]: sparseNodeFields }});
+                    var regLink = $osf.apiV2Url('collections/' + node.id + '/linked_registrations/', { query : { 'related_counts' : 'children', 'embed' : 'contributors', 'version': '2.2', 'fields[registrations]' : sparseRegistrationFields}});
+                    var link = $osf.apiV2Url('collections/' + node.id + '/linked_nodes/', { query : { 'related_counts' : 'children', 'embed' : 'contributors', 'fields[nodes]' : sparseNodeFields }});
                     self.fetchers[self.collections()[self.collections().length-1].id] = new NodeFetcher('nodes', link, false, 'registrations', regLink);
                     self.fetchers[self.collections()[self.collections().length-1].id].on(['page'], self.onPageLoad);
                 });
