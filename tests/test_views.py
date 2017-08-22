@@ -2753,15 +2753,16 @@ class TestPointerViews(OsfTestCase):
         )
         assert_equal(res.status_code, 400)
 
-    def test_fork_pointer(self):
+    def test_forking_pointer_works(self):
         url = self.project.api_url + 'pointer/fork/'
-        node = NodeFactory(creator=self.user)
-        self.project.add_pointer(node, auth=self.consolidate_auth)
-        self.app.post_json(
-            url,
-            {'nodeId': node._id},
-            auth=self.user.auth
-        )
+        linked_node = NodeFactory(creator=self.user)
+        pointer = self.project.add_pointer(linked_node, auth=self.consolidate_auth)
+        assert_true(linked_node.id, pointer.child.id)
+        res = self.app.post_json(url, {'nodeId': pointer.child._id}, auth=self.user.auth)
+        assert_equal(res.status_code, 201)
+        assert_in('node', res.json['data'])
+        fork = res.json['data']['node']
+        assert_equal(fork['title'], 'Fork of {}'.format(linked_node.title))
 
     def test_fork_pointer_not_provided(self):
         url = self.project.api_url + 'pointer/fork/'

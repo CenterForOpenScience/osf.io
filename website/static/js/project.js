@@ -62,7 +62,7 @@ function afterForkGoto(url) {
       },
       closeButton: false
   });
-};
+}
 
 NodeActions.forkNode = function() {
     NodeActions.beforeForkNode(ctx.node.urls.api + 'fork/before/', function() {
@@ -84,7 +84,7 @@ NodeActions.forkNode = function() {
             }
         ).done(function(response) {
             $osf.unblock();
-            afterForkGoto(response.data.links.html)
+            afterForkGoto(response.data.links.html);
         }).fail(function(response) {
             $osf.unblock();
             if (response.status === 403) {
