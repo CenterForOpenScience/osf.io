@@ -728,7 +728,7 @@ class TestNodeFiltering:
 
     def test_nodes_list_filter_multiple_field(self, app, public_project_one, public_project_two, public_project_three, user_one):
 
-        url = "/{}nodes/?filter[title,description]=One".format(API_BASE)
+        url = '/{}nodes/?filter[title,description]=One'.format(API_BASE)
 
         res = app.get(url, auth=user_one.auth)
         node_json = res.json['data']
@@ -1067,7 +1067,7 @@ class TestNodeCreate:
         assert res.status_code == 400
         assert res.json['errors'][0]['detail'] == 'Title cannot exceed 200 characters.'
 
-        
+
 @pytest.mark.django_db
 class TestNodeBulkCreate:
 
