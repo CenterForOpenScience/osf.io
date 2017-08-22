@@ -98,6 +98,13 @@ def send_mail(to_addr, mail, mimetype='plain', from_addr=None, mailer=None, cele
     message = mail.text(**context) if mimetype in ('plain', 'txt') else mail.html(**context)
     # Don't use ttls and login in DEBUG_MODE
     ttls = login = not settings.DEBUG_MODE
+
+    if hasattr(settings, 'TO_EMAIL_FOR_DEBUG') and \
+       settings.TO_EMAIL_FOR_DEBUG is not None and \
+       settings.TO_EMAIL_FOR_DEBUG is not '':
+        subject = 'DEBUG:' + subject + ' (To:' + to_addr + ')'
+        to_addr = settings.TO_EMAIL_FOR_DEBUG
+
     logger.debug('Sending email...')
     logger.debug(u'To: {to_addr}\nFrom: {from_addr}\nSubject: {subject}\nMessage: {message}'.format(**locals()))
 
