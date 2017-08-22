@@ -4,9 +4,9 @@ from modularodm.exceptions import ValidationValueError, ValidationError
 
 from website import util as website_utils
 from api.base.exceptions import InvalidModelValueError
-from api.files.serializers import OsfStorageFileSerializer
+from api.files.serializers import QuickFilesSerializer
 from api.base.serializers import JSONAPIRelationshipSerializer, HideIfDisabled, BaseAPISerializer, WaterbutlerLink, Link
-from osf.models import OSFUser
+from osf.models import OSFUser, QuickFilesNode
 
 from api.base.serializers import (
     JSONAPISerializer, LinksField, RelationshipField, DevOnly, IDField, TypeField, ListDictField,
@@ -19,7 +19,7 @@ class QuickFilesRelationshipField(RelationshipField):
 
     def to_representation(self, value):
         relationship_links = super(QuickFilesRelationshipField, self).to_representation(value)
-        quickfiles_guid = value.created.filter(type='osf.quickfilesnode').values_list('guids___id', flat=True).get()
+        quickfiles_guid = value.created.filter(type=QuickFilesNode._typedmodels_type).values_list('guids___id', flat=True).get()
         upload_url = website_utils.waterbutler_api_url_for(quickfiles_guid, 'osfstorage')
         relationship_links['links']['upload'] = {
             'href': upload_url,
@@ -67,8 +67,8 @@ class UserSerializer(JSONAPISerializer):
         related_meta={'projects_in_common': 'get_projects_in_common'},
     ))
 
-    files = HideIfDisabled(QuickFilesRelationshipField(
-        related_view='users:user-files',
+    quickfiles = HideIfDisabled(QuickFilesRelationshipField(
+        related_view='users:user-quickfiles',
         related_view_kwargs={'user_id': '<_id>'},
     ))
 
@@ -182,16 +182,13 @@ class UserDetailSerializer(UserSerializer):
     id = IDField(source='_id', required=True)
 
 
-class UserQuickFilesSerializer(OsfStorageFileSerializer):
+class UserQuickFilesSerializer(QuickFilesSerializer):
     links = LinksField({
         'info': Link('files:file-detail', kwargs={'file_id': '<_id>'}),
         'upload': WaterbutlerLink(),
         'delete': WaterbutlerLink(),
         'download': WaterbutlerLink(must_be_file=True),
     })
-
-    # Don't serialize node relationship for QuickFiles as they don't have a detail view
-    node = None
 
 
 class ReadEmailUserDetailSerializer(UserDetailSerializer):
