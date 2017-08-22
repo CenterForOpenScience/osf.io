@@ -116,7 +116,6 @@ class AddonList(JSONAPIBaseView, generics.ListAPIView, ListFilterMixin):
                 for field_name, data in field_names.iteritems():
                     operations = data if isinstance(data, list) else [data]
                     for operation in operations:
-                        print self.get_filtered_queryset(field_name, operation, list(default_queryset))
                         if statement:
                             sub_query = sub_query.union(set(self.get_filtered_queryset(field_name, operation, list(default_queryset))))
                         else:
