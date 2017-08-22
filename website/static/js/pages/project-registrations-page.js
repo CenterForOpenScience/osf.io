@@ -1,13 +1,11 @@
 'use strict';
 require('css/registrations.css');
 
-var ko = require('knockout'); //TODO: [OSF-6100]
 var $ = require('jquery');
 
 var $osf = require('js/osfHelpers');
 var RegistrationManager = require('js/registrationUtils').RegistrationManager;
 
-var ctx = window.contextVars; //TODO: [OSF-6100]
 var node = window.contextVars.node;
 
 $(document).ready(function() {

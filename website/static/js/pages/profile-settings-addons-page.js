@@ -3,7 +3,6 @@
 var $ = require('jquery');
 var ko = require('knockout');
 var bootbox = require('bootbox');
-var Raven = require('raven-js'); //TODO: [OSF-6100]
 require('js/osfToggleHeight');
 
 var $osf = require('js/osfHelpers');

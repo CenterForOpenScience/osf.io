@@ -3,7 +3,6 @@
 require('keen-dataviz/dist/keen-dataviz.min.css');
 
 var oop = require('js/oop');
-var $osf = require('js/osfHelpers'); //TODO: [OSF-6100]
 var moment = require('moment');
 var keenDataset = require('keen-dataset');
 var keenDataviz = require('keen-dataviz');

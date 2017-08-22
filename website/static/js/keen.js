@@ -1,7 +1,7 @@
 'use strict';
 
 
-var $ = require('jquery'); //TODO: [OSF-6100]
+var $ = require('jquery');
 var md5 = require('js-md5');
 var Raven = require('raven-js');
 var Cookie = require('js-cookie');

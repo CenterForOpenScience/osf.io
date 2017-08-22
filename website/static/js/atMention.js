@@ -4,7 +4,6 @@
 'use strict';
 
 var $ = require('jquery');
-var ko = require('knockout'); //TODO: [OSF-6100]
 
 require('Caret.js');
 require('At.js');

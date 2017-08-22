@@ -1,4 +1,3 @@
-var $ = require('jquery'); //TODO: [OSF-6100]
 var m = require('mithril');
 
 var collaborative = (typeof WebSocket !== 'undefined' && typeof sharejs !== 'undefined');

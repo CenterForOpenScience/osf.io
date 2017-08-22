@@ -1,7 +1,6 @@
 'use strict';
 require('css/registrations.css');
 
-var ko = require('knockout'); //TODO: [OSF-6100]
 var $ = require('jquery');
 
 var $osf = require('js/osfHelpers');

@@ -1,14 +1,11 @@
 'use strict';
 
 require('css/log-feed.css');
-var $ = require('jquery');  // jQuery //TODO: [OSF-6100]
 var m = require('mithril'); // exposes mithril methods, useful for redraw etc.
-var oop = require('js/oop'); //TODO: [OSF-6100]?
 var $osf = require('js/osfHelpers');
 var mHelpers = require('js/mithrilHelpers');
 var Raven = require('raven-js');
 var LogText = require('js/logTextParser');
-var Paginator = require('js/paginator'); //TODO: [OSF-6100]
 
 var MAX_PAGES_ON_PAGINATOR = 7;
 var MAX_PAGES_ON_PAGINATOR_SIDE = 5;
