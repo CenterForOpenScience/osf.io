@@ -1,8 +1,8 @@
 {
   "name": "osf",
   "dependencies": {
-    "jquery": "^1.12.4",
-    "jquery-ui": "~1.10.4",
+    "jquery": "^3.2.1",
+    "jquery-ui": "~1.12.1",
     "bootstrap": "^3.3.7",
     "ace-builds": "1.1.8",
     "bootstrap.growl": "2.0.0",
@@ -20,5 +20,8 @@
     "clipboard": "^1.6.1",
     "At.js": "CenterForOpenScience/At.js#cos",
     "academicons": "1.8.0"
+  },
+  "resolutions": {
+    "jquery": "^3.2.1"
   }
 }
