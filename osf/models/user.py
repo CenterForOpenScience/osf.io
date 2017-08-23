@@ -34,7 +34,6 @@ from framework.auth.exceptions import (ChangePasswordError, ExpiredTokenError,
 from framework.exceptions import PermissionsError
 from framework.sessions.utils import remove_sessions_for_user
 from osf.utils.requests import get_current_request
-from modularodm.exceptions import NoResultsFound
 from osf.exceptions import reraise_django_validation_errors, MaxRetriesError
 from osf.models.base import BaseModel, GuidMixin, GuidMixinQuerySet
 from osf.models.contributor import RecentlyAddedContributor
@@ -43,7 +42,6 @@ from osf.models.mixins import AddonModelMixin
 from osf.models.session import Session
 from osf.models.tag import Tag
 from osf.models.validators import validate_email, validate_social, validate_history_item
-from osf.modm_compat import Q
 from osf.utils.datetime_aware_jsonfield import DateTimeAwareJSONField
 from osf.utils.fields import NonNaiveDateTimeField, LowercaseEmailField
 from osf.utils.names import impute_names
@@ -919,10 +917,8 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
         for token in email_verifications:
             if self.email_verifications[token].get('confirmed', False):
                 try:
-                    user_merge = OSFUser.find_one(
-                        Q('emails__address', 'eq', self.email_verifications[token]['email'].lower())
-                    )
-                except NoResultsFound:
+                    user_merge = OSFUser.objects.get(emails__address__iexact=self.email_verifications[token]['email'])
+                except OSFUser.DoesNotExist:
                     user_merge = False
 
                 unconfirmed_emails.append({'address': self.email_verifications[token]['email'],
@@ -1135,8 +1131,8 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
 
         # If this email is confirmed on another account, abort
         try:
-            user_to_merge = OSFUser.find_one(Q('emails__address', 'eq', email))
-        except NoResultsFound:
+            user_to_merge = OSFUser.objects.get(emails__address=email)
+        except OSFUser.DoesNotExist:
             user_to_merge = None
 
         if user_to_merge and merge:
@@ -1150,9 +1146,8 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
 
         # If another user has this email as its username, get it
         try:
-            unregistered_user = OSFUser.find_one(Q('username', 'eq', email) &
-                                              Q('_id', 'ne', self._id))
-        except NoResultsFound:
+            unregistered_user = OSFUser.objects.exclude(guids___id=self._id).get(username=email)
+        except OSFUser.DoesNotExist:
             unregistered_user = None
 
         if unregistered_user:
@@ -1426,8 +1421,8 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
         :returns: The signed cookie
         """
         secret = secret or settings.SECRET_KEY
-        user_session = Session.find(
-            Q('data.auth_user_id', 'eq', self._id)
+        user_session = Session.objects.filter(
+            data__auth_user_id=self._id
         ).order_by(
             '-date_modified'
         ).first()
