@@ -18,11 +18,33 @@ def preprint_provider():
 def preprint(preprint_provider):
     return PreprintFactory._build(PreprintService, provider=preprint_provider)
 
+
+@pytest.fixture()
+def yesterday_at_midnight():
+    return datetime.datetime.utcnow().replace(hour=0,
+                                              minute=0,
+                                              second=0,
+                                              microsecond=0) - datetime.timedelta(days=1)
+
+
+@pytest.fixture()
+def yesterday_right_before_today():
+    return datetime.datetime.utcnow().replace(hour=23,
+                                              minute=59,
+                                              second=59) - datetime.timedelta(days=1)
+
+
+@pytest.fixture()
+def my_birthday_at_midnight():
+    return datetime.datetime(1991, 9, 25, 0)
+
 pytestmark = pytest.mark.django_db
 
+
+@pytest.mark.parametrize("date", [yesterday_at_midnight(), yesterday_right_before_today(), my_birthday_at_midnight()])
 class TestPreprintCount:
 
-    def test_get_preprint_count(self, preprint):
+    def test_get_preprint_count(self, preprint, date):
 
         requests.post = mock.MagicMock()
         resp = requests.Response()
@@ -32,7 +54,6 @@ class TestPreprintCount:
         field = PreprintService._meta.get_field('date_created')
         field.auto_now_add = False  # We have to fudge the time because Keen doesn't allow same day queries.
 
-        date = datetime.datetime.utcnow() - datetime.timedelta(days=1, hours=1)
         preprint.date_created = date - datetime.timedelta(hours=1)
         preprint.save()
 
