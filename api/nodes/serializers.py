@@ -1082,53 +1082,6 @@ class NodeInstitutionsRelationshipSerializer(BaseAPISerializer):
         return self.make_instance_obj(node)
 
 
-class NodeAlternativeCitationSerializer(JSONAPISerializer):
-
-    id = IDField(source='_id', read_only=True)
-    type = TypeField()
-    name = ser.CharField(required=True)
-    text = ser.CharField(required=True)
-
-    class Meta:
-        type_ = 'citations'
-
-    def create(self, validated_data):
-        errors = self.error_checker(validated_data)
-        if len(errors) > 0:
-            raise exceptions.ValidationError(detail=errors)
-        node = self.context['view'].get_node()
-        auth = Auth(self.context['request']._user)
-        citation = node.add_citation(auth, save=True, **validated_data)
-        return citation
-
-    def update(self, instance, validated_data):
-        errors = self.error_checker(validated_data)
-        if len(errors) > 0:
-            raise exceptions.ValidationError(detail=errors)
-        node = self.context['view'].get_node()
-        auth = Auth(self.context['request']._user)
-        instance = node.edit_citation(auth, instance, save=True, **validated_data)
-        return instance
-
-    def error_checker(self, data):
-        errors = []
-        name = data.get('name', None)
-        text = data.get('text', None)
-        citations = self.context['view'].get_node().alternative_citations
-        if not (self.instance and self.instance.name == name) and citations.filter(name=name).count() > 0:
-            errors.append("There is already a citation named '{}'".format(name))
-        if not (self.instance and self.instance.text == text):
-            matching_citations = citations.filter(text=text)
-            if matching_citations.count() > 0:
-                names = "', '".join([str(citation.name) for citation in matching_citations])
-                errors.append("Citation matches '{}'".format(names))
-        return errors
-
-    def get_absolute_url(self, obj):
-        #  Citations don't have urls
-        raise NotImplementedError
-
-
 class DraftRegistrationSerializer(JSONAPISerializer):
 
     id = IDField(source='_id', read_only=True)
