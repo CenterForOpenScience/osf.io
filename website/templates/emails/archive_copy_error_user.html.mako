@@ -13,13 +13,4 @@
     We cannot archive ${src.title} at this time because there were errors copying files from some of the linked third-party services. It's possible that this is due to temporary unavailability of one or more of these services and that retrying the registration may resolve this issue. Our development team is investigating this failure. We're sorry for any inconvenience this may have caused.
   </td>
 </tr>
-<tr >
-    <td style="border-collapse: collapse;" align="left">
-        <br>
-        Center for Open Science<br>
-        210 Ridge McIntire Road<br>
-        Suite 500<br>
-        Charlottesville, VA 22903-5083<br>
-    </td>
-</tr>
 </%def>

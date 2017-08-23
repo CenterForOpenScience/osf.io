@@ -14,13 +14,4 @@
     You can view the registration <a href="${settings.DOMAIN.rstrip('/') + src.url}">here.</a>
   </td>
 </tr>
-<tr >
-    <td style="border-collapse: collapse;" align="left">
-        <br>
-        Center for Open Science<br>
-        210 Ridge McIntire Road<br>
-        Suite 500<br>
-        Charlottesville, VA 22903-5083<br>
-    </td>
-</tr>
 </%def>
