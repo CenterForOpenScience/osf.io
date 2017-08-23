@@ -41,7 +41,6 @@ Sincerely,<br>
 <br>
 The Center for Open Science Team<br>
 
-
   </td>
 </tr>
 </%def>

@@ -16,7 +16,6 @@
         Best wishes,<br>
         COS Support Team
 
-
     </div>
 </%def>
 <%def name="footer()">
