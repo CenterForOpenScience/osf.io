@@ -13,7 +13,6 @@ from factory.django import DjangoModelFactory
 from django.utils import timezone
 from django.db.utils import IntegrityError
 from faker import Factory
-from modularodm.exceptions import NoResultsFound
 
 from website import settings
 from website.notifications.constants import NOTIFICATION_TYPES

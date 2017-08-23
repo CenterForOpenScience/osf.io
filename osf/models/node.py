@@ -42,7 +42,6 @@ from osf.models.spam import SpamMixin
 from osf.models.tag import Tag
 from osf.models.user import OSFUser
 from osf.models.validators import validate_doi, validate_title
-from osf.modm_compat import Q as MODMQ
 from osf.utils.auth import Auth, get_user
 from osf.utils.datetime_aware_jsonfield import DateTimeAwareJSONField
 from osf.utils.fields import NonNaiveDateTimeField
@@ -686,12 +685,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
 
     @classmethod
     def find_by_institutions(cls, inst, query=None):
-        base_query = MODMQ('affiliated_institutions', 'eq', inst)
-        if query:
-            final_query = base_query & query
-        else:
-            final_query = base_query
-        return cls.find(final_query)
+        return inst.nodes.filter(query) if query else inst.nodes.all()
 
     def _is_embargo_date_valid(self, end_date):
         now = timezone.now()
@@ -1427,10 +1421,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
 
     @classmethod
     def find_for_user(cls, user, subquery=None):
-        combined_query = MODMQ('contributors', 'eq', user)
-        if subquery is not None:
-            combined_query = combined_query & subquery
-        return cls.find(combined_query)
+        return user.nodes.filter(subquery) if subquery else user.nodes.all()
 
     def can_comment(self, auth):
         if self.comment_level == 'public':
