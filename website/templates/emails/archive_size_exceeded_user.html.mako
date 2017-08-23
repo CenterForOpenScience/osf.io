@@ -12,4 +12,13 @@
     We cannot archive ${src.title} at this time because the projected size of the registration exceeds our usage limits. You should receive a followup email from our support team shortly. We're sorry for any inconvenience this may have caused.
   </td>
 </tr>
+<tr >
+    <td style="border-collapse: collapse;" align="left">
+        <br>
+        Center for Open Science<br>
+        210 Ridge McIntire Road<br>
+        Suite 500<br>
+        Charlottesville, VA 22903-5083<br>
+    </td>
+</tr>
 </%def>
