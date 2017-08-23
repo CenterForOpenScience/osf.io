@@ -19,13 +19,6 @@
         Best,
         <br>
         COS Support Team
-
-        <br>
-        Center for Open Science<br>
-        210 Ridge McIntire Road<br>
-        Suite 500<br>
-        Charlottesville, VA 22903-5083<br>
-
     </div>
 </%def>
 <%def name="footer()">

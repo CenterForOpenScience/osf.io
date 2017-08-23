@@ -17,9 +17,9 @@ Regards,
 The OSF Team
 
 Center for Open Science
-
-210 Ridge McIntire Road, Suite 500, Charlottesville, VA 22903-5083
-
+210 Ridge McIntire Road
+Suite 500
+Charlottesville, VA 22903-5083
 Privacy Policy: https://github.com/CenterForOpenScience/cos.io/blob/master/PRIVACY_POLICY.md
 
 We may send you occasional Service-related emails that you may not opt-out of (e.g. changes or updates to features of our Services that have security or privacy implications, technical and security notices, account verification); this is one of those emails.
