@@ -296,6 +296,7 @@ def osfstorage_download(file_node, payload, node_addon, **kwargs):
     if user_id:
         current_session = get_session()
         current_session.data['auth_user_id'] = user_id
+        current_session.save()
 
     if not request.args.get('version'):
         version_id = None
