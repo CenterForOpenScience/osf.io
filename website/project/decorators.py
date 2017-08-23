@@ -190,7 +190,6 @@ def check_can_access(node, user, key=None, api_node=None):
         raise HTTPError(http.FORBIDDEN, data=error_data)
     return True
 
-
 def check_key_expired(key, node, url):
     """check if key expired if is return url with args so it will push status message
         else return url
@@ -254,7 +253,6 @@ def _must_be_contributor_factory(include_public, include_view_only_anon=True):
         return wrapped
 
     return wrapper
-
 
 # Create authorization decorators
 must_be_contributor = _must_be_contributor_factory(False)
