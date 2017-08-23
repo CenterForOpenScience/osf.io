@@ -147,8 +147,10 @@ def before_request():
                     user_session.data['auth_error_code'] = http.UNAUTHORIZED
                     return
             user_session.data['auth_user_username'] = user.username
-            user_session.data['auth_user_id'] = user._primary_key
             user_session.data['auth_user_fullname'] = user.fullname
+            if user_session.data.get('auth_user_id', None) != user._primary_key:
+                user_session.data['auth_user_id'] = user._primary_key
+                user_session.save()
         else:
             # Invalid key: Not found in database
             user_session.data['auth_error_code'] = http.UNAUTHORIZED
@@ -177,8 +179,6 @@ def before_request():
 
 
 def after_request(response):
-    if session.data.get('auth_user_id'):
-        session.save()
     # Disallow embedding in frames
     response.headers['X-Frame-Options'] = 'SAMEORIGIN'
     return response
