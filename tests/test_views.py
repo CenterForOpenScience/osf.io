@@ -844,6 +844,24 @@ class TestProjectViews(OsfTestCase):
         self.project.reload()
         assert_equal(self.project.title, 'newtitle')
 
+    # Regression test
+    def test_retraction_view(self):
+        project = ProjectFactory(creator=self.user1, is_public=True)
+
+        registration = RegistrationFactory(project=project, is_public=True)
+        registration.retract_registration(self.user1)
+
+        approval_token = registration.retraction.approval_state[self.user1._id]['approval_token']
+        registration.retraction.approve_retraction(self.user1, approval_token)
+        registration.save()
+
+        url = registration.web_url_for('view_project')
+        res = self.app.get(url, auth=self.auth)
+
+        assert_not_in('Mako Runtime Error', res.body)
+        assert_in(registration.title, res.body)
+        assert_equal(res.status_code, 200)
+
 
 class TestEditableChildrenViews(OsfTestCase):
 
@@ -2735,15 +2753,16 @@ class TestPointerViews(OsfTestCase):
         )
         assert_equal(res.status_code, 400)
 
-    def test_fork_pointer(self):
+    def test_forking_pointer_works(self):
         url = self.project.api_url + 'pointer/fork/'
-        node = NodeFactory(creator=self.user)
-        self.project.add_pointer(node, auth=self.consolidate_auth)
-        self.app.post_json(
-            url,
-            {'nodeId': node._id},
-            auth=self.user.auth
-        )
+        linked_node = NodeFactory(creator=self.user)
+        pointer = self.project.add_pointer(linked_node, auth=self.consolidate_auth)
+        assert_true(linked_node.id, pointer.child.id)
+        res = self.app.post_json(url, {'nodeId': pointer.child._id}, auth=self.user.auth)
+        assert_equal(res.status_code, 201)
+        assert_in('node', res.json['data'])
+        fork = res.json['data']['node']
+        assert_equal(fork['title'], 'Fork of {}'.format(linked_node.title))
 
     def test_fork_pointer_not_provided(self):
         url = self.project.api_url + 'pointer/fork/'

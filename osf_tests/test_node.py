@@ -2578,11 +2578,9 @@ class TestPointerMethods:
         assert forked.is_fork is True
         assert forked.forked_from == content
         assert forked.primary is True
-        assert node._nodes.first() == forked
         assert(
             node.logs.latest().action == NodeLog.POINTER_FORKED
         )
-        assert content not in node._nodes.all()
         assert(
             node.logs.latest().params == {
                 'parent_node': node.parent_id,
