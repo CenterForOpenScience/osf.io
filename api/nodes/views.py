@@ -295,7 +295,7 @@ class NodeList(JSONAPIBaseView, bulk_views.BulkUpdateJSONAPIView, bulk_views.Bul
                     raise PermissionDenied
             return nodes
         else:
-            return self.get_queryset_from_request().distinct()
+            return self.get_queryset_from_request()
 
     # overrides ListBulkCreateJSONAPIView, BulkUpdateJSONAPIView, BulkDestroyJSONAPIView
     def get_serializer_class(self):
@@ -3450,4 +3450,4 @@ class NodePreprintsList(JSONAPIBaseView, generics.ListAPIView, NodeMixin, Prepri
         return node.preprints.filter(is_published=True)
 
     def get_queryset(self):
-        return self.get_queryset_from_request().distinct()
+        return self.get_queryset_from_request().distinct('id', 'date_modified')

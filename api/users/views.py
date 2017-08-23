@@ -536,7 +536,7 @@ class UserNodes(JSONAPIBaseView, generics.ListAPIView, UserMixin, NodesFilterMix
             AbstractNode.objects.filter(id__in=set(self.get_queryset_from_request().values_list('id', flat=True)))
             .select_related('node_license')
             .order_by('-date_modified', )
-            .include('guids', 'contributor__user__guids', 'root__guids', limit_includes=10)
+            .include('contributor__user__guids', 'root__guids', limit_includes=10)
         )
 
 
@@ -608,7 +608,7 @@ class UserPreprints(JSONAPIBaseView, generics.ListAPIView, UserMixin, PreprintFi
         return default_qs.filter(no_user_query)
 
     def get_queryset(self):
-        return self.get_queryset_from_request().distinct()
+        return self.get_queryset_from_request().distinct('id', 'date_created')
 
 
 class UserInstitutions(JSONAPIBaseView, generics.ListAPIView, UserMixin):
@@ -740,7 +740,7 @@ class UserRegistrations(JSONAPIBaseView, generics.ListAPIView, UserMixin, NodesF
 
     # overrides ListAPIView
     def get_queryset(self):
-        return self.get_queryset_from_request().select_related('node_license').include('guids', 'contributor__user__guids', 'root__guids', limit_includes=10)
+        return self.get_queryset_from_request().select_related('node_license').include('contributor__user__guids', 'root__guids', limit_includes=10)
 
 
 class UserInstitutionsRelationship(JSONAPIBaseView, generics.RetrieveDestroyAPIView, UserMixin):
