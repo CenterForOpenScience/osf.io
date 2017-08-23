@@ -1141,6 +1141,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
                                                        contributor=contributor,
                                                        auth=auth, email_template=send_email)
             self.update_search()
+            self.save_node_preprints()
             return contrib_to_add, True
 
         # Permissions must be overridden if changed when contributor is
@@ -1213,8 +1214,11 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
             # only raise error if user is registered.
             if contributor.is_registered or self.is_contributor(contributor):
                 raise
-            contributor.add_unclaimed_record(node=self, referrer=auth.user,
-                                             given_name=fullname, email=email)
+
+            contributor.add_unclaimed_record(
+                node=self, referrer=auth.user, given_name=fullname, email=email
+            )
+
             contributor.save()
 
         self.add_contributor(
@@ -1311,6 +1315,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         if self._id in old.unclaimed_records:
             del old.unclaimed_records[self._id]
             old.save()
+        self.save_node_preprints()
         return True
 
     def remove_contributor(self, contributor, auth, log=True):
@@ -1364,6 +1369,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         # send signal to remove this user from project subscriptions
         project_signals.contributor_removed.send(self, user=contributor)
 
+        self.save_node_preprints()
         return True
 
     def remove_contributors(self, contributors, auth=None, log=True, save=False):
@@ -1417,6 +1423,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         )
         if save:
             self.save()
+        self.save_node_preprints()
 
     @classmethod
     def find_for_user(cls, user, subquery=None):
@@ -1529,6 +1536,12 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
             }],
             'allowed_operations': ['read']
         })
+
+    def save_node_preprints(self):
+        if self.preprint_file:
+            PreprintService = apps.get_model('osf.PreprintService')
+            for preprint in PreprintService.objects.filter(node_id=self.id, is_published=True):
+                preprint.save()
 
     @property
     def private_links_active(self):
@@ -1922,6 +1935,9 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         else:
             forked.title = title
 
+        if len(forked.title) > 200:
+            forked.title = forked.title[:200]
+
         # TODO: Optimize me
         for citation in self.alternative_citations.all():
             cloned_citation = citation.clone()
@@ -2022,6 +2038,9 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
             language.TEMPLATED_FROM_PREFIX not in new.title
         ):
             new.title = ''.join((language.TEMPLATED_FROM_PREFIX, new.title,))
+
+        if len(new.title) > 200:
+            new.title = new.title[:200]
 
         # Slight hack - date_created is a read-only field.
         new.date_created = timezone.now()
@@ -2229,6 +2248,8 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
             if save:
                 self.save()
 
+            self.save_node_preprints()
+
         with transaction.atomic():
             if to_remove or permissions_changed and ['read'] in permissions_changed.values():
                 project_signals.write_permissions_revoked.send(self)
@@ -2276,6 +2297,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
                         project_signals.write_permissions_revoked.send(self)
         if visible is not None:
             self.set_visible(user, visible, auth=auth)
+            self.save_node_preprints()
 
     def save(self, *args, **kwargs):
         first_save = not bool(self.pk)

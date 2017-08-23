@@ -1,6 +1,6 @@
 {
   "name": "OSF",
-  "version": "0.119.0",
+  "version": "0.120.0",
   "description": "Facilitating Open Science",
   "repository": "https://github.com/CenterForOpenScience/osf.io",
   "author": "Center for Open Science",
@@ -44,6 +44,9 @@
     "lodash.chunk": "^4.0.6",
     "lodash.find": "^4.3.0",
     "lodash.get": "^4.2.1",
+    "lodash.has": "^4.5.2",
+    "lodash.includes": "^4.3.0",
+    "lodash.set": "^4.3.2",
     "markdown-it": "~4.1.0",
     "markdown-it-ins-del": "^0.1.1",
     "markdown-it-sanitizer": "~0.3.0",
@@ -75,7 +78,7 @@
     "chai": "^2.1.1",
     "faker": "^2.1.2",
     "jshint": "2.8.0",
-    "karma": "^0.12.37",
+    "karma": "^1.7.0",
     "karma-chrome-launcher": "^0.1.7",
     "karma-firefox-launcher": "^0.1.4",
     "karma-mocha": "^0.1.10",
@@ -83,9 +86,10 @@
     "karma-sauce-launcher": "^0.2.10",
     "karma-sinon": "^1.0.5",
     "karma-sourcemap-loader": "^0.3.7",
-    "karma-spec-reporter": "0.0.16",
-    "karma-webpack": "~1.5.1",
-    "mocha": "^2.5.3"
+    "karma-spec-reporter": "^0.0.16",
+    "karma-webpack": "^2.0.4",
+    "mocha": "^2.5.3",
+    "sinon": "^2.4.1"
   },
   "scripts": {
     "test": "./node_modules/karma/bin/karma start --single-run --browsers PhantomJS"

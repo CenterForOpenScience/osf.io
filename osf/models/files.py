@@ -14,6 +14,7 @@ from typedmodels.models import TypedModel, TypedModelManager
 from include import IncludeManager
 
 from framework.analytics import get_basic_counters
+from framework import sentry
 from osf.models.base import BaseModel, OptionalGuidMixin, ObjectIDMixin
 from osf.models.comment import CommentableMixin
 from osf.models.mixins import Taggable
@@ -441,15 +442,13 @@ class File(models.Model):
             version.save()
             self.versions.add(version)
         for entry in self.history:
+            # Some entry might have an undefined modified field
+            if data['modified'] is not None and entry['modified'] is not None and data['modified'] < entry['modified']:
+                sentry.log_message('update() receives metatdata older than the newest entry in file history.')
             if ('etag' in entry and 'etag' in data) and (entry['etag'] == data['etag']):
                 break
         else:
-            # Insert into history if there is no matching etag
-            if data.get('modified'):
-                utils.insort(self.history, data, lambda x: x['modified'])
-            # If modified not included in the metadata, insert at the end of the history
-            else:
-                self.history.append(data)
+            self.history.append(data)
 
         # Finally update last touched
         self.last_touched = timezone.now()
