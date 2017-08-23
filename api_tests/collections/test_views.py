@@ -11,7 +11,7 @@ from osf_tests.factories import (
     AuthUserFactory,
 )
 from osf.models import AbstractNode, NodeLog
-from tests.utils import assert_logs, assert_items_equal
+from tests.utils import assert_items_equal, assert_latest_log
 from website.project.signals import contributor_removed
 from website.util.sanitize import strip_html
 from website.util import disconnected_from_listeners
@@ -446,78 +446,75 @@ class CollectionCRUDTestCase:
 @pytest.mark.django_db
 class TestCollectionUpdate(CollectionCRUDTestCase):
 
-    @pytest.fixture()
-    def logs_collection(self, collection):
-        @assert_logs(NodeLog.EDITED_TITLE, 'collection')
-        def logs(collection):
-            return collection
-
-    def test_update_collection_logged_in(self, app, url_collection_detail, collection, logs_collection, new_title_collection, user_one):
-        res = app.put_json_api(url_collection_detail, {
-            'data': {
-                'id': collection._id,
-                'type': 'collections',
-                'attributes': {
-                    'title': new_title_collection,
+    def test_update_collection_logged_in(self, app, url_collection_detail, collection, new_title_collection, user_one):
+        with assert_latest_log(NodeLog.EDITED_TITLE, collection):
+            res = app.put_json_api(url_collection_detail, {
+                'data': {
+                    'id': collection._id,
+                    'type': 'collections',
+                    'attributes': {
+                        'title': new_title_collection,
+                    }
                 }
-            }
-        }, auth=user_one.auth)
-        assert res.status_code == 200
-        assert res.content_type == 'application/vnd.api+json'
-        assert res.json['data']['attributes']['title'] == new_title_collection
-        collection.reload()
-        assert collection.title == new_title_collection
+            }, auth=user_one.auth)
+            assert res.status_code == 200
+            assert res.content_type == 'application/vnd.api+json'
+            assert res.json['data']['attributes']['title'] == new_title_collection
+            collection.reload()
+            assert collection.title == new_title_collection
 
-    def test_partial_update_collection_logged_in(self, app, url_collection_detail, collection, logs_collection, new_title_collection, user_one):
-        res = app.patch_json_api(url_collection_detail, {
-            'data': {
-                'id': collection._id,
-                'type': 'collections',
-                'attributes': {
-                    'title': new_title_collection,
+    def test_partial_update_collection_logged_in(self, app, url_collection_detail, collection, new_title_collection, user_one):
+        with assert_latest_log(NodeLog.EDITED_TITLE, collection):
+            res = app.patch_json_api(url_collection_detail, {
+                'data': {
+                    'id': collection._id,
+                    'type': 'collections',
+                    'attributes': {
+                        'title': new_title_collection,
+                    }
                 }
-            }
-        }, auth=user_one.auth)
-        assert res.status_code == 200
-        assert res.content_type == 'application/vnd.api+json'
-        assert res.json['data']['attributes']['title'] == new_title_collection
-        collection.reload()
-        assert collection.title == new_title_collection
+            }, auth=user_one.auth)
+            assert res.status_code == 200
+            assert res.content_type == 'application/vnd.api+json'
+            assert res.json['data']['attributes']['title'] == new_title_collection
+            collection.reload()
+            assert collection.title == new_title_collection
 
-
-    def test_update_collection_sanitizes_html_properly(self, app, url_collection_detail, collection, logs_collection, user_one):
+    def test_update_collection_sanitizes_html_properly(self, app, url_collection_detail, collection, user_one):
         """Post request should update resource, and any HTML in fields should be stripped"""
-        new_title = '<strong>Super</strong><script>alert("even cooler")</script> Cool Project'
-        res = app.put_json_api(url_collection_detail, {
-            'data': {
-                'id': collection._id,
-                'type': 'collections',
-                'attributes': {
-                    'title': new_title,
+        with assert_latest_log(NodeLog.EDITED_TITLE, collection):
+            new_title = '<strong>Super</strong><script>alert("even cooler")</script> Cool Project'
+            res = app.put_json_api(url_collection_detail, {
+                'data': {
+                    'id': collection._id,
+                    'type': 'collections',
+                    'attributes': {
+                        'title': new_title,
+                    }
                 }
-            }
-        }, auth=user_one.auth)
-        assert res.status_code == 200
-        assert res.content_type == 'application/vnd.api+json'
-        assert res.json['data']['attributes']['title'] == strip_html(new_title)
-        collection.reload()
-        assert collection.title == strip_html(new_title)
+            }, auth=user_one.auth)
+            assert res.status_code == 200
+            assert res.content_type == 'application/vnd.api+json'
+            assert res.json['data']['attributes']['title'] == strip_html(new_title)
+            collection.reload()
+            assert collection.title == strip_html(new_title)
 
-    def test_partial_update_collection_updates_project_correctly_and_sanitizes_html(self, app, url_collection_detail, collection, logs_collection, user_one):
-        new_title = 'An <script>alert("even cooler")</script> project'
-        res = app.patch_json_api(url_collection_detail, {
-            'data': {
-                'id': collection._id,
-                'type': 'collections',
-                'attributes': {
-                    'title': new_title
+    def test_partial_update_collection_updates_project_correctly_and_sanitizes_html(self, app, url_collection_detail, collection, user_one):
+        with assert_latest_log(NodeLog.EDITED_TITLE, collection):
+            new_title = 'An <script>alert("even cooler")</script> project'
+            res = app.patch_json_api(url_collection_detail, {
+                'data': {
+                    'id': collection._id,
+                    'type': 'collections',
+                    'attributes': {
+                        'title': new_title
+                    }
                 }
-            }
-        }, auth=user_one.auth)
-        assert res.status_code == 200
-        assert res.content_type == 'application/vnd.api+json'
-        collection.reload()
-        assert collection.title == strip_html(new_title)
+            }, auth=user_one.auth)
+            assert res.status_code == 200
+            assert res.content_type == 'application/vnd.api+json'
+            collection.reload()
+            assert collection.title == strip_html(new_title)
 
     def test_multiple_patch_requests_with_same_title_generates_one_log(
         self, app, url_collection_detail, collection, new_title_collection, user_one, payload_collection):
@@ -720,12 +717,6 @@ class TestCollectionUpdate(CollectionCRUDTestCase):
 @pytest.mark.django_db
 class TestCollectionDelete(CollectionCRUDTestCase):
 
-    @pytest.fixture()
-    def logs_collection(self, collection):
-        @assert_logs(NodeLog.PROJECT_DELETED, 'collection')
-        def logs(collection):
-            return collection
-
     def test_do_not_delete_collection_unauthenticated(self, app, url_collection_detail):
         res = app.delete(url_collection_detail, expect_errors=True)
         assert res.status_code == 401
@@ -750,11 +741,12 @@ class TestCollectionDelete(CollectionCRUDTestCase):
         assert collection.is_deleted is False
         assert 'detail' in res.json['errors'][0]
 
-    def test_delete_collection_authorized(self, app, url_collection_detail, user_one, collection, logs_collection):
-        res = app.delete_json_api(url_collection_detail, auth=user_one.auth, expect_errors=True)
-        collection.reload()
-        assert res.status_code == 204
-        assert collection.is_deleted is True
+    def test_delete_collection_authorized(self, app, url_collection_detail, user_one, collection):
+        with assert_latest_log(NodeLog.PROJECT_DELETED, collection):
+            res = app.delete_json_api(url_collection_detail, auth=user_one.auth, expect_errors=True)
+            collection.reload()
+            assert res.status_code == 204
+            assert collection.is_deleted is True
 
 @pytest.mark.django_db
 class TestCollectionNodeLinksList:
@@ -912,96 +904,90 @@ class TestCollectionNodeLinkCreate:
     def url_fake_collection_nodelinks(self, id_fake_node):
         return '/{}collections/{}/node_links/'.format(API_BASE, id_fake_node)
 
-    @pytest.fixture()
-    def logs_collection(self, collection_one):
-        @assert_logs(NodeLog.POINTER_CREATED, 'collection')
-        def logs(collection_one):
-            return collection_one
-
     def test_creates_node_link_to_public_project_logged_in(
-        self, app, logs_collection, url_collection_nodelinks, project_public_user_one, user_one):
-
-        res = app.post_json_api(url_collection_nodelinks, make_post_payload(project_public_user_one._id), auth=user_one.auth)
-        assert res.status_code == 201
-        assert res.content_type == 'application/vnd.api+json'
-        res_json = res.json['data']
-        embedded_node_id = res_json['embeds']['target_node']['data']['id']
-        assert embedded_node_id == project_public_user_one._id
+        self, app, url_collection_nodelinks, project_public_user_one, collection_one, user_one):
+        with assert_latest_log(NodeLog.POINTER_CREATED, collection_one):
+            res = app.post_json_api(url_collection_nodelinks, make_post_payload(project_public_user_one._id), auth=user_one.auth)
+            assert res.status_code == 201
+            assert res.content_type == 'application/vnd.api+json'
+            res_json = res.json['data']
+            embedded_node_id = res_json['embeds']['target_node']['data']['id']
+            assert embedded_node_id == project_public_user_one._id
 
     def test_creates_node_link_to_public_registration_logged_in(
-        self, app, logs_collection, url_collection_nodelinks, registration_public_user_one, user_one):
-
-        res = app.post_json_api(url_collection_nodelinks, make_post_payload(registration_public_user_one._id), auth=user_one.auth)
-        assert res.status_code == 201
-        assert res.content_type == 'application/vnd.api+json'
-        res_json = res.json['data']
-        # node_links end point does not handle registrations correctly
-        embedded_node_id = res_json['embeds']['target_node']['errors'][0]['detail']
-        assert embedded_node_id == 'Not found.'
+        self, app, collection_one, url_collection_nodelinks, registration_public_user_one, user_one):
+        with assert_latest_log(NodeLog.POINTER_CREATED, collection_one):
+            res = app.post_json_api(url_collection_nodelinks, make_post_payload(registration_public_user_one._id), auth=user_one.auth)
+            assert res.status_code == 201
+            assert res.content_type == 'application/vnd.api+json'
+            res_json = res.json['data']
+            # node_links end point does not handle registrations correctly
+            embedded_node_id = res_json['embeds']['target_node']['errors'][0]['detail']
+            assert embedded_node_id == 'Not found.'
 
     def test_creates_node_link_to_private_project_logged_in(
-        self, app, logs_collection, url_collection_nodelinks,
+        self, app, collection_one, url_collection_nodelinks,
         user_one, project_private_user_one):
-
-        res = app.post_json_api(url_collection_nodelinks, make_post_payload(project_private_user_one._id), auth=user_one.auth)
-        assert res.status_code == 201
-        res_json = res.json['data']
-        embedded_node_id = res_json['embeds']['target_node']['data']['id']
-        assert embedded_node_id == project_private_user_one._id
+        with assert_latest_log(NodeLog.POINTER_CREATED, collection_one):
+            res = app.post_json_api(url_collection_nodelinks, make_post_payload(project_private_user_one._id), auth=user_one.auth)
+            assert res.status_code == 201
+            res_json = res.json['data']
+            embedded_node_id = res_json['embeds']['target_node']['data']['id']
+            assert embedded_node_id == project_private_user_one._id
 
     def test_creates_node_link_to_private_registration_logged_in(
-        self, app, logs_collection, url_collection_nodelinks,
+        self, app, url_collection_nodelinks, collection_one,
         registration_private_user_one, user_one):
-
-        res = app.post_json_api(url_collection_nodelinks, make_post_payload(registration_private_user_one._id), auth=user_one.auth)
-        assert res.status_code == 201
-        res_json = res.json['data']
-        # node_links end point does not handle registrations correctly
-        embedded_node_id = res_json['embeds']['target_node']['errors'][0]['detail']
-        assert embedded_node_id == 'Not found.'
+        with assert_latest_log(NodeLog.POINTER_CREATED, collection_one):
+            res = app.post_json_api(url_collection_nodelinks, make_post_payload(registration_private_user_one._id), auth=user_one.auth)
+            assert res.status_code == 201
+            res_json = res.json['data']
+            # node_links end point does not handle registrations correctly
+            embedded_node_id = res_json['embeds']['target_node']['errors'][0]['detail']
+            assert embedded_node_id == 'Not found.'
 
     def test_create_node_link_to_non_contributing_node(
-        self, app, logs_collection, url_collection_nodelinks,
+        self, app, collection_one, url_collection_nodelinks,
         project_public_user_two, user_one):
-
-        res = app.post_json_api(url_collection_nodelinks, make_post_payload(project_public_user_two._id), auth=user_one.auth)
-        assert res.status_code == 201
-        assert res.content_type == 'application/vnd.api+json'
-        res_json = res.json['data']
-        embedded_node_id = res_json['embeds']['target_node']['data']['id']
-        assert embedded_node_id == project_public_user_two._id
+        with assert_latest_log(NodeLog.POINTER_CREATED, collection_one):
+            res = app.post_json_api(url_collection_nodelinks, make_post_payload(project_public_user_two._id), auth=user_one.auth)
+            assert res.status_code == 201
+            assert res.content_type == 'application/vnd.api+json'
+            res_json = res.json['data']
+            embedded_node_id = res_json['embeds']['target_node']['data']['id']
+            assert embedded_node_id == project_public_user_two._id
 
     def test_create_node_link_to_non_contributing_registration(
-        self, app, logs_collection, url_collection_nodelinks,
+        self, app, collection_one, url_collection_nodelinks,
         registration_public_user_two, user_one):
-
-        res = app.post_json_api(url_collection_nodelinks, make_post_payload(registration_public_user_two._id), auth=user_one.auth)
-        assert res.status_code == 201
-        assert res.content_type == 'application/vnd.api+json'
-        res_json = res.json['data']
-        # node_links end point does not handle registrations correctly
-        embedded_node_id = res_json['embeds']['target_node']['errors'][0]['detail']
-        assert embedded_node_id == 'Not found.'
+        with assert_latest_log(NodeLog.POINTER_CREATED, collection_one):
+            res = app.post_json_api(url_collection_nodelinks, make_post_payload(registration_public_user_two._id), auth=user_one.auth)
+            assert res.status_code == 201
+            assert res.content_type == 'application/vnd.api+json'
+            res_json = res.json['data']
+            # node_links end point does not handle registrations correctly
+            embedded_node_id = res_json['embeds']['target_node']['errors'][0]['detail']
+            assert embedded_node_id == 'Not found.'
 
     def test_create_node_pointer_already_connected(
-        self, app, logs_collection, url_collection_nodelinks,
-        project_private_user_one, user_one, collection_one):
+        self, app, collection_one, url_collection_nodelinks,
+        project_private_user_one, user_one):
+        with assert_latest_log(NodeLog.POINTER_CREATED, collection_one):
+            res = app.post_json_api(url_collection_nodelinks, make_post_payload(project_private_user_one._id), auth=user_one.auth)
+            assert res.status_code == 201
+            assert res.content_type == 'application/vnd.api+json'
+            res_json = res.json['data']
+            embedded_node_id = res_json['embeds']['target_node']['data']['id']
+            assert embedded_node_id == project_private_user_one._id
 
-        res = app.post_json_api(url_collection_nodelinks, make_post_payload(project_private_user_one._id), auth=user_one.auth)
-        assert res.status_code == 201
-        assert res.content_type == 'application/vnd.api+json'
-        res_json = res.json['data']
-        embedded_node_id = res_json['embeds']['target_node']['data']['id']
-        assert embedded_node_id == project_private_user_one._id
-
-        res = app.post_json_api(url_collection_nodelinks, make_post_payload(project_private_user_one._id), auth=user_one.auth, expect_errors=True)
-        assert res.status_code == 400
-        error = res.json['errors'][0]
-        assert 'detail' in error
-        assert 'Target Node \'{}\' already pointed to by \'{}\'.'.format(project_private_user_one._id, collection_one._id) == error['detail']
-        assert 'source' in error
-        assert 'pointer' in error['source']
-        assert '/data/relationships/node_links/data/id' == error['source']['pointer']
+            res = app.post_json_api(url_collection_nodelinks, make_post_payload(project_private_user_one._id), auth=user_one.auth, expect_errors=True)
+            assert res.status_code == 400
+            error = res.json['errors'][0]
+            assert 'detail' in error
+            assert 'Target Node \'{}\' already pointed to by \'{}\'.'.format(project_private_user_one._id, collection_one._id) == error['detail']
+            assert 'source' in error
+            assert 'pointer' in error['source']
+            assert '/data/relationships/node_links/data/id' == error['source']['pointer']
 
     def test_non_mutational_collection_nodelink_create_tests(
         self, app, user_one, user_two, collection_one, url_collection_nodelinks, url_fake_collection_nodelinks,
@@ -1128,12 +1114,6 @@ class TestCollectionNodeLinkDetail:
     def url_registration_link_public(self, collection, registration_link_public):
         return '/{}collections/{}/node_links/{}/'.format(API_BASE, collection._id, registration_link_public._id)
 
-    @pytest.fixture()
-    def logs_collection(self, collection):
-        @assert_logs(NodeLog.POINTER_REMOVED, 'collection')
-        def logs(collection):
-            return collection
-
     def test_returns_public_node_pointer_detail_authorized(self, app, user_one, url_node_link_public, project_public):
         res = app.get(url_node_link_public, auth=user_one.auth)
         res_json = res.json['data']
@@ -1182,65 +1162,72 @@ class TestCollectionNodeLinkDetail:
         res = app.delete_json_api(url, auth=user_one.auth)
         assert res.status_code == 204
 
-    def test_delete_public_node_pointer_authorized(self, app, logs_collection, user_one, url_node_link_public, collection):
-        node_count_before = collection.nodes_pointer.count()
-        res = app.delete(url_node_link_public, auth=user_one.auth)
-        collection.reload()
-        assert res.status_code == 204
-        assert node_count_before - 1 == collection.nodes_pointer.count()
+    def test_delete_public_node_pointer_authorized(self, app, user_one, url_node_link_public, collection):
+        with assert_latest_log(NodeLog.POINTER_REMOVED, collection):
+            node_count_before = collection.nodes_pointer.count()
+            res = app.delete(url_node_link_public, auth=user_one.auth)
+            collection.reload()
+            assert res.status_code == 204
+            assert node_count_before - 1 == collection.nodes_pointer.count()
 
-    def test_delete_public_registration_pointer_authorized(self, app, logs_collection, user_one, collection, url_registration_link_public):
-        node_count_before = collection.nodes_pointer.count()
-        res = app.delete(url_registration_link_public, auth=user_one.auth)
-        collection.reload()
-        assert res.status_code == 204
-        assert node_count_before - 1 == len(collection.nodes_pointer)
+    def test_delete_public_registration_pointer_authorized(self, app, user_one, collection, url_registration_link_public):
+        with assert_latest_log(NodeLog.POINTER_REMOVED, collection):
+            node_count_before = collection.nodes_pointer.count()
+            res = app.delete(url_registration_link_public, auth=user_one.auth)
+            collection.reload()
+            assert res.status_code == 204
+            assert node_count_before - 1 == len(collection.nodes_pointer)
 
-    def test_delete_private_node_link_authorized(self, app, logs_collection, url_node_link_private, user_one, collection):
-        node_count_before = collection.nodes_pointer.count()
-        res = app.delete(url_node_link_private, auth=user_one.auth)
-        collection.reload()
-        assert res.status_code == 204
-        assert node_count_before - 1 == len(collection.nodes_pointer)
+    def test_delete_private_node_link_authorized(self, app, url_node_link_private, user_one, collection):
+        with assert_latest_log(NodeLog.POINTER_REMOVED, collection):
+            node_count_before = collection.nodes_pointer.count()
+            res = app.delete(url_node_link_private, auth=user_one.auth)
+            collection.reload()
+            assert res.status_code == 204
+            assert node_count_before - 1 == len(collection.nodes_pointer)
 
-    def test_delete_private_registration_link_authorized(self, app, logs_collection, user_one, url_registration_link_private, collection):
+    def test_delete_private_registration_link_authorized(self, app, user_one, url_registration_link_private, collection):
         node_count_before = collection.nodes_pointer.count()
         res = app.delete(url_registration_link_private, auth=user_one.auth)
         collection.reload()
         assert res.status_code == 204
         assert node_count_before - 1 == collection.nodes_pointer.count()
 
-    def test_can_not_return_deleted_collection_public_node_pointer(self, app, logs_collection, user_one, url_node_link_public, collection):
-        res = app.delete(url_node_link_public, auth=user_one.auth)
-        collection.reload()
-        assert res.status_code == 204
+    def test_can_not_return_deleted_collection_public_node_pointer(self, app, user_one, url_node_link_public, collection):
+        with assert_latest_log(NodeLog.POINTER_REMOVED, collection):
+            res = app.delete(url_node_link_public, auth=user_one.auth)
+            collection.reload()
+            assert res.status_code == 204
 
-        res = app.get(url_node_link_public, auth=user_one.auth, expect_errors=True)
-        assert res.status_code == 404
+            res = app.get(url_node_link_public, auth=user_one.auth, expect_errors=True)
+            assert res.status_code == 404
 
-    def test_can_not_return_deleted_collection_public_registration_pointer(self, app, logs_collection, url_registration_link_public, user_one, collection):
-        res = app.delete(url_registration_link_public, auth=user_one.auth)
-        collection.reload()
-        assert res.status_code == 204
+    def test_can_not_return_deleted_collection_public_registration_pointer(self, app, url_registration_link_public, user_one, collection):
+        with assert_latest_log(NodeLog.POINTER_REMOVED, collection):
+            res = app.delete(url_registration_link_public, auth=user_one.auth)
+            collection.reload()
+            assert res.status_code == 204
 
-        res = app.get(url_registration_link_public, auth=user_one.auth, expect_errors=True)
-        assert res.status_code == 404
+            res = app.get(url_registration_link_public, auth=user_one.auth, expect_errors=True)
+            assert res.status_code == 404
 
-    def test_return_deleted_private_node_pointer(self, app, logs_collection, url_node_link_private, user_one, project_private):
-        res = app.delete(url_node_link_private, auth=user_one.auth)
-        project_private.reload()
-        assert res.status_code == 204
+    def test_return_deleted_private_node_pointer(self, app, collection, url_node_link_private, user_one, project_private):
+        with assert_latest_log(NodeLog.POINTER_REMOVED, collection):
+            res = app.delete(url_node_link_private, auth=user_one.auth)
+            project_private.reload()
+            assert res.status_code == 204
 
-        res = app.get(url_node_link_private, auth=user_one.auth, expect_errors=True)
-        assert res.status_code == 404
+            res = app.get(url_node_link_private, auth=user_one.auth, expect_errors=True)
+            assert res.status_code == 404
 
-    def test_return_deleted_private_registration_pointer(self, app, logs_collection, url_registration_link_private, user_one, project_private):
-        res = app.delete(url_registration_link_private, auth=user_one.auth)
-        project_private.reload()
-        assert res.status_code == 204
+    def test_return_deleted_private_registration_pointer(self, app, collection, url_registration_link_private, user_one, project_private):
+        with assert_latest_log(NodeLog.POINTER_REMOVED, collection):
+            res = app.delete(url_registration_link_private, auth=user_one.auth)
+            project_private.reload()
+            assert res.status_code == 204
 
-        res = app.get(url_registration_link_private, auth=user_one.auth, expect_errors=True)
-        assert res.status_code == 404
+            res = app.get(url_registration_link_private, auth=user_one.auth, expect_errors=True)
+            assert res.status_code == 404
 
     def test_non_mutational_collection_nodelink_detail_tests(
         self, app, collection, user_one, user_two, url_node_link_public, node_link_private,
