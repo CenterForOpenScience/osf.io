@@ -64,6 +64,17 @@ services:
 ##      - emberosf
 ##    command: /bin/bash -c "cd /ember-osf && yarn link && cd /code && yarn link @centerforopenscience/ember-osf && yarn --pure-lockfile --ignore-engines && ./node_modules/bower/bin/bower install --allow-root --config.interactive=false && ./node_modules/ember-cli/bin/ember serve --host 0.0.0.0 --port 4200"
 
+#  quickfiles:
+#    volumes:
+#      - quickfiles-sync:/code:nocopy
+#
+##      # Use this for ember-osf linked development (with docker-sync):
+#      - quickfiles_dist_vol:/code/dist
+#      - emberosf-sync:/ember-osf
+#    depends_on:
+#      - emberosf
+#    command: /bin/bash -c "cd /code && npm link ../ember-osf && yarn --pure-lockfile --ignore-engines && ./node_modules/bower/bin/bower install --allow-root --config.interactive=false && ./node_modules/ember-cli/bin/ember serve --host 0.0.0.0 --port 4201"
+
 #  registries:
 #    volumes:
 #      - registries-sync:/code:nocopy
@@ -96,6 +107,9 @@ volumes:
 #    external: true
 
 #  preprints-sync:
+#    external: true
+
+#  quickfiles-sync:
 #    external: true
 
 #  registries-sync:
