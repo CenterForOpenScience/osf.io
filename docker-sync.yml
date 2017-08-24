@@ -27,6 +27,16 @@ syncs:
   preprints-sync:
     src: '../ember-preprints'
     sync_strategy: 'unison'
+    dest: '/code'
+    sync_args: [ '-prefer newer' ]
+    sync_excludes_type: 'Name'
+    sync_excludes: ['.DS_Store', '*.map', '*.pyc', '*.tmp', '.git', '.idea', 'bower_components', 'node_modules', 'tmp', 'dist']
+    watch_excludes: ['.*\.DS_Store', '.*\.map', '.*\.pyc', '.*\.tmp', '.*/\.git', '.*/\.idea', '.*/bower_components', '.*/node_modules', '.*/tmp', '.*/dist']
+
+  quickfiles-sync:
+    src: '../ember-quickfiles'
+    sync_strategy: 'unison'
+    dest: '/code'
     sync_args: [ '-prefer newer' ]
     sync_excludes_type: 'Name'
     sync_excludes: ['.DS_Store', '*.map', '*.pyc', '*.tmp', '.git', '.idea', 'bower_components', 'node_modules', 'tmp', 'dist']
@@ -35,6 +45,7 @@ syncs:
   emberosf-sync:
     src: '../ember-osf/'
     sync_strategy: 'unison'
+    dest: '/code'
     sync_args: [ '-prefer newer' ]
     sync_excludes_type: 'Name'
     sync_excludes: ['.DS_Store', '*.map', '*.pyc', '*.tmp', '.git', '.idea', 'bower_components', 'node_modules', 'tmp', 'dist']
@@ -50,6 +61,7 @@ syncs:
 
   osf-sync:
     src: './'
+    dest: '/code'
     sync_strategy: 'unison'
     sync_excludes_type: 'Name'
     sync_prefer: 'default'

@@ -39,6 +39,11 @@ EXTERNAL_EMBER_APPS = {
         'url': '/registries/',
         'server': 'http://localhost:4300',
         'path': '/registries/'
+    },
+    'quickfiles': {
+        'url': '/quickfiles/',
+        'server': 'http://localhost:4201',
+        'path': '/quickfiles/'
     }
     # 'meetings': {
     #     'url': '/meetings/',
