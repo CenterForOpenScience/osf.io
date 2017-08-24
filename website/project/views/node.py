@@ -708,7 +708,7 @@ def _view_project(node, auth, primary=False,
             'is_pending_retraction': node.is_pending_retraction if is_registration else False,
             'retracted_justification': getattr(node.retraction, 'justification', None) if is_registration else None,
             'date_retracted': iso8601format(getattr(node.retraction, 'date_retracted', None)) if is_registration else '',
-            'embargo_end_date': node.embargo_end_date.strftime('%A, %b. %d, %Y') if is_registration and node.embargo_end_date else '',
+            'embargo_end_date': node.embargo_end_date.strftime('%A, %b %d, %Y') if is_registration and node.embargo_end_date else '',
             'is_pending_embargo': node.is_pending_embargo if is_registration else False,
             'is_embargoed': node.is_embargoed if is_registration else False,
             'is_pending_embargo_termination': is_registration and node.is_embargoed and (
@@ -735,7 +735,6 @@ def _view_project(node, auth, primary=False,
                 'ark': node.get_identifier_value('ark'),
             },
             'institutions': get_affiliated_institutions(node) if node else [],
-            'alternative_citations': [citation.to_json() for citation in node.alternative_citations.all()],
             'has_draft_registrations': node.has_active_draft_registrations,
             'is_preprint': node.is_preprint,
             'is_preprint_orphan': node.is_preprint_orphan,
@@ -1173,6 +1172,9 @@ def fork_pointer(auth, node, **kwargs):
     """Fork a pointer. Raises BAD_REQUEST if pointer not provided, not found,
     or not present in `nodes`.
 
+    :param Auth auth: Consolidated authorization
+    :param Node node: root from which pointer is child
+    :return: Fork of node to which nodelink(pointer) points
     """
     NodeRelation = apps.get_model('osf.NodeRelation')
 
@@ -1185,10 +1187,15 @@ def fork_pointer(auth, node, **kwargs):
         raise HTTPError(http.BAD_REQUEST)
 
     try:
-        node.fork_pointer(pointer, auth=auth, save=True)
+        fork = node.fork_pointer(pointer, auth=auth, save=True)
     except ValueError:
         raise HTTPError(http.BAD_REQUEST)
 
+    return {
+        'data': {
+            'node': serialize_node_summary(node=fork, auth=auth, show_path=False)
+        }
+    }, http.CREATED
 
 def abbrev_authors(node):
     lead_author = node.visible_contributors[0]

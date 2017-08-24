@@ -86,7 +86,7 @@ def must_be_valid_project(func=None, retractions_valid=False):
 
             _inject_nodes(kwargs)
 
-            if getattr(kwargs['node'], 'is_collection', True):
+            if getattr(kwargs['node'], 'is_collection', True) or getattr(kwargs['node'], 'is_quickfiles', True):
                 raise HTTPError(
                     http.NOT_FOUND
                 )
@@ -177,17 +177,11 @@ def check_can_access(node, user, key=None, api_node=None):
     if user is None:
         return False
     if not node.can_view(Auth(user=user)) and api_node != node:
-        error_data = {
-            'message_long': ('User has restricted access to this page. '
-            'If this should not have occurred and the issue persists, please report it to '
-            '<a href="mailto:support@osf.io">support@osf.io</a>.')
-        }
         if key in node.private_link_keys_deleted:
             status.push_status_message('The view-only links you used are expired.', trust=False)
-        elif node.embargo and not node.is_pending_embargo:
-            error_data['message_short'] = 'Resource under embargo'
-            error_data['message_long'] = 'This resource is currently under embargo, please check back when it opens {}.'.format(node.embargo_end_date.strftime('%A, %b. %d, %Y'))
-        raise HTTPError(http.FORBIDDEN, data=error_data)
+        raise HTTPError(http.FORBIDDEN, data={'message_long': ('User has restricted access to this page. '
+            'If this should not have occurred and the issue persists, please report it to '
+            '<a href="mailto:support@osf.io">support@osf.io</a>.')})
     return True
 
 
@@ -254,7 +248,6 @@ def _must_be_contributor_factory(include_public, include_view_only_anon=True):
         return wrapped
 
     return wrapper
-
 
 # Create authorization decorators
 must_be_contributor = _must_be_contributor_factory(False)
