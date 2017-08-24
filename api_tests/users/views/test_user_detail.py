@@ -85,19 +85,19 @@ class TestUserDetail:
         user_json = res.json['data']
         assert 'profile_image' in user_json['links']
 
-    def test_files_relationship_upload(self):
-        url = "/{}users/{}/".format(API_BASE, self.user_one._id)
-        res = self.app.get(url, auth=self.user_one)
-        quickfiles = QuickFilesNode.objects.get(creator=self.user_one)
+    def test_files_relationship_upload(self, app, user_one):
+        url = "/{}users/{}/".format(API_BASE, user_one._id)
+        res = app.get(url, auth=user_one)
+        quickfiles = QuickFilesNode.objects.get(creator=user_one)
         user_json = res.json['data']
         upload_url = user_json['relationships']['quickfiles']['links']['upload']['href']
         waterbutler_upload = website_utils.waterbutler_api_url_for(quickfiles._id, 'osfstorage')
 
         assert upload_url == waterbutler_upload
 
-    def test_nodes_relationship_is_absent(self):
-        url = "/{}users/{}/".format(API_BASE, self.user_one._id)
-        res = self.app.get(url, auth=self.user_one)
+    def test_nodes_relationship_is_absent(self, app, user_one):
+        url = "/{}users/{}/".format(API_BASE, user_one._id)
+        res = app.get(url, auth=user_one)
         assert 'node' not in res.json['data']['relationships'].keys()
 
 
