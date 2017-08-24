@@ -9,6 +9,7 @@ from modularodm import Q
 from modularodm.exceptions import ModularOdmException, ValidationError
 from django.apps import apps
 from django.db.models import Count
+from bs4 import BeautifulSoup
 
 from framework import status
 from framework.utils import iso8601format
@@ -35,7 +36,8 @@ from website.util.rubeus import collect_addon_js
 from website.project.model import has_anonymous_link, NodeUpdateError, validate_title
 from website.project.forms import NewNodeForm
 from website.project.metadata.utils import serialize_meta_schemas
-from osf.models import AbstractNode, PrivateLink, Comment
+from osf.models import AbstractNode, PrivateLink, Contributor
+from osf.models.contributor import get_contributor_permissions
 from osf.models.licenses import serialize_node_license_record
 from website import settings
 from website.views import find_bookmark_collection, validate_page_num
@@ -43,6 +45,7 @@ from website.views import serialize_node_summary
 from website.profile import utils
 from website.util.sanitize import strip_html
 from website.util import rapply
+from addons.forward.utils import serialize_settings, settings_complete
 
 
 r_strip_html = lambda collection: rapply(collection, strip_html)
@@ -260,7 +263,8 @@ def node_setting(auth, node, **kwargs):
     addons_enabled = []
     addon_enabled_settings = []
 
-    for addon in node.get_addons():
+    addons = list(node.get_addons())
+    for addon in addons:
         addons_enabled.append(addon.config.short_name)
         if 'node' in addon.config.configs:
             config = addon.to_json(auth.user)
@@ -288,7 +292,7 @@ def node_setting(auth, node, **kwargs):
     ret['addons_enabled'] = addons_enabled
     ret['addon_enabled_settings'] = addon_enabled_settings
     ret['addon_capabilities'] = settings.ADDON_CAPABILITIES
-    ret['addon_js'] = collect_node_config_js(node.get_addons())
+    ret['addon_js'] = collect_node_config_js(addons)
 
     ret['include_wiki_settings'] = node.include_wiki_settings(auth.user)
 
@@ -366,6 +370,82 @@ def view_project(auth, node, **kwargs):
         config_entry='widget'
     ))
     ret.update(rubeus.collect_addon_assets(node))
+
+    addons_widget_data = {
+        'wiki': None,
+        'mendeley': None,
+        'zotero': None,
+        'forward': None,
+        'dataverse': None
+    }
+
+    if 'wiki' in ret['addons']:
+        wiki = node.get_addon('wiki')
+        wiki_page = node.get_wiki_page('home')
+
+        # Show "Read more" link if there are multiple pages or has > 400 characters
+        more = len(node.wiki_pages_current.keys()) >= 2
+        MAX_DISPLAY_LENGTH = 400
+        rendered_before_update = False
+        if wiki_page and wiki_page.html(node):
+            wiki_html = wiki_page.html(node)
+            if len(wiki_html) > MAX_DISPLAY_LENGTH:
+                wiki_html = BeautifulSoup(wiki_html[:MAX_DISPLAY_LENGTH] + '...', 'html.parser')
+                more = True
+            else:
+                wiki_html = BeautifulSoup(wiki_html)
+            rendered_before_update = wiki_page.rendered_before_update
+        else:
+            wiki_html = None
+
+        wiki_widget_data = {
+            'complete': True,
+            'wiki_content': unicode(wiki_html) if wiki_html else None,
+            'wiki_content_url': node.api_url_for('wiki_page_content', wname='home'),
+            'rendered_before_update': rendered_before_update,
+            'more': more,
+            'include': False,
+        }
+        wiki_widget_data.update(wiki.config.to_json())
+        addons_widget_data['wiki'] = wiki_widget_data
+
+    if 'dataverse' in ret['addons']:
+        node_addon = node.get_addon('dataverse')
+        widget_url = node.api_url_for('dataverse_get_widget_contents')
+
+        dataverse_widget_data = {
+            'complete': node_addon.complete,
+            'widget_url': widget_url,
+        }
+        dataverse_widget_data.update(node_addon.config.to_json())
+        addons_widget_data['dataverse'] = dataverse_widget_data
+
+    if 'forward' in ret['addons']:
+        node_addon = node.get_addon('forward')
+        forward_widget_data = serialize_settings(node_addon)
+        forward_widget_data['complete'] = settings_complete(node_addon)
+        forward_widget_data.update(node_addon.config.to_json())
+        addons_widget_data['forward'] = forward_widget_data
+
+    if 'zotero' in ret['addons']:
+        node_addon = node.get_addon('zotero')
+        zotero_widget_data = node_addon.config.to_json()
+        zotero_widget_data.update({
+            'complete': node_addon.complete,
+            'list_id': node_addon.list_id,
+        })
+        addons_widget_data['zotero'] = zotero_widget_data
+
+    if 'mendeley' in ret['addons']:
+        node_addon = node.get_addon('mendeley')
+        mendeley_widget_data = node_addon.config.to_json()
+        mendeley_widget_data.update({
+            'complete': node_addon.complete,
+            'list_id': node_addon.list_id,
+        })
+        addons_widget_data['mendeley'] = mendeley_widget_data
+
+    ret.update({'addons_widget_data': addons_widget_data})
     return ret
 
 # Reorder components
@@ -531,14 +611,14 @@ def remove_private_link(*args, **kwargs):
 
 
 # TODO: Split into separate functions
-def _render_addon(node):
+def _render_addons(addons):
 
     widgets = {}
     configs = {}
     js = []
     css = []
 
-    for addon in node.get_addons():
+    for addon in addons:
         configs[addon.config.short_name] = addon.config.to_json()
         js.extend(addon.config.include_js.get('widget', []))
         css.extend(addon.config.include_css.get('widget', []))
@@ -549,11 +629,10 @@ def _render_addon(node):
     return widgets, configs, js, css
 
 
-def _should_show_wiki_widget(node, user):
-
+def _should_show_wiki_widget(node, contributor):
     has_wiki = bool(node.get_addon('wiki'))
     wiki_page = node.get_wiki_page('home', None)
-    if not node.has_permission(user, 'write'):
+    if not contributor or not contributor.write:
         return has_wiki and wiki_page and wiki_page.html(node)
     else:
         return has_wiki
@@ -567,6 +646,10 @@ def _view_project(node, auth, primary=False,
     """
     node = AbstractNode.objects.filter(pk=node.pk).include('contributor__user__guids').get()
     user = auth.user
+    try:
+        contributor = node.contributor_set.get(user=user)
+    except Contributor.DoesNotExist:
+        contributor = None
 
     parent = node.find_readable_antecedent(auth)
     if user:
@@ -578,7 +661,8 @@ def _view_project(node, auth, primary=False,
         bookmark_collection_id = ''
     view_only_link = auth.private_key or request.args.get('view_only', '').strip('/')
     anonymous = has_anonymous_link(node, auth)
-    widgets, configs, js, css = _render_addon(node)
+    addons = list(node.get_addons())
+    widgets, configs, js, css = _render_addons(addons)
     redirect_url = node.url + '?view_only=None'
 
     disapproval_link = ''
@@ -590,10 +674,11 @@ def _view_project(node, auth, primary=False,
 
     # Before page load callback; skip if not primary call
     if primary:
-        for addon in node.get_addons():
+        for addon in addons:
             messages = addon.before_page_load(node, user) or []
             for message in messages:
                 status.push_status_message(message, kind='info', dismissible=False, trust=True)
+    is_registration = node.is_registration
     data = {
         'node': {
             'disapproval_link': disapproval_link,
@@ -616,43 +701,40 @@ def _view_project(node, auth, primary=False,
             'date_created': iso8601format(node.date_created),
             'date_modified': iso8601format(node.logs.latest().date) if node.logs.exists() else '',
             'tags': list(node.tags.filter(system=False).values_list('name', flat=True)),
-            'children': bool(node.nodes_active),
-            'is_registration': node.is_registration,
-            'is_pending_registration': node.is_pending_registration,
-            'is_retracted': node.is_retracted,
-            'is_pending_retraction': node.is_pending_retraction,
-            'retracted_justification': getattr(node.retraction, 'justification', None),
-            'date_retracted': iso8601format(getattr(node.retraction, 'date_retracted', None)),
-            'embargo_end_date': node.embargo_end_date.strftime('%A, %b. %d, %Y') if node.embargo_end_date else False,
-            'is_pending_embargo': node.is_pending_embargo,
-            'is_embargoed': node.is_embargoed,
-            'is_pending_embargo_termination': node.is_embargoed and (
+            'children': node.nodes_active.exists(),
+            'is_registration': is_registration,
+            'is_pending_registration': node.is_pending_registration if is_registration else False,
+            'is_retracted': node.is_retracted if is_registration else False,
+            'is_pending_retraction': node.is_pending_retraction if is_registration else False,
+            'retracted_justification': getattr(node.retraction, 'justification', None) if is_registration else None,
+            'date_retracted': iso8601format(getattr(node.retraction, 'date_retracted', None)) if is_registration else '',
+            'embargo_end_date': node.embargo_end_date.strftime('%A, %b %d, %Y') if is_registration and node.embargo_end_date else '',
+            'is_pending_embargo': node.is_pending_embargo if is_registration else False,
+            'is_embargoed': node.is_embargoed if is_registration else False,
+            'is_pending_embargo_termination': is_registration and node.is_embargoed and (
                 node.embargo_termination_approval and
                 node.embargo_termination_approval.is_pending_approval
             ),
-            'registered_from_url': node.registered_from.url if node.is_registration else '',
-            'registered_date': iso8601format(node.registered_date) if node.is_registration else '',
+            'registered_from_url': node.registered_from.url if is_registration else '',
+            'registered_date': iso8601format(node.registered_date) if is_registration else '',
             'root_id': node.root._id if node.root else None,
             'registered_meta': node.registered_meta,
-            'registered_schemas': serialize_meta_schemas(list(node.registered_schema.all())),
-            'registration_count': node.registrations_all.count(),
+            'registered_schemas': serialize_meta_schemas(list(node.registered_schema.all())) if is_registration else False,
             'is_fork': node.is_fork,
             'forked_from_id': node.forked_from._primary_key if node.is_fork else '',
             'forked_from_display_absolute_url': node.forked_from.display_absolute_url if node.is_fork else '',
             'forked_date': iso8601format(node.forked_date) if node.is_fork else '',
             'fork_count': node.forks.filter(is_deleted=False).count(),
-            'templated_count': node.templated_list.count(),
             'private_links': [x.to_json() for x in node.private_links_active],
             'link': view_only_link,
             'anonymous': anonymous,
             'comment_level': node.comment_level,
-            'has_comments': Comment.objects.filter(node=node).exists(),
+            'has_comments': node.comment_set.exists(),
             'identifiers': {
                 'doi': node.get_identifier_value('doi'),
                 'ark': node.get_identifier_value('ark'),
             },
             'institutions': get_affiliated_institutions(node) if node else [],
-            'alternative_citations': [citation.to_json() for citation in node.alternative_citations.all()],
             'has_draft_registrations': node.has_active_draft_registrations,
             'is_preprint': node.is_preprint,
             'is_preprint_orphan': node.is_preprint_orphan,
@@ -671,26 +753,25 @@ def _view_project(node, auth, primary=False,
             'registrations_url': parent.web_url_for('node_registrations') if parent else '',
             'is_public': parent.is_public if parent else '',
             'is_contributor': parent.is_contributor(user) if parent else '',
-            'can_view': parent.can_view(auth) if parent else False
+            'can_view': parent.can_view(auth) if parent else False,
         },
         'user': {
-            'is_contributor': node.is_contributor(user),
-            'is_admin': node.has_permission(user, ADMIN),
+            'is_contributor': bool(contributor),
+            'is_admin': bool(contributor) and contributor.admin,
             'is_admin_parent': parent.is_admin_parent(user) if parent else False,
-            'can_edit': (node.can_edit(auth)
-                         and not node.is_registration),
+            'can_edit': bool(contributor) and contributor.write and not node.is_registration,
             'has_read_permissions': node.has_permission(user, READ),
-            'permissions': node.get_permissions(user) if user else [],
+            'permissions': get_contributor_permissions(contributor, as_list=True) if contributor else [],
             'id': user._id if user else None,
             'username': user.username if user else None,
             'fullname': user.fullname if user else '',
-            'can_comment': node.can_comment(auth),
-            'show_wiki_widget': _should_show_wiki_widget(node, user),
+            'can_comment': bool(contributor) or node.can_comment(auth),
+            'show_wiki_widget': _should_show_wiki_widget(node, contributor),
             'dashboard_id': bookmark_collection_id,
             'institutions': get_affiliated_institutions(user) if user else [],
         },
         # TODO: Namespace with nested dicts
-        'addons_enabled': node.get_addon_names(),
+        'addons_enabled': [each.short_name for each in addons],
         'addons': configs,
         'addon_widgets': widgets,
         'addon_widget_js': js,
@@ -1091,21 +1172,30 @@ def fork_pointer(auth, node, **kwargs):
     """Fork a pointer. Raises BAD_REQUEST if pointer not provided, not found,
     or not present in `nodes`.
 
+    :param Auth auth: Consolidated authorization
+    :param Node node: root from which pointer is child
+    :return: Fork of node to which nodelink(pointer) points
     """
     NodeRelation = apps.get_model('osf.NodeRelation')
 
-    pointer_id = request.json.get('pointerId')
-    pointer = NodeRelation.load(pointer_id)
+    linked_node_id = request.json.get('nodeId')
+    linked_node = AbstractNode.load(linked_node_id)
+    pointer = NodeRelation.objects.filter(child=linked_node, is_node_link=True, parent=node).first()
 
     if pointer is None:
         # TODO: Change this to 404?
         raise HTTPError(http.BAD_REQUEST)
 
     try:
-        node.fork_pointer(pointer, auth=auth, save=True)
+        fork = node.fork_pointer(pointer, auth=auth, save=True)
     except ValueError:
         raise HTTPError(http.BAD_REQUEST)
 
+    return {
+        'data': {
+            'node': serialize_node_summary(node=fork, auth=auth, show_path=False)
+        }
+    }, http.CREATED
 
 def abbrev_authors(node):
     lead_author = node.visible_contributors[0]

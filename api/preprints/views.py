@@ -10,7 +10,7 @@ from framework.auth.oauth_scopes import CoreScopes
 from osf.models import PreprintService, Identifier
 
 from api.base.exceptions import Conflict
-from api.base.views import JSONAPIBaseView
+from api.base.views import JSONAPIBaseView, WaterButlerMixin
 from api.base.filters import PreprintFilterMixin
 from api.base.parsers import (
     JSONAPIMultipleRelationshipsParser,
@@ -30,7 +30,7 @@ from api.nodes.serializers import (
 
 from api.identifiers.views import IdentifierList
 from api.identifiers.serializers import PreprintIdentifierSerializer
-from api.nodes.views import NodeMixin, WaterButlerMixin
+from api.nodes.views import NodeMixin
 from api.nodes.permissions import ContributorOrPublic
 
 from api.preprints.permissions import PreprintPublishedOrAdmin

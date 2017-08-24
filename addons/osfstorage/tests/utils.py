@@ -2,7 +2,8 @@
 # encoding: utf-8
 
 from tests.base import OsfTestCase
-from tests.factories import ProjectFactory
+from osf_tests.factories import ProjectFactory
+from addons.osfstorage import settings as storage_settings
 
 import collections
 
@@ -63,3 +64,26 @@ def recursively_create_folder(settings, path):
     for subpath in path:
         current = current.append_folder(subpath)
     return current.append_file(final)
+
+
+def make_payload(user, name, **kwargs):
+    payload = {
+        'user': user._id,
+        'name': name,
+        'hashes': {'base64': '=='},
+        'worker': {
+            'uname': 'testmachine'
+        },
+        'settings': {
+            'provider': 'filesystem',
+            storage_settings.WATERBUTLER_RESOURCE: 'blah',
+        },
+        'metadata': {
+            'size': 123,
+            'name': 'file',
+            'provider': 'filesystem',
+            'modified': 'Mon, 16 Feb 2015 18:45:34 GMT'
+        },
+    }
+    payload.update(kwargs)
+    return payload

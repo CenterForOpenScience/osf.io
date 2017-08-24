@@ -74,6 +74,13 @@ class PreprintSerializer(JSONAPISerializer):
     is_published = ser.BooleanField(required=False)
     is_preprint_orphan = ser.BooleanField(read_only=True)
     license_record = NodeLicenseSerializer(required=False, source='license')
+    title = ser.CharField(source='node.title', read_only=True)
+
+    contributors = RelationshipField(
+        related_view='nodes:node-contributors',
+        related_view_kwargs={'node_id': '<node._id>'},
+        read_only=True
+    )
 
     citation = RelationshipField(
         related_view='preprints:preprint-citation',

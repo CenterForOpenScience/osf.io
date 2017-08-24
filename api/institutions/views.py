@@ -23,6 +23,7 @@ from api.base.exceptions import RelationshipPostMakesNoChanges
 from api.nodes.serializers import NodeSerializer
 from api.nodes.filters import NodesFilterMixin
 from api.users.serializers import UserSerializer
+from api.registrations.serializers import RegistrationSerializer
 
 from api.institutions.authentication import InstitutionAuthentication
 from api.institutions.serializers import InstitutionSerializer, InstitutionNodesRelationshipSerializer
@@ -212,7 +213,7 @@ class InstitutionAuth(JSONAPIBaseView, generics.CreateAPIView):
 class InstitutionRegistrationList(InstitutionNodeList):
     """Registrations have selected an institution as their primary institution.
     """
-
+    serializer_class = RegistrationSerializer
     view_name = 'institution-registrations'
 
     ordering = ('-date_modified', )

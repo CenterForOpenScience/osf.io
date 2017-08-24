@@ -1,19 +1,7 @@
 from django.db import models
 from django.utils import timezone
-from osf.models.base import BaseModel, ObjectIDMixin
+from osf.models.base import BaseModel
 from osf.utils.fields import NonNaiveDateTimeField
-
-
-class AlternativeCitation(ObjectIDMixin, BaseModel):
-    name = models.CharField(max_length=256)
-    text = models.CharField(max_length=2048)
-
-    def to_json(self):
-        return {
-            'id': self._id,
-            'name': self.name,
-            'text': self.text
-        }
 
 
 class CitationStyle(BaseModel):

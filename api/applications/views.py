@@ -46,8 +46,6 @@ class ApplicationList(JSONAPIBaseView, generics.ListCreateAPIView, ListFilterMix
     view_category = 'applications'
     view_name = 'application-list'
 
-    # TODO: When we switch to Swagger this should be removed in lieu of a better
-    # solution for hiding this api endpoint
     renderer_classes = [JSONRendererWithESISupport, JSONAPIRenderer, ]  # Hide from web-browsable API tool
 
     ordering = ('-date_created',)
@@ -84,8 +82,6 @@ class ApplicationDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView, 
     view_category = 'applications'
     view_name = 'application-detail'
 
-    # TODO: When we switch to Swagger this should be removed in lieu of a better
-    # solution for hiding this api endpoint
     renderer_classes = [JSONRendererWithESISupport, JSONAPIRenderer, ]  # Hide from web-browsable API tool
 
     def get_object(self):
@@ -124,8 +120,6 @@ class ApplicationReset(JSONAPIBaseView, generics.CreateAPIView, ApplicationMixin
 
     serializer_class = ApiOAuth2ApplicationResetSerializer
 
-    # TODO: When we switch to Swagger this should be removed in lieu of a better
-    # solution for hiding this api endpoint
     renderer_classes = [JSONRendererWithESISupport, JSONAPIRenderer, ]  # Hide from web-browsable API tool
 
     view_category = 'applications'

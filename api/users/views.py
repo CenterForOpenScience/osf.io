@@ -12,7 +12,7 @@ from api.base.utils import (default_node_list_queryset,
                             default_registration_permission_queryset,
                             get_object_or_error,
                             get_user_auth)
-from api.base.views import JSONAPIBaseView
+from api.base.views import JSONAPIBaseView, WaterButlerMixin
 from api.institutions.serializers import InstitutionSerializer
 from api.nodes.filters import NodesFilterMixin
 from api.nodes.serializers import NodeSerializer
@@ -24,6 +24,7 @@ from api.users.serializers import (UserAddonSettingsSerializer,
                                    UserDetailSerializer,
                                    UserInstitutionsRelationshipSerializer,
                                    UserSerializer,
+                                   UserQuickFilesSerializer,
                                    ReadEmailUserDetailSerializer,)
 from django.contrib.auth.models import AnonymousUser
 from framework.auth.oauth_scopes import CoreScopes, normalize_scopes
@@ -31,7 +32,7 @@ from django.db.models import Q
 from rest_framework import permissions as drf_permissions
 from rest_framework import generics
 from rest_framework.exceptions import NotAuthenticated, NotFound
-from osf.models import Contributor, ExternalAccount, AbstractNode, PreprintService, OSFUser
+from osf.models import Contributor, ExternalAccount, QuickFilesNode, AbstractNode, PreprintService, OSFUser
 
 
 class UserMixin(object):
@@ -308,7 +309,7 @@ class UserAddonList(JSONAPIBaseView, generics.ListAPIView, ListFilterMixin, User
     view_category = 'users'
     view_name = 'user-addons'
 
-    ordering = ('-date_last_refreshed',)
+    ordering = ('-id',)
 
     def get_queryset(self):
         qs = [addon for addon in self.get_user().get_addons() if 'accounts' in addon.config.configs]
@@ -540,6 +541,37 @@ class UserNodes(JSONAPIBaseView, generics.ListAPIView, UserMixin, NodesFilterMix
         )
 
 
+class UserQuickFiles(JSONAPIBaseView, generics.ListAPIView, WaterButlerMixin, UserMixin, ListFilterMixin):
+
+    permission_classes = (
+        drf_permissions.IsAuthenticatedOrReadOnly,
+        base_permissions.TokenHasScope,
+    )
+
+    ordering = ('-last_touched')
+
+    required_read_scopes = [CoreScopes.USERS_READ]
+    required_write_scopes = [CoreScopes.USERS_WRITE]
+
+    serializer_class = UserQuickFilesSerializer
+    view_category = 'users'
+    view_name = 'user-quickfiles'
+
+    def get_node(self, check_object_permissions):
+        return QuickFilesNode.objects.get_for_user(self.get_user(check_permissions=False))
+
+    def get_default_queryset(self):
+        self.kwargs[self.path_lookup_url_kwarg] = '/'
+        self.kwargs[self.provider_lookup_url_kwarg] = 'osfstorage'
+        files_list = self.fetch_from_waterbutler()
+
+        return files_list.children.all().prefetch_related('node')
+
+    # overrides ListAPIView
+    def get_queryset(self):
+        return self.get_queryset_from_request()
+
+
 class UserPreprints(JSONAPIBaseView, generics.ListAPIView, UserMixin, PreprintFilterMixin):
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
@@ -593,7 +625,7 @@ class UserInstitutions(JSONAPIBaseView, generics.ListAPIView, UserMixin):
     view_category = 'users'
     view_name = 'user-institutions'
 
-    ordering = ('-date_modified',)
+    ordering = ('-pk', )
 
     def get_default_odm_query(self):
         return None

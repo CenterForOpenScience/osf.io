@@ -18,12 +18,13 @@ from django.core.paginator import Paginator
 from elasticsearch import (ConnectionError, Elasticsearch, NotFoundError,
                            RequestError, TransportError, helpers)
 from framework.celery_tasks import app as celery_app
-from framework.mongo.utils import paginated
+from framework.database import paginated
 from modularodm import Q
 from osf.models import AbstractNode
 from osf.models import OSFUser
 from osf.models import BaseFileNode
 from osf.models import Institution
+from osf.models import QuickFilesNode
 from website import settings
 from website.filters import gravatar
 from osf.models.licenses import serialize_node_license_record
@@ -387,7 +388,7 @@ def update_node(node, index=None, bulk=False, async=False):
     for file_ in paginated(OsfStorageFile, Q('node', 'eq', node)):
         update_file(file_, index=index)
 
-    if node.is_deleted or not node.is_public or node.archiving or (node.is_spammy and settings.SPAM_FLAGGED_REMOVE_FROM_SEARCH):
+    if node.is_deleted or not node.is_public or node.archiving or (node.is_spammy and settings.SPAM_FLAGGED_REMOVE_FROM_SEARCH) or node.is_quickfiles:
         delete_doc(node._id, node, index=index)
     else:
         category = get_doctype_from_node(node)
@@ -450,6 +451,17 @@ def update_user(user, index=None):
     if not user.is_active:
         try:
             client().delete(index=index, doc_type='user', id=user._id, refresh=True, ignore=[404])
+            # update files in their quickfiles node if the user has been marked as spam
+            if 'spam_confirmed' in user.system_tags:
+                quickfiles = QuickFilesNode.objects.get_for_user(user)
+                for quickfile_id in quickfiles.files.values_list('_id', flat=True):
+                    client().delete(
+                        index=index,
+                        doc_type='file',
+                        id=quickfile_id,
+                        refresh=True,
+                        ignore=[404]
+                    )
         except NotFoundError:
             pass
         return
