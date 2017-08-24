@@ -278,7 +278,7 @@ AddContributorViewModel = oop.extend(Paginator, {
                     var updatedUser = $.extend({}, user, {added: added});
 
                     var user_permission = self.permissionList.find(function (permission) {
-                        return permission.value == user.permission
+                        return permission.value === user.permission;
                     });
                     updatedUser.permission = ko.observable(user_permission);
 
