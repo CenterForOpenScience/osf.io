@@ -127,8 +127,8 @@ def get_contributors_from_parent(auth, node, **kwargs):
         raise HTTPError(http.FORBIDDEN)
 
     contribs = [
-        profile_utils.add_contributor_json(contrib)
-        for contrib in parent.visible_contributors
+        profile_utils.add_contributor_json(contrib, node=node)
+        for contrib in parent.contributors if contrib not in node.visible_contributors
     ]
 
     return {'contributors': contribs}
