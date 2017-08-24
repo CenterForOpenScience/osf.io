@@ -40,7 +40,7 @@
                     <!-- Choose which to add -->
                     <div class="row">
 
-                        <div class="col-md-6">
+                        <div class="col-md-4">
                             <div>
                                 <span class="modal-subheader">Results</span>
                                 <a data-bind="visible: addAllVisible, click:addAll">Add all</a>
@@ -71,7 +71,7 @@
                                             <!-- height and width are explicitly specified for faster rendering -->
                                             <img data-bind="attr: {src: contributor.gravatar_url}" height=35 width=35 />
                                         </td>
-                                        <td width="75%">
+                                        <td width="75%" style="word-break: break-all">
                                             <a data-bind = "attr: {href: contributor.profile_url}" target="_blank">
                                                 <span data-bind= "text:contributor.fullname"></span>
                                             </a><br>
@@ -145,7 +145,7 @@
                             </div>
                         </div><!-- ./col-md -->
 
-                        <div class="col-md-6">
+                        <div class="col-md-8">
                             <div>
                                 <span class="modal-subheader">Adding</span>
                                 <a data-bind="visible: removeAllVisible, click:removeAll">Remove all</a>
@@ -155,8 +155,17 @@
                             <table class="table-condensed">
                                 <thead data-bind="visible: selection().length">
                                     <th width="10%"></th>
-                                    <th width="15%"></th>
-                                    <th>Name</th>
+                                    <th width="10%"></th>
+                                    <th width="30%">Name</th>
+                                    <th>
+                                        Bibliographic Contributor
+                                        <i class="fa fa-question-circle visibility-info"
+                                           data-toggle="popover"
+                                           data-title="Bibliographic Contributor Information"
+                                           data-container="body"
+                                           data-placement="right"
+                                           data-html="true">
+                                        </i>
                                     <th>
                                         Permissions
                                         <i class="fa fa-question-circle permission-info"
@@ -180,12 +189,18 @@
                                             <img data-bind="attr: {src: contributor.gravatar_url || '/static/img/unreg_gravatar.png'}" height=35 width=35 />
                                         </td>
 
-                                        <td>
+                                        <td style="word-break: break-all">
                                             <span   data-bind="text: contributor.fullname"></span>
 
                                             <span
                                                     class='text-muted'
                                                     data-bind="visible: !contributor.registered">(unregistered)</span>
+                                        </td>
+                                        <td>
+                                            <input
+                                                type="checkbox" class="biblio visible-filter"
+                                                data-bind="checked: contributor.visible"
+                                            />
                                         </td>
 
                                         <td>
