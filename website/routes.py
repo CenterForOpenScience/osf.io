@@ -1230,6 +1230,14 @@ def make_url_map(app):
             addon_views.addon_view_or_download_file_legacy,
             json_renderer
         ),
+        Rule(
+            [
+                '/quickfiles/<fid>/'
+            ],
+            'get',
+            addon_views.addon_view_or_download_quickfile,
+            json_renderer
+        )
     ])
 
     # API

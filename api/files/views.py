@@ -336,13 +336,12 @@ class FileDetail(JSONAPIBaseView, generics.RetrieveUpdateAPIView, FileMixin):
     # overrides RetrieveAPIView
     def get_object(self):
         user = utils.get_user_auth(self.request).user
-
-        if (self.request.GET.get('create_guid', False) and
-                self.get_node().has_permission(user, 'admin') and
-                utils.has_admin_scope(self.request)):
-            self.get_file(check_permissions=True).get_guid(create=True)
-
-        return self.get_file()
+        file = self.get_file()
+        if self.request.GET.get('create_guid', False):
+            # allows quickfiles to be given guids when another user wants a permanent link to it
+            if (self.get_node().has_permission(user, 'admin') and utils.has_admin_scope(self.request)) or file.node.is_quickfiles:
+                file.get_guid(create=True)
+        return file
 
 class FileVersionsList(JSONAPIBaseView, generics.ListAPIView, FileMixin):
     """List of versions for the requested file. *Read-only*.
