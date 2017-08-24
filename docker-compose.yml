@@ -260,8 +260,10 @@ services:
       - BACKEND=local
     expose:
       - 4400
+      - 41954
     ports:
       - 4400:4400
+      - 41954:41954
     volumes:
       - reviews_dist_vol:/code/dist
     stdin_open: true

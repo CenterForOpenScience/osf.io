@@ -1,15 +1,25 @@
+import functools
+import operator
+
+from guardian.shortcuts import get_objects_for_user
+
 from rest_framework import generics
 from rest_framework import permissions as drf_permissions
 
 from modularodm import Q as MQ
 from django.db.models import Q
+from django.core.exceptions import PermissionDenied
 
 from framework.auth.oauth_scopes import CoreScopes
 
 from osf.models import AbstractNode, Subject, PreprintService, PreprintProvider
 
+from reviews import permissions as reviews_permissions
+from reviews.workflow import public_reviewable_query
+
 from api.base import permissions as base_permissions
-from api.base.filters import PreprintFilterMixin, ODMFilterMixin
+from api.base.exceptions import InvalidFilterValue
+from api.base.filters import PreprintFilterMixin, DjangoFilterMixin
 from api.base.views import JSONAPIBaseView
 from api.base.pagination import MaxSizePagination
 from api.base.utils import get_object_or_error, get_user_auth
@@ -20,7 +30,7 @@ from api.preprints.serializers import PreprintSerializer
 
 from api.preprints.permissions import PreprintPublishedOrAdmin
 
-class PreprintProviderList(JSONAPIBaseView, generics.ListAPIView, ODMFilterMixin):
+class PreprintProviderList(JSONAPIBaseView, generics.ListAPIView, DjangoFilterMixin):
     """
     Paginated list of verified PreprintProviders available. *Read-only*
 
@@ -75,13 +85,29 @@ class PreprintProviderList(JSONAPIBaseView, generics.ListAPIView, ODMFilterMixin
 
     ordering = ('name', )
 
-    # implement ODMFilterMixin
-    def get_default_odm_query(self):
-        return None
+    # implement DjangoFilterMixin
+    def get_default_django_query(self):
+        return Q()
 
     # overrides ListAPIView
     def get_queryset(self):
-        return PreprintProvider.find(self.get_query_from_request())
+        return PreprintProvider.objects.filter(self.get_query_from_request())
+
+    def should_convert_special_params_to_django_query(self, field_name):
+        return field_name == 'permissions'
+
+    def convert_special_params_to_django_query(self, field_name, query_params, key, data):
+        assert field_name == 'permissions'
+        auth = get_user_auth(self.request)
+        auth_user = getattr(auth, 'user', None)
+        if not auth_user:
+            raise PermissionDenied()
+        queries = []
+        permissions = data['value'].split(',')
+        if any(p not in reviews_permissions.PERMISSIONS for p in permissions):
+            valid_permissions = ', '.join(reviews_permissions.PERMISSIONS.keys())
+            raise InvalidFilterValue('Invalid permission! Valid values are: {}'.format(valid_permissions))
+        return Q(id__in=get_objects_for_user(auth_user, permissions, PreprintProvider))
 
 
 class PreprintProviderDetail(JSONAPIBaseView, generics.RetrieveAPIView):
@@ -204,14 +230,7 @@ class PreprintProviderPreprintList(JSONAPIBaseView, generics.ListAPIView, Prepri
         provider = get_object_or_error(PreprintProvider, self.kwargs['provider_id'], display_name='PreprintProvider')
 
         # Permissions on the list objects are handled by the query
-        default_query = Q(node__isnull=False, node__is_deleted=False, provider___id=provider._id)
-        no_user_query = Q(is_published=True, node__is_public=True)
-
-        if auth_user:
-            contrib_user_query = Q(is_published=True, node__contributor__user_id=auth_user.id, node__contributor__read=True)
-            admin_user_query = Q(node__contributor__user_id=auth_user.id, node__contributor__admin=True)
-            return (default_query & (no_user_query | contrib_user_query | admin_user_query))
-        return (default_query & no_user_query)
+        return self.preprint_list_django_query(auth_user, provider___id=provider._id)
 
     # overrides ListAPIView
     def get_queryset(self):

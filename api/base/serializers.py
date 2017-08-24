@@ -440,7 +440,7 @@ class RelationshipField(ser.HyperlinkedIdentityField):
     json_api_link = True  # serializes to a links object
 
     def __init__(self, related_view=None, related_view_kwargs=None, self_view=None, self_view_kwargs=None,
-                 self_meta=None, related_meta=None, always_embed=False, filter=None, filter_key=None, **kwargs):
+                 self_meta=None, related_meta=None, always_embed=False, filter=None, filter_key=None, required=False, **kwargs):
         related_view = related_view
         self_view = self_view
         related_kwargs = related_view_kwargs
@@ -476,6 +476,11 @@ class RelationshipField(ser.HyperlinkedIdentityField):
         # Allow a RelationshipField to be modified if explicitly set so
         if kwargs.get('read_only') is not None:
             self.read_only = kwargs['read_only']
+
+        # Allow a RelationshipField to be required
+        if required:
+            assert not self.read_only, 'May not set both `read_only` and `required`'
+            self.required = required
 
     def resolve(self, resource, field_name, request):
         """

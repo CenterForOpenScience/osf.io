@@ -1,6 +1,9 @@
+from guardian.shortcuts import get_perms
 from rest_framework import serializers as ser
 
-from api.base.utils import absolute_reverse
+from reviews.workflow import Workflows
+
+from api.base.utils import absolute_reverse, get_user_auth
 from api.base.serializers import JSONAPISerializer, LinksField, RelationshipField, ShowIfVersion
 
 
@@ -11,7 +14,9 @@ class PreprintProviderSerializer(JSONAPISerializer):
         'description',
         'id',
         'domain',
-        'domain_redirect_enabled'
+        'domain_redirect_enabled',
+        'reviews_workflow',
+        'permissions',
     ])
 
     name = ser.CharField(required=True)
@@ -28,6 +33,12 @@ class PreprintProviderSerializer(JSONAPISerializer):
     preprint_word = ser.CharField(required=False, allow_null=True)
     allow_submissions = ser.BooleanField(read_only=True)
     additional_providers = ser.ListField(child=ser.CharField(), read_only=True)
+
+    reviews_workflow = ser.ChoiceField(choices=Workflows.choices(), read_only=True)
+    reviews_comments_private = ser.BooleanField(read_only=True)
+    reviews_comments_anonymous = ser.BooleanField(read_only=True)
+
+    permissions = ser.SerializerMethodField()
 
     preprints = RelationshipField(
         related_view='preprint_providers:preprints-list',
@@ -103,3 +114,9 @@ class PreprintProviderSerializer(JSONAPISerializer):
 
     def get_external_url(self, obj):
         return obj.external_url
+
+    def get_permissions(self, obj):
+        auth = get_user_auth(self.context['request'])
+        if not auth.user:
+            return []
+        return get_perms(auth.user, obj)

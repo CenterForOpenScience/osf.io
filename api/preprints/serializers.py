@@ -64,6 +64,7 @@ class PreprintSerializer(JSONAPISerializer):
         'provider',
         'is_published',
         'subjects',
+        'reviews_state',
     ])
 
     id = IDField(source='_id', read_only=True)
@@ -75,6 +76,10 @@ class PreprintSerializer(JSONAPISerializer):
     is_published = ser.BooleanField(required=False)
     is_preprint_orphan = ser.BooleanField(read_only=True)
     license_record = NodeLicenseSerializer(required=False, source='license')
+
+    title = ser.CharField(read_only=True, source='node.title')
+
+    reviews_state = ser.CharField(read_only=True, max_length=15)
 
     citation = RelationshipField(
         related_view='preprints:preprint-citation',
@@ -114,6 +119,11 @@ class PreprintSerializer(JSONAPISerializer):
     review_logs = RelationshipField(
         related_view='preprints:reviewable-review_log-list',
         related_view_kwargs={'preprint_id': '<_id>'}
+    )
+
+    contributors = RelationshipField(
+        related_view='nodes:node-contributors',
+        related_view_kwargs={'node_id': '<node._id>'},
     )
 
     links = LinksField(
@@ -164,6 +174,15 @@ class PreprintSerializer(JSONAPISerializer):
         if not preprint.node.has_permission(auth.user, 'admin'):
             raise exceptions.PermissionDenied(detail='User must be an admin to update a preprint.')
 
+        published = validated_data.pop('is_published', None)
+        if published and preprint.provider.is_moderated:
+            raise Conflict('{} uses a moderation workflow, so preprints must be submitted for review instead of published directly. Submit a preprint by creating a `submit` ReviewLog at {}'.format(
+                preprint.provider.name,
+                absolute_reverse('reviews:review_log-list', kwargs={
+                    'version': self.context['request'].parser_context['kwargs']['version']
+                })
+            ))
+
         save_node = False
         save_preprint = False
         recently_published = False
@@ -186,7 +205,6 @@ class PreprintSerializer(JSONAPISerializer):
             self.set_field(preprint.set_preprint_license, license_details, auth)
             save_preprint = True
 
-        published = validated_data.pop('is_published', None)
         if published is not None:
             self.set_field(preprint.set_published, published, auth)
             save_preprint = True

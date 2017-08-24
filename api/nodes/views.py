@@ -3592,12 +3592,7 @@ class NodePreprintsList(JSONAPIBaseView, generics.ListAPIView, NodeMixin, Prepri
         node = self.get_node()
         # Permissions on the node are handled by the permissions_classes
         # Permissions on the list objects are handled by the query
-        default_query = Q(node__id=node.id)
-        no_user_query = Q(is_published=True)
-        if auth_user:
-            admin_user_query = Q(node__contributor__user_id=auth_user.id, node__contributor__admin=True)
-            return (default_query & (no_user_query | admin_user_query))
-        return (default_query & no_user_query)
+        return self.preprint_list_django_query(auth_user, node__id=node.id)
 
     # overrides ListAPIView
     def get_queryset(self):
