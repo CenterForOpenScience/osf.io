@@ -377,6 +377,22 @@ class TestPreprintCreate(ApiTestCase):
         res = self.app.post_json_api(self.url, private_project_payload, auth=self.user.auth)
         assert not mock_on_preprint_updated.called
 
+    @mock.patch('website.preprints.tasks.get_and_set_preprint_identifiers.si')
+    def test_setting_is_published_with_moderated_provider_fails(self, mock_get_identifiers):
+        self.provider.reviews_workflow = 'pre-moderation'
+        self.provider.save()
+        public_project_payload = build_preprint_create_payload(
+            self.public_project._id,
+            self.provider._id,
+            self.file_one_public_project._id,
+            {
+                'is_published': True,
+                'subjects': [[SubjectFactory()._id]],
+            }
+        )
+        res = self.app.post_json_api(self.url, public_project_payload, auth=self.user.auth, expect_errors=True)
+        assert_equal(res.status_code, 409)
+
 
 class TestPreprintIsPublishedList(PreprintIsPublishedListMixin):
 

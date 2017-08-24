@@ -70,6 +70,7 @@ pyjwt==1.4.0
 pycparser==2.13
 pyjwe==1.0.0
 jsonschema==2.5.1
+django-guardian==1.4.9
 
 # Admin requirements
 django-webpack-loader==0.2.3

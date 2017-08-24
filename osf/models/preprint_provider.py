@@ -1,6 +1,8 @@
 # -*- coding: utf-8 -*-
-from django.db import models
 from django.contrib.postgres import fields
+from django.db import models
+from django.db.models.signals import post_save
+from django.dispatch import receiver
 
 from osf.models.base import BaseModel, ObjectIDMixin
 from osf.models.licenses import NodeLicense
@@ -8,7 +10,8 @@ from osf.models.subject import Subject
 from osf.utils.datetime_aware_jsonfield import DateTimeAwareJSONField
 from osf.utils.fields import EncryptedTextField
 
-from reviews.models.mixins import ReviewProviderMixin
+from reviews import permissions as reviews_permissions
+from reviews.models import ReviewProviderMixin
 
 from website.util import api_v2_url
 
@@ -55,8 +58,8 @@ class PreprintProvider(ObjectIDMixin, ReviewProviderMixin, BaseModel):
     default_license = models.ForeignKey(NodeLicense, blank=True, related_name='default_license', null=True)
 
     class Meta:
-        # custom permissions for use in the OSF Admin App
-        permissions = (
+        permissions = tuple(reviews_permissions.PERMISSIONS.items()) + (
+            # custom permissions for use in the OSF Admin App
             ('view_preprintprovider', 'Can view preprint provider details'),
         )
 
@@ -113,3 +116,9 @@ def rules_to_subjects(rules):
         for sub in rule[0]:
             q.append(models.Q(_id=sub))
     return Subject.objects.filter(reduce(lambda x, y: x | y, q)) if len(q) > 1 else (Subject.objects.filter(q[0]) if len(q) else Subject.objects.all())
+
+
+@receiver(post_save, sender=PreprintProvider)
+def create_provider_auth_groups(sender, instance, created, **kwargs):
+    if created:
+        reviews_permissions.GroupHelper(instance).update_provider_auth_groups()

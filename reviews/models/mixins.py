@@ -1,84 +1,177 @@
 # -*- coding: utf-8 -*-
 from __future__ import unicode_literals
 
+from guardian.shortcuts import get_objects_for_user
+from six import string_types
 from transitions import Machine
 
 from django.db import models
+from django.db import transaction
 
-from reviews.workflow import States
-from reviews.workflow import Workflows
-from reviews.workflow import TRANSITIONS
+from reviews import workflow
+from reviews.exceptions import InvalidTransitionError
+from reviews.models.log import ReviewLog
 
 
 class ReviewProviderMixin(models.Model):
     """A reviewed/moderated collection of objects.
     """
 
-    reviews_workflow = models.CharField(max_length=15, choices=Workflows.choices(), default=Workflows.PRE_MODERATION.value)
+    class Meta:
+        abstract = True
+
+    reviews_workflow = models.CharField(null=True, blank=True, max_length=15, choices=workflow.Workflows.choices())
     reviews_comments_private = models.BooleanField(default=True)
     reviews_comments_anonymous = models.BooleanField(default=True)
 
-    class Meta:
-        abstract = True
+    @property
+    def is_moderated(self):
+        return self.reviews_workflow is not None
 
 
 class ReviewableMixin(models.Model):
-    """Something that may be included in a reviewed collection and is subject to a reviews workflow
+    """Something that may be included in a reviewed collection and is subject to a reviews workflow.
     """
 
-    reviews_state = models.CharField(max_length=15, db_index=True, choices=States.choices(), default=States.PENDING.value)
-
-    def __init__(self, *args, **kwargs):
-        super(ReviewableMixin, self).__init__(*args, **kwargs)
-
-        self.__machine = ReviewsMachine(self)
-
-    def reviews_accept(self, *args, **kwargs):
-        return self.__machine.accept(*args, **kwargs)
-
-    def reviews_reject(self, *args, **kwargs):
-        return self.__machine.reject(*args, **kwargs)
+    __machine = None
 
     class Meta:
         abstract = True
+
+    # NOTE: reviews_state should rarely/never be modified directly -- use the state transition methods below
+    reviews_state = models.CharField(max_length=15, db_index=True, choices=workflow.States.choices(), default=workflow.States.INITIAL.value)
+
+    date_last_transitioned = models.DateTimeField(null=True, blank=True, db_index=True)
+
+    @property
+    def in_public_reviews_state(self):
+        public_states = workflow.PUBLIC_STATES.get(self.provider.reviews_workflow)
+        if not public_states:
+            return False
+        return self.reviews_state in public_states
+
+    @property
+    def _reviews_machine(self):
+        if self.__machine is None:
+            self.__machine = ReviewsMachine(self, 'reviews_state')
+        return self.__machine
+
+    def reviews_submit(self, user):
+        """Run the 'submit' state transition and create a corresponding ReviewLog.
+
+        Params:
+            user: The user triggering this transition.
+        """
+        return self.__run_transition(self._reviews_machine.submit, user=user)
+
+    def reviews_accept(self, user, comment):
+        """Run the 'accept' state transition and create a corresponding ReviewLog.
+
+        Params:
+            user: The user triggering this transition.
+            comment: Text describing why.
+        """
+        return self.__run_transition(self._reviews_machine.accept, user=user, comment=comment)
+
+    def reviews_reject(self, user, comment):
+        """Run the 'reject' state transition and create a corresponding ReviewLog.
+
+        Params:
+            user: The user triggering this transition.
+            comment: Text describing why.
+        """
+        return self.__run_transition(self._reviews_machine.reject, user=user, comment=comment)
+
+    def reviews_edit_comment(self, user, comment):
+        """Run the 'edit_comment' state transition and create a corresponding ReviewLog.
+
+        Params:
+            user: The user triggering this transition.
+            comment: New comment text.
+        """
+        return self.__run_transition(self._reviews_machine.edit_comment, user=user, comment=comment)
+
+    def __run_transition(self, trigger_fn, **kwargs):
+        with transaction.atomic():
+            result = trigger_fn(**kwargs)
+            log = self._reviews_machine.review_log
+            if not result or log is None:
+                raise InvalidTransitionError()
+            return log
 
 
 class ReviewsMachine(Machine):
 
-    def __init__(self, reviewable, state_attr='reviews_state'):
-        self.__reviewable = reviewable
+    review_log = None
+    from_state = None
+
+    def __init__(self, reviewable, state_attr):
+        self.reviewable = reviewable
         self.__state_attr = state_attr
 
         super(ReviewsMachine, self).__init__(
-            states=[s.value for s in States],
-            transitions=TRANSITIONS,
+            states=[s.value for s in workflow.States],
+            transitions=workflow.TRANSITIONS,
             initial=self.state,
             send_event=True,
-            before_state_change='check_permission',
-            finalize_event='save_changes',
+            prepare_event=['initialize_machine'],
+            ignore_invalid_triggers=True,
         )
 
     @property
     def state(self):
-        return getattr(self.__reviewable, self.__state_attr)
+        return getattr(self.reviewable, self.__state_attr)
 
     @state.setter
     def state(self, value):
-        setattr(self.__reviewable, self.__state_attr, value)
+        setattr(self.reviewable, self.__state_attr, value)
 
-    def notify_accepted(self, event):
-        # TODO email submitter
+    def initialize_machine(self, ev):
+        self.review_log = None
+        self.from_state = ev.state
+
+    def save_log(self, ev):
+        user = ev.kwargs.get('user')
+        self.review_log = ReviewLog.objects.create(
+            reviewable=self.reviewable,
+            creator=user,
+            action=ev.event.name,
+            from_state=self.from_state.name,
+            to_state=ev.state.name,
+            comment=ev.kwargs.get('comment', ''),
+        )
+
+    def update_last_transitioned(self, ev):
+        # TODO foreign key to log? or to creator?
+        now = self.review_log.date_created if self.review_log is not None else timezone.now()
+        self.reviewable.date_last_transitioned = now
+
+    def save_changes(self, ev):
+        now = self.review_log.date_created if self.review_log is not None else timezone.now()
+        should_publish = self.reviewable.in_public_reviews_state
+        if should_publish and not self.reviewable.is_published:
+            self.reviewable.is_published = True
+            self.reviewable.date_published = now
+            # TODO EZID
+        elif not should_publish and self.reviewable.is_published:
+            self.reviewable.is_published = False
+        self.reviewable.save()
+
+    def resubmission_allowed(self, ev):
+        return self.reviewable.provider.reviews_workflow == workflow.Workflows.PRE_MODERATION.value
+
+    def notify_submit(self, ev):
+        # TODO email node admins (MOD-53)
         pass
 
-    def notify_rejected(self, event):
-        # TODO email submitter
+    def notify_accept(self, ev):
+        # TODO email node admins (MOD-53)
         pass
 
-    def check_permission(self, event):
-        # TODO raise if user does not have permission (MOD-22)
+    def notify_reject(self, ev):
+        # TODO email node admins (MOD-53)
         pass
 
-    def save_changes(self, event):
-        # TODO save a new review log, with comment from kwargs (MOD-23)
-        if self.state != event.state:
-            self.__reviewable.save()
+    def notify_edit_comment(self, ev):
+        # TODO email node admins (MOD-53)
+        pass

@@ -52,6 +52,12 @@ class PreprintService(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMi
         return '{} preprint (guid={}) of {}'.format('published' if self.is_published else 'unpublished', self._id, self.node.__unicode__())
 
     @property
+    def _verified_publishable(self):
+        return self.is_published and self.node.is_public \
+                and not self.node.is_preprint_orphan and not self.node.is_deleted \
+                and self.node.preprint_file and self.node.preprint_file.node == self.node
+
+    @property
     def primary_file(self):
         if not self.node:
             return

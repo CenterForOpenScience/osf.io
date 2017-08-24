@@ -14,7 +14,7 @@ class PreprintPublishedOrAdmin(permissions.BasePermission):
         node = obj.node
         auth = get_user_auth(request)
         if request.method in permissions.SAFE_METHODS:
-            return obj.is_published or node.has_permission(auth.user, osf_permissions.ADMIN)
+            return obj._verified_publishable or (node.is_public and auth.user.has_perm('view_submissions', obj)) or node.has_permission(auth.user, osf_permissions.ADMIN)
         else:
             if not node.has_permission(auth.user, osf_permissions.ADMIN):
                 raise exceptions.PermissionDenied(detail='User must be an admin to update a preprint.')

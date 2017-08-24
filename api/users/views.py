@@ -600,16 +600,8 @@ class UserPreprints(JSONAPIBaseView, generics.ListAPIView, UserMixin, PreprintFi
         target_user = self.get_user(check_permissions=False)
 
         # Permissions on the list objects are handled by the query
-        default_qs = PreprintService.objects.filter(
-            node__isnull=False,
-            node__is_deleted=False,
-            node___contributors__guids___id=target_user._id
-        )
-        no_user_query = Q(is_published=True, node__is_public=True)
-        if auth_user:
-            admin_user_query = Q(node__contributor__user_id=auth_user.id, node__contributor__admin=True)
-            return default_qs.filter(no_user_query | admin_user_query)
-        return default_qs.filter(no_user_query)
+        default_qs = PreprintService.objects.filter(node___contributors__guids___id=target_user._id)
+        return self.preprints_queryset(default_qs, auth_user)
 
     def get_queryset(self):
         return self.get_queryset_from_request().distinct('id', 'date_created')

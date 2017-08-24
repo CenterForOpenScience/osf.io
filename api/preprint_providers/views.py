@@ -1,13 +1,23 @@
+import functools
+import operator
+
+from guardian.shortcuts import get_objects_for_user
+
 from rest_framework import generics
 from rest_framework import permissions as drf_permissions
 
 from django.db.models import Q
+from django.core.exceptions import PermissionDenied
 
 from framework.auth.oauth_scopes import CoreScopes
 
 from osf.models import AbstractNode, Subject, PreprintProvider
 
+from reviews import permissions as reviews_permissions
+from reviews.workflow import public_reviewable_query
+
 from api.base import permissions as base_permissions
+from api.base.exceptions import InvalidFilterValue
 from api.base.filters import PreprintFilterMixin, ListFilterMixin
 from api.base.views import JSONAPIBaseView
 from api.base.pagination import MaxSizePagination
@@ -80,6 +90,27 @@ class PreprintProviderList(JSONAPIBaseView, generics.ListAPIView, ListFilterMixi
     # overrides ListAPIView
     def get_queryset(self):
         return self.get_queryset_from_request()
+
+    def build_query_from_field(self, field_name, operation):
+        if field_name == 'permissions':
+            auth = get_user_auth(self.request)
+            auth_user = getattr(auth, 'user', None)
+            if not auth_user:
+                raise PermissionDenied()
+            queries = []
+            permissions = data['value'].split(',')
+            if any(p not in reviews_permissions.PERMISSIONS for p in permissions):
+                valid_permissions = ', '.join(reviews_permissions.PERMISSIONS.keys())
+                raise InvalidFilterValue('Invalid permission! Valid values are: {}'.format(valid_permissions))
+
+            query = Q(id__in=get_objects_for_user(auth_user, permissions, PreprintProvider))
+            if operation['op'] == 'eq':
+                return query
+            if operation['op'] == 'ne':
+                return ~query
+            raise InvalidFilterOperator(value=operation['op'], valid_operators=['eq', 'ne'])
+
+        return super(PreprintProviderList, self).build_query_from_field(field_name, operation)
 
 
 class PreprintProviderDetail(JSONAPIBaseView, generics.RetrieveAPIView):
@@ -201,14 +232,7 @@ class PreprintProviderPreprintList(JSONAPIBaseView, generics.ListAPIView, Prepri
         provider = get_object_or_error(PreprintProvider, self.kwargs['provider_id'], self.request, display_name='PreprintProvider')
 
         # Permissions on the list objects are handled by the query
-        default_qs = provider.preprint_services.filter(node__isnull=False, node__is_deleted=False)
-        no_user_query = Q(is_published=True, node__is_public=True)
-
-        if auth_user:
-            contrib_user_query = Q(is_published=True, node__contributor__user_id=auth_user.id, node__contributor__read=True)
-            admin_user_query = Q(node__contributor__user_id=auth_user.id, node__contributor__admin=True)
-            return default_qs.filter(no_user_query | contrib_user_query | admin_user_query)
-        return default_qs.filter(no_user_query)
+        return self.preprints_queryset(provider.preprint_services.all(), auth_user)
 
     # overrides ListAPIView
     def get_queryset(self):

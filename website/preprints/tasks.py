@@ -26,7 +26,7 @@ def on_preprint_updated(preprint_id, update_share=True, share_type=None, old_sub
     if old_subjects is None:
         old_subjects = []
     if preprint.node:
-        status = 'public' if preprint.node.is_public else 'unavailable'
+        status = 'public' if preprint._verified_publishable else 'unavailable'
         try:
             update_ezid_metadata_on_change(preprint, status=status)
         except HTTPError as err:
@@ -113,11 +113,8 @@ def format_preprint(preprint, share_type, old_subjects=None):
         'title': preprint.node.title,
         'description': preprint.node.description or '',
         'is_deleted': (
-            not preprint.is_published or
-            not preprint.node.is_public or
-            preprint.node.is_preprint_orphan or
-            preprint.node.tags.filter(name='qatest').exists() or
-            preprint.node.is_deleted
+            not preprint._verified_publishable or
+            preprint.node.tags.filter(name='qatest').exists()
         ),
         # Note: Changing any preprint attribute that is pulled from the node, like title, will NOT bump
         # the preprint's date modified but will bump the node's date_modified.
@@ -183,6 +180,8 @@ def format_preprint(preprint, share_type, old_subjects=None):
 @celery_app.task(ignore_results=True)
 def get_and_set_preprint_identifiers(preprint):
     ezid_response = request_identifiers_from_ezid(preprint)
+    if ezid_response is None:
+        return
     id_dict = parse_identifiers(ezid_response)
     preprint.set_identifier_values(doi=id_dict['doi'], ark=id_dict['ark'])
 

@@ -7,6 +7,8 @@ from osf_tests.factories import (
     SubjectFactory,
     PreprintProviderFactory
 )
+from reviews.permissions import GroupHelper
+
 
 @pytest.mark.django_db
 class PreprintsListFilteringMixin(object):
@@ -214,3 +216,24 @@ class PreprintsListFilteringMixin(object):
             auth=user.auth
         )
         assert len(res.json['data']) == 0
+
+    @pytest.mark.parametrize('group_name', ['admin', 'moderator'])
+    def test_permissions(self, app, url, preprint_one, preprint_two, preprint_three, group_name):
+        another_user = AuthUserFactory()
+        preprints = (preprint_one, preprint_two, preprint_three)
+
+        for preprint in preprints:
+            preprint.is_published = False
+            preprint.save()
+
+        def actual():
+            res = app.get(url, auth=another_user.auth)
+            return set([preprint['id'] for preprint in res.json['data']])
+
+        expected = set()
+        assert expected == actual()
+
+        for preprint in preprints:
+            another_user.groups.add(GroupHelper(preprint.provider).get_group(group_name))
+            expected.update([p._id for p in preprints if p.provider_id == preprint.provider_id])
+            assert expected == actual()
