@@ -355,7 +355,7 @@ class ArchiverTestCase(OsfTestCase):
         self.user = factories.UserFactory()
         self.auth = Auth(user=self.user)
         self.src = factories.NodeFactory(creator=self.user)
-        self.dst = factories.RegistrationFactory(user=self.user, project=self.src, send_signals=False)
+        self.dst = factories.RegistrationFactory(user=self.user, project=self.src, send_signals=False, archive=True)
         archiver_utils.before_archive(self.dst, self.user)
         self.archive_job = self.dst.archive_job
 
@@ -1175,7 +1175,7 @@ class TestArchiverBehavior(OsfTestCase):
     @mock.patch('website.mails.send_mail')
     def test_archiving_nodes_not_added_to_search_on_archive_failure(self, mock_send, mock_delete_index_node):
         proj = factories.ProjectFactory()
-        reg = factories.RegistrationFactory(project=proj)
+        reg = factories.RegistrationFactory(project=proj, archive=True)
         reg.save()
         with nested(
                 mock.patch('osf.models.archive.ArchiveJob.archive_tree_finished', mock.Mock(return_value=True)),
