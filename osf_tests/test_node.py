@@ -2829,21 +2829,6 @@ class TestForkNode:
         assert registration_wiki_version.node == fork
         assert registration_wiki_version._id != wiki._id
 
-class TestAlternativeCitationMethods:
-
-    def test_add_citation(self, node, auth, fake):
-        name, text = fake.bs(), fake.sentence()
-        node.add_citation(auth=auth, save=True, name=name, text=text)
-        assert node.alternative_citations.count() == 1
-
-        latest_log = node.logs.latest()
-        assert latest_log.action == NodeLog.CITATION_ADDED
-        assert latest_log.params['node'] == node._id
-        assert latest_log.params['citation'] == {
-            'name': name, 'text': text
-        }
-
-
 class TestContributorOrdering:
 
     def test_can_get_contributor_order(self, node):

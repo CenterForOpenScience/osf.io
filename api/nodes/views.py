@@ -85,7 +85,6 @@ from api.nodes.serializers import (
     NodeContributorsSerializer,
     NodeContributorDetailSerializer,
     NodeInstitutionsRelationshipSerializer,
-    NodeAlternativeCitationSerializer,
     NodeContributorsCreateSerializer,
     NodeViewOnlyLinkSerializer,
     NodeViewOnlyLinkUpdateSerializer,
@@ -101,7 +100,7 @@ from framework.postcommit_tasks.handlers import enqueue_postcommit_task
 from osf.models import AbstractNode
 from osf.models import (Node, PrivateLink, Institution, Comment, DraftRegistration, PreprintService)
 from osf.models import OSFUser
-from osf.models import NodeRelation, AlternativeCitation, Guid
+from osf.models import NodeRelation, Guid
 from osf.models import BaseFileNode
 from osf.models.files import File, Folder
 from addons.wiki.models import NodeWikiPage
@@ -2391,96 +2390,6 @@ class NodeProviderDetail(JSONAPIBaseView, generics.RetrieveAPIView, NodeMixin):
 
     def get_object(self):
         return NodeProvider(self.kwargs['provider'], self.get_node())
-
-
-class NodeAlternativeCitationsList(JSONAPIBaseView, generics.ListCreateAPIView, NodeMixin):
-    """List of alternative citations for a project.
-
-    ##Actions
-
-    ###Create Alternative Citation
-
-        Method:         POST
-        Body (JSON):    {
-                            "data": {
-                                "type": "citations",    # required
-                                "attributes": {
-                                    "name": {name},     # mandatory
-                                    "text": {text}      # mandatory
-                                }
-                            }
-                        }
-        Success:        201 Created + new citation representation
-    """
-
-    permission_classes = (
-        drf_permissions.IsAuthenticatedOrReadOnly,
-        AdminOrPublic,
-        ReadOnlyIfRegistration,
-        base_permissions.TokenHasScope
-    )
-
-    required_read_scopes = [CoreScopes.NODE_CITATIONS_READ]
-    required_write_scopes = [CoreScopes.NODE_CITATIONS_WRITE]
-
-    serializer_class = NodeAlternativeCitationSerializer
-    view_category = 'nodes'
-    view_name = 'alternative-citations'
-
-    ordering = ('-id',)
-
-    def get_queryset(self):
-        return self.get_node().alternative_citations.all()
-
-
-class NodeAlternativeCitationDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView, NodeMixin):
-    """Details about an alternative citations for a project.
-
-    ##Actions
-
-    ###Update Alternative Citation
-
-        Method:         PUT
-        Body (JSON):    {
-                            "data": {
-                                "type": "citations",    # required
-                                "id": {{id}}            # required
-                                "attributes": {
-                                    "name": {name},     # mandatory
-                                    "text": {text}      # mandatory
-                                }
-                            }
-                        }
-        Success:        200 Ok + updated citation representation
-
-    ###Delete Alternative Citation
-
-        Method:         DELETE
-        Success:        204 No content
-    """
-
-    permission_classes = (
-        drf_permissions.IsAuthenticatedOrReadOnly,
-        AdminOrPublic,
-        ReadOnlyIfRegistration,
-        base_permissions.TokenHasScope
-    )
-
-    required_read_scopes = [CoreScopes.NODE_CITATIONS_READ]
-    required_write_scopes = [CoreScopes.NODE_CITATIONS_WRITE]
-
-    serializer_class = NodeAlternativeCitationSerializer
-    view_category = 'nodes'
-    view_name = 'alternative-citation-detail'
-
-    def get_object(self):
-        try:
-            return self.get_node().alternative_citations.get(_id=str(self.kwargs['citation_id']))
-        except AlternativeCitation.DoesNotExist:
-            raise NotFound
-
-    def perform_destroy(self, instance):
-        self.get_node().remove_citation(get_user_auth(self.request), instance, save=True)
 
 
 class NodeLogList(JSONAPIBaseView, generics.ListAPIView, NodeMixin, ListFilterMixin):

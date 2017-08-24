@@ -11,7 +11,7 @@ from osf.models.nodelog import NodeLog  # noqa
 from osf.models.tag import Tag  # noqa
 from osf.models.comment import Comment  # noqa
 from osf.models.conference import Conference, MailRecord  # noqa
-from osf.models.citation import AlternativeCitation, CitationStyle  # noqa
+from osf.models.citation import CitationStyle  # noqa
 from osf.models.archive import ArchiveJob, ArchiveTarget  # noqa
 from osf.models.queued_mail import QueuedMail  # noqa
 from osf.models.external import ExternalAccount, ExternalProvider  # noqa
