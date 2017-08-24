@@ -8,10 +8,12 @@ from osf.models.subject import Subject
 from osf.utils.datetime_aware_jsonfield import DateTimeAwareJSONField
 from osf.utils.fields import EncryptedTextField
 
+from reviews.models.mixins import ReviewProviderMixin
+
 from website.util import api_v2_url
 
 
-class PreprintProvider(ObjectIDMixin, BaseModel):
+class PreprintProvider(ObjectIDMixin, ReviewProviderMixin, BaseModel):
 
     PUSH_SHARE_TYPE_CHOICES = (('Preprint', 'Preprint'),
                                ('Thesis', 'Thesis'),)

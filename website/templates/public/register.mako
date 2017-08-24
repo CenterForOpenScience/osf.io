@@ -31,6 +31,13 @@
         </div>
     %endif
 
+    %if campaign == "osf-reviews":
+        <div class="text-center m-t-lg">
+            <h3>OSF Reviews</h3><hr>
+            <p>Please login to the Open Science Framework or create a free account to continue.</p>
+        </div>
+    %endif
+
     %for provider in preprint_campaigns.keys():
         %if campaign == provider:
             <div class="text-center m-t-lg">
@@ -62,6 +69,13 @@
                      <table style="border-collapse: separate; border-spacing: 30px 0; margin-top: 20px;  margin-bottom: 10px;">
                         <tr>
                             <td><img src="/static/img/preprint_providers/osf-preprints-login.png" style="width: 200px; margin-top: 15px" /></td>
+                            <td><h3>Create a free OSF account</h3></td>
+                        </tr>
+                    </table>
+                %elif campaign == "osf-reviews":
+                     <table style="border-collapse: separate; border-spacing: 30px 0; margin-top: 20px;  margin-bottom: 10px;">
+                        <tr>
+                            <td><img src="/static/img/preprint_providers/osf-reviews-login.png" style="width: 200px; margin-top: 15px" /></td>
                             <td><h3>Create a free OSF account</h3></td>
                         </tr>
                     </table>
