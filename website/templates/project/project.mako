@@ -1,6 +1,7 @@
 <%inherit file="project/project_base.mako"/>
 <%namespace name="render_nodes" file="util/render_nodes.mako" />
 <%namespace name="contributor_list" file="util/contributor_list.mako" />
+<%namespace name="render_addon_widget" file="util/render_addon_widget.mako" />
 <%include file="project/nodes_privacy.mako"/>
 
 <%
@@ -301,10 +302,7 @@
     <div class="col-sm-6 osf-dash-col">
 
         %if user['show_wiki_widget']:
-            <div id="addonWikiWidget" class="" mod-meta='{
-              "tpl": "../../addons/wiki/templates/wiki_widget.mako",
-            "uri": "${node['api_url']}wiki/widget/"
-        }'></div>
+            ${ render_addon_widget.render_addon_widget('wiki', addons_widget_data['wiki']) }
         %endif
 
         <!-- Files -->
@@ -341,10 +339,7 @@
             % for addon in addons_enabled:
                 % if addons[addon]['has_widget']:
                     %if addon != 'wiki': ## We already show the wiki widget at the top
-                    <div class="addon-widget-container" mod-meta='{
-                            "tpl": "../../addons/${addon}/templates/${addon}_widget.mako",
-                            "uri": "${node['api_url']}${addon}/widget/"
-                        }'></div>
+                        ${ render_addon_widget.render_addon_widget(addon, addons_widget_data[addon]) }
                     %endif
                 % endif
             % endfor

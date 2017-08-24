@@ -10,7 +10,7 @@ from osf.models import File
 from osf.models import Folder
 from osf.models.files import BaseFileNode
 from tests.base import OsfTestCase
-from tests.factories import AuthUserFactory, ProjectFactory
+from osf_tests.factories import AuthUserFactory, ProjectFactory
 from website.files import exceptions
 from osf import models
 

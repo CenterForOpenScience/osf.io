@@ -13,7 +13,6 @@ from factory.django import DjangoModelFactory
 from django.utils import timezone
 from django.db.utils import IntegrityError
 from faker import Factory
-from modularodm.exceptions import NoResultsFound
 
 from website import settings
 from website.notifications.constants import NOTIFICATION_TYPES
@@ -524,6 +523,21 @@ class PreprintProviderFactory(DjangoModelFactory):
     class Meta:
         model = models.PreprintProvider
 
+    @classmethod
+    def _build(cls, target_class, *args, **kwargs):
+        instance = super(PreprintProviderFactory, cls)._build(target_class, *args, **kwargs)
+        if not instance.share_title:
+            instance.share_title = instance._id
+        return instance
+
+    @classmethod
+    def _create(cls, target_class, *args, **kwargs):
+        instance = super(PreprintProviderFactory, cls)._create(target_class, *args, **kwargs)
+        if not instance.share_title:
+            instance.share_title = instance._id
+            instance.save()
+        return instance
+
 
 def sync_set_identifiers(preprint):
     ezid_return_value ={
@@ -648,22 +662,6 @@ class ApiOAuth2ApplicationFactory(DjangoModelFactory):
 
     home_url = 'ftp://ftp.ncbi.nlm.nimh.gov/'
     callback_url = 'http://example.uk'
-
-
-class AlternativeCitationFactory(DjangoModelFactory):
-    class Meta:
-        model = models.AlternativeCitation
-
-    @classmethod
-    def _create(cls, target_class, *args, **kwargs):
-        name = kwargs.get('name')
-        text = kwargs.get('text')
-        instance = target_class(
-            name=name,
-            text=text
-        )
-        instance.save()
-        return instance
 
 
 class ForkFactory(DjangoModelFactory):

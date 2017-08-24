@@ -5,7 +5,7 @@ from modularodm import Q
 
 from osf.models import AbstractNode
 from api.base import permissions as base_permissions
-from api.base.views import JSONAPIBaseView, BaseContributorDetail, BaseContributorList, BaseNodeLinksDetail, BaseNodeLinksList
+from api.base.views import JSONAPIBaseView, BaseContributorDetail, BaseContributorList, BaseNodeLinksDetail, BaseNodeLinksList, WaterButlerMixin
 
 from api.base.serializers import HideIfWithdrawal, LinkedRegistrationsRelationshipSerializer
 from api.base.serializers import LinkedNodesRelationshipSerializer
@@ -36,10 +36,9 @@ from api.registrations.serializers import (
 from api.nodes.filters import NodesFilterMixin
 
 from api.nodes.views import (
-    NodeMixin, ODMFilterMixin, NodeRegistrationsList,
+    NodeMixin, ODMFilterMixin, NodeRegistrationsList, NodeLogList,
     NodeCommentsList, NodeProvidersList, NodeFilesList, NodeFileDetail,
-    NodeAlternativeCitationsList, NodeAlternativeCitationDetail, NodeLogList,
-    NodeInstitutionsList, WaterButlerMixin, NodeForksList, NodeWikiList, LinkedNodesList,
+    NodeInstitutionsList, NodeForksList, NodeWikiList, LinkedNodesList,
     NodeViewOnlyLinksList, NodeViewOnlyLinkDetail, NodeCitationDetail, NodeCitationStyleDetail,
     NodeLinkedRegistrationsList,
 )
@@ -844,18 +843,6 @@ class RegistrationFileDetail(NodeFileDetail, RegistrationMixin):
     view_category = 'registrations'
     view_name = 'registration-file-detail'
     serializer_class = RegistrationFileSerializer
-
-
-class RegistrationAlternativeCitationsList(NodeAlternativeCitationsList, RegistrationMixin):
-    """List of Alternative Citations for a registration."""
-    view_category = 'registrations'
-    view_name = 'registration-alternative-citations'
-
-
-class RegistrationAlternativeCitationDetail(NodeAlternativeCitationDetail, RegistrationMixin):
-    """Detail of a citations for a registration."""
-    view_category = 'registrations'
-    view_name = 'registration-alternative-citation-detail'
 
 
 class RegistrationInstitutionsList(NodeInstitutionsList, RegistrationMixin):

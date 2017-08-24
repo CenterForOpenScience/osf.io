@@ -17,8 +17,7 @@ def serialize_node(*args, **kwargs):
 PROJECT_QUERY = (
     # Can encompass accessible projects, registrations, or forks
     # Note: is_bookmark collection(s) are implicitly assumed to also be collections; that flag intentionally omitted
-    Q(is_deleted=False) &
-    ~Q(type='osf.collection')
+    Q(is_deleted=False) & ~Q(type='osf.collection') & ~Q(type='osf.quickfilesnode')
 )
 
 def recent_public_registrations(n=10):
@@ -101,7 +100,7 @@ def activity():
                 break
 
     # New and Noteworthy projects are updated manually
-    new_and_noteworthy_projects = list(Node.objects.get(guids___id=settings.NEW_AND_NOTEWORTHY_LINKS_NODE).nodes_pointer)
+    new_and_noteworthy_projects = list(Node.objects.get(guid___id=settings.NEW_AND_NOTEWORTHY_LINKS_NODE).nodes_pointer)
 
     return {
         'new_and_noteworthy_projects': new_and_noteworthy_projects,

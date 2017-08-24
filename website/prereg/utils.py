@@ -1,6 +1,5 @@
 PREREG_CAMPAIGNS = {
     'prereg': 'Prereg Challenge',
-    'erpc': 'Election Research Preacceptance Competition',
 }
 
 

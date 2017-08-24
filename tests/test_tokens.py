@@ -85,8 +85,7 @@ class SanctionTokenHandlerBase(OsfTestCase):
         self.reg = AbstractNode.objects.get(Q(**{self.Model.SHORT_NAME: self.sanction}))
         self.user = self.reg.creator
 
-    @mock.patch('website.project.tasks.on_registration_updated')
-    def test_sanction_handler(self, mock_registration_updated):
+    def test_sanction_handler(self):
         if not self.kind:
             return
         approval_token = self.sanction.approval_state[self.user._id]['approval_token']

@@ -5,7 +5,7 @@ from django.db.models import Q
 from tests.base import DbTestCase
 from osf_tests import factories
 
-from framework.mongo.utils import get_or_http_error, autoload
+from framework.database import get_or_http_error, autoload
 from framework.exceptions import HTTPError
 
 from osf.models import Node

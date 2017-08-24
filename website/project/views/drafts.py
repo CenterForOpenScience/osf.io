@@ -11,7 +11,7 @@ from django.utils import timezone
 from flask import request, redirect
 import pytz
 
-from framework.mongo.utils import get_or_http_error, autoload
+from framework.database import get_or_http_error, autoload
 from framework.exceptions import HTTPError
 from framework.status import push_status_message
 

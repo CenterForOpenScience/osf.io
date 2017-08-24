@@ -171,13 +171,13 @@ class Sitemap(object):
         # AbstractNode urls (Nodes and Registrations, no Collections)
         objs = (AbstractNode.objects
             .filter(is_public=True, is_deleted=False, retraction_id__isnull=True)
-            .exclude(type="osf.collection")
+            .exclude(type__in=["osf.collection", "osf.quickfilesnode"])
             .values('guids___id', 'date_modified'))
         progress.start(objs.count(), 'NODE: ')
         for obj in objs:
             try:
                 config = settings.SITEMAP_NODE_CONFIG
-                config['loc'] = urlparse.urljoin(settings.DOMAIN, obj['guids___id'])
+                config['loc'] = urlparse.urljoin(settings.DOMAIN, '/{}/'.format(obj['guids___id']))
                 config['lastmod'] = obj['date_modified'].strftime('%Y-%m-%d')
                 self.add_url(config)
             except Exception as e:
@@ -196,9 +196,11 @@ class Sitemap(object):
                 preprint_date = obj.date_modified.strftime('%Y-%m-%d')
                 config = settings.SITEMAP_PREPRINT_CONFIG
                 preprint_url = obj.url
-                if obj.provider == osf:
+                provider = obj.provider
+                domain = provider.domain if (provider.domain_redirect_enabled and provider.domain) else settings.DOMAIN
+                if provider == osf:
                     preprint_url = '/preprints/{}/'.format(obj._id)
-                config['loc'] = urlparse.urljoin(settings.DOMAIN, preprint_url)
+                config['loc'] = urlparse.urljoin(domain, preprint_url)
                 config['lastmod'] = preprint_date
                 self.add_url(config)
 

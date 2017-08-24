@@ -1,11 +1,12 @@
 from django.apps import apps
 import logging
 import urlparse
+import random
 import requests
 
 from framework.celery_tasks import app as celery_app
 
-from website import settings
+from website import settings, mails
 from website.util.share import GraphNode, format_contributor
 
 
@@ -19,7 +20,7 @@ def on_node_updated(node_id, user_id, first_save, saved_fields, request_headers=
     AbstractNode = apps.get_model('osf.AbstractNode')
     node = AbstractNode.load(node_id)
 
-    if node.is_collection or node.archiving:
+    if node.is_collection or node.archiving or node.is_quickfiles:
         return
 
     need_update = bool(node.SEARCH_UPDATE_FIELDS.intersection(saved_fields))
@@ -31,54 +32,79 @@ def on_node_updated(node_id, user_id, first_save, saved_fields, request_headers=
 
     if need_update:
         node.update_search()
-        update_share(node)
-
-def update_share(node):
-    if settings.SHARE_URL:
-        if not settings.SHARE_API_TOKEN:
-            return logger.warning('SHARE_API_TOKEN not set. Could not send %s to SHARE.'.format(node))
-        if node.is_registration:
-            on_registration_updated(node)
-        else:
-            update_node_share(node)
+        update_node_share(node)
 
 def update_node_share(node):
-    resp = requests.post('{}api/normalizeddata/'.format(settings.SHARE_URL), json={
+    # Wrapper that ensures share_url and token exist
+    if settings.SHARE_URL:
+        if not settings.SHARE_API_TOKEN:
+            return logger.warning('SHARE_API_TOKEN not set. Could not send "{}" to SHARE.'.format(node._id))
+        _update_node_share(node)
+
+def _update_node_share(node):
+    # Any modifications to this function may need to change _async_update_node_share
+    data = serialize_share_node_data(node)
+    resp = send_share_node_data(data)
+    try:
+        resp.raise_for_status()
+    except Exception:
+        if resp.status_code >= 500:
+            _async_update_node_share.delay(node._id)
+        else:
+            send_desk_share_error(node, resp, 0)
+
+@celery_app.task(bind=True, max_retries=4, acks_late=True)
+def _async_update_node_share(self, node_id):
+    # Any modifications to this function may need to change _update_node_share
+    # Takes node_id to ensure async retries push fresh data
+    AbstractNode = apps.get_model('osf.AbstractNode')
+    node = AbstractNode.load(node_id)
+
+    data = serialize_share_node_data(node)
+    resp = send_share_node_data(data)
+    try:
+        resp.raise_for_status()
+    except Exception as e:
+        if resp.status_code >= 500:
+            if self.request.retries == self.max_retries:
+                send_desk_share_error(node, resp, self.request.retries)
+            raise self.retry(
+                exc=e,
+                countdown=(random.random() + 1) * min(60 + settings.CELERY_RETRY_BACKOFF_BASE ** self.request.retries, 60 * 10)
+            )
+        else:
+            send_desk_share_error(node, resp, self.request.retries)
+
+def send_share_node_data(data):
+    resp = requests.post('{}api/normalizeddata/'.format(settings.SHARE_URL), json=data, headers={'Authorization': 'Bearer {}'.format(settings.SHARE_API_TOKEN), 'Content-Type': 'application/vnd.api+json'})
+    logger.debug(resp.content)
+    return resp
+
+def serialize_share_node_data(node):
+    return {
         'data': {
             'type': 'NormalizedData',
             'attributes': {
                 'tasks': [],
                 'raw': None,
-                'data': {'@graph': [{
-                    '@id': '_:123',
-                    '@type': 'workidentifier',
-                    'creative_work': {'@id': '_:789', '@type': 'project'},
-                    'uri': '{}{}/'.format(settings.DOMAIN, node._id),
-                }, {
-                    '@id': '_:789',
-                    '@type': 'project',
-                    'is_deleted': not node.is_public or node.is_deleted or node.is_spammy,
-                }]}
+                'data': {'@graph': format_registration(node) if node.is_registration else format_node(node)}
             }
         }
-    }, headers={'Authorization': 'Bearer {}'.format(settings.SHARE_API_TOKEN), 'Content-Type': 'application/vnd.api+json'})
-    logger.debug(resp.content)
-    resp.raise_for_status()
+    }
 
-def on_registration_updated(node):
-    resp = requests.post('{}api/v2/normalizeddata/'.format(settings.SHARE_URL), json={
-        'data': {
-            'type': 'NormalizedData',
-            'attributes': {
-                'tasks': [],
-                'raw': None,
-                'data': {'@graph': format_registration(node)}
-            }
+def format_node(node):
+    return [
+        {
+            '@id': '_:123',
+            '@type': 'workidentifier',
+            'creative_work': {'@id': '_:789', '@type': 'project'},
+            'uri': '{}{}/'.format(settings.DOMAIN, node._id),
+        }, {
+            '@id': '_:789',
+            '@type': 'project',
+            'is_deleted': not node.is_public or node.is_deleted or node.is_spammy,
         }
-    }, headers={'Authorization': 'Bearer {}'.format(settings.SHARE_API_TOKEN), 'Content-Type': 'application/vnd.api+json'})
-    logger.debug(resp.content)
-    resp.raise_for_status()
-
+    ]
 
 def format_registration(node):
     registration_graph = GraphNode('registration', **{
@@ -117,3 +143,12 @@ def format_registration(node):
         to_visit.extend(list(n.get_related()))
 
     return [node_.serialize() for node_ in visited]
+
+def send_desk_share_error(node, resp, retries):
+    mails.send_mail(
+        to_addr=settings.SUPPORT_EMAIL,
+        mail=mails.SHARE_ERROR_DESK,
+        node=node,
+        resp=resp,
+        retries=retries,
+    )

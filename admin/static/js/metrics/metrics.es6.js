@@ -941,6 +941,25 @@ var AddonMetrics = function() {
 };
 
 
+// <+><+><+><><>+
+//   preprints   |
+// ><+><+><+<+><+
+
+var PreprintMetrics = function() {
+    var preprint_created = new keenAnalysis.Query("sum", {
+        eventCollection: "preprint_summary",
+        targetProperty: "provider.total",
+        groupBy: ["provider.name"],
+        interval: "daily",
+        timeframe: "previous_30_days",
+        timezone: "UTC"
+    });
+
+    renderKeenMetric("#preprints-added", "line", preprint_created, defaultHeight);
+};
+
+
+
 module.exports = {
     UserGainMetrics: UserGainMetrics,
     NodeLogsPerUser: NodeLogsPerUser,
@@ -948,5 +967,8 @@ module.exports = {
     ActiveUserMetrics: ActiveUserMetrics,
     HealthyUserMetrics:HealthyUserMetrics,
     RawNumberMetrics: RawNumberMetrics,
-    AddonMetrics: AddonMetrics
+    AddonMetrics: AddonMetrics,
+    PreprintMetrics: PreprintMetrics,
+    KeenRenderMetrics: renderKeenMetric
+
 };
