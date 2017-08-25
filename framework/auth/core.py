@@ -87,7 +87,7 @@ def _get_current_user():
 
 
 # TODO: This should be a class method of User?
-def get_user(email=None, password=None, token=None, external_id_provider=None, external_id=None):
+def get_user(email=None, password=None, token=None, external_id_provider=None, external_id=None, eppn=None):
     """
     Get an instance of `User` matching the provided params.
 
@@ -127,6 +127,10 @@ def get_user(email=None, password=None, token=None, external_id_provider=None, e
         if user and not user.check_password(password):
             return False
         return user
+
+    if eppn:
+        eppn = eppn.strip().lower()
+        qs = qs.filter(eppn=eppn)
 
     if token:
         qs = qs.filter(verification_key=token)

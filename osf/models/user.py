@@ -110,6 +110,13 @@ class Email(BaseModel):
         return self.address
 
 
+class Group(BaseModel):
+    name = models.CharField(max_length=255, unique=True)
+
+    def __unicode__(self):
+        return self.name
+
+
 class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, PermissionsMixin, AddonModelMixin):
     FIELD_ALIASES = {
         '_id': 'guids___id',
@@ -355,6 +362,17 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
 
     is_active = models.BooleanField(default=False)
     is_staff = models.BooleanField(default=False)
+
+    # ePPN, eduPersonTargetedID and isMemberOf from Shibboleth
+    # for Cloud Gateway
+    eppn = models.CharField(blank=True, max_length=255, db_index=True, unique=True, null=True)  # eduPersonPrincipalName
+    eptid = models.CharField(blank=True, max_length=255, db_index=True, unique=True, null=True)  # eduPersonTargetedID
+    have_email = models.BooleanField(default=False)
+    groups = models.ManyToManyField(Group, related_name='users_group')
+    groups_admin = models.ManyToManyField(Group, related_name='users_group_admin')
+    groups_sync = models.ManyToManyField(Group, related_name='users_group_sync')
+    groups_initialized = models.BooleanField(default=False)
+    date_last_access = NonNaiveDateTimeField(null=True, blank=True)
 
     def __repr__(self):
         return '<OSFUser({0!r}) with guid {1!r}>'.format(self.username, self._id)
@@ -1207,6 +1225,19 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
 
     def update_date_last_login(self):
         self.date_last_login = timezone.now()
+
+    def update_date_last_access(self):
+        self.date_last_access = timezone.now()
+
+    def add_group(self, groupname):
+        if not self.groups.filter(name=groupname).exists():
+            group, created = Group.objects.get_or_create(name=groupname)
+            self.groups.add(group)
+
+    def add_group_admin(self, groupname):
+        if not self.groups_admin.filter(name=groupname).exists():
+            group, created = Group.objects.get_or_create(name=groupname)
+            self.groups_admin.add(group)
 
     def get_summary(self, formatter='long'):
         return {
