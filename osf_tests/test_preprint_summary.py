@@ -6,6 +6,7 @@ import mock
 import pytest
 import pytz
 import requests
+from django.utils import timezone
 
 from scripts.analytics.preprint_summary import PreprintSummary
 
@@ -21,27 +22,27 @@ def preprint(preprint_provider):
 
 @pytest.fixture()
 def yesterday_at_midnight():
-    return datetime.datetime.utcnow().replace(hour=0,
-                                              minute=0,
-                                              second=0,
-                                              microsecond=0) - datetime.timedelta(days=1)
+    return timezone.now().replace(hour=0,
+                                  minute=0,
+                                  second=0,
+                                  microsecond=0) - datetime.timedelta(days=1)
 
 
 @pytest.fixture()
 def yesterday_right_before_today():
-    return datetime.datetime.utcnow().replace(hour=23,
-                                              minute=59,
-                                              second=59) - datetime.timedelta(days=1)
+    return timezone.now().replace(hour=23,
+                                  minute=59,
+                                  second=59) - datetime.timedelta(days=1)
 
 
 @pytest.fixture()
 def my_birthday_at_midnight():
-    return datetime.datetime(1991, 9, 25, 0)
+    return datetime.datetime(1991, 9, 25, 0, tzinfo=pytz.utc)
 
 pytestmark = pytest.mark.django_db
 
 
-@pytest.mark.parametrize("date", [yesterday_at_midnight(), yesterday_right_before_today(), my_birthday_at_midnight()])
+@pytest.mark.parametrize('date', [yesterday_at_midnight(), yesterday_right_before_today(), my_birthday_at_midnight()])
 class TestPreprintCount:
 
     def test_get_preprint_count(self, preprint, date):
