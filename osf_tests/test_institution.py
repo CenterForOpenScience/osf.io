@@ -1,7 +1,5 @@
 from osf.models import Institution
 
-from modularodm import Q
-
 from .factories import InstitutionFactory
 import pytest
 
@@ -17,7 +15,7 @@ def test_factory():
 @pytest.mark.django_db
 def test_querying_on_domains():
     inst = InstitutionFactory(domains=['foo.test'])
-    result = Institution.find(Q('domains', 'eq', 'foo.test'))
+    result = Institution.objects.filter(domains__contains=['foo.test'])
     assert inst in result
 
 

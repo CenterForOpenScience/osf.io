@@ -53,6 +53,7 @@ def push_status_message(message, kind='warning', dismissible=True, trust=True, j
                            dismissible=dismissible,
                            trust=trust))
     session.data['status'] = statuses
+    session.save()
 
 def pop_status_messages(level=0):
     messages = session.data.get('status')

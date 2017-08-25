@@ -15,6 +15,7 @@ from addons.osfstorage.tests.utils import (
     recursively_create_file,
 )
 from addons.osfstorage.tests import factories
+from addons.osfstorage.tests.utils import make_payload
 
 from framework.auth import signing
 from website.util import rubeus
@@ -163,26 +164,9 @@ class TestUploadFileHook(HookTestCase):
         )
 
     def make_payload(self, **kwargs):
-        payload = {
-            'user': self.user._id,
-            'name': self.name,
-            'hashes': {'base64': '=='},
-            'worker': {
-                'uname': 'testmachine'
-            },
-            'settings': {
-                'provider': 'filesystem',
-                storage_settings.WATERBUTLER_RESOURCE: 'blah',
-            },
-            'metadata': {
-                'size': 123,
-                'name': 'file',
-                'provider': 'filesystem',
-                'modified': 'Mon, 16 Feb 2015 18:45:34 GMT'
-            },
-        }
-        payload.update(kwargs)
-        return payload
+        user = kwargs.pop('user', self.user)
+        name = kwargs.pop('name', self.name)
+        return make_payload(user=user, name=name, **kwargs)
 
     def test_upload_create(self):
         name = 'slightly-mad'
