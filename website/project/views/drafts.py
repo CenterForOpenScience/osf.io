@@ -129,6 +129,11 @@ def submit_draft_for_review(auth, node, draft, *args, **kwargs):
         meta['embargo_end_date'] = end_date_string
     meta['registration_choice'] = registration_choice
 
+    if draft.registered_node:
+        raise HTTPError(http.CONFLICT, data=dict(message_long='This draft has already been registered, if you wish to '
+                                                              'register it again or submit it for review please create '
+                                                              'a new draft.'))
+
     # Don't allow resubmission unless submission was rejected
     if draft.approval and draft.approval.state != Sanction.REJECTED:
         raise HTTPError(http.CONFLICT, data=dict(message_long='Cannot resubmit previously submitted draft.'))
