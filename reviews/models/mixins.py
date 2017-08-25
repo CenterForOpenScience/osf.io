@@ -21,8 +21,8 @@ class ReviewProviderMixin(models.Model):
         abstract = True
 
     reviews_workflow = models.CharField(null=True, blank=True, max_length=15, choices=workflow.Workflows.choices())
-    reviews_comments_private = models.BooleanField(default=True)
-    reviews_comments_anonymous = models.BooleanField(default=True)
+    reviews_comments_private = models.NullBooleanField()
+    reviews_comments_anonymous = models.NullBooleanField()
 
     @property
     def is_moderated(self):

@@ -118,7 +118,7 @@ class LogPermission(permissions.BasePermission):
 
         if request.method in permissions.SAFE_METHODS:
             # If the provider settings allow it, let preprint admins see logs for their submission
-            return (is_node_admin and not reviewable.provider.reviews_comments_private) or auth.user.has_perm('view_review_logs', provider)
+            return (is_node_admin and reviewable.provider.reviews_comments_private is False) or auth.user.has_perm('view_review_logs', provider)
         else:
             # Moderators and node admins can trigger state changes.
             # Action-specific permissions should be checked in the view.

@@ -1,5 +1,6 @@
 from guardian.shortcuts import get_perms
 from rest_framework import serializers as ser
+from rest_framework.exceptions import ValidationError
 
 from reviews.workflow import Workflows
 
@@ -37,9 +38,9 @@ class PreprintProviderSerializer(JSONAPISerializer):
     additional_providers = ser.ListField(read_only=True, child=ser.CharField())
 
     # Reviews settings are the only writable fields
-    reviews_workflow = ser.ChoiceField(choices=Workflows.choices(), required=True)
-    reviews_comments_private = ser.BooleanField(required=True)
-    reviews_comments_anonymous = ser.BooleanField(required=True)
+    reviews_workflow = ser.ChoiceField(choices=Workflows.choices())
+    reviews_comments_private = ser.BooleanField()
+    reviews_comments_anonymous = ser.BooleanField()
 
     permissions = ser.SerializerMethodField()
 
@@ -123,6 +124,13 @@ class PreprintProviderSerializer(JSONAPISerializer):
         if not auth.user:
             return []
         return get_perms(auth.user, obj)
+
+    def validate(self, data):
+        required_fields = ('reviews_workflow', 'reviews_comments_private', 'reviews_comments_anonymous')
+        for field in required_fields:
+            if data.get(field) is None:
+                raise ValidationError('All reviews fields must be set at once: `{}`'.format('`, `'.join(required_fields)))
+        return data
 
     def update(self, instance, validated_data):
         instance.reviews_workflow = validated_data['reviews_workflow']

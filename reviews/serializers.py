@@ -30,7 +30,7 @@ def IfCanViewLogCreator(field_cls):
                 auth = get_user_auth(request)
                 if auth.logged_in:
                     provider = instance.reviewable.provider
-                    if not provider.reviews_comments_anonymous or auth.user.has_perm('view_review_logs', provider):
+                    if provider.reviews_comments_anonymous is False or auth.user.has_perm('view_review_logs', provider):
                         return super(IfCanViewLogCreatorField, self).get_attribute(instance)
             raise SkipField
 
