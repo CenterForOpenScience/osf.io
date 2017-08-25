@@ -99,6 +99,17 @@
         }
     </style>
 
+    %if maintenance:
+        <style type="text/css">
+            @media (max-width: 767px) {
+                #projectBanner .osf-project-navbar {
+                    position: absolute;
+                    top: 100px;
+                }
+            }
+        </style>
+    %endif
+
     % if node['is_registration']:  ## Begin registration undismissable labels
 
         % if not node['is_retracted']:
