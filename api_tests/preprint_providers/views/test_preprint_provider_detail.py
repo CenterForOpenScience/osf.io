@@ -54,15 +54,11 @@ class TestPreprintProviderExists:
 @pytest.mark.django_db
 class TestPreprintProviderUpdate:
 
-    def settings_payload(self, provider_id, workflow, comments_private, comments_anonymous):
+    def settings_payload(self, provider_id, **kwargs):
         payload = {
             'data': {
                 'id': provider_id,
-                'attributes': {
-                    'reviews_workflow': workflow,
-                    'reviews_comments_private': comments_private,
-                    'reviews_comments_anonymous': comments_anonymous,
-                }
+                'attributes': kwargs
             }
         }
         return payload
@@ -88,23 +84,53 @@ class TestPreprintProviderUpdate:
         return '/{}preprint_providers/{}/'.format(API_BASE, preprint_provider._id)
 
     def test_update_reviews_settings(self, app, preprint_provider, url, admin, moderator):
-        payload = self.settings_payload(preprint_provider.id, 'pre-moderation', False, False)
+        payload = self.settings_payload(
+            preprint_provider.id,
+            reviews_workflow='pre-moderation',
+            reviews_comments_private=False,
+            reviews_comments_anonymous=False
+        )
 
-        # Only admin can set up moderation
+        # Unauthorized user can't set up moderation
         res = app.patch_json_api(url, payload, expect_errors=True)
         assert res.status_code == 401
 
+        # Random user can't set up moderation
         some_rando = AuthUserFactory()
         res = app.patch_json_api(url, payload, auth=some_rando.auth, expect_errors=True)
         assert res.status_code == 403
 
+        # Moderator can't set up moderation
         res = app.patch_json_api(url, payload, auth=moderator.auth, expect_errors=True)
         assert res.status_code == 403
 
+        # Admin must include all settings
+        partial_payload = self.settings_payload(
+            preprint_provider.id,
+            reviews_workflow='pre-moderation',
+            reviews_comments_private=False,
+        )
+        res = app.patch_json_api(url, partial_payload, auth=admin.auth, expect_errors=True)
+        assert res.status_code == 400
+
+        partial_payload = self.settings_payload(
+            preprint_provider.id,
+            reviews_comments_private=False,
+            reviews_comments_anonymous=False,
+        )
+        res = app.patch_json_api(url, partial_payload, auth=admin.auth, expect_errors=True)
+        assert res.status_code == 400
+
+        # Admin can set up moderation
         res = app.patch_json_api(url, payload, auth=admin.auth)
         assert res.status_code == 200
 
         # ...but only once
-        payload = self.settings_payload(preprint_provider.id, 'pre-moderation', True, True)
+        payload = self.settings_payload(
+            preprint_provider.id,
+            reviews_workflow='pre-moderation',
+            reviews_comments_private=True,
+            reviews_comments_anonymous=True
+        )
         res = app.patch_json_api(url, payload, auth=admin.auth, expect_errors=True)
         assert res.status_code == 409
