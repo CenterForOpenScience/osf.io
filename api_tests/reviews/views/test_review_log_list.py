@@ -16,7 +16,6 @@ from tests.base import ApiTestCase
 from website.util import permissions as osf_permissions
 
 from reviews.permissions import GroupHelper
-from reviews.models import ReviewLog
 
 
 # include log list mixin

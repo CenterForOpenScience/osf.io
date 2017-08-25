@@ -17,12 +17,13 @@ from api.base.parsers import (
 from api.base.utils import absolute_reverse
 from api.base.utils import get_user_auth
 from api.base.views import JSONAPIBaseView
+from api.base import permissions as base_permissions
 from api.preprints.views import PreprintMixin
+from framework.auth.oauth_scopes import CoreScopes
 from osf.models import PreprintProvider
 from reviews import permissions as reviews_permissions
 from reviews.models import ReviewLog
 from reviews.serializers import ReviewLogSerializer
-from reviews.serializers import ProviderSetupSerializer
 
 
 class ReviewLogMixin:
@@ -67,8 +68,12 @@ class LogDetail(JSONAPIBaseView, generics.RetrieveAPIView, ReviewLogMixin):
     """
     permission_classes = (
         permissions.IsAuthenticatedOrReadOnly,
+        base_permissions.TokenHasScope,
         reviews_permissions.LogPermission,
     )
+
+    required_read_scopes = [CoreScopes.REVIEW_LOGS_READ]
+    required_write_scopes = [CoreScopes.REVIEW_LOGS_WRITE]
 
     serializer_class = ReviewLogSerializer
     view_category = 'reviews'
@@ -121,8 +126,12 @@ class LogList(JSONAPIBaseView, generics.ListCreateAPIView, DjangoFilterMixin, Re
     # Permissions handled in get_default_django_query
     permission_classes = (
         permissions.IsAuthenticated,
+        base_permissions.TokenHasScope,
         reviews_permissions.LogPermission,
     )
+
+    required_read_scopes = [CoreScopes.REVIEW_LOGS_READ]
+    required_write_scopes = [CoreScopes.REVIEW_LOGS_WRITE]
 
     parser_classes = (JSONAPIMultipleRelationshipsParser, JSONAPIMultipleRelationshipsParserForRegularJSON,)
 
@@ -204,8 +213,12 @@ class PreprintReviewLogList(JSONAPIBaseView, generics.ListAPIView, DjangoFilterM
     """
     permission_classes = (
         permissions.IsAuthenticatedOrReadOnly,
+        base_permissions.TokenHasScope,
         reviews_permissions.LogPermission,
     )
+
+    required_read_scopes = [CoreScopes.REVIEW_LOGS_READ]
+    required_write_scopes = [CoreScopes.REVIEW_LOGS_WRITE]
 
     serializer_class = ReviewLogSerializer
 
@@ -220,30 +233,3 @@ class PreprintReviewLogList(JSONAPIBaseView, generics.ListAPIView, DjangoFilterM
     # overrides ListAPIView
     def get_queryset(self):
         return self.review_logs_queryset().filter(self.get_query_from_request())
-
-
-class SetUpProvider(JSONAPIBaseView, generics.UpdateAPIView):
-    """Initialize a review provider's settings
-
-    ## Provider settings
-
-        name                            type                                description
-        ====================================================================================
-        workflow                        string                              chosen reviews workflow ('none', 'pre-moderation', 'post-moderation')
-        comments_private                boolean                             whether moderator comments will be shown to submitters
-        comments_anonymous              boolean                             whether moderator identities will be displayed to submitters with their comments
-    """
-    permission_classes = (
-        permissions.IsAuthenticated,
-        reviews_permissions.CanSetUpProvider,
-    )
-
-    queryset = PreprintProvider.objects.all()
-
-    serializer_class = ProviderSetupSerializer
-
-    view_category = 'reviews'
-    view_name = 'set-up-review_provider'
-
-    lookup_field = '_id'
-    lookup_url_kwarg = 'provider_id'

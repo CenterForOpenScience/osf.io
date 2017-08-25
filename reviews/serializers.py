@@ -129,21 +129,3 @@ class ReviewLogSerializer(JSONAPISerializer):
 
     class Meta:
         type_ = 'review_logs'
-
-
-class ProviderSetupSerializer(JSONAPISerializer):
-    id = ser.CharField(source='_id', read_only=True)
-
-    workflow = ser.ChoiceField(choices=Workflows.choices(), source='reviews_workflow')
-    comments_private = ser.BooleanField(source='reviews_comments_private')
-    comments_anonymous = ser.BooleanField(source='reviews_comments_anonymous')
-
-    def update(self, instance, validated_data):
-        instance.reviews_workflow = validated_data['reviews_workflow']
-        instance.reviews_comments_private = validated_data['reviews_comments_private']
-        instance.reviews_comments_anonymous = validated_data['reviews_comments_anonymous']
-        instance.save()
-        return instance
-
-    class Meta:
-        type_ = 'preprint_providers'

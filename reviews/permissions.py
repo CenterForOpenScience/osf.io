@@ -24,7 +24,7 @@ logger = logging.getLogger(__name__)
 # Object-level permissions for providers.
 # Prefer assigning object permissions to groups and adding users to groups, over assigning permissions to users.
 PERMISSIONS = {
-    'set_up_moderation': 'Can set up reviews for this provider',
+    'set_up_moderation': 'Can set up moderation for this provider',
     'view_submissions': 'Can view all submissions to this provider',
     'accept_submissions': 'Can accept submissions to this provider',
     'reject_submissions': 'Can reject submissions to this provider',
@@ -127,5 +127,7 @@ class LogPermission(permissions.BasePermission):
 
 class CanSetUpProvider(permissions.BasePermission):
     def has_object_permission(self, request, view, obj):
+        if request.method in permissions.SAFE_METHODS:
+            return True
         auth = get_user_auth(request)
-        return not obj.is_moderated and auth.user.has_perm('set_up_moderation', obj)
+        return auth.user.has_perm('set_up_moderation', obj)
