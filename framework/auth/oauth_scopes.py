@@ -95,6 +95,11 @@ class CoreScopes(object):
 
     SEARCH = 'search_read'
 
+    REVIEW_LOGS_READ = 'review_logs_read'
+    REVIEW_LOGS_WRITE = 'review_logs_write'
+
+    PROVIDERS_WRITE = 'providers_write'
+
     NULL = 'null'
 
     # NOTE: Use with extreme caution.
@@ -186,12 +191,16 @@ class ComposedScopes(object):
     NODE_ALL_READ = NODE_METADATA_READ + NODE_DATA_READ + NODE_ACCESS_READ
     NODE_ALL_WRITE = NODE_ALL_READ + NODE_METADATA_WRITE + NODE_DATA_WRITE + NODE_ACCESS_WRITE
 
+    # Reviews
+    REVIEWS_READ = (CoreScopes.REVIEW_LOGS_READ,)
+    REVIEWS_WRITE = (CoreScopes.REVIEW_LOGS_WRITE, CoreScopes.PROVIDERS_WRITE)
+
     # Full permissions: all routes intended to be exposed to third party API users
-    FULL_READ = NODE_ALL_READ + USERS_READ + ORGANIZER_READ + GUIDS_READ + METASCHEMAS_READ + DRAFT_READ + (CoreScopes.INSTITUTION_READ, CoreScopes.SEARCH, )
+    FULL_READ = NODE_ALL_READ + USERS_READ + ORGANIZER_READ + GUIDS_READ + METASCHEMAS_READ + DRAFT_READ + REVIEWS_READ + (CoreScopes.INSTITUTION_READ, CoreScopes.SEARCH, )
     FULL_WRITE = FULL_READ + NODE_ALL_WRITE + USERS_WRITE + ORGANIZER_WRITE + DRAFT_WRITE
 
     # Admin permissions- includes functionality not intended for third-party use
-    ADMIN_LEVEL = FULL_WRITE + APPLICATIONS_WRITE + TOKENS_WRITE + COMMENT_REPORTS_WRITE + USERS_CREATE +\
+    ADMIN_LEVEL = FULL_WRITE + APPLICATIONS_WRITE + TOKENS_WRITE + COMMENT_REPORTS_WRITE + USERS_CREATE + REVIEWS_WRITE +\
                     (CoreScopes.USER_EMAIL_READ, CoreScopes.USER_ADDON_READ, CoreScopes.NODE_ADDON_READ, CoreScopes.NODE_ADDON_WRITE, )
 
 # List of all publicly documented scopes, mapped to composed scopes defined above.

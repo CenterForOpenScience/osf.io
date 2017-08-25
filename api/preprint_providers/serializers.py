@@ -21,24 +21,25 @@ class PreprintProviderSerializer(JSONAPISerializer):
         'permissions',
     ])
 
-    name = ser.CharField(required=True)
-    description = ser.CharField(required=False)
-    id = ser.CharField(max_length=200, source='_id')
-    advisory_board = ser.CharField(required=False)
-    example = ser.CharField(required=False, allow_null=True)
-    domain = ser.CharField(required=False, allow_null=False)
-    domain_redirect_enabled = ser.BooleanField(required=True)
-    footer_links = ser.CharField(required=False)
+    name = ser.CharField(read_only=True)
+    description = ser.CharField(read_only=True)
+    id = ser.CharField(read_only=True, max_length=200, source='_id')
+    advisory_board = ser.CharField(read_only=True)
+    example = ser.CharField(read_only=True, allow_null=True)
+    domain = ser.CharField(read_only=True, allow_null=False)
+    domain_redirect_enabled = ser.BooleanField(read_only=True)
+    footer_links = ser.CharField(read_only=True)
     share_source = ser.CharField(read_only=True)
     share_publish_type = ser.CharField(read_only=True)
-    email_support = ser.CharField(required=False, allow_null=True)
-    preprint_word = ser.CharField(required=False, allow_null=True)
+    email_support = ser.CharField(read_only=True, allow_null=True)
+    preprint_word = ser.CharField(read_only=True, allow_null=True)
     allow_submissions = ser.BooleanField(read_only=True)
-    additional_providers = ser.ListField(child=ser.CharField(), read_only=True)
+    additional_providers = ser.ListField(read_only=True, child=ser.CharField())
 
-    reviews_workflow = ser.ChoiceField(choices=Workflows.choices(), read_only=True)
-    reviews_comments_private = ser.BooleanField(read_only=True)
-    reviews_comments_anonymous = ser.BooleanField(read_only=True)
+    # Reviews settings are the only writable fields
+    reviews_workflow = ser.ChoiceField(choices=Workflows.choices(), required=True)
+    reviews_comments_private = ser.BooleanField(required=True)
+    reviews_comments_anonymous = ser.BooleanField(required=True)
 
     permissions = ser.SerializerMethodField()
 
@@ -70,35 +71,35 @@ class PreprintProviderSerializer(JSONAPISerializer):
 
     # Deprecated fields
     header_text = ShowIfVersion(
-        ser.CharField(required=False, default=''),
+        ser.CharField(read_only=True, default=''),
         min_version='2.0', max_version='2.3'
     )
     banner_path = ShowIfVersion(
-        ser.CharField(required=False, default=''),
+        ser.CharField(read_only=True, default=''),
         min_version='2.0', max_version='2.3'
     )
     logo_path = ShowIfVersion(
-        ser.CharField(required=False, default=''),
+        ser.CharField(read_only=True, default=''),
         min_version='2.0', max_version='2.3'
     )
     email_contact = ShowIfVersion(
-        ser.CharField(required=False, allow_null=True),
+        ser.CharField(read_only=True, allow_null=True),
         min_version='2.0', max_version='2.3'
     )
     social_twitter = ShowIfVersion(
-        ser.CharField(required=False, allow_null=True),
+        ser.CharField(read_only=True, allow_null=True),
         min_version='2.0', max_version='2.3'
     )
     social_facebook = ShowIfVersion(
-        ser.CharField(required=False, allow_null=True),
+        ser.CharField(read_only=True, allow_null=True),
         min_version='2.0', max_version='2.3'
     )
     social_instagram = ShowIfVersion(
-        ser.CharField(required=False, allow_null=True),
+        ser.CharField(read_only=True, allow_null=True),
         min_version='2.0', max_version='2.3'
     )
     subjects_acceptable = ShowIfVersion(
-        ser.ListField(required=False, default=[]),
+        ser.ListField(read_only=True, default=[]),
         min_version='2.0', max_version='2.4'
     )
 
@@ -122,3 +123,10 @@ class PreprintProviderSerializer(JSONAPISerializer):
         if not auth.user:
             return []
         return get_perms(auth.user, obj)
+
+    def update(self, instance, validated_data):
+        instance.reviews_workflow = validated_data['reviews_workflow']
+        instance.reviews_comments_private = validated_data['reviews_comments_private']
+        instance.reviews_comments_anonymous = validated_data['reviews_comments_anonymous']
+        instance.save()
+        return instance
