@@ -190,26 +190,12 @@ def register_draft_registration(auth, node, draft, *args, **kwargs):
     if draft.approval and draft.approval.state != Sanction.REJECTED:
         raise HTTPError(http.CONFLICT, data=dict(message_long='Cannot resubmit previously submitted draft.'))
 
-    register = draft.register(auth)
-    draft.save()
+    draft.register(auth, reg_choice=registration_choice)
 
-    if registration_choice == 'embargo':
-        # Initiate embargo
-        embargo_end_date = parse_date(data['embargoEndDate'], ignoretz=True).replace(tzinfo=pytz.utc)
-        try:
-            register.embargo_registration(auth.user, embargo_end_date)
-        except ValidationValueError as err:
-            raise HTTPError(http.BAD_REQUEST, data=dict(message_long=err.message))
-    else:
-        try:
-            register.require_approval(auth.user)
-        except NodeStateError as err:
-            raise HTTPError(http.BAD_REQUEST, data=dict(message_long=err.message))
-
-    register.save()
     push_status_message(language.AFTER_REGISTER_ARCHIVING,
                         kind='info',
                         trust=False)
+
     return {
         'status': 'initiated',
         'urls': {
