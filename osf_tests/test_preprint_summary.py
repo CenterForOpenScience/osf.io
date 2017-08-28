@@ -22,7 +22,7 @@ def preprint(preprint_provider):
 
 @pytest.fixture()
 def right_before_my_birthday():
-    return {'preprint_dates': datetime.datetime(1991, 9, 25, 0, tzinfo=pytz.utc).replace(hour=23,minute=59,second=59),
+    return {'preprint_dates': datetime.datetime(1991, 9, 25, 0, tzinfo=pytz.utc).replace(hour=23, minute=59, second=59),
             'run_date': timezone.now()
             }
 
