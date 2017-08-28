@@ -35,7 +35,7 @@ from addons.base import signals as file_signals
 from osf.models import (BaseFileNode, TrashedFileNode,
                         OSFUser, AbstractNode,
                         NodeLog, DraftRegistration, MetaSchema)
-from website.profile.utils import get_gravatar
+from website.profile.utils import get_profile_image_url
 from website.project import decorators
 from website.project.decorators import must_be_contributor_or_public, must_be_valid_project
 from website.project.utils import serialize_node
@@ -568,7 +568,7 @@ def addon_deleted_file(auth, node, error_type='BLAME_PROVIDER', **kwargs):
             'render': None,
             'sharejs': None,
             'mfr': settings.MFR_SERVER_URL,
-            'gravatar': get_gravatar(auth.user, 25),
+            'profile_image': get_profile_image_url(auth.user, 25),
             'files': node.web_url_for('collect_file_trees'),
         },
         'extra': {},
@@ -744,7 +744,7 @@ def addon_view_file(auth, node, file_node, version):
             'render': render_url.url,
             'mfr': settings.MFR_SERVER_URL,
             'sharejs': wiki_settings.SHAREJS_URL,
-            'gravatar': get_gravatar(auth.user, 25),
+            'profile_image': get_profile_image_url(auth.user, 25),
             'files': node.web_url_for('collect_file_trees'),
             'archived_from': get_archived_from_url(node, file_node) if node.is_registration else None,
         },

@@ -1612,7 +1612,7 @@ class TestAddingContributorViews(OsfTestCase):
         assert_equal(res['email'], email)
         assert_equal(res['id'], None)
         assert_false(res['registered'])
-        assert_true(res['gravatar'])
+        assert_true(res['profile_image_url'])
         assert_false(res['active'])
 
     def test_deserialize_contributors(self):
@@ -1686,7 +1686,7 @@ class TestAddingContributorViews(OsfTestCase):
         assert_false(res['active'])
         assert_false(res['registered'])
         assert_equal(res['id'], user._primary_key)
-        assert_true(res['gravatar_url'])
+        assert_true(res['profile_image_url'])
         assert_equal(res['fullname'], name)
         assert_equal(res['email'], email)
 

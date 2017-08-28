@@ -161,7 +161,7 @@
             isAdmin: ${ user.get('is_admin', False) | sjson, n},
             canComment: ${ user['can_comment'] | sjson, n},
             canEdit: ${ user['can_edit'] | sjson, n},
-            gravatarUrl: ${user_gravatar | sjson, n}
+            profileImageUrl: ${user_profile_image | sjson, n}
         },
         node: {
             ## TODO: Abstract me
