@@ -3,6 +3,7 @@ import logging
 import re
 
 from django.apps import apps
+from django.core.exceptions import ValidationError
 
 from modularodm import Q
 from modularodm.exceptions import ValidationValueError
@@ -29,9 +30,9 @@ def validate_contributor(guid, contributors):
     OSFUser = apps.get_model('osf.OSFUser')
     user = OSFUser.load(guid)
     if not user or not user.is_claimed:
-        raise ValidationValueError('User does not exist or is not active.')
+        raise ValidationError('User does not exist or is not active.')
     elif user not in contributors:
-        raise ValidationValueError('Mentioned user is not a contributor.')
+        raise ValidationError('Mentioned user is not a contributor.')
     return True
 
 def get_valid_mentioned_users_guids(comment, contributors):

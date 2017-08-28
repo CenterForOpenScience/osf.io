@@ -12,7 +12,6 @@ var m = require('mithril');
 
 
 var FolderPicker = require('js/folderpicker');
-var Clipboard = require('clipboard');
 var $osf = require('js/osfHelpers');
 
 var oop = require('js/oop');

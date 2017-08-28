@@ -1,7 +1,6 @@
 from __future__ import absolute_import
 
 import logging
-from modularodm import Q
 
 # App must be initialized before models or ADDONS_AVAILABLE are available
 from website.app import init_app
@@ -33,17 +32,17 @@ def get_enabled_authorized_linked(user_settings_list, has_external_account, shor
 
     # osfstorage and wiki don't have user_settings, so always assume they're enabled, authorized, linked
     if short_name == 'osfstorage' or short_name == 'wiki':
-        num_enabled = num_authorized = num_linked = OSFUser.find(
-            Q('is_registered', 'eq', True) &
-            Q('password', 'ne', None) &
-            Q('merged_by', 'eq', None) &
-            Q('date_disabled', 'eq', None) &
-            Q('date_confirmed', 'ne', None)
+        num_enabled = num_authorized = num_linked = OSFUser.objects.filter(
+            is_registered=True,
+            password__isnull=False,
+            merged_by__isnull=True,
+            date_disabled__isnull=True,
+            date_confirmed__isnull=False
         ).count()
 
     elif short_name == 'forward':
-        num_enabled = num_authorized = ForwardNodeSettings.find().count()
-        num_linked = ForwardNodeSettings.find(Q('url', 'ne', None)).count()
+        num_enabled = num_authorized = ForwardNodeSettings.objects.count()
+        num_linked = ForwardNodeSettings.objects.filter(url__isnull=False).count()
 
     else:
         for user_settings in paginated(user_settings_list):
@@ -75,7 +74,6 @@ class AddonSnapshot(SnapshotAnalytics):
     def get_events(self, date=None):
         super(AddonSnapshot, self).get_events(date)
 
-
         counts = []
         addons_available = {k: v for k, v in [(addon.short_name, addon) for addon in ADDONS_AVAILABLE]}
 
@@ -91,12 +89,12 @@ class AddonSnapshot(SnapshotAnalytics):
                 for node_settings in paginated(node_settings_model):
                     if node_settings.owner and not node_settings.owner.is_bookmark_collection:
                         connected_count += 1
-                deleted_count = addon.models['nodesettings'].find(Q('deleted', 'eq', True)).count() if addon.models.get('nodesettings') else 0
+                deleted_count = addon.models['nodesettings'].objects.filter(deleted=True).count() if addon.models.get('nodesettings') else 0
                 if has_external_account:
-                    disconnected_count = addon.models['nodesettings'].find(Q('external_account', 'eq', None) & Q('deleted', 'ne', True)).count() if addon.models.get('nodesettings') else 0
+                    disconnected_count = addon.models['nodesettings'].objects.filter(external_account__isnull=True, deleted=False).count() if addon.models.get('nodesettings') else 0
                 else:
                     if addon.models.get('nodesettings'):
-                        for nsm in addon.models['nodesettings'].find(Q('deleted', 'ne', True)):
+                        for nsm in addon.models['nodesettings'].objects.filter(deleted=False):
                             if nsm.configured and not nsm.complete:
                                 disconnected_count += 1
             total = connected_count + deleted_count + disconnected_count

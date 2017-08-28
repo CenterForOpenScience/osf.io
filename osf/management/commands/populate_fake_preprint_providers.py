@@ -28,9 +28,6 @@ from django.core.management import call_command
 from django.core.management.base import BaseCommand
 from django.db import transaction
 
-from modularodm import Q
-from modularodm.exceptions import NoResultsFound
-
 from osf.models import NodeLicense, Subject, PreprintProvider
 from scripts import utils as script_utils
 from website.settings import PREPRINT_PROVIDER_DOMAINS
@@ -103,20 +100,17 @@ PREPRINT_PROVIDERS = [
 
 def get_subject_id(name):
     if name not in SUBJECTS_CACHE:
-        subject = None
         try:
-            subject = Subject.find_one(Q('text', 'eq', name))
-        except NoResultsFound:
+            SUBJECTS_CACHE[name] = Subject.objects.filter(text=name).values_list('_id', flat=True).get()
+        except Subject.DoesNotExist:
             raise Exception('Subject: "{}" not found'.format(name))
-        else:
-            SUBJECTS_CACHE[name] = subject._id
 
     return SUBJECTS_CACHE[name]
 
 def get_license(name):
     try:
-        license = NodeLicense.find_one(Q('name', 'eq', name))
-    except NoResultsFound:
+        license = NodeLicense.objects.get(name=name)
+    except NodeLicense.DoesNotExist:
         raise Exception('License: "{}" not found'.format(name))
     return license
 
