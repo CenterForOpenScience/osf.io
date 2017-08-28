@@ -21,28 +21,21 @@ def preprint(preprint_provider):
 
 
 @pytest.fixture()
-def yesterday_at_midnight():
-    return timezone.now().replace(hour=0,
-                                  minute=0,
-                                  second=0,
-                                  microsecond=0) - datetime.timedelta(days=1)
-
-
-@pytest.fixture()
-def yesterday_right_before_today():
-    return timezone.now().replace(hour=23,
-                                  minute=59,
-                                  second=59) - datetime.timedelta(days=1)
-
+def right_before_my_birthday():
+    return {'preprint_dates': datetime.datetime(1991, 9, 25, 0, tzinfo=pytz.utc).replace(hour=23,minute=59,second=59),
+            'run_date': timezone.now()
+            }
 
 @pytest.fixture()
 def my_birthday_at_midnight():
-    return datetime.datetime(1991, 9, 25, 0, tzinfo=pytz.utc)
+    return {'preprint_dates': datetime.datetime(1991, 9, 25, 0, tzinfo=pytz.utc),
+            'run_date': timezone.now()
+            }
 
 pytestmark = pytest.mark.django_db
 
 
-@pytest.mark.parametrize('date', [yesterday_at_midnight(), yesterday_right_before_today(), my_birthday_at_midnight()])
+@pytest.mark.parametrize('date', [right_before_my_birthday(), my_birthday_at_midnight()])
 class TestPreprintCount:
 
     def test_get_preprint_count(self, preprint, date):
@@ -55,11 +48,11 @@ class TestPreprintCount:
         field = PreprintService._meta.get_field('date_created')
         field.auto_now_add = False  # We have to fudge the time because Keen doesn't allow same day queries.
 
-        preprint.date_created = date - datetime.timedelta(hours=1)
+        preprint.date_created = date['preprint_dates'] - datetime.timedelta(hours=1)
         preprint.save()
 
         field.auto_now_add = True
-        results = PreprintSummary().get_events(date.date())
+        results = PreprintSummary().get_events(date['preprint_dates'].date())
 
         assert len(results) == 1
 
