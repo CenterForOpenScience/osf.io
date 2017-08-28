@@ -4,14 +4,12 @@ var assert = require('chai').assert;
 
 var utils = require('tests/utils');
 var faker = require('faker');
-var Raven = require('raven-js');
 var oop = require('js/oop');
 var ko = require('knockout');
 var $ = require('jquery');
 var $osf = require('js/osfHelpers');
 
 var FolderPickerNodeConfigVM = require('js/folderPickerNodeConfig');
-var FolderPicker = require('js/folderpicker');
 var testUtils = require('./folderPickerTestUtils.js');
 
 var onPickFolderSpy = new sinon.spy();

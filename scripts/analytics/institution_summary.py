@@ -1,8 +1,9 @@
 import pytz
 import logging
-from modularodm import Q
 from dateutil.parser import parse
 from datetime import datetime, timedelta
+
+from django.db.models import Q
 
 from osf.models import OSFUser, AbstractNode, Institution, Registration
 from website.app import init_app
@@ -19,14 +20,10 @@ class InstitutionSummary(SummaryAnalytics):
     def collection_name(self):
         return 'institution_summary'
 
-    def get_institutions(self):
-        institutions = Institution.find(Q('_id', 'ne', None))
-        return institutions
-
     def get_events(self, date):
         super(InstitutionSummary, self).get_events(date)
 
-        institutions = self.get_institutions()
+        institutions = Institution.objects.all()
         counts = []
 
         # Convert to a datetime at midnight for queries and the timestamp
@@ -34,15 +31,15 @@ class InstitutionSummary(SummaryAnalytics):
         query_datetime = timestamp_datetime + timedelta(1)
 
         for institution in institutions:
-            user_query = Q('affiliated_institutions', 'eq', institution)
+            user_query = Q(affiliated_institutions=institution)
             node_query = (
-                Q('is_deleted', 'ne', True) &
-                Q('date_created', 'lt', query_datetime)
+                Q(is_deleted=False) &
+                Q(date_created__lt=query_datetime)
             )
 
-            project_query = node_query & Q('parent_nodes', 'eq', None)
-            public_query = Q('is_public', 'eq', True)
-            private_query = Q('is_public', 'eq', False)
+            project_query = node_query & Q(parent_nodes__isnull=True)
+            public_query = Q(is_public=True)
+            private_query = Q(is_public=False)
             node_public_query = node_query & public_query
             node_private_query = node_query & private_query
             project_public_query = project_query & public_query
@@ -53,27 +50,27 @@ class InstitutionSummary(SummaryAnalytics):
                     'name': institution.name,
                 },
                 'users': {
-                    'total': OSFUser.find(user_query).count(),
+                    'total': institution.contributors.count(),
                 },
                 'nodes': {
-                    'total': AbstractNode.find_by_institutions(institution, node_query).count(),
-                    'public': AbstractNode.find_by_institutions(institution, node_public_query).count(),
-                    'private': AbstractNode.find_by_institutions(institution, node_private_query).count(),
+                    'total': institution.nodes.filter(node_query).exclude(type='osf.registration').count(),
+                    'public': institution.nodes.filter(node_public_query).exclude(type='osf.registration').count(),
+                    'private': institution.nodes.filter(node_private_query).exclude(type='osf.registration').count(),
                 },
                 'projects': {
-                    'total': AbstractNode.find_by_institutions(institution, project_query).count(),
-                    'public': AbstractNode.find_by_institutions(institution, project_public_query).count(),
-                    'private': AbstractNode.find_by_institutions(institution, project_private_query).count(),
+                    'total': institution.nodes.filter(project_query).exclude(type='osf.registration').count(),
+                    'public': institution.nodes.filter(project_public_query).exclude(type='osf.registration').count(),
+                    'private': institution.nodes.filter(project_private_query).exclude(type='osf.registration').count(),
                 },
                 'registered_nodes': {
-                    'total': Registration.find_by_institutions(institution, node_query).count(),
-                    'public': Registration.find_by_institutions(institution, node_public_query).count(),
-                    'embargoed': Registration.find_by_institutions(institution, node_private_query).count(),
+                    'total': institution.nodes.filter(node_query).filter(type='osf.registration').count(),
+                    'public': institution.nodes.filter(node_public_query).filter(type='osf.registration').count(),
+                    'embargoed': institution.nodes.filter(node_private_query).filter(type='osf.registration').count(),
                 },
                 'registered_projects': {
-                    'total': Registration.find_by_institutions(institution, project_query).count(),
-                    'public': Registration.find_by_institutions(institution, project_public_query).count(),
-                    'embargoed': Registration.find_by_institutions(institution, project_private_query).count(),
+                    'total': institution.nodes.filter(project_query).filter(type='osf.registration').count(),
+                    'public': institution.nodes.filter(project_public_query).filter(type='osf.registration').count(),
+                    'embargoed': institution.nodes.filter(project_private_query).filter(type='osf.registration').count(),
                 },
                 'keen': {
                     'timestamp': timestamp_datetime.isoformat()

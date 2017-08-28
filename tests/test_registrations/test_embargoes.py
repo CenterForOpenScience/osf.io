@@ -1,6 +1,5 @@
 """Tests related to embargoes of registrations"""
 import datetime
-from datetime import timedelta
 import httplib as http
 import json
 
@@ -1097,46 +1096,3 @@ class RegistrationEmbargoViewsTestCase(OsfTestCase):
         assert_equal(http.UNAUTHORIZED, res.status_code)
         assert_true(self.registration.is_pending_embargo)
         assert_equal(self.registration.embargo.state, Embargo.UNAPPROVED)
-
-class TestEmbargoUnauthView(OsfTestCase):
-
-    def setUp(self):
-        super(TestEmbargoUnauthView, self).setUp()
-
-        self.user = AuthUserFactory()
-        self.non_contrib = AuthUserFactory()
-
-        self.project = ProjectFactory(creator=self.user)
-        self.registration_embargo = RegistrationFactory(creator=self.user, project=self.project)
-
-        self.registration_embargo.embargo_registration(
-            self.user,
-            timezone.now() + timedelta(days=10)
-        )
-        self.registration_embargo.save()
-
-    def test_pending_embargo_non_contrib_returns_forbidden(self):
-        res = self.app.get(
-            self.registration_embargo.web_url_for('view_project'),
-            auth=self.non_contrib.auth,
-            expect_errors=True
-        )
-
-        assert_true(self.registration_embargo.is_pending_embargo)
-        assert_equal(res.status_code, 403)
-        assert_in('Forbidden', res.body)
-
-    def test_embargo_non_contrib_returns_resource_under_embargo(self):
-        approval_token = self.registration_embargo.embargo.approval_state[self.user._id]['approval_token']
-        self.registration_embargo.embargo.approve_embargo(self.user, approval_token)
-        self.registration_embargo.save()
-
-        res = self.app.get(
-            self.registration_embargo.web_url_for('view_project'),
-            auth=self.non_contrib.auth,
-            expect_errors=True
-        )
-
-        assert_false(self.registration_embargo.is_pending_embargo)
-        assert_equal(res.status_code, 403)
-        assert_in('Resource under embargo', res.body)

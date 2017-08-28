@@ -33,7 +33,7 @@ from osf.models import (Subject, NotificationSubscription, NotificationDigest,
                         NodeLicenseRecord, Embargo, RegistrationApproval,
                         Retraction, Sanction, Comment, DraftRegistration,
                         MetaSchema, AbstractNode, NodeLog,
-                        PrivateLink, Tag, AlternativeCitation, Institution,
+                        PrivateLink, Tag, Institution,
                         ApiOAuth2PersonalToken, ApiOAuth2Application, ExternalAccount,
                         ExternalProvider, OSFUser, PreprintService,
                         PreprintProvider, Session, Guid)
@@ -798,21 +798,6 @@ class ArchiveTargetFactory(ModularOdmFactory):
 class ArchiveJobFactory(ModularOdmFactory):
     class Meta:
         model = ArchiveJob
-
-class AlternativeCitationFactory(ModularOdmFactory):
-    class Meta:
-        model = AlternativeCitation
-
-    @classmethod
-    def _create(cls, target_class, *args, **kwargs):
-        name = kwargs.get('name')
-        text = kwargs.get('text')
-        instance = target_class(
-            name=name,
-            text=text
-        )
-        instance.save()
-        return instance
 
 class DraftRegistrationFactory(ModularOdmFactory):
     class Meta:

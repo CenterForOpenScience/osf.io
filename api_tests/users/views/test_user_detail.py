@@ -2,6 +2,8 @@
 import pytest
 import urlparse
 
+from osf.models import QuickFilesNode
+from website import util as website_utils
 from api.base.settings.defaults import API_BASE
 from osf_tests.factories import (
     AuthUserFactory,
@@ -27,7 +29,7 @@ class TestUserDetail:
         return AuthUserFactory()
 
     def test_get(self, app, user_one, user_two):
-        
+
     #   test_gets_200
         url = '/{}users/{}/'.format(API_BASE, user_one._id)
         res = app.get(url)
@@ -82,6 +84,21 @@ class TestUserDetail:
         res = app.get(url)
         user_json = res.json['data']
         assert 'profile_image' in user_json['links']
+
+    def test_files_relationship_upload(self, app, user_one):
+        url = "/{}users/{}/".format(API_BASE, user_one._id)
+        res = app.get(url, auth=user_one)
+        quickfiles = QuickFilesNode.objects.get(creator=user_one)
+        user_json = res.json['data']
+        upload_url = user_json['relationships']['quickfiles']['links']['upload']['href']
+        waterbutler_upload = website_utils.waterbutler_api_url_for(quickfiles._id, 'osfstorage')
+
+        assert upload_url == waterbutler_upload
+
+    def test_nodes_relationship_is_absent(self, app, user_one):
+        url = "/{}users/{}/".format(API_BASE, user_one._id)
+        res = app.get(url, auth=user_one)
+        assert 'node' not in res.json['data']['relationships'].keys()
 
 
 @pytest.mark.django_db
@@ -721,7 +738,7 @@ class TestDeactivatedUser:
         res = app.get(url, expect_errors=True)
         assert res.status_code == 200
         attr = res.json['data']['attributes']
-        assert attr['active'] == False
+        assert attr['active'] is False
         assert res.json['data']['id'] == user_one._id
 
     def test_requesting_deactivated_user_returns_410_response_and_meta_info(self, app, user_one, user_two):

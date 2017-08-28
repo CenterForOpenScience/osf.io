@@ -735,7 +735,6 @@ def _view_project(node, auth, primary=False,
                 'ark': node.get_identifier_value('ark'),
             },
             'institutions': get_affiliated_institutions(node) if node else [],
-            'alternative_citations': [citation.to_json() for citation in node.alternative_citations.all()],
             'has_draft_registrations': node.has_active_draft_registrations,
             'is_preprint': node.is_preprint,
             'is_preprint_orphan': node.is_preprint_orphan,
@@ -1173,6 +1172,9 @@ def fork_pointer(auth, node, **kwargs):
     """Fork a pointer. Raises BAD_REQUEST if pointer not provided, not found,
     or not present in `nodes`.
 
+    :param Auth auth: Consolidated authorization
+    :param Node node: root from which pointer is child
+    :return: Fork of node to which nodelink(pointer) points
     """
     NodeRelation = apps.get_model('osf.NodeRelation')
 
@@ -1185,10 +1187,15 @@ def fork_pointer(auth, node, **kwargs):
         raise HTTPError(http.BAD_REQUEST)
 
     try:
-        node.fork_pointer(pointer, auth=auth, save=True)
+        fork = node.fork_pointer(pointer, auth=auth, save=True)
     except ValueError:
         raise HTTPError(http.BAD_REQUEST)
 
+    return {
+        'data': {
+            'node': serialize_node_summary(node=fork, auth=auth, show_path=False)
+        }
+    }, http.CREATED
 
 def abbrev_authors(node):
     lead_author = node.visible_contributors[0]
