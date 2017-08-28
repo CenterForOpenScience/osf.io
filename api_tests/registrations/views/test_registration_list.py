@@ -71,7 +71,7 @@ class TestRegistrationList(ApiTestCase):
 
         assert_equal(registered_from, '/{}nodes/{}/'.format(API_BASE, self.public_project._id))
 
-    def test_total_biographic_contributor_in_institution_registration(self):
+    def test_total_biographic_contributor_in_registration(self):
         registration = RegistrationFactory(is_public=True, creator=self.user)
         registration.add_contributor(self.user_two, auth=Auth(self.user))
         registration.save()
