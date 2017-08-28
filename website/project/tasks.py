@@ -1,4 +1,5 @@
 from django.apps import apps
+import httplib as http
 import logging
 import pytz
 import urlparse
@@ -9,14 +10,12 @@ from dateutil.parser import parse as parse_date
 from django.utils import timezone
 
 from framework import status
-from framework.status import push_status_message
 from framework.celery_tasks import app as celery_app
 from framework.exceptions import HTTPError
 
 from osf.exceptions import ValidationValueError
 from osf.models.node_relation import NodeRelation
 
-from website import mails, language, settings
 from website import settings, mails
 from website.exceptions import NodeStateError
 from website.project import signals as project_signals
