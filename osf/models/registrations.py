@@ -538,7 +538,7 @@ class DraftRegistration(ObjectIDMixin, BaseModel):
         if save:
             self.save()
 
-    def register(self, auth, save=False, reg_choice=None):
+    def register(self, auth, data=None, save=False, reg_choice=None):
         node = self.branched_from
 
         # Create the registration
@@ -546,7 +546,7 @@ class DraftRegistration(ObjectIDMixin, BaseModel):
             draft=self,
             schema=self.registration_schema,
             auth=auth,
-            data=self.registration_metadata,
+            data=data,
             reg_choice=reg_choice
         )
 

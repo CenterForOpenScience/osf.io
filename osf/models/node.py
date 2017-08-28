@@ -1598,7 +1598,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
             contribs.append(contrib)
         Contributor.objects.bulk_create(contribs)
 
-    def register_node(self, schema, auth, data, parent=None, draft=None, reg_choice=None):
+    def register_node(self, schema=None, auth=None, data=None, parent=None, draft=None, reg_choice=None):
         """Make a frozen copy of a node.
 
         :param schema: Schema object
@@ -1622,7 +1622,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         if self.is_deleted:
             raise NodeStateError('Cannot register deleted node.')
 
-        enqueue_task(node_tasks.on_node_register.s(self, draft, auth, data=data, schema=schema, parent=parent, reg_choice=reg_choice))
+        enqueue_task(node_tasks.on_node_register.s(self, draft=draft, auth=auth, data=data, schema=schema, parent=parent, reg_choice=reg_choice))
 
     def path_above(self, auth):
         parents = self.parents

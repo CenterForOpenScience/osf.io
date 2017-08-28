@@ -1,5 +1,6 @@
 from django.apps import apps
 import logging
+import pytz
 import urlparse
 import random
 import requests
@@ -25,7 +26,7 @@ from website.util.share import GraphNode, format_contributor
 logger = logging.getLogger(__name__)
 
 @celery_app.task(ignore_results=False)
-def on_node_register(original, draft, auth, data=None, schema=None, parent=None, reg_choice=None):
+def on_node_register(original, draft=None, auth=None, data=None, schema=None, parent=None, reg_choice=None):
 
     registered = original.clone()
     registered.recast('osf.registration')
