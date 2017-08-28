@@ -32,7 +32,7 @@ var oldMarkdownList = function(md) {
 };
 
 // Full markdown renderer for views / wiki pages / pauses between typing
-var markdown = new MarkdownIt({
+var markdown = new MarkdownIt('commonmark', {
     highlight: highlighter,
     linkify: true
 })
@@ -41,25 +41,28 @@ var markdown = new MarkdownIt({
     .use(require('markdown-it-sanitizer'))
     .use(insDel)
     .enable('table')
+    .enable('linkify')
     .use(bootstrapTable)
     .disable('strikethrough');
 
 
 // Fast markdown renderer for active editing to prevent slow loading/rendering tasks
-var markdownQuick = new MarkdownIt({ linkify: true })
+var markdownQuick = new MarkdownIt('commonmark', { linkify: true })
     .use(require('markdown-it-sanitizer'))
     .disable('link')
     .disable('image')
     .use(insDel)
     .enable('table')
+    .enable('linkify')
     .use(bootstrapTable)
     .disable('strikethrough');
 
 // Markdown renderer for older wikis rendered before switch date
-var markdownOld = new MarkdownIt({ linkify: true})
+var markdownOld = new MarkdownIt('commonmark', { linkify: true})
     .use(require('markdown-it-sanitizer'))
     .use(insDel)
     .enable('table')
+    .enable('linkify')
     .use(bootstrapTable)
     .use(oldMarkdownList)
     .disable('strikethrough');
