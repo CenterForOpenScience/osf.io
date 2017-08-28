@@ -4,8 +4,6 @@ from tests.base import ApiTestCase
 from osf_tests.factories import (
     AuthUserFactory,
     InstitutionFactory,
-    NodeFactory,
-    ProjectFactory,
     RegistrationFactory,
     WithdrawnRegistrationFactory
 )
@@ -85,6 +83,7 @@ class TestInstitutionRegistrationList(ApiTestCase):
         registration3.add_contributor(self.user2, auth=Auth(self.user1))
         registration3.save()
         registration3_url = '/{0}registrations/{1}/?embed=contributors'.format(API_BASE, registration3._id)
+
         res = self.app.get(registration3_url)
         assert_true(res.json['data']['embeds']['contributors']['meta']['total_bibliographic'])
         assert_equal(res.json['data']['embeds']['contributors']['meta']['total_bibliographic'], 2)
