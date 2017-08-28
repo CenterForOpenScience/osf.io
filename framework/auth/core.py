@@ -105,7 +105,7 @@ def get_user(email=None, password=None, token=None, external_id_provider=None, e
     """
     from osf.models import OSFUser, Email
 
-    if not any([email, password, token, external_id_provider, external_id_provider]):
+    if not any([email, password, token, external_id_provider, external_id_provider, eppn]):
         return None
 
     if password and not email:
@@ -129,7 +129,6 @@ def get_user(email=None, password=None, token=None, external_id_provider=None, e
         return user
 
     if eppn:
-        eppn = eppn.strip().lower()
         qs = qs.filter(eppn=eppn)
 
     if token:
