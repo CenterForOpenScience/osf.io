@@ -771,6 +771,13 @@ def make_url_map(app):
             OsfWebRenderer('profile/account.mako', trust=False),
         ),
 
+         Rule(
+            '/settings/account/email',
+            'get',
+            profile_views.user_account_email,
+            OsfWebRenderer('profile/add_email.mako', trust=False),
+        ),
+
         Rule(
             '/settings/account/password',
             'post',

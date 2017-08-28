@@ -1181,6 +1181,19 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
             self.save()
             unregistered_user.username = None
 
+        if self.have_email is False:
+            # username is not email address.
+            if self.emails.filter(address=self.username).exists():
+                self.emails.filter(address=self.username).delete()
+            self.username = email
+            self.have_email = True
+            mails.send_mail(
+                to_addr=email,
+                mail=mails.WELCOME_OSF4I,
+                mimetype='html',
+                user=self
+            )
+
         if not self.emails.filter(address=email).exists():
             self.emails.create(address=email)
 

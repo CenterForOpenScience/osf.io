@@ -13,6 +13,7 @@ from framework import sentry
 from framework.auth import utils as auth_utils
 from framework.auth.decorators import collect_auth
 from framework.auth.decorators import must_be_logged_in
+from framework.auth.decorators import must_be_logged_in_without_checking_email
 from framework.auth.decorators import must_be_confirmed
 from framework.auth.exceptions import ChangePasswordError
 from framework.auth.views import send_confirm_email
@@ -83,7 +84,7 @@ def resend_confirmation(auth):
 
     return _profile_view(user, is_profile=True)
 
-@must_be_logged_in
+@must_be_logged_in_without_checking_email
 def update_user(auth):
     """Update the logged-in user's profile."""
 
@@ -226,7 +227,7 @@ def _profile_view(profile, is_profile=False, include_node_counts=False):
         return ret
     raise HTTPError(http.NOT_FOUND)
 
-@must_be_logged_in
+@must_be_logged_in_without_checking_email
 def profile_view_json(auth):
     return _profile_view(auth.user, True)
 
@@ -239,7 +240,7 @@ def profile_view_id_json(uid, auth):
     # Do NOT embed nodes, they aren't necessary
     return _profile_view(user, is_profile)
 
-@must_be_logged_in
+@must_be_logged_in_without_checking_email
 def profile_view(auth):
     # Embed node data, so profile node lists can be rendered
     return _profile_view(auth.user, True, include_node_counts=True)
@@ -268,6 +269,22 @@ def user_account(auth, **kwargs):
     user_addons = addon_utils.get_addons_by_config_type('user', user)
 
     return {
+        'user_id': user._id,
+        'addons': user_addons,
+        'addons_js': collect_user_config_js([addon for addon in settings.ADDONS_AVAILABLE if 'user' in addon.configs]),
+        'addons_css': [],
+        'requested_deactivation': user.requested_deactivation,
+        'external_identity': user.external_identity
+    }
+
+
+@must_be_logged_in_without_checking_email
+def user_account_email(auth, **kwargs):
+    user = auth.user
+    user_addons = addon_utils.get_addons_by_config_type('user', user)
+
+    return {
+        'eppn': user.eppn,
         'user_id': user._id,
         'addons': user_addons,
         'addons_js': collect_user_config_js([addon for addon in settings.ADDONS_AVAILABLE if 'user' in addon.configs]),

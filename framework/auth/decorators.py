@@ -64,6 +64,25 @@ def must_be_confirmed(func):
     return wrapped
 
 
+def email_required(func):
+    """Require that user has email."""
+    @functools.wraps(func)
+    def wrapped(*args, **kwargs):
+        auth = Auth.from_kwargs(request.args.to_dict(), kwargs)
+        if auth.logged_in:
+            auth.user.update_date_last_access()
+            if auth.user.have_email:
+                setup_groups(auth)
+                return func(*args, **kwargs)
+            else:
+                from website.util import web_url_for
+                return redirect(web_url_for('user_account_email'))
+        else:
+            return func(*args, **kwargs)
+
+    return wrapped
+
+
 def must_be_logged_in(func):
     """Require that user be logged in. Modifies kwargs to include the current
     user.
@@ -72,13 +91,131 @@ def must_be_logged_in(func):
     @functools.wraps(func)
     def wrapped(*args, **kwargs):
 
+        auth = Auth.from_kwargs(request.args.to_dict(), kwargs)
+        kwargs['auth'] = auth
+        if auth.logged_in:
+            auth.user.update_date_last_access()
+            if auth.user.have_email:
+                setup_groups(auth)
+                return func(*args, **kwargs)
+            else:
+                from website.util import web_url_for
+                return redirect(web_url_for('user_account_email'))
+        else:
+            return redirect(cas.get_login_url(request.url))
+
+    return wrapped
+
+
+def must_be_logged_in_without_checking_email(func):
+    """Require that user be logged in. Modifies kwargs to include the current
+    user without checking email existence.
+
+    """
+    @functools.wraps(func)
+    def wrapped(*args, **kwargs):
+
         kwargs['auth'] = Auth.from_kwargs(request.args.to_dict(), kwargs)
         if kwargs['auth'].logged_in:
+            kwargs['auth'].user.update_date_last_access()
             return func(*args, **kwargs)
         else:
             return redirect(cas.get_login_url(request.url))
 
     return wrapped
+
+
+def setup_groups(auth):
+    user = auth.user
+    if user.groups_initialized:
+        return
+    #create_or_join_group_projects(user)
+    #leave_group_projects(auth)
+    #user.groups_initialized = True
+    #user.save()
+
+
+def get_group_node(groupname):
+    from website.project.model import Node
+    from modularodm import Q
+    try:
+        node = Node.find_one(Q('group', 'eq', groupname))
+        return node
+    except:
+        return None
+
+def is_group_admin(user, groupname):
+    if groupname in user.groups_admin:
+        return True
+    else:
+        return False
+
+def is_node_admin(node, user):
+    return node.has_permission(user, 'admin', check_parent=False)
+
+def create_group_project(user, groupname):
+    from website.project.model import Node
+    node = Node(title = groupname,
+                category = "project",
+                description = groupname + " (created automatically)", #TODO
+                group = groupname,
+                creator = user)
+    node.save()
+
+def create_or_join_group_projects(user):
+    from website.util.permissions import CREATOR_PERMISSIONS, DEFAULT_CONTRIBUTOR_PERMISSIONS
+    for groupname in user.groups:
+        group_admin = is_group_admin(user, groupname)
+        node = get_group_node(groupname)
+        if node is not None:  # exists
+            if node.is_deleted == True and group_admin:
+                node.is_deleted = False   # re-enabled
+                node.save()
+            if node.is_contributor(user):
+                node_admin = is_node_admin(node, user)
+                if node_admin:
+                    if not group_admin:
+                        node.set_permissions(user,
+                                             DEFAULT_CONTRIBUTOR_PERMISSIONS,
+                                             save=True)
+                else:
+                    if group_admin:
+                        node.set_permissions(user, CREATOR_PERMISSIONS,
+                                             save=True)
+            elif group_admin:
+                node.add_contributor(user, log=True, save=True,
+                                     permissions=CREATOR_PERMISSIONS)
+            else:  # not admin
+                node.add_contributor(user, log=True, save=True)
+        elif group_admin:  # not exist && is admin
+            create_group_project(user, groupname)
+
+def leave_group_projects(auth):
+    user = auth.user
+    from website.project.model import Node
+    nodes = Node.find_for_user(user)
+    for node in nodes:
+        if node.group is None:
+            continue  # skip
+        if user.groups is None:
+            continue  # skip
+        if node.group in user.groups:
+            continue  # skip
+        if not user._id in node.contributors:
+            continue  # skip
+        if not is_node_admin(node, user):
+            node.remove_contributor(user, auth=auth, log=True)
+            ### node.remove_contributor() includes node.save()
+            continue  # next
+        admins = list(node.get_admin_contributors(node.contributors))
+        len_admins = len(admins)
+        if len_admins > 1:
+            node.remove_contributor(user, auth=auth, log=True)
+            ### node.remove_contributor() includes node.save()
+            continue  # next
+        ### The user is last admin.
+        ### len(node.contributors) may not be 1.
+        node.remove_node(auth)  # node.is_deleted = True
 
 
 def must_be_signed(func):

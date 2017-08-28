@@ -17,6 +17,7 @@ from framework.auth import get_user
 from framework.auth.exceptions import DuplicateEmailError, ExpiredTokenError, InvalidTokenError
 from framework.auth.core import generate_verification_key
 from framework.auth.decorators import block_bing_preview, collect_auth, must_be_logged_in
+from framework.auth.decorators import must_be_logged_in_without_checking_email
 from framework.auth.forms import ResendConfirmationForm, ForgotPasswordForm, ResetPasswordForm
 from framework.auth.utils import ensure_external_identity_uniqueness, validate_recaptcha
 from framework.exceptions import HTTPError
@@ -638,7 +639,7 @@ def confirm_email_get(token, auth=None, **kwargs):
     ))
 
 
-@must_be_logged_in
+@must_be_logged_in_without_checking_email
 def unconfirmed_email_remove(auth=None):
     """
     Called at login if user cancels their merge or email add.
@@ -662,7 +663,7 @@ def unconfirmed_email_remove(auth=None):
     }, 200
 
 
-@must_be_logged_in
+@must_be_logged_in_without_checking_email
 def unconfirmed_email_add(auth=None):
     """
     Called at login if user confirms their merge or email add.
