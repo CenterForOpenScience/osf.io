@@ -236,6 +236,8 @@ def _must_be_contributor_factory(include_public, include_view_only_anon=True):
 
             kwargs['auth'] = Auth.from_kwargs(request.args.to_dict(), kwargs)
             user = kwargs['auth'].user
+            if user is not None:
+                user.update_date_last_access()
 
             key = request.args.get('view_only', '').strip('/')
             #if not login user check if the key is valid or the other privilege
@@ -380,6 +382,8 @@ def must_have_permission(permission):
             # User must have permissions
             if not node.has_permission(user, permission):
                 raise HTTPError(http.FORBIDDEN)
+
+            user.update_date_last_access()
 
             # Call view function
             return func(*args, **kwargs)

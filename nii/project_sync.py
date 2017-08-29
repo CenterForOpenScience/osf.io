@@ -185,12 +185,12 @@ def user_last_access_get_latest():
 
     latest = dt.datetime.min
     for user in OSFUser.find():
-        if not hasattr(user, 'last_access'):
+        if not hasattr(user, 'date_last_access'):
             continue
-        elif type(user.last_access) is not dt.datetime:
+        elif type(user.date_last_access) is not dt.datetime:
             continue
-        elif user.last_access > latest:
-            latest = user.last_access
+        elif user.date_last_access > latest:
+            latest = user.date_last_access
     return latest
 
 
