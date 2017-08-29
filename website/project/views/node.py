@@ -278,6 +278,9 @@ def node_setting(auth, node, **kwargs):
         'project': 'Project'
     })
 
+    ret['group'] = node.group.name if node.group is not None else None
+    ret['can_delete'] = True if node.group is None else False
+
     return ret
 
 @must_be_valid_project

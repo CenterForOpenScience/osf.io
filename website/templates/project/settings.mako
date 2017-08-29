@@ -107,7 +107,19 @@
                         </div>
                     % if 'admin' in user['permissions']:
                         <hr />
+                        % if can_delete:
+                            <div class="help-block">
+                                A project cannot be deleted if it has any components within it.
+                                To delete a parent project, you must first delete all child components
+                                by visiting their settings pages.
+                            </div>
                             <button id="deleteNode" class="btn btn-danger btn-delete-node" data-toggle="modal" data-target="#nodesDelete">Delete ${node['node_type']}</button>
+                        % else:
+                            <div class="help-block">
+                                A project which is related to a external group (${group}) cannot be deleted.
+                            </div>
+                            <button disabled="disabled" class="btn btn-danger btn-delete-node" data-toggle="modal" data-target="#nodesDelete">Delete ${node['node_type']}</button>
+                       % endif
                     % endif
                     </div>
                 </div>
