@@ -189,12 +189,16 @@ def init_cloud_gateway_groups(user, provider):
         if groups_str is None:
             groups_str = ''
 
+    # set ePTID (eduPersonTargetedID, persistent-id)
+    user.eptid = provider['user'].get('eptid')
+
     # clear groups
     user.groups.clear()
     user.groups_admin.clear()
     user.groups_sync.clear()
-    user.groups_initialized = False
+    user.groups_initialized = False  # for framework/auth/decorators.py
 
+    # set groups
     import re
     patt_prefix = re.compile('^' + prefix)
     patt_admin = re.compile('(.+)/admin$')
