@@ -77,8 +77,8 @@ class TestRegistrationList(ApiTestCase):
         registration.save()
         registration_url = '/{0}registrations/{1}/?embed=contributors'.format(API_BASE, registration._id)
         res = self.app.get(registration_url)
-        assert_true(res.json['data']['embeds']['contributors']['link']['meta']['total_bibliographic'])
-        assert_equal(res.json['data']['embeds']['contributors']['link']['meta']['total_bibliographic'], 2)
+        assert_true(res.json['data']['embeds']['contributors']['links']['meta']['total_bibliographic'])
+        assert_equal(res.json['data']['embeds']['contributors']['links']['meta']['total_bibliographic'], 2)
 
     def test_exclude_nodes_from_registrations_endpoint(self):
         res = self.app.get(self.url, auth=self.user.auth)

@@ -85,8 +85,8 @@ class TestInstitutionRegistrationList(ApiTestCase):
         registration3_url = '/{0}registrations/{1}/?embed=contributors'.format(API_BASE, registration3._id)
 
         res = self.app.get(registration3_url)
-        assert_true(res.json['data']['embeds']['contributors']['link']['meta']['total_bibliographic'])
-        assert_equal(res.json['data']['embeds']['contributors']['link']['meta']['total_bibliographic'], 2)
+        assert_true(res.json['data']['embeds']['contributors']['links']['meta']['total_bibliographic'])
+        assert_equal(res.json['data']['embeds']['contributors']['links']['meta']['total_bibliographic'], 2)
 
 
 class TestRegistrationListFiltering(RegistrationListFilteringMixin, ApiTestCase):
