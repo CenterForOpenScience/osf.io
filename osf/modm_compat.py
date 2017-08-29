@@ -168,4 +168,7 @@ def _get_internal_type(field):
 def to_django_query(query, model_cls=None):
     """Translate a modular-odm Q or QueryGroup to a Django query.
     """
+    # temporary measure as queries are converted away from modm
+    if isinstance(query, DjangoQ):
+        return query
     return Q.from_modm_query(query, model_cls=model_cls).to_django_query()

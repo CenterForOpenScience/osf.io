@@ -7,18 +7,20 @@ from django.db import transaction
 from osf.models import PreprintProvider, PreprintService, Subject
 from scripts import utils as script_utils
 from osf.models.validators import validate_subject_hierarchy
+from website.preprints.tasks import on_preprint_updated
 
 logger = logging.getLogger(__name__)
 
 BEPRESS_PROVIDER = PreprintProvider.objects.filter(_id='osf').first()
 
-def validate_input(custom_provider, data):
+def validate_input(custom_provider, data, ignore_inex_collisions=False):
     logger.info('Validating data')
     includes = data.get('include', [])
     excludes = data.get('exclude', [])
     customs = data.get('custom', {})
     merges = data.get('merge', {})
-    assert not set(includes) & set(excludes), 'There must be no overlap between includes and excludes'
+    if not ignore_inex_collisions:
+        assert not set(includes) & set(excludes), 'There must be no overlap between includes and excludes'
     for text in includes:
         assert Subject.objects.filter(provider=BEPRESS_PROVIDER, text=text).exists(), 'Unable to find included subject with text {}'.format(text)
     included_subjects = Subject.objects.filter(provider=BEPRESS_PROVIDER, text__in=includes).include_children()
@@ -60,6 +62,9 @@ def create_subjects_recursive(custom_provider, root_text, exclude_texts, parent=
 
 def do_create_subjects(custom_provider, includes, excludes):
     for root_text in includes:
+        if root_text in excludes:
+            # This should only be hit in the `--complete-bepress` case where a top-level is excluded
+            continue
         create_subjects_recursive(custom_provider, root_text, excludes)
 
 def map_custom_subject(custom_provider, name, parent, mapping):
@@ -94,7 +99,7 @@ def do_custom_mapping(custom_provider, customs):
         if new_len == previous_len:
             raise RuntimeError('Unable to map any custom subjects on iteration -- invalid input')
 
-def map_preprints_to_custom_subjects(custom_provider, merge_dict):
+def map_preprints_to_custom_subjects(custom_provider, merge_dict, dry_run=False):
     for preprint in PreprintService.objects.filter(provider=custom_provider):
         logger.info('Preparing to migrate preprint {}'.format(preprint.id))
         old_hier = preprint.subject_hierarchy
@@ -109,19 +114,21 @@ def map_preprints_to_custom_subjects(custom_provider, merge_dict):
             validate_subject_hierarchy([s._id for s in hier])
             for s in hier:
                 preprint.subjects.add(s)
-        preprint.save(old_subjects=old_subjects)
+        # Update preprint in SHARE
+        if not dry_run:
+            on_preprint_updated(preprint._id, old_subjects=old_subjects, update_share=True)
         preprint.reload()
         new_hier = [s.object_hierarchy for s in preprint.subjects.exclude(children__in=preprint.subjects.all())]
         logger.info('Successfully migrated preprint {}.\n\tOld hierarchy:{}\n\tNew hierarchy:{}'.format(preprint.id, old_hier, new_hier))
 
-def migrate(provider=None, data=None):
+def migrate(provider=None, data=None, dry_run=False, complete=False):
     custom_provider = PreprintProvider.objects.filter(_id=provider).first()
     assert custom_provider, 'Unable to find specified provider: {}'.format(provider)
     assert custom_provider.id != BEPRESS_PROVIDER.id, 'Cannot add custom mapping to BePress provider'
-    validate_input(custom_provider, data)
+    validate_input(custom_provider, data, ignore_inex_collisions=complete)
     do_create_subjects(custom_provider, data['include'], data.get('exclude', []))
     do_custom_mapping(custom_provider, data.get('custom', {}))
-    map_preprints_to_custom_subjects(custom_provider, data.get('merge', {}))
+    map_preprints_to_custom_subjects(custom_provider, data.get('merge', {}), dry_run=dry_run)
 
 class Command(BaseCommand):
     def add_arguments(self, parser):
@@ -149,14 +156,23 @@ class Command(BaseCommand):
             required=True,
             help='_id of the PreprintProvider object, e.g. "osf"'
         )
+        parser.add_argument(
+            '--complete-bepress',
+            action='store_true',
+            dest='complete_bepress',
+            help='Specifies that the entire BePress taxonomy should be copied. `data.include` is ignored, the other keys may still be used'
+        )
 
     def handle(self, *args, **options):
         dry_run = options.get('dry_run')
         provider = options['provider']
-        data = options['data']
+        data = json.loads(options['data'])
+        complete = options.get('complete_bepress')
+        if complete:
+            data['include'] = list(Subject.objects.filter(provider=BEPRESS_PROVIDER, parent__isnull=True).values_list('text', flat=True))
         if not dry_run:
             script_utils.add_file_logger(logger, __file__)
         with transaction.atomic():
-            migrate(provider=provider, data=json.loads(data))
+            migrate(provider=provider, data=data, dry_run=dry_run, complete=complete)
             if dry_run:
                 raise RuntimeError('Dry run, transaction rolled back.')

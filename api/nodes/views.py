@@ -45,7 +45,8 @@ from api.base.views import (
     BaseNodeLinksDetail,
     BaseNodeLinksList,
     LinkedNodesRelationship,
-    LinkedRegistrationsRelationship
+    LinkedRegistrationsRelationship,
+    WaterButlerMixin
 )
 from api.caching.tasks import ban_url
 from api.citations.utils import render_citation
@@ -84,14 +85,12 @@ from api.nodes.serializers import (
     NodeContributorsSerializer,
     NodeContributorDetailSerializer,
     NodeInstitutionsRelationshipSerializer,
-    NodeAlternativeCitationSerializer,
     NodeContributorsCreateSerializer,
     NodeViewOnlyLinkSerializer,
     NodeViewOnlyLinkUpdateSerializer,
     NodeCitationSerializer,
     NodeCitationStyleSerializer
 )
-from api.nodes.utils import get_file_object
 from api.preprints.serializers import PreprintSerializer
 from api.registrations.serializers import RegistrationSerializer
 from api.users.views import UserMixin
@@ -101,7 +100,7 @@ from framework.postcommit_tasks.handlers import enqueue_postcommit_task
 from osf.models import AbstractNode
 from osf.models import (Node, PrivateLink, Institution, Comment, DraftRegistration, PreprintService)
 from osf.models import OSFUser
-from osf.models import NodeRelation, AlternativeCitation, Guid
+from osf.models import NodeRelation, Guid
 from osf.models import BaseFileNode
 from osf.models.files import File, Folder
 from addons.wiki.models import NodeWikiPage
@@ -169,39 +168,6 @@ class DraftMixin(object):
 
         self.check_object_permissions(self.request, draft.branched_from)
         return draft
-
-
-class WaterButlerMixin(object):
-
-    path_lookup_url_kwarg = 'path'
-    provider_lookup_url_kwarg = 'provider'
-
-    def get_file_item(self, item):
-        attrs = item['attributes']
-        file_node = BaseFileNode.resolve_class(
-            attrs['provider'],
-            BaseFileNode.FOLDER if attrs['kind'] == 'folder'
-            else BaseFileNode.FILE
-        ).get_or_create(self.get_node(check_object_permissions=False), attrs['path'])
-
-        file_node.update(None, attrs, user=self.request.user)
-
-        self.check_object_permissions(self.request, file_node)
-
-        return file_node
-
-    def fetch_from_waterbutler(self):
-        node = self.get_node(check_object_permissions=False)
-        path = self.kwargs[self.path_lookup_url_kwarg]
-        provider = self.kwargs[self.provider_lookup_url_kwarg]
-        return self.get_file_object(node, path, provider)
-
-    def get_file_object(self, node, path, provider, check_object_permissions=True):
-        obj = get_file_object(node=node, path=path, provider=provider, request=self.request)
-        if provider == 'osfstorage':
-            if check_object_permissions:
-                self.check_object_permissions(self.request, obj)
-        return obj
 
 
 class NodeList(JSONAPIBaseView, bulk_views.BulkUpdateJSONAPIView, bulk_views.BulkDestroyJSONAPIView, bulk_views.ListBulkCreateJSONAPIView, NodesFilterMixin, WaterButlerMixin):
@@ -2434,96 +2400,6 @@ class NodeProviderDetail(JSONAPIBaseView, generics.RetrieveAPIView, NodeMixin):
 
     def get_object(self):
         return NodeProvider(self.kwargs['provider'], self.get_node())
-
-
-class NodeAlternativeCitationsList(JSONAPIBaseView, generics.ListCreateAPIView, NodeMixin):
-    """List of alternative citations for a project.
-
-    ##Actions
-
-    ###Create Alternative Citation
-
-        Method:         POST
-        Body (JSON):    {
-                            "data": {
-                                "type": "citations",    # required
-                                "attributes": {
-                                    "name": {name},     # mandatory
-                                    "text": {text}      # mandatory
-                                }
-                            }
-                        }
-        Success:        201 Created + new citation representation
-    """
-
-    permission_classes = (
-        drf_permissions.IsAuthenticatedOrReadOnly,
-        AdminOrPublic,
-        ReadOnlyIfRegistration,
-        base_permissions.TokenHasScope
-    )
-
-    required_read_scopes = [CoreScopes.NODE_CITATIONS_READ]
-    required_write_scopes = [CoreScopes.NODE_CITATIONS_WRITE]
-
-    serializer_class = NodeAlternativeCitationSerializer
-    view_category = 'nodes'
-    view_name = 'alternative-citations'
-
-    ordering = ('-id',)
-
-    def get_queryset(self):
-        return self.get_node().alternative_citations.all()
-
-
-class NodeAlternativeCitationDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView, NodeMixin):
-    """Details about an alternative citations for a project.
-
-    ##Actions
-
-    ###Update Alternative Citation
-
-        Method:         PUT
-        Body (JSON):    {
-                            "data": {
-                                "type": "citations",    # required
-                                "id": {{id}}            # required
-                                "attributes": {
-                                    "name": {name},     # mandatory
-                                    "text": {text}      # mandatory
-                                }
-                            }
-                        }
-        Success:        200 Ok + updated citation representation
-
-    ###Delete Alternative Citation
-
-        Method:         DELETE
-        Success:        204 No content
-    """
-
-    permission_classes = (
-        drf_permissions.IsAuthenticatedOrReadOnly,
-        AdminOrPublic,
-        ReadOnlyIfRegistration,
-        base_permissions.TokenHasScope
-    )
-
-    required_read_scopes = [CoreScopes.NODE_CITATIONS_READ]
-    required_write_scopes = [CoreScopes.NODE_CITATIONS_WRITE]
-
-    serializer_class = NodeAlternativeCitationSerializer
-    view_category = 'nodes'
-    view_name = 'alternative-citation-detail'
-
-    def get_object(self):
-        try:
-            return self.get_node().alternative_citations.get(_id=str(self.kwargs['citation_id']))
-        except AlternativeCitation.DoesNotExist:
-            raise NotFound
-
-    def perform_destroy(self, instance):
-        self.get_node().remove_citation(get_user_auth(self.request), instance, save=True)
 
 
 class NodeLogList(JSONAPIBaseView, generics.ListAPIView, NodeMixin, ListFilterMixin):

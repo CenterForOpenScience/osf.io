@@ -13,7 +13,7 @@ class PreprintProviderForm(ModelForm):
     class Meta:
         model = PreprintProvider
 
-        exclude = ['modm_model_path', 'modm_query']
+        exclude = ['primary_identifier_name']
 
         widgets = {
             'licenses_acceptable': CheckboxSelectMultiple(),

@@ -844,6 +844,24 @@ class TestProjectViews(OsfTestCase):
         self.project.reload()
         assert_equal(self.project.title, 'newtitle')
 
+    # Regression test
+    def test_retraction_view(self):
+        project = ProjectFactory(creator=self.user1, is_public=True)
+
+        registration = RegistrationFactory(project=project, is_public=True)
+        registration.retract_registration(self.user1)
+
+        approval_token = registration.retraction.approval_state[self.user1._id]['approval_token']
+        registration.retraction.approve_retraction(self.user1, approval_token)
+        registration.save()
+
+        url = registration.web_url_for('view_project')
+        res = self.app.get(url, auth=self.auth)
+
+        assert_not_in('Mako Runtime Error', res.body)
+        assert_in(registration.title, res.body)
+        assert_equal(res.status_code, 200)
+
 
 class TestEditableChildrenViews(OsfTestCase):
 
@@ -2735,15 +2753,16 @@ class TestPointerViews(OsfTestCase):
         )
         assert_equal(res.status_code, 400)
 
-    def test_fork_pointer(self):
+    def test_forking_pointer_works(self):
         url = self.project.api_url + 'pointer/fork/'
-        node = NodeFactory(creator=self.user)
-        pointer = self.project.add_pointer(node, auth=self.consolidate_auth)
-        self.app.post_json(
-            url,
-            {'pointerId': pointer._id},
-            auth=self.user.auth
-        )
+        linked_node = NodeFactory(creator=self.user)
+        pointer = self.project.add_pointer(linked_node, auth=self.consolidate_auth)
+        assert_true(linked_node.id, pointer.child.id)
+        res = self.app.post_json(url, {'nodeId': pointer.child._id}, auth=self.user.auth)
+        assert_equal(res.status_code, 201)
+        assert_in('node', res.json['data'])
+        fork = res.json['data']['node']
+        assert_equal(fork['title'], 'Fork of {}'.format(linked_node.title))
 
     def test_fork_pointer_not_provided(self):
         url = self.project.api_url + 'pointer/fork/'
@@ -2755,7 +2774,7 @@ class TestPointerViews(OsfTestCase):
         url = self.project.api_url + 'pointer/fork/'
         res = self.app.post_json(
             url,
-            {'pointerId': None},
+            {'nodeId': None},
             auth=self.user.auth,
             expect_errors=True
         )
@@ -2765,7 +2784,7 @@ class TestPointerViews(OsfTestCase):
         url = self.project.api_url + 'pointer/fork/'
         res = self.app.post_json(
             url,
-            {'pointerId': 'somefakeid'},
+            {'nodeId': 'somefakeid'},
             auth=self.user.auth,
             expect_errors=True
         )
@@ -3589,7 +3608,7 @@ class TestExternalAuthViews(OsfTestCase):
         name, email = fake.name(), fake.email()
         self.provider_id = fake.ean()
         external_identity = {
-            'service': {
+            'orcid': {
                 self.provider_id: 'CREATE'
             }
         }
@@ -3609,21 +3628,21 @@ class TestExternalAuthViews(OsfTestCase):
 
     def test_external_login_confirm_email_get_with_another_user_logged_in(self):
         another_user = AuthUserFactory()
-        url = self.user.get_confirmation_url(self.user.username, external_id_provider='service', destination='dashboard')
+        url = self.user.get_confirmation_url(self.user.username, external_id_provider='orcid', destination='dashboard')
         res = self.app.get(url, auth=another_user.auth)
         assert_equal(res.status_code, 302, 'redirects to cas logout')
         assert_in('/logout?service=', res.location)
         assert_in(url, res.location)
 
     def test_external_login_confirm_email_get_without_destination(self):
-        url = self.user.get_confirmation_url(self.user.username, external_id_provider='service')
+        url = self.user.get_confirmation_url(self.user.username, external_id_provider='orcid')
         res = self.app.get(url, auth=self.auth, expect_errors=True)
         assert_equal(res.status_code, 400, 'bad request')
 
     @mock.patch('website.mails.send_mail')
     def test_external_login_confirm_email_get_create(self, mock_welcome):
         assert_false(self.user.is_registered)
-        url = self.user.get_confirmation_url(self.user.username, external_id_provider='service', destination='dashboard')
+        url = self.user.get_confirmation_url(self.user.username, external_id_provider='orcid', destination='dashboard')
         res = self.app.get(url, auth=self.auth)
         assert_equal(res.status_code, 302, 'redirects to cas login')
         assert_in('/login?service=', res.location)
@@ -3632,16 +3651,16 @@ class TestExternalAuthViews(OsfTestCase):
         assert_equal(mock_welcome.call_count, 1)
 
         self.user.reload()
-        assert_equal(self.user.external_identity['service'][self.provider_id], 'VERIFIED')
+        assert_equal(self.user.external_identity['orcid'][self.provider_id], 'VERIFIED')
         assert_true(self.user.is_registered)
         assert_true(self.user.has_usable_password())
 
     @mock.patch('website.mails.send_mail')
     def test_external_login_confirm_email_get_link(self, mock_link_confirm):
-        self.user.external_identity['service'][self.provider_id] = 'LINK'
+        self.user.external_identity['orcid'][self.provider_id] = 'LINK'
         self.user.save()
         assert_false(self.user.is_registered)
-        url = self.user.get_confirmation_url(self.user.username, external_id_provider='service', destination='dashboard')
+        url = self.user.get_confirmation_url(self.user.username, external_id_provider='orcid', destination='dashboard')
         res = self.app.get(url, auth=self.auth)
         assert_equal(res.status_code, 302, 'redirects to cas login')
         assert_in('/login?service=', res.location)
@@ -3650,15 +3669,15 @@ class TestExternalAuthViews(OsfTestCase):
         assert_equal(mock_link_confirm.call_count, 1)
 
         self.user.reload()
-        assert_equal(self.user.external_identity['service'][self.provider_id], 'VERIFIED')
+        assert_equal(self.user.external_identity['orcid'][self.provider_id], 'VERIFIED')
         assert_true(self.user.is_registered)
         assert_true(self.user.has_usable_password())
 
     @mock.patch('website.mails.send_mail')
     def test_external_login_confirm_email_get_duped_id(self, mock_confirm):
-        dupe_user = UserFactory(external_identity={'service': {self.provider_id: 'CREATE'}})
+        dupe_user = UserFactory(external_identity={'orcid': {self.provider_id: 'CREATE'}})
         assert_equal(dupe_user.external_identity, self.user.external_identity)
-        url = self.user.get_confirmation_url(self.user.username, external_id_provider='service', destination='dashboard')
+        url = self.user.get_confirmation_url(self.user.username, external_id_provider='orcid', destination='dashboard')
         res = self.app.get(url, auth=self.auth)
         assert_equal(res.status_code, 302, 'redirects to cas login')
         assert_in('/login?service=', res.location)
@@ -3668,13 +3687,13 @@ class TestExternalAuthViews(OsfTestCase):
         self.user.reload()
         dupe_user.reload()
 
-        assert_equal(self.user.external_identity['service'][self.provider_id], 'VERIFIED')
+        assert_equal(self.user.external_identity['orcid'][self.provider_id], 'VERIFIED')
         assert_equal(dupe_user.external_identity, {})
 
     @mock.patch('website.mails.send_mail')
     def test_external_login_confirm_email_get_duping_id(self, mock_confirm):
-        dupe_user = UserFactory(external_identity={'service': {self.provider_id: 'VERIFIED'}})
-        url = self.user.get_confirmation_url(self.user.username, external_id_provider='service', destination='dashboard')
+        dupe_user = UserFactory(external_identity={'orcid': {self.provider_id: 'VERIFIED'}})
+        url = self.user.get_confirmation_url(self.user.username, external_id_provider='orcid', destination='dashboard')
         res = self.app.get(url, auth=self.auth, expect_errors=True)
         assert_equal(res.status_code, 403, 'only allows one user to link an id')
 
@@ -3683,40 +3702,40 @@ class TestExternalAuthViews(OsfTestCase):
         self.user.reload()
         dupe_user.reload()
 
-        assert_equal(dupe_user.external_identity['service'][self.provider_id], 'VERIFIED')
+        assert_equal(dupe_user.external_identity['orcid'][self.provider_id], 'VERIFIED')
         assert_equal(self.user.external_identity, {})
 
     def test_ensure_external_identity_uniqueness_unverified(self):
-        dupe_user = UserFactory(external_identity={'service': {self.provider_id: 'CREATE'}})
+        dupe_user = UserFactory(external_identity={'orcid': {self.provider_id: 'CREATE'}})
         assert_equal(dupe_user.external_identity, self.user.external_identity)
 
-        ensure_external_identity_uniqueness('service', self.provider_id, self.user)
+        ensure_external_identity_uniqueness('orcid', self.provider_id, self.user)
 
         dupe_user.reload()
         self.user.reload()
 
         assert_equal(dupe_user.external_identity, {})
-        assert_equal(self.user.external_identity, {'service': {self.provider_id: 'CREATE'}})
+        assert_equal(self.user.external_identity, {'orcid': {self.provider_id: 'CREATE'}})
 
     def test_ensure_external_identity_uniqueness_verified(self):
-        dupe_user = UserFactory(external_identity={'service': {self.provider_id: 'VERIFIED'}})
-        assert_equal(dupe_user.external_identity, {'service': {self.provider_id: 'VERIFIED'}})
+        dupe_user = UserFactory(external_identity={'orcid': {self.provider_id: 'VERIFIED'}})
+        assert_equal(dupe_user.external_identity, {'orcid': {self.provider_id: 'VERIFIED'}})
         assert_not_equal(dupe_user.external_identity, self.user.external_identity)
 
         with assert_raises(ValidationError):
-            ensure_external_identity_uniqueness('service', self.provider_id, self.user)
+            ensure_external_identity_uniqueness('orcid', self.provider_id, self.user)
 
         dupe_user.reload()
         self.user.reload()
 
-        assert_equal(dupe_user.external_identity, {'service': {self.provider_id: 'VERIFIED'}})
+        assert_equal(dupe_user.external_identity, {'orcid': {self.provider_id: 'VERIFIED'}})
         assert_equal(self.user.external_identity, {})
 
     def test_ensure_external_identity_uniqueness_multiple(self):
-        dupe_user = UserFactory(external_identity={'service': {self.provider_id: 'CREATE'}})
+        dupe_user = UserFactory(external_identity={'orcid': {self.provider_id: 'CREATE'}})
         assert_equal(dupe_user.external_identity, self.user.external_identity)
 
-        ensure_external_identity_uniqueness('service', self.provider_id)
+        ensure_external_identity_uniqueness('orcid', self.provider_id)
 
         dupe_user.reload()
         self.user.reload()

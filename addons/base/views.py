@@ -18,12 +18,14 @@ from modularodm import Q
 from modularodm.exceptions import NoResultsFound
 
 from addons.base.models import BaseStorageAddon
+from addons.osfstorage.models import OsfStorageFile
 from framework import sentry
 from framework.auth import Auth
 from framework.auth import cas
 from framework.auth import oauth_scopes
 from framework.auth.decorators import collect_auth, must_be_logged_in, must_be_signed
 from framework.exceptions import HTTPError
+from framework.routing import proxy_url
 from framework.routing import json_renderer
 from framework.sentry import log_exception
 from framework.transactions.handlers import no_auto_transaction
@@ -592,7 +594,7 @@ def addon_deleted_file(auth, node, error_type='BLAME_PROVIDER', **kwargs):
     return ret, httplib.GONE
 
 
-@must_be_valid_project
+@must_be_valid_project(quickfiles_valid=True)
 @must_be_contributor_or_public
 def addon_view_or_download_file(auth, path, provider, **kwargs):
     extras = request.args.to_dict()
@@ -640,12 +642,17 @@ def addon_view_or_download_file(auth, path, provider, **kwargs):
             cookie=request.cookies.get(settings.COOKIE_NAME)
         )
     )
-
     if version is None:
         # File is either deleted or unable to be found in the provider location
         # Rollback the insertion of the file_node
         transaction.savepoint_rollback(savepoint_id)
         if not file_node.pk:
+            redirect_file_node = BaseFileNode.load(path)
+            # Allow osfstorage to redirect if the deep url can be used to find a valid file_node
+            if redirect_file_node and redirect_file_node.provider == 'osfstorage' and not redirect_file_node.is_deleted:
+                return redirect(
+                    redirect_file_node.node.web_url_for('addon_view_or_download_file', path=redirect_file_node._id, provider=redirect_file_node.provider)
+                )
             raise HTTPError(httplib.NOT_FOUND, data={
                 'message_short': 'File Not Found',
                 'message_long': 'The requested file could not be found.'
@@ -686,6 +693,17 @@ def addon_view_or_download_file(auth, path, provider, **kwargs):
         guid = file_node.get_guid(create=True)
         return redirect(furl.furl('/{}/'.format(guid._id)).set(args=extras).url)
     return addon_view_file(auth, node, file_node, version)
+
+
+def addon_view_or_download_quickfile(**kwargs):
+    fid = kwargs.get('fid', 'NOT_AN_FID')
+    file_ = OsfStorageFile.load(fid)
+    if not file_:
+        raise HTTPError(httplib.NOT_FOUND, data={
+            'message_short': 'File Not Found',
+            'message_long': 'The requested file could not be found.'
+        })
+    return proxy_url('/project/{}/files/osfstorage/{}/'.format(file_.node._id, fid))
 
 
 def addon_view_file(auth, node, file_node, version):

@@ -5,7 +5,7 @@ from django.db import DataError
 from framework.auth import Auth
 from osf.models import Tag
 from osf.exceptions import ValidationError
-from osf_tests.factories import ProjectFactory
+from osf_tests.factories import ProjectFactory, UserFactory
 from website.exceptions import TagNotFoundError
 
 pytestmark = pytest.mark.django_db
@@ -73,3 +73,12 @@ class TestTags:
     def test_remove_tag_not_present(self, project, auth):
         with pytest.raises(TagNotFoundError):
             project.remove_tag('scientific', auth=auth)
+
+    def test_remove_system_tag_from_user(self):
+        user = UserFactory()
+        system_tag = Tag.objects.create(name='test_system_tag', system=True)
+        user.tags.add(system_tag)
+        assert user.all_tags.first() == system_tag
+
+        user.tags.through.objects.filter(tag=system_tag).delete()
+        assert user.all_tags.count() == 0

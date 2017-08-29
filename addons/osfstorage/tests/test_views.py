@@ -15,6 +15,7 @@ from addons.osfstorage.tests.utils import (
     recursively_create_file,
 )
 from addons.osfstorage.tests import factories
+from addons.osfstorage.tests.utils import make_payload
 
 from framework.auth import signing
 from website.util import rubeus
@@ -25,6 +26,7 @@ from addons.osfstorage.apps import osf_storage_root
 from addons.osfstorage import utils
 from addons.base.views import make_auth
 from addons.osfstorage import settings as storage_settings
+from api_tests.utils import create_test_file
 
 from osf_tests.factories import ProjectFactory
 
@@ -162,26 +164,9 @@ class TestUploadFileHook(HookTestCase):
         )
 
     def make_payload(self, **kwargs):
-        payload = {
-            'user': self.user._id,
-            'name': self.name,
-            'hashes': {'base64': '=='},
-            'worker': {
-                'uname': 'testmachine'
-            },
-            'settings': {
-                'provider': 'filesystem',
-                storage_settings.WATERBUTLER_RESOURCE: 'blah',
-            },
-            'metadata': {
-                'size': 123,
-                'name': 'file',
-                'provider': 'filesystem',
-                'modified': 'Mon, 16 Feb 2015 18:45:34 GMT'
-            },
-        }
-        payload.update(kwargs)
-        return payload
+        user = kwargs.pop('user', self.user)
+        name = kwargs.pop('name', self.name)
+        return make_payload(user=user, name=name, **kwargs)
 
     def test_upload_create(self):
         name = 'slightly-mad'
@@ -958,3 +943,26 @@ class TestFileTags(StorageTestCase):
 
         assert_equal(res.status_code, 400)
         mock_log.assert_not_called()
+
+
+@pytest.mark.django_db
+class TestFileViews(StorageTestCase):
+
+    def test_file_views(self):
+        file = create_test_file(node=self.node, user=self.user)
+        url = self.node.web_url_for('addon_view_or_download_file', path=file._id, provider=file.provider)
+        # Test valid url file 200 on redirect
+        redirect = self.app.get(url, auth=self.user.auth)
+        assert redirect.status_code == 302
+        res = redirect.follow(auth=self.user.auth)
+        assert res.status_code == 200
+
+        # Test invalid node but valid deep_url redirects (moved log urls)
+        project_two = ProjectFactory(creator=self.user)
+        url = project_two.web_url_for('addon_view_or_download_file', path=file._id, provider=file.provider)
+        redirect = self.app.get(url, auth=self.user.auth)
+        assert redirect.status_code == 302
+        redirect_two = redirect.follow(auth=self.user.auth)
+        assert redirect_two.status_code == 302
+        res = redirect_two.follow(auth=self.user.auth)
+        assert res.status_code == 200

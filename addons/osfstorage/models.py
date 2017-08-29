@@ -4,13 +4,11 @@ import logging
 
 from django.apps import apps
 from django.db import models, connection
-from modularodm import Q
 from psycopg2._psycopg import AsIs
 
 from addons.base.models import BaseNodeSettings, BaseStorageAddon
 from osf.exceptions import InvalidTagError, NodeStateError, TagNotFoundError
-from osf.models import (File, FileVersion, Folder, Guid,
-                        TrashedFileNode, BaseFileNode)
+from osf.models import File, FileVersion, Folder, TrashedFileNode, BaseFileNode
 from osf.utils.auth import Auth
 from website.files import exceptions
 from website.files import utils as files_utils
@@ -64,7 +62,7 @@ class OsfStorageFileNode(BaseFileNode):
 
     @classmethod
     def get(cls, _id, node):
-        return cls.find_one(Q('_id', 'eq', _id) & Q('node', 'eq', node))
+        return cls.objects.get(_id=_id, node=node)
 
     @classmethod
     def get_or_create(cls, node, path):
@@ -104,10 +102,7 @@ class OsfStorageFileNode(BaseFileNode):
             for item in children:
                 guids.extend(cls.get_file_guids(item.path, provider, node=node))
         else:
-            try:
-                guid = Guid.find(Q('referent', 'eq', file_obj))[0]
-            except IndexError:
-                guid = None
+            guid = file_obj.get_guid()
             if guid:
                 guids.append(guid._id)
 
