@@ -14,11 +14,10 @@ import jwe
 import jwt
 from django.db import transaction
 
-from modularodm import Q
-from modularodm.exceptions import NoResultsFound
-
 from addons.base.models import BaseStorageAddon
 from addons.osfstorage.models import OsfStorageFile
+from addons.osfstorage.models import OsfStorageFileNode
+
 from framework import sentry
 from framework.auth import Auth
 from framework.auth import cas
@@ -199,21 +198,18 @@ def check_access(node, auth, action, cas_resp):
     # Users with the PREREG_ADMIN_TAG should be allowed to download files
     # from prereg challenge draft registrations.
     try:
-        prereg_schema = MetaSchema.find_one(
-            Q('name', 'eq', 'Prereg Challenge') &
-            Q('schema_version', 'eq', 2)
-        )
+        prereg_schema = MetaSchema.objects.get(name='Prereg Challenge', schema_version=2)
         allowed_nodes = [node] + node.parents
-        prereg_draft_registration = DraftRegistration.find(
-            Q('branched_from', 'in', [n for n in allowed_nodes]) &
-            Q('registration_schema', 'eq', prereg_schema)
+        prereg_draft_registration = DraftRegistration.objects.filter(
+            branched_from__in=allowed_nodes,
+            registration_schema=prereg_schema
         )
         if action == 'download' and \
                     auth.user is not None and \
                     prereg_draft_registration.count() > 0 and \
                     settings.PREREG_ADMIN_TAG in auth.user.system_tags:
             return True
-    except NoResultsFound:
+    except MetaSchema.DoesNotExist:
         pass
 
     raise HTTPError(httplib.FORBIDDEN if auth.user else httplib.UNAUTHORIZED)
@@ -452,10 +448,10 @@ def addon_delete_file_node(self, node, user, event_type, payload):
         path = payload['metadata']['path']
         materialized_path = payload['metadata']['materialized']
         if path.endswith('/'):
-            folder_children = BaseFileNode.resolve_class(provider, BaseFileNode.ANY).find(
-                Q('provider', 'eq', provider) &
-                Q('node', 'eq', node) &
-                Q('_materialized_path', 'startswith', materialized_path)
+            folder_children = BaseFileNode.resolve_class(provider, BaseFileNode.ANY).objects.filter(
+                provider=provider,
+                node=node,
+                _materialized_path__startswith=materialized_path
             )
             for item in folder_children:
                 if item.kind == 'file' and not TrashedFileNode.load(item._id):
@@ -464,11 +460,11 @@ def addon_delete_file_node(self, node, user, event_type, payload):
                     BaseFileNode.remove_one(item)
         else:
             try:
-                file_node = BaseFileNode.resolve_class(provider, BaseFileNode.FILE).find_one(
-                    Q('node', 'eq', node) &
-                    Q('_materialized_path', 'eq', materialized_path)
+                file_node = BaseFileNode.resolve_class(provider, BaseFileNode.FILE).objects.get(
+                    node=node,
+                    _materialized_path=materialized_path
                 )
-            except NoResultsFound:
+            except BaseFileNode.DoesNotExist:
                 file_node = None
 
             if file_node and not TrashedFileNode.load(file_node._id):
@@ -501,7 +497,7 @@ def addon_view_or_download_file_legacy(**kwargs):
 
         try:
             path = node_settings.get_root().find_child_by_name(path)._id
-        except NoResultsFound:
+        except OsfStorageFileNode.DoesNotExist:
             raise HTTPError(
                 404, data=dict(
                     message_short='File not found',
