@@ -399,18 +399,10 @@ class NodeLinkMixin(models.Model):
         except NodeRelation.DoesNotExist:
             raise ValueError('Node link {0} not in list'.format(node_relation._id))
 
-        # Fork into current node and replace pointer with forked component
+        # Fork node to which current nodelink points
         forked = node.fork_node(auth)
         if forked is None:
             raise ValueError('Could not fork node')
-
-        relation = NodeRelation.objects.get(
-            parent=self,
-            child=node,
-            is_node_link=True
-        )
-        relation.child = forked
-        relation.save()
 
         if hasattr(self, 'add_log'):
             # Add log

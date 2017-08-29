@@ -37,8 +37,6 @@ class TokenList(JSONAPIBaseView, generics.ListCreateAPIView, ODMFilterMixin):
     view_category = 'tokens'
     view_name = 'token-list'
 
-    # TODO: When we switch to Swagger this should be removed in lieu of a better
-    # solution for hiding this api endpoint
     renderer_classes = [JSONRendererWithESISupport, JSONAPIRenderer, ]  # Hide from web-browsable API tool
 
     ordering = ('-id',)
@@ -81,8 +79,6 @@ class TokenDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView):
     view_category = 'tokens'
     view_name = 'token-detail'
 
-    # TODO: When we switch to Swagger this should be removed in lieu of a better
-    # solution for hiding this api endpoint
     renderer_classes = [JSONRendererWithESISupport, JSONAPIRenderer, ]  # Hide from web-browsable API tool
 
     # overrides RetrieveAPIView

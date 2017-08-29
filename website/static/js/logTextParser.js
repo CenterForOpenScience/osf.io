@@ -114,12 +114,15 @@ var getContributorList = function (contributors, maxShown){
            if(i !== contributors.length -1 && ((i !== maxShown -1) || justOneMore)){
                comma = ', ';
            }
-           if(i === contributors.length -2 || ((i === maxShown -1) && !justOneMore)){
-               comma = ', and ';
+           if(i === contributors.length -2 || ((i === maxShown -1) && !justOneMore) && (i !== contributors.length -1)) {
+               if (contributors.length === 2)
+                   comma = ' and ';
+               else
+                   comma = ', and ';
            }
 
            if (i === maxShown && !justOneMore){
-               contribList.push([((contributors.length - i).toString() + ' others'), '']);
+               contribList.push([((contributors.length - i).toString() + ' others'), ' ']);
                return contribList;
            }
 
@@ -129,8 +132,9 @@ var getContributorList = function (contributors, maxShown){
            else {
                if (item.unregistered_name) {
                    contribList.push([item.unregistered_name, comma]);
+               } else {
+                   contribList.push([item.full_name, comma]);
                }
-               contribList.push([item.full_name, comma]);
        }}
        return contribList;
 };
