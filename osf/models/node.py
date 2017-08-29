@@ -42,6 +42,7 @@ from osf.models.private_link import PrivateLink
 from osf.models.spam import SpamMixin
 from osf.models.tag import Tag
 from osf.models.user import OSFUser
+from osf.models.user import Group
 from osf.models.validators import validate_doi, validate_title
 from framework.auth.core import Auth, get_user
 from osf.utils.datetime_aware_jsonfield import DateTimeAwareJSONField
@@ -413,10 +414,37 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
 
     keenio_read_key = models.CharField(max_length=1000, null=True, blank=True)
 
+    # Group from Cloud Gateway
+    group = models.OneToOneField(Group,
+                                 on_delete=models.SET_NULL,
+                                 null=True, blank=True)
+
+    def title_with_group(self, title):
+        value = title
+        if self.group is not None:
+            # Group-name from isMemberOf is added in project-title.
+            import re
+            m = re.match('.+ \[' + self.group + '\]$', value)
+            if m is None:
+                value = value + ' [' + self.group + ']'
+        return value
+
+    #def __getattr__(self, name):
+    #    value = object.__getattr__(self, name)
+    #    if name == 'title':
+    #        value = self.title_with_group(value)
+    #    return value
+
+    #def __setattr__(self, name, value):
+    #    if name == 'title':
+    #        value = self.title_with_group(value)
+    #    return object.__setattr__(self, name, value)
+
     def __init__(self, *args, **kwargs):
         self._parent = kwargs.pop('parent', None)
         self._is_templated_clone = False
         super(AbstractNode, self).__init__(*args, **kwargs)
+        #self.title = self.title  # re-set to call __setattr__()
 
     def __unicode__(self):
         return ('(title={self.title!r}, category={self.category!r}) '

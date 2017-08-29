@@ -129,42 +129,48 @@ def setup_groups(auth):
     user = auth.user
     if user.groups_initialized:
         return
-    #create_or_join_group_projects(user)
-    #leave_group_projects(auth)
-    #user.groups_initialized = True
-    #user.save()
+    create_or_join_group_projects(user)
+    leave_group_projects(auth)
+    user.groups_initialized = True
+    user.save()
 
 
 def get_group_node(groupname):
-    from website.project.model import Node
-    from modularodm import Q
+    from osf.models.node import Node
     try:
-        node = Node.find_one(Q('group', 'eq', groupname))
+        node = Node.objects.filter(group__name=groupname).get()
         return node
     except:
         return None
 
+
 def is_group_admin(user, groupname):
-    if groupname in user.groups_admin:
+    if user.groups_admin.filter(name=groupname).exists():
         return True
     else:
         return False
 
+
 def is_node_admin(node, user):
     return node.has_permission(user, 'admin', check_parent=False)
 
+
 def create_group_project(user, groupname):
-    from website.project.model import Node
+    from osf.models.node import Node
+    from osf.models.user import Group
+
     node = Node(title = groupname,
                 category = "project",
-                description = groupname + " (created automatically)", #TODO
-                group = groupname,
+                description = groupname,
                 creator = user)
+    group, created = Group.objects.get_or_create(name=groupname)
+    node.group = group
     node.save()
 
 def create_or_join_group_projects(user):
     from website.util.permissions import CREATOR_PERMISSIONS, DEFAULT_CONTRIBUTOR_PERMISSIONS
-    for groupname in user.groups:
+    for group in user.groups.all():
+        groupname = group.name
         group_admin = is_group_admin(user, groupname)
         node = get_group_node(groupname)
         if node is not None:  # exists
@@ -190,18 +196,20 @@ def create_or_join_group_projects(user):
         elif group_admin:  # not exist && is admin
             create_group_project(user, groupname)
 
+
 def leave_group_projects(auth):
+    from osf.models.node import Node
+
     user = auth.user
-    from website.project.model import Node
     nodes = Node.find_for_user(user)
     for node in nodes:
         if node.group is None:
             continue  # skip
         if user.groups is None:
             continue  # skip
-        if node.group in user.groups:
+        if user.groups.filter(id=node.group.id).exists():
             continue  # skip
-        if not user._id in node.contributors:
+        if not node.contributors.filter(id=user.id).exists():
             continue  # skip
         if not is_node_admin(node, user):
             node.remove_contributor(user, auth=auth, log=True)
@@ -213,9 +221,10 @@ def leave_group_projects(auth):
             node.remove_contributor(user, auth=auth, log=True)
             ### node.remove_contributor() includes node.save()
             continue  # next
-        ### The user is last admin.
+        ### len == 1: The user is last admin.
         ### len(node.contributors) may not be 1.
         node.remove_node(auth)  # node.is_deleted = True
+        ### node.remove_node() includes save()
 
 
 def must_be_signed(func):
