@@ -649,6 +649,12 @@ def _view_project(node, auth, primary=False,
     except Contributor.DoesNotExist:
         contributor = None
 
+    if node.group is not None and user.groups_sync is not None and not user.groups_sync.filter(name=node.group.name).exists():
+        from nii import project_sync
+        project_sync.project_sync_one(node, None)
+        user.groups_sync.add(node.group)  # checked
+        user.save()
+
     parent = node.find_readable_antecedent(auth)
     if user:
         bookmark_collection = find_bookmark_collection(user)
