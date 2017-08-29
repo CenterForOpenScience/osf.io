@@ -30,5 +30,6 @@ PROVIDERS = {
     'github': 'GitHub',
     'googledrive': 'Google Drive',
     'owncloud': 'ownCloud',
+    'onedrive': 'Microsoft OneDrive',
     's3': 'Amazon S3'
 }

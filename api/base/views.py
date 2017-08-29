@@ -718,6 +718,7 @@ def root(request, format=None, **kwargs):
         figshare     figshare
         github       GitHub
         googledrive  Google Drive
+        onedrive     Microsoft OneDrive
         osfstorage   OSF Storage
         s3           Amazon S3
 
