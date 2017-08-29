@@ -75,6 +75,59 @@ def server(ctx, host=None, port=5000, debug=True, gitlogs=False):
 
 
 @task
+def reset_user(ctx, username=None):
+    from website.app import init_app
+    init_app(routes=False, set_backends=False)
+
+    from osf.models import OSFUser
+    from osf.models import Guid
+    from osf.models import Node
+
+    if username is None:
+        print 'usage: invoke reset_user -u <username>'
+        print 'OSF users (username):'
+        for user in OSFUser.objects.all():
+            print user.username
+        return
+
+    try:
+        user = OSFUser.objects.get(username=username)
+    except Exception as ex:
+        print ex
+        user = None
+    if user is None:
+        print 'no such user: ' + username
+        return
+
+    try:
+        nodes = Node.find_for_user(user, None)
+    except Exception as ex:
+        print ex
+        nodes = None
+
+    if nodes is not None:
+        for node in nodes:
+            print 'Node Contributor: GUID={}, title={}'.format(node._id, node.title)
+
+    user.emails.filter(address=user.username).delete()
+
+    user.have_email = False
+
+    dummy = user.username
+    for i in range(1000):
+        dummy = '__dummy_' + str(i) + '__' + user.username
+        if not OSFUser.objects.filter(username=dummy).exists():
+            break
+
+    user.username = dummy.lower().strip()
+    user.emails.filter(address=user.username).delete()
+    if not user.emails.filter(address=user.username):
+        user.emails.create(address=user.username)
+    user.save()
+    print 'reset_user OK: ' + username
+
+
+@task
 def git_logs(ctx, branch=None):
     from scripts.meta import gatherer
     gatherer.main(branch=branch)
