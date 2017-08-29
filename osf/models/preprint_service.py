@@ -7,7 +7,7 @@ from django.utils import timezone
 from django.utils.functional import cached_property
 from django.contrib.contenttypes.fields import GenericRelation
 
-from framework.celery_tasks.handlers import enqueue_task
+from framework.postcommit_tasks.handlers import enqueue_postcommit_task
 from framework.exceptions import PermissionsError
 from osf.models import NodeLog, Subject
 from osf.models.validators import validate_subject_hierarchy
@@ -84,7 +84,7 @@ class PreprintService(DirtyFieldsMixin, GuidMixin, IdentifierMixin, BaseModel):
 
     @property
     def url(self):
-        if self.provider.domain_redirect_enabled or self.provider._id == 'osf':
+        if (self.provider.domain_redirect_enabled and self.provider.domain) or self.provider._id == 'osf':
             return '/{}/'.format(self._id)
 
         return '/preprints/{}/{}/'.format(self.provider._id, self._id)
@@ -193,7 +193,7 @@ class PreprintService(DirtyFieldsMixin, GuidMixin, IdentifierMixin, BaseModel):
                 )
 
             # This should be called after all fields for EZID metadta have been set
-            enqueue_task(get_and_set_preprint_identifiers.s(self._id))
+            enqueue_postcommit_task(get_and_set_preprint_identifiers, (), {'preprint': self}, celery=True)
 
         if save:
             self.node.save()
@@ -230,5 +230,5 @@ class PreprintService(DirtyFieldsMixin, GuidMixin, IdentifierMixin, BaseModel):
         ret = super(PreprintService, self).save(*args, **kwargs)
 
         if (not first_save and 'is_published' in saved_fields) or self.is_published:
-            enqueue_task(on_preprint_updated.s(self._id, old_subjects))
+            enqueue_postcommit_task(on_preprint_updated, (self._id,), {'old_subjects': old_subjects}, celery=True)
         return ret

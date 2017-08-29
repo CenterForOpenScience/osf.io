@@ -1,175 +1,182 @@
+import pytest
 from urlparse import urlparse
 
-import pytest
-from nose.tools import *  # flake8: noqa
-
-from osf.models import AbstractNode as Node, NodeLog
-from website.util.sanitize import strip_html
-from website.util import disconnected_from_listeners
-from website.project.signals import contributor_removed
 from api.base.settings.defaults import API_BASE
-from tests.base import ApiTestCase
+from framework.auth.core import Auth
 from osf_tests.factories import (
     CollectionFactory,
     NodeFactory,
     RegistrationFactory,
     ProjectFactory,
-    AuthUserFactory
+    AuthUserFactory,
 )
-from tests.utils import assert_logs
-from framework.auth.core import Auth
+from osf.models import AbstractNode, NodeLog
+from tests.utils import assert_items_equal, assert_latest_log
+from website.project.signals import contributor_removed
+from website.util.sanitize import strip_html
+from website.util import disconnected_from_listeners
 from website.views import find_bookmark_collection
 
 
-def node_url_for(node_id):
-    return '/{}nodes/{}/'.format(API_BASE, node_id)
+url_collection_list = '/{}collections/'.format(API_BASE)
 
+@pytest.fixture()
+def user_one():
+    return AuthUserFactory()
 
-class TestCollectionList(ApiTestCase):
-    def setUp(self):
-        super(TestCollectionList, self).setUp()
-        self.user_one = AuthUserFactory()
-        self.user_two = AuthUserFactory()
-        self.deleted_one = CollectionFactory(creator=self.user_one, is_deleted=True)
-        self.collection_one = CollectionFactory(creator=self.user_one)
+@pytest.mark.django_db
+class TestCollectionList:
 
-        self.url = '/{}collections/'.format(API_BASE)
+    @pytest.fixture()
+    def user_two(self):
+        return AuthUserFactory()
 
-    def test_user_one_gets_user_one_collections(self):
-        res = self.app.get(self.url, auth=self.user_one.auth)
+    @pytest.fixture()
+    def collection(self, user_one):
+        return CollectionFactory(creator=user_one)
+
+    @pytest.fixture()
+    def collection_deleted(self, user_one):
+        return CollectionFactory(creator=user_one, is_deleted=True)
+
+    def test_user_get_own_collections(self, app, user_one, user_two, collection_deleted, collection):
+
+        #test_user_one_gets_user_one_collections
+        res = app.get(url_collection_list, auth=user_one.auth)
         ids = [each['id'] for each in res.json['data']]
-        assert_not_in(self.deleted_one._id, ids)
-        assert_in(self.collection_one._id, ids)
+        assert collection_deleted._id not in ids
+        assert collection._id in ids
 
-    def test_user_two_gets_nothing(self):
-        res = self.app.get(self.url, auth=self.user_two.auth)
+        #test_user_two_gets_nothing
+        res = app.get(url_collection_list, auth=user_two.auth)
         ids = [each['id'] for each in res.json['data']]
-        assert_not_in(self.deleted_one._id, ids)
-        assert_not_in(self.collection_one._id, ids)
+        assert collection_deleted._id not in ids
+        assert collection._id not in ids
 
-    def test_unauthorized_gets_nothing(self):
-        res = self.app.get(self.url)
+        #test_unauthorized_gets_nothing
+        res = app.get(url_collection_list)
         ids = [each['id'] for each in res.json['data']]
-        assert_not_in(self.deleted_one._id, ids)
-        assert_not_in(self.collection_one._id, ids)
+        assert collection_deleted._id not in ids
+        assert collection._id not in ids
 
+@pytest.mark.django_db
+class TestCollectionCreate:
 
-class TestCollectionCreate(ApiTestCase):
+    @pytest.fixture()
+    def user_two(self):
+        return AuthUserFactory()
 
-    def setUp(self):
-        super(TestCollectionCreate, self).setUp()
-        self.user_one = AuthUserFactory()
-        self.url = '/{}collections/'.format(API_BASE)
+    @pytest.fixture()
+    def title_collection(self):
+        return 'Cool Collection'
 
-        self.title = 'Cool Collection'
-
-        self.user_two = AuthUserFactory()
-
-        self.collection = {
+    @pytest.fixture()
+    def data_collection(self, title_collection):
+        return {
             'data': {
                 'type': 'collections',
                 'attributes':
                     {
-                        'title': self.title,
+                        'title': title_collection,
                     }
             }
         }
 
-        # Pretend these aren't created when the user is
-        user_one_bookmark = find_bookmark_collection(self.user_one)
-        user_two_bookmark = find_bookmark_collection(self.user_two)
-        user_one_bookmark.is_deleted = True
-        user_two_bookmark.is_deleted = True
-        user_one_bookmark.save()
-        user_two_bookmark.save()
+    @pytest.fixture()
+    def bookmark_user_one(self, user_one):
+        bookmark_user_one = find_bookmark_collection(user_one)
+        bookmark_user_one.is_deleted = True
+        bookmark_user_one.save()
+        return bookmark_user_one
 
+    @pytest.fixture()
+    def bookmark_user_two(self, user_two):
+        bookmark_user_two = find_bookmark_collection(user_two)
+        bookmark_user_two.is_deleted = True
+        bookmark_user_two.save()
+        return bookmark_user_two
 
-    def test_collection_create_invalid_data(self):
-        res = self.app.post_json_api(self.url, "Incorrect data", auth=self.user_one.auth, expect_errors=True)
-        assert_equal(res.status_code, 400)
-        assert_equal(res.json['errors'][0]['detail'], "Malformed request.")
+    def test_create_collection_fails(self, app, data_collection, user_one, title_collection):
 
-        res = self.app.post_json_api(self.url, ["Incorrect data"], auth=self.user_one.auth, expect_errors=True)
-        assert_equal(res.status_code, 400)
-        assert_equal(res.json['errors'][0]['detail'], "Malformed request.")
+        #test_collection_create_invalid_data
+        res = app.post_json_api(url_collection_list, 'Incorrect data', auth=user_one.auth, expect_errors=True)
+        assert res.status_code == 400
+        assert res.json['errors'][0]['detail'] == 'Malformed request.'
 
-    def test_creates_collection_logged_out(self):
-        res = self.app.post_json_api(self.url, self.collection, expect_errors=True)
-        assert_equal(res.status_code, 401)
-        assert_in('detail', res.json['errors'][0])
+        res = app.post_json_api(url_collection_list, ['Incorrect data'], auth=user_one.auth, expect_errors=True)
+        assert res.status_code == 400
+        assert res.json['errors'][0]['detail'] == 'Malformed request.'
 
-    def test_creates_collection_logged_in(self):
-        res = self.app.post_json_api(self.url, self.collection, auth=self.user_one.auth)
-        assert_equal(res.status_code, 201)
+        #test_creates_collection_logged_out
+        res = app.post_json_api(url_collection_list, data_collection, expect_errors=True)
+        assert res.status_code == 401
+        assert 'detail' in res.json['errors'][0]
+
+        #test_creates_collection_logged_in
+        res = app.post_json_api(url_collection_list, data_collection, auth=user_one.auth)
+        assert res.status_code == 201
         pid = res.json['data']['id']
-        assert_equal(res.json['data']['attributes']['title'], self.title)
-        assert_equal(res.content_type, 'application/vnd.api+json')
-        assert_equal(res.json['data']['type'], 'collections')
-        res = self.app.get(self.url+'?filter[title]={}'.format(self.title), auth=self.user_one.auth)
+        assert res.json['data']['attributes']['title'] == title_collection
+        assert res.content_type == 'application/vnd.api+json'
+        assert res.json['data']['type'] == 'collections'
+        res = app.get('{}?filter[title]={}'.format(url_collection_list, title_collection), auth=user_one.auth)
         ids = [each['id'] for each in res.json['data']]
-        assert_in(pid, ids)
-        collection = Node.load(pid)
-        assert_equal(collection.logs.order_by('date').first().action, NodeLog.PROJECT_CREATED)
-        assert_equal(collection.title, self.title)
+        assert pid in ids
+        collection = AbstractNode.load(pid)
+        assert collection.logs.order_by('date').first().action == NodeLog.PROJECT_CREATED
+        assert collection.title == title_collection
 
-    def test_create_collection_creates_collection_and_sanitizes_html(self):
-        title = '<em>Cool</em> <script>alert("even cooler")</script> <strong>Project</strong>'
-
-        res = self.app.post_json_api(self.url, {
-            'data': {
-                'attributes': {
-                    'title': title,
-                },
-                'type': 'collections'
-            }
-        }, auth=self.user_one.auth)
-        collection_id = res.json['data']['id']
-        assert_equal(res.status_code, 201)
-        assert_equal(res.content_type, 'application/vnd.api+json')
-
-        collection = Node.load(collection_id)
-        assert_equal(collection.logs.latest().action, NodeLog.PROJECT_CREATED)
-        assert_equal(collection.title, strip_html(title))
-
-    def test_creates_project_no_type(self):
+        #test_creates_project_no_type
         collection = {
             'data': {
                 'attributes': {
-                    'title': self.title,
+                    'title': title_collection,
                 }
             }
         }
-        res = self.app.post_json_api(self.url, collection, auth=self.user_one.auth, expect_errors=True)
-        assert_equal(res.status_code, 400)
-        assert_equal(res.json['errors'][0]['detail'], 'This field may not be null.')
-        assert_equal(res.json['errors'][0]['source']['pointer'], '/data/type')
+        res = app.post_json_api(url_collection_list, collection, auth=user_one.auth, expect_errors=True)
+        assert res.status_code == 400
+        assert res.json['errors'][0]['detail'] == 'This field may not be null.'
+        assert res.json['errors'][0]['source']['pointer'] == '/data/type'
 
-    def test_creates_project_incorrect_type(self):
+        #test_creates_project_incorrect_type
         collection = {
             'data': {
                 'attributes': {
-                    'title': self.title,
+                    'title': title_collection,
                 },
                 'type': 'Wrong type.'
             }
         }
-        res = self.app.post_json_api(self.url, collection, auth=self.user_one.auth, expect_errors=True)
-        assert_equal(res.status_code, 409)
-        assert_equal(res.json['errors'][0]['detail'], 'This resource has a type of "collections", but you set the json body\'s type field to "Wrong type.". You probably need to change the type field to match the resource\'s type.')
+        res = app.post_json_api(url_collection_list, collection, auth=user_one.auth, expect_errors=True)
+        assert res.status_code == 409
+        assert res.json['errors'][0]['detail'] == 'This resource has a type of "collections", but you set the json body\'s type field to "Wrong type.". You probably need to change the type field to match the resource\'s type.'
 
-    def test_creates_collection_properties_not_nested(self):
+        #test_creates_collection_properties_not_nested
         project = {
             'data': {
-                'title': self.title,
+                'title': title_collection,
                 'type': 'collections'
             }
         }
-        res = self.app.post_json_api(self.url, project, auth=self.user_one.auth, expect_errors=True)
-        assert_equal(res.status_code, 400)
-        assert_equal(res.json['errors'][0]['detail'], 'Request must include /data/attributes.')
-        assert_equal(res.json['errors'][0]['source']['pointer'], '/data/attributes')
+        res = app.post_json_api(url_collection_list, project, auth=user_one.auth, expect_errors=True)
+        assert res.status_code == 400
+        assert res.json['errors'][0]['detail'] == 'Request must include /data/attributes.'
+        assert res.json['errors'][0]['source']['pointer'] == '/data/attributes'
 
-    def test_create_project_invalid_title(self):
+        #test_create_bookmark_collection_with_no_title
+        collection = {
+            'data': {
+                'type': 'collections',
+                'attributes': {
+                    'bookmarks': True,
+                }
+            }
+        }
+        res = app.post_json_api(url_collection_list, collection, auth=user_one.auth, expect_errors=True)
+        assert res.status_code == 400
+
+        #test_create_project_invalid_title
         project = {
             'data': {
                 'type': 'collections',
@@ -178,11 +185,11 @@ class TestCollectionCreate(ApiTestCase):
                 }
             }
         }
-        res = self.app.post_json_api(self.url, project, auth=self.user_one.auth, expect_errors=True)
-        assert_equal(res.status_code, 400)
-        assert_equal(res.json['errors'][0]['detail'], 'Title cannot exceed 200 characters.')
+        res = app.post_json_api(url_collection_list, project, auth=user_one.auth, expect_errors=True)
+        assert res.status_code == 400
+        assert res.json['errors'][0]['detail'] == 'Title cannot exceed 200 characters.'
 
-    def test_create_bookmark_collection(self):
+    def test_create_bookmark_collection(self, app, bookmark_user_one, data_collection, user_one):
         collection = {
             'data': {
                 'type': 'collections',
@@ -192,12 +199,14 @@ class TestCollectionCreate(ApiTestCase):
                 }
             }
         }
-        res = self.app.post_json_api(self.url, collection, auth=self.user_one.auth)
-        assert_equal(res.status_code, 201)
-        assert_equal(res.json['data']['attributes']['title'], 'Bookmarks')
-        assert_true(res.json['data']['attributes']['bookmarks'])
+        res = app.post_json_api(url_collection_list, collection, auth=user_one.auth)
+        assert res.status_code == 201
+        assert res.json['data']['attributes']['title'] == 'Bookmarks'
+        assert res.json['data']['attributes']['bookmarks']
 
-    def test_cannot_create_multiple_bookmark_collection(self):
+    def test_cannot_create_multiple_bookmark_collection(
+        self, app, bookmark_user_one, data_collection, user_one, title_collection):
+
         collection = {
             'data': {
                 'type': 'collections',
@@ -207,13 +216,15 @@ class TestCollectionCreate(ApiTestCase):
                 }
             }
         }
-        res = self.app.post_json_api(self.url, collection, auth=self.user_one.auth)
-        assert_equal(res.status_code, 201)
-        res = self.app.post_json_api(self.url, collection, auth=self.user_one.auth, expect_errors=True)
-        assert_equal(res.status_code, 400)
-        assert_equal(res.json['errors'][0]['detail'], 'Each user cannot have more than one Bookmark collection.')
+        res = app.post_json_api(url_collection_list, collection, auth=user_one.auth)
+        assert res.status_code == 201
+        res = app.post_json_api(url_collection_list, collection, auth=user_one.auth, expect_errors=True)
+        assert res.status_code == 400
+        assert res.json['errors'][0]['detail'] == 'Each user cannot have more than one Bookmark collection.'
 
-    def test_create_bookmark_collection_with_wrong_title(self):
+    def test_create_bookmark_collection_with_wrong_title(
+        self, app, bookmark_user_one, data_collection, user_one):
+
         collection = {
             'data': {
                 'type': 'collections',
@@ -223,2110 +234,2344 @@ class TestCollectionCreate(ApiTestCase):
                 }
             }
         }
-        res = self.app.post_json_api(self.url, collection, auth=self.user_one.auth)
-        assert_equal(res.status_code, 201)
-        assert_equal(res.json['data']['attributes']['title'], 'Bookmarks')
-        assert_true(res.json['data']['attributes']['bookmarks'])
+        res = app.post_json_api(url_collection_list, collection, auth=user_one.auth)
+        assert res.status_code == 201
+        assert res.json['data']['attributes']['title'] == 'Bookmarks'
+        assert res.json['data']['attributes']['bookmarks']
 
-    def test_create_bookmark_collection_with_no_title(self):
-        collection = {
+    def test_create_collection_creates_collection_and_sanitizes_html(self, app, data_collection, user_one):
+        title = '<em>Cool</em> <script>alert("even cooler")</script> <strong>Project</strong>'
+
+        res = app.post_json_api(url_collection_list, {
             'data': {
-                'type': 'collections',
                 'attributes': {
-                    'bookmarks': True,
-                }
+                    'title': title,
+                },
+                'type': 'collections'
             }
-        }
-        res = self.app.post_json_api(self.url, collection, auth=self.user_one.auth, expect_errors=True)
-        assert_equal(res.status_code, 400)
+        }, auth=user_one.auth)
+        collection_id = res.json['data']['id']
+        assert res.status_code == 201
+        assert res.content_type == 'application/vnd.api+json'
 
-class TestCollectionFiltering(ApiTestCase):
+        collection = AbstractNode.load(collection_id)
+        assert collection.logs.latest().action == NodeLog.PROJECT_CREATED
+        assert collection.title == strip_html(title)
 
-    def setUp(self):
-        super(TestCollectionFiltering, self).setUp()
-        self.user_one = AuthUserFactory()
-        self.user_two = AuthUserFactory()
-        self.collection_one = CollectionFactory(title="Collection One", creator=self.user_one)
-        self.collection_two = CollectionFactory(title="Collection Two", creator=self.user_one)
-        self.collection_three = CollectionFactory(title="Three", creator=self.user_one)
+@pytest.mark.django_db
+class TestCollectionFiltering:
 
-        self.url = "/{}collections/".format(API_BASE)
+    @pytest.fixture()
+    def user_two(self):
+        return AuthUserFactory()
 
-    def test_get_all_projects_with_no_filter_logged_in(self):
-        res = self.app.get(self.url, auth=self.user_one.auth)
+    @pytest.fixture()
+    def collection_one(self, user_one):
+        return CollectionFactory(title='Collection One', creator=user_one)
+
+    @pytest.fixture()
+    def collection_two(self, user_one):
+        return CollectionFactory(title='Collection Two', creator=user_one)
+
+    @pytest.fixture()
+    def collection_three(self, user_one):
+        return CollectionFactory(title='Three', creator=user_one)
+
+    def test_collection_filtering(
+        self, app, user_one, user_two,
+        collection_one, collection_two, collection_three):
+
+        #test_get_all_projects_with_no_filter_logged_in
+        res = app.get(url_collection_list, auth=user_one.auth)
         node_json = res.json['data']
 
         ids = [each['id'] for each in node_json]
-        assert_in(self.collection_one._id, ids)
-        assert_in(self.collection_two._id, ids)
-        assert_in(self.collection_three._id, ids)
+        assert collection_one._id in ids
+        assert collection_two._id in ids
+        assert collection_three._id in ids
 
-    def test_get_no_collections_with_no_filter_not_logged_in(self):
-        res = self.app.get(self.url)
+        #test_get_no_collections_with_no_filter_not_logged_in
+        res = app.get(url_collection_list)
         node_json = res.json['data']
         ids = [each['id'] for each in node_json]
-        assert_not_in(self.collection_one._id, ids)
-        assert_not_in(self.collection_two._id, ids)
-        assert_not_in(self.collection_three._id, ids)
+        assert collection_one._id not in ids
+        assert collection_two._id not in ids
+        assert collection_three._id not in ids
 
-    def test_get_no_collections_with_no_filter_logged_in_as_wrong_user(self):
-        res = self.app.get(self.url, auth=self.user_two.auth)
+        #test_get_no_collections_with_no_filter_logged_in_as_wrong_user
+        res = app.get(url_collection_list, auth=user_two.auth)
         node_json = res.json['data']
         ids = [each['id'] for each in node_json]
-        assert_not_in(self.collection_one._id, ids)
-        assert_not_in(self.collection_two._id, ids)
-        assert_not_in(self.collection_three._id, ids)
+        assert collection_one._id not in ids
+        assert collection_two._id not in ids
+        assert collection_three._id not in ids
 
-    def test_get_one_collection_with_exact_filter_logged_in(self):
-        url = "/{}collections/?filter[title]=Collection%20One".format(API_BASE)
+        #test_get_one_collection_with_exact_filter_logged_in
+        url = '/{}collections/?filter[title]=Collection%20One'.format(API_BASE)
 
-        res = self.app.get(url, auth=self.user_one.auth)
-        node_json = res.json['data']
-
-        ids = [each['id'] for each in node_json]
-        assert_in(self.collection_one._id, ids)
-        assert_not_in(self.collection_two._id, ids)
-        assert_not_in(self.collection_three._id, ids)
-
-    def test_get_one_collection_with_exact_filter_not_logged_in(self):
-        url = "/{}collections/?filter[title]=Collection%20One".format(API_BASE)
-
-        res = self.app.get(url)
+        res = app.get(url, auth=user_one.auth)
         node_json = res.json['data']
 
         ids = [each['id'] for each in node_json]
-        assert_not_in(self.collection_one._id, ids)
-        assert_not_in(self.collection_two._id, ids)
-        assert_not_in(self.collection_three._id, ids)
+        assert collection_one._id in ids
+        assert collection_two._id not in ids
+        assert collection_three._id not in ids
 
-    def test_get_some_collections_with_substring_logged_in(self):
-        url = "/{}collections/?filter[title]=Two".format(API_BASE)
+        #test_get_one_collection_with_exact_filter_not_logged_in
+        url = '/{}collections/?filter[title]=Collection%20One'.format(API_BASE)
 
-        res = self.app.get(url, auth=self.user_one.auth)
+        res = app.get(url)
         node_json = res.json['data']
 
         ids = [each['id'] for each in node_json]
-        assert_not_in(self.collection_one._id, ids)
-        assert_in(self.collection_two._id, ids)
-        assert_not_in(self.collection_three._id, ids)
+        assert collection_one._id not in ids
+        assert collection_two._id not in ids
+        assert collection_three._id not in ids
 
-    def test_get_no_projects_with_substring_not_logged_in(self):
-        url = "/{}collections/?filter[title]=Two".format(API_BASE)
+        #test_get_some_collections_with_substring_logged_in
+        url = '/{}collections/?filter[title]=Two'.format(API_BASE)
 
-        res = self.app.get(url)
+        res = app.get(url, auth=user_one.auth)
         node_json = res.json['data']
 
         ids = [each['id'] for each in node_json]
-        assert_not_in(self.collection_one._id, ids)
-        assert_not_in(self.collection_two._id, ids)
-        assert_not_in(self.collection_three._id, ids)
+        assert collection_one._id not in ids
+        assert collection_two._id in ids
+        assert collection_three._id not in ids
 
-    def test_incorrect_filtering_field_logged_in(self):
+        #test_get_no_projects_with_substring_not_logged_in
+        url = '/{}collections/?filter[title]=Two'.format(API_BASE)
+
+        res = app.get(url)
+        node_json = res.json['data']
+
+        ids = [each['id'] for each in node_json]
+        assert collection_one._id not in ids
+        assert collection_two._id not in ids
+        assert collection_three._id not in ids
+
+        #test_incorrect_filtering_field_logged_in
         url = '/{}collections/?filter[notafield]=bogus'.format(API_BASE)
 
-        res = self.app.get(url, expect_errors=True)
-        assert_equal(res.status_code, 400)
+        res = app.get(url, expect_errors=True)
+        assert res.status_code == 400
         errors = res.json['errors']
-        assert_equal(len(errors), 1)
-        assert_equal(errors[0]['detail'], "'notafield' is not a valid field for this endpoint.")
-        assert_equal(errors[0]['source'], {'parameter': 'filter'})
+        assert len(errors) == 1
+        assert errors[0]['detail'] == '\'notafield\' is not a valid field for this endpoint.'
+        assert errors[0]['source'] == {'parameter': 'filter'}
 
+@pytest.mark.django_db
+class TestCollectionDetail:
 
-class TestCollectionDetail(ApiTestCase):
-    def setUp(self):
-        super(TestCollectionDetail, self).setUp()
-        self.user_one = AuthUserFactory()
-        self.user_two = AuthUserFactory()
+    @pytest.fixture()
+    def user_two(self):
+        return AuthUserFactory()
 
-        self.collection = CollectionFactory(title="Test collection", creator=self.user_one)
-        self.url = '/{}collections/{}/'.format(API_BASE, self.collection._id)
+    @pytest.fixture()
+    def collection(self, user_one):
+        return CollectionFactory(title='Test collection', creator=user_one)
 
-    def test_do_not_return_collection_details_logged_out(self):
-        res = self.app.get(self.url, expect_errors=True)
-        assert_equal(res.status_code, 401)
-        assert_in('detail', res.json['errors'][0])
+    @pytest.fixture()
+    def url_collection_detail(self, collection):
+        return '/{}collections/{}/'.format(API_BASE, collection._id)
 
-    def test_return_collection_details_logged_in(self):
-        res = self.app.get(self.url, auth=self.user_one.auth)
-        assert_equal(res.status_code, 200)
-        assert_equal(res.content_type, 'application/vnd.api+json')
-        assert_equal(res.json['data']['attributes']['title'], self.collection.title)
+    def test_collection_detail_returns(self, app, url_collection_detail, user_one, user_two, collection):
+
+        #test_do_not_return_collection_details_logged_out
+        res = app.get(url_collection_detail, expect_errors=True)
+        assert res.status_code == 401
+        assert 'detail' in res.json['errors'][0]
+
+        #test_return_collection_details_logged_in
+        res = app.get(url_collection_detail, auth=user_one.auth)
+        assert res.status_code == 200
+        assert res.content_type == 'application/vnd.api+json'
+        assert res.json['data']['attributes']['title'] == collection.title
         node_links_url = res.json['data']['relationships']['node_links']['links']['related']['href']
-        expected_url = self.url + 'node_links/'
-        assert_equal(urlparse(node_links_url).path, expected_url)
+        expected_url = url_collection_detail + 'node_links/'
+        assert urlparse(node_links_url).path == expected_url
 
-    def test_do_not_return_collection_details_logged_in_non_contributor(self):
-        res = self.app.get(self.url, auth=self.user_two.auth, expect_errors=True)
-        assert_equal(res.status_code, 403)
-        assert_in('detail', res.json['errors'][0])
+        #test_do_not_return_collection_details_logged_in_non_contributor
+        res = app.get(url_collection_detail, auth=user_two.auth, expect_errors=True)
+        assert res.status_code == 403
+        assert 'detail' in res.json['errors'][0]
 
-    def test_requesting_node_returns_error(self):
-        node = NodeFactory(creator=self.user_one)
-        res = self.app.get(
+        #test_requesting_node_returns_error
+        node = NodeFactory(creator=user_one)
+        res = app.get(
             '/{}collections/{}/'.format(API_BASE, node._id),
-            auth=self.user_one.auth,
-            expect_errors=True
-        )
-        assert_equal(res.status_code, 404)
+            auth=user_one.auth,
+            expect_errors=True)
+        assert res.status_code == 404
 
+@pytest.mark.django_db
+class CollectionCRUDTestCase:
 
-class CollectionCRUDTestCase(ApiTestCase):
+    @pytest.fixture()
+    def user_two(self):
+        return AuthUserFactory()
 
-    def setUp(self):
-        super(CollectionCRUDTestCase, self).setUp()
-        self.user = AuthUserFactory()
-        self.user_two = AuthUserFactory()
+    @pytest.fixture()
+    def title_collection(self):
+        return 'Cool Collection'
 
-        self.title = 'Cool Collection'
-        self.new_title = 'Super Cool Collection'
+    @pytest.fixture()
+    def new_title_collection(self):
+        return 'Super Cool Collection'
 
-        self.collection = CollectionFactory(title=self.title, creator=self.user)
-        self.url = '/{}collections/{}/'.format(API_BASE, self.collection._id)
-        self.fake_url = '/{}collections/{}/'.format(API_BASE, '12345')
+    @pytest.fixture()
+    def collection(self, title_collection, user_one):
+        return CollectionFactory(title=title_collection, creator=user_one)
 
+    @pytest.fixture()
+    def url_collection_detail(self, collection):
+        return '/{}collections/{}/'.format(API_BASE, collection._id)
 
-def make_collection_payload(collection, attributes):
-    return {
-        'data': {
-            'id': collection._id,
-            'type': 'collections',
-            'attributes': attributes,
-        }
-    }
+    @pytest.fixture()
+    def url_fake_collection_detail(self, collection):
+        return '/{}collections/{}/'.format(API_BASE, '12345')
 
+    @pytest.fixture()
+    def payload_collection(self, collection):
+        def make_collection_payload(attributes):
+            return {
+                'data': {
+                    'id': collection._id,
+                    'type': 'collections',
+                    'attributes': attributes,
+                }
+            }
+        return make_collection_payload
 
+@pytest.mark.django_db
 class TestCollectionUpdate(CollectionCRUDTestCase):
 
-    def test_node_update_invalid_data(self):
-        res = self.app.put_json_api(self.url, "Incorrect data", auth=self.user.auth, expect_errors=True)
-        assert_equal(res.status_code, 400)
-        assert_equal(res.json['errors'][0]['detail'], "Malformed request.")
+    def test_update_collection_logged_in(self, app, url_collection_detail, collection, new_title_collection, user_one):
+        with assert_latest_log(NodeLog.EDITED_TITLE, collection):
+            res = app.put_json_api(url_collection_detail, {
+                'data': {
+                    'id': collection._id,
+                    'type': 'collections',
+                    'attributes': {
+                        'title': new_title_collection,
+                    }
+                }
+            }, auth=user_one.auth)
+        assert res.status_code == 200
+        assert res.content_type == 'application/vnd.api+json'
+        assert res.json['data']['attributes']['title'] == new_title_collection
+        collection.reload()
+        assert collection.title == new_title_collection
 
-        res = self.app.patch_json_api(self.url, ["Incorrect data"], auth=self.user.auth, expect_errors=True)
-        assert_equal(res.status_code, 400)
-        assert_equal(res.json['errors'][0]['detail'], "Malformed request.")
+    def test_partial_update_collection_logged_in(self, app, url_collection_detail, collection, new_title_collection, user_one):
+        with assert_latest_log(NodeLog.EDITED_TITLE, collection):
+            res = app.patch_json_api(url_collection_detail, {
+                'data': {
+                    'id': collection._id,
+                    'type': 'collections',
+                    'attributes': {
+                        'title': new_title_collection,
+                    }
+                }
+            }, auth=user_one.auth)
+        assert res.status_code == 200
+        assert res.content_type == 'application/vnd.api+json'
+        assert res.json['data']['attributes']['title'] == new_title_collection
+        collection.reload()
+        assert collection.title == new_title_collection
 
-    def test_update_collection_properties_not_nested(self):
-        res = self.app.put_json_api(self.url, {
-            'id': self.collection._id,
+    def test_update_collection_sanitizes_html_properly(self, app, url_collection_detail, collection, user_one):
+        """Post request should update resource, and any HTML in fields should be stripped"""
+        with assert_latest_log(NodeLog.EDITED_TITLE, collection):
+            new_title = '<strong>Super</strong><script>alert("even cooler")</script> Cool Project'
+            res = app.put_json_api(url_collection_detail, {
+                'data': {
+                    'id': collection._id,
+                    'type': 'collections',
+                    'attributes': {
+                        'title': new_title,
+                    }
+                }
+            }, auth=user_one.auth)
+        assert res.status_code == 200
+        assert res.content_type == 'application/vnd.api+json'
+        assert res.json['data']['attributes']['title'] == strip_html(new_title)
+        collection.reload()
+        assert collection.title == strip_html(new_title)
+
+    def test_partial_update_collection_updates_project_correctly_and_sanitizes_html(self, app, url_collection_detail, collection, user_one):
+        with assert_latest_log(NodeLog.EDITED_TITLE, collection):
+            new_title = 'An <script>alert("even cooler")</script> project'
+            res = app.patch_json_api(url_collection_detail, {
+                'data': {
+                    'id': collection._id,
+                    'type': 'collections',
+                    'attributes': {
+                        'title': new_title
+                    }
+                }
+            }, auth=user_one.auth)
+        assert res.status_code == 200
+        assert res.content_type == 'application/vnd.api+json'
+        collection.reload()
+        assert collection.title == strip_html(new_title)
+
+    def test_multiple_patch_requests_with_same_title_generates_one_log(
+        self, app, url_collection_detail, collection, new_title_collection, user_one, payload_collection):
+
+        payload = payload_collection(attributes={'title': new_title_collection})
+        original_n_logs = collection.logs.count()
+
+        for x in range(0, 2):
+            res = app.patch_json_api(url_collection_detail, payload, auth=user_one.auth)
+            assert res.status_code == 200
+            collection.reload()
+            assert collection.title == new_title_collection
+            assert collection.logs.count() == original_n_logs + 1  # sanity check
+
+    def test_update_collection_should_fail(self, app, url_collection_detail, user_one, user_two, new_title_collection, collection):
+
+        #test_node_update_invalid_data
+        res = app.put_json_api(url_collection_detail, 'Incorrect data', auth=user_one.auth, expect_errors=True)
+        assert res.status_code == 400
+        assert res.json['errors'][0]['detail'] == 'Malformed request.'
+
+        res = app.patch_json_api(url_collection_detail, ['Incorrect data'], auth=user_one.auth, expect_errors=True)
+        assert res.status_code == 400
+        assert res.json['errors'][0]['detail'] == 'Malformed request.'
+
+        #test_update_collection_properties_not_nested
+        res = app.put_json_api(url_collection_detail, {
+            'id': collection._id,
             'type': 'collections',
-            'title': self.new_title,
-        }, auth=self.user.auth, expect_errors=True)
-        assert_equal(res.status_code, 400)
-        assert_equal(res.json['errors'][0]['detail'], 'Request must include /data.')
-        assert_equal(res.json['errors'][0]['source']['pointer'], '/data')
+            'title': new_title_collection,
+        }, auth=user_one.auth, expect_errors=True)
+        assert res.status_code == 400
+        assert res.json['errors'][0]['detail'] == 'Request must include /data.'
+        assert res.json['errors'][0]['source']['pointer'] == '/data'
 
-    def test_update_invalid_id(self):
-        res = self.app.put_json_api(self.url, {
+        #test_update_invalid_id
+        res = app.put_json_api(url_collection_detail, {
             'data': {
                 'id': '12345',
                 'type': 'collections',
                 'attributes': {
-                    'title': self.new_title,
+                    'title': new_title_collection,
                 }
             }
-        }, auth=self.user.auth, expect_errors=True)
-        assert_equal(res.status_code, 409)
+        }, auth=user_one.auth, expect_errors=True)
+        assert res.status_code == 409
 
-    def test_update_invalid_type(self):
-        res = self.app.put_json_api(self.url, {
+        #test_update_invalid_type
+        res = app.put_json_api(url_collection_detail, {
             'data': {
-                'id': self.collection._id,
+                'id': collection._id,
                 'type': 'collection',
                 'attributes': {
-                    'title': self.new_title,
+                    'title': new_title_collection,
                 }
             }
-        }, auth=self.user.auth, expect_errors=True)
-        assert_equal(res.status_code, 409)
+        }, auth=user_one.auth, expect_errors=True)
+        assert res.status_code == 409
 
-    def test_update_no_id(self):
-        res = self.app.put_json_api(self.url, {
+        #test_update_no_id
+        res = app.put_json_api(url_collection_detail, {
             'data': {
                 'type': 'collections',
                 'attributes': {
-                    'title': self.new_title,
+                    'title': new_title_collection,
                 }
             }
-        }, auth=self.user.auth, expect_errors=True)
-        assert_equal(res.status_code, 400)
-        assert_equal(res.json['errors'][0]['detail'], 'This field may not be null.')
-        assert_equal(res.json['errors'][0]['source']['pointer'], '/data/id')
+        }, auth=user_one.auth, expect_errors=True)
+        assert res.status_code == 400
+        assert res.json['errors'][0]['detail'] == 'This field may not be null.'
+        assert res.json['errors'][0]['source']['pointer'] == '/data/id'
 
-    def test_update_no_type(self):
-        res = self.app.put_json_api(self.url, {
+        #test_update_no_type
+        res = app.put_json_api(url_collection_detail, {
             'data': {
-                'id': self.collection._id,
+                'id': collection._id,
                 'attributes': {
-                    'title': self.new_title,
+                    'title': new_title_collection,
                 }
             }
-        }, auth=self.user.auth, expect_errors=True)
-        assert_equal(res.status_code, 400)
-        assert_equal(res.json['errors'][0]['detail'], 'This field may not be null.')
-        assert_equal(res.json['errors'][0]['source']['pointer'], '/data/type')
+        }, auth=user_one.auth, expect_errors=True)
+        assert res.status_code == 400
+        assert res.json['errors'][0]['detail'] == 'This field may not be null.'
+        assert res.json['errors'][0]['source']['pointer'] == '/data/type'
 
-    def test_cannot_update_collection_logged_out(self):
-        res = self.app.put_json_api(self.url, {
+        #test_cannot_update_collection_logged_out
+        res = app.put_json_api(url_collection_detail, {
             'data': {
-                'id': self.collection._id,
+                'id': collection._id,
                 'type': 'collections',
                 'attributes': {
-                    'title': self.new_title,
+                    'title': new_title_collection,
                 }
             }
         }, expect_errors=True)
-        assert_equal(res.status_code, 401)
-        assert_in('detail', res.json['errors'][0])
+        assert res.status_code == 401
+        assert 'detail' in res.json['errors'][0]
 
-    @assert_logs(NodeLog.EDITED_TITLE, 'collection')
-    def test_update_collection_logged_in(self):
-        res = self.app.put_json_api(self.url, {
+        #test_cannot_update_collection_logged_in_but_unauthorized
+        res = app.put_json_api(url_collection_detail, {
             'data': {
-                'id': self.collection._id,
+                'id': collection._id,
                 'type': 'collections',
                 'attributes': {
-                    'title': self.new_title,
+                    'title': new_title_collection,
                 }
             }
-        }, auth=self.user.auth)
-        assert_equal(res.status_code, 200)
-        assert_equal(res.content_type, 'application/vnd.api+json')
-        assert_equal(res.json['data']['attributes']['title'], self.new_title)
-        self.collection.reload()
-        assert_equal(self.collection.title, self.new_title)
+        }, auth=user_two.auth, expect_errors=True)
+        assert res.status_code == 403
+        assert 'detail' in res.json['errors'][0]
 
-    @assert_logs(NodeLog.EDITED_TITLE, 'collection')
-    def test_partial_update_collection_logged_in(self):
-        res = self.app.patch_json_api(self.url, {
-            'data': {
-                'id': self.collection._id,
-                'type': 'collections',
-                'attributes': {
-                    'title': self.new_title,
-                }
-            }
-        }, auth=self.user.auth)
-        assert_equal(res.status_code, 200)
-        assert_equal(res.content_type, 'application/vnd.api+json')
-        assert_equal(res.json['data']['attributes']['title'], self.new_title)
-        self.collection.reload()
-        assert_equal(self.collection.title, self.new_title)
-
-    def test_cannot_update_collection_logged_in_but_unauthorized(self):
-        res = self.app.put_json_api(self.url, {
-            'data': {
-                'id': self.collection._id,
-                'type': 'collections',
-                'attributes': {
-                    'title': self.new_title,
-                }
-            }
-        }, auth=self.user_two.auth, expect_errors=True)
-        assert_equal(res.status_code, 403)
-        assert_in('detail', res.json['errors'][0])
-
-    @assert_logs(NodeLog.EDITED_TITLE, 'collection')
-    def test_update_collection_sanitizes_html_properly(self):
-        """Post request should update resource, and any HTML in fields should be stripped"""
-        new_title = '<strong>Super</strong><script>alert("even cooler")</script> Cool Project'
-        res = self.app.put_json_api(self.url, {
-            'data': {
-                'id': self.collection._id,
-                'type': 'collections',
-                'attributes': {
-                    'title': new_title,
-                }
-            }
-        }, auth=self.user.auth)
-        assert_equal(res.status_code, 200)
-        assert_equal(res.content_type, 'application/vnd.api+json')
-        assert_equal(res.json['data']['attributes']['title'], strip_html(new_title))
-        self.collection.reload()
-        assert_equal(self.collection.title, strip_html(new_title))
-
-    @assert_logs(NodeLog.EDITED_TITLE, 'collection')
-    def test_partial_update_collection_updates_project_correctly_and_sanitizes_html(self):
-        new_title = 'An <script>alert("even cooler")</script> project'
-        res = self.app.patch_json_api(self.url, {
-            'data': {
-                'id': self.collection._id,
-                'type': 'collections',
-                'attributes': {
-                    'title': new_title
-                }
-            }
-        }, auth=self.user.auth)
-        assert_equal(res.status_code, 200)
-        assert_equal(res.content_type, 'application/vnd.api+json')
-        self.collection.reload()
-        assert_equal(self.collection.title, strip_html(new_title))
-
-    def test_partial_update_collection_logged_in_but_unauthorized(self):
-        res = self.app.patch_json_api(self.url, {
+        #test_partial_update_collection_logged_in_but_unauthorized
+        res = app.patch_json_api(url_collection_detail, {
             'data': {
                 'attributes': {
-                    'title': self.new_title},
-                'id': self.collection._id,
+                    'title': new_title_collection},
+                'id': collection._id,
                 'type': 'nodes',
             }
-        }, auth=self.user_two.auth, expect_errors=True)
-        assert_equal(res.status_code, 403)
-        assert_in('detail', res.json['errors'][0])
+        }, auth=user_two.auth, expect_errors=True)
+        assert res.status_code == 403
+        assert 'detail' in res.json['errors'][0]
 
-    def test_multiple_patch_requests_with_same_title_generates_one_log(self):
-        payload = make_collection_payload(collection=self.collection, attributes={'title': self.new_title})
-        original_n_logs = self.collection.logs.count()
-
-        for x in range(0, 2):
-            res = self.app.patch_json_api(self.url, payload, auth=self.user.auth)
-            assert_equal(res.status_code, 200)
-            self.collection.reload()
-            assert_equal(self.collection.title, self.new_title)
-            assert_equal(self.collection.logs.count(), original_n_logs + 1)  # sanity check
-
-    def test_partial_update_invalid_id(self):
-        res = self.app.patch_json_api(self.url, {
+        #test_partial_update_invalid_id
+        res = app.patch_json_api(url_collection_detail, {
                 'data': {
                     'id': '12345',
                     'type': 'collections',
                     'attributes': {
-                        'title': self.new_title,
+                        'title': new_title_collection,
                     }
                 }
-        }, auth=self.user.auth, expect_errors=True)
-        assert_equal(res.status_code, 409)
+        }, auth=user_one.auth, expect_errors=True)
+        assert res.status_code == 409
 
-    def test_partial_update_invalid_type(self):
-        res = self.app.patch_json_api(self.url, {
+        #test_partial_update_invalid_type
+        res = app.patch_json_api(url_collection_detail, {
             'data': {
-                'id': self.collection._id,
+                'id': collection._id,
                 'type': 'collection',
                 'attributes': {
-                    'title': self.new_title,
+                    'title': new_title_collection,
                 }
             }
-        }, auth=self.user.auth, expect_errors=True)
-        assert_equal(res.status_code, 409)
+        }, auth=user_one.auth, expect_errors=True)
+        assert res.status_code == 409
 
-    def test_partial_update_no_id(self):
-        res = self.app.patch_json_api(self.url, {
+        #test_partial_update_no_id
+        res = app.patch_json_api(url_collection_detail, {
             'data': {
                 'type': 'collections',
                 'attributes': {
-                    'title': self.new_title,
+                    'title': new_title_collection,
                 }
             }
-        }, auth=self.user.auth, expect_errors=True)
-        assert_equal(res.status_code, 400)
-        assert_equal(res.json['errors'][0]['detail'], 'This field may not be null.')
-        assert_equal(res.json['errors'][0]['source']['pointer'], '/data/id')
+        }, auth=user_one.auth, expect_errors=True)
+        assert res.status_code == 400
+        assert res.json['errors'][0]['detail'] == 'This field may not be null.'
+        assert res.json['errors'][0]['source']['pointer'] == '/data/id'
 
-    def test_partial_update_no_type(self):
-        res = self.app.patch_json_api(self.url, {
+        #test_partial_update_no_type
+        res = app.patch_json_api(url_collection_detail, {
             'data': {
-                'id': self.collection._id,
+                'id': collection._id,
                 'attributes': {
-                    'title': self.new_title,
+                    'title': new_title_collection,
                 }
             }
-        }, auth=self.user.auth, expect_errors=True)
-        assert_equal(res.status_code, 400)
-        assert_equal(res.json['errors'][0]['detail'], 'This field may not be null.')
-        assert_equal(res.json['errors'][0]['source']['pointer'], '/data/type')
+        }, auth=user_one.auth, expect_errors=True)
+        assert res.status_code == 400
+        assert res.json['errors'][0]['detail'] == 'This field may not be null.'
+        assert res.json['errors'][0]['source']['pointer'] == '/data/type'
 
-    # Nothing will be updated here
-    def test_partial_update_collection_properties_not_nested(self):
-        res = self.app.patch_json_api(self.url, {
+        # Nothing will be updated here
+        #test_partial_update_collection_properties_not_nested
+        res = app.patch_json_api(url_collection_detail, {
             'data': {
-                'id': self.collection._id,
+                'id': collection._id,
                 'type': 'nodes',
-                'title': self.new_title,
+                'title': new_title_collection,
             }
-        }, auth=self.user.auth, expect_errors=True)
-        assert_equal(res.status_code, 400)
+        }, auth=user_one.auth, expect_errors=True)
+        assert res.status_code == 400
 
-    def test_update_collection_invalid_title(self):
+        #test_update_collection_invalid_title
         project = {
             'data': {
                 'type': 'collections',
-                'id': self.collection._id,
+                'id': collection._id,
                 'attributes': {
                     'title': 'A' * 201,
                     'category': 'project',
                 }
             }
         }
-        res = self.app.put_json_api(self.url, project, auth=self.user.auth, expect_errors=True)
-        assert_equal(res.status_code, 400)
-        assert_equal(res.json['errors'][0]['detail'], 'Title cannot exceed 200 characters.')
+        res = app.put_json_api(url_collection_detail, project, auth=user_one.auth, expect_errors=True)
+        assert res.status_code == 400
+        assert res.json['errors'][0]['detail'] == 'Title cannot exceed 200 characters.'
 
-
+@pytest.mark.django_db
 class TestCollectionDelete(CollectionCRUDTestCase):
 
-    def test_do_not_delete_collection_unauthenticated(self):
-        res = self.app.delete(self.url, expect_errors=True)
-        assert_equal(res.status_code, 401)
+    def test_do_not_delete_collection_unauthenticated(self, app, url_collection_detail):
+        res = app.delete(url_collection_detail, expect_errors=True)
+        assert res.status_code == 401
         assert 'detail' in res.json['errors'][0]
 
-    def test_do_not_return_deleted_collection(self):
-        self.collection.is_deleted = True
-        self.collection.save()
-        res = self.app.get(self.url, expect_errors=True)
-        assert_equal(res.status_code, 410)
+    def test_do_not_return_deleted_collection(self, app, collection, url_collection_detail):
+        collection.is_deleted = True
+        collection.save()
+        res = app.get(url_collection_detail, expect_errors=True)
+        assert res.status_code == 410
         assert 'detail' in res.json['errors'][0]
 
-    def test_do_not_delete_collection_unauthorized(self):
-        res = self.app.delete_json_api(self.url, auth=self.user_two.auth, expect_errors=True)
-        self.collection.reload()
-        assert_equal(res.status_code, 403)
-        assert_equal(self.collection.is_deleted, False)
+    def test_cannot_delete_invalid_collection(self, app, url_fake_collection_detail, user_one):
+        res = app.delete(url_fake_collection_detail, auth=user_one.auth, expect_errors=True)
+        assert res.status_code == 404
         assert 'detail' in res.json['errors'][0]
 
-    @assert_logs(NodeLog.PROJECT_DELETED, 'collection')
-    def test_delete_collection_authorized(self):
-        res = self.app.delete_json_api(self.url, auth=self.user.auth, expect_errors=True)
-        self.collection.reload()
-        assert_equal(res.status_code, 204)
-        assert_equal(self.collection.is_deleted, True)
-
-    def test_cannot_delete_invalid_collection(self):
-        res = self.app.delete(self.fake_url, auth=self.user.auth, expect_errors=True)
-        assert_equal(res.status_code, 404)
+    def test_do_not_delete_collection_unauthorized(self, app, url_collection_detail, user_two, collection):
+        res = app.delete_json_api(url_collection_detail, auth=user_two.auth, expect_errors=True)
+        collection.reload()
+        assert res.status_code == 403
+        assert collection.is_deleted is False
         assert 'detail' in res.json['errors'][0]
 
+    def test_delete_collection_authorized(self, app, url_collection_detail, user_one, collection):
+        with assert_latest_log(NodeLog.PROJECT_DELETED, collection):
+            res = app.delete_json_api(url_collection_detail, auth=user_one.auth, expect_errors=True)
+            collection.reload()
+        assert res.status_code == 204
+        assert collection.is_deleted is True
 
-class TestCollectionNodeLinksList(ApiTestCase):
+@pytest.mark.django_db
+class TestCollectionNodeLinksList:
 
-    def setUp(self):
-        super(TestCollectionNodeLinksList, self).setUp()
-        self.user_one = AuthUserFactory()
-        self.user_two = AuthUserFactory()
-        self.collection = CollectionFactory(creator=self.user_one)
-        self.project = ProjectFactory(is_public=False, creator=self.user_one)
-        self.public_project = ProjectFactory(is_public=True, creator=self.user_two)
-        self.registration = RegistrationFactory(is_public=False, creator=self.user_one)
-        self.public_registration = RegistrationFactory(is_public=True, creator=self.user_two)
-        # self.private_project = ProjectFactory(is_public=False, creator=self.user_two)
-        self.collection.add_pointer(self.project, auth=Auth(self.user_one))
-        self.collection.add_pointer(self.public_project, auth=Auth(self.user_one))
-        self.collection.add_pointer(self.registration, auth=Auth(self.user_one))
-        self.collection.add_pointer(self.public_registration, auth=Auth(self.user_one))
-        self.url = '/{}collections/{}/node_links/'.format(API_BASE, self.collection._id)
+    @pytest.fixture()
+    def user_two(self):
+        return AuthUserFactory()
 
-    def test_do_not_return_node_pointers_logged_out(self):
-        res = self.app.get(self.url, expect_errors=True)
-        assert_equal(res.status_code, 401)
-        assert_in('detail', res.json['errors'][0])
+    @pytest.fixture()
+    def project_private(self, user_one):
+        return ProjectFactory(is_public=False, creator=user_one)
 
-    def test_return_node_pointers_logged_in(self):
-        res = self.app.get(self.url, auth=self.user_one.auth)
+    @pytest.fixture()
+    def project_public(self, user_two):
+        return ProjectFactory(is_public=True, creator=user_two)
+
+    @pytest.fixture()
+    def registration_private(self, user_one):
+        return RegistrationFactory(is_public=False, creator=user_one)
+
+    @pytest.fixture()
+    def registration_public(self, user_two):
+        return RegistrationFactory(is_public=True, creator=user_two)
+
+    @pytest.fixture()
+    def collection(self, user_one, project_private, project_public, registration_private, registration_public):
+        collection = CollectionFactory(creator=user_one)
+        collection.add_pointer(project_private, auth=Auth(user_one))
+        collection.add_pointer(project_public, auth=Auth(user_one))
+        collection.add_pointer(registration_private, auth=Auth(user_one))
+        collection.add_pointer(registration_public, auth=Auth(user_one))
+        return collection
+
+    @pytest.fixture()
+    def url_collection_nodelinks(self, collection):
+        return '/{}collections/{}/node_links/'.format(API_BASE, collection._id)
+
+    def test_collection_nodelinks_list_returns(
+        self, app, url_collection_nodelinks, collection,
+        user_one, user_two, project_public, project_private,
+        registration_public, registration_private):
+
+        #test_do_not_return_node_pointers_logged_out
+        res = app.get(url_collection_nodelinks, expect_errors=True)
+        assert res.status_code == 401
+        assert 'detail' in res.json['errors'][0]
+
+        #test_return_node_pointers_logged_in
+        res = app.get(url_collection_nodelinks, auth=user_one.auth)
         res_json = res.json['data']
-        assert_equal(len(res_json), 4)
-        assert_equal(res.status_code, 200)
-        assert_equal(res.content_type, 'application/vnd.api+json')
+        assert len(res_json) == 4
+        assert res.status_code == 200
+        assert res.content_type == 'application/vnd.api+json'
+
         first_embedded = res_json[0]['embeds']['target_node']['data']['id']
         second_embedded = res_json[1]['embeds']['target_node']['data']['id']
         # node_links end point does not handle registrations correctly
         third_embedded = res_json[2]['embeds']['target_node']['errors'][0]['detail']
         fourth_embedded = res_json[3]['embeds']['target_node']['errors'][0]['detail']
-        assert_items_equal([first_embedded, second_embedded, third_embedded, fourth_embedded], [self.project._id, self.public_project._id, 'Not found.', 'Not found.'])
+        assert_items_equal(
+            [first_embedded, second_embedded, third_embedded, fourth_embedded],
+            [project_private._id, project_public._id, 'Not found.', 'Not found.'])
 
-    def test_return_private_node_pointers_logged_in_non_contributor(self):
-        res = self.app.get(self.url, auth=self.user_two.auth, expect_errors=True)
-        assert_equal(res.status_code, 403)
-        assert_in('detail', res.json['errors'][0])
+        #test_return_private_node_pointers_logged_in_non_contributor
+        res = app.get(url_collection_nodelinks, auth=user_two.auth, expect_errors=True)
+        assert res.status_code == 403
+        assert 'detail' in res.json['errors'][0]
 
-    def test_deleted_links_not_returned(self):
-        res = self.app.get(self.url, auth=self.user_one.auth)
+        #test_deleted_links_not_returned
+        res = app.get(url_collection_nodelinks, auth=user_one.auth)
         res_json = res.json['data']
         original_length = len(res_json)
 
-        self.public_project.is_deleted = True
-        self.public_project.save()
+        project_public.is_deleted = True
+        project_public.save()
 
-        res = self.app.get(self.url, auth=self.user_one.auth)
+        res = app.get(url_collection_nodelinks, auth=user_one.auth)
         res_json = res.json['data']
-        assert_equal(len(res_json), original_length - 1)
+        assert len(res_json) == original_length - 1
 
-
-class TestCollectionNodeLinkCreate(ApiTestCase):
-
-    def setUp(self):
-        super(TestCollectionNodeLinkCreate, self).setUp()
-        node_link_string = '/{}collections/{}/node_links/'
-        self.user_one = AuthUserFactory()
-        self.user_two = AuthUserFactory()
-
-        self.collection = CollectionFactory(creator=self.user_one)
-        self.collection_two = CollectionFactory(creator=self.user_one)
-
-        self.project = ProjectFactory(is_public=False, creator=self.user_one)
-        self.public_project = ProjectFactory(is_public=True, creator=self.user_one)
-        self.registration = RegistrationFactory(is_public=False, creator=self.user_one)
-        self.public_registration = RegistrationFactory(is_public=True, creator=self.user_one)
-        self.user_two_private_project = ProjectFactory(is_public=False, creator=self.user_two)
-        self.user_two_public_project = ProjectFactory(is_public=True, creator=self.user_two)
-        self.user_two_private_registration = RegistrationFactory(is_public=False, creator=self.user_two)
-        self.user_two_public_registration = RegistrationFactory(is_public=True, creator=self.user_two)
-
-        self.url = node_link_string.format(API_BASE, self.collection._id)
-        self.fake_node_id = 'fakeident'
-        self.fake_url = node_link_string.format(API_BASE, self.fake_node_id)
-
-    @staticmethod
-    def post_payload(target_node_id, outer_type='node_links', inner_type='nodes'):
-        payload = {
-            'data': {
-                'relationships': {
-                    'nodes': {
-                        'data': {
-                            'id': target_node_id,
-                        }
+def make_post_payload(target_node_id, outer_type='node_links', inner_type='nodes'):
+    payload = {
+        'data': {
+            'relationships': {
+                'nodes': {
+                    'data': {
+                        'id': target_node_id,
                     }
                 }
             }
         }
+    }
+    if outer_type:
+        payload['data']['type'] = outer_type
+    if inner_type:
+        payload['data']['relationships']['nodes']['data']['type'] = inner_type
+    return payload
 
-        if outer_type:
-            payload['data']['type'] = outer_type
-        if inner_type:
-            payload['data']['relationships']['nodes']['data']['type'] = inner_type
-        return payload
+@pytest.mark.django_db
+class TestCollectionNodeLinkCreate:
 
-    def test_does_not_create_link_when_payload_not_nested(self):
-        payload = {'data': {'type': 'node_links', 'target_node_id': self.project._id}}
-        res = self.app.post_json_api(self.url, payload, auth=self.user_two.auth, expect_errors=True)
-        assert_equal(res.status_code, 400)
-        assert_equal(res.json['errors'][0]['source']['pointer'], '/data/relationships')
-        assert_equal(res.json['errors'][0]['detail'], 'Request must include /data/relationships.')
+    @pytest.fixture()
+    def user_two(self):
+        return AuthUserFactory()
 
-    def test_does_not_create_node_link_logged_out(self):
-        res = self.app.post_json_api(self.url, self.post_payload(self.project._id), expect_errors=True)
-        assert_equal(res.status_code, 401)
-        assert_in('detail', res.json['errors'][0])
+    @pytest.fixture()
+    def collection_one(self, user_one):
+        return CollectionFactory(creator=user_one)
 
-    @assert_logs(NodeLog.POINTER_CREATED, 'collection')
-    def test_creates_node_link_to_public_project_logged_in(self):
-        res = self.app.post_json_api(self.url, self.post_payload(self.public_project._id), auth=self.user_one.auth)
-        assert_equal(res.status_code, 201)
-        assert_equal(res.content_type, 'application/vnd.api+json')
+    @pytest.fixture()
+    def collection_two(self, user_two):
+        return CollectionFactory(creator=user_two)
+
+    @pytest.fixture()
+    def project_private_user_one(self, user_one):
+        return ProjectFactory(is_public=False, creator=user_one)
+
+    @pytest.fixture()
+    def project_public_user_one(self, user_one):
+        return ProjectFactory(is_public=True, creator=user_one)
+
+    @pytest.fixture()
+    def registration_private_user_one(self, user_one):
+        return RegistrationFactory(is_public=False, creator=user_one)
+
+    @pytest.fixture()
+    def registration_public_user_one(self, user_one):
+        return RegistrationFactory(is_public=True, creator=user_one)
+
+    @pytest.fixture()
+    def project_private_user_two(self, user_two):
+        return ProjectFactory(is_public=False, creator=user_two)
+
+    @pytest.fixture()
+    def project_public_user_two(self, user_two):
+        return ProjectFactory(is_public=True, creator=user_two)
+
+    @pytest.fixture()
+    def registration_private_user_two(self, user_two):
+        return RegistrationFactory(is_public=False, creator=user_two)
+
+    @pytest.fixture()
+    def registration_public_user_two(self, user_two):
+        return RegistrationFactory(is_public=True, creator=user_two)
+
+    @pytest.fixture()
+    def url_collection_nodelinks(self, collection_one):
+        return '/{}collections/{}/node_links/'.format(API_BASE, collection_one._id)
+
+    @pytest.fixture()
+    def id_fake_node(self):
+        return 'fakeident'
+
+    @pytest.fixture()
+    def url_fake_collection_nodelinks(self, id_fake_node):
+        return '/{}collections/{}/node_links/'.format(API_BASE, id_fake_node)
+
+    def test_creates_node_link_to_public_project_logged_in(
+        self, app, url_collection_nodelinks, project_public_user_one, collection_one, user_one):
+        with assert_latest_log(NodeLog.POINTER_CREATED, collection_one):
+            res = app.post_json_api(
+                    url_collection_nodelinks,
+                    make_post_payload(project_public_user_one._id),
+                    auth=user_one.auth)
+        assert res.status_code == 201
+        assert res.content_type == 'application/vnd.api+json'
         res_json = res.json['data']
         embedded_node_id = res_json['embeds']['target_node']['data']['id']
-        assert_equal(embedded_node_id, self.public_project._id)
+        assert embedded_node_id == project_public_user_one._id
 
-    @assert_logs(NodeLog.POINTER_CREATED, 'collection')
-    def test_creates_node_link_to_public_registration_logged_in(self):
-        res = self.app.post_json_api(self.url, self.post_payload(self.public_registration._id), auth=self.user_one.auth)
-        assert_equal(res.status_code, 201)
-        assert_equal(res.content_type, 'application/vnd.api+json')
+    def test_creates_node_link_to_public_registration_logged_in(
+        self, app, collection_one, url_collection_nodelinks, registration_public_user_one, user_one):
+        with assert_latest_log(NodeLog.POINTER_CREATED, collection_one):
+            res = app.post_json_api(
+                    url_collection_nodelinks,
+                    make_post_payload(registration_public_user_one._id),
+                    auth=user_one.auth)
+        assert res.status_code == 201
+        assert res.content_type == 'application/vnd.api+json'
         res_json = res.json['data']
         # node_links end point does not handle registrations correctly
         embedded_node_id = res_json['embeds']['target_node']['errors'][0]['detail']
-        assert_equal(embedded_node_id, 'Not found.')
+        assert embedded_node_id == 'Not found.'
 
-    @assert_logs(NodeLog.POINTER_CREATED, 'collection')
-    def test_creates_node_link_to_private_project_logged_in(self):
-        res = self.app.post_json_api(self.url, self.post_payload(self.project._id), auth=self.user_one.auth)
-        assert_equal(res.status_code, 201)
+    def test_creates_node_link_to_private_project_logged_in(
+        self, app, collection_one, url_collection_nodelinks,
+        user_one, project_private_user_one):
+        with assert_latest_log(NodeLog.POINTER_CREATED, collection_one):
+            res = app.post_json_api(
+                    url_collection_nodelinks,
+                    make_post_payload(project_private_user_one._id),
+                    auth=user_one.auth)
+        assert res.status_code == 201
         res_json = res.json['data']
         embedded_node_id = res_json['embeds']['target_node']['data']['id']
-        assert_equal(embedded_node_id, self.project._id)
+        assert embedded_node_id == project_private_user_one._id
 
-    @assert_logs(NodeLog.POINTER_CREATED, 'collection')
-    def test_creates_node_link_to_private_registration_logged_in(self):
-        res = self.app.post_json_api(self.url, self.post_payload(self.registration._id), auth=self.user_one.auth)
-        assert_equal(res.status_code, 201)
+    def test_creates_node_link_to_private_registration_logged_in(
+        self, app, url_collection_nodelinks, collection_one,
+        registration_private_user_one, user_one):
+        with assert_latest_log(NodeLog.POINTER_CREATED, collection_one):
+            res = app.post_json_api(
+                    url_collection_nodelinks,
+                    make_post_payload(registration_private_user_one._id),
+                    auth=user_one.auth)
+        assert res.status_code == 201
         res_json = res.json['data']
         # node_links end point does not handle registrations correctly
         embedded_node_id = res_json['embeds']['target_node']['errors'][0]['detail']
-        assert_equal(embedded_node_id, 'Not found.')
+        assert embedded_node_id == 'Not found.'
 
-    def test_does_not_create_node_link_unauthorized(self):
-        res = self.app.post_json_api(self.url, self.post_payload(self.user_two_private_project._id), auth=self.user_two.auth, expect_errors=True)
-        assert_equal(res.status_code, 403)
-        assert_in('detail', res.json['errors'][0])
-
-    def test_does_not_create_registration_link_unauthorized(self):
-        res = self.app.post_json_api(self.url, self.post_payload(self.user_two_private_registration._id), auth=self.user_two.auth, expect_errors=True)
-        assert_equal(res.status_code, 403)
-        assert_in('detail', res.json['errors'][0])
-
-    @assert_logs(NodeLog.POINTER_CREATED, 'collection')
-    def test_create_node_link_to_non_contributing_node(self):
-        res = self.app.post_json_api(self.url, self.post_payload(self.user_two_public_project._id), auth=self.user_one.auth)
-        assert_equal(res.status_code, 201)
-        assert_equal(res.content_type, 'application/vnd.api+json')
+    def test_create_node_link_to_non_contributing_node(
+        self, app, collection_one, url_collection_nodelinks,
+        project_public_user_two, user_one):
+        with assert_latest_log(NodeLog.POINTER_CREATED, collection_one):
+            res = app.post_json_api(
+                    url_collection_nodelinks,
+                    make_post_payload(project_public_user_two._id),
+                    auth=user_one.auth)
+        assert res.status_code == 201
+        assert res.content_type == 'application/vnd.api+json'
         res_json = res.json['data']
         embedded_node_id = res_json['embeds']['target_node']['data']['id']
-        assert_equal(embedded_node_id, self.user_two_public_project._id)
+        assert embedded_node_id == project_public_user_two._id
 
-    @assert_logs(NodeLog.POINTER_CREATED, 'collection')
-    def test_create_node_link_to_non_contributing_registration(self):
-        res = self.app.post_json_api(self.url, self.post_payload(self.user_two_public_registration._id), auth=self.user_one.auth)
-        assert_equal(res.status_code, 201)
-        assert_equal(res.content_type, 'application/vnd.api+json')
+    def test_create_node_link_to_non_contributing_registration(
+        self, app, collection_one, url_collection_nodelinks,
+        registration_public_user_two, user_one):
+        with assert_latest_log(NodeLog.POINTER_CREATED, collection_one):
+            res = app.post_json_api(
+                    url_collection_nodelinks,
+                    make_post_payload(registration_public_user_two._id),
+                    auth=user_one.auth)
+        assert res.status_code == 201
+        assert res.content_type == 'application/vnd.api+json'
         res_json = res.json['data']
         # node_links end point does not handle registrations correctly
         embedded_node_id = res_json['embeds']['target_node']['errors'][0]['detail']
-        assert_equal(embedded_node_id, 'Not found.')
+        assert embedded_node_id == 'Not found.'
 
-    def test_create_node_link_to_fake_node(self):
-        res = self.app.post_json_api(self.url, self.post_payload(self.fake_node_id), auth=self.user_one.auth, expect_errors=True)
-        assert_equal(res.status_code, 400)
-        assert_in('detail', res.json['errors'][0])
-        assert_in('source', res.json['errors'][0])
-
-    def test_fake_collection_pointing_to_valid_node(self):
-        res = self.app.post_json_api(self.fake_url, self.post_payload(self.project._id), auth=self.user_one.auth, expect_errors=True)
-        assert_equal(res.status_code, 404)
-        assert_in('detail', res.json['errors'][0])
-
-        res = self.app.post_json_api(self.fake_url, self.post_payload(self.project._id), auth=self.user_two.auth, expect_errors=True)
-        assert_equal(res.status_code, 404)
-        assert_in('detail', res.json['errors'][0])
-
-    def test_create_collection_node_pointer_to_itself(self):
-        res = self.app.post_json_api(self.url, self.post_payload(self.collection._id), auth=self.user_one.auth, expect_errors=True)
-        res_json = res.json
-        assert_equal(res.status_code, 400)
-        error = res_json['errors'][0]
-        assert_in('detail', error)
-        assert_equal("Target Node '{}' not found.".format(self.collection._id), error['detail'])
-        assert_in('source', error)
-        assert_in('pointer', error['source'])
-        assert_equal('/data/relationships/node_links/data/id', error['source']['pointer'])
-
-    @assert_logs(NodeLog.POINTER_CREATED, 'collection')
-    def test_create_node_pointer_already_connected(self):
-        res = self.app.post_json_api(self.url, self.post_payload(self.project._id), auth=self.user_one.auth)
-        assert_equal(res.status_code, 201)
-        assert_equal(res.content_type, 'application/vnd.api+json')
+    def test_create_node_pointer_already_connected(
+        self, app, collection_one, url_collection_nodelinks,
+        project_private_user_one, user_one):
+        with assert_latest_log(NodeLog.POINTER_CREATED, collection_one):
+            res = app.post_json_api(
+                    url_collection_nodelinks,
+                    make_post_payload(project_private_user_one._id),
+                    auth=user_one.auth)
+        assert res.status_code == 201
+        assert res.content_type == 'application/vnd.api+json'
         res_json = res.json['data']
         embedded_node_id = res_json['embeds']['target_node']['data']['id']
-        assert_equal(embedded_node_id, self.project._id)
+        assert embedded_node_id == project_private_user_one._id
 
-        res = self.app.post_json_api(self.url, self.post_payload(self.project._id), auth=self.user_one.auth, expect_errors=True)
-        assert_equal(res.status_code, 400)
+        res = app.post_json_api(url_collection_nodelinks, make_post_payload(project_private_user_one._id), auth=user_one.auth, expect_errors=True)
+        assert res.status_code == 400
         error = res.json['errors'][0]
-        assert_in('detail', error)
-        assert_equal('Target Node \'{}\' already pointed to by \'{}\'.'.format(self.project._id, self.collection._id), error['detail'])
-        assert_in('source', error)
-        assert_in('pointer', error['source'])
-        assert_equal('/data/relationships/node_links/data/id', error['source']['pointer'])
+        assert 'detail' in error
+        assert 'Target Node \'{}\' already pointed to by \'{}\'.'.format(project_private_user_one._id, collection_one._id) == error['detail']
+        assert 'source' in error
+        assert 'pointer' in error['source']
+        assert '/data/relationships/node_links/data/id' == error['source']['pointer']
 
-    def test_create_node_pointer_no_type(self):
-        payload = self.post_payload(self.public_project._id, outer_type=None)
-        res = self.app.post_json_api(self.url, payload, auth=self.user_one.auth, expect_errors=True)
-        assert_equal(res.status_code, 400)
-        assert_equal(res.json['errors'][0]['detail'], 'This field may not be null.')
-        assert_equal(res.json['errors'][0]['source']['pointer'], '/data/type')
+    def test_non_mutational_collection_nodelink_create_tests(
+        self, app, user_one, user_two, collection_one, url_collection_nodelinks, url_fake_collection_nodelinks,
+        id_fake_node, project_public_user_one, project_private_user_one, project_public_user_two, project_private_user_two,
+        registration_public_user_one, registration_private_user_one, registration_public_user_two, registration_private_user_two):
 
-    def test_create_node_pointer_incorrect_type(self):
-        payload = self.post_payload(self.public_project._id, outer_type='wrong_type')
-        res = self.app.post_json_api(self.url, payload, auth=self.user_one.auth, expect_errors=True)
-        assert_equal(res.status_code, 409)
-        assert_equal(res.json['errors'][0]['detail'], 'This resource has a type of "node_links", but you set the json body\'s type field to "wrong_type". You probably need to change the type field to match the resource\'s type.')
+        #test_create_node_pointer_no_type
+        payload = make_post_payload(project_public_user_one._id, outer_type=None)
+        res = app.post_json_api(url_collection_nodelinks, payload, auth=user_one.auth, expect_errors=True)
+        assert res.status_code == 400
+        assert res.json['errors'][0]['detail'] == 'This field may not be null.'
+        assert res.json['errors'][0]['source']['pointer'] == '/data/type'
 
+        #test_create_node_pointer_incorrect_type
+        payload = make_post_payload(project_public_user_one._id, outer_type='wrong_type')
+        res = app.post_json_api(url_collection_nodelinks, payload, auth=user_one.auth, expect_errors=True)
+        assert res.status_code == 409
+        assert res.json['errors'][0]['detail'] == 'This resource has a type of "node_links", but you set the json body\'s type field to "wrong_type". You probably need to change the type field to match the resource\'s type.'
 
-class TestCollectionNodeLinkDetail(ApiTestCase):
+        #test_does_not_create_link_when_payload_not_nested
+        payload = {'data': {'type': 'node_links', 'target_node_id': project_private_user_one._id}}
+        res = app.post_json_api(url_collection_nodelinks, payload, auth=user_two.auth, expect_errors=True)
+        assert res.status_code == 400
+        assert res.json['errors'][0]['source']['pointer'] == '/data/relationships'
+        assert res.json['errors'][0]['detail'] == 'Request must include /data/relationships.'
 
-    def setUp(self):
-        super(TestCollectionNodeLinkDetail, self).setUp()
-        self.user_one = AuthUserFactory()
-        self.user_two = AuthUserFactory()
-        self.collection = CollectionFactory(creator=self.user_one)
-        self.project = ProjectFactory(creator=self.user_one, is_public=False)
-        self.project_public = ProjectFactory(creator=self.user_one, is_public=False)
-        self.registration = RegistrationFactory(creator=self.user_one, is_public=False)
-        self.registration_public = RegistrationFactory(creator=self.user_one, is_public=False)
-        self.node_link = self.collection.add_pointer(self.project, auth=Auth(self.user_one), save=True)
-        self.node_link_public = self.collection.add_pointer(self.project_public, auth=Auth(self.user_one), save=True)
-        self.registration_link = self.collection.add_pointer(self.registration, auth=Auth(self.user_one), save=True)
-        self.registration_link_public = self.collection.add_pointer(self.registration_public, auth=Auth(self.user_one), save=True)
-        self.url = '/{}collections/{}/node_links/{}/'.format(API_BASE, self.collection._id, self.node_link._id)
-        self.url_public = '/{}collections/{}/node_links/{}/'.format(API_BASE, self.collection._id, self.node_link_public._id)
-        self.reg_url = '/{}collections/{}/node_links/{}/'.format(API_BASE, self.collection._id, self.registration_link._id)
-        self.reg_url_public = '/{}collections/{}/node_links/{}/'.format(API_BASE, self.collection._id, self.registration_link_public._id)
+        #test_does_not_create_node_link_logged_out
+        res = app.post_json_api(url_collection_nodelinks, make_post_payload(project_private_user_one._id), expect_errors=True)
+        assert res.status_code == 401
+        assert 'detail' in res.json['errors'][0]
 
-    def test_returns_error_public_node_link_detail_unauthenticated(self):
-        res = self.app.get(self.url_public, expect_errors=True)
-        assert_equal(res.status_code, 401)
-        assert_in('detail', res.json['errors'][0])
+        #test_does_not_create_node_link_unauthorized
+        res = app.post_json_api(url_collection_nodelinks, make_post_payload(project_private_user_two._id), auth=user_two.auth, expect_errors=True)
+        assert res.status_code == 403
+        assert 'detail' in res.json['errors'][0]
 
-    def test_returns_error_public_registration_link_detail_unauthenticated(self):
-        res = self.app.get(self.reg_url_public, expect_errors=True)
-        assert_equal(res.status_code, 401)
-        assert_in('detail', res.json['errors'][0])
+        #test_does_not_create_registration_link_unauthorized
+        res = app.post_json_api(url_collection_nodelinks, make_post_payload(registration_public_user_two._id), auth=user_two.auth, expect_errors=True)
+        assert res.status_code == 403
+        assert 'detail' in res.json['errors'][0]
 
-    def test_returns_public_node_pointer_detail_authorized(self):
-        res = self.app.get(self.url_public, auth=self.user_one.auth)
+        #test_create_node_link_to_fake_node
+        res = app.post_json_api(url_collection_nodelinks, make_post_payload(id_fake_node), auth=user_one.auth, expect_errors=True)
+        assert res.status_code == 400
+        assert 'detail' in res.json['errors'][0]
+        assert 'source' in res.json['errors'][0]
+
+        #test_fake_collection_pointing_to_valid_node
+        res = app.post_json_api(url_fake_collection_nodelinks, make_post_payload(project_private_user_one._id), auth=user_one.auth, expect_errors=True)
+        assert res.status_code == 404
+        assert 'detail' in res.json['errors'][0]
+
+        res = app.post_json_api(url_fake_collection_nodelinks, make_post_payload(project_private_user_one._id), auth=user_two.auth, expect_errors=True)
+        assert res.status_code == 404
+        assert 'detail' in res.json['errors'][0]
+
+        #test_create_collection_node_pointer_to_itself
+        res = app.post_json_api(url_collection_nodelinks, make_post_payload(collection_one._id), auth=user_one.auth, expect_errors=True)
+        res_json = res.json
+        assert res.status_code == 400
+        error = res_json['errors'][0]
+        assert 'detail' in error
+        assert 'Target Node \'{}\' not found.'.format(collection_one._id) == error['detail']
+        assert 'source' in error
+        assert 'pointer' in error['source']
+        assert '/data/relationships/node_links/data/id' == error['source']['pointer']
+
+@pytest.mark.django_db
+class TestCollectionNodeLinkDetail:
+
+    @pytest.fixture()
+    def user_two(self):
+        return AuthUserFactory()
+
+    @pytest.fixture()
+    def collection(self, user_one):
+        return CollectionFactory(creator=user_one)
+
+    @pytest.fixture()
+    def project_private(self, user_one):
+        return ProjectFactory(creator=user_one, is_public=False)
+
+    @pytest.fixture()
+    def project_public(self, user_one):
+        return ProjectFactory(creator=user_one, is_public=False)
+
+    @pytest.fixture()
+    def registration_private(self, user_one):
+        return RegistrationFactory(creator=user_one, is_public=False)
+
+    @pytest.fixture()
+    def registration_public(self, user_one):
+        return RegistrationFactory(creator=user_one, is_public=False)
+
+    @pytest.fixture()
+    def node_link_private(self, user_one, collection, project_private):
+        return collection.add_pointer(project_private, auth=Auth(user_one), save=True)
+
+    @pytest.fixture()
+    def node_link_public(self, user_one, collection, project_public):
+        return collection.add_pointer(project_public, auth=Auth(user_one), save=True)
+
+    @pytest.fixture()
+    def registration_link_private(self, user_one, registration_private, collection):
+        return collection.add_pointer(registration_private, auth=Auth(user_one), save=True)
+
+    @pytest.fixture()
+    def registration_link_public(self, user_one, registration_public, collection):
+        return collection.add_pointer(registration_public, auth=Auth(user_one), save=True)
+
+    @pytest.fixture()
+    def url_node_link_private(self, collection, node_link_private):
+        return '/{}collections/{}/node_links/{}/'.format(API_BASE, collection._id, node_link_private._id)
+
+    @pytest.fixture()
+    def url_node_link_public(self, collection, node_link_public):
+        return '/{}collections/{}/node_links/{}/'.format(API_BASE, collection._id, node_link_public._id)
+
+    @pytest.fixture()
+    def url_registration_link_private(self, collection, registration_link_private):
+        return '/{}collections/{}/node_links/{}/'.format(API_BASE, collection._id, registration_link_private._id)
+
+    @pytest.fixture()
+    def url_registration_link_public(self, collection, registration_link_public):
+        return '/{}collections/{}/node_links/{}/'.format(API_BASE, collection._id, registration_link_public._id)
+
+    def test_returns_public_node_pointer_detail_authorized(self, app, user_one, url_node_link_public, project_public):
+        res = app.get(url_node_link_public, auth=user_one.auth)
         res_json = res.json['data']
-        assert_equal(res.status_code, 200)
-        assert_equal(res.content_type, 'application/vnd.api+json')
+        assert res.status_code == 200
+        assert res.content_type == 'application/vnd.api+json'
         embedded = res_json['embeds']['target_node']['data']['id']
-        assert_equal(embedded, self.project_public._id)
+        assert embedded == project_public._id
 
-    def test_returns_public_registration_pointer_detail_authorized(self):
-        res = self.app.get(self.reg_url_public, auth=self.user_one.auth)
+    def test_returns_public_registration_pointer_detail_authorized(self, app, user_one, url_registration_link_public):
+        res = app.get(url_registration_link_public, auth=user_one.auth)
         res_json = res.json['data']
-        assert_equal(res.status_code, 200)
-        assert_equal(res.content_type, 'application/vnd.api+json')
+        assert res.status_code == 200
+        assert res.content_type == 'application/vnd.api+json'
         # node_links end point does not handle registrations correctly
         embedded = res_json['embeds']['target_node']['errors'][0]['detail']
-        assert_equal(embedded, 'Not found.')
+        assert embedded == 'Not found.'
 
-    def test_returns_error_private_node_link_detail_unauthenticated(self):
-        res = self.app.get(self.url, expect_errors=True)
-        assert_equal(res.status_code, 401)
-        assert_in('detail', res.json['errors'][0])
-
-    def test_returns_error_private_registration_link_detail_unauthenticated(self):
-        res = self.app.get(self.reg_url, expect_errors=True)
-        assert_equal(res.status_code, 401)
-        assert_in('detail', res.json['errors'][0])
-
-    def test_returns_private_node_link_detail_authorized(self):
-        res = self.app.get(self.url, auth=self.user_one.auth)
+    def test_returns_private_node_link_detail_authorized(self, app, user_one, url_node_link_private, project_private):
+        res = app.get(url_node_link_private, auth=user_one.auth)
         res_json = res.json['data']
-        assert_equal(res.status_code, 200)
-        assert_equal(res.content_type, 'application/vnd.api+json')
+        assert res.status_code == 200
+        assert res.content_type == 'application/vnd.api+json'
         embedded = res_json['embeds']['target_node']['data']['id']
-        assert_equal(embedded, self.project._id)
+        assert embedded == project_private._id
 
-    def test_returns_private_registration_link_detail_authorized(self):
-        res = self.app.get(self.reg_url, auth=self.user_one.auth)
+    def test_returns_private_registration_link_detail_authorized(self, app, url_registration_link_private, user_one):
+        res = app.get(url_registration_link_private, auth=user_one.auth)
         res_json = res.json['data']
-        assert_equal(res.status_code, 200)
-        assert_equal(res.content_type, 'application/vnd.api+json')
+        assert res.status_code == 200
+        assert res.content_type == 'application/vnd.api+json'
         # node_links end point does not handle registrations correctly
         embedded = res_json['embeds']['target_node']['errors'][0]['detail']
-        assert_equal(embedded, 'Not found.')
+        assert embedded == 'Not found.'
 
-    def test_returns_error_private_node_link_detail_unauthorized(self):
-        res = self.app.get(self.url, auth=self.user_two.auth, expect_errors=True)
-        assert_equal(res.status_code, 403)
-        assert_in('detail', res.json['errors'][0])
-
-    def test_returns_error_private_registration_link_detail_unauthorized(self):
-        res = self.app.get(self.reg_url, auth=self.user_two.auth, expect_errors=True)
-        assert_equal(res.status_code, 403)
-        assert_in('detail', res.json['errors'][0])
-
-    def test_self_link_points_to_node_link_detail_url(self):
-        res = self.app.get(self.url, auth=self.user_one.auth)
-        assert_equal(res.status_code, 200)
+    def test_self_link_points_to_node_link_detail_url(self, app, url_node_link_private, user_one):
+        res = app.get(url_node_link_private, auth=user_one.auth)
+        assert res.status_code == 200
         url = res.json['data']['links']['self']
-        assert_in(self.url, url)
+        assert url_node_link_private in url
 
-    def test_delete_node_link_no_permissions_for_target_node(self):
-        pointer_project = CollectionFactory(creator=self.user_two)
-        pointer = self.collection.add_pointer(pointer_project, auth=Auth(self.user_one), save=True)
-        assert_in(pointer.child, self.collection.linked_nodes.all())
-        url = '/{}collections/{}/node_links/{}/'.format(API_BASE, self.collection._id, pointer._id)
-        res = self.app.delete_json_api(url, auth=self.user_one.auth)
-        assert_equal(res.status_code, 204)
+    def test_delete_node_link_no_permissions_for_target_node(self, app, user_one, user_two, collection):
+        pointer_project = CollectionFactory(creator=user_two)
+        pointer = collection.add_pointer(pointer_project, auth=Auth(user_one), save=True)
+        assert pointer.child in collection.linked_nodes.all()
+        url = '/{}collections/{}/node_links/{}/'.format(API_BASE, collection._id, pointer._id)
+        res = app.delete_json_api(url, auth=user_one.auth)
+        assert res.status_code == 204
 
-    def test_can_not_delete_collection_public_node_link_unauthenticated(self):
-        res = self.app.delete(self.url_public, expect_errors=True)
-        assert_equal(res.status_code, 401)
-        assert_in('detail', res.json['errors'][0].keys())
+    def test_delete_public_node_pointer_authorized(self, app, user_one, url_node_link_public, collection):
+        with assert_latest_log(NodeLog.POINTER_REMOVED, collection):
+            node_count_before = collection.nodes_pointer.count()
+            res = app.delete(url_node_link_public, auth=user_one.auth)
+            collection.reload()
+        assert res.status_code == 204
+        assert node_count_before - 1 == collection.nodes_pointer.count()
 
-    def test_can_not_delete_collection_public_node_pointer_unauthorized(self):
-        node_count_before = self.collection.nodes_pointer.count()
-        res = self.app.delete(self.url_public, auth=self.user_two.auth, expect_errors=True)
+    def test_delete_public_registration_pointer_authorized(self, app, user_one, collection, url_registration_link_public):
+        with assert_latest_log(NodeLog.POINTER_REMOVED, collection):
+            node_count_before = collection.nodes_pointer.count()
+            res = app.delete(url_registration_link_public, auth=user_one.auth)
+            collection.reload()
+        assert res.status_code == 204
+        assert node_count_before - 1 == len(collection.nodes_pointer)
+
+    def test_delete_private_node_link_authorized(self, app, url_node_link_private, user_one, collection):
+        with assert_latest_log(NodeLog.POINTER_REMOVED, collection):
+            node_count_before = collection.nodes_pointer.count()
+            res = app.delete(url_node_link_private, auth=user_one.auth)
+            collection.reload()
+        assert res.status_code == 204
+        assert node_count_before - 1 == len(collection.nodes_pointer)
+
+    def test_delete_private_registration_link_authorized(self, app, user_one, url_registration_link_private, collection):
+        node_count_before = collection.nodes_pointer.count()
+        res = app.delete(url_registration_link_private, auth=user_one.auth)
+        collection.reload()
+        assert res.status_code == 204
+        assert node_count_before - 1 == collection.nodes_pointer.count()
+
+    def test_can_not_return_deleted_collection_public_node_pointer(self, app, user_one, url_node_link_public, collection):
+        with assert_latest_log(NodeLog.POINTER_REMOVED, collection):
+            res = app.delete(url_node_link_public, auth=user_one.auth)
+            collection.reload()
+        assert res.status_code == 204
+
+        res = app.get(url_node_link_public, auth=user_one.auth, expect_errors=True)
+        assert res.status_code == 404
+
+    def test_can_not_return_deleted_collection_public_registration_pointer(self, app, url_registration_link_public, user_one, collection):
+        with assert_latest_log(NodeLog.POINTER_REMOVED, collection):
+            res = app.delete(url_registration_link_public, auth=user_one.auth)
+            collection.reload()
+        assert res.status_code == 204
+
+        res = app.get(url_registration_link_public, auth=user_one.auth, expect_errors=True)
+        assert res.status_code == 404
+
+    def test_return_deleted_private_node_pointer(self, app, collection, url_node_link_private, user_one, project_private):
+        with assert_latest_log(NodeLog.POINTER_REMOVED, collection):
+            res = app.delete(url_node_link_private, auth=user_one.auth)
+            project_private.reload()
+        assert res.status_code == 204
+
+        res = app.get(url_node_link_private, auth=user_one.auth, expect_errors=True)
+        assert res.status_code == 404
+
+    def test_return_deleted_private_registration_pointer(self, app, collection, url_registration_link_private, user_one, project_private):
+        with assert_latest_log(NodeLog.POINTER_REMOVED, collection):
+            res = app.delete(url_registration_link_private, auth=user_one.auth)
+            project_private.reload()
+        assert res.status_code == 204
+
+        res = app.get(url_registration_link_private, auth=user_one.auth, expect_errors=True)
+        assert res.status_code == 404
+
+    def test_non_mutational_collection_nodelink_detail_tests(
+        self, app, collection, user_one, user_two, url_node_link_public, node_link_private,
+        url_registration_link_public, url_node_link_private, url_registration_link_private):
+
+        #test_returns_error_public_node_link_detail_unauthenticated
+        res = app.get(url_node_link_public, expect_errors=True)
+        assert res.status_code == 401
+        assert 'detail' in res.json['errors'][0]
+
+        #test_returns_error_public_registration_link_detail_unauthenticated
+        res = app.get(url_registration_link_public, expect_errors=True)
+        assert res.status_code == 401
+        assert 'detail' in res.json['errors'][0]
+
+        #test_returns_error_private_node_link_detail_unauthenticated
+        res = app.get(url_node_link_private, expect_errors=True)
+        assert res.status_code == 401
+        assert 'detail' in res.json['errors'][0]
+
+        #test_returns_error_private_registration_link_detail_unauthenticated
+        res = app.get(url_registration_link_private, expect_errors=True)
+        assert res.status_code == 401
+        assert 'detail' in res.json['errors'][0]
+
+        #test_returns_error_private_node_link_detail_unauthorized
+        res = app.get(url_node_link_private, auth=user_two.auth, expect_errors=True)
+        assert res.status_code == 403
+        assert 'detail' in res.json['errors'][0]
+
+        #test_returns_error_private_registration_link_detail_unauthorized
+        res = app.get(url_registration_link_private, auth=user_two.auth, expect_errors=True)
+        assert res.status_code == 403
+        assert 'detail' in res.json['errors'][0]
+
+        #test_can_not_delete_collection_public_node_link_unauthenticated
+        res = app.delete(url_node_link_public, expect_errors=True)
+        assert res.status_code == 401
+        assert 'detail' in res.json['errors'][0].keys()
+
+        #test_can_not_delete_collection_public_node_pointer_unauthorized
+        node_count_before = collection.nodes_pointer.count()
+        res = app.delete(url_node_link_public, auth=user_two.auth, expect_errors=True)
         # This is could arguably be a 405, but we don't need to go crazy with status codes
-        assert_equal(res.status_code, 403)
-        assert_in('detail', res.json['errors'][0])
-        self.collection.reload()
-        assert_equal(node_count_before, len(self.collection.nodes_pointer))
+        assert res.status_code == 403
+        assert 'detail' in res.json['errors'][0]
+        collection.reload()
+        assert node_count_before == len(collection.nodes_pointer)
 
-    @assert_logs(NodeLog.POINTER_REMOVED, 'collection')
-    def test_delete_public_node_pointer_authorized(self):
-        node_count_before = self.collection.nodes_pointer.count()
-        res = self.app.delete(self.url_public, auth=self.user_one.auth)
-        self.collection.reload()
-        assert_equal(res.status_code, 204)
-        assert_equal(node_count_before - 1, self.collection.nodes_pointer.count())
+        #test_can_not_delete_collection_private_node_link_unauthorized
+        res = app.delete(url_node_link_private, auth=user_two.auth, expect_errors=True)
+        assert res.status_code == 403
+        assert 'detail' in res.json['errors'][0]
 
-    @assert_logs(NodeLog.POINTER_REMOVED, 'collection')
-    def test_delete_public_registration_pointer_authorized(self):
-        node_count_before = self.collection.nodes_pointer.count()
-        res = self.app.delete(self.reg_url_public, auth=self.user_one.auth)
-        self.collection.reload()
-        assert_equal(res.status_code, 204)
-        assert_equal(node_count_before - 1, len(self.collection.nodes_pointer))
+        #test_can_not_delete_collection_private_registration_link_unauthorized
+        res = app.delete(url_registration_link_private, auth=user_two.auth, expect_errors=True)
+        assert res.status_code == 403
+        assert 'detail' in res.json['errors'][0]
 
-    @assert_logs(NodeLog.POINTER_REMOVED, 'collection')
-    def test_delete_private_node_link_authorized(self):
-        node_count_before = self.collection.nodes_pointer.count()
-        res = self.app.delete(self.url, auth=self.user_one.auth)
-        self.collection.reload()
-        assert_equal(res.status_code, 204)
-        assert_equal(node_count_before - 1, len(self.collection.nodes_pointer))
-
-    @assert_logs(NodeLog.POINTER_REMOVED, 'collection')
-    def test_delete_private_registration_link_authorized(self):
-        node_count_before = self.collection.nodes_pointer.count()
-        res = self.app.delete(self.reg_url, auth=self.user_one.auth)
-        self.collection.reload()
-        assert_equal(res.status_code, 204)
-        assert_equal(node_count_before - 1, self.collection.nodes_pointer.count())
-
-    def test_can_not_delete_collection_private_node_link_unauthorized(self):
-        res = self.app.delete(self.url, auth=self.user_two.auth, expect_errors=True)
-        assert_equal(res.status_code, 403)
-        assert_in('detail', res.json['errors'][0])
-
-    def test_can_not_delete_collection_private_registration_link_unauthorized(self):
-        res = self.app.delete(self.reg_url, auth=self.user_two.auth, expect_errors=True)
-        assert_equal(res.status_code, 403)
-        assert_in('detail', res.json['errors'][0])
-
-    @assert_logs(NodeLog.POINTER_REMOVED, 'collection')
-    def test_can_not_return_deleted_collection_public_node_pointer(self):
-        res = self.app.delete(self.url_public, auth=self.user_one.auth)
-        self.collection.reload()
-        assert_equal(res.status_code, 204)
-
-        res = self.app.get(self.url_public, auth=self.user_one.auth, expect_errors=True)
-        assert_equal(res.status_code, 404)
-
-    @assert_logs(NodeLog.POINTER_REMOVED, 'collection')
-    def test_can_not_return_deleted_collection_public_registration_pointer(self):
-        res = self.app.delete(self.reg_url_public, auth=self.user_one.auth)
-        self.collection.reload()
-        assert_equal(res.status_code, 204)
-
-        res = self.app.get(self.reg_url_public, auth=self.user_one.auth, expect_errors=True)
-        assert_equal(res.status_code, 404)
-
-    @assert_logs(NodeLog.POINTER_REMOVED, 'collection')
-    def test_return_deleted_private_node_pointer(self):
-        res = self.app.delete(self.url, auth=self.user_one.auth)
-        self.project.reload()
-        assert_equal(res.status_code, 204)
-
-        res = self.app.get(self.url, auth=self.user_one.auth, expect_errors=True)
-        assert_equal(res.status_code, 404)
-
-    @assert_logs(NodeLog.POINTER_REMOVED, 'collection')
-    def test_return_deleted_private_registration_pointer(self):
-        res = self.app.delete(self.reg_url, auth=self.user_one.auth)
-        self.project.reload()
-        assert_equal(res.status_code, 204)
-
-        res = self.app.get(self.reg_url, auth=self.user_one.auth, expect_errors=True)
-        assert_equal(res.status_code, 404)
-
-    # Regression test for https://openscience.atlassian.net/browse/OSF-4322
-    def test_delete_link_that_is_not_linked_to_correct_node(self):
-        collection = CollectionFactory(creator=self.user_one)
+        #Regression test for https://openscience.atlassian.net/browse/OSF-4322
+        #test_delete_link_that_is_not_linked_to_correct_node
+        collection = CollectionFactory(creator=user_one)
         # The node link belongs to a different project
-        res = self.app.delete(
-            '/{}nodes/{}/node_links/{}/'.format(API_BASE, collection._id, self.node_link._id),
-            auth=self.user_one.auth,
+        res = app.delete(
+            '/{}nodes/{}/node_links/{}/'.format(API_BASE, collection._id, node_link_private._id),
+            auth=user_one.auth,
             expect_errors=True
         )
-        assert_equal(res.status_code, 404)
+        assert res.status_code == 404
         errors = res.json['errors']
-        assert_equal(len(errors), 1)
-        assert_equal(errors[0]['detail'], 'Not found.')
+        assert len(errors) == 1
+        assert errors[0]['detail'] == 'Not found.'
 
+@pytest.mark.django_db
+class TestReturnDeletedCollection:
 
-class TestReturnDeletedCollection(ApiTestCase):
-    def setUp(self):
+    def test_return_deleted_collection(self, app):
 
-        super(TestReturnDeletedCollection, self).setUp()
-        self.user = AuthUserFactory()
-        self.non_contrib = AuthUserFactory()
+        user = AuthUserFactory()
+        non_contrib = AuthUserFactory()
 
-        self.deleted = CollectionFactory(is_deleted=True, creator=self.user, title='This collection has been deleted')
-        self.collection = CollectionFactory(creator=self.user, title='A boring collection')
+        collection_deleted = CollectionFactory(is_deleted=True, creator=user, title='This collection has been deleted')
+        collection = CollectionFactory(creator=user, title='A boring collection')
 
-        self.new_title = 'This deleted node has been edited'
-        self.deleted_url = '/{}collections/{}/'.format(API_BASE, self.deleted._id)
+        title_new = 'This deleted node has been edited'
+        url_collection_deleted = '/{}collections/{}/'.format(API_BASE, collection_deleted._id)
 
-    def test_return_deleted_collection(self):
-        res = self.app.get(self.deleted_url, expect_errors=True)
-        assert_equal(res.status_code, 410)
+        #test_return_deleted_collection
+        res = app.get(url_collection_deleted, expect_errors=True)
+        assert res.status_code == 410
 
-    def test_edit_deleted_collection(self):
-        res = self.app.put_json_api(self.deleted_url, params={'title': self.new_title}, auth=self.user.auth, expect_errors=True)
-        assert_equal(res.status_code, 410)
+        #test_edit_deleted_collection
+        res = app.put_json_api(url_collection_deleted, params={'title': title_new}, auth=user.auth, expect_errors=True)
+        assert res.status_code == 410
 
-    def test_delete_deleted_collection(self):
-        res = self.app.delete(self.deleted_url, auth=self.user.auth, expect_errors=True)
-        assert_equal(res.status_code, 410)
+        #test_delete_deleted_collection
+        res = app.delete(url_collection_deleted, auth=user.auth, expect_errors=True)
+        assert res.status_code == 410
 
+@pytest.mark.django_db
+class TestCollectionBulkCreate:
 
-class TestCollectionBulkCreate(ApiTestCase):
+    @pytest.fixture()
+    def user_two(self):
+        return AuthUserFactory()
 
-    def setUp(self):
-        super(TestCollectionBulkCreate, self).setUp()
-        self.user_one = AuthUserFactory()
-        self.url = '/{}collections/'.format(API_BASE)
+    @pytest.fixture()
+    def url_collections(self):
+        return '/{}collections/'.format(API_BASE)
 
-        self.title = 'Cool Collection'
-        self.title_two = 'Cool Collection, Too'
+    @pytest.fixture()
+    def title_one(self):
+        return 'Cool Collection'
 
-        self.user_two = AuthUserFactory()
+    @pytest.fixture()
+    def title_two(self):
+        return 'Cool Collection, Too'
 
-        self.collection = {
+    @pytest.fixture()
+    def collection_one(self, title_one, user_one):
+        return {
                 'type': 'collections',
                 'attributes': {
-                    'title': self.title,
+                    'title': title_one,
                 }
         }
 
-        self.collection_two = {
+    @pytest.fixture()
+    def collection_two(self, title_two):
+        return {
                 'type': 'collections',
                 'attributes': {
-                    'title': self.title_two,
+                    'title': title_two,
                 }
         }
 
-        self.empty_collection = {'type': 'collections', 'attributes': {'title': "",}}
+    @pytest.fixture()
+    def collection_empty(self):
+        return {
+                'type': 'collections',
+                'attributes': {
+                    'title': '',
+                }
+        }
 
-        # Pretend these aren't created when the user is
-        user_one_bookmark = find_bookmark_collection(self.user_one)
-        user_two_bookmark = find_bookmark_collection(self.user_two)
-        user_one_bookmark.is_deleted = True
-        user_two_bookmark.is_deleted = True
-        user_one_bookmark.save()
-        user_two_bookmark.save()
+    @pytest.fixture()
+    def bookmark_user_one(self, user_one):
+        bookmark_user_one = find_bookmark_collection(user_one)
+        bookmark_user_one.is_deleted = True
+        bookmark_user_one.save()
+        return bookmark_user_one
 
-    def test_bulk_create_collections_blank_request(self):
-        res = self.app.post_json_api(self.url, auth=self.user_one.auth, expect_errors=True, bulk=True)
-        assert_equal(res.status_code, 400)
+    def test_bulk_create_logged_in(self, app, bookmark_user_one, url_collections, collection_one, collection_two, user_one):
+        res = app.post_json_api(url_collections, {'data': [collection_one, collection_two]}, auth=user_one.auth, bulk=True)
+        assert res.status_code == 201
+        assert len(res.json['data']) == 2
+        assert res.json['data'][0]['attributes']['title'] == collection_one['attributes']['title']
+        assert res.json['data'][1]['attributes']['title'] == collection_two['attributes']['title']
+        assert res.content_type == 'application/vnd.api+json'
 
-    def test_bulk_create_all_or_nothing(self):
-        res = self.app.post_json_api(self.url, {'data': [self.collection, self.empty_collection]}, bulk=True, auth=self.user_one.auth, expect_errors=True)
-        assert_equal(res.status_code, 400)
-
-        res = self.app.get(self.url, auth=self.user_one.auth)
-        assert_equal(len(res.json['data']), 0)
-
-    def test_bulk_create_logged_out(self):
-        res = self.app.post_json_api(self.url, {'data': [self.collection, self.collection_two]}, bulk=True, expect_errors=True)
-        assert_equal(res.status_code, 401)
-
-        res = self.app.get(self.url, auth=self.user_one.auth)
-        assert_equal(len(res.json['data']), 0)
-
-    def test_bulk_create_error_formatting(self):
-        res = self.app.post_json_api(self.url, {'data': [self.empty_collection, self.empty_collection]}, bulk=True, auth=self.user_one.auth, expect_errors=True)
-        assert_equal(res.status_code, 400)
-        assert_equal(len(res.json['errors']), 2)
-        errors = res.json['errors']
-        assert_items_equal([errors[0]['source'], errors[1]['source']],
-                           [{'pointer': '/data/0/attributes/title'}, {'pointer': '/data/1/attributes/title'}])
-        assert_items_equal([errors[0]['detail'], errors[1]['detail']],
-                           ["This field may not be blank.", "This field may not be blank."])
-
-    def test_bulk_create_limits(self):
-        node_create_list = {'data': [self.collection] * 101}
-        res = self.app.post_json_api(self.url, node_create_list, auth=self.user_one.auth, expect_errors=True, bulk=True)
-        assert_equal(res.json['errors'][0]['detail'], 'Bulk operation limit is 100, got 101.')
-        assert_equal(res.json['errors'][0]['source']['pointer'], '/data')
-
-        res = self.app.get(self.url, auth=self.user_one.auth)
-        assert_equal(len(res.json['data']), 0)
-
-    def test_bulk_create_no_type(self):
-        payload = {'data': [{"attributes": {'title': self.title}}]}
-        res = self.app.post_json_api(self.url, payload, auth=self.user_one.auth, expect_errors=True, bulk=True)
-        assert_equal(res.status_code, 400)
-        assert_equal(res.json['errors'][0]['source']['pointer'], '/data/0/type')
-
-        res = self.app.get(self.url, auth=self.user_one.auth)
-        assert_equal(len(res.json['data']), 0)
-
-    def test_bulk_create_incorrect_type(self):
-        payload = {'data': [self.collection, {'type': 'Incorrect type.', 'attributes': {'title': self.title}}]}
-        res = self.app.post_json_api(self.url, payload, auth=self.user_one.auth, expect_errors=True, bulk=True)
-        assert_equal(res.status_code, 409)
-
-        res = self.app.get(self.url, auth=self.user_one.auth)
-        assert_equal(len(res.json['data']), 0)
-
-    def test_bulk_create_no_attributes(self):
-        payload = {'data': [self.collection, {'type': 'collections', }]}
-        res = self.app.post_json_api(self.url, payload, auth=self.user_one.auth, expect_errors=True, bulk=True)
-
-        assert_equal(res.status_code, 400)
-        assert_equal(res.json['errors'][0]['source']['pointer'], '/data/attributes')
-
-        res = self.app.get(self.url, auth=self.user_one.auth)
-        assert_equal(len(res.json['data']), 0)
-
-    def test_bulk_create_no_title(self):
-        payload = {'data': [self.collection, {'type': 'collections', "attributes": {}}]}
-        res = self.app.post_json_api(self.url, payload, auth=self.user_one.auth, expect_errors=True, bulk=True)
-
-        assert_equal(res.status_code, 400)
-        assert_equal(res.json['errors'][0]['source']['pointer'], '/data/1/attributes/title')
-
-        res = self.app.get(self.url, auth=self.user_one.auth)
-        assert_equal(len(res.json['data']), 0)
-
-    def test_ugly_payload(self):
-        payload = 'sdf;jlasfd'
-        res = self.app.post_json_api(self.url, payload, auth=self.user_one.auth, expect_errors=True, bulk=True)
-        assert_equal(res.status_code, 400)
-
-        res = self.app.get(self.url, auth=self.user_one.auth)
-        assert_equal(len(res.json['data']), 0)
-
-    def test_bulk_create_logged_in(self):
-        res = self.app.post_json_api(self.url, {'data': [self.collection, self.collection_two]}, auth=self.user_one.auth, bulk=True)
-        assert_equal(res.status_code, 201)
-        assert_equal(len(res.json['data']), 2)
-        assert_equal(res.json['data'][0]['attributes']['title'], self.collection['attributes']['title'])
-        assert_equal(res.json['data'][1]['attributes']['title'], self.collection_two['attributes']['title'])
-        assert_equal(res.content_type, 'application/vnd.api+json')
-
-        res = self.app.get(self.url, auth=self.user_one.auth)
-        assert_equal(len(res.json['data']), 2)
+        res = app.get(url_collections, auth=user_one.auth)
+        assert len(res.json['data']) == 2
         id_one = res.json['data'][0]['id']
         id_two = res.json['data'][1]['id']
 
-        res = self.app.delete_json_api(self.url, {'data': [{'id': id_one, 'type': 'collections'},
-                                                           {'id': id_two, 'type': 'collections'}]},
-                                       auth=self.user_one.auth, bulk=True)
-        assert_equal(res.status_code, 204)
+        res = app.delete_json_api(
+                url_collections, {'data': [{'id': id_one, 'type': 'collections'}, {'id': id_two, 'type': 'collections'}]},
+                auth=user_one.auth, bulk=True)
+        assert res.status_code == 204
 
+    def test_bulk_create_collections_blank_request(self, app, url_collections, user_one):
+        res = app.post_json_api(url_collections, auth=user_one.auth, expect_errors=True, bulk=True)
+        assert res.status_code == 400
 
-class TestCollectionBulkUpdate(ApiTestCase):
+    def test_bulk_create_error_formatting(self, app, url_collections, collection_empty, user_one):
+        res = app.post_json_api(
+            url_collections, {'data': [collection_empty, collection_empty]},
+            bulk=True, auth=user_one.auth, expect_errors=True)
+        assert res.status_code == 400
+        assert len(res.json['errors']) == 2
+        errors = res.json['errors']
+        assert_items_equal(
+            [errors[0]['source'], errors[1]['source']],
+            [{'pointer': '/data/0/attributes/title'}, {'pointer': '/data/1/attributes/title'}])
+        assert_items_equal(
+            [errors[0]['detail'], errors[1]['detail']],
+            ['This field may not be blank.', 'This field may not be blank.'])
 
-    def setUp(self):
-        super(TestCollectionBulkUpdate, self).setUp()
-        self.user = AuthUserFactory()
+    def test_non_mutational_collection_bulk_create_tests(
+        self, app, bookmark_user_one, url_collections, collection_one,
+        collection_two, collection_empty, user_one, title_one):
 
-        self.title = 'Cool Project'
-        self.new_title = 'Super Cool Project'
+        #test_bulk_create_all_or_nothing
+        res = app.post_json_api(
+            url_collections,
+            {'data': [collection_one, collection_empty]},
+            bulk=True, auth=user_one.auth, expect_errors=True)
 
-        self.collection = CollectionFactory(title=self.title,
-                                            creator=self.user)
+        assert res.status_code == 400
 
-        self.collection_two = CollectionFactory(title=self.title,
-                                                creator=self.user)
+        res = app.get(url_collections, auth=user_one.auth)
+        assert len(res.json['data']) == 0
 
-        self.collection_payload = {
+        #test_bulk_create_logged_out
+        res = app.post_json_api(url_collections, {'data': [collection_one, collection_two]}, bulk=True, expect_errors=True)
+        assert res.status_code == 401
+        res = app.get(url_collections, auth=user_one.auth)
+        assert len(res.json['data']) == 0
+
+        #test_bulk_create_limits
+        node_create_list = {'data': [collection_one] * 101}
+        res = app.post_json_api(url_collections, node_create_list, auth=user_one.auth, expect_errors=True, bulk=True)
+        assert res.json['errors'][0]['detail'] == 'Bulk operation limit is 100, got 101.'
+        assert res.json['errors'][0]['source']['pointer'] == '/data'
+
+        res = app.get(url_collections, auth=user_one.auth)
+        assert len(res.json['data']) == 0
+
+        #test_bulk_create_no_type
+        payload = {'data': [{'attributes': {'title': title_one}}]}
+        res = app.post_json_api(url_collections, payload, auth=user_one.auth, expect_errors=True, bulk=True)
+        assert res.status_code == 400
+        assert res.json['errors'][0]['source']['pointer'] == '/data/0/type'
+
+        res = app.get(url_collections, auth=user_one.auth)
+        assert len(res.json['data']) == 0
+
+        #test_bulk_create_incorrect_type
+        payload = {'data': [collection_one, {'type': 'Incorrect type.', 'attributes': {'title': title_one}}]}
+        res = app.post_json_api(url_collections, payload, auth=user_one.auth, expect_errors=True, bulk=True)
+        assert res.status_code == 409
+
+        res = app.get(url_collections, auth=user_one.auth)
+        assert len(res.json['data']) == 0
+
+        #test_bulk_create_no_attributes
+        payload = {'data': [collection_one, {'type': 'collections', }]}
+        res = app.post_json_api(url_collections, payload, auth=user_one.auth, expect_errors=True, bulk=True)
+        assert res.status_code == 400
+        assert res.json['errors'][0]['source']['pointer'] == '/data/attributes'
+
+        res = app.get(url_collections, auth=user_one.auth)
+        assert len(res.json['data']) == 0
+
+        #test_bulk_create_no_title
+        payload = {'data': [collection_one, {'type': 'collections', 'attributes': {}}]}
+        res = app.post_json_api(url_collections, payload, auth=user_one.auth, expect_errors=True, bulk=True)
+        assert res.status_code == 400
+        assert res.json['errors'][0]['source']['pointer'] == '/data/1/attributes/title'
+
+        res = app.get(url_collections, auth=user_one.auth)
+        assert len(res.json['data']) == 0
+
+        #test_ugly_payload
+        payload = 'sdf;jlasfd'
+        res = app.post_json_api(url_collections, payload, auth=user_one.auth, expect_errors=True, bulk=True)
+        assert res.status_code == 400
+
+        res = app.get(url_collections, auth=user_one.auth)
+        assert len(res.json['data']) == 0
+
+@pytest.mark.django_db
+class TestCollectionBulkUpdate:
+
+    @pytest.fixture()
+    def title(self):
+        return 'Cool Project'
+
+    @pytest.fixture()
+    def title_new(self):
+        return 'Super Cool Project'
+
+    @pytest.fixture()
+    def collection_one(self, title, user_one):
+        return CollectionFactory(title=title, creator=user_one)
+
+    @pytest.fixture()
+    def collection_two(self, title, user_one):
+        return CollectionFactory(title=title, creator=user_one)
+
+    @pytest.fixture()
+    def payload_collection(self, collection_one, title_new, collection_two):
+        return {
             'data': [
                 {
-                    'id': self.collection._id,
+                    'id': collection_one._id,
                     'type': 'collections',
                     'attributes': {
-                        'title': self.new_title,
+                        'title': title_new,
                     }
                 },
                 {
-                    'id': self.collection_two._id,
+                    'id': collection_two._id,
                     'type': 'collections',
                     'attributes': {
-                        'title': self.new_title,
+                        'title': title_new,
                     }
                 }
             ]
         }
 
-        self.url = '/{}collections/'.format(API_BASE)
-        self.detail_url_base = '/{}collections/{}/'
+    @pytest.fixture()
+    def empty_payload_collection(self, collection_one, collection_two):
+        return {
+            'data': [
+                {'id': collection_one._id, 'type': 'collections', 'attributes': {'title': '',}},
+                {'id': collection_two._id, 'type': 'collections', 'attributes': {'title': '',}}
+                ]
+            }
+    @pytest.fixture()
+    def url_collections(self):
+        return '/{}collections/'.format(API_BASE)
 
-        self.empty_payload = {'data': [
-            {'id': self.collection._id, 'type': 'collections', 'attributes': {'title': "",}},
-            {'id': self.collection_two._id, 'type': 'collections', 'attributes': {'title': "",}}
-        ]}
+    @pytest.fixture()
+    def base_url_collections(self):
+        return '/{}collections/{}/'
 
-    def test_bulk_update_nodes_blank_request(self):
-        res = self.app.put_json_api(self.url, auth=self.user.auth, expect_errors=True, bulk=True)
-        assert_equal(res.status_code, 400)
 
-    def test_bulk_update_blank_but_not_empty_title(self):
+    def test_non_mutational_collection_bulk_update_tests(
+        self, app, payload_collection, url_collections, base_url_collections,
+        user_one, title, title_new, collection_one, collection_two, empty_payload_collection):
+
+        #test_bulk_update_nodes_blank_request
+        res = app.put_json_api(url_collections, auth=user_one.auth, expect_errors=True, bulk=True)
+        assert res.status_code == 400
+
+        #test_bulk_update_blank_but_not_empty_title
         payload = {
-            "data": [
+            'data': [
                 {
-                  "id": self.collection._id,
-                  "type": "collections",
-                  "attributes": {
-                    "title": "This shouldn't update."
+                  'id': collection_one._id,
+                  'type': 'collections',
+                  'attributes': {
+                    'title': 'This shouldn\'t update.'
                   }
                 },
                 {
-                  "id": self.collection_two._id,
-                  "type": "collections",
-                  "attributes": {
-                    "title": " "
+                  'id': collection_two._id,
+                  'type': 'collections',
+                  'attributes': {
+                    'title': ' '
                   }
                 }
               ]
             }
-        url = self.detail_url_base.format(API_BASE, self.collection._id)
-        res = self.app.put_json_api(self.url, payload, auth=self.user.auth, expect_errors=True, bulk=True)
-        assert_equal(res.status_code, 400)
+        url = base_url_collections.format(API_BASE, collection_one._id)
+        res = app.put_json_api(url, payload, auth=user_one.auth, expect_errors=True, bulk=True)
+        assert res.status_code == 400
+        res = app.get(url, auth=user_one.auth)
+        assert res.json['data']['attributes']['title'] == title
 
-        res = self.app.get(url, auth=self.user.auth)
-        assert_equal(res.json['data']['attributes']['title'], self.title)
-
-    def test_bulk_update_collections_one_not_found(self):
+        #test_bulk_update_collections_one_not_found
         empty_payload = {'data': [
             {
                 'id': '12345',
                 'type': 'collections',
                 'attributes': {
-                    'title': self.new_title
+                    'title': title_new
                 }
-            }, self.collection_payload['data'][0]
+            }, payload_collection['data'][0]
         ]}
 
-        res = self.app.put_json_api(self.url, empty_payload, auth=self.user.auth, expect_errors=True, bulk=True)
-        assert_equal(res.status_code, 400)
-        assert_equal(res.json['errors'][0]['detail'], 'Could not find all objects to update.')
+        res = app.put_json_api(url_collections, empty_payload, auth=user_one.auth, expect_errors=True, bulk=True)
+        assert res.status_code == 400
+        assert res.json['errors'][0]['detail'] == 'Could not find all objects to update.'
 
-        url = self.detail_url_base.format(API_BASE, self.collection._id)
-        res = self.app.get(url, auth=self.user.auth)
-        assert_equal(res.json['data']['attributes']['title'], self.title)
+        url = base_url_collections.format(API_BASE, collection_one._id)
+        res = app.get(url, auth=user_one.auth)
+        assert res.json['data']['attributes']['title'] == title
 
-    def test_bulk_update_collections_logged_out(self):
-        res = self.app.put_json_api(self.url, self.collection_payload, expect_errors=True, bulk=True)
-        assert_equal(res.status_code, 401)
-        assert_equal(res.json['errors'][0]['detail'], "Authentication credentials were not provided.")
+        #test_bulk_update_collections_logged_out
+        res = app.put_json_api(url_collections, payload_collection, expect_errors=True, bulk=True)
+        assert res.status_code == 401
+        assert res.json['errors'][0]['detail'] == 'Authentication credentials were not provided.'
 
-        url = self.detail_url_base.format(API_BASE, self.collection._id)
-        url_two = self.detail_url_base.format(API_BASE, self.collection_two._id)
+        url = base_url_collections.format(API_BASE, collection_one._id)
+        url_two = base_url_collections.format(API_BASE, collection_two._id)
 
-        res = self.app.get(url, auth=self.user.auth)
-        assert_equal(res.json['data']['attributes']['title'], self.title)
+        res = app.get(url, auth=user_one.auth)
+        assert res.json['data']['attributes']['title'] == title
 
-        res = self.app.get(url_two, auth=self.user.auth)
-        assert_equal(res.json['data']['attributes']['title'], self.title)
+        res = app.get(url_two, auth=user_one.auth)
+        assert res.json['data']['attributes']['title'] == title
 
-    def test_bulk_update_collections_logged_in(self):
-        res = self.app.put_json_api(self.url, self.collection_payload, auth=self.user.auth, bulk=True)
-        assert_equal(res.status_code, 200)
-        assert_equal({self.collection._id, self.collection_two._id},
-                     {res.json['data'][0]['id'], res.json['data'][1]['id']})
-        assert_equal(res.json['data'][0]['attributes']['title'], self.new_title)
-        assert_equal(res.json['data'][1]['attributes']['title'], self.new_title)
+        #test_bulk_update_collections_send_dictionary_not_list
+        res = app.put_json_api(url_collections, {'data': {'id': collection_one._id, 'type': 'nodes',
+                                                        'attributes': {'title': title_new}}},
+                                    auth=user_one.auth, expect_errors=True, bulk=True)
+        assert res.status_code == 400
+        assert res.json['errors'][0]['detail'] == 'Expected a list of items but got type "dict".'
 
-    def test_bulk_update_collections_send_dictionary_not_list(self):
-        res = self.app.put_json_api(self.url, {'data': {'id': self.collection._id, 'type': 'nodes',
-                                                        'attributes': {'title': self.new_title}}},
-                                    auth=self.user.auth, expect_errors=True, bulk=True)
-        assert_equal(res.status_code, 400)
-        assert_equal(res.json['errors'][0]['detail'], 'Expected a list of items but got type "dict".')
-
-    def test_bulk_update_error_formatting(self):
-        res = self.app.put_json_api(self.url, self.empty_payload, auth=self.user.auth, expect_errors=True, bulk=True)
-        assert_equal(res.status_code, 400)
-        assert_equal(len(res.json['errors']), 2)
+        #test_bulk_update_error_formatting
+        res = app.put_json_api(url_collections, empty_payload_collection, auth=user_one.auth, expect_errors=True, bulk=True)
+        assert res.status_code == 400
+        assert len(res.json['errors']) == 2
         errors = res.json['errors']
         assert_items_equal([errors[0]['source'], errors[1]['source']],
                            [{'pointer': '/data/0/attributes/title'}, {'pointer': '/data/1/attributes/title'}])
         assert_items_equal([errors[0]['detail'], errors[1]['detail']],
                            ['This field may not be blank.'] * 2)
 
-    def test_bulk_update_id_not_supplied(self):
-        res = self.app.put_json_api(self.url, {'data': [self.collection_payload['data'][1], {'type': 'collections', 'attributes':
-            {'title': self.new_title}}]}, auth=self.user.auth, expect_errors=True, bulk=True)
-        assert_equal(res.status_code, 400)
-        assert_equal(len(res.json['errors']), 1)
-        assert_equal(res.json['errors'][0]['source']['pointer'], '/data/1/id')
-        assert_equal(res.json['errors'][0]['detail'], "This field may not be null.")
+        #test_bulk_update_id_not_supplied
+        res = app.put_json_api(url_collections, {'data': [payload_collection['data'][1], {'type': 'collections', 'attributes':
+            {'title': title_new}}]}, auth=user_one.auth, expect_errors=True, bulk=True)
+        assert res.status_code == 400
+        assert len(res.json['errors']) == 1
+        assert res.json['errors'][0]['source']['pointer'] == '/data/1/id'
+        assert res.json['errors'][0]['detail'] == 'This field may not be null.'
 
-        url = self.detail_url_base.format(API_BASE, self.collection_two._id)
+        url = base_url_collections.format(API_BASE, collection_two._id)
 
-        res = self.app.get(url, auth=self.user.auth)
-        assert_equal(res.json['data']['attributes']['title'], self.title)
+        res = app.get(url, auth=user_one.auth)
+        assert res.json['data']['attributes']['title'] == title
 
-    def test_bulk_update_type_not_supplied(self):
-        res = self.app.put_json_api(self.url, {'data': [self.collection_payload['data'][1], {'id': self.collection._id, 'attributes':
-            {'title': self.new_title}}]}, auth=self.user.auth, expect_errors=True, bulk=True)
-        assert_equal(res.status_code, 400)
-        assert_equal(len(res.json['errors']), 1)
-        assert_equal(res.json['errors'][0]['source']['pointer'], '/data/1/type')
-        assert_equal(res.json['errors'][0]['detail'], "This field may not be null.")
+        #test_bulk_update_type_not_supplied
+        res = app.put_json_api(url_collections, {'data': [payload_collection['data'][1], {'id': collection_one._id, 'attributes':
+            {'title': title_new}}]}, auth=user_one.auth, expect_errors=True, bulk=True)
+        assert res.status_code == 400
+        assert len(res.json['errors']) == 1
+        assert res.json['errors'][0]['source']['pointer'] == '/data/1/type'
+        assert res.json['errors'][0]['detail'] == 'This field may not be null.'
 
-        url = self.detail_url_base.format(API_BASE, self.collection_two._id)
+        url = base_url_collections.format(API_BASE, collection_two._id)
 
-        res = self.app.get(url, auth=self.user.auth)
-        assert_equal(res.json['data']['attributes']['title'], self.title)
+        res = app.get(url, auth=user_one.auth)
+        assert res.json['data']['attributes']['title'] == title
 
-    def test_bulk_update_incorrect_type(self):
-        res = self.app.put_json_api(self.url, {'data': [self.collection_payload['data'][1], {'id': self.collection._id, 'type': 'Incorrect', 'attributes':
-            {'title': self.new_title}}]}, auth=self.user.auth, expect_errors=True, bulk=True)
-        assert_equal(res.status_code, 409)
+        #test_bulk_update_incorrect_type
+        res = app.put_json_api(url_collections, {'data': [payload_collection['data'][1], {'id': collection_one._id, 'type': 'Incorrect', 'attributes':
+            {'title': title_new}}]}, auth=user_one.auth, expect_errors=True, bulk=True)
+        assert res.status_code == 409
 
-        url = self.detail_url_base.format(API_BASE, self.collection_two._id)
+        url = base_url_collections.format(API_BASE, collection_two._id)
 
-        res = self.app.get(url, auth=self.user.auth)
-        assert_equal(res.json['data']['attributes']['title'], self.title)
+        res = app.get(url, auth=user_one.auth)
+        assert res.json['data']['attributes']['title'] == title
 
-    def test_bulk_update_limits(self):
-        node_update_list = {'data': [self.collection_payload['data'][0]] * 101}
-        res = self.app.put_json_api(self.url, node_update_list, auth=self.user.auth, expect_errors=True, bulk=True)
-        assert_equal(res.json['errors'][0]['detail'], 'Bulk operation limit is 100, got 101.')
-        assert_equal(res.json['errors'][0]['source']['pointer'], '/data')
+        #test_bulk_update_limits
+        node_update_list = {'data': [payload_collection['data'][0]] * 101}
+        res = app.put_json_api(url_collections, node_update_list, auth=user_one.auth, expect_errors=True, bulk=True)
+        assert res.json['errors'][0]['detail'] == 'Bulk operation limit is 100, got 101.'
+        assert res.json['errors'][0]['source']['pointer'] == '/data'
 
-    def test_bulk_update_no_title(self):
-        new_payload = {'id': self.collection._id, 'type': 'collections', 'attributes': {}}
-        res = self.app.put_json_api(self.url, {'data': [self.collection_payload['data'][1], new_payload]}, auth=self.user.auth, expect_errors=True, bulk=True)
-        assert_equal(res.status_code, 400)
+        #test_bulk_update_no_title
+        new_payload = {'id': collection_one._id, 'type': 'collections', 'attributes': {}}
+        res = app.put_json_api(url_collections, {'data': [payload_collection['data'][1], new_payload]}, auth=user_one.auth, expect_errors=True, bulk=True)
+        assert res.status_code == 400
+        url = base_url_collections.format(API_BASE, collection_two._id)
 
-        url = self.detail_url_base.format(API_BASE, self.collection_two._id)
+        res = app.get(url, auth=user_one.auth)
+        assert res.json['data']['attributes']['title'] == title
 
-        res = self.app.get(url, auth=self.user.auth)
-        assert_equal(res.json['data']['attributes']['title'], self.title)
+    def test_bulk_update_collections_logged_in(
+        self, app, url_collections, user_one, title_new, payload_collection,
+        collection_one, collection_two):
+
+        res = app.put_json_api(url_collections, payload_collection, auth=user_one.auth, bulk=True)
+        assert res.status_code == 200
+        assert ({collection_one._id, collection_two._id} ==
+                     {res.json['data'][0]['id'], res.json['data'][1]['id']})
+        assert res.json['data'][0]['attributes']['title'] == title_new
+        assert res.json['data'][1]['attributes']['title'] == title_new
 
 
-class TestNodeBulkDelete(ApiTestCase):
+@pytest.mark.django_db
+class TestNodeBulkDelete:
 
-    def setUp(self):
-        super(TestNodeBulkDelete, self).setUp()
-        self.user_one = AuthUserFactory()
-        self.user_two = AuthUserFactory()
-        self.collection_one = CollectionFactory(title="Collection One", creator=self.user_one)
-        self.collection_two = CollectionFactory(title="Collection Two", creator=self.user_one)
-        self.collection_three = CollectionFactory(title="Collection Three", creator=self.user_one)
-        self.collection_user_two = CollectionFactory(title="Collection User Two", creator=self.user_two)
+    @pytest.fixture()
+    def user_two(self):
+        return AuthUserFactory()
 
-        self.url = "/{}collections/".format(API_BASE)
-        self.project_one_url = '/{}collections/{}/'.format(API_BASE, self.collection_one._id)
-        self.project_two_url = '/{}collections/{}/'.format(API_BASE, self.collection_two._id)
-        self.private_project_url = "/{}collections/{}/".format(API_BASE, self.collection_three._id)
+    @pytest.fixture()
+    def collection_one(self, user_one):
+        return CollectionFactory(title='Collection One', creator=user_one)
 
-        self.payload_one = {'data': [{'id': self.collection_one._id, 'type': 'collections'},
-                                     {'id': self.collection_two._id, 'type': 'collections'}]}
-        self.payload_two = {'data': [{'id': self.collection_three._id, 'type': 'collections'}]}
+    @pytest.fixture()
+    def collection_two(self, user_one):
+        return CollectionFactory(title='Collection Two', creator=user_one)
 
-    def test_bulk_delete_nodes_blank_request(self):
-        res = self.app.delete_json_api(self.url, auth=self.user_one.auth, expect_errors=True, bulk=True)
-        assert_equal(res.status_code, 400)
+    @pytest.fixture()
+    def collection_three(self, user_one):
+        return CollectionFactory(title='Collection Three', creator=user_one)
 
-    def test_bulk_delete_no_type(self):
+    @pytest.fixture()
+    def collection_user_two(self, user_two):
+        return CollectionFactory(title='Collection User Two', creator=user_two)
+
+    @pytest.fixture()
+    def url_collections(self):
+        return '/{}collections/'.format(API_BASE)
+
+    @pytest.fixture()
+    def url_project_one(self, collection_one):
+        return '/{}collections/{}/'.format(API_BASE, collection_one._id)
+
+    @pytest.fixture()
+    def url_project_two(self, collection_two):
+        return '/{}collections/{}/'.format(API_BASE, collection_two._id)
+
+    @pytest.fixture()
+    def url_project_private(self, collection_three):
+        return '/{}collections/{}/'.format(API_BASE, collection_three._id)
+
+    @pytest.fixture()
+    def payload_one(self, collection_one, collection_two):
+        return {'data': [{'id': collection_one._id, 'type': 'collections'},
+            {'id': collection_two._id, 'type': 'collections'}]}
+
+    @pytest.fixture()
+    def payload_two(self, collection_three):
+        return {'data': [{'id': collection_three._id, 'type': 'collections'}]}
+
+    def test_bulk_delete_collections_logged_in(
+        self, app, url_collections, payload_one, user_one, url_project_one,
+        collection_one, collection_two):
+
+        res = app.delete_json_api(url_collections, payload_one, auth=user_one.auth, bulk=True)
+        assert res.status_code == 204
+
+        res = app.get(url_project_one, auth=user_one.auth, expect_errors=True)
+        assert res.status_code == 410
+        collection_one.reload()
+        collection_two.reload()
+
+    def test_bulk_delete_collections_logged_out(self, app, url_collections, payload_one, user_one, url_project_one, url_project_two):
+        res = app.delete_json_api(url_collections, payload_one, expect_errors=True, bulk=True)
+        assert res.status_code == 401
+        assert res.json['errors'][0]['detail'] == 'Authentication credentials were not provided.'
+
+        res = app.get(url_project_one, auth=user_one.auth, expect_errors=True)
+        assert res.status_code == 200
+
+        res = app.get(url_project_two, auth=user_one.auth, expect_errors=True)
+        assert res.status_code == 200
+
+    def test_bulk_delete_collections_logged_in_non_contributor(
+        self, app, url_collections, payload_two, user_two, user_one,
+        url_project_private):
+
+        res = app.delete_json_api(url_collections, payload_two,
+                                       auth=user_two.auth, expect_errors=True, bulk=True)
+        assert res.status_code == 403
+        assert res.json['errors'][0]['detail'] == 'You do not have permission to perform this action.'
+
+        res = app.get(url_project_private, auth=user_one.auth)
+        assert res.status_code == 200
+
+    def test_bulk_delete_all_or_nothing(self, app, collection_user_two, collection_three, url_collections, user_one, user_two, url_project_private):
+        new_payload = {
+            'data': [
+                {'id': collection_three._id, 'type': 'collections'},
+                {'id': collection_user_two._id, 'type': 'collections'}]}
+        res = app.delete_json_api(url_collections, new_payload,
+                                       auth=user_one.auth, expect_errors=True, bulk=True)
+        assert res.status_code == 403
+        assert res.json['errors'][0]['detail'] == 'You do not have permission to perform this action.'
+
+        res = app.get(url_project_private, auth=user_one.auth)
+        assert res.status_code == 200
+
+        url = '/{}collections/{}/'.format(API_BASE, collection_user_two._id)
+        res = app.get(url, auth=user_two.auth)
+        assert res.status_code == 200
+
+    def test_non_mutational_node_bulk_delete_tests(
+        self, app, url_collections, user_one, collection_one, collection_two,
+        collection_three, url_project_one, payload_one):
+
+        #test_bulk_delete_nodes_blank_request
+        res = app.delete_json_api(url_collections, auth=user_one.auth, expect_errors=True, bulk=True)
+        assert res.status_code == 400
+
+        #test_bulk_delete_no_type
         payload = {'data': [
-            {'id': self.collection_one._id},
-            {'id': self.collection_two._id}
+            {'id': collection_one._id},
+            {'id': collection_two._id}
         ]}
-        res = self.app.delete_json_api(self.url, payload, auth=self.user_one.auth, expect_errors=True, bulk=True)
-        assert_equal(res.status_code, 400)
-        assert_equal(res.json['errors'][0]['detail'], 'Request must include /type.')
+        res = app.delete_json_api(url_collections, payload, auth=user_one.auth, expect_errors=True, bulk=True)
+        assert res.status_code == 400
+        assert res.json['errors'][0]['detail'] == 'Request must include /type.'
 
-    def test_bulk_delete_no_id(self):
+        #test_bulk_delete_no_id
         payload = {'data': [
             {'type': 'collections'}
         ]}
-        res = self.app.delete_json_api(self.url, payload, auth=self.user_one.auth, expect_errors=True, bulk=True)
-        assert_equal(res.status_code, 400)
-        assert_equal(res.json['errors'][0]['detail'], 'Request must include /data/id.')
+        res = app.delete_json_api(url_collections, payload, auth=user_one.auth, expect_errors=True, bulk=True)
+        assert res.status_code == 400
+        assert res.json['errors'][0]['detail'] == 'Request must include /data/id.'
 
-    def test_bulk_delete_dict_inside_data(self):
-        res = self.app.delete_json_api(self.url, {'data': {'id': self.collection_one._id, 'type': 'collections'}},
-                                       auth=self.user_one.auth, expect_errors=True, bulk=True)
-        assert_equal(res.status_code, 400)
-        assert_equal(res.json['errors'][0]['detail'], 'Expected a list of items but got type "dict".')
+        #test_bulk_delete_dict_inside_data
+        res = app.delete_json_api(url_collections, {'data': {'id': collection_one._id, 'type': 'collections'}},
+                                       auth=user_one.auth, expect_errors=True, bulk=True)
+        assert res.status_code == 400
+        assert res.json['errors'][0]['detail'] == 'Expected a list of items but got type "dict".'
 
-    def test_bulk_delete_invalid_type(self):
-        res = self.app.delete_json_api(self.url, {'data': [{'type': 'Wrong type', 'id': self.collection_one._id}]},
-                                       auth=self.user_one.auth, expect_errors=True, bulk=True)
-        assert_equal(res.status_code, 409)
+        #test_bulk_delete_invalid_type
+        res = app.delete_json_api(url_collections, {'data': [{'type': 'Wrong type', 'id': collection_one._id}]},
+                                       auth=user_one.auth, expect_errors=True, bulk=True)
+        assert res.status_code == 409
 
-    def test_bulk_delete_collections_logged_in(self):
-        res = self.app.delete_json_api(self.url, self.payload_one, auth=self.user_one.auth, bulk=True)
-        assert_equal(res.status_code, 204)
+        #test_bulk_delete_limits
+        new_payload = {'data': [{'id': collection_three._id, 'type': 'nodes'}] * 101}
+        res = app.delete_json_api(url_collections, new_payload,
+                                       auth=user_one.auth, expect_errors=True, bulk=True)
+        assert res.status_code == 400
+        assert res.json['errors'][0]['detail'] == 'Bulk operation limit is 100, got 101.'
+        assert res.json['errors'][0]['source']['pointer'] == '/data'
 
-        res = self.app.get(self.project_one_url, auth=self.user_one.auth, expect_errors=True)
-        assert_equal(res.status_code, 410)
-        self.collection_one.reload()
-        self.collection_two.reload()
+        #test_bulk_delete_invalid_payload_one_not_found
+        new_payload = {'data': [payload_one['data'][0], {'id': '12345', 'type': 'collections'}]}
+        res = app.delete_json_api(url_collections, new_payload, auth=user_one.auth, expect_errors=True, bulk=True)
+        assert res.status_code == 400
+        assert res.json['errors'][0]['detail'] == 'Could not find all objects to delete.'
 
-    def test_bulk_delete_collections_logged_out(self):
-        res = self.app.delete_json_api(self.url, self.payload_one, expect_errors=True, bulk=True)
-        assert_equal(res.status_code, 401)
-        assert_equal(res.json['errors'][0]['detail'], 'Authentication credentials were not provided.')
+        res = app.get(url_project_one, auth=user_one.auth)
+        assert res.status_code == 200
 
-        res = self.app.get(self.project_one_url, auth=self.user_one.auth, expect_errors=True)
-        assert_equal(res.status_code, 200)
+        #test_bulk_delete_no_payload
+        res = app.delete_json_api(url_collections, auth=user_one.auth, expect_errors=True, bulk=True)
+        assert res.status_code == 400
 
-        res = self.app.get(self.project_two_url, auth=self.user_one.auth, expect_errors=True)
-        assert_equal(res.status_code, 200)
+@pytest.mark.django_db
+class TestCollectionLinksBulkCreate:
 
-    def test_bulk_delete_collections_logged_in_non_contributor(self):
-        res = self.app.delete_json_api(self.url, self.payload_two,
-                                       auth=self.user_two.auth, expect_errors=True, bulk=True)
-        assert_equal(res.status_code, 403)
-        assert_equal(res.json['errors'][0]['detail'], 'You do not have permission to perform this action.')
+    ### User_one
+    @pytest.fixture()
+    def collection_one(self, user_one):
+        return CollectionFactory(is_public=False, creator=user_one)
 
-        res = self.app.get(self.private_project_url, auth=self.user_one.auth)
-        assert_equal(res.status_code, 200)
+    @pytest.fixture()
+    def project_one_pointer_private(self, user_one):
+        return ProjectFactory(is_public=False, creator=user_one)
 
-    def test_bulk_delete_all_or_nothing(self):
-        new_payload = {'data': [{'id': self.collection_three._id, 'type': 'collections'}, {'id': self.collection_user_two
-            ._id, 'type': 'collections'}]}
-        res = self.app.delete_json_api(self.url, new_payload,
-                                       auth=self.user_one.auth, expect_errors=True, bulk=True)
-        assert_equal(res.status_code, 403)
-        assert_equal(res.json['errors'][0]['detail'], 'You do not have permission to perform this action.')
+    @pytest.fixture()
+    def project_two_pointer_private(self, user_one):
+        return ProjectFactory(is_public=False, creator=user_one)
 
-        res = self.app.get(self.private_project_url, auth=self.user_one.auth)
-        assert_equal(res.status_code, 200)
+    @pytest.fixture()
+    def reg_one_pointer_private(self, user_one):
+        return RegistrationFactory(is_public=False, creator=user_one)
 
-        url = "/{}collections/{}/".format(API_BASE, self.collection_user_two._id)
-        res = self.app.get(url, auth=self.user_two.auth)
-        assert_equal(res.status_code, 200)
+    @pytest.fixture()
+    def reg_two_pointer_private(self, user_one):
+        return RegistrationFactory(is_public=False, creator=user_one)
 
-    def test_bulk_delete_limits(self):
-        new_payload = {'data': [{'id': self.collection_three._id, 'type': 'nodes'}] * 101}
-        res = self.app.delete_json_api(self.url, new_payload,
-                                       auth=self.user_one.auth, expect_errors=True, bulk=True)
-        assert_equal(res.status_code, 400)
-        assert_equal(res.json['errors'][0]['detail'], 'Bulk operation limit is 100, got 101.')
-        assert_equal(res.json['errors'][0]['source']['pointer'], '/data')
+    @pytest.fixture()
+    def url_collection_one(self, collection_one):
+        return '/{}collections/{}/node_links/'.format(API_BASE, collection_one._id)
 
-    def test_bulk_delete_invalid_payload_one_not_found(self):
-        new_payload = {'data': [self.payload_one['data'][0], {'id': '12345', 'type': 'collections'}]}
-        res = self.app.delete_json_api(self.url, new_payload, auth=self.user_one.auth, expect_errors=True, bulk=True)
-        assert_equal(res.status_code, 400)
-        assert_equal(res.json['errors'][0]['detail'], 'Could not find all objects to delete.')
-
-        res = self.app.get(self.project_one_url, auth=self.user_one.auth)
-        assert_equal(res.status_code, 200)
-
-    def test_bulk_delete_no_payload(self):
-        res = self.app.delete_json_api(self.url, auth=self.user_one.auth, expect_errors=True, bulk=True)
-        assert_equal(res.status_code, 400)
-
-
-class TestCollectionLinksBulkCreate(ApiTestCase):
-
-    def setUp(self):
-        super(TestCollectionLinksBulkCreate, self).setUp()
-        self.user = AuthUserFactory()
-
-        self.collection_one = CollectionFactory(is_public=False, creator=self.user)
-        self.private_pointer_project = ProjectFactory(is_public=False, creator=self.user)
-        self.private_pointer_project_two = ProjectFactory(is_public=False, creator=self.user)
-        self.private_pointer_registration = RegistrationFactory(is_public=False, creator=self.user)
-        self.private_pointer_registration_two = RegistrationFactory(is_public=False, creator=self.user)
-
-        self.collection_url = '/{}collections/{}/node_links/'.format(API_BASE, self.collection_one._id)
-
-        self.collection_payload = {
+    @pytest.fixture()
+    def payload_collection_one(
+        self, project_one_pointer_private, project_two_pointer_private,
+        reg_one_pointer_private, reg_two_pointer_private):
+        return {
             'data': [{
-                "type": "node_links",
-                "relationships": {
+                'type': 'node_links',
+                'relationships': {
                     'target_node': {
                         'data': {
-                            "id": self.private_pointer_project._id,
-                            "type": 'nodes'
+                            'id': project_one_pointer_private._id,
+                            'type': 'nodes'
                         }
                     }
                 }
             },
             {
-                "type": "node_links",
-                "relationships": {
+                'type': 'node_links',
+                'relationships': {
                     'target_node': {
                         'data': {
-                            "id": self.private_pointer_project_two._id,
-                            "type": 'nodes'
+                            'id': project_two_pointer_private._id,
+                            'type': 'nodes'
                         }
                     }
                 }
             },
             {
-                "type": "node_links",
-                "relationships": {
+                'type': 'node_links',
+                'relationships': {
                     'target_node': {
                         'data': {
-                            "id": self.private_pointer_registration._id,
-                            "type": 'nodes'
+                            'id': reg_one_pointer_private._id,
+                            'type': 'nodes'
                         }
                     }
                 }
             },
             {
-                "type": "node_links",
-                "relationships": {
+                'type': 'node_links',
+                'relationships': {
                     'target_node': {
                         'data': {
-                            "id": self.private_pointer_registration_two._id,
-                            "type": 'nodes'
+                            'id': reg_two_pointer_private._id,
+                            'type': 'nodes'
                         }
                     }
                 }
             }]
         }
 
-        self.public_pointer_project = ProjectFactory(is_public=True, creator=self.user)
-        self.public_pointer_project_two = ProjectFactory(is_public=True, creator=self.user)
 
-        self.user_two = AuthUserFactory()
-        self.user_two_collection = CollectionFactory(creator=self.user_two)
-        self.user_two_project = ProjectFactory(is_public=True, creator=self.user_two)
-        self.user_two_registration = RegistrationFactory(is_public=True, creator=self.user_two)
-        self.user_two_url = '/{}collections/{}/node_links/'.format(API_BASE, self.user_two_collection._id)
-        self.user_two_payload = {'data': [{
-            'type': 'node_links',
-            'relationships': {
-                'nodes': {
-                     'data': {
-                         'id': self.user_two_project._id,
-                         'type': 'nodes'
-                     }
+    @pytest.fixture()
+    def project_one_pointer_public(self, user_one):
+        return ProjectFactory(is_public=True, creator=user_one)
+
+    @pytest.fixture()
+    def project_two_pointer_public(self, user_one):
+        return ProjectFactory(is_public=True, creator=user_one)
+
+    ### User_two
+
+    @pytest.fixture()
+    def user_two(self):
+        return AuthUserFactory()
+
+    @pytest.fixture()
+    def collection_user_two(self, user_two):
+        return CollectionFactory(creator=user_two)
+
+    @pytest.fixture()
+    def project_user_two(self, user_two):
+        return ProjectFactory(is_public=True, creator=user_two)
+
+    @pytest.fixture()
+    def registration_user_two(self, user_two):
+        return RegistrationFactory(is_public=True, creator=user_two)
+
+    @pytest.fixture()
+    def url_user_two(self, collection_user_two):
+        return '/{}collections/{}/node_links/'.format(API_BASE, collection_user_two._id)
+
+    @pytest.fixture()
+    def payload_user_two(self, project_user_two, registration_user_two):
+        return {'data':
+                    [{
+                        'type': 'node_links',
+                        'relationships': {
+                            'nodes': {
+                                 'data': {
+                                     'id': project_user_two._id,
+                                     'type': 'nodes'
+                                 }
+                            }
+                        }
+                    },
+                    { 'type': 'node_links',
+                        'relationships': {
+                            'nodes': {
+                                 'data': {
+                                     'id': registration_user_two._id,
+                                     'type': 'nodes'
+                                 }
+                            }
+                        }
+                    }]
                 }
-            }
-        },
-        { 'type': 'node_links',
-            'relationships': {
-                'nodes': {
-                     'data': {
-                         'id': self.user_two_registration._id,
-                         'type': 'nodes'
-                     }
-                }
-            }
-        }
-    ]}
 
-    def test_bulk_create_node_links_blank_request(self):
-        res = self.app.post_json_api(self.collection_url, auth=self.user.auth, expect_errors=True, bulk=True)
-        assert_equal(res.status_code, 400)
+    def test_bulk_creates_collection_node_pointer_logged_in_contrib(
+        self, app, url_collection_one, payload_collection_one, user_one,
+        project_one_pointer_private, project_two_pointer_private):
 
-    def test_bulk_creates_pointers_limits(self):
-        payload = {'data': [self.collection_payload['data'][0]] * 101}
-        res = self.app.post_json_api(self.collection_url, payload, auth=self.user.auth, expect_errors=True, bulk=True)
-        assert_equal(res.status_code, 400)
-        assert_equal(res.json['errors'][0]['detail'], 'Bulk operation limit is 100, got 101.')
-        assert_equal(res.json['errors'][0]['source']['pointer'], '/data')
-
-        res = self.app.get(self.collection_url, auth=self.user.auth)
-        assert_equal(res.json['data'], [])
-
-    def test_bulk_creates_project_target_not_nested(self):
-        payload = {'data': [{'type': 'node_links', 'target_node_id': self.private_pointer_project._id}]}
-        res = self.app.post_json_api(self.collection_url, payload, auth=self.user_two.auth, expect_errors=True, bulk=True)
-        assert_equal(res.status_code, 400)
-        assert_equal(res.json['errors'][0]['source']['pointer'], '/data/relationships')
-        assert_equal(res.json['errors'][0]['detail'], 'Request must include /data/relationships.')
-
-    def test_bulk_creates_collection_node_pointers_logged_out(self):
-        res = self.app.post_json_api(self.collection_url, self.collection_payload, expect_errors=True, bulk=True)
-        assert_equal(res.status_code, 401)
-        assert_in('detail', res.json['errors'][0])
-
-        res = self.app.get(self.collection_url, auth=self.user.auth)
-        assert_equal(res.json['data'], [])
-
-    def test_bulk_creates_collection_node_pointer_logged_in_non_contrib(self):
-        res = self.app.post_json_api(self.collection_url, self.collection_payload,
-                                     auth=self.user_two.auth, expect_errors=True, bulk=True)
-        assert_equal(res.status_code, 403)
-
-    def test_bulk_creates_collection_node_pointer_logged_in_contrib(self):
-        res = self.app.post_json_api(self.collection_url, self.collection_payload, auth=self.user.auth, bulk=True)
-        assert_equal(res.status_code, 201)
-        assert_equal(res.content_type, 'application/vnd.api+json')
+        res = app.post_json_api(url_collection_one, payload_collection_one, auth=user_one.auth, bulk=True)
+        assert res.status_code == 201
+        assert res.content_type == 'application/vnd.api+json'
         res_json = res.json['data']
         embedded = res_json[0]['embeds']['target_node']['data']['id']
-        assert_equal(embedded, self.private_pointer_project._id)
+        assert embedded == project_one_pointer_private._id
 
         embedded = res_json[1]['embeds']['target_node']['data']['id']
-        assert_equal(embedded, self.private_pointer_project_two._id)
+        assert embedded == project_two_pointer_private._id
 
         # linked_node endpoint can create linked_registrations,
         # but will not return a valid embed
         embedded = res_json[2]['embeds']['target_node']['errors'][0]['detail']
-        assert_equal(embedded, 'Not found.')
+        assert embedded == 'Not found.'
 
         embedded = res_json[3]['embeds']['target_node']['errors'][0]['detail']
-        assert_equal(embedded, 'Not found.')
+        assert embedded == 'Not found.'
 
-    def test_bulk_creates_node_pointers_collection_to_non_contributing_node(self):
-        res = self.app.post_json_api(self.collection_url, self.user_two_payload, auth=self.user.auth, bulk=True)
-        assert_equal(res.status_code, 201)
-        assert_equal(res.content_type, 'application/vnd.api+json')
+    def test_bulk_creates_node_pointers_collection_to_non_contributing_node(
+        self, app, project_user_two, url_collection_one, payload_user_two, user_one):
+
+        res = app.post_json_api(url_collection_one, payload_user_two, auth=user_one.auth, bulk=True)
+        assert res.status_code == 201
+        assert res.content_type == 'application/vnd.api+json'
         res_json = res.json['data']
         embedded = res_json[0]['embeds']['target_node']['data']['id']
-        assert_equal(embedded, self.user_two_project._id)
+        assert embedded == project_user_two._id
         embedded = res_json[1]['embeds']['target_node']['errors'][0]['detail']
-        assert_equal(embedded, 'Not found.')
+        assert embedded == 'Not found.'
 
-        res = self.app.get(self.collection_url, auth=self.user.auth)
+        res = app.get(url_collection_one, auth=user_one.auth)
         res_json = res.json['data']
         embedded = res_json[0]['embeds']['target_node']['data']['id']
-        assert_equal(embedded, self.user_two_project._id)
+        assert embedded == project_user_two._id
         embedded = res_json[1]['embeds']['target_node']['errors'][0]['detail']
-        assert_equal(embedded, 'Not found.')
+        assert embedded == 'Not found.'
 
-    def test_bulk_creates_pointers_non_contributing_node_to_fake_node(self):
-        fake_payload = {'data': [{'type': 'node_links', 'relationships': {'nodes': {'data': {'id': 'fdxlq', 'type': 'nodes'}}}}]}
+    def test_bulk_creates_node_pointer_already_connected(
+        self, app, url_collection_one, payload_collection_one, user_one,
+        collection_one, project_one_pointer_private, project_two_pointer_private):
 
-        res = self.app.post_json_api(self.collection_url, fake_payload,
-                                     auth=self.user_two.auth, expect_errors=True, bulk=True)
-        assert_equal(res.status_code, 403)
-        assert_in('detail', res.json['errors'][0])
-
-    def test_bulk_creates_pointers_contributing_node_to_fake_node(self):
-        fake_payload = {'data': [{'type': 'node_links', 'relationships': {'nodes': {'data': {'id': 'fdxlq', 'type': 'nodes'}}}}]}
-
-        res = self.app.post_json_api(self.collection_url, fake_payload,
-                                     auth=self.user.auth, expect_errors=True, bulk=True)
-        assert_equal(res.status_code, 400)
-        assert_in('detail', res.json['errors'][0])
-
-    def test_bulk_creates_fake_nodes_pointing_to_contributing_node(self):
-        fake_url = '/{}collections/{}/node_links/'.format(API_BASE, 'fdxlq')
-
-        res = self.app.post_json_api(fake_url, self.collection_payload, auth=self.user.auth, expect_errors=True, bulk=True)
-        assert_equal(res.status_code, 404)
-        assert_in('detail', res.json['errors'][0])
-
-        res = self.app.post_json_api(fake_url, self.collection_payload, auth=self.user_two.auth, expect_errors=True, bulk=True)
-        assert_equal(res.status_code, 404)
-        assert_in('detail', res.json['errors'][0])
-
-    def test_bulk_creates_node_pointer_already_connected(self):
-        res = self.app.post_json_api(self.collection_url, self.collection_payload, auth=self.user.auth, bulk=True)
-        assert_equal(res.status_code, 201)
-        assert_equal(res.content_type, 'application/vnd.api+json')
+        res = app.post_json_api(url_collection_one, payload_collection_one, auth=user_one.auth, bulk=True)
+        assert res.status_code == 201
+        assert res.content_type == 'application/vnd.api+json'
         res_json = res.json['data']
         embedded = res_json[0]['embeds']['target_node']['data']['id']
-        assert_equal(embedded, self.private_pointer_project._id)
+        assert embedded == project_one_pointer_private._id
 
         embedded_two = res_json[1]['embeds']['target_node']['data']['id']
-        assert_equal(embedded_two, self.private_pointer_project_two._id)
+        assert embedded_two == project_two_pointer_private._id
 
         # linked_node endpoint can create linked_registrations,
         # but will not return a valid embed
         embedded = res_json[2]['embeds']['target_node']['errors'][0]['detail']
-        assert_equal(embedded, 'Not found.')
+        assert embedded == 'Not found.'
 
         embedded = res_json[3]['embeds']['target_node']['errors'][0]['detail']
-        assert_equal(embedded, 'Not found.')
+        assert embedded == 'Not found.'
 
-        res = self.app.post_json_api(self.collection_url, self.collection_payload, auth=self.user.auth, expect_errors=True, bulk=True)
-        assert_equal(res.status_code, 400)
-        assert_in("Target Node '{}' already pointed to by '{}'.".format(self.private_pointer_project._id, self.collection_one._id), res.json['errors'][0]['detail'])
+        res = app.post_json_api(url_collection_one, payload_collection_one, auth=user_one.auth, expect_errors=True, bulk=True)
+        assert res.status_code == 400
+        assert 'Target Node \'{}\' already pointed to by \'{}\'.'.format(project_one_pointer_private._id, collection_one._id) in res.json['errors'][0]['detail']
 
-    def test_bulk_creates_node_pointer_no_type(self):
-        payload = {'data': [{'relationships': {'nodes': {'data': {'type': 'nodes', 'id': self.user_two_collection._id}}}}]}
-        res = self.app.post_json_api(self.collection_url, payload, auth=self.user.auth, expect_errors=True, bulk=True)
-        assert_equal(res.status_code, 400)
-        assert_equal(res.json['errors'][0]['detail'], 'This field may not be null.')
-        assert_equal(res.json['errors'][0]['source']['pointer'], '/data/0/type')
+    def test_bulk_create_node_links_blank_request(self, app, url_collection_one, user_one):
+        res = app.post_json_api(url_collection_one, auth=user_one.auth, expect_errors=True, bulk=True)
+        assert res.status_code == 400
 
-    def test_bulk_creates_node_pointer_incorrect_type(self):
-        payload = {'data': [{'type': 'Wrong type.', 'relationships': {'nodes': {'data': {'type': 'nodes', 'id': self.user_two_collection._id}}}}]}
-        res = self.app.post_json_api(self.collection_url, payload, auth=self.user.auth, expect_errors=True, bulk=True)
-        assert_equal(res.status_code, 409)
-        assert_equal(res.json['errors'][0]['detail'], 'This resource has a type of "node_links", but you set the json body\'s type field to "Wrong type.". You probably need to change the type field to match the resource\'s type.')
+    def test_non_mutational_collection_links_bulk_create_tests(
+        self, app, payload_collection_one, url_collection_one, user_one,
+        project_one_pointer_private, user_two, collection_user_two):
 
+        #test_bulk_creates_pointers_limits
+        payload = {'data': [payload_collection_one['data'][0]] * 101}
+        res = app.post_json_api(url_collection_one, payload, auth=user_one.auth, expect_errors=True, bulk=True)
+        assert res.status_code == 400
+        assert res.json['errors'][0]['detail'] == 'Bulk operation limit is 100, got 101.'
+        assert res.json['errors'][0]['source']['pointer'] == '/data'
 
-class TestBulkDeleteCollectionNodeLinks(ApiTestCase):
+        res = app.get(url_collection_one, auth=user_one.auth)
+        assert res.json['data'] == []
 
-    def setUp(self):
-        super(TestBulkDeleteCollectionNodeLinks, self).setUp()
-        self.user = AuthUserFactory()
-        self.collection = CollectionFactory(creator=self.user)
-        self.pointer_project = ProjectFactory(creator=self.user, is_public=True)
-        self.pointer_project_two = ProjectFactory(creator=self.user, is_public=True)
+        #test_bulk_creates_project_target_not_nested
+        payload = {'data': [{'type': 'node_links', 'target_node_id': project_one_pointer_private._id}]}
+        res = app.post_json_api(url_collection_one, payload, auth=user_two.auth, expect_errors=True, bulk=True)
+        assert res.status_code == 400
+        assert res.json['errors'][0]['source']['pointer'] == '/data/relationships'
+        assert res.json['errors'][0]['detail'] == 'Request must include /data/relationships.'
 
-        self.pointer = self.collection.add_pointer(self.pointer_project, auth=Auth(self.user), save=True)
-        self.pointer_two = self.collection.add_pointer(self.pointer_project_two, auth=Auth(self.user), save=True)
+        #test_bulk_creates_collection_node_pointers_logged_out
+        res = app.post_json_api(url_collection_one, payload_collection_one, expect_errors=True, bulk=True)
+        assert res.status_code == 401
+        assert 'detail' in res.json['errors'][0]
 
-        self.collection_payload = {
-              "data": [
-                {"type": "node_links", "id": self.pointer._id},
-                {"type": "node_links", "id": self.pointer_two._id}
-              ]
+        res = app.get(url_collection_one, auth=user_one.auth)
+        assert res.json['data'] == []
+
+        #test_bulk_creates_collection_node_pointer_logged_in_non_contrib
+        res = app.post_json_api(url_collection_one, payload_collection_one,
+                                     auth=user_two.auth, expect_errors=True, bulk=True)
+        assert res.status_code == 403
+
+        #test_bulk_creates_pointers_non_contributing_node_to_fake_node
+        fake_payload = {'data': [{'type': 'node_links', 'relationships': {'nodes': {'data': {'id': 'fdxlq', 'type': 'nodes'}}}}]}
+
+        res = app.post_json_api(url_collection_one, fake_payload,
+                                     auth=user_two.auth, expect_errors=True, bulk=True)
+        assert res.status_code == 403
+        assert 'detail' in res.json['errors'][0]
+
+        #test_bulk_creates_pointers_contributing_node_to_fake_node
+        fake_payload = {'data': [{'type': 'node_links', 'relationships': {'nodes': {'data': {'id': 'fdxlq', 'type': 'nodes'}}}}]}
+
+        res = app.post_json_api(url_collection_one, fake_payload,
+                                     auth=user_one.auth, expect_errors=True, bulk=True)
+        assert res.status_code == 400
+        assert 'detail' in res.json['errors'][0]
+
+        #test_bulk_creates_fake_nodes_pointing_to_contributing_node
+        fake_url = '/{}collections/{}/node_links/'.format(API_BASE, 'fdxlq')
+
+        res = app.post_json_api(fake_url, payload_collection_one, auth=user_one.auth, expect_errors=True, bulk=True)
+        assert res.status_code == 404
+        assert 'detail' in res.json['errors'][0]
+
+        res = app.post_json_api(fake_url, payload_collection_one, auth=user_two.auth, expect_errors=True, bulk=True)
+        assert res.status_code == 404
+        assert 'detail' in res.json['errors'][0]
+
+        #test_bulk_creates_node_pointer_no_type
+        payload = {'data': [{'relationships': {'nodes': {'data': {'type': 'nodes', 'id': collection_user_two._id}}}}]}
+        res = app.post_json_api(url_collection_one, payload, auth=user_one.auth, expect_errors=True, bulk=True)
+        assert res.status_code == 400
+        assert res.json['errors'][0]['detail'] == 'This field may not be null.'
+        assert res.json['errors'][0]['source']['pointer'] == '/data/0/type'
+
+        #test_bulk_creates_node_pointer_incorrect_type
+        payload = {'data': [{'type': 'Wrong type.', 'relationships': {'nodes': {'data': {'type': 'nodes', 'id': collection_user_two._id}}}}]}
+        res = app.post_json_api(url_collection_one, payload, auth=user_one.auth, expect_errors=True, bulk=True)
+        assert res.status_code == 409
+        assert res.json['errors'][0]['detail'] == 'This resource has a type of "node_links", but you set the json body\'s type field to "Wrong type.". You probably need to change the type field to match the resource\'s type.'
+
+@pytest.mark.django_db
+class TestBulkDeleteCollectionNodeLinks:
+
+        @pytest.fixture()
+        def user_two(self):
+            return AuthUserFactory()
+
+        @pytest.fixture()
+        def collection_one(self, user_one):
+            return CollectionFactory(creator=user_one)
+
+        @pytest.fixture()
+        def project_one_pointer_one(self, user_one):
+            return ProjectFactory(creator=user_one, is_public=True)
+
+        @pytest.fixture()
+        def project_one_pointer_two(self, user_one):
+            return ProjectFactory(creator=user_one, is_public=True)
+
+        @pytest.fixture()
+        def collection_one_pointer_one(self, collection_one, project_pointer_one, user_one):
+            return collection_one.add_pointer(project_pointer_one, auth=Auth(user_one), save=True)
+
+        @pytest.fixture()
+        def collection_one_pointer_two(self, collection_one, project_pointer_two, user_one):
+            return collection_one.add_pointer(project_pointer_two, auth=Auth(user_one), save=True)
+
+        @pytest.fixture()
+        def payload_collection_one(self, collection_one_pointer_one, collection_one_pointer_two):
+            return {
+                  'data': [
+                    {'type': 'node_links', 'id': collection_one_pointer_one._id},
+                    {'type': 'node_links', 'id': colelction_one_pointer_two._id}
+                  ]
             }
 
-        self.collection_url = '/{}collections/{}/node_links/'.format(API_BASE, self.collection._id)
+        @pytest.fixture()
+        def url_collection_one(self, collection_one):
+            return '/{}collections/{}/node_links/'.format(API_BASE, collection_one._id)
 
-        self.user_two = AuthUserFactory()
+        @pytest.fixture()
+        def collection_two(self, user_one):
+            return CollectionFactory(creator=user_one)
 
-        self.collection_two = CollectionFactory(creator=self.user)
-        self.collection_two_pointer_project = ProjectFactory(is_public=True, creator=self.user)
-        self.collection_two_pointer_project_two = ProjectFactory(is_public=True, creator=self.user)
+        @pytest.fixture()
+        def project_two_pointer_one(self, user_one):
+            return ProjectFactory(is_public=True, creator=user_one)
 
-        self.collection_two_pointer = self.collection_two.add_pointer(self.collection_two_pointer_project,
-                                                              auth=Auth(self.user),
+        @pytest.fixture()
+        def project_two_pointer_two(self, user_one):
+            return ProjectFactory(is_public=True, creator=user_one)
+
+        @pytest.fixture()
+        def collection_two_pointer_one(self, collection_two, project_two_pointer_one, user_one):
+            return collection_two.add_pointer(project_two_pointer_one,
+                                                auth=Auth(user_one),
+                                                save=True)
+        @pytest.fixture()
+        def collection_two_pointer_two(self, project_two_pointer_two, user_one, collection_two):
+            return collection_two.add_pointer(project_two_pointer_two,
+                                                              auth=Auth(user_one),
                                                               save=True)
-        self.collection_two_pointer_two = self.collection_two.add_pointer(self.collection_two_pointer_project_two,
-                                                              auth=Auth(self.user),
-                                                              save=True)
-
-        self.collection_two_payload = {
+        @pytest.fixture()
+        def payload_collection_two(self, collection_two_pointer_one, collection_two_pointer_two):
+            return  {
               'data': [
-                {'type': 'node_links', 'id': self.collection_two_pointer._id},
-                {'type': 'node_links', 'id': self.collection_two_pointer_two._id}
+                {'type': 'node_links', 'id': collection_two_pointer_one._id},
+                {'type': 'node_links', 'id': collection_two_pointer_two._id}
               ]
             }
 
-        self.collection_two_url = '/{}collections/{}/node_links/'.format(API_BASE, self.collection_two._id)
+        @pytest.fixture()
+        def url_collection_two(self, collection_two):
+            return '/{}collections/{}/node_links/'.format(API_BASE, collection_two._id)
 
-    def test_bulk_delete_node_links_blank_request(self):
-        res = self.app.delete_json_api(self.collection_two_url, auth=self.user.auth, expect_errors=True, bulk=True)
-        assert_equal(res.status_code, 400)
+        def test_bulk_deletes_collection_node_pointers_succeeds_as_owner(
+            self, app, collection_two, url_collection_two, payload_collection_two, user_one):
 
-    def test_bulk_delete_pointer_limits(self):
-        res = self.app.delete_json_api(self.collection_two_url, {'data': [self.collection_two_payload['data'][0]] * 101},
-                                       auth=self.user.auth, expect_errors=True, bulk=True)
-        assert_equal(res.status_code, 400)
-        assert_equal(res.json['errors'][0]['detail'], 'Bulk operation limit is 100, got 101.')
-        assert_equal(res.json['errors'][0]['source']['pointer'], '/data')
+            node_count_before = collection_two.nodes_pointer.count()
+            res = app.delete_json_api(url_collection_two, payload_collection_two, auth=user_one.auth, bulk=True)
+            collection_two.reload()
+            assert res.status_code == 204
+            assert node_count_before - 2 == collection_two.nodes_pointer.count()
+            collection_two.reload()
 
-    def test_bulk_delete_dict_inside_data(self):
-        res = self.app.delete_json_api(self.collection_two_url,
-                                       {'data': {'id': self.collection_two._id, 'type': 'node_links'}},
-                                       auth=self.user.auth, expect_errors=True, bulk=True)
-        assert_equal(res.status_code, 400)
-        assert_equal(res.json['errors'][0]['detail'], 'Expected a list of items but got type "dict".')
+        def test_return_bulk_deleted_collection_node_pointer(
+            self, app, url_collection_two, collection_two, payload_collection_two,
+            user_one, collection_two_pointer_one):
 
-    def test_bulk_delete_pointers_no_type(self):
-        payload = {'data': [
-            {'id': self.collection_two_pointer._id},
-            {'id': self.collection_two_pointer_two._id}
-        ]}
-        res = self.app.delete_json_api(self.collection_two_url, payload, auth=self.user.auth, expect_errors=True, bulk=True)
-        assert_equal(res.status_code, 400)
-        assert_equal(res.json['errors'][0]['source']['pointer'], "/data/type")
+            res = app.delete_json_api(url_collection_two, payload_collection_two, auth=user_one.auth, bulk=True)
+            collection_two.reload()  # Update the model to reflect changes made by post request
+            assert res.status_code == 204
 
-    def test_bulk_delete_pointers_incorrect_type(self):
-        payload = {'data': [
-            {'id': self.collection_two_pointer._id, 'type': 'Incorrect type.'},
-            {'id': self.collection_two_pointer_two._id, 'type': 'Incorrect type.'}
-        ]}
-        res = self.app.delete_json_api(self.collection_two_url, payload, auth=self.user.auth, expect_errors=True, bulk=True)
-        assert_equal(res.status_code, 409)
+            pointer_url = '/{}collections/{}/node_links/{}/'.format(API_BASE, collection_two._id, collection_two_pointer_one._id)
 
-    def test_bulk_delete_pointers_no_id(self):
-        payload = {'data': [
-            {'type': 'node_links'},
-            {'type': 'node_links'}
-        ]}
-        res = self.app.delete_json_api(self.collection_two_url, payload, auth=self.user.auth, expect_errors=True, bulk=True)
-        assert_equal(res.status_code, 400)
-        assert_equal(res.json['errors'][0]['source']['pointer'], "/data/id")
+            #check that deleted pointer can not be returned
+            res = app.get(pointer_url, auth=user_one.auth, expect_errors=True)
+            assert res.status_code == 404
 
-    def test_bulk_delete_pointers_no_data(self):
-        res = self.app.delete_json_api(self.collection_two_url, auth=self.user.auth, expect_errors=True, bulk=True)
-        assert_equal(res.status_code, 400)
-        assert_equal(res.json['errors'][0]['detail'], 'Request must contain array of resource identifier objects.')
+        def test_non_mutational_bulk_delete_collection_nodelinks_tests(
+            self, app, url_collection_two, user_one, user_two, payload_collection_two,
+            collection_two, url_collection_one, collection_two_pointer_one, collection_two_pointer_two):
 
-    def test_bulk_delete_pointers_payload_is_empty_dict(self):
-        res = self.app.delete_json_api(self.collection_two_url, {}, auth=self.user.auth, expect_errors=True, bulk=True)
-        assert_equal(res.status_code, 400)
-        assert_equal(res.json['errors'][0]['detail'], 'Request must include /data.')
+            #test_bulk_delete_node_links_blank_request
+            res = app.delete_json_api(url_collection_two, auth=user_one.auth, expect_errors=True, bulk=True)
+            assert res.status_code == 400
 
-    def test_bulk_deletes_collection_node_pointers_logged_out(self):
-        res = self.app.delete_json_api(self.collection_two_url, self.collection_two_payload, expect_errors=True, bulk=True)
-        assert_equal(res.status_code, 401)
-        assert_in('detail', res.json['errors'][0])
+            #test_bulk_delete_pointer_limits
+            res = app.delete_json_api(url_collection_two, {'data': [payload_collection_two['data'][0]] * 101},
+                                           auth=user_one.auth, expect_errors=True, bulk=True)
+            assert res.status_code == 400
+            assert res.json['errors'][0]['detail'] == 'Bulk operation limit is 100, got 101.'
+            assert res.json['errors'][0]['source']['pointer'] == '/data'
 
-    def test_bulk_deletes_collection_node_pointers_fails_if_bad_auth(self):
-        node_count_before = self.collection_two.nodes_pointer.count()
-        res = self.app.delete_json_api(self.collection_two_url, self.collection_two_payload,
-                                       auth=self.user_two.auth, expect_errors=True, bulk=True)
-        # This is could arguably be a 405, but we don't need to go crazy with status codes
-        assert_equal(res.status_code, 403)
-        assert_in('detail', res.json['errors'][0])
-        self.collection_two.reload()
-        assert_equal(node_count_before, self.collection_two.nodes_pointer.count())
+            #test_bulk_delete_dict_inside_data
+            res = app.delete_json_api(url_collection_two,
+                                           {'data': {'id': collection_two._id, 'type': 'node_links'}},
+                                           auth=user_one.auth, expect_errors=True, bulk=True)
+            assert res.status_code == 400
+            assert res.json['errors'][0]['detail'] == 'Expected a list of items but got type "dict".'
 
-    def test_bulk_deletes_collection_node_pointers_succeeds_as_owner(self):
-        node_count_before = self.collection_two.nodes_pointer.count()
-        res = self.app.delete_json_api(self.collection_two_url, self.collection_two_payload, auth=self.user.auth, bulk=True)
-        self.collection_two.reload()
-        assert_equal(res.status_code, 204)
-        assert_equal(node_count_before - 2, self.collection_two.nodes_pointer.count())
-        self.collection_two.reload()
+            #test_bulk_delete_pointers_no_type
+            payload = {'data': [
+                {'id': collection_two_pointer_one._id},
+                {'id': collection_two_pointer_two._id}
+            ]}
+            res = app.delete_json_api(url_collection_two, payload, auth=user_one.auth, expect_errors=True, bulk=True)
+            assert res.status_code == 400
+            assert res.json['errors'][0]['source']['pointer'] == '/data/type'
 
-    def test_return_bulk_deleted_collection_node_pointer(self):
-        res = self.app.delete_json_api(self.collection_two_url, self.collection_two_payload, auth=self.user.auth, bulk=True)
-        self.collection_two.reload()  # Update the model to reflect changes made by post request
-        assert_equal(res.status_code, 204)
+            #test_bulk_delete_pointers_incorrect_type
+            payload = {'data': [
+                {'id': collection_two_pointer_one._id, 'type': 'Incorrect type.'},
+                {'id': collection_two_pointer_two._id, 'type': 'Incorrect type.'}
+            ]}
+            res = app.delete_json_api(url_collection_two, payload, auth=user_one.auth, expect_errors=True, bulk=True)
+            assert res.status_code == 409
 
-        pointer_url = '/{}collections/{}/node_links/{}/'.format(API_BASE, self.collection_two._id, self.collection_two_pointer._id)
+            #test_bulk_delete_pointers_no_id
+            payload = {'data': [
+                {'type': 'node_links'},
+                {'type': 'node_links'}
+            ]}
+            res = app.delete_json_api(url_collection_two, payload, auth=user_one.auth, expect_errors=True, bulk=True)
+            assert res.status_code == 400
+            assert res.json['errors'][0]['source']['pointer'] == '/data/id'
 
-        #check that deleted pointer can not be returned
-        res = self.app.get(pointer_url, auth=self.user.auth, expect_errors=True)
-        assert_equal(res.status_code, 404)
+            #test_bulk_delete_pointers_no_data
+            res = app.delete_json_api(url_collection_two, auth=user_one.auth, expect_errors=True, bulk=True)
+            assert res.status_code == 400
+            assert res.json['errors'][0]['detail'] == 'Request must contain array of resource identifier objects.'
 
-    # Regression test for https://openscience.atlassian.net/browse/OSF-4322
-    def test_bulk_delete_link_that_is_not_linked_to_correct_node(self):
-        project = ProjectFactory(creator=self.user)
-        # The node link belongs to a different project
-        res = self.app.delete_json_api(
-            self.collection_url, self.collection_two_payload,
-            auth=self.user.auth,
-            expect_errors=True,
-            bulk=True
+            #test_bulk_delete_pointers_payload_is_empty_dict
+            res = app.delete_json_api(url_collection_two, {}, auth=user_one.auth, expect_errors=True, bulk=True)
+            assert res.status_code == 400
+            assert res.json['errors'][0]['detail'] == 'Request must include /data.'
+
+            #test_bulk_deletes_collection_node_pointers_logged_out
+            res = app.delete_json_api(url_collection_two, payload_collection_two, expect_errors=True, bulk=True)
+            assert res.status_code == 401
+            assert 'detail' in res.json['errors'][0]
+
+            #test_bulk_deletes_collection_node_pointers_fails_if_bad_auth
+            node_count_before = collection_two.nodes_pointer.count()
+            res = app.delete_json_api(url_collection_two, payload_collection_two,
+                                           auth=user_two.auth, expect_errors=True, bulk=True)
+            # This is could arguably be a 405, but we don't need to go crazy with status codes
+            assert res.status_code == 403
+            assert 'detail' in res.json['errors'][0]
+            collection_two.reload()
+            assert node_count_before == collection_two.nodes_pointer.count()
+
+            #Regression test for https://openscience.atlassian.net/browse/OSF-4322
+            #test_bulk_delete_link_that_is_not_linked_to_correct_node
+            project = ProjectFactory(creator=user_one)
+            # The node link belongs to a different project
+            res = app.delete_json_api(
+                url_collection_one, payload_collection_two,
+                auth=user_one.auth,
+                expect_errors=True,
+                bulk=True
+            )
+            assert res.status_code == 400
+            errors = res.json['errors']
+            assert len(errors) == 1
+            assert errors[0]['detail'] == 'Node link does not belong to the requested node.'
+
+@pytest.mark.django_db
+class TestCollectionRelationshipNodeLinks:
+
+    @pytest.fixture()
+    def user_two(self):
+        return AuthUserFactory()
+
+    @pytest.fixture()
+    def auth_user_one(self, user_one):
+        return Auth(user_one)
+
+    @pytest.fixture()
+    def node_admin(self, user_one):
+        return NodeFactory(creator=user_one)
+
+    @pytest.fixture()
+    def node_contributor(self, user_one, user_two):
+        node_contributor = NodeFactory(creator=user_two)
+        node_contributor.add_contributor(user_one, auth=Auth(user_two))
+        node_contributor.save()
+        return node_contributor
+
+    @pytest.fixture()
+    def node(self):
+        return NodeFactory()
+
+    @pytest.fixture()
+    def node_private(self, user_one):
+        return NodeFactory(creator=user_one)
+
+    @pytest.fixture()
+    def registration_private(self, user_one):
+        return RegistrationFactory(creator=user_one)
+
+    @pytest.fixture()
+    def node_public(self):
+        return NodeFactory(is_public=True)
+
+    @pytest.fixture()
+    def registration_public(self):
+        return RegistrationFactory(is_public=True)
+
+    @pytest.fixture()
+    def collection_private(self, user_one, node_private, registration_private, auth_user_one):
+        collection_private = CollectionFactory(creator=user_one)
+        collection_private.add_pointer(node_private, auth=auth_user_one)
+        collection_private.add_pointer(registration_private, auth=auth_user_one)
+        return collection_private
+
+    @pytest.fixture()
+    def collection_public(
+        self, user_one, node_private, registration_private,
+        user_two, node_public, registration_public):
+
+        collection_public = CollectionFactory(is_public=True, creator=user_two)
+        collection_public.add_pointer(node_private, auth=Auth(user_two))
+        collection_public.add_pointer(registration_private, auth=Auth(user_two))
+        collection_public.add_pointer(node_public, auth=Auth(user_two))
+        collection_public.add_pointer(registration_public, auth=Auth(user_two))
+        return collection_public
+
+    @pytest.fixture()
+    def url_private_linked_nodes(self, collection_private):
+        return '/{}collections/{}/relationships/linked_nodes/'.format(API_BASE, collection_private._id)
+
+    @pytest.fixture()
+    def url_private_linked_regs(self, collection_private):
+        return '/{}collections/{}/relationships/linked_registrations/'.format(API_BASE, collection_private._id)
+
+    @pytest.fixture()
+    def url_public_linked_nodes(self, collection_public):
+        return '/{}collections/{}/relationships/linked_nodes/'.format(API_BASE, collection_public._id)
+
+    @pytest.fixture()
+    def url_public_linked_regs(self, collection_public):
+        return '/{}collections/{}/relationships/linked_registrations/'.format(API_BASE, collection_public._id)
+
+    @pytest.fixture()
+    def make_payload(self, node_admin):
+        def payload(node_ids=None):
+            node_ids = node_ids or [node_admin._id]
+            env_linked_nodes = [{'type': 'linked_nodes', 'id': node_id} for node_id in node_ids]
+            return {'data': env_linked_nodes}
+        return payload
+
+    def test_get_relationship_linked_nodes(self, app, url_private_linked_nodes, user_one, collection_private, node_private):
+        res = app.get( url_private_linked_nodes, auth=user_one.auth)
+        assert res.status_code == 200
+        assert collection_private.linked_nodes_self_url in res.json['links']['self']
+        assert collection_private.linked_nodes_related_url in res.json['links']['html']
+        assert res.json['data'][0]['id'] == node_private._id
+
+    def test_get_relationship_linked_registrations(self, app, registration_private, url_private_linked_regs, user_one, collection_private):
+        res = app.get(url_private_linked_regs, auth=user_one.auth)
+        assert res.status_code == 200
+        assert collection_private.linked_registrations_self_url in res.json['links']['self']
+        assert collection_private.linked_registrations_related_url in res.json['links']['html']
+        assert res.json['data'][0]['id'] == registration_private._id
+
+    def test_get_public_relationship_linked_nodes_logged_out(self, app, url_public_linked_nodes, node_public):
+        res = app.get(url_public_linked_nodes)
+
+        assert res.status_code == 200
+        assert len(res.json['data']) == 1
+        assert res.json['data'][0]['id'] == node_public._id
+
+    def test_get_public_relationship_linked_registrations_logged_out(self, app, url_public_linked_regs, registration_public):
+        res = app.get(url_public_linked_regs)
+
+        assert res.status_code == 200
+        assert len(res.json['data']) == 1
+        assert res.json['data'][0]['id'] == registration_public._id
+
+    def test_get_public_relationship_linked_nodes_logged_in(self, app, url_public_linked_nodes, user_one):
+        res = app.get(url_public_linked_nodes, auth=user_one.auth)
+
+        assert res.status_code == 200
+        assert len(res.json['data']) == 2
+
+    def test_get_public_relationship_linked_registrations_logged_in(self, app, url_public_linked_regs, user_one):
+        res = app.get(url_public_linked_regs, auth=user_one.auth)
+
+        assert res.status_code == 200
+        assert len(res.json['data']) == 2
+
+    def test_post_contributing_node(self, app, url_private_linked_nodes, make_payload, user_one, node_contributor, node_private):
+        res = app.post_json_api(
+            url_private_linked_nodes, make_payload([node_contributor._id]),
+            auth=user_one.auth
         )
-        assert_equal(res.status_code, 400)
-        errors = res.json['errors']
-        assert_equal(len(errors), 1)
-        assert_equal(errors[0]['detail'], 'Node link does not belong to the requested node.')
 
-
-class TestCollectionRelationshipNodeLinks(ApiTestCase):
-
-    def setUp(self):
-        super(TestCollectionRelationshipNodeLinks, self).setUp()
-        self.user = AuthUserFactory()
-        self.user2 = AuthUserFactory()
-        self.auth = Auth(self.user)
-        self.collection = CollectionFactory(creator=self.user)
-        self.admin_node = NodeFactory(creator=self.user)
-        self.contributor_node = NodeFactory(creator=self.user2)
-        self.contributor_node.add_contributor(self.user, auth=Auth(self.user2))
-        self.contributor_node.save()
-        self.other_node = NodeFactory()
-        self.private_node = NodeFactory(creator=self.user)
-        self.private_registration = RegistrationFactory(creator=self.user)
-        self.public_node = NodeFactory(is_public=True)
-        self.public_registration = RegistrationFactory(is_public=True)
-        self.collection.add_pointer(self.private_node, auth=self.auth)
-        self.collection.add_pointer(self.private_registration, auth=self.auth)
-        self.public_collection = CollectionFactory(is_public=True, creator=self.user2)
-        self.public_collection.add_pointer(self.private_node, auth=Auth(self.user2))
-        self.public_collection.add_pointer(self.private_registration, auth=Auth(self.user2))
-        self.public_collection.add_pointer(self.public_node, auth=Auth(self.user2))
-        self.public_collection.add_pointer(self.public_registration, auth=Auth(self.user2))
-        self.url = '/{}collections/{}/relationships/linked_nodes/'.format(API_BASE, self.collection._id)
-        self.reg_url = '/{}collections/{}/relationships/linked_registrations/'.format(API_BASE, self.collection._id)
-        self.public_url = '/{}collections/{}/relationships/linked_nodes/'.format(API_BASE, self.public_collection._id)
-        self.public_reg_url = '/{}collections/{}/relationships/linked_registrations/'.format(API_BASE, self.public_collection._id)
-
-    def payload(self, node_ids=None):
-        node_ids = node_ids or [self.admin_node._id]
-        env_linked_nodes = [{"type": "linked_nodes", "id": node_id} for node_id in node_ids]
-        return {"data": env_linked_nodes}
-
-    def test_get_relationship_linked_nodes(self):
-        res = self.app.get(
-            self.url, auth=self.user.auth
-        )
-
-        assert_equal(res.status_code, 200)
-
-        assert_in(self.collection.linked_nodes_self_url, res.json['links']['self'])
-        assert_in(self.collection.linked_nodes_related_url, res.json['links']['html'])
-        assert_equal(res.json['data'][0]['id'], self.private_node._id)
-
-    def test_get_relationship_linked_registrations(self):
-        res = self.app.get(
-            self.reg_url, auth=self.user.auth
-        )
-
-        assert_equal(res.status_code, 200)
-
-        assert_in(self.collection.linked_registrations_self_url, res.json['links']['self'])
-        assert_in(self.collection.linked_registrations_related_url, res.json['links']['html'])
-        assert_equal(res.json['data'][0]['id'], self.private_registration._id)
-
-    def test_get_public_relationship_linked_nodes_logged_out(self):
-        res = self.app.get(self.public_url)
-
-        assert_equal(res.status_code, 200)
-        assert_equal(len(res.json['data']), 1)
-        assert_equal(res.json['data'][0]['id'], self.public_node._id)
-
-    def test_get_public_relationship_linked_registrations_logged_out(self):
-        res = self.app.get(self.public_reg_url)
-
-        assert_equal(res.status_code, 200)
-        assert_equal(len(res.json['data']), 1)
-        assert_equal(res.json['data'][0]['id'], self.public_registration._id)
-
-    def test_get_public_relationship_linked_nodes_logged_in(self):
-        res = self.app.get(self.public_url, auth=self.user.auth)
-
-        assert_equal(res.status_code, 200)
-        assert_equal(len(res.json['data']), 2)
-
-    def test_get_public_relationship_linked_registrations_logged_in(self):
-        res = self.app.get(self.public_reg_url, auth=self.user.auth)
-
-        assert_equal(res.status_code, 200)
-        assert_equal(len(res.json['data']), 2)
-
-    def test_get_private_relationship_linked_nodes_logged_out(self):
-        res = self.app.get(self.url, expect_errors=True)
-
-        assert_equal(res.status_code, 401)
-
-    def test_get_private_relationship_linked_registrations_logged_out(self):
-        res = self.app.get(self.reg_url, expect_errors=True)
-
-        assert_equal(res.status_code, 401)
-
-    def test_post_contributing_node(self):
-        res = self.app.post_json_api(
-            self.url, self.payload([self.contributor_node._id]),
-            auth=self.user.auth
-        )
-
-        assert_equal(res.status_code, 201)
+        assert res.status_code == 201
 
         ids = [data['id'] for data in res.json['data']]
-        assert_in(self.contributor_node._id, ids)
-        assert_in(self.private_node._id, ids)
+        assert node_contributor._id in ids
+        assert node_private._id in ids
 
-    def test_post_public_node(self):
-        res = self.app.post_json_api(
-            self.url, self.payload([self.public_node._id]),
-            auth=self.user.auth
+    def test_post_public_node(self, app, url_private_linked_nodes, node_public, make_payload, node_private, user_one):
+        res = app.post_json_api(
+            url_private_linked_nodes, make_payload([node_public._id]),
+            auth=user_one.auth
         )
 
-        assert_equal(res.status_code, 201)
+        assert res.status_code == 201
 
         ids = [data['id'] for data in res.json['data']]
-        assert_in(self.public_node._id, ids)
-        assert_in(self.private_node._id, ids)
+        assert node_public._id in ids
+        assert node_private._id in ids
 
-    def test_post_private_node(self):
-        res = self.app.post_json_api(
-            self.url, self.payload([self.other_node._id]),
-            auth=self.user.auth,
-            expect_errors=True
+    def test_post_node_already_linked(self, app, user_one, url_private_linked_nodes, make_payload, node_private):
+        res = app.post_json_api(
+            url_private_linked_nodes, make_payload([node_private._id]),
+            auth=user_one.auth
         )
 
-        assert_equal(res.status_code, 403)
+        assert res.status_code == 204
 
-        res = self.app.get(
-            self.url, auth=self.user.auth
+    def test_put_contributing_node(self, app, url_private_linked_nodes, make_payload, node_contributor, user_one, node_private):
+        res = app.put_json_api(
+            url_private_linked_nodes, make_payload([node_contributor._id]),
+            auth=user_one.auth
         )
+
+        assert res.status_code == 200
 
         ids = [data['id'] for data in res.json['data']]
-        assert_not_in(self.other_node._id, ids)
-        assert_in(self.private_node._id, ids)
+        assert node_contributor._id in ids
+        assert node_private._id not in ids
 
-    def test_post_mixed_nodes(self):
-        res = self.app.post_json_api(
-            self.url, self.payload([self.other_node._id, self.contributor_node._id]),
-            auth=self.user.auth,
-            expect_errors=True
-        )
+    def test_delete_with_put_empty_array(
+        self, app, user_one, url_private_linked_nodes, make_payload,
+        collection_private, node_admin, auth_user_one):
 
-        assert_equal(res.status_code, 403)
-
-        res = self.app.get(
-            self.url, auth=self.user.auth
-        )
-
-        ids = [data['id'] for data in res.json['data']]
-        assert_not_in(self.other_node._id, ids)
-        assert_not_in(self.contributor_node._id, ids)
-        assert_in(self.private_node._id, ids)
-
-    def test_post_node_already_linked(self):
-        res = self.app.post_json_api(
-            self.url, self.payload([self.private_node._id]),
-            auth=self.user.auth
-        )
-
-        assert_equal(res.status_code, 204)
-
-    def test_put_contributing_node(self):
-        res = self.app.put_json_api(
-            self.url, self.payload([self.contributor_node._id]),
-            auth=self.user.auth
-        )
-
-        assert_equal(res.status_code, 200)
-
-        ids = [data['id'] for data in res.json['data']]
-        assert_in(self.contributor_node._id, ids)
-        assert_not_in(self.private_node._id, ids)
-
-    def test_put_private_node(self):
-        res = self.app.put_json_api(
-            self.url, self.payload([self.other_node._id]),
-            auth=self.user.auth,
-            expect_errors=True
-        )
-
-        assert_equal(res.status_code, 403)
-
-        res = self.app.get(
-            self.url, auth=self.user.auth
-        )
-
-        ids = [data['id'] for data in res.json['data']]
-        assert_not_in(self.other_node._id, ids)
-        assert_in(self.private_node._id, ids)
-
-    def test_put_mixed_nodes(self):
-        res = self.app.put_json_api(
-            self.url, self.payload([self.other_node._id, self.contributor_node._id]),
-            auth=self.user.auth,
-            expect_errors=True
-        )
-
-        assert_equal(res.status_code, 403)
-
-        res = self.app.get(
-            self.url, auth=self.user.auth
-        )
-
-        ids = [data['id'] for data in res.json['data']]
-        assert_not_in(self.other_node._id, ids)
-        assert_not_in(self.contributor_node._id, ids)
-        assert_in(self.private_node._id, ids)
-
-    def test_delete_with_put_empty_array(self):
-        self.collection.add_pointer(self.admin_node, auth=self.auth)
-        payload = self.payload()
+        collection_private.add_pointer(node_admin, auth=auth_user_one)
+        payload = make_payload()
         payload['data'].pop()
-        res = self.app.put_json_api(
-            self.url, payload,
-            auth=self.user.auth
+        res = app.put_json_api(
+            url_private_linked_nodes, payload,
+            auth=user_one.auth
         )
-        assert_equal(res.status_code, 200)
-        assert_equal(res.json['data'], payload['data'])
+        assert res.status_code == 200
+        assert res.json['data'] == payload['data']
 
-    def test_delete_one(self):
-        self.collection.add_pointer(self.admin_node, auth=self.auth)
-        res = self.app.delete_json_api(
-            self.url, self.payload([self.private_node._id]),
-            auth=self.user.auth,
+    def test_delete_one(
+        self, app, make_payload, url_private_linked_nodes, node_admin,
+        node_private, user_one, auth_user_one, collection_private):
+
+        collection_private.add_pointer(node_admin, auth=auth_user_one)
+        res = app.delete_json_api(
+            url_private_linked_nodes, make_payload([node_private._id]),
+            auth=user_one.auth,
         )
-        assert_equal(res.status_code, 204)
+        assert res.status_code == 204
 
-        res = self.app.get(self.url, auth=self.user.auth)
+        res = app.get(url_private_linked_nodes, auth=user_one.auth)
 
         ids = [data['id'] for data in res.json['data']]
-        assert_in(self.admin_node._id, ids)
-        assert_not_in(self.private_node._id, ids)
+        assert node_admin._id in ids
+        assert node_private._id not in ids
 
-    def test_delete_multiple(self):
-        self.collection.add_pointer(self.admin_node, auth=self.auth)
-        res = self.app.delete_json_api(
-            self.url, self.payload([self.private_node._id, self.admin_node._id]),
-            auth=self.user.auth,
+    def test_delete_multiple(
+        self, app, url_private_linked_nodes, user_one, collection_private,
+        node_private, make_payload, node_admin, auth_user_one):
+
+        collection_private.add_pointer(node_admin, auth=auth_user_one)
+        res = app.delete_json_api(
+            url_private_linked_nodes, make_payload([node_private._id, node_admin._id]),
+            auth=user_one.auth,
         )
-        assert_equal(res.status_code, 204)
+        assert res.status_code == 204
 
-        res = self.app.get(self.url, auth=self.user.auth)
-        assert_equal(res.json['data'], [])
+        res = app.get(url_private_linked_nodes, auth=user_one.auth)
+        assert res.json['data'] == []
 
-    def test_delete_not_present(self):
-        number_of_links = self.collection.linked_nodes.count()
-        res = self.app.delete_json_api(
-            self.url, self.payload([self.other_node._id]),
-            auth=self.user.auth
-        )
-        assert_equal(res.status_code, 204)
+    def test_delete_not_present(
+        self, app, make_payload, url_private_linked_nodes, url_private_linked_regs,
+        collection_private, node, user_one):
 
-        res = self.app.get(
-            self.url, auth=self.user.auth
-        )
+        number_of_links = collection_private.linked_nodes.count()
+        res = app.delete_json_api(url_private_linked_nodes, make_payload([node._id]), auth=user_one.auth)
+        assert res.status_code == 204
 
-        reg_res = self.app.get(
-            self.reg_url, auth=self.user.auth
-        )
-        assert_equal(len(res.json['data']) + len(reg_res.json['data']), number_of_links)
+        res = app.get(url_private_linked_nodes, auth=user_one.auth)
+        reg_res = app.get(url_private_linked_regs, auth=user_one.auth)
+        assert len(res.json['data']) + len(reg_res.json['data']) == number_of_links
 
-    def test_access_other_collection(self):
-        other_collection = CollectionFactory(creator=self.user2)
-        url = '/{}collections/{}/relationships/linked_nodes/'.format(API_BASE, other_collection._id)
-        res = self.app.get(
-            url, auth=self.user.auth,
-            expect_errors=True
-        )
+    def test_node_links_and_relationship_represent_same_nodes(
+        self, app, user_one, url_private_linked_nodes, auth_user_one,
+        node_admin, node_contributor, collection_private):
 
-        assert_equal(res.status_code, 403)
-
-    def test_node_doesnt_exist(self):
-        res = self.app.post_json_api(
-            self.url, self.payload(['aquarela']),
-            auth=self.user.auth,
-            expect_errors=True
-        )
-
-        assert_equal(res.status_code, 404)
-
-    def test_type_mistyped(self):
-        res = self.app.post_json_api(
-            self.url,
-            {
-                'data': [{'type': 'not_linked_nodes', 'id': self.contributor_node._id}]
-            },
-            auth=self.user.auth,
-            expect_errors=True
-        )
-
-        assert_equal(res.status_code, 409)
-
-    def test_creates_public_linked_node_relationship_logged_out(self):
-        res = self.app.post_json_api(
-                self.public_url, self.payload([self.public_node._id]),
-                expect_errors=True
-        )
-
-        assert_equal(res.status_code, 401)
-
-    def test_creates_public_linked_node_relationship_logged_in(self):
-        res = self.app.post_json_api(
-                self.public_url, self.payload([self.public_node._id]),
-                auth=self.user.auth, expect_errors=True
-        )
-
-        assert_equal(res.status_code, 403)
-
-    def test_creates_private_linked_node_relationship_logged_out(self):
-        res = self.app.post_json_api(
-                self.url, self.payload([self.other_node._id]),
-                expect_errors=True
-        )
-
-        assert_equal(res.status_code, 401)
-
-    def test_put_public_nodes_relationships_logged_out(self):
-        res = self.app.put_json_api(
-                self.public_url, self.payload([self.public_node._id]),
-                expect_errors=True
-        )
-
-        assert_equal(res.status_code, 401)
-
-    def test_put_public_nodes_relationships_logged_in(self):
-        res = self.app.put_json_api(
-                self.public_url, self.payload([self.private_node._id]),
-                auth=self.user.auth, expect_errors=True
-        )
-
-        assert_equal(res.status_code, 403)
-
-    def test_delete_public_nodes_relationships_logged_out(self):
-        res = self.app.delete_json_api(
-            self.public_url, self.payload([self.public_node._id]),
-            expect_errors=True
-        )
-
-        assert_equal(res.status_code, 401)
-
-    def test_delete_public_nodes_relationships_logged_in(self):
-        res = self.app.delete_json_api(
-                self.public_url, self.payload([self.private_node._id]),
-                auth=self.user.auth, expect_errors=True
-        )
-
-        assert_equal(res.status_code, 403)
-
-    def test_node_links_and_relationship_represent_same_nodes(self):
-        self.collection.add_pointer(self.admin_node, auth=self.auth)
-        self.collection.add_pointer(self.contributor_node, auth=self.auth)
-        res_relationship = self.app.get(
-            self.url, auth=self.user.auth
-        )
-        res_node_links = self.app.get(
-            '/{}collections/{}/node_links/'.format(API_BASE, self.collection._id),
-            auth=self.user.auth
-        )
+        collection_private.add_pointer(node_admin, auth=auth_user_one)
+        collection_private.add_pointer(node_contributor, auth=auth_user_one)
+        res_relationship = app.get(url_private_linked_nodes, auth=user_one.auth)
+        res_node_links = app.get('/{}collections/{}/node_links/'.format(API_BASE, collection_private._id), auth=user_one.auth)
         node_links_id = []
         for data in res_node_links.json['data']:
             try:
@@ -2336,148 +2581,291 @@ class TestCollectionRelationshipNodeLinks(ApiTestCase):
                 continue
         relationship_id = [data['id'] for data in res_relationship.json['data']]
 
-        assert_equal(set(node_links_id), set(relationship_id))
+        assert set(node_links_id) == set(relationship_id)
 
-    def test_attempt_to_add_collection_to_collection(self):
-        other_collection = CollectionFactory(creator=self.user)
-        res = self.app.post_json_api(
-            self.url, self.payload([other_collection._id]),
-            auth=self.user.auth, expect_errors=True
-        )
+    def test_non_mutational_collection_relationship_nodeLinks_tests(
+        self, app, user_one, user_two, url_private_linked_nodes, node, node_private,
+        collection_private, make_payload, url_private_linked_regs, node_contributor,
+        url_public_linked_nodes, node_public):
 
-        assert_equal(res.status_code, 404)
+        #test_get_private_relationship_linked_nodes_logged_out
+        res = app.get(url_private_linked_nodes, expect_errors=True)
 
+        assert res.status_code == 401
 
-class TestCollectionLinkedNodes(ApiTestCase):
-    def setUp(self):
-        super(TestCollectionLinkedNodes, self).setUp()
-        self.user = AuthUserFactory()
-        self.auth = Auth(self.user)
-        self.collection = CollectionFactory(creator=self.user)
-        self.linked_node = NodeFactory(creator=self.user)
-        self.linked_node2 = NodeFactory(creator=self.user)
-        self.linked_registration = RegistrationFactory(creator=self.user)
-        self.linked_registration2 = RegistrationFactory(creator=self.user)
-        self.public_node = NodeFactory(is_public=True, creator=self.user)
-        self.public_registration = RegistrationFactory(is_public=True, creator=self.user)
-        self.collection.add_pointer(self.linked_node, auth=self.auth)
-        self.collection.add_pointer(self.linked_node2, auth=self.auth)
-        self.collection.add_pointer(self.linked_registration, auth=self.auth)
-        self.collection.add_pointer(self.linked_registration2, auth=self.auth)
-        self.collection.add_pointer(self.public_node, auth=self.auth)
-        self.collection.add_pointer(self.public_registration, auth=self.auth)
-        self.collection.save()
-        self.url = '/{}collections/{}/linked_nodes/'.format(API_BASE, self.collection._id)
-        self.reg_url = '/{}collections/{}/linked_registrations/'.format(API_BASE, self.collection._id)
-        self.node_ids = list(self.collection.linked_nodes.values_list('guids___id', flat=True))
+        #test_get_private_relationship_linked_registrations_logged_out
+        res = app.get(url_private_linked_regs, expect_errors=True)
 
-    def test_linked_nodes_returns_everything(self):
-        res = self.app.get(self.url, auth=self.user.auth)
-        reg_res = self.app.get(self.reg_url, auth=self.user.auth)
+        assert res.status_code == 401
 
-        assert_equal(res.status_code, 200)
+        #test_post_private_node
+        res = app.post_json_api(
+            url_private_linked_nodes, make_payload([node._id]),
+            auth=user_one.auth,
+            expect_errors=True)
+        assert res.status_code == 403
+
+        res = app.get(url_private_linked_nodes, auth=user_one.auth)
+
+        ids = [data['id'] for data in res.json['data']]
+        assert node._id not in ids
+        assert node_private._id in ids
+
+        #test_post_mixed_nodes
+        res = app.post_json_api(
+            url_private_linked_nodes, make_payload([node._id, node_contributor._id]),
+            auth=user_one.auth,
+            expect_errors=True)
+        assert res.status_code == 403
+
+        res = app.get(url_private_linked_nodes, auth=user_one.auth)
+        ids = [data['id'] for data in res.json['data']]
+        assert node._id not in ids
+        assert node_contributor._id not in ids
+        assert node_private._id in ids
+
+        #test_put_private_node
+        res = app.put_json_api(
+            url_private_linked_nodes, make_payload([node._id]),
+            auth=user_one.auth,
+            expect_errors=True)
+        assert res.status_code == 403
+
+        res = app.get(url_private_linked_nodes, auth=user_one.auth)
+        ids = [data['id'] for data in res.json['data']]
+        assert node._id not in ids
+        assert node_private._id in ids
+
+        #test_put_mixed_nodes
+        res = app.put_json_api(
+            url_private_linked_nodes, make_payload([node._id, node_contributor._id]),
+            auth=user_one.auth,
+            expect_errors=True)
+        assert res.status_code == 403
+
+        res = app.get(url_private_linked_nodes, auth=user_one.auth)
+        ids = [data['id'] for data in res.json['data']]
+        assert node._id not in ids
+        assert node_contributor._id not in ids
+        assert node_private._id in ids
+
+        #test_access_other_collection
+        collection = CollectionFactory(creator=user_two)
+        url = '/{}collections/{}/relationships/linked_nodes/'.format(API_BASE, collection._id)
+        res = app.get(url, auth=user_one.auth, expect_errors=True)
+        assert res.status_code == 403
+
+        #test_node_doesnt_exist
+        res = app.post_json_api(
+            url_private_linked_nodes, make_payload(['aquarela']),
+            auth=user_one.auth,
+            expect_errors=True)
+        assert res.status_code == 404
+
+        #test_type_mistyped
+        res = app.post_json_api(
+            url_private_linked_nodes,
+            {
+                'data': [{'type': 'not_linked_nodes', 'id': node_contributor._id}]
+            },
+            auth=user_one.auth,
+            expect_errors=True)
+        assert res.status_code == 409
+
+        #test_creates_public_linked_node_relationship_logged_out
+        res = app.post_json_api(url_public_linked_nodes, make_payload([node_public._id]), expect_errors=True)
+        assert res.status_code == 401
+
+        #test_creates_public_linked_node_relationship_logged_in
+        res = app.post_json_api(url_public_linked_nodes, make_payload([node_public._id]), auth=user_one.auth, expect_errors=True)
+        assert res.status_code == 403
+
+        #test_creates_private_linked_node_relationship_logged_out
+        res = app.post_json_api(url_private_linked_nodes, make_payload([node._id]), expect_errors=True)
+        assert res.status_code == 401
+
+        #test_put_public_nodes_relationships_logged_out
+        res = app.put_json_api(url_public_linked_nodes, make_payload([node_public._id]), expect_errors=True)
+        assert res.status_code == 401
+
+        #test_put_public_nodes_relationships_logged_in
+        res = app.put_json_api(url_public_linked_nodes, make_payload([node_private._id]), auth=user_one.auth, expect_errors=True)
+        assert res.status_code == 403
+
+        #test_delete_public_nodes_relationships_logged_out
+        res = app.delete_json_api(url_public_linked_nodes, make_payload([node_public._id]), expect_errors=True)
+        assert res.status_code == 401
+
+        #test_delete_public_nodes_relationships_logged_in
+        res = app.delete_json_api(url_public_linked_nodes, make_payload([node_private._id]), auth=user_one.auth, expect_errors=True)
+        assert res.status_code == 403
+
+        #test_attempt_to_add_collection_to_collection
+        collection = CollectionFactory(creator=user_one)
+        res = app.post_json_api(url_private_linked_nodes, make_payload([collection._id]), auth=user_one.auth, expect_errors=True)
+        assert res.status_code == 404
+
+@pytest.mark.django_db
+class TestCollectionLinkedNodes:
+
+    @pytest.fixture()
+    def auth_user(self, user_one):
+        return Auth(user_one)
+
+    @pytest.fixture()
+    def linked_node_one(self, user_one):
+        return NodeFactory(creator=user_one)
+
+    @pytest.fixture()
+    def linked_node_two(self, user_one):
+        return NodeFactory(creator=user_one)
+
+    @pytest.fixture()
+    def linked_registration_one(self, user_one):
+        return RegistrationFactory(creator=user_one)
+
+    @pytest.fixture()
+    def linked_registration_two(self, user_one):
+        return RegistrationFactory(creator=user_one)
+
+    @pytest.fixture()
+    def node_public(self, user_one):
+        return NodeFactory(creator=user_one, is_public=True)
+
+    @pytest.fixture()
+    def registration_public(self, user_one):
+        return RegistrationFactory(is_public=True, creator=user_one)
+
+    @pytest.fixture()
+    def collection(
+        self, user_one, linked_node_one, linked_registration_one, linked_registration_two,
+        linked_node_two, node_public, registration_public, auth_user):
+
+        collection = CollectionFactory(creator=user_one)
+        collection.add_pointer(linked_node_one, auth=auth_user)
+        collection.add_pointer(linked_node_two, auth=auth_user)
+        collection.add_pointer(linked_registration_one, auth=auth_user)
+        collection.add_pointer(linked_registration_two, auth=auth_user)
+        collection.add_pointer(node_public, auth=auth_user)
+        collection.add_pointer(registration_public, auth=auth_user)
+        collection.save()
+        return collection
+
+    @pytest.fixture()
+    def url_collection_linked_nodes(self, collection):
+        return '/{}collections/{}/linked_nodes/'.format(API_BASE, collection._id)
+
+    @pytest.fixture()
+    def url_collection_linked_regs(self, collection):
+        return '/{}collections/{}/linked_registrations/'.format(API_BASE, collection._id)
+
+    @pytest.fixture()
+    def id_linked_nodes(self, collection):
+        return list(collection.linked_nodes.values_list('guids___id', flat=True))
+
+    def test_linked_nodes_returns_everything(
+        self, app, url_collection_linked_nodes, url_collection_linked_regs,
+        user_one, id_linked_nodes):
+
+        res = app.get(url_collection_linked_nodes, auth=user_one.auth)
+        reg_res = app.get(url_collection_linked_regs, auth=user_one.auth)
+
+        assert res.status_code == 200
         nodes_returned = [linked_node['id'] for linked_node in res.json['data']]
         registrations_returned = [linked_registration['id'] for linked_registration in reg_res.json['data']]
-        assert_equal(len(nodes_returned) + len(registrations_returned), len(self.node_ids))
+        assert len(nodes_returned) + len(registrations_returned) == len(id_linked_nodes)
 
         for node_returned in nodes_returned:
-            assert_in(node_returned, self.node_ids)
+            assert node_returned in id_linked_nodes
         for registration_returned in registrations_returned:
-            assert_in(registration_returned, self.node_ids)
+            assert registration_returned in id_linked_nodes
 
-    def test_linked_nodes_only_return_viewable_nodes(self):
+    def test_linked_nodes_only_return_viewable_nodes(
+        self, app, user_one, linked_node_one, linked_node_two, linked_registration_one,
+        linked_registration_two, node_public, registration_public, id_linked_nodes, auth_user):
+
         user = AuthUserFactory()
         collection = CollectionFactory(creator=user)
-        self.linked_node.add_contributor(user, auth=self.auth, save=True)
-        self.linked_node2.add_contributor(user, auth=self.auth, save=True)
-        self.linked_registration.add_contributor(user, auth=self.auth, save=True)
-        self.linked_registration2.add_contributor(user, auth=self.auth, save=True)
-        self.public_node.add_contributor(user, auth=self.auth, save=True)
-        self.public_registration.add_contributor(user, auth=self.auth, save=True)
-        collection.add_pointer(self.linked_node, auth=Auth(user))
-        collection.add_pointer(self.linked_node2, auth=Auth(user))
-        collection.add_pointer(self.linked_registration, auth=Auth(user))
-        collection.add_pointer(self.linked_registration2, auth=Auth(user))
-        collection.add_pointer(self.public_node, auth=Auth(user))
-        collection.add_pointer(self.public_registration, auth=Auth(user))
+        linked_node_one.add_contributor(user, auth=auth_user, save=True)
+        linked_node_two.add_contributor(user, auth=auth_user, save=True)
+        linked_registration_one.add_contributor(user, auth=auth_user, save=True)
+        linked_registration_two.add_contributor(user, auth=auth_user, save=True)
+        node_public.add_contributor(user, auth=auth_user, save=True)
+        registration_public.add_contributor(user, auth=auth_user, save=True)
+        collection.add_pointer(linked_node_one, auth=Auth(user))
+        collection.add_pointer(linked_node_two, auth=Auth(user))
+        collection.add_pointer(linked_registration_one, auth=Auth(user))
+        collection.add_pointer(linked_registration_two, auth=Auth(user))
+        collection.add_pointer(node_public, auth=Auth(user))
+        collection.add_pointer(registration_public, auth=Auth(user))
         collection.save()
 
-        res = self.app.get(
-            '/{}collections/{}/linked_nodes/'.format(API_BASE, collection._id),
-            auth=user.auth
-        )
-        reg_res = self.app.get(
-            '/{}collections/{}/linked_registrations/'.format(API_BASE, collection._id),
-            auth=user.auth
-        )
+        res = app.get('/{}collections/{}/linked_nodes/'.format(API_BASE, collection._id), auth=user.auth)
+        reg_res = app.get('/{}collections/{}/linked_registrations/'.format(API_BASE, collection._id), auth=user.auth)
 
-        assert_equal(res.status_code, 200)
-        assert_equal(reg_res.status_code, 200)
+        assert res.status_code == 200
+        assert reg_res.status_code == 200
         nodes_returned = [linked_node['id'] for linked_node in res.json['data']]
         registrations_returned = [linked_registration['id'] for linked_registration in res.json['data']]
-        assert_equal(len(nodes_returned) + len(registrations_returned), len(self.node_ids))
+        assert len(nodes_returned) + len(registrations_returned) == len(id_linked_nodes)
 
         for node_returned in nodes_returned:
-            assert_in(node_returned, self.node_ids)
+            assert node_returned in id_linked_nodes
         for registration_returned in registrations_returned:
-            assert_in(registration_returned, self.node_ids)
+            assert registration_returned in id_linked_nodes
 
         # Disconnect contributor_removed so that we don't check in files
         # We can remove this when StoredFileNode is implemented in osf-models
         with disconnected_from_listeners(contributor_removed):
-            self.linked_node2.remove_contributor(user, auth=self.auth)
-            self.public_node.remove_contributor(user, auth=self.auth)
-            self.linked_registration2.remove_contributor(user, auth=self.auth)
-            self.public_registration.remove_contributor(user, auth=self.auth)
+            linked_node_two.remove_contributor(user, auth=auth_user)
+            node_public.remove_contributor(user, auth=auth_user)
+            linked_registration_two.remove_contributor(user, auth=auth_user)
+            registration_public.remove_contributor(user, auth=auth_user)
 
-        res = self.app.get(
-            '/{}collections/{}/linked_nodes/'.format(API_BASE, collection._id),
-            auth=user.auth
-        )
-        reg_res = self.app.get(
-            '/{}collections/{}/linked_registrations/'.format(API_BASE, collection._id),
-            auth=user.auth
-        )
+        res = app.get('/{}collections/{}/linked_nodes/'.format(API_BASE, collection._id), auth=user.auth)
+        reg_res = app.get('/{}collections/{}/linked_registrations/'.format(API_BASE, collection._id), auth=user.auth)
+
         nodes_returned = [linked_node['id'] for linked_node in res.json['data']]
         registrations_returned = [linked_registration['id'] for linked_registration in reg_res.json['data']]
-        assert_equal(len(nodes_returned) + len(registrations_returned), len(self.node_ids) - 2)
 
-        assert_in(self.linked_node._id, nodes_returned)
-        assert_in(self.public_node._id, nodes_returned)
-        assert_in(self.linked_registration._id, registrations_returned)
-        assert_in(self.public_registration._id, registrations_returned)
-        assert_not_in(self.linked_node2._id, nodes_returned)
-        assert_not_in(self.linked_registration2._id, registrations_returned)
+        assert len(nodes_returned) + len(registrations_returned) == len(id_linked_nodes) - 2
+        assert linked_node_one._id in nodes_returned
+        assert node_public._id in nodes_returned
+        assert linked_registration_one._id in registrations_returned
+        assert registration_public._id in registrations_returned
+        assert linked_node_two._id not in nodes_returned
+        assert linked_registration_two._id not in registrations_returned
 
-    def test_linked_nodes_doesnt_return_deleted_nodes(self):
-        self.linked_node.is_deleted = True
-        self.linked_node.save()
-        res = self.app.get(self.url, auth=self.user.auth)
+    def test_linked_nodes_doesnt_return_deleted_nodes(
+        self, app, linked_node_one, linked_node_two, node_public, registration_public,
+        id_linked_nodes, url_collection_linked_nodes, url_collection_linked_regs, user_one,
+        linked_registration_one, linked_registration_two):
 
-        self.linked_registration.is_deleted = True
-        self.linked_registration.save()
-        reg_res = self.app.get(self.reg_url, auth=self.user.auth)
+        linked_node_one.is_deleted = True
+        linked_node_one.save()
+        res = app.get(url_collection_linked_nodes, auth=user_one.auth)
 
-        assert_equal(res.status_code, 200)
+        linked_registration_one.is_deleted = True
+        linked_registration_one.save()
+        reg_res = app.get(url_collection_linked_regs, auth=user_one.auth)
+
+        assert res.status_code == 200
         nodes_returned = [linked_node['id'] for linked_node in res.json['data']]
-        assert_equal(len(nodes_returned), len(self.node_ids) - 4)
+        assert len(nodes_returned) == len(id_linked_nodes) - 4
 
-        assert_equal(reg_res.status_code, 200)
+        assert reg_res.status_code == 200
         registrations_returned = [linked_registration['id'] for linked_registration in reg_res.json['data']]
-        assert_equal(len(registrations_returned), len(self.node_ids) - 4)
+        assert len(registrations_returned) == len(id_linked_nodes) - 4
 
-        assert_not_in(self.linked_node._id, nodes_returned)
-        assert_in(self.linked_node2._id, nodes_returned)
-        assert_in(self.public_node._id, nodes_returned)
+        assert linked_node_one._id not in nodes_returned
+        assert linked_node_two._id in nodes_returned
+        assert node_public._id in nodes_returned
 
-        assert_not_in(self.linked_registration._id, registrations_returned)
-        assert_in(self.linked_registration2._id, registrations_returned)
-        assert_in(self.public_registration._id, registrations_returned)
+        assert linked_registration_one._id not in registrations_returned
+        assert linked_registration_two._id in registrations_returned
+        assert registration_public._id in registrations_returned
 
-    def test_attempt_to_return_linked_nodes_logged_out(self):
-        res = self.app.get(
-            self.url, auth=None,
-            expect_errors=True
-        )
+    def test_attempt_to_return_linked_nodes_logged_out(self, app, url_collection_linked_nodes):
 
-        assert_equal(res.status_code, 401)
+        res = app.get(url_collection_linked_nodes, auth=None, expect_errors=True)
+        assert res.status_code == 401

@@ -7,8 +7,7 @@ from django.shortcuts import redirect
 
 from osf.models.preprint_service import PreprintService
 from osf.models.admin_log_entry import update_admin_log, REINDEX_SHARE
-from website import settings
-from website.preprints.tasks import on_preprint_updated
+from website.preprints.tasks import update_preprint_share
 
 from framework.exceptions import PermissionsError
 from admin.base.views import GuidFormView, GuidView
@@ -79,13 +78,12 @@ class PreprintReindexShare(PermissionRequiredMixin, DeleteView):
 
     def delete(self, request, *args, **kwargs):
         preprint = self.get_object()
-        if settings.SHARE_URL and settings.SHARE_API_TOKEN:
-            on_preprint_updated(preprint._id)
-            update_admin_log(
-                user_id=self.request.user.id,
-                object_id=preprint._id,
-                object_repr='Preprint',
-                message='Preprint Reindexed (SHARE): {}'.format(preprint._id),
-                action_flag=REINDEX_SHARE
-            )
+        update_preprint_share(preprint)
+        update_admin_log(
+            user_id=self.request.user.id,
+            object_id=preprint._id,
+            object_repr='Preprint',
+            message='Preprint Reindexed (SHARE): {}'.format(preprint._id),
+            action_flag=REINDEX_SHARE
+        )
         return redirect(reverse_preprint(self.kwargs.get('guid')))

@@ -8,6 +8,7 @@ from osf.models import (
     Guid,
     BaseFileNode,
     FileVersion,
+    QuickFilesNode
 )
 
 from api.base.exceptions import Gone
@@ -21,7 +22,7 @@ from api.nodes.permissions import ReadOnlyIfRegistration
 from api.files.permissions import IsPreprintFile
 from api.files.permissions import CheckedOutOrAdmin
 from api.files.serializers import FileSerializer
-from api.files.serializers import FileDetailSerializer
+from api.files.serializers import FileDetailSerializer, QuickFilesDetailSerializer
 from api.files.serializers import FileVersionSerializer
 
 
@@ -324,19 +325,23 @@ class FileDetail(JSONAPIBaseView, generics.RetrieveUpdateAPIView, FileMixin):
     view_category = 'files'
     view_name = 'file-detail'
 
+    def get_serializer_class(self):
+        if isinstance(self.get_node(), QuickFilesNode):
+            return QuickFilesDetailSerializer
+        return FileDetailSerializer
+
     def get_node(self):
         return self.get_file().node
 
     # overrides RetrieveAPIView
     def get_object(self):
         user = utils.get_user_auth(self.request).user
-
-        if (self.request.GET.get('create_guid', False) and
-                self.get_node().has_permission(user, 'admin') and
-                utils.has_admin_scope(self.request)):
-            self.get_file(check_permissions=True).get_guid(create=True)
-
-        return self.get_file()
+        file = self.get_file()
+        if self.request.GET.get('create_guid', False):
+            # allows quickfiles to be given guids when another user wants a permanent link to it
+            if (self.get_node().has_permission(user, 'admin') and utils.has_admin_scope(self.request)) or file.node.is_quickfiles:
+                file.get_guid(create=True)
+        return file
 
 class FileVersionsList(JSONAPIBaseView, generics.ListAPIView, FileMixin):
     """List of versions for the requested file. *Read-only*.
@@ -396,6 +401,8 @@ class FileVersionsList(JSONAPIBaseView, generics.ListAPIView, FileMixin):
     serializer_class = FileVersionSerializer
     view_category = 'files'
     view_name = 'file-versions'
+
+    ordering = ('-modified',)
 
     def get_queryset(self):
         return self.get_file().versions.all()

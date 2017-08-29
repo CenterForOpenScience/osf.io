@@ -291,6 +291,36 @@
                 "status": "none",
                 "text": "Zotero content will not be registered."
             }
+        },
+        "Bitbucket": {
+            "Permissions": {
+                "status": "partial",
+                "text": "Making an OSF project public or private is independent of making a Bitbucket repo public or private. The OSF does not alter the permissions of linked Bitbucket repos."
+            },
+            "View / download file versions": {
+                "status": "full",
+                "text": "Bitbucket files and their versions can be viewed/downloaded via OSF."
+            },
+            "Add / update files": {
+                "status": "none",
+                "text": "Bitbucket does not support adding or updating files via their API."
+            },
+            "Delete files": {
+                "status": "none",
+                "text": "Bitbucket does not support deleting files via their API."
+            },
+            "Logs": {
+                "status": "full",
+                "text": "OSF keeps track of changes you make to your Bitbucket content through OSF, but not for changes made using Bitbucket directly."
+            },
+            "Forking": {
+                "status": "partial",
+                "text": "Forking a project or component does not copy Bitbucket authorization unless the user forking the project is the same user who authorized the Bitbucket add-on in the source project being forked."
+            },
+            "Registering": {
+                "status": "partial",
+                "text": "Bitbucket content will be registered, but version history will not be copied to the registration."
+            }
         }
     },
     "disclaimers": ["This add-on connects your OSF project to an external service. Use of this service is bound by its terms and conditions. The OSF is not responsible for the service or for your use thereof.", "This add-on allows you to store files using an external service. Files added to this add-on are not stored within the OSF."]

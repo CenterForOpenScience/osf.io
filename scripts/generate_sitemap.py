@@ -6,7 +6,6 @@ import datetime
 import gzip
 import os
 import shutil
-import sys
 import urlparse
 import xml
 
@@ -24,26 +23,6 @@ from website.app import init_app
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO)
 
-class Progress(object):
-    def __init__(self, bar_len=50):
-        self.bar_len = bar_len
-
-    def start(self, total, prefix):
-        self.total = total
-        self.count = 0
-        self.prefix = prefix
-
-    def increment(self, inc=1):
-        self.count += inc
-        filled_len = int(round(self.bar_len * self.count / float(self.total)))
-        percents = round(100.0 * self.count / float(self.total), 1)
-        bar = '=' * filled_len + '-' * (self.bar_len - filled_len)
-        sys.stdout.flush()
-        sys.stdout.write('{}[{}] {}{} ... {}\r'.format(self.prefix, bar, percents, '%', str(self.total)))
-
-    def stop(self):
-        # To preserve line, there is probably a better way to do this
-        print('')
 
 class Sitemap(object):
     def __init__(self):
@@ -166,7 +145,7 @@ class Sitemap(object):
         print('Generating Sitemap')
 
         # Progress bar
-        progress = Progress()
+        progress = script_utils.Progress()
 
         # Static urls
         progress.start(len(settings.SITEMAP_STATIC_URLS), 'STAT: ')
@@ -192,13 +171,13 @@ class Sitemap(object):
         # AbstractNode urls (Nodes and Registrations, no Collections)
         objs = (AbstractNode.objects
             .filter(is_public=True, is_deleted=False, retraction_id__isnull=True)
-            .exclude(type="osf.collection")
+            .exclude(type__in=["osf.collection", "osf.quickfilesnode"])
             .values('guids___id', 'date_modified'))
         progress.start(objs.count(), 'NODE: ')
         for obj in objs:
             try:
                 config = settings.SITEMAP_NODE_CONFIG
-                config['loc'] = urlparse.urljoin(settings.DOMAIN, obj['guids___id'])
+                config['loc'] = urlparse.urljoin(settings.DOMAIN, '/{}/'.format(obj['guids___id']))
                 config['lastmod'] = obj['date_modified'].strftime('%Y-%m-%d')
                 self.add_url(config)
             except Exception as e:
@@ -217,9 +196,11 @@ class Sitemap(object):
                 preprint_date = obj.date_modified.strftime('%Y-%m-%d')
                 config = settings.SITEMAP_PREPRINT_CONFIG
                 preprint_url = obj.url
-                if obj.provider == osf:
+                provider = obj.provider
+                domain = provider.domain if (provider.domain_redirect_enabled and provider.domain) else settings.DOMAIN
+                if provider == osf:
                     preprint_url = '/preprints/{}/'.format(obj._id)
-                config['loc'] = urlparse.urljoin(settings.DOMAIN, preprint_url)
+                config['loc'] = urlparse.urljoin(domain, preprint_url)
                 config['lastmod'] = preprint_date
                 self.add_url(config)
 

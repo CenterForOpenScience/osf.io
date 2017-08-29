@@ -259,60 +259,58 @@ class TestNodeReindex(AdminTestCase):
         self.node = ProjectFactory(creator=self.user)
         self.registration = RegistrationFactory(project=self.node, creator=self.user)
 
-        self.patcher_share_url = mock.patch('website.settings.SHARE_URL', 'ima_real_website')
-        self.patcher_share_token = mock.patch('website.settings.SHARE_API_TOKEN', 'ima_real_token')
-        self.patcher_mock_reindex_node = mock.patch('website.project.tasks.update_node_share')
-        self.patcher_mock_reindex_registration = mock.patch('website.project.tasks.on_registration_updated')
-        self.patcher_mock_reindex_elastic = mock.patch('website.search.search.update_node')
-
-        self.patcher_share_url.start()
-        self.patcher_share_token.start()
-        self.mock_reindex_node = self.patcher_mock_reindex_node.start()
-        self.mock_reindex_registration = self.patcher_mock_reindex_registration.start()
-        self.mock_reindex_elastic = self.patcher_mock_reindex_elastic.start()
-
-    def tearDown(self):
-        super(TestNodeReindex, self).tearDown()
-        self.patcher_share_url.stop()
-        self.patcher_share_token.stop()
-        self.patcher_mock_reindex_node.stop()
-        self.patcher_mock_reindex_registration.stop()
-        self.patcher_mock_reindex_elastic.stop()
-
-    def test_reindex_node_share(self):
+    @mock.patch('website.project.tasks.format_node')
+    @mock.patch('website.project.tasks.format_registration')
+    @mock.patch('website.project.tasks.settings.SHARE_URL', 'ima_real_website')
+    @mock.patch('website.project.tasks.settings.SHARE_API_TOKEN', 'totaly_real_token')
+    @mock.patch('website.project.tasks.send_share_node_data')
+    def test_reindex_node_share(self, mock_update_share, mock_format_registration, mock_format_node):
         count = AdminLogEntry.objects.count()
         view = NodeReindexShare()
         view = setup_log_view(view, self.request, guid=self.node._id)
         view.delete(self.request)
 
-        nt.assert_true(self.mock_reindex_node.called)
-        nt.assert_false(self.mock_reindex_registration.called)
+        nt.assert_true(mock_update_share.called)
+        nt.assert_true(mock_format_node.called)
+        nt.assert_false(mock_format_registration.called)
         nt.assert_equal(AdminLogEntry.objects.count(), count + 1)
 
-    def test_reindex_registration_share(self):
+    @mock.patch('website.project.tasks.format_node')
+    @mock.patch('website.project.tasks.format_registration')
+    @mock.patch('website.project.tasks.settings.SHARE_URL', 'ima_real_website')
+    @mock.patch('website.project.tasks.settings.SHARE_API_TOKEN', 'totaly_real_token')
+    @mock.patch('website.project.tasks.send_share_node_data')
+    def test_reindex_registration_share(self, mock_update_share, mock_format_registration, mock_format_node):
         count = AdminLogEntry.objects.count()
         view = NodeReindexShare()
         view = setup_log_view(view, self.request, guid=self.registration._id)
         view.delete(self.request)
 
-        nt.assert_false(self.mock_reindex_node.called)
-        nt.assert_true(self.mock_reindex_registration.called)
+        nt.assert_true(mock_update_share.called)
+        nt.assert_false(mock_format_node.called)
+        nt.assert_true(mock_format_registration.called)
         nt.assert_equal(AdminLogEntry.objects.count(), count + 1)
 
-    def test_reindex_node_elastic(self):
+    @mock.patch('website.search.search.update_node')
+    @mock.patch('website.search.elastic_search.bulk_update_nodes')
+    def test_reindex_node_elastic(self, mock_update_search, mock_bulk_update_nodes):
         count = AdminLogEntry.objects.count()
         view = NodeReindexElastic()
         view = setup_log_view(view, self.request, guid=self.node._id)
         view.delete(self.request)
 
-        nt.assert_true(self.mock_reindex_elastic.called)
+        nt.assert_true(mock_update_search.called)
+        nt.assert_true(mock_bulk_update_nodes.called)
         nt.assert_equal(AdminLogEntry.objects.count(), count + 1)
 
-    def test_reindex_registration_elastic(self):
+    @mock.patch('website.search.search.update_node')
+    @mock.patch('website.search.elastic_search.bulk_update_nodes')
+    def test_reindex_registration_elastic(self, mock_update_search, mock_bulk_update_nodes):
         count = AdminLogEntry.objects.count()
         view = NodeReindexElastic()
         view = setup_log_view(view, self.request, guid=self.registration._id)
         view.delete(self.request)
 
-        nt.assert_true(self.mock_reindex_elastic.called)
+        nt.assert_true(mock_update_search.called)
+        nt.assert_true(mock_bulk_update_nodes.called)
         nt.assert_equal(AdminLogEntry.objects.count(), count + 1)

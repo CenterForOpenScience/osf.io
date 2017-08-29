@@ -8,7 +8,6 @@ var ko = require('knockout');
 var moment = require('moment');
 var Raven = require('raven-js');
 var linkifyHtml = require('linkifyjs/html');
-var koHelpers = require('./koHelpers');
 require('jquery-autosize');
 
 var osfHelpers = require('js/osfHelpers');
@@ -813,7 +812,8 @@ var onOpen = function(page, rootId, nodeApiUrl, currentUserId) {
 function initAtMention(nodeId, selectorOrElem) {
     var url = osfHelpers.apiV2Url('nodes/' + nodeId + '/contributors/', {
         query: {
-            'page[size]': 50
+            'page[size]': 50,
+            'fields[users]': 'given_name,full_name,active',
         }
     });
     return getContributorList(url)
@@ -830,7 +830,6 @@ function initAtMention(nodeId, selectorOrElem) {
  *      rootId: Node._id,
  *      fileId: StoredFileNode._id,
  *      canComment: User.canComment,
- *      hasChildren: Node.hasChildren,
  *      currentUser: window.contextVars.currentUser,
  *      pageTitle: Node.title
  * }

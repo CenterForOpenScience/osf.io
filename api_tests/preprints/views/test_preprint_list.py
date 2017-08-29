@@ -14,7 +14,7 @@ from osf_tests.factories import (
     PreprintFactory,
     AuthUserFactory,
     SubjectFactory,
-    PreprintProviderFactory
+    PreprintProviderFactory,
 )
 from tests.base import ApiTestCase, capture_signals
 from website.project import signals as project_signals
@@ -141,7 +141,8 @@ class TestPreprintCreate(ApiTestCase):
 
         assert_equal(res.status_code, 201)
 
-    def test_create_preprint_from_private_project(self):
+    @mock.patch('website.preprints.tasks.get_and_set_preprint_identifiers.si')
+    def test_create_preprint_from_private_project(self, mock_create_identifiers):
         private_project_payload = build_preprint_create_payload(self.private_project._id, self.provider._id, self.file_one_private_project._id, attrs={
                 'subjects': [[SubjectFactory()._id]],
                 'is_published': True
@@ -259,7 +260,8 @@ class TestPreprintCreate(ApiTestCase):
         assert_equal(res.status_code, 400)
         assert_equal(res.json['errors'][0]['detail'], 'Cannot create a preprint from a deleted node.')
 
-    def test_create_preprint_adds_log_if_published(self):
+    @mock.patch('website.preprints.tasks.get_and_set_preprint_identifiers.si')
+    def test_create_preprint_adds_log_if_published(self, mock_get_identifiers):
         public_project_payload = build_preprint_create_payload(
             self.public_project._id,
             self.provider._id,
@@ -277,8 +279,9 @@ class TestPreprintCreate(ApiTestCase):
         assert_equal(log.action, 'preprint_initiated')
         assert_equal(log.params.get('preprint'), preprint_id)
 
-    @mock.patch('website.preprints.tasks.on_preprint_updated.s')
-    def test_create_preprint_from_project_published_hits_update(self, mock_on_preprint_updated):
+    @mock.patch('website.preprints.tasks.get_and_set_preprint_identifiers.si')
+    @mock.patch('website.preprints.tasks.on_preprint_updated.si')
+    def test_create_preprint_from_project_published_hits_update(self, mock_on_preprint_updated, mock_get_identifiers):
         private_project_payload = build_preprint_create_payload(self.private_project._id, self.provider._id, self.file_one_private_project._id, attrs={
                 'subjects': [[SubjectFactory()._id]],
                 'is_published': True
@@ -286,7 +289,7 @@ class TestPreprintCreate(ApiTestCase):
         res = self.app.post_json_api(self.url, private_project_payload, auth=self.user.auth)
         assert mock_on_preprint_updated.called
 
-    @mock.patch('website.preprints.tasks.on_preprint_updated.s')
+    @mock.patch('website.preprints.tasks.on_preprint_updated.si')
     def test_create_preprint_from_project_unpublished_does_not_hit_update(self, mock_on_preprint_updated):
         private_project_payload = build_preprint_create_payload(self.private_project._id, self.provider._id, self.file_one_private_project._id, attrs={
                 'subjects': [[SubjectFactory()._id]],
@@ -296,21 +299,50 @@ class TestPreprintCreate(ApiTestCase):
         assert not mock_on_preprint_updated.called
 
 
-class TestPreprintIsPublishedList(PreprintIsPublishedListMixin, ApiTestCase):
-    def setUp(self):
-        self.admin = AuthUserFactory()
-        self.provider_one = PreprintProviderFactory()
-        self.provider_two = self.provider_one
-        self.published_project = ProjectFactory(creator=self.admin, is_public=True)
-        self.public_project = ProjectFactory(creator=self.admin, is_public=True)
-        self.url = '/{}preprints/?version=2.2&'.format(API_BASE)
-        super(TestPreprintIsPublishedList, self).setUp()
+class TestPreprintIsPublishedList(PreprintIsPublishedListMixin):
+
+    @pytest.fixture()
+    def user_admin_contrib(self):
+        return AuthUserFactory()
+
+    @pytest.fixture()
+    def provider_one(self):
+        return PreprintProviderFactory()
+
+    @pytest.fixture()
+    def provider_two(self, provider_one):
+        return provider_one
+
+    @pytest.fixture()
+    def project_published(self, user_admin_contrib):
+        return ProjectFactory(creator=user_admin_contrib, is_public=True)
+
+    @pytest.fixture()
+    def project_public(self, user_admin_contrib, user_write_contrib):
+        project_public = ProjectFactory(creator=user_admin_contrib, is_public=True)
+        project_public.add_contributor(user_write_contrib, permissions=permissions.DEFAULT_CONTRIBUTOR_PERMISSIONS, save=True)
+        return project_public
+
+    @pytest.fixture()
+    def url(self):
+        return '/{}preprints/?version=2.2&'.format(API_BASE)
 
 class TestPreprintIsValidList(PreprintIsValidListMixin):
-    @pytest.fixture(autouse=True)
-    def setUp(self):
-        self.admin = AuthUserFactory()
-        self.project = ProjectFactory(creator=self.admin, is_public=True)
-        self.provider = PreprintProviderFactory()
-        self.url = '/{}preprints/?version=2.2&'.format(API_BASE)
-        super(TestPreprintIsValidList, self).setUp()
+
+    @pytest.fixture()
+    def user_admin_contrib(self):
+        return AuthUserFactory()
+
+    @pytest.fixture()
+    def project(self, user_admin_contrib, user_write_contrib):
+        project = ProjectFactory(creator=user_admin_contrib, is_public=True)
+        project.add_contributor(user_write_contrib, permissions=permissions.DEFAULT_CONTRIBUTOR_PERMISSIONS, save=True)
+        return project
+
+    @pytest.fixture()
+    def provider(self):
+        return PreprintProviderFactory()
+
+    @pytest.fixture()
+    def url(self, project):
+        return '/{}preprints/?version=2.2&'.format(API_BASE)

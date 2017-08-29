@@ -3,6 +3,7 @@
 import datetime
 import httplib as http
 import time
+import functools
 
 import furl
 import itsdangerous
@@ -30,7 +31,8 @@ from osf.models.files import BaseFileNode, TrashedFileNode
 from website.project import new_private_link
 from website.project.views.node import _view_project as serialize_node
 from website.util import api_url_for, rubeus
-
+from dateutil.parser import parse as parse_date
+from framework import sentry
 
 class SetEnvironMiddleware(object):
 
@@ -551,6 +553,20 @@ class TestAddonFileViews(OsfTestCase):
         self.user_addon.oauth_grants[self.project._id] = {self.oauth._id: []}
         self.user_addon.save()
 
+    def set_sentry(status):
+        def wrapper(func):
+            @functools.wraps(func)
+            def wrapped(*args, **kwargs):
+                enabled, sentry.enabled = sentry.enabled, status
+                func(*args, **kwargs)
+                sentry.enabled = enabled
+
+            return wrapped
+
+        return wrapper
+
+    with_sentry = set_sentry(True)
+
     def get_test_file(self):
         version = file_models.FileVersion(identifier='1')
         version.save()
@@ -888,6 +904,35 @@ class TestAddonFileViews(OsfTestCase):
         assert_equal(len(file_node.history), 1)
         assert_equal(file_node.history[0], file_data)
 
+    @mock.patch('website.archiver.tasks.archive')
+    def test_missing_modified_date_in_file_history(self, mock_archive):
+        file_node = self.get_test_file()
+        file_node.history.append({'modified': None})
+        file_data = {
+            'name': 'Test File Update',
+            'materialized': file_node.materialized_path,
+            'modified': None
+        }
+        file_node.update(revision=None, data=file_data)
+        assert_equal(len(file_node.history), 2)
+        assert_equal(file_node.history[1], file_data)
+
+    @with_sentry
+    @mock.patch('framework.sentry.sentry.captureMessage')
+    def test_update_logs_to_sentry_when_called_with_disordered_metadata(self, mock_capture):
+        file_node = self.get_test_file()
+        file_node.history.append({'modified': parse_date(
+                '2017-08-22T13:54:32.100900',
+                ignoretz=True,
+                default=timezone.now()  # Just incase nothing can be parsed
+            )})
+        data = {
+            'name': 'a name',
+            'materialized': 'materialized',
+            'modified': '2016-08-22T13:54:32.100900'
+        }
+        file_node.update(revision=None, user=None, data=data)
+        mock_capture.assert_called_with(unicode('update() receives metatdata older than the newest entry in file history.'), extra={'session': {}})
 
 class TestLegacyViews(OsfTestCase):
 

@@ -3,9 +3,9 @@ from rest_framework.exceptions import ValidationError, NotFound
 from framework.auth.oauth_scopes import CoreScopes
 from modularodm import Q
 
-from osf.models import AbstractNode as Node
+from osf.models import AbstractNode
 from api.base import permissions as base_permissions
-from api.base.views import JSONAPIBaseView, BaseContributorDetail, BaseContributorList, BaseNodeLinksDetail, BaseNodeLinksList
+from api.base.views import JSONAPIBaseView, BaseContributorDetail, BaseContributorList, BaseNodeLinksDetail, BaseNodeLinksList, WaterButlerMixin
 
 from api.base.serializers import HideIfWithdrawal, LinkedRegistrationsRelationshipSerializer
 from api.base.serializers import LinkedNodesRelationshipSerializer
@@ -36,10 +36,9 @@ from api.registrations.serializers import (
 from api.nodes.filters import NodesFilterMixin
 
 from api.nodes.views import (
-    NodeMixin, ODMFilterMixin, NodeRegistrationsList,
+    NodeMixin, ODMFilterMixin, NodeRegistrationsList, NodeLogList,
     NodeCommentsList, NodeProvidersList, NodeFilesList, NodeFileDetail,
-    NodeAlternativeCitationsList, NodeAlternativeCitationDetail, NodeLogList,
-    NodeInstitutionsList, WaterButlerMixin, NodeForksList, NodeWikiList, LinkedNodesList,
+    NodeInstitutionsList, NodeForksList, NodeWikiList, LinkedNodesList,
     NodeViewOnlyLinksList, NodeViewOnlyLinkDetail, NodeCitationDetail, NodeCitationStyleDetail,
     NodeLinkedRegistrationsList,
 )
@@ -60,7 +59,7 @@ class RegistrationMixin(NodeMixin):
 
     def get_node(self, check_object_permissions=True):
         node = get_object_or_error(
-            Node,
+            AbstractNode,
             self.kwargs[self.node_lookup_url_kwarg],
             display_name='node'
 
@@ -151,6 +150,8 @@ class RegistrationList(JSONAPIBaseView, generics.ListAPIView, NodesFilterMixin):
     view_category = 'registrations'
     view_name = 'registration-list'
 
+    ordering = ('-date_modified',)
+
     # overrides NodesFilterMixin
     def get_default_queryset(self):
         base_query = (
@@ -163,7 +164,7 @@ class RegistrationList(JSONAPIBaseView, generics.ListAPIView, NodesFilterMixin):
             permission_query = (permission_query | Q('contributors', 'eq', user))
 
         query = base_query & permission_query
-        return Node.find(query)
+        return AbstractNode.find(query)
 
     def is_blacklisted(self):
         query_params = self.parse_query_params(self.request.query_params)
@@ -181,7 +182,7 @@ class RegistrationList(JSONAPIBaseView, generics.ListAPIView, NodesFilterMixin):
         # If attempting to filter on a blacklisted field, exclude withdrawals.
         if blacklisted:
             non_withdrawn_list = [node._id for node in nodes if not node.is_retracted]
-            non_withdrawn_nodes = Node.find(Q('_id', 'in', non_withdrawn_list))
+            non_withdrawn_nodes = AbstractNode.find(Q('_id', 'in', non_withdrawn_list))
             return non_withdrawn_nodes
         return nodes
 
@@ -514,6 +515,8 @@ class RegistrationChildrenList(JSONAPIBaseView, generics.ListAPIView, ODMFilterM
     required_read_scopes = [CoreScopes.NODE_REGISTRATIONS_READ]
     required_write_scopes = [CoreScopes.NULL]
 
+    ordering = ('-date_modified',)
+
     def get_default_odm_query(self):
         base_query = (
             Q('is_deleted', 'ne', True) &
@@ -537,10 +540,10 @@ class RegistrationChildrenList(JSONAPIBaseView, generics.ListAPIView, ODMFilterM
             Q('pk', 'in', node_pks) &
             req_query
         )
-        nodes = Node.find(query).order_by('-date_modified')
+        nodes = AbstractNode.find(query).order_by('-date_modified')
         auth = get_user_auth(self.request)
         pks = [each.pk for each in nodes if each.can_view(auth)]
-        return Node.objects.filter(pk__in=pks).order_by('-date_modified')
+        return AbstractNode.objects.filter(pk__in=pks).order_by('-date_modified')
 
 
 class RegistrationCitationDetail(NodeCitationDetail, RegistrationMixin):
@@ -840,18 +843,6 @@ class RegistrationFileDetail(NodeFileDetail, RegistrationMixin):
     view_category = 'registrations'
     view_name = 'registration-file-detail'
     serializer_class = RegistrationFileSerializer
-
-
-class RegistrationAlternativeCitationsList(NodeAlternativeCitationsList, RegistrationMixin):
-    """List of Alternative Citations for a registration."""
-    view_category = 'registrations'
-    view_name = 'registration-alternative-citations'
-
-
-class RegistrationAlternativeCitationDetail(NodeAlternativeCitationDetail, RegistrationMixin):
-    """Detail of a citations for a registration."""
-    view_category = 'registrations'
-    view_name = 'registration-alternative-citation-detail'
 
 
 class RegistrationInstitutionsList(NodeInstitutionsList, RegistrationMixin):

@@ -23,7 +23,7 @@ from website.project.signals import contributor_added
 from website.project.views.contributor import notify_added_contributor
 from website.views import find_bookmark_collection
 
-from osf.models import AbstractNode, OSFUser as User, Tag, Contributor, Session
+from osf.models import AbstractNode, OSFUser, Tag, Contributor, Session
 from osf.utils.auth import Auth
 from osf.utils.names import impute_names_model
 from osf.exceptions import ValidationError
@@ -67,7 +67,7 @@ class TestOSFUser:
 
     def test_create(self):
         name, email = fake.name(), fake.email()
-        user = User.create(
+        user = OSFUser.create(
             username=email, password='foobar', fullname=name
         )
         user.save()
@@ -77,7 +77,7 @@ class TestOSFUser:
 
     def test_create_unconfirmed(self):
         name, email = fake.name(), fake.email()
-        user = User.create_unconfirmed(
+        user = OSFUser.create_unconfirmed(
             username=email, password='foobar', fullname=name
         )
         assert user.is_registered is False
@@ -86,7 +86,7 @@ class TestOSFUser:
 
     def test_create_unconfirmed_with_campaign(self):
         name, email = fake.name(), fake.email()
-        user = User.create_unconfirmed(
+        user = OSFUser.create_unconfirmed(
             username=email, password='foobar', fullname=name,
             campaign='institution'
         )
@@ -99,7 +99,7 @@ class TestOSFUser:
                 fake.ean(): 'CREATE'
             }
         }
-        user = User.create_unconfirmed(
+        user = OSFUser.create_unconfirmed(
             username=email,
             password=str(fake.password()),
             fullname=name,
@@ -113,7 +113,7 @@ class TestOSFUser:
 
     def test_create_confirmed(self):
         name, email = fake.name(), fake.email()
-        user = User.create_confirmed(
+        user = OSFUser.create_confirmed(
             username=email, password='foobar', fullname=name
         )
         user.save()
@@ -123,7 +123,7 @@ class TestOSFUser:
 
     def test_update_guessed_names(self):
         name = fake.name()
-        u = User(fullname=name)
+        u = OSFUser(fullname=name)
         u.update_guessed_names()
 
         parsed = impute_names_model(name)
@@ -135,7 +135,7 @@ class TestOSFUser:
 
     def test_create_unregistered(self):
         name, email = fake.name(), fake.email()
-        u = User.create_unregistered(email=email,
+        u = OSFUser.create_unregistered(email=email,
                                      fullname=name)
         # TODO: Remove post-migration
         u.date_registered = timezone.now()
@@ -150,7 +150,7 @@ class TestOSFUser:
 
     @mock.patch('osf.models.user.OSFUser.update_search')
     def test_search_not_updated_for_unreg_users(self, update_search):
-        u = User.create_unregistered(fullname=fake.name(), email=fake.email())
+        u = OSFUser.create_unregistered(fullname=fake.name(), email=fake.email())
         # TODO: Remove post-migration
         u.date_registered = timezone.now()
         u.save()
@@ -163,7 +163,7 @@ class TestOSFUser:
 
     def test_create_unregistered_raises_error_if_already_in_db(self):
         u = UnregUserFactory()
-        dupe = User.create_unregistered(fullname=fake.name(), email=u.username)
+        dupe = OSFUser.create_unregistered(fullname=fake.name(), email=u.username)
         with pytest.raises(ValidationError):
             dupe.save()
 
@@ -173,7 +173,7 @@ class TestOSFUser:
         assert dupe.is_active is False
 
     def test_non_registered_user_is_not_active(self):
-        u = User(username=fake.email(),
+        u = OSFUser(username=fake.email(),
                  fullname='Freddie Mercury',
                  is_registered=False)
         u.set_password('killerqueen')
@@ -181,7 +181,7 @@ class TestOSFUser:
         assert u.is_active is False
 
     def test_user_with_no_password_is_invalid(self):
-        u = User(
+        u = OSFUser(
             username=fake.email(),
             fullname='Freddie Mercury',
             is_registered=True,
@@ -211,19 +211,19 @@ class TestOSFUser:
         assert project.is_contributor(user2) is False
 
     def test_cant_create_user_without_username(self):
-        u = User()  # No username given
+        u = OSFUser()  # No username given
         with pytest.raises(ValidationError):
             u.save()
 
     def test_date_registered_upon_saving(self):
-        u = User(username=fake.email(), fullname='Foo bar')
+        u = OSFUser(username=fake.email(), fullname='Foo bar')
         u.set_unusable_password()
         u.save()
         assert bool(u.date_registered) is True
         assert u.date_registered.tzinfo == pytz.utc
 
     def test_cant_create_user_without_full_name(self):
-        u = User(username=fake.email())
+        u = OSFUser(username=fake.email())
         with pytest.raises(ValidationError):
             u.save()
 
@@ -492,6 +492,33 @@ class TestOSFUser:
         u.reload()
         assert u.display_full_name(node=project) == name
 
+    def test_repeat_add_same_unreg_user_with_diff_name(self):
+        unreg_user = UnregUserFactory()
+        project = NodeFactory()
+        old_name = unreg_user.fullname
+        project.add_unregistered_contributor(
+            fullname=old_name, email=unreg_user.username,
+            auth=Auth(project.creator)
+        )
+        project.save()
+        unreg_user.reload()
+        name_list = [contrib.fullname for contrib in project.contributors]
+        assert unreg_user.fullname in name_list
+        project.remove_contributor(contributor=unreg_user, auth=Auth(project.creator))
+        project.save()
+        project.reload()
+        assert unreg_user not in project.contributors
+        new_name = fake.name()
+        project.add_unregistered_contributor(
+            fullname=new_name, email=unreg_user.username,
+            auth=Auth(project.creator)
+        )
+        project.save()
+        unreg_user.reload()
+        project.reload()
+        unregistered_name = unreg_user.unclaimed_records[project._id].get('name', None)
+        assert new_name == unregistered_name
+
     def test_username_is_automatically_lowercased(self):
         user = UserFactory(username='nEoNiCon@bet.com')
         assert user.username == 'neonicon@bet.com'
@@ -583,13 +610,13 @@ class TestCookieMethods:
     def test_get_user_by_cookie(self):
         user = UserFactory()
         cookie = user.get_or_create_cookie()
-        assert user == User.from_cookie(cookie)
+        assert user == OSFUser.from_cookie(cookie)
 
     def test_get_user_by_cookie_returns_none(self):
-        assert User.from_cookie('') is None
+        assert OSFUser.from_cookie('') is None
 
     def test_get_user_by_cookie_bad_cookie(self):
-        assert User.from_cookie('foobar') is None
+        assert OSFUser.from_cookie('foobar') is None
 
     def test_get_user_by_cookie_no_user_id(self):
         user = UserFactory()
@@ -597,13 +624,13 @@ class TestCookieMethods:
         session = Session.find_one(Q('data.auth_user_id', 'eq', user._id))
         del session.data['auth_user_id']
         session.save()
-        assert User.from_cookie(cookie) is None
+        assert OSFUser.from_cookie(cookie) is None
 
     def test_get_user_by_cookie_no_session(self):
         user = UserFactory()
         cookie = user.get_or_create_cookie()
         Session.objects.all().delete()
-        assert User.from_cookie(cookie) is None
+        assert OSFUser.from_cookie(cookie) is None
 
 
 class TestChangePassword:
@@ -991,9 +1018,8 @@ class TestCitationProperties:
     @pytest.fixture()
     def unreg_user(self, referrer, project, email):
         user = UnregUserFactory()
-        given_name = 'Fredd Merkury'
         user.add_unclaimed_record(node=project,
-            given_name=given_name, referrer=referrer,
+            given_name=user.fullname, referrer=referrer,
             email=email)
         user.save()
         return user
@@ -1006,9 +1032,9 @@ class TestCitationProperties:
         # Tests the csl name for a registered user
         if user.is_registered:
             assert bool(
-                user.csl_name(user._id) ==
+                user.csl_name() ==
                 {
-                    'given': user.given_name,
+                    'given': user.csl_given_name,
                     'family': user.family_name,
                 }
             )
@@ -1245,7 +1271,7 @@ class TestUser(OsfTestCase):
 
     def tearDown(self):
         AbstractNode.remove()
-        User.remove()
+        OSFUser.remove()
         Session.remove()
         super(TestUser, self).tearDown()
 
@@ -1757,7 +1783,9 @@ class TestUserValidation(OsfTestCase):
         self.user.social = {
             'foo': 'bar',
         }
-        self.user.save()
+        with pytest.raises(ValidationError) as exc_info:
+            self.user.save()
+        assert isinstance(exc_info.value.args[0], dict)
         assert self.user.social_links == {}
 
     def test_validate_jobs_valid(self):

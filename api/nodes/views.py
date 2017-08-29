@@ -45,7 +45,8 @@ from api.base.views import (
     BaseNodeLinksDetail,
     BaseNodeLinksList,
     LinkedNodesRelationship,
-    LinkedRegistrationsRelationship
+    LinkedRegistrationsRelationship,
+    WaterButlerMixin
 )
 from api.caching.tasks import ban_url
 from api.citations.utils import render_citation
@@ -84,14 +85,12 @@ from api.nodes.serializers import (
     NodeContributorsSerializer,
     NodeContributorDetailSerializer,
     NodeInstitutionsRelationshipSerializer,
-    NodeAlternativeCitationSerializer,
     NodeContributorsCreateSerializer,
     NodeViewOnlyLinkSerializer,
     NodeViewOnlyLinkUpdateSerializer,
     NodeCitationSerializer,
     NodeCitationStyleSerializer
 )
-from api.nodes.utils import get_file_object
 from api.preprints.serializers import PreprintSerializer
 from api.registrations.serializers import RegistrationSerializer
 from api.users.views import UserMixin
@@ -99,9 +98,9 @@ from api.wikis.serializers import NodeWikiSerializer
 from framework.auth.oauth_scopes import CoreScopes
 from framework.postcommit_tasks.handlers import enqueue_postcommit_task
 from osf.models import AbstractNode
-from osf.models import (Node, PrivateLink, NodeLog, Institution, Comment, DraftRegistration, PreprintService)
-from osf.models import OSFUser as User
-from osf.models import NodeRelation, AlternativeCitation, Guid
+from osf.models import (Node, PrivateLink, Institution, Comment, DraftRegistration, PreprintService)
+from osf.models import OSFUser
+from osf.models import NodeRelation, Guid
 from osf.models import BaseFileNode
 from osf.models.files import File, Folder
 from addons.wiki.models import NodeWikiPage
@@ -168,39 +167,6 @@ class DraftMixin(object):
 
         self.check_object_permissions(self.request, draft.branched_from)
         return draft
-
-
-class WaterButlerMixin(object):
-
-    path_lookup_url_kwarg = 'path'
-    provider_lookup_url_kwarg = 'provider'
-
-    def get_file_item(self, item):
-        attrs = item['attributes']
-        file_node = BaseFileNode.resolve_class(
-            attrs['provider'],
-            BaseFileNode.FOLDER if attrs['kind'] == 'folder'
-            else BaseFileNode.FILE
-        ).get_or_create(self.get_node(check_object_permissions=False), attrs['path'])
-
-        file_node.update(None, attrs, user=self.request.user)
-
-        self.check_object_permissions(self.request, file_node)
-
-        return file_node
-
-    def fetch_from_waterbutler(self):
-        node = self.get_node(check_object_permissions=False)
-        path = self.kwargs[self.path_lookup_url_kwarg]
-        provider = self.kwargs[self.provider_lookup_url_kwarg]
-        return self.get_file_object(node, path, provider)
-
-    def get_file_object(self, node, path, provider, check_object_permissions=True):
-        obj = get_file_object(node=node, path=path, provider=provider, request=self.request)
-        if provider == 'osfstorage':
-            if check_object_permissions:
-                self.check_object_permissions(self.request, obj)
-        return obj
 
 
 class NodeList(JSONAPIBaseView, bulk_views.BulkUpdateJSONAPIView, bulk_views.BulkDestroyJSONAPIView, bulk_views.ListBulkCreateJSONAPIView, NodesFilterMixin, WaterButlerMixin):
@@ -669,7 +635,7 @@ class NodeContributorsList(BaseContributorList, bulk_views.BulkUpdateJSONAPIView
 
     required_read_scopes = [CoreScopes.NODE_CONTRIBUTORS_READ]
     required_write_scopes = [CoreScopes.NODE_CONTRIBUTORS_WRITE]
-    model_class = User
+    model_class = OSFUser
 
     throttle_classes = (AddContributorThrottle, UserRateThrottle, NonCookieAuthThrottle, )
 
@@ -744,7 +710,7 @@ class NodeContributorsList(BaseContributorList, bulk_views.BulkUpdateJSONAPIView
             except IndexError:
                 raise ValidationError('Contributor identifier incorrectly formatted.')
 
-        resource_object_list = User.find(MQ('_id', 'in', requested_ids))
+        resource_object_list = OSFUser.find(MQ('_id', 'in', requested_ids))
         for resource in resource_object_list:
             if getattr(resource, 'is_deleted', None):
                 raise Gone
@@ -945,6 +911,8 @@ class NodeDraftRegistrationsList(JSONAPIBaseView, generics.ListCreateAPIView, No
     serializer_class = DraftRegistrationSerializer
     view_category = 'nodes'
     view_name = 'node-draft-registrations'
+
+    ordering = ('-date_modified',)
 
     # overrides ListCreateAPIView
     def get_queryset(self):
@@ -1166,6 +1134,8 @@ class NodeRegistrationsList(JSONAPIBaseView, generics.ListCreateAPIView, NodeMix
     view_category = 'nodes'
     view_name = 'node-registrations'
 
+    ordering = ('-date_modified',)
+
     # overrides ListCreateAPIView
     # TODO: Filter out withdrawals by default
     def get_queryset(self):
@@ -1273,6 +1243,8 @@ class NodeChildrenList(JSONAPIBaseView, bulk_views.ListBulkCreateJSONAPIView, No
     serializer_class = NodeSerializer
     view_category = 'nodes'
     view_name = 'node-children'
+
+    ordering = ('-date_modified',)
 
     # overrides NodeODMFilterMixin
     def get_default_odm_query(self):
@@ -1641,6 +1613,8 @@ class NodeForksList(JSONAPIBaseView, generics.ListCreateAPIView, NodeMixin, Node
     serializer_class = NodeForksSerializer
     view_category = 'nodes'
     view_name = 'node-forks'
+
+    ordering = ('-forked_date',)
 
     # overrides ListCreateAPIView
     def get_queryset(self):
@@ -2050,6 +2024,8 @@ class NodeAddonList(JSONAPIBaseView, generics.ListAPIView, ListFilterMixin, Node
     view_category = 'nodes'
     view_name = 'node-addons'
 
+    ordering = ('-id',)
+
     def get_default_queryset(self):
         qs = []
         for addon in ADDONS_OAUTH:
@@ -2253,6 +2229,7 @@ class NodeProvider(object):
         self.provider = provider
         self.node_id = node._id
         self.pk = node._id
+        self.id = node.id
 
 
 class NodeProvidersList(JSONAPIBaseView, generics.ListAPIView, NodeMixin):
@@ -2382,6 +2359,8 @@ class NodeProvidersList(JSONAPIBaseView, generics.ListAPIView, NodeMixin):
     view_category = 'nodes'
     view_name = 'node-providers'
 
+    ordering = ('-id',)
+
     def get_provider_item(self, provider):
         return NodeProvider(provider, self.get_node())
 
@@ -2413,95 +2392,7 @@ class NodeProviderDetail(JSONAPIBaseView, generics.RetrieveAPIView, NodeMixin):
         return NodeProvider(self.kwargs['provider'], self.get_node())
 
 
-class NodeAlternativeCitationsList(JSONAPIBaseView, generics.ListCreateAPIView, NodeMixin):
-    """List of alternative citations for a project.
-
-    ##Actions
-
-    ###Create Alternative Citation
-
-        Method:         POST
-        Body (JSON):    {
-                            "data": {
-                                "type": "citations",    # required
-                                "attributes": {
-                                    "name": {name},     # mandatory
-                                    "text": {text}      # mandatory
-                                }
-                            }
-                        }
-        Success:        201 Created + new citation representation
-    """
-
-    permission_classes = (
-        drf_permissions.IsAuthenticatedOrReadOnly,
-        AdminOrPublic,
-        ReadOnlyIfRegistration,
-        base_permissions.TokenHasScope
-    )
-
-    required_read_scopes = [CoreScopes.NODE_CITATIONS_READ]
-    required_write_scopes = [CoreScopes.NODE_CITATIONS_WRITE]
-
-    serializer_class = NodeAlternativeCitationSerializer
-    view_category = 'nodes'
-    view_name = 'alternative-citations'
-
-    def get_queryset(self):
-        return self.get_node().alternative_citations.all()
-
-
-class NodeAlternativeCitationDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView, NodeMixin):
-    """Details about an alternative citations for a project.
-
-    ##Actions
-
-    ###Update Alternative Citation
-
-        Method:         PUT
-        Body (JSON):    {
-                            "data": {
-                                "type": "citations",    # required
-                                "id": {{id}}            # required
-                                "attributes": {
-                                    "name": {name},     # mandatory
-                                    "text": {text}      # mandatory
-                                }
-                            }
-                        }
-        Success:        200 Ok + updated citation representation
-
-    ###Delete Alternative Citation
-
-        Method:         DELETE
-        Success:        204 No content
-    """
-
-    permission_classes = (
-        drf_permissions.IsAuthenticatedOrReadOnly,
-        AdminOrPublic,
-        ReadOnlyIfRegistration,
-        base_permissions.TokenHasScope
-    )
-
-    required_read_scopes = [CoreScopes.NODE_CITATIONS_READ]
-    required_write_scopes = [CoreScopes.NODE_CITATIONS_WRITE]
-
-    serializer_class = NodeAlternativeCitationSerializer
-    view_category = 'nodes'
-    view_name = 'alternative-citation-detail'
-
-    def get_object(self):
-        try:
-            return self.get_node().alternative_citations.get(_id=str(self.kwargs['citation_id']))
-        except AlternativeCitation.DoesNotExist:
-            raise NotFound
-
-    def perform_destroy(self, instance):
-        self.get_node().remove_citation(get_user_auth(self.request), instance, save=True)
-
-
-class NodeLogList(JSONAPIBaseView, generics.ListAPIView, NodeMixin, ODMFilterMixin):
+class NodeLogList(JSONAPIBaseView, generics.ListAPIView, NodeMixin, ListFilterMixin):
     """List of Logs associated with a given Node. *Read-only*.
 
     <!--- Copied Description from NodeLogDetail -->
@@ -2629,13 +2520,15 @@ class NodeLogList(JSONAPIBaseView, generics.ListAPIView, NodeMixin, ODMFilterMix
         ExcludeWithdrawals
     )
 
-    def get_default_odm_query(self):
+    def get_default_queryset(self):
         auth = get_user_auth(self.request)
-        query = self.get_node().get_aggregate_logs_query(auth)
-        return query
+        queryset = self.get_node().get_aggregate_logs_queryset(auth)
+        return queryset
 
     def get_queryset(self):
-        queryset = NodeLog.find(self.get_query_from_request()).select_related('node', 'original_node', 'user')
+        queryset = self.get_queryset_from_request().include(
+            'node__guids', 'user__guids', 'original_node__guids', limit_includes=10
+        )
         return queryset
 
 
@@ -2818,6 +2711,8 @@ class NodeInstitutionsList(JSONAPIBaseView, generics.ListAPIView, ODMFilterMixin
     model = Institution
     view_category = 'nodes'
     view_name = 'node-institutions'
+
+    ordering = ('-id',)
 
     def get_queryset(self):
         node = self.get_node()
@@ -3349,6 +3244,8 @@ class NodeViewOnlyLinksList(JSONAPIBaseView, generics.ListCreateAPIView, ListFil
     view_category = 'nodes'
     view_name = 'node-view-only-links'
 
+    ordering = ('-date_created',)
+
     def get_default_queryset(self):
         return self.get_node().private_links.filter(is_deleted=False)
 
@@ -3561,6 +3458,8 @@ class NodePreprintsList(JSONAPIBaseView, generics.ListAPIView, NodeMixin, Prepri
 
     view_category = 'nodes'
     view_name = 'node-preprints'
+
+    ordering = ('-date_modified',)
 
     # overrides DjangoFilterMixin
     def get_default_django_query(self):

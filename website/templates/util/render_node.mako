@@ -55,24 +55,22 @@
             <div class="pull-right">
                 % if not summary['primary'] and 'write' in user['permissions'] and not node['is_registration']:
                     <i class="fa fa-times remove-pointer" data-id="${summary['id']}" data-toggle="tooltip" title="Remove link"></i>
-                    <i class="fa fa-code-fork" onclick="NodeActions.forkPointer('${summary['id']}', '${summary['primary_id']}');" data-toggle="tooltip" title="Fork this ${summary['node_type']} into ${node['node_type']} ${node['title']}"></i>
+                    <i class="fa fa-code-fork" onclick="NodeActions.forkPointer('${summary['id']}', '${summary['primary_id']}');" data-toggle="tooltip" title="Create a fork of ${summary['title']}"></i>
                 % endif
-                % if summary['primary'] and summary['logged_in'] and summary['is_contributor']:
+                % if summary['primary'] and summary['logged_in'] and summary['is_contributor'] and not summary['is_registration']:
                     <div class="dropdown pull-right" id="componentQuickActions">
                         <button class="btn btn-default dropdown-toggle" type="button" data-toggle="dropdown">
                             <span class="glyphicon glyphicon-option-horizontal"></span>
                         </button>
                         <ul class="dropdown-menu dropdown-menu-right">
                             <li><a tabindex="-1" href="${domain}${summary['id']}/contributors/">Manage Contributors</a></li>
-                            % if not node['is_registration']:
-                                <li><a tabindex="-1" href="${domain}${summary['id']}/settings/">Settings</a></li>
-                                % if summary['is_admin']:
-                                <li>
-                                    <a tabindex="-1" onclick="ComponentActions.deleteNode(${summary['childExists'] | sjson, n}, '${summary['node_type']}', ${summary['isPreprint'] | sjson, n},'${summary['api_url']}')" type="button">
-                                        Delete
-                                    </a>
-                                </li>
-                                % endif
+                            <li><a tabindex="-1" href="${domain}${summary['id']}/settings/">Settings</a></li>
+                            % if summary['is_admin']:
+                            <li>
+                                <a tabindex="-1" onclick="ComponentActions.deleteNode(${summary['childExists'] | sjson, n}, '${summary['node_type']}', ${summary['isPreprint'] | sjson, n},'${summary['api_url']}')" type="button">
+                                    Delete
+                                </a>
+                            </li>
                             % endif
                         </ul>
                   </div>

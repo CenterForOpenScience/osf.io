@@ -11,22 +11,29 @@ Other resources that are a part of the Prereg Challenge:
 from flask import request
 
 from framework.auth import decorators
+from framework.auth.core import Auth
 from framework.utils import iso8601format
 from website.prereg import utils
 
-@decorators.must_be_logged_in
-def prereg_landing_page(auth, **kwargs):
+def prereg_landing_page(**kwargs):
     """Landing page for the prereg challenge"""
+    auth = kwargs['auth'] = Auth.from_kwargs(request.args.to_dict(), kwargs)
+    is_logged_in = kwargs['auth'].logged_in
     campaign = request.path.strip('/') or 'prereg'
-    registerable_nodes = [
-        node for node
-        in auth.user.contributor_to
-        if node.has_permission(user=auth.user, permission='admin')
-    ]
-    has_projects = bool(registerable_nodes)
-    has_draft_registrations = bool(utils.drafts_for_user(auth.user, campaign).count())
+    if is_logged_in:
+        registerable_nodes = [
+            node for node
+            in auth.user.contributor_to
+            if node.has_permission(user=auth.user, permission='admin')
+        ]
+        has_projects = bool(registerable_nodes)
+        has_draft_registrations = bool(utils.drafts_for_user(auth.user, campaign).count())
+    else:
+        has_projects = False
+        has_draft_registrations = False
 
     return {
+        'is_logged_in': is_logged_in,
         'has_draft_registrations': has_draft_registrations,
         'has_projects': has_projects,
         'campaign_long': utils.PREREG_CAMPAIGNS[campaign],

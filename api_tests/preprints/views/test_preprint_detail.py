@@ -63,6 +63,12 @@ class TestPreprintDetail:
         assert data['type'] == 'preprints'
         assert data['id'] == preprint._id
 
+    #   test title in preprint data
+        assert data['attributes']['title'] == preprint.node.title
+
+    #   test contributors in preprint data
+        assert data['relationships'].get('contributors', None)
+
     #   test_preprint_node_deleted_detail_failure
         deleted_node = ProjectFactory(creator=user, is_deleted=True)
         deleted_preprint = PreprintFactory(project=deleted_node, creator=user)
@@ -71,6 +77,17 @@ class TestPreprintDetail:
         deleted_preprint_res = app.get(deleted_preprint_url, expect_errors=True)
         assert deleted_preprint_res.status_code == 404
         assert res.content_type == 'application/vnd.api+json'
+
+    def test_embed_contributors(self, app, user, preprint):
+        url = '/{}preprints/{}/?embed=contributors'.format(API_BASE, preprint._id)
+
+        res = app.get(url, auth=user.auth)
+        embeds = res.json['data']['embeds']
+        ids = preprint.node.contributors.all().values_list('guids___id', flat=True)
+        ids = ['{}-{}'.format(preprint.node._id, id_) for id_ in ids]
+        for contrib in embeds['contributors']['data']:
+            assert contrib['id'] in ids
+
 
 @pytest.mark.django_db
 class TestPreprintDelete:
@@ -292,7 +309,8 @@ class TestPreprintUpdate:
 
         assert not preprint.subjects.filter(_id=subject._id).exists()
 
-    def test_update_published(self, app, user):
+    @mock.patch('website.preprints.tasks.get_and_set_preprint_identifiers.si')
+    def test_update_published(self, mock_get_identifiers, app, user):
         unpublished = PreprintFactory(creator=user, is_published=False)
         url = '/{}preprints/{}/'.format(API_BASE, unpublished._id)
         payload = build_preprint_update_payload(unpublished._id, attributes={'is_published': True})

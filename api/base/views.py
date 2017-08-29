@@ -16,17 +16,20 @@ from api.base.filters import ListFilterMixin
 from api.base.parsers import JSONAPIRelationshipParser
 from api.base.parsers import JSONAPIRelationshipParserForRegularJSON
 from api.base.requests import EmbeddedRequest
-from api.base.serializers import LinkedNodesRelationshipSerializer
-from api.base.serializers import LinkedRegistrationsRelationshipSerializer
+from api.base.serializers import (
+    MaintenanceStateSerializer,
+    LinkedNodesRelationshipSerializer,
+    LinkedRegistrationsRelationshipSerializer
+)
 from api.base.throttling import RootAnonThrottle, UserRateThrottle
 from api.base.utils import is_bulk_request, get_user_auth
+from api.nodes.utils import get_file_object
 from api.nodes.permissions import ContributorOrPublic
 from api.nodes.permissions import ContributorOrPublicForRelationshipPointers
 from api.nodes.permissions import ReadOnlyIfRegistration
 from api.users.serializers import UserSerializer
 from framework.auth.oauth_scopes import CoreScopes
-from osf.models.contributor import Contributor
-from website import maintenance
+from osf.models import Contributor, MaintenanceState, BaseFileNode
 
 
 class JSONAPIBaseView(generics.GenericAPIView):
@@ -727,6 +730,7 @@ def root(request, format=None, **kwargs):
 
         value        description
         ==========================================
+        bitbucket    Bitbucket
         box          Box.com
         dataverse    Dataverse
         dropbox      Dropbox
@@ -769,8 +773,9 @@ def root(request, format=None, **kwargs):
 @api_view(('GET',))
 @throttle_classes([RootAnonThrottle, UserRateThrottle])
 def status_check(request, format=None, **kwargs):
+    maintenance = MaintenanceState.objects.all().first()
     return Response({
-        'maintenance': maintenance.get_maintenance(),
+        'maintenance': MaintenanceStateSerializer(maintenance).data if maintenance else None
     })
 
 
@@ -798,10 +803,12 @@ class BaseContributorDetail(JSONAPIBaseView, generics.RetrieveAPIView):
 
 class BaseContributorList(JSONAPIBaseView, generics.ListAPIView, ListFilterMixin):
 
+    ordering = ('-date_modified',)
+
     def get_default_queryset(self):
         node = self.get_node()
 
-        return node.contributor_set.all()
+        return node.contributor_set.all().include('user__guids')
 
     def get_queryset(self):
         queryset = self.get_queryset_from_request()
@@ -824,6 +831,8 @@ class BaseNodeLinksDetail(JSONAPIBaseView, generics.RetrieveAPIView):
 
 
 class BaseNodeLinksList(JSONAPIBaseView, generics.ListAPIView):
+
+    ordering = ('-date_modified',)
 
     def get_queryset(self):
         auth = get_user_auth(self.request)
@@ -854,6 +863,8 @@ class BaseLinkedList(JSONAPIBaseView, generics.ListAPIView):
     view_category = None
     view_name = None
 
+    ordering = ('-date_modified',)
+
     # TODO: This class no longer exists
     # model_class = Pointer
 
@@ -861,3 +872,36 @@ class BaseLinkedList(JSONAPIBaseView, generics.ListAPIView):
         auth = get_user_auth(self.request)
 
         return self.get_node().linked_nodes.filter(is_deleted=False).exclude(type='osf.collection').can_view(user=auth.user, private_link=auth.private_link).order_by('-date_modified')
+
+
+class WaterButlerMixin(object):
+
+    path_lookup_url_kwarg = 'path'
+    provider_lookup_url_kwarg = 'provider'
+
+    def get_file_item(self, item):
+        attrs = item['attributes']
+        file_node = BaseFileNode.resolve_class(
+            attrs['provider'],
+            BaseFileNode.FOLDER if attrs['kind'] == 'folder'
+            else BaseFileNode.FILE
+        ).get_or_create(self.get_node(check_object_permissions=False), attrs['path'])
+
+        file_node.update(None, attrs, user=self.request.user)
+
+        self.check_object_permissions(self.request, file_node)
+
+        return file_node
+
+    def fetch_from_waterbutler(self):
+        node = self.get_node(check_object_permissions=False)
+        path = self.kwargs[self.path_lookup_url_kwarg]
+        provider = self.kwargs[self.provider_lookup_url_kwarg]
+        return self.get_file_object(node, path, provider)
+
+    def get_file_object(self, node, path, provider, check_object_permissions=True):
+        obj = get_file_object(node=node, path=path, provider=provider, request=self.request)
+        if provider == 'osfstorage':
+            if check_object_permissions:
+                self.check_object_permissions(self.request, obj)
+        return obj

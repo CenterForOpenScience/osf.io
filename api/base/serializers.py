@@ -20,7 +20,7 @@ from api.base.exceptions import RelationshipPostMakesNoChanges
 from api.base.settings import BULK_SETTINGS
 from api.base.utils import absolute_reverse, extend_querystring_params, get_user_auth, extend_querystring_if_key_exists
 from framework.auth import core as auth_core
-from osf.models import AbstractNode as Node
+from osf.models import AbstractNode, MaintenanceState
 from website import settings
 from website import util as website_utils
 from website.util.sanitize import strip_html
@@ -104,49 +104,6 @@ class ShowIfVersion(ser.Field):
 
     def to_internal_value(self, data):
         return self.field.to_internal_value(data)
-
-
-class EmailScopeRequired(ser.Field):
-    """
-    Skip field if USER_EMAIL scope is not present.
-    SKip field if requesting user != serialized user.
-    """
-
-    def __init__(self, field, **kwargs):
-        super(EmailScopeRequired, self).__init__(**kwargs)
-        self.field = field
-        self.required = field.required
-        self.read_only = field.read_only
-
-    def get_attribute(self, instance):
-        request = self.context.get('request')
-        view = self.context.get('view')
-        if view and request and request.auth:
-            scopes = request.auth.attributes['accessTokenScope']
-            if 'osf.users.user_email' in scopes and request.user == view.get_user():
-                return self.field.get_attribute(instance)
-        raise SkipField
-
-    def bind(self, field_name, parent):
-        super(EmailScopeRequired, self).bind(field_name, parent)
-        self.field.bind(field_name, self)
-
-    def to_internal_value(self, data):
-        return self.field.to_internal_value(data)
-
-    def to_representation(self, value):
-        if getattr(self.field.root, 'child', None):
-            self.field.parent = self.field.root.child
-        else:
-            self.field.parent = self.field.root
-        return self.field.to_representation(value)
-
-    def to_esi_representation(self, value, envelope='data'):
-        if getattr(self.field.root, 'child', None):
-            self.field.parent = self.field.root.child
-        else:
-            self.field.parent = self.field.root
-        return self.field.to_esi_representation(value, envelope)
 
 
 class HideIfRegistration(ser.Field):
@@ -1433,7 +1390,7 @@ class LinkedNodesRelationshipSerializer(BaseAPISerializer):
 
         nodes_to_add = []
         for node_id in diff['add']:
-            node = Node.load(node_id)
+            node = AbstractNode.load(node_id)
             if not node:
                 raise exceptions.NotFound(detail='Node with id "{}" was not found'.format(node_id))
             nodes_to_add.append(node)
@@ -1498,7 +1455,7 @@ class LinkedRegistrationsRelationshipSerializer(BaseAPISerializer):
 
         nodes_to_add = []
         for node_id in diff['add']:
-            node = Node.load(node_id)
+            node = AbstractNode.load(node_id)
             if not node:
                 raise exceptions.NotFound(detail='Node with id "{}" was not found'.format(node_id))
             nodes_to_add.append(node)
@@ -1539,3 +1496,10 @@ class LinkedRegistrationsRelationshipSerializer(BaseAPISerializer):
             collection.add_pointer(node, auth)
 
         return self.make_instance_obj(collection)
+
+
+class MaintenanceStateSerializer(ser.ModelSerializer):
+
+    class Meta:
+        model = MaintenanceState
+        fields = ('level', 'message', 'start', 'end')

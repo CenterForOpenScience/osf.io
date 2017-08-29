@@ -1,97 +1,120 @@
-from modularodm import Q
-from nose.tools import *  # flake8: noqa
+import pytest
+import uuid
 
 from api.base.settings.defaults import API_BASE
 from api_tests import utils
-
 from framework.auth.core import Auth
-
-from tests.base import ApiTestCase
+from osf.models import MetaSchema
 from osf_tests.factories import (
     AuthUserFactory,
     NodeFactory,
     ProjectFactory,
-    InstitutionFactory
+    InstitutionFactory,
 )
 from osf_tests.utils import mock_archive
-
-from osf.models import MetaSchema
+from website import settings
 from website.project.metadata.schemas import LATEST_SCHEMA_VERSION
+from website.search import elastic_search
 from website.search import search
 
 
-class ApiSearchTestCase(ApiTestCase):
+@pytest.mark.django_db
+class ApiSearchTestCase:
 
-    def setUp(self):
-        super(ApiSearchTestCase, self).setUp()
+    @pytest.fixture(autouse=True)
+    def index(self):
+        settings.ELASTIC_INDEX = uuid.uuid4().hex
+        elastic_search.INDEX = settings.ELASTIC_INDEX
 
-        self.user = AuthUserFactory()
-        self.user_one = AuthUserFactory(fullname='Kanye Omari West')
-        self.user_one.schools = [{
+        search.create_index(elastic_search.INDEX)
+        yield
+        search.delete_index(elastic_search.INDEX)
+
+    @pytest.fixture()
+    def user(self):
+        return AuthUserFactory()
+
+    @pytest.fixture()
+    def institution(self):
+        return InstitutionFactory(name='Social Experiment')
+
+    @pytest.fixture()
+    def user_one(self):
+        user_one = AuthUserFactory(fullname='Kanye Omari West')
+        user_one.schools = [{
             'degree': 'English',
             'institution': 'Chicago State University'
         }]
-        self.user_one.jobs = [{
+        user_one.jobs = [{
             'title': 'Producer',
             'institution': 'GOOD Music, Inc.'
         }]
-        self.user_one.save()
+        user_one.save()
+        return user_one
 
-        self.user_two = AuthUserFactory(fullname='Chance The Rapper')
-        self.institution = InstitutionFactory(name='Social Experiment')
-        self.user_two.affiliated_institutions.add(self.institution)
-        self.user_two.save()
-        # self.institution.save()
+    @pytest.fixture()
+    def user_two(self, institution):
+        user_two = AuthUserFactory(fullname='Chance The Rapper')
+        user_two.affiliated_institutions.add(institution)
+        user_two.save()
+        return user_two
 
-        self.project = ProjectFactory(title='The Life of Pablo', creator=self.user_one, is_public=True)
-        self.project.set_description('Name one genius who ain\'t crazy', auth=Auth(self.user_one), save=True)
-        self.project.add_tag('Yeezus', auth=Auth(self.user_one), save=True)
+    @pytest.fixture()
+    def project(self, user_one):
+        return ProjectFactory(title='Graduation', creator=user_one, is_public=True)
 
-        self.project_two = ProjectFactory(title='Graduation', creator=self.user_one, is_public=True)
-        self.private_project = ProjectFactory(title='Coloring Book', creator=self.user_two)
+    @pytest.fixture()
+    def project_public(self, user_one):
+        project_public = ProjectFactory(title='The Life of Pablo', creator=user_one, is_public=True)
+        project_public.set_description('Name one genius who ain\'t crazy', auth=Auth(user_one), save=True)
+        project_public.add_tag('Yeezus', auth=Auth(user_one), save=True)
+        return project_public
 
-        self.component = NodeFactory(parent=self.project, title='Ultralight Beam', creator=self.user_two, is_public=True)
-        self.component.set_description('This is my part, nobody else speak', auth=Auth(self.user_two), save=True)
-        self.component.add_tag('trumpets', auth=Auth(self.user_two), save=True)
+    @pytest.fixture()
+    def project_private(self, user_two):
+        return ProjectFactory(title='Coloring Book', creator=user_two)
 
-        self.component_two = NodeFactory(parent=self.project, title='Highlights', creator=self.user_one, is_public=True)
-        self.private_component = NodeFactory(parent=self.project, title='Wavves', creator=self.user_one)
+    @pytest.fixture()
+    def component(self, user_one, project_public):
+        return NodeFactory(parent=project_public, title='Highlights', creator=user_one, is_public=True)
 
-        self.file = utils.create_test_file(self.component, self.user_one, filename='UltralightBeam.mp3')
-        self.file_two = utils.create_test_file(self.component_two, self.user_one, filename='Highlights.mp3')
-        self.private_file = utils.create_test_file(self.private_component, self.user_one, filename='Wavves.mp3')
+    @pytest.fixture()
+    def component_public(self, user_two, project_public):
+        component_public = NodeFactory(parent=project_public, title='Ultralight Beam', creator=user_two, is_public=True)
+        component_public.set_description('This is my part, nobody else speak', auth=Auth(user_two), save=True)
+        component_public.add_tag('trumpets', auth=Auth(user_two), save=True)
+        return component_public
 
-    def tearDown(self):
-        super(ApiSearchTestCase, self).tearDown()
-        search.delete_all()
+    @pytest.fixture()
+    def component_private(self, user_one, project_public):
+        return NodeFactory(parent=project_public, title='Wavves', creator=user_one)
 
+    @pytest.fixture()
+    def file_component(self, component, user_one):
+        return utils.create_test_file(component, user_one, filename='Highlights.mp3')
+
+    @pytest.fixture()
+    def file_public(self, component_public, user_one):
+        return utils.create_test_file(component_public, user_one, filename='UltralightBeam.mp3')
+
+    @pytest.fixture()
+    def file_private(self, component_private, user_one):
+        return utils.create_test_file(component_private, user_one, filename='Wavves.mp3')
 
 class TestSearch(ApiSearchTestCase):
 
-    def setUp(self):
-        super(TestSearch, self).setUp()
-        self.url = '/{}search/'.format(API_BASE)
+    @pytest.fixture()
+    def url_search(self):
+        return '/{}search/'.format(API_BASE)
 
-    def test_search_no_auth(self):
-        res = self.app.get(self.url)
-        assert_equal(res.status_code, 200)
+    def test_search_results(
+        self, app, url_search, user, user_one, user_two,
+        institution, component, component_private, component_public, file_component,
+        file_private, file_public, project, project_public, project_private):
 
-        search_fields = res.json['search_fields']
-        users_found = search_fields['users']['related']['meta']['total']
-        files_found = search_fields['files']['related']['meta']['total']
-        projects_found = search_fields['projects']['related']['meta']['total']
-        components_found = search_fields['components']['related']['meta']['total']
-        registrations_found = search_fields['registrations']['related']['meta']['total']
-
-        assert_equal(users_found, 3)
-        assert_equal(files_found, 2)
-        assert_equal(projects_found, 2)
-        assert_equal(components_found, 2)
-        assert_equal(registrations_found, 0)
-
-    def test_search_auth(self):
-        res = self.app.get(self.url, auth=self.user.auth)
-        assert_equal(res.status_code, 200)
+        #test_search_no_auth
+        res = app.get(url_search)
+        assert res.status_code == 200
 
         search_fields = res.json['search_fields']
         users_found = search_fields['users']['related']['meta']['total']
@@ -100,15 +123,32 @@ class TestSearch(ApiSearchTestCase):
         components_found = search_fields['components']['related']['meta']['total']
         registrations_found = search_fields['registrations']['related']['meta']['total']
 
-        assert_equal(users_found, 3)
-        assert_equal(files_found, 2)
-        assert_equal(projects_found, 2)
-        assert_equal(components_found, 2)
-        assert_equal(registrations_found, 0)
+        assert users_found == 3
+        assert files_found == 2
+        assert projects_found == 2
+        assert components_found == 2
+        assert registrations_found == 0
 
-    def test_search_fields_links(self):
-        res = self.app.get(self.url)
-        assert_equal(res.status_code, 200)
+        #test_search_auth
+        res = app.get(url_search, auth=user.auth)
+        assert res.status_code == 200
+
+        search_fields = res.json['search_fields']
+        users_found = search_fields['users']['related']['meta']['total']
+        files_found = search_fields['files']['related']['meta']['total']
+        projects_found = search_fields['projects']['related']['meta']['total']
+        components_found = search_fields['components']['related']['meta']['total']
+        registrations_found = search_fields['registrations']['related']['meta']['total']
+
+        assert users_found == 3
+        assert files_found == 2
+        assert projects_found == 2
+        assert components_found == 2
+        assert registrations_found == 0
+
+        #test_search_fields_links
+        res = app.get(url_search)
+        assert res.status_code == 200
 
         search_fields = res.json['search_fields']
         users_link = search_fields['users']['related']['href']
@@ -117,16 +157,16 @@ class TestSearch(ApiSearchTestCase):
         components_link = search_fields['components']['related']['href']
         registrations_link = search_fields['registrations']['related']['href']
 
-        assert_in('/{}search/users/?q=%2A'.format(API_BASE), users_link)
-        assert_in('/{}search/files/?q=%2A'.format(API_BASE), files_link)
-        assert_in('/{}search/projects/?q=%2A'.format(API_BASE), projects_link)
-        assert_in('/{}search/components/?q=%2A'.format(API_BASE), components_link)
-        assert_in('/{}search/registrations/?q=%2A'.format(API_BASE), registrations_link)
+        assert '/{}search/users/?q=%2A'.format(API_BASE) in users_link
+        assert '/{}search/files/?q=%2A'.format(API_BASE) in files_link
+        assert '/{}search/projects/?q=%2A'.format(API_BASE) in projects_link
+        assert '/{}search/components/?q=%2A'.format(API_BASE) in components_link
+        assert '/{}search/registrations/?q=%2A'.format(API_BASE) in registrations_link
 
-    def test_search_fields_links_with_query(self):
-        url = '{}?q=science'.format(self.url)
-        res = self.app.get(url)
-        assert_equal(res.status_code, 200)
+        #test_search_fields_links_with_query
+        url = '{}?q=science'.format(url_search)
+        res = app.get(url)
+        assert res.status_code == 200
 
         search_fields = res.json['search_fields']
         users_link = search_fields['users']['related']['href']
@@ -135,485 +175,540 @@ class TestSearch(ApiSearchTestCase):
         components_link = search_fields['components']['related']['href']
         registrations_link = search_fields['registrations']['related']['href']
 
-        assert_in('/{}search/users/?q=science'.format(API_BASE), users_link)
-        assert_in('/{}search/files/?q=science'.format(API_BASE), files_link)
-        assert_in('/{}search/projects/?q=science'.format(API_BASE), projects_link)
-        assert_in('/{}search/components/?q=science'.format(API_BASE), components_link)
-        assert_in('/{}search/registrations/?q=science'.format(API_BASE), registrations_link)
+        assert '/{}search/users/?q=science'.format(API_BASE) in users_link
+        assert '/{}search/files/?q=science'.format(API_BASE) in files_link
+        assert '/{}search/projects/?q=science'.format(API_BASE) in projects_link
+        assert '/{}search/components/?q=science'.format(API_BASE) in components_link
+        assert '/{}search/registrations/?q=science'.format(API_BASE) in registrations_link
 
 
 class TestSearchComponents(ApiSearchTestCase):
 
-    def setUp(self):
-        super(TestSearchComponents, self).setUp()
-        self.url = '/{}search/components/'.format(API_BASE)
+    @pytest.fixture()
+    def url_component_search(self):
+        return '/{}search/components/'.format(API_BASE)
 
-    def test_search_public_component_no_auth(self):
-        res = self.app.get(self.url)
-        assert_equal(res.status_code, 200)
+    def test_search_components(
+        self, app, url_component_search, user, user_one, user_two,
+        component, component_public, component_private):
+
+        #test_search_public_component_no_auth
+        res = app.get(url_component_search)
+        assert res.status_code == 200
         num_results = len(res.json['data'])
         total = res.json['links']['meta']['total']
-        assert_equal(num_results, total, 2)
-        assert_in(self.component.title, res)
-        assert_in(self.component_two.title, res)
+        assert num_results == 2
+        assert total == 2
+        assert component_public.title in res
+        assert component.title in res
 
-    def test_search_public_component_auth(self):
-        res = self.app.get(self.url, auth=self.user)
-        assert_equal(res.status_code, 200)
+        #test_search_public_component_auth
+        res = app.get(url_component_search, auth=user)
+        assert res.status_code == 200
         num_results = len(res.json['data'])
         total = res.json['links']['meta']['total']
-        assert_equal(num_results, total, 2)
-        assert_in(self.component.title, res)
-        assert_in(self.component_two.title, res)
+        assert num_results == 2
+        assert total == 2
+        assert component_public.title in res
+        assert component.title in res
 
-    def test_search_public_component_contributor(self):
-        res = self.app.get(self.url, auth=self.user_two)
-        assert_equal(res.status_code, 200)
+        #test_search_public_component_contributor
+        res = app.get(url_component_search, auth=user_two)
+        assert res.status_code == 200
         num_results = len(res.json['data'])
         total = res.json['links']['meta']['total']
-        assert_equal(num_results, total, 2)
-        assert_in(self.component.title, res)
-        assert_in(self.component_two.title, res)
+        assert num_results == 2
+        assert total == 2
+        assert component_public.title in res
+        assert component.title in res
 
-    def test_search_private_component_no_auth(self):
-        res = self.app.get(self.url)
-        assert_equal(res.status_code, 200)
-        assert_not_in(self.private_component.title, res)
+        #test_search_private_component_no_auth
+        res = app.get(url_component_search)
+        assert res.status_code == 200
+        assert component_private.title not in res
 
-    def test_search_private_component_auth(self):
-        res = self.app.get(self.url, auth=self.user)
-        assert_equal(res.status_code, 200)
-        assert_not_in(self.private_component.title, res)
+        #test_search_private_component_auth
+        res = app.get(url_component_search, auth=user)
+        assert res.status_code == 200
+        assert component_private.title not in res
 
-    def test_search_private_component_contributor(self):
-        res = self.app.get(self.url, auth=self.user_two)
-        assert_equal(res.status_code, 200)
-        assert_not_in(self.private_component.title, res)
+        #test_search_private_component_contributor
+        res = app.get(url_component_search, auth=user_two)
+        assert res.status_code == 200
+        assert component_private.title not in res
 
-    def test_search_component_by_title(self):
-        url = '{}?q={}'.format(self.url, 'beam')
-        res = self.app.get(url)
-        assert_equal(res.status_code, 200)
+        #test_search_component_by_title
+        url = '{}?q={}'.format(url_component_search, 'beam')
+        res = app.get(url)
+        assert res.status_code == 200
         num_results = len(res.json['data'])
         total = res.json['links']['meta']['total']
-        assert_equal(num_results, total, 1)
-        assert_equal(self.component.title, res.json['data'][0]['attributes']['title'])
+        assert num_results == 1
+        assert total == 1
+        assert component_public.title == res.json['data'][0]['attributes']['title']
 
-    def test_search_component_by_description(self):
-        url = '{}?q={}'.format(self.url, 'speak')
-        res = self.app.get(url)
-        assert_equal(res.status_code, 200)
+        #test_search_component_by_description
+        url = '{}?q={}'.format(url_component_search, 'speak')
+        res = app.get(url)
+        assert res.status_code == 200
         num_results = len(res.json['data'])
         total = res.json['links']['meta']['total']
-        assert_equal(num_results, total, 1)
-        assert_equal(self.component.title, res.json['data'][0]['attributes']['title'])
+        assert num_results == 1
+        assert total == 1
+        assert component_public.title == res.json['data'][0]['attributes']['title']
 
-    def test_search_component_by_tags(self):
-        url = '{}?q={}'.format(self.url, 'trumpets')
-        res = self.app.get(url)
-        assert_equal(res.status_code, 200)
+        #test_search_component_by_tags
+        url = '{}?q={}'.format(url_component_search, 'trumpets')
+        res = app.get(url)
+        assert res.status_code == 200
         num_results = len(res.json['data'])
         total = res.json['links']['meta']['total']
-        assert_equal(num_results, total, 1)
-        assert_equal(self.component.title, res.json['data'][0]['attributes']['title'])
+        assert num_results == 1
+        assert total == 1
+        assert component_public.title == res.json['data'][0]['attributes']['title']
 
-    def test_search_component_by_contributor(self):
-        url = '{}?q={}'.format(self.url, 'Chance')
-        res = self.app.get(url)
-        assert_equal(res.status_code, 200)
+        #test_search_component_by_contributor
+        url = '{}?q={}'.format(url_component_search, 'Chance')
+        res = app.get(url)
+        assert res.status_code == 200
         num_results = len(res.json['data'])
         total = res.json['links']['meta']['total']
-        assert_equal(num_results, total, 1)
-        assert_equal(self.component.title, res.json['data'][0]['attributes']['title'])
+        assert num_results == 1
+        assert total == 1
+        assert component_public.title == res.json['data'][0]['attributes']['title']
 
-    def test_search_component_no_results(self):
-        url = '{}?q={}'.format(self.url, 'Ocean')
-        res = self.app.get(url)
-        assert_equal(res.status_code, 200)
+        #test_search_component_no_results
+        url = '{}?q={}'.format(url_component_search, 'Ocean')
+        res = app.get(url)
+        assert res.status_code == 200
         num_results = len(res.json['data'])
         total = res.json['links']['meta']['total']
-        assert_equal(num_results, total, 0)
+        assert num_results == 0
+        assert total == 0
 
-    def test_search_component_bad_query(self):
-        url = '{}?q={}'.format(self.url, 'www.spam.com/help/twitter/')
-        res = self.app.get(url, expect_errors=True)
-        assert_equal(res.status_code, 400)
+        #test_search_component_bad_query
+        url = '{}?q={}'.format(url_component_search, 'www.spam.com/help/twitter/')
+        res = app.get(url, expect_errors=True)
+        assert res.status_code == 400
 
 
 class TestSearchFiles(ApiSearchTestCase):
 
-    def setUp(self):
-        super(TestSearchFiles, self).setUp()
-        self.url = '/{}search/files/'.format(API_BASE)
+    @pytest.fixture()
+    def url_file_search(self):
+        return '/{}search/files/'.format(API_BASE)
 
-    def test_search_public_file_no_auth(self):
-        res = self.app.get(self.url)
-        assert_equal(res.status_code, 200)
+    def test_search_files(self, app, url_file_search, user, user_one, file_public, file_component, file_private):
+
+        #test_search_public_file_no_auth
+        res = app.get(url_file_search)
+        assert res.status_code == 200
         num_results = len(res.json['data'])
         total = res.json['links']['meta']['total']
-        assert_equal(num_results, total, 2)
-        assert_in(self.file.name, res)
-        assert_in(self.file_two.name, res)
+        assert num_results == 2
+        assert total == 2
+        assert file_public.name in res
+        assert file_component.name in res
 
-    def test_search_public_file_auth(self):
-        res = self.app.get(self.url, auth=self.user)
-        assert_equal(res.status_code, 200)
+        #test_search_public_file_auth
+        res = app.get(url_file_search, auth=user)
+        assert res.status_code == 200
         num_results = len(res.json['data'])
         total = res.json['links']['meta']['total']
-        assert_equal(num_results, total, 2)
-        assert_in(self.file.name, res)
-        assert_in(self.file_two.name, res)
+        assert num_results == 2
+        assert total == 2
+        assert file_public.name in res
+        assert file_component.name in res
 
-    def test_search_public_file_contributor(self):
-        res = self.app.get(self.url, auth=self.user_one)
-        assert_equal(res.status_code, 200)
+        #test_search_public_file_contributor
+        res = app.get(url_file_search, auth= user_one)
+        assert res.status_code == 200
         num_results = len(res.json['data'])
         total = res.json['links']['meta']['total']
-        assert_equal(num_results, total, 2)
-        assert_in(self.file.name, res)
-        assert_in(self.file_two.name, res)
+        assert num_results == 2
+        assert total == 2
+        assert file_public.name in res
+        assert file_component.name in res
 
-    def test_search_private_file_no_auth(self):
-        res = self.app.get(self.url)
-        assert_equal(res.status_code, 200)
-        assert_not_in(self.private_file.name, res)
+        #test_search_private_file_no_auth
+        res = app.get(url_file_search)
+        assert res.status_code == 200
+        assert file_private.name not in res
 
-    def test_search_private_file_auth(self):
-        res = self.app.get(self.url, auth=self.user)
-        assert_equal(res.status_code, 200)
-        assert_not_in(self.private_file.name, res)
+        #test_search_private_file_auth
+        res = app.get(url_file_search, auth=user)
+        assert res.status_code == 200
+        assert file_private.name not in res
 
-    def test_search_private_file_contributor(self):
-        res = self.app.get(self.url, auth=self.user_one)
-        assert_equal(res.status_code, 200)
-        assert_not_in(self.private_file.name, res)
+        #test_search_private_file_contributor
+        res = app.get(url_file_search, auth=user_one)
+        assert res.status_code == 200
+        assert file_private.name not in res
 
-    def test_search_file_by_name(self):
-        url = '{}?q={}'.format(self.url, 'highlights')
-        res = self.app.get(url)
-        assert_equal(res.status_code, 200)
+        #test_search_file_by_name
+        url = '{}?q={}'.format(url_file_search, 'highlights')
+        res = app.get(url)
+        assert res.status_code == 200
         num_results = len(res.json['data'])
         total = res.json['links']['meta']['total']
-        assert_equal(num_results, total, 1)
-        assert_equal(self.file_two.name, res.json['data'][0]['attributes']['name'])
+        assert num_results == 1
+        assert total == 1
+        assert file_component.name == res.json['data'][0]['attributes']['name']
 
 
 class TestSearchProjects(ApiSearchTestCase):
 
-    def setUp(self):
-        super(TestSearchProjects, self).setUp()
-        self.url = '/{}search/projects/'.format(API_BASE)
+    @pytest.fixture()
+    def url_project_search(self):
+        return '/{}search/projects/'.format(API_BASE)
 
-    def test_search_public_project_no_auth(self):
-        res = self.app.get(self.url)
-        assert_equal(res.status_code, 200)
+    def test_search_projects(self, app, url_project_search, user, user_one, user_two, project, project_public, project_private):
+
+        #test_search_public_project_no_auth
+        res = app.get(url_project_search)
+        assert res.status_code == 200
         num_results = len(res.json['data'])
         total = res.json['links']['meta']['total']
-        assert_equal(num_results, total, 2)
-        assert_in(self.project.title, res)
-        assert_in(self.project_two.title, res)
+        assert num_results == 2
+        assert total == 2
+        assert project_public.title in res
+        assert project.title in res
 
-    def test_search_public_project_auth(self):
-        res = self.app.get(self.url, auth=self.user)
-        assert_equal(res.status_code, 200)
+        #test_search_public_project_auth
+        res = app.get(url_project_search, auth=user)
+        assert res.status_code == 200
         num_results = len(res.json['data'])
         total = res.json['links']['meta']['total']
-        assert_equal(num_results, total, 2)
-        assert_in(self.project.title, res)
-        assert_in(self.project_two.title, res)
+        assert num_results == 2
+        assert total == 2
+        assert project_public.title in res
+        assert project.title in res
 
-    def test_search_public_project_contributor(self):
-        res = self.app.get(self.url, auth=self.user_one)
-        assert_equal(res.status_code, 200)
+        #test_search_public_project_contributor
+        res = app.get(url_project_search, auth=user_one)
+        assert res.status_code == 200
         num_results = len(res.json['data'])
         total = res.json['links']['meta']['total']
-        assert_equal(num_results, total, 2)
-        assert_in(self.project.title, res)
-        assert_in(self.project_two.title, res)
+        assert num_results == 2
+        assert total == 2
+        assert project_public.title in res
+        assert project.title in res
 
-    def test_search_private_project_no_auth(self):
-        res = self.app.get(self.url)
-        assert_equal(res.status_code, 200)
-        assert_not_in(self.private_project.title, res)
+        #test_search_private_project_no_auth
+        res = app.get(url_project_search)
+        assert res.status_code == 200
+        assert project_private.title not in res
 
-    def test_search_private_project_auth(self):
-        res = self.app.get(self.url, auth=self.user)
-        assert_equal(res.status_code, 200)
-        assert_not_in(self.private_project.title, res)
+        #test_search_private_project_auth
+        res = app.get(url_project_search, auth=user)
+        assert res.status_code == 200
+        assert project_private.title not in res
 
-    def test_search_private_project_contributor(self):
-        res = self.app.get(self.url, auth=self.user_two)
-        assert_equal(res.status_code, 200)
-        assert_not_in(self.private_project.title, res)
+        #test_search_private_project_contributor
+        res = app.get(url_project_search, auth=user_two)
+        assert res.status_code == 200
+        assert project_private.title not in res
 
-    def test_search_project_by_title(self):
-        url = '{}?q={}'.format(self.url, 'pablo')
-        res = self.app.get(url)
-        assert_equal(res.status_code, 200)
+        #test_search_project_by_title
+        url = '{}?q={}'.format(url_project_search, 'pablo')
+        res = app.get(url)
+        assert res.status_code == 200
         num_results = len(res.json['data'])
         total = res.json['links']['meta']['total']
-        assert_equal(num_results, total, 1)
-        assert_equal(self.project.title, res.json['data'][0]['attributes']['title'])
+        assert num_results == 1
+        assert total == 1
+        assert project_public.title == res.json['data'][0]['attributes']['title']
 
-    def test_search_project_by_description(self):
-        url = '{}?q={}'.format(self.url, 'genius')
-        res = self.app.get(url)
-        assert_equal(res.status_code, 200)
+        #test_search_project_by_description
+        url = '{}?q={}'.format(url_project_search, 'genius')
+        res = app.get(url)
+        assert res.status_code == 200
         num_results = len(res.json['data'])
         total = res.json['links']['meta']['total']
-        assert_equal(num_results, total, 1)
-        assert_equal(self.project.title, res.json['data'][0]['attributes']['title'])
+        assert num_results == 1
+        assert total == 1
+        assert project_public.title == res.json['data'][0]['attributes']['title']
 
-    def test_search_project_by_tags(self):
-        url = '{}?q={}'.format(self.url, 'Yeezus')
-        res = self.app.get(url)
-        assert_equal(res.status_code, 200)
+        #test_search_project_by_tags
+        url = '{}?q={}'.format(url_project_search, 'Yeezus')
+        res = app.get(url)
+        assert res.status_code == 200
         num_results = len(res.json['data'])
         total = res.json['links']['meta']['total']
-        assert_equal(num_results, total, 1)
-        assert_equal(self.project.title, res.json['data'][0]['attributes']['title'])
+        assert num_results == 1
+        assert total == 1
+        assert project_public.title == res.json['data'][0]['attributes']['title']
 
-    def test_search_project_by_contributor(self):
-        url = '{}?q={}'.format(self.url, 'kanye')
-        res = self.app.get(url)
-        assert_equal(res.status_code, 200)
+        #test_search_project_by_contributor
+        url = '{}?q={}'.format(url_project_search, 'kanye')
+        res = app.get(url)
+        assert res.status_code == 200
         num_results = len(res.json['data'])
         total = res.json['links']['meta']['total']
-        assert_equal(num_results, total, 2)
-        assert_in(self.project.title, res)
-        assert_in(self.project_two.title, res)
+        assert num_results == 2
+        assert total == 2
+        assert project_public.title in res
+        assert project.title in res
 
-    def test_search_project_no_results(self):
-        url = '{}?q={}'.format(self.url, 'chicago')
-        res = self.app.get(url)
-        assert_equal(res.status_code, 200)
+        #test_search_project_no_results
+        url = '{}?q={}'.format(url_project_search, 'chicago')
+        res = app.get(url)
+        assert res.status_code == 200
         num_results = len(res.json['data'])
         total = res.json['links']['meta']['total']
-        assert_equal(num_results, total, 0)
+        assert num_results == 0
+        assert total == 0
 
-    def test_search_project_bad_query(self):
-        url = '{}?q={}'.format(self.url, 'www.spam.com/help/facebook/')
-        res = self.app.get(url, expect_errors=True)
-        assert_equal(res.status_code, 400)
+        #test_search_project_bad_query
+        url = '{}?q={}'.format(url_project_search, 'www.spam.com/help/facebook/')
+        res = app.get(url, expect_errors=True)
+        assert res.status_code == 400
 
 
+@pytest.mark.django_db
 class TestSearchRegistrations(ApiSearchTestCase):
 
-    def setUp(self):
-        super(TestSearchRegistrations, self).setUp()
-        self.url = '/{}search/registrations/'.format(API_BASE)
+    @pytest.fixture()
+    def url_registration_search(self):
+        return '/{}search/registrations/'.format(API_BASE)
 
-        self.schema = MetaSchema.find_one(
-            Q('name', 'eq', 'Replication Recipe (Brandt et al., 2013): Post-Completion') &
-            Q('schema_version', 'eq', LATEST_SCHEMA_VERSION)
-        )
+    @pytest.fixture()
+    def schema(self):
+        schema = MetaSchema.objects.filter(name='Replication Recipe (Brandt et al., 2013): Post-Completion',
+            schema_version=LATEST_SCHEMA_VERSION).first()
+        return schema
 
-        with mock_archive(self.project, autocomplete=True, autoapprove=True, schema=self.schema) as registration:
-            self.registration = registration
+    @pytest.fixture()
+    def registration(self, project, schema):
+        with mock_archive(project, autocomplete=True, autoapprove=True, schema=schema) as registration:
+            return registration
 
-        with mock_archive(self.project_two, autocomplete=True, autoapprove=True,
-                          schema=self.schema) as registration_two:
-            self.registration_two = registration_two
+    @pytest.fixture()
+    def registration_public(self, project_public, schema):
+        with mock_archive(project_public, autocomplete=True, autoapprove=True, schema=schema) as registration_public:
+            return registration_public
 
-        with mock_archive(self.private_project, autocomplete=True, autoapprove=True,
-                          schema=self.schema) as private_registration:
-            self.private_registration = private_registration
+    @pytest.fixture()
+    def registration_private(self, project_private, schema):
+        with mock_archive(project_private, autocomplete=True, autoapprove=True, schema=schema) as registration_private:
+            registration_private.is_public = False
+            registration_private.save()
+            # TODO: This shouldn't be necessary, but tests fail if we don't do this. Investigate further.
+            registration_private.update_search()
+            return registration_private
 
-        self.private_registration.is_public = False
-        self.private_registration.save()
-        # TODO: This shouldn't be necessary, but tests fail if we don't do this. Investigate further.
-        self.private_registration.update_search()
+    def test_search_registrations(self, app, url_registration_search, user, user_one, user_two, registration, registration_public, registration_private):
 
-    def test_search_public_registration_no_auth(self):
-        res = self.app.get(self.url)
-        assert_equal(res.status_code, 200)
+        #test_search_public_registration_no_auth
+        res = app.get(url_registration_search)
+        assert res.status_code == 200
         num_results = len(res.json['data'])
         total = res.json['links']['meta']['total']
-        assert_equal(num_results, total, 2)
-        assert_in(self.registration.title, res)
-        assert_in(self.registration_two.title, res)
+        assert num_results == 2
+        assert total == 2
+        assert registration_public.title in res
+        assert registration.title in res
 
-    def test_search_public_registration_auth(self):
-        res = self.app.get(self.url, auth=self.user)
-        assert_equal(res.status_code, 200)
+        #test_search_public_registration_auth
+        res = app.get(url_registration_search, auth=user)
+        assert res.status_code == 200
         num_results = len(res.json['data'])
         total = res.json['links']['meta']['total']
-        assert_equal(num_results, total, 2)
-        assert_in(self.registration.title, res)
-        assert_in(self.registration_two.title, res)
+        assert num_results == 2
+        assert total == 2
+        assert registration_public.title in res
+        assert registration.title in res
 
-    def test_search_public_registration_contributor(self):
-        res = self.app.get(self.url, auth=self.user_one)
-        assert_equal(res.status_code, 200)
+        #test_search_public_registration_contributor
+        res = app.get(url_registration_search, auth=user_one)
+        assert res.status_code == 200
         num_results = len(res.json['data'])
         total = res.json['links']['meta']['total']
-        assert_equal(num_results, total, 2)
-        assert_in(self.registration.title, res)
-        assert_in(self.registration_two.title, res)
+        assert num_results == 2
+        assert total == 2
+        assert registration_public.title in res
+        assert registration.title in res
 
-    def test_search_private_registration_no_auth(self):
-        res = self.app.get(self.url)
-        assert_equal(res.status_code, 200)
-        assert_not_in(self.private_registration.title, res)
+        #test_search_private_registration_no_auth
+        res = app.get(url_registration_search)
+        assert res.status_code == 200
+        assert registration_private.title not in res
 
-    def test_search_private_registration_auth(self):
-        res = self.app.get(self.url, auth=self.user)
-        assert_equal(res.status_code, 200)
-        assert_not_in(self.private_registration.title, res)
+        #test_search_private_registration_auth
+        res = app.get(url_registration_search, auth=user)
+        assert res.status_code == 200
+        assert registration_private.title not in res
 
-    def test_search_private_registration_contributor(self):
-        res = self.app.get(self.url, auth=self.user_two)
-        assert_equal(res.status_code, 200)
-        assert_not_in(self.private_registration.title, res)
+        #test_search_private_registration_contributor
+        res = app.get(url_registration_search, auth=user_two)
+        assert res.status_code == 200
+        assert registration_private.title not in res
 
-    def test_search_registration_by_title(self):
-        url = '{}?q={}'.format(self.url, 'graduation')
-        res = self.app.get(url)
-        assert_equal(res.status_code, 200)
+        #test_search_registration_by_title
+        url = '{}?q={}'.format(url_registration_search, 'graduation')
+        res = app.get(url)
+        assert res.status_code == 200
         num_results = len(res.json['data'])
         total = res.json['links']['meta']['total']
-        assert_equal(num_results, total, 1)
-        assert_equal(self.registration_two.title, res.json['data'][0]['attributes']['title'])
+        assert num_results == 1
+        assert total == 1
+        assert registration.title == res.json['data'][0]['attributes']['title']
 
-    def test_search_registration_by_description(self):
-        url = '{}?q={}'.format(self.url, 'crazy')
-        res = self.app.get(url)
-        assert_equal(res.status_code, 200)
+        #test_search_registration_by_description
+        url = '{}?q={}'.format(url_registration_search, 'crazy')
+        res = app.get(url)
+        assert res.status_code == 200
         num_results = len(res.json['data'])
         total = res.json['links']['meta']['total']
-        assert_equal(num_results, total, 1)
-        assert_equal(self.registration.title, res.json['data'][0]['attributes']['title'])
+        assert num_results == 1
+        assert total == 1
+        assert registration_public.title == res.json['data'][0]['attributes']['title']
 
-    def test_search_registration_by_tags(self):
-        url = '{}?q={}'.format(self.url, 'yeezus')
-        res = self.app.get(url)
-        assert_equal(res.status_code, 200)
+        #test_search_registration_by_tags
+        url = '{}?q={}'.format(url_registration_search, 'yeezus')
+        res = app.get(url)
+        assert res.status_code == 200
         num_results = len(res.json['data'])
         total = res.json['links']['meta']['total']
-        assert_equal(num_results, total, 1)
-        assert_equal(self.registration.title, res.json['data'][0]['attributes']['title'])
+        assert num_results == 1
+        assert total == 1
+        assert registration_public.title == res.json['data'][0]['attributes']['title']
 
-    def test_search_registration_by_contributor(self):
-        url = '{}?q={}'.format(self.url, 'west')
-        res = self.app.get(url)
-        assert_equal(res.status_code, 200)
+        #test_search_registration_by_contributor
+        url = '{}?q={}'.format(url_registration_search, 'west')
+        res = app.get(url)
+        assert res.status_code == 200
         num_results = len(res.json['data'])
         total = res.json['links']['meta']['total']
-        assert_equal(num_results, total, 2)
-        assert_in(self.registration.title, res)
-        assert_in(self.registration_two.title, res)
+        assert num_results == 2
+        assert total == 2
+        assert registration_public.title in res
+        assert registration.title in res
 
-    def test_search_registration_no_results(self):
-        url = '{}?q={}'.format(self.url, '79th')
-        res = self.app.get(url)
-        assert_equal(res.status_code, 200)
+        #test_search_registration_no_results
+        url = '{}?q={}'.format(url_registration_search, '79th')
+        res = app.get(url)
+        assert res.status_code == 200
         num_results = len(res.json['data'])
         total = res.json['links']['meta']['total']
-        assert_equal(num_results, total, 0)
+        assert num_results == 0
+        assert total == 0
 
-    def test_search_registration_bad_query(self):
-        url = '{}?q={}'.format(self.url, 'www.spam.com/help/snapchat/')
-        res = self.app.get(url, expect_errors=True)
-        assert_equal(res.status_code, 400)
+        #test_search_registration_bad_query
+        url = '{}?q={}'.format(url_registration_search, 'www.spam.com/help/snapchat/')
+        res = app.get(url, expect_errors=True)
+        assert res.status_code == 400
 
 
 class TestSearchUsers(ApiSearchTestCase):
 
-    def setUp(self):
-        super(TestSearchUsers, self).setUp()
-        self.url = '/{}search/users/'.format(API_BASE)
+    @pytest.fixture()
+    def url_user_search(self):
+        return '/{}search/users/'.format(API_BASE)
 
-    def test_search_users_no_auth(self):
-        res = self.app.get(self.url)
-        assert_equal(res.status_code, 200)
+    def test_search_user(self, app, url_user_search, user, user_one, user_two):
+
+        #test_search_users_no_auth
+        res = app.get(url_user_search)
+        assert res.status_code == 200
         num_results = len(res.json['data'])
         total = res.json['links']['meta']['total']
-        assert_equal(num_results, total, 2)
-        assert_in(self.user.fullname, res)
-        assert_in(self.user.fullname, res)
+        assert num_results == 3
+        assert total == 3
+        assert user.fullname in res
 
-    def test_search_users_auth(self):
-        res = self.app.get(self.url, auth=self.user)
-        assert_equal(res.status_code, 200)
+        #test_search_users_auth
+        res = app.get(url_user_search, auth=user)
+        assert res.status_code == 200
         num_results = len(res.json['data'])
         total = res.json['links']['meta']['total']
-        assert_equal(num_results, total, 2)
-        assert_in(self.user.fullname, res)
-        assert_in(self.user.fullname, res)
+        assert num_results == 3
+        assert total == 3
+        assert user.fullname in res
 
-    def test_search_users_by_given_name(self):
-        url = '{}?q={}'.format(self.url, 'Kanye')
-        res = self.app.get(url)
-        assert_equal(res.status_code, 200)
+        #test_search_users_by_given_name
+        url = '{}?q={}'.format(url_user_search, 'Kanye')
+        res = app.get(url)
+        assert res.status_code == 200
         num_results = len(res.json['data'])
         total = res.json['links']['meta']['total']
-        assert_equal(num_results, total, 1)
-        assert_equal(self.user_one.given_name, res.json['data'][0]['attributes']['given_name'])
+        assert num_results == 1
+        assert total == 1
+        assert user_one.given_name == res.json['data'][0]['attributes']['given_name']
 
-    def test_search_users_by_middle_name(self):
-        url = '{}?q={}'.format(self.url, 'Omari')
-        res = self.app.get(url)
-        assert_equal(res.status_code, 200)
+        #test_search_users_by_middle_name
+        url = '{}?q={}'.format(url_user_search, 'Omari')
+        res = app.get(url)
+        assert res.status_code == 200
         num_results = len(res.json['data'])
         total = res.json['links']['meta']['total']
-        assert_equal(num_results, total, 1)
-        assert_equal(self.user_one.middle_names[0], res.json['data'][0]['attributes']['middle_names'][0])
+        assert num_results == 1
+        assert total == 1
+        assert user_one.middle_names[0] == res.json['data'][0]['attributes']['middle_names'][0]
 
-    def test_search_users_by_family_name(self):
-        url = '{}?q={}'.format(self.url, 'West')
-        res = self.app.get(url)
-        assert_equal(res.status_code, 200)
+        #test_search_users_by_family_name
+        url = '{}?q={}'.format(url_user_search, 'West')
+        res = app.get(url)
+        assert res.status_code == 200
         num_results = len(res.json['data'])
         total = res.json['links']['meta']['total']
-        assert_equal(num_results, total, 1)
-        assert_equal(self.user_one.family_name, res.json['data'][0]['attributes']['family_name'])
+        assert num_results == 1
+        assert total == 1
+        assert user_one.family_name == res.json['data'][0]['attributes']['family_name']
 
-    def test_search_users_by_job(self):
-        url = '{}?q={}'.format(self.url, 'producer')
-        res = self.app.get(url)
-        assert_equal(res.status_code, 200)
+        #test_search_users_by_job
+        url = '{}?q={}'.format(url_user_search, 'producer')
+        res = app.get(url)
+        assert res.status_code == 200
         num_results = len(res.json['data'])
         total = res.json['links']['meta']['total']
-        assert_equal(num_results, total, 1)
-        assert_equal(self.user_one.fullname, res.json['data'][0]['attributes']['full_name'])
+        assert num_results == 1
+        assert total == 1
+        assert user_one.fullname == res.json['data'][0]['attributes']['full_name']
 
-    def test_search_users_by_school(self):
-        url = '{}?q={}'.format(self.url, 'Chicago')
-        res = self.app.get(url)
-        assert_equal(res.status_code, 200)
+        #test_search_users_by_school
+        url = '{}?q={}'.format(url_user_search, 'Chicago')
+        res = app.get(url)
+        assert res.status_code == 200
         num_results = len(res.json['data'])
         total = res.json['links']['meta']['total']
-        assert_equal(num_results, total, 1)
-        assert_equal(self.user_one.fullname, res.json['data'][0]['attributes']['full_name'])
+        assert num_results == 1
+        assert total == 1
+        assert user_one.fullname == res.json['data'][0]['attributes']['full_name']
 
 
 class TestSearchInstitutions(ApiSearchTestCase):
 
-    def setUp(self):
-        super(TestSearchInstitutions, self).setUp()
-        self.url = '/{}search/institutions/'.format(API_BASE)
+    @pytest.fixture()
+    def url_institution_search(self):
+        return '/{}search/institutions/'.format(API_BASE)
 
-    def test_search_institutions_no_auth(self):
-        res = self.app.get(self.url)
-        assert_equal(res.status_code, 200)
+    def test_search_institutions(self, app, url_institution_search, user, institution):
+
+        #test_search_institutions_no_auth
+        res = app.get(url_institution_search)
+        assert res.status_code == 200
         num_results = len(res.json['data'])
         total = res.json['links']['meta']['total']
-        assert_equal(num_results, total, 1)
-        assert_in(self.institution.name, res)
+        assert num_results == 1
+        assert total == 1
+        assert institution.name in res
 
-    def test_search_institutions_auth(self):
-        res = self.app.get(self.url, auth=self.user)
-        assert_equal(res.status_code, 200)
+        #test_search_institutions_auth
+        res = app.get(url_institution_search, auth=user)
+        assert res.status_code == 200
         num_results = len(res.json['data'])
         total = res.json['links']['meta']['total']
-        assert_equal(num_results, total, 1)
-        assert_in(self.institution.name, res)
+        assert num_results == 1
+        assert total == 1
+        assert institution.name in res
 
-    def test_search_institutions_by_name(self):
-        url = '{}?q={}'.format(self.url, 'Social')
-        res = self.app.get(url)
-        assert_equal(res.status_code, 200)
+        #test_search_institutions_by_name
+        url = '{}?q={}'.format(url_institution_search, 'Social')
+        res = app.get(url)
+        assert res.status_code == 200
         num_results = len(res.json['data'])
         total = res.json['links']['meta']['total']
-        assert_equal(num_results, total, 1)
-        assert_equal(self.institution.name, res.json['data'][0]['attributes']['name'])
+        assert num_results == 1
+        assert total == 1
+        assert institution.name == res.json['data'][0]['attributes']['name']

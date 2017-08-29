@@ -1,33 +1,32 @@
 import httplib
 import functools
 
-from modularodm.exceptions import NoResultsFound
-from modularodm.storage.base import KeyExistsException
+from django.core.exceptions import ObjectDoesNotExist
+from django.db import IntegrityError
+
 from framework.auth.decorators import must_be_signed
 
 from framework.exceptions import HTTPError
 
 from addons.osfstorage.models import OsfStorageFileNode, OsfStorageFolder
-from osf.models import OSFUser as User, AbstractNode as Node
+from osf.models import OSFUser, AbstractNode
 from website.files import exceptions
 from website.project.decorators import (
     must_not_be_registration, must_have_addon,
 )
 
-
-def handle_odm_errors(func):
+def handle_django_errors(func):
     @functools.wraps(func)
     def wrapped(*args, **kwargs):
         try:
             return func(*args, **kwargs)
-        except NoResultsFound:
+        except ObjectDoesNotExist:
             raise HTTPError(httplib.NOT_FOUND)
-        except KeyExistsException:
+        except IntegrityError:
             raise HTTPError(httplib.CONFLICT)
         except exceptions.VersionNotFoundError:
             raise HTTPError(httplib.NOT_FOUND)
     return wrapped
-
 
 def autoload_filenode(must_be=None, default_root=False):
     """Implies both must_have_addon osfstorage node and
@@ -35,7 +34,7 @@ def autoload_filenode(must_be=None, default_root=False):
     Attempts to load fid as a OsfStorageFileNode with viable constraints
     """
     def _autoload_filenode(func):
-        @handle_odm_errors
+        @handle_django_errors
         @must_have_addon('osfstorage', 'node')
         @functools.wraps(func)
         def wrapped(*args, **kwargs):
@@ -63,14 +62,14 @@ def autoload_filenode(must_be=None, default_root=False):
 def waterbutler_opt_hook(func):
 
     @must_be_signed
-    @handle_odm_errors
+    @handle_django_errors
     @must_not_be_registration
     @must_have_addon('osfstorage', 'node')
     @functools.wraps(func)
     def wrapped(payload, *args, **kwargs):
         try:
-            user = User.load(payload['user'])
-            dest_node = Node.load(payload['destination']['node'])
+            user = OSFUser.load(payload['user'])
+            dest_node = AbstractNode.load(payload['destination']['node'])
             source = OsfStorageFileNode.get(payload['source'], kwargs['node'])
             dest_parent = OsfStorageFolder.get(payload['destination']['parent'], dest_node)
 

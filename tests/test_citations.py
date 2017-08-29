@@ -7,7 +7,7 @@ from framework.auth.core import Auth
 from osf_tests.factories import AuthUserFactory, ProjectFactory, UserFactory, NodeFactory, fake, UnregUserFactory
 from scripts import parse_citation_styles
 from tests.base import OsfTestCase
-from osf.models import OSFUser as User, AbstractNode as Node
+from osf.models import OSFUser
 from website.citations.utils import datetime_to_csl
 from website.util import api_url_for
 
@@ -31,8 +31,8 @@ class CitationsNodeTestCase(OsfTestCase):
 
     def tearDown(self):
         super(CitationsNodeTestCase, self).tearDown()
-        Node.remove()
-        User.remove()
+        OSFUser.remove()
+        OSFUser.remove()
 
     def test_csl_single_author(self):
         # Nodes with one contributor generate valid CSL-data
@@ -98,14 +98,14 @@ class CitationsUserTestCase(OsfTestCase):
 
     def test_registered_user_csl(self):
         # Tests the csl name for a registered user
-        user = User.create_confirmed(
+        user = OSFUser.create_confirmed(
             username=fake.email(), password='foobar', fullname=fake.name()
         )
         if user.is_registered:
             assert bool(
-                user.csl_name(user._id) ==
+                user.csl_name() ==
                 {
-                    'given': user.given_name,
+                    'given': user.csl_given_name,
                     'family': user.family_name,
                 }
             )
@@ -115,9 +115,8 @@ class CitationsUserTestCase(OsfTestCase):
         referrer = UserFactory()
         project = NodeFactory(creator=referrer)
         user = UnregUserFactory()
-        given_name = 'Fredd Merkury'
         user.add_unclaimed_record(node=project,
-            given_name=given_name, referrer=referrer,
+            given_name=user.fullname, referrer=referrer,
             email=fake.email())
         user.save()
         name = user.unclaimed_records[project._primary_key]['name'].split(' ')
