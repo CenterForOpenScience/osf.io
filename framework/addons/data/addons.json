@@ -127,7 +127,7 @@
             },
             "View / download file versions": {
                 "status": "full",
-                "text": "OneDrive files and their versions can be viewed/downloaded via OSF."
+                "text": "OneDrive files and their versions can be viewed/downloaded via OSF.  OneNote files are unexportable and cannot be downloaded or viewed."
             },
             "Add / update files": {
                 "status": "none",
@@ -147,7 +147,7 @@
             },
             "Registering": {
                 "status": "partial",
-                "text": "OneDrive content will be registered, but version history will not be copied to the registration."
+                "text": "OneDrive content will be registered, but version history will not be copied to the registration. OneNote files are unexportable and will not be archived."
             }
         },
         "Dataverse": {
