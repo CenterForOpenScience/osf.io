@@ -270,7 +270,7 @@ def proxy_url(url):
     """
     # Get URL map, passing current request method; else method defaults to GET
     match = app.url_map.bind('').match(url, method=request.method)
-    response = app.yview_functions[match[0]](**match[1])
+    response = app.view_functions[match[0]](**match[1])
     return make_response(response)
 
 

@@ -219,7 +219,7 @@ services:
     ports:
       - 4201:4201
     volumes:
-      - preprints_dist_vol:/code/dist
+      - quickfiles_dist_vol:/code/dist
     stdin_open: true
 
   #############
@@ -422,4 +422,5 @@ services:
       - osf_node_modules_vol:/code/node_modules
       - preprints_dist_vol:/preprints
       - registries_dist_vol:/registries
+      - quickfiles_dist_vol:/quickfiles
     stdin_open: true
