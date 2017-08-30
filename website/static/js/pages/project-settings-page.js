@@ -6,10 +6,13 @@ var Raven = require('raven-js');
 var ko = require('knockout');
 
 var ProjectSettings = require('js/projectSettings.js');
+var NodesDelete = require('js/nodesDelete.js');
 var InstitutionProjectSettings = require('js/institutionProjectSettings.js');
 
 var $osf = require('js/osfHelpers');
 require('css/addonsettings.css');
+
+var template = require('raw!templates/registration-modal.html');
 
 var ctx = window.contextVars;
 
@@ -84,7 +87,7 @@ $(document).ready(function() {
 
     $('#deleteNode').on('click', function() {
         if(ctx.node.childExists){
-            $osf.growl('Error', 'Any child components must be deleted prior to deleting this project.','danger', 30000);
+            new NodesDelete.NodesDelete('#nodesDelete', ctx.node)
         }else{
             ProjectSettings.getConfirmationCode(ctx.node.nodeType, ctx.node.isPreprint);
         }
