@@ -1,7 +1,18 @@
+"""Check nodes for spam using Akismet.
+
+To print out whether a node is classified as spam or ham:
+
+    python manage.py check_spam abc12
+
+
+To check and flag a node:
+
+    python manage.py check_spam abc12 --flag
+"""
 import logging
 
 from django.core.management.base import BaseCommand
-from osf.models import Node
+from osf.models import AbstractNode
 
 logger = logging.getLogger(__name__)
 
@@ -39,7 +50,7 @@ class Command(BaseCommand):
             dest='flag',
             help='Update records in the database',
         )
-        parser.add_argument('--guids', type=str, nargs='+', help='Node GUIDs')
+        parser.add_argument('guids', type=str, nargs='+', help='Node GUIDs')
 
     def handle(self, *args, **options):
         guids = options.get('guids', [])
@@ -47,4 +58,4 @@ class Command(BaseCommand):
 
         for guid in guids:
             logger.info('Checking Node {}...'.format(guid))
-            check_spam(Node.load(guid), flag=flag)
+            check_spam(AbstractNode.load(guid), flag=flag)
