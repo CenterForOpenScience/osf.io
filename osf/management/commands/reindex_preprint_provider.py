@@ -10,7 +10,7 @@ logger = logging.getLogger(__name__)
 def reindex_provider(provider):
     logger.info('Sending {} preprints to SHARE...'.format(provider.preprint_services.count()))
     for preprint in provider.preprint_services.all():
-        update_preprint_share(preprint._id, old_subjects=None, share_type=None)
+        update_preprint_share(preprint, old_subjects=None, share_type=None)
 
 class Command(BaseCommand):
     def add_arguments(self, parser):
