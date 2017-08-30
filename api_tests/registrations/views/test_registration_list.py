@@ -72,11 +72,13 @@ class TestRegistrationList(ApiTestCase):
         assert_equal(registered_from, '/{}nodes/{}/'.format(API_BASE, self.public_project._id))
 
     def test_total_biographic_contributor_in_registration(self):
+        user3 = AuthUserFactory()
         registration = RegistrationFactory(is_public=True, creator=self.user)
         registration.add_contributor(self.user_two, auth=Auth(self.user))
+        registration.add_contributor(user3, auth=Auth(self.user), visible=False)
         registration.save()
         registration_url = '/{0}registrations/{1}/?embed=contributors'.format(API_BASE, registration._id)
-        
+
         res = self.app.get(registration_url)
         assert_true(res.json['data']['embeds']['contributors']['links']['meta']['total_bibliographic'])
         assert_equal(res.json['data']['embeds']['contributors']['links']['meta']['total_bibliographic'], 2)

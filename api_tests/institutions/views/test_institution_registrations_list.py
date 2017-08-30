@@ -78,9 +78,11 @@ class TestInstitutionRegistrationList(ApiTestCase):
         assert_not_in(self.registration2._id, ids)
 
     def test_total_biographic_contributor_in_institution_registration(self):
+        user3 = AuthUserFactory()
         registration3 = RegistrationFactory(is_public=True, creator=self.user1)
         registration3.affiliated_institutions.add(self.institution)
         registration3.add_contributor(self.user2, auth=Auth(self.user1))
+        registration3.add_contributor(user3, auth=Auth(self.user1), visible=False)
         registration3.save()
         registration3_url = '/{0}registrations/{1}/?embed=contributors'.format(API_BASE, registration3._id)
 
