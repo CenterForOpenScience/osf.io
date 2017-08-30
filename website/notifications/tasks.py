@@ -104,5 +104,5 @@ def remove_notifications(email_notification_ids=None):
     :param email_notification_ids:
     :return:
     """
-    for email_id in email_notification_ids:
-        NotificationDigest.objects.get(_id=email_id).delete()
+    if email_notification_ids:
+        NotificationDigest.objects.filter(_id__in=email_notification_ids).delete()

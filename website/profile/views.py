@@ -44,7 +44,8 @@ def get_public_projects(uid=None, user=None):
     user = user or OSFUser.load(uid)
     # In future redesign, should be limited for users with many projects / components
     node_ids = (
-        Node.find_for_user(user, PROJECT_QUERY)
+        user.nodes
+        .filter(PROJECT_QUERY)
         .filter(is_public=True)
         .get_roots()
         .values_list('id', flat=True)

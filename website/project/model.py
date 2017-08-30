@@ -90,9 +90,7 @@ def validate_user(value):
     OSFUser = apps.get_model('osf.OSFUser')
     if value != {}:
         user_id = value.iterkeys().next()
-        try:
-            OSFUser.objects.get(_id=user_id)
-        except OSFUser.DoesNotExist:
+        if not OSFUser.objects.get(guids___id=user_id).exists():
             raise ValidationError('User does not exist.')
     return True
 

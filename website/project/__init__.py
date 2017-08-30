@@ -53,7 +53,7 @@ def new_bookmark_collection(user):
         is_bookmark_collection=True,
         creator=user,
         is_deleted=False
-    ).count()
+    ).exists()
 
     if existing_bookmark_collections:
         raise NodeStateError('Users may only have one bookmark collection')

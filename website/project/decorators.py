@@ -223,7 +223,7 @@ def _must_be_contributor_factory(include_public, include_view_only_anon=True):
             if not include_view_only_anon:
                 from osf.models import PrivateLink
                 try:
-                    link_anon = PrivateLink.objects.get(key=key).anonymous
+                    link_anon = PrivateLink.objects.filter(key=key).values_list('anonymous', flat=True).get()
                 except PrivateLink.DoesNotExist:
                     link_anon = None
 
