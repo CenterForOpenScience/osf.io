@@ -23,6 +23,7 @@ from website.project.decorators import (
     must_be_valid_project,
     must_have_permission,
     must_have_write_permission_or_public_wiki,
+    must_not_be_retracted_registration,
 )
 
 from website.exceptions import NodeStateError
@@ -216,6 +217,7 @@ def project_wiki_delete(auth, wname, **kwargs):
 @must_be_valid_project  # returns project
 @must_be_contributor_or_public
 @must_have_addon('wiki', 'node')
+@must_not_be_retracted_registration
 def project_wiki_view(auth, wname, path=None, **kwargs):
     node = kwargs['node'] or kwargs['project']
     anonymous = has_anonymous_link(node, auth)

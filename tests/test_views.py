@@ -862,6 +862,11 @@ class TestProjectViews(OsfTestCase):
         assert_in(registration.title, res.body)
         assert_equal(res.status_code, 200)
 
+        for route in ['files', 'wiki/home', 'analytics', 'forks', 'contributors', 'settings', 'withdraw', 'register', 'register/fakeid']:
+            res = self.app.get('{}{}/'.format(url, route), auth=self.auth, expect_errors=True)
+            assert_equal(res.status_code, 400, route)
+            assert_in('Unable to view supplemental pages for withdrawn registrations', res.body, route)
+
 
 class TestEditableChildrenViews(OsfTestCase):
 

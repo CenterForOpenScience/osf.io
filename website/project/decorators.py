@@ -16,7 +16,7 @@ from framework.auth.decorators import collect_auth
 from framework.database import get_or_http_error
 
 from osf.models import AbstractNode
-from website import settings
+from website import language, settings
 
 _load_node_or_fail = lambda pk: get_or_http_error(AbstractNode, pk)
 
@@ -120,6 +120,26 @@ def must_be_public_registration(func):
             raise HTTPError(
                 http.BAD_REQUEST,
                 data=dict(message_long='Must be a public registration to view')
+            )
+
+        return func(*args, **kwargs)
+
+    return wrapped
+
+
+def must_not_be_retracted_registration(func):
+
+    @functools.wraps(func)
+    def wrapped(*args, **kwargs):
+
+        _inject_nodes(kwargs)
+
+        node = kwargs['node']
+
+        if node.is_retracted:
+            raise HTTPError(
+                http.BAD_REQUEST,
+                data=dict(message_long=language.RETRACTED_REGISTRATION_ERROR_MESSAGE)
             )
 
         return func(*args, **kwargs)
