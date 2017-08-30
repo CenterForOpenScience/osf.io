@@ -76,6 +76,7 @@ class TestRegistrationList(ApiTestCase):
         registration.add_contributor(self.user_two, auth=Auth(self.user))
         registration.save()
         registration_url = '/{0}registrations/{1}/?embed=contributors'.format(API_BASE, registration._id)
+        
         res = self.app.get(registration_url)
         assert_true(res.json['data']['embeds']['contributors']['links']['meta']['total_bibliographic'])
         assert_equal(res.json['data']['embeds']['contributors']['links']['meta']['total_bibliographic'], 2)
