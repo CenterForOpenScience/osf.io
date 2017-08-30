@@ -9,6 +9,7 @@ from api.base.views import JSONAPIBaseView, BaseContributorDetail, BaseContribut
 
 from api.base.serializers import HideIfWithdrawal, LinkedRegistrationsRelationshipSerializer
 from api.base.serializers import LinkedNodesRelationshipSerializer
+from api.base.pagination import NodeContributorPagination
 from api.base.parsers import JSONAPIRelationshipParser
 from api.base.parsers import JSONAPIRelationshipParserForRegularJSON
 from api.base.utils import get_user_auth
@@ -379,6 +380,8 @@ class RegistrationContributorsList(BaseContributorList, RegistrationMixin, UserM
     """
     view_category = 'registrations'
     view_name = 'registration-contributors'
+
+    pagination_class = NodeContributorPagination
     serializer_class = RegistrationContributorsSerializer
 
     required_read_scopes = [CoreScopes.NODE_REGISTRATIONS_READ]
