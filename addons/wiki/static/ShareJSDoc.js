@@ -181,7 +181,7 @@ var ShareJSDoc = function(url, metadata, viewText, editor) {
         if (madeConnection) {
             viewModel.status('connected');
         } else {
-            viewModel.status('disconnect');
+            viewModel.status('disconnected');
         }
     };
     // This will be called on both connect and reconnect
