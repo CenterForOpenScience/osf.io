@@ -18,6 +18,8 @@ from modularodm import Q
 from modularodm.exceptions import NoResultsFound
 
 from addons.base.models import BaseStorageAddon
+from addons.osfstorage.models import OsfStorageFileNode
+
 from framework import sentry
 from framework.auth import Auth
 from framework.auth import cas
@@ -499,7 +501,7 @@ def addon_view_or_download_file_legacy(**kwargs):
 
         try:
             path = node_settings.get_root().find_child_by_name(path)._id
-        except NoResultsFound:
+        except OsfStorageFileNode.DoesNotExist:
             raise HTTPError(
                 404, data=dict(
                     message_short='File not found',
