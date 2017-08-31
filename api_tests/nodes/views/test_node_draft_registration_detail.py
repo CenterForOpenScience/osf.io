@@ -461,7 +461,7 @@ class TestDraftRegistrationPatch(DraftRegistrationTestCase):
         assert data['attributes']['registration_metadata'] == payload['data']['attributes']['registration_metadata']
 
     def test_cannot_update_draft(self, app, user_write_contrib, user_read_contrib, user_non_contrib, payload, url_draft_registrations):
-    
+
     #   test_read_only_contributor_cannot_update_draft
         res = app.patch_json_api(url_draft_registrations, payload, auth=user_read_contrib.auth, expect_errors=True)
         assert res.status_code == 403

@@ -2,10 +2,10 @@
 import uuid
 
 from django.apps import apps
+from django.core.exceptions import ValidationError
 
 from framework.auth.core import Auth
 from modularodm import Q
-from modularodm.exceptions import ValidationValueError
 from website.exceptions import NodeStateError
 from website.util.sanitize import strip_html
 
@@ -85,7 +85,7 @@ def new_private_link(name, user, nodes, anonymous):
     if name:
         name = strip_html(name)
         if name is None or not name.strip():
-            raise ValidationValueError('Invalid link name.')
+            raise ValidationError('Invalid link name.')
     else:
         name = 'Shared project link'
 
