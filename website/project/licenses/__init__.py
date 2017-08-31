@@ -2,7 +2,6 @@ from django.apps import apps
 from django.core.exceptions import ValidationError
 
 from framework import exceptions as framework_exceptions
-
 from website import exceptions as web_exceptions
 from website.util import permissions
 

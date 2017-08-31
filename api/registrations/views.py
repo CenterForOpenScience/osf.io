@@ -1,17 +1,18 @@
 from rest_framework import generics, permissions as drf_permissions
 from rest_framework.exceptions import ValidationError, NotFound
 from framework.auth.oauth_scopes import CoreScopes
-from modularodm import Q
 
 from osf.models import AbstractNode
 from api.base import permissions as base_permissions
+from api.base.filters import ListFilterMixin
 from api.base.views import JSONAPIBaseView, BaseContributorDetail, BaseContributorList, BaseNodeLinksDetail, BaseNodeLinksList, WaterButlerMixin
 
 from api.base.serializers import HideIfWithdrawal, LinkedRegistrationsRelationshipSerializer
 from api.base.serializers import LinkedNodesRelationshipSerializer
+from api.base.pagination import NodeContributorPagination
 from api.base.parsers import JSONAPIRelationshipParser
 from api.base.parsers import JSONAPIRelationshipParserForRegularJSON
-from api.base.utils import get_user_auth
+from api.base.utils import get_user_auth, default_registration_list_queryset, default_registration_permission_queryset
 from api.comments.serializers import RegistrationCommentSerializer, CommentCreateSerializer
 from api.identifiers.serializers import RegistrationIdentifierSerializer
 from api.nodes.views import NodeIdentifierList
@@ -36,7 +37,7 @@ from api.registrations.serializers import (
 from api.nodes.filters import NodesFilterMixin
 
 from api.nodes.views import (
-    NodeMixin, ODMFilterMixin, NodeRegistrationsList, NodeLogList,
+    NodeMixin, NodeRegistrationsList, NodeLogList,
     NodeCommentsList, NodeProvidersList, NodeFilesList, NodeFileDetail,
     NodeInstitutionsList, NodeForksList, NodeWikiList, LinkedNodesList,
     NodeViewOnlyLinksList, NodeViewOnlyLinkDetail, NodeCitationDetail, NodeCitationStyleDetail,
@@ -154,17 +155,7 @@ class RegistrationList(JSONAPIBaseView, generics.ListAPIView, NodesFilterMixin):
 
     # overrides NodesFilterMixin
     def get_default_queryset(self):
-        base_query = (
-            Q('is_deleted', 'ne', True) &
-            Q('type', 'eq', 'osf.registration')
-        )
-        user = self.request.user
-        permission_query = Q('is_public', 'eq', True)
-        if not user.is_anonymous:
-            permission_query = (permission_query | Q('contributors', 'eq', user))
-
-        query = base_query & permission_query
-        return AbstractNode.find(query)
+        return default_registration_list_queryset() & default_registration_permission_queryset(self.request.user)
 
     def is_blacklisted(self):
         query_params = self.parse_query_params(self.request.query_params)
@@ -178,13 +169,11 @@ class RegistrationList(JSONAPIBaseView, generics.ListAPIView, NodesFilterMixin):
     # overrides ListAPIView
     def get_queryset(self):
         blacklisted = self.is_blacklisted()
-        nodes = self.get_queryset_from_request().distinct()
+        registrations = self.get_queryset_from_request().distinct()
         # If attempting to filter on a blacklisted field, exclude withdrawals.
         if blacklisted:
-            non_withdrawn_list = [node._id for node in nodes if not node.is_retracted]
-            non_withdrawn_nodes = AbstractNode.find(Q('_id', 'in', non_withdrawn_list))
-            return non_withdrawn_nodes
-        return nodes
+            return registrations.exclude(retraction__isnull=False)
+        return registrations
 
 
 class RegistrationDetail(JSONAPIBaseView, generics.RetrieveUpdateAPIView, RegistrationMixin, WaterButlerMixin):
@@ -379,6 +368,8 @@ class RegistrationContributorsList(BaseContributorList, RegistrationMixin, UserM
     """
     view_category = 'registrations'
     view_name = 'registration-contributors'
+
+    pagination_class = NodeContributorPagination
     serializer_class = RegistrationContributorsSerializer
 
     required_read_scopes = [CoreScopes.NODE_REGISTRATIONS_READ]
@@ -452,7 +443,7 @@ class RegistrationContributorDetail(BaseContributorDetail, RegistrationMixin, Us
         base_permissions.TokenHasScope,
     )
 
-class RegistrationChildrenList(JSONAPIBaseView, generics.ListAPIView, ODMFilterMixin, RegistrationMixin):
+class RegistrationChildrenList(JSONAPIBaseView, generics.ListAPIView, ListFilterMixin, RegistrationMixin):
     """Children of the current registration.
 
     This will get the next level of child nodes for the selected node if the current user has read access for those
@@ -517,33 +508,13 @@ class RegistrationChildrenList(JSONAPIBaseView, generics.ListAPIView, ODMFilterM
 
     ordering = ('-date_modified',)
 
-    def get_default_odm_query(self):
-        base_query = (
-            Q('is_deleted', 'ne', True) &
-            Q('type', 'eq', 'osf.registration')
-        )
-        user = self.request.user
-        permission_query = Q('is_public', 'eq', True)
-        if not user.is_anonymous:
-            permission_query = (permission_query | Q('contributors', 'eq', user))
-
-        query = base_query & permission_query
-        return query
+    def get_default_queryset(self):
+        return default_registration_list_queryset() & default_registration_permission_queryset(self.request.user)
 
     def get_queryset(self):
-        node = self.get_node()
-        req_query = self.get_query_from_request()
-
-        node_pks = node.node_relations.filter(is_node_link=False).select_related('child').values_list('child__pk', flat=True)
-
-        query = (
-            Q('pk', 'in', node_pks) &
-            req_query
-        )
-        nodes = AbstractNode.find(query).order_by('-date_modified')
-        auth = get_user_auth(self.request)
-        pks = [each.pk for each in nodes if each.can_view(auth)]
-        return AbstractNode.objects.filter(pk__in=pks).order_by('-date_modified')
+        registration = self.get_node()
+        registration_pks = registration.node_relations.filter(is_node_link=False).select_related('child').values_list('child__pk', flat=True)
+        return self.get_queryset_from_request().filter(pk__in=registration_pks).can_view(self.request.user).order_by('-date_modified')
 
 
 class RegistrationCitationDetail(NodeCitationDetail, RegistrationMixin):

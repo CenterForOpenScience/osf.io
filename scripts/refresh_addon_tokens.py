@@ -7,7 +7,6 @@ import time
 from django.utils import timezone
 
 import django
-from modularodm import Q
 from oauthlib.oauth2 import OAuth2Error
 from dateutil.relativedelta import relativedelta
 django.setup()
@@ -37,10 +36,10 @@ def look_up_provider(addon_short_name):
 def get_targets(delta, addon_short_name):
     # NOTE: expires_at is the  access_token's expiration date,
     # NOT the refresh token's
-    return ExternalAccount.find(
-        Q('expires_at', 'lt', timezone.now() - delta) &
-        Q('date_last_refreshed', 'lt', timezone.now() - delta) &
-        Q('provider', 'eq', addon_short_name)
+    return ExternalAccount.objects.filter(
+        expires_at__lt=timezone.now() - delta,
+        date_last_refreshed__lt=timezone.now() - delta,
+        provider=addon_short_name
     )
 
 def main(delta, Provider, rate_limit, dry_run):

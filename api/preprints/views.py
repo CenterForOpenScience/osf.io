@@ -167,23 +167,22 @@ class PreprintList(JSONAPIBaseView, generics.ListCreateAPIView, PreprintFilterMi
         else:
             return PreprintSerializer
 
-    # overrides DjangoFilterMixin
-    def get_default_django_query(self):
+    def get_default_queryset(self):
         auth = get_user_auth(self.request)
         auth_user = getattr(auth, 'user', None)
 
         # Permissions on the list objects are handled by the query
-        default_query = Q(node__isnull=False, node__is_deleted=False)
+        default_qs = PreprintService.objects.filter(node__is_deleted=False, node__isnull=False)
         no_user_query = Q(is_published=True, node__is_public=True)
         if auth_user:
             contrib_user_query = Q(is_published=True, node__contributor__user_id=auth_user.id, node__contributor__read=True)
             admin_user_query = Q(node__contributor__user_id=auth_user.id, node__contributor__admin=True)
-            return (default_query & (no_user_query | contrib_user_query | admin_user_query))
-        return (default_query & no_user_query)
+            return default_qs.filter(no_user_query | contrib_user_query | admin_user_query)
+        return default_qs.filter(no_user_query)
 
     # overrides ListAPIView
     def get_queryset(self):
-        return PreprintService.objects.filter(self.get_query_from_request()).distinct()
+        return self.get_queryset_from_request().distinct()
 
 class PreprintDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView, PreprintMixin, WaterButlerMixin):
     """Preprint Detail  *Writeable*.
@@ -401,4 +400,4 @@ class PreprintIdentifierList(IdentifierList, PreprintMixin):
 
     # overrides ListCreateAPIView
     def get_queryset(self):
-        return Identifier.find(self.get_query_from_request())
+        return Identifier.find(self.get_queryset_from_request())

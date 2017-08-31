@@ -2,7 +2,6 @@ import pytz
 import json
 
 from django.core.exceptions import ValidationError
-from modularodm.exceptions import ValidationValueError
 from rest_framework import serializers as ser
 from rest_framework import exceptions
 
@@ -18,6 +17,7 @@ from api.nodes.serializers import NodeContributorsSerializer, NodeTagField
 from api.base.serializers import (IDField, RelationshipField, LinksField, HideIfWithdrawal,
                                   FileCommentRelationshipField, NodeFileHyperLinkField, HideIfRegistration,
                                   JSONAPIListField, ShowIfVersion, DateByVersion,)
+from osf.exceptions import ValidationValueError
 
 
 class BaseRegistrationSerializer(NodeSerializer):

@@ -9,7 +9,6 @@ require('js/osfToggleHeight');
 var m = require('mithril');
 var Fangorn = require('js/fangorn').Fangorn;
 var Raven = require('raven-js');
-var lodashGet  = require('lodash.get');
 require('truncate');
 
 var $osf = require('js/osfHelpers');
@@ -21,7 +20,6 @@ var mathrender = require('js/mathrender');
 var md = require('js/markdown').full;
 var oldMd = require('js/markdown').old;
 var AddProject = require('js/addProjectPlugin');
-var mHelpers = require('js/mithrilHelpers');
 var SocialShare = require('js/components/socialshare');
 
 var ctx = window.contextVars;

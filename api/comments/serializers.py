@@ -1,7 +1,6 @@
 import bleach
 
 from rest_framework import serializers as ser
-from modularodm import Q
 from osf.exceptions import ValidationError as ModelValidationError
 from framework.auth.core import Auth
 from framework.exceptions import PermissionsError
@@ -83,7 +82,7 @@ class CommentSerializer(JSONAPISerializer):
         return obj.user._id == user._id and obj.node.can_comment(Auth(user))
 
     def get_has_children(self, obj):
-        return Comment.find(Q('target', 'eq', Guid.load(obj._id))).count() > 0
+        return Comment.objects.filter(target___id=obj._id).exists()
 
     def get_absolute_url(self, obj):
         return absolute_reverse('comments:comment-detail', kwargs={
