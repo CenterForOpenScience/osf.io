@@ -78,12 +78,31 @@
                     </div>
                     </li>
                 %else :
+		%if not embedded_ds:
                 <li class="dropdown sign-in">
                     <div class="col-sm-12">
                         <a data-bind="click: trackClick.bind($data, 'SignUp')" href="${web_url_for('auth_register')}" class="btn btn-success btn-top-signup m-r-xs">Sign Up</a>
                         <a data-bind="click: trackClick.bind($data, 'SignIn')" href="${login_url}" class="btn btn-info btn-top-login p-sm">Sign In</a>
                     </div>
                 </li>
+		%else :
+<!-- embedded DS -->
+<script type="text/javascript" charset="UTF-8"><!--
+  var li = document.createElement('li');
+  li.innerHTML = '<a id="shibbolethDS" href="#" class="user-item login-link" onclick="return toggleDs()">DS</a>';
+  document.getElementById('login-link').parentNode.parentNode.appendChild(li);
+    //-->
+</script>
+<script type="text/javascript" src="/js/embedded-wayf_disp.js"></script>
+<div id="wayfInMenu" style="float: right; clear: right; position: relative;">
+<script type="text/javascript" src="/js/embedded-wayf_config.js"></script>
+<script type="text/javascript" charset="UTF-8"><!--
+  document.write('<script type="text/javascript" src="https://test-ds.gakunin.nii.ac.jp/WAYF/embedded-wayf.js?' + (new Date().getTime()) + '"></scr'+'ipt>');
+    //-->
+</script>
+<!-- embbeded DS -->
+</div>
+                %endif
                 %endif
             % endif
 
