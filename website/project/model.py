@@ -5,7 +5,6 @@ import re
 from django.apps import apps
 from django.core.exceptions import ValidationError
 
-from website import settings
 from website.util import sanitize
 
 logger = logging.getLogger(__name__)
@@ -59,15 +58,6 @@ def get_pointer_parent(pointer):
     return parent_refs[0]
 
 
-def validate_category(value):
-    """Validator for Node#category. Makes sure that the value is one of the
-    categories defined in NODE_CATEGORY_MAP.
-    """
-    if value not in settings.NODE_CATEGORY_MAP.keys():
-        raise ValidationError('Invalid value for category.')
-    return True
-
-
 def validate_title(value):
     """Validator for Node#title. Makes sure that the value exists and is not
     above 200 characters.
@@ -86,23 +76,8 @@ def validate_title(value):
     return True
 
 
-def validate_user(value):
-    OSFUser = apps.get_model('osf.OSFUser')
-    if value != {}:
-        user_id = value.iterkeys().next()
-        if not OSFUser.objects.get(guids___id=user_id).exists():
-            raise ValidationError('User does not exist.')
-    return True
-
-
 class NodeUpdateError(Exception):
     def __init__(self, reason, key, *args, **kwargs):
         super(NodeUpdateError, self).__init__(reason, *args, **kwargs)
         self.key = key
         self.reason = reason
-
-
-def validate_doi(value):
-    if value and not re.match(r'\b(10\.\d{4,}(?:\.\d+)*/\S+(?:(?!["&\'<>])\S))\b', value):
-        raise ValidationError('"{}" is not a valid DOI'.format(value))
-    return True
