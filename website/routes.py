@@ -75,6 +75,12 @@ def set_status_message(user):
             extra={}
         )
 
+def use_embedded_ds():
+    if hasattr(settings, 'USE_EMBEDDED_DS'):
+        if settings.USE_EMBEDDED_DS and settings.USE_EMBEDDED_DS.lower().strip() == 'true':
+            return True
+    return False
+
 def get_globals():
     """Context variables that are available for every template rendered by
     OSFWebRenderer.
@@ -93,6 +99,7 @@ def get_globals():
         request_login_url = request.url
 
     return {
+        'embedded_ds': use_embedded_ds(),
         'private_link_anonymous': is_private_link_anonymous_view(),
         'user_name': user.username if user else '',
         'user_full_name': user.fullname if user else '',
