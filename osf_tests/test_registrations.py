@@ -37,7 +37,7 @@ def auth(user):
 
 
 # copied from tests/test_models.py
-def test_factory(user, project):
+def test_factory(user, project, auth):
     # Create a registration with kwargs
     registration1 = factories.RegistrationFactory(
         title='t1', description='d1', creator=user,
@@ -51,7 +51,7 @@ def test_factory(user, project):
 
     # Create a registration from a project
     user2 = factories.UserFactory()
-    project.add_contributor(user2)
+    project.add_contributor(user2, permissions=(READ, WRITE, ADMIN))
     registration2 = factories.RegistrationFactory(
         project=project,
         user=user2,
@@ -228,7 +228,7 @@ class TestRegisterNode:
         assert registration.is_registration
 
     def test_registered_date(self, registration):
-        assert_datetime_equal(registration.registered_date, timezone.now(), allowance=3000)
+        assert_datetime_equal(registration.registered_date, timezone.now(), allowance=6000)
 
     def test_registered_addons(self, registration):
         assert (
@@ -280,9 +280,10 @@ class TestRegisterNode:
     @mock.patch('website.project.signals.after_create_registration')
     def test_registration_clones_project_wiki_pages(self, mock_signal, project, user):
         project = factories.ProjectFactory(creator=user, is_public=True)
+        draft = factories.DraftRegistrationFactory(initiator=user, branched_from=project)
         wiki = NodeWikiFactory(node=project)
         current_wiki = NodeWikiFactory(node=project, version=2)
-        registration = project.register_node(get_default_metaschema(), Auth(user), '', None)
+        registration = project.register_node(schema=get_default_metaschema(), draft=draft, auth=Auth(user), data='', parent=None, celery=False)
         assert registration.wiki_private_uuids == {}
 
         registration_wiki_current = NodeWikiPage.load(registration.wiki_pages_current[current_wiki.page_name])

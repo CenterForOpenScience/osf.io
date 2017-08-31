@@ -288,7 +288,7 @@ class RegistrationFactory(BaseNodeFactory):
 
     @classmethod
     def _create(cls, target_class, project=None, is_public=False,
-                schema=None, data=None,
+                schema=None, data=None, draft=None,
                 archive=False, embargo=None, registration_approval=None, retraction=None,
                 *args, **kwargs):
         user = None
@@ -311,10 +311,20 @@ class RegistrationFactory(BaseNodeFactory):
         schema = schema or get_default_metaschema()
         data = data or {'some': 'data'}
         auth = Auth(user=user)
+
+        if draft is None:
+            draft = DraftRegistrationFactory(
+                        branched_from=project,
+                        initiator=user,
+                        registration_schema=schema,
+                        registration_metadata=data)
+
         register = lambda: project.register_node(
             schema=schema,
             auth=auth,
-            data=data
+            data=data,
+            draft=draft,
+            celery=False
         )
 
         def add_approval_step(reg):

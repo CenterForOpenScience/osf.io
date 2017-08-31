@@ -9,6 +9,7 @@ import pytest
 from nose.tools import *  # noqa (PEP8 asserts)
 from tests.base import OsfTestCase, get_default_metaschema
 from osf_tests.factories import ProjectFactory, UserFactory, AuthUserFactory
+from osf_tests.utils import mock_archive
 
 from framework.exceptions import HTTPError
 from framework.auth import Auth
@@ -287,13 +288,14 @@ class TestBitbucketSettings(OsfTestCase):
         bitbucket_mock = self.bitbucket
         mock_branches.return_value = bitbucket_mock.branches.return_value
 
-        registration = self.project.register_node(
-            schema=get_default_metaschema(),
-            auth=self.consolidated_auth,
-            data=''
-        )
+        # registration = self.project.register_node(
+        #     schema=get_default_metaschema(),
+        #     auth=self.consolidated_auth,
+        #     data=''
+        # )
+        with mock_archive(self.project, data='', autoapprove=True) as registration:
+            url = registration.api_url + 'bitbucket/settings/'
 
-        url = registration.api_url + 'bitbucket/settings/'
         res = self.app.post_json(
             url,
             {

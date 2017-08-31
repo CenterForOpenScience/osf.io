@@ -5,7 +5,9 @@ import pytz
 import urlparse
 import random
 import requests
+import celery
 
+from framework.celery_tasks.handlers import enqueue_task
 from dateutil.parser import parse as parse_date
 from django.utils import timezone
 
@@ -24,9 +26,16 @@ from website.util.share import GraphNode, format_contributor
 
 logger = logging.getLogger(__name__)
 
-@celery_app.task(ignore_results=False)
-def on_node_register(original, draft=None, auth=None, data=None, schema=None, parent=None, reg_choice=None):
+def on_node_register(original, draft=None, auth=None, data=None, schema=None, parent=None, reg_choice=None, celery=True):
+    if celery:
+        return enqueue_task(_on_node_register_celery.s(original, draft=draft, auth=auth, data=data, schema=schema, parent=parent, reg_choice=reg_choice, celery=celery))
+    return _on_node_register(original, draft=draft, auth=auth, data=data, schema=schema, parent=parent, reg_choice=reg_choice, celery=celery)
 
+@celery_app.task(ignore_results=False)
+def _on_node_register_celery(original, draft=None, auth=None, data=None, schema=None, parent=None, reg_choice=None, celery=True):
+    _on_node_register(original, draft=draft, auth=auth, data=data, schema=schema, parent=parent, reg_choice=reg_choice, celery=celery)
+
+def _on_node_register(original, draft=None, auth=None, data=None, schema=None, parent=None, reg_choice=None, celery=True):
     registered = original.clone()
     registered.recast('osf.registration')
 
@@ -79,8 +88,8 @@ def on_node_register(original, draft=None, auth=None, data=None, schema=None, pa
                 schema=schema,
                 auth=auth,
                 data=data,
-                parent=registered
-            )
+                parent=registered,
+                celery=celery)
         else:
             # Copy linked nodes
             NodeRelation.objects.get_or_create(
@@ -114,13 +123,13 @@ def on_node_register(original, draft=None, auth=None, data=None, schema=None, pa
                 registered.embargo_registration(auth.user, embargo_end_date)
             except ValidationValueError as err:
                 raise HTTPError(http.BAD_REQUEST, data=dict(message_long=err.message))
-        else:
+        elif reg_choice == 'immediate':
             try:
                 registered.require_approval(auth.user)
             except NodeStateError as err:
                 raise HTTPError(http.BAD_REQUEST, data=dict(message_long=err.message))
 
-        registered.save()
+    return registered
 
 @celery_app.task(ignore_results=True)
 def on_node_updated(node_id, user_id, first_save, saved_fields, request_headers=None):

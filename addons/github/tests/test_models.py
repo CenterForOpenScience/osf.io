@@ -9,6 +9,7 @@ from addons.base.tests.models import (OAuthAddonNodeSettingsTestSuiteMixin,
 from addons.github.models import NodeSettings
 from addons.github.tests import factories
 from osf_tests.factories import ProjectFactory, UserFactory
+from osf_tests.utils import mock_archive
 
 from nose.tools import (assert_equal, assert_false, assert_in, assert_is,
                         assert_not_equal, assert_not_in, assert_true)
@@ -16,7 +17,7 @@ from nose.tools import (assert_equal, assert_false, assert_in, assert_is,
 from github3 import GitHubError
 from github3.repos import Repository
 
-from tests.base import OsfTestCase, get_default_metaschema
+from tests.base import OsfTestCase
 
 from framework.auth import Auth
 from addons.github.exceptions import NotFoundError
@@ -270,14 +271,9 @@ class TestCallbacks(OsfTestCase):
         self.node_settings.reload()
         assert_true(self.node_settings.user_settings is None)
 
-    @mock.patch('website.archiver.tasks.archive')
-    def test_does_not_get_copied_to_registrations(self, mock_archive):
-        registration = self.project.register_node(
-            schema=get_default_metaschema(),
-            auth=Auth(user=self.project.creator),
-            data='hodor',
-        )
-        assert_false(registration.has_addon('github'))
+    def test_does_not_get_copied_to_registrations(self):
+        with mock_archive(self.project, data='hodor', autoapprove=True) as registration:
+            assert_false(registration.has_addon('github'))
 
 
 class TestGithubNodeSettings(unittest.TestCase):

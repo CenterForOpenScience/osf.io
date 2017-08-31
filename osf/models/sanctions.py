@@ -866,9 +866,15 @@ class DraftRegistrationApproval(Sanction):
 
         initiator = draft.initiator.merged_by or draft.initiator
         auth = Auth(initiator)
+        data = {
+            'embargoEndDate': self.meta.get('embargo_end_date', '')
+        }
         registration = draft.register(
             auth=auth,
-            save=True
+            save=True,
+            data=data,
+            reg_choice=self.meta['registration_choice'],
+            celery=False
         )
         registration_choice = self.meta['registration_choice']
 

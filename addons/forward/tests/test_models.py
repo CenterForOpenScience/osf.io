@@ -6,6 +6,7 @@ import pytest
 from django.core.exceptions import ValidationError
 
 from osf_tests.factories import ProjectFactory, RegistrationFactory
+from osf_tests.utils import mock_archive
 from addons.forward.tests.factories import ForwardSettingsFactory
 
 pytestmark = pytest.mark.django_db
@@ -20,11 +21,10 @@ class TestNodeSettings(unittest.TestCase):
         self.node.save()
 
     def test_forward_registered(self):
-        registration = RegistrationFactory(project=self.node)
-        assert registration.has_addon('forward')
-
-        forward = registration.get_addon('forward')
-        assert_equal(forward.url, 'http://frozen.pizza.reviews/')
+        with mock_archive(self.node, autoapprove=True) as registration:
+            assert registration.has_addon('forward')
+            forward = registration.get_addon('forward')
+        assert forward.url == 'http://frozen.pizza.reviews/'
 
 class TestSettingsValidation(unittest.TestCase):
 

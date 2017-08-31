@@ -3,7 +3,7 @@ import mock
 import pytest
 import unittest
 
-from tests.base import get_default_metaschema
+from osf_tests.utils import mock_archive
 from framework.auth.decorators import Auth
 
 from addons.base.tests.models import (OAuthAddonNodeSettingsTestSuiteMixin,
@@ -37,14 +37,9 @@ class TestNodeSettings(OAuthAddonNodeSettingsTestSuiteMixin, utils.DataverseAddo
             'owner': self.node
         }
 
-    @mock.patch('website.archiver.tasks.archive')
-    def test_does_not_get_copied_to_registrations(self, mock_archive):
-        registration = self.node.register_node(
-            schema=get_default_metaschema(),
-            auth=Auth(user=self.node.creator),
-            data='hodor',
-        )
-        assert_false(registration.has_addon('dataverse'))
+    def test_does_not_get_copied_to_registrations(self):
+        with mock_archive(self.node, data='hodor', autoapprove=True) as registration:
+            assert_false(registration.has_addon('dataverse'))
 
     ## Overrides ##
 

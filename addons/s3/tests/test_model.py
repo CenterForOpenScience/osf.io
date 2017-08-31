@@ -8,7 +8,7 @@ import unittest
 from framework.auth import Auth
 
 from osf_tests.factories import ProjectFactory
-from tests.base import get_default_metaschema
+from osf_tests.utils import mock_archive
 
 from addons.base.tests.models import (
     OAuthAddonNodeSettingsTestSuiteMixin,
@@ -59,14 +59,9 @@ class TestNodeSettings(OAuthAddonNodeSettingsTestSuiteMixin, unittest.TestCase):
         message = self.node_settings.before_register(self.node, self.user)
         assert_true(message)
 
-    @mock.patch('website.archiver.tasks.archive')
-    def test_does_not_get_copied_to_registrations(self, mock_archive):
-        registration = self.node.register_node(
-            schema=get_default_metaschema(),
-            auth=Auth(user=self.user),
-            data='hodor',
-        )
-        assert_false(registration.has_addon('s3'))
+    def test_does_not_get_copied_to_registrations(self):
+        with mock_archive(self.node, data='hodor', autoapprove=True) as registration:
+            assert_false(registration.has_addon('s3'))
 
     ## Overrides ##
 

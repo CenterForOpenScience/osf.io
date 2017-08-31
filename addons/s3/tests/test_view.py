@@ -10,6 +10,7 @@ import pytest
 from framework.auth import Auth
 from tests.base import OsfTestCase, get_default_metaschema
 from osf_tests.factories import ProjectFactory, AuthUserFactory
+from osf_tests.utils import mock_archive
 
 from addons.base.tests.views import (
     OAuthAddonConfigViewsTestCaseMixin
@@ -89,11 +90,8 @@ class TestS3Views(S3AddonTestCase, OAuthAddonConfigViewsTestCaseMixin, OsfTestCa
         assert_equal(res.status_code, http.FORBIDDEN)
 
     def test_s3_set_bucket_registered(self):
-        registration = self.project.register_node(
-            get_default_metaschema(), Auth(self.user), '', ''
-        )
-
-        url = registration.api_url_for('s3_set_config')
+        with mock_archive(self.project, autoapprove=True) as registration:
+            url = registration.api_url_for('s3_set_config')
         res = self.app.put_json(
             url, {'s3_bucket': 'hammertofall'}, auth=self.user.auth,
             expect_errors=True,
