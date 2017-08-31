@@ -329,11 +329,7 @@ class Registration(AbstractNode):
     def delete_registration_tree(self, save=False):
         logger.debug('Marking registration {} as deleted'.format(self._id))
         self.is_deleted = True
-        for draft_registration in DraftRegistration.objects.filter(registered_node=self):
-            # Allow draft registration to be submitted
-            if draft_registration.approval:
-                draft_registration.approval = None
-                draft_registration.save()
+
         if not getattr(self.embargo, 'for_existing_registration', False):
             self.registered_from = None
         if save:
@@ -468,10 +464,10 @@ class DraftRegistration(ObjectIDMixin, BaseModel):
     @property
     def is_approved(self):
         if self.requires_approval:
-            if not self.approval:
-                return False
-            else:
+            try:
                 return self.approval.is_approved
+            except AttributeError:
+                return None
         else:
             return False
 
