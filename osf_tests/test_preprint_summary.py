@@ -22,14 +22,14 @@ def preprint(preprint_provider):
 
 @pytest.fixture()
 def right_before_my_birthday():
-    return {'run_date': datetime.datetime(1991, 9, 25, 0, tzinfo=pytz.utc).replace(hour=23, minute=59, second=59),
-            'preprint_date_created': datetime.datetime(1991, 9, 25, 0, tzinfo=pytz.utc).replace(hour=23, minute=59, second=59) - datetime.timedelta(hours=1)
+    return {'run_date': datetime.datetime(year=1991, month=9, day=25, hour=23, minute=59, second=59, tzinfo=pytz.utc),
+            'preprint_date_created': datetime.datetime(year=1991, month=9, day=25, hour=22, minute=59, second=59, tzinfo=pytz.utc)
             }
 
 @pytest.fixture()
 def my_birthday_at_midnight():
-    return {'run_date': datetime.datetime(1991, 9, 25, 0, tzinfo=pytz.utc),
-            'preprint_date_created': datetime.datetime(1991, 9, 25, 0, tzinfo=pytz.utc) - datetime.timedelta(hours=1)
+    return {'run_date': datetime.datetime(year=1991, month=9, day=25, hour=0, tzinfo=pytz.utc),
+            'preprint_date_created': datetime.datetime(year=1991, month=9, day=24, hour=23, tzinfo=pytz.utc)
             }
 
 pytestmark = pytest.mark.django_db
