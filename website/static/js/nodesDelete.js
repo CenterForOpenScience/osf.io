@@ -57,6 +57,7 @@ function patchNodesDelete(nodes) {
             }
         };
     });
+
     //s3 is a very recent version of jQuery that fixes a known bug when used in internet explorer
     return $3.ajax({
         url: nodesV2Url,
@@ -67,7 +68,7 @@ function patchNodesDelete(nodes) {
         xhrFields: {withCredentials: true},
         processData: false,
         data: JSON.stringify({
-            data: nodesPatch.reverse()
+            data: nodesPatch
         })
     });
 }
@@ -216,7 +217,7 @@ NodesDeleteViewModel.prototype.confirmChanges =  function() {
     //The API's bulk limit is 100 nodes.  We catch the exception in nodes_privacy.mako.
     if (nodesChanged.length <= 100) {
         $osf.block('Deleting Project');
-        patchNodesDelete(nodesChanged).then(function () {
+        patchNodesDelete(nodesChanged.reverse()).then(function () {
             self.onSetDelete(nodesChanged);
             self.nodesChangedPublic([]);
             self.nodesChangedPrivate([]);
