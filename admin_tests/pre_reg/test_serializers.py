@@ -91,4 +91,3 @@ class TestGetApprovalStatus:
 
     def test_draft_rejected(self, draft_rejected):
         assert get_approval_status(draft_rejected) == 'Rejected'
-        
