@@ -18,6 +18,7 @@ from modularodm.query import queryset as modularodm_queryset
 from rest_framework import serializers as ser
 from rest_framework.filters import OrderingFilter
 from osf.models import Subject
+from osf.models.base import GuidMixin
 
 
 def lowercase(lower):
@@ -408,7 +409,11 @@ class ListFilterMixin(FilterMixin):
         if field_name == 'permission':
             operation['op'] = 'exact'
         if field_name == 'id':
-            operation['source_field_name'] = 'guids___id'
+            operation['source_field_name'] = (
+                'guids___id'
+                if issubclass(self.model_class, GuidMixin)
+                else self.model_class.primary_identifier_name
+            )
             operation['op'] = 'in'
 
     def get_filtered_queryset(self, field_name, params, default_queryset):
