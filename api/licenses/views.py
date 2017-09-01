@@ -1,3 +1,4 @@
+from django.apps import apps
 from rest_framework import generics, permissions as drf_permissions
 from framework.auth.oauth_scopes import CoreScopes
 
@@ -72,6 +73,7 @@ class LicenseList(JSONAPIBaseView, generics.ListAPIView, ListFilterMixin):
 
     required_read_scopes = [CoreScopes.LICENSE_READ]
     required_write_scopes = [CoreScopes.NULL]
+    model_class = apps.get_model('osf.NodeLicense')
 
     serializer_class = LicenseSerializer
     view_category = 'licenses'
@@ -84,8 +86,3 @@ class LicenseList(JSONAPIBaseView, generics.ListAPIView, ListFilterMixin):
 
     def get_queryset(self):
         return self.get_queryset_from_request()
-
-    def postprocess_query_param(self, key, field_name, operation):
-        if field_name == 'id':
-            operation['source_field_name'] = '_id'
-            operation['op'] = 'in'

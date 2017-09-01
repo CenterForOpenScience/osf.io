@@ -1,3 +1,4 @@
+from django.apps import apps
 
 from api.addons.views import AddonSettingsMixin
 from api.base import permissions as base_permissions
@@ -136,6 +137,7 @@ class UserList(JSONAPIBaseView, generics.ListAPIView, ListFilterMixin):
 
     required_read_scopes = [CoreScopes.USERS_READ]
     required_write_scopes = [CoreScopes.NULL]
+    model_class = apps.get_model('osf.OSFUser')
 
     serializer_class = UserSerializer
 
