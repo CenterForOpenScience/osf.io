@@ -8,8 +8,6 @@ from django.utils import timezone
 from django.db import DataError
 from nose.tools import *  # noqa
 
-from modularodm import Q
-
 from framework.auth import Auth
 from framework.exceptions import PermissionsError
 from tests.base import fake, OsfTestCase
@@ -88,7 +86,7 @@ class RegistrationRetractionModelsTestCase(OsfTestCase):
         self.registration.retract_registration(self.user, self.valid_justification)
         self.registration.save()
         self.registration.reload()
-        assert_equal(Retraction.find(Q('initiated_by', 'eq', self.user)).count(), 1)
+        assert_equal(Retraction.objects.filter(initiated_by=self.user).count(), 1)
 
     # Node#retract_registration tests
     def test_pending_retract(self):

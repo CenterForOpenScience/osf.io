@@ -5,11 +5,10 @@ import httplib as http  # TODO: Inconsistent usage of aliased import
 from dateutil.parser import parse as parse_date
 
 from django.utils import timezone
+from django.core.exceptions import ValidationError
 from flask import request
-import markupsafe
 import mailchimp
-from modularodm.exceptions import ValidationError, NoResultsFound, MultipleResultsFound
-from modularodm import Q
+
 from osf.models import Node, NodeRelation, OSFUser
 
 from framework import sentry
@@ -45,7 +44,8 @@ def get_public_projects(uid=None, user=None):
     user = user or OSFUser.load(uid)
     # In future redesign, should be limited for users with many projects / components
     node_ids = (
-        Node.find_for_user(user, PROJECT_QUERY)
+        user.nodes
+        .filter(PROJECT_QUERY)
         .filter(is_public=True)
         .get_roots()
         .values_list('id', flat=True)
@@ -403,9 +403,8 @@ def oauth_application_detail(auth, **kwargs):
 
     # The client ID must be an active and existing record, and the logged-in user must have permission to view it.
     try:
-        #
-        record = ApiOAuth2Application.find_one(Q('client_id', 'eq', client_id))
-    except NoResultsFound:
+        record = ApiOAuth2Application.objects.get(client_id=client_id)
+    except ApiOAuth2Application.DoesNotExist:
         raise HTTPError(http.NOT_FOUND)
     except ValueError:  # Invalid client ID -- ApiOAuth2Application will not exist
         raise HTTPError(http.NOT_FOUND)
@@ -441,8 +440,8 @@ def personal_access_token_detail(auth, **kwargs):
 
     # The ID must be an active and existing record, and the logged-in user must have permission to view it.
     try:
-        record = ApiOAuth2PersonalToken.find_one(Q('_id', 'eq', _id))
-    except NoResultsFound:
+        record = ApiOAuth2PersonalToken.objects.get(_id=_id)
+    except ApiOAuth2PersonalToken.DoesNotExist:
         raise HTTPError(http.NOT_FOUND)
     if record.owner != auth.user:
         raise HTTPError(http.FORBIDDEN)
@@ -561,8 +560,8 @@ def sync_data_from_mailchimp(**kwargs):
         username = r.values['data[email]']
 
         try:
-            user = OSFUser.find_one(Q('username', 'eq', username))
-        except NoResultsFound:
+            user = OSFUser.objects.get(username=username)
+        except OSFUser.DoesNotExist:
             sentry.log_exception()
             sentry.log_message('A user with this username does not exist.')
             raise HTTPError(404, data=dict(message_short='User not found',
@@ -828,33 +827,3 @@ def request_deactivation(auth):
     user.requested_deactivation = True
     user.save()
     return {'message': 'Sent account deactivation request'}
-
-
-def redirect_to_twitter(twitter_handle):
-    """Redirect GET requests for /@TwitterHandle/ to respective the OSF user
-    account if it associated with an active account
-
-    :param uid: uid for requested User
-    :return: Redirect to User's Twitter account page
-    """
-    try:
-        user = OSFUser.find_one(Q('social.twitter', 'iexact', twitter_handle))
-    except NoResultsFound:
-        raise HTTPError(http.NOT_FOUND, data={
-            'message_short': 'User Not Found',
-            'message_long': 'There is no active user associated with the Twitter handle: {0}.'.format(twitter_handle)
-        })
-    except MultipleResultsFound:
-        users = OSFUser.find(Q('social.twitter', 'iexact', twitter_handle))
-        message_long = 'There are multiple OSF accounts associated with the ' \
-                       'Twitter handle: <strong>{0}</strong>. <br /> Please ' \
-                       'select from the accounts below. <br /><ul>'.format(markupsafe.escape(twitter_handle))
-        for user in users:
-            message_long += '<li><a href="{0}">{1}</a></li>'.format(user.url, markupsafe.escape(user.fullname))
-        message_long += '</ul>'
-        raise HTTPError(http.MULTIPLE_CHOICES, data={
-            'message_short': 'Multiple Users Found',
-            'message_long': message_long
-        })
-
-    return redirect(user.url)

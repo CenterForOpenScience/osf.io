@@ -4,12 +4,12 @@ import httplib as http
 import urllib
 
 import markupsafe
+from django.core.exceptions import ValidationError
 from django.utils import timezone
 from flask import request
 
 from modularodm import Q
 from modularodm.exceptions import NoResultsFound
-from modularodm.exceptions import ValidationError
 from modularodm.exceptions import ValidationValueError
 
 from framework import forms, sentry, status

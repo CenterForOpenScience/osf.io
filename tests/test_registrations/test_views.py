@@ -10,8 +10,6 @@ from django.utils import timezone
 
 from nose.tools import *  # noqa PEP8 asserts
 
-from modularodm import Q
-
 from framework.exceptions import HTTPError
 
 from osf.models import MetaSchema, DraftRegistration
@@ -325,7 +323,7 @@ class TestDraftRegistrationViews(RegistrationsTestBase):
         res = self.app.post(url, payload, auth=self.user.auth)
         assert_equal(res.status_code, http.FOUND)
         target.reload()
-        draft = DraftRegistration.find_one(Q('branched_from', 'eq', target))
+        draft = DraftRegistration.objects.get(branched_from=target)
         assert_equal(draft.registration_schema, self.meta_schema)
 
     def test_new_draft_registration_on_registration(self):
@@ -378,10 +376,8 @@ class TestDraftRegistrationViews(RegistrationsTestBase):
         res = self.app.put_json(url, payload, auth=self.user.auth)
         assert_equal(res.status_code, http.OK)
 
-        open_ended_schema = MetaSchema.find_one(
-            Q('name', 'eq', 'OSF-Standard Pre-Data Collection Registration') &
-            Q('schema_version', 'eq', 1)
-        )
+        open_ended_schema = MetaSchema.objects.get(name='OSF-Standard Pre-Data Collection Registration', schema_version=1)
+
         self.draft.reload()
         assert_equal(open_ended_schema, self.draft.registration_schema)
         assert_equal(metadata, self.draft.registration_metadata)
