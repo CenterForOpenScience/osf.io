@@ -30,7 +30,7 @@ from api.nodes.serializers import (
 
 from api.identifiers.views import IdentifierList
 from api.identifiers.serializers import PreprintIdentifierSerializer
-from api.nodes.views import NodeMixin
+from api.nodes.views import NodeMixin, NodeContributorsList
 from api.nodes.permissions import ContributorOrPublic
 
 from api.preprints.permissions import PreprintPublishedOrAdmin
@@ -397,3 +397,10 @@ class PreprintIdentifierList(IdentifierList, PreprintMixin):
     # overrides IdentifierList
     def get_object(self, check_object_permissions=True):
         return self.get_preprint(check_object_permissions=check_object_permissions)
+
+
+class PreprintContributorsList(NodeContributorsList, PreprintMixin):
+
+    def create(self, request, *args, **kwargs):
+        self.kwargs['node_id'] = self.get_preprint(check_object_permissions=False).node._id
+        return super(PreprintContributorsList, self).create(request, *args, **kwargs)
