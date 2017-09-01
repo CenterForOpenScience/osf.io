@@ -1,6 +1,7 @@
 import re
 
 from django.db.models import Q
+from django.shortcuts import get_object_or_404
 
 from rest_framework import generics
 from rest_framework.exceptions import NotFound, PermissionDenied, NotAuthenticated
@@ -16,7 +17,7 @@ from api.base.parsers import (
     JSONAPIMultipleRelationshipsParser,
     JSONAPIMultipleRelationshipsParserForRegularJSON,
 )
-from api.base.utils import get_object_or_error, get_user_auth
+from api.base.utils import get_user_auth
 from api.base import permissions as base_permissions
 from api.citations.utils import render_citation, preprint_csl
 from api.preprints.serializers import (
@@ -40,12 +41,10 @@ class PreprintMixin(NodeMixin):
     preprint_lookup_url_kwarg = 'preprint_id'
 
     def get_preprint(self, check_object_permissions=True):
-        preprint = get_object_or_error(
-            PreprintService,
-            self.kwargs[self.preprint_lookup_url_kwarg],
-            display_name='preprint'
+        preprint = get_object_or_404(
+            PreprintService.objects.select_related('node'), guids___id=self.kwargs[self.preprint_lookup_url_kwarg]
         )
-        if not preprint or preprint.node.is_deleted:
+        if preprint.node.is_deleted:
             raise NotFound
         # May raise a permission denied
         if check_object_permissions:
