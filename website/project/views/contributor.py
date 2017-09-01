@@ -633,6 +633,7 @@ def claim_user_registered(auth, node, **kwargs):
     session.data['unreg_user'] = {
         'uid': uid, 'pid': pid, 'token': token
     }
+    session.save()
 
     form = PasswordForm(request.form)
     if request.method == 'POST':
