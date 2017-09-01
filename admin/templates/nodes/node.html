@@ -343,6 +343,24 @@
                     <pre>{{ node.spam_data }}</pre>
                 </td>
             </tr>
+            <tr>
+                <td>Logs</td>
+
+                <td>
+                    <ul>
+                    {% for log, params in node.logs %}
+                        <li>
+                            <b>{{ log.action }}</b> by {{log.user}} at {{ log.date }} with the following parameters:
+
+                            {% for key, value in params %}
+                            <div>{{key}} : {{ value }}</div>
+                            {% endfor %}
+
+                        </li>
+                    {% endfor %}
+                    </ul>
+                </td>
+            </tr>
         </tbody>
         </table>
         </div>
