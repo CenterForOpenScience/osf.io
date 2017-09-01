@@ -70,7 +70,7 @@ def get_url(draft):
     elif draft.branched_from is not None:
         url.path.add(draft.branched_from.url)
         return url.url
-    return CANCELED
+    return None
 
 
 def get_embargo(draft, json_safe):
@@ -81,7 +81,7 @@ def get_embargo(draft, json_safe):
             return iso8601format(time) if json_safe else time
         return IMMEDIATE
     else:
-        return None
+        return CANCELED
 
 def get_approval_status(draft):
     if draft.is_approved:
