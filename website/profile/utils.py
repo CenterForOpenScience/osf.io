@@ -91,7 +91,6 @@ def serialize_user(user, node=None, admin=False, full=False, is_profile=False, i
         else:
             merged_by = None
 
-        projects = user.nodes.filter(PROJECT_QUERY).get_roots()
         ret.update({
             'activity_points': user.get_activity_points(),
             'gravatar_url': gravatar(
@@ -102,6 +101,7 @@ def serialize_user(user, node=None, admin=False, full=False, is_profile=False, i
             'merged_by': merged_by,
         })
         if include_node_counts:
+            projects = user.nodes.filter(PROJECT_QUERY).get_roots()
             ret.update({
                 'number_projects': projects.count(),
                 'number_public_projects': projects.filter(is_public=True).count(),
