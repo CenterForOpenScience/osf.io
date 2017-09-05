@@ -1608,19 +1608,17 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         if not self.can_edit(auth=auth) and not self.is_admin_parent(user=auth.user):
             raise PermissionsError(
                 'User {} does not have permission '
-                'to register this node'.format(auth.user._id)
-            )
+                'to register this node'.format(auth.user._id))
+
         if self.is_collection:
             raise NodeStateError('Folders may not be registered')
 
-        # Note: Cloning a node will clone each node wiki page version and add it to
-        # `registered.wiki_pages_current` and `registered.wiki_pages_versions`.
         if self.is_deleted:
             raise NodeStateError('Cannot register deleted node.')
 
         return node_tasks.on_node_register(
-                self, draft=draft, auth=auth, data=data, schema=schema,
-                parent=parent, reg_choice=reg_choice, celery=celery)
+            self, draft=draft, auth=auth, data=data, schema=schema,
+            parent=parent, reg_choice=reg_choice, celery=celery)
 
     def path_above(self, auth):
         parents = self.parents

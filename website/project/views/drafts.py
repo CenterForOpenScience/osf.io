@@ -5,7 +5,6 @@ import itertools
 from operator import itemgetter
 
 from dateutil.parser import parse as parse_date
-from django.core.exceptions import ValidationError
 from django.db.models import Q
 from django.utils import timezone
 from flask import request, redirect

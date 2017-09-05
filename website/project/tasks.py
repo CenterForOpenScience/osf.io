@@ -106,14 +106,13 @@ def _on_node_register(original, draft=None, auth=None, data=None, schema=None, p
         project_signals.after_create_registration.send(original, dst=registered, user=auth.user)
 
     if parent is None:
+
         DraftRegistrationLog = apps.get_model('osf.DraftRegistrationLog')
 
         draft.registered_node = registered
         draft.add_status_log(auth.user, DraftRegistrationLog.REGISTERED)
 
-        save = False
-        if save:
-            draft.save()
+        draft.save()
 
         if reg_choice == 'embargo':
             # Initiate embargo
