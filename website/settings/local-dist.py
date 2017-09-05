@@ -10,6 +10,7 @@ from . import defaults
 DEV_MODE = True
 DEBUG_MODE = True  # Sets app to debug mode, turns off template caching, etc.
 SECURE_MODE = not DEBUG_MODE  # Disable osf cookie secure
+FAKECAS_MODE = True  # Use fakeCAS
 
 # NOTE: Internal Domains/URLs have been added to facilitate docker development environments
 #       when localhost inside a container != localhost on the client machine/docker host.
