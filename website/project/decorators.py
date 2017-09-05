@@ -14,6 +14,7 @@ from framework.database import get_or_http_error
 
 from osf.models import AbstractNode
 from website import settings
+from website.util import web_url_for
 
 _load_node_or_fail = lambda pk: get_or_http_error(AbstractNode, pk)
 
@@ -135,7 +136,7 @@ def must_not_be_retracted_registration(func):
 
         if node.is_retracted:
             return redirect(
-                node.web_url_for('view_project')
+                web_url_for('resolve_guid', guid=node._id)
             )
         return func(*args, **kwargs)
 
