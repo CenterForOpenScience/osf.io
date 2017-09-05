@@ -16,7 +16,7 @@ from framework.auth.decorators import collect_auth
 from framework.database import get_or_http_error
 
 from osf.models import AbstractNode
-from website import language, settings
+from website import settings
 
 _load_node_or_fail = lambda pk: get_or_http_error(AbstractNode, pk)
 
@@ -137,11 +137,9 @@ def must_not_be_retracted_registration(func):
         node = kwargs['node']
 
         if node.is_retracted:
-            raise HTTPError(
-                http.BAD_REQUEST,
-                data=dict(message_long=language.RETRACTED_REGISTRATION_ERROR_MESSAGE)
+            return redirect(
+                node.web_url_for('view_project')
             )
-
         return func(*args, **kwargs)
 
     return wrapped

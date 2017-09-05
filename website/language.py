@@ -161,8 +161,6 @@ deleted after registration. Please be sure the project is complete and
 comprehensive for what you wish to register.
 '''
 
-RETRACTED_REGISTRATION_ERROR_MESSAGE = 'Unable to view supplemental pages for withdrawn registrations'
-
 # Nodes: forking, templating, linking
 
 LINK_ACTION = 'Link to this Project'

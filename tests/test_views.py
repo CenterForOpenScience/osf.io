@@ -863,9 +863,11 @@ class TestProjectViews(OsfTestCase):
         assert_equal(res.status_code, 200)
 
         for route in ['files', 'wiki/home', 'analytics', 'forks', 'contributors', 'settings', 'withdraw', 'register', 'register/fakeid']:
-            res = self.app.get('{}{}/'.format(url, route), auth=self.auth, expect_errors=True)
-            assert_equal(res.status_code, 400, route)
-            assert_in('Unable to view supplemental pages for withdrawn registrations', res.body, route)
+            res = self.app.get('{}{}/'.format(url, route), auth=self.auth, allow_redirects=True)
+            assert_equal(res.status_code, 302, route)
+            res = res.follow()
+            assert_equal(res.status_code, 200, route)
+            assert_in('This project is a withdrawn registration of', res.body, route)
 
 
 class TestEditableChildrenViews(OsfTestCase):
