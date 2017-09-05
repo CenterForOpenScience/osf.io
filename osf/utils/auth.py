@@ -1,8 +1,8 @@
 import logging
 
 from django.apps import apps
-from modularodm.exceptions import QueryException
-from modularodm import Q
+from django.db.models import Q
+from django.core.exceptions import ObjectDoesNotExist
 
 from framework.sessions import session
 
@@ -30,14 +30,14 @@ def get_user(email=None, password=None, verification_key=None):
     query_list = []
     if email:
         email = email.strip().lower()
-        query_list.append(Q('emails__address', 'eq', email) | Q('username', 'eq', email))
+        query_list.append(Q(emails__address=email) | Q(username=email))
     if password:
         password = password.strip()
         try:
             query = query_list[0]
             for query_part in query_list[1:]:
                 query = query & query_part
-            user = User.find_one(query)
+            user = User.objects.get(query)
         except Exception as err:
             logger.error(err)
             user = None
@@ -45,12 +45,9 @@ def get_user(email=None, password=None, verification_key=None):
             return False
         return user
     if verification_key:
-        query_list.append(Q('verification_key', 'eq', verification_key))
+        query_list.append(Q(verification_key=verification_key))
     try:
-        query = query_list[0]
-        for query_part in query_list[1:]:
-            query = query & query_part
-        user = User.find_one(query)
+        user = User.objects.get(query_list[0])
         return user
     except Exception as err:
         logger.error(err)
@@ -84,7 +81,7 @@ class Auth(object):
             if private_link.is_deleted:
                 return None
 
-        except QueryException:
+        except ObjectDoesNotExist:
             return None
 
         return private_link

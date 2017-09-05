@@ -3,7 +3,7 @@
 import httplib as http
 
 from flask import request
-from modularodm.exceptions import ValidationError, ValidationValueError
+from django.core.exceptions import ValidationError
 
 from framework import forms, status
 from framework.auth import cas
@@ -165,7 +165,7 @@ def deserialize_contributors(node, user_dicts, auth, validate=False):
             # up to the invalid entry will be saved. (communicate to the user what needs to be retried)
             fullname = sanitize.strip_html(fullname)
             if not fullname:
-                raise ValidationValueError('Full name field cannot be empty')
+                raise ValidationError('Full name field cannot be empty')
             if email:
                 validate_email(email)  # Will raise a ValidationError if email invalid
 
@@ -633,6 +633,7 @@ def claim_user_registered(auth, node, **kwargs):
     session.data['unreg_user'] = {
         'uid': uid, 'pid': pid, 'token': token
     }
+    session.save()
 
     form = PasswordForm(request.form)
     if request.method == 'POST':

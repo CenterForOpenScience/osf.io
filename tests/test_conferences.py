@@ -7,10 +7,9 @@ import hmac
 import hashlib
 from StringIO import StringIO
 
+from django.core.exceptions import ValidationError
 from django.db import IntegrityError
 import furl
-from modularodm import Q
-from modularodm.exceptions import ValidationError
 
 from framework.auth import get_or_create_user
 from framework.auth.core import Auth
@@ -77,48 +76,6 @@ class TestConferenceUtils(OsfTestCase):
         assert_equal(fetched.fullname, fullname)
         assert_equal(fetched.username, username)
         assert_true('is_spam' in fetched.system_tags)
-
-    def test_get_or_create_node_exists(self):
-        node = ProjectFactory()
-        fetched, created = utils.get_or_create_node(node.title, node.creator)
-        assert_false(created)
-        assert_equal(node._id, fetched._id)
-
-    def test_get_or_create_node_title_not_exists(self):
-        title = 'Night at the Opera'
-        creator = UserFactory()
-        node = ProjectFactory(creator=creator)
-        fetched, created = utils.get_or_create_node(title, creator)
-        assert_true(created)
-        assert_not_equal(node._id, fetched._id)
-
-    def test_get_or_create_node_title_exists_deleted(self):
-        title = 'Night at the Opera'
-        creator = UserFactory()
-        node = ProjectFactory(title=title)
-        node.is_deleted = True
-        node.save()
-        fetched, created = utils.get_or_create_node(title, creator)
-        assert_true(created)
-        assert_not_equal(node._id, fetched._id)
-
-    def test_get_or_create_node_title_exists_not_deleted(self):
-        title = 'Night at the Opera'
-        creator = UserFactory()
-        node = ProjectFactory(title=title, creator=creator)
-        node.is_deleted = False
-        node.save()
-        fetched, created = utils.get_or_create_node(title, creator)
-        assert_false(created)
-        assert_equal(node._id, fetched._id)
-
-    def test_get_or_create_node_user_not_exists(self):
-        title = 'Night at the Opera'
-        creator = UserFactory()
-        node = ProjectFactory(title=title)
-        fetched, created = utils.get_or_create_node(title, creator)
-        assert_true(created)
-        assert_not_equal(node._id, fetched._id)
 
     def test_get_or_create_user_with_blacklisted_domain(self):
         fullname = 'Kanye West'
@@ -589,9 +546,9 @@ class TestConferenceIntegration(ContextTestCase):
             ],
         )
         assert_true(mock_upload.called)
-        users = OSFUser.find(Q('username', 'eq', username))
+        users = OSFUser.objects.filter(username=username)
         assert_equal(users.count(), 1)
-        nodes = AbstractNode.find(Q('title', 'eq', title))
+        nodes = AbstractNode.objects.filter(title=title)
         assert_equal(nodes.count(), 1)
         node = nodes[0]
         assert_equal(node.get_wiki_page('home').content, body)
@@ -678,9 +635,9 @@ class TestConferenceIntegration(ContextTestCase):
             ],
         )
         assert_true(mock_upload.called)
-        users = OSFUser.find(Q('username', 'eq', username))
+        users = OSFUser.objects.filter(username=username)
         assert_equal(users.count(), 1)
-        nodes = AbstractNode.find(Q('title', 'eq', title))
+        nodes = AbstractNode.objects.filter(title=title)
         assert_equal(nodes.count(), 1)
         node = nodes[0]
         assert_equal(node.get_wiki_page('home').content, body)

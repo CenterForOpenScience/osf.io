@@ -171,7 +171,7 @@ class Sitemap(object):
         # AbstractNode urls (Nodes and Registrations, no Collections)
         objs = (AbstractNode.objects
             .filter(is_public=True, is_deleted=False, retraction_id__isnull=True)
-            .exclude(type="osf.collection")
+            .exclude(type__in=["osf.collection", "osf.quickfilesnode"])
             .values('guids___id', 'date_modified'))
         progress.start(objs.count(), 'NODE: ')
         for obj in objs:

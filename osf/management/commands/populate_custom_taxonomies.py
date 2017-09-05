@@ -5,6 +5,7 @@ from django.core.management.base import BaseCommand
 from django.db import transaction
 
 from osf.models import PreprintProvider, PreprintService, Subject
+from osf.models.preprint_provider import rules_to_subjects
 from scripts import utils as script_utils
 from osf.models.validators import validate_subject_hierarchy
 from website.preprints.tasks import on_preprint_updated
@@ -13,26 +14,28 @@ logger = logging.getLogger(__name__)
 
 BEPRESS_PROVIDER = PreprintProvider.objects.filter(_id='osf').first()
 
-def validate_input(custom_provider, data, ignore_inex_collisions=False):
+def validate_input(custom_provider, data, copy=False):
     logger.info('Validating data')
     includes = data.get('include', [])
     excludes = data.get('exclude', [])
     customs = data.get('custom', {})
     merges = data.get('merge', {})
-    if not ignore_inex_collisions:
+    if copy:
+        included_subjects = rules_to_subjects(custom_provider.subjects_acceptable)
+    else:
         assert not set(includes) & set(excludes), 'There must be no overlap between includes and excludes'
-    for text in includes:
-        assert Subject.objects.filter(provider=BEPRESS_PROVIDER, text=text).exists(), 'Unable to find included subject with text {}'.format(text)
-    included_subjects = Subject.objects.filter(provider=BEPRESS_PROVIDER, text__in=includes).include_children()
-    logger.info('Successfully validated `include`')
-    for text in excludes:
-        try:
-            Subject.objects.get(provider=BEPRESS_PROVIDER, text=text)
-        except Subject.DoesNotExist:
-            raise RuntimeError('Unable to find excluded subject with text {}'.format(text))
-        assert included_subjects.filter(text=text).exists(), 'Excluded subject with text {} was not included'.format(text)
-    included_subjects.exclude(text__in=excludes)
-    logger.info('Successfully validated `exclude`')
+        for text in includes:
+            assert Subject.objects.filter(provider=BEPRESS_PROVIDER, text=text).exists(), 'Unable to find included subject with text {}'.format(text)
+        included_subjects = Subject.objects.filter(provider=BEPRESS_PROVIDER, text__in=includes).include_children()
+        logger.info('Successfully validated `include`')
+        for text in excludes:
+            try:
+                Subject.objects.get(provider=BEPRESS_PROVIDER, text=text)
+            except Subject.DoesNotExist:
+                raise RuntimeError('Unable to find excluded subject with text {}'.format(text))
+            assert included_subjects.filter(text=text).exists(), 'Excluded subject with text {} was not included'.format(text)
+        included_subjects.exclude(text__in=excludes)
+        logger.info('Successfully validated `exclude`')
     for cust_name, map_dict in customs.iteritems():
         assert not included_subjects.filter(text=cust_name).exists(), 'Custom text {} already exists in mapped set'.format(cust_name)
         assert Subject.objects.filter(provider=BEPRESS_PROVIDER, text=map_dict.get('bepress')).exists(), 'Unable to find specified BePress subject with text {}'.format(map_dict.get('bepress'))
@@ -60,12 +63,30 @@ def create_subjects_recursive(custom_provider, root_text, exclude_texts, parent=
     for child_text in bepress_subj.children.exclude(text__in=exclude_texts).values_list('text', flat=True):
         create_subjects_recursive(custom_provider, child_text, exclude_texts, parent=custom_subj)
 
-def do_create_subjects(custom_provider, includes, excludes):
-    for root_text in includes:
-        if root_text in excludes:
-            # This should only be hit in the `--complete-bepress` case where a top-level is excluded
-            continue
-        create_subjects_recursive(custom_provider, root_text, excludes)
+def create_from_subjects_acceptable(custom_provider):
+    tries = 0
+    subjects_to_copy = list(rules_to_subjects(custom_provider.subjects_acceptable))
+    while len(subjects_to_copy):
+        previous_len = len(subjects_to_copy)
+        tries += 1
+        if tries == 10:
+            raise RuntimeError('Unable to map subjects acceptable with 10 iterations -- invalid input')
+        for subj in list(subjects_to_copy):
+            if map_custom_subject(custom_provider, subj.text, subj.parent.text if subj.parent else None, subj.text):
+                subjects_to_copy.remove(subj)
+            else:
+                logger.warn('Failed. Retrying next iteration')
+        new_len = len(subjects_to_copy)
+        if new_len == previous_len:
+            raise RuntimeError('Unable to map any custom subjects on iteration -- invalid input')
+
+
+def do_create_subjects(custom_provider, includes, excludes, copy=False):
+    if copy:
+        create_from_subjects_acceptable(custom_provider)
+    else:
+        for root_text in includes:
+            create_subjects_recursive(custom_provider, root_text, excludes)
 
 def map_custom_subject(custom_provider, name, parent, mapping):
     logger.info('Attempting to create subject {} on {} from {} with {}'.format(name, custom_provider._id, mapping, 'parent {}'.format(parent) if parent else 'no parent'))
@@ -83,8 +104,8 @@ def map_custom_subject(custom_provider, name, parent, mapping):
 def do_custom_mapping(custom_provider, customs):
     tries = 0
     unmapped_customs = customs
-    previous_len = len(unmapped_customs)
     while len(unmapped_customs):
+        previous_len = len(unmapped_customs)
         tries += 1
         if tries == 10:
             raise RuntimeError('Unable to map custom subjects with 10 iterations -- invalid input')
@@ -121,12 +142,12 @@ def map_preprints_to_custom_subjects(custom_provider, merge_dict, dry_run=False)
         new_hier = [s.object_hierarchy for s in preprint.subjects.exclude(children__in=preprint.subjects.all())]
         logger.info('Successfully migrated preprint {}.\n\tOld hierarchy:{}\n\tNew hierarchy:{}'.format(preprint.id, old_hier, new_hier))
 
-def migrate(provider=None, data=None, dry_run=False, complete=False):
+def migrate(provider=None, data=None, dry_run=False, copy=False):
     custom_provider = PreprintProvider.objects.filter(_id=provider).first()
     assert custom_provider, 'Unable to find specified provider: {}'.format(provider)
     assert custom_provider.id != BEPRESS_PROVIDER.id, 'Cannot add custom mapping to BePress provider'
-    validate_input(custom_provider, data, ignore_inex_collisions=complete)
-    do_create_subjects(custom_provider, data['include'], data.get('exclude', []))
+    validate_input(custom_provider, data, copy=copy)
+    do_create_subjects(custom_provider, data['include'], data.get('exclude', []), copy=copy)
     do_custom_mapping(custom_provider, data.get('custom', {}))
     map_preprints_to_custom_subjects(custom_provider, data.get('merge', {}), dry_run=dry_run)
 
@@ -143,7 +164,6 @@ class Command(BaseCommand):
             '--data',
             action='store',
             dest='data',
-            required=True,
             help='List of targets, of form {\n"include": [<list of subject texts to include at top level, children implicit>],'
             '\n"exclude": [<list of children to exclude from included trees>],'
             '\n"custom": [{"<Custom Name": {"parent": <Parent text>", "bepress": "<Bepress Name>"}}, ...]'
@@ -157,22 +177,22 @@ class Command(BaseCommand):
             help='_id of the PreprintProvider object, e.g. "osf"'
         )
         parser.add_argument(
-            '--complete-bepress',
+            '--from-subjects-acceptable',
             action='store_true',
-            dest='complete_bepress',
-            help='Specifies that the entire BePress taxonomy should be copied. `data.include` is ignored, the other keys may still be used'
+            dest='from_subjects_acceptable',
+            help='Specifies that the provider\'s `subjects_acceptable` be copied. `data.include` and `exclude` are ignored, the other keys may still be used'
         )
 
     def handle(self, *args, **options):
         dry_run = options.get('dry_run')
         provider = options['provider']
-        data = json.loads(options['data'])
-        complete = options.get('complete_bepress')
-        if complete:
+        data = json.loads(options['data'] or '{}')
+        copy = options.get('from_subjects_acceptable')
+        if copy:
             data['include'] = list(Subject.objects.filter(provider=BEPRESS_PROVIDER, parent__isnull=True).values_list('text', flat=True))
         if not dry_run:
             script_utils.add_file_logger(logger, __file__)
         with transaction.atomic():
-            migrate(provider=provider, data=data, dry_run=dry_run, complete=complete)
+            migrate(provider=provider, data=data, dry_run=dry_run, copy=copy)
             if dry_run:
                 raise RuntimeError('Dry run, transaction rolled back.')

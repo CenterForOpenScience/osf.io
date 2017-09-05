@@ -14,8 +14,6 @@ from flask import request, url_for
 
 from website import settings as website_settings
 from api.base import settings as api_settings
-from modularodm import Q
-from modularodm.exceptions import NoResultsFound
 
 logger = logging.getLogger(__name__)
 
@@ -209,16 +207,12 @@ def disconnected_from_listeners(signal):
 
 def check_private_key_for_anonymized_link(private_key):
     from osf.models import PrivateLink
+    try:
+        link = PrivateLink.objects.get(key=private_key)
+    except PrivateLink.DoesNotExist:
+        return False
+    return link.anonymous
 
-    is_anonymous = False
-    if private_key is not None:
-        try:
-            link = PrivateLink.find_one(Q('key', 'eq', private_key))
-        except NoResultsFound:
-            link = None
-        if link is not None:
-            is_anonymous = link.anonymous
-    return is_anonymous
 
 def get_headers_from_request(req):
     """ Get and normalize DRF and Flask request headers

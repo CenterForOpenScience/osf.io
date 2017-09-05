@@ -2,8 +2,7 @@ import pytz
 import logging
 from dateutil.parser import parse
 from datetime import datetime, timedelta
-
-from modularodm import Q
+from django.db.models import Q
 
 from osf.models import OSFUser, NodeLog
 from website.app import init_app
@@ -18,10 +17,10 @@ LOG_THRESHOLD = 11
 
 # Modified from scripts/analytics/depth_users.py
 def count_user_logs(user):
-    logs = NodeLog.find(Q('user', 'eq', user._id))
+    logs = user.logs.all()
     length = logs.count()
     if length == LOG_THRESHOLD:
-        item = logs[0]
+        item = logs.first()
         if item.action == 'project_created' and item.node.is_bookmark_collection:
             length -= 1
     return length
@@ -41,12 +40,12 @@ class UserSummary(SummaryAnalytics):
         query_datetime = timestamp_datetime + timedelta(1)
 
         active_user_query = (
-            Q('is_registered', 'eq', True) &
-            Q('password', 'ne', None) &
-            Q('merged_by', 'eq', None) &
-            Q('date_disabled', 'eq', None) &
-            Q('date_confirmed', 'ne', None) &
-            Q('date_confirmed', 'lt', query_datetime)
+            Q(is_registered=True) &
+            Q(password__isnull=False) &
+            Q(merged_by__isnull=True) &
+            Q(date_disabled__isnull=True) &
+            Q(date_confirmed__isnull=False) &
+            Q(date_confirmed__lt=query_datetime)
         )
 
         active_users = 0
@@ -68,18 +67,9 @@ class UserSummary(SummaryAnalytics):
             'status': {
                 'active': active_users,
                 'depth': depth_users,
-                'unconfirmed': OSFUser.find(
-                    Q('date_registered', 'lt', query_datetime) &
-                    Q('date_confirmed', 'eq', None)
-                ).count(),
-                'deactivated': OSFUser.find(
-                    Q('date_disabled', 'ne', None) &
-                    Q('date_disabled', 'lt', query_datetime)
-                ).count(),
-                'merged': OSFUser.find(
-                    Q('date_registered', 'lt', query_datetime) &
-                    Q('merged_by', 'ne', None)
-                ).count(),
+                'unconfirmed': OSFUser.objects.filter(date_registered__lt=query_datetime, date_confirmed__isnull=True).count(),
+                'deactivated': OSFUser.objects.filter(date_disabled__isnull=False, date_disabled__lt=query_datetime).count(),
+                'merged': OSFUser.objects.filter(date_registered__lt=query_datetime, merged_by__isnull=False).count(),
                 'profile_edited': profile_edited
             }
         }
