@@ -4,9 +4,8 @@ import httplib as http
 import json
 
 import pytz
+from django.core.exceptions import ValidationError
 from django.utils import timezone
-from modularodm import Q
-from modularodm.exceptions import ValidationValueError
 
 import mock
 from nose.tools import *  # noqa
@@ -119,22 +118,22 @@ class RegistrationEmbargoModelsTestCase(OsfTestCase):
         with assert_raises(PermissionsError):
             self.registration.embargo_registration(self.user, self.valid_embargo_end_date)
 
-    def test_embargo_end_date_in_past_raises_ValidationValueError(self):
-        with assert_raises(ValidationValueError):
+    def test_embargo_end_date_in_past_raises_ValueError(self):
+        with assert_raises(ValidationError):
             self.registration.embargo_registration(
                 self.user,
                 datetime.datetime(1999, 1, 1, tzinfo=pytz.utc)
             )
 
-    def test_embargo_end_date_today_raises_ValidationValueError(self):
-        with assert_raises(ValidationValueError):
+    def test_embargo_end_date_today_raises_ValueError(self):
+        with assert_raises(ValidationError):
             self.registration.embargo_registration(
                 self.user,
                 timezone.now()
             )
 
-    def test_embargo_end_date_in_far_future_raises_ValidationValueError(self):
-        with assert_raises(ValidationValueError):
+    def test_embargo_end_date_in_far_future_raises_ValidationError(self):
+        with assert_raises(ValidationError):
             self.registration.embargo_registration(
                 self.user,
                 datetime.datetime(2099, 1, 1, tzinfo=pytz.utc)
@@ -853,9 +852,7 @@ class RegistrationEmbargoViewsTestCase(OsfTestCase):
         assert_equal(res.json['urls']['registrations'], self.project.web_url_for('node_registrations'))
 
         # Last node directly registered from self.project
-        registration = AbstractNode.find(
-            Q('registered_from', 'eq', self.project)
-        ).order_by('-registered_date')[0]
+        registration = AbstractNode.objects.filter(registered_from=self.project).order_by('-registered_date')[0]
 
         assert_true(registration.is_registration)
         assert_false(registration.is_public)
@@ -946,9 +943,7 @@ class RegistrationEmbargoViewsTestCase(OsfTestCase):
         assert_equal(res.json['urls']['registrations'], self.project.web_url_for('node_registrations'))
 
         # Last node directly registered from self.project
-        registration = AbstractNode.find(
-            Q('registered_from', 'eq', self.project)
-        ).order_by('-registered_date')[0]
+        registration = AbstractNode.objects.filter(registered_from=self.project).order_by('-registered_date')[0]
 
         assert_true(registration.is_registration)
         assert_false(registration.is_public)

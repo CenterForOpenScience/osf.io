@@ -1,6 +1,5 @@
 import pytest
 from urlparse import urlparse
-from modularodm import Q
 
 from rest_framework import exceptions
 from api.base.settings.defaults import API_BASE
@@ -138,7 +137,7 @@ class TestRegistrationUpdate:
 
     @pytest.fixture()
     def unapproved_registration(self, registration_approval):
-        return Registration.find_one(Q('registration_approval', 'eq', registration_approval))
+        return Registration.objects.get(registration_approval=registration_approval)
 
     @pytest.fixture()
     def unapproved_url(self, unapproved_registration):

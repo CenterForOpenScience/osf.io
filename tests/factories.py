@@ -17,8 +17,6 @@ from django.utils import timezone
 from factory import base, Sequence, SubFactory, post_generation, LazyAttribute
 import mock
 from mock import patch, Mock
-from modularodm import Q
-from modularodm.exceptions import NoResultsFound
 
 from framework.auth import Auth
 from framework.auth.utils import impute_names_model, impute_names
@@ -296,8 +294,8 @@ class SubjectFactory(ModularOdmFactory):
     @classmethod
     def _create(cls, target_class, text=None, parents=[], *args, **kwargs):
         try:
-            subject = Subject.find_one(Q('text', 'eq', text))
-        except NoResultsFound:
+            subject = Subject.objects.get(text=text)
+        except Subject.DoesNotExist:
             subject = target_class(*args, **kwargs)
             subject.text = text
             subject.save()
@@ -831,14 +829,9 @@ class NodeLicenseRecordFactory(ModularOdmFactory):
 
     @classmethod
     def _create(cls, *args, **kwargs):
-        NodeLicense.find_one(
-            Q('name', 'eq', 'No license')
-        )
         kwargs['node_license'] = kwargs.get(
             'node_license',
-            NodeLicense.find_one(
-                Q('name', 'eq', 'No license')
-            )
+            NodeLicense.objects.get(name='No license')
         )
         return super(NodeLicenseRecordFactory, cls)._create(*args, **kwargs)
 

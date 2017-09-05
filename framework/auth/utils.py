@@ -4,7 +4,7 @@ import re
 from nameparser.parser import HumanName
 import requests
 
-from modularodm.exceptions import ValidationError
+from django.core.exceptions import ValidationError
 from modularodm import Q
 
 from website import settings

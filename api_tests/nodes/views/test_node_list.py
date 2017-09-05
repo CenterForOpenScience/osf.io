@@ -1,10 +1,9 @@
-from modularodm import Q
 import pytest
 
 from api.base.settings.defaults import API_BASE, MAX_PAGE_SIZE
 from api_tests.nodes.filters.test_filters import NodesListFilteringMixin, NodesListDateFilteringMixin
 from framework.auth.core import Auth
-from osf.models import AbstractNode, NodeLog
+from osf.models import AbstractNode, Node, NodeLog
 from osf_tests.factories import (
     CollectionFactory,
     ProjectFactory,
@@ -258,7 +257,7 @@ class TestNodeFiltering:
         data = res.json['data']
         ids = [each['id'] for each in data]
 
-        preprints = AbstractNode.find(Q('preprint_file', 'ne', None) & Q('_is_preprint_orphan', 'ne', True))
+        preprints = Node.objects.filter(preprint_file__isnull=False).exclude(_is_preprint_orphan=True)
         assert len(data) == len(preprints)
         assert preprint.node._id in ids
         assert public_project_one._id not in ids
@@ -640,7 +639,7 @@ class TestNodeFiltering:
         res = app.get(url, auth=new_user.auth)
         assert res.status_code == 200
 
-        public_root_nodes = AbstractNode.find(Q('is_public', 'eq', True)).get_roots()
+        public_root_nodes = Node.objects.filter(is_public=True).get_roots()
         assert len(res.json['data']) == public_root_nodes.count()
 
         guids = [each['id'] for each in res.json['data']]

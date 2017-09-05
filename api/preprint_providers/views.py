@@ -1,15 +1,14 @@
 from rest_framework import generics
 from rest_framework import permissions as drf_permissions
 
-from modularodm import Q as MQ
 from django.db.models import Q
 
 from framework.auth.oauth_scopes import CoreScopes
 
-from osf.models import AbstractNode, Subject, PreprintService, PreprintProvider
+from osf.models import AbstractNode, Subject, PreprintProvider
 
 from api.base import permissions as base_permissions
-from api.base.filters import PreprintFilterMixin, ODMFilterMixin
+from api.base.filters import PreprintFilterMixin, ListFilterMixin
 from api.base.views import JSONAPIBaseView
 from api.base.pagination import MaxSizePagination
 from api.base.utils import get_object_or_error, get_user_auth
@@ -20,7 +19,7 @@ from api.preprints.serializers import PreprintSerializer
 
 from api.preprints.permissions import PreprintPublishedOrAdmin
 
-class PreprintProviderList(JSONAPIBaseView, generics.ListAPIView, ODMFilterMixin):
+class PreprintProviderList(JSONAPIBaseView, generics.ListAPIView, ListFilterMixin):
     """
     Paginated list of verified PreprintProviders available. *Read-only*
 
@@ -75,13 +74,12 @@ class PreprintProviderList(JSONAPIBaseView, generics.ListAPIView, ODMFilterMixin
 
     ordering = ('name', )
 
-    # implement ODMFilterMixin
-    def get_default_odm_query(self):
-        return None
+    def get_default_queryset(self):
+        return PreprintProvider.objects.all()
 
     # overrides ListAPIView
     def get_queryset(self):
-        return PreprintProvider.find(self.get_query_from_request())
+        return self.get_queryset_from_request()
 
 
 class PreprintProviderDetail(JSONAPIBaseView, generics.RetrieveAPIView):
@@ -197,25 +195,24 @@ class PreprintProviderPreprintList(JSONAPIBaseView, generics.ListAPIView, Prepri
     view_category = 'preprint_providers'
     view_name = 'preprints-list'
 
-    # overrides DjangoFilterMixin
-    def get_default_django_query(self):
+    def get_default_queryset(self):
         auth = get_user_auth(self.request)
         auth_user = getattr(auth, 'user', None)
         provider = get_object_or_error(PreprintProvider, self.kwargs['provider_id'], display_name='PreprintProvider')
 
         # Permissions on the list objects are handled by the query
-        default_query = Q(node__isnull=False, node__is_deleted=False, provider___id=provider._id)
+        default_qs = provider.preprint_services.filter(node__isnull=False, node__is_deleted=False)
         no_user_query = Q(is_published=True, node__is_public=True)
 
         if auth_user:
             contrib_user_query = Q(is_published=True, node__contributor__user_id=auth_user.id, node__contributor__read=True)
             admin_user_query = Q(node__contributor__user_id=auth_user.id, node__contributor__admin=True)
-            return (default_query & (no_user_query | contrib_user_query | admin_user_query))
-        return (default_query & no_user_query)
+            return default_qs.filter(no_user_query | contrib_user_query | admin_user_query)
+        return default_qs.filter(no_user_query)
 
     # overrides ListAPIView
     def get_queryset(self):
-        return PreprintService.objects.filter(self.get_query_from_request()).distinct()
+        return self.get_queryset_from_request().distinct()
 
 
 class PreprintProviderTaxonomies(JSONAPIBaseView, generics.ListAPIView):
@@ -259,7 +256,7 @@ class PreprintProviderTaxonomies(JSONAPIBaseView, generics.ListAPIView):
                 #  Calculate this here to only have to do it once.
                 allowed_parents = [id_ for sublist in provider.subjects_acceptable for id_ in sublist[0]]
                 allows_children = [subs[0][-1] for subs in provider.subjects_acceptable if subs[1]]
-                return [sub for sub in Subject.find(MQ('parent___id', 'eq', parent)) if provider.subjects_acceptable == [] or self.is_valid_subject(allows_children=allows_children, allowed_parents=allowed_parents, sub=sub)]
+                return [sub for sub in Subject.objects.filter(parent___id=parent) if provider.subjects_acceptable == [] or self.is_valid_subject(allows_children=allows_children, allowed_parents=allowed_parents, sub=sub)]
         return provider.all_subjects
 
 

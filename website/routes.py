@@ -5,7 +5,6 @@ import httplib as http
 
 from flask import request
 from flask import send_from_directory
-from django.core.exceptions import ObjectDoesNotExist
 
 from geoip import geolite2
 
@@ -61,7 +60,7 @@ def get_globals():
         try:
             inst_id = Institution.objects.get(domains__icontains=[request.host])._id
             request_login_url = '{}institutions/{}'.format(settings.DOMAIN, inst_id)
-        except ObjectDoesNotExist:
+        except Institution.DoesNotExist:
             request_login_url = request.url.replace(request.host_url, settings.DOMAIN)
     else:
         request_login_url = request.url
@@ -803,13 +802,6 @@ def make_url_map(app):
             OsfWebRenderer('profile/personal_tokens_detail.mako', trust=False)
         ),
 
-        # TODO: Uncomment once outstanding issues with this feature are addressed
-        # Rule(
-        #     '/@<twitter_handle>/',
-        #     'get',
-        #     profile_views.redirect_to_twitter,
-        #     OsfWebRenderer('error.mako', render_mako_string, trust=False)
-        # ),
     ])
 
     # API
@@ -1230,6 +1222,14 @@ def make_url_map(app):
             addon_views.addon_view_or_download_file_legacy,
             json_renderer
         ),
+        Rule(
+            [
+                '/quickfiles/<fid>/'
+            ],
+            'get',
+            addon_views.addon_view_or_download_quickfile,
+            json_renderer
+        )
     ])
 
     # API
