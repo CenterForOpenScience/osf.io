@@ -1,17 +1,16 @@
 # -*- coding: utf-8 -*-
+import pytest
+import unittest
 
-from nose.tools import *  # noqa (PEP8 asserts)
+from osf_tests.factories import UserFactory
 
-from tests.base import OsfTestCase
-from tests.factories import UserFactory
+from addons.onedrive.models import UserSettings
 
-from website.addons.onedrive.model import OneDriveUserSettings
+pytestmark = pytest.mark.django_db
 
-
-class TestCore(OsfTestCase):
+class TestCore(unittest.TestCase):
 
     def setUp(self):
-
         super(TestCore, self).setUp()
 
         self.user = UserFactory()
@@ -24,6 +23,6 @@ class TestCore(OsfTestCase):
 
     def test_get_addon_returns_onedrive_user_settings(self):
         result = self.user.get_addon('onedrive')
-        assert_true(isinstance(result, OneDriveUserSettings))
+        assert isinstance(result, UserSettings)
 
 

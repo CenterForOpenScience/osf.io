@@ -3,27 +3,38 @@ import os
 import urllib
 import logging
 
-from modularodm import fields
+from django.db import models
 
+from addons.base import exceptions
+from addons.base.models import (BaseOAuthNodeSettings, BaseOAuthUserSettings,
+                                BaseStorageAddon)
+from addons.onedrive import settings
+from addons.onedrive.client import OneDriveClient
+from addons.onedrive.settings import DEFAULT_ROOT_ID
+from addons.onedrive.serializer import OneDriveSerializer
 from framework.auth import Auth
 from framework.exceptions import HTTPError
-from website.oauth.models import ExternalProvider
-
+from osf.models.external import ExternalProvider
+from osf.models.files import File, Folder, BaseFileNode
 from website.util import api_v2_url
-from website.addons.base import exceptions
-from website.addons.base import StorageAddonBase
-from website.addons.base import AddonOAuthUserSettingsBase, AddonOAuthNodeSettingsBase
-
-from website.addons.onedrive import settings
-from website.addons.onedrive.client import OneDriveClient
-from website.addons.onedrive.settings import DEFAULT_ROOT_ID
-from website.addons.onedrive.serializer import OneDriveSerializer
 
 logger = logging.getLogger(__name__)
 
 
+class OneDriveFileNode(BaseFileNode):
+    _provider = 'onedrive'
+
+
+class OneDriveFolder(OneDriveFileNode, Folder):
+    pass
+
+
+class OneDriveFile(OneDriveFileNode, File):
+    pass
+
+
 class OneDriveProvider(ExternalProvider):
-    name = 'onedrive'
+    name = 'Microsoft OneDrive'
     short_name = 'onedrive'
 
     client_id = settings.ONEDRIVE_KEY
@@ -55,14 +66,14 @@ class OneDriveProvider(ExternalProvider):
         return self.account.oauth_key
 
 
-class OneDriveUserSettings(AddonOAuthUserSettingsBase):
+class UserSettings(BaseOAuthUserSettings):
     """Stores user-specific onedrive information
     """
     oauth_provider = OneDriveProvider
     serializer = OneDriveSerializer
 
 
-class OneDriveNodeSettings(StorageAddonBase, AddonOAuthNodeSettingsBase):
+class NodeSettings(BaseOAuthNodeSettings, BaseStorageAddon):
     """Individual OneDrive settings for a particular node.
 
     QUIRKS::
@@ -77,15 +88,12 @@ class OneDriveNodeSettings(StorageAddonBase, AddonOAuthNodeSettingsBase):
       is defined in the settings.
 
     """
-
     oauth_provider = OneDriveProvider
     serializer = OneDriveSerializer
 
-    foreign_user_settings = fields.ForeignField(
-        'onedriveusersettings', backref='authorized'
-    )
-    folder_id = fields.StringField(default=None)
-    folder_path = fields.StringField()
+    folder_id = models.TextField(null=True, blank=True)
+    folder_path = models.TextField(null=True, blank=True)
+    user_settings = models.ForeignKey(UserSettings, null=True, blank=True)
 
     _api = None
 

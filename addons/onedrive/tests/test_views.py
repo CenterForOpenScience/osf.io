@@ -1,21 +1,20 @@
 # -*- coding: utf-8 -*-
-
 import mock
-from nose.tools import *  # noqa
+import pytest
 
-from website.addons.base.testing import views
-from website.addons.onedrive.client import OneDriveClient
-from website.addons.onedrive.serializer import OneDriveSerializer
-from website.addons.onedrive.tests.utils import OneDriveAddonTestCase
-from website.addons.onedrive.tests.utils import raw_subfolder_response
-from website.addons.onedrive.tests.utils import raw_root_folder_response
+from addons.base.tests import views
+from addons.onedrive.client import OneDriveClient
+from addons.onedrive.serializer import OneDriveSerializer
+from addons.onedrive.tests.utils import OneDriveAddonTestCase, raw_subfolder_response, raw_root_folder_response
+from tests.base import OsfTestCase
 
+pytestmark = pytest.mark.django_db
 
-class TestAuthViews(OneDriveAddonTestCase, views.OAuthAddonAuthViewsTestCaseMixin):
+class TestAuthViews(OneDriveAddonTestCase, views.OAuthAddonAuthViewsTestCaseMixin, OsfTestCase):
     pass
 
 
-class TestConfigViews(OneDriveAddonTestCase, views.OAuthAddonConfigViewsTestCaseMixin):
+class TestConfigViews(OneDriveAddonTestCase, views.OAuthAddonConfigViewsTestCaseMixin, OsfTestCase):
     folder = {
         'path': 'Drive/Camera Uploads',
         'id': '1234567890'
@@ -52,5 +51,5 @@ class TestConfigViews(OneDriveAddonTestCase, views.OAuthAddonConfigViewsTestCase
         folderId = '12345'
         url = self.project.api_url_for('onedrive_folder_list', folder_id=folderId)
         res = self.app.get(url, auth=self.user.auth)
-        assert_equal(res.status_code, 200)
-        assert_equal(len(res.json), len(raw_subfolder_response))
+        assert res.status_code == 200
+        assert len(res.json) == len(raw_subfolder_response)

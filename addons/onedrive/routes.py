@@ -2,14 +2,12 @@
 """OneDrive addon routes."""
 from framework.routing import Rule, json_renderer
 
-from website.addons.onedrive import views
+from addons.onedrive import views
 
 
 api_routes = {
     'rules': [
-
         #### Profile settings ###
-
         Rule(
             [
                 '/settings/onedrive/accounts/',
@@ -18,9 +16,7 @@ api_routes = {
             views.onedrive_account_list,
             json_renderer,
         ),
-
         ##### Node settings #####
-
         Rule(
             [
                 '/project/<pid>/onedrive/folders/',
@@ -30,7 +26,6 @@ api_routes = {
             views.onedrive_folder_list,
             json_renderer,
         ),
-
         Rule(
             [
                 '/project/<pid>/onedrive/config/',
@@ -40,7 +35,6 @@ api_routes = {
             views.onedrive_get_config,
             json_renderer,
         ),
-
         Rule(
             [
                 '/project/<pid>/onedrive/config/',
@@ -50,7 +44,6 @@ api_routes = {
             views.onedrive_set_config,
             json_renderer,
         ),
-
         Rule(
             [
                 '/project/<pid>/onedrive/config/',
@@ -60,7 +53,6 @@ api_routes = {
             views.onedrive_deauthorize_node,
             json_renderer,
         ),
-
         Rule(
             [
                 '/project/<pid>/onedrive/import-auth/',

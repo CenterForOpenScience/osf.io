@@ -1,15 +1,14 @@
 # -*- coding: utf-8 -*-
 """Serializer tests for the OneDrive addon."""
+import pytest
 
-import mock
-from nose.tools import *  # noqa (PEP8 asserts)
-
+from addons.onedrive.models import OneDriveProvider
+from addons.onedrive.serializer import OneDriveSerializer
+from addons.onedrive.tests.factories import OneDriveAccountFactory
+from addons.base.tests.serializers import StorageAddonSerializerTestSuiteMixin
 from tests.base import OsfTestCase
-from website.addons.onedrive.model import OneDriveProvider
-from website.addons.onedrive.serializer import OneDriveSerializer
-from website.addons.onedrive.tests.factories import OneDriveAccountFactory
-from website.addons.base.testing.serializers import StorageAddonSerializerTestSuiteMixin
 
+pytestmark = pytest.mark.django_db
 
 class TestOneDriveSerializer(StorageAddonSerializerTestSuiteMixin, OsfTestCase):
 

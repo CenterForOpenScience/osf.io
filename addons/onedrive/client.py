@@ -2,8 +2,8 @@
 from framework.exceptions import HTTPError
 
 from website.util.client import BaseClient
-from website.addons.onedrive import settings
-from website.addons.onedrive.settings import DEFAULT_ROOT_ID
+from addons.onedrive import settings
+from addons.onedrive.settings import DEFAULT_ROOT_ID
 
 
 class OneDriveClient(BaseClient):
@@ -28,7 +28,7 @@ class OneDriveClient(BaseClient):
         """
 
         if folder_id is None or folder_id == DEFAULT_ROOT_ID:
-            url = self._build_url(settings.ONEDRIVE_API_URL, 'drive', 'root', 'children')
+            url = self._build_url(settings.ONEDRIVE_API_URL, 'drive', DEFAULT_ROOT_ID, 'children')
         else:
             url = self._build_url(settings.ONEDRIVE_API_URL, 'drive', 'items',
                                   folder_id, 'children')

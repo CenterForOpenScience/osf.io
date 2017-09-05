@@ -7,8 +7,8 @@ from website.project.decorators import (
     must_have_addon, must_be_addon_authorizer,
 )
 
-from website.addons.base import generic_views
-from website.addons.onedrive.serializer import OneDriveSerializer
+from addons.base import generic_views
+from addons.onedrive.serializer import OneDriveSerializer
 
 
 SHORT_NAME = 'onedrive'
