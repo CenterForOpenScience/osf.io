@@ -49,7 +49,7 @@
                             <div data-bind="html: notification().message, css: 'alert alert-' + notification().level"></div>
                             <!-- /ko -->
                             <!-- ko if: doneSearching -->
-                            <table class="table-condensed">
+                            <table class="table-condensed table-hover">
                                 <thead data-bind="visible: foundResults">
                                 </thead>
                                 <tbody data-bind="foreach:{data:results, as: 'contributor', afterRender:addTips}">
@@ -71,7 +71,7 @@
                                             <!-- height and width are explicitly specified for faster rendering -->
                                             <img data-bind="attr: {src: contributor.gravatar_url}" height=35 width=35 />
                                         </td>
-                                        <td width="75%" style="word-break: break-all">
+                                        <td width="75%">
                                             <a data-bind = "attr: {href: contributor.profile_url}" target="_blank">
                                                 <span data-bind= "text:contributor.fullname"></span>
                                             </a><br>
@@ -152,7 +152,7 @@
                             </div>
 
                             <!-- TODO: Duplication here: Put this in a KO template -->
-                            <table class="table-condensed">
+                            <table class="table-condensed table-hover">
                                 <thead data-bind="visible: selection().length">
                                     <th width="10%"></th>
                                     <th width="10%"></th>
@@ -189,7 +189,7 @@
                                             <img data-bind="attr: {src: contributor.gravatar_url || '/static/img/unreg_gravatar.png'}" height=35 width=35 />
                                         </td>
 
-                                        <td style="word-break: break-all">
+                                        <td class="break-all">
                                             <span   data-bind="text: contributor.fullname"></span>
 
                                             <span
