@@ -5,7 +5,6 @@ import pytz
 import urlparse
 import random
 import requests
-import celery
 
 from framework.celery_tasks.handlers import enqueue_task
 from dateutil.parser import parse as parse_date

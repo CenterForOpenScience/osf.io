@@ -188,7 +188,7 @@ def register_draft_registration(auth, node, draft, *args, **kwargs):
     if draft.approval and draft.approval.state != Sanction.REJECTED:
         raise HTTPError(http.CONFLICT, data=dict(message_long='Cannot resubmit previously submitted draft.'))
 
-    register = draft.register(auth, data=data, reg_choice=registration_choice)
+    draft.register(auth, data=data, reg_choice=registration_choice)
 
     push_status_message(language.AFTER_REGISTER_ARCHIVING,
                         kind='info',
