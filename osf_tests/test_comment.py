@@ -3,7 +3,6 @@ from collections import OrderedDict
 
 from django.core.exceptions import ValidationError
 
-
 from addons.box.models import BoxFile
 from addons.dropbox.models import DropboxFile
 from addons.github.models import GithubFile

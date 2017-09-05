@@ -5,9 +5,6 @@ import httplib as http
 from furl import furl
 from flask import request
 
-from modularodm import Q
-from modularodm.exceptions import ModularOdmException
-
 from framework import status
 from framework.auth import Auth, cas
 from framework.flask import redirect  # VOL-aware redirect
@@ -241,13 +238,12 @@ def _must_be_contributor_factory(include_public, include_view_only_anon=True):
             #if not login user check if the key is valid or the other privilege
 
             kwargs['auth'].private_key = key
-            link_anon = None
             if not include_view_only_anon:
                 from osf.models import PrivateLink
                 try:
-                    link_anon = PrivateLink.find_one(Q('key', 'eq', key)).anonymous
-                except ModularOdmException:
-                    pass
+                    link_anon = PrivateLink.objects.filter(key=key).values_list('anonymous', flat=True).get()
+                except PrivateLink.DoesNotExist:
+                    link_anon = None
 
             if not node.is_public or not include_public:
                 if not include_view_only_anon and link_anon:

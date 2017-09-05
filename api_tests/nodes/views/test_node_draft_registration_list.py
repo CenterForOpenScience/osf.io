@@ -67,7 +67,7 @@ class TestDraftRegistrationList(DraftRegistrationTestCase):
     @pytest.fixture()
     def schema(self):
         return MetaSchema.objects.get(name='Open-Ended Registration', schema_version=LATEST_SCHEMA_VERSION)
-    
+
     @pytest.fixture()
     def draft_registration(self, user, project_public, schema):
         return DraftRegistrationFactory(

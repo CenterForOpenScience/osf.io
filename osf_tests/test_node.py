@@ -1703,20 +1703,6 @@ class TestAddUnregisteredContributor:
                 auth=auth
             )
 
-def test_find_for_user():
-    node1, node2 = NodeFactory(is_public=False), NodeFactory(is_public=True)
-    contrib = UserFactory()
-    noncontrib = UserFactory()
-    Contributor.objects.create(node=node1, user=contrib)
-    Contributor.objects.create(node=node2, user=contrib)
-    assert node1 in Node.find_for_user(contrib)
-    assert node2 in Node.find_for_user(contrib)
-    assert node1 not in Node.find_for_user(noncontrib)
-
-    assert node1 in Node.find_for_user(contrib, Q(is_public=False))
-    assert node2 not in Node.find_for_user(contrib, Q(is_public=False))
-
-
 def test_find_by_institutions():
     inst1, inst2 = InstitutionFactory(), InstitutionFactory()
     project = ProjectFactory(is_public=True)

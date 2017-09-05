@@ -1,5 +1,4 @@
-from modularodm.exceptions import ValidationError
-from modularodm import Q
+from django.core.exceptions import ValidationError
 from rest_framework import exceptions
 from rest_framework import serializers as ser
 
@@ -219,9 +218,7 @@ class PreprintSerializer(JSONAPISerializer):
             func(val, auth)
         except PermissionsError as e:
             raise exceptions.PermissionDenied(detail=e.message)
-        except ValueError as e:
-            raise exceptions.ValidationError(detail=e.message)
-        except NodeStateError as e:
+        except (ValueError, ValidationError, NodeStateError) as e:
             raise exceptions.ValidationError(detail=e.message)
 
 
@@ -248,9 +245,9 @@ class PreprintCreateSerializer(PreprintSerializer):
         if not provider:
             raise exceptions.ValidationError(detail='You must specify a valid provider to create a preprint.')
 
-        if PreprintService.find(Q('node', 'eq', node) & Q('provider', 'eq', provider)).count():
-            conflict = PreprintService.find_one(Q('node', 'eq', node) & Q('provider', 'eq', provider))
-            raise Conflict('Only one preprint per provider can be submitted for a node. Check `meta[existing_resource_id]`.', meta={'existing_resource_id': conflict._id})
+        node_preprints = node.preprints.filter(provider=provider)
+        if node_preprints.exists():
+            raise Conflict('Only one preprint per provider can be submitted for a node. Check `meta[existing_resource_id]`.', meta={'existing_resource_id': node_preprints.first()._id})
 
         preprint = PreprintService(node=node, provider=provider)
         self.set_field(preprint.set_primary_file, primary_file, auth)

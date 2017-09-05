@@ -1421,10 +1421,6 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
             self.save()
         self.save_node_preprints()
 
-    @classmethod
-    def find_for_user(cls, user, subquery=None):
-        return user.nodes.filter(subquery) if subquery else user.nodes.all()
-
     def can_comment(self, auth):
         if self.comment_level == 'public':
             return auth.logged_in and (

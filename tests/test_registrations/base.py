@@ -1,7 +1,6 @@
 import datetime as dt
 
 from django.utils import timezone
-from modularodm import Q
 
 from framework.auth import Auth
 
@@ -27,10 +26,8 @@ class RegistrationsTestBase(OsfTestCase):
         )
         self.non_contrib = AuthUserFactory()
 
-        self.meta_schema = MetaSchema.find_one(
-            Q('name', 'eq', 'Open-Ended Registration') &
-            Q('schema_version', 'eq', 2)
-        )
+        self.meta_schema = MetaSchema.objects.get(name='Open-Ended Registration', schema_version=2)
+
         self.draft = DraftRegistrationFactory(
             initiator=self.user,
             branched_from=self.node,

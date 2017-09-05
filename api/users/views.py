@@ -1,13 +1,16 @@
+from django.apps import apps
 
 from api.addons.views import AddonSettingsMixin
 from api.base import permissions as base_permissions
 from api.base.exceptions import Conflict, UserGone
-from api.base.filters import ListFilterMixin, ODMFilterMixin, PreprintFilterMixin
+from api.base.filters import ListFilterMixin, PreprintFilterMixin
 from api.base.parsers import (JSONAPIRelationshipParser,
                               JSONAPIRelationshipParserForRegularJSON)
 from api.base.serializers import AddonAccountSerializer
-from api.base.utils import (default_node_list_query,
-                            default_node_permission_query,
+from api.base.utils import (default_node_list_queryset,
+                            default_node_permission_queryset,
+                            default_registration_list_queryset,
+                            default_registration_permission_queryset,
                             get_object_or_error,
                             get_user_auth)
 from api.base.views import JSONAPIBaseView, WaterButlerMixin
@@ -26,7 +29,6 @@ from api.users.serializers import (UserAddonSettingsSerializer,
                                    ReadEmailUserDetailSerializer,)
 from django.contrib.auth.models import AnonymousUser
 from framework.auth.oauth_scopes import CoreScopes, normalize_scopes
-from modularodm import Q as MQ
 from django.db.models import Q
 from rest_framework import permissions as drf_permissions
 from rest_framework import generics
@@ -79,7 +81,7 @@ class UserMixin(object):
         return obj
 
 
-class UserList(JSONAPIBaseView, generics.ListAPIView, ODMFilterMixin):
+class UserList(JSONAPIBaseView, generics.ListAPIView, ListFilterMixin):
     """List of users registered on the OSF.
 
     Paginated list of users ordered by the date they registered.  Each resource contains the full representation of the
@@ -135,6 +137,7 @@ class UserList(JSONAPIBaseView, generics.ListAPIView, ODMFilterMixin):
 
     required_read_scopes = [CoreScopes.USERS_READ]
     required_write_scopes = [CoreScopes.NULL]
+    model_class = apps.get_model('osf.OSFUser')
 
     serializer_class = UserSerializer
 
@@ -142,21 +145,14 @@ class UserList(JSONAPIBaseView, generics.ListAPIView, ODMFilterMixin):
     view_category = 'users'
     view_name = 'user-list'
 
-    # overrides ODMFilterMixin
-    def get_default_odm_query(self):
-        base_query = (
-            MQ('is_registered', 'eq', True) &
-            MQ('date_disabled', 'eq', None)
-        )
+    def get_default_queryset(self):
         if self.request.version >= '2.3':
-            return base_query & MQ('merged_by', 'eq', None)
-        return base_query
+            return OSFUser.objects.filter(is_registered=True, date_disabled__isnull=True, merged_by__isnull=True)
+        return OSFUser.objects.filter(is_registered=True, date_disabled__isnull=True)
 
     # overrides ListCreateAPIView
     def get_queryset(self):
-        # TODO: sort
-        query = self.get_query_from_request()
-        return OSFUser.find(query)
+        return self.get_queryset_from_request()
 
 
 class UserDetail(JSONAPIBaseView, generics.RetrieveUpdateAPIView, UserMixin):
@@ -532,10 +528,10 @@ class UserNodes(JSONAPIBaseView, generics.ListAPIView, UserMixin, NodesFilterMix
     # overrides NodesFilterMixin
     def get_default_queryset(self):
         user = self.get_user()
-        query = MQ('contributors', 'eq', user) & default_node_list_query()
+        qs = default_node_list_queryset().filter(contributor__user__id=user.id)
         if user != self.request.user:
-            query &= default_node_permission_query(self.request.user)
-        return AbstractNode.find(query)
+            return qs & default_node_permission_queryset(self.request.user)
+        return qs
 
     # overrides ListAPIView
     def get_queryset(self):
@@ -594,8 +590,7 @@ class UserPreprints(JSONAPIBaseView, generics.ListAPIView, UserMixin, PreprintFi
     view_category = 'users'
     view_name = 'user-preprints'
 
-    # overrides DjangoFilterMixin
-    def get_default_django_query(self):
+    def get_default_queryset(self):
         # the user who is requesting
         auth = get_user_auth(self.request)
         auth_user = getattr(auth, 'user', None)
@@ -604,17 +599,19 @@ class UserPreprints(JSONAPIBaseView, generics.ListAPIView, UserMixin, PreprintFi
         target_user = self.get_user(check_permissions=False)
 
         # Permissions on the list objects are handled by the query
-        default_query = Q(node__isnull=False, node__is_deleted=False, node___contributors__guids___id=target_user._id)
+        default_qs = PreprintService.objects.filter(
+            node__isnull=False,
+            node__is_deleted=False,
+            node___contributors__guids___id=target_user._id
+        )
         no_user_query = Q(is_published=True, node__is_public=True)
-
         if auth_user:
-            contrib_user_query = Q(is_published=True, node__contributor__user_id=auth_user.id, node__contributor__read=True)
             admin_user_query = Q(node__contributor__user_id=auth_user.id, node__contributor__admin=True)
-            return (default_query & (no_user_query | contrib_user_query | admin_user_query))
-        return (default_query & no_user_query)
+            return default_qs.filter(no_user_query | admin_user_query)
+        return default_qs.filter(no_user_query)
 
     def get_queryset(self):
-        return PreprintService.objects.filter(self.get_query_from_request()).distinct()
+        return self.get_queryset_from_request().distinct()
 
 
 class UserInstitutions(JSONAPIBaseView, generics.ListAPIView, UserMixin):
@@ -640,7 +637,6 @@ class UserInstitutions(JSONAPIBaseView, generics.ListAPIView, UserMixin):
         return user.affiliated_institutions.all()
 
 
-# TODO: This view should be a subclass of UserNodes (i.e. NodeODMFilterMixin and NodesListFilterMixin replaced with NodesFilterMixin)
 class UserRegistrations(JSONAPIBaseView, generics.ListAPIView, UserMixin, NodesFilterMixin):
     """List of registrations that the user contributes to. *Read-only*.
 
@@ -742,17 +738,8 @@ class UserRegistrations(JSONAPIBaseView, generics.ListAPIView, UserMixin, NodesF
     def get_default_queryset(self):
         user = self.get_user()
         current_user = self.request.user
-
-        query = (
-            MQ('is_deleted', 'ne', True) &
-            MQ('type', 'eq', 'osf.registration') &
-            MQ('contributors', 'eq', user)
-        )
-        permission_query = MQ('is_public', 'eq', True)
-        if not current_user.is_anonymous:
-            permission_query = (permission_query | MQ('contributors', 'eq', current_user))
-        query = query & permission_query
-        return AbstractNode.find(query)
+        qs = default_registration_list_queryset() & default_registration_permission_queryset(current_user)
+        return qs.filter(contributor__user__id=user.id)
 
     # overrides ListAPIView
     def get_queryset(self):

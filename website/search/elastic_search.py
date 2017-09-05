@@ -15,11 +15,11 @@ import six
 
 from django.apps import apps
 from django.core.paginator import Paginator
+from django.db.models import Q
 from elasticsearch import (ConnectionError, Elasticsearch, NotFoundError,
                            RequestError, TransportError, helpers)
 from framework.celery_tasks import app as celery_app
 from framework.database import paginated
-from modularodm import Q
 from osf.models import AbstractNode
 from osf.models import OSFUser
 from osf.models import BaseFileNode
@@ -385,7 +385,7 @@ def serialize_node(node, category):
 def update_node(node, index=None, bulk=False, async=False):
     from addons.osfstorage.models import OsfStorageFile
     index = index or INDEX
-    for file_ in paginated(OsfStorageFile, Q('node', 'eq', node)):
+    for file_ in paginated(OsfStorageFile, Q(node=node)):
         update_file(file_, index=index)
 
     if node.is_deleted or not node.is_public or node.archiving or (node.is_spammy and settings.SPAM_FLAGGED_REMOVE_FROM_SEARCH) or node.is_quickfiles:
