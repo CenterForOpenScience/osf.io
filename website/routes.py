@@ -52,11 +52,13 @@ from website.closed_challenges import views as closed_challenges_views
 from website.identifiers import views as identifier_views
 
 
-def use_embedded_ds():
-    if hasattr(settings, 'USE_EMBEDDED_DS'):
-        if settings.USE_EMBEDDED_DS and settings.USE_EMBEDDED_DS.lower().strip() == 'true':
-            return True
-    return False
+def bool_from_str(s):
+    return s.lower() in ['true', 'yes', '1']
+
+def bool_from_settings(name, default):
+    if hasattr(settings, name):
+        return bool_from_str(getattr(settings, name))
+    return default
 
 def get_globals():
     """Context variables that are available for every template rendered by
@@ -74,7 +76,10 @@ def get_globals():
     else:
         request_login_url = request.url
     return {
-        'embedded_ds': use_embedded_ds(),
+        'embedded_ds': bool_from_settings('USE_EMBEDDED_DS', False),
+        'nav_dropdown': bool_from_settings('NAV_DROPDOWN', True),
+        'osf_page_name': unicode(settings.OSF_PAGE_NAME, 'utf-8'),
+        ''
         'private_link_anonymous': is_private_link_anonymous_view(),
         'user_name': user.username if user else '',
         'user_full_name': user.fullname if user else '',

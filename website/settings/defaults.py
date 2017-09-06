@@ -19,6 +19,8 @@ def parent_dir(path):
     '''Return the parent of a directory.'''
     return os.path.abspath(os.path.join(path, os.pardir))
 
+OSF_PAGE_NAME = 'OSF'
+
 HERE = os.path.dirname(os.path.abspath(__file__))
 BASE_PATH = parent_dir(HERE)  # website/ directory
 APP_PATH = parent_dir(BASE_PATH)
