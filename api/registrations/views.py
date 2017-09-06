@@ -12,7 +12,7 @@ from api.base.serializers import LinkedNodesRelationshipSerializer
 from api.base.pagination import NodeContributorPagination
 from api.base.parsers import JSONAPIRelationshipParser
 from api.base.parsers import JSONAPIRelationshipParserForRegularJSON
-from api.base.utils import get_user_auth, default_registration_list_queryset, default_registration_permission_queryset
+from api.base.utils import get_user_auth, default_node_list_permission_queryset
 from api.comments.serializers import RegistrationCommentSerializer, CommentCreateSerializer
 from api.identifiers.serializers import RegistrationIdentifierSerializer
 from api.nodes.views import NodeIdentifierList
@@ -157,7 +157,7 @@ class RegistrationList(JSONAPIBaseView, generics.ListAPIView, NodesFilterMixin):
 
     # overrides NodesFilterMixin
     def get_default_queryset(self):
-        return default_registration_list_queryset() & default_registration_permission_queryset(self.request.user)
+        return default_node_list_permission_queryset(user=self.request.user, model_cls=Registration)
 
     def is_blacklisted(self):
         query_params = self.parse_query_params(self.request.query_params)
@@ -511,7 +511,7 @@ class RegistrationChildrenList(JSONAPIBaseView, generics.ListAPIView, ListFilter
     ordering = ('-date_modified',)
 
     def get_default_queryset(self):
-        return default_registration_list_queryset() & default_registration_permission_queryset(self.request.user)
+        return default_node_list_permission_queryset(user=self.request.user, model_cls=Registration)
 
     def get_queryset(self):
         registration = self.get_node()

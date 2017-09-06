@@ -8,9 +8,7 @@ from api.base.parsers import (JSONAPIRelationshipParser,
                               JSONAPIRelationshipParserForRegularJSON)
 from api.base.serializers import AddonAccountSerializer
 from api.base.utils import (default_node_list_queryset,
-                            default_node_permission_queryset,
-                            default_registration_list_queryset,
-                            default_registration_permission_queryset,
+                            default_node_list_permission_queryset,
                             get_object_or_error,
                             get_user_auth)
 from api.base.views import JSONAPIBaseView, WaterButlerMixin
@@ -33,7 +31,7 @@ from django.db.models import Q
 from rest_framework import permissions as drf_permissions
 from rest_framework import generics
 from rest_framework.exceptions import NotAuthenticated, NotFound
-from osf.models import Contributor, ExternalAccount, QuickFilesNode, AbstractNode, PreprintService, OSFUser
+from osf.models import Contributor, ExternalAccount, QuickFilesNode, AbstractNode, PreprintService, OSFUser, Registration, Node
 
 
 class UserMixin(object):
@@ -528,10 +526,9 @@ class UserNodes(JSONAPIBaseView, generics.ListAPIView, UserMixin, NodesFilterMix
     # overrides NodesFilterMixin
     def get_default_queryset(self):
         user = self.get_user()
-        qs = default_node_list_queryset().filter(contributor__user__id=user.id)
         if user != self.request.user:
-            return qs & default_node_permission_queryset(self.request.user)
-        return qs
+            return default_node_list_permission_queryset(user=self.request.user, model_cls=Node).filter(contributor__user__id=user.id)
+        return default_node_list_queryset(model_cls=Node).filter(contributor__user__id=user.id)
 
     # overrides ListAPIView
     def get_queryset(self):
@@ -739,7 +736,7 @@ class UserRegistrations(JSONAPIBaseView, generics.ListAPIView, UserMixin, NodesF
     def get_default_queryset(self):
         user = self.get_user()
         current_user = self.request.user
-        qs = default_registration_list_queryset() & default_registration_permission_queryset(current_user)
+        qs = default_node_list_permission_queryset(user=current_user, model_cls=Registration)
         return qs.filter(contributor__user__id=user.id)
 
     # overrides ListAPIView
