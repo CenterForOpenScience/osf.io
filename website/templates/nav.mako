@@ -8,24 +8,28 @@
         <a class="navbar-brand" href="/" aria-label="Go home"><span class="osf-navbar-logo"></span></a>
         <div class="service-name">
             <a href="${service_url}">
-                <span class="hidden-xs"> OSF </span>
+                <span class="hidden-xs"> ${osf_page_name} </span>
+              % if nav_dropdown:
                 <span class="current-service"><strong>${service_name}</strong></span>
+              % endif
             </a>
         </div>
+        % if nav_dropdown:
         <div class="dropdown primary-nav">
             <button data-bind="click: trackClick.bind($data, 'Dropdown Arrow')" id="primary-navigation" class="dropdown-toggle btn-link" data-toggle="dropdown" role="button" aria-expanded="false" aria-label="Toggle primary navigation">
                 <span class="fa fa-caret-down fa-2x"></span>
             </button>
             <ul class="dropdown-menu service-dropdown" role="menu">
-                <li><a data-bind="click: trackClick.bind($data, 'Home')" href="${domain}">OSF<b>HOME</b></a></li>
-                <li><a data-bind="click: trackClick.bind($data, 'Preprints')" href="${domain}preprints/">OSF<b>PREPRINTS</b></a></li>
-                <li><a data-bind="click: trackClick.bind($data, 'Registries')" href="${domain}registries/">OSF<b>REGISTRIES</b></a></li>
-                <li><a data-bind="click: trackClick.bind($data, 'Meetings')" href="${domain}meetings/">OSF<b>MEETINGS</b></a></li>
+                <li><a data-bind="click: trackClick.bind($data, 'Home')" href="${domain}">${osf_page_name}<b>HOME</b></a></li>
+                <li><a data-bind="click: trackClick.bind($data, 'Preprints')" href="${domain}preprints/">${osf_page_name}<b>PREPRINTS</b></a></li>
+                <li><a data-bind="click: trackClick.bind($data, 'Registries')" href="${domain}registries/">${osf_page_name}<b>REGISTRIES</b></a></li>
+                <li><a data-bind="click: trackClick.bind($data, 'Meetings')" href="${domain}meetings/">${osf_page_name}<b>MEETINGS</b></a></li>
                 % if institutional_landing_flag:
-                    <li><a data-bind="click: trackClick.bind($data, 'Institutions')" href="${domain}institutions/">OSF<b>INSTITUTIONS</b></a></li>
+                    <li><a data-bind="click: trackClick.bind($data, 'Institutions')" href="${domain}institutions/">${osf_page_name}<b>INSTITUTIONS</b></a></li>
                 % endif
             </ul>
         </div>
+        % endif 
         <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#secondary-navigation" aria-label="Toggle secondary navigation"}}>
             <span class="sr-only">Toggle navigation</span>
             <span class="icon-bar"></span>

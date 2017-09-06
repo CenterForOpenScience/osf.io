@@ -4,7 +4,7 @@
 <html lang="en">
 <head>
     <meta charset="utf-8">
-    <title>OSF | ${self.title()}</title>
+    <title>${osf_page_name} | ${self.title()}</title>
     % if settings.GOOGLE_SITE_VERIFICATION:
         <meta name="google-site-verification" content="${settings.GOOGLE_SITE_VERIFICATION}" />
     % endif
