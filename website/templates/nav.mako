@@ -29,7 +29,7 @@
                 % endif
             </ul>
         </div>
-        % endif 
+        % endif
         <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#secondary-navigation" aria-label="Toggle secondary navigation"}}>
             <span class="sr-only">Toggle navigation</span>
             <span class="icon-bar"></span>
@@ -50,10 +50,12 @@
                 % endif
                     <li><a id="navbar-search" data-bind="click: trackClick.bind($data, 'Search')" href="${domain}search/">Search</a></li>
             % endif
+            % if nav_support:
             <li class="dropdown">
             <a id="navbar-support" data-bind="click: trackClick.bind($data, '${service_name} Support')" href="${service_support_url}">Support</a>
             </li>
             <li class="navbar-donate-button"><a id="navbar-donate" data-bind="click: trackClick.bind($data, 'Donate')" href="https://cos.io/donate">Donate</a></li>
+            % endif:
             % if user_name and display_name:
             <li class="dropdown secondary-nav-dropdown">
                 <a class="dropdown-toggle btn-link" data-toggle="dropdown" role="button" aria-expanded="false" aria-label="Toggle auth dropdown">
@@ -68,7 +70,9 @@
 
                 <ul class="dropdown-menu auth-dropdown" role="menu">
                     <li><a data-bind="click: trackClick.bind($data, 'MyProfile')" href="${domain}profile/"><i class="fa fa-user fa-lg p-r-xs"></i> My Profile</a></li>
+                    % if nav_support:
                     <li><a data-bind="click: trackClick.bind($data, 'Support')" href="${domain}support/" ><i class="fa fa-life-ring fa-lg p-r-xs"></i> OSF Support</a></li>
+                    % endif
                     <li><a data-bind="click: trackClick.bind($data, 'Settings')" href="${web_url_for('user_profile')}"><i class="fa fa-cog fa-lg p-r-xs"></i> Settings</a></li>
                     <li><a data-bind="click: trackClick.bind($data, 'Logout')" href="${web_url_for('auth_logout')}"><i class="fa fa-sign-out fa-lg p-r-xs"></i> Log out</a></li>
                 </ul>
