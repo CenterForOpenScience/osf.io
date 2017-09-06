@@ -11,6 +11,7 @@ from osf_tests.factories import (
     RegistrationFactory,
     NodeFactory,
     CollectionFactory,
+    DraftRegistrationFactory,
 )
 from osf.models import NodeRelation
 from tests.base import OsfTestCase, get_default_metaschema
@@ -237,7 +238,8 @@ class TestViewProjectEmbeds(OsfTestCase):
     # Regression test for https://github.com/CenterForOpenScience/osf.io/issues/1478
     @mock.patch('website.archiver.tasks.archive')
     def test_view_project_embed_registrations_includes_contribution_count(self, mock_archive):
-        self.project.register_node(get_default_metaschema(), Auth(user=self.project.creator), '', None)
+        draft = DraftRegistrationFactory(branched_from=self.project)
+        self.project.register_node(schema=get_default_metaschema(), auth=Auth(user=self.project.creator), draft=draft, data='', parent=None, celery=False)
         data = _view_project(node=self.project, auth=Auth(self.project.creator), embed_registrations=True)
         assert_is_not_none(data['node']['registrations'][0]['nlogs'])
 

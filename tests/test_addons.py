@@ -17,8 +17,11 @@ from framework.exceptions import HTTPError
 from nose.tools import *  # noqa
 from osf_tests import factories
 from tests.base import OsfTestCase, get_default_metaschema
-from osf_tests.factories import (AuthUserFactory, ProjectFactory,
-                             RegistrationFactory)
+from osf_tests.factories import (
+    AuthUserFactory,
+    ProjectFactory,
+    RegistrationFactory,
+    DraftRegistrationFactory)
 from website import settings
 from addons.base import views
 from addons.github.exceptions import ApiError
@@ -851,11 +854,13 @@ class TestAddonFileViews(OsfTestCase):
         file_node = self.get_test_file()
         second_file_node = self.get_second_test_file()
         file_node.copied_from = second_file_node
-
+        draft = DraftRegistrationFactory(branched_from=self.project, initiator=self.user)
         registered_node = self.project.register_node(
+            draft=draft,
             schema=get_default_metaschema(),
             auth=Auth(self.user),
             data=None,
+            celery=False,
         )
 
         archived_from_url = views.get_archived_from_url(registered_node, file_node)

@@ -8,6 +8,7 @@ from osf_tests.factories import (
     AuthUserFactory,
     NodeFactory,
     RegistrationFactory,
+    DraftRegistrationFactory,
 )
 from tests.base import ApiTestCase, get_default_metaschema
 
@@ -34,7 +35,10 @@ class LinkedRegistrationsTestCase(ApiTestCase):
         public_node.add_pointer(self.public_linked_registration, auth=Auth(self.admin_contributor))
         public_node.add_pointer(self.private_linked_registration, auth=Auth(self.rw_contributor))
         public_node.save()
-        self.public_registration = public_node.register_node(get_default_metaschema(), Auth(self.admin_contributor), '', None)
+        draft_reg_public_node = DraftRegistrationFactory(
+            branched_from=public_node,
+            initiator=self.admin_contributor)
+        self.public_registration = public_node.register_node(schema=get_default_metaschema(), draft=draft_reg_public_node, auth=Auth(self.admin_contributor), data='', parent=None, celery=False)
         self.public_registration.is_public = True
         self.public_registration.save()
 
@@ -44,7 +48,10 @@ class LinkedRegistrationsTestCase(ApiTestCase):
         private_node.add_pointer(self.public_linked_registration, auth=Auth(self.admin_contributor))
         private_node.add_pointer(self.private_linked_registration, auth=Auth(self.rw_contributor))
         private_node.save()
-        self.private_registration = private_node.register_node(get_default_metaschema(), Auth(self.admin_contributor), '', None)
+        draft_reg_private_node = DraftRegistrationFactory(
+            branched_from=private_node,
+            initiator=self.admin_contributor)
+        self.private_registration = private_node.register_node(schema=get_default_metaschema(), draft=draft_reg_private_node, auth=Auth(self.admin_contributor), data='', parent=None, celery=False)
 
     def tearDown(self):
         super(LinkedRegistrationsTestCase, self).tearDown()

@@ -74,6 +74,10 @@ def project(user):
     return ProjectFactory(creator=user)
 
 @pytest.fixture()
+def reg_draft(project, user):
+    return DraftRegistrationFactory(branched_from=project, initiator=user)
+
+@pytest.fixture()
 def auth(user):
     return Auth(user)
 
@@ -1594,9 +1598,9 @@ class TestPermissions:
 
 class TestRegisterNode:
 
-    def test_register_node_creates_new_registration(self, node, auth):
+    def test_register_node_creates_new_registration(self, node, auth, reg_draft):
         with disconnected_from_listeners(after_create_registration):
-            registration = node.register_node(get_default_metaschema(), auth, '', None)
+            registration = node.register_node(draft=reg_draft, schema=get_default_metaschema(), auth=auth, data='', parent=None, celery=False)
             assert type(registration) is Registration
             assert node._id != registration._id
 
@@ -1612,16 +1616,16 @@ class TestRegisterNode:
         assert err.value.message == 'Cannot register deleted node.'
 
     @mock.patch('website.project.signals.after_create_registration')
-    def test_register_node_makes_private_registration(self, mock_signal):
+    def test_register_node_makes_private_registration(self, mock_signal, reg_draft):
         user = UserFactory()
         node = NodeFactory(creator=user)
         node.is_public = True
         node.save()
-        registration = node.register_node(get_default_metaschema(), Auth(user), '', None)
+        registration = node.register_node(schema=get_default_metaschema(), draft=reg_draft, auth=Auth(user), data='', parent=None, celery=False)
         assert registration.is_public is False
 
     @mock.patch('website.project.signals.after_create_registration')
-    def test_register_node_makes_private_child_registrations(self, mock_signal):
+    def test_register_node_makes_private_child_registrations(self, mock_signal, reg_draft):
         user = UserFactory()
         node = NodeFactory(creator=user)
         node.is_public = True
@@ -1632,12 +1636,12 @@ class TestRegisterNode:
         childchild = NodeFactory(parent=child)
         childchild.is_public = True
         childchild.save()
-        registration = node.register_node(get_default_metaschema(), Auth(user), '', None)
+        registration = node.register_node(schema=get_default_metaschema(), auth=Auth(user), data='', parent=None, draft=reg_draft, celery=False)
         for node in registration.node_and_primary_descendants():
             assert node.is_public is False
 
     @mock.patch('website.project.signals.after_create_registration')
-    def test_register_node_propagates_schema_and_data_to_children(self, mock_signal, user, auth):
+    def test_register_node_propagates_schema_and_data_to_children(self, mock_signal, user, auth, reg_draft):
         root = ProjectFactory(creator=user)
         c1 = ProjectFactory(creator=user, parent=root)
         ProjectFactory(creator=user, parent=c1)
@@ -1649,7 +1653,8 @@ class TestRegisterNode:
             schema=meta_schema,
             auth=auth,
             data=data,
-        )
+            draft=reg_draft,
+            celery=False)
         r1 = reg.nodes[0]
         r1a = r1.nodes[0]
         for r in [reg, r1, r1a]:
@@ -1756,17 +1761,17 @@ class TestSetPrivacy:
         with pytest.raises(PermissionsError):
             project.set_privacy('private', Auth(non_contrib))
 
-    def test_set_privacy_pending_embargo(self, user):
+    def test_set_privacy_pending_embargo(self, user, reg_draft):
         project = ProjectFactory(creator=user, is_public=False)
-        with mock_archive(project, embargo=True, autocomplete=True) as registration:
+        with mock_archive(project, draft=reg_draft, embargo=True, autocomplete=True) as registration:
             assert bool(registration.embargo.is_pending_approval) is True
             assert bool(registration.is_pending_embargo) is True
             with pytest.raises(NodeStateError):
                 registration.set_privacy('public', Auth(project.creator))
 
-    def test_set_privacy_pending_registration(self, user):
+    def test_set_privacy_pending_registration(self, user, reg_draft):
         project = ProjectFactory(creator=user, is_public=False)
-        with mock_archive(project, embargo=False, autocomplete=True) as registration:
+        with mock_archive(project, embargo=False, draft=reg_draft, autocomplete=True) as registration:
             assert bool(registration.registration_approval.is_pending_approval) is True
             assert bool(registration.is_pending_registration) is True
             with pytest.raises(NodeStateError):

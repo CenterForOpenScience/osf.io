@@ -895,7 +895,7 @@ class RegistrationEmbargoViewsTestCase(OsfTestCase):
     @mock.patch('framework.celery_tasks.handlers.enqueue_task')
     def test_POST_register_embargo_is_not_public(self, mock_enqueue):
         res = self.app.post(
-            self.project.api_url_for('register_draft_registration', draft_id=self.draft._id),
+            self.project.api_url_for('register_draft_registration', draft_id=self.draft._id, celery=False),
             self.valid_embargo_payload,
             content_type='application/json',
             auth=self.user.auth
@@ -933,7 +933,7 @@ class RegistrationEmbargoViewsTestCase(OsfTestCase):
             is_public=True
         )
         res = self.app.post(
-            self.project.api_url_for('register_draft_registration', draft_id=self.draft._id),
+            self.project.api_url_for('register_draft_registration', draft_id=self.draft._id, celery=False),
             self.valid_embargo_payload,
             content_type='application/json',
             auth=self.user.auth
@@ -957,7 +957,7 @@ class RegistrationEmbargoViewsTestCase(OsfTestCase):
     @mock.patch('framework.celery_tasks.handlers.enqueue_task')
     def test_POST_invalid_embargo_end_date_returns_HTTPBad_Request(self, mock_enqueue):
         res = self.app.post(
-            self.project.api_url_for('register_draft_registration', draft_id=self.draft._id),
+            self.project.api_url_for('register_draft_registration', draft_id=self.draft._id, celery=False),
             self.invalid_embargo_date_payload,
             content_type='application/json',
             auth=self.user.auth,
@@ -970,7 +970,7 @@ class RegistrationEmbargoViewsTestCase(OsfTestCase):
     def test_valid_POST_embargo_adds_to_parent_projects_log(self, mock_enquque):
         initial_project_logs = self.project.logs.count()
         self.app.post(
-            self.project.api_url_for('register_draft_registration', draft_id=self.draft._id),
+            self.project.api_url_for('register_draft_registration', draft_id=self.draft._id, celery=False),
             self.valid_embargo_payload,
             content_type='application/json',
             auth=self.user.auth

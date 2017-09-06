@@ -117,9 +117,7 @@ class TestDraftRegistrationList(DraftRegistrationTestCase):
         assert len(data) == 0
 
     def test_draft_with_deleted_registered_node_shows_up_in_draft_list(self, app, user, project_public, draft_registration, schema, url_draft_registrations):
-        reg = RegistrationFactory(project=project_public)
-        draft_registration.registered_node = reg
-        draft_registration.save()
+        reg = RegistrationFactory(project=project_public, draft=draft_registration)
         reg.is_deleted = True
         reg.save()
         res = app.get(url_draft_registrations, auth=user.auth)

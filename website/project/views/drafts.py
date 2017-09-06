@@ -30,6 +30,10 @@ from website.project.metadata.utils import serialize_meta_schema, serialize_draf
 from website.project.utils import serialize_node
 from website.util import rapply
 from website.util.sanitize import strip_html
+import logging
+
+logger = logging.getLogger(__name__)
+
 
 get_schema_or_fail = lambda query: get_or_http_error(MetaSchema, query)
 autoload_draft = functools.partial(autoload, DraftRegistration, 'draft_id', 'draft')
@@ -187,7 +191,8 @@ def register_draft_registration(auth, node, draft, *args, **kwargs):
     if draft.approval and draft.approval.state != Sanction.REJECTED:
         raise HTTPError(http.CONFLICT, data=dict(message_long='Cannot resubmit previously submitted draft.'))
 
-    draft.register(auth, data=data, reg_choice=registration_choice)
+    use_celery = False if request.args.get('celery') == 'False' else True
+    draft.register(auth, data=data, reg_choice=registration_choice, celery=use_celery)
 
     push_status_message(language.AFTER_REGISTER_ARCHIVING,
                         kind='info',
