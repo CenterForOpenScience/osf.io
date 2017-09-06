@@ -78,6 +78,7 @@ def get_globals():
     return {
         'embedded_ds': bool_from_settings('USE_EMBEDDED_DS', False),
         'nav_dropdown': bool_from_settings('NAV_DROPDOWN', True),
+        'nav_support': bool_from_settings('NAV_SUPPORT', True),
         'osf_page_name': unicode(settings.OSF_PAGE_NAME, 'utf-8'),
         ''
         'private_link_anonymous': is_private_link_anonymous_view(),
