@@ -14,7 +14,9 @@ Markdown==2.4.1
 Pygments==1.6
 WTForms==1.0.4
 beautifulsoup4==4.3.2
-celery==3.1.25
+celery==4.1.0
+kombu==4.1.0
+vine==1.1.4
 httplib2==0.9
 hurry.filesize==0.9
 itsdangerous==0.24
@@ -41,10 +43,6 @@ git+https://github.com/CenterForOpenScience/modular-odm.git@0.4.0
 # Python markdown extensions for comment emails
 git+git://github.com/CenterForOpenScience/mdx_del_ins.git
 
-# Kombu with the ability to specify queue priority
-# TODO: Remove this when Kombu has a stable release including commit c20f854
-git+git://github.com/CenterForOpenScience/kombu.git@v3.0.36
-
 # Issue: certifi-2015.9.6.1 and 2015.9.6.2 fail verification (https://github.com/certifi/python-certifi/issues/26)
 # MailChimp Ticket: LTK1218902287135X, Domain: https://us9.api.mailchimp.com
 certifi==2015.4.28
@@ -65,6 +63,10 @@ Django==1.11.4
 djangorestframework==3.6.3
 django-cors-headers==1.3.1
 djangorestframework-bulk==0.2.1
+# django-celery-beat==1.0.1  # BSD 3 Clause
+# Contains a fix for handling disabled tasks that still has not been release
+git+git://github.com/celery/django-celery-beat@f014edcb954c707cb7628f4416257b6a58689523# BSD 3 Clause
+
 pyjwt==1.4.0
 # Issue: sorry, but this version only supports 100 named groups (https://github.com/eliben/pycparser/issues/147)
 pycparser==2.13

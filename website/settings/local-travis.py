@@ -5,6 +5,7 @@ These settings override what's in website/settings/defaults.py
 NOTE: local.py will not be added to source control.
 '''
 import inspect
+import logging
 
 from . import defaults
 import os
@@ -53,7 +54,7 @@ OSF_SERVER_CERT = None
 
 ##### Celery #####
 ## Default RabbitMQ broker
-BROKER_URL = 'amqp://'
+CELERY_BROKER_URL = 'amqp://'
 
 # In-memory result backend
 CELERY_RESULT_BACKEND = 'cache'
@@ -90,3 +91,5 @@ POPULAR_LINKS_REGISTRATIONS = 'woooo'
 
 EZID_USERNAME = 'testfortravisnotreal'
 EZID_PASSWORD = 'testfortravisnotreal'
+
+logging.getLogger('celery.app.trace').setLevel(logging.FATAL)

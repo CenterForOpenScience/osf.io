@@ -84,6 +84,7 @@ INSTALLED_APPS = (
     'django.contrib.admin',
 
     # 3rd party
+    'django_celery_beat',
     'rest_framework',
     'corsheaders',
     'raven.contrib.django.raven_compat',
@@ -270,3 +271,5 @@ SELECT_FOR_UPDATE_ENABLED = True
 
 # Disable anonymous user permissions in django-guardian
 ANONYMOUS_USER_NAME = None
+
+CELERY_BEAT_SCHEDULER = 'django_celery_beat.schedulers:DatabaseScheduler'
