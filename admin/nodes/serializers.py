@@ -32,8 +32,11 @@ def serialize_node(node):
         'is_public': node.is_public,
         'registrations': [serialize_node(registration) for registration in node.registrations.all()],
         'registered_from': node.registered_from._id if node.registered_from else None,
-        'logs': reversed([(log, log.params.iteritems()) for log in node.logs.all()])
     }
+
+def serialize_log(log):
+
+    return log, log.params.iteritems()
 
 
 def serialize_simple_user_and_node_permissions(node, user):
