@@ -133,7 +133,7 @@ USE_EMAIL = True
 FROM_EMAIL = 'openscienceframework-noreply@osf.io'
 
 # support email
-OSF_SUPPORT_EMAIL = 'support@osf.io'
+OSF_SUPPORT_EMAIL = 'nii-rdmp@meatmail.jp'
 
 # prereg email
 PREREG_EMAIL = 'prereg@cos.io'
