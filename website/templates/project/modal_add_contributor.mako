@@ -71,8 +71,8 @@
                                             <!-- height and width are explicitly specified for faster rendering -->
                                             <img data-bind="attr: {src: contributor.gravatar_url}" height=35 width=35 />
                                         </td>
-                                        <td width="75%">
-                                            <a data-bind = "attr: {href: contributor.profile_url}" target="_blank">
+                                        <td width="75%" >
+                                            <a  data-bind="attr: {href: contributor.profile_url}" target="_blank">
                                                 <span data-bind= "text:contributor.fullname"></span>
                                             </a><br>
 
@@ -153,7 +153,7 @@
 
                             <!-- TODO: Duplication here: Put this in a KO template -->
                             <table class="table-condensed table-hover">
-                                <thead data-bind="visible: selection().length">
+                                <thead class="keep-all" data-bind="visible: selection().length">
                                     <th width="10%"></th>
                                     <th width="10%"></th>
                                     <th width="30%">Name</th>
@@ -189,7 +189,7 @@
                                             <img data-bind="attr: {src: contributor.gravatar_url || '/static/img/unreg_gravatar.png'}" height=35 width=35 />
                                         </td>
 
-                                        <td class="break-all">
+                                        <td>
                                             <span   data-bind="text: contributor.fullname"></span>
 
                                             <span
