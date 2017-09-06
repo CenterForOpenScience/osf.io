@@ -58,6 +58,8 @@
             <%
                 #import locale
                 #locale.setlocale(locale.LC_ALL, 'en_US')
+                if not node.is_public:
+                    continue
                 if node.is_registration:
                     explicit_date = '{month} {dt.day} {dt.year}'.format(
                         dt=node.registered_date.date(),
