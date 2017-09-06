@@ -871,11 +871,13 @@ class TestAddonFileViews(OsfTestCase):
     @mock.patch('website.archiver.tasks.archive')
     def test_archived_from_url_without_copied_from(self, mock_archive):
         file_node = self.get_test_file()
-
+        draft = DraftRegistrationFactory(branched_from=self.project, initiator=self.user)
         registered_node = self.project.register_node(
+            draft=draft,
             schema=get_default_metaschema(),
             auth=Auth(self.user),
             data=None,
+            celery=False,
         )
         archived_from_url = views.get_archived_from_url(registered_node, file_node)
         assert_false(archived_from_url)
@@ -885,10 +887,13 @@ class TestAddonFileViews(OsfTestCase):
         file_node = self.get_test_file()
         second_file_node = self.get_second_test_file()
         file_node.copied_from = second_file_node
+        draft = DraftRegistrationFactory(branched_from=self.project, initiator=self.user)
         self.project.register_node(
+            draft=draft,
             schema=get_default_metaschema(),
             auth=Auth(self.user),
             data=None,
+            celery=False,
         )
         trashed_node = second_file_node.delete()
         assert_false(trashed_node.copied_from)

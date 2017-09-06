@@ -11,6 +11,7 @@ from django.utils import timezone
 from nose.tools import *  # noqa PEP8 asserts
 
 from framework.exceptions import HTTPError
+from django.core.exceptions import ValidationError
 
 from osf.models import MetaSchema, DraftRegistration
 from website.project.metadata.schemas import _name_to_id, LATEST_SCHEMA_VERSION
@@ -238,14 +239,13 @@ class TestDraftRegistrationViews(RegistrationsTestBase):
 
     @mock.patch('framework.celery_tasks.handlers.enqueue_task')
     def test_register_draft_registration_invalid_embargo_end_date_raises_HTTPError(self, mock_enqueue):
-        res = self.app.post_json(
-            self.node.api_url_for('register_draft_registration', draft_id=self.draft._id, celery=False),
-            self.invalid_embargo_date_payload,
-            auth=self.user.auth,
-            expect_errors=True
-        )
-
-        assert_equal(res.status_code, http.BAD_REQUEST)
+        with assert_raises(ValidationError):
+            res = self.app.post_json(
+                self.node.api_url_for('register_draft_registration', draft_id=self.draft._id, celery=False),
+                self.invalid_embargo_date_payload,
+                auth=self.user.auth,
+                expect_errors=True
+            )
 
     def test_register_draft_registration_invalid_registrationChoice(self):
         res = self.app.post_json(
