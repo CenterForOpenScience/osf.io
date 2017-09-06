@@ -2,7 +2,7 @@ from rest_framework import generics, permissions as drf_permissions
 from rest_framework.exceptions import ValidationError, NotFound
 from framework.auth.oauth_scopes import CoreScopes
 
-from osf.models import AbstractNode
+from osf.models import AbstractNode, Registration
 from api.base import permissions as base_permissions
 from api.base.filters import ListFilterMixin
 from api.base.views import JSONAPIBaseView, BaseContributorDetail, BaseContributorList, BaseNodeLinksDetail, BaseNodeLinksList, WaterButlerMixin
@@ -152,6 +152,7 @@ class RegistrationList(JSONAPIBaseView, generics.ListAPIView, NodesFilterMixin):
     view_name = 'registration-list'
 
     ordering = ('-date_modified',)
+    model_class = Registration
 
     # overrides NodesFilterMixin
     def get_default_queryset(self):
