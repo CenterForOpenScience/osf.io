@@ -22,7 +22,7 @@ env:
     - ELASTICSEARCH_ARCHIVE="elasticsearch-1.5.0.tar.gz"
     - LIBJEMALLOC_DEB="libjemalloc1_3.5.1-2_amd64.deb"
     - LIBPCRE_DEB="libpcre3_8.31-2ubuntu2.3_amd64.deb"
-    - VARNISH_DEB="varnish_4.1.0-1~trusty_amd64.deb"
+    # - VARNISH_DEB="varnish_4.1.0-1~trusty_amd64.deb"
     - OSF_DB_PORT="54321"
   matrix:
     - TEST_BUILD="osf"
@@ -78,30 +78,30 @@ before_install:
       tar xzf $ELASTICSEARCH_ARCHIVE -C /tmp/elasticsearch --strip-components=1
     - /tmp/elasticsearch/bin/elasticsearch > /dev/null & export ELASTICSEARCH_PID=$!
     # varnish
-    - |
-      cd $HOME/.cache/downloads
-
-      if [ ! -f "$LIBJEMALLOC_DEB" ]; then
-        curl -SLO http://mirrors.kernel.org/ubuntu/pool/universe/j/jemalloc/$LIBJEMALLOC_DEB
-      fi
-
-      if [ ! -f "$LIBPCRE_DEB" ]; then
-        curl -SLO http://security.ubuntu.com/ubuntu/pool/main/p/pcre3/$LIBPCRE_DEB
-      fi
-
-      if [ ! -f "$VARNISH_DEB" ]; then
-        curl -SLO https://repo.varnish-cache.org/ubuntu/pool/varnish-4.1/v/varnish/$VARNISH_DEB
-      fi
-
-      dpkg -x $LIBJEMALLOC_DEB /tmp/libjemalloc
-      dpkg -x $LIBPCRE_DEB /tmp/libpcre
-      dpkg -x $VARNISH_DEB /tmp/varnish
-    - |
-      if [ "$TEST_BUILD" = "varnish" ]; then
-        export ENABLE_VARNISH=True
-        export LD_LIBRARY_PATH=/tmp/libpcre/lib/x86_64-linux-gnu:/tmp/libjemalloc/usr/lib/x86_64-linux-gnu:/tmp/varnish/usr/lib/varnish
-        /tmp/varnish/usr/sbin/varnishd -n /tmp -p feature=+esi_disable_xml_check -p vmod_dir=/tmp/varnish/usr/lib/varnish/vmods -F -f $PROJECT_DIR/tests/test_files/varnish.vcl -a *:8080 > /dev/null & export VARNISH_PID=$!
-      fi
+    # - |
+    #   cd $HOME/.cache/downloads
+    #
+    #   if [ ! -f "$LIBJEMALLOC_DEB" ]; then
+    #     curl -SLO http://mirrors.kernel.org/ubuntu/pool/universe/j/jemalloc/$LIBJEMALLOC_DEB
+    #   fi
+    #
+    #   if [ ! -f "$LIBPCRE_DEB" ]; then
+    #     curl -SLO http://security.ubuntu.com/ubuntu/pool/main/p/pcre3/$LIBPCRE_DEB
+    #   fi
+    #
+    #   if [ ! -f "$VARNISH_DEB" ]; then
+    #     curl -SLO https://repo.varnish-cache.org/ubuntu/pool/varnish-4.1/v/varnish/$VARNISH_DEB
+    #   fi
+    #
+    #   dpkg -x $LIBJEMALLOC_DEB /tmp/libjemalloc
+    #   dpkg -x $LIBPCRE_DEB /tmp/libpcre
+    #   dpkg -x $VARNISH_DEB /tmp/varnish
+    # - |
+    #   if [ "$TEST_BUILD" = "varnish" ]; then
+    #     export ENABLE_VARNISH=True
+    #     export LD_LIBRARY_PATH=/tmp/libpcre/lib/x86_64-linux-gnu:/tmp/libjemalloc/usr/lib/x86_64-linux-gnu:/tmp/varnish/usr/lib/varnish
+    #     /tmp/varnish/usr/sbin/varnishd -n /tmp -p feature=+esi_disable_xml_check -p vmod_dir=/tmp/varnish/usr/lib/varnish/vmods -F -f $PROJECT_DIR/tests/test_files/varnish.vcl -a *:8080 > /dev/null & export VARNISH_PID=$!
+    #   fi
 install:
     - nvm install 0.12.4
     - nvm use 0.12.4
@@ -142,7 +142,7 @@ before_cache:
   # kill any running processes
   - kill -9 $POSTGRES_PID
   - kill -9 $ELASTICSEARCH_PID
-  - kill -9 $VARNISH_PID
+  # - kill -9 $VARNISH_PID
 
 branches:
   except:

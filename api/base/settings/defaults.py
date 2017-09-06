@@ -84,7 +84,6 @@ INSTALLED_APPS = (
 
     # 3rd party
     'rest_framework',
-    'rest_framework_swagger',
     'corsheaders',
     'raven.contrib.django.raven_compat',
     'django_extensions',
@@ -129,9 +128,6 @@ MAX_PAGE_SIZE = 100
 
 REST_FRAMEWORK = {
     'PAGE_SIZE': 10,
-    # Order is important here because of a bug in rest_framework_swagger. For now,
-    # rest_framework.renderers.JSONRenderer needs to be first, at least until
-    # https://github.com/marcgibbons/django-rest-swagger/issues/271 is resolved.
     'DEFAULT_RENDERER_CLASSES': (
         'api.base.renderers.JSONAPIRenderer',
         'api.base.renderers.JSONRendererWithESISupport',
@@ -243,28 +239,6 @@ STATIC_ROOT = os.path.join(BASE_DIR, 'static/vendor')
 
 API_BASE = 'v2/'
 STATIC_URL = '/static/'
-
-STATICFILES_DIRS = (
-    ('rest_framework_swagger/css', os.path.join(BASE_DIR, 'static/css')),
-    ('rest_framework_swagger/images', os.path.join(BASE_DIR, 'static/images')),
-)
-
-# TODO: Revisit methods for excluding private routes from swagger docs
-SWAGGER_SETTINGS = {
-    'api_path': '/',
-    'info': {
-        'description':
-        """
-        Welcome to the fine documentation for the Open Science Framework's API!  Please click
-        on the <strong>GET /v2/</strong> link below to get started.
-
-        For the most recent docs, please check out our <a href="/v2/">Browsable API</a>.
-        """,
-        'title': 'OSF APIv2 Documentation',
-    },
-    'doc_expansion': 'list',
-    'exclude_namespaces': ['applications', 'tokens', 'test'],
-}
 
 NODE_CATEGORY_MAP = osf_settings.NODE_CATEGORY_MAP
 

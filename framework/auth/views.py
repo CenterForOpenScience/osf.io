@@ -2,11 +2,13 @@
 import httplib as http
 
 import markupsafe
+
+from django.core.exceptions import ValidationError
+
 from flask import request
 
 from modularodm import Q
 from modularodm.exceptions import NoResultsFound
-from modularodm.exceptions import ValidationError
 from modularodm.exceptions import ValidationValueError
 
 from framework import sentry, status
