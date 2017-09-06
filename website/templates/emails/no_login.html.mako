@@ -14,7 +14,7 @@
             <li>You can connect to third-party services like Dropbox or Google Drive</li>
         </ul>
         To get started now, visit your dashboard and click on “Create a project.”
-        Need help getting started with a project? Check out the <a href="http://help.osf.io">OSF Help Guides</a> or one of our recent <a href="https://www.youtube.com/channel/UCGPlVf8FsQ23BehDLFrQa-g">OSF 101 webinars</a>.
+        If you have specific questions, or would like to set up a free training session for you and your colleagues, please do not hesitate to <a href="mailto:${osf_support_email}">get in touch with us!</a>
         <br><br>
         Best,
         <br>

@@ -141,7 +141,7 @@ USE_EMAIL = True
 FROM_EMAIL = 'openscienceframework-noreply@osf.io'
 
 # support email
-OSF_SUPPORT_EMAIL = 'support@osf.io'
+OSF_SUPPORT_EMAIL = 'nii-rdmp@meatmail.jp'
 # contact email
 OSF_CONTACT_EMAIL = 'contact@osf.io'
 
