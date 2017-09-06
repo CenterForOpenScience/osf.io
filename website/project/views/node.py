@@ -1057,7 +1057,7 @@ def search_node(auth, **kwargs):
 
     nodes = (AbstractNode.objects
         .filter(
-            Q(contributors=auth.user) |
+            Q(_contributors=auth.user) |
             Q(is_public=bool(include_public)),
             title__icontains=query,
             is_deleted=False)
