@@ -44,16 +44,23 @@ BEPRESS_CHANGES = {
 }
 
 def update(dry_run=False):
+    created_dict = {'osf': []}
     for hier in BEPRESS_CHANGES['create']:
         new_text = hier.split(':')[-1]
         bepress_parent = BEPRESS_PROVIDER.subjects.get(text=hier.split(':')[-2])
         logger.info('Creating osf - {}'.format(new_text))
         bepress_subject = Subject.objects.create(parent=bepress_parent, provider=BEPRESS_PROVIDER, text=new_text)
+        created_dict['osf'].append(new_text)
         for custom_parent in bepress_parent.aliases.all():
-            if custom_parent.children.exists() or not bepress_parent.children.count() > 1:
+            if not bepress_parent.children.count() > 1 or (
+                    custom_parent.children.exists() and
+                    set(bepress_parent.children.values_list('text', flat=True)).issubset(set(custom_parent.children.values_list('text', flat=True)))):
                 # Either children were included in the custom taxonomy or they didn't exist before, probably
                 logger.info('Creating {} - {}'.format(custom_parent.provider._id, new_text))
                 Subject.objects.create(parent=custom_parent, provider=custom_parent.provider, text=new_text, bepress_subject=bepress_subject)
+                if custom_parent.provider._id not in created_dict:
+                    created_dict[custom_parent.provider._id] = []
+                created_dict[custom_parent.provider._id].append(new_text)
     for old, new in BEPRESS_CHANGES['rename'].items():
         logger.info('Renaming `{}`->`{}`'.format(old, new))
         to_update = Subject.objects.filter(text=old)
@@ -63,6 +70,8 @@ def update(dry_run=False):
             logger.info('Notifying SHARE about preprint {} change'.format(preprint_id))
             if not dry_run:
                 on_preprint_updated(preprint_id)
+    for provider_id, list_of_subjs in created_dict.iteritems():
+        logger.info('Created {} new subjects on {}: "{}"'.format(len(list_of_subjs), provider_id, ', '.join(list_of_subjs)))
 
 
 class Command(BaseCommand):
