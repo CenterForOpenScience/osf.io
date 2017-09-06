@@ -53,7 +53,7 @@ from website.identifiers import views as identifier_views
 
 
 def bool_from_str(s):
-    return s.lower() in ['true', 'yes', '1']
+    return s.lower() in ['true', 'yes', 'on', '1']
 
 def bool_from_settings(name, default):
     if hasattr(settings, name):
@@ -79,6 +79,8 @@ def get_globals():
         'embedded_ds': bool_from_settings('USE_EMBEDDED_DS', False),
         'nav_dropdown': bool_from_settings('NAV_DROPDOWN', True),
         'nav_support': bool_from_settings('NAV_SUPPORT', True),
+        'project_analytics': bool_from_settings('PROJECT_ANALYTICS', True),
+        'project_registrations': bool_from_settings('PROJECT_REGISTRATIONS', True),
         'osf_page_name': unicode(settings.OSF_PAGE_NAME, 'utf-8'),
         ''
         'private_link_anonymous': is_private_link_anonymous_view(),
