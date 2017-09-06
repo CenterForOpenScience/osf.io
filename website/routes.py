@@ -81,6 +81,7 @@ def get_globals():
         'nav_support': bool_from_settings('NAV_SUPPORT', True),
         'project_analytics': bool_from_settings('PROJECT_ANALYTICS', True),
         'project_registrations': bool_from_settings('PROJECT_REGISTRATIONS', True),
+        'project_makepublic': bool_from_settings('PROJECT_MAKEPUBLIC', True),
         'osf_page_name': unicode(settings.OSF_PAGE_NAME, 'utf-8'),
         ''
         'private_link_anonymous': is_private_link_anonymous_view(),
