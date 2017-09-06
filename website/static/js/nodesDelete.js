@@ -42,18 +42,15 @@ function getNodesOriginal(nodeTree, nodesOriginal) {
 }
 
 /**
- * patches all the nodes in a changed state
+ * Deletes all nodes in changed state
  * uses API v2 bulk requests
  */
-function patchNodesDelete(nodes) {
+function batchNodesDelete(nodes) {
     var nodesV2Url = window.contextVars.apiV2Prefix + 'nodes/';
-    var nodesPatch = $.map(nodes, function (node) {
+    var nodesBatch = $.map(nodes, function (node) {
         return {
             'type': 'nodes',
             'id': node.id,
-            'attributes': {
-                'public': node.public
-            }
         };
     });
 
@@ -67,7 +64,7 @@ function patchNodesDelete(nodes) {
         xhrFields: {withCredentials: true},
         processData: false,
         data: JSON.stringify({
-            data: nodesPatch
+            data: nodesBatch
         })
     });
 }
@@ -75,7 +72,7 @@ function patchNodesDelete(nodes) {
 /**
  * view model which corresponds to nodes_delete.mako (#nodesDelete)
  *
- * @type {NodesPrivacyViewModel}
+ * @type {NodesDeleteViewModel}
  */
 var NodesDeleteViewModel = function(node) {
     var self = this;
@@ -104,7 +101,7 @@ var NodesDeleteViewModel = function(node) {
                 newValue[key].changed = false;
             }
         }
-        self.nodesDeleted(nodesDeleted > 0 && nodesDeleted == Object.keys(self.nodesOriginal).length);
+        self.nodesDeleted(nodesDeleted > 0 && nodesDeleted === Object.keys(self.nodesOriginal).length);
         m.redraw(true);
     });
     //original node state on page load
@@ -116,10 +113,6 @@ var NodesDeleteViewModel = function(node) {
     self.page = ko.observable(self.SELECT);
 
     self.pageTitle = ko.computed(function() {
-        if (self.page() === self.WARNING &&  self.parentIsEmbargoed) {
-            return "This is a an embargo?";
-        }
-
         return {
             select: 'Delete Project',
             confirm: 'Delete Project and Components'
@@ -127,21 +120,13 @@ var NodesDeleteViewModel = function(node) {
     });
 
     self.message = ko.computed(function() {
-        if (self.page() === self.WARNING &&  self.parentIsEmbargoed) {
-            return "This is an embargo?"
-        }
-
-        if (self.page() === self.WARNING &&  self.isPreprint) {
-            return "You are attempting to delete a preprint."
-        }
-
         if (self.page() === self.CONFIRM) {
-            return "The following project and components will be deleted"
+            return 'The following project and components will be deleted';
         }
 
         return {
-            select: "It looks like your project has components within it. To delete this project, you must also delete all child components",
-            confirm: "The following project and components will be deleted."
+            select: 'It looks like your project has components within it. To delete this project, you must also delete all child components',
+            confirm: 'The following project and components will be deleted.'
         }[self.page()];
     });
 };
@@ -186,7 +171,7 @@ NodesDeleteViewModel.prototype.confirmWarning =  function() {
     var nodesState = ko.toJS(this.nodesState);
     for (var node in nodesState) {
         if (nodesState[node].changed) {
-            this.nodesChanged().push(nodesState[node].title)
+            this.nodesChanged().push(nodesState[node].title);
         }
     }
     this.confirmationString = $osf.getConfirmationString();
@@ -219,7 +204,7 @@ NodesDeleteViewModel.prototype.confirmChanges =  function() {
     if ($('#bbConfirmText').val() === this.confirmationString) {
         if (nodesChanged.length <= 100) {
             $osf.block('Deleting Project');
-            patchNodesDelete(nodesChanged.reverse()).then(function () {
+            batchNodesDelete(nodesChanged.reverse()).then(function () {
                 self.page(self.WARNING);
                 window.location.reload();
             }).fail(function (xhr) {
@@ -228,7 +213,7 @@ NodesDeleteViewModel.prototype.confirmChanges =  function() {
                 if (xhr.responseJSON && xhr.responseJSON.errors) {
                     errorMessage = xhr.responseJSON.errors[0].detail;
                 }
-                $osf.growl('Problem delete project', errorMessage);
+                $osf.growl('Problem deleting project', errorMessage);
                 Raven.captureMessage('Could not batch delete projects.');
                 self.clear();
                 $('#nodesDelete').modal('hide');
