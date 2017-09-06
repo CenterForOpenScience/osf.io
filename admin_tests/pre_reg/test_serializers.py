@@ -4,15 +4,9 @@ from osf_tests.factories import DraftRegistrationFactory, ProjectFactory, AuthUs
 from osf.models import DraftRegistrationApproval
 from website.prereg.utils import get_prereg_schema
 from admin.pre_reg.serializers import get_approval_status
-from website.app import init_app
 
 pytestmark = pytest.mark.django_db
 
-@pytest.fixture(autouse=True, scope='session')
-def app_init():
-    init_app(routes=False, set_backends=False)
-
-@pytest.mark.django_db
 class TestGetApprovalStatus:
 
     @pytest.fixture()
@@ -36,7 +30,9 @@ class TestGetApprovalStatus:
             }
         )
         draft.approval.state = 'approved'
+        draft.approval.save()
         draft.registered_node = RegistrationFactory(creator=user, project=project, is_public=True)
+        draft.save()
         return draft
 
     @pytest.fixture()
@@ -44,12 +40,15 @@ class TestGetApprovalStatus:
         draft = DraftRegistrationFactory(initiator=user, registration_schema=get_prereg_schema())
         draft.registered_node = RegistrationFactory(creator=user, project=project, is_public=True)
         draft.registered_node.is_deleted = True
+        draft.registered_node.save()
+        draft.save()
         return draft
 
     @pytest.fixture()
     def draft_approved_but_withdrawn(self, user, project):
         draft = DraftRegistrationFactory(initiator=user, registration_schema=get_prereg_schema())
         draft.registered_node = RegistrationFactory(creator=user, project=project, is_public=True, retraction=RetractionFactory())
+        draft.save()
         return draft
 
     @pytest.fixture()
@@ -61,6 +60,8 @@ class TestGetApprovalStatus:
             }
         )
         draft.approval.state = 'approved'
+        draft.approval.save()
+        draft.save()
         return draft
 
     @pytest.fixture()
@@ -72,6 +73,8 @@ class TestGetApprovalStatus:
             }
         )
         draft.approval.state = 'rejected'
+        draft.approval.save()
+        draft.save()
         return draft
 
     def test_draft_pending_approval(self, draft_pending_approval):
