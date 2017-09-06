@@ -128,7 +128,7 @@ def get_contributors_from_parent(auth, node, **kwargs):
 
     contribs = [
         profile_utils.add_contributor_json(contrib, node=node)
-        for contrib in parent.contributors if contrib not in node.visible_contributors
+        for contrib in parent.contributors if contrib not in node.contributors
     ]
 
     return {'contributors': contribs}
