@@ -177,7 +177,7 @@ CONFIRM_EMAIL_ERPC = Mail(
 )
 CONFIRM_EMAIL_PREPRINTS = lambda name, provider: Mail(
     'confirm_preprints_{}'.format(name),
-    subject='Open Science Framework Account Verification, {} Preprints Service'.format(provider)
+    subject='Open Science Framework Account Verification, {}'.format(provider)
 )
 CONFIRM_EMAIL_REGISTRIES_OSF = Mail(
     'confirm_registries_osf',
@@ -197,7 +197,7 @@ INVITE_DEFAULT = Mail(
 )
 INVITE_PREPRINT = lambda template, provider: Mail(
     'invite_preprints_{}'.format(template),
-    subject='You have been added as a contributor to {} {} preprint.'.format(get_english_article(provider), provider)
+    subject='You have been added as a contributor to {} {} {}.'.format(get_english_article(provider.name), provider.name, provider.preprint_word)
 )
 CONTRIBUTOR_ADDED_DEFAULT = Mail(
     'contributor_added_default',
@@ -205,7 +205,7 @@ CONTRIBUTOR_ADDED_DEFAULT = Mail(
 )
 CONTRIBUTOR_ADDED_PREPRINT = lambda template, provider: Mail(
     'contributor_added_preprints_{}'.format(template),
-    subject='You have been added as a contributor to {} {} preprint.'.format(get_english_article(provider), provider)
+    subject='You have been added as a contributor to {} {} {}.'.format(get_english_article(provider.name), provider.name, provider.preprint_word)
 )
 CONTRIBUTOR_ADDED_PREPRINT_NODE_FROM_OSF = Mail(
     'contributor_added_preprint_node_from_osf',
