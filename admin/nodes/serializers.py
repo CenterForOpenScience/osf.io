@@ -31,11 +31,10 @@ def serialize_node(node):
         'spam_data': json.dumps(node.spam_data, indent=4),
         'is_public': node.is_public,
         'registrations': [serialize_node(registration) for registration in node.registrations.all()],
-        'registered_from': node.registered_from._id if node.registered_from else None,
+        'registered_from': node.registered_from._id if node.registered_from else None
     }
 
 def serialize_log(log):
-
     return log, log.params.iteritems()
 
 
