@@ -186,11 +186,13 @@ class TestCampaignsAuthViews(OsfTestCase):
             assert_equal(resp.status_code, http.FOUND)
             assert_equal(value['url_landing'], resp.headers['Location'])
 
+    # TODO: @longze this test is updated for CAS, remove the comment when passed code review
     def test_campaign_register_view_logged_out(self):
         for key, value in self.campaigns.items():
             resp = self.app.get(value['url_register'])
-            assert_equal(resp.status_code, http.OK)
-            assert_in(value['title_register'], resp)
+            redirect_url = cas.get_account_register_url(service_url=value['url_landing'])
+            assert_equal(resp.status_code, http.FOUND)
+            assert_equal(redirect_url, resp.headers['Location'])
 
     def test_campaign_login_logged_in(self):
         for key, value in self.campaigns.items():

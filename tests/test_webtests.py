@@ -13,7 +13,7 @@ from nose.tools import *  # flake8: noqa (PEP8 asserts)
 import re
 
 from addons.wiki.utils import to_mongo_key
-from framework.auth import exceptions as auth_exc
+from framework.auth import exceptions as auth_exc, cas
 from framework.auth.core import Auth
 from tests.base import OsfTestCase
 from tests.base import fake
@@ -96,9 +96,12 @@ class TestAUser(OsfTestCase):
         res = res.follow(auth=self.user.auth)
         assert_equal(res.request.path, '/dashboard/')
 
-    def test_register_page(self):
+    # TODO: @longze this test is updated for CAS, remove the comment when passed code review
+    def test_osf_register_redirect_to_cas_register_page(self):
         res = self.app.get('/register/')
-        assert_equal(res.status_code, 200)
+        redirect_url = cas.get_account_register_url(service_url=web_url_for('dashboard', _absolute=True))
+        assert_equal(res.status_code, http.FOUND)
+        assert_equal(redirect_url, res.headers['Location'])
 
     def test_is_redirected_to_dashboard_if_already_logged_in_at_register_page(self):
         res = self.app.get('/register/', auth=self.user.auth)
@@ -807,174 +810,6 @@ class TestExplorePublicActivity(OsfTestCase):
         assert_in(str(self.popular_project.date_created.date()), res)
         assert_in(str(self.popular_registration.title), res)
         assert_in(str(self.popular_registration.registered_date.date()), res)
-
-
-class TestResendConfirmation(OsfTestCase):
-
-    def setUp(self):
-        super(TestResendConfirmation, self).setUp()
-        self.unconfirmed_user = UnconfirmedUserFactory()
-        self.confirmed_user = UserFactory()
-        self.get_url = web_url_for('resend_confirmation_get')
-        self.post_url = web_url_for('resend_confirmation_post')
-
-    # test that resend confirmation page is load correctly
-    def test_resend_confirmation_get(self):
-        res = self.app.get(self.get_url)
-        assert_equal(res.status_code, 200)
-        assert_in('Resend Confirmation', res.body)
-        assert_in('resendForm', res.forms)
-
-    # test that unconfirmed user can receive resend confirmation email
-    @mock.patch('framework.auth.views.mails.send_mail')
-    def test_can_receive_resend_confirmation_email(self, mock_send_mail):
-        # load resend confirmation page and submit email
-        res = self.app.get(self.get_url)
-        form = res.forms['resendForm']
-        form['email'] = self.unconfirmed_user.unconfirmed_emails[0]
-        res = form.submit()
-
-        # check email, request and response
-        assert_true(mock_send_mail.called)
-        assert_equal(res.status_code, 200)
-        assert_equal(res.request.path, self.post_url)
-        assert_in_html('If there is an OSF account', res)
-
-    # test that confirmed user cannot receive resend confirmation email
-    @mock.patch('framework.auth.views.mails.send_mail')
-    def test_cannot_receive_resend_confirmation_email_1(self, mock_send_mail):
-        # load resend confirmation page and submit email
-        res = self.app.get(self.get_url)
-        form = res.forms['resendForm']
-        form['email'] = self.confirmed_user.emails.first().address
-        res = form.submit()
-
-        # check email, request and response
-        assert_false(mock_send_mail.called)
-        assert_equal(res.status_code, 200)
-        assert_equal(res.request.path, self.post_url)
-        assert_in_html('has already been confirmed', res)
-
-    # test that non-existing user cannot receive resend confirmation email
-    @mock.patch('framework.auth.views.mails.send_mail')
-    def test_cannot_receive_resend_confirmation_email_2(self, mock_send_mail):
-        # load resend confirmation page and submit email
-        res = self.app.get(self.get_url)
-        form = res.forms['resendForm']
-        form['email'] = 'random@random.com'
-        res = form.submit()
-
-        # check email, request and response
-        assert_false(mock_send_mail.called)
-        assert_equal(res.status_code, 200)
-        assert_equal(res.request.path, self.post_url)
-        assert_in_html('If there is an OSF account', res)
-
-    # test that user cannot submit resend confirmation request too quickly
-    @mock.patch('framework.auth.views.mails.send_mail')
-    def test_cannot_resend_confirmation_twice_quickly(self, mock_send_mail):
-        # load resend confirmation page and submit email
-        res = self.app.get(self.get_url)
-        form = res.forms['resendForm']
-        form['email'] = self.unconfirmed_user.email
-        res = form.submit()
-        res = form.submit()
-
-        # check request and response
-        assert_equal(res.status_code, 200)
-        assert_in_html('Please wait', res)
-
-
-class TestForgotPassword(OsfTestCase):
-
-    def setUp(self):
-        super(TestForgotPassword, self).setUp()
-        self.user = UserFactory()
-        self.auth_user = AuthUserFactory()
-        self.get_url = web_url_for('forgot_password_get')
-        self.post_url = web_url_for('forgot_password_post')
-        self.user.verification_key_v2 = {}
-        self.user.save()
-
-    # log users out before they land on forgot password page
-    def test_forgot_password_logs_out_user(self):
-        # visit forgot password link while another user is logged in
-        res = self.app.get(self.get_url, auth=self.auth_user.auth)
-        # check redirection to CAS logout
-        assert_equal(res.status_code, 302)
-        location = res.headers.get('Location')
-        assert_not_in('reauth', location)
-        assert_in('logout?service=', location)
-        assert_in('forgotpassword', location)
-
-    # test that forgot password page is loaded correctly
-    def test_get_forgot_password(self):
-        res = self.app.get(self.get_url)
-        assert_equal(res.status_code, 200)
-        assert_in('Forgot Password', res.body)
-        assert_in('forgotPasswordForm', res.forms)
-
-    # test that existing user can receive reset password email
-    @mock.patch('framework.auth.views.mails.send_mail')
-    def test_can_receive_reset_password_email(self, mock_send_mail):
-        # load forgot password page and submit email
-        res = self.app.get(self.get_url)
-        form = res.forms['forgotPasswordForm']
-        form['forgot_password-email'] = self.user.username
-        res = form.submit()
-
-        # check mail was sent
-        assert_true(mock_send_mail.called)
-        # check http 200 response
-        assert_equal(res.status_code, 200)
-        # check request URL is /forgotpassword
-        assert_equal(res.request.path, self.post_url)
-        # check push notification
-        assert_in_html('If there is an OSF account', res)
-        assert_not_in_html('Please wait', res)
-
-        # check verification_key_v2 is set
-        self.user.reload()
-        assert_not_equal(self.user.verification_key_v2, {})
-
-    # test that non-existing user cannot receive reset password email
-    @mock.patch('framework.auth.views.mails.send_mail')
-    def test_cannot_receive_reset_password_email(self, mock_send_mail):
-        # load forgot password page and submit email
-        res = self.app.get(self.get_url)
-        form = res.forms['forgotPasswordForm']
-        form['forgot_password-email'] = 'fake' + self.user.username
-        res = form.submit()
-
-        # check mail was not sent
-        assert_false(mock_send_mail.called)
-        # check http 200 response
-        assert_equal(res.status_code, 200)
-        # check request URL is /forgotpassword
-        assert_equal(res.request.path, self.post_url)
-        # check push notification
-        assert_in_html('If there is an OSF account', res)
-        assert_not_in_html('Please wait', res)
-
-        # check verification_key_v2 is not set
-        self.user.reload()
-        assert_equal(self.user.verification_key_v2, {})
-
-    # test that user cannot submit forgot password request too quickly
-    @mock.patch('framework.auth.views.mails.send_mail')
-    def test_cannot_reset_password_twice_quickly(self, mock_send_mail):
-        # load forgot password page and submit email
-        res = self.app.get(self.get_url)
-        form = res.forms['forgotPasswordForm']
-        form['forgot_password-email'] = self.user.username
-        res = form.submit()
-        res = form.submit()
-
-        # check http 200 response
-        assert_equal(res.status_code, 200)
-        # check push notification
-        assert_in_html('Please wait', res)
-        assert_not_in_html('If there is an OSF account', res)
 
 
 @unittest.skip('Public projects/components are dynamically loaded now.')

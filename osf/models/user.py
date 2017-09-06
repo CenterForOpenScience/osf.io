@@ -996,7 +996,7 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
         Add an email verification token for a given email.
 
         :param email: the email to confirm
-        :param email: overwrite default expiration time
+        :param expiration: overwrite default expiration time
         :param external_identity: the user's external identity
         :return: a token
         :raises: ValueError if email already confirmed, except for login through external idp.

@@ -444,9 +444,15 @@ API_TESTS3 = [
     'api_tests/view_only_links',
     'api_tests/wikis',
 ]
+
+API_TESTS4 = [
+    'api_tests/cas',
+]
+
 ADDON_TESTS = [
     'addons',
 ]
+
 ADMIN_TESTS = [
     'admin_tests',
 ]
@@ -483,6 +489,13 @@ def test_api3(ctx, numprocesses=None):
     """Run the API test suite."""
     print('Testing modules "{}"'.format(API_TESTS3))
     test_module(ctx, module=API_TESTS3, numprocesses=numprocesses)
+
+
+@task
+def test_api4(ctx, numprocesses=None):
+    """Run the API test suite."""
+    print('Testing modules "{}"'.format(API_TESTS4))
+    test_module(ctx, module=API_TESTS4, numprocesses=numprocesses)
 
 
 @task
@@ -575,6 +588,13 @@ def test_travis_api2(ctx, numprocesses=None):
 
 @task
 def test_travis_api3(ctx, numprocesses=None):
+    flake(ctx)
+    jshint(ctx)
+    test_api3(ctx, numprocesses=numprocesses)
+
+
+@task
+def test_travis_api4(ctx, numprocesses=None):
     flake(ctx)
     jshint(ctx)
     test_api3(ctx, numprocesses=numprocesses)

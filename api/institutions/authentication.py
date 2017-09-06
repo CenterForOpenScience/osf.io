@@ -12,6 +12,7 @@ from framework import sentry
 from framework.auth import get_or_create_user
 
 from osf.models import Institution
+
 from website.mails import send_mail, WELCOME_OSF4I
 
 

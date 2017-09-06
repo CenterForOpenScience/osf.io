@@ -49,28 +49,6 @@ def authenticate(user, access_token, response):
     return response
 
 
-def external_first_login_authenticate(user, response):
-    """
-    Create a special unauthenticated session for user login through external identity provider for the first time.
-
-    :param user: the user with external credential
-    :param response: the response to return
-    :return: the response
-    """
-
-    data = session.data if session._get_current_object() else {}
-    data.update({
-        'auth_user_external_id_provider': user['external_id_provider'],
-        'auth_user_external_id': user['external_id'],
-        'auth_user_fullname': user['fullname'],
-        'auth_user_access_token': user['access_token'],
-        'auth_user_external_first_login': True,
-        'service_url': user['service_url'],
-    })
-    response = create_session(response, data=data)
-    return response
-
-
 def logout():
     """Clear users' session(s) and log them out of OSF."""
 
@@ -84,6 +62,20 @@ def logout():
 
 
 def register_unconfirmed(username, password, fullname, campaign=None):
+    """
+    Register an unconfirmed user.
+
+    :param username: user's email
+    :param password: user's password (plaintext)
+    :param fullname: user's fullname
+    :param campaign: the place where user is from
+    :return: the newly created but unconfirmed user
+    :raises: several expected errors as described below
+        DuplicatedEmailError,   if user already exists and registered
+        ChangePasswordError,    if user's email is the same with the password
+        ValidationError,        if user's email is invalid or if user's email domain is blacklisted
+        ValueError,             if user's email has already been confirmed
+    """
     from osf.models import OSFUser
     user = get_user(email=username)
     if not user:

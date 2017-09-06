@@ -7,11 +7,15 @@ from django.db import transaction
 from bulk_update.helper import bulk_update
 
 from addons.osfstorage.models import OsfStorageFile
+
 from framework.auth import get_or_create_user
+from framework.auth.cas import get_set_password_url
 from framework.exceptions import HTTPError
 from framework.flask import redirect
 from framework.transactions.handlers import no_auto_transaction
+
 from osf.models import AbstractNode, Node, Conference, Tag
+
 from website import settings
 from website.conferences import utils, signals
 from website.conferences.message import ConferenceMessage, ConferenceError
@@ -82,14 +86,11 @@ def add_poster_by_email(conference, message):
             user.save()
 
             # must save the user first before accessing user._id
-            set_password_url = web_url_for(
-                'reset_password_get',
-                uid=user._id,
-                token=user.verification_key_v2['token'],
-                _absolute=True,
-            )
+            set_password_url = get_set_password_url(user._id, meetings=True)
+            token = user.verification_key_v2['token']
         else:
             set_password_url = None
+            token = None
 
         node, node_created = Node.objects.get_or_create(
             title__iexact=message.subject,
@@ -134,6 +135,7 @@ def add_poster_by_email(conference, message):
         ),
         fullname=message.sender_display,
         user_created=user_created,
+        verification_code=token,
         set_password_url=set_password_url,
         profile_url=user.absolute_url,
         node_url=node.absolute_url,
@@ -238,6 +240,7 @@ def conference_results(meeting):
         'settings': settings,
     }
 
+
 def conference_submissions(**kwargs):
     """Return data for all OSF4M submissions.
 
@@ -255,6 +258,7 @@ def conference_submissions(**kwargs):
         conf.num_submissions = nodes.count()
     bulk_update(conferences, update_fields=['num_submissions'])
     return {'success': True}
+
 
 def conference_view(**kwargs):
     meetings = []

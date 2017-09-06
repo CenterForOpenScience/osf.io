@@ -5,7 +5,7 @@ Congratulations! You have successfully added your ${conf_full_name} ${presentati
 
 
 % if user_created:
-Your account on the Open Science Framework has been created. To claim your account, please create a password by clicking here: ${set_password_url}. Please verify your profile information at: ${profile_url}.
+Your account on the Open Science Framework has been created. To claim your account, visit ${set_password_url}. Your will be asked to create your password and enter the verification code ${verification_code}. Please verify your profile information at: ${profile_url}.
 
 % endif
 

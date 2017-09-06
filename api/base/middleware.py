@@ -4,9 +4,11 @@ import cProfile
 import pstats
 import threading
 
-from django.conf import settings
-from raven.contrib.django.raven_compat.models import sentry_exception_handler
 import corsheaders.middleware
+
+from django.conf import settings
+
+from raven.contrib.django.raven_compat.models import sentry_exception_handler
 
 from framework.postcommit_tasks.handlers import (
     postcommit_after_request,

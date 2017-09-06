@@ -18,13 +18,11 @@ from api.base.permissions import TokenHasScope
 from website.settings import DEBUG_MODE
 from website import maintenance
 
-from django.contrib.auth.models import User
-
 import importlib
 
 URLS_MODULES = []
 for loader, name, _ in pkgutil.iter_modules(['api']):
-    if name != 'base' and name != 'test':
+    if name != 'base' and name != 'test' and name != 'cas':
         try:
             URLS_MODULES.append(importlib.import_module('api.{}.urls'.format(name)))
         except ImportError:
@@ -35,6 +33,7 @@ for mod in URLS_MODULES:
     urlpatterns = mod.urlpatterns
     for patt in urlpatterns:
         VIEW_CLASSES.append(patt.callback.cls)
+
 
 class TestApiBaseViews(ApiTestCase):
 
@@ -59,7 +58,7 @@ class TestApiBaseViews(ApiTestCase):
     def test_view_classes_have_minimal_set_of_permissions_classes(self):
         base_permissions = [
             TokenHasScope,
-            (IsAuthenticated, IsAuthenticatedOrReadOnly)
+            (IsAuthenticated, IsAuthenticatedOrReadOnly),
         ]
         for view in VIEW_CLASSES:
             for cls in base_permissions:

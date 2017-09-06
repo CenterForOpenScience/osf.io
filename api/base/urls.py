@@ -18,6 +18,7 @@ urlpatterns = [
                 url(r'^status/', views.status_check, name='status_check'),
                 url(r'^addons/', include('api.addons.urls', namespace='addons')),
                 url(r'^applications/', include('api.applications.urls', namespace='applications')),
+                url(r'^cas/', include('api.cas.urls', namespace='cas')),
                 url(r'^citations/', include('api.citations.urls', namespace='citations')),
                 url(r'^collections/', include('api.collections.urls', namespace='collections')),
                 url(r'^comments/', include('api.comments.urls', namespace='comments')),
