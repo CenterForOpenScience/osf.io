@@ -85,13 +85,13 @@ $(document).ready(function() {
         ko.applyBindings(projectSettingsVM, $('#projectSettings')[0]);
     }
 
-    $('#deleteNode').on('click', function() {
-        if(ctx.node.childExists){
-            new NodesDelete.NodesDelete('#nodesDelete', ctx.node)
-        }else{
+    if(ctx.node.childExists){
+        new NodesDelete.NodesDelete('#nodesDelete', ctx.node)
+    }else{
+        $('#deleteNode').on('click', function() {
             ProjectSettings.getConfirmationCode(ctx.node.nodeType, ctx.node.isPreprint);
-        }
-    });
+        });
+    }
 
     // TODO: Knockout-ify me
     $('#commentSettings').on('submit', function() {

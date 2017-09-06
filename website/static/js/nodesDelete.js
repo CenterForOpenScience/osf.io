@@ -31,7 +31,6 @@ function getNodesOriginal(nodeTree, nodesOriginal) {
     var flatNodes = _flattenNodeTree(nodeTree);
     $.each(flatNodes, function(_, nodeMeta) {
         nodesOriginal[nodeMeta.node.id] = {
-            public: nodeMeta.node.is_public,
             id: nodeMeta.node.id,
             title: nodeMeta.node.title,
             isAdmin: nodeMeta.node.is_admin,
@@ -78,74 +77,71 @@ function patchNodesDelete(nodes) {
  *
  * @type {NodesPrivacyViewModel}
  */
-var NodesDeleteViewModel = function(node, onSetDelete) {
+var NodesDeleteViewModel = function(node) {
     var self = this;
-    self.WARNING = 'warning';
     self.SELECT = 'select';
     self.CONFIRM = 'confirm';
 
-    self.onSetDelete = onSetDelete;
-
+    self.confirmationString = '';
     self.parentIsEmbargoed = node.is_embargoed;
     self.parentIsPublic = node.is_public;
     self.parentNodeType = node.node_type;
     self.isPreprint = node.is_preprint;
     self.treebeardUrl = window.contextVars.node.urls.api  + 'tree/';
     self.nodesOriginal = {};
-    self.nodesChanged = ko.observable();
+    self.nodesDeleted = ko.observable();
+    self.nodesChanged = ko.observableArray([]);
     //state of current nodes
     self.nodesState = ko.observableArray();
     self.nodesState.subscribe(function(newValue) {
-        var nodesChanged = 0;
+        var nodesDeleted = 0;
         for (var key in newValue) {
-            if (newValue[key].public !== self.nodesOriginal[key].public) {
+            if (newValue[key].changed !== self.nodesOriginal[key].changed){
                 newValue[key].changed = true;
-                nodesChanged++;
+                nodesDeleted++;
             }
             else {
                 newValue[key].changed = false;
             }
         }
-        self.nodesChanged(nodesChanged > 0);
+        self.nodesDeleted(nodesDeleted > 0 && nodesDeleted == Object.keys(self.nodesOriginal).length);
         m.redraw(true);
     });
     //original node state on page load
-    self.nodesChangedPublic = ko.observableArray([]);
-    self.nodesChangedPrivate = ko.observableArray([]);
     self.hasChildren = ko.observable(false);
     $('#nodesDelete').on('hidden.bs.modal', function () {
         self.clear();
     });
 
-    self.page = ko.observable(self.WARNING);
+    self.page = ko.observable(self.SELECT);
 
     self.pageTitle = ko.computed(function() {
         if (self.page() === self.WARNING &&  self.parentIsEmbargoed) {
-            return "This is a message";
+            return "This is a an embargo?";
         }
 
         return {
-            warning: self.parentIsPublic ?
-                'Make ' + self.parentNodeType + ' private' :
-                'Warning',
-            select: 'Change privacy settings',
-            confirm: 'Projects and components affected'
+            select: 'Delete Project',
+            confirm: 'Delete Project and Components'
         }[self.page()];
     });
 
     self.message = ko.computed(function() {
         if (self.page() === self.WARNING &&  self.parentIsEmbargoed) {
-            return "This is a message"
+            return "This is an embargo?"
         }
 
         if (self.page() === self.WARNING &&  self.isPreprint) {
-            return "messages"
+            return "You are attempting to delete a preprint."
+        }
+
+        if (self.page() === self.CONFIRM) {
+            return "The following project and components will be deleted"
         }
 
         return {
-            warning: "messages",
-            select: "messages",
-            confirm: "messages"
+            select: "It looks like your project has components within it. To delete this project, you must also delete all child components",
+            confirm: "The following project and components will be deleted."
         }[self.page()];
     });
 };
@@ -171,9 +167,6 @@ NodesDeleteViewModel.prototype.fetchNodeTree = function() {
         self.hasChildren(size > 1);
         var nodesState = $.extend(true, {}, self.nodesOriginal);
         var nodeParent = response[0].node.id;
-        //change node state and response to reflect button push by user on project page (make public | make private)
-        nodesState[nodeParent].public = response[0].node.is_public = !self.parentIsPublic;
-        nodesState[nodeParent].changed = true;
         self.nodesState(nodesState);
     }).fail(function(xhr, status, error) {
         $osf.growl('Error', 'Unable to retrieve project settings');
@@ -193,16 +186,24 @@ NodesDeleteViewModel.prototype.confirmWarning =  function() {
     var nodesState = ko.toJS(this.nodesState);
     for (var node in nodesState) {
         if (nodesState[node].changed) {
-            if (nodesState[node].public) {
-                this.nodesChangedPublic().push(nodesState[node].title);
-            }
-            else {
-                this.nodesChangedPrivate().push(nodesState[node].title);
-            }
+            this.nodesChanged().push(nodesState[node].title)
         }
     }
+    this.confirmationString = $osf.getConfirmationString();
     this.page(this.CONFIRM);
 };
+
+NodesDeleteViewModel.prototype.selectAll = function() {
+    var nodesState = ko.toJS(this.nodesState());
+    for (var node in nodesState) {
+        if (nodesState[node].isAdmin) {
+            nodesState[node].changed = true;
+        }
+    }
+    this.nodesState(nodesState);
+    m.redraw(true);
+};
+
 
 NodesDeleteViewModel.prototype.confirmChanges =  function() {
     var self = this;
@@ -214,72 +215,49 @@ NodesDeleteViewModel.prototype.confirmChanges =  function() {
     var nodesChanged = nodesState.filter(function(node) {
         return node.changed;
     });
-    //The API's bulk limit is 100 nodes.  We catch the exception in nodes_privacy.mako.
-    if (nodesChanged.length <= 100) {
-        $osf.block('Deleting Project');
-        patchNodesDelete(nodesChanged.reverse()).then(function () {
-            self.onSetDelete(nodesChanged);
-            self.nodesChangedPublic([]);
-            self.nodesChangedPrivate([]);
-            self.page(self.WARNING);
-            window.location.reload();
-        }).fail(function (xhr) {
-            $osf.unblock();
-            var errorMessage = 'Unable to update project privacy';
-            if (xhr.responseJSON && xhr.responseJSON.errors) {
-                errorMessage = xhr.responseJSON.errors[0].detail;
-            }
-            $osf.growl('Problem changing privacy', errorMessage);
-            Raven.captureMessage('Could not PATCH project settings.');
-            self.clear();
-            $('#nodesDelete').modal('hide');
-        }).always(function() {
-            $osf.unblock();
-        });
+
+    if ($('#bbConfirmText').val() === this.confirmationString) {
+        if (nodesChanged.length <= 100) {
+            $osf.block('Deleting Project');
+            patchNodesDelete(nodesChanged.reverse()).then(function () {
+                self.page(self.WARNING);
+                window.location.reload();
+            }).fail(function (xhr) {
+                $osf.unblock();
+                var errorMessage = 'Unable to delete project';
+                if (xhr.responseJSON && xhr.responseJSON.errors) {
+                    errorMessage = xhr.responseJSON.errors[0].detail;
+                }
+                $osf.growl('Problem delete project', errorMessage);
+                Raven.captureMessage('Could not batch delete projects.');
+                self.clear();
+                $('#nodesDelete').modal('hide');
+            }).always(function() {
+                $osf.unblock();
+            });
+        }
+    }
+    else {
+        $osf.growl('Verification failed', 'Strings did not match');
     }
 };
 
 NodesDeleteViewModel.prototype.clear = function() {
-    this.nodesChangedPublic([]);
-    this.nodesChangedPrivate([]);
-    this.page(this.WARNING);
-};
-
-NodesDeleteViewModel.prototype.back = function() {
-    this.nodesChangedPublic([]);
-    this.nodesChangedPrivate([]);
+    this.nodesChanged([]);
     this.page(this.SELECT);
 };
 
-NodesDeleteViewModel.prototype.makeEmbargoPublic = function() {
-    var self = this;
-
-    var nodesChanged = $.map(self.nodesOriginal, function(node) {
-	if (node.isRoot) {
-            node.public = true;
-	    return node;
-	}
-	return null;
-    }).filter(Boolean);
-    $osf.block('Submitting request to end embargo early ...');
-    patchNodesDelete(nodesChanged).then(function (res) {
-        $osf.unblock();
-        $('.modal').modal('hide');
-        self.onSetPrivacy(nodesChanged, true);
-        $osf.growl(
-            'Email sent',
-            'The administrator(s) can approve or cancel the action within 48 hours. If 48 hours pass without any action taken, then the registration will become public.',
-            'success'
-        );
-    });
+NodesDeleteViewModel.prototype.back = function() {
+    this.nodesChanged([]);
+    this.page(this.SELECT);
 };
 
-function NodesDelete(selector, node, onSetDelete) {
+function NodesDelete(selector, node) {
     var self = this;
 
     self.selector = selector;
     self.$element = $(self.selector);
-    self.viewModel = new NodesDeleteViewModel(node, onSetDelete);
+    self.viewModel = new NodesDeleteViewModel(node);
     self.viewModel.fetchNodeTree().done(function(response) {
         new NodesDeleteTreebeard('nodesDeleteTreebeard', response, self.viewModel.nodesState, self.viewModel.nodesOriginal);
     });

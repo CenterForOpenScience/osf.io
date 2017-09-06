@@ -74,7 +74,7 @@ function NodesDeleteTreebeard(divID, data, nodesState, nodesOriginal) {
             var id = item.data.node.id;
             var nodesStateLocal = ko.toJS(nodesState());
             //this lets treebeard know when changes come from the knockout side (select all or select none)
-            item.data.node.is_public = nodesStateLocal[id].public;
+            item.data.node.changed = nodesStateLocal[id].changed;
             columns.push(
                 {
                     data : 'action',
@@ -84,19 +84,12 @@ function NodesDeleteTreebeard(divID, data, nodesState, nodesOriginal) {
                         return m('input[type=checkbox]', {
                             disabled : !item.data.node.is_admin,
                             onclick : function() {
-                                item.data.node.is_public = !item.data.node.is_public;
                                 item.open = true;
-                                nodesStateLocal[id].public = item.data.node.is_public;
-                                if (nodesStateLocal[id].public !== nodesOriginal[id].local) {
-                                    nodesStateLocal[id].changed = true;
-                                }
-                                else {
-                                    nodesStateLocal[id].changed = false;
-                                }
+                                nodesStateLocal[id].changed = !nodesStateLocal[id].changed;
                                 nodesState(nodesStateLocal);
                                 tb.updateFolder(null, item);
                             },
-                            checked: nodesState()[id].public
+                            checked: nodesState()[id].changed
                         });
                     }
                 },
