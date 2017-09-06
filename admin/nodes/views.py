@@ -221,7 +221,6 @@ class AdminNodeLogView(PermissionRequiredMixin, ListView):
 
     def get_context_data(self, **kwargs):
         query_set = self.get_queryset()
-        print query_set
         page_size = self.get_paginate_by(query_set)
         paginator, page, query_set, is_paginated = self.paginate_queryset(
             query_set, page_size)
