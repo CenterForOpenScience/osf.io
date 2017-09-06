@@ -112,8 +112,6 @@ $(document).ready(function () {
     });
 
     if (!ctx.node.isRetracted) {
-        m.startComputation();
-
         if (ctx.node.institutions.length && !ctx.node.anonymous) {
             m.mount(document.getElementById('instLogo'), m.component(institutionLogos, {institutions: window.contextVars.node.institutions}));
         }
@@ -123,9 +121,9 @@ $(document).ready(function () {
         m.mount(document.getElementById('logFeed'), m.component(LogFeed.LogFeed, {node: node}));
 
         // Treebeard Files view
-        $.ajax({
-            url:  nodeApiUrl + 'files/grid/'
-        }).done(function (data) {
+        var urlFilesGrid = nodeApiUrl + 'files/grid/';
+        var promise = m.request({ method: 'GET', background: true, config: $osf.setXHRAuthorization, url: urlFilesGrid});
+        promise.then(function (data) {
             var fangornOpts = {
                 divID: 'treeGrid',
                 filesData: data.data,
@@ -201,8 +199,12 @@ $(document).ready(function () {
             if (newComponentElem) {
                 m.mount(newComponentElem, AddComponentButton);
             }
-            m.endComputation();
-        });
+            return promise;
+        }, function(xhr, textStatus, error) {
+            Raven.captureMessage('Error retrieving filebrowser', {extra: {url: urlFilesGrid, textStatus: textStatus, error: error}});
+        }
+
+      );
 
     }
 
