@@ -46,5 +46,9 @@
             dashboardInstitutions: ${ dashboard_institutions | sjson, n},
         });
     </script>
+    % if home_simple:
+    <script src=${"/static/public/js/home-page-simple.js" | webpack_asset}></script>
+    % else:
     <script src=${"/static/public/js/home-page.js" | webpack_asset}></script>
+    % endif
 </%def>

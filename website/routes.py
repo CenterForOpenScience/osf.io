@@ -79,6 +79,8 @@ def get_globals():
         'embedded_ds': bool_from_settings('USE_EMBEDDED_DS', False),
         'nav_dropdown': bool_from_settings('NAV_DROPDOWN', True),
         'nav_support': bool_from_settings('NAV_SUPPORT', True),
+        'home_simple': bool_from_settings('HOME_SIMPLE', False),
+        'pages_footer': bool_from_settings('PAGES_FOOTER', True),
         'project_analytics': bool_from_settings('PROJECT_ANALYTICS', True),
         'project_registrations': bool_from_settings('PROJECT_REGISTRATIONS', True),
         'project_makepublic': bool_from_settings('PROJECT_MAKEPUBLIC', True),

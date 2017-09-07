@@ -25,6 +25,7 @@ var entry = {
     // JS
     'base-page': staticPath('js/pages/base-page.js'),
     'home-page': staticPath('js/pages/home-page.js'),
+    'home-page-simple': staticPath('js/pages/home-page-simple.js'),
     'landing-page': staticPath('js/pages/landing-page.js'),
     'dashboard-page': staticPath('js/pages/dashboard-page.js'),
     'profile-page': staticPath('js/pages/profile-page.js'),

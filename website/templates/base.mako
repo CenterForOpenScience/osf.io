@@ -164,7 +164,9 @@
 % endif
 
 
+    % if pages_footer:
     ${self.footer()}
+    % endif
     <%include file="copyright.mako"/>
         <%!
             import hashlib
