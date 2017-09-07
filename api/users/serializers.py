@@ -3,7 +3,7 @@ from rest_framework import serializers as ser
 from api.base.exceptions import InvalidModelValueError
 from api.base.serializers import (
     BaseAPISerializer, JSONAPISerializer, JSONAPIRelationshipSerializer,
-    DateByVersion, DevOnly, HideIfDisabled, IDField,
+    DateByVersion, HideIfDisabled, IDField,
     Link, LinksField, ListDictField, TypeField, RelationshipField,
     WaterbutlerLink
 )
