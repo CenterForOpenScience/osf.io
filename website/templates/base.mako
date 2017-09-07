@@ -173,7 +173,9 @@
 % endif
 
 
+    % if pages_footer:
     ${self.footer()}
+    % endif
         <%!
             import hashlib
 
