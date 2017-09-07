@@ -32,6 +32,7 @@
                 <a href="{% url 'desk:customer' user.id %}" data-toggle="modal" data-target="#deskModal" class="btn btn-default">Desk profile</a>
                 <a href="{% url 'desk:user_cases' user.id %}" data-toggle="modal" data-target="#caseModal" class="btn btn-default">Desk cases</a>
                 {% endif %}
+                <a href="{% url 'users:merge-accounts' user.id  %}" data-toggle="modal" data-target="#mergeAccountModal" class="btn btn-default">Merge Account</a>
             </div>
         </div>
         <div class="col-md-4 form-group">
@@ -48,7 +49,7 @@
             {% elif 'spam_confirmed' in user.system_tags %}
                 <a href="{% url 'users:ham_enable' user.id %}" data-toggle="modal" data-target="#enableHamModal" class="btn btn-success">Re-enable Ham account</a>
             {% endif %}
-            <a href="{% url 'users:reindex-elastic-user' guid=user.id %}" data-toggle="modal" data-target="#confirmReindexElasticUser" class="btn btn-success">Elastic Reindex</a>
+            <a href="{% url 'users:reindex-elastic-user' user.id %}" data-toggle="modal" data-target="#confirmReindexElasticUser" class="btn btn-success">Elastic Reindex</a>
         </div>
     </div>
 
@@ -60,6 +61,11 @@
                 </div>
             </div>
             <div class="modal" id="caseModal">
+                <div class="modal-dialog">
+                    <div class="modal-content"></div>
+                </div>
+            </div>
+            <div class="modal" id="mergeAccountModal">
                 <div class="modal-dialog">
                     <div class="modal-content"></div>
                 </div>

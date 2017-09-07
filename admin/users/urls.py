@@ -20,4 +20,5 @@ urlpatterns = [
     url(r'^(?P<guid>[a-z0-9]+)/get_confirmation/$', views.GetUserConfirmationLink.as_view(), name='get_confirmation'),
     url(r'^(?P<guid>[a-z0-9]+)/get_reset_password/$', views.GetPasswordResetLink.as_view(), name='get_reset_password'),
     url(r'^(?P<guid>[a-z0-9]+)/reindex_elastic_user/$', views.UserReindexElastic.as_view(), name='reindex-elastic-user'),
+    url(r'^(?P<guid>[a-z0-9]+)/merge_accounts/$', views.UserMergeAccounts.as_view(), name='merge-accounts'),
 ]
