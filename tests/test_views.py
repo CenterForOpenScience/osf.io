@@ -2820,8 +2820,9 @@ class TestPointerViews(OsfTestCase):
 
         assert_true(template)
         assert_equal(template.title, 'Templated from ' + self.project.title)
+        assert_not_in(project2, template.linked_nodes)
 
-        
+
 class TestPublicViews(OsfTestCase):
 
     def test_explore(self):

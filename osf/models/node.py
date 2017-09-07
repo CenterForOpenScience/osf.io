@@ -2000,12 +2000,6 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
                         is_node_link=False
                     )
                     templated_child.save()  # Recompute root on save()
-            else:
-                # Copy linked nodes
-                NodeRelation.objects.get_or_create(
-                    parent=new, child=node_contained,
-                    is_node_link=True
-                )
 
         return new
 
