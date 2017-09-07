@@ -1984,12 +1984,28 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         )
         new.save()
         # deal with the children of the node, if any
-        for node_relation in self.node_relations.select_related('child').filter(child__is_deleted=False):
-            child = node_relation.child
-            if child.can_view(auth):
-                templated_child = child.use_as_template(auth, changes, top_level=False)
-                NodeRelation.objects.get_or_create(parent=new, child=templated_child,
-                                                   is_node_link=node_relation.is_node_link)
+        for node_relation in self.node_relations.filter(child__is_deleted=False):
+            node_contained = node_relation.child
+            # tempalte child nodes
+            if not node_relation.is_node_link:
+                try:  # Catch the potential PermissionsError above
+                    templated_child = node_contained.use_as_template(auth, changes, top_level=False)
+
+                except PermissionsError:
+                    pass  # If this exception is thrown omit the node from the result set
+                    templated_child = None
+                if templated_child is not None:
+                    NodeRelation.objects.get_or_create(
+                        parent=new, child=templated_child,
+                        is_node_link=False
+                    )
+                    templated_child.save()  # Recompute root on save()
+            else:
+                # Copy linked nodes
+                NodeRelation.objects.get_or_create(
+                    parent=new, child=node_contained,
+                    is_node_link=True
+                )
 
         return new
 

@@ -2810,7 +2810,18 @@ class TestPointerViews(OsfTestCase):
         assert_equal(pointed[0]['title'], 'Private Component')
         assert_equal(pointed[0]['authorShort'], 'Private Author(s)')
 
+    def test_can_template_project_linked_to_each_other(self):
+        project2 = ProjectFactory(creator=self.user)
+        self.project.add_pointer(project2, auth=Auth(user=self.user))
+        self.project.save()
+        project2.add_pointer(self.project, auth=Auth(user=self.user))
+        project2.save()
+        template = self.project.use_as_template(auth=Auth(user=self.user))
 
+        assert_true(template)
+        assert_equal(template.title, 'Templated from ' + self.project.title)
+
+        
 class TestPublicViews(OsfTestCase):
 
     def test_explore(self):
