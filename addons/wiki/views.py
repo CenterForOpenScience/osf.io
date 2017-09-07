@@ -134,40 +134,6 @@ def _get_wiki_web_urls(node, key, version=1, additional_urls=None):
     return urls
 
 
-@must_be_contributor_or_public
-@must_have_addon('wiki', 'node')
-def wiki_widget(**kwargs):
-    node = kwargs['node'] or kwargs['project']
-    wiki = node.get_addon('wiki')
-    wiki_page = node.get_wiki_page('home')
-
-    # Show "Read more" link if there are multiple pages or has > 400 characters
-    more = len(node.wiki_pages_current.keys()) >= 2
-    MAX_DISPLAY_LENGTH = 400
-    rendered_before_update = False
-    if wiki_page and wiki_page.html(node):
-        wiki_html = wiki_page.html(node)
-        if len(wiki_html) > MAX_DISPLAY_LENGTH:
-            wiki_html = BeautifulSoup(wiki_html[:MAX_DISPLAY_LENGTH] + '...', 'html.parser')
-            more = True
-        else:
-            wiki_html = BeautifulSoup(wiki_html)
-        rendered_before_update = wiki_page.rendered_before_update
-    else:
-        wiki_html = None
-
-    ret = {
-        'complete': True,
-        'wiki_content': unicode(wiki_html) if wiki_html else None,
-        'wiki_content_url': node.api_url_for('wiki_page_content', wname='home'),
-        'rendered_before_update': rendered_before_update,
-        'more': more,
-        'include': False,
-    }
-    ret.update(wiki.config.to_json())
-    return ret
-
-
 @must_be_valid_project
 @must_have_write_permission_or_public_wiki
 @must_have_addon('wiki', 'node')
