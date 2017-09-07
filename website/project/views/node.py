@@ -46,7 +46,8 @@ from website.profile import utils
 from website.util.sanitize import strip_html
 from website.util import rapply
 from addons.forward.utils import serialize_settings, settings_complete
-
+from addons.mendeley.provider import MendeleyCitationsProvider
+from addons.zotero.provider import ZoteroCitationsProvider
 
 r_strip_html = lambda collection: rapply(collection, strip_html)
 logger = logging.getLogger(__name__)
@@ -431,20 +432,12 @@ def view_project(auth, node, **kwargs):
 
     if 'zotero' in ret['addons']:
         node_addon = node.get_addon('zotero')
-        zotero_widget_data = node_addon.config.to_json()
-        zotero_widget_data.update({
-            'complete': node_addon.complete,
-            'list_id': node_addon.list_id,
-        })
+        zotero_widget_data = ZoteroCitationsProvider().widget(node_addon)
         addons_widget_data['zotero'] = zotero_widget_data
 
     if 'mendeley' in ret['addons']:
         node_addon = node.get_addon('mendeley')
-        mendeley_widget_data = node_addon.config.to_json()
-        mendeley_widget_data.update({
-            'complete': node_addon.complete,
-            'list_id': node_addon.list_id,
-        })
+        mendeley_widget_data = MendeleyCitationsProvider().widget(node_addon)
         addons_widget_data['mendeley'] = mendeley_widget_data
 
     ret.update({'addons_widget_data': addons_widget_data})
