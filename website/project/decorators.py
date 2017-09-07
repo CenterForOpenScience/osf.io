@@ -155,8 +155,8 @@ def must_not_be_registration(func):
             raise HTTPError(
                 http.BAD_REQUEST,
                 data={
-                    'message_short': 'Registered Nodes are immutable',
-                    'message_long': "The operation you're trying to do cannot be applied to registered Nodes, which are immutable",
+                    'message_short': 'Registrations cannot be changed',
+                    'message_long': "The operation you're trying to do cannot be applied to registered projects, which are not allowed to be changed",
                 }
             )
         return func(*args, **kwargs)
