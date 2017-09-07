@@ -32,6 +32,7 @@ var ViewModel = function(data) {
     self.nodeId = ko.observable(data.node.id);
     self.rootId = ko.observable(data.node.rootId);
     self.childExists = ko.observable(data.node.childExists);
+    self.isRegistration = ko.observable(data.node.isRegistration);
 
     //user chooses to delete all nodes
     self.modifyChildren = ko.observable(false);
@@ -155,9 +156,9 @@ var ViewModel = function(data) {
             message: '<div class="spinner-loading-wrapper"><div class="ball-scale ball-scale-blue"><div></div></div><p class="m-t-sm fg-load-message"> Updating affiliation... this may take a minute.</p></div>',
         });
         var index;
-        var url = data.apiV2Prefix + 'institutions/' + item.id + '/relationships/nodes/';
+        var url = data.apiV2Prefix + 'institutions/' + item.id + '/relationships/' + (self.isRegistration() ? 'registrations/' :  'nodes/');
         var ajaxJSONType = self.isAddInstitution() ? 'POST': 'DELETE';
-        var nodesToModify = [{'type': 'nodes', 'id': self.nodeId()}];
+        var nodesToModify = [{'type': (self.isRegistration() ? 'registrations' :  'nodes'), 'id': self.nodeId()}];
         self.loading(true);
         if (self.modifyChildren()) {
             for (var node in self.childNodes()) {
