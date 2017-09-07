@@ -12,8 +12,6 @@ var InstitutionProjectSettings = require('js/institutionProjectSettings.js');
 var $osf = require('js/osfHelpers');
 require('css/addonsettings.css');
 
-var template = require('raw!templates/registration-modal.html');
-
 var ctx = window.contextVars;
 
 
