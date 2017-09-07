@@ -9,10 +9,7 @@ from django.core.exceptions import ValidationError
 from flask import request
 import mailchimp
 
-from osf.models import Node, NodeRelation, OSFUser
-
 from framework import sentry
-from framework.auth import Auth
 from framework.auth import utils as auth_utils
 from framework.auth.decorators import collect_auth
 from framework.auth.decorators import must_be_logged_in
@@ -24,72 +21,18 @@ from framework.exceptions import HTTPError, PermissionsError
 from framework.flask import redirect  # VOL-aware redirect
 from framework.status import push_status_message
 
-from osf.models import ApiOAuth2Application, ApiOAuth2PersonalToken
+from osf.models import ApiOAuth2Application, ApiOAuth2PersonalToken, OSFUser
 from website import mails
 from website import mailchimp_utils
 from website import settings
-from website.project.utils import PROJECT_QUERY
 from website.oauth.utils import get_available_scopes
 from website.profile import utils as profile_utils
 from website.util.time import throttle_period_expired
 from website.util import api_v2_url, web_url_for, paths
 from website.util.sanitize import escape_html
-from website.views import serialize_node_summary
 from addons.base import utils as addon_utils
 
 logger = logging.getLogger(__name__)
-
-
-def get_public_projects(uid=None, user=None):
-    user = user or OSFUser.load(uid)
-    # In future redesign, should be limited for users with many projects / components
-    node_ids = (
-        user.nodes
-        .filter(PROJECT_QUERY)
-        .filter(is_public=True)
-        .get_roots()
-        .values_list('id', flat=True)
-    )
-    nodes = (
-        Node.objects.filter(id__in=set(node_ids))
-        # Defer some fields that we don't use for rendering node lists
-        .defer('child_node_subscriptions', 'date_created', 'deleted_date', 'description', 'file_guid_to_share_uuids')
-        .include('guids', 'contributor__user__guids', '_parents__parent__guids')
-        .order_by('-date_modified')
-
-    )
-    return [
-        serialize_node_summary(node=node, auth=Auth(user), show_path=False)
-        for node in nodes
-    ]
-
-
-def get_public_components(uid=None, user=None):
-    user = user or OSFUser.load(uid)
-
-    rel_child_ids = (
-        NodeRelation.objects.filter(
-            child__is_public=True,
-            child__type='osf.node',  # nodes only (not collections or registration)
-            child___contributors=user,  # user is a contributor
-            is_node_link=False  # exclude childs by node linkage
-        )
-        .exclude(parent__type='osf.collection')
-        .exclude(child__is_deleted=True)
-        .values_list('child_id', flat=True)
-    )
-
-    nodes = (Node.objects.filter(id__in=rel_child_ids)
-    .include('contributor__user__guids', 'guids', '_parents__parent__guids')
-    # Defer some fields that we don't use for rendering node lists
-    .defer('child_node_subscriptions', 'date_created', 'deleted_date', 'description',
-           'file_guid_to_share_uuids')
-        .order_by('-date_modified'))
-
-    return [
-        serialize_node_summary(node=node, auth=Auth(user), show_path=True)
-        for node in nodes
-    ]
 
 
 def date_or_none(date):
@@ -263,7 +206,7 @@ def update_user(auth):
     return _profile_view(user, is_profile=True)
 
 
-def _profile_view(profile, is_profile=False, embed_nodes=False, include_node_counts=False):
+def _profile_view(profile, is_profile=False, include_node_counts=False):
     if profile and profile.is_disabled:
         raise HTTPError(http.GONE)
 
@@ -278,18 +221,12 @@ def _profile_view(profile, is_profile=False, embed_nodes=False, include_node_cou
                 'permissions': [],  # necessary for rendering nodes
             },
         }
-        if embed_nodes:
-            ret.update({
-                'public_projects': get_public_projects(user=profile),
-                'public_components': get_public_components(user=profile),
-            })
         return ret
     raise HTTPError(http.NOT_FOUND)
 
 @must_be_logged_in
 def profile_view_json(auth):
-    # Do NOT embed nodes, they aren't necessary
-    return _profile_view(auth.user, True, embed_nodes=False)
+    return _profile_view(auth.user, True)
 
 
 @collect_auth
@@ -298,12 +235,12 @@ def profile_view_id_json(uid, auth):
     user = OSFUser.load(uid)
     is_profile = auth and auth.user == user
     # Do NOT embed nodes, they aren't necessary
-    return _profile_view(user, is_profile, embed_nodes=False)
+    return _profile_view(user, is_profile)
 
 @must_be_logged_in
 def profile_view(auth):
     # Embed node data, so profile node lists can be rendered
-    return _profile_view(auth.user, True, embed_nodes=False, include_node_counts=True)
+    return _profile_view(auth.user, True, include_node_counts=True)
 
 @collect_auth
 @must_be_confirmed
@@ -311,7 +248,7 @@ def profile_view_id(uid, auth):
     user = OSFUser.load(uid)
     is_profile = auth and auth.user == user
     # Embed node data, so profile node lists can be rendered
-    return _profile_view(user, is_profile, embed_nodes=False, include_node_counts=True)
+    return _profile_view(user, is_profile, include_node_counts=True)
 
 
 @must_be_logged_in

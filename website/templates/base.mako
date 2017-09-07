@@ -279,6 +279,11 @@
 
 <%def name="includes_top()">
 
+    <!-- ES6 shim for IE support for "My Projects" page-->
+    <!--[if IE]>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/es6-shim/0.35.0/es6-shim.min.js"></script>
+    <![endif]-->
+
     <!-- HTML5 shim and Respond.js for IE8 support of HTML5 elements and media queries -->
     <!-- WARNING: Respond.js doesn't work if you view the page via file:// -->
     <!--[if lt IE 9]>

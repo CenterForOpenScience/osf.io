@@ -14,7 +14,7 @@ logger = logging.getLogger(__name__)
 
 BEPRESS_PROVIDER = PreprintProvider.objects.filter(_id='osf').first()
 
-def validate_input(custom_provider, data, copy=False):
+def validate_input(custom_provider, data, copy=False, add_missing=False):
     logger.info('Validating data')
     includes = data.get('include', [])
     excludes = data.get('exclude', [])
@@ -49,8 +49,10 @@ def validate_input(custom_provider, data, copy=False):
         assert merged_into in set(included_subjects.values_list('text', flat=True)) | set(customs.keys()), 'Unable to determine merge target for "{}"'.format(merged_into)
     included_subjects = included_subjects | Subject.objects.filter(text__in=merges.keys())
     missing_subjects = Subject.objects.filter(id__in=set([hier[-1].id for ps in PreprintService.objects.filter(provider=custom_provider) for hier in ps.subject_hierarchy])).exclude(id__in=included_subjects.values_list('id', flat=True))
-    assert not missing_subjects.exists(), 'Incomplete mapping -- following subjects in use but not included:\n{}'.format(missing_subjects.all())
+    if not add_missing:
+        assert not missing_subjects.exists(), 'Incomplete mapping -- following subjects in use but not included:\n{}'.format(missing_subjects.all())
     logger.info('Successfully validated mapping completeness')
+    return list(missing_subjects) if add_missing else None
 
 def create_subjects_recursive(custom_provider, root_text, exclude_texts, parent=None):
     logger.info('Duplicating BePress subject {} on {}'.format(root_text, custom_provider._id))
@@ -63,27 +65,33 @@ def create_subjects_recursive(custom_provider, root_text, exclude_texts, parent=
     for child_text in bepress_subj.children.exclude(text__in=exclude_texts).values_list('text', flat=True):
         create_subjects_recursive(custom_provider, child_text, exclude_texts, parent=custom_subj)
 
-def create_from_subjects_acceptable(custom_provider):
+def create_from_subjects_acceptable(custom_provider, add_missing=False, missing=None):
     tries = 0
     subjects_to_copy = list(rules_to_subjects(custom_provider.subjects_acceptable))
+    if missing and add_missing:
+        subjects_to_copy = subjects_to_copy + missing
     while len(subjects_to_copy):
         previous_len = len(subjects_to_copy)
         tries += 1
         if tries == 10:
-            raise RuntimeError('Unable to map subjects acceptable with 10 iterations -- invalid input')
+            raise RuntimeError('Unable to map subjects acceptable with 10 iterations -- subjects remaining: {}'.format(subjects_to_copy))
         for subj in list(subjects_to_copy):
             if map_custom_subject(custom_provider, subj.text, subj.parent.text if subj.parent else None, subj.text):
                 subjects_to_copy.remove(subj)
+            elif add_missing and subj.parent and subj.parent not in subjects_to_copy:
+                # Dirty
+                subjects_to_copy.append(subj.parent)
+                previous_len += 1
             else:
                 logger.warn('Failed. Retrying next iteration')
         new_len = len(subjects_to_copy)
         if new_len == previous_len:
-            raise RuntimeError('Unable to map any custom subjects on iteration -- invalid input')
+            raise RuntimeError('Unable to map any custom subjects on iteration -- subjects remaining: {}'.format(subjects_to_copy))
 
 
-def do_create_subjects(custom_provider, includes, excludes, copy=False):
+def do_create_subjects(custom_provider, includes, excludes, copy=False, add_missing=False, missing=None):
     if copy:
-        create_from_subjects_acceptable(custom_provider)
+        create_from_subjects_acceptable(custom_provider, add_missing=add_missing, missing=missing)
     else:
         for root_text in includes:
             create_subjects_recursive(custom_provider, root_text, excludes)
@@ -142,12 +150,12 @@ def map_preprints_to_custom_subjects(custom_provider, merge_dict, dry_run=False)
         new_hier = [s.object_hierarchy for s in preprint.subjects.exclude(children__in=preprint.subjects.all())]
         logger.info('Successfully migrated preprint {}.\n\tOld hierarchy:{}\n\tNew hierarchy:{}'.format(preprint.id, old_hier, new_hier))
 
-def migrate(provider=None, data=None, dry_run=False, copy=False):
+def migrate(provider=None, data=None, dry_run=False, copy=False, add_missing=False):
     custom_provider = PreprintProvider.objects.filter(_id=provider).first()
     assert custom_provider, 'Unable to find specified provider: {}'.format(provider)
     assert custom_provider.id != BEPRESS_PROVIDER.id, 'Cannot add custom mapping to BePress provider'
-    validate_input(custom_provider, data, copy=copy)
-    do_create_subjects(custom_provider, data['include'], data.get('exclude', []), copy=copy)
+    missing = validate_input(custom_provider, data, copy=copy, add_missing=add_missing)
+    do_create_subjects(custom_provider, data['include'], data.get('exclude', []), copy=copy, add_missing=add_missing, missing=missing)
     do_custom_mapping(custom_provider, data.get('custom', {}))
     map_preprints_to_custom_subjects(custom_provider, data.get('merge', {}), dry_run=dry_run)
 
@@ -182,17 +190,24 @@ class Command(BaseCommand):
             dest='from_subjects_acceptable',
             help='Specifies that the provider\'s `subjects_acceptable` be copied. `data.include` and `exclude` are ignored, the other keys may still be used'
         )
+        parser.add_argument(
+            '--add-missing',
+            action='store_true',
+            dest='add_missing',
+            help='Adds "used-but-not-included" subjects.'
+        )
 
     def handle(self, *args, **options):
         dry_run = options.get('dry_run')
         provider = options['provider']
         data = json.loads(options['data'] or '{}')
         copy = options.get('from_subjects_acceptable')
+        add_missing = options.get('add_missing')
         if copy:
             data['include'] = list(Subject.objects.filter(provider=BEPRESS_PROVIDER, parent__isnull=True).values_list('text', flat=True))
         if not dry_run:
             script_utils.add_file_logger(logger, __file__)
         with transaction.atomic():
-            migrate(provider=provider, data=data, dry_run=dry_run, copy=copy)
+            migrate(provider=provider, data=data, dry_run=dry_run, copy=copy, add_missing=add_missing)
             if dry_run:
                 raise RuntimeError('Dry run, transaction rolled back.')
