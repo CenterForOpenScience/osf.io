@@ -100,7 +100,7 @@ class TestUserDetail:
         preprint_url = "/{}users/{}/preprints/".format(API_BASE, user_one._id)
         res = app.get(url, auth=user_one)
         user_json = res.json['data']
-        upload_url = user_json['relationships']['preprints']['links']['upload']['href']
+        upload_url = user_json['relationships']['preprints']['links']['related']['href']
         assert upload_url == preprint_url
 
     def test_registrations_relationship(self, app, user_one):
@@ -108,7 +108,7 @@ class TestUserDetail:
         registration_url = "/{}users/{}/registrations/".format(API_BASE, user_one._id)
         res = app.get(url, auth=user_one)
         user_json = res.json['data']
-        upload_url = user_json['relationships']['registrations']['links']['upload']['href']
+        upload_url = user_json['relationships']['registrations']['links']['related']['href']
         assert upload_url == registration_url
 
     def test_nodes_relationship_is_absent(self, app, user_one):
