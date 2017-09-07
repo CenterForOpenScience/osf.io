@@ -750,10 +750,15 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
         from framework.auth import logout
 
         try:
+            username = self.username
+        except mailchimp_utils.mailchimp.InvalidApiKeyError:
+            username = None
+
+        try:
             mailchimp_utils.unsubscribe_mailchimp(
                 list_name=website_settings.MAILCHIMP_GENERAL_LIST,
                 user_id=self._id,
-                username=self.username
+                username=username
             )
         except mailchimp_utils.mailchimp.ListNotSubscribedError:
             pass
