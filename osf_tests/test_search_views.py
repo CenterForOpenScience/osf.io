@@ -22,6 +22,13 @@ class TestSearchViews(OsfTestCase):
         for i in range(0, 12):
             factories.UserFactory(fullname='Freddie Mercury{}'.format(i))
 
+        self.user_one = factories.AuthUserFactory()
+        self.user_two = factories.AuthUserFactory()
+        self.project_private_user_one = factories.ProjectFactory(title='aaa', creator=self.user_one, is_public=False)
+        self.project_private_user_two = factories.ProjectFactory(title='aaa', creator=self.user_two, is_public=False)
+        self.project_public_user_one = factories.ProjectFactory(title='aaa', creator=self.user_one, is_public=True)
+        self.project_public_user_two = factories.ProjectFactory(title='aaa', creator=self.user_two, is_public=True)
+
     def tearDown(self):
         super(TestSearchViews, self).tearDown()
         import website.search.search as search
@@ -65,7 +72,7 @@ class TestSearchViews(OsfTestCase):
         assert_equal(res.status_code, 200)
         result = res.json['users']
         page = res.json['page']
-        assert_equal(len(result), 2)
+        assert_equal(len(result), 4)
         assert_equal(page, 2)
 
     def test_search_pagination_smaller_pages(self):
@@ -86,7 +93,7 @@ class TestSearchViews(OsfTestCase):
         result = res.json['users']
         pages = res.json['pages']
         page = res.json['page']
-        assert_equal(len(result), 2)
+        assert_equal(len(result), 4)
         assert_equal(page, 2)
         assert_equal(pages, 3)
 
@@ -102,6 +109,30 @@ class TestSearchViews(OsfTestCase):
           auth=factories.AuthUserFactory().auth
         )
         assert_equal(res.status_code, 200)
+
+    def test_search_node_include_public_true(self):
+      res = self.app.post_json(
+        api_url_for('search_node'),
+        {'query': 'a', 'includePublic': True},
+        auth=self.user_one.auth
+      )
+      node_ids = [node['id'] for node in res.json['nodes']]
+      assert_in(self.project_private_user_one._id, node_ids)
+      assert_in(self.project_public_user_one._id, node_ids)
+      assert_in(self.project_public_user_two._id, node_ids)
+      assert_not_in(self.project_private_user_two._id, node_ids)
+
+    def test_search_node_include_public_false(self):
+      res = self.app.post_json(
+        api_url_for('search_node'),
+        {'query': 'a', 'includePublic': False},
+        auth=self.user_one.auth
+      )
+      node_ids = [node['id'] for node in res.json['nodes']]
+      assert_in(self.project_private_user_one._id, node_ids)
+      assert_in(self.project_public_user_one._id, node_ids)
+      assert_not_in(self.project_public_user_two._id, node_ids)
+      assert_not_in(self.project_private_user_two._id, node_ids)
 
     def test_search_user(self):
 
