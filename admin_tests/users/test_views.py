@@ -629,7 +629,7 @@ class TestUserSearchView(AdminTestCase):
         nt.assert_equal(response.status_code, 302)
         nt.assert_equal(self.view.success_url, '/users/search/Hardy/')
 
-    def test_search_user_by_name_with_punction(self):
+    def test_search_user_by_name_with_punctuation(self):
         form_data = {
             'name': 'Dr. Sportello, PI'
         }
@@ -637,7 +637,7 @@ class TestUserSearchView(AdminTestCase):
         nt.assert_true(form.is_valid())
         response = self.view.form_valid(form)
         nt.assert_equal(response.status_code, 302)
-        nt.assert_equal(self.view.success_url, furl.quote('/users/search/Dr. Sportello, PI/'))
+        nt.assert_equal(self.view.success_url, furl.quote('/users/search/Dr. Sportello, PI/', safe='/.,'))
 
     def test_search_user_by_username(self):
         form_data = {
