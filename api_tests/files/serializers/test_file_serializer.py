@@ -27,8 +27,8 @@ class TestFileSerializer:
         return utils.create_test_file(node, user)
 
     def test_file_serializer(self, file_one):
-        date_created = file_one.versions.first().date_created
-        date_modified = file_one.versions.last().date_created
+        date_created = file_one.versions.last().date_created
+        date_modified = file_one.versions.first().date_created
         date_created_tz_aware = date_created.replace(tzinfo=utc)
         date_modified_tz_aware = date_modified.replace(tzinfo=utc)
         new_format = '%Y-%m-%dT%H:%M:%S.%fZ'
