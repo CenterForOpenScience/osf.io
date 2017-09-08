@@ -68,7 +68,11 @@
                 </div>
                 <div id="visits" class="panel-body">
                     <div class="text-center">
-                        <div class="logo-spin logo-lg"></div>
+                        <div class="ball-pulse ball-scale-blue text-center">
+                          <div></div>
+                          <div></div>
+                          <div></div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -80,7 +84,11 @@
             </div>
             <div id="serverTimeVisits" class="panel-body">
               <div class="text-center">
-                <div class="logo-spin logo-lg"></div>
+                  <div class="ball-pulse ball-scale-blue text-center">
+                    <div></div>
+                    <div></div>
+                    <div></div>
+                  </div>
               </div>
             </div>
           </div>
@@ -95,7 +103,11 @@
                 </div>
                 <div id="topReferrers" class="panel-body">
                     <div class="text-center">
-                        <div class="logo-spin logo-lg"></div>
+                        <div class="ball-pulse ball-scale-blue text-center">
+                          <div></div>
+                          <div></div>
+                          <div></div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -107,7 +119,12 @@
                 </div>
                 <div id="popularPages" class="panel-body">
                     <div class="text-center">
-                        <div class="logo-spin logo-lg"></div>
+                        <div class="ball-pulse ball-scale-blue text-center">
+                          <div></div>
+                          <div></div>
+                          <div></div>
+                        </div>
+                    </div>
                     </div>
                 </div>
             </div>
