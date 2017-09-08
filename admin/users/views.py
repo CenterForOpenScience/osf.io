@@ -293,7 +293,7 @@ class UserMergeAccounts(PermissionRequiredMixin, FormView):
     form_class = MergeUserForm
 
     def get_context_data(self, **kwargs):
-        return {'guid' : self.get_object()._id}
+        return {'guid': self.get_object()._id}
 
     def get_object(self, queryset=None):
         return OSFUser.load(self.kwargs.get('guid'))
