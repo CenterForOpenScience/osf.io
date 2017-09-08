@@ -4,6 +4,7 @@ from modularodm import Q
 from dateutil.parser import parse
 from datetime import datetime, timedelta
 
+from framework.encryption import ensure_bytes
 from osf.models import OSFUser, AbstractNode, Institution, Registration
 from website.app import init_app
 from scripts.analytics.base import SummaryAnalytics
@@ -49,8 +50,8 @@ class InstitutionSummary(SummaryAnalytics):
             project_private_query = project_query & private_query
             count = {
                 'institution': {
-                    'id': institution._id,
-                    'name': institution.name,
+                    'id': ensure_bytes(institution._id),
+                    'name': ensure_bytes(institution.name),
                 },
                 'users': {
                     'total': OSFUser.find(user_query).count(),
