@@ -3545,8 +3545,8 @@ class TestTemplateNode:
         assert len(list(new.nodes)) == len(list(project.nodes)) - 1
         # check that all children were copied
         assert (
-            [x.title for x in new.nodes] in
-            [x.title for x in project.nodes]
+            [x.title for x in new.nodes] ==
+            [x.title for x in project.nodes if x not in project.linked_from]
         )
         # ensure all child nodes were actually copied, instead of moved
         assert {x._primary_key for x in new.nodes}.isdisjoint(
@@ -3567,7 +3567,7 @@ class TestTemplateNode:
             auth=auth,
             changes=changes
         )
-        old_nodes = [x for x in project.nodes if not x.is_node_link]
+        old_nodes = [x for x in project.nodes if x not in project.linked_from]
 
         for old_node, new_node in zip(old_nodes, new.nodes):
             if isinstance(old_node, Node):
@@ -3644,7 +3644,7 @@ class TestTemplateNode:
         # check that all children were copied
         assert (
             set(x.template_node._id for x in new.nodes) ==
-            set(x._id for x in visible_nodes if not x.is_node_link)
+            set(x._id for x in visible_nodes if x not in project.linked_from)
         )
         # ensure all child nodes were actually copied, instead of moved
         assert bool({x._primary_key for x in new.nodes}.isdisjoint(
