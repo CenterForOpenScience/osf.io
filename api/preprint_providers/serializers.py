@@ -7,6 +7,8 @@ from reviews.workflow import Workflows
 from api.base.utils import absolute_reverse, get_user_auth
 from api.base.serializers import JSONAPISerializer, LinksField, RelationshipField, ShowIfVersion
 
+from reviews.serializers import ReviewableCountingRelationshipField
+
 
 class PreprintProviderSerializer(JSONAPISerializer):
 
@@ -42,7 +44,7 @@ class PreprintProviderSerializer(JSONAPISerializer):
 
     permissions = ser.SerializerMethodField()
 
-    preprints = RelationshipField(
+    preprints = ReviewableCountingRelationshipField(
         related_view='preprint_providers:preprints-list',
         related_view_kwargs={'provider_id': '<_id>'}
     )
