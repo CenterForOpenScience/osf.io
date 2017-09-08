@@ -269,7 +269,7 @@ class OptionalGuidMixin(BaseIDMixin):
                 pass
             else:
                 return guid
-        return self.guids.order_by('-created').first()
+        return self.guids.first()
 
     class Meta:
         abstract = True
