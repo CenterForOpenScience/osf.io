@@ -201,6 +201,7 @@ $(document).ready(function () {
             if (newComponentElem) {
                 m.mount(newComponentElem, AddComponentButton);
             }
+            m.endComputation();
         });
 
     }

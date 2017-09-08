@@ -2,6 +2,7 @@
 
 require('css/log-feed.css');
 var m = require('mithril'); // exposes mithril methods, useful for redraw etc.
+var $ = require('jquery');
 var $osf = require('js/osfHelpers');
 var mHelpers = require('js/mithrilHelpers');
 var Raven = require('raven-js');
@@ -57,9 +58,6 @@ var LogFeed = {
                 self.currentPage(parseInt(page));
                 self.totalPages(Math.ceil(result.links.meta.total / result.links.meta.per_page));
                 $('#linkProjects').toggleClass('disabled');
-                if (!window.contextVars.node.isRetracted && !$(location).attr('href').includes('profile')) {
-                    m.endComputation(); //paired with m.startComputation in project-dashboard-page; prevents redraw of mithril components.
-                }
             }
             self.logRequestPending(true);
             var promise = m.request({method : 'GET', url : url, config: mHelpers.apiV2Config({withCredentials: window.contextVars.isOnRootDomain})});
