@@ -123,6 +123,11 @@ class OsfStorageFileNode(BaseFileNode):
     def is_checked_out(self):
         return self.checkout is not None
 
+    # overrides BaseFileNode
+    @property
+    def current_version_number(self):
+        return self.versions.count() or 1
+
     def _check_delete_allowed(self):
         if self.is_preprint_primary:
             raise exceptions.FileNodeIsPrimaryFile()
@@ -207,10 +212,7 @@ class OsfStorageFile(OsfStorageFileNode, File):
 
     @property
     def history(self):
-        metadata = []
-        for meta in self.versions.values_list('metadata', flat=True):
-            metadata.append(meta)
-        return metadata
+        return list(self.versions.values_list('metadata', flat=True))
 
     @history.setter
     def history(self, value):
@@ -253,7 +255,7 @@ class OsfStorageFile(OsfStorageFileNode, File):
     def get_version(self, version=None, required=False):
         if version is None:
             if self.versions.exists():
-                return self.versions.last()
+                return self.versions.first()
             return None
 
         try:
