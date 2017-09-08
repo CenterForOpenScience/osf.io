@@ -5,9 +5,8 @@ import logging
 import time
 
 import bleach
+from django.db.models import Q
 from flask import request
-
-from modularodm import Q
 
 from framework.auth.decorators import collect_auth
 from framework.auth.decorators import must_be_logged_in
@@ -73,7 +72,7 @@ def search_search(**kwargs):
     return results
 
 
-def conditionally_add_query_item(query, item, condition):
+def conditionally_add_query_item(query, item, condition, value):
     """ Helper for the search_projects_by_title function which will add a condition to a query
     It will give an error if the proper search term is not used.
     :param query: The modular ODM query that you want to modify
@@ -85,9 +84,9 @@ def conditionally_add_query_item(query, item, condition):
     condition = condition.lower()
 
     if condition == 'yes':
-        return query & Q(item, 'eq', True)
+        return query & Q(**{item: value})
     elif condition == 'no':
-        return query & Q(item, 'eq', False)
+        return query & ~Q(**{item: value})
     elif condition == 'either':
         return query
 
@@ -122,42 +121,34 @@ def search_projects_by_title(**kwargs):
     include_contributed = request.args.get('includeContributed', 'yes').lower()
     ignore_nodes = request.args.getlist('ignoreNode', [])
 
-    matching_title = (
-        Q('title', 'icontains', term) &  # search term (case insensitive)
-        Q('category', 'eq', category)  # is a project
+    matching_title = Q(
+        title__icontains=term,  # search term (case insensitive)
+        category=category  # is a project
     )
 
-    matching_title = conditionally_add_query_item(matching_title, 'is_deleted', is_deleted)
-
-    # TODO: Why.
-    if is_registration == 'yes':
-        matching_title &= Q('type', 'eq', 'osf.registration')
-    elif is_registration == 'no':
-        matching_title &= Q('type', 'ne', 'osf.registration')
-    if is_collection == 'yes':
-        matching_title &= Q('type', 'eq', 'osf.collection')
-    elif is_collection == 'no':
-        matching_title &= Q('type', 'ne', 'osf.collection')
+    matching_title = conditionally_add_query_item(matching_title, 'is_deleted', is_deleted, True)
+    matching_title = conditionally_add_query_item(matching_title, 'type', is_registration, 'osf.registration')
+    matching_title = conditionally_add_query_item(matching_title, 'type', is_collection, 'osf.collection')
 
     if len(ignore_nodes) > 0:
         for node_id in ignore_nodes:
-            matching_title = matching_title & Q('_id', 'ne', node_id)
+            matching_title = matching_title & ~Q(_id=node_id)
 
     my_projects = []
     my_project_count = 0
     public_projects = []
 
     if include_contributed == 'yes':
-        my_projects = AbstractNode.find(
+        my_projects = AbstractNode.objects.filter(
             matching_title &
-            Q('contributors', 'eq', user)  # user is a contributor
+            Q(_contributors=user)  # user is a contributor
         )[:max_results]
         my_project_count = my_project_count
 
     if my_project_count < max_results and include_public == 'yes':
-        public_projects = AbstractNode.find(
+        public_projects = AbstractNode.objects.filter(
             matching_title &
-            Q('is_public', 'eq', True)  # is public
+            Q(is_public=True)  # is public
         )[:max_results - my_project_count]
 
     results = list(my_projects) + list(public_projects)

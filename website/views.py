@@ -4,11 +4,12 @@ import httplib as http
 import logging
 import math
 import os
+import requests
 import urllib
 
 from django.apps import apps
 from django.db.models import Count
-from flask import request, send_from_directory
+from flask import request, send_from_directory, Response, stream_with_context
 
 from framework import sentry
 from framework.auth import Auth
@@ -22,7 +23,7 @@ from framework.auth.core import get_current_user_id
 from website.institutions.views import serialize_institution
 
 from osf.models import BaseFileNode, Guid, Institution, PreprintService, AbstractNode
-from website.settings import EXTERNAL_EMBER_APPS, INSTITUTION_DISPLAY_NODE_THRESHOLD
+from website.settings import EXTERNAL_EMBER_APPS, PROXY_EMBER_APPS, INSTITUTION_DISPLAY_NODE_THRESHOLD
 from website.project.model import has_anonymous_link
 from website.util import permissions
 
@@ -296,7 +297,12 @@ def resolve_guid(guid, suffix=None):
                 # w/ the exception of `<guid>/download` handled above.
                 return redirect(referent.absolute_url, http.MOVED_PERMANENTLY)
 
+            if PROXY_EMBER_APPS:
+                resp = requests.get(EXTERNAL_EMBER_APPS['preprints']['server'], stream=True)
+                return Response(stream_with_context(resp.iter_content()), resp.status_code)
+
             return send_from_directory(preprints_dir, 'index.html')
+
         url = _build_guid_url(urllib.unquote(referent.deep_url), suffix)
         return proxy_url(url)
 

@@ -4,12 +4,11 @@ import httplib as http
 import math
 from itertools import islice
 
-from flask import request
-from modularodm import Q
-from modularodm.exceptions import ModularOdmException, ValidationError
-from django.apps import apps
-from django.db.models import Count
 from bs4 import BeautifulSoup
+from flask import request
+from django.apps import apps
+from django.core.exceptions import ValidationError
+from django.db.models import Count, Q
 
 from framework import status
 from framework.utils import iso8601format
@@ -588,27 +587,26 @@ def remove_private_link(*args, **kwargs):
     link_id = request.json['private_link_id']
 
     try:
-        link = PrivateLink.load(link_id)
-        link.is_deleted = True
-        link.save()
-
-        for node in link.nodes.all():
-            log_dict = {
-                'project': node.parent_id,
-                'node': node._id,
-                'user': kwargs.get('auth').user._id,
-                'anonymous_link': link.anonymous,
-            }
-
-            node.add_log(
-                NodeLog.VIEW_ONLY_LINK_REMOVED,
-                log_dict,
-                auth=kwargs.get('auth', None)
-            )
-
-    except ModularOdmException:
+        link = PrivateLink.objects.get(_id=link_id)
+    except PrivateLink.DoesNotExist:
         raise HTTPError(http.NOT_FOUND)
 
+    link.is_deleted = True
+    link.save()
+
+    for node in link.nodes.all():
+        log_dict = {
+            'project': node.parent_id,
+            'node': node._id,
+            'user': kwargs.get('auth').user._id,
+            'anonymous_link': link.anonymous,
+        }
+
+        node.add_log(
+            NodeLog.VIEW_ONLY_LINK_REMOVED,
+            log_dict,
+            auth=kwargs.get('auth', None)
+        )
 
 # TODO: Split into separate functions
 def _render_addons(addons):
@@ -735,7 +733,6 @@ def _view_project(node, auth, primary=False,
                 'ark': node.get_identifier_value('ark'),
             },
             'institutions': get_affiliated_institutions(node) if node else [],
-            'alternative_citations': [citation.to_json() for citation in node.alternative_citations.all()],
             'has_draft_registrations': node.has_active_draft_registrations,
             'is_preprint': node.is_preprint,
             'is_preprint_orphan': node.is_preprint_orphan,
@@ -1055,18 +1052,18 @@ def search_node(auth, **kwargs):
     if not query:
         return {'nodes': []}
 
-    # Build ODM query
-    title_query = Q('title', 'icontains', query)
-    not_deleted_query = Q('is_deleted', 'eq', False)
-    visibility_query = Q('contributors', 'eq', auth.user)
-    if include_public:
-        visibility_query = visibility_query | Q('is_public', 'eq', True)
-    odm_query = title_query & not_deleted_query & visibility_query
-
     # Exclude current node from query if provided
     nin = [node.id] + list(node._nodes.values_list('pk', flat=True)) if node else []
 
-    nodes = AbstractNode.find(odm_query).exclude(id__in=nin).exclude(type='osf.collection')
+    nodes = (AbstractNode.objects
+        .filter(
+            Q(_contributors=auth.user) |
+            Q(is_public=bool(include_public)),
+            title__icontains=query,
+            is_deleted=False)
+        .exclude(id__in=nin)
+        .exclude(type='osf.collection'))
+
     count = nodes.count()
     pages = math.ceil(count / size)
     validate_page_num(page, pages)
@@ -1173,6 +1170,9 @@ def fork_pointer(auth, node, **kwargs):
     """Fork a pointer. Raises BAD_REQUEST if pointer not provided, not found,
     or not present in `nodes`.
 
+    :param Auth auth: Consolidated authorization
+    :param Node node: root from which pointer is child
+    :return: Fork of node to which nodelink(pointer) points
     """
     NodeRelation = apps.get_model('osf.NodeRelation')
 
@@ -1185,10 +1185,15 @@ def fork_pointer(auth, node, **kwargs):
         raise HTTPError(http.BAD_REQUEST)
 
     try:
-        node.fork_pointer(pointer, auth=auth, save=True)
+        fork = node.fork_pointer(pointer, auth=auth, save=True)
     except ValueError:
         raise HTTPError(http.BAD_REQUEST)
 
+    return {
+        'data': {
+            'node': serialize_node_summary(node=fork, auth=auth, show_path=False)
+        }
+    }, http.CREATED
 
 def abbrev_authors(node):
     lead_author = node.visible_contributors[0]

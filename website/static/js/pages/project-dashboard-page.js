@@ -9,7 +9,6 @@ require('js/osfToggleHeight');
 var m = require('mithril');
 var Fangorn = require('js/fangorn').Fangorn;
 var Raven = require('raven-js');
-var lodashGet  = require('lodash.get');
 require('truncate');
 
 var $osf = require('js/osfHelpers');
@@ -17,13 +16,10 @@ var LogFeed = require('js/components/logFeed');
 var pointers = require('js/pointers');
 var Comment = require('js/comment'); //jshint ignore:line
 var NodeControl = require('js/nodeControl');
-var CitationList = require('js/citationList');
-var CitationWidget = require('js/citationWidget');
 var mathrender = require('js/mathrender');
 var md = require('js/markdown').full;
 var oldMd = require('js/markdown').old;
 var AddProject = require('js/addProjectPlugin');
-var mHelpers = require('js/mithrilHelpers');
 var SocialShare = require('js/components/socialshare');
 
 var ctx = window.contextVars;
@@ -37,12 +33,6 @@ $('body').on('nodeLoad', function(event, data) {
     if (!data.node.is_retracted) {
         // Initialize controller for "Add Links" modal
         new pointers.PointerManager('#addPointer', window.contextVars.node.title);
-    }
-    // Initialize CitationWidget if user isn't viewing through an anonymized VOL
-    if (!data.node.anonymous && !data.node.is_retracted) {
-        var citations = data.node.alternative_citations;
-        new CitationList('#citationList', citations, data.user);
-        new CitationWidget('#citationStyleInput', '#citationText');
     }
     // Initialize nodeControl
     new NodeControl.NodeControl('#projectScope', data, {categories: nodeCategories});

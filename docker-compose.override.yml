@@ -10,9 +10,6 @@ services:
   admin_assets:
     volumes:
       - osf-sync:/code:nocopy
-  sharejs:
-    volumes:
-      - osf-sync:/code:nocopy
   worker:
     volumes:
       - osf-sync:/code:nocopy

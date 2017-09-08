@@ -4,7 +4,7 @@ import urlparse
 
 import furl
 from django.core.exceptions import ObjectDoesNotExist
-from modularodm import Q
+from django.db.models import OuterRef, Exists, Q
 from rest_framework.exceptions import NotFound
 from rest_framework.reverse import reverse
 
@@ -13,7 +13,7 @@ from api.base.exceptions import Gone, UserGone
 from framework.auth import Auth
 from framework.auth.cas import CasResponse
 from framework.auth.oauth_scopes import ComposedScopes, normalize_scopes
-from osf.models import OSFUser
+from osf.models import OSFUser, Contributor
 from osf.models.base import GuidMixin
 from osf.modm_compat import to_django_query
 from website import settings as website_settings
@@ -151,19 +151,21 @@ def waterbutler_url_for(request_type, provider, path, node_id, token, obj_args=N
     url.args.update(query)
     return url.url
 
-def default_node_list_query():
-    return (
-        Q('is_deleted', 'ne', True) &
-        Q('type', 'eq', 'osf.node')
-    )
 
+def default_node_list_queryset(model_cls):
+    return model_cls.objects.filter(is_deleted=False)
 
-def default_node_permission_query(user):
-    permission_query = Q('is_public', 'eq', True)
-    if not user.is_anonymous:
-        permission_query = (permission_query | Q('contributors', 'eq', user.pk))
+def default_node_permission_queryset(user, model_cls):
+    if user.is_anonymous:
+        return model_cls.objects.filter(is_public=True)
+    sub_qs = Contributor.objects.filter(node=OuterRef('pk'), user__id=user.id, read=True)
+    return model_cls.objects.annotate(contrib=Exists(sub_qs)).filter(Q(contrib=True) | Q(is_public=True))
 
-    return permission_query
+def default_node_list_permission_queryset(user, model_cls):
+    # **DO NOT** change the order of the querysets below.
+    # If get_roots() is called on default_node_list_qs & default_node_permission_qs,
+    # Django's alaising will break and the resulting QS will be empty and you will be sad.
+    return default_node_permission_queryset(user, model_cls) & default_node_list_queryset(model_cls)
 
 
 def extend_querystring_params(url, params):
@@ -172,7 +174,6 @@ def extend_querystring_params(url, params):
     orig_params.update(params)
     query = urllib.urlencode(orig_params, True)
     return urlparse.urlunsplit([scheme, netloc, path, query, ''])
-
 
 def extend_querystring_if_key_exists(url, request, key):
     if key in request.query_params.keys():

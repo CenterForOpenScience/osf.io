@@ -3,7 +3,7 @@
 import httplib as http
 
 from flask import request
-from modularodm.exceptions import ValidationError, ValidationValueError
+from django.core.exceptions import ValidationError
 
 from framework import forms, status
 from framework.auth import cas
@@ -165,7 +165,7 @@ def deserialize_contributors(node, user_dicts, auth, validate=False):
             # up to the invalid entry will be saved. (communicate to the user what needs to be retried)
             fullname = sanitize.strip_html(fullname)
             if not fullname:
-                raise ValidationValueError('Full name field cannot be empty')
+                raise ValidationError('Full name field cannot be empty')
             if email:
                 validate_email(email)  # Will raise a ValidationError if email invalid
 
@@ -454,7 +454,7 @@ def send_claim_email(email, unclaimed_user, node, notify=True, throttle=24 * 360
             email_template, preprint_provider = find_preprint_provider(node)
             if not email_template or not preprint_provider:
                 return
-            mail_tpl = getattr(mails, 'INVITE_PREPRINT')(email_template, preprint_provider.name)
+            mail_tpl = getattr(mails, 'INVITE_PREPRINT')(email_template, preprint_provider)
         else:
             mail_tpl = getattr(mails, 'INVITE_DEFAULT'.format(email_template.upper()))
 
@@ -529,7 +529,7 @@ def notify_added_contributor(node, contributor, auth=None, throttle=None, email_
             email_template, preprint_provider = find_preprint_provider(node)
             if not email_template or not preprint_provider:
                 return
-            email_template = getattr(mails, 'CONTRIBUTOR_ADDED_PREPRINT')(email_template, preprint_provider.name)
+            email_template = getattr(mails, 'CONTRIBUTOR_ADDED_PREPRINT')(email_template, preprint_provider)
         elif node.is_preprint:
             email_template = getattr(mails, 'CONTRIBUTOR_ADDED_PREPRINT_NODE_FROM_OSF'.format(email_template.upper()))
         else:
@@ -633,6 +633,7 @@ def claim_user_registered(auth, node, **kwargs):
     session.data['unreg_user'] = {
         'uid': uid, 'pid': pid, 'token': token
     }
+    session.save()
 
     form = PasswordForm(request.form)
     if request.method == 'POST':

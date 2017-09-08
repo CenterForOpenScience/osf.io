@@ -1,10 +1,9 @@
 import collections
 
 from django.apps import apps
-from framework.postcommit_tasks.handlers import run_postcommit
-from modularodm.exceptions import NoResultsFound
+from django.db.models import Q
 
-from osf.modm_compat import Q
+from framework.postcommit_tasks.handlers import run_postcommit
 from website.notifications import constants
 from website.notifications.exceptions import InvalidSubscriptionError
 from website.project import signals
@@ -78,8 +77,9 @@ def remove_subscription(node):
 def remove_subscription_task(node_id):
     AbstractNode = apps.get_model('osf.AbstractNode')
     NotificationSubscription = apps.get_model('osf.NotificationSubscription')
+
     node = AbstractNode.load(node_id)
-    NotificationSubscription.remove(Q('node', 'eq', node))
+    NotificationSubscription.objects.filter(node=node).delete()
     parent = node.parent_node
 
     if parent and parent.child_node_subscriptions:
@@ -181,13 +181,11 @@ def get_configured_projects(user):
     """
     configured_projects = set()
     user_subscriptions = get_all_user_subscriptions(user, extra=(
-        Q('node__type', 'ne', 'osf.collection') &
-        Q('node__is_deleted', 'eq', False)
+        ~Q(node__type='osf.collection') &
+        Q(node__is_deleted=False)
     ))
 
     for subscription in user_subscriptions:
-        if subscription is None:
-            continue
         # If the user has opted out of emails skip
         node = subscription.owner
 
@@ -216,13 +214,12 @@ def check_project_subscriptions_are_all_none(user, node):
 def get_all_user_subscriptions(user, extra=None):
     """ Get all Subscription objects that the user is subscribed to"""
     NotificationSubscription = apps.get_model('osf.NotificationSubscription')
-    for notification_type in constants.NOTIFICATION_TYPES:
-        query = Q(notification_type, 'eq', user.pk)
-        if extra:
-            query &= extra
-        queryset = NotificationSubscription.find(query)
-        for subscription in queryset:
-            yield subscription
+    queryset = NotificationSubscription.objects.filter(
+        Q(none=user.pk) |
+        Q(email_digest=user.pk) |
+        Q(email_transactional=user.pk)
+    )
+    return queryset.filter(extra) if extra else queryset
 
 
 def get_all_node_subscriptions(user, node, user_subscriptions=None):
@@ -235,10 +232,7 @@ def get_all_node_subscriptions(user, node, user_subscriptions=None):
     """
     if not user_subscriptions:
         user_subscriptions = get_all_user_subscriptions(user)
-    # TODO: Filter in database rather than in Python
-    for subscription in user_subscriptions:
-        if subscription and subscription.owner == node:
-            yield subscription
+    return user_subscriptions.filter(user__isnull=True, node=node)
 
 
 def format_data(user, nodes):
@@ -266,8 +260,8 @@ def format_data(user, nodes):
 
         if can_read:
             node_sub_available = list(constants.NODE_SUBSCRIPTIONS_AVAILABLE.keys())
-            subscriptions = [subscription for subscription in get_all_node_subscriptions(user, node, user_subscriptions=user_subscriptions)
-                             if getattr(subscription, 'event_name') in node_sub_available]
+            subscriptions = get_all_node_subscriptions(user, node, user_subscriptions=user_subscriptions).filter(event_name__in=node_sub_available)
+
             for subscription in subscriptions:
                 index = node_sub_available.index(getattr(subscription, 'event_name'))
                 children_tree.append(serialize_event(user, subscription=subscription,
@@ -381,8 +375,8 @@ def get_parent_notification_type(node, event, user):
         parent = node.parent_node
         key = to_subscription_key(parent._id, event)
         try:
-            subscription = NotificationSubscription.find_one(Q('_id', 'eq', key))
-        except NoResultsFound:
+            subscription = NotificationSubscription.objects.get(_id=key)
+        except NotificationSubscription.DoesNotExist:
             return get_parent_notification_type(parent, event, user)
 
         for notification_type in constants.NOTIFICATION_TYPES:

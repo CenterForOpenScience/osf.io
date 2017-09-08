@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-from modularodm import Q
+from django.shortcuts import get_object_or_404
 from rest_framework.exceptions import PermissionDenied, NotFound
 from rest_framework.status import is_server_error
 import requests
@@ -8,7 +8,6 @@ from addons.osfstorage.models import OsfStorageFile, OsfStorageFolder
 from website.util import waterbutler_api_url_for
 
 from api.base.exceptions import ServiceUnavailableError
-from api.base.utils import get_object_or_error
 
 def get_file_object(node, path, provider, request):
     # Don't bother going to waterbutler for osfstorage
@@ -22,7 +21,7 @@ def get_file_object(node, path, provider, request):
                 model = OsfStorageFolder
             else:
                 model = OsfStorageFile
-            obj = get_object_or_error(model, Q('node', 'eq', node.pk) & Q('_id', 'eq', path.strip('/')))
+            obj = get_object_or_404(model, node=node.pk, _id=path.strip('/'))
         return obj
 
     if not node.get_addon(provider) or not node.get_addon(provider).configured:

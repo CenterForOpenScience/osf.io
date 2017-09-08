@@ -289,8 +289,7 @@ services:
     stdin_open: true
 
   sharejs:
-    image: quay.io/centerforopenscience/osf:develop
-    command: invoke sharejs
+    build: ./addons/wiki/
     restart: unless-stopped
     ports:
       - 7007:7007
@@ -299,8 +298,8 @@ services:
     env_file:
       - .docker-compose.sharejs.env
     volumes:
-      - osf_requirements_vol:/usr/local/lib/python2.7
-      - osf_node_modules_vol:/code/node_modules
+      - ./addons/wiki/package.json:/code/package.json
+      - ./addons/wiki/shareServer.js:/code/shareServer.js
     stdin_open: true
 
 #  beat:

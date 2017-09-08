@@ -6,8 +6,7 @@ import httplib
 import logging
 import functools
 
-from modularodm.exceptions import ValidationValueError
-
+from osf.exceptions import ValidationValueError
 from framework.exceptions import HTTPError
 from framework.analytics import update_counter
 

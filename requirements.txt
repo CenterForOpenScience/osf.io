@@ -64,7 +64,6 @@ raven==5.32.0
 Django==1.11.4
 djangorestframework==3.6.3
 django-cors-headers==1.3.1
-django-rest-swagger==0.3.6
 djangorestframework-bulk==0.2.1
 pyjwt==1.4.0
 # Issue: sorry, but this version only supports 100 named groups (https://github.com/eliben/pycparser/issues/147)
@@ -86,7 +85,7 @@ python-geoip-geolite2==2015.0303
 django-typed-models==0.7.0
 git+https://github.com/cos-forks/django-dirtyfields@develop
 git+https://github.com/cos-forks/django-extensions@master
-django-include==0.1.0
+django-include==0.2.3
 psycopg2==2.6.2
 ujson==1.35
 sqlparse==0.2.2
