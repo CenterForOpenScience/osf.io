@@ -51,8 +51,8 @@ var UserFacingChart = oop.defclass({
 
         // prebuild html for showing spinner
         var spinnerHtml = '';
-        spinnerHtml += '<div class="text-center">';
-        spinnerHtml += '    <div class="logo-spin logo-lg"></div>';
+        spinnerHtml += '<div class="ball-pulse ball-scale-blue text-center">';
+        spinnerHtml += '    <div></div><div></div><div></div>';
         spinnerHtml += '</div>';
         self._spinnerHtml = spinnerHtml;
     },

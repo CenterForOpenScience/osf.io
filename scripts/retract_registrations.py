@@ -22,7 +22,7 @@ logging.basicConfig(level=logging.INFO)
 
 
 def main(dry_run=True):
-    pending_retractions = Retraction.objects.select_for_update().filter(state=Retraction.UNAPPROVED)
+    pending_retractions = Retraction.objects.filter(state=Retraction.UNAPPROVED)
     for retraction in pending_retractions:
         if should_be_retracted(retraction):
             if dry_run:
@@ -73,4 +73,3 @@ def run_main(dry_run=True):
     if not dry_run:
         scripts_utils.add_file_logger(logger, __file__)
     main(dry_run=dry_run)
-

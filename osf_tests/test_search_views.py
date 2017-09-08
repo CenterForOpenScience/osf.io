@@ -95,6 +95,14 @@ class TestSearchViews(OsfTestCase):
         res = self.app.get(url, {'q': self.project.title})
         assert_equal(res.status_code, 200)
 
+    def test_search_node(self):
+        res = self.app.post_json(
+          api_url_for('search_node'),
+          {'query': self.project.title},
+          auth=factories.AuthUserFactory().auth
+        )
+        assert_equal(res.status_code, 200)
+
     def test_search_user(self):
 
         url = '/api/v1/search/user/'
