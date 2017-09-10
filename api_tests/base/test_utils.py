@@ -1,14 +1,11 @@
 # -*- coding: utf-8 -*-
-from nose.tools import *  # flake8: noqa
-import mock # noqa
-import unittest
+import mock
+import pytest
 
+from api.base import utils as api_utils
+from framework.status import push_status_message
 from rest_framework import fields
 from rest_framework.exceptions import ValidationError
-from api.base import utils as api_utils
-
-from tests.base import ApiTestCase
-from framework.status import push_status_message
 
 
 class TestTruthyFalsy:
@@ -17,28 +14,28 @@ class TestTruthyFalsy:
     """
 
     def test_truthy(self):
-        assert_equal(api_utils.TRUTHY, fields.BooleanField.TRUE_VALUES)
+        assert api_utils.TRUTHY == fields.BooleanField.TRUE_VALUES
 
     def test_falsy(self):
-        assert_equal(api_utils.FALSY, fields.BooleanField.FALSE_VALUES)
+        assert api_utils.FALSY == fields.BooleanField.FALSE_VALUES
 
 
-class TestIsDeprecated(unittest.TestCase):
+class TestIsDeprecated:
 
-    def setUp(self):
-        super(TestIsDeprecated, self).setUp()
-        self.min_version = '2.0'
-        self.max_version = '2.5'
+    def test_test_is_deprecated(self):
 
-    def test_is_deprecated(self):
+        min_version = '2.0'
+        max_version = '2.5'
+
+        #test_is_deprecated
         request_version = '2.6'
-        is_deprecated = api_utils.is_deprecated(request_version, self.min_version, self.max_version)
-        assert_equal(is_deprecated, True)
+        is_deprecated = api_utils.is_deprecated(request_version, min_version, max_version)
+        assert is_deprecated is True
 
-    def test_is_not_deprecated(self):
+        #test_is_not_deprecated
         request_version = '2.5'
-        is_deprecated = api_utils.is_deprecated(request_version, self.min_version, self.max_version)
-        assert_equal(is_deprecated, False)
+        is_deprecated = api_utils.is_deprecated(request_version, min_version, max_version)
+        assert is_deprecated is False
 
 
 class TestFlaskDjangoIntegration:
@@ -49,20 +46,19 @@ class TestFlaskDjangoIntegration:
             try:
                 push_status_message(status_message, kind=status)
             except:
-                assert_true(False, 'Exception from push_status_message via API v2 with type "{}".'.format(status))
+                assert False, 'Exception from push_status_message via API v2 with type "{}".'.format(status)
 
     def test_push_status_message_expected_error(self):
         status_message = 'This is a message'
         try:
             push_status_message(status_message, kind='error')
-            assert_true(False, 'push_status_message() should have generated a ValidationError exception.')
+            assert False, 'push_status_message() should have generated a ValidationError exception.'
         except ValidationError as e:
-            assert_equal(e.detail[0], status_message,
-                         'push_status_message() should have passed along the message with the Exception.')
+            assert e.detail[0] == status_message, 'push_status_message() should have passed along the message with the Exception.'
         except RuntimeError:
-            assert_true(False, 'push_status_message() should have caught the runtime error and replaced it.')
+            assert False, 'push_status_message() should have caught the runtime error and replaced it.'
         except:
-            assert_true(False, 'Exception from push_status_message when called from the v2 API with type "error"')
+            assert False, 'Exception from push_status_message when called from the v2 API with type "error"'
 
     @mock.patch('framework.status.session')
     def test_push_status_message_unexpected_error(self, mock_sesh):
@@ -74,14 +70,10 @@ class TestFlaskDjangoIntegration:
         mock_sesh.attach_mock(mock_data, 'data')
         try:
             push_status_message(status_message, kind='error')
-            assert_true(False, 'push_status_message() should have generated a RuntimeError exception.')
+            assert False, 'push_status_message() should have generated a RuntimeError exception.'
         except ValidationError as e:
-            assert_true(False, 'push_status_message() should have re-raised the RuntimeError not gotten ValidationError.')
+            assert False, 'push_status_message() should have re-raised the RuntimeError not gotten ValidationError.'
         except RuntimeError as e:
-            assert_equal(getattr(e, 'message', None),
-                         exception_message,
-                         'push_status_message() should have re-raised the '
-                         'original RuntimeError with the original message.')
+            assert (getattr(e, 'message', None) == exception_message), 'push_status_message() should have re-raised the original RuntimeError with the original message.'
         except:
-            assert_true(False, 'Unexpected Exception from push_status_message when called '
-                               'from the v2 API with type "error"')
+            assert False, 'Unexpected Exception from push_status_message when called from the v2 API with type "error"'

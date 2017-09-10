@@ -5,16 +5,10 @@ import operator
 import re
 
 import pytz
+import pytest
 from dateutil import parser
 from django.utils import timezone
-
-from nose.tools import *  # flake8: noqa
-
 from rest_framework import serializers as ser
-
-from unittest import TestCase
-
-from tests.base import ApiTestCase
 
 from api.base.filters import ListFilterMixin
 import api.base.filters as filters
@@ -24,12 +18,13 @@ from api.base.exceptions import (
     InvalidFilterComparisonType,
     InvalidFilterMatchType,
 )
-
 from api.base.serializers import RelationshipField
 
 class FakeSerializer(ser.Serializer):
 
-    filterable_fields = ('id', 'string_field', 'second_string_field','list_field', 'date_field', 'int_field', 'bool_field', 'relationship_field')
+    filterable_fields = (
+        'id', 'string_field','second_string_field','list_field',
+        'date_field', 'int_field', 'bool_field', 'relationship_field')
 
     id = ser.CharField()
     string_field = ser.CharField()
@@ -71,14 +66,15 @@ class FakeListView(ListFilterMixin):
 
     serializer_class = FakeSerializer
 
+@pytest.fixture()
+def view():
+    return FakeListView()
 
-class TestFilterMixin(ApiTestCase):
+class TestFilterMixin:
 
-    def setUp(self):
-        super(TestFilterMixin, self).setUp()
-        self.view = FakeListView()
+    def test_parse_query_params(self, view):
 
-    def test_parse_query_params_default_operators(self):
+        #test_parse_query_params_default_operators
         query_params = {
             'filter[string_field]': 'foo',
             'filter[list_field]': 'bar',
@@ -86,20 +82,20 @@ class TestFilterMixin(ApiTestCase):
             'filter[bool_field]': 'false',
         }
 
-        fields = self.view.parse_query_params(query_params)
-        assert_in('string_field', fields['filter[string_field]'])
-        assert_equal(fields['filter[string_field]']['string_field']['op'], 'icontains')
+        fields = view.parse_query_params(query_params)
+        assert 'string_field' in fields['filter[string_field]']
+        assert fields['filter[string_field]']['string_field']['op'] == 'icontains'
 
-        assert_in('list_field', fields['filter[list_field]'])
-        assert_equal(fields['filter[list_field]']['list_field']['op'], 'contains')
+        assert 'list_field' in fields['filter[list_field]']
+        assert fields['filter[list_field]']['list_field']['op'] == 'contains'
 
-        assert_in('int_field', fields['filter[int_field]'])
-        assert_equal(fields['filter[int_field]']['int_field']['op'], 'eq')
+        assert 'int_field' in fields['filter[int_field]']
+        assert fields['filter[int_field]']['int_field']['op'] == 'eq'
 
-        assert_in('bool_field', fields['filter[bool_field]'])
-        assert_equal(fields['filter[bool_field]']['bool_field']['op'], 'eq')
+        assert 'bool_field' in fields['filter[bool_field]']
+        assert fields['filter[bool_field]']['bool_field']['op'] == 'eq'
 
-    def test_parse_query_params_casts_values(self):
+        #test_parse_query_params_casts_values
         query_params = {
             'filter[string_field]': 'foo',
             'filter[list_field]': 'bar',
@@ -107,189 +103,186 @@ class TestFilterMixin(ApiTestCase):
             'filter[bool_field]': 'false',
         }
 
-        fields = self.view.parse_query_params(query_params)
-        assert_in('string_field', fields['filter[string_field]'])
-        assert_equal(fields['filter[string_field]']['string_field']['value'], 'foo')
+        fields = view.parse_query_params(query_params)
+        assert 'string_field' in fields['filter[string_field]']
+        assert fields['filter[string_field]']['string_field']['value'] == 'foo'
 
-        assert_in('list_field', fields['filter[list_field]'])
-        assert_equal(fields['filter[list_field]']['list_field']['value'], 'bar')
+        assert 'list_field' in fields['filter[list_field]']
+        assert fields['filter[list_field]']['list_field']['value'] == 'bar'
 
-        assert_in('int_field', fields['filter[int_field]'])
-        assert_equal(fields['filter[int_field]']['int_field']['value'], 42)
+        assert 'int_field' in fields['filter[int_field]']
+        assert fields['filter[int_field]']['int_field']['value'] == 42
 
-        assert_in('bool_field', fields.get('filter[bool_field]'))
-        assert_equal(fields['filter[bool_field]']['bool_field']['value'], False)
+        assert 'bool_field' in fields.get('filter[bool_field]')
+        assert fields['filter[bool_field]']['bool_field']['value'] is False
 
-    def test_parse_query_params_uses_field_source_attribute(self):
+        #test_parse_query_params_uses_field_source_attribute
         query_params = {
             'filter[bool_field]': 'false',
         }
 
-        fields = self.view.parse_query_params(query_params)
+        fields = view.parse_query_params(query_params)
         parsed_field = fields['filter[bool_field]']['bool_field']
-        assert_equal(parsed_field['source_field_name'], 'foobar')
-        assert_equal(parsed_field ['value'], False)
-        assert_equal(parsed_field ['op'], 'eq')
+        assert parsed_field['source_field_name'] == 'foobar'
+        assert parsed_field ['value'] is False
+        assert parsed_field ['op'] == 'eq'
 
-    def test_parse_query_params_generalizes_dates(self):
-        query_params = {
-            'filter[date_field]': '2014-12-12'
-        }
-
-        fields = self.view.parse_query_params(query_params)
-        start = parser.parse('2014-12-12').replace(tzinfo=pytz.utc)
-        stop = start + datetime.timedelta(days=1)
-        for key, field_name in fields.iteritems():
-            for match in field_name['date_field']:
-                if match['op'] == 'gte':
-                    assert_equal(match['value'], start)
-                elif match['op'] == 'lt':
-                    assert_equal(match['value'], stop)
-                else:
-                    self.fail()
-
-    def test_parse_query_params_comparable_field(self):
-        query_params = {
-            'filter[int_field][gt]': 42,
-            'filter[int_field][lte]': 9000
-        }
-        fields = self.view.parse_query_params(query_params)
-        for key, field_name in fields.iteritems():
-            if field_name['int_field']['op'] == 'gt':
-                assert_equal(field_name['int_field']['value'], 42)
-            elif field_name['int_field']['op'] == 'lte':
-                assert_equal(field_name['int_field']['value'], 9000)
-            else:
-                self.fail()
-
-    def test_parse_query_params_matchable_field(self):
-        query_params = {
-            'filter[string_field][contains]': 'foo',
-            'filter[string_field][icontains]': 'bar'
-        }
-        fields = self.view.parse_query_params(query_params)
-        for key, field_name in fields.iteritems():
-            if field_name['string_field']['op'] == 'contains':
-                assert_equal(field_name['string_field']['value'], 'foo')
-            elif field_name['string_field']['op'] == 'icontains':
-                assert_equal(field_name['string_field']['value'], 'bar')
-            else:
-                self.fail()
-
-    def test_parse_query_params_raises_InvalidFilterError_bad_field(self):
+        #test_parse_query_params_raises_InvalidFilterError_bad_field
         query_params = {
             'filter[fake]': 'foo'
         }
-        with assert_raises(InvalidFilterError):
-            self.view.parse_query_params(query_params)
+        with pytest.raises(InvalidFilterError):
+            view.parse_query_params(query_params)
 
-    def test_parse_query_params_raises_InvalidFilterComparisonType(self):
+        #test_parse_query_params_raises_InvalidFilterComparisonType
         query_params = {
             'filter[string_field][gt]': 'foo'
         }
-        with assert_raises(InvalidFilterComparisonType):
-            self.view.parse_query_params(query_params)
+        with pytest.raises(InvalidFilterComparisonType):
+            view.parse_query_params(query_params)
 
-    def test_parse_query_params_raises_InvalidFilterMatchType(self):
+        #test_parse_query_params_raises_InvalidFilterMatchType
         query_params = {
             'filter[date_field][icontains]': '2015'
         }
-        with assert_raises(InvalidFilterMatchType):
-            self.view.parse_query_params(query_params)
+        with pytest.raises(InvalidFilterMatchType):
+            view.parse_query_params(query_params)
 
-    def test_parse_query_params_raises_InvalidFilterOperator(self):
+        #test_parse_query_params_raises_InvalidFilterOperator
         query_params = {
             'filter[int_field][bar]': 42
         }
-        with assert_raises(InvalidFilterOperator):
-            self.view.parse_query_params(query_params)
+        with pytest.raises(InvalidFilterOperator):
+            view.parse_query_params(query_params)
 
-    def test_InvalidFilterOperator_parameterizes_valid_operators(self):
+        #test_InvalidFilterOperator_parameterizes_valid_operators
         query_params = {
             'filter[int_field][bar]': 42
         }
         try:
-            self.view.parse_query_params(query_params)
+            view.parse_query_params(query_params)
         except InvalidFilterOperator as err:
             ops = re.search(r'one of (?P<ops>.+)\.$', err.detail).groupdict()['ops']
-            assert_equal(ops, "gt, gte, lt, lte, eq, ne")
+            assert ops == "gt, gte, lt, lte, eq, ne"
 
         query_params = {
             'filter[string_field][bar]': 'foo'
         }
         try:
-            self.view.parse_query_params(query_params)
+            view.parse_query_params(query_params)
         except InvalidFilterOperator as err:
             ops = re.search(r'one of (?P<ops>.+)\.$', err.detail).groupdict()['ops']
-            assert_equal(ops, "contains, icontains, eq, ne")
+            assert ops == "contains, icontains, eq, ne"
 
 
-    def test_parse_query_params_supports_multiple_filters(self):
+        #test_parse_query_params_supports_multiple_filters
         query_params = {
             'filter[string_field]': 'foo',
             'filter[string_field]': 'bar',
         }
         # FIXME: This test may only be checking one field
-        fields = self.view.parse_query_params(query_params)
-        assert_in('string_field', fields.get('filter[string_field]'))
+        fields = view.parse_query_params(query_params)
+        assert 'string_field' in fields.get('filter[string_field]')
         for key, field_name in fields.iteritems():
-            assert_in(field_name['string_field']['value'], ('foo', 'bar'))
+            assert field_name['string_field']['value'] in ('foo', 'bar')
 
-    def test_convert_value_bool(self):
+        #test_convert_value_bool
         value = 'true'
         field = FakeSerializer._declared_fields['bool_field']
-        value = self.view.convert_value(value, field)
-        assert_true(isinstance(value, bool))
-        assert_true(value)
+        value = view.convert_value(value, field)
+        assert isinstance(value, bool)
+        assert value
 
-    def test_convert_value_date(self):
+        #test_convert_value_date
         value = '2014-12-12'
         field = FakeSerializer._declared_fields['date_field']
-        value = self.view.convert_value(value, field)
-        assert_true(isinstance(value, datetime.datetime))
-        assert_equal(value, parser.parse('2014-12-12').replace(tzinfo=pytz.utc))
+        value = view.convert_value(value, field)
+        assert isinstance(value, datetime.datetime)
+        assert value == parser.parse('2014-12-12').replace(tzinfo=pytz.utc)
 
-    def test_convert_value_int(self):
+        #test_convert_value_int
         value = '9000'
         field = FakeSerializer._declared_fields['int_field']
-        value = self.view.convert_value(value, field)
-        assert_equal(value, 9000)
+        value = view.convert_value(value, field)
+        assert value == 9000
 
-    def test_convert_value_float(self):
+        #test_convert_value_float
         value = '42'
         orig_type = type(value)
         field = FakeSerializer._declared_fields['float_field']
-        value = self.view.convert_value(value, field)
-        assert_equal(value, 42.0)
+        value = view.convert_value(value, field)
+        assert value == 42.0
 
-    def test_convert_value_null_for_list(self):
+        #test_convert_value_null_for_list
         value = 'null'
         field = FakeSerializer._declared_fields['list_field']
-        value = self.view.convert_value(value, field)
-        assert_equal(value, [])
+        value = view.convert_value(value, field)
+        assert value == []
 
-    def test_multiple_filter_params_bad_filter(self):
+        #test_multiple_filter_params_bad_filter
         query_params = {
             'filter[string_field, not_a_field]': 'test'
         }
-        with assert_raises(InvalidFilterError):
-            self.view.parse_query_params(query_params)
+        with pytest.raises(InvalidFilterError):
+            view.parse_query_params(query_params)
 
-    def test_bad_filter_operator(self):
+        #test_bad_filter_operator
         query_params = {
             'filter[relationship_field][invalid]': 'false',
         }
-        with assert_raises(InvalidFilterOperator):
-            self.view.parse_query_params(query_params)
+        with pytest.raises(InvalidFilterOperator):
+            view.parse_query_params(query_params)
+
+    def test_parse_query_params_generalizes_dates(self, view):
+        query_params = {
+            'filter[date_field]': '2014-12-12'
+        }
+
+        fields = view.parse_query_params(query_params)
+        start = parser.parse('2014-12-12').replace(tzinfo=pytz.utc)
+        stop = start + datetime.timedelta(days=1)
+        for key, field_name in fields.iteritems():
+            for match in field_name['date_field']:
+                if match['op'] == 'gte':
+                    assert match['value'] == start
+                elif match['op'] == 'lt':
+                    assert match['value'] == stop
+                else:
+                    self.fail()
+
+    def test_parse_query_params_comparable_field(self, view):
+        query_params = {
+            'filter[int_field][gt]': 42,
+            'filter[int_field][lte]': 9000
+        }
+        fields = view.parse_query_params(query_params)
+        for key, field_name in fields.iteritems():
+            if field_name['int_field']['op'] == 'gt':
+                assert field_name['int_field']['value'] == 42
+            elif field_name['int_field']['op'] == 'lte':
+                assert field_name['int_field']['value'] == 9000
+            else:
+                self.fail()
+
+    def test_parse_query_params_matchable_field(self, view):
+        query_params = {
+            'filter[string_field][contains]': 'foo',
+            'filter[string_field][icontains]': 'bar'
+        }
+        fields = view.parse_query_params(query_params)
+        for key, field_name in fields.iteritems():
+            if field_name['string_field']['op'] == 'contains':
+                assert field_name['string_field']['value'] == 'foo'
+            elif field_name['string_field']['op'] == 'icontains':
+                assert field_name['string_field']['value'] == 'bar'
+            else:
+                self.fail()
 
 
-class TestListFilterMixin(ApiTestCase):
+@pytest.mark.django_db
+class TestListFilterMixin:
 
-    def setUp(self):
-        super(TestListFilterMixin, self).setUp()
-        self.view = FakeListView()
-
-    def test_get_filtered_queryset_for_list_field_converts_to_lowercase(self):
+    def test_get_filtered_queryset_for_list_field_converts_to_lowercase(self, view):
         field_name = 'list_field'
         params = {
             'value': 'FOO',
@@ -300,13 +293,13 @@ class TestListFilterMixin(ApiTestCase):
             FakeRecord(_id=2, list_field=['Foo', 'Bax']),
             FakeRecord(_id=3, list_field=['Bar', 'baR', 'bat'])
         ]
-        filtered = self.view.get_filtered_queryset(field_name, params, default_queryset)
+        filtered = view.get_filtered_queryset(field_name, params, default_queryset)
         for record in filtered:
-            assert_not_equal(record._id, 3)
+            assert record._id != 3
         for id in (1, 2):
-            assert_in(id, [f._id for f in filtered])
+            assert id in [f._id for f in filtered]
 
-    def test_get_filtered_queryset_for_list_respects_special_case_of_ids_being_list(self):
+    def test_get_filtered_queryset_for_list_respects_special_case_of_ids_being_list(self, view):
         field_name = 'bool_field'
         params = {
             'value': True,
@@ -318,13 +311,13 @@ class TestListFilterMixin(ApiTestCase):
             FakeRecord(_id=2, foobar=True),
             FakeRecord(_id=3, foobar=False)
         ]
-        filtered = self.view.get_filtered_queryset(field_name, params, default_queryset)
+        filtered = view.get_filtered_queryset(field_name, params, default_queryset)
         for record in filtered:
-            assert_not_equal(record._id, 3)
+            assert record._id != 3
         for id in (1, 2):
-            assert_in(id, [f._id for f in filtered])
+            assert id in [f._id for f in filtered]
 
-    def test_get_filtered_queryset_for_list_respects_id_always_being_list(self):
+    def test_get_filtered_queryset_for_list_respects_id_always_being_list(self, view):
         field_name = 'id'
         params = {
             'value': '2',
@@ -336,25 +329,26 @@ class TestListFilterMixin(ApiTestCase):
             FakeRecord(_id='2', foobar=True),
             FakeRecord(_id='3', foobar=False)
         ]
-        filtered = self.view.get_filtered_queryset(field_name, params, default_queryset)
+        filtered = view.get_filtered_queryset(field_name, params, default_queryset)
         for record in filtered:
-            assert_equal(record._id, '2')
+            assert record._id == '2'
         for id in ('1', '3'):
-            assert_not_in(id, [f._id for f in filtered])
+            assert id not in [f._id for f in filtered]
 
-    def test_parse_query_params_uses_field_source_attribute(self):
+    def test_parse_query_params_uses_field_source_attribute(self, view):
         query_params = {
             'filter[bool_field]': 'false',
         }
 
-        fields = self.view.parse_query_params(query_params)
+        fields = view.parse_query_params(query_params)
         parsed_field = fields['filter[bool_field]']['bool_field']
-        assert_equal(parsed_field['source_field_name'], 'foobar')
-        assert_equal(parsed_field ['value'], False)
-        assert_equal(parsed_field ['op'], 'eq')
+        assert parsed_field['source_field_name'] == 'foobar'
+        assert parsed_field ['value'] is False
+        assert parsed_field ['op'] == 'eq'
 
 
-class TestODMOrderingFilter(ApiTestCase):
+class TestODMOrderingFilter:
+
     class query:
         title = ' '
         def __init__(self, title):
@@ -371,32 +365,31 @@ class TestODMOrderingFilter(ApiTestCase):
         def __str__(self):
             return self.title
 
-
     def test_filter_queryset_forward(self):
         query_to_be_sorted = [self.query(x) for x in 'NewProj Zip Proj Activity'.split()]
         sorted_query = sorted(query_to_be_sorted, cmp=filters.sort_multiple(['title']))
         sorted_output = [str(i) for i in sorted_query]
-        assert_equal(sorted_output, ['Activity', 'NewProj', 'Proj', 'Zip'])
+        assert sorted_output == ['Activity', 'NewProj', 'Proj', 'Zip']
 
 
     def test_filter_queryset_forward_duplicate(self):
         query_to_be_sorted = [self.query(x) for x in 'NewProj Activity Zip Activity'.split()]
         sorted_query = sorted(query_to_be_sorted, cmp=filters.sort_multiple(['title']))
         sorted_output = [str(i) for i in sorted_query]
-        assert_equal(sorted_output, ['Activity', 'Activity', 'NewProj', 'Zip'])
+        assert sorted_output == ['Activity', 'Activity', 'NewProj', 'Zip']
 
 
     def test_filter_queryset_reverse(self):
         query_to_be_sorted = [self.query(x) for x in 'NewProj Zip Proj Activity'.split()]
         sorted_query = sorted(query_to_be_sorted, cmp=filters.sort_multiple(['-title']))
         sorted_output = [str(i) for i in sorted_query]
-        assert_equal(sorted_output, ['Zip', 'Proj', 'NewProj', 'Activity'])
+        assert sorted_output == ['Zip', 'Proj', 'NewProj', 'Activity']
 
     def test_filter_queryset_reverse_duplicate(self):
         query_to_be_sorted = [self.query(x) for x in 'NewProj Activity Zip Activity'.split()]
         sorted_query = sorted(query_to_be_sorted, cmp=filters.sort_multiple(['-title']))
         sorted_output = [str(i) for i in sorted_query]
-        assert_equal(sorted_output, ['Zip', 'NewProj', 'Activity', 'Activity'])
+        assert sorted_output == ['Zip', 'NewProj', 'Activity', 'Activity']
 
     def test_filter_queryset_handles_multiple_fields(self):
         objs = [self.query_with_num(title='NewProj', number=10),
@@ -404,76 +397,76 @@ class TestODMOrderingFilter(ApiTestCase):
                 self.query_with_num(title='Activity', number=30),
                 self.query_with_num(title='Activity', number=40)]
         actual = [x.number for x in sorted(objs, cmp=filters.sort_multiple(['title', '-number']))]
-        assert_equal(actual, [40, 30, 10, 20])
+        assert actual == [40, 30, 10, 20]
 
 
-class TestQueryPatternRegex(TestCase):
+class TestQueryPatternRegex:
 
-    def setUp(self):
-        super(TestQueryPatternRegex, self).setUp()
-        self.filter_regex = FakeListView.QUERY_PATTERN
-        self.filter_fields = FakeListView.FILTER_FIELDS
+    def test_query_pattern_regex(self):
 
-    def test_single_field_filter(self):
+        filter_regex = FakeListView.QUERY_PATTERN
+        filter_fields = FakeListView.FILTER_FIELDS
+
+        #test_single_field_filter
         filter_str = 'filter[name]'
-        match = self.filter_regex.match(filter_str)
+        match = filter_regex.match(filter_str)
         fields = match.groupdict()['fields']
-        field_names = re.findall(self.filter_fields, fields)
-        assert_equal(fields, 'name')
-        assert_equal(field_names[0], 'name')
+        field_names = re.findall(filter_fields, fields)
+        assert fields == 'name'
+        assert field_names[0] == 'name'
 
-    def test_double_field_filter(self):
+        #test_double_field_filter
         filter_str = 'filter[name,id]'
-        match = self.filter_regex.match(filter_str)
+        match = filter_regex.match(filter_str)
         fields = match.groupdict()['fields']
-        field_names = re.findall(self.filter_fields, fields)
-        assert_equal(fields, 'name,id')
-        assert_equal(field_names[0], 'name')
-        assert_equal(field_names[1], 'id')
+        field_names = re.findall(filter_fields, fields)
+        assert fields == 'name,id'
+        assert field_names[0] == 'name'
+        assert field_names[1] == 'id'
 
-    def test_multiple_field_filter(self):
+        #test_multiple_field_filter
         filter_str = 'filter[name,id,another,field,here]'
-        match = self.filter_regex.match(filter_str)
+        match = filter_regex.match(filter_str)
         fields = match.groupdict()['fields']
-        field_names = re.findall(self.filter_fields, fields)
-        assert_equal(fields, 'name,id,another,field,here')
-        assert_equals(len(field_names), 5)
+        field_names = re.findall(filter_fields, fields)
+        assert fields == 'name,id,another,field,here'
+        assert len(field_names) == 5
 
-    def test_single_field_filter_end_comma(self):
+        #test_single_field_filter_end_comma
         filter_str = 'filter[name,]'
-        match = self.filter_regex.match(filter_str)
-        assert_false(match)
+        match = filter_regex.match(filter_str)
+        assert not match
 
-    def test_multiple_field_filter_end_comma(self):
+        #test_multiple_field_filter_end_comma
         filter_str = 'filter[name,id,]'
-        match = self.filter_regex.match(filter_str)
-        assert_false(match)
+        match = filter_regex.match(filter_str)
+        assert not match
 
-    def test_multiple_field_filter_with_spaces(self):
+        #test_multiple_field_filter_with_spaces
         filter_str = 'filter[name,  id]'
-        match = self.filter_regex.match(filter_str)
+        match = filter_regex.match(filter_str)
         fields = match.groupdict()['fields']
-        field_names = re.findall(self.filter_fields, fields)
-        assert_equal(fields, 'name,  id')
-        assert_equal(field_names[0], 'name')
-        assert_equal(field_names[1], 'id')
+        field_names = re.findall(filter_fields, fields)
+        assert fields == 'name,  id'
+        assert field_names[0] == 'name'
+        assert field_names[1] == 'id'
 
-    def test_multiple_field_filter_with_blank_field(self):
+        #test_multiple_field_filter_with_blank_field
         filter_str = 'filter[name,  ,  id]'
-        match = self.filter_regex.match(filter_str)
-        assert_false(match)
+        match = filter_regex.match(filter_str)
+        assert not match
 
-    def test_multiple_field_filter_non_match(self):
+        #test_multiple_field_filter_non_match
         filter_str = 'filter[name; id]'
-        match = self.filter_regex.match(filter_str)
-        assert_false(match)
+        match = filter_regex.match(filter_str)
+        assert not match
 
-    def test_single_field_filter_non_match(self):
+        #test_single_field_filter_non_match
         filter_str = 'fitler[name]'
-        match = self.filter_regex.match(filter_str)
-        assert_false(match)
+        match = filter_regex.match(filter_str)
+        assert not match
 
-    def test_single_field_non_alphanumeric_character(self):
+        #test_single_field_non_alphanumeric_character
         filter_str = 'fitler[<name>]'
-        match = self.filter_regex.match(filter_str)
-        assert_false(match)
+        match = filter_regex.match(filter_str)
+        assert not match
