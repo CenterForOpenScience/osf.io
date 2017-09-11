@@ -348,6 +348,29 @@ class TestNodeFiltering:
         assert public_project_two._id not in ids
         assert project_no_tag._id in ids
 
+    def test_filtering_multiple_fields(self, app, user_one):
+        project_public_one = ProjectFactory(is_public=True, title='test', creator=user_one)
+        project_private_one = ProjectFactory(is_public=False, title='test', creator=user_one)
+        project_public_two = ProjectFactory(is_public=True, title='kitten', creator=user_one, description='test')
+        project_private_two = ProjectFactory(is_public=False, title='kitten', creator=user_one)
+        project_public_three = ProjectFactory(is_public=True, title='test', creator=user_one)
+        project_public_four = ProjectFactory(is_public=True, title='test', creator=user_one, description='test')
+
+        for project in [project_public_one, project_public_two, project_public_three, project_private_one, project_private_two]:
+            project.date_created = '2016-10-25 00:00:00.000000+00:00'
+            project.save()
+
+        project_public_four.date_created = '2016-10-28 00:00:00.000000+00:00'
+        project_public_four.save()
+
+        expected = [project_public_one._id, project_public_two._id, project_public_three._id]
+        url = '/{}nodes/?filter[public]=true&filter[title,description]=test&filter[date_created]=2016-10-25'.format(API_BASE)
+        res = app.get(url, auth=user_one.auth)
+        actual = [node['id'] for node in res.json['data']]
+
+        assert len(expected) == len(actual)
+        assert set(expected) == set(actual)
+
     def test_filtering_tags_exact(self, app, user_one, public_project_one, public_project_two):
         public_project_one.add_tag('logic', Auth(user_one))
         public_project_two.add_tag('logic', Auth(user_one))
