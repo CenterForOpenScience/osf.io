@@ -550,8 +550,8 @@ class DraftRegistration(ObjectIDMixin, BaseModel):
             reg_choice=reg_choice,
             celery=celery)
 
-        # if register and save:
-        #     self.save()
+        if register and save:
+            self.save()
 
         return register
 

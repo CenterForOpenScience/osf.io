@@ -22,6 +22,7 @@ class TestNodeSettings(unittest.TestCase):
 
     def test_forward_registered(self):
         with mock_archive(self.node, autoapprove=True) as registration:
+            assert registration.title
             assert registration.has_addon('forward')
             forward = registration.get_addon('forward')
         assert forward.url == 'http://frozen.pizza.reviews/'

@@ -61,6 +61,7 @@ class TestNodeSettings(OAuthAddonNodeSettingsTestSuiteMixin, unittest.TestCase):
 
     def test_does_not_get_copied_to_registrations(self):
         with mock_archive(self.node, data='hodor', autoapprove=True) as registration:
+            assert_true(registration.title)
             assert_false(registration.has_addon('s3'))
 
     ## Overrides ##

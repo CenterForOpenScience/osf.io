@@ -41,6 +41,7 @@ class TestNodeSettings(models.OAuthAddonNodeSettingsTestSuiteMixin, unittest.Tes
     @mock.patch('addons.figshare.models.NodeSettings.archive_errors')
     def test_does_not_get_copied_to_registrations(self, mock_errors):
         with mock_archive(self.node, data='hodor', autoapprove=True) as registration:
+            assert_true(registration.title)
             assert_false(registration.has_addon('figshare'))
 
     # Overrides

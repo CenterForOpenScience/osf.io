@@ -289,6 +289,7 @@ class TestBitbucketSettings(OsfTestCase):
         mock_branches.return_value = bitbucket_mock.branches.return_value
 
         with mock_archive(self.project, data='', autoapprove=True) as registration:
+            assert_true(registation.title)
             url = registration.api_url + 'bitbucket/settings/'
 
         res = self.app.post_json(

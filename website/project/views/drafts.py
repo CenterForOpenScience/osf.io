@@ -10,6 +10,7 @@ from django.utils import timezone
 from flask import request, redirect
 import pytz
 
+from api.base.utils import is_truthy
 from framework.database import get_or_http_error, autoload
 from framework.exceptions import HTTPError
 from framework.status import push_status_message
@@ -191,7 +192,7 @@ def register_draft_registration(auth, node, draft, *args, **kwargs):
     if draft.approval and draft.approval.state != Sanction.REJECTED:
         raise HTTPError(http.CONFLICT, data=dict(message_long='Cannot resubmit previously submitted draft.'))
 
-    use_celery = False if request.args.get('celery') == 'False' else True
+    use_celery = is_truthy(request.args.get('celery', True))
     draft.register(auth, data=data, reg_choice=registration_choice, celery=use_celery)
 
     push_status_message(language.AFTER_REGISTER_ARCHIVING,

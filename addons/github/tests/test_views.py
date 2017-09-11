@@ -497,6 +497,7 @@ class TestGithubSettings(OsfTestCase):
     def test_link_repo_registration(self, mock_branches):
 
         with mock_archive(self.project, data='', autoapprove=True) as registration:
+            assert_true(registration.title)
             url = registration.api_url + 'github/settings/'
 
         mock_branches.return_value = [

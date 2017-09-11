@@ -228,7 +228,7 @@ class TestRegisterNode:
         assert registration.is_registration
 
     def test_registered_date(self, registration):
-        assert_datetime_equal(registration.registered_date, timezone.now(), allowance=6000)
+        assert_datetime_equal(registration.registered_date, timezone.now(), allowance=3000)
 
     def test_registered_addons(self, registration):
         assert (

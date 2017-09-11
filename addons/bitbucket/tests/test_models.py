@@ -269,4 +269,5 @@ class TestCallbacks(OsfTestCase):
 
     def test_does_not_get_copied_to_registrations(self):
         with mock_archive(self.project, data='hodor', autoapprove=True) as registration:
+            assert_true(registration.title)
             assert_false(registration.has_addon('bitbucket'))
