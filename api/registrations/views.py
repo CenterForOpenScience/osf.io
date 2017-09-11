@@ -2,7 +2,7 @@ from rest_framework import generics, permissions as drf_permissions
 from rest_framework.exceptions import ValidationError, NotFound
 from framework.auth.oauth_scopes import CoreScopes
 
-from osf.models import AbstractNode
+from osf.models import AbstractNode, Registration
 from api.base import permissions as base_permissions
 from api.base.filters import ListFilterMixin
 from api.base.views import JSONAPIBaseView, BaseContributorDetail, BaseContributorList, BaseNodeLinksDetail, BaseNodeLinksList, WaterButlerMixin
@@ -170,7 +170,7 @@ class RegistrationList(JSONAPIBaseView, generics.ListAPIView, NodesFilterMixin):
     # overrides ListAPIView
     def get_queryset(self):
         blacklisted = self.is_blacklisted()
-        registrations = self.get_queryset_from_request()
+        registrations = self.get_queryset_from_request().distinct('id', 'date_modified')
         # If attempting to filter on a blacklisted field, exclude withdrawals.
         if blacklisted:
             return registrations.exclude(retraction__isnull=False)
