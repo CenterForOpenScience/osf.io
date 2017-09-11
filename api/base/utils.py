@@ -4,7 +4,7 @@ import urlparse
 
 import furl
 from django.core.exceptions import ObjectDoesNotExist
-from django.db.models import Q
+from django.db.models import OuterRef, Exists, Q
 from rest_framework.exceptions import NotFound
 from rest_framework.reverse import reverse
 
@@ -13,7 +13,7 @@ from api.base.exceptions import Gone, UserGone
 from framework.auth import Auth
 from framework.auth.cas import CasResponse
 from framework.auth.oauth_scopes import ComposedScopes, normalize_scopes
-from osf.models import OSFUser, Node, Registration
+from osf.models import OSFUser, Contributor
 from osf.models.base import GuidMixin
 from osf.modm_compat import to_django_query
 from website import settings as website_settings
@@ -151,21 +151,22 @@ def waterbutler_url_for(request_type, provider, path, node_id, token, obj_args=N
     url.args.update(query)
     return url.url
 
-def default_node_list_queryset():
-    return Node.objects.filter(is_deleted=False)
 
-def default_node_permission_queryset(user):
+def default_node_list_queryset(model_cls):
+    return model_cls.objects.filter(is_deleted=False)
+
+def default_node_permission_queryset(user, model_cls):
     if user.is_anonymous:
-        return Node.objects.filter(is_public=True)
-    return Node.objects.filter(Q(is_public=True) | Q(contributor__user_id=user.pk))
+        return model_cls.objects.filter(is_public=True)
+    sub_qs = Contributor.objects.filter(node=OuterRef('pk'), user__id=user.id, read=True)
+    return model_cls.objects.annotate(contrib=Exists(sub_qs)).filter(Q(contrib=True) | Q(is_public=True))
 
-def default_registration_list_queryset():
-    return Registration.objects.filter(is_deleted=False)
+def default_node_list_permission_queryset(user, model_cls):
+    # **DO NOT** change the order of the querysets below.
+    # If get_roots() is called on default_node_list_qs & default_node_permission_qs,
+    # Django's alaising will break and the resulting QS will be empty and you will be sad.
+    return default_node_permission_queryset(user, model_cls) & default_node_list_queryset(model_cls)
 
-def default_registration_permission_queryset(user):
-    if user.is_anonymous:
-        return Registration.objects.filter(is_public=True)
-    return Registration.objects.filter(Q(is_public=True) | Q(contributor__user_id=user.pk))
 
 def extend_querystring_params(url, params):
     scheme, netloc, path, query, _ = urlparse.urlsplit(url)
