@@ -262,8 +262,8 @@ class TestPreprintProviderExportImport(AdminTestCase):
         content_dict = json.loads(res.content)
 
         content_dict['fields']['_id'] = 'new_id'
-        content_dict['fields']['new_field'] = "this is a new field, not in the model"
-        del content_dict['fields']['description'] # this is a old field, removed from the model JSON
+        content_dict['fields']['new_field'] = 'this is a new field, not in the model'
+        del content_dict['fields']['description']  # this is a old field, removed from the model JSON
 
         data = StringIO(unicode(json.dumps(content_dict), 'utf-8'))
         self.import_request.FILES['file'] = InMemoryUploadedFile(data, None, 'data', 'application/json', 500, None, {})
