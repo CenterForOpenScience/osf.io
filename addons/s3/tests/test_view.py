@@ -91,7 +91,7 @@ class TestS3Views(S3AddonTestCase, OAuthAddonConfigViewsTestCaseMixin, OsfTestCa
 
     def test_s3_set_bucket_registered(self):
         with mock_archive(self.project, autoapprove=True) as registration:
-            assert_true(registation.title)
+            assert_true(registration.title)
             url = registration.api_url_for('s3_set_config')
         res = self.app.put_json(
             url, {'s3_bucket': 'hammertofall'}, auth=self.user.auth,

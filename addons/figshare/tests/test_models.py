@@ -1,5 +1,8 @@
 import mock
-from nose.tools import assert_false, assert_equal
+from nose.tools import (
+    assert_false, assert_equal,
+    assert_true,
+)
 import pytest
 import unittest
 
