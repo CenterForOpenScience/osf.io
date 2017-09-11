@@ -32,7 +32,8 @@ class ReviewProviderMixin(models.Model):
 
     def get_reviewable_status_counts(self):
         assert self.REVIEWABLE_RELATION_NAME, 'REVIEWABLE_RELATION_NAME must be set to compute status counts'
-        qs = getattr(self, self.REVIEWABLE_RELATION_NAME).values('reviews_state').annotate(count=models.Count('*'))
+        # TODO fix hackery once GUID query set is gone
+        qs = models.QuerySet.annotate(getattr(self, self.REVIEWABLE_RELATION_NAME).values('reviews_state'), count=models.Count('*'))
         ret = {state.value: 0 for state in workflow.States}
         ret.update({row['reviews_state']: row['count'] for row in qs if row['reviews_state'] in ret})
         return ret
