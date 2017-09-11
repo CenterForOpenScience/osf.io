@@ -464,7 +464,7 @@ class TestGetRevisions(StorageTestCase):
                 version,
                 index=self.record.versions.count() - 1 - idx
             )
-            for idx, version in enumerate(reversed(self.record.versions.all()))
+            for idx, version in enumerate(self.record.versions.all())
         ]
 
         assert_equal(len(res.json['revisions']), 15)
