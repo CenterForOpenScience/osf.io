@@ -231,8 +231,9 @@ class ImportPreprintProvider(PermissionRequiredMixin, View):
         if form.is_valid():
             file_str = self.parse_file(request.FILES['file'])
             file_json = json.loads(file_str)
+            current_fields = [f.name for f in PreprintProvider._meta.get_fields()]
             # make sure not to import an exported access token for SHARE
-            cleaned_result = {key: value for key, value in file_json['fields'].iteritems() if key not in FIELDS_TO_NOT_IMPORT_EXPORT}
+            cleaned_result = {key: value for key, value in file_json['fields'].iteritems() if key not in FIELDS_TO_NOT_IMPORT_EXPORT and key in current_fields}
             preprint_provider = self.create_or_update_provider(cleaned_result)
             return redirect('preprint_providers:detail', preprint_provider_id=preprint_provider.id)
 
