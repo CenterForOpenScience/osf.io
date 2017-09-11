@@ -5,10 +5,10 @@ import re
 
 import django_filters
 from django.db import models
-from django import forms
 import pytz
 from guardian.shortcuts import get_objects_for_user
 from api.base import utils
+from api.base.fields import NullModelMultipleChoiceCaseInsensitiveField
 from api.base.exceptions import (InvalidFilterComparisonType,
                                  InvalidFilterError, InvalidFilterFieldError,
                                  InvalidFilterMatchType, InvalidFilterOperator,
@@ -79,28 +79,6 @@ class MultiValueCharFilter(django_filters.BaseInFilter, django_filters.filters.C
         qs = qs.filter(q)
 
         return qs
-
-class NullModelMultipleChoiceCaseInsensitiveField(forms.ModelMultipleChoiceField):
-
-    def clean(self, value):
-        # let a custom filter handle the actual filtering for null values later in the qs
-        if value == 'null':
-            return value
-
-        try:
-            return super(NullModelMultipleChoiceCaseInsensitiveField, self).clean(value)
-
-        except ValidationError as validation_error:
-            # Check to make sure the validation error wasn't because of a case sensitive relationship query
-            q = Q()
-            for choice in value:
-                q |= Q(**{'{}__iexact'.format(self.to_field_name): choice})
-            queryset = self.queryset.filter(q)
-
-            if not queryset:
-                raise validation_error
-
-            return queryset
 
 
 class NullModelMultipleChoiceFilter(django_filters.ModelChoiceFilter):
