@@ -303,12 +303,7 @@ var LogPieces = {
             if (paramIsReturned(linked_node, logObject) && !linked_node.errors) {
                 return m('a', {href: $osf.toRelativeUrl(linked_node.data.links.html, window)}, linked_node.data.attributes.title);
             }
-            // Applicable when pointer has been deleted
-            var pointer_info = logObject.attributes.params.pointer;
-            if (pointer_info && paramIsReturned(pointer_info, logObject)) {
-                return m('span', pointer_info.title);
-            }
-            return m('span','a project');
+            return m('span', 'a project');
         }
     },
     // Pointer category
