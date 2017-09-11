@@ -22,6 +22,8 @@ class PreprintProvider(ObjectIDMixin, ReviewProviderMixin, BaseModel):
                                ('Thesis', 'Thesis'),)
     PUSH_SHARE_TYPE_HELP = 'This SHARE type will be used when pushing publications to SHARE'
 
+    REVIEWABLE_RELATION_NAME = 'preprint_services'
+
     name = models.CharField(null=False, max_length=128)  # max length on prod: 22
     description = models.TextField(default='', blank=True)
     domain = models.URLField(blank=True, default='', max_length=200)
