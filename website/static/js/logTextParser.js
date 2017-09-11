@@ -300,12 +300,12 @@ var LogPieces = {
     pointer: {
         view: function (ctrl, logObject) {
             var linked_node = logObject.embeds.linked_node;
-            if(paramIsReturned(linked_node, logObject)){
+            if (paramIsReturned(linked_node, logObject) && !linked_node.errors) {
                 return m('a', {href: $osf.toRelativeUrl(linked_node.data.links.html, window)}, linked_node.data.attributes.title);
             }
             // Applicable when pointer has been deleted
             var pointer_info = logObject.attributes.params.pointer;
-            if (paramIsReturned(pointer_info, logObject)) {
+            if (pointer_info && paramIsReturned(pointer_info, logObject)) {
                 return m('span', pointer_info.title);
             }
             return m('span','a project');
@@ -315,21 +315,13 @@ var LogPieces = {
     pointer_category: {
         view: function (ctrl, logObject) {
             var linked_node = logObject.embeds.linked_node;
-            if(paramIsReturned(linked_node, logObject)){
+            if (paramIsReturned(linked_node, logObject) && !linked_node.errors) {
                 var category = linked_node.data.attributes.category;
                 if (category !== '') {
                     return m('span', linked_node.data.attributes.category);
                 }
             }
-
-            var linkedNodeParams = logObject.attributes.params.pointer;
-            if (paramIsReturned(linkedNodeParams, logObject)) {
-                if (linkedNodeParams.category !== '') {
-                     return m('span', linkedNodeParams.category);
-                }
-
-            }
-            return m('span','project');
+            return m('span', '');
         }
     },
     // Node that acted as template to create a new node involved
