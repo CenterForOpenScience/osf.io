@@ -279,7 +279,7 @@ class TestUsers:
         data = res.json['data']
         assert len(data) == 2
 
-    def test_users_list_two_multiple_fields(self):
+    def test_users_list_two_multiple_fields(self, app):
         john_doe = UserFactory(fullname='John Doe')
         john_doe.given_name = 'John'
         john_doe.family_name = 'Doe'
@@ -301,11 +301,11 @@ class TestUsers:
         dog_boy.save()
 
         url = "/{}users/?filter[given_name,family_name]=Doe,Dog".format(API_BASE)
-        res = self.app.get(url)
+        res = app.get(url)
         data = res.json['data']
         assert len(data) == 4
 
-    def test_users_list_more_multiple_fields(self):
+    def test_users_list_more_multiple_fields(self, app):
         john_doe = UserFactory(fullname='John Doe')
         john_doe.given_name = 'John'
         john_doe.family_name = 'Doe'
@@ -318,9 +318,9 @@ class TestUsers:
         doe_jane.save()
 
         url = "/{}users/?filter[given_name,family_name]=Doe&filter[id,full_name]={}".format(API_BASE, john_doe._id)
-        res = self.app.get(url)
+        res = app.get(url)
         data = res.json['data']
-        assert_equal(len(data), 2)
+        assert len(data) == 2
 
 
 @pytest.mark.django_db

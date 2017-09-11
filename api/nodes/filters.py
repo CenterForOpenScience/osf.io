@@ -3,11 +3,11 @@ from copy import deepcopy
 from django.db.models import Q
 from django.conf import settings
 
-from api.base.exceptions import InvalidFilterOperator, InvalidFilterValue, InvalidFilterError
+from api.base.exceptions import InvalidFilterOperator, InvalidFilterValue
 from api.base.filters import ListFilterMixin, JSONAPIFilterSet, NullModelMultipleChoiceFilter, MultiValueCharFilter
 from api.base import utils
 
-from osf.models import NodeRelation, AbstractNode, Node
+from osf.models import NodeRelation, AbstractNode, Tag, OSFUser
 
 
 class NodesFilterMixin(ListFilterMixin):
@@ -85,7 +85,7 @@ class NodeFilterSet(JSONAPIFilterSet):
     def filter_parent(self, queryset, name, value):
         if value == 'null':
             return queryset.get_roots()
-        parent = utils.get_object_or_error(Node, value, display_name='parent')
+        parent = utils.get_object_or_error(AbstractNode, value, display_name='parent')
         node_ids = NodeRelation.objects.filter(parent=parent, is_node_link=False).values_list('child_id', flat=True)
 
         return queryset.filter(id__in=node_ids)
@@ -104,7 +104,7 @@ class NodeFilterSet(JSONAPIFilterSet):
         return queryset.exclude(preprint_filters) if utils.is_truthy(value) else queryset.filter(preprint_filters)
 
     class Meta(JSONAPIFilterSet.Meta):
-        model = Node
+        model = AbstractNode
         fields = [
             'title',
             'description',
