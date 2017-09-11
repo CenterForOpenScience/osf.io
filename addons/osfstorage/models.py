@@ -259,8 +259,8 @@ class OsfStorageFile(OsfStorageFileNode, File):
             return None
 
         try:
-            return self.versions.all()[int(version) - 1]
-        except (IndexError, ValueError):
+            return self.versions.get(identifier=version)
+        except FileVersion.DoesNotExist:
             if required:
                 raise exceptions.VersionNotFoundError(version)
             return None
