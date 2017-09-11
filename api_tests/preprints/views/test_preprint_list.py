@@ -52,7 +52,8 @@ def build_preprint_create_payload(node_id=None, provider_id=None, file_id=None, 
     return payload
 
 
-def build_preprint_create_payload_without_node(provider_id=None, file_id=None, attrs={}):
+def build_preprint_create_payload_without_node(provider_id=None, file_id=None, attrs=None):
+    attrs = attrs or {}
     return build_preprint_create_payload(node_id=None, provider_id=provider_id, file_id=file_id, attrs=attrs)
 
 
