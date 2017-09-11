@@ -17,6 +17,8 @@ class ReviewProviderMixin(models.Model):
     """A reviewed/moderated collection of objects.
     """
 
+    REVIEWABLE_RELATION_NAME = None
+
     class Meta:
         abstract = True
 
@@ -27,6 +29,21 @@ class ReviewProviderMixin(models.Model):
     @property
     def is_moderated(self):
         return self.reviews_workflow is not None
+
+    def get_reviewable_status_counts(self):
+        assert self.REVIEWABLE_RELATION_NAME, 'REVIEWABLE_RELATION_NAME must be set to compute status counts'
+        qs = getattr(self, self.REVIEWABLE_RELATION_NAME).values('reviews_state').annotate(count=models.Count('*'))
+        ret = {state.value: 0 for state in workflow.States}
+        ret.update({row['reviews_state']: row['count'] for row in qs if row['reviews_state'] in ret})
+        return ret
+
+    def add_admin(self, user):
+        from reviews.permissions import GroupHelper
+        return GroupHelper(self).get_group('admin').user_set.add(user)
+
+    def add_moderator(self, user):
+        from reviews.permissions import GroupHelper
+        return GroupHelper(self).get_group('moderator').user_set.add(user)
 
 
 class ReviewableMixin(models.Model):

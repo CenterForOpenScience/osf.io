@@ -1,24 +1,22 @@
 # -*- coding: utf-8 -*-
 from __future__ import unicode_literals
 
-from rest_framework import serializers as ser
 from rest_framework import exceptions
+from rest_framework import generics
+from rest_framework import serializers as ser
 from rest_framework.fields import SkipField
 
+from api.base import utils
 from api.base.exceptions import JSONAPIAttributeException
 from api.base.serializers import JSONAPISerializer
-from api.base.serializers import RelationshipField
 from api.base.serializers import LinksField
-from api.base.utils import absolute_reverse
-from api.base.utils import get_user_auth
+from api.base.serializers import RelationshipField
 
 from osf.models import PreprintService
 
 from reviews.exceptions import InvalidTransitionError
 from reviews.workflow import Actions
 from reviews.workflow import States
-from reviews.workflow import Workflows
-from reviews.models import ReviewLog
 
 
 # Pseudo-class to hide the creator field if it shouldn't be shown
@@ -27,7 +25,7 @@ def IfCanViewLogCreator(field_cls):
         def get_attribute(self, instance):
             request = self.context.get('request')
             if request is not None:
-                auth = get_user_auth(request)
+                auth = utils.get_user_auth(request)
                 if auth.logged_in:
                     provider = instance.reviewable.provider
                     if provider.reviews_comments_anonymous is False or auth.user.has_perm('view_review_logs', provider):
@@ -39,6 +37,36 @@ def IfCanViewLogCreator(field_cls):
             return r.replace(self.__class__.__name__, '{}<{}>'.format(self.__class__.__name__, field_cls.__name__))
 
     return IfCanViewLogCreatorField
+
+
+class ReviewableCountsRelationshipField(RelationshipField):
+
+    def __init__(self, *args, **kwargs):
+        kwargs['related_meta'] = kwargs.get('related_meta') or {}
+        if 'include_status_counts' not in kwargs['related_meta']:
+            kwargs['related_meta']['include_status_counts'] = True
+        super(ReviewableCountsRelationshipField, self).__init__(*args, **kwargs)
+
+    def get_meta_information(self, metadata, provider):
+        # Clone metadata because it's mutablity is questionable
+        metadata = dict(metadata or {})
+
+        # Make counts opt in
+        show_counts = utils.is_truthy(self.context['request'].query_params.get('related_counts', False))
+        # Only include counts on detail routes
+        is_detail = not isinstance(self.context['view'], generics.ListAPIView)
+        # Weird hack to avoid being called twice
+        # get_meta_information is called with both self.related_meta and self.self_meta.
+        # `is` could probably be used here but this seems more comprehensive.
+        is_related_meta = metadata.pop('include_status_counts', False)
+
+        if show_counts and is_detail and is_related_meta:
+            # Finally, require users to have view_review_logs permissions
+            auth = utils.get_user_auth(self.context['request'])
+            if auth and auth.logged_in and auth.user.has_perm('view_review_logs', provider):
+                metadata.update(provider.get_reviewable_status_counts())
+
+        return super(ReviewableCountsRelationshipField, self).get_meta_information(metadata, provider)
 
 
 class ReviewableRelationshipField(RelationshipField):
@@ -105,7 +133,7 @@ class ReviewLogSerializer(JSONAPISerializer):
     )
 
     def get_log_url(self, obj):
-        return absolute_reverse('reviews:review_log-detail', kwargs={'log_id': obj._id, 'version': self.context['request'].parser_context['kwargs']['version']})
+        return utils.absolute_reverse('reviews:review_log-detail', kwargs={'log_id': obj._id, 'version': self.context['request'].parser_context['kwargs']['version']})
 
     def create(self, validated_data):
         action = validated_data.pop('action')
