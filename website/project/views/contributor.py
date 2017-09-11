@@ -454,7 +454,7 @@ def send_claim_email(email, unclaimed_user, node, notify=True, throttle=24 * 360
             email_template, preprint_provider = find_preprint_provider(node)
             if not email_template or not preprint_provider:
                 return
-            mail_tpl = getattr(mails, 'INVITE_PREPRINT')(email_template, preprint_provider.name)
+            mail_tpl = getattr(mails, 'INVITE_PREPRINT')(email_template, preprint_provider)
         else:
             mail_tpl = getattr(mails, 'INVITE_DEFAULT'.format(email_template.upper()))
 
@@ -529,7 +529,7 @@ def notify_added_contributor(node, contributor, auth=None, throttle=None, email_
             email_template, preprint_provider = find_preprint_provider(node)
             if not email_template or not preprint_provider:
                 return
-            email_template = getattr(mails, 'CONTRIBUTOR_ADDED_PREPRINT')(email_template, preprint_provider.name)
+            email_template = getattr(mails, 'CONTRIBUTOR_ADDED_PREPRINT')(email_template, preprint_provider)
         elif node.is_preprint:
             email_template = getattr(mails, 'CONTRIBUTOR_ADDED_PREPRINT_NODE_FROM_OSF'.format(email_template.upper()))
         else:
