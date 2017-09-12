@@ -496,17 +496,19 @@ class PreprintFilterMixin(ListFilterMixin):
                 operation['source_field_name'] = 'subjects__text'
                 operation['op'] = 'iexact'
 
-    def preprints_queryset(self, base_queryset, auth_user):
+    def preprints_queryset(self, base_queryset, auth_user, allow_contribs=True):
         default_query = Q(node__isnull=False, node__is_deleted=False)
         no_user_query = Q(is_published=True, node__is_public=True)
 
         if auth_user:
-            contrib_user_query = Q(is_published=True, node__contributor__user_id=auth_user.id, node__contributor__read=True)
             admin_user_query = Q(node__contributor__user_id=auth_user.id, node__contributor__admin=True)
             reviews_user_query = Q(node__is_public=True, provider__in=get_objects_for_user(auth_user, 'view_submissions', PreprintProvider))
-            query = default_query & (no_user_query | contrib_user_query | admin_user_query | reviews_user_query)
+            if allow_contribs:
+                contrib_user_query = Q(is_published=True, node__contributor__user_id=auth_user.id, node__contributor__read=True)
+                query = default_query & (no_user_query | contrib_user_query | admin_user_query | reviews_user_query)
+            else:
+                query = default_query & (no_user_query | admin_user_query | reviews_user_query)
         else:
             query = default_query & no_user_query
 
         return base_queryset.filter(query)
-

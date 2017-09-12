@@ -80,15 +80,11 @@ class GroupHelper(object):
     def update_provider_auth_groups(self):
         for group_name, group_permissions in GROUPS.items():
             group, created = Group.objects.get_or_create(name=self.format_group(group_name))
-            if created:
-                logger.debug('Created group %s', group.name)
             to_remove = set(get_perms(group, self.provider)).difference(group_permissions)
             for p in to_remove:
                 remove_perm(p, group, self.provider)
-                logger.debug('Removed permission %s from group %s for provider %s', p, group.name, self.provider._id)
             for p in group_permissions:
                 assign_perm(p, group, self.provider)
-                logger.debug('Assigned permission %s to group %s for provider %s', p, group.name, self.provider._id)
 
     def get_permissions(self, user):
         return [p for p in get_perms(user, self.provider) if p in PERMISSIONS]

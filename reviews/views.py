@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 from __future__ import unicode_literals
 
-from django.db.models import Q
 from django.shortcuts import get_object_or_404
 from guardian.shortcuts import get_objects_for_user
 from rest_framework import generics
@@ -170,7 +169,7 @@ class LogList(JSONAPIBaseView, generics.ListCreateAPIView, ListFilterMixin, Revi
 
     # overrides ListCreateAPIView
     def get_queryset(self):
-        return self.review_logs_queryset().filter(self.get_query_from_request())
+        return self.get_queryset_from_request()
 
 
 class PreprintReviewLogList(JSONAPIBaseView, generics.ListAPIView, ListFilterMixin, PreprintMixin, ReviewLogMixin):
@@ -229,3 +228,7 @@ class PreprintReviewLogList(JSONAPIBaseView, generics.ListAPIView, ListFilterMix
     # overrides ListFilterMixin
     def get_default_queryset(self):
         return self.review_logs_queryset().filter(reviewable_id=self.get_preprint().id)
+
+    # overrides ListAPIView
+    def get_queryset(self):
+        return self.get_queryset_from_request()

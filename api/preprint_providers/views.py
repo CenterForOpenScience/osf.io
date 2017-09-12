@@ -13,7 +13,7 @@ from osf.models import AbstractNode, Subject, PreprintProvider
 from reviews import permissions as reviews_permissions
 
 from api.base import permissions as base_permissions
-from api.base.exceptions import InvalidFilterValue, Conflict
+from api.base.exceptions import InvalidFilterValue, InvalidFilterOperator, Conflict
 from api.base.filters import PreprintFilterMixin, ListFilterMixin
 from api.base.views import JSONAPIBaseView
 from api.base.pagination import MaxSizePagination
@@ -98,7 +98,7 @@ class PreprintProviderList(JSONAPIBaseView, generics.ListAPIView, ListFilterMixi
             auth_user = getattr(auth, 'user', None)
             if not auth_user:
                 raise NotAuthenticated()
-            value = data['value'].lstrip('[').rstrip(']')
+            value = operation['value'].lstrip('[').rstrip(']')
             permissions = [v.strip() for v in value.split(',')]
             if any(p not in reviews_permissions.PERMISSIONS for p in permissions):
                 valid_permissions = ', '.join(reviews_permissions.PERMISSIONS.keys())

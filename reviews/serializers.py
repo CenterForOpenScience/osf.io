@@ -151,6 +151,9 @@ class ReviewLogSerializer(JSONAPISerializer):
         }
     )
 
+    def get_absolute_url(self, obj):
+        return self.get_log_url(obj)
+
     def get_log_url(self, obj):
         return utils.absolute_reverse('reviews:review_log-detail', kwargs={'log_id': obj._id, 'version': self.context['request'].parser_context['kwargs']['version']})
 
