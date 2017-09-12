@@ -344,7 +344,7 @@ AddContributorViewModel = oop.extend(Paginator, {
             self.inviteError(validated);
             return false;
         }
-        return self.postInviteRequest(self.inviteName(), self.inviteEmail());
+        return self.postInviteRequest(self.inviteName(), self.inviteEmail().replace(/^\s+|\s+$/g, ''));
     },
     add: function (data) {
         var self = this;
