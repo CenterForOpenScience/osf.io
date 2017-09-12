@@ -3535,7 +3535,7 @@ class TestTemplateNode:
             return str(language.TEMPLATED_FROM_PREFIX + x.title)
         return str(x.title)
 
-    def test_complex_template_without_pointee(self, auth):
+    def test_complex_template_without_pointee(self, auth, user):
         """Create a templated node from a node with children"""
 
         # create templated node
