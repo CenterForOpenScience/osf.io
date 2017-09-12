@@ -124,6 +124,11 @@ class PageCounter(BaseModel):
                     model_instance.save()
                     return
 
+            if page_type == 'view' and node_info:
+                if node_info['contributors'].filter(guids___id__isnull=False, guids___id=session.data.get('auth_user_id')).exists():
+                    model_instance.save()
+                    return
+
             visited = session.data.get('visited', [])
             if page not in visited:
                 model_instance.unique += 1
