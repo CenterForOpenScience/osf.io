@@ -466,8 +466,8 @@ class TestFileView:
     def test_files_view_count(self, app, user, node):
         file1 = node.get_addon('osfstorage').get_root().append_file('I\'d be a teacher!!')
         file1.save()
-        file_url = '/{}files/{}/'.format(API_BASE, file1._id)
-        res = app.get(file_url, auth=user.auth)
+        file1_url = '/{}files/{}/'.format(API_BASE, file1._id)
+        res = app.get(file1_url, auth=user.auth)
         file1.versions.last().reload()
         assert res.status_code == 200
         assert res.json.keys() == ['data']

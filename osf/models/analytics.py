@@ -147,3 +147,13 @@ class PageCounter(BaseModel):
             return (counter.unique, counter.total)
         except cls.DoesNotExist:
             return (None, None)
+
+    @classmethod
+    def set_basic_counters(cls, page, counts):
+        cleaned_page = cls.clean_page(page)
+
+        with transaction.atomic():
+            model_instance, created = cls.objects.select_for_update().get_or_create(_id=cleaned_page)
+            model_instance.total = counts
+            model_instance.save()
+
