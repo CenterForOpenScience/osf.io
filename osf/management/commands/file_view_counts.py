@@ -22,11 +22,9 @@ def set_file_view_counts(state, *args, **kwargs):
     # get all osfstorage files which is_deleted == False
     files = BaseFileNode.resolve_class('osfstorage', BaseFileNode.FILE).active.all()
 
-    for file in files:
+    for file_node in files:
         # for each file get the file view counts from keen
-        query = [{"property_name": "page.info.path",
-                  "operator": "eq",
-                  "property_value": file._id}]
+        query = [{"property_name": "page.info.path", "operator": "eq", "property_value": file_node._id}]
 
         query = urllib.quote(json.dumps(query))
         url = 'https://api.keen.io/3.0/projects/{}/queries/count' \
@@ -36,9 +34,9 @@ def set_file_view_counts(state, *args, **kwargs):
         file_view_count = int(resp.json()['result'])
 
         # udpate the pagecounter for file view counts
-        PageCounter.set_basic_counters('view:{0}:{1}'.format(file.node._id, file._id), file_view_count)
+        PageCounter.set_basic_counters('view:{0}:{1}'.format(file_node.node._id, file_node._id), file_view_count)
 
-        logger.info('File ID {0}: has inputed "{1}" view counts'.format(file._id, file_view_count))
+        logger.info('File ID {0}: has inputed "{1}" view counts'.format(file_node._id, file_view_count))
 
     logger.info('File view counts migration from keen completed.')
 
