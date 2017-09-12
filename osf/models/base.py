@@ -282,6 +282,9 @@ class GuidMixinQuerySet(IncludeQuerySet):
     def all(self):
         return super(GuidMixinQuerySet, self).all().include('guids')
 
+    def count(self):
+        return super(GuidMixinQuerySet, self.include(None)).count()
+
 
 class GuidMixin(BaseIDMixin):
     __guid_min_length__ = 5
