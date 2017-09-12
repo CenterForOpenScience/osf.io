@@ -320,7 +320,7 @@ AddContributorViewModel = oop.extend(Paginator, {
         if (!self.inviteName().trim().length) {
             return 'Full Name is required.';
         }
-        if (self.inviteEmail() && !$osf.isEmail(self.inviteEmail())) {
+        if (self.inviteEmail() && !$osf.isEmail(self.inviteEmail().replace(/^\s+|\s+$/g, ''))) {
             return 'Not a valid email address.';
         }
         // Make sure that entered email is not already in selection
