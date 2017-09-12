@@ -148,10 +148,15 @@ class JSONAPIFilterSet(django_filters.rest_framework.FilterSet):
             if value == 'true' or value == 'false':
                 value = value.title()
             if field_name in self.DATE_FIELDS:
-                # reformat timezone information for django's parse_datetime util to recognize datetimes
-                split_parts = value.split(' ')
-                if len(split_parts) > 1:
-                    value = '{}+{}'.format('T'.join(split_parts[:-1]), split_parts[-1])
+                try:
+                    value_datetime = date_parser.parse(value, ignoretz=False)
+                    if not value_datetime.tzinfo:
+                        value = value_datetime.replace(tzinfo=pytz.utc).isoformat()
+                except ValueError:
+                    raise InvalidFilterValue(
+                        value=value,
+                        field_type='date'
+                    )
 
             data_to_return[field_name] = value
 
