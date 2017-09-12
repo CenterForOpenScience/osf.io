@@ -10,7 +10,7 @@ from osf_tests.factories import UserFactory, PreprintFactory, NodeFactory
 
 
 @pytest.mark.django_db
-class TestGuidAnnotations:
+class TestGuidAutoInclude:
     guid_factories = [
         UserFactory,
         PreprintFactory,
@@ -20,7 +20,7 @@ class TestGuidAnnotations:
     @pytest.mark.parametrize('Factory', guid_factories)
     def test_filter_object(self, Factory):
         obj = Factory()
-        assert '__guids' in str(obj._meta.model.objects.filter(id=obj.id).query), 'Guid annotations did not exist in filter query for {}'.format(obj._meta.model.__name__)
+        assert '__guids' in str(obj._meta.model.objects.filter(id=obj.id).query), 'Guids were not included in filter query for {}'.format(obj._meta.model.__name__)
 
     @pytest.mark.parametrize('Factory', guid_factories)
     @pytest.mark.django_assert_num_queries
