@@ -123,8 +123,6 @@ def osfstorage_get_metadata(file_node, node_addon, **kwargs):
     except (ValueError, TypeError):  # If its not a number
         version = None
 
-    utils.update_analytics(node_addon.owner, file_node._id, int(version.identifier) - 1, download=False)
-
     return file_node.serialize(version=version, include_full=True)
 
 
