@@ -8,7 +8,7 @@ import pytest
 from nose.tools import *  # noqa
 from dateutil.parser import parse as parse_datetime
 
-from addons.osfstorage.models import OsfStorageFileNode
+from addons.osfstorage.models import OsfStorageFileNode, OsfStorageFolder
 from framework.auth.core import Auth
 from addons.osfstorage.tests.utils import (
     StorageTestCase, Delta, AssertDeltas,
@@ -20,7 +20,7 @@ from addons.osfstorage.tests.utils import make_payload
 from framework.auth import signing
 from website.util import rubeus
 
-from osf.models import Tag
+from osf.models import Tag, QuickFilesNode
 from osf.models import files as models
 from addons.osfstorage.apps import osf_storage_root
 from addons.osfstorage import utils
@@ -845,6 +845,57 @@ class TestMoveHook(HookTestCase):
             expect_errors=True,
         )
         assert_equal(res.status_code, 200)
+
+    def test_cannot_move_file_out_of_quickfiles_node(self):
+        quickfiles_node = QuickFilesNode.objects.get_for_user(self.user)
+        create_test_file(quickfiles_node, self.user, filename='slippery.mp3')
+        quickfiles_folder = OsfStorageFolder.objects.get(node=quickfiles_node)
+        dest_folder = OsfStorageFolder.objects.get(node=self.project)
+
+        res = self.send_hook(
+            'osfstorage_move_hook',
+            {'nid': quickfiles_node._id},
+            payload={
+                'source': quickfiles_folder._id,
+                'node': quickfiles_node._id,
+                'user': self.user._id,
+                'destination': {
+                    'parent': dest_folder._id,
+                    'node': self.project._id,
+                    'name': dest_folder.name,
+                }
+            },
+            method='post_json',
+            expect_errors=True,
+        )
+        assert_equal(res.status_code, 400)
+
+
+@pytest.mark.django_db
+class TestCopyHook(HookTestCase):
+    def test_cannot_copy_file_out_of_quickfiles_node(self):
+        quickfiles_node = QuickFilesNode.objects.get_for_user(self.user)
+        create_test_file(quickfiles_node, self.user, filename='dont_copy_meeeeeeeee.mp3')
+        quickfiles_folder = OsfStorageFolder.objects.get(node=quickfiles_node)
+        dest_folder = OsfStorageFolder.objects.get(node=self.project)
+
+        res = self.send_hook(
+            'osfstorage_copy_hook',
+            {'nid': quickfiles_node._id},
+            payload={
+                'source': quickfiles_folder._id,
+                'node': quickfiles_node._id,
+                'user': self.user._id,
+                'destination': {
+                    'parent': dest_folder._id,
+                    'node': self.project._id,
+                    'name': dest_folder.name,
+                }
+            },
+            method='post_json',
+            expect_errors=True,
+        )
+        assert_equal(res.status_code, 400)
 
 
 @pytest.mark.django_db
