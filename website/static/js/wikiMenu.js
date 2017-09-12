@@ -56,7 +56,7 @@ function WikiMenu(data, wikiID, canEdit) {
                 width: '100%'
             }];
         },
-        onload: function() {
+        ondataload: function() {
             var tb = this;  // jshint ignore: line
             for (var i = 0; i < tb.treeData.children.length; i++) {
                 var parent = tb.treeData.children[i];
