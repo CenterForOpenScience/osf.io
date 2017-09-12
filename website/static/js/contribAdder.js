@@ -342,6 +342,7 @@ AddContributorViewModel = oop.extend(Paginator, {
         var validated = self.validateInviteForm();
         if (typeof validated === 'string') {
             self.inviteError(validated);
+            self.canSubmit(true);
             return false;
         }
         return self.postInviteRequest(self.inviteName(), self.inviteEmail().replace(/^\s+|\s+$/g, ''));
