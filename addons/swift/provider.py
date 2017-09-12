@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-from website.oauth.models import BasicAuthProviderMixin
+from osf.models.external import BasicAuthProviderMixin
 
 
 class SwiftProvider(BasicAuthProviderMixin):

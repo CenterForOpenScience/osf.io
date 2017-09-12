@@ -11,7 +11,7 @@ from addons.base import generic_views
 from addons.swift import utils
 from addons.swift.provider import SwiftProvider
 from addons.swift.serializer import SwiftSerializer
-from website.oauth.models import ExternalAccount
+from osf.models import ExternalAccount
 from website.project.decorators import (
     must_have_addon, must_have_permission,
     must_be_addon_authorizer,
