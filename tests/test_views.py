@@ -2813,9 +2813,7 @@ class TestPointerViews(OsfTestCase):
     def test_can_template_project_linked_to_each_other(self):
         project2 = ProjectFactory(creator=self.user)
         self.project.add_pointer(project2, auth=Auth(user=self.user))
-        self.project.save()
         project2.add_pointer(self.project, auth=Auth(user=self.user))
-        project2.save()
         template = self.project.use_as_template(auth=Auth(user=self.user))
 
         assert_true(template)

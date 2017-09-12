@@ -1923,6 +1923,10 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         except (AttributeError, KeyError):
             attributes = dict()
 
+        # Non-contributors can't fork private nodes
+        if not (self.is_public or self.has_permission(auth.user, 'read')):
+            raise PermissionsError('{0!r} does not have permission to template node {1!r}'.format(auth.user, self._id))
+
         new = self.clone()
         new._is_templated_clone = True  # This attribute may be read in post_save handlers
 
