@@ -116,7 +116,7 @@ class NodeDeleteBase(DeleteView):
         return super(NodeDeleteBase, self).get_context_data(**context)
 
     def get_object(self, queryset=None):
-        return Node.load(self.kwargs.get('guid'))
+        return Node.load(self.kwargs.get('guid')) or Registration.load(self.kwargs.get('guid'))
 
 
 class NodeDeleteView(PermissionRequiredMixin, NodeDeleteBase):
