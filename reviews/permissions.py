@@ -6,11 +6,10 @@ import logging
 from guardian.shortcuts import assign_perm
 from guardian.shortcuts import get_perms
 from guardian.shortcuts import remove_perm
-from rest_framework import exceptions, permissions
+from rest_framework import permissions
 
 from django.contrib.auth.models import Group
 
-from api.base.exceptions import Conflict
 from api.base.utils import get_user_auth
 from website.util import permissions as osf_permissions
 
@@ -114,14 +113,14 @@ class LogPermission(permissions.BasePermission):
         else:
             raise ValueError('Not a reviews-related model: {}'.format(obj))
 
-        is_node_admin = reviewable is not None and reviewable.node.has_permission(auth.user, osf_permissions.ADMIN)
-
         if request.method in permissions.SAFE_METHODS:
-            # If the provider settings allow it, let preprint admins see logs for their submission
-            return (is_node_admin and reviewable.provider.reviews_comments_private is False) or auth.user.has_perm('view_review_logs', provider)
+            # Moderators and node contributors can view review logs
+            is_node_contributor = reviewable is not None and reviewable.node.has_permission(auth.user, osf_permissions.READ)
+            return is_node_contributor or auth.user.has_perm('view_review_logs', provider)
         else:
             # Moderators and node admins can trigger state changes.
             # Action-specific permissions should be checked in the view.
+            is_node_admin = reviewable is not None and reviewable.node.has_permission(auth.user, osf_permissions.ADMIN)
             return is_node_admin or auth.user.has_perm('view_submissions', provider)
 
 

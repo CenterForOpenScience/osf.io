@@ -50,7 +50,6 @@ class TestPreprintProviderExists:
         taxonomies_res = app.get('{}taxonomies/'.format(fake_url), expect_errors=True)
         assert taxonomies_res.status_code == 404
 
-
 @pytest.mark.django_db
 class TestPreprintProviderUpdate:
 
@@ -124,13 +123,25 @@ class TestPreprintProviderUpdate:
         # Admin can set up moderation
         res = app.patch_json_api(url, payload, auth=admin.auth)
         assert res.status_code == 200
+        preprint_provider.refresh_from_db()
+        assert preprint_provider.reviews_workflow == 'pre-moderation'
+        assert not preprint_provider.reviews_comments_private
+        assert not preprint_provider.reviews_comments_anonymous
 
         # ...but only once
-        payload = self.settings_payload(
+        res = app.patch_json_api(url, payload, auth=admin.auth, expect_errors=True)
+        assert res.status_code == 409
+
+        another_payload = self.settings_payload(
             preprint_provider.id,
-            reviews_workflow='pre-moderation',
+            reviews_workflow='post-moderation',
             reviews_comments_private=True,
             reviews_comments_anonymous=True
         )
-        res = app.patch_json_api(url, payload, auth=admin.auth, expect_errors=True)
+        res = app.patch_json_api(url, another_payload, auth=admin.auth, expect_errors=True)
         assert res.status_code == 409
+
+        preprint_provider.refresh_from_db()
+        assert preprint_provider.reviews_workflow == 'pre-moderation'
+        assert not preprint_provider.reviews_comments_private
+        assert not preprint_provider.reviews_comments_anonymous

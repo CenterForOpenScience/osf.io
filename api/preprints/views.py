@@ -1,9 +1,5 @@
 import re
 
-from django.db.models import Q
-
-from guardian.shortcuts import get_objects_for_user
-
 from rest_framework import generics
 from rest_framework.exceptions import NotFound, PermissionDenied, NotAuthenticated
 from rest_framework import permissions as drf_permissions

@@ -7,6 +7,7 @@ from api.base.settings.defaults import API_BASE
 from api_tests import utils as test_utils
 from api_tests.preprints.filters.test_filters import PreprintsListFilteringMixin
 from api_tests.preprints.views.test_preprint_list_mixin import PreprintIsPublishedListMixin, PreprintIsValidListMixin
+from api_tests.reviews.mixins.filter_mixins import ReviewableFilterMixin
 from framework.auth.core import Auth
 from osf.models import PreprintService, Node
 from osf_tests.factories import (
@@ -177,6 +178,31 @@ class TestPreprintsListFiltering(PreprintsListFilteringMixin):
         res = app.get('{}{}'.format(provider_url, provider_two._id), auth=user.auth)
         actual = [preprint['id'] for preprint in res.json['data']]
         assert expected == actual
+
+
+class TestPreprintListFilteringByReviewableFields(ReviewableFilterMixin):
+    @pytest.fixture()
+    def url(self):
+        return '/{}preprints/'.format(API_BASE)
+
+    @pytest.fixture()
+    def expected_reviewables(self, user):
+        preprints = [
+            PreprintFactory(is_published=True),
+            PreprintFactory(is_published=True),
+            PreprintFactory(is_published=True),
+        ]
+        preprints[0].reviews_submit(user)
+        preprints[0].reviews_accept(user, 'comment')
+        preprints[1].reviews_submit(user)
+        preprints[1].reviews_reject(user, 'comment')
+        preprints[2].reviews_submit(user)
+        return preprints
+
+    @pytest.fixture
+    def user(self):
+        return AuthUserFactory()
+
 
 class TestPreprintCreate(ApiTestCase):
     def setUp(self):
