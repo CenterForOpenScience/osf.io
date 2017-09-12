@@ -155,18 +155,23 @@ var ViewModel = function(data) {
             closeButton: false,
             message: '<div class="spinner-loading-wrapper"><div class="ball-scale ball-scale-blue"><div></div></div><p class="m-t-sm fg-load-message"> Updating affiliation... this may take a minute.</p></div>',
         });
-        var index;
-        var url = data.apiV2Prefix + 'institutions/' + item.id + '/relationships/' + (self.isRegistration() ? 'registrations/' :  'nodes/');
-        var ajaxJSONType = self.isAddInstitution() ? 'POST': 'DELETE';
-        var nodesToModify = [{'type': (self.isRegistration() ? 'registrations' :  'nodes'), 'id': self.nodeId()}];
-        self.loading(true);
-        if (self.modifyChildren()) {
-            for (var node in self.childNodes()) {
-                if (self.childNodes()[node].hasPermissions) {
-                    nodesToModify.push({'type': 'nodes', 'id': node});
+        var index, url, nodesToModify;
+        if (self.isRegistration()) {
+            url = data.apiV2Prefix + 'institutions/' + item.id + '/relationships/registrations/';
+            nodesToModify = [{'type': 'registrations', 'id': self.nodeId()}];
+        } else {
+            url = data.apiV2Prefix + 'institutions/' + item.id + '/relationships/nodes/';
+            nodesToModify = [{'type': 'nodes', 'id': self.nodeId()}];
+            if (self.modifyChildren()) {
+                for (var node in self.childNodes()) {
+                    if (self.childNodes()[node].hasPermissions) {
+                        nodesToModify.push({'type': 'nodes', 'id': node});
+                    }
                 }
             }
         }
+        self.loading(true);
+        var ajaxJSONType = self.isAddInstitution() ? 'POST': 'DELETE';
         return $osf.ajaxJSON(
             ajaxJSONType,
             url,
