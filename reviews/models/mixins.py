@@ -1,12 +1,11 @@
 # -*- coding: utf-8 -*-
 from __future__ import unicode_literals
 
-from guardian.shortcuts import get_objects_for_user
-from six import string_types
 from transitions import Machine
 
 from django.db import models
 from django.db import transaction
+from django.utils import timezone
 
 from reviews import workflow
 from reviews.exceptions import InvalidTransitionError

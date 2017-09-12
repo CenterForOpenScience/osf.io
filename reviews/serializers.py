@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 from __future__ import unicode_literals
 
-from rest_framework import exceptions
 from rest_framework import generics
 from rest_framework import serializers as ser
 from rest_framework.fields import SkipField
@@ -20,8 +19,8 @@ from reviews.workflow import States
 
 
 # Pseudo-class to hide the creator field if it shouldn't be shown
-def IfCanViewLogCreator(field_cls):
-    class IfCanViewLogCreatorField(field_cls):
+def HideIfCommentsAnonymous(field_cls):
+    class HideIfCommentsAnonymousField(field_cls):
         def get_attribute(self, instance):
             request = self.context.get('request')
             if request is not None:
@@ -29,14 +28,34 @@ def IfCanViewLogCreator(field_cls):
                 if auth.logged_in:
                     provider = instance.reviewable.provider
                     if provider.reviews_comments_anonymous is False or auth.user.has_perm('view_review_logs', provider):
-                        return super(IfCanViewLogCreatorField, self).get_attribute(instance)
+                        return super(HideIfCommentsAnonymousField, self).get_attribute(instance)
             raise SkipField
 
         def __repr__(self):
-            r = super(IfCanViewLogCreatorField, self).__repr__()
+            r = super(HideIfCommentsAnonymousField, self).__repr__()
             return r.replace(self.__class__.__name__, '{}<{}>'.format(self.__class__.__name__, field_cls.__name__))
 
-    return IfCanViewLogCreatorField
+    return HideIfCommentsAnonymousField
+
+
+# Pseudo-class to hide the comment field if it shouldn't be shown
+def HideIfCommentsPrivate(field_cls):
+    class HideIfCommentsPrivateField(field_cls):
+        def get_attribute(self, instance):
+            request = self.context.get('request')
+            if request is not None:
+                auth = utils.get_user_auth(request)
+                if auth.logged_in:
+                    provider = instance.reviewable.provider
+                    if provider.reviews_comments_private is False or auth.user.has_perm('view_review_logs', provider):
+                        return super(HideIfCommentsPrivateField, self).get_attribute(instance)
+            raise SkipField
+
+        def __repr__(self):
+            r = super(HideIfCommentsPrivateField, self).__repr__()
+            return r.replace(self.__class__.__name__, '{}<{}>'.format(self.__class__.__name__, field_cls.__name__))
+
+    return HideIfCommentsPrivateField
 
 
 class ReviewableCountsRelationshipField(RelationshipField):
@@ -95,7 +114,7 @@ class ReviewLogSerializer(JSONAPISerializer):
     action = ser.ChoiceField(choices=Actions.choices())
 
     # TODO what limit do we want?
-    comment = ser.CharField(max_length=65535, required=False)
+    comment = HideIfCommentsPrivate(ser.CharField)(max_length=65535, required=False)
 
     from_state = ser.ChoiceField(choices=States.choices(), read_only=True)
     to_state = ser.ChoiceField(choices=States.choices(), read_only=True)
@@ -118,7 +137,7 @@ class ReviewLogSerializer(JSONAPISerializer):
         filter_key='reviewable__guids___id',
     )
 
-    creator = IfCanViewLogCreator(RelationshipField)(
+    creator = HideIfCommentsAnonymous(RelationshipField)(
         read_only=True,
         related_view='users:user-detail',
         related_view_kwargs={'user_id': '<creator._id>'},
@@ -149,7 +168,7 @@ class ReviewLogSerializer(JSONAPISerializer):
                 return reviewable.reviews_edit_comment(user, comment)
             if action == Actions.SUBMIT.value:
                 return reviewable.reviews_submit(user)
-        except InvalidTransitionError as e:
+        except InvalidTransitionError:
             # Invalid transition from the current state
             raise JSONAPIAttributeException(attribute='action', detail='Cannot perform action "{}" from state "{}"'.format(action, reviewable.reviews_state))
         else:

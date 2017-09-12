@@ -1,19 +1,18 @@
 # -*- coding: utf-8 -*-
 from __future__ import unicode_literals
 
-import functools
-import operator
-
 from enum import Enum
 from enum import unique
-
-from django.db.models import Q
 
 
 class ChoiceEnum(Enum):
     @classmethod
     def choices(cls):
-        return tuple((w.value, unicode(w.value).title()) for w in cls)
+        return tuple((v, unicode(v).title()) for v in cls.values())
+
+    @classmethod
+    def values(cls):
+        return tuple(c.value for c in cls)
 
 
 @unique
@@ -89,10 +88,3 @@ TRANSITIONS = [
         'after': ['save_log', 'save_changes', 'notify_edit_comment'],
     },
 ]
-
-
-def public_reviewable_query():
-    return functools.reduce(operator.or_, [
-        Q(provider__reviews_workflow=workflow, reviews_state__in=public_states)
-        for workflow, public_states in PUBLIC_STATES.items()
-    ])

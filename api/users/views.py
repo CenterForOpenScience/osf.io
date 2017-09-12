@@ -26,7 +26,6 @@ from api.users.serializers import (UserAddonSettingsSerializer,
 from django.contrib.auth.models import AnonymousUser
 from framework.auth.oauth_scopes import CoreScopes, normalize_scopes
 from modularodm import Q as MQ
-from django.db.models import Q
 from rest_framework import permissions as drf_permissions
 from rest_framework import generics
 from rest_framework.exceptions import NotAuthenticated, NotFound

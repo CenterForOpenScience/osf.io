@@ -1,16 +1,11 @@
 import re
 
-from django.db.models import Q
-
-from guardian.shortcuts import get_objects_for_user
-
 from rest_framework import generics
 from rest_framework.exceptions import NotFound, PermissionDenied, NotAuthenticated
 from rest_framework import permissions as drf_permissions
 
 from framework.auth.oauth_scopes import CoreScopes
-from osf.models import PreprintProvider, PreprintService, Identifier
-from reviews.workflow import public_reviewable_query
+from osf.models import PreprintService, Identifier
 
 from api.base.exceptions import Conflict
 from api.base.views import JSONAPIBaseView

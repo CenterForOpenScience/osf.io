@@ -1,21 +1,17 @@
-import functools
-import operator
-
 from guardian.shortcuts import get_objects_for_user
 
 from rest_framework import generics
 from rest_framework import permissions as drf_permissions
+from rest_framework.exceptions import NotAuthenticated
 
 from modularodm import Q as MQ
 from django.db.models import Q
-from django.core.exceptions import PermissionDenied
 
 from framework.auth.oauth_scopes import CoreScopes
 
 from osf.models import AbstractNode, Subject, PreprintService, PreprintProvider
 
 from reviews import permissions as reviews_permissions
-from reviews.workflow import public_reviewable_query
 
 from api.base import permissions as base_permissions
 from api.base.exceptions import InvalidFilterValue, Conflict
@@ -104,13 +100,13 @@ class PreprintProviderList(JSONAPIBaseView, generics.ListAPIView, DjangoFilterMi
         auth = get_user_auth(self.request)
         auth_user = getattr(auth, 'user', None)
         if not auth_user:
-            raise PermissionDenied()
-        queries = []
-        permissions = data['value'].split(',')
+            raise NotAuthenticated()
+        value = data['value'].lstrip('[').rstrip(']')
+        permissions = [v.strip() for v in value.split(',')]
         if any(p not in reviews_permissions.PERMISSIONS for p in permissions):
             valid_permissions = ', '.join(reviews_permissions.PERMISSIONS.keys())
             raise InvalidFilterValue('Invalid permission! Valid values are: {}'.format(valid_permissions))
-        return Q(id__in=get_objects_for_user(auth_user, permissions, PreprintProvider))
+        return Q(id__in=get_objects_for_user(auth_user, permissions, PreprintProvider, any_perm=True))
 
 
 class PreprintProviderDetail(JSONAPIBaseView, generics.RetrieveUpdateAPIView):
@@ -156,7 +152,7 @@ class PreprintProviderDetail(JSONAPIBaseView, generics.RetrieveUpdateAPIView):
 
     Set up moderation for a provider by sending a patch request to the ID of the existing provider.
 
-    Currently, the only parameters which may be set are `reviews_workflow`, 
+    Currently, the only parameters which may be set are `reviews_workflow`,
     `reviews_comments_private`, and `reviews_comments_anonymous`. These parameters may be set
     only once, after which they may be updated only by an OSF Admin.
 

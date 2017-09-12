@@ -53,9 +53,7 @@ class PreprintService(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMi
 
     @property
     def _verified_publishable(self):
-        return self.is_published and self.node.is_public \
-                and not self.node.is_preprint_orphan and not self.node.is_deleted \
-                and self.node.preprint_file and self.node.preprint_file.node == self.node
+        return self.is_published and self.node.is_preprint and not self.node.is_deleted
 
     @property
     def primary_file(self):

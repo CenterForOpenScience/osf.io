@@ -2,7 +2,6 @@ import re
 
 from django.apps import apps
 from modularodm import Q as MQ
-from django.db.models import Q
 from rest_framework import generics, permissions as drf_permissions
 from rest_framework.exceptions import PermissionDenied, ValidationError, NotFound, MethodNotAllowed, NotAuthenticated
 from rest_framework.response import Response
