@@ -306,7 +306,6 @@
         <script src="/static/vendor/bower_components/jquery/dist/jquery.min.js"></script>
         <script src="/static/vendor/bower_components/jquery-ui/jquery-ui.min.js"></script>
     % endif
-    <script src="https://code.jquery.com/jquery-migrate-3.0.0.js"></script>
     ## NOTE: We load vendor bundle  at the top of the page because contains
     ## the webpack runtime and a number of necessary stylesheets which should be loaded before the user sees
     ## content.
