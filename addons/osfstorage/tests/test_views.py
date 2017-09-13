@@ -848,7 +848,7 @@ class TestMoveHook(HookTestCase):
 
     def test_cannot_move_file_out_of_quickfiles_node(self):
         quickfiles_node = QuickFilesNode.objects.get_for_user(self.user)
-        create_test_file(quickfiles_node, self.user, filename='slippery.mp3')
+        quickfiles_file = create_test_file(quickfiles_node, self.user, filename='slippery.mp3')
         quickfiles_folder = OsfStorageFolder.objects.get(node=quickfiles_node)
         dest_folder = OsfStorageFolder.objects.get(node=self.project)
 
@@ -856,7 +856,7 @@ class TestMoveHook(HookTestCase):
             'osfstorage_move_hook',
             {'nid': quickfiles_node._id},
             payload={
-                'source': quickfiles_folder._id,
+                'source': quickfiles_file._id,
                 'node': quickfiles_node._id,
                 'user': self.user._id,
                 'destination': {
@@ -869,6 +869,36 @@ class TestMoveHook(HookTestCase):
             expect_errors=True,
         )
         assert_equal(res.status_code, 400)
+
+    def test_can_rename_file_in_quickfiles_node(self):
+        quickfiles_node = QuickFilesNode.objects.get_for_user(self.user)
+        quickfiles_file = create_test_file(quickfiles_node, self.user, filename='road_dogg.mp3')
+        quickfiles_folder = OsfStorageFolder.objects.get(node=quickfiles_node)
+        dest_folder = OsfStorageFolder.objects.get(node=self.project)
+        new_name = 'JesseJames.mp3'
+
+        res = self.send_hook(
+            'osfstorage_move_hook',
+            {'nid': quickfiles_node._id},
+            payload={
+                'action': 'rename',
+                'source': quickfiles_file._id,
+                'node': quickfiles_node._id,
+                'user': self.user._id,
+                'name': quickfiles_file.name,
+                'destination': {
+                    'parent': quickfiles_folder._id,
+                    'node': quickfiles_node._id,
+                    'name': new_name,
+                }
+            },
+            method='post_json',
+            expect_errors=True,
+        )
+        quickfiles_file.reload()
+
+        assert_equal(res.status_code, 200)
+        assert_equal(quickfiles_file.name, new_name)
 
 
 @pytest.mark.django_db

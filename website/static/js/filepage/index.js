@@ -510,7 +510,7 @@ var FileViewPage = {
                 (ctrl.node.preprintFileId !== ctrl.file.id) &&
                     !(ctrl.file.provider === 'figshare' && ctrl.file.extra.status === 'public') &&
                 (ctrl.file.provider !== 'osfstorage' || !ctrl.file.checkoutUser) &&
-                ($(document).context.URL.indexOf('version=latest-published') < 0)
+                (document.URL.indexOf('version=latest-published') < 0)
             ) ? m('.btn-group.m-l-xs.m-t-xs', [
                         ctrl.isLatestVersion ? m('button.btn.btn-sm.btn-danger.file-delete', {onclick: $(document).trigger.bind($(document), 'fileviewpage:delete') }, 'Delete') : null
             ]) : '',
