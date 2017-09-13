@@ -432,7 +432,7 @@ class TestWikiViews(OsfTestCase):
         # Old pages use a different version of js render
         mock_rendered_before_update.return_value = True
         res = serialize_wiki_widget(self.project)
-        assert_true(res.['rendered_before_update'])
+        assert_true(res['rendered_before_update'])
 
     def test_read_only_users_cannot_view_edit_pane(self):
         url = self.project.web_url_for('project_wiki_view', wname='home')
