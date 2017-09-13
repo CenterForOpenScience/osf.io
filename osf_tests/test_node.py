@@ -3549,7 +3549,7 @@ class TestTemplateNode:
         # check that all children were copied
         assert (
             [x.title for x in new.nodes] ==
-            [x.title for x in project.nodes if x not in project1.linked_nodes]
+            [x.title for x in project1.nodes if x not in project1.linked_nodes]
         )
         # ensure all child nodes were actually copied, instead of moved
         assert {x._primary_key for x in new.nodes}.isdisjoint(
