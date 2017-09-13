@@ -9,7 +9,7 @@ from rest_framework import permissions
 from rest_framework.exceptions import PermissionDenied
 
 from api.base.exceptions import Conflict
-from api.base.filters import DjangoFilterMixin
+from api.base.filters import ListFilterMixin
 from api.base.parsers import (
     JSONAPIMultipleRelationshipsParser,
     JSONAPIMultipleRelationshipsParserForRegularJSON,
@@ -85,7 +85,7 @@ class LogDetail(JSONAPIBaseView, generics.RetrieveAPIView, ReviewLogMixin):
         return log
 
 
-class LogList(JSONAPIBaseView, generics.ListCreateAPIView, DjangoFilterMixin, ReviewLogMixin):
+class LogList(JSONAPIBaseView, generics.ListCreateAPIView, ListFilterMixin, ReviewLogMixin):
     """Review Log List *Writable*
 
     Review logs represent state changes and/or comments on a reviewable object (e.g. a preprint)
@@ -141,11 +141,11 @@ class LogList(JSONAPIBaseView, generics.ListCreateAPIView, DjangoFilterMixin, Re
     view_category = 'reviews'
     view_name = 'review_log-list'
 
-    # overrides DjangoFilterMixin
-    def get_default_django_query(self):
+    # overrides ListFilterMixin
+    def get_default_queryset(self):
         auth = get_user_auth(self.request)
         provider_queryset = get_objects_for_user(auth.user, 'view_review_logs', PreprintProvider)
-        return Q(reviewable__provider__in=provider_queryset)
+        return self.review_logs_queryset().filter(reviewable__provider__in=provider_queryset)
 
     # overrides ListCreateAPIView
     def perform_create(self, serializer):
@@ -173,7 +173,7 @@ class LogList(JSONAPIBaseView, generics.ListCreateAPIView, DjangoFilterMixin, Re
         return self.review_logs_queryset().filter(self.get_query_from_request())
 
 
-class PreprintReviewLogList(JSONAPIBaseView, generics.ListAPIView, DjangoFilterMixin, PreprintMixin, ReviewLogMixin):
+class PreprintReviewLogList(JSONAPIBaseView, generics.ListAPIView, ListFilterMixin, PreprintMixin, ReviewLogMixin):
     """Review Log List *Read-only*
 
     Review logs represent state changes and/or comments on a reviewable object (e.g. a preprint)
@@ -226,10 +226,6 @@ class PreprintReviewLogList(JSONAPIBaseView, generics.ListAPIView, DjangoFilterM
     view_category = 'reviews'
     view_name = 'reviewable-review_log-list'
 
-    # overrides DjangoFilterMixin
-    def get_default_django_query(self):
-        return Q(reviewable_id=self.get_preprint().id)
-
-    # overrides ListAPIView
-    def get_queryset(self):
-        return self.review_logs_queryset().filter(self.get_query_from_request())
+    # overrides ListFilterMixin
+    def get_default_queryset(self):
+        return self.review_logs_queryset().filter(reviewable_id=self.get_preprint().id)
