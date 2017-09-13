@@ -7,7 +7,7 @@ from rest_framework.exceptions import NotFound, PermissionDenied, NotAuthenticat
 from rest_framework import permissions as drf_permissions
 
 from framework.auth.oauth_scopes import CoreScopes
-from osf.models import PreprintService, Identifier
+from osf.models import PreprintService
 
 from api.base.exceptions import Conflict
 from api.base.views import JSONAPIBaseView, WaterButlerMixin
@@ -397,7 +397,3 @@ class PreprintIdentifierList(IdentifierList, PreprintMixin):
     # overrides IdentifierList
     def get_object(self, check_object_permissions=True):
         return self.get_preprint(check_object_permissions=check_object_permissions)
-
-    # overrides ListCreateAPIView
-    def get_queryset(self):
-        return Identifier.find(self.get_queryset_from_request())
