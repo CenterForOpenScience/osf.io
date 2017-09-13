@@ -152,7 +152,7 @@ class PageCounter(BaseModel):
     def set_basic_counters(cls, page, count, date=None):
         cleaned_page = cls.clean_page(page)
         if not date:
-            timezone.now()
+            date = timezone.now()
 
         date_string = date.strftime('%Y/%m/%d')
 
