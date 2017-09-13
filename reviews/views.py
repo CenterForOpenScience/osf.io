@@ -135,6 +135,7 @@ class LogList(JSONAPIBaseView, generics.ListCreateAPIView, ListFilterMixin, Revi
     parser_classes = (JSONAPIMultipleRelationshipsParser, JSONAPIMultipleRelationshipsParserForRegularJSON,)
 
     serializer_class = ReviewLogSerializer
+    model_class = ReviewLog
 
     ordering = ('-date_created',)
     view_category = 'reviews'
@@ -220,6 +221,7 @@ class PreprintReviewLogList(JSONAPIBaseView, generics.ListAPIView, ListFilterMix
     required_write_scopes = [CoreScopes.REVIEW_LOGS_WRITE]
 
     serializer_class = ReviewLogSerializer
+    model_class = ReviewLog
 
     ordering = ('-date_created',)
     view_category = 'reviews'

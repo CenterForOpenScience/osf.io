@@ -73,7 +73,7 @@ class ReviewableCountsRelationshipField(RelationshipField):
         # Make counts opt in
         show_counts = utils.is_truthy(self.context['request'].query_params.get('related_counts', False))
         # Only include counts on detail routes
-        is_detail = not isinstance(self.context['view'], generics.ListAPIView)
+        is_detail = self.context.get('view') and not isinstance(self.context['view'], generics.ListAPIView)
         # Weird hack to avoid being called twice
         # get_meta_information is called with both self.related_meta and self.self_meta.
         # `is` could probably be used here but this seems more comprehensive.

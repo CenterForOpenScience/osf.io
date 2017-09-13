@@ -18,11 +18,10 @@ class TestPreprintReviewLogFilters(ReviewLogFilterMixin):
     def preprint(self, all_review_logs):
         return all_review_logs[0].reviewable
 
-    @pytest.fixture()
-    @pytest.mark.parametrize('moderator', [True, False])
-    def user(self, preprint, moderator):
+    @pytest.fixture(params=[True, False], ids=['moderator', 'node_admin'])
+    def user(self, request, preprint):
         user = AuthUserFactory()
-        if moderator:
+        if request.param:
             user.groups.add(GroupHelper(preprint.provider).get_group('moderator'))
         else:
             preprint.node.add_contributor(user, permissions=[osf_permissions.READ, osf_permissions.WRITE, osf_permissions.ADMIN])
