@@ -464,7 +464,7 @@ class TestFileView:
         assert node.id not in split_href
 
     def test_files_view_count(self, app, user, node):
-        file1 = node.get_addon('osfstorage').get_root().append_file('I\'d be a teacher!!')
+        file1 = api_utils.create_test_file(node, user, create_guid=False)
         file1.save()
         file1_url = '/{}files/{}/'.format(API_BASE, file1._id)
         res = app.get(file1_url, auth=user.auth)
