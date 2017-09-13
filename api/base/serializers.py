@@ -1,5 +1,6 @@
 import collections
 import re
+from urlparse import urlparse
 
 import furl
 from django.core.urlresolvers import resolve, reverse, NoReverseMatch
@@ -10,6 +11,7 @@ from rest_framework import exceptions, permissions
 from rest_framework import serializers as ser
 from rest_framework.fields import SkipField
 from rest_framework.fields import get_attribute as get_nested_attributes
+from rest_framework.mixins import RetrieveModelMixin
 
 from api.base import utils
 from api.base.exceptions import InvalidQueryStringError
@@ -713,11 +715,28 @@ class RelationshipField(ser.HyperlinkedIdentityField):
             raise SkipField
 
         related_url = url['related']
+        related_path = urlparse(related_url).path
         related_meta = self.get_meta_information(self.related_meta, value)
         self_url = url['self']
         self_meta = self.get_meta_information(self.self_meta, value)
-        return format_relationship_links(related_url, self_url, related_meta, self_meta)
-
+        relationship = format_relationship_links(related_url, self_url, related_meta, self_meta)
+        if related_url and (len(related_path.split('/')) & 1) == 1:
+            resolved_url = resolve(related_path)
+            related_class = resolved_url.func.view_class
+            if issubclass(related_class, RetrieveModelMixin):
+                related_type = resolved_url.namespace
+                try:
+                    # TODO: change kwargs to preprint_provider_id and registration_id
+                    if related_type == 'preprint_providers':
+                        related_id = resolved_url.kwargs['provider_id']
+                    elif related_type == 'registrations':
+                        related_id = resolved_url.kwargs['node_id']
+                    else:
+                        related_id = resolved_url.kwargs[related_type[:-1] + '_id']
+                except KeyError:
+                    return relationship
+                relationship['data'] = {'id': related_id, 'type': related_type}
+        return relationship
 
 class FileCommentRelationshipField(RelationshipField):
     def get_url(self, obj, view_name, request, format):

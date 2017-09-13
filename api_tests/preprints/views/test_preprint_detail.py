@@ -68,6 +68,11 @@ class TestPreprintDetail:
 
     #   test contributors in preprint data
         assert data['relationships'].get('contributors', None)
+        assert data['relationships']['contributors'].get('data', None) == None
+
+    #   test node type and id in preprint data
+        assert data['relationships']['node']['data'].get('id', None) == preprint.node._id
+        assert data['relationships']['node']['data'].get('type', None) == 'nodes'
 
     #   test_preprint_node_deleted_detail_failure
         deleted_node = ProjectFactory(creator=user, is_deleted=True)
@@ -540,6 +545,11 @@ class TestPreprintUpdateLicense:
         res = make_request(url, data, auth=admin_contrib.auth)
         assert res.status_code == 200
         preprint.reload()
+
+        res_data = res.json['data']
+        pp_license_id = preprint.license.node_license._id
+        assert res_data['relationships']['license']['data'].get('id', None) == pp_license_id
+        assert res_data['relationships']['license']['data'].get('type', None) == 'licenses'
 
         assert preprint.license.node_license == cc0_license
         assert preprint.license.year == None
