@@ -62,4 +62,3 @@ class Command(BaseCommand):
             set_file_view_counts
             if dry_run:
                 raise RuntimeError('Dry run, transaction rolled back.')
-            
