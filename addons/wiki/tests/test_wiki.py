@@ -418,7 +418,7 @@ class TestWikiViews(OsfTestCase):
         short_content = 'a' * 150
         project.update_node_wiki('home', short_content, Auth(self.user))
         project.update_node_wiki('andanotherone', short_content, Auth(self.user))
-        res = serialize_wiki_widget(self.project)
+        res = serialize_wiki_widget(project)
         assert_true(res['more'])
 
     @mock.patch('addons.wiki.models.NodeWikiPage.rendered_before_update', new_callable=mock.PropertyMock)
@@ -426,14 +426,13 @@ class TestWikiViews(OsfTestCase):
         # New pages use js renderer
         mock_rendered_before_update.return_value = False
         self.project.update_node_wiki('home', 'updated content', Auth(self.user))
-        url = self.project.api_url_for('wiki_widget', wid='home')
-        res = self.app.get(url, auth=self.user.auth)
-        assert_false(res.json['rendered_before_update'])
+        res = serialize_wiki_widget(self.project)
+        assert_false(res['rendered_before_update'])
 
         # Old pages use a different version of js render
         mock_rendered_before_update.return_value = True
-        res = self.app.get(url, auth=self.user.auth)
-        assert_true(res.json['rendered_before_update'])
+        res = serialize_wiki_widget(self.project)
+        assert_true(res.['rendered_before_update'])
 
     def test_read_only_users_cannot_view_edit_pane(self):
         url = self.project.web_url_for('project_wiki_view', wname='home')
