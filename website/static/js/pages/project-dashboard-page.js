@@ -227,7 +227,7 @@ $(document).ready(function () {
             var url = nodeApiUrl + 'tags/';
             var data = {tag: tag};
             var request = $osf.postJSON(url, data);
-            request.success(function() {
+            request.done(function() {
                 window.contextVars.node.tags.push(tag);
             });
             request.fail(function(xhr, textStatus, error) {
