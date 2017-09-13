@@ -84,16 +84,6 @@ def get_campaigns():
                 }
             })
 
-            newest_campaigns.update({
-                'osf-reviews': {
-                    'system_tag': 'osf_reviews',
-                    'redirect_url': furl.furl(DOMAIN).add(path='reviews/').url,
-                    'confirmation_email_template': mails.CONFIRM_EMAIL_REGISTRIES_OSF,
-                    'login_type': 'proxy',
-                    'provider': 'osf',
-                }
-            })
-
             CAMPAIGNS = newest_campaigns
             CAMPAIGNS_LAST_REFRESHED = timezone.now()
 
