@@ -24,7 +24,7 @@ def set_file_view_counts(state, *args, **kwargs):
 
     for file_node in files:
         # for each file get the file view counts from keen
-        query = [{"property_name": "page.info.path", "operator": "eq", "property_value": file_node._id}]
+        query = [{'property_name': 'page.info.path', 'operator': 'eq', 'property_value': file_node._id}]
 
         query = urllib.quote(json.dumps(query))
         url = 'https://api.keen.io/3.0/projects/{}/queries/count' \
@@ -62,3 +62,4 @@ class Command(BaseCommand):
             set_file_view_counts
             if dry_run:
                 raise RuntimeError('Dry run, transaction rolled back.')
+            
