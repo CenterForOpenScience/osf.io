@@ -3,6 +3,7 @@ from collections import OrderedDict
 from django.core.urlresolvers import reverse
 from django.core.paginator import InvalidPage, Paginator as DjangoPaginator
 from django.db.models import QuerySet
+from furl import furl
 
 from rest_framework import pagination
 from rest_framework.exceptions import NotFound
@@ -374,3 +375,98 @@ class SearchPagination(JSONAPIPagination):
                     ]))
                 ])),
             ])
+
+
+class JSONAPICursorPagination(pagination.CursorPagination):
+    cursor_query_param = 'page[cursor]'
+    page_size_query_param = 'page[size]'
+    max_page_size = MAX_PAGE_SIZE
+
+    def decode_cursor(self, request):
+        encoded = request.query_params.get(self.cursor_query_param)
+        if encoded == 'first' or self.request.parser_context['kwargs'].get('is_embedded'):
+            # If this is an embedded resource, returns first page, ignoring query params.
+            return None
+        elif encoded == 'last':
+            return pagination.Cursor(offset=0, reverse=True, position=None)
+        else:
+            return super(JSONAPICursorPagination, self).decode_cursor(request)
+
+    def paginate_queryset(self, queryset, request, view=None):
+        # Add locals for use in overrides
+        self.request = request
+        self.queryset = queryset
+        self.total = queryset.count()
+        return super(JSONAPICursorPagination, self).paginate_queryset(queryset, request, view=view)
+
+    def get_response_dict(self, data):
+        self_url = furl(self.base_url)
+        first_url = None
+        last_url = None
+        if self.has_previous:
+            first_url = furl(self.base_url)
+            first_url.args[self.cursor_query_param] = 'first'
+        if self.has_next:
+            last_url = furl(self.base_url)
+            last_url.args[self.cursor_query_param] = 'last'
+        return OrderedDict([
+            ('data', data),
+            ('meta', OrderedDict([
+                ('total', self.total),
+                ('per_page', self.page_size),
+            ])),
+            ('links', OrderedDict([
+                ('self', str(self_url)),
+                ('first', str(first_url) if first_url else None),
+                ('last', str(last_url) if last_url else None),
+                ('prev', self.get_previous_link()),
+                ('next', self.get_next_link()),
+            ])),
+        ])
+
+    def get_response_dict_deprecated(self, data):
+        first_url = None
+        last_url = None
+        if self.has_previous:
+            first_url = furl(self.base_url)
+            first_url.args[self.cursor_query_param] = 'first'
+        if self.has_next:
+            last_url = furl(self.base_url)
+            last_url.args[self.cursor_query_param] = 'last'
+        return OrderedDict([
+            ('data', data),
+            ('links', OrderedDict([
+                ('first', str(first_url) if first_url else None),
+                ('last', str(last_url) if last_url else None),
+                ('prev', self.get_previous_link()),
+                ('next', self.get_next_link()),
+                ('meta', OrderedDict([
+                    ('total', self.total),
+                    ('per_page', self.page_size),
+                ]))
+            ])),
+        ])
+
+    def get_paginated_response(self, data):
+        """
+        Formats paginated response in accordance with JSON API, as of version 2.1.
+        Version 2.0 uses the response_dict_deprecated function,
+        which does not return JSON API compliant pagination links.
+        """
+        kwargs = self.request.parser_context['kwargs'].copy()
+        embedded = kwargs.pop('is_embedded', None)
+        view_name = self.request.parser_context['view'].view_fqn
+        if embedded:
+            self.base_url = self.request.build_absolute_uri(reverse(view_name, kwargs=kwargs))
+
+        if self.request.version < '2.1':
+            response_dict = self.get_response_dict_deprecated(data)
+        else:
+            response_dict = self.get_response_dict(data)
+
+        if is_anonymized(self.request):
+            if response_dict.get('meta', False):
+                response_dict['meta'].update({'anonymous': True})
+            else:
+                response_dict['meta'] = {'anonymous': True}
+        return Response(response_dict)
