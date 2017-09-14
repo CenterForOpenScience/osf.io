@@ -525,11 +525,14 @@ def notify_added_contributor(node, contributor, auth=None, throttle=None, email_
             or node.parent_node and not node.parent_node.is_contributor(contributor)):
 
         preprint_provider = None
-        if email_template == 'preprint':
-            email_template, preprint_provider = find_preprint_provider(node)
-            if not email_template or not preprint_provider:
+        if 'preprint' in email_template:
+            template, preprint_provider = find_preprint_provider(node)
+            if not template or not preprint_provider:
                 return
-            email_template = getattr(mails, 'CONTRIBUTOR_ADDED_PREPRINT')(email_template, preprint_provider)
+            if email_template == 'preprint_confirmation':
+                email_template = getattr(mails, 'PREPRINT_CONFIRMATION')(template, preprint_provider)
+            else:
+                email_template = getattr(mails, 'CONTRIBUTOR_ADDED_PREPRINT')(template, preprint_provider)
         elif node.is_preprint:
             email_template = getattr(mails, 'CONTRIBUTOR_ADDED_PREPRINT_NODE_FROM_OSF'.format(email_template.upper()))
         else:
@@ -551,7 +554,8 @@ def notify_added_contributor(node, contributor, auth=None, throttle=None, email_
             node=node,
             referrer_name=auth.user.fullname if auth else '',
             all_global_subscriptions_none=check_if_all_global_subscriptions_are_none(contributor),
-            branded_service=preprint_provider
+            branded_service=preprint_provider,
+            preprint=get_preprint(node)
         )
 
         contributor.contributor_added_email_records[node._id]['last_sent'] = get_timestamp()
@@ -560,6 +564,11 @@ def notify_added_contributor(node, contributor, auth=None, throttle=None, email_
     elif not contributor.is_registered:
         unreg_contributor_added.send(node, contributor=contributor, auth=auth, email_template=email_template)
 
+def get_preprint(node):
+    try:
+        return PreprintService.objects.get(node=node)
+    except PreprintService.DoesNotExist:
+        return None
 
 def find_preprint_provider(node):
     """

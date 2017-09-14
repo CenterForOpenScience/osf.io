@@ -14,6 +14,7 @@ from osf.models.validators import validate_subject_hierarchy
 from osf.utils.fields import NonNaiveDateTimeField
 from website.preprints.tasks import on_preprint_updated, get_and_set_preprint_identifiers
 from website.project.licenses import set_license
+from website.project import signals as project_signals
 from website.util import api_v2_url
 from website.util.permissions import ADMIN
 from website import settings
@@ -209,6 +210,10 @@ class PreprintService(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMi
         if save:
             self.node.save()
             self.save()
+
+            # Send creator confirmation email
+            project_signals.contributor_added.send(self.node, contributor=auth.user, auth=auth,
+                                                   email_template='preprint_confirmation')
 
     def set_preprint_license(self, license_detail, auth, save=False):
         license_record, license_changed = set_license(self, license_detail, auth, node_type='preprint')

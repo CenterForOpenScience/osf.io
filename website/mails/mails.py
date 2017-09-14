@@ -211,6 +211,14 @@ CONTRIBUTOR_ADDED_PREPRINT_NODE_FROM_OSF = Mail(
     'contributor_added_preprint_node_from_osf',
     subject='You have been added as a contributor to an OSF project.'
 )
+PREPRINT_CONFIRMATION = lambda template, provider: Mail(
+    'preprint_confirmation_{}'.format(template),
+    subject="You've shared {} {} on {}".format(
+        get_english_article(provider.preprint_word),
+        provider.preprint_word,
+        'OSF Preprints' if provider._id == 'osf' else provider.name
+    )
+)
 FORWARD_INVITE = Mail('forward_invite', subject='Please forward to ${fullname}')
 FORWARD_INVITE_REGISTERED = Mail('forward_invite_registered', subject='Please forward to ${fullname}')
 

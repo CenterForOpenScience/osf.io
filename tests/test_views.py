@@ -1822,6 +1822,7 @@ class TestAddingContributorViews(OsfTestCase):
             referrer_name=self.auth.user.fullname,
             all_global_subscriptions_none=False,
             branded_service=None,
+            preprint=None
         )
         assert_almost_equal(contributor.contributor_added_email_records[project._id]['last_sent'], int(time.time()), delta=1)
 

@@ -21,9 +21,10 @@ from osf_tests.utils import MockShareResponse
 from tests.utils import assert_logs
 from tests.base import OsfTestCase
 from website import settings
+from website.project.signals import contributor_added
 from website.identifiers.utils import get_doi_and_metadata_for_object
 from website.preprints.tasks import format_preprint, update_preprint_share, on_preprint_updated
-from website.project.views.contributor import find_preprint_provider
+from website.project.views.contributor import find_preprint_provider, notify_added_contributor
 from website.util import permissions
 from website.util.share import format_user
 
@@ -727,3 +728,27 @@ class TestPreprintSaveShareHook(OsfTestCase):
         update_preprint_share(self.preprint)
         assert not mock_async.called
         assert mock_mail.called
+
+class TestPreprintConfirmationEmails(OsfTestCase):
+    def setUp(self):
+        super(TestPreprintConfirmationEmails, self).setUp()
+        self.user = AuthUserFactory()
+        self.write_contrib = AuthUserFactory()
+        self.project = ProjectFactory(creator=self.user)
+        self.project.add_contributor(self.write_contrib, permissions=[permissions.WRITE])
+        self.preprint = PreprintFactory(project=self.project, is_published=False)
+        contributor_added.connect(notify_added_contributor)
+
+    @mock.patch('website.mails.send_mail')
+    def test_creator_gets_email(self, send_mail):
+        self.preprint.set_published(True, auth=Auth(self.user), save=True)
+        assert_true(send_mail.called)
+
+    @mock.patch('website.mails.send_mail')
+    def test_creator_preprint_not_saved(self, send_mail):
+        self.preprint.set_published(True, auth=Auth(self.user), save=False)
+        assert_false(send_mail.called)
+
+    def tearDown(self):
+        super(TestPreprintConfirmationEmails, self).tearDown()
+        contributor_added.disconnect(notify_added_contributor)
