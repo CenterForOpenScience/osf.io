@@ -11,10 +11,11 @@ from rest_framework import permissions
 from django.contrib.auth.models import Group
 
 from api.base.utils import get_user_auth
+from osf.models.action import Action
 from website.util import permissions as osf_permissions
 
-from reviews import models
-from reviews.workflow import Actions
+from reviews.models import ReviewableMixin, ReviewProviderMixin
+from reviews.workflow import Triggers
 
 
 logger = logging.getLogger(__name__)
@@ -27,8 +28,8 @@ PERMISSIONS = {
     'view_submissions': 'Can view all submissions to this provider',
     'accept_submissions': 'Can accept submissions to this provider',
     'reject_submissions': 'Can reject submissions to this provider',
-    'edit_review_comments': 'Can edit comments on review logs for this provider',
-    'view_review_logs': 'Can view review/moderation logs for submissions to this provider',
+    'edit_review_comments': 'Can edit comments on actions for this provider',
+    'view_actions': 'Can view actions on submissions to this provider',
 
     # TODO Implement adding/removing moderators via API. Currently must be done in OSF Admin
     'add_moderator': 'Can add other users as moderators for this provider',
@@ -46,19 +47,19 @@ PERMISSIONS = {
 # Groups created for each provider.
 GROUP_FORMAT = 'reviews_{provider_id}_{group}'
 GROUPS = {
-    'admin': ('set_up_moderation', 'add_moderator', 'view_submissions', 'accept_submissions', 'reject_submissions', 'edit_review_comments', 'view_review_logs'),
-    'moderator': ('view_submissions', 'accept_submissions', 'reject_submissions', 'edit_review_comments', 'view_review_logs'),
+    'admin': ('set_up_moderation', 'add_moderator', 'view_submissions', 'accept_submissions', 'reject_submissions', 'edit_review_comments', 'view_actions'),
+    'moderator': ('view_submissions', 'accept_submissions', 'reject_submissions', 'edit_review_comments', 'view_actions'),
     'manager': (),  # TODO "Senior editor"-like role, can add/remove/assign moderators and reviewers
     'reviewer': (),  # TODO Implement reviewers
 }
 
 
 # Required permission to perform each action. `None` means no permissions required.
-ACTION_PERMISSIONS = {
-    Actions.SUBMIT.value: None,
-    Actions.ACCEPT.value: 'accept_submissions',
-    Actions.REJECT.value: 'reject_submissions',
-    Actions.EDIT_COMMENT.value: 'edit_review_comments',
+TRIGGER_PERMISSIONS = {
+    Triggers.SUBMIT.value: None,
+    Triggers.ACCEPT.value: 'accept_submissions',
+    Triggers.REJECT.value: 'reject_submissions',
+    Triggers.EDIT_COMMENT.value: 'edit_review_comments',
 }
 
 
@@ -90,7 +91,7 @@ class GroupHelper(object):
         return [p for p in get_perms(user, self.provider) if p in PERMISSIONS]
 
 
-class LogPermission(permissions.BasePermission):
+class ActionPermission(permissions.BasePermission):
     def has_object_permission(self, request, view, obj):
         auth = get_user_auth(request)
         if auth.user is None:
@@ -98,21 +99,21 @@ class LogPermission(permissions.BasePermission):
 
         reviewable = None
         provider = None
-        if isinstance(obj, models.ReviewLog):
-            reviewable = obj.reviewable
+        if isinstance(obj, Action):
+            reviewable = obj.target
             provider = reviewable.provider
-        elif isinstance(obj, models.ReviewableMixin):
+        elif isinstance(obj, ReviewableMixin):
             reviewable = obj
             provider = reviewable.provider
-        elif isinstance(obj, models.ReviewProviderMixin):
+        elif isinstance(obj, ReviewProviderMixin):
             provider = obj
         else:
             raise ValueError('Not a reviews-related model: {}'.format(obj))
 
         if request.method in permissions.SAFE_METHODS:
-            # Moderators and node contributors can view review logs
+            # Moderators and node contributors can view actions
             is_node_contributor = reviewable is not None and reviewable.node.has_permission(auth.user, osf_permissions.READ)
-            return is_node_contributor or auth.user.has_perm('view_review_logs', provider)
+            return is_node_contributor or auth.user.has_perm('view_actions', provider)
         else:
             # Moderators and node admins can trigger state changes.
             # Action-specific permissions should be checked in the view.

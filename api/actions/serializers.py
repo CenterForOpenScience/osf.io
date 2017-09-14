@@ -14,7 +14,7 @@ from api.base.serializers import RelationshipField
 from osf.models import PreprintService
 
 from reviews.exceptions import InvalidTransitionError
-from reviews.workflow import Actions
+from reviews.workflow import Triggers
 from reviews.workflow import States
 
 
@@ -26,8 +26,8 @@ def HideIfCommentsAnonymous(field_cls):
             if request is not None:
                 auth = utils.get_user_auth(request)
                 if auth.logged_in:
-                    provider = instance.reviewable.provider
-                    if provider.reviews_comments_anonymous is False or auth.user.has_perm('view_review_logs', provider):
+                    provider = instance.target.provider
+                    if provider.reviews_comments_anonymous is False or auth.user.has_perm('view_actions', provider):
                         return super(HideIfCommentsAnonymousField, self).get_attribute(instance)
             raise SkipField
 
@@ -46,8 +46,8 @@ def HideIfCommentsPrivate(field_cls):
             if request is not None:
                 auth = utils.get_user_auth(request)
                 if auth.logged_in:
-                    provider = instance.reviewable.provider
-                    if provider.reviews_comments_private is False or auth.user.has_perm('view_review_logs', provider):
+                    provider = instance.target.provider
+                    if provider.reviews_comments_private is False or auth.user.has_perm('view_actions', provider):
                         return super(HideIfCommentsPrivateField, self).get_attribute(instance)
             raise SkipField
 
@@ -80,38 +80,38 @@ class ReviewableCountsRelationshipField(RelationshipField):
         is_related_meta = metadata.pop('include_status_counts', False)
 
         if show_counts and is_detail and is_related_meta:
-            # Finally, require users to have view_review_logs permissions
+            # Finally, require users to have view_actions permissions
             auth = utils.get_user_auth(self.context['request'])
-            if auth and auth.logged_in and auth.user.has_perm('view_review_logs', provider):
+            if auth and auth.logged_in and auth.user.has_perm('view_actions', provider):
                 metadata.update(provider.get_reviewable_status_counts())
 
         return super(ReviewableCountsRelationshipField, self).get_meta_information(metadata, provider)
 
 
-class ReviewableRelationshipField(RelationshipField):
+class TargetRelationshipField(RelationshipField):
     def get_object(self, preprint_id):
         return PreprintService.objects.get(guids___id=preprint_id)
 
     def to_internal_value(self, data):
         preprint = self.get_object(data)
-        return {'reviewable': preprint}
+        return {'target': preprint}
 
 
-class ReviewLogSerializer(JSONAPISerializer):
+class ActionSerializer(JSONAPISerializer):
     filterable_fields = frozenset([
         'id',
-        'action',
+        'trigger',
         'from_state',
         'to_state',
         'date_created',
         'date_modified',
         'provider',
-        'reviewable',
+        'target',
     ])
 
     id = ser.CharField(source='_id', read_only=True)
 
-    action = ser.ChoiceField(choices=Actions.choices())
+    trigger = ser.ChoiceField(choices=Triggers.choices())
 
     # TODO what limit do we want?
     comment = HideIfCommentsPrivate(ser.CharField)(max_length=65535, required=False)
@@ -125,16 +125,16 @@ class ReviewLogSerializer(JSONAPISerializer):
     provider = RelationshipField(
         read_only=True,
         related_view='preprint_providers:preprint_provider-detail',
-        related_view_kwargs={'provider_id': '<reviewable.provider._id>'},
-        filter_key='reviewable__provider___id',
+        related_view_kwargs={'provider_id': '<target.provider._id>'},
+        filter_key='target__provider___id',
     )
 
-    reviewable = ReviewableRelationshipField(
+    target = TargetRelationshipField(
         read_only=False,
         required=True,
         related_view='preprints:preprint-detail',
-        related_view_kwargs={'preprint_id': '<reviewable._id>'},
-        filter_key='reviewable__guids___id',
+        related_view_kwargs={'preprint_id': '<target._id>'},
+        filter_key='target__guids___id',
     )
 
     creator = HideIfCommentsAnonymous(RelationshipField)(
@@ -147,35 +147,35 @@ class ReviewLogSerializer(JSONAPISerializer):
 
     links = LinksField(
         {
-            'self': 'get_log_url',
+            'self': 'get_action_url',
         }
     )
 
     def get_absolute_url(self, obj):
-        return self.get_log_url(obj)
+        return self.get_action_url(obj)
 
-    def get_log_url(self, obj):
-        return utils.absolute_reverse('reviews:review_log-detail', kwargs={'log_id': obj._id, 'version': self.context['request'].parser_context['kwargs']['version']})
+    def get_action_url(self, obj):
+        return utils.absolute_reverse('actions:action-detail', kwargs={'action_id': obj._id, 'version': self.context['request'].parser_context['kwargs']['version']})
 
     def create(self, validated_data):
-        action = validated_data.pop('action')
+        trigger = validated_data.pop('trigger')
         user = validated_data.pop('user')
-        reviewable = validated_data.pop('reviewable')
+        target = validated_data.pop('target')
         comment = validated_data.pop('comment', '')
         try:
-            if action == Actions.ACCEPT.value:
-                return reviewable.reviews_accept(user, comment)
-            if action == Actions.REJECT.value:
-                return reviewable.reviews_reject(user, comment)
-            if action == Actions.EDIT_COMMENT.value:
-                return reviewable.reviews_edit_comment(user, comment)
-            if action == Actions.SUBMIT.value:
-                return reviewable.reviews_submit(user)
+            if trigger == Triggers.ACCEPT.value:
+                return target.reviews_accept(user, comment)
+            if trigger == Triggers.REJECT.value:
+                return target.reviews_reject(user, comment)
+            if trigger == Triggers.EDIT_COMMENT.value:
+                return target.reviews_edit_comment(user, comment)
+            if trigger == Triggers.SUBMIT.value:
+                return target.reviews_submit(user)
         except InvalidTransitionError:
             # Invalid transition from the current state
-            raise JSONAPIAttributeException(attribute='action', detail='Cannot perform action "{}" from state "{}"'.format(action, reviewable.reviews_state))
+            raise JSONAPIAttributeException(attribute='trigger', detail='Cannot trigger "{}" from state "{}"'.format(trigger, target.reviews_state))
         else:
-            raise JSONAPIAttributeException(attribute='action', detail='Invalid action.')
+            raise JSONAPIAttributeException(attribute='trigger', detail='Invalid trigger.')
 
     class Meta:
-        type_ = 'review_logs'
+        type_ = 'actions'

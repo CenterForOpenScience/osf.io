@@ -7,9 +7,9 @@ from django.db import models
 from django.db import transaction
 from django.utils import timezone
 
+from osf.models.action import Action
 from reviews import workflow
 from reviews.exceptions import InvalidTransitionError
-from reviews.models.log import ReviewLog
 
 
 class ReviewProviderMixin(models.Model):
@@ -74,7 +74,7 @@ class ReviewableMixin(models.Model):
         return self.__machine
 
     def reviews_submit(self, user):
-        """Run the 'submit' state transition and create a corresponding ReviewLog.
+        """Run the 'submit' state transition and create a corresponding Action.
 
         Params:
             user: The user triggering this transition.
@@ -82,7 +82,7 @@ class ReviewableMixin(models.Model):
         return self.__run_transition(self._reviews_machine.submit, user=user)
 
     def reviews_accept(self, user, comment):
-        """Run the 'accept' state transition and create a corresponding ReviewLog.
+        """Run the 'accept' state transition and create a corresponding Action.
 
         Params:
             user: The user triggering this transition.
@@ -91,7 +91,7 @@ class ReviewableMixin(models.Model):
         return self.__run_transition(self._reviews_machine.accept, user=user, comment=comment)
 
     def reviews_reject(self, user, comment):
-        """Run the 'reject' state transition and create a corresponding ReviewLog.
+        """Run the 'reject' state transition and create a corresponding Action.
 
         Params:
             user: The user triggering this transition.
@@ -100,7 +100,7 @@ class ReviewableMixin(models.Model):
         return self.__run_transition(self._reviews_machine.reject, user=user, comment=comment)
 
     def reviews_edit_comment(self, user, comment):
-        """Run the 'edit_comment' state transition and create a corresponding ReviewLog.
+        """Run the 'edit_comment' state transition and create a corresponding Action.
 
         Params:
             user: The user triggering this transition.
@@ -111,15 +111,15 @@ class ReviewableMixin(models.Model):
     def __run_transition(self, trigger_fn, **kwargs):
         with transaction.atomic():
             result = trigger_fn(**kwargs)
-            log = self._reviews_machine.review_log
-            if not result or log is None:
+            action = self._reviews_machine.action
+            if not result or action is None:
                 raise InvalidTransitionError()
-            return log
+            return action
 
 
 class ReviewsMachine(Machine):
 
-    review_log = None
+    action = None
     from_state = None
 
     def __init__(self, reviewable, state_attr):
@@ -144,27 +144,27 @@ class ReviewsMachine(Machine):
         setattr(self.reviewable, self.__state_attr, value)
 
     def initialize_machine(self, ev):
-        self.review_log = None
+        self.action = None
         self.from_state = ev.state
 
-    def save_log(self, ev):
+    def save_action(self, ev):
         user = ev.kwargs.get('user')
-        self.review_log = ReviewLog.objects.create(
-            reviewable=self.reviewable,
+        self.action = Action.objects.create(
+            target=self.reviewable,
             creator=user,
-            action=ev.event.name,
+            trigger=ev.event.name,
             from_state=self.from_state.name,
             to_state=ev.state.name,
             comment=ev.kwargs.get('comment', ''),
         )
 
     def update_last_transitioned(self, ev):
-        # TODO foreign key to log? or to creator?
-        now = self.review_log.date_created if self.review_log is not None else timezone.now()
+        # TODO foreign key to action? or to creator?
+        now = self.action.date_created if self.action is not None else timezone.now()
         self.reviewable.date_last_transitioned = now
 
     def save_changes(self, ev):
-        now = self.review_log.date_created if self.review_log is not None else timezone.now()
+        now = self.action.date_created if self.action is not None else timezone.now()
         should_publish = self.reviewable.in_public_reviews_state
         if should_publish and not self.reviewable.is_published:
             self.reviewable.is_published = True

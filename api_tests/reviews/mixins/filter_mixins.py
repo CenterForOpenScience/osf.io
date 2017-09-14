@@ -4,12 +4,12 @@ import pytest
 from furl import furl
 
 from osf_tests.factories import (
+    ActionFactory,
     AuthUserFactory,
     PreprintFactory,
     PreprintProviderFactory,
 )
 from reviews.permissions import GroupHelper
-from reviews_tests.factories import ReviewLogFactory
 
 
 def get_actual(app, url, user=None, sort=None, expect_errors=False, **filters):
@@ -41,7 +41,7 @@ def get_actual(app, url, user=None, sort=None, expect_errors=False, **filters):
 
 
 @pytest.mark.django_db
-class ReviewLogFilterMixin(object):
+class ActionFilterMixin(object):
 
     @pytest.fixture()
     def url(self):
@@ -52,22 +52,22 @@ class ReviewLogFilterMixin(object):
         return [PreprintProviderFactory(reviews_workflow='pre-moderation') for _ in range(5)]
 
     @pytest.fixture()
-    def all_review_logs(self, providers):
-        logs = []
+    def all_actions(self, providers):
+        actions = []
         for p in providers:
             preprint = PreprintFactory(provider=p)
             for _ in range(5):
-                logs.append(ReviewLogFactory(reviewable=preprint))
-        return logs
+                actions.append(ActionFactory(target=preprint))
+        return actions
 
     @pytest.fixture()
     def allowed_providers(self, providers):
         return providers
 
     @pytest.fixture()
-    def expected_logs(self, all_review_logs, allowed_providers):
+    def expected_actions(self, all_actions, allowed_providers):
         provider_ids = set([p.id for p in allowed_providers])
-        return [l for l in all_review_logs if l.reviewable.provider_id in provider_ids]
+        return [l for l in all_actions if l.target.provider_id in provider_ids]
 
     @pytest.fixture()
     def user(self, allowed_providers):
@@ -76,63 +76,63 @@ class ReviewLogFilterMixin(object):
             user.groups.add(GroupHelper(provider).get_group('moderator'))
         return user
 
-    def test_filter_logs(self, app, url, user, expected_logs):
+    def test_filter_actions(self, app, url, user, expected_actions):
         # unfiltered
-        expected = set([l._id for l in expected_logs])
+        expected = set([l._id for l in expected_actions])
         actual = get_actual(app, url, user)
         assert expected == actual
 
-        if not expected_logs:
+        if not expected_actions:
             return
 
-        log = expected_logs[0]
+        action = expected_actions[0]
 
         # filter by id
-        expected = set([log._id])
-        actual = get_actual(app, url, user, id=log._id)
+        expected = set([action._id])
+        actual = get_actual(app, url, user, id=action._id)
         assert expected == actual
 
-        # filter by action
-        expected = set([l._id for l in expected_logs if l.action == log.action])
-        actual = get_actual(app, url, user, action=log.action)
+        # filter by trigger
+        expected = set([l._id for l in expected_actions if l.trigger == action.trigger])
+        actual = get_actual(app, url, user, trigger=action.trigger)
         assert expected == actual
 
         # filter by from_state
-        expected = set([l._id for l in expected_logs if l.from_state == log.from_state])
-        actual = get_actual(app, url, user, from_state=log.from_state)
+        expected = set([l._id for l in expected_actions if l.from_state == action.from_state])
+        actual = get_actual(app, url, user, from_state=action.from_state)
         assert expected == actual
 
         # filter by to_state
-        expected = set([l._id for l in expected_logs if l.to_state == log.to_state])
-        actual = get_actual(app, url, user, to_state=log.to_state)
+        expected = set([l._id for l in expected_actions if l.to_state == action.to_state])
+        actual = get_actual(app, url, user, to_state=action.to_state)
         assert expected == actual
 
         # filter by date_created
-        expected = set([l._id for l in expected_logs])
-        actual = get_actual(app, url, user, date_created=log.date_created)
+        expected = set([l._id for l in expected_actions])
+        actual = get_actual(app, url, user, date_created=action.date_created)
         assert expected == actual
 
         expected = set()
-        actual = get_actual(app, url, user, date_created=log.date_created - timedelta(days=1))
+        actual = get_actual(app, url, user, date_created=action.date_created - timedelta(days=1))
         assert expected == actual
 
         # filter by date_modified
-        expected = set([l._id for l in expected_logs])
-        actual = get_actual(app, url, user, date_modified=log.date_modified)
+        expected = set([l._id for l in expected_actions])
+        actual = get_actual(app, url, user, date_modified=action.date_modified)
         assert expected == actual
 
         expected = set()
-        actual = get_actual(app, url, user, date_modified=log.date_modified - timedelta(days=1))
+        actual = get_actual(app, url, user, date_modified=action.date_modified - timedelta(days=1))
         assert expected == actual
 
-        # filter by reviewable
-        expected = set([l._id for l in expected_logs if l.reviewable_id == log.reviewable_id])
-        actual = get_actual(app, url, user, reviewable=log.reviewable._id)
+        # filter by target
+        expected = set([l._id for l in expected_actions if l.target_id == action.target_id])
+        actual = get_actual(app, url, user, target=action.target._id)
         assert expected == actual
 
         # filter by provider
-        expected = set([l._id for l in expected_logs if l.reviewable.provider_id == log.reviewable.provider_id])
-        actual = get_actual(app, url, user, provider=log.reviewable.provider._id)
+        expected = set([l._id for l in expected_actions if l.target.provider_id == action.target.provider_id])
+        actual = get_actual(app, url, user, provider=action.target.provider._id)
         assert expected == actual
 
 
@@ -224,22 +224,22 @@ class ReviewProviderFilterMixin(object):
         # filter by permissions (admin)
         user, provider = admin_pair
         expected = set([provider._id])
-        actual = get_actual(app, url, user, permissions='view_review_logs')
+        actual = get_actual(app, url, user, permissions='view_actions')
         assert expected == actual
 
         actual = get_actual(app, url, user, permissions='set_up_moderation')
         assert expected == actual
 
-        actual = get_actual(app, url, user, permissions='set_up_moderation,view_review_logs')
+        actual = get_actual(app, url, user, permissions='set_up_moderation,view_actions')
         assert expected == actual
 
         # filter by permissions (moderator)
         user, provider = moderator_pair
         expected = set([provider._id])
-        actual = get_actual(app, url, user, permissions='view_review_logs')
+        actual = get_actual(app, url, user, permissions='view_actions')
         assert expected == actual
 
-        actual = get_actual(app, url, user, permissions='set_up_moderation,view_review_logs')
+        actual = get_actual(app, url, user, permissions='set_up_moderation,view_actions')
         assert expected == actual
 
         expected = set()
@@ -249,13 +249,13 @@ class ReviewProviderFilterMixin(object):
         # filter by permissions (rando)
         user = AuthUserFactory()
         expected = set()
-        actual = get_actual(app, url, user, permissions='view_review_logs')
+        actual = get_actual(app, url, user, permissions='view_actions')
         assert expected == actual
 
         actual = get_actual(app, url, user, permissions='set_up_moderation')
         assert expected == actual
 
-        actual = get_actual(app, url, user, permissions='set_up_moderation,view_review_logs')
+        actual = get_actual(app, url, user, permissions='set_up_moderation,view_actions')
         assert expected == actual
 
         # filter by permissions requires auth

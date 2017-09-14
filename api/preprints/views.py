@@ -5,12 +5,15 @@ from rest_framework.exceptions import NotFound, PermissionDenied, NotAuthenticat
 from rest_framework import permissions as drf_permissions
 
 from framework.auth.oauth_scopes import CoreScopes
-from osf.models import PreprintService
+from osf.models import Action, PreprintService
 from osf.utils.requests import check_select_for_update
+from reviews import permissions as reviews_permissions
 
+from api.actions.serializers import ActionSerializer
+from api.actions.views import ActionMixin
 from api.base.exceptions import Conflict
 from api.base.views import JSONAPIBaseView, WaterButlerMixin
-from api.base.filters import PreprintFilterMixin
+from api.base.filters import ListFilterMixin, PreprintFilterMixin
 from api.base.parsers import (
     JSONAPIMultipleRelationshipsParser,
     JSONAPIMultipleRelationshipsParserForRegularJSON,
@@ -400,3 +403,66 @@ class PreprintContributorsList(NodeContributorsList, PreprintMixin):
     def create(self, request, *args, **kwargs):
         self.kwargs['node_id'] = self.get_preprint(check_object_permissions=False).node._id
         return super(PreprintContributorsList, self).create(request, *args, **kwargs)
+
+
+class PreprintActionList(JSONAPIBaseView, generics.ListAPIView, ListFilterMixin, PreprintMixin, ActionMixin):
+    """Action List *Read-only*
+
+    Actions represent state changes and/or comments on a reviewable object (e.g. a preprint)
+
+    ##Action Attributes
+
+        name                            type                                description
+        ====================================================================================
+        date_created                    iso8601 timestamp                   timestamp that the action was created
+        date_modified                   iso8601 timestamp                   timestamp that the action was last modified
+        from_state                      string                              state of the reviewable before this action was created
+        to_state                        string                              state of the reviewable after this action was created
+        comment                         string                              comment explaining the state change
+        trigger                         string                              name of the trigger for this action
+
+    ##Relationships
+
+    ###Target
+    Link to the object (e.g. preprint) this action acts on
+
+    ###Provider
+    Link to detail for the target object's provider
+
+    ###Creator
+    Link to the user that created this action
+
+    ##Links
+    - `self` -- Detail page for the current action
+
+    ##Query Params
+
+    + `page=<Int>` -- page number of results to view, default 1
+
+    + `filter[<fieldname>]=<Str>` -- fields and values to filter the search results on.
+
+    Actions may be filtered by their `id`, `from_state`, `to_state`, `date_created`, `date_modified`, `creator`, `provider`, `target`
+    """
+    permission_classes = (
+        drf_permissions.IsAuthenticatedOrReadOnly,
+        base_permissions.TokenHasScope,
+        reviews_permissions.ActionPermission,
+    )
+
+    required_read_scopes = [CoreScopes.ACTIONS_READ]
+    required_write_scopes = [CoreScopes.ACTIONS_WRITE]
+
+    serializer_class = ActionSerializer
+    model_class = Action
+
+    ordering = ('-date_created',)
+    view_category = 'preprints'
+    view_name = 'preprint-action-list'
+
+    # overrides ListFilterMixin
+    def get_default_queryset(self):
+        return self.actions_queryset().filter(target_id=self.get_preprint().id)
+
+    # overrides ListAPIView
+    def get_queryset(self):
+        return self.get_queryset_from_request()

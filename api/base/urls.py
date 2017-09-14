@@ -16,6 +16,7 @@ urlpatterns = [
             [
                 url(r'^$', views.root, name='root'),
                 url(r'^status/', views.status_check, name='status_check'),
+                url(r'^actions/', include('api.actions.urls', namespace='actions')),
                 url(r'^addons/', include('api.addons.urls', namespace='addons')),
                 url(r'^applications/', include('api.applications.urls', namespace='applications')),
                 url(r'^citations/', include('api.citations.urls', namespace='citations')),
@@ -32,7 +33,6 @@ urlpatterns = [
                 url(r'^nodes/', include('api.nodes.urls', namespace='nodes')),
                 url(r'^preprints/', include('api.preprints.urls', namespace='preprints')),
                 url(r'^preprint_providers/', include('api.preprint_providers.urls', namespace='preprint_providers')),
-                url(r'^reviews/', include('reviews.urls', namespace='reviews')),
                 url(r'^registrations/', include('api.registrations.urls', namespace='registrations')),
                 url(r'^search/', include('api.search.urls', namespace='search')),
                 url(r'^taxonomies/', include('api.taxonomies.urls', namespace='taxonomies')),

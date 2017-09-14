@@ -95,8 +95,8 @@ class CoreScopes(object):
 
     SEARCH = 'search_read'
 
-    REVIEW_LOGS_READ = 'review_logs_read'
-    REVIEW_LOGS_WRITE = 'review_logs_write'
+    ACTIONS_READ = 'review_logs_read'
+    ACTIONS_WRITE = 'review_logs_write'
 
     PROVIDERS_WRITE = 'providers_write'
 
@@ -192,8 +192,8 @@ class ComposedScopes(object):
     NODE_ALL_WRITE = NODE_ALL_READ + NODE_METADATA_WRITE + NODE_DATA_WRITE + NODE_ACCESS_WRITE
 
     # Reviews
-    REVIEWS_READ = (CoreScopes.REVIEW_LOGS_READ,)
-    REVIEWS_WRITE = (CoreScopes.REVIEW_LOGS_WRITE, CoreScopes.PROVIDERS_WRITE)
+    REVIEWS_READ = (CoreScopes.ACTIONS_READ,)
+    REVIEWS_WRITE = (CoreScopes.ACTIONS_WRITE, CoreScopes.PROVIDERS_WRITE)
 
     # Full permissions: all routes intended to be exposed to third party API users
     FULL_READ = NODE_ALL_READ + USERS_READ + ORGANIZER_READ + GUIDS_READ + METASCHEMAS_READ + DRAFT_READ + REVIEWS_READ + (CoreScopes.INSTITUTION_READ, CoreScopes.SEARCH, )

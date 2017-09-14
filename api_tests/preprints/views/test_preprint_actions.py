@@ -8,15 +8,15 @@ from osf_tests.factories import (
 from reviews.permissions import GroupHelper
 from website.util import permissions as osf_permissions
 
-from api_tests.reviews.mixins.filter_mixins import ReviewLogFilterMixin
-from api_tests.reviews.mixins.comment_settings import ReviewLogCommentSettingsMixin
+from api_tests.reviews.mixins.filter_mixins import ActionFilterMixin
+from api_tests.reviews.mixins.comment_settings import ActionCommentSettingsMixin
 
 
-class TestPreprintReviewLogFilters(ReviewLogFilterMixin):
+class TestPreprintActionFilters(ActionFilterMixin):
 
     @pytest.fixture()
-    def preprint(self, all_review_logs):
-        return all_review_logs[0].reviewable
+    def preprint(self, all_actions):
+        return all_actions[0].target
 
     @pytest.fixture(params=[True, False], ids=['moderator', 'node_admin'])
     def user(self, request, preprint):
@@ -28,12 +28,12 @@ class TestPreprintReviewLogFilters(ReviewLogFilterMixin):
         return user
 
     @pytest.fixture()
-    def expected_logs(self, preprint, all_review_logs):
-        return [r for r in all_review_logs if r.reviewable_id == preprint.id]
+    def expected_actions(self, preprint, all_actions):
+        return [r for r in all_actions if r.target_id == preprint.id]
 
     @pytest.fixture()
     def url(self, preprint):
-        return '/{}preprints/{}/review_logs/'.format(API_BASE, preprint._id)
+        return '/{}preprints/{}/actions/'.format(API_BASE, preprint._id)
 
     def test_unauthorized_user(self, app, url):
         res = app.get(url, expect_errors=True)
@@ -44,7 +44,7 @@ class TestPreprintReviewLogFilters(ReviewLogFilterMixin):
         assert res.status_code == 403
 
 
-class TestReviewLogSettings(ReviewLogCommentSettingsMixin):
+class TestActionSettings(ActionCommentSettingsMixin):
     @pytest.fixture()
     def url(self, preprint):
-        return '/{}preprints/{}/review_logs/'.format(API_BASE, preprint._id)
+        return '/{}preprints/{}/actions/'.format(API_BASE, preprint._id)

@@ -4,17 +4,17 @@ import pytest
 from furl import furl
 
 from osf_tests.factories import (
+    ActionFactory,
     AuthUserFactory,
     PreprintFactory,
     PreprintProviderFactory,
 )
 from reviews.permissions import GroupHelper
-from reviews_tests.factories import ReviewLogFactory
 from website.util import permissions as osf_permissions
 
 
 @pytest.mark.django_db
-class ReviewLogCommentSettingsMixin(object):
+class ActionCommentSettingsMixin(object):
 
     @pytest.fixture()
     def url(self):
@@ -29,8 +29,8 @@ class ReviewLogCommentSettingsMixin(object):
         return PreprintFactory(provider=provider)
 
     @pytest.fixture()
-    def logs(self, preprint):
-        return [ReviewLogFactory(reviewable=preprint) for _ in range(5)]
+    def actions(self, preprint):
+        return [ActionFactory(target=preprint) for _ in range(5)]
 
     @pytest.fixture()
     def provider_admin(self, provider):
@@ -50,8 +50,8 @@ class ReviewLogCommentSettingsMixin(object):
         preprint.node.add_contributor(user, permissions=[osf_permissions.READ, osf_permissions.WRITE, osf_permissions.ADMIN])
         return user
 
-    def test_comment_settings(self, app, url, provider, logs, provider_admin, provider_moderator, node_admin):
-        expected_ids = set([l._id for l in logs])
+    def test_comment_settings(self, app, url, provider, actions, provider_admin, provider_moderator, node_admin):
+        expected_ids = set([l._id for l in actions])
         for anonymous in [True, False]:
             for private in [True, False]:
                 provider.reviews_comments_anonymous = anonymous
@@ -77,12 +77,12 @@ class ReviewLogCommentSettingsMixin(object):
             raise Exception((expected_ids, actual_ids))
         assert expected_ids == actual_ids
 
-        for log in data:
+        for action in data:
             if hidden_creator:
-                assert 'creator' not in log['relationships']
+                assert 'creator' not in action['relationships']
             else:
-                assert 'creator' in log['relationships']
+                assert 'creator' in action['relationships']
             if hidden_comment:
-                assert 'comment' not in log['attributes']
+                assert 'comment' not in action['attributes']
             else:
-                assert 'comment' in log['attributes']
+                assert 'comment' in action['attributes']

@@ -6,8 +6,7 @@ from reviews.workflow import Workflows
 
 from api.base.utils import absolute_reverse, get_user_auth
 from api.base.serializers import JSONAPISerializer, LinksField, RelationshipField, ShowIfVersion
-
-from reviews.serializers import ReviewableCountsRelationshipField
+from api.actions.serializers import ReviewableCountsRelationshipField
 
 
 class PreprintProviderSerializer(JSONAPISerializer):
