@@ -361,6 +361,10 @@ class TestInstitutionRelationshipRegistrations:
         return user
 
     @pytest.fixture()
+    def user(self, institution):
+        return AuthUserFactory()
+
+    @pytest.fixture()
     def registration_no_owner(self):
         return RegistrationFactory(is_public=True)
 
@@ -466,8 +470,7 @@ class TestInstitutionRelationshipRegistrations:
         registration_no_affiliation.reload()
         assert institution in registration_no_affiliation.affiliated_institutions.all()
 
-    def test_add_user_is_read_write(self, app, registration_no_affiliation, url_institution_registrations, institution):
-        user = AuthUserFactory()
+    def test_add_user_is_read_write(self, app, user, registration_no_affiliation, url_institution_registrations, institution):
         user.affiliated_institutions.add(institution)
         registration_no_affiliation.add_contributor(user)
         registration_no_affiliation.save()
@@ -492,8 +495,7 @@ class TestInstitutionRelationshipRegistrations:
         registration_pending.reload()
         assert institution in registration_pending.affiliated_institutions.all()
 
-    def test_add_user_is_read_only(self, app, registration_no_affiliation, url_institution_registrations, institution):
-        user = AuthUserFactory()
+    def test_add_user_is_read_only(self, app, user, registration_no_affiliation, url_institution_registrations, institution):
         user.affiliated_institutions.add(institution)
         registration_no_affiliation.add_contributor(user, permissions=[permissions.READ])
         registration_no_affiliation.save()
@@ -509,8 +511,7 @@ class TestInstitutionRelationshipRegistrations:
         registration_no_affiliation.reload()
         assert institution not in registration_no_affiliation.affiliated_institutions.all()
 
-    def test_add_user_is_admin_but_not_affiliated(self, app, url_institution_registrations, institution):
-        user = AuthUserFactory()
+    def test_add_user_is_admin_but_not_affiliated(self, user, app, url_institution_registrations, institution):
         registration = RegistrationFactory(creator=user)
         res = app.post_json_api(
             url_institution_registrations,
@@ -547,8 +548,7 @@ class TestInstitutionRelationshipRegistrations:
         assert res.status_code == 204
         assert institution not in registration_pending.affiliated_institutions.all()
 
-    def test_delete_user_is_read_write(self, app, registration_pending, url_institution_registrations, institution):
-        user = AuthUserFactory()
+    def test_delete_user_is_read_write(self, app, user, registration_pending, url_institution_registrations, institution):
         registration_pending.add_contributor(user)
         registration_pending.save()
 
@@ -562,8 +562,7 @@ class TestInstitutionRelationshipRegistrations:
         assert res.status_code == 204
         assert institution not in registration_pending.affiliated_institutions.all()
 
-    def test_delete_user_is_read_only(self, registration_pending, app, url_institution_registrations, institution):
-        user = AuthUserFactory()
+    def test_delete_user_is_read_only(self, user, registration_pending, app, url_institution_registrations, institution):
         registration_pending.add_contributor(user, permissions='read')
         registration_pending.save()
 
@@ -578,8 +577,7 @@ class TestInstitutionRelationshipRegistrations:
         assert res.status_code == 403
         assert institution in registration_pending.affiliated_institutions.all()
 
-    def test_delete_user_is_admin_but_not_affiliated_with_inst(self, institution, app, url_institution_registrations):
-        user = AuthUserFactory()
+    def test_delete_user_is_admin_but_not_affiliated_with_inst(self, user, institution, app, url_institution_registrations):
         registration = RegistrationFactory(creator=user)
         registration.affiliated_institutions.add(institution)
         registration.save()
@@ -594,3 +592,4 @@ class TestInstitutionRelationshipRegistrations:
         assert res.status_code == 204
         registration.reload()
         assert institution not in registration.affiliated_institutions.all()
+        
