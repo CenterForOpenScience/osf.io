@@ -25,30 +25,12 @@ def set_file_view_counts(state, *args, **kwargs):
 
     for file_node in files:
         # for each file get the file view counts from keen
-        client = KeenClient(
-            project_id=settings.KEEN['public']['project_id'],
-            read_key=settings.KEEN['public']['read_key'],
-        )
-
-        node_pageviews = client.count(
-            event_collection='pageviews',
-            timeframe='this_7_days',
-            group_by='node.id',
-            filters=[
-                {
-                    'property_name': 'node.id',
-                    'operator': 'exists',
-                    'property_value': True
-                }
-            ]
-        )
-
         query = [{'property_name': 'page.info.path', 'operator': 'eq', 'property_value': file_node._id}]
 
         query = urllib.quote(json.dumps(query))
         url = 'https://api.keen.io/3.0/projects/{}/queries/count' \
               '?api_key={}&event_collection=pageviews&timezone=UTC&timeframe' \
-              '=this_14_days&filters={}'.format(settings.KEEN['public']['project_id'], settings.KEEN['public']['read_key'], query)
+              '=this_14_days&filters={}'.format(settings.KEEN['private']['project_id'], settings.KEEN['private']['read_key'], query)
         resp = requests.get(url)
         file_view_count = int(resp.json()['result'])
 
