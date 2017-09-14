@@ -144,6 +144,8 @@ class JSONAPIFilterSet(django_filters.rest_framework.FilterSet):
         for field_name, value in data.iteritems():
             # to filter on a relationship field, values must be in a list
             if field_name in self.MANY_TO_MANY_FIELDS and value != 'null':
+                if field_name == 'contributors':
+                    field_name = '_contributors'
                 value = value if type(value) == list else value.split(',')
             if value == 'true' or value == 'false':
                 value = value.title()

@@ -364,6 +364,11 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
         """Used for GUID resolution."""
         return '/profile/{}/'.format(self._primary_key)
 
+    # TODO - this is really gross and needs to go away - here because of django/forms/models.py line 1316
+    @property
+    def guids___id(self):
+        return self.guids.first()
+
     @property
     def url(self):
         return '/{}/'.format(self._id)
