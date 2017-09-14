@@ -34,7 +34,7 @@ from api.base.throttling import (
     NonCookieAuthThrottle,
     AddContributorThrottle,
 )
-from api.base.utils import default_node_list_queryset, default_node_list_permission_queryset
+from api.base.utils import default_node_list_queryset, default_node_permission_queryset
 from api.base.utils import get_object_or_error, is_bulk_request, get_user_auth, is_truthy
 from api.base.views import JSONAPIBaseView
 from api.base.views import (
@@ -275,7 +275,8 @@ class NodeList(JSONAPIBaseView, bulk_views.BulkUpdateJSONAPIView, bulk_views.Bul
 
     # overrides NodesFilterMixin
     def get_default_queryset(self):
-        return default_node_list_permission_queryset(user=self.request.user, model_cls=Node)
+        user = self.request.user
+        return default_node_list_queryset() & default_node_permission_queryset(user)
 
     # overrides ListBulkCreateJSONAPIView, BulkUpdateJSONAPIView
     def get_queryset(self):
@@ -295,7 +296,7 @@ class NodeList(JSONAPIBaseView, bulk_views.BulkUpdateJSONAPIView, bulk_views.Bul
                     raise PermissionDenied
             return nodes
         else:
-            return self.get_queryset_from_request().distinct()
+            return self.get_queryset_from_request().distinct('id', 'date_modified')
 
     # overrides ListBulkCreateJSONAPIView, BulkUpdateJSONAPIView, BulkDestroyJSONAPIView
     def get_serializer_class(self):
@@ -1238,7 +1239,7 @@ class NodeChildrenList(JSONAPIBaseView, bulk_views.ListBulkCreateJSONAPIView, No
     ordering = ('-date_modified',)
 
     def get_default_queryset(self):
-        return default_node_list_queryset(model_cls=Node)
+        return default_node_list_queryset()
 
     # overrides ListBulkCreateJSONAPIView
     def get_queryset(self):
@@ -1929,7 +1930,7 @@ class NodeFilesList(JSONAPIBaseView, generics.ListAPIView, WaterButlerMixin, Lis
             # We should not have gotten a file here
             raise NotFound
 
-        return files_list.children.all()
+        return files_list.children.prefetch_related('node__guids', 'versions', 'tags', 'guids')
 
     # overrides ListAPIView
     def get_queryset(self):
@@ -3450,4 +3451,4 @@ class NodePreprintsList(JSONAPIBaseView, generics.ListAPIView, NodeMixin, Prepri
         return node.preprints.filter(is_published=True)
 
     def get_queryset(self):
-        return self.get_queryset_from_request().distinct()
+        return self.get_queryset_from_request().distinct('id', 'date_modified')

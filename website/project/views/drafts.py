@@ -27,7 +27,7 @@ from website.project.decorators import (
 from website import language, settings
 from website.prereg import utils as prereg_utils
 from website.project import utils as project_utils
-from website.project.metadata.schemas import LATEST_SCHEMA_VERSION
+from website.project.metadata.schemas import LATEST_SCHEMA_VERSION, METASCHEMA_ORDERING
 from website.project.metadata.utils import serialize_meta_schema, serialize_draft_registration
 from website.project.utils import serialize_node
 from website.util import rapply
@@ -350,9 +350,11 @@ def get_metaschemas(*args, **kwargs):
     count = request.args.get('count', 100)
     include = request.args.get('include', 'latest')
 
-    meta_schemas = MetaSchema.objects.filter(active=True).order_by('name')
+    meta_schemas = MetaSchema.objects.filter(active=True).distinct()
     if include == 'latest':
-        meta_schemas.filter(schema_version=LATEST_SCHEMA_VERSION)
+        meta_schemas.filter(schema_version=LATEST_SCHEMA_VERSION).distinct()
+
+    meta_schemas = sorted(meta_schemas, key=lambda x: METASCHEMA_ORDERING.index(x.name))
 
     return {
         'meta_schemas': [

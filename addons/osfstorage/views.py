@@ -85,7 +85,12 @@ def osfstorage_get_revisions(file_node, node_addon, payload, **kwargs):
 
 @decorators.waterbutler_opt_hook
 def osfstorage_copy_hook(source, destination, name=None, **kwargs):
-    return source.copy_under(destination, name=name).serialize(), httplib.CREATED
+    try:
+        return source.copy_under(destination, name=name).serialize(), httplib.CREATED
+    except exceptions.FileNodeIsQuickFilesNode:
+        raise HTTPError(httplib.BAD_REQUEST, data={
+            'message_long': 'Cannot copy file as it is in a quickfiles node'
+        })
 
 
 @decorators.waterbutler_opt_hook
@@ -99,6 +104,10 @@ def osfstorage_move_hook(source, destination, name=None, **kwargs):
     except exceptions.FileNodeIsPrimaryFile:
         raise HTTPError(httplib.FORBIDDEN, data={
             'message_long': 'Cannot move file as it is the primary file of preprint.'
+        })
+    except exceptions.FileNodeIsQuickFilesNode:
+        raise HTTPError(httplib.BAD_REQUEST, data={
+            'message_long': 'Cannot move file as it is in a quickfiles node'
         })
 
 
