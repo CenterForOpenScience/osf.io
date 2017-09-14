@@ -71,8 +71,6 @@ class IdentifierList(JSONAPIBaseView, generics.ListAPIView, ListFilterMixin):
 
     def get_default_queryset(self):
         obj = self.get_object()
-        if isinstance(obj, PreprintService):
-            return obj.node.identifiers.all()
         return obj.identifiers.all()
 
     # overrides ListCreateAPIView

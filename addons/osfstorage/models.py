@@ -155,7 +155,7 @@ class OsfStorageFileNode(BaseFileNode):
                 raise exceptions.FileNodeIsPrimaryFile()
         if self.is_checked_out:
             raise exceptions.FileNodeCheckedOutError()
-        if self.node.is_quickfiles:
+        if self.node.is_quickfiles and self.node != destination_parent.node:
             raise exceptions.FileNodeIsQuickFilesNode()
         return super(OsfStorageFileNode, self).move_under(destination_parent, name)
 
