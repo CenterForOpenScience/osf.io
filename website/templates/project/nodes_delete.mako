@@ -63,7 +63,7 @@
                                 <p>
                                     Type the following to continue: <strong data-bind="text: confirmationString"></strong>
                                 </p>
-                                <input id="bbConfirmText" class="form-control">
+                                <input id="bbConfirmTextDelete" class="form-control">
                             </div>
                         </div>
                     </div><!-- end projects changed warning page -->

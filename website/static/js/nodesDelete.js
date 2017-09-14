@@ -201,7 +201,7 @@ NodesDeleteViewModel.prototype.confirmChanges =  function() {
         return node.changed;
     });
 
-    if ($('#bbConfirmText').val() === this.confirmationString) {
+    if ($('#bbConfirmTextDelete').val() === this.confirmationString) {
         if (nodesChanged.length <= 100) {
             $osf.block('Deleting Project');
             batchNodesDelete(nodesChanged.reverse()).then(function () {
