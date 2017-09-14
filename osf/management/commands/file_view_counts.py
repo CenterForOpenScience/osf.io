@@ -12,6 +12,7 @@ from django.core.management.base import BaseCommand
 from django.db import transaction
 from osf.models import BaseFileNode, PageCounter
 from website import settings
+from keen import KeenClient
 
 from scripts import utils as script_utils
 
@@ -24,6 +25,24 @@ def set_file_view_counts(state, *args, **kwargs):
 
     for file_node in files:
         # for each file get the file view counts from keen
+        client = KeenClient(
+            project_id=settings.KEEN['public']['project_id'],
+            read_key=settings.KEEN['public']['read_key'],
+        )
+
+        node_pageviews = client.count(
+            event_collection='pageviews',
+            timeframe='this_7_days',
+            group_by='node.id',
+            filters=[
+                {
+                    'property_name': 'node.id',
+                    'operator': 'exists',
+                    'property_value': True
+                }
+            ]
+        )
+
         query = [{'property_name': 'page.info.path', 'operator': 'eq', 'property_value': file_node._id}]
 
         query = urllib.quote(json.dumps(query))
