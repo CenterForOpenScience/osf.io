@@ -113,7 +113,6 @@ class NodeLogParamsSerializer(RestrictedDictSerializer):
         return None
 
     def get_pointer(self, obj):
-        print self.context
         user = self.context['request'].user
         pointer = obj.get('pointer', None)
         if pointer:
