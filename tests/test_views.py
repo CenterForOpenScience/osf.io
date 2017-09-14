@@ -332,7 +332,7 @@ class TestProjectViews(OsfTestCase):
 
         for_update_sql = connection.ops.for_update_sql()
         assert_equal(res.status_code, 200)
-        assert_equal(res.body['newValue'], 'Seth Rollins')
+        assert_in('Seth Rollins', res.body)
         assert any(for_update_sql in query['sql'] for query in ctx.captured_queries)
 
     def test_cannot_remove_only_visible_contributor(self):

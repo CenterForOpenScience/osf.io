@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+from django.db.models import Q
 from rest_framework.exceptions import PermissionDenied, NotFound
 from rest_framework.status import is_server_error
 import requests
@@ -21,7 +22,7 @@ def get_file_object(node, path, provider, request):
                 model = OsfStorageFolder
             else:
                 model = OsfStorageFile
-            obj = get_object_or_error(model, {'node': node.pk, '_id': path.strip('/')}, request)
+            obj = get_object_or_error(model, Q(node=node.pk, _id=path.strip('/')), request)
         return obj
 
     if not node.get_addon(provider) or not node.get_addon(provider).configured:
