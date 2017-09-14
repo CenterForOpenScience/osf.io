@@ -65,146 +65,116 @@ def is_anonymized(request):
     return request._is_anonymized
 
 
-class ShowIfVersion(ser.Field):
+class ConditionalField(ser.Field):
+    """
+    Skips the inner field based on `should_show` or `should_hide`; override whichever makes the logic more readable.
+    If you'd prefer to return `None` rather skipping the field, override `should_be_none` as well.
+    """
+
+    def __init__(self, field, **kwargs):
+        super(ConditionalField, self).__init__(**kwargs)
+        self.field = field
+        self.source = self.field.source
+        self.required = self.field.required
+        self.read_only = self.field.read_only
+
+    def should_show(self, instance):
+        return not self.should_hide(instance)
+
+    def should_hide(self, instance):
+        raise NotImplementedError()
+
+    def should_be_none(self, instance):
+        return False
+
+    def get_attribute(self, instance):
+        if not self.should_show(instance):
+            if self.should_be_none(instance):
+                return None
+            raise SkipField
+        return self.field.get_attribute(instance)
+
+    def bind(self, field_name, parent):
+        super(ConditionalField, self).bind(field_name, parent)
+        self.field.bind(field_name, self)
+
+    def to_representation(self, value):
+        if getattr(self.field.root, 'child', None):
+            self.field.parent = self.field.root.child
+        else:
+            self.field.parent = self.field.root
+        return self.field.to_representation(value)
+
+    def to_esi_representation(self, value, envelope='data'):
+        if getattr(self.field.root, 'child', None):
+            self.field.parent = self.field.root.child
+        else:
+            self.field.parent = self.field.root
+        return self.field.to_esi_representation(value, envelope)
+
+    def to_internal_value(self, data):
+        return self.field.to_internal_value(data)
+
+
+class ShowIfVersion(ConditionalField):
     """
     Skips the field if the specified request version is not after a feature's earliest supported version,
     or not before the feature's latest supported version.
     """
 
     def __init__(self, field, min_version, max_version, **kwargs):
-        super(ShowIfVersion, self).__init__(**kwargs)
-        self.field = field
-        self.required = field.required
-        self.read_only = field.read_only
+        super(ShowIfVersion, self).__init__(field, **kwargs)
         self.min_version = min_version
         self.max_version = max_version
         self.help_text = 'This field is deprecated as of version {}'.format(self.max_version) or kwargs.get('help_text')
 
-    def get_attribute(self, instance):
+    def should_hide(self, instance):
         request = self.context.get('request')
-        if request and utils.is_deprecated(request.version, self.min_version, self.max_version):
-            raise SkipField
-        return self.field.get_attribute(instance)
-
-    def bind(self, field_name, parent):
-        super(ShowIfVersion, self).bind(field_name, parent)
-        self.field.bind(field_name, self)
-
-    def to_representation(self, value):
-        if getattr(self.field.root, 'child', None):
-            self.field.parent = self.field.root.child
-        else:
-            self.field.parent = self.field.root
-        return self.field.to_representation(value)
-
-    def to_esi_representation(self, value, envelope='data'):
-        if getattr(self.field.root, 'child', None):
-            self.field.parent = self.field.root.child
-        else:
-            self.field.parent = self.field.root
-        return self.field.to_esi_representation(value, envelope)
-
-    def to_internal_value(self, data):
-        return self.field.to_internal_value(data)
+        return request and utils.is_deprecated(request.version, self.min_version, self.max_version)
 
 
-class HideIfRegistration(ser.Field):
+class ShowIfCurrentUser(ConditionalField):
+
+    def should_show(self, instance):
+        request = self.context.get('request')
+        return request and request.user == instance
+
+
+class HideIfRegistration(ConditionalField):
     """
     If node is a registration, this field will return None.
     """
 
-    def __init__(self, field, **kwargs):
-        super(HideIfRegistration, self).__init__(**kwargs)
-        self.field = field
-        self.source = field.source
-        self.required = field.required
-        self.read_only = field.read_only
+    def should_hide(self, instance):
+        return instance.is_registration
 
-    def get_attribute(self, instance):
-        if instance.is_registration:
-            if isinstance(self.field, RelationshipField):
-                raise SkipField
-            else:
-                return None
-        return self.field.get_attribute(instance)
-
-    def bind(self, field_name, parent):
-        super(HideIfRegistration, self).bind(field_name, parent)
-        self.field.bind(field_name, self)
-
-    def to_internal_value(self, data):
-        return self.field.to_internal_value(data)
-
-    def to_representation(self, value):
-        if getattr(self.field.root, 'child', None):
-            self.field.parent = self.field.root.child
-        else:
-            self.field.parent = self.field.root
-        return self.field.to_representation(value)
-
-    def to_esi_representation(self, value, envelope='data'):
-        if getattr(self.field.root, 'child', None):
-            self.field.parent = self.field.root.child
-        else:
-            self.field.parent = self.field.root
-        return self.field.to_esi_representation(value, envelope)
+    def should_be_none(self, instance):
+        return not isinstance(self.field, RelationshipField)
 
 
-class HideIfDisabled(ser.Field):
+class HideIfDisabled(ConditionalField):
     """
     If the user is disabled, returns None for attribute fields, or skips
     if a RelationshipField.
     """
 
-    def __init__(self, field, **kwargs):
-        super(HideIfDisabled, self).__init__(**kwargs)
-        self.field = field
-        self.source = field.source
-        self.required = field.required
-        self.read_only = field.read_only
+    def should_hide(self, instance):
+        return instance.is_disabled
 
-    def get_attribute(self, instance):
-        if instance.is_disabled:
-            if isinstance(self.field, RelationshipField):
-                raise SkipField
-            else:
-                return None
-        return self.field.get_attribute(instance)
-
-    def bind(self, field_name, parent):
-        super(HideIfDisabled, self).bind(field_name, parent)
-        self.field.bind(field_name, self)
-
-    def to_internal_value(self, data):
-        return self.field.to_internal_value(data)
-
-    def to_representation(self, value):
-        if getattr(self.field.root, 'child', None):
-            self.field.parent = self.field.root.child
-        else:
-            self.field.parent = self.field.root
-        return self.field.to_representation(value)
-
-    def to_esi_representation(self, value, envelope='data'):
-        if getattr(self.field.root, 'child', None):
-            self.field.parent = self.field.root.child
-        else:
-            self.field.parent = self.field.root
-        return self.field.to_esi_representation(value, envelope)
+    def should_be_none(self, instance):
+        return not isinstance(self.field, RelationshipField)
 
 
-class HideIfWithdrawal(HideIfRegistration):
+class HideIfWithdrawal(ConditionalField):
     """
     If registration is withdrawn, this field will return None.
     """
 
-    def get_attribute(self, instance):
-        if instance.is_retracted:
-            if isinstance(self.field, RelationshipField):
-                raise SkipField
-            else:
-                return None
-        return self.field.get_attribute(instance)
+    def should_hide(self, instance):
+        return instance.is_retracted
+
+    def should_be_none(self, instance):
+        return not isinstance(self.field, RelationshipField)
 
 
 class AllowMissing(ser.Field):
