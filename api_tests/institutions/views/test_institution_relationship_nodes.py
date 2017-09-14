@@ -592,4 +592,3 @@ class TestInstitutionRelationshipRegistrations:
         assert res.status_code == 204
         registration.reload()
         assert institution not in registration.affiliated_institutions.all()
-        

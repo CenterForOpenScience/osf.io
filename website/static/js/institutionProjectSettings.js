@@ -155,7 +155,8 @@ var ViewModel = function(data) {
             closeButton: false,
             message: '<div class="spinner-loading-wrapper"><div class="ball-scale ball-scale-blue"><div></div></div><p class="m-t-sm fg-load-message"> Updating affiliation... this may take a minute.</p></div>',
         });
-        var index, url, nodesToModify;
+        var url = '';
+        var nodesToModify = [];
         if (self.isRegistration()) {
             url = data.apiV2Prefix + 'institutions/' + item.id + '/relationships/registrations/';
             nodesToModify = [{'type': 'registrations', 'id': self.nodeId()}];
@@ -183,6 +184,7 @@ var ViewModel = function(data) {
                 fields: {xhrFields: {withCredentials: true}}
             }
         ).done(function () {
+            var index;
             if (self.isAddInstitution()) {
                 index = self.availableInstitutionsIds().indexOf(item.id);
                 var added = self.availableInstitutions.splice(index, 1)[0];
