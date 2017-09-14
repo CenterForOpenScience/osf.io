@@ -158,6 +158,6 @@ class PageCounter(BaseModel):
 
         with transaction.atomic():
             model_instance, created = cls.objects.select_for_update().get_or_create(_id=cleaned_page)
+            model_instance.date[date_string] = dict(total=count)
             model_instance.total = count
-            model_instance.date[date_string]['total'] = count
             model_instance.save()
