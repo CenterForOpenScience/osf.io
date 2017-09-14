@@ -36,7 +36,7 @@ PROVIDER_MAP = {}
 logger = logging.getLogger(__name__)
 
 
-class BaseFileNodeManager(TypedModelManager):
+class BaseFileNodeManager(TypedModelManager, IncludeManager):
 
     def get_queryset(self):
         qs = super(BaseFileNodeManager, self).get_queryset()
@@ -163,6 +163,12 @@ class BaseFileNode(TypedModel, CommentableMixin, OptionalGuidMixin, Taggable, Ob
     def root_target_page(self):
         """The comment page type associated with StoredFileNodes."""
         return 'files'
+
+    @property
+    def current_version_number(self):
+        if self.history:
+            return len(self.history)
+        return 1
 
     @classmethod
     def create(cls, **kwargs):
@@ -694,4 +700,4 @@ class FileVersion(ObjectIDMixin, BaseModel):
         return True
 
     class Meta:
-        ordering = ('date_created',)
+        ordering = ('-date_created',)
