@@ -12,7 +12,6 @@ from django.core.management.base import BaseCommand
 from django.db import transaction
 from osf.models import BaseFileNode, PageCounter
 from website import settings
-from keen import KeenClient
 
 from scripts import utils as script_utils
 
