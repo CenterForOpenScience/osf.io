@@ -3,59 +3,20 @@ from __future__ import unicode_literals
 
 from rest_framework import generics
 from rest_framework import serializers as ser
-from rest_framework.fields import SkipField
 
 from api.base import utils
 from api.base.exceptions import JSONAPIAttributeException
 from api.base.serializers import JSONAPISerializer
 from api.base.serializers import LinksField
 from api.base.serializers import RelationshipField
+from api.base.serializers import HideIfProviderCommentsAnonymous
+from api.base.serializers import HideIfProviderCommentsPrivate
 
 from osf.models import PreprintService
 
 from reviews.exceptions import InvalidTransitionError
 from reviews.workflow import Triggers
 from reviews.workflow import States
-
-
-# Pseudo-class to hide the creator field if it shouldn't be shown
-def HideIfCommentsAnonymous(field_cls):
-    class HideIfCommentsAnonymousField(field_cls):
-        def get_attribute(self, instance):
-            request = self.context.get('request')
-            if request is not None:
-                auth = utils.get_user_auth(request)
-                if auth.logged_in:
-                    provider = instance.target.provider
-                    if provider.reviews_comments_anonymous is False or auth.user.has_perm('view_actions', provider):
-                        return super(HideIfCommentsAnonymousField, self).get_attribute(instance)
-            raise SkipField
-
-        def __repr__(self):
-            r = super(HideIfCommentsAnonymousField, self).__repr__()
-            return r.replace(self.__class__.__name__, '{}<{}>'.format(self.__class__.__name__, field_cls.__name__))
-
-    return HideIfCommentsAnonymousField
-
-
-# Pseudo-class to hide the comment field if it shouldn't be shown
-def HideIfCommentsPrivate(field_cls):
-    class HideIfCommentsPrivateField(field_cls):
-        def get_attribute(self, instance):
-            request = self.context.get('request')
-            if request is not None:
-                auth = utils.get_user_auth(request)
-                if auth.logged_in:
-                    provider = instance.target.provider
-                    if provider.reviews_comments_private is False or auth.user.has_perm('view_actions', provider):
-                        return super(HideIfCommentsPrivateField, self).get_attribute(instance)
-            raise SkipField
-
-        def __repr__(self):
-            r = super(HideIfCommentsPrivateField, self).__repr__()
-            return r.replace(self.__class__.__name__, '{}<{}>'.format(self.__class__.__name__, field_cls.__name__))
-
-    return HideIfCommentsPrivateField
 
 
 class ReviewableCountsRelationshipField(RelationshipField):
@@ -113,8 +74,7 @@ class ActionSerializer(JSONAPISerializer):
 
     trigger = ser.ChoiceField(choices=Triggers.choices())
 
-    # TODO what limit do we want?
-    comment = HideIfCommentsPrivate(ser.CharField)(max_length=65535, required=False)
+    comment = HideIfProviderCommentsPrivate(ser.CharField(max_length=65535, required=False))
 
     from_state = ser.ChoiceField(choices=States.choices(), read_only=True)
     to_state = ser.ChoiceField(choices=States.choices(), read_only=True)
@@ -137,13 +97,13 @@ class ActionSerializer(JSONAPISerializer):
         filter_key='target__guids___id',
     )
 
-    creator = HideIfCommentsAnonymous(RelationshipField)(
+    creator = HideIfProviderCommentsAnonymous(RelationshipField(
         read_only=True,
         related_view='users:user-detail',
         related_view_kwargs={'user_id': '<creator._id>'},
         filter_key='creator__guids___id',
         always_embed=True,
-    )
+    ))
 
     links = LinksField(
         {

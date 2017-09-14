@@ -159,7 +159,6 @@ class ReviewsMachine(Machine):
         )
 
     def update_last_transitioned(self, ev):
-        # TODO foreign key to action? or to creator?
         now = self.action.date_created if self.action is not None else timezone.now()
         self.reviewable.date_last_transitioned = now
 
@@ -169,7 +168,7 @@ class ReviewsMachine(Machine):
         if should_publish and not self.reviewable.is_published:
             self.reviewable.is_published = True
             self.reviewable.date_published = now
-            # TODO EZID
+            # TODO EZID (MOD-70)
         elif not should_publish and self.reviewable.is_published:
             self.reviewable.is_published = False
         self.reviewable.save()

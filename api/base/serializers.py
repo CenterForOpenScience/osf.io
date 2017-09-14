@@ -177,6 +177,38 @@ class HideIfWithdrawal(ConditionalField):
         return not isinstance(self.field, RelationshipField)
 
 
+class HideIfProviderCommentsAnonymous(ConditionalField):
+    """
+    If the action's provider has anonymous comments and the user does not have `view_actions`
+    permission on the provider, hide the field.
+    """
+
+    def should_hide(self, instance):
+        request = self.context.get('request')
+        auth = utils.get_user_auth(request)
+        if auth.logged_in:
+            provider = instance.target.provider
+            if provider.reviews_comments_anonymous is False or auth.user.has_perm('view_actions', provider):
+                return False
+        return True
+
+
+class HideIfProviderCommentsPrivate(ConditionalField):
+    """
+    If the action's provider has private comments and the user does not have `view_actions`
+    permission on the provider, hide the field.
+    """
+
+    def should_hide(self, instance):
+        request = self.context.get('request')
+        auth = utils.get_user_auth(request)
+        if auth.logged_in:
+            provider = instance.target.provider
+            if provider.reviews_comments_private is False or auth.user.has_perm('view_actions', provider):
+                return False
+        return True
+
+
 class AllowMissing(ser.Field):
     def __init__(self, field, **kwargs):
         super(AllowMissing, self).__init__(**kwargs)
