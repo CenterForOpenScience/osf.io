@@ -19,7 +19,7 @@ from django.utils.functional import cached_property
 from keen import scoped_keys
 from psycopg2._psycopg import AsIs
 from typedmodels.models import TypedModel, TypedModelManager
-from include import IncludeQuerySet, IncludeManager
+from include import IncludeManager
 
 from framework import status
 from framework.celery_tasks.handlers import enqueue_task
@@ -61,13 +61,13 @@ from website.util.permissions import (ADMIN, CREATOR_PERMISSIONS,
                                       DEFAULT_CONTRIBUTOR_PERMISSIONS, READ,
                                       WRITE, expand_permissions,
                                       reduce_permissions)
-from .base import BaseModel, Guid, GuidMixin
+from .base import BaseModel, Guid, GuidMixin, GuidMixinQuerySet
 
 
 logger = logging.getLogger(__name__)
 
 
-class AbstractNodeQuerySet(IncludeQuerySet):
+class AbstractNodeQuerySet(GuidMixinQuerySet):
 
     def get_roots(self):
         return self.filter(id__in=self.exclude(type='osf.collection').exclude(type='osf.quickfilesnode').values_list('root_id', flat=True))
@@ -133,7 +133,8 @@ class AbstractNodeQuerySet(IncludeQuerySet):
             if not isinstance(user, int):
                 raise TypeError('"user" must be either {} or {}. Got {!r}'.format(int, OSFUser, user))
 
-            qs |= self.filter(contributor__user_id=user, contributor__read=True)
+            sqs = Contributor.objects.filter(node=models.OuterRef('pk'), user__id=user, read=True)
+            qs |= self.annotate(can_view=models.Exists(sqs)).filter(can_view=True)
             qs |= self.extra(where=['''
                 "osf_abstractnode".id in (
                     WITH RECURSIVE implicit_read AS (
@@ -150,7 +151,7 @@ class AbstractNodeQuerySet(IncludeQuerySet):
                 )
             '''], params=(user, ))
 
-        return qs.distinct()
+        return qs
 
 class AbstractNodeManager(TypedModelManager, IncludeManager):
 

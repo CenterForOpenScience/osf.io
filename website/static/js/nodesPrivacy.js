@@ -4,7 +4,6 @@
 'use strict';
 
 var $ = require('jquery');
-var $3 = window.$3;
 var ko = require('knockout');
 var Raven = require('raven-js');
 var $osf = require('./osfHelpers');
@@ -79,8 +78,7 @@ function patchNodesPrivacy(nodes) {
             }
         };
     });
-    //s3 is a very recent version of jQuery that fixes a known bug when used in internet explorer
-    return $3.ajax({
+    return $.ajax({
         url: nodesV2Url,
         type: 'PATCH',
         dataType: 'json',
