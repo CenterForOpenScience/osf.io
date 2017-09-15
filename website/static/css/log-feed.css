@@ -18,6 +18,10 @@
     position: absolute;
 }
 
+.db-loading-list {
+    opacity: 0.3;
+}
+
 #poFilter {
     width : 300px;
 }
