@@ -848,6 +848,7 @@ class TestContributorMethods:
             contributor=new_user
         )
         node.save()
+        new_user.refresh_from_db()
         assert node._primary_key not in new_user.unclaimed_records
 
     def test_is_contributor(self, node):
