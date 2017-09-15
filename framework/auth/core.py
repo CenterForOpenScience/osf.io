@@ -10,6 +10,7 @@ from django.db.models import Subquery
 from flask import request
 from framework.sessions import session
 from modularodm import Q
+from rest_framework.permissions import SAFE_METHODS
 
 from modularodm.exceptions import QueryException, ValidationError, ValidationValueError
 from modularodm.validators import URLValidator
@@ -80,7 +81,7 @@ def get_current_user_id():
 def _get_current_user():
     from osf.models import OSFUser
     current_user_id = get_current_user_id()
-    select_for_update = bool(request.method != 'GET')
+    select_for_update = bool(request.method not in SAFE_METHODS)
     if current_user_id:
         return OSFUser.load(current_user_id, select_for_update=select_for_update)
     else:

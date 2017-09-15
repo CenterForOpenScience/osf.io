@@ -6,6 +6,7 @@ import markupsafe
 from django.core.paginator import Paginator
 from django.db.models import Q, QuerySet
 from flask import request
+from rest_framework.permissions import SAFE_METHODS
 
 from framework.exceptions import HTTPError
 
@@ -30,7 +31,7 @@ def get_or_http_error(Model, pk_or_query, allow_deleted=False, display_name=None
     display_name = display_name or ''
     # FIXME: Not everything that uses this decorator needs to be markupsafe, but OsfWebRenderer error.mako does...
     safe_name = markupsafe.escape(display_name)
-    select_for_update = bool(request.method != 'GET')
+    select_for_update = bool(request.method not in SAFE_METHODS)
 
     if isinstance(pk_or_query, Q):
         try:
