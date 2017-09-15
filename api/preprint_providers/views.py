@@ -212,7 +212,7 @@ class PreprintProviderPreprintList(JSONAPIBaseView, generics.ListAPIView, Prepri
 
     # overrides ListAPIView
     def get_queryset(self):
-        return self.get_queryset_from_request().distinct()
+        return self.get_queryset_from_request().distinct('id', 'date_created')
 
 
 class PreprintProviderTaxonomies(JSONAPIBaseView, generics.ListAPIView):

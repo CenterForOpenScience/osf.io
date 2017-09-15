@@ -348,9 +348,10 @@ class ListFilterMixin(FilterMixin):
         filters = self.parse_query_params(query_params)
         queryset = default_queryset
         query_parts = []
-        sub_query_parts = []
+
         if filters:
             for key, field_names in filters.iteritems():
+                sub_query_parts = []
                 for field_name, data in field_names.iteritems():
                     operations = data if isinstance(data, list) else [data]
                     if isinstance(queryset, list):

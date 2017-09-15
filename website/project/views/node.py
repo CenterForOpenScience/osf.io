@@ -1055,14 +1055,18 @@ def search_node(auth, **kwargs):
     # Exclude current node from query if provided
     nin = [node.id] + list(node._nodes.values_list('pk', flat=True)) if node else []
 
+    can_view_query = Q(_contributors=auth.user)
+    if include_public:
+        can_view_query = can_view_query | Q(is_public=True)
+
     nodes = (AbstractNode.objects
         .filter(
-            Q(_contributors=auth.user) |
-            Q(is_public=bool(include_public)),
+            can_view_query,
             title__icontains=query,
             is_deleted=False)
         .exclude(id__in=nin)
-        .exclude(type='osf.collection'))
+        .exclude(type='osf.collection')
+        .exclude(type='osf.quickfilesnode'))
 
     count = nodes.count()
     pages = math.ceil(count / size)
