@@ -19,7 +19,7 @@ if (!window.contextVars.currentUser.isContributor) {
 }
 
 // Used for clearing backward/forward cache issues
-$(window).unload(function(){
+$(window).on('unload', function(){
     return 'Unload';
 });
 
