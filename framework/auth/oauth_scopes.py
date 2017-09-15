@@ -197,7 +197,7 @@ class ComposedScopes(object):
 
     # Full permissions: all routes intended to be exposed to third party API users
     FULL_READ = NODE_ALL_READ + USERS_READ + ORGANIZER_READ + GUIDS_READ + METASCHEMAS_READ + DRAFT_READ + REVIEWS_READ + (CoreScopes.INSTITUTION_READ, CoreScopes.SEARCH, )
-    FULL_WRITE = FULL_READ + NODE_ALL_WRITE + USERS_WRITE + ORGANIZER_WRITE + DRAFT_WRITE
+    FULL_WRITE = FULL_READ + NODE_ALL_WRITE + USERS_WRITE + ORGANIZER_WRITE + DRAFT_WRITE + REVIEWS_WRITE
 
     # Admin permissions- includes functionality not intended for third-party use
     ADMIN_LEVEL = FULL_WRITE + APPLICATIONS_WRITE + TOKENS_WRITE + COMMENT_REPORTS_WRITE + USERS_CREATE + REVIEWS_WRITE +\

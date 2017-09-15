@@ -49,8 +49,8 @@ GROUP_FORMAT = 'reviews_{provider_id}_{group}'
 GROUPS = {
     'admin': ('set_up_moderation', 'add_moderator', 'view_submissions', 'accept_submissions', 'reject_submissions', 'edit_review_comments', 'view_actions'),
     'moderator': ('view_submissions', 'accept_submissions', 'reject_submissions', 'edit_review_comments', 'view_actions'),
-    'manager': (),  # TODO "Senior editor"-like role, can add/remove/assign moderators and reviewers
-    'reviewer': (),  # TODO Implement reviewers
+    # 'manager': (),  # TODO "Senior editor"-like role, can add/remove/assign moderators and reviewers
+    # 'reviewer': (),  # TODO Implement reviewers
 }
 
 
