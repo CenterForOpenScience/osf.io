@@ -464,8 +464,8 @@ function checkConflicts(tb, item, folder, cb) {
                 m('', messageArray), [
                     m('span.btn.btn-primary.btn-sm', {onclick: cb.bind(tb, 'keep')}, 'Keep Both'),
                     m('span.btn.btn-primary.btn-sm', {onclick: cb.bind(tb, 'replace')}, 'Replace'),
-                    m('span.btn.btn-default.btn-sm', {onclick: function() {handleCancel(tb, folder.data.provider, 'skip');}}, 'Skip'), //jshint ignore:line
-                    m('span.btn.btn-danger.btn-sm', {onclick: function() {handleCancel(tb, folder.data.provider, 'cancel');}}, 'Cancel') //jshint ignore:lin                                                                          e
+                    m('span.btn.btn-default.btn-sm', {onclick: function() {handleCancel(tb, folder.data.provider, 'skip');}}, 'Skip'),
+                    m('span.btn.btn-danger.btn-sm', {onclick: function() {handleCancel(tb, folder.data.provider, 'cancel');}}, 'Cancel')
                 ],
                 m('h3.break-word.modal-title', 'Replace "' + child.data.name + '"?')
             );
