@@ -4,7 +4,7 @@ import logging
 from django.core.management.base import BaseCommand
 from django.db import transaction
 
-from osf.models import Node
+from osf.models import Node, BaseFileNode, TrashedFileNode
 from scripts import utils as script_utils
 
 logger = logging.getLogger(__name__)
@@ -12,15 +12,20 @@ logger = logging.getLogger(__name__)
 
 def remove_logs_and_files(node_guid):
     assert node_guid, 'Expected truthy node_id, got {}'.format(node_guid)
-    n = Node.load(node_guid)
-    assert n, 'Unable to find node with guid {}'.format(node_guid)
-    logger.info('Deleting file versions...')
-    for file in n.files.exclude(parent__isnull=True):
-        file.versions.all().delete()
-    logger.info('Deleting file nodes...')
-    n.files.exclude(parent__isnull=True).delete()
-    logger.info('Deleting logs...')
-    n.logs.exclude(id=n.logs.earliest().id).delete()
+    node = Node.load(node_guid)
+    assert node, 'Unable to find node with guid {}'.format(node_guid)
+    for n in node.node_and_primary_descendants():
+        logger.info('{} - Deleting file versions...'.format(n._id))
+        for file in n.files.exclude(parent__isnull=True):
+            try:
+                file.versions.exclude(id=file.versions.latest('date_created').id).delete()
+            except file.versions.model.DoesNotExist:
+                # No FileVersions, skip
+                pass
+        logger.info('{} - Deleting trashed file nodes...'.format(n._id))
+        BaseFileNode.objects.filter(type__in=TrashedFileNode._typedmodels_subtypes, node=n).delete()
+        logger.info('{} - Deleting logs...'.format(n._id))
+        n.logs.exclude(id=n.logs.earliest().id).delete()
 
 class Command(BaseCommand):
     """
@@ -53,3 +58,4 @@ class Command(BaseCommand):
             remove_logs_and_files(node_id)
             if not really_delete:
                 raise RuntimeError('Not certain enough -- transaction rolled back')
+            logger.info('Committing...')
