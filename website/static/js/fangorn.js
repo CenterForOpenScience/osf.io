@@ -430,6 +430,19 @@ function _fangornToggleCheck(item) {
     return false;
 }
 
+function handleCancel(tb, provider, mode){
+    if (mode === 'cancel') {
+        tb.syncFileMoveCache[provider].length = 0;
+        tb.modal.dismiss();
+    } else {
+        if (tb.syncFileMoveCache[provider].length > 0){
+            doSyncMove(tb, provider);
+        } else {
+            tb.modal.dismiss();
+        }
+    }
+}
+
 function checkConflicts(tb, item, folder, cb) {
     var messageArray = [];
     for(var i = 0; i < folder.children.length; i++) {
@@ -443,14 +456,16 @@ function checkConflicts(tb, item, folder, cb) {
                     '"Replace" will overwrite the existing file in this location. ' +
                     'You will lose previous versions of the overwritten file. ' +
                     'You will keep previous versions of the moved file.'),
-                m('h5.replace-file', '"Cancel" will cancel the move.')
+                m('h5.replace-file', '"Skip" will skip the current move.'),
+                m('h5.replace-file', '"Cancel" will cancel all remaining moves.')
             ]);
 
             tb.modal.update(
                 m('', messageArray), [
-                    m('span.btn.btn-default', {onclick: function() {tb.modal.dismiss();}}, 'Cancel'), //jshint ignore:line
-                    m('span.btn.btn-primary', {onclick: cb.bind(tb, 'keep')}, 'Keep Both'),
-                    m('span.btn.btn-primary', {onclick: cb.bind(tb, 'replace')}, 'Replace')
+                    m('span.btn.btn-primary.btn-sm', {onclick: cb.bind(tb, 'keep')}, 'Keep Both'),
+                    m('span.btn.btn-primary.btn-sm', {onclick: cb.bind(tb, 'replace')}, 'Replace'),
+                    m('span.btn.btn-default.btn-sm', {onclick: function() {handleCancel(tb, folder.data.provider, 'skip');}}, 'Skip'), //jshint ignore:line
+                    m('span.btn.btn-danger.btn-sm', {onclick: function() {handleCancel(tb, folder.data.provider, 'cancel');}}, 'Cancel') //jshint ignore:lin                                                                          e
                 ],
                 m('h3.break-word.modal-title', 'Replace "' + child.data.name + '"?')
             );
@@ -500,7 +515,22 @@ function checkConflictsRename(tb, item, name, cb) {
 
 function doItemOp(operation, to, from, rename, conflict) {
     var tb = this;
-    tb.modal.dismiss();
+    var filesRemaining = tb.syncFileMoveCache && tb.syncFileMoveCache[to.data.provider];
+    if (filesRemaining && filesRemaining.length > 0){
+        var s = filesRemaining.length > 1 ? 's' : '';
+        var mithrilContent = m('div', { className: 'text-center' }, [
+            m('p.h4', filesRemaining.length + ' file' + s + ' left to move'),
+            m('div', {className: 'ball-pulse ball-scale-blue text-center'}, [
+                m('div',''),
+                m('div',''),
+                m('div',''),
+            ])
+        ]);
+        var header =  m('h3.break-word.modal-title', operation.action + ' "' + from.data.name +'"');
+        tb.modal.update(mithrilContent, m('', []), header);
+    } else {
+        tb.modal.dismiss();
+    }
     var ogParent = from.parentID;
     if (to.id === ogParent && (!rename || rename === from.data.name)){
       return;
@@ -639,7 +669,7 @@ function doItemOp(operation, to, from, rename, conflict) {
         orderFolder.call(tb, from.parent());
     }).always(function(){
         from.inProgress = false;
-        if (SYNC_UPLOAD_ADDONS.indexOf(to.data.provider) !== -1){
+        if (tb.syncFileMoveCache[to.data.provider].length > 0) {
             doSyncMove(tb, to.data.provider);
         }
     });
@@ -2397,17 +2427,13 @@ function _dropLogic(event, items, folder) {
         return tb.updateFolder(null, folder, _dropLogic.bind(tb, event, items, folder));
     }
 
-    if (SYNC_UPLOAD_ADDONS.indexOf(folder.data.provider) !== -1) {
+    if (SYNC_UPLOAD_ADDONS.indexOf(folder.data.provider) !== -1 || folder.data.provider === 'osfstorage') {
         tb.syncFileMoveCache = tb.syncFileMoveCache || {};
         tb.syncFileMoveCache[folder.data.provider] = tb.syncFileMoveCache[folder.data.provider] || [];
         $.each(items, function(index, item) {
             tb.syncFileMoveCache[folder.data.provider].push({'item' : item, 'folder' : folder});
         });
         doSyncMove(tb, folder.data.provider);
-    }else{
-        $.each(items, function(index, item) {
-            checkConflicts(tb, item, folder, doItemOp.bind(tb, copyMode === 'move' ? OPERATIONS.MOVE : OPERATIONS.COPY, folder, item, undefined));
-        });
     }
 }
 
