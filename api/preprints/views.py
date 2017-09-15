@@ -1,7 +1,6 @@
 import re
 
 from django.db.models import Q
-from django.shortcuts import get_object_or_404
 
 from rest_framework import generics
 from rest_framework.exceptions import NotFound, PermissionDenied, NotAuthenticated
@@ -41,9 +40,12 @@ class PreprintMixin(NodeMixin):
     preprint_lookup_url_kwarg = 'preprint_id'
 
     def get_preprint(self, check_object_permissions=True):
-        preprint = get_object_or_404(
-            PreprintService.objects.select_related('node'), guids___id=self.kwargs[self.preprint_lookup_url_kwarg]
-        )
+        qs = PreprintService.objects.filter(guids___id=self.kwargs[self.preprint_lookup_url_kwarg])
+        try:
+            preprint = qs.select_for_update().get() if self.request.method not in drf_permissions.SAFE_METHODS else qs.select_related('node').get()
+        except PreprintService.DoesNotExist:
+            raise NotFound
+
         if preprint.node.is_deleted:
             raise NotFound
         # May raise a permission denied
