@@ -194,6 +194,7 @@ class PreprintProviderDetail(JSONAPIBaseView, generics.RetrieveUpdateAPIView):
     def get_object(self):
         provider = get_object_or_error(PreprintProvider, self.kwargs['provider_id'], self.request, display_name='PreprintProvider')
         self.check_object_permissions(self.request, provider)
+        return provider
 
     def perform_update(self, serializer):
         if serializer.instance.is_moderated:
