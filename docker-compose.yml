@@ -289,7 +289,7 @@ services:
     stdin_open: true
 
   sharejs:
-    build: ./addons/wiki/
+    image: quay.io/centerforopenscience/sharejs:develop
     restart: unless-stopped
     ports:
       - 7007:7007

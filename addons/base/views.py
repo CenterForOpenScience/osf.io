@@ -250,7 +250,8 @@ def get_auth(auth, **kwargs):
             options={'require_exp': True},
             algorithm=settings.WATERBUTLER_JWT_ALGORITHM
         )['data']
-    except (jwt.InvalidTokenError, KeyError):
+    except (jwt.InvalidTokenError, KeyError) as err:
+        sentry.log_message(str(err))
         raise HTTPError(httplib.FORBIDDEN)
 
     if not auth.user:
