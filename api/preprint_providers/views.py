@@ -199,7 +199,6 @@ class PreprintProviderDetail(JSONAPIBaseView, generics.RetrieveUpdateAPIView):
         if serializer.instance.is_moderated:
             raise Conflict('Reviews settings may be set only once. Contact support@osf.io if you need to update them.')
         super(PreprintProviderDetail, self).perform_update(serializer)
->>>>>>> [MOD-61] Set reviews settings by PATCHing provider (#28)
 
 
 class PreprintProviderPreprintList(JSONAPIBaseView, generics.ListAPIView, PreprintFilterMixin):
