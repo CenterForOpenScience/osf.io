@@ -43,7 +43,7 @@ def set_file_view_counts(state, *args, **kwargs):
 
 class Command(BaseCommand):
     """
-    Backfill Retraction.date_retracted with `RETRACTION_APPROVED` log date.
+    Migrate initiate pagecounter  file view counts from keen
     """
     def add_arguments(self, parser):
         super(Command, self).add_arguments(parser)
