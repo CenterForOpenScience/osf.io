@@ -960,6 +960,32 @@ class TestForgotPassword(OsfTestCase):
         self.user.reload()
         assert_equal(self.user.verification_key_v2, {})
 
+    # test that non-existing user cannot receive reset password email
+    @mock.patch('framework.auth.views.mails.send_mail')
+    def test_not_active_user_no_reset_password_email(self, mock_send_mail):
+        self.user.disable_account()
+        self.user.save()
+
+        # load forgot password page and submit email
+        res = self.app.get(self.get_url)
+        form = res.forms['forgotPasswordForm']
+        form['forgot_password-email'] = self.user.username
+        res = form.submit()
+
+        # check mail was not sent
+        assert_false(mock_send_mail.called)
+        # check http 200 response
+        assert_equal(res.status_code, 200)
+        # check request URL is /forgotpassword
+        assert_equal(res.request.path, self.post_url)
+        # check push notification
+        assert_in_html('If there is an OSF account', res)
+        assert_not_in_html('Please wait', res)
+
+        # check verification_key_v2 is not set
+        self.user.reload()
+        assert_equal(self.user.verification_key_v2, {})
+
     # test that user cannot submit forgot password request too quickly
     @mock.patch('framework.auth.views.mails.send_mail')
     def test_cannot_reset_password_twice_quickly(self, mock_send_mail):
