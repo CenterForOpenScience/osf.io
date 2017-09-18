@@ -68,6 +68,7 @@ var LogFeed = {
                     return promise;
                 }, function(xhr, textStatus, error) {
                     self.failed = true;
+                    $('#linkProjects').toggleClass('disabled');
                     self.logRequestPending(false);
                     Raven.captureMessage('Error retrieving logs', {extra: {url: url, textStatus: textStatus, error: error}});
                 }
