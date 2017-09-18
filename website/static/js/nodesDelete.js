@@ -4,7 +4,6 @@
 'use strict';
 
 var $ = require('jquery');
-var $3 = window.$3;
 var ko = require('knockout');
 var Raven = require('raven-js');
 var $osf = require('./osfHelpers');
@@ -55,7 +54,7 @@ function batchNodesDelete(nodes) {
     });
 
     //s3 is a very recent version of jQuery that fixes a known bug when used in internet explorer
-    return $3.ajax({
+    return $.ajax({
         url: nodesV2Url,
         type: 'DELETE',
         dataType: 'json',
@@ -65,7 +64,10 @@ function batchNodesDelete(nodes) {
         processData: false,
         data: JSON.stringify({
             data: nodesBatch
-        })
+        }),
+        success: function(){
+            window.location.href = '/dashboard/';
+        }
     });
 }
 
@@ -82,8 +84,6 @@ var NodesDeleteViewModel = function(node) {
     self.confirmationString = '';
     self.parentIsEmbargoed = node.is_embargoed;
     self.parentIsPublic = node.is_public;
-    self.parentNodeType = node.node_type;
-    self.isPreprint = node.is_preprint;
     self.treebeardUrl = window.contextVars.node.urls.api  + 'tree/';
     self.nodesOriginal = {};
     self.nodesDeleted = ko.observable();
@@ -206,7 +206,6 @@ NodesDeleteViewModel.prototype.confirmChanges =  function() {
             $osf.block('Deleting Project');
             batchNodesDelete(nodesChanged.reverse()).then(function () {
                 self.page(self.WARNING);
-                window.location.reload();
             }).fail(function (xhr) {
                 $osf.unblock();
                 var errorMessage = 'Unable to delete project';
