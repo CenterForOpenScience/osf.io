@@ -1,0 +1,10 @@
+{
+    "weko_file_added" : "${user} added file ${filename} to WEKO index ${dataset} in ${node}",
+    "weko_file_removed" : "${user} removed file ${filename} from WEKO index ${dataset} in ${node}",
+    "weko_index_linked" : "${user} linked WEKO index ${dataset} to ${node}",
+    "weko_index_created" : "${user} created an index ${filename} on ${node}",
+    "weko_item_created" : "${user} created an item ${filename} on ${node}",
+    "weko_node_authorized" : "${user} authorized the WEKO addon for ${node}",
+    "weko_node_deauthorized" : "${user} deauthorized the WEKO addon for ${node}",
+    "weko_node_deauthorized_no_user" : "WEKO addon for ${node} deauthorized"
+}

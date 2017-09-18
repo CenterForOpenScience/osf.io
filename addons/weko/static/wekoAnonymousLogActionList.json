@@ -1,0 +1,10 @@
+{
+    "weko_file_added" : "A user added a file to a WEKO index in a project",
+    "weko_file_removed" : "A user removed a file from a WEKO index in a project",
+    "weko_index_linked" : "A user linked a WEKO index to a project",
+    "weko_index_created" : "A user created an index to a project",
+    "weko_item_created" : "A user created an item to a project",
+    "weko_node_authorized" : "A user authorized the WEKO addon for a project",
+    "weko_node_deauthorized" : "A user deauthorized the WEKO addon for a project",
+    "weko_node_deauthorized_no_user" : "WEKO addon for a project deauthorized"
+}

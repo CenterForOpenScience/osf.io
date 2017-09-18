@@ -18,7 +18,8 @@
         "googledrive",
         "bitbucket",
         "swift",
-        "azureblobstorage"
+        "azureblobstorage",
+        "weko"
     ],
     "addons_default": [
         "osfstorage"
@@ -39,7 +40,8 @@
         "wiki": "full",
         "bitbucket": "partial",
         "swift": "partial",
-        "azureblobstorage": "partial"
+        "azureblobstorage": "partial",
+        "weko": "partial"
     },
     "addons_commentable": [
         "osfstorage",
@@ -56,7 +58,8 @@
         "onedrive",
         "swift",
         "swift",
-        "azureblobstorage"
+        "azureblobstorage",
+        "weko"
     ],
     "addons_based_on_ids": [
         "osfstorage",
@@ -82,7 +85,8 @@
         "bitbucket": "Bitbucket is a web-based Git repository hosting service. Connect your Bitbucket repo to your OSF project to share your code alongside other materials in your OSF project.",
         "onedrive": "Microsoft OneDrive is a file storage add-on. Connect your Microsoft OneDrive account to an OSF project to interact with files hosted on Microsoft OneDrive via the OSF.",
         "swift": "Swift is a file storage add-on. Connect your Swift account to an OSF project to interact with files hosted on Swift via the OSF.",
-        "azureblobstorage": "Azure Blob Storage is a file storage add-on. Connect your Azure Storage account to an OSF project to interact with files hosted on Azure Blob Storage (Block Blob) via the OSF."
+        "azureblobstorage": "Azure Blob Storage is a file storage add-on. Connect your Azure Storage account to an OSF project to interact with files hosted on Azure Blob Storage (Block Blob) via the OSF.",
+        "weko": "WEKO is an application server to share, archive data."
     },
     "addons_url": {
         "box": "http://www.box.com",
@@ -99,6 +103,7 @@
         "bitbucket": "https://bitbucket.org/",
         "onedrive": "https://onedrive.live.com",
         "swift": "https://wiki.openstack.org/wiki/Swift",
-        "azureblobstorage": "https://azure.microsoft.com/"
+        "azureblobstorage": "https://azure.microsoft.com/",
+        "weko": "https://weko.at.nii.ac.jp/"
     }
 }
