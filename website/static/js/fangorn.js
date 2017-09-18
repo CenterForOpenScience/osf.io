@@ -2434,6 +2434,10 @@ function _dropLogic(event, items, folder) {
             tb.syncFileMoveCache[folder.data.provider].push({'item' : item, 'folder' : folder});
         });
         doSyncMove(tb, folder.data.provider);
+    } else {
+        $.each(items, function(index, item) {
+            checkConflicts(tb, item, folder, doItemOp.bind(tb, copyMode === 'move' ? OPERATIONS.MOVE : OPERATIONS.COPY, folder, item, undefined));
+        });
     }
 }
 
