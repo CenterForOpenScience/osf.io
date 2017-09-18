@@ -3,7 +3,7 @@ import os
 from flask import send_from_directory
 from website.settings import EXTERNAL_EMBER_APPS
 
-quickfiles_dir = os.path.abspath(os.path.join(os.getcwd(), EXTERNAL_EMBER_APPS['quickfiles']['path']))
+quickfiles_dir = os.path.abspath(os.path.join(os.getcwd(), EXTERNAL_EMBER_APPS['ember-osf-web']['path']))
 
 def quickfiles_landing_page(**kwargs):
     return {}

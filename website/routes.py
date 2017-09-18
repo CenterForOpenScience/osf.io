@@ -422,13 +422,6 @@ def make_url_map(app):
         ),
 
         Rule(
-            '/quickfiles/',
-            'get',
-            quickfiles_views.quickfiles_landing_page,
-            OsfWebRenderer('public/pages/quickfiles_landing.mako', trust=False),
-        ),
-
-        Rule(
             '/preprint/',
             'get',
             preprint_views.preprint_redirect,
@@ -1243,6 +1236,12 @@ def make_url_map(app):
             'get',
             addon_views.addon_view_or_download_quickfile,
             json_renderer
+        ),
+        Rule(
+            '/quickfiles/',
+            'get',
+            quickfiles_views.use_ember_app,
+            notemplate,
         )
     ])
 
