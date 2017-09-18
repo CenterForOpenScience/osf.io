@@ -5,8 +5,6 @@ from api.base.settings.defaults import API_BASE
 from osf_tests.factories import AuthUserFactory, ProjectFactory
 
 
-# pytestmark = pytest.mark.skip('Unskip when throttling no longer fails on travis')
-
 @pytest.mark.django_db
 class TestDefaultThrottleClasses:
 
@@ -17,9 +15,11 @@ class TestDefaultThrottleClasses:
         assert res.status_code == 200
         assert mock_base.call_count == 2
 
+
 @pytest.fixture()
 def user():
     return AuthUserFactory()
+
 
 @pytest.mark.django_db
 class TestRootThrottle:
@@ -35,10 +35,12 @@ class TestRootThrottle:
         assert mock_allow.call_count == 1
 
     @mock.patch('rest_framework.throttling.UserRateThrottle.allow_request')
-    def test_root_throttle_unauthenticated_request(self, mock_allow, app, url, user):
+    def test_root_throttle_unauthenticated_request(
+            self, mock_allow, app, url, user):
         res = app.get(url, auth=user.auth)
         assert res.status_code == 200
         assert mock_allow.call_count == 1
+
 
 @pytest.mark.django_db
 class TestUserRateThrottle:
@@ -53,6 +55,7 @@ class TestUserRateThrottle:
         assert res.status_code == 200
         assert mock_allow.call_count == 1
 
+
 @pytest.mark.django_db
 class TestNonCookieAuthThrottle:
 
@@ -61,10 +64,12 @@ class TestNonCookieAuthThrottle:
         return '/{}nodes/'.format(API_BASE)
 
     @mock.patch('api.base.throttling.NonCookieAuthThrottle.allow_request')
-    def test_cookie_throttle_rate_allow_request_called(self, mock_allow, app, url):
+    def test_cookie_throttle_rate_allow_request_called(
+            self, mock_allow, app, url):
         res = app.get(url)
         assert res.status_code == 200
         assert mock_allow.call_count == 1
+
 
 @pytest.mark.django_db
 class TestAddContributorEmailThrottle:
@@ -88,31 +93,36 @@ class TestAddContributorEmailThrottle:
     @pytest.fixture()
     def data_user_two(self, user_two):
         return {
-                'data': {
-                    'type': 'contributors',
-                    'attributes': {
+            'data': {
+                'type': 'contributors',
+                'attributes': {
                         'bibliographic': True,
-                    },
-                    'relationships': {
-                        'users': {
-                            'data': {
-                                'type': 'users',
-                                'id': user_two._id,
-                            }
+                },
+                'relationships': {
+                    'users': {
+                        'data': {
+                            'type': 'users',
+                            'id': user_two._id,
                         }
                     }
                 }
             }
+        }
 
     @mock.patch('api.base.throttling.AddContributorThrottle.allow_request')
-    def test_add_contrib_throttle_rate_allow_request_not_called(self, mock_allow, app, url):
+    def test_add_contrib_throttle_rate_allow_request_not_called(
+            self, mock_allow, app, url):
         res = app.get(url)
         assert res.status_code == 200
         assert mock_allow.call_count == 0
 
     @mock.patch('api.base.throttling.AddContributorThrottle.allow_request')
-    def test_add_contrib_throttle_rate_allow_request_called(self, mock_allow, app, url_contrib_public_project, user, data_user_two):
-        res = app.post_json_api(url_contrib_public_project, data_user_two, auth=user.auth)
+    def test_add_contrib_throttle_rate_allow_request_called(
+            self, mock_allow, app, url_contrib_public_project, user, data_user_two):
+        res = app.post_json_api(
+            url_contrib_public_project,
+            data_user_two,
+            auth=user.auth)
         assert res.status_code == 201
         assert mock_allow.call_count == 1
 
@@ -120,8 +130,8 @@ class TestAddContributorEmailThrottle:
     @mock.patch('rest_framework.throttling.UserRateThrottle.allow_request')
     @mock.patch('api.base.throttling.AddContributorThrottle.allow_request')
     def test_add_contrib_throttle_rate_and_default_rates_called(
-        self, mock_contrib_allow, mock_user_allow, mock_anon_allow,
-        app, url_contrib_public_project, user):
+            self, mock_contrib_allow, mock_user_allow, mock_anon_allow,
+            app, url_contrib_public_project, user):
 
         res = app.get(url_contrib_public_project, auth=user.auth)
         assert res.status_code == 200

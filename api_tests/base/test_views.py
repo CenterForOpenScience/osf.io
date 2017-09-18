@@ -20,7 +20,9 @@ URLS_MODULES = []
 for loader, name, _ in pkgutil.iter_modules(['api']):
     if name != 'base' and name != 'test':
         try:
-            URLS_MODULES.append(importlib.import_module('api.{}.urls'.format(name)))
+            URLS_MODULES.append(
+                importlib.import_module(
+                    'api.{}.urls'.format(name)))
         except ImportError:
             pass
 
@@ -30,6 +32,7 @@ for mod in URLS_MODULES:
     for patt in urlpatterns:
         VIEW_CLASSES.append(patt.callback.cls)
 
+
 @pytest.mark.django_db
 class TestApiBaseViews:
 
@@ -38,7 +41,7 @@ class TestApiBaseViews:
         assert res.status_code == 200
 
     def test_does_not_exist_returns_404(self, app):
-        res = app.get('/{}{}'.format(API_BASE,'notapage'), expect_errors=True)
+        res = app.get('/{}{}'.format(API_BASE, 'notapage'), expect_errors=True)
         assert res.status_code == 404
 
     def test_does_not_exist_formatting(self, app):
@@ -57,9 +60,11 @@ class TestApiBaseViews:
             for cls in base_permissions:
                 if isinstance(cls, tuple):
                     has_cls = any([c in view.permission_classes for c in cls])
-                    assert has_cls, "{0} lacks the appropriate permission classes".format(view)
+                    assert has_cls, "{0} lacks the appropriate permission classes".format(
+                        view)
                 else:
-                    assert cls in view.permission_classes, "{0} lacks the appropriate permission classes".format(view)
+                    assert cls in view.permission_classes, "{0} lacks the appropriate permission classes".format(
+                        view)
             for key in ['read', 'write']:
                 scopes = getattr(view, 'required_{}_scopes'.format(key), None)
                 assert bool(scopes)
@@ -70,24 +75,35 @@ class TestApiBaseViews:
 
     def test_view_classes_support_embeds(self):
         for view in VIEW_CLASSES:
-            assert hasattr(view, '_get_embed_partial'), "{0} lacks embed support".format(view)
+            assert hasattr(
+                view, '_get_embed_partial'), "{0} lacks embed support".format(view)
 
     def test_view_classes_define_or_override_serializer_class(self):
         for view in VIEW_CLASSES:
-            has_serializer_class = getattr(view, 'serializer_class', None) or getattr(view, 'get_serializer_class', None)
-            assert has_serializer_class, "{0} should include serializer class or override get_serializer_class()".format(view)
+            has_serializer_class = getattr(
+                view, 'serializer_class', None) or getattr(
+                view, 'get_serializer_class', None)
+            assert has_serializer_class, "{0} should include serializer class or override get_serializer_class()".format(
+                view)
 
     def test_unconfirmed_user_gets_error(self, app):
         with mock.patch('osf.models.OSFUser.is_confirmed', mock.PropertyMock(return_value=False)):
             user = AuthUserFactory()
-            res = app.get('/{}nodes/'.format(API_BASE), auth=user.auth, expect_errors=True)
+            res = app.get(
+                '/{}nodes/'.format(API_BASE),
+                auth=user.auth,
+                expect_errors=True)
         assert res.status_code == http.BAD_REQUEST
 
     def test_disabled_user_gets_error(self, app):
         with mock.patch('osf.models.OSFUser.is_disabled', mock.PropertyMock(return_value=True)):
             user = AuthUserFactory()
-            res = app.get('/{}nodes/'.format(API_BASE), auth=user.auth, expect_errors=True)
+            res = app.get(
+                '/{}nodes/'.format(API_BASE),
+                auth=user.auth,
+                expect_errors=True)
         assert res.status_code == http.BAD_REQUEST
+
 
 @pytest.mark.django_db
 class TestStatusView:
@@ -95,12 +111,12 @@ class TestStatusView:
     def test_status_view(self, app):
         url = '/{}status/'.format(API_BASE)
 
-        #test_status_view_wo_maintenance
+        # test_status_view_wo_maintenance
         res = app.get(url)
         assert res.status_code == 200
         assert res.json == {'maintenance': None}
 
-        #test_status_view_with_maintenance
+        # test_status_view_with_maintenance
         maintenance.set_maintenance(message='test')
         res = app.get(url)
         m = maintenance.get_maintenance()
@@ -123,14 +139,16 @@ class TestJSONAPIBaseView:
         for i in range(5):
             ProjectFactory(parent=node)
 
-        #test_request_added_to_serializer_context
-        with mock.patch('api.base.serializers.JSONAPISerializer.to_representation', autospec=True) as  mock_to_representation:
+        # test_request_added_to_serializer_context
+        with mock.patch('api.base.serializers.JSONAPISerializer.to_representation', autospec=True) as mock_to_representation:
             url = '/{0}nodes/{1}/'.format(API_BASE, node._id)
             app.get(url, auth=user.auth)
             assert 'request' in mock_to_representation.call_args[0][0].context
 
-        #test_reverse_sort_possible
-        res = app.get('http://localhost:8000/v2/users/me/nodes/?sort=-title', auth=user.auth)
+        # test_reverse_sort_possible
+        res = app.get(
+            'http://localhost:8000/v2/users/me/nodes/?sort=-title',
+            auth=user.auth)
         assert res.status_code == 200
 
 

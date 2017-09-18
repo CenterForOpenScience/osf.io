@@ -9,7 +9,6 @@ import pytest
 from pytz import utc
 import urllib
 
-# from tests.base import ApiTestCase, DbTestCase
 from api.base.settings.defaults import API_BASE
 from api.base.serializers import JSONAPISerializer, BaseAPISerializer
 from api.base import serializers as base_serializers
@@ -29,7 +28,9 @@ SER_MODULES = []
 for loader, name, _ in pkgutil.iter_modules(['api']):
     if name != 'base' and name != 'test':
         try:
-            SER_MODULES.append(importlib.import_module('api.{}.serializers'.format(name)))
+            SER_MODULES.append(
+                importlib.import_module(
+                    'api.{}.serializers'.format(name)))
         except ImportError:
             pass
 
@@ -44,6 +45,7 @@ for mod in SER_MODULES:
         except TypeError:
             pass
 
+
 class FakeModel(object):
 
     def null_field(self):
@@ -56,6 +58,7 @@ class FakeModel(object):
     foo = 'bar'
 
     pk = '1234'
+
 
 class FakeSerializer(base_serializers.JSONAPISerializer):
 
@@ -74,6 +77,7 @@ class FakeSerializer(base_serializers.JSONAPISerializer):
         related_view='nodes:node-detail',
         related_view_kwargs={'node_id': '<foo>'},
     )
+
     def null_field(*args, **kwargs):
         return None
 
@@ -84,8 +88,11 @@ class FakeSerializer(base_serializers.JSONAPISerializer):
 class TestSerializerMetaType:
     def test_expected_serializers_have_meta_types(self):
         for ser in SER_CLASSES:
-            assert hasattr(ser, 'Meta'), 'Serializer {} has no Meta'.format(ser)
-            assert hasattr(ser.Meta, 'type_'), 'Serializer {} has no Meta.type_'.format(ser)
+            assert hasattr(
+                ser, 'Meta'), 'Serializer {} has no Meta'.format(ser)
+            assert hasattr(
+                ser.Meta, 'type_'), 'Serializer {} has no Meta.type_'.format(ser)
+
 
 @pytest.mark.django_db
 class TestNodeSerializerAndRegistrationSerializerDifferences:
@@ -96,7 +103,9 @@ class TestNodeSerializerAndRegistrationSerializerDifferences:
     HideIfRegistration fields should not be serialized on registrations.
     """
 
-    def test_node_serializer_and_registration_serializer_differences(self, app):
+    def test_node_serializer_and_registration_serializer_differences(
+            self,
+            app):
 
         node = ProjectFactory(is_public=True)
         registration = RegistrationFactory(project=node, is_public=True)
@@ -104,9 +113,20 @@ class TestNodeSerializerAndRegistrationSerializerDifferences:
         url = '/{}nodes/{}/'.format(API_BASE, node._id)
         url_reg = '/{}registrations/{}/'.format(API_BASE, registration._id)
 
-        #test_registration_serializer
+        # test_registration_serializer
         # fields that are visible for withdrawals
-        visible_on_withdrawals = ['contributors', 'date_created', 'date_modified', 'description', 'id', 'links', 'registration', 'title', 'type', 'current_user_can_comment', 'preprint']
+        visible_on_withdrawals = [
+            'contributors',
+            'date_created',
+            'date_modified',
+            'description',
+            'id',
+            'links',
+            'registration',
+            'title',
+            'type',
+            'current_user_can_comment',
+            'preprint']
         # fields that do not appear on registrations
         non_registration_fields = ['registrations', 'draft_registrations']
 
@@ -115,21 +135,29 @@ class TestNodeSerializerAndRegistrationSerializerDifferences:
             reg_field = RegistrationSerializer._declared_fields[field]
 
             if field not in visible_on_withdrawals and field not in non_registration_fields:
-                assert (isinstance(reg_field, base_serializers.HideIfWithdrawal)
-                            or isinstance(reg_field, base_serializers.ShowIfVersion))
+                assert (
+                    isinstance(
+                        reg_field,
+                        base_serializers.HideIfWithdrawal) or isinstance(
+                        reg_field,
+                        base_serializers.ShowIfVersion))
 
-        #test_hide_if_registration_fields
+        # test_hide_if_registration_fields
         node_res = app.get(url)
         node_relationships = node_res.json['data']['relationships']
 
         registration_res = app.get(url_reg)
         registration_relationships = registration_res.json['data']['relationships']
 
-        hide_if_registration_fields = [field for field in NodeSerializer._declared_fields if isinstance(NodeSerializer._declared_fields[field], base_serializers.HideIfRegistration)]
+        hide_if_registration_fields = [
+            field for field in NodeSerializer._declared_fields if isinstance(
+                NodeSerializer._declared_fields[field],
+                base_serializers.HideIfRegistration)]
 
         for field in hide_if_registration_fields:
             assert field in node_relationships
             assert field not in registration_relationships
+
 
 @pytest.mark.django_db
 class TestNullLinks:
@@ -142,6 +170,7 @@ class TestNullLinks:
         assert 'valued_field' in rep['links']
         assert 'null_link_field' not in rep['relationships']
         assert 'valued_link_field' in rep['relationships']
+
 
 @pytest.mark.django_db
 class TestApiBaseSerializers:
@@ -165,16 +194,17 @@ class TestApiBaseSerializers:
 
     def test_api_base_serializers(self, app, node, url):
 
-        #test_serializers_have_get_absolute_url_method
+        # test_serializers_have_get_absolute_url_method
         serializers = JSONAPISerializer.__subclasses__()
         base_get_absolute_url = JSONAPISerializer.get_absolute_url
 
         for serializer in serializers:
             if not re.match('^(api_test|test).*', serializer.__module__):
-                assert hasattr(serializer, 'get_absolute_url'), 'No get_absolute_url method'
+                assert hasattr(
+                    serializer, 'get_absolute_url'), 'No get_absolute_url method'
                 assert serializer.get_absolute_url != base_get_absolute_url
 
-        #test_counts_not_included_in_link_fields_by_default
+        # test_counts_not_included_in_link_fields_by_default
         res = app.get(url)
         relationships = res.json['data']['relationships']
         for relation in relationships.values():
@@ -183,7 +213,7 @@ class TestApiBaseSerializers:
             link = relation['links'].values()[0]
             assert 'count' not in link['meta']
 
-        #test_counts_included_in_link_fields_with_related_counts_query_param
+        # test_counts_included_in_link_fields_with_related_counts_query_param
         res = app.get(url, params={'related_counts': True})
         relationships = res.json['data']['relationships']
         for key, relation in relationships.iteritems():
@@ -196,7 +226,7 @@ class TestApiBaseSerializers:
                 link = relation['links'].values()[0]
                 assert 'count' in link['meta'], field
 
-        #test_related_counts_excluded_query_param_false
+        # test_related_counts_excluded_query_param_false
         res = app.get(url, params={'related_counts': False})
         relationships = res.json['data']['relationships']
         for relation in relationships.values():
@@ -205,21 +235,25 @@ class TestApiBaseSerializers:
             link = relation['links'].values()[0]
             assert 'count' not in link['meta']
 
-        #test_invalid_related_counts_value_raises_bad_request(self, app, url):
-        res = app.get(url, params={'related_counts': 'fish'}, expect_errors=True)
+        # test_invalid_related_counts_value_raises_bad_request(self, app, url):
+        res = app.get(
+            url,
+            params={
+                'related_counts': 'fish'},
+            expect_errors=True)
         assert res.status_code == http.BAD_REQUEST
 
-        #test_invalid_embed_value_raise_bad_request
+        # test_invalid_embed_value_raise_bad_request
         res = app.get(url, params={'embed': 'foo'}, expect_errors=True)
         assert res.status_code == http.BAD_REQUEST
         assert res.json['errors'][0]['detail'] == "The following fields are not embeddable: foo"
 
-        #test_embed_does_not_remove_relationship
+        # test_embed_does_not_remove_relationship
         res = app.get(url, params={'embed': 'root'})
         assert res.status_code == 200
         assert url in res.json['data']['relationships']['root']['links']['related']['href']
 
-        #test_counts_included_in_children_field_with_children_related_counts_query_param
+        # test_counts_included_in_children_field_with_children_related_counts_query_param
         res = app.get(url, params={'related_counts': 'children'})
         relationships = res.json['data']['relationships']
         for key, relation in relationships.iteritems():
@@ -234,7 +268,7 @@ class TestApiBaseSerializers:
             else:
                 assert 'count' not in link['meta']
 
-        #test_counts_included_in_children_and_contributors_fields_with_field_csv_related_counts_query_param
+        # test_counts_included_in_children_and_contributors_fields_with_field_csv_related_counts_query_param
         res = app.get(url, params={'related_counts': 'children,contributors'})
         relationships = res.json['data']['relationships']
         for key, relation in relationships.iteritems():
@@ -244,13 +278,18 @@ class TestApiBaseSerializers:
             if getattr(field, 'field', None):
                 field = field.field
             link = relation['links'].values()[0]
-            if (field.related_meta or {}).get('count') and key == 'children' or key == 'contributors':
+            if (field.related_meta or {}).get(
+                    'count') and key == 'children' or key == 'contributors':
                 assert 'count' in link['meta']
             else:
                 assert 'count' not in link['meta']
 
-        #test_error_when_requesting_related_counts_for_attribute_field
-        res = app.get(url, params={'related_counts': 'title'}, expect_errors=True)
+        # test_error_when_requesting_related_counts_for_attribute_field
+        res = app.get(
+            url,
+            params={
+                'related_counts': 'title'},
+            expect_errors=True)
         assert res.status_code == http.BAD_REQUEST
         assert res.json['errors'][0]['detail'] == "Acceptable values for the related_counts query param are 'true', 'false', or any of the relationship fields; got 'title'"
 
@@ -296,9 +335,7 @@ class TestRelationshipField:
         registered_from = RelationshipField(
             related_view=lambda n: 'registrations:registration-detail' if n and n.is_registration else 'nodes:node-detail',
             related_view_kwargs=lambda n: {
-                'node_id': '<registered_from._id>'
-            }
-        )
+                'node_id': '<registered_from._id>'})
 
         field_with_filters = base_serializers.RelationshipField(
             related_view='nodes:node-detail',
@@ -331,41 +368,55 @@ class TestRelationshipField:
 
     def test_base_node_serializers(self, drf_request, component):
 
-        data = self.BasicNodeSerializer(component, context={'request': drf_request}).data['data']
+        data = self.BasicNodeSerializer(
+            component, context={
+                'request': drf_request}).data['data']
 
-        #Regression test for https://openscience.atlassian.net/browse/OSF-4832
-        #test_serializing_meta
+        # Regression test for https://openscience.atlassian.net/browse/OSF-4832
+        # test_serializing_meta
 
         meta = data['relationships']['parent_with_meta']['links']['related']['meta']
         assert 'count' not in meta
         assert 'extra' in meta
         assert meta['extra'] == 'foo'
 
-        #test_self_and_related_fields
+        # test_self_and_related_fields
         relationship_field = data['relationships']['self_and_related_field']['links']
-        assert '/v2/nodes/{}/contributors/'.format(component._id) in relationship_field['self']['href']
-        assert '/v2/nodes/{}/'.format(component._id) in relationship_field['related']['href']
+        assert '/v2/nodes/{}/contributors/'.format(
+            component._id) in relationship_field['self']['href']
+        assert '/v2/nodes/{}/'.format(
+            component._id) in relationship_field['related']['href']
 
-        #test_field_with_two_kwargs
+        # test_field_with_two_kwargs
         field = data['relationships']['two_url_kwargs']['links']
-        assert '/v2/nodes/{}/node_links/{}/'.format(component._id, component._id) in field['related']['href']
+        assert '/v2/nodes/{}/node_links/{}/'.format(
+            component._id, component._id) in field['related']['href']
 
-        #test_field_with_two_filters
+        # test_field_with_two_filters
         field = data['relationships']['field_with_filters']['links']
-        assert urllib.quote('filter[target]=hello', safe='?=') in field['related']['href']
-        assert urllib.quote('filter[woop]=yea', safe='?=') in field['related']['href']
+        assert urllib.quote(
+            'filter[target]=hello',
+            safe='?=') in field['related']['href']
+        assert urllib.quote(
+            'filter[woop]=yea',
+            safe='?=') in field['related']['href']
 
-        #test_field_with_non_attribute
+        # test_field_with_non_attribute
         field = data['relationships']['not_attribute_on_target']['links']
-        assert '/v2/nodes/{}/children/'.format('12345') in field['related']['href']
+        assert '/v2/nodes/{}/children/'.format(
+            '12345') in field['related']['href']
 
-        #test_field_with_callable_related_attrs
+        # test_field_with_callable_related_attrs
         assert 'registered_from' not in data['relationships']
 
         registration = RegistrationFactory(project=component)
-        data = self.BasicNodeSerializer(registration, context={'request': drf_request}).data['data']
+        data = self.BasicNodeSerializer(
+            registration, context={
+                'request': drf_request}).data['data']
         field = data['relationships']['registered_from']['links']
-        assert '/v2/nodes/{}/'.format(component._id) in field['related']['href']
+        assert '/v2/nodes/{}/'.format(
+            component._id) in field['related']['href']
+
 
 @pytest.mark.django_db
 class TestShowIfVersion:
@@ -374,25 +425,30 @@ class TestShowIfVersion:
         node = NodeFactory()
         registration = RegistrationFactory()
 
-        #test_node_links_allowed_version_node_serializer
+        # test_node_links_allowed_version_node_serializer
         req = make_drf_request_with_version(version='2.0')
         data = NodeSerializer(node, context={'request': req}).data['data']
         assert 'node_links' in data['relationships']
 
-        #test_node_links_bad_version_node_serializer
+        # test_node_links_bad_version_node_serializer
         req = make_drf_request_with_version(version='2.1')
         data = NodeSerializer(node, context={'request': req}).data['data']
         assert 'node_links' not in data['relationships']
 
-        #test_node_links_allowed_version_registration_serializer
+        # test_node_links_allowed_version_registration_serializer
         req = make_drf_request_with_version(version='2.0')
-        data = RegistrationSerializer(registration, context={'request': req}).data['data']
+        data = RegistrationSerializer(
+            registration, context={
+                'request': req}).data['data']
         assert 'node_links' in data['attributes']
 
-        #test_node_links_bad_version_registration_serializer
+        # test_node_links_bad_version_registration_serializer
         req = make_drf_request_with_version(version='2.1')
-        data = RegistrationSerializer(registration, context={'request': req}).data['data']
+        data = RegistrationSerializer(
+            registration, context={
+                'request': req}).data['data']
         assert 'node_links' not in data['attributes']
+
 
 @pytest.mark.django_db
 class TestDateByVersion:
@@ -408,27 +464,30 @@ class TestDateByVersion:
         old_format_without_microseconds = '%Y-%m-%dT%H:%M:%S'
         new_format = '%Y-%m-%dT%H:%M:%S.%fZ'
 
-        #test_old_date_formats_to_old_format
+        # test_old_date_formats_to_old_format
         req = make_drf_request_with_version(version='2.0')
         setattr(node, 'date_modified', old_date)
         data = NodeSerializer(node, context={'request': req}).data['data']
-        assert datetime.strftime(old_date, old_format) == data['attributes']['date_modified']
+        assert datetime.strftime(
+            old_date, old_format) == data['attributes']['date_modified']
 
-        #test_old_date_without_microseconds_formats_to_old_format
+        # test_old_date_without_microseconds_formats_to_old_format
         req = make_drf_request_with_version(version='2.0')
         setattr(node, 'date_modified', old_date_without_microseconds)
         data = NodeSerializer(node, context={'request': req}).data['data']
         assert (
-            datetime.strftime(old_date_without_microseconds, old_format_without_microseconds) ==
-            data['attributes']['date_modified'])
+            datetime.strftime(
+                old_date_without_microseconds,
+                old_format_without_microseconds) == data['attributes']['date_modified'])
 
-        #test_old_date_formats_to_new_format
+        # test_old_date_formats_to_new_format
         req = make_drf_request_with_version(version='2.2')
         setattr(node, 'date_modified', old_date)
         data = NodeSerializer(node, context={'request': req}).data['data']
-        assert datetime.strftime(old_date, new_format) == data['attributes']['date_modified']
+        assert datetime.strftime(
+            old_date, new_format) == data['attributes']['date_modified']
 
-        #test_old_date_without_microseconds_formats_to_new_format
+        # test_old_date_without_microseconds_formats_to_new_format
         req = make_drf_request_with_version(version='2.2')
         setattr(node, 'date_modified', old_date_without_microseconds)
         data = NodeSerializer(node, context={'request': req}).data['data']
@@ -436,27 +495,30 @@ class TestDateByVersion:
             datetime.strftime(old_date_without_microseconds, new_format) ==
             data['attributes']['date_modified'])
 
-        #test_new_date_formats_to_old_format
+        # test_new_date_formats_to_old_format
         req = make_drf_request_with_version(version='2.0')
         setattr(node, 'date_modified', new_date)
         data = NodeSerializer(node, context={'request': req}).data['data']
-        assert datetime.strftime(new_date, old_format) == data['attributes']['date_modified']
+        assert datetime.strftime(
+            new_date, old_format) == data['attributes']['date_modified']
 
-        #test_new_date_without_microseconds_formats_to_old_format
+        # test_new_date_without_microseconds_formats_to_old_format
         req = make_drf_request_with_version(version='2.0')
         setattr(node, 'date_modified', new_date_without_microseconds)
         data = NodeSerializer(node, context={'request': req}).data['data']
         assert (
-            datetime.strftime(new_date_without_microseconds, old_format_without_microseconds) ==
-            data['attributes']['date_modified'])
+            datetime.strftime(
+                new_date_without_microseconds,
+                old_format_without_microseconds) == data['attributes']['date_modified'])
 
-        #test_new_date_formats_to_new_format
+        # test_new_date_formats_to_new_format
         req = make_drf_request_with_version(version='2.2')
         setattr(node, 'date_modified', new_date)
         data = NodeSerializer(node, context={'request': req}).data['data']
-        assert datetime.strftime(new_date, new_format) == data['attributes']['date_modified']
+        assert datetime.strftime(
+            new_date, new_format) == data['attributes']['date_modified']
 
-        #test_new_date_without_microseconds_formats_to_new_format
+        # test_new_date_without_microseconds_formats_to_new_format
         req = make_drf_request_with_version(version='2.2')
         setattr(node, 'date_modified', new_date_without_microseconds)
         data = NodeSerializer(node, context={'request': req}).data['data']

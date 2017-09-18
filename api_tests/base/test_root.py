@@ -10,6 +10,7 @@ from osf_tests.factories import AuthUserFactory
 from osf.models import ApiOAuth2PersonalToken, Session
 from website import settings
 
+
 @pytest.mark.django_db
 class TestWelcomeToApi:
 
@@ -25,7 +26,7 @@ class TestWelcomeToApi:
         res = app.get(url)
         assert res.status_code == 200
         assert res.content_type == 'application/vnd.api+json'
-        assert res.json['meta']['current_user'] == None
+        assert res.json['meta']['current_user'] is None
 
     def test_returns_current_user_info_when_logged_in(self, app, url, user):
         res = app.get(url, auth=user.auth)
@@ -46,7 +47,7 @@ class TestWelcomeToApi:
 
         res = app.get(url)
         assert res.status_code == 200
-        assert res.json['meta']['admin'] == True
+        assert res.json['meta']['admin'] is True
 
     def test_basic_auth_does_not_have_admin(self, app, url, user):
         res = app.get(url, auth=user.auth)
@@ -54,7 +55,9 @@ class TestWelcomeToApi:
         assert 'admin' not in res.json['meta'].keys()
 
     @mock.patch('api.base.authentication.drf.OSFCASAuthentication.authenticate')
-    @pytest.mark.skipif(not settings.DEV_MODE, reason='DEV_MODE disabled, osf.admin unavailable')  # TODO: Remove when available outside of DEV_MODE
+    # TODO: Remove when available outside of DEV_MODE
+    @pytest.mark.skipif(not settings.DEV_MODE,
+                        reason='DEV_MODE disabled, osf.admin unavailable')
     def test_admin_scoped_token_has_admin(self, mock_auth, app, url, user):
         token = ApiOAuth2PersonalToken(
             owner=user,
@@ -71,13 +74,17 @@ class TestWelcomeToApi:
             }
         )
         mock_auth.return_value = user, mock_cas_resp
-        res = app.get(url, headers={'Authorization': 'Bearer {}'.format(token.token_id)})
+        res = app.get(
+            url, headers={
+                'Authorization': 'Bearer {}'.format(
+                    token.token_id)})
 
         assert res.status_code == 200
-        assert res.json['meta']['admin'] == True
+        assert res.json['meta']['admin'] is True
 
     @mock.patch('api.base.authentication.drf.OSFCASAuthentication.authenticate')
-    def test_non_admin_scoped_token_does_not_have_admin(self, mock_auth, app, url, user):
+    def test_non_admin_scoped_token_does_not_have_admin(
+            self, mock_auth, app, url, user):
         token = ApiOAuth2PersonalToken(
             owner=user,
             name='Admin Token',
@@ -93,7 +100,10 @@ class TestWelcomeToApi:
             }
         )
         mock_auth.return_value = user, mock_cas_resp
-        res = app.get(url, headers={'Authorization': 'Bearer {}'.format(token.token_id)})
+        res = app.get(
+            url, headers={
+                'Authorization': 'Bearer {}'.format(
+                    token.token_id)})
 
         assert res.status_code == 200
         assert 'admin' not in res.json['meta'].keys()

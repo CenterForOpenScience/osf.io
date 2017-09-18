@@ -28,6 +28,7 @@ class MiddlewareTestCase:
     def request_factory(self):
         return APIRequestFactory()
 
+
 class TestCorsMiddleware(MiddlewareTestCase):
     MIDDLEWARE = CorsMiddleware
 
@@ -35,7 +36,8 @@ class TestCorsMiddleware(MiddlewareTestCase):
     def url(self):
         return api_v2_url('users/me/')
 
-    def test_institutions_added_to_cors_whitelist(self, request_factory, middleware, url, settings):
+    def test_institutions_added_to_cors_whitelist(
+            self, request_factory, middleware, url, settings):
         settings.CORS_ORIGIN_ALLOW_ALL = False
         domain = urlparse('https://dinosaurs.sexy1')
         institution = InstitutionFactory(
@@ -49,7 +51,8 @@ class TestCorsMiddleware(MiddlewareTestCase):
         processed = middleware.process_response(request, response)
         assert response['Access-Control-Allow-Origin'] == domain.geturl()
 
-    def test_preprintproviders_added_to_cors_whitelist(self, request_factory, middleware, url, settings):
+    def test_preprintproviders_added_to_cors_whitelist(
+            self, request_factory, middleware, url, settings):
         settings.CORS_ORIGIN_ALLOW_ALL = False
         domain = urlparse('https://dinoprints.sexy')
         preprintprovider = PreprintProviderFactory(
@@ -63,7 +66,8 @@ class TestCorsMiddleware(MiddlewareTestCase):
         processed = middleware.process_response(request, response)
         assert response['Access-Control-Allow-Origin'] == domain.geturl()
 
-    def test_cross_origin_request_with_cookies_does_not_get_cors_headers(self, request_factory, middleware, url, settings):
+    def test_cross_origin_request_with_cookies_does_not_get_cors_headers(
+            self, request_factory, middleware, url, settings):
         settings.CORS_ORIGIN_ALLOW_ALL = False
         domain = urlparse('https://dinosaurs.sexy2')
         request = request_factory.get(url, HTTP_ORIGIN=domain.geturl())
@@ -73,7 +77,8 @@ class TestCorsMiddleware(MiddlewareTestCase):
             processed = middleware.process_response(request, response)
         assert 'Access-Control-Allow-Origin' not in response
 
-    def test_cross_origin_request_with_Authorization_gets_cors_headers(self, request_factory, middleware, url, settings):
+    def test_cross_origin_request_with_Authorization_gets_cors_headers(
+            self, request_factory, middleware, url, settings):
         settings.CORS_ORIGIN_ALLOW_ALL = False
         domain = urlparse('https://dinosaurs.sexy3')
         request = request_factory.get(
@@ -86,7 +91,8 @@ class TestCorsMiddleware(MiddlewareTestCase):
         processed = middleware.process_response(request, response)
         assert response['Access-Control-Allow-Origin'] == domain.geturl()
 
-    def test_cross_origin_request_with_Authorization_and_cookie_does_not_get_cors_headers(self, request_factory, middleware, url, settings):
+    def test_cross_origin_request_with_Authorization_and_cookie_does_not_get_cors_headers(
+            self, request_factory, middleware, url, settings):
         settings.CORS_ORIGIN_ALLOW_ALL = False
         domain = urlparse('https://dinosaurs.sexy4')
         request = request_factory.get(
@@ -100,7 +106,8 @@ class TestCorsMiddleware(MiddlewareTestCase):
             processed = middleware.process_response(request, response)
         assert 'Access-Control-Allow-Origin' not in response
 
-    def test_non_institution_preflight_request_requesting_authorization_header_gets_cors_headers(self, request_factory, middleware, url, settings):
+    def test_non_institution_preflight_request_requesting_authorization_header_gets_cors_headers(
+            self, request_factory, middleware, url, settings):
         settings.CORS_ORIGIN_ALLOW_ALL = False
         domain = urlparse('https://dinosaurs.sexy5')
         request = request_factory.options(
