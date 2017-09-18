@@ -10,7 +10,6 @@ from rest_framework import permissions as drf_permissions
 
 from django.contrib.auth.models import Group
 
-from api.base.exceptions import JSONAPIAttributeException
 from api.base.utils import get_user_auth
 from osf.models.action import Action
 from website.util import permissions as osf_permissions
@@ -117,18 +116,9 @@ class ActionPermission(drf_permissions.BasePermission):
             return is_node_contributor or auth.user.has_perm('view_actions', provider)
         else:
             # Moderators and node admins can trigger state changes.
+            # Action-specific permissions should be checked in the view.
             is_node_admin = reviewable is not None and reviewable.node.has_permission(auth.user, osf_permissions.ADMIN)
-            if not (is_node_admin or auth.user.has_perm('view_submissions', provider)):
-                return False
-
-            # Check trigger-specific permissions
-            trigger = request.POST.get('trigger')
-            if trigger not in TRIGGER_PERMISSIONS:
-                valid_triggers = TRIGGER_PERMISSIONS.keys()
-                raise JSONAPIAttributeException('Invalid trigger! Valid triggers: {}. Got: {}'.format(', '.join(valid_triggers), trigger), 'trigger')
-            permission = TRIGGER_PERMISSIONS[trigger]
-            return permission is None or self.request.user.has_perm(permission, reviewable.provider)
-
+            return is_node_admin or auth.user.has_perm('view_submissions', provider)
 
 class CanSetUpProvider(drf_permissions.BasePermission):
     def has_object_permission(self, request, view, obj):
