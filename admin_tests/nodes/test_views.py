@@ -331,15 +331,13 @@ class TestNodeConfirmHamView(AdminTestCase):
         view = setup_log_view(view, self.request, guid=self.node._id)
         view.delete(self.request)
 
-        updated_node = view.get_object()
-        nt.assert_equal(updated_node, self.node)
-        nt.assert_true(updated_node.spam_status == 4)
+        self.node.refresh_from_db()
+        nt.assert_true(self.node.spam_status == 4)
 
     def test_confirm_registration_as_ham(self):
         view = NodeConfirmHamView()
         view = setup_log_view(view, self.request, guid=self.registration._id)
         view.delete(self.request)
 
-        updated_registration = view.get_object()
-        nt.assert_equal(updated_registration, self.registration)
-        nt.assert_true(updated_registration.spam_status == 4)
+        self.registration.refresh_from_db()
+        nt.assert_true(self.registration.spam_status == 4)
