@@ -139,7 +139,7 @@ class TestNodeListFiltering(NodesListFilteringMixin):
 
     @pytest.fixture()
     def project(self, user, institution):
-        project = ProjectFactory(creator=user, is_public=True)
+        project = ProjectFactory(creator=user, title='Lait Cafe et Sucre', is_public=True)
         project.affiliated_institutions.add(institution)
         project.save()
         return project

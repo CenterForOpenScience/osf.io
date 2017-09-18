@@ -66,7 +66,6 @@ var AddPointerViewModel = oop.extend(Paginator, {
             }
             return SEARCH_MY_PROJECTS_SUBMIT_TEXT;
         });
-        this.searchMyProjects();
     },
     doneSearching: function(){
         var self = this;
@@ -271,6 +270,12 @@ var AddPointerViewModel = oop.extend(Paginator, {
         }
         return false;
     },
+    title: function(node){
+        if (node.attributes.title.length > 30){
+            return node.attributes.title.substr(0, 30) + '...'
+        }
+        return node.attributes.title
+    },
     authorText: function(node){
         var contributors = node.embeds.contributors.data;
         var author = contributors[0].embeds.users.data.attributes.family_name;
@@ -355,6 +360,9 @@ PointerManager.prototype.init = function(){
     ko.applyBindings(self.viewModel, self.$element[0]);
     self.$element.on('hidden.bs.modal', function(){
         self.viewModel.clear();
+    });
+    $('#linkProjects').on('click', function(){
+        self.viewModel.searchMyProjects();
     });
 };
 

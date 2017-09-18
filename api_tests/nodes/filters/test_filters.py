@@ -25,7 +25,7 @@ class NodesListFilteringMixin(object):
 
     @pytest.fixture()
     def project(self, user):
-        return ProjectFactory(creator=user, is_public=True)
+        return ProjectFactory(creator=user, title='Lait Cafe et Sucre', is_public=True)
 
     @pytest.fixture()
     def parent_project(self, user, contrib):
@@ -35,11 +35,11 @@ class NodesListFilteringMixin(object):
 
     @pytest.fixture()
     def child_node_one(self, user, parent_project):
-        return NodeFactory(parent=parent_project, creator=user)
+        return NodeFactory(parent=parent_project, title='Lait Cafe et Sucre', creator=user)
 
     @pytest.fixture()
     def child_node_two(self, user, parent_project):
-        return NodeFactory(parent=parent_project, creator=user)
+        return NodeFactory(parent=parent_project, title='Lait Cafe au Choco', creator=user)
 
     @pytest.fixture()
     def grandchild_node_one(self, user, child_node_one):
@@ -126,6 +126,17 @@ class NodesListFilteringMixin(object):
 
         ids = [node_['id'] for node_ in res.json['data']]
 
+        assert parent_project._id not in ids
+        assert child_node_one._id not in ids
+        assert child_node_two._id not in ids
+        assert project._id in ids
+
+    #   test_root_ne_with_title_excludes_children_with_query_in_title
+        url = '{}{}&{}'.format(root_ne_url, parent_project._id, 'filter[title]=Lait')
+        res = app.get(url, auth=user.auth)
+        assert res.status_code == 200
+        assert len(res.json['data']) == 1
+        ids = [node_['id'] for node_ in res.json['data']]
         assert parent_project._id not in ids
         assert child_node_one._id not in ids
         assert child_node_two._id not in ids

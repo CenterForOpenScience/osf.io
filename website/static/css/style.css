@@ -744,3 +744,56 @@ div.ball-scale-blue>div {
 #componentQuickActions a {
     color: #333;
 }
+
+/* Table
+-----------------------*/
+table.add-links tr {
+    padding: 5px;
+  }
+
+table.add-links td {
+  padding: 10px;
+}
+
+table.add-links {
+  width: 100%;
+  margin:0;
+  padding:0;
+  border-collapse: collapse;
+  border-spacing: 0;
+}
+
+@media screen and (max-width: 600px) {
+    table.add-links  {
+      border: 0;
+    }
+
+    table.add-links  tr {
+      border: 1px solid #ddd;
+      margin-bottom: 10px;
+      display: block;
+      border-bottom: 2px solid #ddd;
+    }
+
+    table.add-links  td {
+      display: block;
+      text-align: right;
+      font-size: 13px;
+      border-bottom: 1px dotted #ccc;
+    }
+
+    table.add-links  td:first-child {
+      border-top: 0;
+      text-align: left;
+    }
+
+    table.add-links  td:last-child {
+      border-bottom: 0;
+    }
+
+    table.add-links  td:before {
+      content: attr(data-label);
+      float: left;
+      font-weight: bold;
+    }
+}

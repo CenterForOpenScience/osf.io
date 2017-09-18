@@ -49,39 +49,29 @@
                 <!-- Choose which to add -->
                 <div class="row">
 
-                    <div class="col-md-12">
-                        <div>
-                            <span data-bind="if: (inputType() == 'nodes' && includePublic)" class="modal-subheader">Results: All Projects</span>
-                            <span data-bind="if: (inputType() == 'nodes' && !includePublic())" class="modal-subheader">Results: My Projects</span>
-                            <span data-bind="if: (inputType() != 'nodes' && includePublic)" class="modal-subheader">Results: All Registrations</span>
-                            <span data-bind="if: (inputType() != 'nodes' && !includePublic())" class="modal-subheader">Results: My Registrations</span>
-                        </div>
+                    <div class="col-md-10">
                         <div class="error" data-bind="text:errorMsg"></div>
-                        <div class="table-responsive">
-                          <table class="table table-striped">
-                              <tbody data-bind="foreach:{data:results}">
-                                  <tr class="pointer-tow">
-                                      <td class="osf-icon-td">
-                                          <div data-bind="if:!($root.selected($data))">
-                                              <a class="btn btn-success contrib-button" data-bind="click:$root.add.bind($root), css: $root.disableButtons()">
-                                                  <i class="fa fa-plus"></i>
-                                                  <i data-bind="visible: $root.processing() && $root.isClicked() == $data.id" class="fa fa-spinner fa-lg fa-spin"></i>
-                                              </a>
-                                          </div>
-                                          <div data-bind="if:($root.selected($data))">
-                                              <a class="btn btn-default contrib-button" data-bind="click:$root.remove.bind($root), css: $root.disableButtons()">
-                                                  <i class="fa fa-minus"></i>
-                                                  <i data-bind="visible: $root.processing() && $root.isClicked() == $data.id" class="fa fa-spinner fa-lg fa-spin"></i>
-                                              </a>
-                                          </div>
-                                      </td>
-                                      <td data-bind="text:attributes.title" class="overflow"></td>
-                                      <td class="node-dates" data-bind="text:$root.getDates($data)"></td>
-                                      <td data-bind="text:$root.authorText($data)"></td>
-                                  </tr>
-                              </tbody>
-                          </table>
-                        </div>
+                            <table class="table add-links table-striped table-condensed table-hover">
+                                <caption>
+                                    <span data-bind="if: (inputType() == 'nodes' && includePublic)" class="modal-subheader">Results: All Projects</span>
+                                    <span data-bind="if: (inputType() == 'nodes' && !includePublic())" class="modal-subheader">Results: My Projects</span>
+                                    <span data-bind="if: (inputType() != 'nodes' && includePublic)" class="modal-subheader">Results: All Registrations</span>
+                                    <span data-bind="if: (inputType() != 'nodes' && !includePublic())" class="modal-subheader">Results: My Registrations</span>
+                                </caption>
+                                <tbody data-bind="foreach:{data:results}">
+                                    <tr>
+                                        <td data-label="">
+                                            <a data-bind="attr: {class: $root.selected($data) ? 'btn btn-default btn-sm': 'btn btn-success btn-sm' }, click: $root.selected($data) ? $root.remove.bind($root) : $root.add.bind($root), css: $root.disableButtons()">
+                                                <i data-bind="attr: {class: $root.selected($data) ? 'fa fa-minus': 'fa fa-plus' }, visible: !$root.processing() || ($root.processing() && !($root.isClicked() == $data.id))"></i>
+                                                <i data-bind="visible: $root.processing() && $root.isClicked() == $data.id" class="fa fa-spinner fa-spin"></i>
+                                            </a>
+                                            <a data-bind="attr: {href: $data.links.html}, text: $root.title($data)"></a>
+                                        </td>
+                                        <td data-label="Date" class="node-dates" data-bind="text:$root.getDates($data)"></td>
+                                        <td data-label="By" class="text-center" data-bind="text:$root.authorText($data)"></td>
+                                    </tr>
+                                </tbody>
+                            </table>
                         <div data-bind='if: loadingResults'>
                             <div class="ball-pulse ball-scale-blue text-center">
                               <div></div>
