@@ -5,8 +5,8 @@
 
 var $ = require('jquery');
 var ko = require('knockout');
+var $osf = require('js/osfHelpers');
 
-var osfHelpers = require('js/osfHelpers');
 var Paginator = require('js/paginator');
 var oop = require('js/oop');
 var Raven = require('raven-js');
@@ -14,7 +14,7 @@ var Raven = require('raven-js');
 // Grab nodeID from global context (mako)
 var nodeApiUrl = window.contextVars.node.urls.api;
 var nodeId = window.contextVars.node.id;
-var nodeLinksUrl = osfHelpers.apiV2Url(
+var nodeLinksUrl = $osf.apiV2Url(
   'nodes/' + nodeId + '/node_links/', {
     query : {
       'fields[nodes]' : 'relationships'
@@ -103,7 +103,7 @@ var AddPointerViewModel = oop.extend(Paginator, {
         self.selection([]);
         var pageNum = self.pageToGet() + 1;
         var userOrPublicNodes = self.includePublic() ? '' : 'users/me/';
-        var url = osfHelpers.apiV2Url(
+        var url = $osf.apiV2Url(
              userOrPublicNodes + self.inputType() + '/', {
                 query : {
                   'filter[title]' : self.query(),
@@ -114,7 +114,7 @@ var AddPointerViewModel = oop.extend(Paginator, {
                 }
             }
         );
-        var requestNodes = osfHelpers.ajaxJSON(
+        var requestNodes = $osf.ajaxJSON(
             'GET',
             url,
             {'isCors': true}
@@ -127,7 +127,7 @@ var AddPointerViewModel = oop.extend(Paginator, {
                 self.doneSearching();
                 return;
             }
-            var requestNodeLinks = osfHelpers.ajaxJSON(
+            var requestNodeLinks = $osf.ajaxJSON(
                 'GET',
                 nodeLinksUrl,
                 {'isCors': true}
@@ -142,10 +142,10 @@ var AddPointerViewModel = oop.extend(Paginator, {
                 }
                 nodes.forEach(function(each){
                     if (each.type === 'registrations'){
-                        each.dateRegistered = new osfHelpers.FormattableDate(each.attributes.date_registered);
+                        each.dateRegistered = new $osf.FormattableDate(each.attributes.date_registered);
                     } else {
-                        each.dateCreated = new osfHelpers.FormattableDate(each.attributes.date_created);
-                        each.dateModified = new osfHelpers.FormattableDate(each.attributes.date_modified);
+                        each.dateCreated = new $osf.FormattableDate(each.attributes.date_created);
+                        each.dateModified = new $osf.FormattableDate(each.attributes.date_modified);
                     }
                     if (embedNodeIds.indexOf(each.id) !== -1){
                         self.selection.push(each);
@@ -190,8 +190,8 @@ var AddPointerViewModel = oop.extend(Paginator, {
         var self = this;
         self.processing(true);
         self.isClicked(data.id);
-        var addUrl = osfHelpers.apiV2Url('nodes/' + nodeId + '/node_links/');
-        var request = osfHelpers.ajaxJSON(
+        var addUrl = $osf.apiV2Url('nodes/' + nodeId + '/node_links/');
+        var request = $osf.ajaxJSON(
             'POST',
             addUrl,
             {
@@ -225,7 +225,7 @@ var AddPointerViewModel = oop.extend(Paginator, {
         var self = this;
         self.processing(true);
         self.isClicked(data.id);
-        var requestNodeLinks = osfHelpers.ajaxJSON(
+        var requestNodeLinks = $osf.ajaxJSON(
             'GET',
             nodeLinksUrl,
             {'isCors': true}
@@ -241,8 +241,8 @@ var AddPointerViewModel = oop.extend(Paginator, {
                     break;
                 }
             }
-            var deleteUrl = osfHelpers.apiV2Url('nodes/' + nodeId + '/node_links/' + nodeLinkId + '/');
-            osfHelpers.ajaxJSON(
+            var deleteUrl = $osf.apiV2Url('nodes/' + nodeId + '/node_links/' + nodeLinkId + '/');
+            $osf.ajaxJSON(
                 'DELETE',
                 deleteUrl,
                 {'isCors': true}
@@ -281,7 +281,7 @@ var AddPointerViewModel = oop.extend(Paginator, {
     },
     authorText: function(node){
         var contributors = node.embeds.contributors.data;
-        var author = contributors[0].embeds.users.data.attributes.family_name;
+        var author = $osf.findContribName(contributors[0].embeds.users.data.attributes);
         if (contributors.length > 1){
             author += ' et al.';
         }
@@ -339,7 +339,7 @@ var LinksViewModel = function($elm){
                 self.links(response.pointed);
             }).fail(function(){
                 $elm.modal('hide');
-                osfHelpers.growl('Error:', 'Could not get links');
+                $osf.growl('Error:', 'Could not get links');
             });
         }
     });
