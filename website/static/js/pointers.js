@@ -277,7 +277,7 @@ var AddPointerViewModel = oop.extend(Paginator, {
         if (node.attributes.title.length > 30){
             title.short = node.attributes.title.substr(0, 30) + '...';
         }
-        return title
+        return title;
     },
     authorText: function(node){
         var contributors = node.embeds.contributors.data;
@@ -321,7 +321,8 @@ var AddPointerViewModel = oop.extend(Paginator, {
         }
     },
     done: function(){
-        window.location.reload();
+        var self = this;
+        self.clear();
     }
 });
 
