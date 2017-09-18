@@ -4,7 +4,6 @@ from __future__ import unicode_literals
 from django.shortcuts import get_object_or_404
 from rest_framework import generics
 from rest_framework import permissions
-from rest_framework.exceptions import PermissionDenied
 
 from framework.auth.oauth_scopes import CoreScopes
 from osf.models import Action

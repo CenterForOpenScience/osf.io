@@ -125,10 +125,9 @@ class ActionPermission(drf_permissions.BasePermission):
             trigger = request.POST.get('trigger')
             if trigger not in TRIGGER_PERMISSIONS:
                 valid_triggers = TRIGGER_PERMISSIONS.keys()
-                raise JSONAPIAttributeException('Invalid trigger! Valid triggers: {}'.format(', '.join(valid_triggers), 'trigger'))
+                raise JSONAPIAttributeException('Invalid trigger! Valid triggers: {}. Got: {}'.format(', '.join(valid_triggers), trigger), 'trigger')
             permission = TRIGGER_PERMISSIONS[trigger]
-            return permission is None or self.request.user.has_perm(permission, target.provider)
-
+            return permission is None or self.request.user.has_perm(permission, reviewable.provider)
 
 
 class CanSetUpProvider(drf_permissions.BasePermission):
