@@ -168,12 +168,6 @@ class CreateAction(JSONAPIBaseView, generics.ListCreateAPIView):
     def perform_create(self, serializer):
         target = serializer.validated_data['target']
         self.check_object_permissions(self.request, target)
-
-        trigger = serializer.validated_data['trigger']
-        permission = reviews_permissions.TRIGGER_PERMISSIONS[trigger]
-        if permission is not None and not self.request.user.has_perm(permission, target.provider):
-            raise PermissionDenied(detail='Performing trigger "{}" requires permission "{}" on the provider.'.format(trigger, permission))
-
         if not target.provider.is_reviewed:
             raise Conflict('{} is an unmoderated provider. If you are an admin, set up moderation by setting `reviews_workflow` at {}'.format(
                 target.provider.name,

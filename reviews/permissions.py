@@ -6,10 +6,11 @@ import logging
 from guardian.shortcuts import assign_perm
 from guardian.shortcuts import get_perms
 from guardian.shortcuts import remove_perm
-from rest_framework import permissions
+from rest_framework import permissions as drf_permissions
 
 from django.contrib.auth.models import Group
 
+from api.base.exceptions import JSONAPIAttributeException
 from api.base.utils import get_user_auth
 from osf.models.action import Action
 from website.util import permissions as osf_permissions
@@ -91,7 +92,7 @@ class GroupHelper(object):
         return [p for p in get_perms(user, self.provider) if p in PERMISSIONS]
 
 
-class ActionPermission(permissions.BasePermission):
+class ActionPermission(drf_permissions.BasePermission):
     def has_object_permission(self, request, view, obj):
         auth = get_user_auth(request)
         if auth.user is None:
@@ -110,20 +111,29 @@ class ActionPermission(permissions.BasePermission):
         else:
             raise ValueError('Not a reviews-related model: {}'.format(obj))
 
-        if request.method in permissions.SAFE_METHODS:
+        if request.method in drf_permissions.SAFE_METHODS:
             # Moderators and node contributors can view actions
             is_node_contributor = reviewable is not None and reviewable.node.has_permission(auth.user, osf_permissions.READ)
             return is_node_contributor or auth.user.has_perm('view_actions', provider)
         else:
             # Moderators and node admins can trigger state changes.
-            # Action-specific permissions should be checked in the view.
             is_node_admin = reviewable is not None and reviewable.node.has_permission(auth.user, osf_permissions.ADMIN)
-            return is_node_admin or auth.user.has_perm('view_submissions', provider)
+            if not (is_node_admin or auth.user.has_perm('view_submissions', provider)):
+                return False
+
+            # Check trigger-specific permissions
+            trigger = request.POST.get('trigger')
+            if trigger not in TRIGGER_PERMISSIONS:
+                valid_triggers = TRIGGER_PERMISSIONS.keys()
+                raise JSONAPIAttributeException('Invalid trigger! Valid triggers: {}'.format(', '.join(valid_triggers), 'trigger'))
+            permission = TRIGGER_PERMISSIONS[trigger]
+            return permission is None or self.request.user.has_perm(permission, target.provider)
 
 
-class CanSetUpProvider(permissions.BasePermission):
+
+class CanSetUpProvider(drf_permissions.BasePermission):
     def has_object_permission(self, request, view, obj):
-        if request.method in permissions.SAFE_METHODS:
+        if request.method in drf_permissions.SAFE_METHODS:
             return True
         auth = get_user_auth(request)
         return auth.user.has_perm('set_up_moderation', obj)
