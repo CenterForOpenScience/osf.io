@@ -441,6 +441,34 @@
                 "status": "none",
                 "text": "Azure Blob Storage content will not be registered."
             }
+        },
+        "WEKO": {
+            "Permissions": {
+                "status": "NA"
+            },
+            "View / download file versions": {
+                "status": "NA"
+            },
+            "Add / update files": {
+                "status": "partial",
+                "text": "Adding/updating indices/items in the project via OSF will be reflected in WEKO."
+            },
+            "Delete files": {
+                "status": "partial",
+                "text": "Items deleted via OSF will be deleted in WEKO."
+            },
+            "Logs": {
+                "status": "partial",
+                "text": "The OSF keeps track of changes you make to your WEKO index through the OSF, but not for changes made using WEKO directly."
+            },
+            "Forking": {
+                "status": "partial",
+                "text": "Forking a project or component does not copy WEKO authorization unless the user forking the project is the same user who authorized the WEKO add-on in the source project being forked."
+            },
+            "Registering": {
+                "status": "none",
+                "text": "WEKO content will not be registered."
+            }
         }
     },
     "disclaimers": ["This add-on connects your OSF project to an external service. Use of this service is bound by its terms and conditions. The OSF is not responsible for the service or for your use thereof.", "This add-on allows you to store files using an external service. Files added to this add-on are not stored within the OSF."]
