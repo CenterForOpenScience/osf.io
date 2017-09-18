@@ -65,7 +65,7 @@
                                                 <i data-bind="attr: {class: $root.selected($data) ? 'fa fa-minus': 'fa fa-plus' }, visible: !$root.processing() || ($root.processing() && !($root.isClicked() == $data.id))"></i>
                                                 <i data-bind="visible: $root.processing() && $root.isClicked() == $data.id" class="fa fa-spinner fa-spin"></i>
                                             </a>
-                                            <a data-bind="attr: {href: $data.links.html}, text: $root.title($data)"></a>
+                                            <a data-toggle="tooltip" data-bind="attr: {href: $data.links.html, title: $root.title($data).long}, text: $root.title($data).short, "></a>
                                         </td>
                                         <td data-label="Date" class="node-dates" data-bind="text:$root.getDates($data)"></td>
                                         <td data-label="By" class="text-center" data-bind="text:$root.authorText($data)"></td>
