@@ -69,28 +69,37 @@ function NodesDeleteTreebeard(divID, data, nodesState, nodesOriginal) {
             expandOnLoad.call(tb);
         },
         resolveRows: function nodesDeleteResolveRows(item){
+            var tooltips = function(){
+                $('[data-toggle="tooltip"]').tooltip();
+            };
             var tb = this;
             var columns = [];
             var id = item.data.node.id;
             var nodesStateLocal = ko.toJS(nodesState());
             //this lets treebeard know when changes come from the knockout side (select all or select none)
             item.data.node.changed = nodesStateLocal[id].changed;
+            //A wrapper div for tooltips must exist because tooltips does not work on a disabled element
+            var tooltipWrapper = item.data.node.is_admin ? 'div' : 'div[data-toggle="tooltip"][title="You must have admin permissions on this component to be able to delete it."][data-placement="right"]';
             columns.push(
                 {
                     data : 'action',
                     sortInclude : false,
                     filter : false,
                     custom : function () {
-                        return m('input[type=checkbox]', {
-                            disabled : !item.data.node.is_admin,
-                            onclick : function() {
-                                item.open = true;
-                                nodesStateLocal[id].changed = !nodesStateLocal[id].changed;
-                                nodesState(nodesStateLocal);
-                                tb.updateFolder(null, item);
-                            },
-                            checked: nodesState()[id].changed
-                        });
+                        return m(tooltipWrapper, {config: tooltips()},
+                            [
+                                m('input[type=checkbox]', {
+                                    disabled : !item.data.node.is_admin,
+                                    onclick : function() {
+                                        item.open = true;
+                                        nodesStateLocal[id].changed = !nodesStateLocal[id].changed;
+                                        nodesState(nodesStateLocal);
+                                        tb.updateFolder(null, item);
+                                    },
+                                    checked: nodesState()[id].changed,
+                                })
+                            ]
+                        );
                     }
                 },
                 {
