@@ -10,7 +10,7 @@ from osf.utils.requests import check_select_for_update
 from reviews import permissions as reviews_permissions
 
 from api.actions.serializers import ActionSerializer
-from api.actions.views import ActionMixin
+from api.actions.views import get_actions_queryset
 from api.base.exceptions import Conflict
 from api.base.views import JSONAPIBaseView, WaterButlerMixin
 from api.base.filters import ListFilterMixin, PreprintFilterMixin
@@ -405,7 +405,7 @@ class PreprintContributorsList(NodeContributorsList, PreprintMixin):
         return super(PreprintContributorsList, self).create(request, *args, **kwargs)
 
 
-class PreprintActionList(JSONAPIBaseView, generics.ListAPIView, ListFilterMixin, PreprintMixin, ActionMixin):
+class PreprintActionList(JSONAPIBaseView, generics.ListAPIView, ListFilterMixin, PreprintMixin):
     """Action List *Read-only*
 
     Actions represent state changes and/or comments on a reviewable object (e.g. a preprint)
@@ -461,7 +461,7 @@ class PreprintActionList(JSONAPIBaseView, generics.ListAPIView, ListFilterMixin,
 
     # overrides ListFilterMixin
     def get_default_queryset(self):
-        return self.actions_queryset().filter(target_id=self.get_preprint().id)
+        return get_actions_queryset().filter(target_id=self.get_preprint().id)
 
     # overrides ListAPIView
     def get_queryset(self):

@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 from __future__ import unicode_literals
 
+from include import IncludeQuerySet
 from transitions import Machine
 
 from django.db import models
@@ -9,7 +10,7 @@ from django.utils import timezone
 
 from osf.models.action import Action
 from reviews import workflow
-from reviews.exceptions import InvalidTransitionError
+from reviews.exceptions import InvalidTriggerError
 
 
 class ReviewProviderMixin(models.Model):
@@ -26,13 +27,15 @@ class ReviewProviderMixin(models.Model):
     reviews_comments_anonymous = models.NullBooleanField()
 
     @property
-    def is_moderated(self):
+    def is_reviewed(self):
         return self.reviews_workflow is not None
 
     def get_reviewable_status_counts(self):
         assert self.REVIEWABLE_RELATION_NAME, 'REVIEWABLE_RELATION_NAME must be set to compute status counts'
-        # TODO fix hackery once GUID query set is gone
-        qs = models.QuerySet.annotate(getattr(self, self.REVIEWABLE_RELATION_NAME).values('reviews_state'), count=models.Count('*'))
+        qs = getattr(self, self.REVIEWABLE_RELATION_NAME)
+        if isinstance(qs, IncludeQuerySet):
+            qs = qs.include(None)
+        qs = qs.values('reviews_state').annotate(count=models.Count('*'))
         ret = {state.value: 0 for state in workflow.States}
         ret.update({row['reviews_state']: row['count'] for row in qs if row['reviews_state'] in ret})
         return ret
@@ -79,7 +82,7 @@ class ReviewableMixin(models.Model):
         Params:
             user: The user triggering this transition.
         """
-        return self.__run_transition(self._reviews_machine.submit, user=user)
+        return self.__run_transition(workflow.Triggers.SUBMIT.value, user=user)
 
     def reviews_accept(self, user, comment):
         """Run the 'accept' state transition and create a corresponding Action.
@@ -88,7 +91,7 @@ class ReviewableMixin(models.Model):
             user: The user triggering this transition.
             comment: Text describing why.
         """
-        return self.__run_transition(self._reviews_machine.accept, user=user, comment=comment)
+        return self.__run_transition(workflow.Triggers.ACCEPT.value, user=user, comment=comment)
 
     def reviews_reject(self, user, comment):
         """Run the 'reject' state transition and create a corresponding Action.
@@ -97,7 +100,7 @@ class ReviewableMixin(models.Model):
             user: The user triggering this transition.
             comment: Text describing why.
         """
-        return self.__run_transition(self._reviews_machine.reject, user=user, comment=comment)
+        return self.__run_transition(workflow.Triggers.REJECT.value, user=user, comment=comment)
 
     def reviews_edit_comment(self, user, comment):
         """Run the 'edit_comment' state transition and create a corresponding Action.
@@ -106,14 +109,16 @@ class ReviewableMixin(models.Model):
             user: The user triggering this transition.
             comment: New comment text.
         """
-        return self.__run_transition(self._reviews_machine.edit_comment, user=user, comment=comment)
+        return self.__run_transition(workflow.Triggers.EDIT_COMMENT.value, user=user, comment=comment)
 
-    def __run_transition(self, trigger_fn, **kwargs):
+    def __run_transition(self, trigger, **kwargs):
+        trigger_fn = getattr(self._reviews_machine, trigger)
         with transaction.atomic():
             result = trigger_fn(**kwargs)
             action = self._reviews_machine.action
             if not result or action is None:
-                raise InvalidTransitionError()
+                valid_triggers = self._reviews_machine.get_triggers(self.reviews_state)
+                raise InvalidTriggerError(trigger, self.reviews_state, valid_triggers)
             return action
 
 

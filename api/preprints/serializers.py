@@ -182,7 +182,7 @@ class PreprintSerializer(JSONAPISerializer):
             raise exceptions.PermissionDenied(detail='User must be an admin to update a preprint.')
 
         published = validated_data.pop('is_published', None)
-        if published and preprint.provider.is_moderated:
+        if published and preprint.provider.is_reviewed:
             raise Conflict('{} uses a moderation workflow, so preprints must be submitted for review instead of published directly. Submit a preprint by creating a `submit` Action at {}'.format(
                 preprint.provider.name,
                 absolute_reverse('actions:create-action', kwargs={

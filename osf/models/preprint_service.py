@@ -52,7 +52,7 @@ class PreprintService(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMi
         return '{} preprint (guid={}) of {}'.format('published' if self.is_published else 'unpublished', self._id, self.node.__unicode__())
 
     @property
-    def _verified_publishable(self):
+    def verified_publishable(self):
         return self.is_published and self.node.is_preprint and not self.node.is_deleted
 
     @property

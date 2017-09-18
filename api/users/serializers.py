@@ -1,5 +1,4 @@
 from guardian.models import GroupObjectPermission
-from guardian.models import UserObjectPermission
 
 from rest_framework import serializers as ser
 
@@ -114,8 +113,7 @@ class UserSerializer(JSONAPISerializer):
 
     def get_can_view_reviews(self, obj):
         group_qs = GroupObjectPermission.objects.filter(group__user=obj, permission__codename='view_submissions')
-        user_qs = UserObjectPermission.objects.filter(user=obj, permission__codename='view_submissions')
-        return group_qs.exists() or user_qs.exists()
+        return group_qs.exists() or obj.userobjectpermission_set.filter(permission__codename='view_submissions')
 
     def profile_image_url(self, user):
         size = self.context['request'].query_params.get('profile_image_size')

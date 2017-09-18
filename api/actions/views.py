@@ -21,18 +21,17 @@ from api.base.views import JSONAPIBaseView
 from api.base import permissions as base_permissions
 
 
-class ActionMixin:
-    def actions_queryset(self):
-        return Action.objects.include(
-            'creator',
-            'creator__guids',
-            'target',
-            'target__guids',
-            'target__provider',
-        ).filter(is_deleted=False)
+def get_actions_queryset():
+    return Action.objects.include(
+        'creator',
+        'creator__guids',
+        'target',
+        'target__guids',
+        'target__provider',
+    ).filter(is_deleted=False)
 
 
-class ActionDetail(JSONAPIBaseView, generics.RetrieveAPIView, ActionMixin):
+class ActionDetail(JSONAPIBaseView, generics.RetrieveAPIView):
     """Action Detail
 
     Actions represent state changes and/or comments on a reviewable object (e.g. a preprint)
@@ -76,7 +75,7 @@ class ActionDetail(JSONAPIBaseView, generics.RetrieveAPIView, ActionMixin):
     view_name = 'action-detail'
 
     def get_object(self):
-        action = get_object_or_404(self.actions_queryset(), _id=self.kwargs['action_id'])
+        action = get_object_or_404(get_actions_queryset(), _id=self.kwargs['action_id'])
         self.check_object_permissions(self.request, action)
         return action
 
@@ -175,7 +174,7 @@ class CreateAction(JSONAPIBaseView, generics.ListCreateAPIView):
         if permission is not None and not self.request.user.has_perm(permission, target.provider):
             raise PermissionDenied(detail='Performing trigger "{}" requires permission "{}" on the provider.'.format(trigger, permission))
 
-        if not target.provider.is_moderated:
+        if not target.provider.is_reviewed:
             raise Conflict('{} is an unmoderated provider. If you are an admin, set up moderation by setting `reviews_workflow` at {}'.format(
                 target.provider.name,
                 absolute_reverse('preprint_providers:preprint_provider-detail', kwargs={

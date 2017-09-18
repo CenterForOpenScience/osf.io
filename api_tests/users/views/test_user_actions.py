@@ -1,17 +1,12 @@
-import mock
 import pytest
 
 from api.base.settings.defaults import API_BASE
 
 from osf_tests.factories import (
-    ProjectFactory,
     PreprintFactory,
     AuthUserFactory,
-    SubjectFactory,
     PreprintProviderFactory,
 )
-
-from tests.base import ApiTestCase
 
 from website.util import permissions as osf_permissions
 
@@ -166,7 +161,12 @@ class TestActionCreate(object):
                 preprint.save()
                 bad_payload = self.create_payload(preprint._id, trigger=trigger)
                 res = app.post_json_api(url, bad_payload, auth=moderator.auth, expect_errors=True)
-                assert res.status_code == 400
+                assert res.status_code == 409
+
+        # test invalid trigger
+        bad_payload = self.create_payload(preprint._id, trigger='badtriggerbad')
+        res = app.post_json_api(url, bad_payload, auth=moderator.auth, expect_errors=True)
+        assert res.status_code == 400
 
         # test target is required
         bad_payload = self.create_payload(trigger='accept')

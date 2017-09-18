@@ -26,7 +26,7 @@ def on_preprint_updated(preprint_id, update_share=True, share_type=None, old_sub
     if old_subjects is None:
         old_subjects = []
     if preprint.node:
-        status = 'public' if preprint._verified_publishable else 'unavailable'
+        status = 'public' if preprint.verified_publishable else 'unavailable'
         try:
             update_ezid_metadata_on_change(preprint, status=status)
         except HTTPError as err:
@@ -113,7 +113,7 @@ def format_preprint(preprint, share_type, old_subjects=None):
         'title': preprint.node.title,
         'description': preprint.node.description or '',
         'is_deleted': (
-            not preprint._verified_publishable or
+            not preprint.verified_publishable or
             preprint.node.tags.filter(name='qatest').exists()
         ),
         # Note: Changing any preprint attribute that is pulled from the node, like title, will NOT bump

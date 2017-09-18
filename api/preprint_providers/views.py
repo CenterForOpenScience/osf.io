@@ -197,7 +197,7 @@ class PreprintProviderDetail(JSONAPIBaseView, generics.RetrieveUpdateAPIView):
         return provider
 
     def perform_update(self, serializer):
-        if serializer.instance.is_moderated:
+        if serializer.instance.is_reviewed:
             raise Conflict('Reviews settings may be set only once. Contact support@osf.io if you need to update them.')
         super(PreprintProviderDetail, self).perform_update(serializer)
 

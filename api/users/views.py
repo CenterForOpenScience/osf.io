@@ -3,7 +3,7 @@ from django.apps import apps
 from guardian.shortcuts import get_objects_for_user
 
 from api.addons.views import AddonSettingsMixin
-from api.actions.views import ActionMixin
+from api.actions.views import get_actions_queryset
 from api.actions.serializers import ActionSerializer
 from api.base import permissions as base_permissions
 from api.base.exceptions import Conflict, UserGone
@@ -790,7 +790,7 @@ class UserInstitutionsRelationship(JSONAPIBaseView, generics.RetrieveDestroyAPIV
         user.save()
 
 
-class UserActionList(JSONAPIBaseView, generics.ListAPIView, ListFilterMixin, ActionMixin, UserMixin):
+class UserActionList(JSONAPIBaseView, generics.ListAPIView, ListFilterMixin, UserMixin):
     """List of actions viewable by this user *Read-only*
 
     Actions represent state changes and/or comments on a reviewable object (e.g. a preprint)
@@ -848,7 +848,7 @@ class UserActionList(JSONAPIBaseView, generics.ListAPIView, ListFilterMixin, Act
     # overrides ListFilterMixin
     def get_default_queryset(self):
         provider_queryset = get_objects_for_user(self.get_user(), 'view_actions', PreprintProvider)
-        return self.actions_queryset().filter(target__provider__in=provider_queryset)
+        return get_actions_queryset().filter(target__provider__in=provider_queryset)
 
     # overrides ListAPIView
     def get_queryset(self):

@@ -5,6 +5,7 @@ from rest_framework import generics
 from rest_framework import serializers as ser
 
 from api.base import utils
+from api.base.exceptions import Conflict
 from api.base.exceptions import JSONAPIAttributeException
 from api.base.serializers import JSONAPISerializer
 from api.base.serializers import LinksField
@@ -14,7 +15,7 @@ from api.base.serializers import HideIfProviderCommentsPrivate
 
 from osf.models import PreprintService
 
-from reviews.exceptions import InvalidTransitionError
+from reviews.exceptions import InvalidTriggerError
 from reviews.workflow import Triggers
 from reviews.workflow import States
 
@@ -28,10 +29,10 @@ class ReviewableCountsRelationshipField(RelationshipField):
         super(ReviewableCountsRelationshipField, self).__init__(*args, **kwargs)
 
     def get_meta_information(self, metadata, provider):
-        # Clone metadata because it's mutablity is questionable
+        # Clone metadata because its mutability is questionable
         metadata = dict(metadata or {})
 
-        # Make counts opt in
+        # Make counts opt-in
         show_counts = utils.is_truthy(self.context['request'].query_params.get('related_counts', False))
         # Only include counts on detail routes
         is_detail = self.context.get('view') and not isinstance(self.context['view'], generics.ListAPIView)
@@ -131,9 +132,9 @@ class ActionSerializer(JSONAPISerializer):
                 return target.reviews_edit_comment(user, comment)
             if trigger == Triggers.SUBMIT.value:
                 return target.reviews_submit(user)
-        except InvalidTransitionError:
+        except InvalidTriggerError as e:
             # Invalid transition from the current state
-            raise JSONAPIAttributeException(attribute='trigger', detail='Cannot trigger "{}" from state "{}"'.format(trigger, target.reviews_state))
+            raise Conflict(e.message)
         else:
             raise JSONAPIAttributeException(attribute='trigger', detail='Invalid trigger.')
 
