@@ -135,7 +135,7 @@ class PreprintProviderDetail(JSONAPIBaseView, generics.RetrieveAPIView):
     view_name = 'preprint_provider-detail'
 
     def get_object(self):
-        return get_object_or_error(PreprintProvider, self.kwargs['provider_id'], display_name='PreprintProvider')
+        return get_object_or_error(PreprintProvider, self.kwargs['provider_id'], self.request, display_name='PreprintProvider')
 
 
 class PreprintProviderPreprintList(JSONAPIBaseView, generics.ListAPIView, PreprintFilterMixin):
@@ -198,7 +198,7 @@ class PreprintProviderPreprintList(JSONAPIBaseView, generics.ListAPIView, Prepri
     def get_default_queryset(self):
         auth = get_user_auth(self.request)
         auth_user = getattr(auth, 'user', None)
-        provider = get_object_or_error(PreprintProvider, self.kwargs['provider_id'], display_name='PreprintProvider')
+        provider = get_object_or_error(PreprintProvider, self.kwargs['provider_id'], self.request, display_name='PreprintProvider')
 
         # Permissions on the list objects are handled by the query
         default_qs = provider.preprint_services.filter(node__isnull=False, node__is_deleted=False)
@@ -245,7 +245,7 @@ class PreprintProviderTaxonomies(JSONAPIBaseView, generics.ListAPIView):
 
     def get_queryset(self):
         parent = self.request.query_params.get('filter[parents]', None) or self.request.query_params.get('filter[parent]', None)
-        provider = get_object_or_error(PreprintProvider, self.kwargs['provider_id'], display_name='PreprintProvider')
+        provider = get_object_or_error(PreprintProvider, self.kwargs['provider_id'], self.request, display_name='PreprintProvider')
         if parent:
             if parent == 'null':
                 return provider.top_level_subjects
@@ -275,7 +275,7 @@ class PreprintProviderHighlightedSubjectList(JSONAPIBaseView, generics.ListAPIVi
     serializer_class = TaxonomySerializer
 
     def get_queryset(self):
-        provider = get_object_or_error(PreprintProvider, self.kwargs['provider_id'], display_name='PreprintProvider')
+        provider = get_object_or_error(PreprintProvider, self.kwargs['provider_id'], self.request, display_name='PreprintProvider')
         return Subject.objects.filter(id__in=[s.id for s in provider.highlighted_subjects]).order_by('text')
 
 
@@ -284,7 +284,7 @@ class PreprintProviderLicenseList(LicenseList):
     view_category = 'preprint_providers'
 
     def get_queryset(self):
-        provider = get_object_or_error(PreprintProvider, self.kwargs['provider_id'], display_name='PreprintProvider')
+        provider = get_object_or_error(PreprintProvider, self.kwargs['provider_id'], self.request, display_name='PreprintProvider')
         if not provider.licenses_acceptable.count():
             if not provider.default_license:
                 return super(PreprintProviderLicenseList, self).get_queryset()
