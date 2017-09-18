@@ -97,28 +97,38 @@ class ActionPermission(drf_permissions.BasePermission):
         if auth.user is None:
             return False
 
-        reviewable = None
+        target = None
         provider = None
         if isinstance(obj, Action):
-            reviewable = obj.target
-            provider = reviewable.provider
+            target = obj.target
+            provider = target.provider
         elif isinstance(obj, ReviewableMixin):
-            reviewable = obj
-            provider = reviewable.provider
+            target = obj
+            provider = target.provider
         elif isinstance(obj, ReviewProviderMixin):
             provider = obj
         else:
             raise ValueError('Not a reviews-related model: {}'.format(obj))
 
+        serializer = view.get_serializer()
+
         if request.method in drf_permissions.SAFE_METHODS:
             # Moderators and node contributors can view actions
-            is_node_contributor = reviewable is not None and reviewable.node.has_permission(auth.user, osf_permissions.READ)
+            is_node_contributor = target is not None and target.node.has_permission(auth.user, osf_permissions.READ)
             return is_node_contributor or auth.user.has_perm('view_actions', provider)
         else:
             # Moderators and node admins can trigger state changes.
-            # Action-specific permissions should be checked in the view.
-            is_node_admin = reviewable is not None and reviewable.node.has_permission(auth.user, osf_permissions.ADMIN)
-            return is_node_admin or auth.user.has_perm('view_submissions', provider)
+            is_node_admin = target is not None and target.node.has_permission(auth.user, osf_permissions.ADMIN)
+            if not (is_node_admin or auth.user.has_perm('view_submissions', provider)):
+                return False
+
+            # User can trigger state changes on this reviewable, but can they use this trigger in particular?
+            serializer = view.get_serializer(data=request.data)
+            serializer.is_valid(raise_exception=True)
+            trigger = serializer.validated_data.get('trigger')
+            permission = TRIGGER_PERMISSIONS[trigger]
+            return permission is None or request.user.has_perm(permission, target.provider)
+
 
 class CanSetUpProvider(drf_permissions.BasePermission):
     def has_object_permission(self, request, view, obj):
