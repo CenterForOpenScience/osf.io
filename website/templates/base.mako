@@ -292,10 +292,7 @@
     ## https://github.com/webpack/webpack/issues/2023 is resolved
     <link rel="stylesheet" href="/static/vendor/bower_components/bootstrap/dist/css/bootstrap.min.css">
 
-    <!-- ES6 shim for IE support for "My Projects" page-->
-    <!--[if IE]>
-        <script src="https://cdnjs.cloudflare.com/ajax/libs/es6-shim/0.35.0/es6-shim.min.js"></script>
-    <![endif]-->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/es6-shim/0.35.0/es6-shim.min.js"></script>
 
     % if settings.USE_CDN_FOR_CLIENT_LIBS:
         <script src="//ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
