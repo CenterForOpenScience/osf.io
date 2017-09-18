@@ -15,6 +15,8 @@ volumes:
     external: false
   registries_dist_vol:
     external: false
+  quickfiles_dist_vol:
+    external: false
   mfr_requirements_vol:
     external: false
   mfr_requirements_local_bin_vol:
@@ -198,6 +200,27 @@ services:
       - postgres
     stdin_open: true
 
+
+  #############
+  # Quickfiles #
+  #############
+
+  quickfiles:
+    build: github.com/hmoco/ember-quickfiles
+    command: /bin/bash -c "yarn --pure-lockfile --ignore-engines --no-progress --no-emoji && ./node_modules/bower/bin/bower install --allow-root --config.interactive=false && ./node_modules/ember-cli/bin/ember serve --host 0.0.0.0 --port 4201"
+    restart: unless-stopped
+    depends_on:
+      - api
+      - web
+    environment:
+      - BACKEND=local
+    expose:
+      - 4201
+    ports:
+      - 4201:4201
+    volumes:
+      - quickfiles_dist_vol:/code/dist
+    stdin_open: true
 
   #############
   # Preprints #
@@ -399,4 +422,5 @@ services:
       - osf_node_modules_vol:/code/node_modules
       - preprints_dist_vol:/preprints
       - registries_dist_vol:/registries
+      - quickfiles_dist_vol:/quickfiles
     stdin_open: true

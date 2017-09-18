@@ -15,7 +15,6 @@ import jwt
 from django.db import transaction
 
 from addons.base.models import BaseStorageAddon
-from addons.osfstorage.models import OsfStorageFile
 from addons.osfstorage.models import OsfStorageFileNode
 
 from framework import sentry
@@ -694,7 +693,7 @@ def addon_view_or_download_file(auth, path, provider, **kwargs):
 
 def addon_view_or_download_quickfile(**kwargs):
     fid = kwargs.get('fid', 'NOT_AN_FID')
-    file_ = OsfStorageFile.load(fid)
+    file_ = OsfStorageFileNode.load(fid)
     if not file_:
         raise HTTPError(httplib.NOT_FOUND, data={
             'message_short': 'File Not Found',
