@@ -61,9 +61,9 @@
                             <tbody data-bind="foreach:{data:results}">
                                 <tr>
                                     <td data-label="">
-                                        <a data-bind="attr: {class: $root.selected($data) ? 'btn btn-default btn-sm': 'btn btn-success btn-sm' }, click: $root.selected($data) ? $root.remove.bind($root) : $root.add.bind($root), css: $root.disableButtons()">
-                                            <i data-bind="attr: {class: $root.selected($data) ? 'fa fa-minus': 'fa fa-plus' }, visible: !$root.processing() || ($root.processing() && !($root.isClicked() == $data.id))"></i>
-                                            <i data-bind="visible: $root.processing() && $root.isClicked() == $data.id" class="fa fa-spinner fa-spin"></i>
+                                        <a data-bind="attr: {class: $root.selected($data) ? 'fa-button btn btn-default': 'fa-button btn btn-success' }, click: $root.selected($data) ? $root.remove.bind($root) : $root.add.bind($root), css: $root.disableButtons()">
+                                            <i data-bind="attr: {class: $root.selected($data) ? 'fa-fix-width fa fa-minus': 'fa-fix-width fa fa-plus' }, visible: !$root.processing() || ($root.processing() && !($root.isClicked() == $data.id))"></i>
+                                            <i data-bind="visible: $root.processing() && $root.isClicked() == $data.id" class="fa-fix-width fa fa-spinner fa-spin"></i>
                                         </a>
                                         <a data-toggle="tooltip" data-bind="attr: {href: $data.links.html, title: $root.title($data).long}, text: $root.title($data).short, "></a>
                                     </td>
