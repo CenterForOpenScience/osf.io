@@ -9,6 +9,7 @@ var Raven = require('raven-js');
 var $osf = require('./osfHelpers');
 var osfHelpers = require('js/osfHelpers');
 var m = require('mithril');
+var bootbox = require('bootbox');
 var NodesDeleteTreebeard = require('js/nodesDeleteTreebeard');
 
 function _flattenNodeTree(nodeTree) {
@@ -66,7 +67,12 @@ function batchNodesDelete(nodes) {
             data: nodesBatch
         }),
         success: function(){
-            window.location.href = '/dashboard/';
+            bootbox.alert({
+            message: 'Project has been successfully deleted.',
+                callback: function(confirmed) {
+                    window.location.href = '/dashboard/';
+                }
+            });
         }
     });
 }
@@ -82,8 +88,6 @@ var NodesDeleteViewModel = function(node) {
     self.CONFIRM = 'confirm';
 
     self.confirmationString = '';
-    self.parentIsEmbargoed = node.is_embargoed;
-    self.parentIsPublic = node.is_public;
     self.treebeardUrl = window.contextVars.node.urls.api  + 'tree/';
     self.nodesOriginal = {};
     self.nodesDeleted = ko.observable();
