@@ -52,9 +52,10 @@ class ODMOrderingFilter(OrderingFilter):
         if isinstance(queryset, DjangoQuerySet):
             if queryset.ordered:
                 return queryset
-            elif getattr(queryset.query, 'distinct_fields', None):
-                order_fields = [field.lstrip('-') for field in ordering]
-                queryset = queryset.distinct(*order_fields)
+            elif ordering and getattr(queryset.query, 'distinct_fields', None):
+                order_fields = tuple([field.lstrip('-') for field in ordering])
+                distinct_fields = queryset.query.distinct_fields
+                queryset.query.distinct_fields = tuple(set(distinct_fields + order_fields))
             return super(ODMOrderingFilter, self).filter_queryset(request, queryset, view)
         if ordering:
             if not isinstance(queryset, modularodm_queryset.BaseQuerySet) and isinstance(ordering, (list, tuple)):
