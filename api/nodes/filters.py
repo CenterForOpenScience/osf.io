@@ -26,7 +26,7 @@ class NodesFilterMixin(ListFilterMixin):
             if operation['op'] == 'eq':
                 if operation['value']:
                     # filter[parent]=<nid>
-                    parent = utils.get_object_or_error(AbstractNode, operation['value'], display_name='parent')
+                    parent = utils.get_object_or_error(AbstractNode, operation['value'], self.request, display_name='parent')
                     node_ids = NodeRelation.objects.filter(parent=parent, is_node_link=False).values_list('child_id', flat=True)
                     return Q(id__in=node_ids)
             elif operation['op'] == 'ne':

@@ -2,7 +2,7 @@ import pytest
 
 from django.db.models import Q
 
-from tests.base import DbTestCase
+from tests.base import OsfTestCase
 from osf_tests import factories
 
 from framework.database import get_or_http_error, autoload
@@ -11,7 +11,8 @@ from framework.exceptions import HTTPError
 from osf.models import Node
 
 
-class FrameworkUtilsTestCase(DbTestCase):
+class FrameworkUtilsTestCase(OsfTestCase):
+
     def test_get_or_http_error_by_pk_found(self):
         n = factories.NodeFactory()
         found = get_or_http_error(Node, n._id)

@@ -6,6 +6,7 @@ import furl
 from django.core.exceptions import ObjectDoesNotExist
 from django.db.models import Q
 from rest_framework.exceptions import NotFound
+from rest_framework.permissions import SAFE_METHODS
 from rest_framework.reverse import reverse
 
 from api.base.authentication.drf import get_session_from_cookie
@@ -75,8 +76,9 @@ def absolute_reverse(view_name, query_kwargs=None, args=None, kwargs=None):
     return url
 
 
-def get_object_or_error(model_cls, query_or_pk, display_name=None):
+def get_object_or_error(model_cls, query_or_pk, request, display_name=None):
     obj = query = None
+    select_for_update = bool(request.method not in SAFE_METHODS)
     if isinstance(query_or_pk, basestring):
         # they passed a 5-char guid as a string
         if issubclass(model_cls, GuidMixin):
@@ -88,14 +90,14 @@ def get_object_or_error(model_cls, query_or_pk, display_name=None):
                 query = {model_cls.primary_identifier_name: query_or_pk}
             else:
                 # fall back to modmcompatiblity's load method since we don't know their PIN
-                obj = model_cls.load(query_or_pk)
+                obj = model_cls.load(query_or_pk, select_for_update=select_for_update)
     else:
         # they passed a query
         if hasattr(model_cls, 'primary_identifier_name'):
             query = to_django_query(query_or_pk, model_cls=model_cls)
         else:
             # fall back to modmcompatibility's find_one
-            obj = model_cls.find_one(query_or_pk)
+            obj = model_cls.find_one(query_or_pk, select_for_update=select_for_update)
 
     if not obj:
         if not query:
@@ -104,9 +106,9 @@ def get_object_or_error(model_cls, query_or_pk, display_name=None):
         try:
             # TODO This could be added onto with eager on the queryset and the embedded fields of the api
             if isinstance(query, dict):
-                obj = model_cls.objects.get(**query)
+                obj = model_cls.objects.get(**query) if not select_for_update else model_cls.objects.filter(**query).select_for_update().get()
             else:
-                obj = model_cls.objects.get(query)
+                obj = model_cls.objects.get(query) if not select_for_update else model_cls.objects.filter(query).select_for_update().get()
         except ObjectDoesNotExist:
             raise NotFound
 

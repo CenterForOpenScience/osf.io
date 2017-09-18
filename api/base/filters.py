@@ -48,11 +48,15 @@ class ODMOrderingFilter(OrderingFilter):
     """Adaptation of rest_framework.filters.OrderingFilter to work with modular-odm."""
     # override
     def filter_queryset(self, request, queryset, view):
+        ordering = self.get_ordering(request, queryset, view)
         if isinstance(queryset, DjangoQuerySet):
             if queryset.ordered:
                 return queryset
+            elif ordering and getattr(queryset.query, 'distinct_fields', None):
+                order_fields = tuple([field.lstrip('-') for field in ordering])
+                distinct_fields = queryset.query.distinct_fields
+                queryset.query.distinct_fields = tuple(set(distinct_fields + order_fields))
             return super(ODMOrderingFilter, self).filter_queryset(request, queryset, view)
-        ordering = self.get_ordering(request, queryset, view)
         if ordering:
             if not isinstance(queryset, modularodm_queryset.BaseQuerySet) and isinstance(ordering, (list, tuple)):
                 sorted_list = sorted(queryset, cmp=sort_multiple(ordering))
