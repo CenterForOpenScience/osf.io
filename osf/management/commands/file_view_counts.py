@@ -22,10 +22,13 @@ def set_file_view_counts(state, *args, **kwargs):
     # get all osfstorage files which is_deleted == False, the file size in production database > 1730325
     files = OsfStorageFile.objects.all()
 
+    # the limit of the datasets size return from keen is 400kb.
+    # A json file return 3 file counts from keen is about 223 bytes
+    # So a json file return from keen should be able to reach 4800 files, to be safe user 4500
+    keen_file_limit = 4500
+
     while files:
-        # the limit of the datasets size return from keen is 400kb.
-        # A json file return 3 file counts from keen is about 223 bytes
-        file_array = files[:4500]
+        file_array = files[:keen_file_limit]
         file_ids = [x._id for x in file_array]
         # for each file get the file view counts from keen
         query = [{'property_name': 'page.info.path', 'operator': 'in', 'property_value': file_ids}]
@@ -49,7 +52,7 @@ def set_file_view_counts(state, *args, **kwargs):
 
             logger.info('File ID {0}: has inputed "{1}" view counts'.format(file_node._id, count))
 
-        files = files[4500:]
+        files = files[keen_file_limit:]
 
     logger.info('File view counts migration from keen completed.')
 
