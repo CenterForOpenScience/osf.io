@@ -247,7 +247,7 @@ $(document).ready(function () {
                 return false;
             }
             var request = $osf.ajaxJSON('DELETE', url, {'data': {'tag': tag}});
-            request.success(function() {
+            request.done(function() {
                 window.contextVars.node.tags.splice(window.contextVars.node.tags.indexOf(tag), 1);
             });
             request.fail(function(xhr, textStatus, error) {
