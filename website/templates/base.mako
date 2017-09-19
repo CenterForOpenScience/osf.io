@@ -279,11 +279,6 @@
 
 <%def name="includes_top()">
 
-    <!-- ES6 shim for IE support for "My Projects" page-->
-    <!--[if IE]>
-        <script src="https://cdnjs.cloudflare.com/ajax/libs/es6-shim/0.35.0/es6-shim.min.js"></script>
-    <![endif]-->
-
     <!-- HTML5 shim and Respond.js for IE8 support of HTML5 elements and media queries -->
     <!-- WARNING: Respond.js doesn't work if you view the page via file:// -->
     <!--[if lt IE 9]>
@@ -296,6 +291,8 @@
     ## TODO: Install bootstrap with npm and build it into vendor.js when
     ## https://github.com/webpack/webpack/issues/2023 is resolved
     <link rel="stylesheet" href="/static/vendor/bower_components/bootstrap/dist/css/bootstrap.min.css">
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/es6-shim/0.35.0/es6-shim.min.js"></script>
 
     % if settings.USE_CDN_FOR_CLIENT_LIBS:
         <script src="//ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>

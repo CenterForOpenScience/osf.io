@@ -119,6 +119,13 @@ class TestNodeList:
             project = AbstractNode.load(project_json['id'])
             assert project_json['embeds']['root']['data']['id'] == project.root._id
 
+    def test_node_list_sorting(self, app, url):
+        res = app.get('{}?sort=-date_created'.format(url))
+        assert res.status_code == 200
+
+        res = app.get('{}?sort=title'.format(url))
+        assert res.status_code == 200
+
 
 @pytest.mark.django_db
 class TestNodeFiltering:

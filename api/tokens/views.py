@@ -1,6 +1,7 @@
 """
 Views related to personal access tokens. Intended for OSF internal use only
 """
+from django.db.models import Q
 from rest_framework.exceptions import APIException, NotFound
 from rest_framework import generics
 from rest_framework import permissions as drf_permissions
@@ -11,6 +12,7 @@ from framework.auth import cas
 from framework.auth.oauth_scopes import CoreScopes
 
 from api.base.filters import ListFilterMixin
+from api.base.utils import get_object_or_error
 from api.base.views import JSONAPIBaseView
 from api.base import permissions as base_permissions
 from api.tokens.serializers import ApiOAuth2PersonalTokenSerializer
@@ -76,7 +78,7 @@ class TokenDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView):
     # overrides RetrieveAPIView
     def get_object(self):
         try:
-            obj = ApiOAuth2PersonalToken.objects.get(_id=self.kwargs['_id'], is_active=True)
+            obj = get_object_or_error(ApiOAuth2PersonalToken, Q(_id=self.kwargs['_id'], is_active=True), self.request)
         except ApiOAuth2PersonalToken.DoesNotExist:
             raise NotFound
         self.check_object_permissions(self.request, obj)
