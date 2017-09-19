@@ -29,7 +29,7 @@ from website.util import permissions
 
 logger = logging.getLogger(__name__)
 preprints_dir = os.path.abspath(os.path.join(os.getcwd(), EXTERNAL_EMBER_APPS['preprints']['path']))
-quickfiles_dir = os.path.abspath(os.path.join(os.getcwd(), EXTERNAL_EMBER_APPS['ember-osf-web']['path']))
+quickfiles_dir = os.path.abspath(os.path.join(os.getcwd(), EXTERNAL_EMBER_APPS['quickfiles']['path']))
 
 def serialize_contributors_for_summary(node, max_count=3):
     # # TODO: Use .filter(visible=True) when chaining is fixed in django-include

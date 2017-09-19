@@ -1236,12 +1236,6 @@ def make_url_map(app):
             'get',
             addon_views.addon_view_or_download_quickfile,
             json_renderer
-        ),
-        Rule(
-            '/quickfiles/',
-            'get',
-            quickfiles_views.use_ember_app,
-            notemplate,
         )
     ])
 
