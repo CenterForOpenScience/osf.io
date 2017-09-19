@@ -24,7 +24,7 @@ def set_file_view_counts(state, *args, **kwargs):
 
     # the limit of the datasets size return from keen is 400kb.
     # A json file return 3 file counts from keen is about 223 bytes
-    # So a json file return from keen should be able to reach 4800 files, to be safe user 4500
+    # So a json file return from keen should be able to reach 4800 files, to be safe use 4500
     keen_file_limit = 4500
 
     while files:
