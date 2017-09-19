@@ -1,12 +1,18 @@
 # -*- coding: utf-8 -*-
+from django.db import transaction
 from flask import Request as FlaskRequest
 from flask import request
+from rest_framework.permissions import SAFE_METHODS
 from api.base.api_globals import api_globals
 
 
 class DummyRequest(object):
     pass
 dummy_request = DummyRequest()
+
+
+def check_select_for_update(request):
+    return bool(request.method not in SAFE_METHODS and transaction.get_connection().in_atomic_block)
 
 
 def get_current_request():

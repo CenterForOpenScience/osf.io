@@ -5,11 +5,10 @@ import httplib as http
 import markupsafe
 from django.core.paginator import Paginator
 from django.db.models import Q, QuerySet
-from django.db import transaction
 from flask import request
-from rest_framework.permissions import SAFE_METHODS
 
 from framework.exceptions import HTTPError
+from osf.utils.requests import check_select_for_update
 
 
 def get_or_http_error(Model, pk_or_query, allow_deleted=False, display_name=None):
@@ -32,7 +31,7 @@ def get_or_http_error(Model, pk_or_query, allow_deleted=False, display_name=None
     display_name = display_name or ''
     # FIXME: Not everything that uses this decorator needs to be markupsafe, but OsfWebRenderer error.mako does...
     safe_name = markupsafe.escape(display_name)
-    select_for_update = bool(request.method not in SAFE_METHODS and transaction.get_connection().in_atomic_block)
+    select_for_update = check_select_for_update(request)
 
     if isinstance(pk_or_query, Q):
         try:
