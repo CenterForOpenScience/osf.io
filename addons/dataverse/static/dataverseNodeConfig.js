@@ -363,8 +363,10 @@ ViewModel.prototype.sendAuth = function() {
         self.changeMessage('Please select a Dataverse repository.', 'text-danger');
         return;
     }
-    self.authorizing(true);
+
     var url = self.urls().create;
+
+    self.authorizing(true);
     return $osf.postJSON(
         url,
         ko.toJS({
@@ -593,13 +595,10 @@ ViewModel.prototype.changeMessage = function(text, css, timeout) {
 function DataverseNodeConfig(selector, url) {
     // Initialization code
     var self = this;
-    self.selector = $(selector);
+    self.selector = selector;
     self.url = url;
     // On success, instantiate and bind the ViewModel
     self.viewModel = new ViewModel(url);
     $osf.applyBindings(self.viewModel, '#dataverseScope');
-    self.selector.on('hidden.bs.modal', function(){
-        self.viewModel.clearModal();
-    });
 }
 module.exports = DataverseNodeConfig;
