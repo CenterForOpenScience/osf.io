@@ -42,9 +42,9 @@ EXTERNAL_EMBER_APPS = {
         'path': '/registries/'
     },
     'quickfiles': {
-        'url': '/quickfiles/',
+        'url': '/ember_osf_web/',
         'server': 'http://localhost:4201',
-        'path': '/quickfiles/'
+        'path': '/ember_osf_web/'
     }
     # 'meetings': {
     #     'url': '/meetings/',
