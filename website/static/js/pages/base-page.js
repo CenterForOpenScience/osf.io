@@ -5,7 +5,7 @@
 'use strict';
 // CSS used on every page
 require('../../vendor/bootstrap-editable-custom/css/bootstrap-editable.css');
-require('../../vendor/bower_components/jquery-ui/themes/base/minified/jquery.ui.resizable.min.css');
+require('../../vendor/bower_components/jquery-ui/themes/base/resizable.css');
 require('../../css/bootstrap-xl.css');
 require('../../css/animate.css');
 require('../../css/search-bar.css');

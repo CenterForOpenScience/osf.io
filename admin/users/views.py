@@ -413,7 +413,7 @@ class UserWorkshopFormView(PermissionRequiredMixin, FormView):
             else:
                 user = user_by_email
 
-            workshop_date = datetime.strptime(row[1], '%m/%d/%y')
+            workshop_date = pytz.utc.localize(datetime.strptime(row[1], '%m/%d/%y'))
             nodes = self.get_user_nodes_since_workshop(user, workshop_date)
             user_logs = self.get_user_logs_since_workshop(user, workshop_date)
             last_log_date = user_logs.latest().date.strftime('%m/%d/%y') if user_logs else ''

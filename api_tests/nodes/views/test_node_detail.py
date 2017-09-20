@@ -4,6 +4,10 @@ import mock
 import pytest
 from urlparse import urlparse
 
+from django.db import connection, transaction
+from django.test import TransactionTestCase
+from django.test.utils import CaptureQueriesContext
+
 from api.base.settings.defaults import API_BASE
 from framework.auth.core import Auth
 from osf.models import NodeLog
@@ -317,6 +321,30 @@ class NodeCRUDTestCase:
 
 @pytest.mark.django_db
 class TestNodeUpdate(NodeCRUDTestCase):
+
+    def test_select_for_update(self, app, user, title_new, description_new, category_new, project_public, url_public):
+        with transaction.atomic(), CaptureQueriesContext(connection) as ctx:
+            res = app.put_json_api(url_public, {
+                'data': {
+                    'id': project_public._id,
+                    'type': 'nodes',
+                    'attributes': {
+                        'title': title_new,
+                        'description': description_new,
+                        'category': category_new,
+                        'public': True
+                    }
+                }
+            }, auth=user.auth)
+
+        assert res.status_code == 200
+        assert res.content_type == 'application/vnd.api+json'
+        assert res.json['data']['attributes']['title'] == title_new
+        assert res.json['data']['attributes']['description'] == description_new
+        assert res.json['data']['attributes']['category'] == category_new
+
+        for_update_sql = connection.ops.for_update_sql()
+        assert any(for_update_sql in query['sql'] for query in ctx.captured_queries)
 
     def test_node_update_invalid_data(self, app, user, url_public):
         res = app.put_json_api(url_public, 'Incorrect data', auth=user.auth, expect_errors=True)

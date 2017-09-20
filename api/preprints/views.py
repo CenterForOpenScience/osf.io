@@ -7,7 +7,7 @@ from rest_framework.exceptions import NotFound, PermissionDenied, NotAuthenticat
 from rest_framework import permissions as drf_permissions
 
 from framework.auth.oauth_scopes import CoreScopes
-from osf.models import PreprintService, Identifier
+from osf.models import PreprintService
 
 from api.base.exceptions import Conflict
 from api.base.views import JSONAPIBaseView, WaterButlerMixin
@@ -16,7 +16,7 @@ from api.base.parsers import (
     JSONAPIMultipleRelationshipsParser,
     JSONAPIMultipleRelationshipsParserForRegularJSON,
 )
-from api.base.utils import get_object_or_error, get_user_auth
+from api.base.utils import get_user_auth
 from api.base import permissions as base_permissions
 from api.citations.utils import render_citation, preprint_csl
 from api.preprints.serializers import (
@@ -30,7 +30,7 @@ from api.nodes.serializers import (
 
 from api.identifiers.views import IdentifierList
 from api.identifiers.serializers import PreprintIdentifierSerializer
-from api.nodes.views import NodeMixin
+from api.nodes.views import NodeMixin, NodeContributorsList
 from api.nodes.permissions import ContributorOrPublic
 
 from api.preprints.permissions import PreprintPublishedOrAdmin
@@ -40,12 +40,13 @@ class PreprintMixin(NodeMixin):
     preprint_lookup_url_kwarg = 'preprint_id'
 
     def get_preprint(self, check_object_permissions=True):
-        preprint = get_object_or_error(
-            PreprintService,
-            self.kwargs[self.preprint_lookup_url_kwarg],
-            display_name='preprint'
-        )
-        if not preprint or preprint.node.is_deleted:
+        qs = PreprintService.objects.filter(guids___id=self.kwargs[self.preprint_lookup_url_kwarg])
+        try:
+            preprint = qs.select_for_update().get() if self.request.method not in drf_permissions.SAFE_METHODS else qs.select_related('node').get()
+        except PreprintService.DoesNotExist:
+            raise NotFound
+
+        if preprint.node.is_deleted:
             raise NotFound
         # May raise a permission denied
         if check_object_permissions:
@@ -182,7 +183,7 @@ class PreprintList(JSONAPIBaseView, generics.ListCreateAPIView, PreprintFilterMi
 
     # overrides ListAPIView
     def get_queryset(self):
-        return self.get_queryset_from_request().distinct()
+        return self.get_queryset_from_request().distinct('id', 'date_created')
 
 class PreprintDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView, PreprintMixin, WaterButlerMixin):
     """Preprint Detail  *Writeable*.
@@ -398,6 +399,9 @@ class PreprintIdentifierList(IdentifierList, PreprintMixin):
     def get_object(self, check_object_permissions=True):
         return self.get_preprint(check_object_permissions=check_object_permissions)
 
-    # overrides ListCreateAPIView
-    def get_queryset(self):
-        return Identifier.find(self.get_queryset_from_request())
+
+class PreprintContributorsList(NodeContributorsList, PreprintMixin):
+
+    def create(self, request, *args, **kwargs):
+        self.kwargs['node_id'] = self.get_preprint(check_object_permissions=False).node._id
+        return super(PreprintContributorsList, self).create(request, *args, **kwargs)
