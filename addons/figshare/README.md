@@ -1,4 +1,4 @@
-# OSF Dropbox Addon
+# OSF figshare Addon
 
 ## Setup figshare for development
 
