@@ -1,4 +1,5 @@
 from django.apps import apps
+import waffle
 
 from api.addons.views import AddonSettingsMixin
 from api.base import permissions as base_permissions
@@ -152,8 +153,11 @@ class UserList(JSONAPIBaseView, generics.ListAPIView, ListFilterMixin):
 
     # overrides ListCreateAPIView
     def get_queryset(self):
-        return self.get_queryset_from_request()
-
+        # This is an example of using a switch to turn an API endpoint on and off within a view
+        if waffle.switch_is_active('api_switch'):
+            return self.get_queryset_from_request()
+        else:
+            raise NotFound('Endpoint is disabled.')
 
 class UserDetail(JSONAPIBaseView, generics.RetrieveUpdateAPIView, UserMixin):
     """Details about a specific user. *Writeable*.
