@@ -36,7 +36,7 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
         user_guid = options.get('user')
-        num_actions = options.get('num-actions')
+        num_actions = options.get('--num-actions')
 
         if user_guid is None:
             user = OSFUser.objects.first()

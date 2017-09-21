@@ -4,9 +4,9 @@ from rest_framework.exceptions import ValidationError
 
 from reviews.workflow import Workflows
 
+from api.actions.serializers import ReviewableCountsRelationshipField
 from api.base.utils import absolute_reverse, get_user_auth
 from api.base.serializers import JSONAPISerializer, LinksField, RelationshipField, ShowIfVersion
-from api.actions.serializers import ReviewableCountsRelationshipField
 
 
 class PreprintProviderSerializer(JSONAPISerializer):

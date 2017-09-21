@@ -17,7 +17,7 @@ from api.base.exceptions import InvalidFilterValue, InvalidFilterOperator, Confl
 from api.base.filters import PreprintFilterMixin, ListFilterMixin
 from api.base.views import JSONAPIBaseView
 from api.base.pagination import MaxSizePagination
-from api.base.utils import get_object_or_error, get_user_auth
+from api.base.utils import get_object_or_error, get_user_auth, is_truthy
 from api.licenses.views import LicenseList
 from api.taxonomies.serializers import TaxonomySerializer
 from api.preprint_providers.serializers import PreprintProviderSerializer
@@ -270,6 +270,22 @@ class PreprintProviderPreprintList(JSONAPIBaseView, generics.ListAPIView, Prepri
     # overrides ListAPIView
     def get_queryset(self):
         return self.get_queryset_from_request().distinct('id', 'date_created')
+
+    # overrides APIView
+    def get_renderer_context(self):
+        context = super(PreprintProviderPreprintList, self).get_renderer_context()
+        show_counts = is_truthy(self.request.query_params.get('meta[reviews_state_counts]', False))
+        if show_counts:
+            # TODO don't duplicate the above
+            auth = get_user_auth(self.request)
+            auth_user = getattr(auth, 'user', None)
+            provider = get_object_or_error(PreprintProvider, self.kwargs['provider_id'], self.request, display_name='PreprintProvider')
+            if not auth_user or not auth_user.has_perm('view_submissions', provider):
+                self.permission_denied(self.request, 'Must have `view_submissions` permission to request state counts')
+            context['meta'] = {
+                'reviews_state_counts': provider.get_reviewable_state_counts(),
+            }
+        return context
 
 
 class PreprintProviderTaxonomies(JSONAPIBaseView, generics.ListAPIView):

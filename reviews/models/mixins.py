@@ -30,15 +30,15 @@ class ReviewProviderMixin(models.Model):
     def is_reviewed(self):
         return self.reviews_workflow is not None
 
-    def get_reviewable_status_counts(self):
-        assert self.REVIEWABLE_RELATION_NAME, 'REVIEWABLE_RELATION_NAME must be set to compute status counts'
+    def get_reviewable_state_counts(self):
+        assert self.REVIEWABLE_RELATION_NAME, 'REVIEWABLE_RELATION_NAME must be set to compute state counts'
         qs = getattr(self, self.REVIEWABLE_RELATION_NAME)
         if isinstance(qs, IncludeQuerySet):
             qs = qs.include(None)
         qs = qs.values('reviews_state').annotate(count=models.Count('*'))
-        ret = {state.value: 0 for state in workflow.States}
-        ret.update({row['reviews_state']: row['count'] for row in qs if row['reviews_state'] in ret})
-        return ret
+        counts = {state.value: 0 for state in workflow.States}
+        counts.update({row['reviews_state']: row['count'] for row in qs if row['reviews_state'] in counts})
+        return counts
 
     def add_admin(self, user):
         from reviews.permissions import GroupHelper
