@@ -263,7 +263,14 @@ class UserDetail(JSONAPIBaseView, generics.RetrieveUpdateAPIView, UserMixin):
 
     # overrides RetrieveAPIView
     def get_object(self):
-        return self.get_user()
+        """
+        This is an example of using a sample to turn an API endpoint on and off.
+        The sample is set to 50%, so this endpoint will return NotFound fifty percent of the time.
+        """
+        if waffle.sample_is_active('api_fifty_percent_sample'):
+            return self.get_user()
+        else:
+            raise NotFound('Endpoint is disabled.')
 
     # overrides RetrieveUpdateAPIView
     def get_serializer_context(self):
