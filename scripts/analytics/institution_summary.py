@@ -1,3 +1,6 @@
+import django
+django.setup()
+
 import pytz
 import logging
 from dateutil.parser import parse
@@ -31,19 +34,23 @@ class InstitutionSummary(SummaryAnalytics):
         timestamp_datetime = datetime(date.year, date.month, date.day).replace(tzinfo=pytz.UTC)
         query_datetime = timestamp_datetime + timedelta(1)
 
-        for institution in institutions:
-            node_query = (
-                Q(is_deleted=False) &
-                Q(date_created__lt=query_datetime)
-            )
+        daily_query = Q(date_created__gte=timestamp_datetime)
+        node_query = Q(is_deleted=False) & Q(date_created__lt=query_datetime)
+        project_query = node_query & Q(parent_nodes__isnull=True)
+        public_query = Q(is_public=True)
+        private_query = Q(is_public=False)
+        reg_type_query = Q(type='osf.registration')
 
-            project_query = node_query & Q(parent_nodes__isnull=True)
-            public_query = Q(is_public=True)
-            private_query = Q(is_public=False)
-            node_public_query = node_query & public_query
-            node_private_query = node_query & private_query
-            project_public_query = project_query & public_query
-            project_private_query = project_query & private_query
+        node_public_query = node_query & public_query
+        node_private_query = node_query & private_query
+        project_public_query = project_query & public_query
+        project_private_query = project_query & private_query
+
+        # `embargoed` used private status to determine embargoes, but old registrations could be private and unapproved registrations can also be private
+        # `embargoed_v2` uses future embargo end dates on root
+        embargo_v2_query = Q(root__embargo__end_date__gt=query_datetime)
+
+        for institution in institutions:
             count = {
                 'institution': {
                     'id': ensure_bytes(institution._id),
@@ -51,26 +58,49 @@ class InstitutionSummary(SummaryAnalytics):
                 },
                 'users': {
                     'total': institution.osfuser_set.count(),
+                    'total_daily': institution.osfuser_set.filter(date_confirmed__gte=timestamp_datetime, date_congirmed__lt=query_datetime).count(),
                 },
                 'nodes': {
-                    'total': institution.nodes.filter(node_query).exclude(type='osf.registration').count(),
-                    'public': institution.nodes.filter(node_public_query).exclude(type='osf.registration').count(),
-                    'private': institution.nodes.filter(node_private_query).exclude(type='osf.registration').count(),
+                    'total': institution.nodes.filter(node_query).exclude(reg_type_query).count(),
+                    'public': institution.nodes.filter(node_public_query).exclude(reg_type_query).count(),
+                    'private': institution.nodes.filter(node_private_query).exclude(reg_type_query).count(),
+
+                    'total_daily': institution.nodes.filter(node_query & daily_query).exclude(reg_type_query).count(),
+                    'public_daily': institution.nodes.filter(node_public_query & daily_query).exclude(reg_type_query).count(),
+                    'private_daily': institution.nodes.filter(node_private_query & daily_query).exclude(reg_type_query).count(),
                 },
                 'projects': {
-                    'total': institution.nodes.filter(project_query).exclude(type='osf.registration').count(),
-                    'public': institution.nodes.filter(project_public_query).exclude(type='osf.registration').count(),
-                    'private': institution.nodes.filter(project_private_query).exclude(type='osf.registration').count(),
+                    'total': institution.nodes.filter(project_query).exclude(reg_type_query).count(),
+                    'public': institution.nodes.filter(project_public_query).exclude(reg_type_query).count(),
+                    'private': institution.nodes.filter(project_private_query).exclude(reg_type_query).count(),
+
+                    'total_daily': institution.nodes.filter(project_query & daily_query).exclude(reg_type_query).count(),
+                    'public_daily': institution.nodes.filter(project_public_query & daily_query).exclude(reg_type_query).count(),
+                    'private_daily': institution.nodes.filter(project_private_query & daily_query).exclude(reg_type_query).count(),
+
                 },
                 'registered_nodes': {
-                    'total': institution.nodes.filter(node_query).filter(type='osf.registration').count(),
-                    'public': institution.nodes.filter(node_public_query).filter(type='osf.registration').count(),
-                    'embargoed': institution.nodes.filter(node_private_query).filter(type='osf.registration').count(),
+                    'total': institution.nodes.filter(node_query & reg_type_query).count(),
+                    'public': institution.nodes.filter(node_public_query & reg_type_query).count(),
+                    'embargoed': institution.nodes.filter(node_private_query & reg_type_query).count(),
+                    'embargoed_v2': institution.nodes.filter(node_private_query & reg_type_query & embargo_v2_query).count(),
+
+                    'total_daily': institution.nodes.filter(node_query & reg_type_query & daily_query).count(),
+                    'public_daily': institution.nodes.filter(node_public_query & reg_type_query & daily_query).count(),
+                    'embargoed_daily': institution.nodes.filter(node_private_query & reg_type_query & daily_query).count(),
+                    'embargoed_v2_daily': institution.nodes.filter(node_private_query & reg_type_query & daily_query & embargo_v2_query).count(),
+
                 },
                 'registered_projects': {
-                    'total': institution.nodes.filter(project_query).filter(type='osf.registration').count(),
-                    'public': institution.nodes.filter(project_public_query).filter(type='osf.registration').count(),
-                    'embargoed': institution.nodes.filter(project_private_query).filter(type='osf.registration').count(),
+                    'total': institution.nodes.filter(project_query & reg_type_query).count(),
+                    'public': institution.nodes.filter(project_public_query & reg_type_query).count(),
+                    'embargoed': institution.nodes.filter(project_private_query & reg_type_query).count(),
+                    'embargoed_v2': institution.nodes.filter(project_private_query & reg_type_query & embargo_v2_query).count(),
+
+                    'total_daily': institution.nodes.filter(project_query & reg_type_query & daily_query).count(),
+                    'public_daily': institution.nodes.filter(project_public_query & reg_type_query & daily_query).count(),
+                    'embargoed_daily': institution.nodes.filter(project_private_query & reg_type_query & daily_query).count(),
+                    'embargoed_v2_daily': institution.nodes.filter(project_private_query & reg_type_query & daily_query & embargo_v2_query).count(),
                 },
                 'keen': {
                     'timestamp': timestamp_datetime.isoformat()

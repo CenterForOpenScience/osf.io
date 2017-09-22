@@ -1,4 +1,7 @@
-from itertools import chain
+import django
+django.setup()
+
+from django.db.models import Q
 import pytz
 import logging
 from dateutil.parser import parse
@@ -25,21 +28,31 @@ class NodeSummary(SummaryAnalytics):
 
         # Convert to a datetime at midnight for queries and the timestamp
         timestamp_datetime = datetime(date.year, date.month, date.day).replace(tzinfo=pytz.UTC)
+        print timestamp_datetime
         query_datetime = timestamp_datetime + timedelta(1)
+        print query_datetime
+        node_query = Q(is_deleted=False, date_created__lte=query_datetime)
+        project_query = node_query & Q(parent_nodes__isnull=True)
 
-        node_query = {'is_deleted': False, 'date_created__lte': query_datetime}
-        project_query = dict(chain(node_query.iteritems(), {'parent_nodes__isnull': True}.iteritems()))
+        public_query = Q(is_public=True)
+        private_query = Q(is_public=False)
 
-        public_query = {'is_public': True}
-        private_query = {'is_public': False}
-        retracted_query = {'retraction__isnull': False}
+        # node_query encompasses lte query_datetime
+        daily_query = Q(date_created__gte=timestamp_datetime)
+        retracted_query = Q(retraction__isnull=False)
 
-        node_public_query = dict(chain(node_query.iteritems(), public_query.iteritems()))
-        node_private_query = dict(chain(node_query.iteritems(), private_query.iteritems()))
-        node_retracted_query = dict(chain(node_query.iteritems(), retracted_query.iteritems()))
-        project_public_query = dict(chain(project_query.iteritems(), public_query.iteritems()))
-        project_private_query = dict(chain(project_query.iteritems(), private_query.iteritems()))
-        project_retracted_query = dict(chain(project_query.iteritems(), retracted_query.iteritems()))
+        node_public_query = node_query & public_query
+        node_private_query = node_query & private_query
+        node_daily_query = node_query & public_query
+
+        node_retracted_query = node_query & retracted_query
+        project_public_query = project_query & public_query
+        project_private_query = project_query & private_query
+        project_retracted_query = project_query & retracted_query
+
+        # `embargoed` used private status to determine embargoes, but old registrations could be private and unapproved registrations can also be private
+        # `embargoed_v2` uses future embargo end dates on root
+        embargo_v2_query = Q(root__embargo__end_date__gt=query_datetime)
 
         totals = {
             'keen': {
@@ -47,29 +60,48 @@ class NodeSummary(SummaryAnalytics):
             },
             # Nodes - the number of projects and components
             'nodes': {
-                'total': Node.objects.filter(**node_query).count(),
-                'public': Node.objects.filter(**node_public_query).count(),
-                'private': Node.objects.filter(**node_private_query).count()
+                'total': Node.objects.filter(node_query).count(),
+                'public': Node.objects.filter(node_public_query).count(),
+                'private': Node.objects.filter(node_private_query).count(),
+                'total_daily': Node.objects.filter(node_query & daily_query).count(),
+                'public_daily': Node.objects.filter(node_public_query & daily_query).count(),
+                'private_daily': Node.objects.filter(node_private_query & daily_query).count(),
             },
             # Projects - the number of top-level only projects
             'projects': {
-                'total': Node.objects.filter(**project_query).count(),
-                'public': Node.objects.filter(**project_public_query).count(),
-                'private': Node.objects.filter(**project_private_query).count(),
+                'total': Node.objects.filter(project_query).count(),
+                'public': Node.objects.filter(project_public_query).count(),
+                'private': Node.objects.filter(project_private_query).count(),
+                'total_daily': Node.objects.filter(project_query & daily_query).count(),
+                'public_daily': Node.objects.filter(project_public_query & daily_query).count(),
+                'private_daily': Node.objects.filter(project_private_query & daily_query).count(),
             },
             # Registered Nodes - the number of registered projects and components
             'registered_nodes': {
-                'total': Registration.objects.filter(**node_query).count(),
-                'public': Registration.objects.filter(**node_public_query).count(),
-                'embargoed': Registration.objects.filter(**node_private_query).count(),
-                'withdrawn': Registration.objects.filter(**node_retracted_query).count(),
+                'total': Registration.objects.filter(node_query).count(),
+                'public': Registration.objects.filter(node_public_query).count(),
+                'embargoed': Registration.objects.filter(node_private_query).count(),
+                'embargoed_v2': Registration.objects.filter(node_private_query & embargo_v2_query).count(),
+                'withdrawn': Registration.objects.filter(node_retracted_query).count(),
+                'total_daily': Registration.objects.filter(node_query & daily_query).count(),
+                'public_daily': Registration.objects.filter(node_public_query & daily_query).count(),
+                'embargoed_daily': Registration.objects.filter(node_private_query & daily_query).count(),
+                'embargoed_v2_daily': Registration.objects.filter(node_private_query & daily_query & embargo_v2_query).count(),
+                'withdrawn_daily': Registration.objects.filter(node_retracted_query & daily_query).count(),
+
             },
             # Registered Projects - the number of registered top level projects
             'registered_projects': {
-                'total': Registration.objects.filter(**project_query).count(),
-                'public': Registration.objects.filter(**project_public_query).count(),
-                'embargoed': Registration.objects.filter(**project_private_query).count(),
-                'withdrawn': Registration.objects.filter(**project_retracted_query).count(),
+                'total': Registration.objects.filter(project_query).count(),
+                'public': Registration.objects.filter(project_public_query).count(),
+                'embargoed': Registration.objects.filter(project_private_query).count(),
+                'embargoed_v2': Registration.objects.filter(project_private_query & embargo_v2_query).count(),
+                'withdrawn': Registration.objects.filter(project_retracted_query).count(),
+                'total_daily': Registration.objects.filter(project_query & daily_query).count(),
+                'public_daily': Registration.objects.filter(project_public_query & daily_query).count(),
+                'embargoed_daily': Registration.objects.filter(project_private_query & daily_query).count(),
+                'embargoed_v2_daily': Registration.objects.filter(project_private_query & daily_query & embargo_v2_query).count(),
+                'withdrawn_daily': Registration.objects.filter(project_retracted_query & daily_query).count(),
             }
         }
 

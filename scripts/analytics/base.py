@@ -4,6 +4,7 @@ import argparse
 import importlib
 from datetime import datetime, timedelta
 from dateutil.parser import parse
+from django.utils import timezone
 
 from website.app import init_app
 from website.settings import KEEN as keen_settings
@@ -64,7 +65,7 @@ class SummaryAnalytics(BaseAnalytics):
         # Date must be specified, must be a date (not a datetime), and must not be today or in the future
         if not date:
             raise AttributeError('Script must be called with a date to gather analytics.')
-        today = datetime.today().date()
+        today = timezone.now().date()
         if date >= today:
             raise AttributeError('Script cannot be called for the same day, or for a date in the future.')
         if type(date) != type(today):
