@@ -24,7 +24,7 @@ class TestERPCParticipantEmail:
         project.save()
         schema = MetaSchema.objects.get(name='Election Research Preacceptance Competition', active=False)
 
-        registration = project.register_node(schema=schema, auth=Auth(creator), data='')
+        registration = project.register_node(schema, Auth(creator), data='')
         registration.save()
 
         gathered_participant_emails = get_erpc_participants()

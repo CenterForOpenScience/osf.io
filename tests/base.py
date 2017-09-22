@@ -109,7 +109,6 @@ class AppTestCase(unittest.TestCase):
 
     def setUp(self):
         super(AppTestCase, self).setUp()
-        test_app.config['PRESERVE_CONTEXT_ON_EXCEPTION'] = False
         self.app = TestApp(test_app)
         if not self.PUSH_CONTEXT:
             return

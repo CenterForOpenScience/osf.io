@@ -238,7 +238,7 @@ class PreprintFactory(ModularOdmFactory):
         model = PreprintService
 
     @classmethod
-    def _create(cls, target_class, project=None, is_public=True, filename='preprint_file.txt', provider=None, 
+    def _create(cls, target_class, project=None, is_public=True, filename='preprint_file.txt', provider=None,
                 doi=None, external_url=None, is_published=True, subjects=None, finish=True, *args, **kwargs):
         save_kwargs(**kwargs)
         user = None
@@ -274,7 +274,7 @@ class PreprintFactory(ModularOdmFactory):
             subjects = subjects or [[SubjectFactory()._id]]
             preprint.set_subjects(subjects, auth=auth)
             preprint.set_published(is_published, auth=auth)
-        
+
         if not preprint.is_published:
             project._has_abandoned_preprint = True
 
@@ -341,8 +341,8 @@ class RegistrationFactory(AbstractNodeFactory):
         data = data or {'some': 'data'}
         auth = Auth(user=user)
         register = lambda: project.register_node(
-            schema=schema,
-            auth=auth,
+            schema,
+            auth,
             data=data
         )
 

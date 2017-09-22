@@ -31,9 +31,6 @@ from website.project.metadata.utils import serialize_meta_schema, serialize_draf
 from website.project.utils import serialize_node
 from website.util import rapply
 from website.util.sanitize import strip_html
-import logging
-
-logger = logging.getLogger(__name__)
 
 
 get_schema_or_fail = lambda query: get_or_http_error(MetaSchema, query)

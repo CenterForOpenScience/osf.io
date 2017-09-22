@@ -115,7 +115,7 @@ class TestCloneWikiPages(OsfTestCase):
 
     def test_registration_wiki_pages_created_pre_registration_get_cloned(self):
         project = self.set_up_project_with_wiki_page()
-        registration = project.register_node(get_default_metaschema(), Auth(self.user), '', None)
+        registration = project.register_node(get_default_metaschema(), Auth(self.user), data='', parent=None)
         # reset wiki pages for test
         registration.wiki_pages_versions = project.wiki_pages_versions
         registration.wiki_pages_current = project.wiki_pages_current

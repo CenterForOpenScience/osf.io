@@ -38,7 +38,7 @@ class LinkedRegistrationsTestCase(ApiTestCase):
         draft_reg_public_node = DraftRegistrationFactory(
             branched_from=public_node,
             initiator=self.admin_contributor)
-        self.public_registration = public_node.register_node(schema=get_default_metaschema(), draft=draft_reg_public_node, auth=Auth(self.admin_contributor), data='', parent=None, celery=False)
+        self.public_registration = public_node.register_node(get_default_metaschema(), Auth(self.admin_contributor), draft_id=draft_reg_public_node._id, data='', parent=None, celery=False)
         self.public_registration.is_public = True
         self.public_registration.save()
 
@@ -51,7 +51,7 @@ class LinkedRegistrationsTestCase(ApiTestCase):
         draft_reg_private_node = DraftRegistrationFactory(
             branched_from=private_node,
             initiator=self.admin_contributor)
-        self.private_registration = private_node.register_node(schema=get_default_metaschema(), draft=draft_reg_private_node, auth=Auth(self.admin_contributor), data='', parent=None, celery=False)
+        self.private_registration = private_node.register_node(get_default_metaschema(), Auth(self.admin_contributor), draft_id=draft_reg_private_node._id, data='', parent=None, celery=False)
 
     def tearDown(self):
         super(LinkedRegistrationsTestCase, self).tearDown()

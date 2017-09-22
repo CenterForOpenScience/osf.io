@@ -36,7 +36,7 @@ class TestRegistrationViews(RegistrationsTestBase):
     @mock.patch('website.archiver.tasks.archive')
     def test_node_register_page_registration(self, mock_archive):
         draft = DraftRegistrationFactory(branched_from=self.node, initiator=self.user)
-        reg = self.node.register_node(schema=get_default_metaschema(), auth=self.auth, data='', parent=None, draft=draft, celery=False)
+        reg = self.node.register_node(get_default_metaschema(), self.auth, draft_id=draft._id, data='', parent=None, celery=False)
         url = reg.web_url_for('node_register_page')
         res = self.app.get(url, auth=self.user.auth)
         assert_equal(res.status_code, http.OK)
@@ -239,13 +239,13 @@ class TestDraftRegistrationViews(RegistrationsTestBase):
 
     @mock.patch('framework.celery_tasks.handlers.enqueue_task')
     def test_register_draft_registration_invalid_embargo_end_date_raises_HTTPError(self, mock_enqueue):
-        with assert_raises(ValidationError):
-            res = self.app.post_json(
-                self.node.api_url_for('register_draft_registration', draft_id=self.draft._id, celery=False),
-                self.invalid_embargo_date_payload,
-                auth=self.user.auth,
-                expect_errors=True
-            )
+        res = self.app.post_json(
+            self.node.api_url_for('register_draft_registration', draft_id=self.draft._id, celery=False),
+            self.invalid_embargo_date_payload,
+            auth=self.user.auth,
+            expect_errors=True
+        )
+        assert_equal(res.status_code, http.BAD_REQUEST)
 
     def test_register_draft_registration_invalid_registrationChoice(self):
         res = self.app.post_json(

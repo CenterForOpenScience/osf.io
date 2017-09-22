@@ -320,10 +320,10 @@ class RegistrationFactory(BaseNodeFactory):
                         registration_metadata=data)
 
         register = lambda: project.register_node(
-            schema=schema,
-            auth=auth,
+            schema,
+            auth,
+            draft_id=draft._id,
             data=data,
-            draft=draft,
             celery=False
         )
 

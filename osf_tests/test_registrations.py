@@ -283,7 +283,7 @@ class TestRegisterNode:
         draft = factories.DraftRegistrationFactory(initiator=user, branched_from=project)
         wiki = NodeWikiFactory(node=project)
         current_wiki = NodeWikiFactory(node=project, version=2)
-        registration = project.register_node(schema=get_default_metaschema(), draft=draft, auth=Auth(user), data='', parent=None, celery=False)
+        registration = project.register_node(get_default_metaschema(), Auth(user), draft_id=draft._id, data='', parent=None, celery=False)
         assert registration.wiki_private_uuids == {}
 
         registration_wiki_current = NodeWikiPage.load(registration.wiki_pages_current[current_wiki.page_name])

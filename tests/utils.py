@@ -143,11 +143,11 @@ def mock_archive(project, schema=None, auth=None, data=None, parent=None,
 
     with mock.patch('framework.celery_tasks.handlers.enqueue_task'):
         registration = project.register_node(
-            schema=schema,
-            auth=auth,
+            schema,
+            auth,
+            draft_id=draft._id,
             data=data,
             parent=parent,
-            draft=draft,
             celery=False,
         )
         draft.save()

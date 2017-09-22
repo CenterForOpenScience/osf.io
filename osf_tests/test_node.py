@@ -1509,7 +1509,7 @@ class TestPermissionMethods:
     def test_raises_permissions_error_if_not_a_contributor(self, project):
         user = UserFactory()
         with pytest.raises(PermissionsError):
-            project.register_node(None, Auth(user=user), '', None)
+            project.register_node(None, Auth(user=user), data='', parent=None, celery=False)
 
     def test_admin_can_register_private_children(self, project, user, auth):
         project.set_permissions(user, ['admin', 'write', 'read'])
@@ -1600,7 +1600,7 @@ class TestRegisterNode:
 
     def test_register_node_creates_new_registration(self, node, auth, reg_draft):
         with disconnected_from_listeners(after_create_registration):
-            registration = node.register_node(draft=reg_draft, schema=get_default_metaschema(), auth=auth, data='', parent=None, celery=False)
+            registration = node.register_node(get_default_metaschema(), auth, draft_id=reg_draft._id, data='', parent=None, celery=False)
             assert type(registration) is Registration
             assert node._id != registration._id
 
@@ -1609,8 +1609,8 @@ class TestRegisterNode:
         node.save()
         with pytest.raises(NodeStateError) as err:
             node.register_node(
-                schema=None,
-                auth=auth,
+                None,
+                auth,
                 data=None
             )
         assert err.value.message == 'Cannot register deleted node.'
@@ -1621,7 +1621,7 @@ class TestRegisterNode:
         node = NodeFactory(creator=user)
         node.is_public = True
         node.save()
-        registration = node.register_node(schema=get_default_metaschema(), draft=reg_draft, auth=Auth(user), data='', parent=None, celery=False)
+        registration = node.register_node(get_default_metaschema(), Auth(user), draft_id=reg_draft._id, data='', parent=None, celery=False)
         assert registration.is_public is False
 
     @mock.patch('website.project.signals.after_create_registration')
@@ -1636,7 +1636,7 @@ class TestRegisterNode:
         childchild = NodeFactory(parent=child)
         childchild.is_public = True
         childchild.save()
-        registration = node.register_node(schema=get_default_metaschema(), auth=Auth(user), data='', parent=None, draft=reg_draft, celery=False)
+        registration = node.register_node(get_default_metaschema(), Auth(user), draft_id=reg_draft._id, data='', parent=None, celery=False)
         for node in registration.node_and_primary_descendants():
             assert node.is_public is False
 
@@ -1650,10 +1650,10 @@ class TestRegisterNode:
 
         data = {'some': 'data'}
         reg = root.register_node(
-            schema=meta_schema,
-            auth=auth,
+            meta_schema,
+            auth,
+            draft_id=reg_draft._id,
             data=data,
-            draft=reg_draft,
             celery=False)
         r1 = reg.nodes[0]
         r1a = r1.nodes[0]

@@ -1861,7 +1861,7 @@ class TestAddingContributorViews(OsfTestCase):
     def test_registering_project_does_not_send_contributor_added_email(self, send_mail, mock_archive):
         project = ProjectFactory()
         draft = DraftRegistrationFactory(branched_from=project)
-        project.register_node(draft=draft, schema=get_default_metaschema(), auth=Auth(user=project.creator), data='', parent=None, celery=False)
+        project.register_node(get_default_metaschema(), Auth(user=project.creator), draft_id=draft._id, data='', parent=None, celery=False)
         assert_false(send_mail.called)
 
     @mock.patch('website.mails.send_mail')

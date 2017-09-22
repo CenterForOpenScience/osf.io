@@ -956,14 +956,14 @@ class RegistrationEmbargoViewsTestCase(OsfTestCase):
 
     @mock.patch('framework.celery_tasks.handlers.enqueue_task')
     def test_POST_invalid_embargo_end_date_returns_HTTPBad_Request(self, mock_enqueue):
-        with assert_raises(ValidationError):
-            res = self.app.post(
-                self.project.api_url_for('register_draft_registration', draft_id=self.draft._id, celery=False),
-                self.invalid_embargo_date_payload,
-                content_type='application/json',
-                auth=self.user.auth,
-                expect_errors=True,
-            )
+        res = self.app.post(
+            self.project.api_url_for('register_draft_registration', draft_id=self.draft._id, celery=False),
+            self.invalid_embargo_date_payload,
+            content_type='application/json',
+            auth=self.user.auth,
+            expect_errors=True,
+        )
+        assert_equal(res.status_code, http.BAD_REQUEST)
 
     @mock.patch('framework.celery_tasks.handlers.enqueue_task')
     def test_valid_POST_embargo_adds_to_parent_projects_log(self, mock_enqueue):

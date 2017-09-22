@@ -856,9 +856,9 @@ class TestAddonFileViews(OsfTestCase):
         file_node.copied_from = second_file_node
         draft = DraftRegistrationFactory(branched_from=self.project, initiator=self.user)
         registered_node = self.project.register_node(
-            draft=draft,
-            schema=get_default_metaschema(),
-            auth=Auth(self.user),
+            get_default_metaschema(),
+            Auth(self.user),
+            draft_id=draft._id,
             data=None,
             celery=False,
         )
@@ -873,9 +873,9 @@ class TestAddonFileViews(OsfTestCase):
         file_node = self.get_test_file()
         draft = DraftRegistrationFactory(branched_from=self.project, initiator=self.user)
         registered_node = self.project.register_node(
-            draft=draft,
-            schema=get_default_metaschema(),
-            auth=Auth(self.user),
+            get_default_metaschema(),
+            Auth(self.user),
+            draft_id=draft._id,
             data=None,
             celery=False,
         )
@@ -889,9 +889,9 @@ class TestAddonFileViews(OsfTestCase):
         file_node.copied_from = second_file_node
         draft = DraftRegistrationFactory(branched_from=self.project, initiator=self.user)
         self.project.register_node(
-            draft=draft,
-            schema=get_default_metaschema(),
-            auth=Auth(self.user),
+            get_default_metaschema(),
+            Auth(self.user),
+            draft_id=draft._id,
             data=None,
             celery=False,
         )

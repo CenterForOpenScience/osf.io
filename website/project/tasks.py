@@ -9,12 +9,12 @@ import requests
 from framework.celery_tasks.handlers import enqueue_task
 from dateutil.parser import parse as parse_date
 from django.utils import timezone
+from django.core.exceptions import ValidationError
 
 from framework import status
 from framework.celery_tasks import app as celery_app
 from framework.exceptions import HTTPError
 
-from osf.exceptions import ValidationValueError
 from osf.models.node_relation import NodeRelation
 
 from website import settings, mails
@@ -25,16 +25,23 @@ from website.util.share import GraphNode, format_contributor
 
 logger = logging.getLogger(__name__)
 
-def on_node_register(original, draft=None, auth=None, data=None, schema=None, parent=None, reg_choice=None, celery=True):
+def on_node_register(original_id, draft_id, auth, schema, data=None, parent=None, reg_choice=None, celery=True):
     if celery:
-        return enqueue_task(_on_node_register_celery.s(original, draft=draft, auth=auth, data=data, schema=schema, parent=parent, reg_choice=reg_choice, celery=celery))
-    return _on_node_register(original, draft=draft, auth=auth, data=data, schema=schema, parent=parent, reg_choice=reg_choice, celery=celery)
+        return enqueue_task(_on_node_register_celery.s(original_id, draft_id, auth, schema, data=data, parent=parent, reg_choice=reg_choice, celery=celery))
+    return _on_node_register(original_id, draft_id, auth, schema, data=data, parent=parent, reg_choice=reg_choice, celery=celery)
 
 @celery_app.task(ignore_results=False)
-def _on_node_register_celery(original, draft=None, auth=None, data=None, schema=None, parent=None, reg_choice=None, celery=True):
-    _on_node_register(original, draft=draft, auth=auth, data=data, schema=schema, parent=parent, reg_choice=reg_choice, celery=celery)
+def _on_node_register_celery(original_id, draft_id, auth, schema, data=None, parent=None, reg_choice=None, celery=True):
+    _on_node_register(original_id, draft_id, auth, schema, data=data, parent=parent, reg_choice=reg_choice, celery=celery)
 
-def _on_node_register(original, draft=None, auth=None, data=None, schema=None, parent=None, reg_choice=None, celery=True):
+def _on_node_register(original_id, draft_id, auth, schema, data=None, parent=None, reg_choice=None, celery=True):
+
+    AbstractNode = apps.get_model('osf.AbstractNode')
+    original = AbstractNode.load(original_id)
+
+    if original is None:
+        return
+
     registered = original.clone()
     registered.recast('osf.registration')
 
@@ -84,8 +91,8 @@ def _on_node_register(original, draft=None, auth=None, data=None, schema=None, p
         # Register child nodes
         if not node_relation.is_node_link:
             registered_child = node_contained.register_node(  # noqa
-                schema=schema,
-                auth=auth,
+                schema,
+                auth,
                 data=data,
                 parent=registered,
                 celery=celery)
@@ -107,19 +114,21 @@ def _on_node_register(original, draft=None, auth=None, data=None, schema=None, p
 
     if parent is None:
 
+        DraftRegistration = apps.get_model('osf.DraftRegistration')
         DraftRegistrationLog = apps.get_model('osf.DraftRegistrationLog')
 
-        draft.registered_node = registered
-        draft.add_status_log(auth.user, DraftRegistrationLog.REGISTERED)
-
-        draft.save()
+        draft = DraftRegistration.load(draft_id)
+        if draft is not None:
+            draft.registered_node = registered
+            draft.add_status_log(auth.user, DraftRegistrationLog.REGISTERED)
+            draft.save()
 
         if reg_choice == 'embargo':
             # Initiate embargo
             embargo_end_date = parse_date(data['embargoEndDate'], ignoretz=True).replace(tzinfo=pytz.utc)
             try:
                 registered.embargo_registration(auth.user, embargo_end_date)
-            except ValidationValueError as err:
+            except ValidationError as err:
                 raise HTTPError(http.BAD_REQUEST, data=dict(message_long=err.message))
         elif reg_choice == 'immediate':
             try:
