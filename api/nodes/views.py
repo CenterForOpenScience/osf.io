@@ -1,4 +1,5 @@
 import re
+import waffle
 
 from django.apps import apps
 from django.db.models import Q
@@ -276,8 +277,12 @@ class NodeList(JSONAPIBaseView, bulk_views.BulkUpdateJSONAPIView, bulk_views.Bul
 
     # overrides NodesFilterMixin
     def get_default_queryset(self):
-        user = self.request.user
-        return default_node_list_queryset() & default_node_permission_queryset(user)
+        # this is an example of using a flag inside an API view to enable/disable
+        if waffle.flag_is_active(self.request, 'api_flag_on_user_id'):
+            user = self.request.user
+            return default_node_list_queryset() & default_node_permission_queryset(user)
+        else:
+            raise NotFound('Endpoint is disabled.')
 
     # overrides ListBulkCreateJSONAPIView, BulkUpdateJSONAPIView
     def get_queryset(self):
