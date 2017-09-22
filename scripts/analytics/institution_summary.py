@@ -7,6 +7,7 @@ from dateutil.parser import parse
 from datetime import datetime, timedelta
 
 from django.db.models import Q
+from django.utils import timezone
 
 from framework.encryption import ensure_bytes
 from osf.models import OSFUser, AbstractNode, Institution, Registration
@@ -58,7 +59,7 @@ class InstitutionSummary(SummaryAnalytics):
                 },
                 'users': {
                     'total': institution.osfuser_set.count(),
-                    'total_daily': institution.osfuser_set.filter(date_confirmed__gte=timestamp_datetime, date_congirmed__lt=query_datetime).count(),
+                    'total_daily': institution.osfuser_set.filter(date_confirmed__gte=timestamp_datetime, date_confirmed__lt=query_datetime).count(),
                 },
                 'nodes': {
                     'total': institution.nodes.filter(node_query).exclude(reg_type_query).count(),
@@ -131,7 +132,7 @@ if __name__ == '__main__':
     args = institution_summary.parse_args()
     yesterday = args.yesterday
     if yesterday:
-        date = (datetime.today() - timedelta(1)).date()
+        date = (timezone.now() - timedelta(1)).date()
     else:
         date = parse(args.date).date() if args.date else None
     events = institution_summary.get_events(date)

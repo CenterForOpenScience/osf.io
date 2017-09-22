@@ -105,15 +105,12 @@ class TestNodeCount(OsfTestCase):
         assert_equal(registered_projects['embargoed_daily'], 1)
         assert_equal(registered_projects['embargoed_v2_daily'], 1)
 
-
-
         # Modify date to zero out dailies
         for node in AbstractNode.objects.all():
             node.date_created = self.date - datetime.timedelta(1)
             node.save()
 
         self.results = NodeSummary().get_events(self.date.date())[0]
-
 
     # test_get_node_count daily zero
         nodes = self.results['nodes']
@@ -136,7 +133,6 @@ class TestNodeCount(OsfTestCase):
         assert_equal(projects['total_daily'], 0)
         assert_equal(projects['public_daily'], 0)
         assert_equal(projects['private_daily'], 0)
-
 
     # test_get_registered_nodes_count daily zero
         registered_nodes = self.results['registered_nodes']

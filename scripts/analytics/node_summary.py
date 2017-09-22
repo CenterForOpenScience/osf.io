@@ -28,9 +28,8 @@ class NodeSummary(SummaryAnalytics):
 
         # Convert to a datetime at midnight for queries and the timestamp
         timestamp_datetime = datetime(date.year, date.month, date.day).replace(tzinfo=pytz.UTC)
-        print timestamp_datetime
         query_datetime = timestamp_datetime + timedelta(1)
-        print query_datetime
+
         node_query = Q(is_deleted=False, date_created__lte=query_datetime)
         project_query = node_query & Q(parent_nodes__isnull=True)
 

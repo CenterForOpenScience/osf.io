@@ -6,6 +6,7 @@ from dateutil.parser import parse
 from datetime import datetime, timedelta
 
 from django.db.models import Q
+from django.utils import timezone
 from website.app import init_app
 from scripts.analytics.base import SummaryAnalytics
 
@@ -83,7 +84,7 @@ if __name__ == '__main__':
     args = preprint_summary.parse_args()
     yesterday = args.yesterday
     if yesterday:
-        date = (datetime.today() - timedelta(1)).date()
+        date = (timezone.now() - timedelta(1)).date()
     else:
         date = parse(args.date).date() if args.date else None
     events = preprint_summary.get_events(date)

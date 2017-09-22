@@ -10,6 +10,7 @@ import requests
 from dateutil.parser import parse
 from datetime import datetime, timedelta
 from django.db.models import Q
+from django.utils import timezone
 
 from osf.models import OSFUser, NodeLog
 from website.app import init_app
@@ -96,7 +97,6 @@ class UserSummary(SummaryAnalytics):
                 depth_users += 1
             if user.social or user.schools or user.jobs:
                 profile_edited += 1
-        # user summary dates
         new_users = OSFUser.objects.filter(is_active=True, date_confirmed__gte=timestamp_datetime, date_confirmed__lt=query_datetime)
         counts = {
             'keen': {
@@ -143,7 +143,7 @@ if __name__ == '__main__':
     args = user_summary.parse_args()
     yesterday = args.yesterday
     if yesterday:
-        date = (datetime.today() - timedelta(1)).date()
+        date = (timezone.now() - timedelta(1)).date()
     else:
         date = parse(args.date).date() if args.date else None
     events = user_summary.get_events(date)

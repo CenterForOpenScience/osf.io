@@ -187,12 +187,12 @@ class DateAnalyticsHarness(BaseAnalyticsHarness):
     def main(self, date=None, yesterday=False, command_line=True):
         analytics_classes = self.analytics_classes
         if yesterday:
-            date = (datetime.today() - timedelta(1)).date()
+            date = (timezone.now() - timedelta(1)).date()
 
         if command_line:
             args = self.parse_args()
             if args.yesterday:
-                date = (datetime.today() - timedelta(1)).date()
+                date = (timezone.now() - timedelta(1)).date()
             if not date:
                 try:
                     date = parse(args.date).date()
