@@ -34,7 +34,7 @@ google-api-python-client==1.2
 Babel==1.3
 citeproc-py==0.3.0
 boto3==1.4.4
-django-waffle==0.12.0
+django-waffle==0.11.0
 # Support SSL SNI on Python < 2.7.9
 # (http://docs.python-requests.org/en/latest/community/faq/#what-are-hostname-doesn-t-match-errors)
 ndg-httpsclient==0.3.0
