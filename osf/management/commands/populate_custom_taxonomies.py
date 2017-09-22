@@ -154,6 +154,7 @@ def migrate(provider=None, share_title=None, data=None, dry_run=False, copy=Fals
     custom_provider = PreprintProvider.objects.filter(_id=provider).first()
     assert custom_provider, 'Unable to find specified provider: {}'.format(provider)
     assert custom_provider.id != BEPRESS_PROVIDER.id, 'Cannot add custom mapping to BePress provider'
+    assert not custom_provider.subjects.exists(), 'Provider aldready has a custom taxonomy'
     if custom_provider.share_title in [None, '', 'bepress']:
         if not share_title:
             raise RuntimeError('`--share-title` is required if not already set on the provider')
@@ -187,7 +188,7 @@ class Command(BaseCommand):
             action='store',
             dest='provider',
             required=True,
-            help='_id of the PreprintProvider object, e.g. "osf"'
+            help='_id of the PreprintProvider object, e.g. "osf". Provider is expected to not already have a custom taxonomy.'
         )
         parser.add_argument(
             '--from-subjects-acceptable',
