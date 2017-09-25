@@ -5,6 +5,8 @@ import json
 import datetime as dt
 import urlparse
 
+from django.db import connection, transaction
+from django.test.utils import CaptureQueriesContext
 from django.utils import timezone
 import mock
 import itsdangerous
@@ -343,6 +345,20 @@ class TestOSFUser:
 
         assert 'foo@bar.com' not in user.unconfirmed_emails
         assert user.emails.filter(address='foo@bar.com').exists()
+
+    def test_confirm_email_merge_uses_select_for_update(self, user):
+        mergee = UserFactory(username='foo@bar.com')
+        token = user.add_unconfirmed_email('foo@bar.com')
+
+        with transaction.atomic(), CaptureQueriesContext(connection) as ctx:
+            user.confirm_email(token, merge=True)
+
+        mergee.reload()
+        assert mergee.is_merged
+        assert mergee.merged_by == user
+
+        for_update_sql = connection.ops.for_update_sql()
+        assert any(for_update_sql in query['sql'] for query in ctx.captured_queries)
 
     def test_confirm_email_comparison_is_case_insensitive(self):
         u = UnconfirmedUserFactory.build(

@@ -11,8 +11,11 @@ class DummyRequest(object):
 dummy_request = DummyRequest()
 
 
-def check_select_for_update(request):
-    return bool(request.method not in SAFE_METHODS and transaction.get_connection().in_atomic_block)
+def check_select_for_update(request=None):
+    atomic_transaction = transaction.get_connection().in_atomic_block
+    if request:
+        return request.method not in SAFE_METHODS and atomic_transaction
+    return atomic_transaction
 
 
 def get_current_request():
