@@ -224,6 +224,6 @@ module.exports = {
         ]
     },
     node: {
-       fs: "empty"
+       fs: 'empty'
     }
 };
