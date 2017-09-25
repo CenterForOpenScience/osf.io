@@ -2259,7 +2259,7 @@ class TestNodeBulkDelete:
         assert res.status_code == 400
 
         new_payload = {'data': [{'id': public_component._id, 'type': 'nodes'}, {'id': public_project_parent._id, 'type': 'nodes'}]}
-        res = app.delete_json_api(url, new_payload, auth=user_one.auth, expect_errors=True, bulk=True)
+        res = app.delete_json_api(url, new_payload, auth=user_one.auth, bulk=True)
         assert res.status_code == 204
 
 
