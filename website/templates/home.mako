@@ -45,6 +45,8 @@
         window.contextVars = $.extend(true, {}, window.contextVars, {
             dashboardInstitutions: ${ dashboard_institutions | sjson, n},
         });
+        // Creating global waffle object to give access to flags, switches and samples
+        // Adapted from django-waffle v0.11.1, waffle/views.py
         var FLAGS = ${ flags | sjson, n }
         var SWITCHES = ${ switches | sjson, n }
         var SAMPLES = ${ samples | sjson, n }
