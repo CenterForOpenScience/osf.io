@@ -4,7 +4,7 @@
 
 Hello ${user.fullname},
 
-Congratulations on sharing your ${preprint.provider.preprint_word}  "${node.title}" on ${preprint.provider.name}, powered by OSF Preprints: ${preprint.absolute_url}
+Congratulations on sharing your ${preprint.provider.preprint_word} "${node.title}" on ${preprint.provider.name}, powered by OSF Preprints: ${preprint.absolute_url}
 
 Now that you've shared your ${preprint.provider.preprint_word}, take advantage of more OSF features:
 
@@ -23,7 +23,7 @@ Sincerely,
 
 Your ${preprint.provider.name} and OSF teams
 
-Want more information? Visit https://osf.io/preprints/${preprint.provider.name.lower()} to learn about ${preprint.provider.name} or https://osf.io/ to learn about the Open Science Framework, or https://cos.io/ for information about its supporting organization, the Center for Open Science.
+Want more information? Visit ${preprint.provider.landing_url} to learn about ${preprint.provider.name} or https://osf.io/ to learn about the Open Science Framework, or https://cos.io/ for information about its supporting organization, the Center for Open Science.
 
 Questions? Email support+${preprint.provider._id}@osf.io
 

@@ -211,12 +211,15 @@ CONTRIBUTOR_ADDED_PREPRINT_NODE_FROM_OSF = Mail(
     'contributor_added_preprint_node_from_osf',
     subject='You have been added as a contributor to an OSF project.'
 )
-PREPRINT_CONFIRMATION = lambda template, provider: Mail(
-    'preprint_confirmation_{}'.format(template),
+PREPRINT_CONFIRMATION_DEFAULT = Mail(
+    'preprint_confirmation_default',
+    subject="You've shared a preprint on OSF preprints"
+)
+PREPRINT_CONFIRMATION_BRANDED = lambda provider: Mail(
+    'preprint_confirmation_branded',
     subject="You've shared {} {} on {}".format(
         get_english_article(provider.preprint_word),
-        provider.preprint_word,
-        'OSF Preprints' if provider._id == 'osf' else provider.name
+        provider.preprint_word, provider.name
     )
 )
 FORWARD_INVITE = Mail('forward_invite', subject='Please forward to ${fullname}')
