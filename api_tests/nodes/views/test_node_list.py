@@ -2038,6 +2038,14 @@ class TestNodeBulkDelete:
         return ProjectFactory(title='Project Two', description='One Three', is_public=True, creator=user_one)
 
     @pytest.fixture()
+    def public_project_parent(self, user_one):
+        return ProjectFactory(title='Project with Component', description='Project with component', is_public=True, creator=user_one)
+
+    @pytest.fixture()
+    def public_component(self, user_one, public_project_parent):
+        return NodeFactory(parent=public_project_parent, creator=user_one)
+
+    @pytest.fixture()
     def user_one_private_project(self, user_one):
         return ProjectFactory(title='User One Private Project', is_public=False, creator=user_one)
 
@@ -2244,6 +2252,15 @@ class TestNodeBulkDelete:
 
         res = app.get(public_project_one_url, auth=user_one.auth)
         assert res.status_code == 200
+
+    def test_bulk_delete_project_with_component(self, app, user_one, public_project_parent, public_component, url):
+        new_payload = {'data': [{'id': public_project_parent._id, 'type': 'nodes'}, {'id': public_component._id, 'type': 'nodes'}]}
+        res = app.delete_json_api(url, new_payload, auth=user_one.auth, expect_errors=True, bulk=True)
+        assert res.status_code == 400
+
+        new_payload = {'data': [{'id': public_component._id, 'type': 'nodes'}, {'id': public_project_parent._id, 'type': 'nodes'}]}
+        res = app.delete_json_api(url, new_payload, auth=user_one.auth, expect_errors=True, bulk=True)
+        assert res.status_code == 204
 
 
 @pytest.mark.django_db
