@@ -13,8 +13,3 @@ context.keys().forEach(context);
 var addonContext = require.context('../../../../addons/', true, /.*test\.js$/); //make sure you have your directory and regex test set correctly!
 addonContext.keys().forEach(addonContext);
 
-module.exports = {
-    node: {
-       fs: 'empty'
-    }
-};
