@@ -52,7 +52,10 @@
             tinymce.init(FOOTER_LINKS_CONFIG);
 
         </script>
+        <link href="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.4/css/select2.min.css" rel="stylesheet" />
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.4/js/select2.min.js"></script>
     </head>
+<div class="row">
     <div class="col-md-9">
         <form action="" method="post">
             {% csrf_token %}
@@ -108,3 +111,162 @@
             </form>
         </div>
     </div>
+</div>
+<br>
+<br>
+<div class="row">
+    <div class="col-md-12">
+        <div>
+            <h2>Custom Taxonomy</h2>
+            <p>Use the form below to build a custom taxonomy. Enter the JSON for the custom taxonomy directly in the text box, or use the form fields below to build the taxonomy one entry at a time.</p>
+            <p>Click <a role="button" data-toggle="modal" href="#exampleModal">here</a> to see an example of a full custom taxonomy
+                and for more information about building a custom taxonomy.
+            </p>
+        </div>
+        <form id="taxonomy-form" action="{% url 'preprint_providers:process_custom_taxonomy' %}" method="post">
+            {% csrf_token %}
+            {{ taxonomy_form.non_field_errors }}
+            {{ taxonomy_form.provider_id }}
+
+            <div>
+                <div class="fieldWrapper">
+                    {{ taxonomy_form.add_missing.errors }}
+                    <div class="row">
+                        <div class="col-md-2">
+                            {{ taxonomy_form.add_missing.label_tag }}
+                        </div>
+                        <div class="col-md-10">
+                            {{ taxonomy_form.add_missing }}
+                        </div>
+                    </div>
+                </div>
+                <div class="fieldWrapper">
+                    {{ taxonomy_form.include.errors }}
+                    <div class="row">
+                        <div class="col-md-2">
+                            {{ taxonomy_form.include.label_tag }}
+                        </div>
+                        <div class="col-md-10">
+                            {{ taxonomy_form.include }}
+                            <button type="button" class="taxonomy-action-button" id={{ taxonomy_form.include.html_name }} value={{ taxonomy_form.include.id_for_label }}>Add</button>
+                        </div>
+                    </div>
+                </div>
+                <div class="fieldWrapper">
+                    {{ taxonomy_form.exclude.errors }}
+                    <div class="row">
+                        <div class="col-md-2">
+                            {{ taxonomy_form.exclude.label_tag }}
+                        </div>
+                        <div class="col-md-10">
+                            {{ taxonomy_form.exclude }}
+                            <button type="button" class="taxonomy-action-button" id={{ taxonomy_form.exclude.html_name }} value={{ taxonomy_form.exclude.id_for_label }}>Add</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div>
+                <div><b>Custom:</b></div>
+                <div class="panel panel-default">
+                    <div class="panel-body">
+                        {{ taxonomy_form.custom_name.errors }}
+                        <p>
+                            {{ taxonomy_form.custom_name.label_tag }}
+                            {{ taxonomy_form.custom_name }}
+                        </p>
+                        {{ taxonomy_form.custom_parent.errors }}
+                        <p>
+                            {{ taxonomy_form.custom_parent.label_tag }}
+                            {{ taxonomy_form.custom_parent }}
+                        </p>
+                        {{ taxonomy_form.bepress.errors }}
+                        <p>
+                            {{ taxonomy_form.bepress.label_tag }}
+                            {{ taxonomy_form.bepress }}
+                        </p>
+                        <div class="pull-right">
+                            <button type="button" id="id-add-custom">Add</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div>
+                <div class="fieldWrapper">
+                    {{ taxonomy_form.custom_taxonomy_json.errors }}
+                    <div class="row">
+                        <div class="col-md-12">
+                            <h4>Built Custom Taxonomy</h4>
+                            {{ taxonomy_form.custom_taxonomy_json }}
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div>
+                <button type="button" id="id-validate-custom">Validate</button>
+                <p>Click the 'Validate' button to check your taxonomy before clicking the 'Save' button to submit.</p>
+                <div id="taxonomy-field-info"></div>
+                <div>
+                </div>
+            </div>
+            <div>
+                <input class="form-button" type="submit" value="Save" />
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Modal explaining Custom Taxonomy -->
+<div class="modal fade" id="exampleModal" tabindex="-1" role="dialog">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="exampleModalLabel">Custom Taxonomy Example</h5>
+                <button type="button" class="close" data-dismiss="modal"><span aria-hidden="true">&times;</span></button>
+            </div>
+            <div class="modal-body">
+                <pre>
+{
+    "include": [
+        "Rehabilitation and Therapy",
+        "Theatre and Performance Studies"
+    ],
+    "exclude": [
+        "Acting",
+        "Playwriting",
+        "Theatre History",
+        "Other Theatre and Performance Studies",
+        "Dramatic Literature, Criticism and Theory"
+    ],
+    "custom": {
+        "Medicine and Health": {
+            "parent": "Rehabilitation and Therapy",
+            "bepress": "Sociology"
+        },
+        "Sport and Exercise Science": {
+            "parent": "",
+            "bepress": "Kinesiology"
+        },
+        "Exercise Immunology": {
+            "parent": "Sport and Exercise Science",
+            "bepress": "Exercise Science"
+        },
+        "Motor Control and Development": {
+            "parent": "Sport and Exercise Science",
+            "bepress": "Motor Control"
+        }
+    }
+}
+                </pre>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    $("#id_provider_id").val({{ preprint_provider.id }})
+</script>
