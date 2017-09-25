@@ -42,6 +42,7 @@ urlpatterns = [
                 url(r'^tokens/', include('api.tokens.urls', namespace='tokens')),
                 url(r'^users/', include('api.users.urls', namespace='users')),
                 url(r'^view_only_links/', include('api.view_only_links.urls', namespace='view-only-links')),
+                url(r'^waffle_flags/', include('api.waffle_flags.urls', namespace='waffle_flags')),
                 url(r'^waffle_switches/', include('api.waffle_switches.urls', namespace='waffle_switches')),
                 url(r'^wikis/', include('api.wikis.urls', namespace='wikis')),
             ],
