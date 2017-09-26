@@ -305,6 +305,10 @@ def resolve_guid(guid, suffix=None):
             return send_from_directory(preprints_dir, 'index.html')
 
         if isinstance(referent, BaseFileNode) and referent.is_file and referent.node.is_quickfiles:
+            if PROXY_EMBER_APPS:
+                resp = requests.get(EXTERNAL_EMBER_APPS['quickfiles']['server'], stream=True)
+                return Response(stream_with_context(resp.iter_content()), resp.status_code)
+
             return send_from_directory(quickfiles_dir, 'index.html')
 
         url = _build_guid_url(urllib.unquote(referent.deep_url), suffix)
