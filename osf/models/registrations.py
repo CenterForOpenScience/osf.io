@@ -545,13 +545,12 @@ class DraftRegistration(ObjectIDMixin, BaseModel):
         register = node.register_node(
             self.registration_schema,
             auth,
-            draft_id=self._id,
+            draft=self,
             data=data,
             reg_choice=reg_choice,
             celery=celery)
 
         if register and save:
-            self.refresh_from_db()
             self.save()
 
         return register

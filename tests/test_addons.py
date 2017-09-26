@@ -858,7 +858,7 @@ class TestAddonFileViews(OsfTestCase):
         registered_node = self.project.register_node(
             get_default_metaschema(),
             Auth(self.user),
-            draft_id=draft._id,
+            draft=draft,
             data=None,
             celery=False,
         )
@@ -875,7 +875,7 @@ class TestAddonFileViews(OsfTestCase):
         registered_node = self.project.register_node(
             get_default_metaschema(),
             Auth(self.user),
-            draft_id=draft._id,
+            draft=draft,
             data=None,
             celery=False,
         )
@@ -891,7 +891,7 @@ class TestAddonFileViews(OsfTestCase):
         self.project.register_node(
             get_default_metaschema(),
             Auth(self.user),
-            draft_id=draft._id,
+            draft=draft,
             data=None,
             celery=False,
         )

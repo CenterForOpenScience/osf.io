@@ -1,5 +1,4 @@
 from django.apps import apps
-import httplib as http
 import logging
 import pytz
 import urlparse
@@ -9,38 +8,35 @@ import requests
 from framework.celery_tasks.handlers import enqueue_task
 from dateutil.parser import parse as parse_date
 from django.utils import timezone
-from django.core.exceptions import ValidationError
 
 from framework import status
 from framework.celery_tasks import app as celery_app
-from framework.exceptions import HTTPError
-
 from osf.models.node_relation import NodeRelation
-
 from website import settings, mails
-from website.exceptions import NodeStateError
 from website.project import signals as project_signals
 from website.util.share import GraphNode, format_contributor
 
 
 logger = logging.getLogger(__name__)
 
-def on_node_register(original_id, draft_id, auth, schema, data=None, parent=None, reg_choice=None, celery=True):
+def on_node_register(original, draft, auth, schema, data=None, parent=None, reg_choice=None, celery=True):
     if celery:
-        return enqueue_task(_on_node_register_celery.s(original_id, draft_id, auth, schema, data=data, parent=parent, reg_choice=reg_choice, celery=celery))
-    return _on_node_register(original_id, draft_id, auth, schema, data=data, parent=parent, reg_choice=reg_choice, celery=celery)
+        return enqueue_task(_on_node_register_celery.s(original._id, draft._id, auth, schema, data=data, parent=parent, reg_choice=reg_choice, celery=celery))
+    return _on_node_register(original, draft, auth, schema, data=data, parent=parent, reg_choice=reg_choice, celery=celery)
 
 @celery_app.task(ignore_results=False)
 def _on_node_register_celery(original_id, draft_id, auth, schema, data=None, parent=None, reg_choice=None, celery=True):
     _on_node_register(original_id, draft_id, auth, schema, data=data, parent=parent, reg_choice=reg_choice, celery=celery)
 
-def _on_node_register(original_id, draft_id, auth, schema, data=None, parent=None, reg_choice=None, celery=True):
+def _on_node_register(original, draft, auth, schema, data=None, parent=None, reg_choice=None, celery=True):
 
-    AbstractNode = apps.get_model('osf.AbstractNode')
-    original = AbstractNode.load(original_id)
-
-    if original is None:
-        return
+    if celery:
+        AbstractNode = apps.get_model('osf.AbstractNode')
+        DraftRegistration = apps.get_model('osf.DraftRegistration')
+        original = AbstractNode.load(original)
+        draft = DraftRegistration.load(draft)
+        if original is None:
+            return
 
     registered = original.clone()
     registered.recast('osf.registration')
@@ -114,27 +110,18 @@ def _on_node_register(original_id, draft_id, auth, schema, data=None, parent=Non
 
     if parent is None:
 
-        DraftRegistration = apps.get_model('osf.DraftRegistration')
-        DraftRegistrationLog = apps.get_model('osf.DraftRegistrationLog')
-
-        draft = DraftRegistration.load(draft_id)
         if draft is not None:
+            DraftRegistrationLog = apps.get_model('osf.DraftRegistrationLog')
+
             draft.registered_node = registered
             draft.add_status_log(auth.user, DraftRegistrationLog.REGISTERED)
             draft.save()
 
         if reg_choice == 'embargo':
-            # Initiate embargo
             embargo_end_date = parse_date(data['embargoEndDate'], ignoretz=True).replace(tzinfo=pytz.utc)
-            try:
-                registered.embargo_registration(auth.user, embargo_end_date)
-            except ValidationError as err:
-                raise HTTPError(http.BAD_REQUEST, data=dict(message_long=err.message))
+            registered.embargo_registration(auth.user, embargo_end_date)
         elif reg_choice == 'immediate':
-            try:
-                registered.require_approval(auth.user)
-            except NodeStateError as err:
-                raise HTTPError(http.BAD_REQUEST, data=dict(message_long=err.message))
+            registered.require_approval(auth.user)
 
     return registered
 

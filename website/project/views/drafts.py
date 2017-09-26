@@ -189,6 +189,14 @@ def register_draft_registration(auth, node, draft, *args, **kwargs):
     if draft.approval and draft.approval.state != Sanction.REJECTED:
         raise HTTPError(http.CONFLICT, data=dict(message_long='Cannot resubmit previously submitted draft.'))
 
+    if registration_choice == 'embargo':
+        end_date = parse_date(data['embargoEndDate'], ignoretz=True).replace(tzinfo=pytz.utc)
+        if not node._is_embargo_date_valid(end_date):
+            error_msg = 'Registrations can only be embargoed for up to four years.'
+            if (end_date - timezone.now()) < settings.EMBARGO_END_DATE_MIN:
+                error_msg = 'Embargo end date must be at least three days in the future.'
+            raise HTTPError(http.BAD_REQUEST, data=dict(message_long=error_msg))
+
     use_celery = is_truthy(request.args.get('celery', True))
     draft.register(auth, data=data, reg_choice=registration_choice, celery=use_celery)
 

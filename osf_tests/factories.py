@@ -322,7 +322,7 @@ class RegistrationFactory(BaseNodeFactory):
         register = lambda: project.register_node(
             schema,
             auth,
-            draft_id=draft._id,
+            draft=draft,
             data=data,
             celery=False
         )

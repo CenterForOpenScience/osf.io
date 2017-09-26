@@ -1600,7 +1600,7 @@ class TestRegisterNode:
 
     def test_register_node_creates_new_registration(self, node, auth, reg_draft):
         with disconnected_from_listeners(after_create_registration):
-            registration = node.register_node(get_default_metaschema(), auth, draft_id=reg_draft._id, data='', parent=None, celery=False)
+            registration = node.register_node(get_default_metaschema(), auth, draft=reg_draft, data='', parent=None, celery=False)
             assert type(registration) is Registration
             assert node._id != registration._id
 
@@ -1621,7 +1621,7 @@ class TestRegisterNode:
         node = NodeFactory(creator=user)
         node.is_public = True
         node.save()
-        registration = node.register_node(get_default_metaschema(), Auth(user), draft_id=reg_draft._id, data='', parent=None, celery=False)
+        registration = node.register_node(get_default_metaschema(), Auth(user), draft=reg_draft, data='', parent=None, celery=False)
         assert registration.is_public is False
 
     @mock.patch('website.project.signals.after_create_registration')
@@ -1636,7 +1636,7 @@ class TestRegisterNode:
         childchild = NodeFactory(parent=child)
         childchild.is_public = True
         childchild.save()
-        registration = node.register_node(get_default_metaschema(), Auth(user), draft_id=reg_draft._id, data='', parent=None, celery=False)
+        registration = node.register_node(get_default_metaschema(), Auth(user), draft=reg_draft, data='', parent=None, celery=False)
         for node in registration.node_and_primary_descendants():
             assert node.is_public is False
 
@@ -1652,7 +1652,7 @@ class TestRegisterNode:
         reg = root.register_node(
             meta_schema,
             auth,
-            draft_id=reg_draft._id,
+            draft=reg_draft,
             data=data,
             celery=False)
         r1 = reg.nodes[0]

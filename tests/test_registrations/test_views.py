@@ -36,7 +36,7 @@ class TestRegistrationViews(RegistrationsTestBase):
     @mock.patch('website.archiver.tasks.archive')
     def test_node_register_page_registration(self, mock_archive):
         draft = DraftRegistrationFactory(branched_from=self.node, initiator=self.user)
-        reg = self.node.register_node(get_default_metaschema(), self.auth, draft_id=draft._id, data='', parent=None, celery=False)
+        reg = self.node.register_node(get_default_metaschema(), self.auth, draft=draft, data='', parent=None, celery=False)
         url = reg.web_url_for('node_register_page')
         res = self.app.get(url, auth=self.user.auth)
         assert_equal(res.status_code, http.OK)

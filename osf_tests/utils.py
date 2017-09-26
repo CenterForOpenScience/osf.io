@@ -123,7 +123,7 @@ def mock_archive(project, schema=None, auth=None, data=None, parent=None,
         registration = project.register_node(
             schema,
             auth,
-            draft_id=draft._id,
+            draft=draft,
             data=data,
             parent=parent,
             celery=False,
