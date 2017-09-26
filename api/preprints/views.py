@@ -8,6 +8,7 @@ from rest_framework import permissions as drf_permissions
 
 from framework.auth.oauth_scopes import CoreScopes
 from osf.models import PreprintService
+from osf.utils.requests import check_select_for_update
 
 from api.base.exceptions import Conflict
 from api.base.views import JSONAPIBaseView, WaterButlerMixin
@@ -35,6 +36,7 @@ from api.nodes.permissions import ContributorOrPublic
 
 from api.preprints.permissions import PreprintPublishedOrAdmin
 
+
 class PreprintMixin(NodeMixin):
     serializer_class = PreprintSerializer
     preprint_lookup_url_kwarg = 'preprint_id'
@@ -42,7 +44,7 @@ class PreprintMixin(NodeMixin):
     def get_preprint(self, check_object_permissions=True):
         qs = PreprintService.objects.filter(guids___id=self.kwargs[self.preprint_lookup_url_kwarg])
         try:
-            preprint = qs.select_for_update().get() if self.request.method not in drf_permissions.SAFE_METHODS else qs.select_related('node').get()
+            preprint = qs.select_for_update().get() if check_select_for_update(self.request) else qs.select_related('node').get()
         except PreprintService.DoesNotExist:
             raise NotFound
 
