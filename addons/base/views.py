@@ -691,7 +691,7 @@ def addon_view_or_download_file(auth, path, provider, **kwargs):
     return addon_view_file(auth, node, file_node, version)
 
 
-def addon_view_or_download_quickfile(**kwargs):
+def addon_view_or_download_file_by_fid(**kwargs):
     fid = kwargs.get('fid', 'NOT_AN_FID')
     file_ = OsfStorageFileNode.load(fid)
     if not file_:

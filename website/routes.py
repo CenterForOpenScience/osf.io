@@ -1231,10 +1231,10 @@ def make_url_map(app):
         ),
         Rule(
             [
-                '/quickfiles/<fid>/'
+                '/file_redirect/<fid>/'
             ],
             'get',
-            addon_views.addon_view_or_download_quickfile,
+            addon_views.addon_view_or_download_file_by_fid,
             json_renderer
         )
     ])
