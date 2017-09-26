@@ -54,6 +54,49 @@ class TestPreprintProviderPreprintsListFiltering(PreprintsListFilteringMixin):
         actual = set([preprint['id'] for preprint in res.json['data']])
         assert expected == actual
 
+    def test_reviews_state_counts(self, app, user, provider_one, preprint_one, preprint_two, preprint_three, url):
+        url = '{}meta[reviews_state_counts]=true'.format(url)
+        preprint_one.reviews_state = 'pending'
+        preprint_one.save()
+        preprint_two.reviews_state = 'pending'
+        preprint_two.save()
+        preprint_three.reviews_state = 'accepted'
+        preprint_three.save()
+
+        expected = {
+            'initial': 0,
+            'pending': 2,
+            'accepted': 1,
+            'rejected': 0,
+        }
+
+        # non-moderators can't see counts
+        res = app.get(url, auth=user.auth)
+        assert 'reviews_state_counts' not in res.json['meta']
+
+        provider_one.add_moderator(user)
+
+        # moderators can see counts
+        res = app.get(url, auth=user.auth)
+        actual = res.json['meta']['reviews_state_counts']
+        assert expected == actual
+
+        # exclude private preprints
+        preprint_one.node.is_public = False
+        preprint_one.node.save()
+        expected['pending'] -= 1
+        res = app.get(url, auth=user.auth)
+        actual = res.json['meta']['reviews_state_counts']
+        assert expected == actual
+
+        # exclude deleted preprints
+        preprint_two.node.is_deleted = True
+        preprint_two.node.save()
+        expected['pending'] -= 1
+        res = app.get(url, auth=user.auth)
+        actual = res.json['meta']['reviews_state_counts']
+        assert expected == actual
+
 
 class TestPreprintProviderPreprintListFilteringByReviewableFields(ReviewableFilterMixin):
     @pytest.fixture()

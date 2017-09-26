@@ -280,11 +280,10 @@ class PreprintProviderPreprintList(JSONAPIBaseView, generics.ListAPIView, Prepri
             auth = get_user_auth(self.request)
             auth_user = getattr(auth, 'user', None)
             provider = get_object_or_error(PreprintProvider, self.kwargs['provider_id'], self.request, display_name='PreprintProvider')
-            if not auth_user or not auth_user.has_perm('view_submissions', provider):
-                self.permission_denied(self.request, 'Must have `view_submissions` permission to request state counts')
-            context['meta'] = {
-                'reviews_state_counts': provider.get_reviewable_state_counts(),
-            }
+            if auth_user and auth_user.has_perm('view_submissions', provider):
+                context['meta'] = {
+                    'reviews_state_counts': provider.get_reviewable_state_counts(),
+                }
         return context
 
 

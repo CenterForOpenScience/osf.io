@@ -35,7 +35,7 @@ class ReviewProviderMixin(models.Model):
         qs = getattr(self, self.REVIEWABLE_RELATION_NAME)
         if isinstance(qs, IncludeQuerySet):
             qs = qs.include(None)
-        qs = qs.values('reviews_state').annotate(count=models.Count('*'))
+        qs = qs.filter(node__isnull=False, node__is_deleted=False, node__is_public=True).values('reviews_state').annotate(count=models.Count('*'))
         counts = {state.value: 0 for state in workflow.States}
         counts.update({row['reviews_state']: row['count'] for row in qs if row['reviews_state'] in counts})
         return counts
