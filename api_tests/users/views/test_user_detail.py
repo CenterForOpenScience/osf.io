@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+import mock
 import pytest
 import urlparse
 
@@ -446,6 +447,25 @@ class TestUserUpdate:
 
         for_update_sql = connection.ops.for_update_sql()
         assert any(for_update_sql in query['sql'] for query in ctx.captured_queries)
+
+    @mock.patch('osf.utils.requests.settings.SELECT_FOR_UPDATE_ENABLED', False)
+    def test_select_for_update_disabled(self, app, user_one, url_user_one, data_new_user_one):
+        with transaction.atomic(), CaptureQueriesContext(connection) as ctx:
+            res = app.patch_json_api(url_user_one, {
+                'data': {
+                    'id': user_one._id,
+                    'type': 'users',
+                    'attributes': {
+                    'family_name': data_new_user_one['data']['attributes']['family_name'],
+                    }
+                }
+            }, auth=user_one.auth)
+
+        assert res.status_code == 200
+        assert res.json['data']['attributes']['family_name'] == data_new_user_one['data']['attributes']['family_name']
+
+        for_update_sql = connection.ops.for_update_sql()
+        assert not any(for_update_sql in query['sql'] for query in ctx.captured_queries)
 
     def test_update_patch_errors(self, app, user_one, user_two, data_new_user_one, data_incorrect_type, data_incorrect_id, data_missing_type, data_missing_id, data_blank_but_not_empty_full_name, url_user_one):
 

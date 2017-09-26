@@ -45,6 +45,7 @@ from osf.models.validators import validate_email, validate_social, validate_hist
 from osf.utils.datetime_aware_jsonfield import DateTimeAwareJSONField
 from osf.utils.fields import NonNaiveDateTimeField, LowercaseEmailField
 from osf.utils.names import impute_names
+from osf.utils.requests import check_select_for_update
 from website import settings as website_settings
 from website import filters, mails
 from website.project import new_bookmark_collection
@@ -1129,7 +1130,10 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
 
         # If this email is confirmed on another account, abort
         try:
-            user_to_merge = OSFUser.objects.get(emails__address=email)
+            if check_select_for_update():
+                user_to_merge = OSFUser.objects.filter(emails__address=email).select_for_update().get()
+            else:
+                user_to_merge = OSFUser.objects.get(emails__address=email)
         except OSFUser.DoesNotExist:
             user_to_merge = None
 

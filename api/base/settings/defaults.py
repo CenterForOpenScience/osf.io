@@ -262,3 +262,5 @@ OSF_SHELL_USER_IMPORTS = None
 
 # Settings for use in the admin
 OSF_URL = 'https://osf.io'
+
+SELECT_FOR_UPDATE_ENABLED = True
