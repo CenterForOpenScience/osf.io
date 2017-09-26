@@ -20,9 +20,10 @@ from website.util.share import GraphNode, format_contributor
 logger = logging.getLogger(__name__)
 
 def on_node_register(original, draft, auth, schema, data=None, parent=None, reg_choice=None, celery=True):
-    if celery:
+    if not celery:
+        return _on_node_register(original, draft, auth, schema, data=data, parent=parent, reg_choice=reg_choice, celery=celery)
+    if original and draft:
         return enqueue_task(_on_node_register_celery.s(original._id, draft._id, auth, schema, data=data, parent=parent, reg_choice=reg_choice, celery=celery))
-    return _on_node_register(original, draft, auth, schema, data=data, parent=parent, reg_choice=reg_choice, celery=celery)
 
 @celery_app.task(ignore_results=False)
 def _on_node_register_celery(original_id, draft_id, auth, schema, data=None, parent=None, reg_choice=None, celery=True):
