@@ -7,6 +7,7 @@
 
 var m = require('mithril');
 var Fangorn = require('js/fangorn').Fangorn;
+var lodashGet = require('lodash.get');
 
 
 function resolveToggle(item) {
@@ -32,6 +33,7 @@ function getNodesOriginal(nodeTree, nodesOriginal) {
     var j;
     var adminContributors = [];
     var registeredContributors = [];
+    var visibleContributors = [];
     var nodeId = nodeTree.node.id;
     for (i=0; i < nodeTree.node.contributors.length; i++) {
         if (nodeTree.node.contributors[i].is_admin) {
@@ -40,10 +42,13 @@ function getNodesOriginal(nodeTree, nodesOriginal) {
         if (nodeTree.node.contributors[i].is_confirmed) {
             registeredContributors.push(nodeTree.node.contributors[i].id);
         }
+        if (nodeTree.node.contributors[i].visible) {
+            visibleContributors.push(nodeTree.node.contributors[i].id);
+        }
     }
-    var nodeInstitutions = [];
+    var nodeInstitutions = lodashGet(nodeTree.node, 'affiliated_institutions', []);
 
-    nodeInstitutions = nodeTree.node.affiliated_institutions.map(function(item) {
+    nodeInstitutions = nodeInstitutions.map(function(item) {
         return item.id;
     });
 
@@ -53,7 +58,7 @@ function getNodesOriginal(nodeTree, nodesOriginal) {
         title: nodeTree.node.title,
         contributors: nodeTree.node.contributors,
         isAdmin: nodeTree.node.is_admin,
-        visibleContributors: nodeTree.node.visible_contributors,
+        visibleContributors: visibleContributors,
         adminContributors: adminContributors,
         registeredContributors: registeredContributors,
         institutions: nodeInstitutions,

@@ -962,13 +962,12 @@ class TestGetNodeTree(OsfTestCase):
         res = self.app.get(url, auth=self.user.auth)
         tree = res.json[0]
         parent_node_id = tree['node']['id']
-        child1_id = tree['children'][0]['node']['id']
-        child2_id = tree['children'][1]['node']['id']
-        child3_id = tree['children'][2]['node']['id']
+        child_ids = [child['node']['id'] for child in tree['children']]
+
         assert_equal(parent_node_id, project._primary_key)
-        assert_equal(child1_id, child1._primary_key)
-        assert_equal(child2_id, child2._primary_key)
-        assert_equal(child3_id, child3._primary_key)
+        assert_in(child1._primary_key, child_ids)
+        assert_in(child2._primary_key, child_ids)
+        assert_in(child3._primary_key, child_ids)
 
     def test_get_node_with_child_linked_to_parent(self):
         project = ProjectFactory(creator=self.user)
