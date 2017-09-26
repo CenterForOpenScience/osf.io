@@ -224,7 +224,7 @@ def sharejs(ctx, host=None, port=None, db_url=None, cors_allow_origin=None):
 
 
 @task(aliases=['celery'])
-def celery_worker(ctx, level='debug', hostname=None, beat=False, queues=None):
+def celery_worker(ctx, level='debug', hostname=None, beat=False, queues=None, concurrency=None, max_tasks_per_child=None):
     """Run the Celery process."""
     os.environ['DJANGO_SETTINGS_MODULE'] = 'api.base.settings'
     cmd = 'celery worker -A framework.celery_tasks -Ofair -l {0}'.format(level)
@@ -235,6 +235,10 @@ def celery_worker(ctx, level='debug', hostname=None, beat=False, queues=None):
         cmd = cmd + ' --beat'
     if queues:
         cmd = cmd + ' --queues={}'.format(queues)
+    if concurrency:
+        cmd = cmd + ' --concurrency={}'.format(concurrency)
+    if max_tasks_per_child:
+        cmd = cmd + ' --maxtasksperchild={}'.format(max_tasks_per_child)
     ctx.run(bin_prefix(cmd), pty=True)
 
 
