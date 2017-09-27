@@ -783,6 +783,19 @@ class TestNodeFiltering:
         assert preprint.node._id not in ids
         assert unpublished.node._id in ids
 
+    def test_unpublished_preprint_in_preprint_true_filter_results_with_include_unpublished_preprints_param(self, app, user_one, preprint):
+        unpublished = PreprintFactory(creator=preprint.node.creator, is_published=False)
+        assert not unpublished.is_published
+
+        url = '/{}nodes/?filter[preprint]=true&include_unpublished_preprints=true'.format(API_BASE)
+        res = app.get(url, auth=user_one.auth)
+        assert res.status_code == 200
+        data = res.json['data']
+        ids = [each['id'] for each in data]
+
+        assert preprint.node._id in ids
+        assert unpublished.node._id in ids
+
 
 @pytest.mark.django_db
 class TestNodeCreate:
