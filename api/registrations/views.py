@@ -171,7 +171,7 @@ class RegistrationList(JSONAPIBaseView, generics.ListAPIView, NodesFilterMixin):
     # overrides ListAPIView
     def get_queryset(self):
         blacklisted = self.is_blacklisted()
-        registrations = self.get_queryset_from_request().distinct('id', 'date_modified')
+        registrations = self.get_queryset_from_request()
         # If attempting to filter on a blacklisted field, exclude withdrawals.
         if blacklisted:
             return registrations.exclude(retraction__isnull=False)
