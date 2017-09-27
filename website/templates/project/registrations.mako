@@ -156,6 +156,7 @@
                 public: true,
             },
         });
+        window.contextVars.node = $.extend(true, {}, window.contextVars.node, {isSpammy: ${ node.get('is_spammy', False) | sjson, n }})
     </script>
 
     <script src=${"/static/public/js/project-registrations-page.js" | webpack_asset}> </script>
