@@ -4,12 +4,12 @@ import httplib as http
 import urllib
 
 import markupsafe
+from django.core.exceptions import ValidationError
 from django.utils import timezone
 from flask import request
 
 from modularodm import Q
 from modularodm.exceptions import NoResultsFound
-from modularodm.exceptions import ValidationError
 from modularodm.exceptions import ValidationValueError
 
 from framework import forms, sentry, status
@@ -33,6 +33,7 @@ from website.util import web_url_for
 from website.util.time import throttle_period_expired
 from website.util.sanitize import strip_html
 from osf.models.preprint_provider import PreprintProvider
+from osf.utils.requests import check_select_for_update
 
 @block_bing_preview
 @collect_auth
@@ -574,13 +575,18 @@ def confirm_email_get(token, auth=None, **kwargs):
     HTTP Method: GET
     """
 
-    user = OSFUser.load(kwargs['uid'])
     is_merge = 'confirm_merge' in request.args
+
+    try:
+        if not is_merge or not check_select_for_update():
+            user = OSFUser.objects.get(guids___id=kwargs['uid'])
+        else:
+            user = OSFUser.objects.filter(guids___id=kwargs['uid']).select_for_update().get()
+    except OSFUser.DoesNotExist:
+        raise HTTPError(http.NOT_FOUND)
+
     is_initial_confirmation = not user.date_confirmed
     log_out = request.args.get('logout', None)
-
-    if user is None:
-        raise HTTPError(http.NOT_FOUND)
 
     # if the user is merging or adding an email (they already are an osf user)
     if log_out:

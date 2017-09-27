@@ -1,8 +1,7 @@
 import pytz
 import json
 
-from modularodm.exceptions import ValidationValueError
-
+from django.core.exceptions import ValidationError
 from rest_framework import serializers as ser
 from rest_framework import exceptions
 
@@ -18,6 +17,7 @@ from api.nodes.serializers import NodeContributorsSerializer, NodeTagField
 from api.base.serializers import (IDField, RelationshipField, LinksField, HideIfWithdrawal,
                                   FileCommentRelationshipField, NodeFileHyperLinkField, HideIfRegistration,
                                   JSONAPIListField, ShowIfVersion, DateByVersion,)
+from osf.exceptions import ValidationValueError
 
 
 class BaseRegistrationSerializer(NodeSerializer):
@@ -236,7 +236,7 @@ class BaseRegistrationSerializer(NodeSerializer):
             embargo_end_date = embargo_lifted.replace(tzinfo=pytz.utc)
             try:
                 registration.embargo_registration(auth.user, embargo_end_date)
-            except ValidationValueError as err:
+            except ValidationError as err:
                 raise exceptions.ValidationError(err.message)
         else:
             try:

@@ -1,19 +1,18 @@
-from modularodm.exceptions import ValidationValueError
 from addons.base.exceptions import AddonError
 
 class WikiError(AddonError):
     """Base exception class for Wiki-related error."""
     pass
 
-class NameEmptyError(WikiError, ValidationValueError):
+class NameEmptyError(WikiError):
     """Raised if user tries to provide an empty name value."""
     pass
 
-class NameInvalidError(WikiError, ValidationValueError):
+class NameInvalidError(WikiError):
     """Raised if user tries to provide a string containing an invalid character."""
     pass
 
-class NameMaximumLengthError(WikiError, ValidationValueError):
+class NameMaximumLengthError(WikiError):
     """Raised if user tries to provide a name which exceeds the maximum accepted length."""
     pass
 

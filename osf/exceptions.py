@@ -45,6 +45,11 @@ class SanctionTokenError(TokenError):
     pass
 
 
+class MaxRetriesError(OSFError):
+    """Raised when an operation has been attempted a pre-determined number of times"""
+    pass
+
+
 class InvalidSanctionRejectionToken(TokenError):
     """Raised if a Sanction subclass disapproval token submitted is invalid
      or associated with another admin authorizer

@@ -1,7 +1,14 @@
 # -*- coding: utf-8 -*-
+import mock
 import pytest
 import urlparse
 
+from django.db import connection, transaction
+from django.test import TransactionTestCase
+from django.test.utils import CaptureQueriesContext
+
+from osf.models import QuickFilesNode
+from website import util as website_utils
 from api.base.settings.defaults import API_BASE
 from osf_tests.factories import (
     AuthUserFactory,
@@ -27,7 +34,7 @@ class TestUserDetail:
         return AuthUserFactory()
 
     def test_get(self, app, user_one, user_two):
-        
+
     #   test_gets_200
         url = '/{}users/{}/'.format(API_BASE, user_one._id)
         res = app.get(url)
@@ -82,6 +89,21 @@ class TestUserDetail:
         res = app.get(url)
         user_json = res.json['data']
         assert 'profile_image' in user_json['links']
+
+    def test_files_relationship_upload(self, app, user_one):
+        url = "/{}users/{}/".format(API_BASE, user_one._id)
+        res = app.get(url, auth=user_one)
+        quickfiles = QuickFilesNode.objects.get(creator=user_one)
+        user_json = res.json['data']
+        upload_url = user_json['relationships']['quickfiles']['links']['upload']['href']
+        waterbutler_upload = website_utils.waterbutler_api_url_for(quickfiles._id, 'osfstorage')
+
+        assert upload_url == waterbutler_upload
+
+    def test_nodes_relationship_is_absent(self, app, user_one):
+        url = "/{}users/{}/".format(API_BASE, user_one._id)
+        res = app.get(url, auth=user_one)
+        assert 'node' not in res.json['data']['relationships'].keys()
 
 
 @pytest.mark.django_db
@@ -408,6 +430,43 @@ class TestUserUpdate:
             }
         }
 
+    def test_select_for_update(self, app, user_one, url_user_one, data_new_user_one):
+        with transaction.atomic(), CaptureQueriesContext(connection) as ctx:
+            res = app.patch_json_api(url_user_one, {
+                'data': {
+                    'id': user_one._id,
+                    'type': 'users',
+                    'attributes': {
+                    'family_name': data_new_user_one['data']['attributes']['family_name'],
+                    }
+                }
+            }, auth=user_one.auth)
+
+        assert res.status_code == 200
+        assert res.json['data']['attributes']['family_name'] == data_new_user_one['data']['attributes']['family_name']
+
+        for_update_sql = connection.ops.for_update_sql()
+        assert any(for_update_sql in query['sql'] for query in ctx.captured_queries)
+
+    @mock.patch('osf.utils.requests.settings.SELECT_FOR_UPDATE_ENABLED', False)
+    def test_select_for_update_disabled(self, app, user_one, url_user_one, data_new_user_one):
+        with transaction.atomic(), CaptureQueriesContext(connection) as ctx:
+            res = app.patch_json_api(url_user_one, {
+                'data': {
+                    'id': user_one._id,
+                    'type': 'users',
+                    'attributes': {
+                    'family_name': data_new_user_one['data']['attributes']['family_name'],
+                    }
+                }
+            }, auth=user_one.auth)
+
+        assert res.status_code == 200
+        assert res.json['data']['attributes']['family_name'] == data_new_user_one['data']['attributes']['family_name']
+
+        for_update_sql = connection.ops.for_update_sql()
+        assert not any(for_update_sql in query['sql'] for query in ctx.captured_queries)
+
     def test_update_patch_errors(self, app, user_one, user_two, data_new_user_one, data_incorrect_type, data_incorrect_id, data_missing_type, data_missing_id, data_blank_but_not_empty_full_name, url_user_one):
 
     #   test_update_user_blank_but_not_empty_full_name
@@ -721,7 +780,7 @@ class TestDeactivatedUser:
         res = app.get(url, expect_errors=True)
         assert res.status_code == 200
         attr = res.json['data']['attributes']
-        assert attr['active'] == False
+        assert attr['active'] is False
         assert res.json['data']['id'] == user_one._id
 
     def test_requesting_deactivated_user_returns_410_response_and_meta_info(self, app, user_one, user_two):

@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """Various node-related utilities."""
 from django.apps import apps
-from modularodm import Q
+from django.db.models import Q
 
 from website import settings
 
@@ -17,20 +17,18 @@ def serialize_node(*args, **kwargs):
 PROJECT_QUERY = (
     # Can encompass accessible projects, registrations, or forks
     # Note: is_bookmark collection(s) are implicitly assumed to also be collections; that flag intentionally omitted
-    Q('is_deleted', 'eq', False) &
-    Q('type', 'ne', 'osf.collection')
+    Q(is_deleted=False) & ~Q(type='osf.collection') & ~Q(type='osf.quickfilesnode')
 )
 
 def recent_public_registrations(n=10):
-    from django.db.models import Q as DQ
     Registration = apps.get_model('osf.Registration')
 
     return Registration.objects.filter(
         is_public=True,
         is_deleted=False,
     ).filter(
-        DQ(DQ(embargo__isnull=True) | ~DQ(embargo__state='unapproved')) &
-        DQ(DQ(retraction__isnull=True) | ~DQ(retraction__state='approved'))
+        Q(Q(embargo__isnull=True) | ~Q(embargo__state='unapproved')) &
+        Q(Q(retraction__isnull=True) | ~Q(retraction__state='approved'))
     ).get_roots().order_by('-registered_date')[:n]
 
 
@@ -102,7 +100,7 @@ def activity():
                 break
 
     # New and Noteworthy projects are updated manually
-    new_and_noteworthy_projects = list(Node.find_one(Q('_id', 'eq', settings.NEW_AND_NOTEWORTHY_LINKS_NODE)).nodes_pointer)
+    new_and_noteworthy_projects = list(Node.objects.get(guids___id=settings.NEW_AND_NOTEWORTHY_LINKS_NODE).nodes_pointer)
 
     return {
         'new_and_noteworthy_projects': new_and_noteworthy_projects,

@@ -5,7 +5,6 @@ var ContribManager = require('js/contribManager');
 
 var PrivateLinkManager = require('js/privateLinkManager');
 var PrivateLinkTable = require('js/privateLinkTable');
-var ko = require('knockout');  // TODO: Why is this required? Is it? See [#OSF-6100]
 var rt = require('js/responsiveTable');
 require('jquery-ui');
 require('js/filters');
@@ -37,7 +36,7 @@ $(function() {
     });
 });
 
-$(window).load(function() {
+$(window).on('load', function() {
     if (typeof cm !== 'undefined') {
       cm.viewModel.onWindowResize();
     }

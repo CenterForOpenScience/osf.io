@@ -19,7 +19,7 @@ from django.utils.functional import cached_property
 from keen import scoped_keys
 from psycopg2._psycopg import AsIs
 from typedmodels.models import TypedModel, TypedModelManager
-from include import IncludeQuerySet, IncludeManager
+from include import IncludeManager
 
 from framework import status
 from framework.celery_tasks.handlers import enqueue_task
@@ -27,7 +27,6 @@ from framework.exceptions import PermissionsError
 from framework.sentry import log_exception
 from addons.wiki.utils import to_mongo_key
 from osf.exceptions import ValidationValueError
-from osf.models.citation import AlternativeCitation
 from osf.models.contributor import (Contributor, RecentlyAddedContributor,
                                     get_contributor_permissions)
 from osf.models.identifiers import Identifier, IdentifierMixin
@@ -42,7 +41,6 @@ from osf.models.spam import SpamMixin
 from osf.models.tag import Tag
 from osf.models.user import OSFUser
 from osf.models.validators import validate_doi, validate_title
-from osf.modm_compat import Q as MODMQ
 from osf.utils.auth import Auth, get_user
 from osf.utils.datetime_aware_jsonfield import DateTimeAwareJSONField
 from osf.utils.fields import NonNaiveDateTimeField
@@ -63,16 +61,16 @@ from website.util.permissions import (ADMIN, CREATOR_PERMISSIONS,
                                       DEFAULT_CONTRIBUTOR_PERMISSIONS, READ,
                                       WRITE, expand_permissions,
                                       reduce_permissions)
-from .base import BaseModel, Guid, GuidMixin
+from .base import BaseModel, Guid, GuidMixin, GuidMixinQuerySet
 
 
 logger = logging.getLogger(__name__)
 
 
-class AbstractNodeQuerySet(IncludeQuerySet):
+class AbstractNodeQuerySet(GuidMixinQuerySet):
 
     def get_roots(self):
-        return self.filter(id__in=self.exclude(type='osf.collection').values_list('root_id', flat=True))
+        return self.filter(id__in=self.exclude(type='osf.collection').exclude(type='osf.quickfilesnode').values_list('root_id', flat=True))
 
     def get_children(self, root, active=False):
         # If `root` is a root node, we can use the 'descendants' related name
@@ -135,7 +133,8 @@ class AbstractNodeQuerySet(IncludeQuerySet):
             if not isinstance(user, int):
                 raise TypeError('"user" must be either {} or {}. Got {!r}'.format(int, OSFUser, user))
 
-            qs |= self.filter(contributor__user_id=user, contributor__read=True)
+            sqs = Contributor.objects.filter(node=models.OuterRef('pk'), user__id=user, read=True)
+            qs |= self.annotate(can_view=models.Exists(sqs)).filter(can_view=True)
             qs |= self.extra(where=['''
                 "osf_abstractnode".id in (
                     WITH RECURSIVE implicit_read AS (
@@ -152,7 +151,7 @@ class AbstractNodeQuerySet(IncludeQuerySet):
                 )
             '''], params=(user, ))
 
-        return qs.distinct()
+        return qs
 
 class AbstractNodeManager(TypedModelManager, IncludeManager):
 
@@ -262,7 +261,6 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
     WHERE id = (SELECT node_license_id FROM ascendants WHERE node_license_id IS NOT NULL) LIMIT 1;''')
 
     affiliated_institutions = models.ManyToManyField('Institution', related_name='nodes')
-    alternative_citations = models.ManyToManyField(AlternativeCitation, related_name='nodes')
     category = models.CharField(max_length=255,
                                 choices=CATEGORY_MAP.items(),
                                 blank=True,
@@ -421,6 +419,10 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
     @property
     def is_registration(self):
         """For v1 compat."""
+        return False
+
+    @property
+    def is_quickfiles(self):
         return False
 
     @property
@@ -686,12 +688,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
 
     @classmethod
     def find_by_institutions(cls, inst, query=None):
-        base_query = MODMQ('affiliated_institutions', 'eq', inst)
-        if query:
-            final_query = base_query & query
-        else:
-            final_query = base_query
-        return cls.find(final_query)
+        return inst.nodes.filter(query) if query else inst.nodes.all()
 
     def _is_embargo_date_valid(self, end_date):
         now = timezone.now()
@@ -1425,13 +1422,6 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
             self.save()
         self.save_node_preprints()
 
-    @classmethod
-    def find_for_user(cls, user, subquery=None):
-        combined_query = MODMQ('contributors', 'eq', user)
-        if subquery is not None:
-            combined_query = combined_query & subquery
-        return cls.find(combined_query)
-
     def can_comment(self, auth):
         if self.comment_level == 'public':
             return auth.logged_in and (
@@ -1652,7 +1642,6 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         registered.copy_contributors_from(self)
         registered.tags.add(*self.all_tags.values_list('pk', flat=True))
         registered.affiliated_institutions.add(*self.affiliated_institutions.values_list('pk', flat=True))
-        registered.alternative_citations.add(*self.alternative_citations.values_list('pk', flat=True))
 
         # Clone each log from the original node for this registration.
         logs = original.logs.all()
@@ -1800,66 +1789,6 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
                 return True
         return False
 
-    def add_citation(self, auth, save=False, log=True, citation=None, **kwargs):
-        if not citation:
-            citation = AlternativeCitation.objects.create(**kwargs)
-        self.alternative_citations.add(citation)
-        citation_dict = {'name': citation.name, 'text': citation.text}
-        if log:
-            self.add_log(
-                action=NodeLog.CITATION_ADDED,
-                params={
-                    'node': self._id,
-                    'citation': citation_dict
-                },
-                auth=auth,
-                save=False
-            )
-            if save:
-                self.save()
-        return citation
-
-    def edit_citation(self, auth, instance, save=False, log=True, **kwargs):
-        citation = {'name': instance.name, 'text': instance.text}
-        new_name = kwargs.get('name', instance.name)
-        new_text = kwargs.get('text', instance.text)
-        if new_name != instance.name:
-            instance.name = new_name
-            citation['new_name'] = new_name
-        if new_text != instance.text:
-            instance.text = new_text
-            citation['new_text'] = new_text
-        instance.save()
-        if log:
-            self.add_log(
-                action=NodeLog.CITATION_EDITED,
-                params={
-                    'node': self._primary_key,
-                    'citation': citation
-                },
-                auth=auth,
-                save=False
-            )
-        if save:
-            self.save()
-        return instance
-
-    def remove_citation(self, auth, instance, save=False, log=True):
-        citation = {'name': instance.name, 'text': instance.text}
-        self.alternative_citations.remove(instance)
-        if log:
-            self.add_log(
-                action=NodeLog.CITATION_REMOVED,
-                params={
-                    'node': self._primary_key,
-                    'citation': citation
-                },
-                auth=auth,
-                save=False
-            )
-        if save:
-            self.save()
-
     # TODO: Optimize me (e.g. use bulk create)
     def fork_node(self, auth, title=None):
         """Recursively fork a node.
@@ -1937,17 +1866,6 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
 
         if len(forked.title) > 200:
             forked.title = forked.title[:200]
-
-        # TODO: Optimize me
-        for citation in self.alternative_citations.all():
-            cloned_citation = citation.clone()
-            cloned_citation.save()
-            forked.add_citation(
-                auth=auth,
-                citation=cloned_citation,
-                log=False,
-                save=False
-            )
 
         forked.add_contributor(
             contributor=user,
@@ -2409,7 +2327,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
 
             # Make public nodes private from this contributor
             for node in user.contributed:
-                if self._id != node._id and len(node.contributors) == 1 and node.is_public:
+                if self._id != node._id and len(node.contributors) == 1 and node.is_public and not node.is_quickfiles:
                     node.set_privacy('private', log=False, save=True)
 
     def flag_spam(self):
@@ -2525,10 +2443,10 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
                 raise NodeUpdateError(reason='Registered content cannot be updated', key=key)
             # Title and description have special methods for logging purposes
             if key == 'title':
-                if not self.is_bookmark_collection:
+                if not self.is_bookmark_collection or not self.is_quickfiles:
                     self.set_title(title=value, auth=auth, save=False)
                 else:
-                    raise NodeUpdateError(reason='Bookmark collections cannot be renamed.', key=key)
+                    raise NodeUpdateError(reason='Bookmark collections or QuickFilesNodes cannot be renamed.', key=key)
             elif key == 'description':
                 self.set_description(description=value, auth=auth, save=False)
             elif key == 'is_public':
@@ -2969,6 +2887,7 @@ class Collection(AbstractNode):
 ##### Signal listeners #####
 @receiver(post_save, sender=Collection)
 @receiver(post_save, sender=Node)
+@receiver(post_save, sender='osf.QuickFilesNode')
 def add_creator_as_contributor(sender, instance, created, **kwargs):
     if created:
         Contributor.objects.get_or_create(
@@ -3022,6 +2941,7 @@ def add_default_node_addons(sender, instance, created, **kwargs):
 @receiver(post_save, sender=Collection)
 @receiver(post_save, sender=Node)
 @receiver(post_save, sender='osf.Registration')
+@receiver(post_save, sender='osf.QuickFilesNode')
 def set_parent_and_root(sender, instance, created, *args, **kwargs):
     if getattr(instance, '_parent', None):
         NodeRelation.objects.get_or_create(

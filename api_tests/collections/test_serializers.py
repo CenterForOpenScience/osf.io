@@ -1,23 +1,18 @@
-# -*- coding: utf-8 -*-
+import pytest
 from urlparse import urlparse
 
-from nose.tools import *  # flake8: noqa
-
-from tests.base import ApiTestCase
-from tests.utils import make_drf_request_with_version
-from osf_tests.factories import UserFactory, CollectionFactory
-
 from api.collections.serializers import CollectionSerializer
+from osf_tests.factories import (
+    UserFactory,
+    CollectionFactory,
+)
+from tests.utils import make_drf_request_with_version
 
-
-class TestNodeSerializer(ApiTestCase):
-
-    def setUp(self):
-        super(TestNodeSerializer, self).setUp()
-        self.user = UserFactory()
-
+@pytest.mark.django_db
+class TestNodeSerializer:
     def test_collection_serialization(self):
-        collection = CollectionFactory(creator=self.user)
+        user = UserFactory()
+        collection = CollectionFactory(creator=user)
         req = make_drf_request_with_version()
         if req.version >= '2.2':
             created_format = '%Y-%m-%dT%H:%M:%S.%fZ'
@@ -28,21 +23,21 @@ class TestNodeSerializer(ApiTestCase):
 
         result = CollectionSerializer(collection, context={'request': req}).data
         data = result['data']
-        assert_equal(data['id'], collection._id)
-        assert_equal(data['type'], 'collections')
+        assert data['id'] == collection._id
+        assert data['type'] == 'collections'
         # Attributes
         attributes = data['attributes']
-        assert_equal(attributes['title'], collection.title)
-        assert_equal(attributes['date_created'], collection.date_created.strftime(created_format))
-        assert_equal(attributes['date_modified'], collection.date_modified.strftime(modified_format))
-        assert_equal(attributes['bookmarks'], collection.is_bookmark_collection)
+        assert attributes['title'] == collection.title
+        assert attributes['date_created'] == collection.date_created.strftime(created_format)
+        assert attributes['date_modified'] == collection.date_modified.strftime(modified_format)
+        assert attributes['bookmarks'] == collection.is_bookmark_collection
 
         # Relationships
         relationships = data['relationships']
-        assert_in('node_links', relationships)
+        assert 'node_links' in relationships
         # Bunch of stuff in Nodes that should not be in Collections
-        assert_not_in('contributors', relationships)
-        assert_not_in('files', relationships)
-        assert_not_in('parent', relationships)
-        assert_not_in('registrations', relationships)
-        assert_not_in('forked_from', relationships)
+        assert 'contributors' not in relationships
+        assert 'files' not in relationships
+        assert 'parent' not in relationships
+        assert 'registrations' not in relationships
+        assert 'forked_from' not in relationships
