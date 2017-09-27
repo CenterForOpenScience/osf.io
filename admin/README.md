@@ -24,7 +24,7 @@ If you are manually testing functionality for permissions views, do not log in t
 - Visit the admin at `http://localhost:8001/`
 - Log in with your OSF User's username and password
 
-4. Add other admin users
+5. Add other admin users
 - Visit the admin user form at the top right under your username
 - Add users by their OSF guid
 - Select the permissions you'd like your user to have using the checkboxes, and click submit
