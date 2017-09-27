@@ -160,6 +160,18 @@ class TestUpdateNodeWiki(OsfTestCase):
         assert wiki._id not in contributor.comments_viewed_timestamp
         assert comment.target.referent._id == new_version_id
 
+    # Regression test for https://openscience.atlassian.net/browse/OSF-8584
+    def test_no_read_more_when_less_than_400_character(self):
+        wiki_content = '1234567'
+        for x in range(39):
+            wiki_content += '1234567890'
+        assert len(wiki_content) == 397
+        project = ProjectFactory(creator=self.user)
+        project.update_node_wiki('home', wiki_content, self.auth)
+        url = project.web_url_for('view_project')
+        res = self.app.get(url, auth=self.user.auth)
+        assert 'Read More' not in res.json
+
 
 class TestRenameNodeWiki(OsfTestCase):
 
