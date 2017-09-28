@@ -17,7 +17,7 @@
                                 <div class="input-group m-b-sm">
                                     <input class='form-control'
                                             data-bind="value:query"
-                                            placeholder='Search by name' autofocus/>
+                                            placeholder='Search by name or ORCiD' autofocus/>
                                     <span class="input-group-btn">
                                         <input type="submit" value="Search" class="btn btn-default">
                                     </span>
@@ -92,6 +92,7 @@
                                                     </span><br>
                                                 </span>
 
+
                                                 <span class= 'small'
                                                       data-bind= "text: contributor.displayProjectsInCommon">
                                                 </span>
@@ -99,6 +100,74 @@
                                             <span
                                                     class='text-muted'
                                                     data-bind="visible: !contributor.registered">(unregistered)</span>
+##                                             <span data-bind="if: contributor.social">
+##                                                 <span data-bind="foreach: contributor.social">
+##                                                     <a class="small" data-bind="tooltip: {title: name}, attr: {href: url}">
+##                                                         <img data-bind="attr: {alt: name, src: logo}" height="16" width="16"/>
+##                                                     </a>
+##                                                 </span>
+##                                             </span>
+                                            <li data-bind="visible: contributor.social.personal">
+                                                <a data-bind="attr: {href: contributor.social.personal}">
+                                                    <i class="fa fa-globe social-icons" data-toggle="tooltip" title="Personal Website"></i>
+                                                </a>
+                                            </li>
+
+                                            <li data-bind="visible: contributor.social.twitter">
+                                                <a data-bind="attr: {href: contributor.social.twitter}">
+                                                    <i class="fa fa-twitter social-icons" data-toggle="tooltip" title="Twitter"></i>
+                                                </a>
+                                            </li>
+                                            <li data-bind="visible: contributor.social.github">
+                                                <a data-bind="attr: {href: contributor.social.github}">
+                                                    <i class="fa fa-github-alt social-icons" data-toggle="tooltip" title="Github"></i>
+                                                </a>
+                                            </li>
+                                            <li data-bind="visible: contributor.social.linkedIn">
+                                                <a data-bind="attr: {href: contributor.social.linkedIn}">
+                                                    <i class="fa fa-linkedin social-icons" data-toggle="tooltip" title="LinkedIn"></i>
+                                                </a>
+                                            </li>
+                                            <li data-bind="visible: contributor.social.scholar">
+                                                <a data-bind="attr: {href: contributor.social.scholar}">
+                                                    <img class="social-icons" src="/static/img/googlescholar.png"data-toggle="tooltip" title="Google Scholar">
+                                                </a>
+                                            </li>
+                                            <li data-bind="visible: contributor.social.impactStory">
+                                                <a data-bind="attr: {href: contributor.social.impactStory}">
+                                                    <i class="fa fa-info-circle social-icons" data-toggle="tooltip" title="ImpactStory"></i>
+                                                </a>
+                                            </li>
+                                            <li data-bind="visible: contributor.social.orcid">
+                                                <a data-bind="attr: {href: contributor.social.orcid}">
+                                                    <i class="fa social-icons" data-toggle="tooltip" title="ORCiD">iD</i>
+                                                </a>
+                                            </li>
+                                            <li data-bind="visible: contributor.social.researcherId">
+                                                <a data-bind="attr: {href: contributor.social.researcherId}">
+                                                    <i class="fa social-icons" data-toggle="tooltip" title="ResearcherID">R</i>
+                                                </a>
+                                            </li>
+                                            <li data-bind="visible: contributor.social.researchGate">
+                                                <a data-bind="attr: {href: contributor.social.researchGate}">
+                                                    <img class="social-icons" src="/static/img/researchgate.jpg" style="PADDING-BOTTOM: 7px" data-toggle="tooltip" title="ResearchGate"></i>
+                                                </a>
+                                            </li>
+                                            <li data-bind="visible: contributor.social.academiaInstitution + social.academiaProfileID">
+                                                <a data-bind="attr: {href: contributor.social.academiaInstitution + social.academiaProfileID}">
+                                                    <i class="fa social-icons" data-toggle="tooltip" title="Academia">A</i>
+                                                </a>
+                                            </li>
+                                            <li data-bind="visible: contributor.social.baiduScholar">
+                                                <a data-bind="attr: {href: contributor.social.baiduScholar}">
+                                                    <img class="social-icons" src="/static/img/baiduscholar.png"data-toggle="tooltip" style="PADDING-BOTTOM: 5px" title="Baidu Scholar">
+                                                </a>
+                                            </li>
+                                            <li data-bind="visible: contributor.social.ssrn">
+                                                <a data-bind="attr: {href: contributor.social.ssrn}">
+                                                    <img class="social-icons" src="/static/img/SSRN.png"data-toggle="tooltip" style="PADDING-BOTTOM: 5px" title="SSRN">
+                                                </a>
+                                            </li>
 
                                         </td>
 
@@ -140,7 +209,7 @@
                                     </div>
                                 </div>
                                 <div data-bind="if: emailSearch">
-                                    <p>It looks like you are trying to search by email address. Please try your search again using your collaborator's name. You will be able to add users without OSF accounts as unregistered contributors.</p>
+                                    <p>It look like you are trying to search by email address. Please try your search again using your collaborator's name. You will be able to add users without OSF accounts as unregistered contributors.</p>
                                 </div>
                             </div>
                         </div><!-- ./col-md -->

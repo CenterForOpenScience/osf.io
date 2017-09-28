@@ -700,6 +700,7 @@ def search_contributor(query, page=0, size=10, exclude=None, current_user=None):
         if user.is_active:  # exclude merged, unregistered, etc.
             current_employment = None
             education = None
+            social = []
 
             if user.jobs:
                 current_employment = user.jobs[0]['institution']
@@ -712,6 +713,7 @@ def search_contributor(query, page=0, size=10, exclude=None, current_user=None):
                 'id': doc['id'],
                 'employment': current_employment,
                 'education': education,
+                'social': user.social_links,
                 'n_projects_in_common': n_projects_in_common,
                 'gravatar_url': gravatar(
                     user,
@@ -721,7 +723,6 @@ def search_contributor(query, page=0, size=10, exclude=None, current_user=None):
                 'profile_url': user.profile_url,
                 'registered': user.is_registered,
                 'active': user.is_active
-
             })
 
     return {
