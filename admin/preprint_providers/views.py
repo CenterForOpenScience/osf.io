@@ -15,7 +15,6 @@ from admin.base.forms import ImportFileForm
 from admin.preprint_providers.forms import PreprintProviderForm, PreprintProviderCustomTaxonomyForm
 from osf.models import PreprintProvider, Subject, NodeLicense
 from osf.models.preprint_provider import rules_to_subjects
-from osf.management.commands.populate_custom_taxonomies import validate_input, migrate
 
 # When preprint_providers exclusively use Subject relations for creation, set this to False
 SHOW_TAXONOMIES_IN_PREPRINT_PROVIDER_CREATE = True
@@ -176,6 +175,9 @@ class ProcessCustomTaxonomy(PermissionRequiredMixin, View):
     raise_exception = True
 
     def post(self, request, *args, **kwargs):
+        # Import here to avoid test DB access errors when importing preprint provider views
+        from osf.management.commands.populate_custom_taxonomies import validate_input, migrate
+
         provider_form = PreprintProviderCustomTaxonomyForm(request.POST)
         if provider_form.is_valid():
             provider = PreprintProvider.objects.get(id=provider_form.cleaned_data['provider_id'])
