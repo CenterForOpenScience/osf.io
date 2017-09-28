@@ -7,10 +7,13 @@
     <div class="col-md-12">
         <div>
             <h2>Custom Taxonomy</h2>
-            <p>Use the form below to build a custom taxonomy. Enter the JSON for the custom taxonomy directly in the text box, or use the form fields below to build the taxonomy one entry at a time.</p>
-            <p>Click <a role="button" data-toggle="modal" href="#exampleModal">here</a> to see an example of a full custom taxonomy
-                and for more information about building a custom taxonomy.
-            </p>
+            <p>Use the form below to build a custom taxonomy. In each dropdown menu, start typing to select an existing subject. After selecting a subject, or entering
+                a custom mapping, click the "Add" button to add it to the taxonomy. The result will be displayed in the 'Built Custom Taxonomy' section.</p>
+
+            <p>To remove an entry, delete it from the text box in the Built Custom Taxonomy section. If deleting the last item in a list, be sure to also remove the
+                final comma.</p>
+
+            <p>Click <a role="button" data-toggle="modal" href="#exampleModal">here</a> to see an example of a full custom taxonomy and for more information about each field.</p>
         </div>
         <form id="taxonomy-form" action="{% url 'preprint_providers:process_custom_taxonomy' %}" method="post">
             {% csrf_token %}
@@ -100,11 +103,28 @@
     <div class="modal-dialog" role="document">
         <div class="modal-content">
             <div class="modal-header">
-                <h5 class="modal-title" id="exampleModalLabel">Custom Taxonomy Example</h5>
+                <h4 class="modal-title" id="exampleModalLabel">Custom Taxonomy Example</h4>
                 <button type="button" class="close" data-dismiss="modal"><span aria-hidden="true">&times;</span></button>
-                <p>For a custom taxonomy </p>
             </div>
             <div class="modal-body">
+                <div>
+                    <ul>
+                        <li><b>include</b>: These subjects, and their children will be included in the custom taxonomy.
+                            If a second level subject is included, that second level will become the top of the subject tree, and its parent will not be in the taxonomy.</li>
+                        <li><b>exclude</b>: These subjects, and their children will *not* be included in the custom taxonomy. Useful to include a top level subject, but then specify
+                        a certain child and its descendants to not be included.</li>
+                        <li><b>custom</b>: A new taxonomy name, along with information about which existing Bepress subject to replace with the new name.
+                            <ul>
+                                <li>custom name: the new name for the subject</li>
+                                <li>custom parent: the parent of the subject. Leave blank if it is a toplevel subject.
+                                    *Note*: if adding a new child of an existing bepress parent, you must also add a 'custom' parent with the same name that maps to the existing
+                                    bepress subject. See JSON below for an example.
+                                </li>
+                                <li>bepress: the existing subject that you would like to repalce with the subject listed in the custom name field.</li>
+                            </ul>
+                        </li>
+                    </ul>
+                </div>
                 <pre>
 {
     "include": [
@@ -127,13 +147,17 @@
             "parent": "",
             "bepress": "Kinesiology"
         },
-        "Exercise Immunology": {
-            "parent": "Sport and Exercise Science",
-            "bepress": "Exercise Science"
-        },
         "Motor Control and Development": {
             "parent": "Sport and Exercise Science",
             "bepress": "Motor Control"
+        },
+        "Super Engineering": {
+            "parent": "Engineering",
+            "bepress": "Aerospace Engineering"
+        },
+        "Engineering": {
+            "parent": "",
+            "bepress": "Engineering"
         }
     }
 }
