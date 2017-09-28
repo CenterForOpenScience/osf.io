@@ -24,7 +24,6 @@ from website.util import web_url_for
 hook_domain = github_settings.HOOK_DOMAIN or settings.DOMAIN
 
 
-
 class GithubFileNode(BaseFileNode):
     _provider = 'github'
 
@@ -204,8 +203,6 @@ class NodeSettings(BaseStorageAddon, BaseOAuthNodeSettings):
             # find them
             valid_credentials = True
             try:
-                my_orgs_repos = connection.my_org_repos()
-                my_repos = connection.repos()
                 repos = itertools.chain.from_iterable((connection.repos(), connection.my_org_repos()))
                 repo_names = [
                     '{0} / {1}'.format(repo.owner.login, repo.name)
