@@ -140,7 +140,7 @@
                                                 </span>
                                                 <span data-bind="visible: contributor.social.researchGate">
                                                     <a data-bind="attr: {href: contributor.social.researchGate}">
-                                                        <img class="social-icons" src="/static/img/researchgate.jpg" style="padding-bottom:5px" data-toggle="tooltip" title="ResearchGate"></i>
+                                                        <img class="social-icons p-b-xs" src="/static/img/researchgate.jpg" data-toggle="tooltip" title="ResearchGate"></i>
                                                     </a>
                                                 </span>
                                                 <span data-bind="visible: contributor.social.academiaInstitution + social.academiaProfileID">
