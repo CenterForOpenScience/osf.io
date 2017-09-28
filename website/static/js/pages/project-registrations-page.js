@@ -40,6 +40,6 @@ $(document).ready(function() {
         draftManager.init();
     } else{
         //To change the text from "Loading..." to "New registration" when RegistrationManager is not initialized
-        $('#registerNode').text('New registration')
+        $('#registerNode').text('New registration');
     }
 });
