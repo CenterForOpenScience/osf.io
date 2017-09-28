@@ -1,11 +1,11 @@
 from rest_framework import generics
 from rest_framework import permissions as drf_permissions
 
-from django.db.models import Q
+from django.db.models import Q, Exists, OuterRef
 
 from framework.auth.oauth_scopes import CoreScopes
 
-from osf.models import AbstractNode, Subject, PreprintProvider
+from osf.models import AbstractNode, Subject, PreprintProvider, Contributor
 
 from api.base import permissions as base_permissions
 from api.base.filters import PreprintFilterMixin, ListFilterMixin
@@ -205,14 +205,13 @@ class PreprintProviderPreprintList(JSONAPIBaseView, generics.ListAPIView, Prepri
         no_user_query = Q(is_published=True, node__is_public=True)
 
         if auth_user:
-            contrib_user_query = Q(is_published=True, node__contributor__user_id=auth_user.id, node__contributor__read=True)
-            admin_user_query = Q(node__contributor__user_id=auth_user.id, node__contributor__admin=True)
-            return default_qs.filter(no_user_query | contrib_user_query | admin_user_query)
+            sub_qs = Contributor.objects.filter(node=OuterRef('pk'), user__id=auth.user.id, admin=True)
+            return model_cls.objects.annotate(admin_user=Exists(sub_qs)).filter(Q(admin_user=True) | contrib_user_query | no_user_query )
         return default_qs.filter(no_user_query)
 
     # overrides ListAPIView
     def get_queryset(self):
-        return self.get_queryset_from_request().distinct('id', 'date_created')
+        return self.get_queryset_from_request()
 
 
 class PreprintProviderTaxonomies(JSONAPIBaseView, generics.ListAPIView):
