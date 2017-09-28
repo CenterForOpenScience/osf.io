@@ -124,11 +124,6 @@ class PreprintProviderDisplay(PermissionRequiredMixin, DetailView):
 
         subject_html += '</ul>'
         preprint_provider_attributes['subjects_acceptable'] = subject_html
-        # subjects_with_mapped_taxonomies = [sub for sub in preprint_provider.subjects.all() if sub.text != sub.bepress_subject.text]
-        # mapped_taxonomies_html = '<ul>'
-        # for subject in subjects_with_mapped_taxonomies:
-        #     mapped_taxonomies_html += '<li>BePress: <b>{}</b> ==> New: <b>{}</b>'.format(subject.bepress_subject.text, subject.text)
-        # kwargs['mapped_taxonomies'] = mapped_taxonomies_html + '</ul>'
 
         kwargs['preprint_provider'] = preprint_provider_attributes
         kwargs['subject_ids'] = list(subject_ids)
@@ -139,7 +134,6 @@ class PreprintProviderDisplay(PermissionRequiredMixin, DetailView):
         kwargs['show_taxonomies'] = False if preprint_provider.subjects.exists() else True
         kwargs['form'] = PreprintProviderForm(initial=fields)
         kwargs['taxonomy_form'] = PreprintProviderCustomTaxonomyForm()
-        kwargs['no_add_list'] = ['custom_taxonomy_json', 'add_missing']
         kwargs['import_form'] = ImportFileForm()
         kwargs['tinymce_apikey'] = settings.TINYMCE_APIKEY
         return kwargs
@@ -187,18 +181,17 @@ class ProcessCustomTaxonomy(PermissionRequiredMixin, View):
             provider = PreprintProvider.objects.get(id=provider_form.cleaned_data['provider_id'])
             try:
                 taxonomy_json = json.loads(provider_form.cleaned_data['custom_taxonomy_json'])
-                add_missing = provider_form.cleaned_data['add_missing']
                 if request.is_ajax():
                     # An ajax request is for validation only, so run that validation!
                     try:
-                        response_data = validate_input(custom_provider=provider, data=taxonomy_json, add_missing=add_missing)
+                        response_data = validate_input(custom_provider=provider, data=taxonomy_json)
                     except (RuntimeError, AssertionError) as script_feedback:
                         response_data = {'message': script_feedback.message, 'feedback_type': 'error'}
                     if not response_data:
                         response_data = {'message': 'Custom taxonomy validated!', 'feedback_type': 'success'}
                 else:
                     # Actually do the migration of the custom taxonomies
-                    migrate(provider=provider._id, data=taxonomy_json, add_missing=add_missing)
+                    migrate(provider=provider._id, data=taxonomy_json)
                     return redirect('preprint_providers:detail', preprint_provider_id=provider.id)
 
             except ValueError as error:

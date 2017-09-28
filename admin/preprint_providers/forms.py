@@ -63,7 +63,6 @@ class PreprintProviderForm(forms.ModelForm):
 
 class PreprintProviderCustomTaxonomyForm(forms.Form):
     custom_taxonomy_json = forms.CharField(widget=forms.Textarea, initial='{"include": [], "exclude": [], "custom": {}}', required=False)
-    add_missing = forms.BooleanField(required=False)
     provider_id = forms.IntegerField(widget=forms.HiddenInput())
     include = forms.ChoiceField(choices=[], required=False)
     exclude = forms.ChoiceField(choices=[], required=False)
