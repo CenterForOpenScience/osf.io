@@ -638,15 +638,15 @@ class TestAddContributor(OsfTestCase):
         contribs = search.search_contributor(self.name4.split(' ')[0][:-1])
         assert_equal(len(contribs['users']), 0)
 
-    # def test_search_orcid(self):
-    #     orcid = '123456'
-    #     user = factories.UserFactory()
-    #     user.social['orcid'] = orcid
-    #     user.save()
-    #     contribs = search.search_contributor(orcid)
-    #     assert_equal(len(contribs['users']), 1)
-    #     assert_equal(contribs['users'][0]['orcid']['id'], user.social['orcid'])
-    #     assert_equal(contribs['users'][0]['orcid']['url'], user.social_links['orcid'])
+    def test_search_profile(self):
+        orcid = '123456'
+        user = factories.UserFactory()
+        user.social['orcid'] = orcid
+        user.save()
+        contribs = search.search_contributor(orcid)
+        assert_equal(len(contribs['users']), 1)
+        assert_equal(len(contribs['users'][0]['social_links']), 1)
+        assert_equal(contribs['users'][0]['social_links']['orcid'], user.social_links['orcid'])
 
 
 class TestProjectSearchResults(OsfTestCase):
