@@ -73,13 +73,13 @@ TRANSITIONS = [
         'trigger': Triggers.ACCEPT.value,
         'source': [States.PENDING.value, States.REJECTED.value],
         'dest': States.ACCEPTED.value,
-        'after': ['save_action', 'update_last_transitioned', 'save_changes', 'notify_accept'],
+        'after': ['save_action', 'update_last_transitioned', 'save_changes', 'notify_accept_reject'],
     },
     {
         'trigger': Triggers.REJECT.value,
         'source': [States.PENDING.value, States.ACCEPTED.value],
         'dest': States.REJECTED.value,
-        'after': ['save_action', 'update_last_transitioned', 'save_changes', 'notify_reject'],
+        'after': ['save_action', 'update_last_transitioned', 'save_changes', 'notify_accept_reject'],
     },
     {
         'trigger': Triggers.EDIT_COMMENT.value,

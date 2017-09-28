@@ -10,7 +10,8 @@ USER_SUBSCRIPTIONS_AVAILABLE = {
     'global_comment_replies': 'Replies to your comments',
     'global_comments': 'Comments added',
     'global_file_updated': 'Files updated',
-    'global_mentions': 'Mentions added'
+    'global_mentions': 'Mentions added',
+    'global_reviews': 'Preprints submission updated'
 }
 
 # Note: the python value None mean inherit from parent

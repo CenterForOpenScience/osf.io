@@ -12,6 +12,16 @@ from osf.models.action import Action
 from reviews import workflow
 from reviews.exceptions import InvalidTriggerError
 
+from website import settings
+
+from osf.models import NotificationDigest
+from osf.models import OSFUser
+
+from website import mails
+from website.notifications.emails import get_user_subscriptions, get_node_lineage
+from website.notifications import utils
+from website.reviews import signals as reviews_signals
+
 
 class ReviewProviderMixin(models.Model):
     """A reviewed/moderated collection of objects.
@@ -182,17 +192,62 @@ class ReviewsMachine(Machine):
         return self.reviewable.provider.reviews_workflow == workflow.Workflows.PRE_MODERATION.value
 
     def notify_submit(self, ev):
-        # TODO email node admins (MOD-53)
-        pass
+        context = self.get_context()
+        context['referrer'] = ev.kwargs.get('user')
+        context['template'] = 'reviews_submission_confirmation'
+        reviews_signals.reviews_email.send(context=context, notify_submit=True)
 
-    def notify_accept(self, ev):
-        # TODO email node admins (MOD-53)
-        pass
-
-    def notify_reject(self, ev):
-        # TODO email node admins (MOD-53)
-        pass
+    def notify_accept_reject(self, ev):
+        context = self.get_context()
+        context['template'] = 'reviews_submission_status',
+        context['notify_comment'] = not self.reviewable.provider.reviews_comments_private and self.action.comment,
+        context['is_rejected'] = self.action.to_state == workflow.States.REJECTED.value,
+        reviews_signals.reviews_email.send(context=context)
 
     def notify_edit_comment(self, ev):
-        # TODO email node admins (MOD-53)
-        pass
+        context = self.get_context()
+        context['template'] = 'reviews_update_comment'
+        if not self.reviewable.provider.reviews_comments_private and self.action.comment:
+            reviews_signals.reviews_email.send(context=context)
+
+    def get_context(self):
+        return {
+            'domain': settings.DOMAIN,
+            'email_recipients': [contributor._id for contributor in self.reviewable.node.contributors],
+            'reviewable': self.reviewable,
+            'workflow': self.reviewable.provider.reviews_workflow,
+            'provider_url': self.reviewable.provider.external_url if self.reviewable.provider.external_url is not None else settings.DOMAIN + '/preprints' + self.reviewable.provider._id,
+            'provider_contact_email': self.reviewable.provider.email_contact if self.reviewable.provider.email_contact is not None else 'contact@osf.io',
+            'provider_support_email': self.reviewable.provider.email_support if self.reviewable.provider.email_support is not None else 'support@osf.io',
+        }
+
+@reviews_signals.reviews_email.connect
+def reviews_notification(self, context, notify_submit=False):
+    timestamp = timezone.now()
+    event_type = utils.find_subscription_type('global_reviews')
+    template = ''.join(context.get('template')) + '.txt.mako'
+    for user_id in context.get('email_recipients'):
+        user = OSFUser.load(user_id)
+        subscriptions = get_user_subscriptions(user, event_type)
+        if user == context.get('reviewable').node.creator:
+            context['is_creator'] = True
+        else:
+            context['is_creator'] = False
+        for notification_type in subscriptions:
+            check_user_subscribe = subscriptions[notification_type] and user_id in subscriptions[notification_type]  # check if user is subscribed to this type of notifications
+            check_submission = notify_submit or notification_type != 'none'  # check if submission and bypass user subscription if none. Users will receive email for submission only with no more notifications in future.
+            if (check_submission and check_user_subscribe):
+                node_lineage_ids = get_node_lineage(context.get('reviewable').node) if context.get('reviewable').node else []
+                context['user'] = user
+                context['no_future_emails'] = notification_type == 'none'
+                send_type = notification_type if notification_type != 'none' else 'email_transactional'
+                message = mails.render_message(template, **context)
+                digest = NotificationDigest(
+                    user=user,
+                    timestamp=timestamp,
+                    send_type=send_type,
+                    event='global_reviews',
+                    message=message,
+                    node_lineage=node_lineage_ids
+                )
+                digest.save()
