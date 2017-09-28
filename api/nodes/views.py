@@ -98,7 +98,7 @@ from framework.auth.oauth_scopes import CoreScopes
 from framework.postcommit_tasks.handlers import enqueue_postcommit_task
 from osf.models import AbstractNode
 from osf.models import (Node, PrivateLink, Institution, Comment, DraftRegistration,)
-from osf.models import OSFUser
+from osf.models import OSFUser, Contributor
 from osf.models import NodeRelation, Guid
 from osf.models import BaseFileNode
 from osf.models.files import File, Folder
@@ -3451,8 +3451,9 @@ class NodePreprintsList(JSONAPIBaseView, generics.ListAPIView, NodeMixin, Prepri
         # Permissions on the node are handled by the permissions_classes
         # Permissions on the list objects are handled by the query
         if auth_user:
-            return node.preprints.filter(Q(is_published=True) | Q(node__contributor__user_id=auth_user.id, node__contributor__admin=True))
+            sub_qs = Contributor.objects.filter(node=OuterRef('pk'), user__id=auth.user.id, admin=True)
+            return node.preprints.annotate(contrib=Exists(sub_qs)).filter(Q(contrib=True) | Q(is_published=True))
         return node.preprints.filter(is_published=True)
 
     def get_queryset(self):
-        return self.get_queryset_from_request().distinct('id', 'date_modified')
+        return self.get_queryset_from_request()
