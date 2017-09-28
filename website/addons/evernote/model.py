@@ -38,7 +38,7 @@ class Evernote(ExternalProvider):
         user = userStore.getUser()
 
         return {
-            'provider_id': user.id,  # or user.username
+            'provider_id': user.id,
             'display_name': user.name,
             'profile_url': ''
         }
@@ -66,9 +66,6 @@ class EvernoteNodeSettings(StorageAddonBase, AddonOAuthNodeSettingsBase):
 
     def set_user_auth(self, user_settings):
 
-        # TO DO:  but this function should go away upon switching to use the generic_views found in website/addons/base/
-        # https://github.com/CenterForOpenScience/osf.io/pull/4670#discussion_r67694204
-
         self.user_settings = user_settings
         self.nodelogger.log(action='node_authorized', save=True)
 
@@ -91,14 +88,11 @@ class EvernoteNodeSettings(StorageAddonBase, AddonOAuthNodeSettingsBase):
 
         self.nodelogger.log(action='folder_selected', save=True)
 
-    # based on https://github.com/CenterForOpenScience/osf.io/blob/4a5d4e5a887c944174694300c42b399638184722/website/addons/box/model.py#L105-L107
     def fetch_full_folder_path(self):
-        # don't know why this would be needed for Evernote
 
         return self.folder_path
 
     def fetch_folder_name(self):
-        # don't know why this would be needed for Evernote
 
         return self.folder_path
 
@@ -108,7 +102,6 @@ class EvernoteNodeSettings(StorageAddonBase, AddonOAuthNodeSettingsBase):
         self.folder_path = None
 
     def deauthorize(self, auth=None, add_log=True):
-        """Remove user authorization from this node and log the event."""
         folder_id = self.folder_id
         self.clear_settings()
 
@@ -130,6 +123,3 @@ class EvernoteNodeSettings(StorageAddonBase, AddonOAuthNodeSettingsBase):
         if self.folder_id is None:
             raise exceptions.AddonError('Folder is not configured')
         return {'folder': self.folder_id}
-
-    # TO DO : may need create_waterbutler_log
-    # https://github.com/CenterForOpenScience/osf.io/pull/4670/#discussion_r67736406

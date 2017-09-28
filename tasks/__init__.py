@@ -556,6 +556,17 @@ def test_addons(ctx):
     for addon in settings.ADDONS_REQUESTED:
         module = os.path.join(settings.BASE_PATH, 'addons', addon)
         modules.append(module)
+
+    print(modules)
+    test_module(ctx, module=modules)
+
+@task
+def test_evernote(ctx):
+    """Run all the tests in evernote
+    """
+    module = os.path.join(settings.BASE_PATH, 'addons', 'evernote')
+    modules = [module]
+
     test_module(ctx, module=modules)
 
 

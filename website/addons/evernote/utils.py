@@ -3,8 +3,8 @@ import settings
 from evernote.api.client import EvernoteClient
 from evernote.edam.notestore.ttypes import (NoteFilter, NotesMetadataResultSpec)
 
-from ENML2HTML import MediaStore
-import base64
+#from ENML2HTML import MediaStore
+#import base64
 
 def get_evernote_client(token=None):
     if token:
@@ -128,22 +128,22 @@ def timestamp_iso(ts):
     return datetime.datetime.utcfromtimestamp(ts / 1000.).isoformat()
 
 
-class MyMediaStore(MediaStore):
-    def __init__(self, note_store, note_guid):
-        super(MyMediaStore, self).__init__(note_store, note_guid)
+# class MyMediaStore(MediaStore):
+#     def __init__(self, note_store, note_guid):
+#         super(MyMediaStore, self).__init__(note_store, note_guid)
 
-    def save(self, hash_str, mime_type):
-        # hash_str is the hash digest string of the resource file
-        # mime_type is the mime_type of the resource that is about to be saved
-        # you can get the mime type to file extension mapping by accessing the dict MIME_TO_EXTENSION_MAPPING
+#     def save(self, hash_str, mime_type):
+#         # hash_str is the hash digest string of the resource file
+#         # mime_type is the mime_type of the resource that is about to be saved
+#         # you can get the mime type to file extension mapping by accessing the dict MIME_TO_EXTENSION_MAPPING
 
-        # retrieve the binary data
-        data = self._get_resource_by_hash(hash_str)
-        # some saving operation [ not needed for embedding into data URI]
+#         # retrieve the binary data
+#         data = self._get_resource_by_hash(hash_str)
+#         # some saving operation [ not needed for embedding into data URI]
 
-        # return the URL of the resource that has just been saved
-        # convert content to data:uri
-        # https://gist.github.com/jsocol/1089733
+#         # return the URL of the resource that has just been saved
+#         # convert content to data:uri
+#         # https://gist.github.com/jsocol/1089733
 
-        data64 = u''.join(base64.encodestring(data).splitlines())
-        return u'data:{};base64,{}'.format(mime_type, data64)
+#         data64 = u''.join(base64.encodestring(data).splitlines())
+#         return u'data:{};base64,{}'.format(mime_type, data64)

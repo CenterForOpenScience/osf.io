@@ -35,8 +35,6 @@ class EvernoteSerializer(StorageAddonSerializer):
             'folders': node.api_url_for('evernote_folder_list'),
             'config': node.api_url_for('evernote_set_config'),
             'notes': node.api_url_for('evernote_notes'),
-            # TO DO files -- fix what 'files' should be
-            # https://github.com/CenterForOpenScience/osf.io/pull/4670/#discussion_r67703341
             'files': node.api_url_for('evernote_notes'),
             'deauthorize': node.api_url_for('evernote_deauthorize_node'),
             'accounts': node.api_url_for('evernote_get_user_settings'),
