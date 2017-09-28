@@ -27,7 +27,7 @@ from api.users.serializers import (UserAddonSettingsSerializer,
                                    ReadEmailUserDetailSerializer,)
 from django.contrib.auth.models import AnonymousUser
 from framework.auth.oauth_scopes import CoreScopes, normalize_scopes
-from django.db.models import Q
+from django.db.models import Q, Exists, OuterRef
 from rest_framework import permissions as drf_permissions
 from rest_framework import generics
 from rest_framework.exceptions import NotAuthenticated, NotFound
@@ -604,12 +604,12 @@ class UserPreprints(JSONAPIBaseView, generics.ListAPIView, UserMixin, PreprintFi
         )
         no_user_query = Q(is_published=True, node__is_public=True)
         if auth_user:
-            admin_user_query = Q(node__contributor__user_id=auth_user.id, node__contributor__admin=True)
-            return default_qs.filter(no_user_query | admin_user_query)
+            sub_qs = Contributor.objects.filter(node=OuterRef('pk'), user__id=auth.user.id, admin=True)
+            return default_qs.annotate(admin_user=Exists(sub_qs)).filter(Q(admin_user=True) | no_user_query)
         return default_qs.filter(no_user_query)
 
     def get_queryset(self):
-        return self.get_queryset_from_request().distinct('id', 'date_created')
+        return self.get_queryset_from_request()
 
 
 class UserInstitutions(JSONAPIBaseView, generics.ListAPIView, UserMixin):
