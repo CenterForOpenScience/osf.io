@@ -205,8 +205,9 @@ class PreprintProviderPreprintList(JSONAPIBaseView, generics.ListAPIView, Prepri
         no_user_query = Q(is_published=True, node__is_public=True)
 
         if auth_user:
+            contrib_user_query = Q(is_published=True, node__contributor__user_id=auth_user.id, node__contributor__read=True)
             sub_qs = Contributor.objects.filter(node=OuterRef('pk'), user__id=auth.user.id, admin=True)
-            return model_cls.objects.annotate(admin_user=Exists(sub_qs)).filter(Q(admin_user=True) | contrib_user_query | no_user_query )
+            return default_qs.annotate(admin_user=Exists(sub_qs)).filter(Q(admin_user=True) | contrib_user_query | no_user_query )
         return default_qs.filter(no_user_query)
 
     # overrides ListAPIView
