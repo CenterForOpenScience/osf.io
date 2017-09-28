@@ -700,7 +700,6 @@ def search_contributor(query, page=0, size=10, exclude=None, current_user=None):
         if user.is_active:  # exclude merged, unregistered, etc.
             current_employment = None
             education = None
-            social = []
 
             if user.jobs:
                 current_employment = user.jobs[0]['institution']

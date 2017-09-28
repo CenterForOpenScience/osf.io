@@ -1,5 +1,4 @@
 'use strict';
-'use strict';
 
 var ko = require('knockout');
 var $ = require('jquery');
