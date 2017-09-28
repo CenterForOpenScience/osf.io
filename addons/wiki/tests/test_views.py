@@ -170,7 +170,7 @@ class TestUpdateNodeWiki(OsfTestCase):
         project.update_node_wiki('home', wiki_content, self.auth)
         url = project.web_url_for('view_project')
         res = self.app.get(url, auth=self.user.auth)
-        assert 'Read More' not in res.json
+        assert 'Read More' not in res.body
 
 
 class TestRenameNodeWiki(OsfTestCase):
