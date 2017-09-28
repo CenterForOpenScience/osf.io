@@ -113,7 +113,7 @@
                                                         <i class="fa fa-github-alt social-icons fa-lg" data-toggle="tooltip" title="Github"></i>
                                                     </a>
                                                 </span>
-                                                <span data-bind="visible: contributor.social.linkedIn">
+                                                <span data-bind="visible: contributor.social.linkedIn" >
                                                     <a data-bind="attr: {href: contributor.social.linkedIn}">
                                                         <i class="fa fa-linkedin social-icons fa-lg" data-toggle="tooltip" title="LinkedIn"></i>
                                                     </a>
@@ -140,7 +140,7 @@
                                                 </span>
                                                 <span data-bind="visible: contributor.social.researchGate">
                                                     <a data-bind="attr: {href: contributor.social.researchGate}">
-                                                        <img class="social-icons fa-lg" src="/static/img/researchgate.jpg" style="PADDING-BOTTOM: 7px" data-toggle="tooltip" title="ResearchGate"></i>
+                                                        <img class="social-icons" src="/static/img/researchgate.jpg" style="padding-bottom:5px" data-toggle="tooltip" title="ResearchGate"></i>
                                                     </a>
                                                 </span>
                                                 <span data-bind="visible: contributor.social.academiaInstitution + social.academiaProfileID">
@@ -150,12 +150,12 @@
                                                 </span>
                                                 <span data-bind="visible: contributor.social.baiduScholar">
                                                     <a data-bind="attr: {href: contributor.social.baiduScholar}">
-                                                        <img class="social-icons fa-lg" src="/static/img/baiduscholar.png"data-toggle="tooltip" style="PADDING-BOTTOM: 5px" title="Baidu Scholar">
+                                                        <img class="social-icons fa-lg" src="/static/img/baiduscholar.png"data-toggle="tooltip" title="Baidu Scholar">
                                                     </a>
                                                 </span>
                                                 <span data-bind="visible: contributor.social.ssrn">
                                                     <a data-bind="attr: {href: contributor.social.ssrn}">
-                                                        <img class="social-icons fa-lg" src="/static/img/SSRN.png"data-toggle="tooltip" style="PADDING-BOTTOM: 5px" title="SSRN">
+                                                        <img class="social-icons fa-lg" src="/static/img/SSRN.png"data-toggle="tooltip" title="SSRN">
                                                     </a>
                                                 </span>
                                             <span
