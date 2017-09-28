@@ -1,6 +1,6 @@
 import urllib
 import itertools
-
+import logging
 import github3
 import cachecontrol
 from requests.adapters import HTTPAdapter
@@ -14,6 +14,7 @@ from addons.github.exceptions import NotFoundError
 https_cache = cachecontrol.CacheControlAdapter()
 default_adapter = HTTPAdapter()
 
+logger = logging.getLogger(__name__)
 
 class GitHubClient(object):
 
@@ -40,6 +41,8 @@ class GitHubClient(object):
             user if omitted
         :return dict: GitHub API response
         """
+        if user is None:
+            return self.gh3.me()
         return self.gh3.user(user)
 
     def repo(self, user, repo):
@@ -60,21 +63,22 @@ class GitHubClient(object):
         raise NotFoundError
 
     def repos(self):
-        return self.gh3.iter_repos(type='all', sort='full_name')
+        return self.gh3.repositories(type='all', sort='full_name')
 
     def user_repos(self, user):
-        return self.gh3.iter_user_repos(user, type='all', sort='full_name')
+        return self.gh3.repositories_by(user, type='all', sort='full_name')
 
     def my_org_repos(self, permissions=None):
-        permissions = permissions or ['push']
-        return itertools.chain.from_iterable(
-            team.iter_repos()
-            for team in self.gh3.iter_user_teams()
-            if team.permission in permissions
+        my_orgs = self.gh3.organizations_with(self.user())
+        my_orgs_repos = itertools.chain.from_iterable(
+            org.repositories()
+            for org in my_orgs
         )
+        logger.debug(my_orgs_repos)
+        return [repo for repo in my_orgs_repos if repo.permissions]
 
     def create_repo(self, repo, **kwargs):
-        return self.gh3.create_repo(repo, **kwargs)
+        return self.gh3.create_repository(repo, **kwargs)
 
     def branches(self, user, repo, branch=None):
         """List a repo's branches or get a single branch (in a list).
@@ -87,7 +91,7 @@ class GitHubClient(object):
         """
         if branch:
             return [self.repo(user, repo).branch(branch)]
-        return self.repo(user, repo).iter_branches() or []
+        return self.repo(user, repo).branches() or []
 
     # TODO: Test
     def starball(self, user, repo, archive='tar', ref='master'):
@@ -119,7 +123,7 @@ class GitHubClient(object):
         :return list: List of commit dicts from GitHub; see
             http://developer.github.com/v3/repos/hooks/#json-http
         """
-        return self.repo(user, repo).iter_hooks()
+        return self.repo(user, repo).hooks()
 
     def add_hook(self, user, repo, name, config, events=None, active=True):
         """Create a webhook.

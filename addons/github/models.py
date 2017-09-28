@@ -3,6 +3,7 @@
 import itertools
 import os
 import urlparse
+import logging
 
 import markupsafe
 from addons.base.models import (BaseOAuthNodeSettings, BaseOAuthUserSettings,
@@ -22,6 +23,8 @@ from addons.github.exceptions import ApiError, NotFoundError
 from addons.github.serializer import GitHubSerializer
 from website.util import web_url_for
 hook_domain = github_settings.HOOK_DOMAIN or settings.DOMAIN
+
+logger = logging.getLogger(__name__)
 
 
 class GithubFileNode(BaseFileNode):
@@ -203,7 +206,12 @@ class NodeSettings(BaseStorageAddon, BaseOAuthNodeSettings):
             # find them
             valid_credentials = True
             try:
+                my_orgs_repos = connection.my_org_repos()
+                my_repos = connection.repos()
                 repos = itertools.chain.from_iterable((connection.repos(), connection.my_org_repos()))
+                logger.debug(list(my_orgs_repos))
+                logger.debug(list(my_repos))
+
                 repo_names = [
                     '{0} / {1}'.format(repo.owner.login, repo.name)
                     for repo in repos
@@ -228,6 +236,7 @@ class NodeSettings(BaseStorageAddon, BaseOAuthNodeSettings):
                 'addons_url': web_url_for('user_addons'),
                 'files_url': self.owner.web_url_for('collect_file_trees')
             })
+            logger.debug(ret)
         return ret
 
     def serialize_waterbutler_credentials(self):

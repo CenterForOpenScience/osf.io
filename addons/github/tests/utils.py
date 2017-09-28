@@ -1,4 +1,5 @@
 import mock
+from json import dumps
 import github3
 from addons.github.api import GitHubClient
 from github3.repos.branch import Branch
@@ -41,8 +42,8 @@ def create_mock_github(user='octo-cat', private=False):
     :return: An autospecced GitHub Mock object
     """
     github_mock = mock.create_autospec(GitHubClient)
-    github_mock.repo.return_value = github3.repos.Repository.from_json({
-    u'archive_url': u'https://api.github.com/repos/{user}/mock-repo/{{archive_format}}{{/ref}}'.format(user=user),
+    github_mock.repo.return_value = github3.repos.Repository.from_json(dumps({
+     u'archive_url': u'https://api.github.com/repos/{user}/mock-repo/{{archive_format}}{{/ref}}'.format(user=user),
      u'assignees_url': u'https://api.github.com/repos/{user}/mock-repo/assignees{{/user}}'.format(user=user),
      u'blobs_url': u'https://api.github.com/repos/{user}/mock-repo/git/blobs{{/sha}}'.format(user=user),
      u'branches_url': u'https://api.github.com/repos/{user}/mock-repo/branches{{/bra.format(user=user)nch}}'.format(user=user),
@@ -128,21 +129,19 @@ def create_mock_github(user='octo-cat', private=False):
      u'watchers': 1469,
      u'watchers_count': 1469,
      # NOTE: permissions are only available if authorized on the repo
-     'permissions': {
-        'push': True
-     }
-     })
+     'permissions': { 'push': True }
+     }))
 
     github_mock.branches.return_value = [
-        Branch.from_json({u'commit': {u'sha': u'e22d92d5d90bb8f9695e9a5e2e2311a5c1997230',
+        Branch.from_json(dumps({u'commit': {u'sha': u'e22d92d5d90bb8f9695e9a5e2e2311a5c1997230',
            u'url': u'https://api.github.com/repos/{user}/mock-repo/commits/e22d92d5d90bb8f9695e9a5e2e2311a5c1997230'.format(user=user)},
-          u'name': u'dev'}),
-         Branch.from_json({u'commit': {u'sha': u'444a74d0d90a4aea744dacb31a14f87b5c30759c',
+          u'name': u'dev'})),
+         Branch.from_json(dumps({u'commit': {u'sha': u'444a74d0d90a4aea744dacb31a14f87b5c30759c',
            u'url': u'https://api.github.com/repos/{user}/mock-repo/commits/444a74d0d90a4aea744dacb31a14f87b5c30759c'.format(user=user)},
-          u'name': u'master'}),
-         Branch.from_json({u'commit': {u'sha': u'c6eaaf6708561c3d4439c0c8dd99c2e33525b1e6',
+          u'name': u'master'})),
+         Branch.from_json(dumps({u'commit': {u'sha': u'c6eaaf6708561c3d4439c0c8dd99c2e33525b1e6',
            u'url': u'https://api.github.com/repos/{user}/mock-repo/commits/c6eaaf6708561c3d4439c0c8dd99c2e33525b1e6'.format(user=user)},
-          u'name': u'no-bundle'})
+          u'name': u'no-bundle'}))
       ]
 
     return github_mock

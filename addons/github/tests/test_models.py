@@ -3,6 +3,7 @@
 import mock
 import pytest
 import unittest
+from json import dumps
 
 from addons.base.tests.models import (OAuthAddonNodeSettingsTestSuiteMixin,
                                       OAuthAddonUserSettingTestSuiteMixin)
@@ -152,7 +153,7 @@ class TestCallbacks(OsfTestCase):
     def test_before_page_load_osf_public_gh_public(self, mock_repo):
         self.project.is_public = True
         self.project.save()
-        mock_repo.return_value = Repository.from_json({'private': False})
+        mock_repo.return_value = Repository.from_json(dumps({'private': False}))
         message = self.node_settings.before_page_load(self.project, self.project.creator)
         mock_repo.assert_called_with(
             self.node_settings.user,
@@ -164,7 +165,7 @@ class TestCallbacks(OsfTestCase):
     def test_before_page_load_osf_public_gh_private(self, mock_repo):
         self.project.is_public = True
         self.project.save()
-        mock_repo.return_value = Repository.from_json({'private': True})
+        mock_repo.return_value = Repository.from_json(dumps({'private': True}))
         message = self.node_settings.before_page_load(self.project, self.project.creator)
         mock_repo.assert_called_with(
             self.node_settings.user,
@@ -174,7 +175,7 @@ class TestCallbacks(OsfTestCase):
 
     @mock.patch('addons.github.api.GitHubClient.repo')
     def test_before_page_load_osf_private_gh_public(self, mock_repo):
-        mock_repo.return_value = Repository.from_json({'private': False})
+        mock_repo.return_value = Repository.from_json(dumps({'private': False}))
         message = self.node_settings.before_page_load(self.project, self.project.creator)
         mock_repo.assert_called_with(
             self.node_settings.user,
@@ -184,7 +185,7 @@ class TestCallbacks(OsfTestCase):
 
     @mock.patch('addons.github.api.GitHubClient.repo')
     def test_before_page_load_osf_private_gh_private(self, mock_repo):
-        mock_repo.return_value = Repository.from_json({'private': True})
+        mock_repo.return_value = Repository.from_json(dumps({'private': True}))
         message = self.node_settings.before_page_load(self.project, self.project.creator)
         mock_repo.assert_called_with(
             self.node_settings.user,
