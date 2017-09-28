@@ -1,7 +1,7 @@
 import re
 
 from django.apps import apps
-from django.db.models import Q
+from django.db.models import Q, OuterRef, Exists
 from rest_framework import generics, permissions as drf_permissions
 from rest_framework.exceptions import PermissionDenied, ValidationError, NotFound, MethodNotAllowed, NotAuthenticated
 from rest_framework.response import Response
@@ -1932,11 +1932,12 @@ class NodeFilesList(JSONAPIBaseView, generics.ListAPIView, WaterButlerMixin, Lis
             # We should not have gotten a file here
             raise NotFound
 
-        return files_list.children.prefetch_related('node__guids', 'versions', 'tags', 'guids')
+        sub_qs = type(files_list).objects.filter(_children=OuterRef('pk'), pk=files_list.pk)
+        return files_list.children.annotate(folder=Exists(sub_qs)).filter(Q(folder=True)).prefetch_related('node__guids', 'versions', 'tags', 'guids')
 
     # overrides ListAPIView
     def get_queryset(self):
-        return self.get_queryset_from_request().distinct()
+        return self.get_queryset_from_request()
 
 
 class NodeFileDetail(JSONAPIBaseView, generics.RetrieveAPIView, WaterButlerMixin, NodeMixin):
