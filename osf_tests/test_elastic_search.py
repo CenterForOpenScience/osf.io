@@ -645,8 +645,8 @@ class TestAddContributor(OsfTestCase):
         user.save()
         contribs = search.search_contributor(orcid)
         assert_equal(len(contribs['users']), 1)
-        assert_equal(len(contribs['users'][0]['social_links']), 1)
-        assert_equal(contribs['users'][0]['social_links']['orcid'], user.social_links['orcid'])
+        assert_equal(len(contribs['users'][0]['social']), 1)
+        assert_equal(contribs['users'][0]['social']['orcid'], user.social_links['orcid'])
 
 
 class TestProjectSearchResults(OsfTestCase):
