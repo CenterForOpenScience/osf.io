@@ -49,7 +49,9 @@
         </div>
         <div id="form-view" style="display:none;">
             {% include 'preprint_providers/update_preprint_provider_form.html' %}
+            {% if show_taxonomies %}
             {% include 'preprint_providers/enter_custom_taxonomy.html' %}
+            {% endif %}
         </div>
 
 {% endblock content %}
