@@ -34,7 +34,6 @@ class TestPreprintProviderSerializer(DbTestCase):
         assert_in('social_facebook', attributes)
         assert_in('social_instagram', attributes)
         assert_in('social_twitter', attributes)
-        assert_in('subjects_acceptable', attributes)
 
     def test_preprint_provider_serialization_v24(self):
         req = make_drf_request_with_version(version='2.4')
@@ -71,7 +70,6 @@ class TestPreprintProviderSerializer(DbTestCase):
         assert_not_in('social_facebook', attributes)
         assert_not_in('social_instagram', attributes)
         assert_not_in('social_twitter', attributes)
-        assert_not_in('subjects_acceptable', attributes)
 
         assert_in('name', attributes)
         assert_in('description', attributes)

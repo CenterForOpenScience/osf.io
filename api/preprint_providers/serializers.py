@@ -86,10 +86,6 @@ class PreprintProviderSerializer(JSONAPISerializer):
         ser.CharField(required=False, allow_null=True),
         min_version='2.0', max_version='2.3'
     )
-    subjects_acceptable = ShowIfVersion(
-        ser.ListField(required=False, default=[]),
-        min_version='2.0', max_version='2.4'
-    )
 
     class Meta:
         type_ = 'preprint_providers'
