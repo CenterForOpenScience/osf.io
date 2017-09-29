@@ -12,7 +12,7 @@ from framework.celery_tasks import app as celery_app
 
 from website.app import init_app
 from website import settings
-from osf.models import Node, NodeLog, Retraction
+from osf.models import NodeLog, Retraction
 
 from scripts import utils as scripts_utils
 
@@ -28,9 +28,9 @@ def main(dry_run=True):
             if dry_run:
                 logger.warn('Dry run mode')
             try:
-                parent_registration = Node.objects.get(retraction=retraction)
+                parent_registration = retraction.registrations.get()
             except Exception as err:
-                logger.error('Could not find registration associated with retraction {}'.format(retraction))
+                logger.exception('Could not find registration associated with retraction {}'.format(retraction))
                 logger.error('Skipping...'.format(retraction))
                 continue
 
