@@ -3451,8 +3451,10 @@ class NodePreprintsList(JSONAPIBaseView, generics.ListAPIView, NodeMixin, Prepri
         # Permissions on the node are handled by the permissions_classes
         # Permissions on the list objects are handled by the query
         if auth_user:
-            sub_qs = Contributor.objects.filter(node=OuterRef('pk'), user__id=auth.user.id, admin=True)
-            return node.preprints.annotate(contrib=Exists(sub_qs)).filter(Q(contrib=True) | Q(is_published=True))
+            admin_subquery = Contributor.objects.filter(node=OuterRef('pk'), user__id=auth_user.id, admin=True)
+            node_subquery = AbstractNode.objects.annotate(contrib=Exists(admin_subquery)).filter(preprints=OuterRef('pk'), contrib=True)
+            return node.preprints.annotate(node_present=Exists(node_subquery)).filter(Q(node_present=True) | Q(is_published=True))
+
         return node.preprints.filter(is_published=True)
 
     def get_queryset(self):

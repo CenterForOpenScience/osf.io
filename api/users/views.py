@@ -603,8 +603,10 @@ class UserPreprints(JSONAPIBaseView, generics.ListAPIView, UserMixin, PreprintFi
         )
         no_user_query = Q(is_published=True, node__is_public=True)
         if auth_user:
-            sub_qs = Contributor.objects.filter(node=OuterRef('pk'), user_id=auth_user.id, admin=True)
-            return default_qs.annotate(admin_user=Exists(sub_qs)).filter(Q(admin_user=True) | no_user_query)
+            admin_subquery = Contributor.objects.filter(node=OuterRef('pk'), user_id=auth_user.id, admin=True)
+            node_subquery = AbstractNode.objects.annotate(contrib=Exists(admin_subquery)).filter(preprints=OuterRef('pk'), contrib=True)
+            return default_qs.annotate(node_present=Exists(node_subquery)).filter(Q(node_present=True) | no_user_query)
+
         return default_qs.filter(no_user_query)
 
     def get_queryset(self):

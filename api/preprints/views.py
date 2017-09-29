@@ -7,7 +7,7 @@ from rest_framework.exceptions import NotFound, PermissionDenied, NotAuthenticat
 from rest_framework import permissions as drf_permissions
 
 from framework.auth.oauth_scopes import CoreScopes
-from osf.models import PreprintService, Contributor
+from osf.models import PreprintService, Contributor, AbstractNode
 from osf.utils.requests import check_select_for_update
 
 from api.base.exceptions import Conflict
@@ -179,8 +179,10 @@ class PreprintList(JSONAPIBaseView, generics.ListCreateAPIView, PreprintFilterMi
         no_user_query = Q(is_published=True, node__is_public=True)
         if auth_user:
             contrib_user_query = Q(is_published=True, node__contributor__user_id=auth_user.id, node__contributor__read=True)
-            sub_qs = Contributor.objects.filter(node=OuterRef('pk'), user_id=auth_user.id, admin=True)
-            return default_qs.annotate(admin_user=Exists(sub_qs)).filter(Q(admin_user=True) | contrib_user_query | no_user_query)
+            admin_subquery = Contributor.objects.filter(node=OuterRef('pk'), user_id=auth_user.id, admin=True)
+            node_subquery = AbstractNode.objects.annotate(contrib=Exists(admin_subquery)).filter(preprints=OuterRef('pk'), contrib=True)
+            return default_qs.annotate(node_present=Exists(node_subquery)).filter(Q(node_present=True) | contrib_user_query | no_user_query)
+
         return default_qs.filter(no_user_query)
 
     # overrides ListAPIView
