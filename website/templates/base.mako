@@ -46,7 +46,7 @@
     ${self.javascript()}
 
     <link href='//fonts.googleapis.com/css?family=Carrois+Gothic|Inika|Patua+One' rel='stylesheet' type='text/css'>
-    <link href='https://fonts.googleapis.com/css?family=Open+Sans:400,600,300,700' rel='stylesheet' type='text/css'>
+    <link href='https://fonts.googleapis.com/css?family=Open+Sans:400,600,300' rel='stylesheet' type='text/css'>
 
 </head>
 <body data-spy="scroll" data-target=".scrollspy">
@@ -253,12 +253,16 @@
         <div class="container ${self.container_class()}">
             ## Maintenance alert
             % if maintenance:
-                <div id="maintenance" class="scripted alert alert-info alert-dismissible" role="alert">
+                <div id="maintenance" class="scripted alert alert-dismissible" role="alert">
                 <button type="button" class="close" data-dismiss="alert" aria-label="Close">
                     <span aria-hidden="true">&times;</span></button>
-                <strong>Notice:</strong> The site will undergo maintenance between
-                <span id="maintenanceTime"></span>.
-                Thank you for your patience.
+                <strong>Notice:</strong>
+                % if maintenance['message']:
+                    ${maintenance['message']}
+                % else:
+                    The site will undergo maintenance between <span id="maintenanceTime"></span>.
+                    Thank you for your patience.
+                % endif
             </div>
             % endif
             ## End Maintenance alert
@@ -289,20 +293,16 @@
     <link rel="stylesheet" href="/static/vendor/bower_components/bootstrap/dist/css/bootstrap.min.css">
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/es6-shim/0.35.0/es6-shim.min.js"></script>
+
     % if settings.USE_CDN_FOR_CLIENT_LIBS:
-        <script src="//ajax.googleapis.com/ajax/libs/jquery/1.11.2/jquery.min.js"></script>
+        <script src="//ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
         <script>window.jQuery || document.write('<script src="/static/vendor/bower_components/jquery/dist/jquery.min.js">\x3C/script>')</script>
-        <script src="//ajax.googleapis.com/ajax/libs/jqueryui/1.10.3/jquery-ui.min.js"></script>
-        <script>window.jQuery.ui || document.write('<script src="/static/vendor/bower_components/jquery-ui/ui/minified/jquery-ui.min.js">\x3C/script>')</script>
+        <script src="//ajax.googleapis.com/ajax/libs/jqueryui/1.12.1/jquery-ui.min.js"></script>
+        <script>window.jQuery.ui || document.write('<script src="/static/vendor/bower_components/jquery-ui/jquery-ui.min.js">\x3C/script>')</script>
     % else:
         <script src="/static/vendor/bower_components/jquery/dist/jquery.min.js"></script>
-        <script src="/static/vendor/bower_components/jquery-ui/ui/minified/jquery-ui.min.js"></script>
+        <script src="/static/vendor/bower_components/jquery-ui/jquery-ui.min.js"></script>
     % endif
-    <!-- JQuery 3 for IE Patching -->
-    <script type="text/javascript" src="/static/vendor/jquery-compat-git/jquery-compat-git.js"></script>
-    <script type="text/javascript">
-        var $3 = jQuery.noConflict(true);
-    </script>
     ## NOTE: We load vendor bundle  at the top of the page because contains
     ## the webpack runtime and a number of necessary stylesheets which should be loaded before the user sees
     ## content.

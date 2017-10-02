@@ -11,7 +11,7 @@
                 % endfor
             </span>
         </ul>
-        % if sortable and 'write' in user['permissions']:
+        % if sortable and 'write' in user['permissions'] and not node['is_registration']:
         <script>
             $(function(){
                 $('.sortable').sortable({

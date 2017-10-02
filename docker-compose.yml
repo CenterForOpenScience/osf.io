@@ -205,7 +205,7 @@ services:
 
   preprints:
     image: quay.io/centerforopenscience/ember-preprints:develop-development-local
-    command: /bin/bash -c "yarn --pure-lockfile --no-progress --no-emoji && ./node_modules/bower/bin/bower install --allow-root --config.interactive=false && ./node_modules/ember-cli/bin/ember serve --host 0.0.0.0 --port 4200 --live-reload-port 41953"
+    command: /bin/bash -c "yarn --pure-lockfile --ignore-engines --no-progress --no-emoji && ./node_modules/bower/bin/bower install --allow-root --config.interactive=false && ./node_modules/ember-cli/bin/ember serve --host 0.0.0.0 --port 4200 --live-reload-port 41953"
     restart: unless-stopped
     depends_on:
       - api
@@ -228,7 +228,7 @@ services:
 
   registries:
     image: quay.io/centerforopenscience/ember-osf-registries:develop-development-local
-    command: /bin/bash -c "yarn --pure-lockfile --no-progress --no-emoji && ./node_modules/bower/bin/bower install --allow-root --config.interactive=false && ./node_modules/ember-cli/bin/ember serve --host 0.0.0.0 --port 4300"
+    command: /bin/bash -c "yarn --pure-lockfile --ignore-engines --no-progress --no-emoji && ./node_modules/bower/bin/bower install --allow-root --config.interactive=false && ./node_modules/ember-cli/bin/ember serve --host 0.0.0.0 --port 4300"
     restart: unless-stopped
     depends_on:
       - api
@@ -289,8 +289,7 @@ services:
     stdin_open: true
 
   sharejs:
-    image: quay.io/centerforopenscience/osf:develop
-    command: invoke sharejs
+    image: quay.io/centerforopenscience/sharejs:develop
     restart: unless-stopped
     ports:
       - 7007:7007
@@ -299,8 +298,8 @@ services:
     env_file:
       - .docker-compose.sharejs.env
     volumes:
-      - osf_requirements_vol:/usr/local/lib/python2.7
-      - osf_node_modules_vol:/code/node_modules
+      - ./addons/wiki/package.json:/code/package.json
+      - ./addons/wiki/shareServer.js:/code/shareServer.js
     stdin_open: true
 
 #  beat:

@@ -356,7 +356,7 @@ var ContributorsViewModel = function(contributors, adminContributors, user, isRe
         self.contributors().forEach(function(contributor) {
             contributor.reset(self.adminCount, self.visibleCount);
         });
-        self.contributors(self.contributors.sort(function(left, right) {
+        self.contributors(self.contributors().sort(function(left, right) {
             return left.originals.index > right.originals.index ? 1 : -1;
         }));
     };

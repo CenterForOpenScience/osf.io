@@ -1,8 +1,9 @@
 import pytz
 import logging
-from modularodm import Q
 from dateutil.parser import parse
 from datetime import datetime, timedelta
+
+from django.db.models import Q
 
 from website.app import init_app
 from osf.models import NodeLog
@@ -32,7 +33,7 @@ class NodeLogEvents(EventAnalytics):
             date, (date + timedelta(1)).isoformat()
         ))
 
-        node_log_query = Q('date', 'lt', date + timedelta(1)) & Q('date', 'gte', date)
+        node_log_query = Q(date__lt=date + timedelta(1)) & Q(date__gte=date)
 
         node_logs = paginated(NodeLog, query=node_log_query)
         node_log_events = []

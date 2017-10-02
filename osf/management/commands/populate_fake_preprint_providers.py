@@ -28,9 +28,6 @@ from django.core.management import call_command
 from django.core.management.base import BaseCommand
 from django.db import transaction
 
-from modularodm import Q
-from modularodm.exceptions import NoResultsFound
-
 from osf.models import NodeLicense, Subject, PreprintProvider
 from scripts import utils as script_utils
 from website.settings import PREPRINT_PROVIDER_DOMAINS
@@ -42,11 +39,14 @@ def format_domain_url(domain):
     return ''.join((PREPRINT_PROVIDER_DOMAINS['prefix'], str(domain), PREPRINT_PROVIDER_DOMAINS['suffix'])) if \
         PREPRINT_PROVIDER_DOMAINS['enabled'] else ''
 
+
 SUBJECTS_CACHE = {}
 PREPRINT_PROVIDERS = [
     {
         '_id': 'lawarxiv',
         'name': '[TEST] LawArXiv',
+        'share_publish_type': 'Preprint',
+        'share_title': 'LawArXiv',
         'default_license': 'CC0 1.0 Universal',
         'licenses_acceptable': ['CC0 1.0 Universal', 'No license'],
         'description': 'Straight bepress taxonomy, no custom domain, two licenses',
@@ -54,6 +54,8 @@ PREPRINT_PROVIDERS = [
     {
         '_id': 'socarxiv',
         'name': '[TEST] SocArXiv',
+        'share_publish_type': 'Preprint',
+        'share_title': 'SocArXiv',
         'domain': format_domain_url('socarxiv.org'),
         'domain_redirect_enabled': True,
         'default_license': 'CC0 1.0 Universal',
@@ -63,6 +65,8 @@ PREPRINT_PROVIDERS = [
     {
         '_id': 'psyarxiv',
         'name': '[TEST] PsyArXiv',
+        'share_publish_type': 'Preprint',
+        'share_title': 'PsyArXiv',
         'domain': format_domain_url('psyarxiv.com'),
         'domain_redirect_enabled': False,
         'default_license': 'No license',
@@ -76,6 +80,8 @@ PREPRINT_PROVIDERS = [
     {
         '_id': 'engrxiv',
         'name': '[TEST] engrXiv',
+        'share_publish_type': 'Preprint',
+        'share_title': 'EngrXiv',
         'external_url': 'http://engrxiv.com',
         'default_license': 'CC0 1.0 Universal',
         'licenses_acceptable': ['CC0 1.0 Universal', 'CC-By Attribution 4.0 International', 'No license'],
@@ -98,20 +104,17 @@ PREPRINT_PROVIDERS = [
 
 def get_subject_id(name):
     if name not in SUBJECTS_CACHE:
-        subject = None
         try:
-            subject = Subject.find_one(Q('text', 'eq', name))
-        except NoResultsFound:
+            SUBJECTS_CACHE[name] = Subject.objects.filter(text=name).values_list('_id', flat=True).get()
+        except Subject.DoesNotExist:
             raise Exception('Subject: "{}" not found'.format(name))
-        else:
-            SUBJECTS_CACHE[name] = subject._id
 
     return SUBJECTS_CACHE[name]
 
 def get_license(name):
     try:
-        license = NodeLicense.find_one(Q('name', 'eq', name))
-    except NoResultsFound:
+        license = NodeLicense.objects.get(name=name)
+    except NodeLicense.DoesNotExist:
         raise Exception('License: "{}" not found'.format(name))
     return license
 

@@ -1,24 +1,20 @@
-from nose.tools import *  # flake8: noqa
+import pytest
 
 from api.base.settings.defaults import API_BASE
 
-from tests.base import ApiTestCase
+@pytest.mark.django_db
+class TestAddonsList:
 
-class TestAddonsList(ApiTestCase):
+    def test_filter_by_category(self, app):
+        url = '/{}addons/'.format(API_BASE)
+        url_storage = '{}?filter[categories]=storage'.format(url)
+        url_citations = '{}?filter[categories]=citations'.format(url)
 
-    def setUp(self):
-        super(TestAddonsList, self).setUp()
-        self.url = '/{}addons/'.format(API_BASE)
+        data_storage = app.get(url_storage).json['data']
+        data_citations = app.get(url_citations).json['data']
 
-    def test_filter_by_category(self):
-        storage_url = '{}?filter[categories]=storage'.format(self.url)
-        citations_url = '{}?filter[categories]=citations'.format(self.url)
+        for addon in data_storage:
+            assert 'storage' in addon['attributes']['categories']
 
-        storage_data = self.app.get(storage_url).json['data']
-        citations_data = self.app.get(citations_url).json['data']
-
-        for addon in storage_data:
-            assert_in('storage', addon['attributes']['categories'])
-
-        for addon in citations_data:
-            assert_in('citations', addon['attributes']['categories'])
+        for addon in data_citations:
+            assert 'citations' in addon['attributes']['categories']

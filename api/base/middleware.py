@@ -67,13 +67,12 @@ class CorsMiddleware(corsheaders.middleware.CorsMiddleware):
     _context = threading.local()
 
     def origin_not_found_in_white_lists(self, origin, url):
+        settings.CORS_ORIGIN_WHITELIST += api_settings.ORIGINS_WHITELIST
+        # Check if origin is in the dynamic custom domain whitelist
         not_found = super(CorsMiddleware, self).origin_not_found_in_white_lists(origin, url)
+        # Check if a cross-origin request using the Authorization header
         if not_found:
-            # Check if origin is in the dynamic Institutions whitelist
-            if url.netloc.lower() in api_settings.ORIGINS_WHITELIST:
-                return
-            # Check if a cross-origin request using the Authorization header
-            elif not self._context.request.COOKIES:
+            if not self._context.request.COOKIES:
                 if self._context.request.META.get('HTTP_AUTHORIZATION'):
                     return
                 elif (
