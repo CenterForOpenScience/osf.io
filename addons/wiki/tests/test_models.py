@@ -1,6 +1,6 @@
 import pytest
 
-from modularodm.exceptions import ValidationValueError
+from addons.wiki.exceptions import NameMaximumLengthError
 
 from addons.wiki.models import NodeWikiPage
 from addons.wiki.tests.factories import NodeWikiFactory
@@ -15,7 +15,7 @@ class TestNodeWikiPageModel:
     def test_page_name_cannot_be_greater_than_100_characters(self):
         bad_name = 'a' * 101
         page = NodeWikiPage(page_name=bad_name)
-        with pytest.raises(ValidationValueError):
+        with pytest.raises(NameMaximumLengthError):
             page.save()
 
     def test_is_current_with_single_version(self):

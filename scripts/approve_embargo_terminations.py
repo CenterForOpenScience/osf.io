@@ -14,7 +14,6 @@ import logging
 import django
 from django.utils import timezone
 from django.db import transaction
-from modularodm import Q
 django.setup()
 
 from framework.celery_tasks import app as celery_app
@@ -31,16 +30,16 @@ logging.basicConfig(level=logging.INFO)
 def get_pending_embargo_termination_requests():
     auto_approve_time = timezone.now() - settings.EMBARGO_TERMINATION_PENDING_TIME
 
-    return models.EmbargoTerminationApproval.find(
-        Q('initiation_date', 'lt', auto_approve_time) &
-        Q('state', 'eq', models.EmbargoTerminationApproval.UNAPPROVED)
+    return models.EmbargoTerminationApproval.objects.filter(
+        initiation_date__lt=auto_approve_time,
+        state=models.EmbargoTerminationApproval.UNAPPROVED
     )
 
 def main():
     pending_embargo_termination_requests = get_pending_embargo_termination_requests()
     count = 0
     for request in pending_embargo_termination_requests:
-        registration = models.Registration.find_one(Q('embargo_termination_approval', 'eq', request))
+        registration = models.Registration.objects.get(embargo_termination_approval=request)
         if not registration.is_embargoed:
             logger.warning("Registration {0} associated with this embargo termination request ({0}) is not embargoed.".format(
                 registration._id,

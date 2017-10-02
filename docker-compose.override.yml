@@ -10,9 +10,6 @@ services:
   admin_assets:
     volumes:
       - osf-sync:/code:nocopy
-  sharejs:
-    volumes:
-      - osf-sync:/code:nocopy
   worker:
     volumes:
       - osf-sync:/code:nocopy
@@ -33,8 +30,8 @@ services:
 #      - osf-sync:/code:nocopy
 
 #  fakecas:
-#    image: quay.io/centerforopenscience/fakecas:latest
-#    command: fakecas -host=0.0.0.0:8080 -dbaddress=172.19.0.7:27017
+#    image: quay.io/centerforopenscience/fakecas:master
+#    command: fakecas -host=0.0.0.0:8080 -osfhost=localhost:5000 -dbaddress=postgres://postgres@postgres:5432/osf?sslmode=disable
 
 #  wb:
 #    volumes:

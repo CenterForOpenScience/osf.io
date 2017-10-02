@@ -7,11 +7,13 @@ from api.base.serializers import JSONAPISerializer, LinksField, RelationshipFiel
 class PreprintProviderSerializer(JSONAPISerializer):
 
     filterable_fields = frozenset([
-        'name',
+        'allow_submissions',
         'description',
-        'id',
         'domain',
-        'domain_redirect_enabled'
+        'domain_redirect_enabled',
+        'id',
+        'name',
+        'share_publish_type',
     ])
 
     name = ser.CharField(required=True)

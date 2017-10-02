@@ -7,7 +7,6 @@ from osf.models import *  # noqa
 class NodeAdmin(ForeignKeyAutocompleteAdmin):
     fields = (
         'affiliated_institutions',
-        'alternative_citations',
         'category',
         'creator',
         'deleted_date',
