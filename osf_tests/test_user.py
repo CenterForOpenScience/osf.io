@@ -5,6 +5,8 @@ import json
 import datetime as dt
 import urlparse
 
+from django.db import connection, transaction
+from django.test.utils import CaptureQueriesContext
 from django.utils import timezone
 import mock
 import itsdangerous
@@ -344,6 +346,35 @@ class TestOSFUser:
         assert 'foo@bar.com' not in user.unconfirmed_emails
         assert user.emails.filter(address='foo@bar.com').exists()
 
+    def test_confirm_email_merge_select_for_update(self, user):
+        mergee = UserFactory(username='foo@bar.com')
+        token = user.add_unconfirmed_email('foo@bar.com')
+
+        with transaction.atomic(), CaptureQueriesContext(connection) as ctx:
+            user.confirm_email(token, merge=True)
+
+        mergee.reload()
+        assert mergee.is_merged
+        assert mergee.merged_by == user
+
+        for_update_sql = connection.ops.for_update_sql()
+        assert any(for_update_sql in query['sql'] for query in ctx.captured_queries)
+
+    @mock.patch('osf.utils.requests.settings.SELECT_FOR_UPDATE_ENABLED', False)
+    def test_confirm_email_merge_select_for_update_disabled(self, user):
+        mergee = UserFactory(username='foo@bar.com')
+        token = user.add_unconfirmed_email('foo@bar.com')
+
+        with transaction.atomic(), CaptureQueriesContext(connection) as ctx:
+            user.confirm_email(token, merge=True)
+
+        mergee.reload()
+        assert mergee.is_merged
+        assert mergee.merged_by == user
+
+        for_update_sql = connection.ops.for_update_sql()
+        assert not any(for_update_sql in query['sql'] for query in ctx.captured_queries)
+
     def test_confirm_email_comparison_is_case_insensitive(self):
         u = UnconfirmedUserFactory.build(
             username='letsgettacos@lgt.com'
@@ -491,6 +522,33 @@ class TestOSFUser:
         project.save()
         u.reload()
         assert u.display_full_name(node=project) == name
+
+    def test_repeat_add_same_unreg_user_with_diff_name(self):
+        unreg_user = UnregUserFactory()
+        project = NodeFactory()
+        old_name = unreg_user.fullname
+        project.add_unregistered_contributor(
+            fullname=old_name, email=unreg_user.username,
+            auth=Auth(project.creator)
+        )
+        project.save()
+        unreg_user.reload()
+        name_list = [contrib.fullname for contrib in project.contributors]
+        assert unreg_user.fullname in name_list
+        project.remove_contributor(contributor=unreg_user, auth=Auth(project.creator))
+        project.save()
+        project.reload()
+        assert unreg_user not in project.contributors
+        new_name = fake.name()
+        project.add_unregistered_contributor(
+            fullname=new_name, email=unreg_user.username,
+            auth=Auth(project.creator)
+        )
+        project.save()
+        unreg_user.reload()
+        project.reload()
+        unregistered_name = unreg_user.unclaimed_records[project._id].get('name', None)
+        assert new_name == unregistered_name
 
     def test_username_is_automatically_lowercased(self):
         user = UserFactory(username='nEoNiCon@bet.com')

@@ -153,13 +153,14 @@ class TestPreprintProviderChangeForm(AdminTestCase):
         formatted_rule = [[[self.parent_1._id], True]]
 
         new_data = {
+            '_id': 'newname',
             'name': 'New Name',
+            'share_publish_type': 'Preprint',
             'subjects_chosen': '{}, {}, {}, {}'.format(
                 self.parent_1.id, self.child_1.id, self.child_2.id, self.grandchild_1.id
             ),
             'toplevel_subjects': [self.parent_1.id],
             'subjects_acceptable': '[]',
-            '_id': 'newname',
             'preprint_word': 'preprint'
         }
         form = PreprintProviderForm(data=new_data)
@@ -173,6 +174,7 @@ class TestPreprintProviderChangeForm(AdminTestCase):
         new_data = {
             '_id': 'newname',
             'name': 'New Name',
+            'share_publish_type': 'Preprint',
             'subjects_chosen': '{}, {}, {}, {}'.format(
                 self.parent_1.id, self.child_1.id, self.child_2.id, self.grandchild_1.id
             ),

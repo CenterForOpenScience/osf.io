@@ -7,7 +7,7 @@
 
 <div class="row project-page">
     <!-- Begin left column -->
-    <div class="col-sm-3 affix-parent scrollspy">
+    <div class="col-md-3 col-xs-12 affix-parent scrollspy">
 
         % if 'write' in user['permissions']:
 
@@ -23,6 +23,9 @@
                             <li><a href="#configureAddonsAnchor">Configure Add-ons</a></li>
                         % endif
 
+                        % if 'admin' in user['permissions']:
+                            <li><a href="#createVolsAnchor">View-Only Links</a></li>
+                        % endif
                         <li><a href="#configureWikiAnchor">Wiki</a></li>
 
                         % if 'admin' in user['permissions']:
@@ -55,7 +58,7 @@
     <!-- End left column -->
 
     <!-- Begin right column -->
-    <div class="col-sm-9">
+    <div class="col-md-9 col-xs-12">
 
         % if 'write' in user['permissions']:  ## Begin Configure Project
 
@@ -187,6 +190,26 @@
             % endif
 
         % endif  ## End Select Addons
+
+        % if 'admin' in user['permissions']:  ## Begin create VOLS
+            % if not node['is_registration']:
+                <div class="panel panel-default">
+                    <span id="createVolsAnchor" class="anchor"></span>
+                    <div class="panel-heading clearfix">
+                        <h3 class="panel-title">View-Only Links</h3>
+                    </div>
+                    <div class="panel-body">
+                        <p>
+                            Create a link to share this project so those who have the link can view&mdash;but not edit&mdash;the project.
+                        </p>
+                        <a href="#addPrivateLink" data-toggle="modal" class="btn btn-success btn-sm">
+                          <i class="fa fa-plus"></i> Add
+                        </a>
+                        <%include file="project/private_links.mako"/>
+                    </div>
+                </div>
+            % endif
+        % endif ## End create vols
 
         % if 'write' in user['permissions']:  ## Begin Wiki Config
             % if not node['is_registration']:
@@ -527,8 +550,8 @@
 
 <%def name="stylesheets()">
     ${parent.stylesheets()}
-
     <link rel="stylesheet" href="/static/css/pages/project-page.css">
+    <link rel="stylesheet" href="/static/css/responsive-tables.css">
 </%def>
 
 <%def name="javascript_bottom()">
@@ -544,6 +567,7 @@
       window.contextVars.wiki.isEnabled = ${wiki.short_name in addons_enabled | sjson, n };
       window.contextVars.currentUser = window.contextVars.currentUser || {};
       window.contextVars.currentUser.institutions = ${ user['institutions'] | sjson, n };
+      window.contextVars.currentUser.permissions = ${ user['permissions'] | sjson, n } ;
       window.contextVars.analyticsMeta = $.extend(true, {}, window.contextVars.analyticsMeta, {
           pageMeta: {
               title: 'Settings',
@@ -553,8 +577,12 @@
     </script>
 
     <script type="text/javascript" src=${"/static/public/js/project-settings-page.js" | webpack_asset}></script>
-    <script type="text/javascript" src=${"/static/public/js/forward/node-cfg.js" | webpack_asset}></script>
+    <script src=${"/static/public/js/sharing-page.js" | webpack_asset}></script>
 
+    % if not node['is_registration']:
+        <script type="text/javascript" src=${"/static/public/js/forward/node-cfg.js" | webpack_asset}></script>
+    % endif
+    
     % for js_asset in addon_js:
         <script src="${js_asset | webpack_asset}"></script>
     % endfor

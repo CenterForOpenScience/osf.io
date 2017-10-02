@@ -1,9 +1,5 @@
-from modularodm import Q
-
-
 PREREG_CAMPAIGNS = {
     'prereg': 'Prereg Challenge',
-    'erpc': 'Election Research Preacceptance Competition',
 }
 
 
@@ -27,7 +23,4 @@ def get_prereg_schema(campaign='prereg'):
         raise ValueError('campaign must be one of: {}'.format(', '.join(PREREG_CAMPAIGNS.keys())))
     schema_name = PREREG_CAMPAIGNS[campaign]
 
-    return MetaSchema.find_one(
-        Q('name', 'eq', schema_name) &
-        Q('schema_version', 'eq', 2)
-    )
+    return MetaSchema.objects.get(name=schema_name, schema_version=2)

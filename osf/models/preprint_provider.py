@@ -2,8 +2,6 @@
 from django.db import models
 from django.contrib.postgres import fields
 
-from modularodm import Q
-
 from osf.models.base import BaseModel, ObjectIDMixin
 from osf.models.licenses import NodeLicense
 from osf.models.subject import Subject
@@ -14,6 +12,11 @@ from website.util import api_v2_url
 
 
 class PreprintProvider(ObjectIDMixin, BaseModel):
+
+    PUSH_SHARE_TYPE_CHOICES = (('Preprint', 'Preprint'),
+                               ('Thesis', 'Thesis'),)
+    PUSH_SHARE_TYPE_HELP = 'This SHARE type will be used when pushing publications to SHARE'
+
     name = models.CharField(null=False, max_length=128)  # max length on prod: 22
     description = models.TextField(default='', blank=True)
     domain = models.URLField(blank=True, default='', max_length=200)
@@ -28,6 +31,10 @@ class PreprintProvider(ObjectIDMixin, BaseModel):
     social_facebook = models.CharField(null=True, blank=True, max_length=200)  # max length on prod: 8
     social_instagram = models.CharField(null=True, blank=True, max_length=200)  # max length on prod: 8
     footer_links = models.TextField(default='', blank=True)
+    share_publish_type = models.CharField(choices=PUSH_SHARE_TYPE_CHOICES,
+                                          default='Preprint',
+                                          help_text=PUSH_SHARE_TYPE_HELP,
+                                          max_length=32)
     share_source = models.CharField(blank=True, max_length=200)
     share_title = models.TextField(default='', blank=True)
     allow_submissions = models.BooleanField(default=True)
@@ -94,12 +101,13 @@ def rules_to_subjects(rules):
         return Subject.objects.filter(provider___id='osf')
     q = []
     for rule in rules:
+        parent_from_rule = Subject.load(rule[0][-1])
         if rule[1]:
-            q.append(Q('parent', 'eq', Subject.load(rule[0][-1])))
+            q.append(models.Q(parent=parent_from_rule))
             if len(rule[0]) == 1:
-                potential_parents = Subject.find(Q('parent', 'eq', Subject.load(rule[0][-1])))
+                potential_parents = Subject.objects.filter(parent=parent_from_rule)
                 for parent in potential_parents:
-                    q.append(Q('parent', 'eq', parent))
+                    q.append(models.Q(parent=parent))
         for sub in rule[0]:
-            q.append(Q('_id', 'eq', sub))
-    return Subject.find(reduce(lambda x, y: x | y, q)) if len(q) > 1 else (Subject.find(q[0]) if len(q) else Subject.find())
+            q.append(models.Q(_id=sub))
+    return Subject.objects.filter(reduce(lambda x, y: x | y, q)) if len(q) > 1 else (Subject.objects.filter(q[0]) if len(q) else Subject.objects.all())

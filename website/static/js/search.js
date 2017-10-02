@@ -9,7 +9,6 @@ var History = require('exports?History!history');
 var siteLicenses = require('js/licenses');
 var licenses = siteLicenses.list;
 var DEFAULT_LICENSE = siteLicenses.DEFAULT_LICENSE;
-var OTHER_LICENSE = siteLicenses.OTHER_LICENSE;  // TODO: Why is this required? Is it? See [#OSF-6100]
 
 var $osf = require('js/osfHelpers');
 
@@ -66,7 +65,7 @@ var User = function(result){
     self.url = result.url;
     self.user = result.user;
 
-    $.ajax('/api/v1'+ result.url).success(function(data){
+    $.ajax('/api/v1'+ result.url).done(function(data){
         if (typeof data.profile !== 'undefined') {
             self.gravatarUrl(data.profile.gravatar_url);
         }
@@ -371,7 +370,7 @@ var ViewModel = function(params) {
             }
         };
 
-        $osf.postJSON(url, jsonData).success(function(data) {
+        $osf.postJSON(url, jsonData).done(function(data) {
 
             //Clear out our variables
             self.tags([]);
@@ -469,7 +468,7 @@ var ViewModel = function(params) {
                 self.pushState();
             }
 
-            $osf.postJSON(window.contextVars.shareUrl + 'api/v2/search/creativeworks/_count', shareQuery).success(function(data) {
+            $osf.postJSON(window.contextVars.shareUrl + 'api/v2/search/creativeworks/_count', shareQuery).done(function(data) {
                 if(data.count > 0) {
                     self.shareCategory(new Category('SHARE', data.count, 'SHARE'));
                 }

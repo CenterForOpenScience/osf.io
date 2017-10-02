@@ -9,7 +9,6 @@ require('knockout-sortable');
 
 var $osf = require('./osfHelpers');
 var koHelpers = require('./koHelpers');
-var m = require('mithril');
 require('js/objectCreateShim');
 
 // Adapted from Django URLValidator
@@ -731,6 +730,14 @@ SocialViewModel.prototype.unserialize = function(data) {
     var self = this;
     var websiteValue = [];
     $.each(data || {}, function(key, value) {
+        if (key === 'profileWebsites') {
+            value = value.map(function(website) {
+                return $osf.decodeText(website);
+            });
+        } else {
+            value = $osf.decodeText(value);
+        }
+
         if (ko.isObservable(self[key]) && key === 'profileWebsites') {
             if (value && value.length === 0) {
                 value.push(ko.observable('').extend({
@@ -924,6 +931,9 @@ ListViewModel.prototype.unserialize = function(data) {
         self.editable(false);
     }
     self.contents(ko.utils.arrayMap(data.contents || [], function (each) {
+        for (var attr in each) {
+            each[attr] = $osf.decodeText(each[attr]);
+        }
         return new self.ContentModel(self).unserialize(each);
     }));
 

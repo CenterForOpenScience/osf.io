@@ -5,20 +5,19 @@ import os
 
 import requests
 from dateutil.parser import parse as parse_date
-from django.core.exceptions import ObjectDoesNotExist
 from django.db import models
 from django.db.models import Manager
+from django.core.exceptions import ObjectDoesNotExist
 from django.utils import timezone
-from modularodm.exceptions import NoResultsFound
 from typedmodels.models import TypedModel, TypedModelManager
 from include import IncludeManager
 
 from framework.analytics import get_basic_counters
+from framework import sentry
 from osf.models.base import BaseModel, OptionalGuidMixin, ObjectIDMixin
 from osf.models.comment import CommentableMixin
 from osf.models.mixins import Taggable
 from osf.models.validators import validate_location
-from osf.modm_compat import Q
 from osf.utils.datetime_aware_jsonfield import DateTimeAwareJSONField
 from osf.utils.fields import NonNaiveDateTimeField
 from website.files import utils
@@ -37,7 +36,7 @@ PROVIDER_MAP = {}
 logger = logging.getLogger(__name__)
 
 
-class BaseFileNodeManager(TypedModelManager):
+class BaseFileNodeManager(TypedModelManager, IncludeManager):
 
     def get_queryset(self):
         qs = super(BaseFileNodeManager, self).get_queryset()
@@ -165,6 +164,12 @@ class BaseFileNode(TypedModel, CommentableMixin, OptionalGuidMixin, Taggable, Ob
         """The comment page type associated with StoredFileNodes."""
         return 'files'
 
+    @property
+    def current_version_number(self):
+        if self.history:
+            return len(self.history)
+        return 1
+
     @classmethod
     def create(cls, **kwargs):
         kwargs.update(provider=cls._provider)
@@ -184,9 +189,7 @@ class BaseFileNode(TypedModel, CommentableMixin, OptionalGuidMixin, Taggable, Ob
         materialized_path = '/' + materialized_path.lstrip('/')
         if materialized_path.endswith('/'):
             # it's a folder
-            folder_children = cls.find(Q('provider', 'eq', provider) &
-                                       Q('node', 'eq', node) &
-                                       Q('_materialized_path', 'startswith', materialized_path))
+            folder_children = cls.objects.filter(provider=provider, node=node, _materialized_path__startswith=materialized_path)
             for item in folder_children:
                 if item.kind == 'file':
                     guid = item.get_guid()
@@ -195,9 +198,10 @@ class BaseFileNode(TypedModel, CommentableMixin, OptionalGuidMixin, Taggable, Ob
         else:
             # it's a file
             try:
-                file_obj = cls.find_one(
-                    Q('node', 'eq', node) & Q('_materialized_path', 'eq', materialized_path))
-            except NoResultsFound:
+                file_obj = cls.objects.get(
+                    node=node, _materialized_path=materialized_path
+                )
+            except cls.DoesNotExist:
                 return guids
             guid = file_obj.get_guid()
             if guid:
@@ -219,7 +223,7 @@ class BaseFileNode(TypedModel, CommentableMixin, OptionalGuidMixin, Taggable, Ob
         :param user: The user with checked out files
         :return: A queryset of all FileNodes checked out by user
         """
-        return cls.find(Q('checkout', 'eq', user))
+        return cls.objects.filter(checkout=user)
 
     @classmethod
     def resolve_class(cls, provider, type_integer):
@@ -441,15 +445,13 @@ class File(models.Model):
             version.save()
             self.versions.add(version)
         for entry in self.history:
+            # Some entry might have an undefined modified field
+            if data['modified'] is not None and entry['modified'] is not None and data['modified'] < entry['modified']:
+                sentry.log_message('update() receives metatdata older than the newest entry in file history.')
             if ('etag' in entry and 'etag' in data) and (entry['etag'] == data['etag']):
                 break
         else:
-            # Insert into history if there is no matching etag
-            if data.get('modified'):
-                utils.insort(self.history, data, lambda x: x['modified'])
-            # If modified not included in the metadata, insert at the end of the history
-            else:
-                self.history.append(data)
+            self.history.append(data)
 
         # Finally update last touched
         self.last_touched = timezone.now()
@@ -532,10 +534,7 @@ class Folder(models.Model):
         return child
 
     def find_child_by_name(self, name, kind=2):
-        return self.resolve_class(self.provider, kind).find_one(
-            Q('name', 'eq', name) &
-            Q('parent', 'eq', self)
-        )
+        return self.resolve_class(self.provider, kind).objects.get(name=name, parent=self)
 
     def serialize(self):
         return self._serialize()
@@ -673,15 +672,15 @@ class FileVersion(ObjectIDMixin, BaseModel):
             # Shouldn't ever happen, but we already have an archive
             return True  # We've found ourself
 
-        other = self.__class__.find(
-            Q('_id', 'ne', self._id) &
-            Q('metadata.sha256', 'eq', self.metadata['sha256']) &
-            Q('metadata.archive', 'ne', None) &
-            Q('metadata.vault', 'ne', None)
-        ).first()
-        if not other:
+        other = self.__class__.objects.filter(
+            metadata__sha256=self.metadata['sha256']
+        ).exclude(
+            _id=self._id, metadata__archive__is_null=True, metadata__vault__is_null=True
+        )
+        if not other.exists():
             return False
         try:
+            other = other.first()
             self.metadata['vault'] = other.metadata['vault']
             self.metadata['archive'] = other.metadata['archive']
         except KeyError:
@@ -691,4 +690,4 @@ class FileVersion(ObjectIDMixin, BaseModel):
         return True
 
     class Meta:
-        ordering = ('date_created',)
+        ordering = ('-date_created',)

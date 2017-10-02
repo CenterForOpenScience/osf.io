@@ -1,5 +1,4 @@
-from modularodm.exceptions import ValidationError
-from modularodm import Q
+from django.core.exceptions import ValidationError
 from rest_framework import exceptions
 from rest_framework import serializers as ser
 
@@ -75,6 +74,13 @@ class PreprintSerializer(JSONAPISerializer):
     is_published = ser.BooleanField(required=False)
     is_preprint_orphan = ser.BooleanField(read_only=True)
     license_record = NodeLicenseSerializer(required=False, source='license')
+    title = ser.CharField(source='node.title', required=False)
+    description = ser.CharField(required=False, allow_blank=True, allow_null=True, source='node.description')
+
+    contributors = RelationshipField(
+        related_view='nodes:node-contributors',
+        related_view_kwargs={'node_id': '<node._id>'},
+    )
 
     citation = RelationshipField(
         related_view='preprints:preprint-citation',
@@ -167,6 +173,10 @@ class PreprintSerializer(JSONAPISerializer):
             self.set_field(preprint.set_primary_file, primary_file, auth)
             save_node = True
 
+        if 'node' in validated_data:
+            preprint.node.update(fields=validated_data.pop('node'))
+            save_node = True
+
         if 'subjects' in validated_data:
             subjects = validated_data.pop('subjects', None)
             self.set_field(preprint.set_subjects, subjects, auth)
@@ -183,9 +193,13 @@ class PreprintSerializer(JSONAPISerializer):
 
         published = validated_data.pop('is_published', None)
         if published is not None:
+            if not preprint.primary_file:
+                raise exceptions.ValidationError(detail='A valid primary_file must be set before publishing a preprint.')
             self.set_field(preprint.set_published, published, auth)
             save_preprint = True
             recently_published = published
+            preprint.node.set_privacy('public')
+            save_node = True
 
         if save_node:
             try:
@@ -212,9 +226,7 @@ class PreprintSerializer(JSONAPISerializer):
             func(val, auth)
         except PermissionsError as e:
             raise exceptions.PermissionDenied(detail=e.message)
-        except ValueError as e:
-            raise exceptions.ValidationError(detail=e.message)
-        except NodeStateError as e:
+        except (ValueError, ValidationError, NodeStateError) as e:
             raise exceptions.ValidationError(detail=e.message)
 
 
@@ -223,30 +235,26 @@ class PreprintCreateSerializer(PreprintSerializer):
     id = IDField(source='_id', required=False, allow_null=True)
 
     def create(self, validated_data):
-        node = validated_data.pop('node', None)
-        if not node:
-            raise exceptions.NotFound('Unable to find Node with specified id.')
-        elif node.is_deleted:
+        node = validated_data.pop('node', {})
+        if isinstance(node, dict):
+            node = Node.objects.create(creator=self.context['request'].user, **node)
+
+        if node.is_deleted:
             raise exceptions.ValidationError('Cannot create a preprint from a deleted node.')
 
         auth = get_user_auth(self.context['request'])
         if not node.has_permission(auth.user, permissions.ADMIN):
             raise exceptions.PermissionDenied
 
-        primary_file = validated_data.pop('primary_file', None)
-        if not primary_file:
-            raise exceptions.ValidationError(detail='You must specify a valid primary_file to create a preprint.')
-
         provider = validated_data.pop('provider', None)
         if not provider:
             raise exceptions.ValidationError(detail='You must specify a valid provider to create a preprint.')
 
-        if PreprintService.find(Q('node', 'eq', node) & Q('provider', 'eq', provider)).count():
-            conflict = PreprintService.find_one(Q('node', 'eq', node) & Q('provider', 'eq', provider))
-            raise Conflict('Only one preprint per provider can be submitted for a node. Check `meta[existing_resource_id]`.', meta={'existing_resource_id': conflict._id})
+        node_preprints = node.preprints.filter(provider=provider)
+        if node_preprints.exists():
+            raise Conflict('Only one preprint per provider can be submitted for a node. Check `meta[existing_resource_id]`.', meta={'existing_resource_id': node_preprints.first()._id})
 
         preprint = PreprintService(node=node, provider=provider)
-        self.set_field(preprint.set_primary_file, primary_file, auth)
         preprint.save()
         preprint.node._has_abandoned_preprint = True
         preprint.node.save()
