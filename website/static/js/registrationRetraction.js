@@ -3,11 +3,9 @@
 **/
 'use strict';
 
-var $ = require('jquery');
 var $osf = require('js/osfHelpers');
 
 var ko = require('knockout');
-var koHelpers = require('js/koHelpers');
 require('knockout.validation');
 
 var ChangeMessageMixin = require('js/changeMessage');

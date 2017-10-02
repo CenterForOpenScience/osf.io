@@ -3,7 +3,7 @@
 import httplib as http
 
 from flask import request
-from modularodm.exceptions import ValidationError, ValidationValueError
+from django.core.exceptions import ValidationError
 
 from framework import forms, status
 from framework.auth import cas
@@ -165,7 +165,7 @@ def deserialize_contributors(node, user_dicts, auth, validate=False):
             # up to the invalid entry will be saved. (communicate to the user what needs to be retried)
             fullname = sanitize.strip_html(fullname)
             if not fullname:
-                raise ValidationValueError('Full name field cannot be empty')
+                raise ValidationError('Full name field cannot be empty')
             if email:
                 validate_email(email)  # Will raise a ValidationError if email invalid
 
@@ -633,6 +633,7 @@ def claim_user_registered(auth, node, **kwargs):
     session.data['unreg_user'] = {
         'uid': uid, 'pid': pid, 'token': token
     }
+    session.save()
 
     form = PasswordForm(request.form)
     if request.method == 'POST':
@@ -745,7 +746,7 @@ def claim_user_form(auth, **kwargs):
             status.push_status_message(language.CLAIMED_CONTRIBUTOR, kind='success', trust=True)
             # Redirect to CAS and authenticate the user with a verification key.
             return redirect(cas.get_login_url(
-                web_url_for('view_project', pid=pid, _absolute=True),
+                web_url_for('resolve_guid', guid=pid, _absolute=True),
                 username=user.username,
                 verification_key=user.verification_key
             ))

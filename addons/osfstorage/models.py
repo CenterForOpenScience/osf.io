@@ -4,13 +4,11 @@ import logging
 
 from django.apps import apps
 from django.db import models, connection
-from modularodm import Q
 from psycopg2._psycopg import AsIs
 
 from addons.base.models import BaseNodeSettings, BaseStorageAddon
 from osf.exceptions import InvalidTagError, NodeStateError, TagNotFoundError
-from osf.models import (File, FileVersion, Folder, Guid,
-                        TrashedFileNode, BaseFileNode)
+from osf.models import File, FileVersion, Folder, TrashedFileNode, BaseFileNode
 from osf.utils.auth import Auth
 from website.files import exceptions
 from website.files import utils as files_utils
@@ -64,7 +62,7 @@ class OsfStorageFileNode(BaseFileNode):
 
     @classmethod
     def get(cls, _id, node):
-        return cls.find_one(Q('_id', 'eq', _id) & Q('node', 'eq', node))
+        return cls.objects.get(_id=_id, node=node)
 
     @classmethod
     def get_or_create(cls, node, path):
@@ -104,10 +102,7 @@ class OsfStorageFileNode(BaseFileNode):
             for item in children:
                 guids.extend(cls.get_file_guids(item.path, provider, node=node))
         else:
-            try:
-                guid = Guid.find(Q('referent', 'eq', file_obj))[0]
-            except IndexError:
-                guid = None
+            guid = file_obj.get_guid()
             if guid:
                 guids.append(guid._id)
 
@@ -128,6 +123,11 @@ class OsfStorageFileNode(BaseFileNode):
     def is_checked_out(self):
         return self.checkout is not None
 
+    # overrides BaseFileNode
+    @property
+    def current_version_number(self):
+        return self.versions.count() or 1
+
     def _check_delete_allowed(self):
         if self.is_preprint_primary:
             raise exceptions.FileNodeIsPrimaryFile()
@@ -144,12 +144,19 @@ class OsfStorageFileNode(BaseFileNode):
         self._materialized_path = self.materialized_path
         return super(OsfStorageFileNode, self).delete(user=user, parent=parent) if self._check_delete_allowed() else None
 
+    def copy_under(self, destination_parent, name=None):
+        if self.node.is_quickfiles:
+            raise exceptions.FileNodeIsQuickFilesNode()
+        return super(OsfStorageFileNode, self).copy_under(destination_parent, name)
+
     def move_under(self, destination_parent, name=None):
         if self.is_preprint_primary:
             if self.node != destination_parent.node or self.provider != destination_parent.provider:
                 raise exceptions.FileNodeIsPrimaryFile()
         if self.is_checked_out:
             raise exceptions.FileNodeCheckedOutError()
+        if self.node.is_quickfiles and self.node != destination_parent.node:
+            raise exceptions.FileNodeIsQuickFilesNode()
         return super(OsfStorageFileNode, self).move_under(destination_parent, name)
 
     def check_in_or_out(self, user, checkout, save=False):
@@ -212,10 +219,7 @@ class OsfStorageFile(OsfStorageFileNode, File):
 
     @property
     def history(self):
-        metadata = []
-        for meta in self.versions.values_list('metadata', flat=True):
-            metadata.append(meta)
-        return metadata
+        return list(self.versions.values_list('metadata', flat=True))
 
     @history.setter
     def history(self, value):
@@ -258,12 +262,12 @@ class OsfStorageFile(OsfStorageFileNode, File):
     def get_version(self, version=None, required=False):
         if version is None:
             if self.versions.exists():
-                return self.versions.last()
+                return self.versions.first()
             return None
 
         try:
-            return self.versions.all()[int(version) - 1]
-        except (IndexError, ValueError):
+            return self.versions.get(identifier=version)
+        except FileVersion.DoesNotExist:
             if required:
                 raise exceptions.VersionNotFoundError(version)
             return None

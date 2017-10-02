@@ -4,7 +4,7 @@ import urlparse
 
 import furl
 from django.core.exceptions import ObjectDoesNotExist
-from modularodm import Q
+from django.db.models import Q
 from rest_framework.exceptions import NotFound
 from rest_framework.reverse import reverse
 
@@ -13,9 +13,10 @@ from api.base.exceptions import Gone, UserGone
 from framework.auth import Auth
 from framework.auth.cas import CasResponse
 from framework.auth.oauth_scopes import ComposedScopes, normalize_scopes
-from osf.models import OSFUser
+from osf.models import OSFUser, Node, Registration
 from osf.models.base import GuidMixin
 from osf.modm_compat import to_django_query
+from osf.utils.requests import check_select_for_update
 from website import settings as website_settings
 from website import util as website_util  # noqa
 
@@ -75,8 +76,9 @@ def absolute_reverse(view_name, query_kwargs=None, args=None, kwargs=None):
     return url
 
 
-def get_object_or_error(model_cls, query_or_pk, display_name=None):
+def get_object_or_error(model_cls, query_or_pk, request, display_name=None):
     obj = query = None
+    select_for_update = check_select_for_update(request)
     if isinstance(query_or_pk, basestring):
         # they passed a 5-char guid as a string
         if issubclass(model_cls, GuidMixin):
@@ -88,14 +90,14 @@ def get_object_or_error(model_cls, query_or_pk, display_name=None):
                 query = {model_cls.primary_identifier_name: query_or_pk}
             else:
                 # fall back to modmcompatiblity's load method since we don't know their PIN
-                obj = model_cls.load(query_or_pk)
+                obj = model_cls.load(query_or_pk, select_for_update=select_for_update)
     else:
         # they passed a query
         if hasattr(model_cls, 'primary_identifier_name'):
             query = to_django_query(query_or_pk, model_cls=model_cls)
         else:
             # fall back to modmcompatibility's find_one
-            obj = model_cls.find_one(query_or_pk)
+            obj = model_cls.find_one(query_or_pk, select_for_update=select_for_update)
 
     if not obj:
         if not query:
@@ -104,9 +106,9 @@ def get_object_or_error(model_cls, query_or_pk, display_name=None):
         try:
             # TODO This could be added onto with eager on the queryset and the embedded fields of the api
             if isinstance(query, dict):
-                obj = model_cls.objects.get(**query)
+                obj = model_cls.objects.get(**query) if not select_for_update else model_cls.objects.filter(**query).select_for_update().get()
             else:
-                obj = model_cls.objects.get(query)
+                obj = model_cls.objects.get(query) if not select_for_update else model_cls.objects.filter(query).select_for_update().get()
         except ObjectDoesNotExist:
             raise NotFound
 
@@ -151,20 +153,21 @@ def waterbutler_url_for(request_type, provider, path, node_id, token, obj_args=N
     url.args.update(query)
     return url.url
 
-def default_node_list_query():
-    return (
-        Q('is_deleted', 'ne', True) &
-        Q('type', 'eq', 'osf.node')
-    )
+def default_node_list_queryset():
+    return Node.objects.filter(is_deleted=False)
 
+def default_node_permission_queryset(user):
+    if user.is_anonymous:
+        return Node.objects.filter(is_public=True)
+    return Node.objects.filter(Q(is_public=True) | Q(contributor__user_id=user.pk))
 
-def default_node_permission_query(user):
-    permission_query = Q('is_public', 'eq', True)
-    if not user.is_anonymous:
-        permission_query = (permission_query | Q('contributors', 'eq', user.pk))
+def default_registration_list_queryset():
+    return Registration.objects.filter(is_deleted=False)
 
-    return permission_query
-
+def default_registration_permission_queryset(user):
+    if user.is_anonymous:
+        return Registration.objects.filter(is_public=True)
+    return Registration.objects.filter(Q(is_public=True) | Q(contributor__user_id=user.pk))
 
 def extend_querystring_params(url, params):
     scheme, netloc, path, query, _ = urlparse.urlsplit(url)
@@ -172,7 +175,6 @@ def extend_querystring_params(url, params):
     orig_params.update(params)
     query = urllib.urlencode(orig_params, True)
     return urlparse.urlunsplit([scheme, netloc, path, query, ''])
-
 
 def extend_querystring_if_key_exists(url, request, key):
     if key in request.query_params.keys():

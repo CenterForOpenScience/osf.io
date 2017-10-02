@@ -5,7 +5,6 @@ import logging
 import django
 from django.db import transaction
 from django.utils import timezone
-from modularodm import Q
 django.setup()
 
 from framework.auth import Auth
@@ -23,7 +22,7 @@ logging.basicConfig(level=logging.INFO)
 
 
 def main(dry_run=True):
-    pending_retractions = Retraction.find(Q('state', 'eq', Retraction.UNAPPROVED))
+    pending_retractions = Retraction.objects.filter(state=Retraction.UNAPPROVED)
     for retraction in pending_retractions:
         if should_be_retracted(retraction):
             if dry_run:

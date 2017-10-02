@@ -150,10 +150,16 @@ def map_preprints_to_custom_subjects(custom_provider, merge_dict, dry_run=False)
         new_hier = [s.object_hierarchy for s in preprint.subjects.exclude(children__in=preprint.subjects.all())]
         logger.info('Successfully migrated preprint {}.\n\tOld hierarchy:{}\n\tNew hierarchy:{}'.format(preprint.id, old_hier, new_hier))
 
-def migrate(provider=None, data=None, dry_run=False, copy=False, add_missing=False):
+def migrate(provider=None, share_title=None, data=None, dry_run=False, copy=False, add_missing=False):
     custom_provider = PreprintProvider.objects.filter(_id=provider).first()
     assert custom_provider, 'Unable to find specified provider: {}'.format(provider)
     assert custom_provider.id != BEPRESS_PROVIDER.id, 'Cannot add custom mapping to BePress provider'
+    assert not custom_provider.subjects.exists(), 'Provider aldready has a custom taxonomy'
+    if custom_provider.share_title in [None, '', 'bepress']:
+        if not share_title:
+            raise RuntimeError('`--share-title` is required if not already set on the provider')
+        custom_provider.share_title = share_title
+        custom_provider.save()
     missing = validate_input(custom_provider, data, copy=copy, add_missing=add_missing)
     do_create_subjects(custom_provider, data['include'], data.get('exclude', []), copy=copy, add_missing=add_missing, missing=missing)
     do_custom_mapping(custom_provider, data.get('custom', {}))
@@ -182,7 +188,7 @@ class Command(BaseCommand):
             action='store',
             dest='provider',
             required=True,
-            help='_id of the PreprintProvider object, e.g. "osf"'
+            help='_id of the PreprintProvider object, e.g. "osf". Provider is expected to not already have a custom taxonomy.'
         )
         parser.add_argument(
             '--from-subjects-acceptable',
@@ -196,11 +202,19 @@ class Command(BaseCommand):
             dest='add_missing',
             help='Adds "used-but-not-included" subjects.'
         )
+        parser.add_argument(
+            '--share-title',
+            action='store',
+            type=str,
+            dest='share_title',
+            help='Sets <provider>.share_title. Ignored if already set on provider, required if not.'
+        )
 
     def handle(self, *args, **options):
         dry_run = options.get('dry_run')
         provider = options['provider']
         data = json.loads(options['data'] or '{}')
+        share_title = options.get('share_title')
         copy = options.get('from_subjects_acceptable')
         add_missing = options.get('add_missing')
         if copy:
@@ -208,6 +222,6 @@ class Command(BaseCommand):
         if not dry_run:
             script_utils.add_file_logger(logger, __file__)
         with transaction.atomic():
-            migrate(provider=provider, data=data, dry_run=dry_run, copy=copy, add_missing=add_missing)
+            migrate(provider=provider, share_title=share_title, data=data, dry_run=dry_run, copy=copy, add_missing=add_missing)
             if dry_run:
                 raise RuntimeError('Dry run, transaction rolled back.')

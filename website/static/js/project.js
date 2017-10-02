@@ -6,9 +6,7 @@
 var $ = require('jquery');
 var bootbox = require('bootbox');
 var Raven = require('raven-js');
-var m = require('mithril');
 var ko = require('knockout');
-var LogFeed = require('js/components/logFeed.js');
 
 
 var $osf = require('js/osfHelpers');
@@ -134,7 +132,7 @@ NodeActions.beforeTemplate = function(url, done) {
     $.ajax({
         url: url,
         contentType: 'application/json'
-    }).success(function(response) {
+    }).done(function(response) {
         bootbox.confirm({
             message: $osf.joinPrompts(response.prompts,
                 ('<h4>Are you sure you want to create a new project using this project as a template?</h4>' +
