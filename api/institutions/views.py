@@ -39,6 +39,7 @@ class InstitutionMixin(object):
         inst = get_object_or_error(
             Institution,
             self.kwargs[self.institution_lookup_url_kwarg],
+            self.request,
             display_name='institution'
         )
         return inst

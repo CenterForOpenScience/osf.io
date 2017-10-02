@@ -62,6 +62,7 @@ class RegistrationMixin(NodeMixin):
         node = get_object_or_error(
             AbstractNode,
             self.kwargs[self.node_lookup_url_kwarg],
+            self.request,
             display_name='node'
 
         )
