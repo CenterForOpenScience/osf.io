@@ -43,6 +43,7 @@ class CollectionMixin(object):
         node = get_object_or_error(
             Collection,
             self.kwargs[self.node_lookup_url_kwarg],
+            self.request,
             display_name='collection'
         )
         # Nodes that are folders/collections are treated as a separate resource, so if the client
@@ -582,6 +583,7 @@ class NodeLinksDetail(JSONAPIBaseView, generics.RetrieveDestroyAPIView, Collecti
         node_link = get_object_or_error(
             NodeRelation,
             self.kwargs[node_link_lookup_url_kwarg],
+            self.request,
             'node link'
         )
         # May raise a permission denied
