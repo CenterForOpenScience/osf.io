@@ -1759,7 +1759,7 @@ def make_url_map(app):
     # NOTE: We use nginx to serve static addon assets in production
     addon_base_path = os.path.abspath('addons')
     provider_static_path = os.path.abspath('assets')
-    if settings.DEV_MODE:
+    if settings.DEV_MODE or settings.to_bool('USE_STATIC_FILES', False):
         @app.route('/static/addons/<addon>/<path:filename>')
         def addon_static(addon, filename):
             addon_path = os.path.join(addon_base_path, addon, 'static')
