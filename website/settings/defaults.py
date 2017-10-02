@@ -206,11 +206,11 @@ WIKI_WHITELIST = {
     'attributes': [
         'align', 'alt', 'border', 'cite', 'class', 'dir',
         'height', 'href', 'id', 'src', 'style', 'title', 'type', 'width',
-        'face', 'size', # font tags
+        'face', 'size',  # font tags
         'salign', 'align', 'wmode', 'target',
     ],
     # Styles currently used in Reproducibility Project wiki pages
-    'styles' : [
+    'styles': [
         'top', 'left', 'width', 'height', 'position',
         'background', 'font-size', 'text-align', 'z-index',
         'list-style',
@@ -469,7 +469,7 @@ else:
         },
         'refresh_addons': {
             'task': 'scripts.refresh_addon_tokens',
-            'schedule': crontab(minute=0, hour= 2),  # Daily 2:00 a.m
+            'schedule': crontab(minute=0, hour=2),  # Daily 2:00 a.m
             'kwargs': {'dry_run': False, 'addons': {
                 'box': 60,          # https://docs.box.com/docs/oauth-20#section-6-using-the-access-and-refresh-tokens
                 'googledrive': 14,  # https://developers.google.com/identity/protocols/OAuth2#expiration

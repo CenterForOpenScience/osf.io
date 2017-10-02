@@ -49,16 +49,7 @@ from modularodm.query.querydialect import DefaultQueryDialect as Q
 django.setup()
 
 from framework.auth import Auth
-from framework.auth import utils
-from osf_tests.factories import (
-    fake_email,
-    NodeFactory,
-    PreprintFactory,
-    PreprintProviderFactory,
-    ProjectFactory,
-    RegistrationFactory,
-    UserFactory,
-)
+from osf_tests.factories import UserFactory, ProjectFactory, NodeFactory, RegistrationFactory, PreprintFactory, PreprintProviderFactory, fake_email
 from osf import models
 from website.app import init_app
 
