@@ -1660,7 +1660,7 @@ def make_url_map(app):
     # Set up static routing for addons
     # NOTE: We use nginx to serve static addon assets in production
     addon_base_path = os.path.abspath('addons')
-    if settings.DEV_MODE:
+    if settings.DEV_MODE or settings.to_bool('USE_STATIC_FILES', False):
         from flask import stream_with_context, Response
         import requests
 
