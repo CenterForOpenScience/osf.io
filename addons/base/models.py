@@ -13,7 +13,6 @@ from osf.models.base import BaseModel, ObjectIDMixin
 from osf.models.external import ExternalAccount
 from osf.models.node import AbstractNode
 from osf.models.user import OSFUser
-from osf.modm_compat import Q
 from osf.utils.datetime_aware_jsonfield import DateTimeAwareJSONField
 from website import settings
 from addons.base import logger, serializer
@@ -319,10 +318,7 @@ class BaseOAuthUserSettings(BaseUserSettings):
         except KeyError:
             pass
         else:
-            connected = Model.find(Q('user_settings', 'eq', user_settings))
-            for node_settings in connected:
-                node_settings.user_settings = self
-                node_settings.save()
+            Model.objects.filter(user_settings=user_settings).update(user_settings=self)
 
         self.save()
 
@@ -390,18 +386,6 @@ class BaseNodeSettings(BaseAddonSettings):
             'node_settings_template': os.path.basename(self.config.node_settings_template),
         })
         return ret
-
-    def render_config_error(self, data):
-        """
-
-        """
-        # Note: `config` is added to `self` in `AddonConfig::__init__`.
-        template = lookup.get_template('project/addon/config_error.mako')
-        return template.get_def('config_error').render(
-            title=self.config.full_name,
-            name=self.config.short_name,
-            **data
-        )
 
     #############
     # Callbacks #

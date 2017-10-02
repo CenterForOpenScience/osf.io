@@ -1,4 +1,5 @@
 import pytest
+import uuid
 
 from api.base.settings.defaults import API_BASE
 from api_tests import utils
@@ -11,11 +12,23 @@ from osf_tests.factories import (
     InstitutionFactory,
 )
 from osf_tests.utils import mock_archive
+from website import settings
 from website.project.metadata.schemas import LATEST_SCHEMA_VERSION
+from website.search import elastic_search
 from website.search import search
+
 
 @pytest.mark.django_db
 class ApiSearchTestCase:
+
+    @pytest.fixture(autouse=True)
+    def index(self):
+        settings.ELASTIC_INDEX = uuid.uuid4().hex
+        elastic_search.INDEX = settings.ELASTIC_INDEX
+
+        search.create_index(elastic_search.INDEX)
+        yield
+        search.delete_index(elastic_search.INDEX)
 
     @pytest.fixture()
     def user(self):
@@ -88,17 +101,6 @@ class ApiSearchTestCase:
     def file_private(self, component_private, user_one):
         return utils.create_test_file(component_private, user_one, filename='Wavves.mp3')
 
-    @pytest.fixture()
-    def cleanup(self):
-        # Cleanup needed before first test to make sure no cached results returned.
-        search.delete_all()
-
-    @pytest.fixture()
-    def delete_all(self):
-        # Delete search engine cache at the end of each test method.
-        yield
-        search.delete_all()
-
 class TestSearch(ApiSearchTestCase):
 
     @pytest.fixture()
@@ -106,9 +108,9 @@ class TestSearch(ApiSearchTestCase):
         return '/{}search/'.format(API_BASE)
 
     def test_search_results(
-        self, app, cleanup, url_search, user, user_one, user_two,
+        self, app, url_search, user, user_one, user_two,
         institution, component, component_private, component_public, file_component,
-        file_private, file_public, project, project_public, project_private, delete_all):
+        file_private, file_public, project, project_public, project_private):
 
         #test_search_no_auth
         res = app.get(url_search)
@@ -188,7 +190,7 @@ class TestSearchComponents(ApiSearchTestCase):
 
     def test_search_components(
         self, app, url_component_search, user, user_one, user_two,
-        component, component_public, component_private, delete_all):
+        component, component_public, component_private):
 
         #test_search_public_component_no_auth
         res = app.get(url_component_search)
@@ -296,7 +298,7 @@ class TestSearchFiles(ApiSearchTestCase):
     def url_file_search(self):
         return '/{}search/files/'.format(API_BASE)
 
-    def test_search_files(self, app, url_file_search, user, user_one, file_public, file_component, file_private, delete_all):
+    def test_search_files(self, app, url_file_search, user, user_one, file_public, file_component, file_private):
 
         #test_search_public_file_no_auth
         res = app.get(url_file_search)
@@ -360,7 +362,7 @@ class TestSearchProjects(ApiSearchTestCase):
     def url_project_search(self):
         return '/{}search/projects/'.format(API_BASE)
 
-    def test_search_projects(self, app, url_project_search, user, user_one, user_two, project, project_public, project_private, delete_all):
+    def test_search_projects(self, app, url_project_search, user, user_one, user_two, project, project_public, project_private):
 
         #test_search_public_project_no_auth
         res = app.get(url_project_search)
@@ -495,7 +497,7 @@ class TestSearchRegistrations(ApiSearchTestCase):
             registration_private.update_search()
             return registration_private
 
-    def test_search_registrations(self, app, url_registration_search, user, user_one, user_two, registration, registration_public, registration_private, delete_all):
+    def test_search_registrations(self, app, url_registration_search, user, user_one, user_two, registration, registration_public, registration_private):
 
         #test_search_public_registration_no_auth
         res = app.get(url_registration_search)
@@ -604,7 +606,7 @@ class TestSearchUsers(ApiSearchTestCase):
     def url_user_search(self):
         return '/{}search/users/'.format(API_BASE)
 
-    def test_search_user(self, app, url_user_search, user, user_one, user_two, delete_all):
+    def test_search_user(self, app, url_user_search, user, user_one, user_two):
 
         #test_search_users_no_auth
         res = app.get(url_user_search)
@@ -681,7 +683,7 @@ class TestSearchInstitutions(ApiSearchTestCase):
     def url_institution_search(self):
         return '/{}search/institutions/'.format(API_BASE)
 
-    def test_search_institutions(self, app, url_institution_search, user, institution, delete_all):
+    def test_search_institutions(self, app, url_institution_search, user, institution):
 
         #test_search_institutions_no_auth
         res = app.get(url_institution_search)

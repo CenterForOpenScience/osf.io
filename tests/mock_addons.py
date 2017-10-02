@@ -7,7 +7,6 @@ import markupsafe
 import requests
 
 from modularodm import fields
-from modularodm import Q
 
 from framework.auth import Auth
 from framework.auth.decorators import must_be_logged_in
@@ -101,7 +100,7 @@ class AddonUserSettingsBase(AddonSettingsBase):
             return []
         return [
             node_addon.owner
-            for node_addon in schema.find(Q('user_settings', 'eq', self))
+            for node_addon in schema.objects.filter(user_settings=self)
             if node_addon.owner and not node_addon.owner.is_deleted
         ]
 
@@ -216,7 +215,7 @@ class AddonOAuthUserSettingsBase(AddonUserSettingsBase):
                 # Remove grant in `for` loop below
                 pass
 
-        if OSFUser.find(Q('external_accounts', 'eq', external_account._id)).count() == 1:
+        if OSFUser.objects.filter(external_accounts=external_account._id).count() == 1:
             # Only this user is using the account, so revoke remote access as well.
             self.revoke_remote_oauth_access(external_account)
 
@@ -313,7 +312,7 @@ class AddonOAuthUserSettingsBase(AddonUserSettingsBase):
         except KeyError:
             pass
         else:
-            connected = Model.find(Q('user_settings', 'eq', user_settings))
+            connected = Model.objects.filter(user_settings=user_settings)
             for node_settings in connected:
                 node_settings.user_settings = self
                 node_settings.save()

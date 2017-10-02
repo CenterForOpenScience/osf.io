@@ -10,7 +10,7 @@ from osf.models import AbstractNode
 from scripts import utils as script_utils
 from website import settings
 from website.app import setup_django
-from website.project.tasks import on_registration_updated
+from website.project.tasks import update_node_share
 
 
 logger = logging.getLogger(__name__)
@@ -28,7 +28,7 @@ def migrate(registrations):
         logger.info('{}/{} - {}'.format(count, registrations_count, registration_id))
         registration = AbstractNode.load(registration_id)
         assert registration.type == 'osf.registration'
-        on_registration_updated(registration)
+        update_node_share(registration)
         logger.info('Registration {} was sent to SHARE.'.format(registration_id))
 
 

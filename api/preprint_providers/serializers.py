@@ -7,11 +7,13 @@ from api.base.serializers import JSONAPISerializer, LinksField, RelationshipFiel
 class PreprintProviderSerializer(JSONAPISerializer):
 
     filterable_fields = frozenset([
-        'name',
+        'allow_submissions',
         'description',
-        'id',
         'domain',
-        'domain_redirect_enabled'
+        'domain_redirect_enabled',
+        'id',
+        'name',
+        'share_publish_type',
     ])
 
     name = ser.CharField(required=True)
@@ -23,7 +25,9 @@ class PreprintProviderSerializer(JSONAPISerializer):
     domain_redirect_enabled = ser.BooleanField(required=True)
     footer_links = ser.CharField(required=False)
     share_source = ser.CharField(read_only=True)
+    share_publish_type = ser.CharField(read_only=True)
     email_support = ser.CharField(required=False, allow_null=True)
+    preprint_word = ser.CharField(required=False, allow_null=True)
     allow_submissions = ser.BooleanField(read_only=True)
     additional_providers = ser.ListField(child=ser.CharField(), read_only=True)
 

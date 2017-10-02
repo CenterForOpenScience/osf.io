@@ -22,9 +22,6 @@ from framework.auth import views as auth_views
 from framework.routing import render_mako_string
 from framework.auth.core import _get_current_user
 
-from modularodm import Q
-from modularodm.exceptions import QueryException, NoResultsFound
-
 from osf.models import Institution
 from website import util
 from website import prereg
@@ -49,6 +46,7 @@ from website.preprints import views as preprint_views
 from website.registries import views as registries_views
 from website.institutions import views as institution_views
 from website.notifications import views as notification_views
+from website.closed_challenges import views as closed_challenges_views
 
 
 def get_globals():
@@ -60,9 +58,9 @@ def get_globals():
     location = geolite2.lookup(request.remote_addr) if request.remote_addr else None
     if request.host_url != settings.DOMAIN:
         try:
-            inst_id = (Institution.find_one(Q('domains', 'eq', request.host.lower())))._id
+            inst_id = Institution.objects.get(domains__icontains=[request.host])._id
             request_login_url = '{}institutions/{}'.format(settings.DOMAIN, inst_id)
-        except NoResultsFound:
+        except Institution.DoesNotExist:
             request_login_url = request.url.replace(request.host_url, settings.DOMAIN)
     else:
         request_login_url = request.url
@@ -126,13 +124,11 @@ def get_globals():
 
 
 def is_private_link_anonymous_view():
+    # Avoid circular import
+    from osf.models import PrivateLink
     try:
-        # Avoid circular import
-        from osf.models import PrivateLink
-        return PrivateLink.find_one(
-            Q('key', 'eq', request.args.get('view_only'))
-        ).anonymous
-    except QueryException:
+        return PrivateLink.objects.filter(key=request.args.get('view_only')).values_list('anonymous', flat=True).get()
+    except PrivateLink.DoesNotExist:
         return False
 
 
@@ -397,10 +393,14 @@ def make_url_map(app):
         ),
 
         Rule(
-            [
-                '/prereg/',
-                '/erpc/',
-            ],
+            '/erpc/',
+            'get',
+            closed_challenges_views.erpc_landing_page,
+            OsfWebRenderer('erpc_landing_page.mako', trust=False)
+        ),
+
+        Rule(
+            '/prereg/',
             'get',
             prereg.prereg_landing_page,
             OsfWebRenderer('prereg_landing_page.mako', trust=False)
@@ -802,13 +802,6 @@ def make_url_map(app):
             OsfWebRenderer('profile/personal_tokens_detail.mako', trust=False)
         ),
 
-        # TODO: Uncomment once outstanding issues with this feature are addressed
-        # Rule(
-        #     '/@<twitter_handle>/',
-        #     'get',
-        #     profile_views.redirect_to_twitter,
-        #     OsfWebRenderer('error.mako', render_mako_string, trust=False)
-        # ),
     ])
 
     # API
@@ -987,8 +980,6 @@ def make_url_map(app):
             notemplate
         ),
 
-        # # TODO: Add API endpoint for tags
-        # Rule('/tags/<tag>/', 'get', project_views.tag.project_tag, OsfWebRenderer('tags.mako', trust=False)),
         Rule('/project/new/<pid>/beforeTemplate/', 'get',
              project_views.node.project_before_template, json_renderer),
 
@@ -1231,6 +1222,14 @@ def make_url_map(app):
             addon_views.addon_view_or_download_file_legacy,
             json_renderer
         ),
+        Rule(
+            [
+                '/quickfiles/<fid>/'
+            ],
+            'get',
+            addon_views.addon_view_or_download_quickfile,
+            json_renderer
+        )
     ])
 
     # API

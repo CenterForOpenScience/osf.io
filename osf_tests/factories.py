@@ -13,7 +13,6 @@ from factory.django import DjangoModelFactory
 from django.utils import timezone
 from django.db.utils import IntegrityError
 from faker import Factory
-from modularodm.exceptions import NoResultsFound
 
 from website import settings
 from website.notifications.constants import NOTIFICATION_TYPES
@@ -253,6 +252,7 @@ class NodeLogFactory(DjangoModelFactory):
     class Meta:
         model = models.NodeLog
     action = 'file_added'
+    params = {'path': '/'}
     user = SubFactory(UserFactory)
 
 class PrivateLinkFactory(DjangoModelFactory):
@@ -335,15 +335,11 @@ class RegistrationFactory(BaseNodeFactory):
             add_approval_step(reg)
         if not archive:
             with patch.object(reg.archive_job, 'archive_tree_finished', Mock(return_value=True)):
-                reg.archive_job.status = ARCHIVER_SUCCESS
-                reg.archive_job.save()
+                archive_job = reg.archive_job
+                archive_job.status = ARCHIVER_SUCCESS
+                archive_job.done = True
                 reg.sanction.state = Sanction.APPROVED
                 reg.sanction.save()
-        # models.ArchiveJob(
-        #     src_node=project,
-        #     dst_node=reg,
-        #     initiator=user,
-        # )
         if is_public:
             reg.is_public = True
         reg.save()
@@ -663,22 +659,6 @@ class ApiOAuth2ApplicationFactory(DjangoModelFactory):
 
     home_url = 'ftp://ftp.ncbi.nlm.nimh.gov/'
     callback_url = 'http://example.uk'
-
-
-class AlternativeCitationFactory(DjangoModelFactory):
-    class Meta:
-        model = models.AlternativeCitation
-
-    @classmethod
-    def _create(cls, target_class, *args, **kwargs):
-        name = kwargs.get('name')
-        text = kwargs.get('text')
-        instance = target_class(
-            name=name,
-            text=text
-        )
-        instance.save()
-        return instance
 
 
 class ForkFactory(DjangoModelFactory):

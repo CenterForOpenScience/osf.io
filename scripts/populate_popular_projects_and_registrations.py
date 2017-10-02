@@ -5,7 +5,6 @@ import sys
 import logging
 
 from django.db import transaction
-from modularodm import Q
 
 from website.app import init_app
 from framework.auth.core import Auth
@@ -40,9 +39,9 @@ def main(dry_run=True):
     popular_activity = activity()
 
     popular_nodes = popular_activity['popular_public_projects']
-    popular_links_node = AbstractNode.find_one(Q('_id', 'eq', POPULAR_LINKS_NODE))
+    popular_links_node = AbstractNode.objects.get(guids___id=POPULAR_LINKS_NODE)
     popular_registrations = popular_activity['popular_public_registrations']
-    popular_links_registrations = AbstractNode.find_one(Q('_id', 'eq', POPULAR_LINKS_REGISTRATIONS))
+    popular_links_registrations = AbstractNode.objects.get(guids___id=POPULAR_LINKS_REGISTRATIONS)
 
     update_node_links(popular_links_node, popular_nodes, 'popular')
     update_node_links(popular_links_registrations, popular_registrations, 'popular registrations')

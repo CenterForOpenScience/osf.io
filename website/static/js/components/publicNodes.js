@@ -1,8 +1,6 @@
 'use strict';
 
-var $ = require('jquery');  // jQuery
 var m = require('mithril'); // exposes mithril methods, useful for redraw etc.
-var oop = require('js/oop');
 var $osf = require('js/osfHelpers');
 var iconmap = require('js/iconmap');
 var lodashFind = require('lodash.find');
