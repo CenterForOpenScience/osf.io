@@ -199,9 +199,9 @@ class ReviewsMachine(Machine):
 
     def notify_accept_reject(self, ev):
         context = self.get_context()
-        context['template'] = 'reviews_submission_status',
-        context['notify_comment'] = not self.reviewable.provider.reviews_comments_private and self.action.comment,
-        context['is_rejected'] = self.action.to_state == workflow.States.REJECTED.value,
+        context['template'] = 'reviews_submission_status'
+        context['notify_comment'] = not self.reviewable.provider.reviews_comments_private and self.action.comment
+        context['is_rejected'] = self.action.to_state == workflow.States.REJECTED.value
         reviews_signals.reviews_email.send(context=context)
 
     def notify_edit_comment(self, ev):
