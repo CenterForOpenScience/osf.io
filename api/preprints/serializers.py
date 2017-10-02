@@ -180,6 +180,19 @@ class PreprintSerializer(JSONAPISerializer):
             self.set_field(preprint.set_primary_file, primary_file, auth)
             save_node = True
 
+        old_tags = set(preprint.node.tags.values_list('name', flat=True))
+        if validated_data.get('node') and 'tags' in validated_data['node']:
+            current_tags = set(validated_data['node'].pop('tags', []))
+        elif self.partial:
+            current_tags = set(old_tags)
+        else:
+            current_tags = set()
+
+        for new_tag in (current_tags - old_tags):
+            preprint.node.add_tag(new_tag, auth=auth)
+        for deleted_tag in (old_tags - current_tags):
+            preprint.node.remove_tag(deleted_tag, auth=auth)
+
         if 'node' in validated_data:
             preprint.node.update(fields=validated_data.pop('node'))
             save_node = True
