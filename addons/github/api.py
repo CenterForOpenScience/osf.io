@@ -1,5 +1,4 @@
 import urllib
-import itertools
 import github3
 import cachecontrol
 from requests.adapters import HTTPAdapter
@@ -61,17 +60,8 @@ class GitHubClient(object):
         raise NotFoundError
 
     def repos(self):
-        return self.gh3.repositories(type='all', sort='full_name')
-
-    def user_repos(self, user):
-        return self.gh3.repositories_by(user, type='all', sort='full_name')
-
-    def my_org_repos(self):
-        my_orgs_repos = itertools.chain.from_iterable(
-            org.repositories()
-            for org in self.gh3.organizations_with(self.user())
-        )
-        return [repo for repo in my_orgs_repos if repo.permissions['push']]
+        repos = self.gh3.repositories(type='all', sort='full_name')
+        return [repo for repo in repos if repo.permissions['push']]
 
     def create_repo(self, repo, **kwargs):
         return self.gh3.create_repository(repo, **kwargs)
