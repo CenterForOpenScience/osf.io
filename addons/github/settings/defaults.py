@@ -3,7 +3,7 @@ CLIENT_ID = None
 CLIENT_SECRET = None
 
 # GitHub access scope
-SCOPE = ['repo']
+SCOPE = ['repo', 'read:org']
 
 # GitHub hook domain
 HOOK_DOMAIN = None
