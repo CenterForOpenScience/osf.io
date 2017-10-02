@@ -23,7 +23,6 @@ var formatSelection = function(state) {
 };
 
 // Public API
-
 function CitationWidget(inputSelector, displaySelector) {
     this.$input = $(inputSelector || '#citationStyleInput');
     this.$citationElement = $(displaySelector || '#citationText');
@@ -83,7 +82,6 @@ CitationWidget.prototype.init = function() {
     }).on('select2-removed', function(e) {
         self.$citationElement.slideUp().text();
     });
-
 };
 
 module.exports = CitationWidget;

@@ -235,13 +235,11 @@ def export_account(user_id, only_private=False, only_admin=False, export_files=T
     projects_to_export = (user.nodes
         .filter(is_deleted=False, type='osf.node')
         .exclude(guids___id__in=preprint_projects_exported)
-        .include('guids')
         .get_roots()
     )
 
     registrations_to_export = (user.nodes
         .filter(is_deleted=False, type='osf.registration', retraction__isnull=True)
-        .include('guids')
         .get_roots()
     )
 

@@ -16,10 +16,10 @@ import pytest
 from nose.tools import *  # noqa PEP8 asserts
 from django.utils import timezone
 from django.apps import apps
-
-
-from modularodm import Q
-from modularodm.exceptions import ValidationError
+from django.core.exceptions import ValidationError
+from django.db import connection, transaction
+from django.test import TransactionTestCase
+from django.test.utils import CaptureQueriesContext
 
 from addons.github.tests.factories import GitHubAccountFactory
 from framework.auth import cas
@@ -311,6 +311,17 @@ class TestProjectViews(OsfTestCase):
         res = self.app.post_json(url, {'name': 'title', 'value': '<a></a>'}, auth=self.user1.auth, expect_errors=True)
         assert_equal(res.status_code, 400)
         assert_in('Invalid title.', res.body)
+
+    def test_view_project_doesnt_select_for_update(self):
+        node = ProjectFactory(creator=self.user1)
+        url = node.api_url_for('view_project')
+
+        with transaction.atomic(), CaptureQueriesContext(connection) as ctx:
+            res = self.app.get(url, auth=self.user1.auth)
+
+        for_update_sql = connection.ops.for_update_sql()
+        assert_equal(res.status_code, 200)
+        assert not any(for_update_sql in query['sql'] for query in ctx.captured_queries)
 
     def test_cannot_remove_only_visible_contributor(self):
         user1_contrib = self.project.contributor_set.get(user=self.user1)
@@ -844,6 +855,24 @@ class TestProjectViews(OsfTestCase):
         self.project.reload()
         assert_equal(self.project.title, 'newtitle')
 
+    # Regression test
+    def test_retraction_view(self):
+        project = ProjectFactory(creator=self.user1, is_public=True)
+
+        registration = RegistrationFactory(project=project, is_public=True)
+        registration.retract_registration(self.user1)
+
+        approval_token = registration.retraction.approval_state[self.user1._id]['approval_token']
+        registration.retraction.approve_retraction(self.user1, approval_token)
+        registration.save()
+
+        url = registration.web_url_for('view_project')
+        res = self.app.get(url, auth=self.auth)
+
+        assert_not_in('Mako Runtime Error', res.body)
+        assert_in(registration.title, res.body)
+        assert_equal(res.status_code, 200)
+
 
 class TestEditableChildrenViews(OsfTestCase):
 
@@ -1362,54 +1391,6 @@ class TestUserProfile(OsfTestCase):
         assert_equal(mock_client.lists.unsubscribe.call_count, 0)
         assert_equal(mock_client.lists.subscribe.call_count, 0)
         handlers.celery_teardown_request()
-
-    # TODO: Uncomment once outstanding issues with this feature are addressed
-    # def test_twitter_redirect_success(self):
-    #     self.user.social['twitter'] = fake.last_name()
-    #     self.user.save()
-
-    #     res = self.app.get(web_url_for('redirect_to_twitter', twitter_handle=self.user.social['twitter']))
-    #     assert_equals(res.status_code, http.FOUND)
-    #     assert_in(self.user.url, res.location)
-
-    # def test_twitter_redirect_is_case_insensitive(self):
-    #     self.user.social['twitter'] = fake.last_name()
-    #     self.user.save()
-
-    #     res1 = self.app.get(web_url_for('redirect_to_twitter', twitter_handle=self.user.social['twitter']))
-    #     res2 = self.app.get(web_url_for('redirect_to_twitter', twitter_handle=self.user.social['twitter'].lower()))
-    #     assert_equal(res1.location, res2.location)
-
-    # def test_twitter_redirect_unassociated_twitter_handle_returns_404(self):
-    #     unassociated_handle = fake.last_name()
-    #     expected_error = 'There is no active user associated with the Twitter handle: {0}.'.format(unassociated_handle)
-
-    #     res = self.app.get(
-    #         web_url_for('redirect_to_twitter', twitter_handle=unassociated_handle),
-    #         expect_errors=True
-    #     )
-    #     assert_equal(res.status_code, http.NOT_FOUND)
-    #     assert_true(expected_error in res.body)
-
-    # def test_twitter_redirect_handle_with_multiple_associated_accounts_redirects_to_selection_page(self):
-    #     self.user.social['twitter'] = fake.last_name()
-    #     self.user.save()
-    #     user2 = AuthUserFactory()
-    #     user2.social['twitter'] = self.user.social['twitter']
-    #     user2.save()
-
-    #     expected_error = 'There are multiple OSF accounts associated with the Twitter handle: <strong>{0}</strong>.'.format(self.user.social['twitter'])
-    #     res = self.app.get(
-    #         web_url_for(
-    #             'redirect_to_twitter',
-    #             twitter_handle=self.user.social['twitter'],
-    #             expect_error=True
-    #         )
-    #     )
-    #     assert_equal(res.status_code, http.MULTIPLE_CHOICES)
-    #     assert_true(expected_error in res.body)
-    #     assert_true(self.user.url in res.body)
-    #     assert_true(user2.url in res.body)
 
 
 class TestUserProfileApplicationsPage(OsfTestCase):
@@ -2735,15 +2716,16 @@ class TestPointerViews(OsfTestCase):
         )
         assert_equal(res.status_code, 400)
 
-    def test_fork_pointer(self):
+    def test_forking_pointer_works(self):
         url = self.project.api_url + 'pointer/fork/'
-        node = NodeFactory(creator=self.user)
-        pointer = self.project.add_pointer(node, auth=self.consolidate_auth)
-        self.app.post_json(
-            url,
-            {'pointerId': pointer._id},
-            auth=self.user.auth
-        )
+        linked_node = NodeFactory(creator=self.user)
+        pointer = self.project.add_pointer(linked_node, auth=self.consolidate_auth)
+        assert_true(linked_node.id, pointer.child.id)
+        res = self.app.post_json(url, {'nodeId': pointer.child._id}, auth=self.user.auth)
+        assert_equal(res.status_code, 201)
+        assert_in('node', res.json['data'])
+        fork = res.json['data']['node']
+        assert_equal(fork['title'], 'Fork of {}'.format(linked_node.title))
 
     def test_fork_pointer_not_provided(self):
         url = self.project.api_url + 'pointer/fork/'
@@ -2755,7 +2737,7 @@ class TestPointerViews(OsfTestCase):
         url = self.project.api_url + 'pointer/fork/'
         res = self.app.post_json(
             url,
-            {'pointerId': None},
+            {'nodeId': None},
             auth=self.user.auth,
             expect_errors=True
         )
@@ -2765,7 +2747,7 @@ class TestPointerViews(OsfTestCase):
         url = self.project.api_url + 'pointer/fork/'
         res = self.app.post_json(
             url,
-            {'pointerId': 'somefakeid'},
+            {'nodeId': 'somefakeid'},
             auth=self.user.auth,
             expect_errors=True
         )
@@ -2870,7 +2852,7 @@ class TestAuthViews(OsfTestCase):
                 'password': password,
             }
         )
-        user = OSFUser.find_one(Q('username', 'eq', email))
+        user = OSFUser.objects.get(username=email)
         assert_equal(user.fullname, name)
 
     # Regression test for https://github.com/CenterForOpenScience/osf.io/issues/2902
@@ -2887,7 +2869,7 @@ class TestAuthViews(OsfTestCase):
                 'password': password,
             }
         )
-        user = OSFUser.find_one(Q('username', 'eq', email))
+        user = OSFUser.objects.get(username=email)
         assert_equal(user.fullname, name)
 
     @mock.patch('framework.auth.views.send_confirm_email')
@@ -2906,7 +2888,7 @@ class TestAuthViews(OsfTestCase):
         )
 
         expected_scrub_username = "Eunice O' \"Cornwallis\"cornify_add()"
-        user = OSFUser.find_one(Q('username', 'eq', email))
+        user = OSFUser.objects.get(username=email)
 
         assert_equal(res.status_code, http.OK)
         assert_equal(user.fullname, expected_scrub_username)
@@ -2925,7 +2907,7 @@ class TestAuthViews(OsfTestCase):
             expect_errors=True,
         )
         assert_equal(res.status_code, http.BAD_REQUEST)
-        users = OSFUser.find(Q('username', 'eq', email))
+        users = OSFUser.objects.filter(username=email)
         assert_equal(users.count(), 0)
 
     def test_register_blacklisted_email_domain(self):
@@ -2941,7 +2923,7 @@ class TestAuthViews(OsfTestCase):
             expect_errors=True
         )
         assert_equal(res.status_code, http.BAD_REQUEST)
-        users = OSFUser.find(Q('username', 'eq', email))
+        users = OSFUser.objects.filter(username=email)
         assert_equal(users.count(), 0)
 
     @mock.patch('framework.auth.views.validate_recaptcha', return_value=True)
@@ -2963,7 +2945,7 @@ class TestAuthViews(OsfTestCase):
             )
             validate_recaptcha.assert_called_with(captcha, remote_ip=None)
             assert_equal(resp.status_code, http.OK)
-            user = OSFUser.find_one(Q('username', 'eq', email))
+            user = OSFUser.objects.get(username=email)
             assert_equal(user.fullname, name)
 
     @mock.patch('framework.auth.views.validate_recaptcha', return_value=False)
@@ -3020,7 +3002,7 @@ class TestAuthViews(OsfTestCase):
         project.save()
 
         # The new, unregistered user
-        new_user = OSFUser.find_one(Q('username', 'eq', email))
+        new_user = OSFUser.objects.get(username=email)
 
         # Instead of following the invitation link, they register at the regular
         # registration page
@@ -3589,7 +3571,7 @@ class TestExternalAuthViews(OsfTestCase):
         name, email = fake.name(), fake.email()
         self.provider_id = fake.ean()
         external_identity = {
-            'service': {
+            'orcid': {
                 self.provider_id: 'CREATE'
             }
         }
@@ -3609,21 +3591,21 @@ class TestExternalAuthViews(OsfTestCase):
 
     def test_external_login_confirm_email_get_with_another_user_logged_in(self):
         another_user = AuthUserFactory()
-        url = self.user.get_confirmation_url(self.user.username, external_id_provider='service', destination='dashboard')
+        url = self.user.get_confirmation_url(self.user.username, external_id_provider='orcid', destination='dashboard')
         res = self.app.get(url, auth=another_user.auth)
         assert_equal(res.status_code, 302, 'redirects to cas logout')
         assert_in('/logout?service=', res.location)
         assert_in(url, res.location)
 
     def test_external_login_confirm_email_get_without_destination(self):
-        url = self.user.get_confirmation_url(self.user.username, external_id_provider='service')
+        url = self.user.get_confirmation_url(self.user.username, external_id_provider='orcid')
         res = self.app.get(url, auth=self.auth, expect_errors=True)
         assert_equal(res.status_code, 400, 'bad request')
 
     @mock.patch('website.mails.send_mail')
     def test_external_login_confirm_email_get_create(self, mock_welcome):
         assert_false(self.user.is_registered)
-        url = self.user.get_confirmation_url(self.user.username, external_id_provider='service', destination='dashboard')
+        url = self.user.get_confirmation_url(self.user.username, external_id_provider='orcid', destination='dashboard')
         res = self.app.get(url, auth=self.auth)
         assert_equal(res.status_code, 302, 'redirects to cas login')
         assert_in('/login?service=', res.location)
@@ -3632,16 +3614,16 @@ class TestExternalAuthViews(OsfTestCase):
         assert_equal(mock_welcome.call_count, 1)
 
         self.user.reload()
-        assert_equal(self.user.external_identity['service'][self.provider_id], 'VERIFIED')
+        assert_equal(self.user.external_identity['orcid'][self.provider_id], 'VERIFIED')
         assert_true(self.user.is_registered)
         assert_true(self.user.has_usable_password())
 
     @mock.patch('website.mails.send_mail')
     def test_external_login_confirm_email_get_link(self, mock_link_confirm):
-        self.user.external_identity['service'][self.provider_id] = 'LINK'
+        self.user.external_identity['orcid'][self.provider_id] = 'LINK'
         self.user.save()
         assert_false(self.user.is_registered)
-        url = self.user.get_confirmation_url(self.user.username, external_id_provider='service', destination='dashboard')
+        url = self.user.get_confirmation_url(self.user.username, external_id_provider='orcid', destination='dashboard')
         res = self.app.get(url, auth=self.auth)
         assert_equal(res.status_code, 302, 'redirects to cas login')
         assert_in('/login?service=', res.location)
@@ -3650,15 +3632,15 @@ class TestExternalAuthViews(OsfTestCase):
         assert_equal(mock_link_confirm.call_count, 1)
 
         self.user.reload()
-        assert_equal(self.user.external_identity['service'][self.provider_id], 'VERIFIED')
+        assert_equal(self.user.external_identity['orcid'][self.provider_id], 'VERIFIED')
         assert_true(self.user.is_registered)
         assert_true(self.user.has_usable_password())
 
     @mock.patch('website.mails.send_mail')
     def test_external_login_confirm_email_get_duped_id(self, mock_confirm):
-        dupe_user = UserFactory(external_identity={'service': {self.provider_id: 'CREATE'}})
+        dupe_user = UserFactory(external_identity={'orcid': {self.provider_id: 'CREATE'}})
         assert_equal(dupe_user.external_identity, self.user.external_identity)
-        url = self.user.get_confirmation_url(self.user.username, external_id_provider='service', destination='dashboard')
+        url = self.user.get_confirmation_url(self.user.username, external_id_provider='orcid', destination='dashboard')
         res = self.app.get(url, auth=self.auth)
         assert_equal(res.status_code, 302, 'redirects to cas login')
         assert_in('/login?service=', res.location)
@@ -3668,13 +3650,13 @@ class TestExternalAuthViews(OsfTestCase):
         self.user.reload()
         dupe_user.reload()
 
-        assert_equal(self.user.external_identity['service'][self.provider_id], 'VERIFIED')
+        assert_equal(self.user.external_identity['orcid'][self.provider_id], 'VERIFIED')
         assert_equal(dupe_user.external_identity, {})
 
     @mock.patch('website.mails.send_mail')
     def test_external_login_confirm_email_get_duping_id(self, mock_confirm):
-        dupe_user = UserFactory(external_identity={'service': {self.provider_id: 'VERIFIED'}})
-        url = self.user.get_confirmation_url(self.user.username, external_id_provider='service', destination='dashboard')
+        dupe_user = UserFactory(external_identity={'orcid': {self.provider_id: 'VERIFIED'}})
+        url = self.user.get_confirmation_url(self.user.username, external_id_provider='orcid', destination='dashboard')
         res = self.app.get(url, auth=self.auth, expect_errors=True)
         assert_equal(res.status_code, 403, 'only allows one user to link an id')
 
@@ -3683,40 +3665,40 @@ class TestExternalAuthViews(OsfTestCase):
         self.user.reload()
         dupe_user.reload()
 
-        assert_equal(dupe_user.external_identity['service'][self.provider_id], 'VERIFIED')
+        assert_equal(dupe_user.external_identity['orcid'][self.provider_id], 'VERIFIED')
         assert_equal(self.user.external_identity, {})
 
     def test_ensure_external_identity_uniqueness_unverified(self):
-        dupe_user = UserFactory(external_identity={'service': {self.provider_id: 'CREATE'}})
+        dupe_user = UserFactory(external_identity={'orcid': {self.provider_id: 'CREATE'}})
         assert_equal(dupe_user.external_identity, self.user.external_identity)
 
-        ensure_external_identity_uniqueness('service', self.provider_id, self.user)
+        ensure_external_identity_uniqueness('orcid', self.provider_id, self.user)
 
         dupe_user.reload()
         self.user.reload()
 
         assert_equal(dupe_user.external_identity, {})
-        assert_equal(self.user.external_identity, {'service': {self.provider_id: 'CREATE'}})
+        assert_equal(self.user.external_identity, {'orcid': {self.provider_id: 'CREATE'}})
 
     def test_ensure_external_identity_uniqueness_verified(self):
-        dupe_user = UserFactory(external_identity={'service': {self.provider_id: 'VERIFIED'}})
-        assert_equal(dupe_user.external_identity, {'service': {self.provider_id: 'VERIFIED'}})
+        dupe_user = UserFactory(external_identity={'orcid': {self.provider_id: 'VERIFIED'}})
+        assert_equal(dupe_user.external_identity, {'orcid': {self.provider_id: 'VERIFIED'}})
         assert_not_equal(dupe_user.external_identity, self.user.external_identity)
 
         with assert_raises(ValidationError):
-            ensure_external_identity_uniqueness('service', self.provider_id, self.user)
+            ensure_external_identity_uniqueness('orcid', self.provider_id, self.user)
 
         dupe_user.reload()
         self.user.reload()
 
-        assert_equal(dupe_user.external_identity, {'service': {self.provider_id: 'VERIFIED'}})
+        assert_equal(dupe_user.external_identity, {'orcid': {self.provider_id: 'VERIFIED'}})
         assert_equal(self.user.external_identity, {})
 
     def test_ensure_external_identity_uniqueness_multiple(self):
-        dupe_user = UserFactory(external_identity={'service': {self.provider_id: 'CREATE'}})
+        dupe_user = UserFactory(external_identity={'orcid': {self.provider_id: 'CREATE'}})
         assert_equal(dupe_user.external_identity, self.user.external_identity)
 
-        ensure_external_identity_uniqueness('service', self.provider_id)
+        ensure_external_identity_uniqueness('orcid', self.provider_id)
 
         dupe_user.reload()
         self.user.reload()
@@ -4034,16 +4016,17 @@ class TestWikiWidgetViews(OsfTestCase):
         self.project2.update_node_wiki(name='home', content='', auth=Auth(self.project.creator))
 
     def test_show_wiki_for_contributors_when_no_wiki_or_content(self):
-        assert_true(_should_show_wiki_widget(self.project, self.project.creator))
-        assert_true(_should_show_wiki_widget(self.project2, self.project.creator))
+        contrib = self.project.contributor_set.get(user=self.project.creator)
+        assert_true(_should_show_wiki_widget(self.project, contrib))
+        assert_true(_should_show_wiki_widget(self.project2, contrib))
 
     def test_show_wiki_is_false_for_read_contributors_when_no_wiki_or_content(self):
-        assert_false(_should_show_wiki_widget(self.project, self.read_only_contrib))
-        assert_false(_should_show_wiki_widget(self.project2, self.read_only_contrib))
+        contrib = self.project.contributor_set.get(user=self.read_only_contrib)
+        assert_false(_should_show_wiki_widget(self.project, contrib))
+        assert_false(_should_show_wiki_widget(self.project2, contrib))
 
     def test_show_wiki_is_false_for_noncontributors_when_no_wiki_or_content(self):
-        assert_false(_should_show_wiki_widget(self.project, self.noncontributor))
-        assert_false(_should_show_wiki_widget(self.project2, self.read_only_contrib))
+        assert_false(_should_show_wiki_widget(self.project, None))
 
 
 class TestProjectCreation(OsfTestCase):

@@ -44,6 +44,7 @@ function FileViewTreebeard(data) {
         },
         ondataload: function () {
             var tb = this;
+            Fangorn.DefaultOptions.ondataload.call(tb);
             var path = '';
             tb.fangornFolderIndex = 0;
             tb.fangornFolderArray = [''];

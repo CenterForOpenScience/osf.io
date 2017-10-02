@@ -9,7 +9,6 @@ from nose import tools as nt
 from django.test import RequestFactory
 from django.http import Http404
 from django.core.files.uploadedfile import SimpleUploadedFile
-from django.utils import timezone
 from django.core.urlresolvers import reverse
 from django.core.exceptions import PermissionDenied
 from django.contrib.auth.models import Permission
@@ -18,6 +17,7 @@ from tests.base import AdminTestCase
 from website import settings
 from framework.auth import Auth
 from osf.models.user import OSFUser
+from osf.models.tag import Tag
 from osf_tests.factories import (
     UserFactory,
     AuthUserFactory,
@@ -195,11 +195,43 @@ class TestDisableUser(AdminTestCase):
         response = self.view.as_view()(request, guid=guid)
         self.assertEqual(response.status_code, 200)
 
+
+class TestHamUserRestore(AdminTestCase):
+    def setUp(self):
+        self.user = UserFactory()
+        self.request = RequestFactory().post('/fake_path')
+        self.view = views.HamUserRestoreView
+        self.view = setup_log_view(self.view, self.request, guid=self.user._id)
+
+        self.spam_confirmed, created = Tag.objects.get_or_create(name='spam_confirmed')
+        self.ham_confirmed, created = Tag.objects.get_or_create(name='ham_confirmed')
+
+    def test_get_object(self):
+        obj = self.view().get_object()
+        nt.assert_is_instance(obj, OSFUser)
+
+    def test_get_context(self):
+        res = self.view().get_context_data(object=self.user)
+        nt.assert_in('guid', res)
+        nt.assert_equal(res.get('guid'), self.user._id)
+
+    def test_enable_user(self):
+        self.user.disable_account()
+        self.user.save()
+        nt.assert_true(self.user.is_disabled)
+        self.view().delete(self.request)
+        self.user.reload()
+
+        nt.assert_false(self.user.is_disabled)
+        nt.assert_false(self.user.all_tags.filter(name=self.spam_confirmed.name).exists())
+        nt.assert_true(self.user.all_tags.filter(name=self.ham_confirmed.name).exists())
+
+
 class TestDisableSpamUser(AdminTestCase):
     def setUp(self):
         self.user = UserFactory()
         self.public_node = ProjectFactory(creator=self.user, is_public=True)
-        self.public_node = ProjectFactory(creator=self.user, is_public=False)
+        self.private_node = ProjectFactory(creator=self.user, is_public=False)
         self.request = RequestFactory().post('/fake_path')
         self.view = views.SpamUserDeleteView
         self.view = setup_log_view(self.view, self.request, guid=self.user._id)
@@ -220,6 +252,7 @@ class TestDisableSpamUser(AdminTestCase):
         self.user.reload()
         self.public_node.reload()
         nt.assert_true(self.user.is_disabled)
+        nt.assert_true(self.user.all_tags.filter(name='spam_confirmed').exists())
         nt.assert_false(self.public_node.is_public)
         nt.assert_equal(AdminLogEntry.objects.count(), count + 3)
 
@@ -390,24 +423,10 @@ class TestRemove2Factor(AdminTestCase):
 class TestUserWorkshopFormView(AdminTestCase):
 
     def setUp(self):
-        self.user_1 = AuthUserFactory()
-        self.auth_1 = Auth(self.user_1)
+        self.user = AuthUserFactory()
+        self.auth = Auth(self.user)
         self.view = views.UserWorkshopFormView()
-        self.workshop_date = timezone.now()
-        self.data = [
-            ['none', 'date', 'none', 'none', 'none', 'email', 'none'],
-            [None, self.workshop_date.strftime('%m/%d/%y'), None, None, None, self.user_1.username, None],
-        ]
-
-        self.user_exists_by_name_data = [
-            ['number', 'date', 'location', 'topic', 'name', 'email', 'other'],
-            [None, self.workshop_date.strftime('%m/%d/%y'), None, None, self.user_1.fullname, 'unknown@example.com', None],
-        ]
-
-        self.user_not_found_data = [
-            ['none', 'date', 'none', 'none', 'none', 'email', 'none'],
-            [None, self.workshop_date.strftime('%m/%d/%y'), None, None, None, 'fake@example.com', None],
-        ]
+        self.node = ProjectFactory(creator=self.user)
 
         self.mock_data = mock.patch.object(
             csv,
@@ -420,108 +439,112 @@ class TestUserWorkshopFormView(AdminTestCase):
     def tearDown(self):
         self.mock_data.stop()
 
-    def _create_and_parse_test_file(self, data):
-        result_csv = self.view.parse(data)
+    def _setup_workshop(self, date):
+        self.workshop_date = date
+        self.data = [
+            ['none', 'date', 'none', 'none', 'none', 'email', 'none'],
+            [None, self.workshop_date.strftime('%m/%d/%y'), None, None, None, self.user.username, None],
+        ]
 
-        return result_csv
+        self.user_exists_by_name_data = [
+            ['number', 'date', 'location', 'topic', 'name', 'email', 'other'],
+            [None, self.workshop_date.strftime('%m/%d/%y'), None, None, self.user.fullname, 'unknown@example.com', None],
+        ]
 
-    def _create_nodes_and_add_logs(self, first_activity_date, second_activity_date=None):
-        node_one = ProjectFactory(creator=self.user_1)
-        node_one.date_created = first_activity_date
-        node_one.add_log(
-            'log_added', params={'project': node_one._id}, auth=self.auth_1, log_date=first_activity_date, save=True
-        )
+        self.user_not_found_data = [
+            ['none', 'date', 'none', 'none', 'none', 'email', 'none'],
+            [None, self.workshop_date.strftime('%m/%d/%y'), None, None, None, 'fake@example.com', None],
+        ]
 
-        if second_activity_date:
-            node_two = ProjectFactory(creator=self.user_1)
-            node_two.date_created = second_activity_date
-            node_two.add_log(
-                'log_added', params={'project': node_two._id}, auth=self.auth_1, log_date=second_activity_date, save=True
-            )
+    def _add_log(self, date):
+        self.node.add_log('log_added', params={'project': self.node._id}, auth=self.auth, log_date=date, save=True)
 
     def test_correct_number_of_columns_added(self):
+        self._setup_workshop(self.node.date_created)
         added_columns = ['OSF ID', 'Logs Since Workshop', 'Nodes Created Since Workshop', 'Last Log Data']
-        result_csv = self._create_and_parse_test_file(self.data)
+        result_csv = self.view.parse(self.data)
         nt.assert_equal(len(self.data[0]) + len(added_columns), len(result_csv[0]))
 
-    def test_user_activity_day_of_workshop_only(self):
-        self._create_nodes_and_add_logs(first_activity_date=self.workshop_date)
-
-        result_csv = self._create_and_parse_test_file(self.data)
-        user_logs_since_workshop = result_csv[1][-3]
-        user_nodes_created_since_workshop = result_csv[1][-2]
-
-        nt.assert_equal(user_logs_since_workshop, 0)
-        nt.assert_equal(user_nodes_created_since_workshop, 0)
-
-    def test_user_activity_before_workshop_only(self):
-        activity_date = timezone.now() - timedelta(days=1)
-        self._create_nodes_and_add_logs(first_activity_date=activity_date)
-
-        result_csv = self._create_and_parse_test_file(self.data)
-        user_logs_since_workshop = result_csv[1][-3]
-        user_nodes_created_since_workshop = result_csv[1][-2]
-
-        nt.assert_equal(user_logs_since_workshop, 0)
-        nt.assert_equal(user_nodes_created_since_workshop, 0)
-
-    def test_user_activity_after_workshop_only(self):
-        activity_date = timezone.now() + timedelta(hours=25)
-        self._create_nodes_and_add_logs(first_activity_date=activity_date)
-
-        result_csv = self._create_and_parse_test_file(self.data)
-        user_logs_since_workshop = result_csv[1][-3]
-        user_nodes_created_since_workshop = result_csv[1][-2]
-
-        nt.assert_equal(user_logs_since_workshop, 1)
-        nt.assert_equal(user_nodes_created_since_workshop, 1)
-
     def test_user_activity_day_of_workshop_and_before(self):
-        activity_date = timezone.now() - timedelta(days=1)
-        self._create_nodes_and_add_logs(
-            first_activity_date=self.workshop_date,
-            second_activity_date=activity_date
-        )
-
-        result_csv = self._create_and_parse_test_file(self.data)
+        self._setup_workshop(self.node.date_created)
+        # add logs 0 to 48 hours back
+        for time_mod in range(9):
+            self._add_log(self.node.date_created - timedelta(hours=(time_mod * 6)))
+        result_csv = self.view.parse(self.data)
         user_logs_since_workshop = result_csv[1][-3]
         user_nodes_created_since_workshop = result_csv[1][-2]
 
         nt.assert_equal(user_logs_since_workshop, 0)
         nt.assert_equal(user_nodes_created_since_workshop, 0)
 
-    def test_user_activity_day_of_workshop_and_after(self):
-        activity_date = timezone.now() + timedelta(hours=25)
-        self._create_nodes_and_add_logs(
-            first_activity_date=self.workshop_date,
-            second_activity_date=activity_date
-        )
+    def test_user_activity_after_workshop(self):
+        self._setup_workshop(self.node.date_created - timedelta(hours=25))
+        self._add_log(self.node.date_created)
 
-        result_csv = self._create_and_parse_test_file(self.data)
+        result_csv = self.view.parse(self.data)
         user_logs_since_workshop = result_csv[1][-3]
         user_nodes_created_since_workshop = result_csv[1][-2]
 
-        nt.assert_equal(user_logs_since_workshop, 1)
+        # 1 node created, 1 bookmarks collection created (new user), 1 node log
+        nt.assert_equal(user_logs_since_workshop, 3)
         nt.assert_equal(user_nodes_created_since_workshop, 1)
 
-    def test_user_activity_before_workshop_and_after(self):
-        before_activity_date = timezone.now() - timedelta(days=1)
-        after_activity_date = timezone.now() + timedelta(hours=25)
-        self._create_nodes_and_add_logs(
-            first_activity_date=before_activity_date,
-            second_activity_date=after_activity_date
-        )
+        # Test workshop 30 days ago
+        self._setup_workshop(self.node.date_created - timedelta(days=30))
 
-        result_csv = self._create_and_parse_test_file(self.data)
+        result_csv = self.view.parse(self.data)
         user_logs_since_workshop = result_csv[1][-3]
         user_nodes_created_since_workshop = result_csv[1][-2]
 
-        # One log before workshop, one after, only should show the one after
-        nt.assert_equal(user_logs_since_workshop, 1)
+        nt.assert_equal(user_logs_since_workshop, 3)
         nt.assert_equal(user_nodes_created_since_workshop, 1)
+
+        # Test workshop a year ago
+        self._setup_workshop(self.node.date_created - timedelta(days=365))
+
+        result_csv = self.view.parse(self.data)
+        user_logs_since_workshop = result_csv[1][-3]
+        user_nodes_created_since_workshop = result_csv[1][-2]
+
+        nt.assert_equal(user_logs_since_workshop, 3)
+        nt.assert_equal(user_nodes_created_since_workshop, 1)
+
+    # Regression test for OSF-8089
+    def test_utc_new_day(self):
+        node_date = self.node.date_created
+        date = datetime(node_date.year, node_date.month, node_date.day, 0, tzinfo=pytz.utc) + timedelta(days=1)
+        self._setup_workshop(date)
+        self._add_log(self.workshop_date + timedelta(hours=25))
+
+        result_csv = self.view.parse(self.data)
+        user_logs_since_workshop = result_csv[1][-3]
+        nt.assert_equal(user_logs_since_workshop, 1)
+
+    # Regression test for OSF-8089
+    def test_utc_new_day_plus_hour(self):
+        node_date = self.node.date_created
+        date = datetime(node_date.year, node_date.month, node_date.day, 0, tzinfo=pytz.utc) + timedelta(days=1, hours=1)
+        self._setup_workshop(date)
+        self._add_log(self.workshop_date + timedelta(hours=25))
+
+        result_csv = self.view.parse(self.data)
+        user_logs_since_workshop = result_csv[1][-3]
+        nt.assert_equal(user_logs_since_workshop, 1)
+
+    # Regression test for OSF-8089
+    def test_utc_new_day_minus_hour(self):
+        node_date = self.node.date_created
+        date = datetime(node_date.year, node_date.month, node_date.day, 0, tzinfo=pytz.utc) + timedelta(days=1) - timedelta(hours=1)
+        self._setup_workshop(date)
+        self._add_log(self.workshop_date + timedelta(hours=25))
+
+        result_csv = self.view.parse(self.data)
+        user_logs_since_workshop = result_csv[1][-3]
+        nt.assert_equal(user_logs_since_workshop, 1)
 
     def test_user_osf_account_not_found(self):
-        result_csv = self._create_and_parse_test_file(self.user_not_found_data)
+        self._setup_workshop(self.node.date_created)
+        result_csv = self.view.parse(self.user_not_found_data)
         user_id = result_csv[1][-4]
         last_log_date = result_csv[1][-1]
         user_logs_since_workshop = result_csv[1][-3]
@@ -533,13 +556,14 @@ class TestUserWorkshopFormView(AdminTestCase):
         nt.assert_equal(user_nodes_created_since_workshop, 0)
 
     def test_user_found_by_name(self):
-        result_csv = self._create_and_parse_test_file(self.user_exists_by_name_data)
+        self._setup_workshop(self.node.date_created)
+        result_csv = self.view.parse(self.user_exists_by_name_data)
         user_id = result_csv[1][-4]
         last_log_date = result_csv[1][-1]
         user_logs_since_workshop = result_csv[1][-3]
         user_nodes_created_since_workshop = result_csv[1][-2]
 
-        nt.assert_equal(user_id, self.user_1.id)
+        nt.assert_equal(user_id, self.user.id)
         nt.assert_equal(last_log_date, '')
         nt.assert_equal(user_logs_since_workshop, 0)
         nt.assert_equal(user_nodes_created_since_workshop, 0)
@@ -548,7 +572,7 @@ class TestUserWorkshopFormView(AdminTestCase):
         request = RequestFactory().post('/fake_path')
         data = [
             ['none', 'date', 'none', 'none', 'none', 'email', 'none'],
-            [None, '9/1/16', None, None, None, self.user_1.username, None],
+            [None, '9/1/16', None, None, None, self.user.username, None],
         ]
 
         uploaded = SimpleUploadedFile('test_name', bytes(csv.reader(data)), content_type='text/csv')
