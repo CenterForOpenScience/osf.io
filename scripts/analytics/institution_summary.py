@@ -50,7 +50,7 @@ class InstitutionSummary(SummaryAnalytics):
                     'name': ensure_bytes(institution.name),
                 },
                 'users': {
-                    'total': institution.contributors.count(),
+                    'total': institution.osfuser_set.count(),
                 },
                 'nodes': {
                     'total': institution.nodes.filter(node_query).exclude(type='osf.registration').count(),

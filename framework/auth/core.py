@@ -7,11 +7,13 @@ import logging
 from django.utils import timezone
 from django.db.models import Q as DQ
 from django.db.models import Subquery
+from flask import request
 from framework.sessions import session
 from modularodm import Q
 
 from modularodm.exceptions import QueryException, ValidationError, ValidationValueError
 from modularodm.validators import URLValidator
+from osf.utils.requests import check_select_for_update
 from website import security, settings
 
 name_formatters = {
@@ -80,7 +82,7 @@ def _get_current_user():
     from osf.models import OSFUser
     current_user_id = get_current_user_id()
     if current_user_id:
-        return OSFUser.load(current_user_id)
+        return OSFUser.load(current_user_id, select_for_update=check_select_for_update(request))
     else:
         return None
 

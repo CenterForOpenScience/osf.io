@@ -182,6 +182,7 @@ def get_configured_projects(user):
     configured_projects = set()
     user_subscriptions = get_all_user_subscriptions(user, extra=(
         ~Q(node__type='osf.collection') &
+        ~Q(node__type='osf.quickfilesnode') &
         Q(node__is_deleted=False)
     ))
 
@@ -218,7 +219,7 @@ def get_all_user_subscriptions(user, extra=None):
         Q(none=user.pk) |
         Q(email_digest=user.pk) |
         Q(email_transactional=user.pk)
-    )
+    ).distinct()
     return queryset.filter(extra) if extra else queryset
 
 

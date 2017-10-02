@@ -1119,7 +1119,7 @@ class DraftRegistrationSerializer(JSONAPISerializer):
         metadata = validated_data.pop('registration_metadata', None)
 
         schema_id = validated_data.pop('registration_schema').get('_id')
-        schema = get_object_or_error(MetaSchema, schema_id)
+        schema = get_object_or_error(MetaSchema, schema_id, self.context['request'])
         if schema.schema_version != LATEST_SCHEMA_VERSION or not schema.active:
             raise exceptions.ValidationError('Registration supplement must be an active schema.')
 
