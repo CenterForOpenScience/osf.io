@@ -82,6 +82,7 @@ PREPRINT_PROVIDER_DOMAINS = {
 }
 # External Ember App Local Development
 USE_EXTERNAL_EMBER = False
+PROXY_EMBER_APPS = False
 EXTERNAL_EMBER_APPS = {}
 
 LOG_PATH = os.path.join(APP_PATH, 'logs')
@@ -201,11 +202,11 @@ WIKI_WHITELIST = {
     'attributes': [
         'align', 'alt', 'border', 'cite', 'class', 'dir',
         'height', 'href', 'id', 'src', 'style', 'title', 'type', 'width',
-        'face', 'size', # font tags
+        'face', 'size',  # font tags
         'salign', 'align', 'wmode', 'target',
     ],
     # Styles currently used in Reproducibility Project wiki pages
-    'styles' : [
+    'styles': [
         'top', 'left', 'width', 'height', 'position',
         'background', 'font-size', 'text-align', 'z-index',
         'list-style',
@@ -342,6 +343,9 @@ LOW_QUEUE = 'low'
 MED_QUEUE = 'med'
 HIGH_QUEUE = 'high'
 
+# Seconds, not an actual celery setting
+CELERY_RETRY_BACKOFF_BASE = 5
+
 LOW_PRI_MODULES = {
     'framework.analytics.tasks',
     'framework.celery_tasks',
@@ -395,10 +399,16 @@ else:
     CELERY_STORE_ERRORS_EVEN_IF_IGNORED = True
 
 # Default RabbitMQ broker
-BROKER_URL = 'amqp://'
+RABBITMQ_USERNAME = os.environ.get('RABBITMQ_USERNAME', 'guest')
+RABBITMQ_PASSWORD = os.environ.get('RABBITMQ_PASSWORD', 'guest')
+RABBITMQ_HOST = os.environ.get('RABBITMQ_HOST', 'localhost')
+RABBITMQ_PORT = os.environ.get('RABBITMQ_PORT', '5672')
+RABBITMQ_VHOST = os.environ.get('RABBITMQ_VHOST', '/')
+
+BROKER_URL = os.environ.get('BROKER_URL', 'amqp://{}:{}@{}:{}/{}'.format(RABBITMQ_USERNAME, RABBITMQ_PASSWORD, RABBITMQ_HOST, RABBITMQ_PORT, RABBITMQ_VHOST))
 
 # Default RabbitMQ backend
-CELERY_RESULT_BACKEND = 'amqp://'
+CELERY_RESULT_BACKEND = os.environ.get('CELERY_RESULT_BACKEND', BROKER_URL)
 
 # Modules to import when celery launches
 CELERY_IMPORTS = (
@@ -455,7 +465,7 @@ else:
         },
         'refresh_addons': {
             'task': 'scripts.refresh_addon_tokens',
-            'schedule': crontab(minute=0, hour= 2),  # Daily 2:00 a.m
+            'schedule': crontab(minute=0, hour=2),  # Daily 2:00 a.m
             'kwargs': {'dry_run': False, 'addons': {
                 'box': 60,          # https://docs.box.com/docs/oauth-20#section-6-using-the-access-and-refresh-tokens
                 'googledrive': 14,  # https://developers.google.com/identity/protocols/OAuth2#expiration

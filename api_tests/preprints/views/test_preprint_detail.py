@@ -63,6 +63,12 @@ class TestPreprintDetail:
         assert data['type'] == 'preprints'
         assert data['id'] == preprint._id
 
+    #   test title in preprint data
+        assert data['attributes']['title'] == preprint.node.title
+
+    #   test contributors in preprint data
+        assert data['relationships'].get('contributors', None)
+
     #   test_preprint_node_deleted_detail_failure
         deleted_node = ProjectFactory(creator=user, is_deleted=True)
         deleted_preprint = PreprintFactory(project=deleted_node, creator=user)
@@ -71,6 +77,17 @@ class TestPreprintDetail:
         deleted_preprint_res = app.get(deleted_preprint_url, expect_errors=True)
         assert deleted_preprint_res.status_code == 404
         assert res.content_type == 'application/vnd.api+json'
+
+    def test_embed_contributors(self, app, user, preprint):
+        url = '/{}preprints/{}/?embed=contributors'.format(API_BASE, preprint._id)
+
+        res = app.get(url, auth=user.auth)
+        embeds = res.json['data']['embeds']
+        ids = preprint.node.contributors.all().values_list('guids___id', flat=True)
+        ids = ['{}-{}'.format(preprint.node._id, id_) for id_ in ids]
+        for contrib in embeds['contributors']['data']:
+            assert contrib['id'] in ids
+
 
 @pytest.mark.django_db
 class TestPreprintDelete:
@@ -217,6 +234,58 @@ class TestPreprintUpdate:
         preprint_detail = app.get(url, auth=user.auth).json['data']
         assert preprint_detail['links']['doi'] == 'https://dx.doi.org/{}'.format(new_doi)
 
+    @mock.patch('website.preprints.tasks.on_preprint_updated.s')
+    def test_update_description_and_title(self, mock_preprint_updated, app, user, preprint, url):
+        new_title = 'Brother Nero'
+        new_description = "I knew you'd come!"
+        assert preprint.node.description != new_description
+        assert preprint.node.title != new_title
+        update_title_description_payload = build_preprint_update_payload(
+            preprint._id,
+            attributes={
+                'title': new_title,
+                'description': new_description
+            }
+        )
+        res = app.patch_json_api(url, update_title_description_payload, auth=user.auth)
+
+        assert res.status_code == 200
+        preprint.node.reload()
+
+        assert preprint.node.description == new_description
+        assert preprint.node.title == new_title
+        assert mock_preprint_updated.called
+
+    @mock.patch('website.preprints.tasks.on_preprint_updated.s')
+    def test_update_contributors(self, mock_preprint_updated, app, user, preprint, url):
+        new_user = AuthUserFactory()
+        contributor_payload = {
+            "data": {
+                "attributes": {
+                    "bibliographic": True,
+                    "permission": "write",
+                    "send_email": False
+                },
+                "type": "contributors",
+                "relationships": {
+                    "users": {
+                        "data": {
+                            "id": new_user._id,
+                            "type": "users"
+                        }
+                    }
+                }
+            }
+        }
+
+        contributor_url = url + 'contributors/'
+
+        res = app.post_json_api(contributor_url, contributor_payload, auth=user.auth)
+
+        assert res.status_code == 201
+        assert new_user in preprint.node.contributors
+        assert mock_preprint_updated.called
+
     def test_cannot_set_primary_file(self, app, user, preprint, url):
 
     #   test_write_contrib_cannot_set_primary_file
@@ -300,6 +369,17 @@ class TestPreprintUpdate:
         res = app.patch_json_api(url, payload, auth=user.auth)
         unpublished.reload()
         assert unpublished.is_published
+
+    @mock.patch('website.preprints.tasks.get_and_set_preprint_identifiers.si')
+    def test_update_published_makes_node_public(self, mock_get_identifiers, app, user):
+        unpublished = PreprintFactory(creator=user, is_published=False)
+        assert not unpublished.node.is_public
+        url = '/{}preprints/{}/'.format(API_BASE, unpublished._id)
+        payload = build_preprint_update_payload(unpublished._id, attributes={'is_published': True})
+        app.patch_json_api(url, payload, auth=user.auth)
+        unpublished.node.reload()
+
+        assert unpublished.node.is_public
 
     @mock.patch('website.preprints.tasks.on_preprint_updated.s')
     def test_update_preprint_task_called_on_api_update(self, mock_on_preprint_updated, app, user, preprint, url):

@@ -314,7 +314,7 @@ var tbOptions = {
         down : 'i.fa.fa-angle-down'
     },
     sortDepth : 0,
-    onload : function () {
+    ondataload : function () {
         var tb = this,
             rowDiv = tb.select('.tb-row');
         rowDiv.first().trigger('click');

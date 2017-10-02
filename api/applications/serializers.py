@@ -1,8 +1,6 @@
 from django.core.validators import URLValidator
 from rest_framework import serializers as ser
 
-from modularodm import Q
-
 from osf.models import ApiOAuth2Application
 
 from api.base.serializers import JSONAPISerializer, LinksField, IDField, TypeField, DateByVersion
@@ -96,7 +94,7 @@ class ApiOAuth2ApplicationDetailSerializer(ApiOAuth2ApplicationSerializer):
 class ApiOAuth2ApplicationResetSerializer(ApiOAuth2ApplicationDetailSerializer):
 
     def absolute_url(self, obj):
-        obj = ApiOAuth2Application.find_one(Q('client_id', 'eq', obj['client_id']))
+        obj = ApiOAuth2Application.objects.get(client_id=obj['client_id'])
         return obj.absolute_url
 
     def reset_url(self, obj):

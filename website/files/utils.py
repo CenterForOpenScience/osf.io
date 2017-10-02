@@ -1,4 +1,4 @@
-from modularodm.exceptions import ValidationValueError
+from django.core.exceptions import ValidationError
 
 
 def copy_files(src, target_node, parent=None, name=None):
@@ -74,7 +74,7 @@ def validate_location(value):
     from addons.osfstorage import settings
     for key in ('service', settings.WATERBUTLER_RESOURCE, 'object'):
         if key not in value:
-            raise ValidationValueError('Location {} missing key "{}"'.format(value, key))
+            raise ValidationError('Location {} missing key "{}"'.format(value, key))
 
 
 def insort(col, element, get=lambda x: x):

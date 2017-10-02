@@ -6,9 +6,7 @@
 var $ = require('jquery');
 var bootbox = require('bootbox');
 var Raven = require('raven-js');
-var m = require('mithril');
 var ko = require('knockout');
-var LogFeed = require('js/components/logFeed.js');
 
 
 var $osf = require('js/osfHelpers');
@@ -43,6 +41,27 @@ NodeActions.beforeForkNode = function(url, done) {
     );
 };
 
+function afterForkGoto(url) {
+  bootbox.confirm({
+      message: '<h4 class="add-project-success text-success">Fork created successfully!</h4>',
+      callback: function(result) {
+          if(result) {
+              window.location = url;
+          }
+      },
+      buttons: {
+          confirm: {
+              label: 'Go to new fork',
+              className: 'btn-success'
+          },
+          cancel: {
+              label: 'Keep working here'
+          }
+      },
+      closeButton: false
+  });
+}
+
 NodeActions.forkNode = function() {
     NodeActions.beforeForkNode(ctx.node.urls.api + 'fork/before/', function() {
         // Block page
@@ -63,24 +82,7 @@ NodeActions.forkNode = function() {
             }
         ).done(function(response) {
             $osf.unblock();
-            bootbox.confirm({
-                message: '<h4 class="add-project-success text-success">Fork created successfully!</h4>',
-                callback: function(result) {
-                    if(result) {
-                        window.location = response.data.links.html;
-                    }
-                },
-                buttons: {
-                    confirm: {
-                        label: 'Go to new fork',
-                        className: 'btn-success'
-                    },
-                    cancel: {
-                        label: 'Keep working here'
-                    }
-                },
-                closeButton: false
-            });
+            afterForkGoto(response.data.links.html);
         }).fail(function(response) {
             $osf.unblock();
             if (response.status === 403) {
@@ -109,8 +111,9 @@ NodeActions.forkPointer = function(nodeId) {
                 $osf.postJSON(
                     ctx.node.urls.api + 'pointer/fork/',
                     {nodeId: nodeId}
-                ).done(function() {
-                    window.location.reload();
+                ).done(function(response) {
+                    $osf.unblock();
+                    afterForkGoto(response.data.node.url);
                 }).fail(function() {
                     $osf.unblock();
                     $osf.growl('Error','Could not fork link.');
@@ -129,7 +132,7 @@ NodeActions.beforeTemplate = function(url, done) {
     $.ajax({
         url: url,
         contentType: 'application/json'
-    }).success(function(response) {
+    }).done(function(response) {
         bootbox.confirm({
             message: $osf.joinPrompts(response.prompts,
                 ('<h4>Are you sure you want to create a new project using this project as a template?</h4>' +
