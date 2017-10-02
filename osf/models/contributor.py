@@ -1,4 +1,5 @@
 from django.db import models
+from include import IncludeManager
 
 from osf.utils.fields import NonNaiveDateTimeField
 from website.util.permissions import (
@@ -9,6 +10,8 @@ from website.util.permissions import (
 
 
 class AbstractBaseContributor(models.Model):
+    objects = IncludeManager()
+
     primary_identifier_name = 'user__guids___id'
 
     read = models.BooleanField(default=False)

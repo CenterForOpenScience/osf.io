@@ -3,7 +3,6 @@ All triggered emails live here.
 """
 
 from django.utils import timezone
-from modularodm import Q
 
 from website import settings
 from framework.auth import signals as auth_signals
@@ -32,9 +31,8 @@ def queue_first_public_project_email(user, node, meeting_creation):
     """
     from osf.models.queued_mail import queue_mail, QueuedMail, NEW_PUBLIC_PROJECT_TYPE, NEW_PUBLIC_PROJECT
     if not meeting_creation:
-        sent_mail = QueuedMail.find(Q('user', 'eq', user) & Q('sent_at', 'ne', None) &
-                                          Q('email_type', 'eq', NEW_PUBLIC_PROJECT_TYPE))
-        if not sent_mail.count():
+        sent_mail = QueuedMail.objects.filter(user=user, email_type=NEW_PUBLIC_PROJECT_TYPE)
+        if not sent_mail.exists():
             queue_mail(
                 to_addr=user.username,
                 mail=NEW_PUBLIC_PROJECT,

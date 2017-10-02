@@ -1,7 +1,10 @@
 import json
+from io import StringIO
 
 from nose import tools as nt
 from django.test import RequestFactory
+from django.core.files.uploadedfile import InMemoryUploadedFile
+from scripts.update_taxonomies import update_taxonomies
 
 from tests.base import AdminTestCase
 from osf_tests.factories import (
@@ -10,7 +13,7 @@ from osf_tests.factories import (
     PreprintFactory,
     SubjectFactory,
 )
-from osf.models import PreprintProvider
+from osf.models import PreprintProvider, NodeLicense
 from admin_tests.utilities import setup_form_view, setup_user_view
 from admin.preprint_providers import views
 from admin.preprint_providers.forms import PreprintProviderForm
@@ -150,13 +153,15 @@ class TestPreprintProviderChangeForm(AdminTestCase):
         formatted_rule = [[[self.parent_1._id], True]]
 
         new_data = {
+            '_id': 'newname',
             'name': 'New Name',
+            'share_publish_type': 'Preprint',
             'subjects_chosen': '{}, {}, {}, {}'.format(
                 self.parent_1.id, self.child_1.id, self.child_2.id, self.grandchild_1.id
             ),
             'toplevel_subjects': [self.parent_1.id],
             'subjects_acceptable': '[]',
-            '_id': 'newname'
+            'preprint_word': 'preprint'
         }
         form = PreprintProviderForm(data=new_data)
         nt.assert_true(form.is_valid())
@@ -169,6 +174,7 @@ class TestPreprintProviderChangeForm(AdminTestCase):
         new_data = {
             '_id': 'newname',
             'name': 'New Name',
+            'share_publish_type': 'Preprint',
             'subjects_chosen': '{}, {}, {}, {}'.format(
                 self.parent_1.id, self.child_1.id, self.child_2.id, self.grandchild_1.id
             ),
@@ -176,7 +182,8 @@ class TestPreprintProviderChangeForm(AdminTestCase):
             'subjects_acceptable': '[]',
             'advisory_board': '<div><ul><li>Bill<i class="fa fa-twitter"></i> Nye</li></ul></div>',
             'description': '<span>Open Preprints <code>Open</code> Science<script></script></span>',
-            'footer_links': '<p>Xiv: <script>Support</script> | <pre>Contact<pre> | <a href=""><span class="fa fa-facebook"></span></a></p>'
+            'footer_links': '<p>Xiv: <script>Support</script> | <pre>Contact<pre> | <a href=""><span class="fa fa-facebook"></span></a></p>',
+            'preprint_word': 'preprint'
         }
 
         stripped_advisory_board = '<div><ul><li>Bill Nye</li></ul></div>'
@@ -193,9 +200,9 @@ class TestPreprintProviderChangeForm(AdminTestCase):
         nt.assert_equal(new_provider.advisory_board, stripped_advisory_board)
 
 
-class TestPreprintProviderExport(AdminTestCase):
+class TestPreprintProviderExportImport(AdminTestCase):
     def setUp(self):
-        super(TestPreprintProviderExport, self).setUp()
+        super(TestPreprintProviderExportImport, self).setUp()
 
         self.user = AuthUserFactory()
         self.preprint_provider = PreprintProviderFactory()
@@ -205,6 +212,13 @@ class TestPreprintProviderExport(AdminTestCase):
         self.view = setup_user_view(self.view, self.request, user=self.user)
 
         self.view.kwargs = {'preprint_provider_id': self.preprint_provider.id}
+
+        self.import_request = RequestFactory().get('/fake_path')
+        self.import_view = views.ImportPreprintProvider()
+        self.import_view = setup_user_view(self.import_view, self.import_request, user=self.user)
+
+        self.preprint_provider.licenses_acceptable = [NodeLicense.objects.get(license_id='NONE')]
+        self.subject = SubjectFactory(provider=self.preprint_provider)
 
     def test_post(self):
         res = self.view.get(self.request)
@@ -218,6 +232,59 @@ class TestPreprintProviderExport(AdminTestCase):
         content_dict = json.loads(res.content)
         for field in views.FIELDS_TO_NOT_IMPORT_EXPORT:
             nt.assert_not_in(field, content_dict['fields'].keys())
+
+    def test_export_to_import_new_provider(self):
+        update_taxonomies('test_bepress_taxonomy.json')
+
+        res = self.view.get(self.request)
+        content_dict = json.loads(res.content)
+
+        content_dict['fields']['_id'] = 'new_id'
+        data = StringIO(unicode(json.dumps(content_dict), 'utf-8'))
+        self.import_request.FILES['file'] = InMemoryUploadedFile(data, None, 'data', 'application/json', 500, None, {})
+
+        res = self.import_view.post(self.import_request)
+
+        provider_id = ''.join([i for i in res.url if i.isdigit()])
+        new_provider = PreprintProvider.objects.get(id=provider_id)
+
+        nt.assert_equal(res.status_code, 302)
+        nt.assert_equal(new_provider._id, 'new_id')
+        # nt.assert_equal(new_provider.subjects.all().count(), 1)
+        nt.assert_equal(new_provider.licenses_acceptable.all().count(), 1)
+        # nt.assert_equal(new_provider.subjects.all()[0].text, self.subject.text)
+        nt.assert_equal(new_provider.licenses_acceptable.all()[0].license_id, 'NONE')
+
+    def test_update_provider_existing_subjects(self):
+        # If there are existing subjects for a provider, imported subjects are ignored
+        self.import_view.kwargs = {'preprint_provider_id': self.preprint_provider.id}
+
+        res = self.view.get(self.request)
+        content_dict = json.loads(res.content)
+
+        new_subject_data = {'include': [], 'exclude': []}
+        new_subject_data['custom'] = {
+            'TestSubject1': {
+                'parent': '',
+                'bepress': 'Law'
+            }
+        }
+
+        content_dict['fields']['subjects'] = json.dumps(new_subject_data)
+        content_dict['fields']['licenses_acceptable'] = ['CCBY']
+        data = StringIO(unicode(json.dumps(content_dict), 'utf-8'))
+        self.import_request.FILES['file'] = InMemoryUploadedFile(data, None, 'data', 'application/json', 500, None, {})
+
+        res = self.import_view.post(self.import_request)
+
+        new_provider_id = int(''.join([i for i in res.url if i.isdigit()]))
+
+        nt.assert_equal(res.status_code, 302)
+        nt.assert_equal(new_provider_id, self.preprint_provider.id)
+        # nt.assert_equal(self.preprint_provider.subjects.all().count(), 1)
+        nt.assert_equal(self.preprint_provider.licenses_acceptable.all().count(), 1)
+        # nt.assert_equal(self.preprint_provider.subjects.all()[0].text, self.subject.text)
+        nt.assert_equal(self.preprint_provider.licenses_acceptable.all()[0].license_id, 'CCBY')
 
 
 class TestCreatePreprintProvider(AdminTestCase):

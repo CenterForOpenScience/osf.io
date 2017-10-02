@@ -5,7 +5,7 @@
 'use strict';
 // CSS used on every page
 require('../../vendor/bootstrap-editable-custom/css/bootstrap-editable.css');
-require('../../vendor/bower_components/jquery-ui/themes/base/minified/jquery.ui.resizable.min.css');
+require('../../vendor/bower_components/jquery-ui/themes/base/resizable.css');
 require('../../css/bootstrap-xl.css');
 require('../../css/animate.css');
 require('../../css/search-bar.css');
@@ -229,6 +229,14 @@ $(function() {
         var $maintenance = $('#maintenance').on('closed.bs.alert', function() {
             Cookie.set(maintenancePersistKey, '0', { expires: 1, path: '/'});
         });
+
+        var levelMap = {
+            1: 'info',
+            2: 'warning',
+            3: 'danger'
+        };
+        $('#maintenance').addClass('alert-' + levelMap[window.contextVars.maintenance.level]);
+
         var dismissed = Cookie.get(maintenancePersistKey) === '0';
         if (!dismissed) {
             $maintenance.show();

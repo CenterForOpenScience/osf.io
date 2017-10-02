@@ -52,7 +52,6 @@ var entry = {
     'view-file-tree-page': staticPath('js/pages/view-file-tree-page.js'),
     'search-page': staticPath('js/pages/search-page.js'),
     'profile-settings-addons-page': staticPath('js/pages/profile-settings-addons-page.js'),
-    'twofactor-page': staticPath('js/pages/twofactor-page.js'),
     'forgotpassword-page': staticPath('js/pages/forgotpassword-page.js'),
     'resetpassword-page': staticPath('js/pages/resetpassword-page.js'),
     'claimaccount-page': staticPath('js/pages/claimaccount-page.js'),
@@ -83,8 +82,6 @@ var entry = {
         'js/osfHelpers',
         'js/osfToggleHeight',
         'mithril',
-        'js/qToggle',
-        'js/components/autocomplete',
         // Main CSS files that get loaded above the fold
         nodePath('select2/select2.css'),
         '@centerforopenscience/osf-style',
@@ -144,7 +141,7 @@ var resolve = {
         'clipboard': staticPath('vendor/bower_components/clipboard/dist/clipboard.js'),
         'history': nodePath('historyjs/scripts/bundled/html4+html5/jquery.history.js'),
         // Needed for knockout-sortable
-        'jquery.ui.sortable': staticPath('vendor/bower_components/jquery-ui/ui/jquery.ui.sortable.js'),
+        'jquery.ui.sortable': staticPath('vendor/bower_components/jquery-ui/ui/widgets/sortable.js'),
         'truncate': staticPath('vendor/bower_components/truncate/jquery.truncate.js'),
         // Needed for ace code editor in wiki
         'ace-noconflict': staticPath('vendor/bower_components/ace-builds/src-noconflict/ace.js'),

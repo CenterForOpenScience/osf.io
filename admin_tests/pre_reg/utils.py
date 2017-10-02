@@ -1,14 +1,9 @@
-from modularodm import Q
-
 from osf.models import DraftRegistration, MetaSchema
 
 
 def draft_reg_util():
     DraftRegistration.remove()
-    return MetaSchema.find_one(
-        Q('name', 'eq', 'Prereg Challenge') &
-        Q('schema_version', 'eq', 2)
-    )
+    return MetaSchema.objects.get(name='Prereg Challenge', schema_version=2)
 
 
 SCHEMA_DATA = {
