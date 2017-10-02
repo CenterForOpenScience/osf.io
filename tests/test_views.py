@@ -9,6 +9,7 @@ import httplib as http
 import json
 import time
 import unittest
+import urllib
 
 from flask import request
 import mock
@@ -4449,7 +4450,7 @@ class TestResetPassword(OsfTestCase):
         assert_equal(res.status_code, 302)
         location = res.headers.get('Location')
         assert_true('login?service=' in location)
-        assert_true('username={}'.format(self.user.username) in location)
+        assert_true('username={}'.format(urllib.quote(self.user.username, safe='@')) in location)
         assert_true('verification_key={}'.format(self.user.verification_key) in location)
 
         # check if password was updated
