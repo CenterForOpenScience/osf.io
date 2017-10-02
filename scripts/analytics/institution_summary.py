@@ -10,7 +10,7 @@ from django.db.models import Q
 from django.utils import timezone
 
 from framework.encryption import ensure_bytes
-from osf.models import OSFUser, AbstractNode, Institution, Registration
+from osf.models import Institution
 from website.app import init_app
 from scripts.analytics.base import SummaryAnalytics
 

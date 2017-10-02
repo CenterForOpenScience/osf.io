@@ -12,7 +12,7 @@ from datetime import datetime, timedelta
 from django.db.models import Q
 from django.utils import timezone
 
-from osf.models import OSFUser, NodeLog
+from osf.models import OSFUser
 from website.app import init_app
 from website import settings
 from framework.database import paginated
