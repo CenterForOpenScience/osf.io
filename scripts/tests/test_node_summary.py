@@ -1,6 +1,6 @@
 import datetime
 from django.utils import timezone
-from osf.models import OSFUser, AbstractNode
+from osf.models import AbstractNode
 from tests.base import OsfTestCase
 from osf_tests.factories import UserFactory, RegistrationFactory, ProjectFactory, WithdrawnRegistrationFactory
 from nose.tools import *  # PEP8 asserts

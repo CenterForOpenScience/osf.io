@@ -6,7 +6,6 @@ import furl
 from django.core.exceptions import ObjectDoesNotExist
 from django.db.models import Q
 from rest_framework.exceptions import NotFound
-from rest_framework.permissions import SAFE_METHODS
 from rest_framework.reverse import reverse
 
 from api.base.authentication.drf import get_session_from_cookie
@@ -17,6 +16,7 @@ from framework.auth.oauth_scopes import ComposedScopes, normalize_scopes
 from osf.models import OSFUser, Node, Registration
 from osf.models.base import GuidMixin
 from osf.modm_compat import to_django_query
+from osf.utils.requests import check_select_for_update
 from website import settings as website_settings
 from website import util as website_util  # noqa
 
@@ -78,7 +78,7 @@ def absolute_reverse(view_name, query_kwargs=None, args=None, kwargs=None):
 
 def get_object_or_error(model_cls, query_or_pk, request, display_name=None):
     obj = query = None
-    select_for_update = bool(request.method not in SAFE_METHODS)
+    select_for_update = check_select_for_update(request)
     if isinstance(query_or_pk, basestring):
         # they passed a 5-char guid as a string
         if issubclass(model_cls, GuidMixin):
