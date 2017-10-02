@@ -31,6 +31,7 @@ class LicenseDetail(JSONAPIBaseView, generics.RetrieveAPIView):
         license = get_object_or_error(
             NodeLicense,
             self.kwargs[self.lookup_url_kwarg],
+            self.request,
             display_name='license'
         )
         self.check_object_permissions(self.request, license)
