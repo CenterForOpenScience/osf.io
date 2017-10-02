@@ -74,7 +74,7 @@ class UserMixin(object):
             else:
                 return self.request.user
 
-        obj = get_object_or_error(OSFUser, key, 'user')
+        obj = get_object_or_error(OSFUser, key, self.request, 'user')
         if check_permissions:
             # May raise a permission denied
             self.check_object_permissions(self.request, obj)
@@ -539,7 +539,8 @@ class UserNodes(JSONAPIBaseView, generics.ListAPIView, UserMixin, NodesFilterMix
             AbstractNode.objects.filter(id__in=set(self.get_queryset_from_request().values_list('id', flat=True)))
             .select_related('node_license')
             .order_by('-date_modified', )
-            .include('guids', 'contributor__user__guids', 'root__guids', limit_includes=10)
+            .include('contributor__user__guids', 'root__guids', limit_includes=10)
+            .distinct('id', 'date_modified')
         )
 
 
@@ -567,7 +568,7 @@ class UserQuickFiles(JSONAPIBaseView, generics.ListAPIView, WaterButlerMixin, Us
         self.kwargs[self.provider_lookup_url_kwarg] = 'osfstorage'
         files_list = self.fetch_from_waterbutler()
 
-        return files_list.children.all().prefetch_related('node')
+        return files_list.children.prefetch_related('node__guids', 'versions', 'tags').include('guids')
 
     # overrides ListAPIView
     def get_queryset(self):
@@ -611,7 +612,7 @@ class UserPreprints(JSONAPIBaseView, generics.ListAPIView, UserMixin, PreprintFi
         return default_qs.filter(no_user_query)
 
     def get_queryset(self):
-        return self.get_queryset_from_request().distinct()
+        return self.get_queryset_from_request().distinct('id', 'date_created')
 
 
 class UserInstitutions(JSONAPIBaseView, generics.ListAPIView, UserMixin):
@@ -743,7 +744,7 @@ class UserRegistrations(JSONAPIBaseView, generics.ListAPIView, UserMixin, NodesF
 
     # overrides ListAPIView
     def get_queryset(self):
-        return self.get_queryset_from_request().select_related('node_license').include('guids', 'contributor__user__guids', 'root__guids', limit_includes=10)
+        return self.get_queryset_from_request().select_related('node_license').include('contributor__user__guids', 'root__guids', limit_includes=10).distinct('id', 'date_modified')
 
 
 class UserInstitutionsRelationship(JSONAPIBaseView, generics.RetrieveDestroyAPIView, UserMixin):

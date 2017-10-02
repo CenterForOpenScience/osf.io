@@ -6,29 +6,30 @@ from bulk_update.helper import bulk_update
 from osf.models import OSFUser
 from django.db.models import Max, DateTimeField
 
-from osf_tests.factories import UserFactory, PreprintFactory
+from osf_tests.factories import UserFactory, PreprintFactory, NodeFactory
 
 
 @pytest.mark.django_db
-class TestGuidAnnotations:
+class TestGuidAutoInclude:
     guid_factories = [
         UserFactory,
         PreprintFactory,
+        NodeFactory
     ]
 
     @pytest.mark.parametrize('Factory', guid_factories)
     def test_filter_object(self, Factory):
         obj = Factory()
-        assert '_guids__' in str(obj._meta.model.objects.filter(id=obj.id).query), 'Guid annotations did not exist in filter query for {}'.format(obj._meta.model.__name__)
+        assert '__guids' in str(obj._meta.model.objects.filter(id=obj.id).query), 'Guids were not included in filter query for {}'.format(obj._meta.model.__name__)
 
-    # TODO: Investigate why this test fails with PreprintFactory
+    @pytest.mark.parametrize('Factory', guid_factories)
     @pytest.mark.django_assert_num_queries
-    def test_all(self, django_assert_num_queries):
+    def test_all(self, Factory, django_assert_num_queries):
         ids = range(0, 5)
         for id in ids:
             UserFactory()
         with django_assert_num_queries(1):
-            wut = OSFUser.objects.all()
+            wut = Factory._meta.model.objects.all()
             for x in wut:
                 assert x._id is not None, 'Guid was None'
 
@@ -182,15 +183,3 @@ class TestGuidAnnotations:
             setattr(obj, dtfield, timezone.now())
         with django_assert_num_queries(1):
             bulk_update(objects)
-
-    @pytest.mark.parametrize('Factory', guid_factories)
-    @pytest.mark.django_assert_num_queries
-    def test_annotate(self, Factory, django_assert_num_queries):
-        objects = []
-        ids = range(0, 5)
-        for the_id in ids:
-            objects.append(Factory())
-        things = Factory._meta.model.objects.all().annotate(highest_id=Max('id'))
-        with django_assert_num_queries(1):
-            for thing in things:
-                assert hasattr(thing, 'highest_id'), 'Annotation failed'

@@ -81,7 +81,7 @@
                             Hack: Use template binding with if rather than vanilla if
                             binding to get access to afterRender
                         -->
-                        <div data-bind="template {if: editing, afterRender: autosizeText.bind($data)}">
+                        <div data-bind="template: {if: editing, afterRender: autosizeText.bind($data)}">
                             <div class="form-group" style="padding-top: 10px">
                                 <div class="form-control atwho-input" placeholder="Edit comment" data-bind="editableHTML: {observable: content, onUpdate: handleEditableUpdate}, attr: {maxlength: $root.MAXLENGTH}" contenteditable="true"></div>
                             </div>
@@ -159,7 +159,7 @@
 
             <!-- ko if: replying -->
 
-                <div data-bind="template {afterRender: autosizeText.bind($data)}">
+                <div data-bind="template: {afterRender: autosizeText.bind($data)}">
                     <div class="form-group" style="padding-top: 10px">
                         <div class="form-control atwho-input" placeholder="Add a comment" data-bind="editableHTML: {observable: replyContent, onUpdate: handleEditableUpdate}, attr: {maxlength: $root.MAXLENGTH}" contenteditable="true"></div>
                     </div>

@@ -126,6 +126,7 @@ class NodeMixin(object):
             node = get_object_or_error(
                 Node,
                 self.kwargs[self.node_lookup_url_kwarg],
+                self.request,
                 display_name='node'
             )
 
@@ -147,7 +148,7 @@ class DraftMixin(object):
         node_id = self.kwargs['node_id']
         if draft_id is None:
             draft_id = self.kwargs['draft_id']
-        draft = get_object_or_error(DraftRegistration, draft_id)
+        draft = get_object_or_error(DraftRegistration, draft_id, self.request)
 
         if not draft.branched_from._id == node_id:
             raise ValidationError('This draft registration is not created from the given node.')
@@ -296,7 +297,7 @@ class NodeList(JSONAPIBaseView, bulk_views.BulkUpdateJSONAPIView, bulk_views.Bul
                     raise PermissionDenied
             return nodes
         else:
-            return self.get_queryset_from_request().distinct()
+            return self.get_queryset_from_request().distinct('id', 'date_modified')
 
     # overrides ListBulkCreateJSONAPIView, BulkUpdateJSONAPIView, BulkDestroyJSONAPIView
     def get_serializer_class(self):
@@ -1416,6 +1417,7 @@ class NodeLinksList(BaseNodeLinksList, bulk_views.BulkDestroyJSONAPIView, bulk_v
         node = get_object_or_error(
             Node,
             self.kwargs[self.node_lookup_url_kwarg],
+            self.request,
             display_name='node'
         )
         if node.is_registration:
@@ -1497,6 +1499,7 @@ class NodeLinksDetail(BaseNodeLinksDetail, generics.RetrieveDestroyAPIView, Node
         node_link = get_object_or_error(
             NodeRelation,
             self.kwargs[self.node_link_lookup_url_kwarg],
+            self.request,
             'node link'
         )
         self.check_object_permissions(self.request, node_link.parent)
@@ -1930,7 +1933,7 @@ class NodeFilesList(JSONAPIBaseView, generics.ListAPIView, WaterButlerMixin, Lis
             # We should not have gotten a file here
             raise NotFound
 
-        return files_list.children.all()
+        return files_list.children.prefetch_related('node__guids', 'versions', 'tags', 'guids')
 
     # overrides ListAPIView
     def get_queryset(self):
@@ -3362,6 +3365,7 @@ class NodeIdentifierList(NodeMixin, IdentifierList):
         node = get_object_or_error(
             Node,
             self.kwargs[self.node_lookup_url_kwarg],
+            self.request,
             display_name='node'
         )
         # Nodes that are folders/collections are treated as a separate resource, so if the client
@@ -3451,4 +3455,4 @@ class NodePreprintsList(JSONAPIBaseView, generics.ListAPIView, NodeMixin, Prepri
         return node.preprints.filter(is_published=True)
 
     def get_queryset(self):
-        return self.get_queryset_from_request().distinct()
+        return self.get_queryset_from_request().distinct('id', 'date_modified')

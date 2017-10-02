@@ -1590,7 +1590,7 @@ function _loadTopLevelChildren() {
  * @this Treebeard.controller
  * @private
  */
-var NO_AUTO_EXPAND_PROJECTS = ['ezcuj', 'ecmz4'];
+var NO_AUTO_EXPAND_PROJECTS = ['ezcuj', 'ecmz4', 'w4wvg', 'sn64d'];
 function expandStateLoad(item) {
     var tb = this,
         i;
@@ -2677,10 +2677,12 @@ tbOptions = {
         up : 'i.fa.fa-chevron-up',
         down : 'i.fa.fa-chevron-down'
     },
+    ondataload: function() {
+        _loadTopLevelChildren.call(this);
+    },
     onload : function () {
         var tb = this;
         tb.options.onload = null;  // Make sure we don't get called again
-        _loadTopLevelChildren.call(tb);
         tb.uploadStates = [];
         tb.pendingFileOps = [];
         tb.select('#tb-tbody, .tb-tbody-inner').on('click', function(event){
