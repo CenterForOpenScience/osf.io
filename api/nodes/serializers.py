@@ -23,6 +23,7 @@ from rest_framework import serializers as ser
 from rest_framework import exceptions
 from addons.base.exceptions import InvalidAuthError, InvalidFolderError
 from website.exceptions import NodeStateError
+from website.files import exceptions as file_exceptions
 from osf.models import (Comment, DraftRegistration, Institution,
                         MetaSchema, AbstractNode, PrivateLink)
 from osf.models.external import ExternalAccount
@@ -1007,18 +1008,6 @@ class NodeProviderFileMetadataSerializer(JSONAPISerializer):
     source = ser.CharField(write_only=True, help_text="ID of file you are copying.")
     action = ser.ChoiceField(choices=action_choices, write_only=True, help_text='Choices: ' + action_choices_string)
 
-    def copy_file(self, source, destination, name):
-        try:
-            return source.copy_under(destination, name=name)
-        except IntegrityError:
-            raise exceptions.ValidationError('File already exists with this name.')
-
-    def move_file(self, source, destination, name):
-        try:
-            return source.move_under(destination, name=source.name)
-        except IntegrityError:
-            raise exceptions.ValidationError('File already exists with this name.')
-
     def create(self, validated_data):
         node = self.context['view'].get_node()
         provider_id = self.context['view'].get_provider_id()
@@ -1026,14 +1015,18 @@ class NodeProviderFileMetadataSerializer(JSONAPISerializer):
         destination = self.context['view'].get_file_object(node, validated_data.pop('destination', '') + '/', provider_id, check_object_permissions=False)
 
         action = validated_data.pop('action', '')
-        import pdb; pdb.set_trace()
 
-        if action == 'copy':
-            return self.copy_file(source, destination, source.name)
-
-
-        if action == 'move':
-            return self.move_file(source, destination, source.name)
+        try:
+            # Current actions are only move and copy
+            return source.copy_under(destination, source.name) if action == 'copy' else source.move_under(destination, name=source.name)
+        except IntegrityError:
+            raise exceptions.ValidationError('File already exists with this name.')
+        except file_exceptions.FileNodeIsQuickFilesNode:
+            raise exceptions.ValidationError('Cannot {} file as it is in a quickfiles node.').format(action)
+        except file_exceptions.FileNodeCheckedOutError:
+            raise exceptions.ValidationError('Cannot move file as it is checked out.')
+        except file_exceptions.FileNodeIsPrimaryFile:
+            raise exceptions.ValidationError('Cannot move file as it is the primary file of preprint.')
 
     class Meta:
         type_ = 'file_metadata'
