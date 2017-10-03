@@ -126,8 +126,11 @@ class InstitutionAuthentication(BaseAuthentication):
 
             # Relying on front-end validation until `accepted_tos` is added to the JWT payload
             user.accepted_terms_of_service = timezone.now()
-            user.timezone = settings.USER_TIMEZONE
-            user.locale = settings.USER_LOCALE
+            if settings.USER_TIMEZONE:
+                user.timezone = settings.USER_TIMEZONE
+
+            if settings.USER_LOCALE:
+                user.locale = settings.USER_LOCALE
 
             if USE_EPPN:
                 user.eppn = eppn
