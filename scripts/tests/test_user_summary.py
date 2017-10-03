@@ -12,8 +12,8 @@ from scripts.analytics.user_summary import UserSummary, LOG_THRESHOLD
 
 class TestUserCount(OsfTestCase):
     def setUp(self):
-        self.yesterday = timezone.now() - timedelta(1)
-        self.a_while_ago = timezone.now() - timedelta(2)
+        self.yesterday = timezone.now() - timedelta(days=1)
+        self.a_while_ago = timezone.now() - timedelta(days=2)
         super(TestUserCount, self).setUp()
 
         for _ in range(3):

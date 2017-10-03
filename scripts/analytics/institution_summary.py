@@ -33,7 +33,7 @@ class InstitutionSummary(SummaryAnalytics):
 
         # Convert to a datetime at midnight for queries and the timestamp
         timestamp_datetime = datetime(date.year, date.month, date.day).replace(tzinfo=pytz.UTC)
-        query_datetime = timestamp_datetime + timedelta(1)
+        query_datetime = timestamp_datetime + timedelta(days=1)
 
         daily_query = Q(date_created__gte=timestamp_datetime)
         node_query = Q(is_deleted=False) & Q(date_created__lt=query_datetime)
@@ -132,7 +132,7 @@ if __name__ == '__main__':
     args = institution_summary.parse_args()
     yesterday = args.yesterday
     if yesterday:
-        date = (timezone.now() - timedelta(1)).date()
+        date = (timezone.now() - timedelta(days=1)).date()
     else:
         date = parse(args.date).date() if args.date else None
     events = institution_summary.get_events(date)

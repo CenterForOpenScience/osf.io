@@ -75,7 +75,7 @@ class UserSummary(SummaryAnalytics):
 
         # Convert to a datetime at midnight for queries and the timestamp
         timestamp_datetime = datetime(date.year, date.month, date.day).replace(tzinfo=pytz.UTC)
-        query_datetime = timestamp_datetime + timedelta(1)
+        query_datetime = timestamp_datetime + timedelta(days=1)
 
         active_user_query = (
             Q(is_registered=True) &
@@ -143,7 +143,7 @@ if __name__ == '__main__':
     args = user_summary.parse_args()
     yesterday = args.yesterday
     if yesterday:
-        date = (timezone.now() - timedelta(1)).date()
+        date = (timezone.now() - timedelta(days=1)).date()
     else:
         date = parse(args.date).date() if args.date else None
     events = user_summary.get_events(date)

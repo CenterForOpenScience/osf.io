@@ -28,7 +28,7 @@ class NodeSummary(SummaryAnalytics):
 
         # Convert to a datetime at midnight for queries and the timestamp
         timestamp_datetime = datetime(date.year, date.month, date.day).replace(tzinfo=pytz.UTC)
-        query_datetime = timestamp_datetime + timedelta(1)
+        query_datetime = timestamp_datetime + timedelta(days=1)
 
         node_query = Q(is_deleted=False, date_created__lte=query_datetime)
         project_query = node_query & Q(parent_nodes__isnull=True)
@@ -126,7 +126,7 @@ if __name__ == '__main__':
     args = node_summary.parse_args()
     yesterday = args.yesterday
     if yesterday:
-        date = (timezone.now() - timedelta(1)).date()
+        date = (timezone.now() - timedelta(days=1)).date()
     else:
         date = parse(args.date).date() if args.date else None
     events = node_summary.get_events(date)

@@ -44,7 +44,7 @@ class TestNodeCount(OsfTestCase):
         self.deleted_node = ProjectFactory(is_deleted=True)
         self.deleted_node2 = ProjectFactory(is_deleted=True)
 
-        self.date = timezone.now() - datetime.timedelta(1)
+        self.date = timezone.now() - datetime.timedelta(days=1)
 
         for node in AbstractNode.objects.all():
             node.date_created = self.date
@@ -107,7 +107,7 @@ class TestNodeCount(OsfTestCase):
 
         # Modify date to zero out dailies
         for node in AbstractNode.objects.all():
-            node.date_created = self.date - datetime.timedelta(1)
+            node.date_created = self.date - datetime.timedelta(days=1)
             node.save()
 
         self.results = NodeSummary().get_events(self.date.date())[0]

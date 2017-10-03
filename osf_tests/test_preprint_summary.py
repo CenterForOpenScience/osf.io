@@ -33,8 +33,8 @@ class TestPreprintCount:
         field = PreprintService._meta.get_field('date_created')
         field.auto_now_add = False  # We have to fudge the time because Keen doesn't allow same day queries.
 
-        date = datetime.datetime.utcnow() - datetime.timedelta(1)
-        preprint.date_created = date - datetime.timedelta(0.1)
+        date = datetime.datetime.utcnow() - datetime.timedelta(days=1)
+        preprint.date_created = date - datetime.timedelta(days=0.1)
         preprint.save()
 
         field.auto_now_add = True
