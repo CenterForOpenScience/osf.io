@@ -30,7 +30,9 @@ from osf.modm_compat import Q
 from addons.osfstorage.models import OsfStorageFile
 
 fake = Factory.create()
-fake_email = lambda: '{}+{}@{}'.format(FAKE_EMAIL_NAME, int(time.time() * 1000000), FAKE_EMAIL_DOMAIN)
+
+# If tests are run on really old processors without high precision this might fail. Unlikely to occur.
+fake_email = lambda: '{}+{}@{}'.format(FAKE_EMAIL_NAME, int(time.clock() * 1000000), FAKE_EMAIL_DOMAIN)
 
 def get_default_metaschema():
     """This needs to be a method so it gets called after the test database is set up"""

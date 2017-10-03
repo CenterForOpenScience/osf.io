@@ -2,6 +2,7 @@
 import datetime
 import mock
 import os
+import pytest
 import time
 import unittest
 from django.utils import timezone
@@ -496,3 +497,18 @@ class TestUserUtils(unittest.TestCase):
         given_name = 'Cause'
         csl_given_name = generate_csl_given_name(given_name)
         assert_equal(csl_given_name, 'Cause')
+
+
+@pytest.mark.django_db
+class TestUserFactoryConflict:
+
+    def test_build_create_user_time_conflict(self):
+        # Test that build and create user factories do not create conflicting usernames 
+        # because they occured quickly
+        user_one_build = UserFactory.build()
+        user_two_build = UserFactory.build()
+        assert user_one_build.username != user_two_build.username
+
+        user_one_create = UserFactory()
+        user_two_create = UserFactory()
+        assert user_one_create.username != user_two_create.username
