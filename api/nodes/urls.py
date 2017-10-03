@@ -1,7 +1,6 @@
 from django.conf.urls import url
 
 from api.nodes import views
-from api.osfstorage import views as osfstorage_views
 
 urlpatterns = [
     # Examples:
