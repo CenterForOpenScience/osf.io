@@ -17,7 +17,7 @@
                                 <div class="input-group m-b-sm">
                                     <input class='form-control'
                                             data-bind="value:query"
-                                            placeholder='Search by name, user profile information, or email' autofocus/>
+                                            placeholder='Search by name or user profile information' autofocus/>
                                     <span class="input-group-btn">
                                         <input type="submit" value="Search" class="btn btn-default">
                                     </span>
