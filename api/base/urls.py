@@ -30,6 +30,7 @@ urlpatterns = [
                 url(r'^logs/', include('api.logs.urls', namespace='logs')),
                 url(r'^metaschemas/', include('api.metaschemas.urls', namespace='metaschemas')),
                 url(r'^nodes/', include('api.nodes.urls', namespace='nodes')),
+                url(r'^osfstorage/', include('api.osfstorage.urls', namespace='osfstorage')),
                 url(r'^preprints/', include('api.preprints.urls', namespace='preprints')),
                 url(r'^preprint_providers/', include('api.preprint_providers.urls', namespace='preprint_providers')),
                 url(r'^registrations/', include('api.registrations.urls', namespace='registrations')),
