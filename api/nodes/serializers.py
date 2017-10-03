@@ -22,7 +22,6 @@ from osf.models import Tag
 from rest_framework import serializers as ser
 from rest_framework import exceptions
 from addons.base.exceptions import InvalidAuthError, InvalidFolderError
-from addons.osfstorage.models import OsfStorageFileNode, OsfStorageFolder
 from website.exceptions import NodeStateError
 from osf.models import (Comment, DraftRegistration, Institution,
                         MetaSchema, AbstractNode, PrivateLink)
@@ -1001,30 +1000,19 @@ class NodeProviderSerializer(JSONAPISerializer):
 class NodeProviderFileMetadataSerializer(JSONAPISerializer):
     id = IDField(source='_id', read_only=True)
     type = TypeField()
-    parent= ser.CharField(write_only=True, help_text="Id of containing destination folder for file")
+    destination = ser.CharField(allow_null=True, write_only=True, help_text="Id of containing destination folder for file")
     source = ser.CharField(write_only=True, help_text="Id of file you are copying")
     action=ser.CharField(write_only=True, help_text="Copy or move, need to make this choicefield")
 
     def create(self, validated_data):
         import pdb; pdb.set_trace()
-        source_id = validated_data.pop('source', '')
-        parent_id = validated_data.pop('parent', '')
-        action = validated_data.pop('action', '')
-        try:
-            node = self.context['view'].get_node()
-            if not(node.get_addon('osfstorage')):
-                raise exceptions.ValidationError('Node must have OSFStorage Addon.')
-        except AbstractNode.DoesNotExist:
-            raise exceptions.NotFound('Cannot find node.')
-        try:
-            source = OsfStorageFileNode.get(source_id, node.id)
-        except OsfStorageFileNode.DoesNotExist:
-            raise exceptions.NotFound('Cannot find file.')
 
-        try:
-            destination = OsfStorageFolder.get(parent_id, node.id)
-        except OsfStorageFolder.DoesNotExist:
-            raise exceptions.NotFound('Cannot find folder.')
+        action = validated_data.pop('action', '')
+
+        node = self.context['view'].get_node()
+        provider_id = self.context['view'].get_provider_id()
+        source = self.context['view'].get_file_object(node, validated_data.pop('source', ''), provider_id, check_object_permissions=False)
+        destination = self.context['view'].get_file_object(node, validated_data.pop('destination', '') + '/', provider_id, check_object_permissions=False)
 
         if action == 'copy':
             try:

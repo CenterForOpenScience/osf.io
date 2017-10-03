@@ -2380,7 +2380,7 @@ class NodeProviderDetail(JSONAPIBaseView, generics.RetrieveAPIView, NodeMixin):
         return NodeProvider(self.kwargs['provider'], self.get_node())
 
 
-class NodeProviderFileMetadata(JSONAPIBaseView, generics.CreateAPIView, NodeMixin):
+class NodeProviderFileMetadata(JSONAPIBaseView, generics.CreateAPIView, NodeMixin, WaterButlerMixin):
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
         ContributorOrPublic,
@@ -2395,9 +2395,17 @@ class NodeProviderFileMetadata(JSONAPIBaseView, generics.CreateAPIView, NodeMixi
     view_category = 'nodes'
     view_name = 'node-provider-file-metadata'
 
-    def get_object(self):
-        import pdb; pdb.set_trace()
-        return NodeProvider(self.kwargs['provider'], self.get_node())
+    def get_node(self, check_object_permissions=True):
+        node = super(NodeProviderFileMetadata, self).get_node(check_object_permissions)
+        if not(node.get_addon('osfstorage')):
+            raise ValidationError('Node must have OSFStorage Addon.')
+        return node
+
+    def get_provider_id(self):
+        provider = self.kwargs.get('provider')
+        if provider != 'osfstorage':
+            raise ValidationError('This endpoint only valid for the OSFStorage Addon.')
+        return provider
 
 
 class NodeLogList(JSONAPIBaseView, generics.ListAPIView, NodeMixin, ListFilterMixin):
