@@ -52,14 +52,6 @@ from website.closed_challenges import views as closed_challenges_views
 from website.identifiers import views as identifier_views
 
 
-def bool_from_str(s):
-    return s.lower() in ['true', 'yes', 'on', '1']
-
-def bool_from_settings(name, default):
-    if hasattr(settings, name):
-        return bool_from_str(getattr(settings, name))
-    return default
-
 def get_globals():
     """Context variables that are available for every template rendered by
     OSFWebRenderer.
@@ -76,14 +68,14 @@ def get_globals():
     else:
         request_login_url = request.url
     return {
-        'embedded_ds': bool_from_settings('USE_EMBEDDED_DS', False),
-        'nav_dropdown': bool_from_settings('NAV_DROPDOWN', True),
-        'nav_support': bool_from_settings('NAV_SUPPORT', True),
-        'home_simple': bool_from_settings('HOME_SIMPLE', False),
-        'pages_footer': bool_from_settings('PAGES_FOOTER', True),
-        'project_analytics': bool_from_settings('PROJECT_ANALYTICS', True),
-        'project_registrations': bool_from_settings('PROJECT_REGISTRATIONS', True),
-        'project_makepublic': bool_from_settings('PROJECT_MAKEPUBLIC', True),
+        'embedded_ds': settings.to_bool('USE_EMBEDDED_DS', False),
+        'nav_dropdown': settings.to_bool('NAV_DROPDOWN', True),
+        'nav_support': settings.to_bool('NAV_SUPPORT', True),
+        'home_simple': settings.to_bool('HOME_SIMPLE', False),
+        'pages_footer': settings.to_bool('PAGES_FOOTER', True),
+        'project_analytics': settings.to_bool('PROJECT_ANALYTICS', True),
+        'project_registrations': settings.to_bool('PROJECT_REGISTRATIONS', True),
+        'project_makepublic': settings.to_bool('PROJECT_MAKEPUBLIC', True),
         'osf_page_name': unicode(settings.OSF_PAGE_NAME, 'utf-8'),
         ''
         'private_link_anonymous': is_private_link_anonymous_view(),
