@@ -18,7 +18,7 @@
         </span>
 
         <div style="margin-bottom: 10px;">
-            <a class="btn btn-primary" data-bind="enabled: hasFirst(), click: impute">Auto-fill</a>
+            <a class="btn btn-primary" data-bind="enabled: hasFirst(), click: autoFill">Auto-fill</a>
         </div>
 
         <div class="form-group">
