@@ -1064,6 +1064,22 @@ class TestArchiverListeners(ArchiverTestCase):
         for node in [reg, rchild, rchild2]:
             assert_false(node.archive_job.archive_tree_finished())
 
+    def test_archive_tree_finished_false_for_partial_archive(self):
+        proj = factories.NodeFactory()
+        child = factories.NodeFactory(parent=proj, title='child')
+        sibling = factories.NodeFactory(parent=proj, title='sibling')
+
+        reg = factories.RegistrationFactory(project=proj)
+        rchild = reg._nodes.filter(title='child').get()
+        rsibling = reg._nodes.filter(title='sibling').get()
+        for node in [reg, rchild, rsibling]:
+            node.archive_job._set_target('osfstorage')
+        for node in [reg, rchild]:
+            node.archive_job.update_target('osfstorage', ARCHIVER_SUCCESS)
+        rsibling.archive_job.update_target('osfstorage', ARCHIVER_INITIATED)
+        rsibling.save()
+        assert_false(reg.archive_job.archive_tree_finished())
+
     @mock.patch('website.mails.send_mail')
     @mock.patch('website.archiver.tasks.archive_success.delay')
     def test_archive_callback_on_tree_sends_only_one_email(self, mock_send_success, mock_arhive_success):
