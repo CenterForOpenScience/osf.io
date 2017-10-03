@@ -1,4 +1,6 @@
 import urllib
+import itertools
+
 import github3
 import cachecontrol
 from requests.adapters import HTTPAdapter
@@ -62,6 +64,14 @@ class GitHubClient(object):
     def repos(self):
         repos = self.gh3.repositories(type='all', sort='full_name')
         return [repo for repo in repos if repo.permissions['push']]
+
+    def user_team_repos(self, permissions=None):
+        permissions = permissions or ['push']
+        return itertools.chain.from_iterable(
+            team.iter_repos()
+            for team in self.gh3.user_teams()
+            if team.permission in permissions
+        )
 
     def create_repo(self, repo, **kwargs):
         return self.gh3.create_repository(repo, **kwargs)

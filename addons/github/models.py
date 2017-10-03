@@ -2,6 +2,7 @@
 
 import os
 import urlparse
+import itertools
 
 import markupsafe
 from addons.base.models import (BaseOAuthNodeSettings, BaseOAuthUserSettings,
@@ -199,16 +200,16 @@ class NodeSettings(BaseStorageAddon, BaseOAuthNodeSettings):
 
             valid_credentials = True
             try:
-                repos = connection.repos()
-                repo_names = [
+                repos = itertools.chain.from_iterable((connection.repos(), connection.user_team_repos()))
+                repo_names = {
                     '{0} / {1}'.format(repo.owner.login, repo.name)
                     for repo in repos
-                ]
+                }
             except GitHubError:
                 repo_names = []
                 valid_credentials = False
             if owner == user:
-                ret.update({'repo_names': repo_names})
+                ret.update({'repo_names': list(repo_names)})
             ret.update({
                 'node_has_auth': True,
                 'github_user': self.user or '',

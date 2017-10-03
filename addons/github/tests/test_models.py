@@ -67,13 +67,17 @@ class TestNodeSettings(OAuthAddonNodeSettingsTestSuiteMixin, unittest.TestCase):
         super(TestNodeSettings, self).test_complete_has_auth_not_verified()
 
     @mock.patch('addons.github.api.GitHubClient.repos')
-    def test_to_json(self, mock_repos):
+    @mock.patch('addons.github.api.GitHubClient.user_team_repos')
+    def test_to_json(self, mock_team_repos, mock_repos):
         mock_repos.return_value = {}
+        mock_team_repos.return_value = {}
         super(TestNodeSettings, self).test_to_json()
 
     @mock.patch('addons.github.api.GitHubClient.repos')
-    def test_to_json_user_is_owner(self, mock_repos):
+    @mock.patch('addons.github.api.GitHubClient.user_team_repos')
+    def test_to_json_user_is_owner(self, mock_team_repos, mock_repos):
         mock_repos.return_value = {}
+        mock_team_repos.return_value = {}
         result = self.node_settings.to_json(self.user)
         assert_true(result['user_has_auth'])
         assert_equal(result['github_user'], 'abc')
@@ -82,8 +86,10 @@ class TestNodeSettings(OAuthAddonNodeSettingsTestSuiteMixin, unittest.TestCase):
         assert_equal(result.get('repo_names', None), [])
 
     @mock.patch('addons.github.api.GitHubClient.repos')
-    def test_to_json_user_is_not_owner(self, mock_repos):
+    @mock.patch('addons.github.api.GitHubClient.user_team_repos')
+    def test_to_json_user_is_not_owner(self, mock_team_repos, mock_repos):
         mock_repos.return_value = {}
+        mock_team_repos.return_value = {}
         not_owner = UserFactory()
         result = self.node_settings.to_json(not_owner)
         assert_false(result['user_has_auth'])
