@@ -88,7 +88,8 @@ from api.nodes.serializers import (
     NodeViewOnlyLinkSerializer,
     NodeViewOnlyLinkUpdateSerializer,
     NodeCitationSerializer,
-    NodeCitationStyleSerializer
+    NodeCitationStyleSerializer,
+    NodeProviderFileMetadataSerializer
 )
 from api.preprints.serializers import PreprintSerializer
 from api.registrations.serializers import RegistrationSerializer
@@ -2376,6 +2377,26 @@ class NodeProviderDetail(JSONAPIBaseView, generics.RetrieveAPIView, NodeMixin):
     view_name = 'node-provider-detail'
 
     def get_object(self):
+        return NodeProvider(self.kwargs['provider'], self.get_node())
+
+
+class NodeProviderFileMetadata(JSONAPIBaseView, generics.CreateAPIView, NodeMixin):
+    permission_classes = (
+        drf_permissions.IsAuthenticatedOrReadOnly,
+        ContributorOrPublic,
+        ExcludeWithdrawals,
+        base_permissions.TokenHasScope,
+    )
+
+    required_read_scopes = [CoreScopes.NODE_FILE_READ]
+    required_write_scopes = [CoreScopes.NODE_FILE_WRITE]
+
+    serializer_class = NodeProviderFileMetadataSerializer
+    view_category = 'nodes'
+    view_name = 'node-provider-file-metadata'
+
+    def get_object(self):
+        import pdb; pdb.set_trace()
         return NodeProvider(self.kwargs['provider'], self.get_node())
 
 

@@ -1,6 +1,7 @@
 from django.conf.urls import url
 
 from api.nodes import views
+from api.osfstorage import views as osfstorage_views
 
 urlpatterns = [
     # Examples:
@@ -21,6 +22,7 @@ urlpatterns = [
     url(r'^(?P<node_id>\w+)/draft_registrations/(?P<draft_id>\w+)/$', views.NodeDraftRegistrationDetail.as_view(), name=views.NodeDraftRegistrationDetail.view_name),
     url(r'^(?P<node_id>\w+)/files/$', views.NodeProvidersList.as_view(), name=views.NodeProvidersList.view_name),
     url(r'^(?P<node_id>\w+)/files/providers/(?P<provider>\w+)/?$', views.NodeProviderDetail.as_view(), name=views.NodeProviderDetail.view_name),
+    url(r'^(?P<node_id>\w+)/files/providers/(?P<provider>\w+)/file_metadata/$', views.NodeProviderFileMetadata.as_view(), name=views.NodeProviderFileMetadata.view_name),
     url(r'^(?P<node_id>\w+)/files/(?P<provider>\w+)(?P<path>/(?:.*/)?)$', views.NodeFilesList.as_view(), name=views.NodeFilesList.view_name),
     url(r'^(?P<node_id>\w+)/files/(?P<provider>\w+)(?P<path>/.+[^/])$', views.NodeFileDetail.as_view(), name=views.NodeFileDetail.view_name),
     url(r'^(?P<node_id>\w+)/forks/$', views.NodeForksList.as_view(), name=views.NodeForksList.view_name),

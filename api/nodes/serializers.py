@@ -1,4 +1,4 @@
-from django.db import connection
+from django.db import connection, IntegrityError
 
 from api.base.exceptions import (Conflict, EndpointNotImplementedError,
                                  InvalidModelValueError,
@@ -22,6 +22,7 @@ from osf.models import Tag
 from rest_framework import serializers as ser
 from rest_framework import exceptions
 from addons.base.exceptions import InvalidAuthError, InvalidFolderError
+from addons.osfstorage.models import OsfStorageFileNode, OsfStorageFolder
 from website.exceptions import NodeStateError
 from osf.models import (Comment, DraftRegistration, Institution,
                         MetaSchema, AbstractNode, PrivateLink)
@@ -995,6 +996,44 @@ class NodeProviderSerializer(JSONAPISerializer):
                 'filter[categories]': 'storage'
             }
         )
+
+
+class NodeProviderFileMetadataSerializer(JSONAPISerializer):
+    id = IDField(source='_id', read_only=True)
+    type = TypeField()
+    parent= ser.CharField(write_only=True, help_text="Id of containing destination folder for file")
+    source = ser.CharField(write_only=True, help_text="Id of file you are copying")
+    action=ser.CharField(write_only=True, help_text="Copy or move, need to make this choicefield")
+
+    def create(self, validated_data):
+        import pdb; pdb.set_trace()
+        source_id = validated_data.pop('source', '')
+        parent_id = validated_data.pop('parent', '')
+        action = validated_data.pop('action', '')
+        try:
+            node = self.context['view'].get_node()
+            if not(node.get_addon('osfstorage')):
+                raise exceptions.ValidationError('Node must have OSFStorage Addon.')
+        except AbstractNode.DoesNotExist:
+            raise exceptions.NotFound('Cannot find node.')
+        try:
+            source = OsfStorageFileNode.get(source_id, node.id)
+        except OsfStorageFileNode.DoesNotExist:
+            raise exceptions.NotFound('Cannot find file.')
+
+        try:
+            destination = OsfStorageFolder.get(parent_id, node.id)
+        except OsfStorageFolder.DoesNotExist:
+            raise exceptions.NotFound('Cannot find folder.')
+
+        if action == 'copy':
+            try:
+                return source.copy_under(destination, name=source.name)
+            except IntegrityError:
+                raise exceptions.ValidationError('File already exists with this name.')
+
+    class Meta:
+        type_ = 'file_metadata'
 
 class InstitutionRelated(JSONAPIRelationshipSerializer):
     id = ser.CharField(source='_id', required=False, allow_null=True)
