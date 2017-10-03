@@ -998,27 +998,42 @@ class NodeProviderSerializer(JSONAPISerializer):
 
 
 class NodeProviderFileMetadataSerializer(JSONAPISerializer):
+    action_choices = ['move', 'copy']
+    action_choices_string = ', '.join(["'{}'".format(choice) for choice in action_choices])
+
     id = IDField(source='_id', read_only=True)
     type = TypeField()
-    destination = ser.CharField(allow_null=True, write_only=True, help_text="Id of containing destination folder for file")
-    source = ser.CharField(write_only=True, help_text="Id of file you are copying")
-    action=ser.CharField(write_only=True, help_text="Copy or move, need to make this choicefield")
+    destination = ser.CharField(allow_null=True, write_only=True, help_text="ID of destination folder. Null if moving to top level of osfstorage.")
+    source = ser.CharField(write_only=True, help_text="ID of file you are copying.")
+    action = ser.ChoiceField(choices=action_choices, write_only=True, help_text='Choices: ' + action_choices_string)
+
+    def copy_file(self, source, destination, name):
+        try:
+            return source.copy_under(destination, name=name)
+        except IntegrityError:
+            raise exceptions.ValidationError('File already exists with this name.')
+
+    def move_file(self, source, destination, name):
+        try:
+            return source.move_under(destination, name=source.name)
+        except IntegrityError:
+            raise exceptions.ValidationError('File already exists with this name.')
 
     def create(self, validated_data):
-        import pdb; pdb.set_trace()
-
-        action = validated_data.pop('action', '')
-
         node = self.context['view'].get_node()
         provider_id = self.context['view'].get_provider_id()
         source = self.context['view'].get_file_object(node, validated_data.pop('source', ''), provider_id, check_object_permissions=False)
         destination = self.context['view'].get_file_object(node, validated_data.pop('destination', '') + '/', provider_id, check_object_permissions=False)
 
+        action = validated_data.pop('action', '')
+        import pdb; pdb.set_trace()
+
         if action == 'copy':
-            try:
-                return source.copy_under(destination, name=source.name)
-            except IntegrityError:
-                raise exceptions.ValidationError('File already exists with this name.')
+            return self.copy_file(source, destination, source.name)
+
+
+        if action == 'move':
+            return self.move_file(source, destination, source.name)
 
     class Meta:
         type_ = 'file_metadata'
