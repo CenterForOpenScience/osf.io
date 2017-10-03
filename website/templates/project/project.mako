@@ -475,6 +475,7 @@ ${parent.javascript_bottom()}
         currentUser: {
             canComment: ${ user['can_comment'] | sjson, n },
             canEdit: ${ user['can_edit'] | sjson, n },
+            canEditTags: ${ user['can_edit_tags'] | sjson, n },
         },
         node: {
             id: ${node['id'] | sjson, n},
