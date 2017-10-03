@@ -1924,12 +1924,14 @@ LOGIN_BY_EPPN = False
 
 #USER_TIMEZONE = 'Asia/Tokyo'
 #USER_LOCALE = 'ja'
+USER_TIMEZONE = None
+USER_LOCALE = None
 
 # OSF projects synchronize groups on Cloud Gateway.
-#CLOUD_GATAWAY_HOST = 'cg.gakunin.jp'
+CLOUD_GATAWAY_HOST = 'cg.gakunin.jp'
 
 # Prefix of isMemberOf attribute for groups.
-#CLOUD_GATAWAY_ISMEMBEROF_PREFIX = 'https://cg.gakunin.jp/gr/'
+CLOUD_GATAWAY_ISMEMBEROF_PREFIX = 'https://cg.gakunin.jp/gr/'
 
 # Path of .cer and . key for GakuNin SP on the container of server.
 # (for API of Cloud Gateway)
