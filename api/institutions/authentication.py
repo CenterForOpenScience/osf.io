@@ -121,8 +121,11 @@ class InstitutionAuthentication(BaseAuthentication):
                 user.suffix = suffix
             user.update_date_last_login()
 
-            user.timezone = settings.USER_TIMEZONE
-            user.locale = settings.USER_LOCALE
+            if settings.USER_TIMEZONE:
+                user.timezone = settings.USER_TIMEZONE
+
+            if settings.USER_LOCALE:
+                user.locale = settings.USER_LOCALE
 
             if USE_EPPN:
                 user.eppn = eppn

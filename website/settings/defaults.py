@@ -19,8 +19,6 @@ def parent_dir(path):
     '''Return the parent of a directory.'''
     return os.path.abspath(os.path.join(path, os.pardir))
 
-OSF_PAGE_NAME = 'OSF'
-
 HERE = os.path.dirname(os.path.abspath(__file__))
 BASE_PATH = parent_dir(HERE)  # website/ directory
 APP_PATH = parent_dir(BASE_PATH)
@@ -1914,3 +1912,31 @@ CUSTOM_CITATIONS = {
 }
 
 PREPRINTS_ASSETS = '/static/img/preprints_assets/'
+
+
+### NII extensions
+
+# service name for page header
+OSF_PAGE_NAME = 'OSF'
+
+# use ePPN (eduPersonPrincipalName) for login (OSFUser.eppn)
+LOGIN_BY_EPPN = False
+
+#USER_TIMEZONE = 'Asia/Tokyo'
+#USER_LOCALE = 'ja'
+
+# OSF projects synchronize groups on Cloud Gateway.
+#CLOUD_GATAWAY_HOST = 'cg.gakunin.jp'
+
+# Prefix of isMemberOf attribute for groups.
+#CLOUD_GATAWAY_ISMEMBEROF_PREFIX = 'https://cg.gakunin.jp/gr/'
+
+# Path of .cer and . key for GakuNin SP on the container of server.
+# (for API of Cloud Gateway)
+GAKUNIN_SP_CERT = '/ssl/gakunin-sp.cer'
+GAKUNIN_SP_KEY  = '/ssl/gakunin-sp.key'
+
+# (unused) OSF projects synchronize groups on Cloud Gateway periodically.
+PROJECT_SYNC = False
+PROJECT_SYNC_LOOP_INTERVAL =  300  # sec.
+PROJECT_SYNC_TIME_LENGTH   = 3600  # sec.
