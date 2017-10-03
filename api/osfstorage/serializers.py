@@ -11,10 +11,10 @@ from api.base.serializers import JSONAPISerializer, IDField, TypeField
 class OsfStorageSerializer(JSONAPISerializer):
     id = IDField(source='_id', read_only=True)
     type = TypeField()
-    parent= ser.CharField(help_text="Id of containing destination folder for file")
-    node = ser.CharField(help_text="Id of source node")
-    source = ser.CharField(help_text="Id of file you are copying")
-    action=ser.CharField(help_text="Copy or move, need to make this choicefield")
+    parent= ser.CharField(write_only=True, help_text="Id of containing destination folder for file")
+    node = ser.CharField(write_only=True, help_text="Id of source node")
+    source = ser.CharField(write_only=True, help_text="Id of file you are copying")
+    action=ser.CharField(write_only=True, help_text="Copy or move, need to make this choicefield")
 
     def create(self, validated_data):
         import pdb; pdb.set_trace()
