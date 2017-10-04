@@ -23,7 +23,7 @@ from framework.auth.core import get_current_user_id
 from website.institutions.views import serialize_institution
 
 from osf.models import BaseFileNode, Guid, Institution, PreprintService, AbstractNode
-from website.settings import EXTERNAL_EMBER_APPS, PROXY_EMBER_APPS, INSTITUTION_DISPLAY_NODE_THRESHOLD
+from website.settings import EXTERNAL_EMBER_APPS, PROXY_EMBER_APPS, INSTITUTION_DISPLAY_NODE_THRESHOLD, DOMAIN
 from website.project.model import has_anonymous_link
 from website.util import permissions
 
@@ -132,7 +132,7 @@ def index():
         inst_dict.update({
             'home': False,
             'institution': True,
-            'redirect_url': '/institutions/{}/'.format(institution._id),
+            'redirect_url': '{}institutions/{}/'.format(DOMAIN, institution._id),
         })
 
         return inst_dict
