@@ -1015,10 +1015,11 @@ class NodeProviderFileMetadataCreateSerializer(FileSerializer):
     def create(self, validated_data):
         source_node = self.context['view'].get_node()
         provider_id = self.context['view'].get_provider_id()
-        destination_node = AbstractNode.load(validated_data.pop('destination_node', '')) or source_node
+        destination_node_id = validated_data.pop('destination_node', '')
+        destination_node = self.context['view'].get_node(specific_node_id=destination_node_id) if destination_node_id else source_node
 
         source = self.context['view'].get_file_object(source_node, validated_data.pop('source', ''), provider_id, check_object_permissions=False)
-        destination = self.context['view'].get_file_object(destination_node, validated_data.pop('destination', '') or "" + '/', provider_id, check_object_permissions=False)
+        destination = self.context['view'].get_file_object(destination_node, (validated_data.pop('destination_parent', '') or "") + '/', provider_id, check_object_permissions=False)
 
         action = validated_data.pop('action', '')
         name = validated_data.pop('name', source.name)
