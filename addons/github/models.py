@@ -209,7 +209,8 @@ class NodeSettings(BaseStorageAddon, BaseOAuthNodeSettings):
                 repo_names = []
                 valid_credentials = False
             if owner == user:
-                ret.update({'repo_names': list(repo_names)})
+                repo_names_sorted = sorted(list(repo_names))
+                ret.update({'repo_names': repo_names_sorted})
             ret.update({
                 'node_has_auth': True,
                 'github_user': self.user or '',
