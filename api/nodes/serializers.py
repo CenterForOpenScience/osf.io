@@ -13,6 +13,7 @@ from api.base.serializers import (DateByVersion, HideIfRegistration, IDField,
 from api.base.settings import ADDONS_FOLDER_CONFIGURABLE
 from api.base.utils import (absolute_reverse, get_object_or_error,
                             get_user_auth, is_truthy)
+from api.files.serializers import FileSerializer
 from django.apps import apps
 from django.conf import settings
 from django.core.exceptions import ValidationError
@@ -998,7 +999,7 @@ class NodeProviderSerializer(JSONAPISerializer):
         )
 
 
-class NodeProviderFileMetadataSerializer(JSONAPISerializer):
+class NodeProviderFileMetadataSerializer(FileSerializer):
     action_choices = ['move', 'copy']
     action_choices_string = ', '.join(["'{}'".format(choice) for choice in action_choices])
 
@@ -1008,12 +1009,14 @@ class NodeProviderFileMetadataSerializer(JSONAPISerializer):
     source = ser.CharField(write_only=True, help_text="ID of file you are copying.")
     action = ser.ChoiceField(choices=action_choices, write_only=True, help_text='Choices: ' + action_choices_string)
     name = ser.CharField(allow_null=True, required=False, help_text="New file name including extension")
+    checkout = ser.CharField(read_only=True)
 
     def create(self, validated_data):
         node = self.context['view'].get_node()
         provider_id = self.context['view'].get_provider_id()
+
         source = self.context['view'].get_file_object(node, validated_data.pop('source', ''), provider_id, check_object_permissions=False)
-        destination = self.context['view'].get_file_object(node, validated_data.pop('destination', '') + '/', provider_id, check_object_permissions=False)
+        destination = self.context['view'].get_file_object(node, validated_data.pop('destination', '') or "" + '/', provider_id, check_object_permissions=False)
 
         action = validated_data.pop('action', '')
         name = validated_data.pop('name', source.name)
