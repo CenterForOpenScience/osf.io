@@ -2,7 +2,7 @@
   "name": "osf",
   "dependencies": {
     "jquery": "^3.2.1",
-    "jquery-ui": "~1.12.1",
+    "jquery-ui": "1.12.1",
     "bootstrap": "^3.3.7",
     "ace-builds": "1.1.8",
     "bootstrap.growl": "2.0.0",
