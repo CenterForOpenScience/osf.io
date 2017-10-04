@@ -632,7 +632,9 @@ class RelationshipField(ser.HyperlinkedIdentityField):
                         else:
                             url = None
 
-                    url = extend_querystring_if_key_exists(url, self.context['request'], 'view_only')
+                    if url:
+                        url = extend_querystring_if_key_exists(url, self.context['request'],
+                                                               'view_only')
                     urls[view_name] = url
 
         if not urls['self'] and not urls['related']:

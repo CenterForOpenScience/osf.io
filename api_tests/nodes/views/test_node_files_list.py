@@ -15,7 +15,8 @@ from api_tests import utils as api_utils
 from tests.base import ApiTestCase
 from osf_tests.factories import (
     ProjectFactory,
-    AuthUserFactory
+    AuthUserFactory,
+    PrivateLinkFactory
 )
 
 
@@ -116,6 +117,12 @@ class TestNodeFilesList(ApiTestCase):
         self.project.save()
         addon.user_settings.oauth_grants[self.project._id] = {oauth_settings._id: []}
         addon.user_settings.save()
+
+    def view_only_link(self):
+        private_link = PrivateLinkFactory(creator=self.user)
+        private_link.nodes.add(self.project)
+        private_link.save()
+        return private_link
 
     def _prepare_mock_wb_response(self, node=None, **kwargs):
         prepare_mock_wb_response(node=node or self.project, **kwargs)
@@ -219,6 +226,19 @@ class TestNodeFilesList(ApiTestCase):
         assert_equal(len(data), 2)
         assert_in('github', providers)
         assert_in('osfstorage', providers)
+
+    def test_vol_node_files_list(self):
+        self._prepare_mock_wb_response(provider='github', files=[{'name': 'NewFile'}])
+        self.add_github()
+        vol = self.view_only_link()
+        url = '/{}nodes/{}/files/github/?view_only={}'.format(API_BASE, self.project._id, vol.key)
+        res = self.app.get(url, auth=self.user_two.auth)
+        wb_request = httpretty.last_request()
+        assert_equal(wb_request.querystring, {u'view_only': [unicode(vol.key, 'utf-8')],
+                                              u'meta': [u'True']
+                                            })
+        assert_equal(res.json['data'][0]['attributes']['name'], 'NewFile')
+        assert_equal(res.json['data'][0]['attributes']['provider'], 'github')
 
     def test_returns_node_files_list(self):
         self._prepare_mock_wb_response(provider='github', files=[{'name': 'NewFile'}])
