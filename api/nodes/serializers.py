@@ -1009,7 +1009,7 @@ class NodeProviderFileMetadataCreateSerializer(FileSerializer):
     checkout = ser.CharField(read_only=True)
     destination_node = ser.CharField(allow_null=True, required=False, write_only=True, help_text="Id of destination node. If none, the node of the source will be used.")
     destination_parent = ser.CharField(allow_null=True, write_only=True, help_text="Id of destination folder. Null if moving to top level of osfstorage.")
-    name = ser.CharField(allow_null=True, required=False, help_text="New file name including extension - optional. If none, will use current file name.")
+    name = ser.CharField(allow_null=True, required=False, help_text="New file name if renaming. If none, will use current file name.")
     source = ser.CharField(write_only=True, help_text="Id of file you are copying.")
 
     def create(self, validated_data):
