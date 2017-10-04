@@ -2,7 +2,7 @@ import re
 
 from django.apps import apps
 from django.db.models import Q
-from rest_framework import generics, permissions as drf_permissions
+from rest_framework import generics, status, permissions as drf_permissions
 from rest_framework.exceptions import PermissionDenied, ValidationError, NotFound, MethodNotAllowed, NotAuthenticated
 from rest_framework.response import Response
 from rest_framework.status import HTTP_204_NO_CONTENT
@@ -111,12 +111,15 @@ from website.util.permissions import ADMIN, PERMISSIONS
 class NodeMixin(object):
     """Mixin with convenience methods for retrieving the current node based on the
     current URL. By default, fetches the current node based on the node_id kwarg.
+
+    If specific_node_id is specified, will attempt to retrieve this node instead of the
+    one on the node_id kwarg.
     """
 
     serializer_class = NodeSerializer
     node_lookup_url_kwarg = 'node_id'
 
-    def get_node(self, check_object_permissions=True):
+    def get_node(self, check_object_permissions=True, specific_node_id=None):
         node = None
 
         if self.kwargs.get('is_embedded') is True:
@@ -126,7 +129,7 @@ class NodeMixin(object):
         if node is None:
             node = get_object_or_error(
                 Node,
-                self.kwargs[self.node_lookup_url_kwarg],
+                specific_node_id or self.kwargs[self.node_lookup_url_kwarg],
                 self.request,
                 display_name='node'
             )
@@ -2401,12 +2404,13 @@ class NodeProviderFileMetadataCreate(JSONAPIBaseView, generics.CreateAPIView, No
     view_name = 'node-provider-file-metadata'
 
     # Overrides NodeMixin to ensure node has osfstorage addon
-    def get_node(self, check_object_permissions=True):
-        node = super(NodeProviderFileMetadataCreate, self).get_node(check_object_permissions)
+    def get_node(self, check_object_permissions=True, specific_node_id=None):
+        node = super(NodeProviderFileMetadataCreate, self).get_node(check_object_permissions, specific_node_id)
         if not(node.get_addon('osfstorage')):
             raise ValidationError('Node must have OSFStorage Addon.')
         return node
 
+    # This endpoint only works for the OsfStorage provider
     def get_provider_id(self):
         provider = self.kwargs.get('provider')
         if provider != 'osfstorage':
