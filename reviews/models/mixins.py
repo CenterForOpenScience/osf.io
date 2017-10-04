@@ -246,7 +246,7 @@ class ReviewsMachine(Machine):
 def reviews_notification(self, context, notify_submit=False):
     timestamp = timezone.now()
     event_type = utils.find_subscription_type('global_reviews')
-    template = ''.join(context.get('template')) + '.txt.mako'
+    template = ''.join(context.get('template')) + '.html.mako'
     for user_id in context.get('email_recipients'):
         user = OSFUser.load(user_id)
         subscriptions = get_user_subscriptions(user, event_type)
