@@ -699,7 +699,7 @@ def copy_settings(ctx, addons=False):
 @task(aliases=['bower'])
 def bower_install(ctx):
     print('Installing bower-managed packages')
-    bower_bin = os.path.join(HERE, 'node_modules', 'bower', 'bin', 'bower')
+    bower_bin = os.path.join(HERE, 'node_modules', '.bin', 'bower')
     ctx.run('{} prune --allow-root'.format(bower_bin), echo=True)
     ctx.run('{} install --allow-root'.format(bower_bin), echo=True)
 
@@ -894,15 +894,12 @@ def webpack(ctx, clean=False, watch=False, dev=False, colors=False):
     """Build static assets with webpack."""
     if clean:
         clean_assets(ctx)
-    webpack_bin = os.path.join(HERE, 'node_modules', 'webpack', 'bin', 'webpack.js')
-    args = [webpack_bin]
+    args = ['yarn run webpack-{}'.format('dev' if dev else 'prod')]
     args += ['--progress']
     if watch:
         args += ['--watch']
     if colors:
         args += ['--colors']
-    config_file = 'webpack.dev.config.js' if dev else 'webpack.prod.config.js'
-    args += ['--config {0}'.format(config_file)]
     command = ' '.join(args)
     ctx.run(command, echo=True)
 
@@ -919,10 +916,10 @@ def build_js_config_files(ctx):
 @task()
 def assets(ctx, dev=False, watch=False, colors=False):
     """Install and build static assets."""
-    npm = 'npm install'
+    command = 'yarn install --frozen-lockfile'
     if not dev:
-        npm += ' --production'
-    ctx.run(npm, echo=True)
+        command += ' --production'
+    ctx.run(command, echo=True)
     bower_install(ctx)
     build_js_config_files(ctx)
     # Always set clean=False to prevent possible mistakes
