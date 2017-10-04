@@ -121,7 +121,7 @@ function NodeFetcher(type, link, handleOrphans, regType, regLink) {
         link = link ? link : $osf.apiV2Url('users/me/nodes/', { query : { 'filter[preprint]': true, 'related_counts' : 'children', 'embed' : ['contributors', 'preprints'], 'fields[users]' : sparseUserFields, 'fields[contributors]' : sparseContributorFields}});
     }
 
-    this.nextLink = link ? 
+    this.nextLink = link ?
         link + '&version=2.2' :
         $osf.apiV2Url('users/me/' + this.type + '/', { query: params});
 }
@@ -1921,7 +1921,11 @@ var Information = {
                             m('p.db-info-meta.text-muted', [
                                 item.attributes.preprint ? m('.fangorn-preprint.p-xs.m-b-xs', 'This project is a Preprint') : '',
                                 m('', 'Visibility : ' + (item.attributes.public ? 'Public' : 'Private')),
-                                m('.text-capitalize', 'Category: ' + category),
+                                m('', [
+                                  m('span', 'Category: '),
+                                  m('span', { className : mHelpers.getIcon(category) }),
+                                  m('span.text-capitalize', ' ' + category)
+                                ]),
                                 m('.text-capitalize', 'Permission: ' + permission),
                                 m('', 'Last Modified on: ' + (item.date ? item.date.local : ''))
                             ]),

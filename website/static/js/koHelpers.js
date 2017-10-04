@@ -498,8 +498,14 @@ ko.bindingHandlers.editableHTML = {
  */
 ko.bindingHandlers.getIcon = {
     init: function(elem, valueAccessor) {
-        var category = valueAccessor();
+        var category = ko.unwrap(valueAccessor());
         var icon =  iconmap.projectComponentIcons[category];
+        $(elem).addClass(icon);
+    },
+    update: function(elem, valueAccessor) {
+        var category = ko.unwrap(valueAccessor());
+        var icon =  iconmap.projectComponentIcons[category];
+        $(elem).removeClass();
         $(elem).addClass(icon);
     }
 };
