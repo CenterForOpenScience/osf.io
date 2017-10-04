@@ -89,7 +89,7 @@ from api.nodes.serializers import (
     NodeViewOnlyLinkUpdateSerializer,
     NodeCitationSerializer,
     NodeCitationStyleSerializer,
-    NodeProviderFileMetadataSerializer
+    NodeProviderFileMetadataCreateSerializer
 )
 from api.preprints.serializers import PreprintSerializer
 from api.registrations.serializers import RegistrationSerializer
@@ -2380,7 +2380,7 @@ class NodeProviderDetail(JSONAPIBaseView, generics.RetrieveAPIView, NodeMixin):
         return NodeProvider(self.kwargs['provider'], self.get_node())
 
 
-class NodeProviderFileMetadata(JSONAPIBaseView, generics.CreateAPIView, NodeMixin, WaterButlerMixin):
+class NodeProviderFileMetadataCreate(JSONAPIBaseView, generics.CreateAPIView, NodeMixin, WaterButlerMixin):
     """
     View for creating metadata for file move/copy in osfstorage.  Only WaterButler should talk to this endpoint.
     To move/copy a file, send a request to WB, and WB will call this view.
@@ -2396,13 +2396,13 @@ class NodeProviderFileMetadata(JSONAPIBaseView, generics.CreateAPIView, NodeMixi
     required_read_scopes = [CoreScopes.NODE_FILE_READ]
     required_write_scopes = [CoreScopes.NODE_FILE_WRITE]
 
-    serializer_class = NodeProviderFileMetadataSerializer
+    serializer_class = NodeProviderFileMetadataCreateSerializer
     view_category = 'nodes'
     view_name = 'node-provider-file-metadata'
 
     # Overrides NodeMixin to ensure node has osfstorage addon
     def get_node(self, check_object_permissions=True):
-        node = super(NodeProviderFileMetadata, self).get_node(check_object_permissions)
+        node = super(NodeProviderFileMetadataCreate, self).get_node(check_object_permissions)
         if not(node.get_addon('osfstorage')):
             raise ValidationError('Node must have OSFStorage Addon.')
         return node

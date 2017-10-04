@@ -999,7 +999,7 @@ class NodeProviderSerializer(JSONAPISerializer):
         )
 
 
-class NodeProviderFileMetadataSerializer(FileSerializer):
+class NodeProviderFileMetadataCreateSerializer(FileSerializer):
     action_choices = ['move', 'copy']
     action_choices_string = ', '.join(["'{}'".format(choice) for choice in action_choices])
 
