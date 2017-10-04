@@ -2415,6 +2415,7 @@ class NodeProviderFileMetadataCreate(JSONAPIBaseView, generics.CreateAPIView, No
             raise ValidationError('Node must have OSFStorage Addon.')
         return node
 
+    # Regular nodes or quickfiles nodes both work at this endpoint.
     def get_quickfiles_node(self, node_kwarg, specific_node_id):
         node = get_object_or_error(AbstractNode, specific_node_id if specific_node_id else node_kwarg, self.request, display_name='node')
         self.check_object_permissions(self.request, node)
