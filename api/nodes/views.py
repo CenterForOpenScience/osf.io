@@ -2381,6 +2381,11 @@ class NodeProviderDetail(JSONAPIBaseView, generics.RetrieveAPIView, NodeMixin):
 
 
 class NodeProviderFileMetadata(JSONAPIBaseView, generics.CreateAPIView, NodeMixin, WaterButlerMixin):
+    """
+    View for creating metadata for file move/copy in osfstorage.  Only WaterButler should talk to this endpoint.
+    To move/copy a file, send a request to WB, and WB will call this view.
+    """
+
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
         ContributorOrPublic,
@@ -2395,6 +2400,7 @@ class NodeProviderFileMetadata(JSONAPIBaseView, generics.CreateAPIView, NodeMixi
     view_category = 'nodes'
     view_name = 'node-provider-file-metadata'
 
+    # Overrides NodeMixin to ensure node has osfstorage addon
     def get_node(self, check_object_permissions=True):
         node = super(NodeProviderFileMetadata, self).get_node(check_object_permissions)
         if not(node.get_addon('osfstorage')):

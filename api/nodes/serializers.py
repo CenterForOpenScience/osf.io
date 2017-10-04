@@ -1005,11 +1005,11 @@ class NodeProviderFileMetadataSerializer(FileSerializer):
 
     id = IDField(source='_id', read_only=True)
     type = TypeField()
-    destination = ser.CharField(allow_null=True, write_only=True, help_text="ID of destination folder. Null if moving to top level of osfstorage.")
-    source = ser.CharField(write_only=True, help_text="ID of file you are copying.")
     action = ser.ChoiceField(choices=action_choices, write_only=True, help_text='Choices: ' + action_choices_string)
-    name = ser.CharField(allow_null=True, required=False, help_text="New file name including extension")
     checkout = ser.CharField(read_only=True)
+    destination = ser.CharField(allow_null=True, write_only=True, help_text="ID of destination folder. Null if moving to top level of osfstorage.")
+    name = ser.CharField(allow_null=True, required=False, help_text="New file name including extension")
+    source = ser.CharField(write_only=True, help_text="ID of file you are copying.")
 
     def create(self, validated_data):
         node = self.context['view'].get_node()
