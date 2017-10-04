@@ -1007,6 +1007,7 @@ class NodeProviderFileMetadataSerializer(JSONAPISerializer):
     destination = ser.CharField(allow_null=True, write_only=True, help_text="ID of destination folder. Null if moving to top level of osfstorage.")
     source = ser.CharField(write_only=True, help_text="ID of file you are copying.")
     action = ser.ChoiceField(choices=action_choices, write_only=True, help_text='Choices: ' + action_choices_string)
+    name = ser.CharField(allow_null=True, required=False, help_text="New file name including extension")
 
     def create(self, validated_data):
         node = self.context['view'].get_node()
@@ -1015,10 +1016,11 @@ class NodeProviderFileMetadataSerializer(JSONAPISerializer):
         destination = self.context['view'].get_file_object(node, validated_data.pop('destination', '') + '/', provider_id, check_object_permissions=False)
 
         action = validated_data.pop('action', '')
+        name = validated_data.pop('name', source.name)
 
         try:
             # Current actions are only move and copy
-            return source.copy_under(destination, source.name) if action == 'copy' else source.move_under(destination, name=source.name)
+            return source.copy_under(destination, name) if action == 'copy' else source.move_under(destination, name)
         except IntegrityError:
             raise exceptions.ValidationError('File already exists with this name.')
         except file_exceptions.FileNodeIsQuickFilesNode:
