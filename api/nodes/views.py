@@ -2413,6 +2413,11 @@ class NodeProviderFileMetadataCreate(JSONAPIBaseView, generics.CreateAPIView, No
             raise ValidationError('This endpoint only valid for the OSFStorage Addon.')
         return provider
 
+    def create(self, request, *args, **kwargs):
+        response = super(NodeProviderFileMetadataCreate, self).create(request, *args, **kwargs)
+        response.status_code = status.HTTP_200_OK if request.data.get('action', '') == 'move' else status.HTTP_201_CREATED
+        return response
+
 
 class NodeLogList(JSONAPIBaseView, generics.ListAPIView, NodeMixin, ListFilterMixin):
     """List of Logs associated with a given Node. *Read-only*.
