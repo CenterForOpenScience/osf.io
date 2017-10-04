@@ -186,6 +186,13 @@ def init_cloud_gateway_groups(user, provider):
     if not prefix:
         return
 
+    eptid = provider['user'].get('eptid')
+    if not eptid:
+        return  # Cloud Gateway may not be alive.
+
+    # set ePTID (eduPersonTargetedID, persistent-id)
+    user.eptid = eptid
+
     debug = False
     #debug = True
 
@@ -199,9 +206,6 @@ def init_cloud_gateway_groups(user, provider):
         groups_str = provider['user'].get('groups')
         if groups_str is None:
             groups_str = ''
-
-    # set ePTID (eduPersonTargetedID, persistent-id)
-    user.eptid = provider['user'].get('eptid')
 
     # clear groups
     user.groups.clear()
