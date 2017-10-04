@@ -1007,16 +1007,18 @@ class NodeProviderFileMetadataSerializer(FileSerializer):
     type = TypeField()
     action = ser.ChoiceField(choices=action_choices, write_only=True, help_text='Choices: ' + action_choices_string)
     checkout = ser.CharField(read_only=True)
-    destination = ser.CharField(allow_null=True, write_only=True, help_text="ID of destination folder. Null if moving to top level of osfstorage.")
-    name = ser.CharField(allow_null=True, required=False, help_text="New file name including extension")
-    source = ser.CharField(write_only=True, help_text="ID of file you are copying.")
+    destination_node = ser.CharField(allow_null=True, required=False, write_only=True, help_text="Id of destination node. If none, the node of the source will be used.")
+    destination_parent = ser.CharField(allow_null=True, write_only=True, help_text="Id of destination folder. Null if moving to top level of osfstorage.")
+    name = ser.CharField(allow_null=True, required=False, help_text="New file name including extension - optional. If none, will use current file name.")
+    source = ser.CharField(write_only=True, help_text="Id of file you are copying.")
 
     def create(self, validated_data):
-        node = self.context['view'].get_node()
+        source_node = self.context['view'].get_node()
         provider_id = self.context['view'].get_provider_id()
+        destination_node = AbstractNode.load(validated_data.pop('destination_node', '')) or source_node
 
-        source = self.context['view'].get_file_object(node, validated_data.pop('source', ''), provider_id, check_object_permissions=False)
-        destination = self.context['view'].get_file_object(node, validated_data.pop('destination', '') or "" + '/', provider_id, check_object_permissions=False)
+        source = self.context['view'].get_file_object(source_node, validated_data.pop('source', ''), provider_id, check_object_permissions=False)
+        destination = self.context['view'].get_file_object(destination_node, validated_data.pop('destination', '') or "" + '/', provider_id, check_object_permissions=False)
 
         action = validated_data.pop('action', '')
         name = validated_data.pop('name', source.name)
