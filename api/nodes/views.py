@@ -2403,11 +2403,21 @@ class NodeProviderFileMetadataCreate(JSONAPIBaseView, generics.CreateAPIView, No
     view_category = 'nodes'
     view_name = 'node-provider-file-metadata'
 
-    # Overrides NodeMixin to ensure node has osfstorage addon
+    # Overrides NodeMixin for passing in specific node_id, or fetching quickfiles node.
     def get_node(self, check_object_permissions=True, specific_node_id=None):
-        node = super(NodeProviderFileMetadataCreate, self).get_node(check_object_permissions, specific_node_id)
+        node_kwarg = self.kwargs[self.node_lookup_url_kwarg]
+        if (specific_node_id and len(specific_node_id) == 5) or len(node_kwarg) == 5:
+            node = super(NodeProviderFileMetadataCreate, self).get_node(check_object_permissions, specific_node_id)
+        else:
+            node = self.get_quickfiles_node(node_kwarg, specific_node_id)
+
         if not(node.get_addon('osfstorage')):
             raise ValidationError('Node must have OSFStorage Addon.')
+        return node
+
+    def get_quickfiles_node(self, node_kwarg, specific_node_id):
+        node = get_object_or_error(AbstractNode, specific_node_id if specific_node_id else node_kwarg, self.request, display_name='node')
+        self.check_object_permissions(self.request, node)
         return node
 
     # This endpoint only works for the OsfStorage provider
