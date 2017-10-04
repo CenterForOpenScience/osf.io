@@ -137,6 +137,10 @@ class Sitemap(object):
         self.errors += 1
         logger.info('Error on {}, {}:'.format(obj, obj_id))
         logger.exception(error)
+
+        if self.errors <= 10:
+            sentry.log_message(error)
+
         if self.errors == 1000:
             sentry.log_message('ERROR: generate_sitemap stopped execution after reaching 1000 errors. See logs for details.')
             raise Exception('Too many errors generating sitemap.')

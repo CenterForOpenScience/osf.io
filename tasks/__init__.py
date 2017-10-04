@@ -696,30 +696,6 @@ def copy_settings(ctx, addons=False):
         copy_addon_settings(ctx)
 
 
-@task
-def packages(ctx):
-    brew_commands = [
-        'update',
-        'upgrade',
-        'install libxml2',
-        'install libxslt',
-        'install elasticsearch@1.7',
-        'install rabbitmq',
-        'install node',
-        'tap tokutek/tokumx',
-        'install chrisseto/homebrew-tokumx/tokumx-bin',
-    ]
-    if platform.system() == 'Darwin':
-        print('Running brew commands')
-        for item in brew_commands:
-            command = 'brew {cmd}'.format(cmd=item)
-            ctx.run(command)
-    elif platform.system() == 'Linux':
-        # TODO: Write a script similar to brew bundle for Ubuntu
-        # e.g., run('sudo apt-get install [list of packages]')
-        pass
-
-
 @task(aliases=['bower'])
 def bower_install(ctx):
     print('Installing bower-managed packages')
@@ -729,19 +705,8 @@ def bower_install(ctx):
 
 
 @task
-def setup(ctx):
-    """Creates local settings, and installs requirements"""
-    copy_settings(ctx, addons=True)
-    packages(ctx)
-    requirements(ctx, addons=True, dev=True)
-    # Build nodeCategories.json before building assets
-    build_js_config_files(ctx)
-    assets(ctx, dev=True, watch=False)
-
-@task
 def docker_init(ctx):
     """Initial docker setup"""
-    import platform
     print('You will be asked for your sudo password to continue...')
     if platform.system() == 'Darwin':  # Mac OSX
         ctx.run('sudo ifconfig lo0 alias 192.168.168.167')
