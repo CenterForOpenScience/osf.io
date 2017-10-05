@@ -196,7 +196,7 @@ class TestWikiViews(OsfTestCase):
         res = self.app.post(url, {'content': page_content}, auth=self.user.auth).follow()
         assert_equal(res.status_code, 200)
 
-        new_wiki_page_count = NodeWikiPage.find().count()
+        new_wiki_page_count = NodeWikiPage.objects.all().count()
         # A new wiki page was created in the db
         assert_equal(new_wiki_page_count, old_wiki_page_count + 1)
 

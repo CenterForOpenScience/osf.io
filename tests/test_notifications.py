@@ -4,7 +4,6 @@ from babel import dates, Locale
 from schema import Schema, And, Use, Or
 from django.utils import timezone
 
-from osf.modm_compat import Q
 from nose.tools import *  # noqa PEP8 asserts
 
 from framework.auth import Auth
