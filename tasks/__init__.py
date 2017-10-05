@@ -264,9 +264,9 @@ def rebuild_search(ctx):
 
 
 @task
-def mailserver(ctx, port=1025):
+def mailserver(ctx, host='localhost', port=1025):
     """Run a SMTP test server."""
-    cmd = 'python -m smtpd -n -c DebuggingServer localhost:{port}'.format(port=port)
+    cmd = 'python -m smtpd -n -c DebuggingServer {host}:{port}'.format(host=host, port=port)
     ctx.run(bin_prefix(cmd), pty=True)
 
 
