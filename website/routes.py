@@ -269,7 +269,7 @@ def make_url_map(app):
     # Ember Applications
     if settings.USE_EXTERNAL_EMBER:
         # Routes that serve up the Ember application. Hide behind feature flag.
-        for prefix, ember_app in settings.EXTERNAL_EMBER_APPS.iteritems():
+        for prefix, value in settings.EXTERNAL_EMBER_APPS.iteritems():
             process_rules(app, [
                 Rule(
                     [
@@ -296,17 +296,15 @@ def make_url_map(app):
                 ),
             ], prefix='/' + prefix)
 
-            if ember_app.get('has_additional_routes', False):
+            if value.get('has_additional_routes', False):
                 import imp
-                app_views = imp.load_source('views', 'website/' + ember_app['url'] + '/views.py')
-                # app_views = __import__('website.' + ember_app['url'], globals(), locals(), ['views'], -1).views
+                app_views = imp.load_source('views', 'website/' + value['url'] + '/views.py')
                 process_rules(app, [
                     Rule(
                         [route for route in app_views.routes],
                         'get',
                         app_views.use_ember_app,
-                        json_renderer,
-                        endpoint_suffix='__' + prefix
+                        notemplate
                     )
                 ])
 
