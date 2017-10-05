@@ -18,7 +18,7 @@ from scripts import utils as script_utils
 logger = logging.getLogger(__name__)
 
 
-def set_file_view_counts(state, *args, **kwargs):
+def set_file_view_counts():
     # get all osfstorage files which is_deleted == False, the file size in production database > 1730325
     files = OsfStorageFile.objects.all()
 
