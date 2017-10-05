@@ -853,11 +853,11 @@ class TestRegistrationBulkUpdate:
 
     @pytest.fixture()
     def registration_one(self, user):
-        return RegistrationFactory(creator=user, embargo=EmbargoFactory(user=user), is_public=False)
+        return RegistrationFactory(creator=user, title='Birds', embargo=EmbargoFactory(user=user), is_public=False)
 
     @pytest.fixture()
     def registration_two(self, user):
-        return RegistrationFactory(creator=user, embargo=EmbargoFactory(user=user), is_public=False)
+        return RegistrationFactory(creator=user, title='Birds II', embargo=EmbargoFactory(user=user), is_public=False)
 
     @pytest.fixture()
     def private_payload(self, registration_one, registration_two):
@@ -926,7 +926,7 @@ class TestRegistrationBulkUpdate:
                     'id': registration_one._id,
                     'type': 'registrations',
                     'attributes': {
-                        'title': 'Nerds',
+                        'public': True,
                     }
                 },
                 {
@@ -1021,8 +1021,20 @@ class TestRegistrationBulkUpdate:
         assert res.json['errors'][0]['detail'] == 'Registrations can only be turned from private to public.'
         assert res.status_code == 400
 
+        # Confirm no changes have occured
+        registration_one.refresh_from_db()
+        registration_two.refresh_from_db()
 
-    def test_bulk_update_private_projects_logged_in_read_only_contrib(self, app, user, registration_one, registration_two, public_payload, url):
+        assert registration_one.embargo_termination_approval is None
+        assert registration_two.embargo_termination_approval is None
+
+        assert registration_one.is_public is False
+        assert registration_two.is_public is False
+
+        assert registration_one.title == 'Birds'
+        assert registration_two.title == 'Birds II'
+
+    def test_bulk_update_embargo_logged_in_read_only_contrib(self, app, user, registration_one, registration_two, public_payload, url):
         read_contrib = AuthUserFactory()
         registration_one.add_contributor(read_contrib, permissions=[permissions.READ], save=True)
         registration_two.add_contributor(read_contrib, permissions=[permissions.READ], save=True)
@@ -1031,7 +1043,7 @@ class TestRegistrationBulkUpdate:
         assert res.status_code == 403
         assert res.json['errors'][0]['detail'] == exceptions.PermissionDenied.default_detail
 
-    def test_bulk_update_private_embargo_logged_in_contrib(self, app, user, registration_one, registration_two, public_payload, url):
+    def test_bulk_update_embargo_logged_in_contrib(self, app, user, registration_one, registration_two, public_payload, url):
         assert registration_one.embargo_termination_approval is None
         assert registration_two.embargo_termination_approval is None
 
