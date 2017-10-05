@@ -32,10 +32,11 @@ EXTERNAL_EMBER_APPS = {
         'server': 'http://localhost:4200',
         'path': os.environ.get('HOME') + '/preprints/'
     },
-    'quickfiles': {
+    'ember_osf_web': {
         'url': '/ember_osf_web/',
         'server': 'http://localhost:4201',
-        'path': os.environ.get('HOME') + '/ember_osf_web/'
+        'path': os.environ.get('HOME') + '/ember_osf_web/',
+        'has_additional_routes': True
     }
 }
 

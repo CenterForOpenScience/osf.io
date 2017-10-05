@@ -43,7 +43,6 @@ from addons.base import views as addon_views
 from website.discovery import views as discovery_views
 from website.conferences import views as conference_views
 from website.preprints import views as preprint_views
-from website.quickfiles import views as quickfiles_views
 from website.registries import views as registries_views
 from website.institutions import views as institution_views
 from website.notifications import views as notification_views
@@ -270,7 +269,7 @@ def make_url_map(app):
     # Ember Applications
     if settings.USE_EXTERNAL_EMBER:
         # Routes that serve up the Ember application. Hide behind feature flag.
-        for prefix in settings.EXTERNAL_EMBER_APPS.keys():
+        for prefix, ember_app in settings.EXTERNAL_EMBER_APPS.iteritems():
             process_rules(app, [
                 Rule(
                     [
@@ -296,6 +295,20 @@ def make_url_map(app):
                     endpoint_suffix='__' + prefix
                 ),
             ], prefix='/' + prefix)
+
+            if ember_app.get('has_additional_routes', False):
+                import imp
+                app_views = imp.load_source('views', 'website/' + ember_app['url'] + '/views.py')
+                # app_views = __import__('website.' + ember_app['url'], globals(), locals(), ['views'], -1).views
+                process_rules(app, [
+                    Rule(
+                        [route for route in app_views.routes],
+                        'get',
+                        app_views.use_ember_app,
+                        json_renderer,
+                        endpoint_suffix='__' + prefix
+                    )
+                ])
 
     ### Base ###
 
@@ -801,13 +814,6 @@ def make_url_map(app):
             'get',
             profile_views.personal_access_token_detail,
             OsfWebRenderer('profile/personal_tokens_detail.mako', trust=False)
-        ),
-
-        Rule(
-            '/<uid>/quickfiles/',
-            'get',
-            quickfiles_views.use_ember_app,
-            notemplate,
         )
     ])
 
