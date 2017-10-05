@@ -12,7 +12,7 @@ from nose.tools import *  # noqa (PEP8 asserts)
 import blinker
 
 from tests.base import OsfTestCase, DbTestCase
-from osf_tests.factories import RegistrationFactory, UserFactory
+from osf_tests.factories import RegistrationFactory, UserFactory, fake_email
 
 from framework.auth.utils import generate_csl_given_name
 from framework.routing import Rule, json_renderer
@@ -505,6 +505,10 @@ class TestUserFactoryConflict:
     def test_build_create_user_time_conflict(self):
         # Test that build and create user factories do not create conflicting usernames 
         # because they occured quickly
+        user_email_one = fake_email()
+        user_email_two = fake_email()
+        assert user_email_one != user_email_two
+
         user_one_build = UserFactory.build()
         user_two_build = UserFactory.build()
         assert user_one_build.username != user_two_build.username
