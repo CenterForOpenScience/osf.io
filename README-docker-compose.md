@@ -93,7 +93,7 @@ Ubuntu: Skip install of docker-sync, fswatch, and unison. instead...
         Ignore future steps that start, stop, or wait for docker-sync
 
 1. Install Docker Sync 0.3.5
-  - Mac: `$ gem install docker-sync -v 0.3.5`
+  - Mac: `$ gem install docker-sync`
   - [Instructions](http://docker-sync.io)
 
 1. Install fswatch and unison
