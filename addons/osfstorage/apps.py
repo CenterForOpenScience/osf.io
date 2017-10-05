@@ -26,7 +26,7 @@ def osf_storage_root(addon_config, node_settings, auth, **kwargs):
 class OSFStorageAddonAppConfig(BaseAddonAppConfig):
     name = 'addons.osfstorage'
     label = 'addons_osfstorage'
-    full_name = 'OSF Storage'
+    full_name = 'NII Storage'
     short_name = 'osfstorage'
     added_default = ['node']
     added_mandatory = ['node']
