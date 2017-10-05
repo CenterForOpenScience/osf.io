@@ -75,6 +75,6 @@ class Command(BaseCommand):
         if not dry_run:
             script_utils.add_file_logger(logger, __file__)
         with transaction.atomic():
-            set_file_view_counts
+            set_file_view_counts()
             if dry_run:
                 raise RuntimeError('Dry run, transaction rolled back.')
