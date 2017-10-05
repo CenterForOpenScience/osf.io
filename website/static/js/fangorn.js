@@ -458,11 +458,14 @@ function checkConflicts(items, folder){
 }
 
 function handleCancel(tb, provider, mode){
-    if (mode === 'cancel') {
+    conflictsCount = tb.syncFileMoveCache[provider].conflicts.length;
+    if (mode === 'stop') {
         tb.syncFileMoveCache[provider].conflicts.length = 0;
         tb.modal.dismiss();
     } else {
-        if (tb.syncFileMoveCache[provider].conflicts.length > 0){
+        var file = conflictsCount > 0 && tb.syncFileMoveCache[provider].conflicts[conflictsCount-1];
+        addMoveStatus(tb, file, true, '', 'skip');
+        if (conflictsCount > 0){
             doSyncMove(tb, provider);
         }
          else {
@@ -481,13 +484,13 @@ function displayConflict(tb, item, folder, cb) {
             'You will lose previous versions of the overwritten file. ' +
             'You will keep previous versions of the moved file.'),
         m('h5.replace-file', '"Skip" will skip the current move.'),
-        m('h5.replace-file', '"Cancel" will cancel all remaining moves.')
+        m('h5.replace-file', '"Stop" will only move files with no conflicts.')
     ]);
     var mithrilButtons = [
         m('span.btn.btn-primary.btn-sm', {onclick: cb.bind(tb, 'keep')}, 'Keep Both'),
         m('span.btn.btn-primary.btn-sm', {onclick: cb.bind(tb, 'replace')}, 'Replace'),
         m('span.btn.btn-default.btn-sm', {onclick: function() {handleCancel(tb, folder.data.provider, 'skip');}}, 'Skip'),
-        m('span.btn.btn-danger.btn-sm', {onclick: function() {handleCancel(tb, folder.data.provider, 'cancel');}}, 'Cancel')
+        m('span.btn.btn-danger.btn-sm', {onclick: function() {handleCancel(tb, folder.data.provider, 'stop');}}, 'Stop')
     ];
     var header = m('h3.break-word.modal-title', 'Replace "' + item.data.name + '"?');
     tb.modal.update(mithrilContent, mithrilButtons, header);
@@ -552,8 +555,6 @@ function doItemOp(operation, to, from, rename, conflict) {
         ]);
         var header =  m('h3.break-word.modal-title', operation.action + ' "' + from.data.name +'"');
         tb.modal.update(mithrilContent, m('', []), header);
-    } else if (typeof(filesRemaining.conflicts) !== 'undefined' && !inConflictsQueue) {
-        tb.modal.dismiss();
     }
 
     var ogParent = from.parentID;
@@ -657,6 +658,8 @@ function doItemOp(operation, to, from, rename, conflict) {
             from.open = true;
             from.load = true;
         }
+        var url = from.data.nodeUrl + 'files/' + from.data.provider + from.data.path;
+        addMoveStatus(tb, from, true, url, conflict);
         // no need to redraw because fangornOrderFolder does it
         orderFolder.call(tb, from.parent());
     }).fail(function(xhr, textStatus) {
@@ -690,13 +693,13 @@ function doItemOp(operation, to, from, rename, conflict) {
                 requestData: moveSpec
             }
         });
-
+        addMoveStatus(tb, from, false, '', conflict);
         orderFolder.call(tb, from.parent());
     }).always(function(){
         from.inProgress = false;
-        if (inConflictsQueue || (syncMoves && inReadyQueue)) {
-            doSyncMove(tb, to.data.provider);
-        }
+        // if (inConflictsQueue || (syncMoves && inReadyQueue)) {
+        doSyncMove(tb, to.data.provider);
+        // }
     });
 }
 
@@ -2456,6 +2459,7 @@ function _dropLogic(event, items, folder) {
 
     tb.syncFileMoveCache = tb.syncFileMoveCache || {};
     tb.syncFileMoveCache[folder.data.provider] = tb.syncFileMoveCache[folder.data.provider] || {};
+    tb.syncFileMoveCache.moveStates = tb.syncFileMoveCache.moveStates || [];
 
     if (toMove.ready.length > 0) {
         tb.syncFileMoveCache[folder.data.provider].ready = tb.syncFileMoveCache[folder.data.provider].ready || [];
@@ -2483,15 +2487,45 @@ function _dropLogic(event, items, folder) {
     }
 }
 
+function addMoveStatus(treebeard, file, success, link, op){
+    treebeard.syncFileMoveCache.moveStates.push(
+        {'name': file.name || file.data.name, 'success': success, 'link': link, 'op': op}
+    );
+}
+
 function doSyncMove(tb, provider){
-    var cache = tb.syncFileMoveCache && tb.syncFileMoveCache[provider], itemData;
+    var cache = tb.syncFileMoveCache && tb.syncFileMoveCache[provider];
+    var itemData;
     if (cache.conflicts && cache.conflicts.length > 0) {
         itemData = cache.conflicts.pop();
         displayConflict(tb, itemData.item, itemData.folder, doItemOp.bind(tb, copyMode === 'move' ? OPERATIONS.MOVE : OPERATIONS.COPY, itemData.folder, itemData.item, undefined));
     } else if (cache.ready && cache.ready.length > 0) {
         itemData = cache.ready.pop();
         doItemOp.call(tb, copyMode === 'move' ? OPERATIONS.MOVE : OPERATIONS.COPY, itemData.folder, itemData.item, undefined, 'replace');
-    }
+    } else {
+       var moveStates = tb.syncFileMoveCache.moveStates;
+       if (moveStates.length) {
+           tb.syncFileMoveCache.moveStates = [];
+           tb.modal.update(m('', [
+               m('', [
+                   moveStates.map(function(status){
+                       return m('',
+                           [
+                               m('.row', [
+                                   m((status.success ? 'a[href="' + status.link + '"]' : '') + '.col-sm-8', status.name),
+                                   m('.col-sm-2' + (status.success ? '.text-success' : '.text-danger') , status.op),
+                                   m('.col-sm-2', m(status.success ? '.fa.fa-check[style="color: green"]' : '.fa.fa-times[style="color: red"]')),
+                               ]),
+                               m('hr')
+                           ]
+                       );
+                   })
+               ])
+           ]), m('', [
+               m('a.btn.btn-primary', {onclick: function() {tb.modal.dismiss();}}, 'Done'), //jshint ignore:line
+           ]), m('h3.break-word.modal-title', 'Move Status'));
+     }
+   }
 }
 
 /**
