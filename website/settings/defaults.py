@@ -124,6 +124,10 @@ USE_EMAIL = True
 FROM_EMAIL = 'openscienceframework-noreply@osf.io'
 SUPPORT_EMAIL = 'support@osf.io'
 
+# Default settings for fake email address generation
+FAKE_EMAIL_NAME = 'freddiemercury'
+FAKE_EMAIL_DOMAIN = 'cos.io'
+
 # SMTP Settings
 MAIL_SERVER = 'smtp.sendgrid.net'
 MAIL_USERNAME = 'osf-smtp'
