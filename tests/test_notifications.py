@@ -1802,9 +1802,9 @@ class TestSendDigest(OsfTestCase):
         with assert_raises(NotificationDigest.DoesNotExist):
             NotificationDigest.objects.get(_id=digest_id)
 
-@mock.patch('website.mails.render_message')
+@mock.patch('website.mails.mails.send_mail')
 class TestNotificationsReviews(OsfTestCase):
-    def test_reviews_notification(self, mock_render):
+    def test_reviews_notification(self, mock_send_email):
         provider = factories.PreprintProviderFactory(_id = 'engrxiv')
         preprint = factories.PreprintFactory(provider = provider)
         user = factories.UserFactory()
@@ -1816,7 +1816,7 @@ class TestNotificationsReviews(OsfTestCase):
             'reviewable': preprint,
             'workflow': 'pre-moderation',
             'provider_contact_email': 'contact@osf.io',
-            'provider_support_email': 'support@osf.io'
+            'provider_support_email': 'support@osf.io',
         }
         factories.NotificationSubscriptionFactory(
             _id=user._id + '_' + 'global_comments',
@@ -1835,10 +1835,9 @@ class TestNotificationsReviews(OsfTestCase):
             user=user,
             event_name='global_reviews'
         ).add_user_to_subscription(user, 'email_transactional')
-        mixins.reviews_notification(self, context=context, notify_submit=True)
-        assert_true(mock_render.called)
-        template = ''.join(context.get('template')) + '.txt.mako'
-        mock_render.assert_called_with(template, **context)
+        mixins.reviews_submit_notification(self, context=context)
+        assert_true(mock_send_email.called)
+        template  = ''.join(context.get('template'))
         contributor_subscriptions = list(utils.get_all_user_subscriptions(user))
         event_types = [sub.event_name for sub in contributor_subscriptions]
         assert_in('global_reviews', event_types)
