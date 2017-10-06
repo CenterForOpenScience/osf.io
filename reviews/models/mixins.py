@@ -252,7 +252,7 @@ def reviews_notification(self, context):
         user = OSFUser.load(user_id)
         subscriptions = get_user_subscriptions(user, event_type)
         for notification_type in subscriptions:
-            check_user_subscribe = subscriptions[notification_type] and user_id in subscriptions[notification_type] and notification_type != 'none'# check if user is subscribed to this type of notifications
+            check_user_subscribe = subscriptions[notification_type] and user_id in subscriptions[notification_type] and notification_type != 'none'  # check if user is subscribed to this type of notifications
             if check_user_subscribe:
                 node_lineage_ids = get_node_lineage(context.get('reviewable').node) if context.get('reviewable').node else []
                 context['user'] = user
