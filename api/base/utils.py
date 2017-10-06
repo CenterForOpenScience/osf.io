@@ -15,7 +15,6 @@ from framework.auth.cas import CasResponse
 from framework.auth.oauth_scopes import ComposedScopes, normalize_scopes
 from osf.models import OSFUser, Node, Registration
 from osf.models.base import GuidMixin
-from osf.modm_compat import to_django_query
 from osf.utils.requests import check_select_for_update
 from website import settings as website_settings
 from website import util as website_util  # noqa
@@ -93,11 +92,10 @@ def get_object_or_error(model_cls, query_or_pk, request, display_name=None):
                 obj = model_cls.load(query_or_pk, select_for_update=select_for_update)
     else:
         # they passed a query
-        if hasattr(model_cls, 'primary_identifier_name'):
-            query = to_django_query(query_or_pk, model_cls=model_cls)
-        else:
-            # fall back to modmcompatibility's find_one
-            obj = model_cls.find_one(query_or_pk, select_for_update=select_for_update)
+        try:
+            obj = model_cls.objects.get(query_or_pk, select_for_update=select_for_update)
+        except model_cls.DoesNotExist:
+            obj = None
 
     if not obj:
         if not query:
