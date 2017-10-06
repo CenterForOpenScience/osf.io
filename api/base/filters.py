@@ -12,10 +12,8 @@ from api.base.exceptions import (InvalidFilterComparisonType,
 from api.base.serializers import RelationshipField, ShowIfVersion, TargetField
 from dateutil import parser as date_parser
 from django.core.exceptions import ValidationError
-from django.db.models import QuerySet as DjangoQuerySet
 from django.db.models import Q
 from rest_framework import serializers as ser
-from rest_framework.filters import OrderingFilter
 from osf.models import Subject
 from osf.models.base import GuidMixin
 

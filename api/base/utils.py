@@ -93,7 +93,7 @@ def get_object_or_error(model_cls, query_or_pk, request, display_name=None):
     else:
         # they passed a query
         try:
-            obj = model_cls.objects.get(query_or_pk, select_for_update=select_for_update)
+            obj = model_cls.objects.filter(query_or_pk).select_for_update().get() if select_for_update else model_cls.objects.get(query_or_pk)
         except model_cls.DoesNotExist:
             obj = None
 
