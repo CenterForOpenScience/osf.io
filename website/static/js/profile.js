@@ -468,6 +468,8 @@ var NameViewModel = function(urls, modes, preventUnsaved, fetchCallback) {
     };
 
     self.citeApa = ko.computed(function() {
+        var fullName = $osf.parseName($.trim(self.full()));
+
         var cite = self.family();
         var given = $.trim(self.given() + ' ' + self.middle());
 
@@ -477,10 +479,25 @@ var NameViewModel = function(urls, modes, preventUnsaved, fetchCallback) {
         if (self.suffix()) {
             cite = cite + ', ' + suffix(self.suffix());
         }
+
+        if (cite === '') {
+            cite = fullName.lastName;
+
+            if (fullName.firstName) {
+                cite = cite + ', ' + self.initials($.trim(fullName.firstName + ' ' + fullName.middleName));
+            }
+
+            if (fullName.suffix) {
+                cite = cite + ', ' + suffix(fullName.suffix);
+            }
+        }
+
         return cite;
     });
 
     self.citeMla = ko.computed(function() {
+        var fullName = $osf.parseName($.trim(self.full()));
+
         var cite = self.family();
         if (self.given()) {
             cite = cite + ', ' + self.given();
@@ -491,6 +508,23 @@ var NameViewModel = function(urls, modes, preventUnsaved, fetchCallback) {
         if (self.suffix()) {
             cite = cite + ', ' + suffix(self.suffix());
         }
+
+        if (cite === '') {
+            cite = fullName.lastName;
+
+            if (fullName.firstName) {
+                cite = cite + ', ' + fullName.firstName;
+            }
+
+            if (fullName.middleName) {
+                cite = cite + ' ' + self.initials(fullName.middleName);
+            }
+
+            if (fullName.suffix) {
+                cite = cite + ', ' + suffix(fullName.suffix);
+            }
+        }
+
         return cite;
     });
 

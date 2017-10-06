@@ -372,6 +372,50 @@ var decodeText = function(text) {
     return text;
 };
 
+var parseName = function(text) {
+    // list for determining the difference between a last name and a suffix in case a period is not used
+    var suffixList = ['jr','jnr','sr','snr','dr','phd','i','ii','iii','iv','v','md','esq'];
+    var fullName = {
+        firstName: '',
+        middleName: '',
+        lastName: '',
+        suffix: ''
+    };
+
+    text = text.split(/(\s+)/).filter( function(name) {
+        return name.trim().length > 0;
+    });
+
+    // sets fullName.firstName to the first item in the array and removes it from the array
+    if (text.length >= 1) {
+        fullName.firstName = text.shift();
+    }
+
+    // determines if the last item on the array is a suffix or a last name and removes it from the array
+    // sets the value on fullName accordingly
+    if (text.length >= 1) {
+        var item = text.pop();
+        var itemLower = item.toLowerCase();
+        if (item.includes('.') || suffixList.includes(itemLower)) {
+            fullName.suffix = item;
+        } else {
+            fullName.lastName = item;
+        }
+    }
+
+    // determines if fullName.lastName has a value, if it does not, sets it to the last value on the array
+    if (!fullName.lastName && text.length >= 1) {
+        fullName.lastName = text.pop();
+    } 
+
+    // determines if there are any more values on the array, any values remaining are set to fullName.middleName
+    if (text.length >= 1) {
+        fullName.middleName = text.join(' ');
+    }
+
+    return fullName;
+};
+
 /**
   * Return whether or not a value is an email address.
   * Adapted from Knockout-Validation.
@@ -1079,4 +1123,5 @@ module.exports = window.$.osf = {
     linkifyText: linkifyText,
     getConfirmationString: getConfirmationString,
     decodeText: decodeText,
+    parseName: parseName,
 };

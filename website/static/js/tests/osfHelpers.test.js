@@ -264,6 +264,35 @@ describe('osfHelpers', () => {
         });
     });
 
+    describe('parseName', () => {
+        it('returns a name object with attributes for a suffix and a first, middle, and last name', () => {
+            var names = [
+                'John Snow',
+                'John Stark Snow',
+                'John Snow Jr',
+                'John Snow jr',
+                'John Snow Jr.',
+                'John Jr.',
+                'John Stark Snow Sr.',
+                'John Jacob Jinglheimer Smitt Sr.'
+            ];
+            var expectedOutput = [
+                {firstName: 'John', middleName: '', lastName: 'Snow', suffix: ''},
+                {firstName: 'John', middleName: 'Stark', lastName: 'Snow', suffix: ''},
+                {firstName: 'John', middleName: '', lastName: 'Snow', suffix: 'Jr'},
+                {firstName: 'John', middleName: '', lastName: 'Snow', suffix: 'Jr.'},
+                {firstName: 'John', middleName: '', lastName: '', suffix: 'Jr.'},
+                {firstName: 'John', middleName: 'Stark', lastName: 'Snow', suffix: 'Sr.'},
+                {firstName: '', middleName: '', lastName: '', suffix: ''},
+                {firstName: 'John', middleName: 'Jacob Jinglheimer', lastName: 'Smitt', suffix: 'Sr.'}
+            ];
+            for (let i = 0; i < names.length; i++) {
+                let test = $osf.parseName(name[i]);
+                assert.equal(test, expectedOutput[i]);
+            }
+        });
+    });
+
     describe('isEmail', () => {
         it('returns true for valid emails', () => {
             var emails = [
