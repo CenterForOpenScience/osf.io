@@ -1,0 +1,2 @@
+# Requirements for the cloudfiles add-on
+rackspacesdk

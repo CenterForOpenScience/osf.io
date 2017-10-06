@@ -1,0 +1,9 @@
+{
+    "containerLocations": [
+        {"label": "North Virginia (IAD)", "value" : "IAD"},
+        {"label": "Dallas (DFW)", "value" : "DFW"},
+        {"label": "Chicago (ORD)", "value" : "ORD"},
+        {"label": "Sydney (SYD)", "value" : "SYD"},
+        {"label": "Hong Kong (HKG)", "value" : "HKG"}
+    ]
+}
