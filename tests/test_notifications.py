@@ -1837,7 +1837,6 @@ class TestNotificationsReviews(OsfTestCase):
         ).add_user_to_subscription(user, 'email_transactional')
         mixins.reviews_submit_notification(self, context=context)
         assert_true(mock_send_email.called)
-        template  = ''.join(context.get('template'))
         contributor_subscriptions = list(utils.get_all_user_subscriptions(user))
         event_types = [sub.event_name for sub in contributor_subscriptions]
         assert_in('global_reviews', event_types)

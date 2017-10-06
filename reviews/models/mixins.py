@@ -67,8 +67,6 @@ class ReviewableMixin(models.Model):
     """Something that may be included in a reviewed collection and is subject to a reviews workflow.
     """
 
-    __machine = None
-
     class Meta:
         abstract = True
 
@@ -83,12 +81,6 @@ class ReviewableMixin(models.Model):
         if not public_states:
             return False
         return self.reviews_state in public_states
-
-    @property
-    def _reviews_machine(self):
-        if self.__machine is None:
-            self.__machine = ReviewsMachine(self, 'reviews_state')
-        return self.__machine
 
     def reviews_submit(self, user):
         """Run the 'submit' state transition and create a corresponding Action.
@@ -126,12 +118,13 @@ class ReviewableMixin(models.Model):
         return self.__run_transition(workflow.Triggers.EDIT_COMMENT.value, user=user, comment=comment)
 
     def __run_transition(self, trigger, **kwargs):
-        trigger_fn = getattr(self._reviews_machine, trigger)
+        reviews_machine = ReviewsMachine(self, 'reviews_state')
+        trigger_fn = getattr(reviews_machine, trigger)
         with transaction.atomic():
             result = trigger_fn(**kwargs)
-            action = self._reviews_machine.action
+            action = reviews_machine.action
             if not result or action is None:
-                valid_triggers = self._reviews_machine.get_triggers(self.reviews_state)
+                valid_triggers = reviews_machine.get_triggers(self.reviews_state)
                 raise InvalidTriggerError(trigger, self.reviews_state, valid_triggers)
             return action
 
@@ -247,7 +240,7 @@ class ReviewsMachine(Machine):
 def reviews_notification(self, context):
     timestamp = timezone.now()
     event_type = utils.find_subscription_type('global_reviews')
-    template = ''.join(context.get('template')) + '.txt.mako'
+    template = ''.join(context.get('template')) + '.html.mako'
     for user_id in context.get('email_recipients'):
         user = OSFUser.load(user_id)
         subscriptions = get_user_subscriptions(user, event_type)
