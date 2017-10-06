@@ -1,4 +1,6 @@
 from rest_framework import generics, permissions as drf_permissions
+from rest_framework.exceptions import NotFound
+from django.core.exceptions import ObjectDoesNotExist
 
 from api.base.views import JSONAPIBaseView
 from api.base.utils import get_object_or_error
@@ -100,4 +102,7 @@ class TaxonomyDetail(JSONAPIBaseView, generics.RetrieveAPIView):
     view_name = 'taxonomy-detail'
 
     def get_object(self):
-        return get_object_or_error(Subject, self.kwargs['taxonomy_id'], self.request)
+        try:
+             return optimize_subject_query(Subject.objects).get(_id=self.kwargs['taxonomy_id'])
+        except ObjectDoesNotExist:
+            raise NotFound
