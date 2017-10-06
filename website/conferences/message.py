@@ -177,7 +177,7 @@ class ConferenceMessage(object):
     def allowed_types(self):
         Conference = apps.get_model('osf.Conference')
         allowed_types = []
-        for conf in Conference.find():
+        for conf in Conference.objects.all():
             allowed_types.extend([conf.field_names['submission1'], conf.field_names['submission2']])
         regex_types_allowed = '|'.join(set(allowed_types))
         return regex_types_allowed
