@@ -240,14 +240,14 @@ $(document).ready(function () {
                 }
             };
 
-            var request = $.ajax({
-                type: 'PATCH',
-                dataType: 'json',
-                contentType: 'application/json',
-                url: tagsApiUrl,
-                data: JSON.stringify(payload),
-                beforeSend: $osf.setXHRAuthorization
-            });
+            var request = $osf.ajaxJSON(
+                'PATCH',
+                tagsApiUrl,
+                {
+                    data: payload,
+                    isCors: true
+                }
+            );
 
             request.done(function() {
                 window.contextVars.node.tags.push(tag);
@@ -278,14 +278,14 @@ $(document).ready(function () {
                 }
             };
 
-            var request = $.ajax({
-                type: 'PATCH',
-                dataType: 'json',
-                contentType: 'application/json',
-                url: tagsApiUrl,
-                data: JSON.stringify(payload),
-                beforeSend: $osf.setXHRAuthorization
-            });
+            var request = $osf.ajaxJSON(
+                'PATCH',
+                tagsApiUrl,
+                {
+                    data: payload,
+                    isCors: true
+                }
+            );
 
             request.done(function() {
                 window.contextVars.node.tags.splice(window.contextVars.node.tags.indexOf(tag), 1);
