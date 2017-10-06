@@ -102,7 +102,7 @@ class TestFileView:
 
     def test_get_file(self, app, user, file_url, file):
         res = app.get(file_url, auth=user.auth)
-        file.versions.last().reload()
+        file.versions.first().reload()
         assert res.status_code == 200
         assert res.json.keys() == ['data']
         attributes = res.json['data']['attributes']
@@ -112,10 +112,10 @@ class TestFileView:
         assert attributes['materialized_path'] == file.materialized_path
         assert attributes['last_touched'] == None
         assert attributes['provider'] == file.provider
-        assert attributes['size'] == file.versions.last().size
+        assert attributes['size'] == file.versions.first().size
         assert attributes['current_version'] == len(file.history)
-        assert attributes['date_modified'] == _dt_to_iso8601(file.versions.last().date_created.replace(tzinfo=pytz.utc))
-        assert attributes['date_created'] == _dt_to_iso8601(file.versions.first().date_created.replace(tzinfo=pytz.utc))
+        assert attributes['date_modified'] == _dt_to_iso8601(file.versions.first().date_created.replace(tzinfo=pytz.utc))
+        assert attributes['date_created'] == _dt_to_iso8601(file.versions.last().date_created.replace(tzinfo=pytz.utc))
         assert attributes['extra']['hashes']['md5'] == None
         assert attributes['extra']['hashes']['sha256'] == None
         assert attributes['tags'] == []
@@ -463,6 +463,31 @@ class TestFileView:
         assert node._id in split_href
         assert node.id not in split_href
 
+    def test_files_view_count(self, app, user, node):
+        file1 = api_utils.create_test_file(node, user, create_guid=False)
+        file1.save()
+        file1_url = '/{}files/{}/'.format(API_BASE, file1._id)
+        res = app.get(file1_url, auth=user.auth)
+        file1.versions.last().reload()
+        assert res.status_code == 200
+        assert res.json.keys() == ['data']
+        attributes = res.json['data']['attributes']
+        assert attributes['path'] == file1.path
+        assert attributes['kind'] == file1.kind
+        assert attributes['name'] == file1.name
+        assert attributes['materialized_path'] == file1.materialized_path
+        assert attributes['last_touched'] == None
+        assert attributes['provider'] == file1.provider
+        assert attributes['size'] == file1.versions.last().size
+        assert attributes['current_version'] == len(file1.history)
+        assert attributes['date_modified'] == _dt_to_iso8601(file1.versions.last().date_created.replace(tzinfo=pytz.utc))
+        assert attributes['date_created'] == _dt_to_iso8601(file1.versions.first().date_created.replace(tzinfo=pytz.utc))
+        assert attributes['extra']['hashes']['md5'] == None
+        assert attributes['extra']['hashes']['sha256'] == None
+        assert attributes['extra']['downloads'] == 0
+        assert attributes['extra']['views'] == 0
+        assert attributes['tags'] == []
+
 
 @pytest.mark.django_db
 class TestFileVersionView:
@@ -508,8 +533,8 @@ class TestFileVersionView:
         )
         assert res.status_code == 200
         assert len(res.json['data']) == 2
-        assert res.json['data'][0]['id'] == '1'
-        assert res.json['data'][1]['id'] == '2'
+        assert res.json['data'][0]['id'] == '2'
+        assert res.json['data'][1]['id'] == '1'
 
     def test_load_and_property(self, app, user, file):
         # test_by_id

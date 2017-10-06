@@ -7,7 +7,8 @@ from rest_framework.exceptions import NotFound, PermissionDenied, NotAuthenticat
 from rest_framework import permissions as drf_permissions
 
 from framework.auth.oauth_scopes import CoreScopes
-from osf.models import PreprintService, Identifier
+from osf.models import PreprintService
+from osf.utils.requests import check_select_for_update
 
 from api.base.exceptions import Conflict
 from api.base.views import JSONAPIBaseView, WaterButlerMixin
@@ -16,7 +17,7 @@ from api.base.parsers import (
     JSONAPIMultipleRelationshipsParser,
     JSONAPIMultipleRelationshipsParserForRegularJSON,
 )
-from api.base.utils import get_object_or_error, get_user_auth
+from api.base.utils import get_user_auth
 from api.base import permissions as base_permissions
 from api.citations.utils import render_citation, preprint_csl
 from api.preprints.serializers import (
@@ -30,22 +31,24 @@ from api.nodes.serializers import (
 
 from api.identifiers.views import IdentifierList
 from api.identifiers.serializers import PreprintIdentifierSerializer
-from api.nodes.views import NodeMixin
+from api.nodes.views import NodeMixin, NodeContributorsList
 from api.nodes.permissions import ContributorOrPublic
 
 from api.preprints.permissions import PreprintPublishedOrAdmin
+
 
 class PreprintMixin(NodeMixin):
     serializer_class = PreprintSerializer
     preprint_lookup_url_kwarg = 'preprint_id'
 
     def get_preprint(self, check_object_permissions=True):
-        preprint = get_object_or_error(
-            PreprintService,
-            self.kwargs[self.preprint_lookup_url_kwarg],
-            display_name='preprint'
-        )
-        if not preprint or preprint.node.is_deleted:
+        qs = PreprintService.objects.filter(guids___id=self.kwargs[self.preprint_lookup_url_kwarg])
+        try:
+            preprint = qs.select_for_update().get() if check_select_for_update(self.request) else qs.select_related('node').get()
+        except PreprintService.DoesNotExist:
+            raise NotFound
+
+        if preprint.node.is_deleted:
             raise NotFound
         # May raise a permission denied
         if check_object_permissions:
@@ -167,23 +170,22 @@ class PreprintList(JSONAPIBaseView, generics.ListCreateAPIView, PreprintFilterMi
         else:
             return PreprintSerializer
 
-    # overrides DjangoFilterMixin
-    def get_default_django_query(self):
+    def get_default_queryset(self):
         auth = get_user_auth(self.request)
         auth_user = getattr(auth, 'user', None)
 
         # Permissions on the list objects are handled by the query
-        default_query = Q(node__isnull=False, node__is_deleted=False)
+        default_qs = PreprintService.objects.filter(node__is_deleted=False, node__isnull=False)
         no_user_query = Q(is_published=True, node__is_public=True)
         if auth_user:
             contrib_user_query = Q(is_published=True, node__contributor__user_id=auth_user.id, node__contributor__read=True)
             admin_user_query = Q(node__contributor__user_id=auth_user.id, node__contributor__admin=True)
-            return (default_query & (no_user_query | contrib_user_query | admin_user_query))
-        return (default_query & no_user_query)
+            return default_qs.filter(no_user_query | contrib_user_query | admin_user_query)
+        return default_qs.filter(no_user_query)
 
     # overrides ListAPIView
     def get_queryset(self):
-        return PreprintService.objects.filter(self.get_query_from_request()).distinct()
+        return self.get_queryset_from_request().distinct('id', 'date_created')
 
 class PreprintDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView, PreprintMixin, WaterButlerMixin):
     """Preprint Detail  *Writeable*.
@@ -399,6 +401,9 @@ class PreprintIdentifierList(IdentifierList, PreprintMixin):
     def get_object(self, check_object_permissions=True):
         return self.get_preprint(check_object_permissions=check_object_permissions)
 
-    # overrides ListCreateAPIView
-    def get_queryset(self):
-        return Identifier.find(self.get_query_from_request())
+
+class PreprintContributorsList(NodeContributorsList, PreprintMixin):
+
+    def create(self, request, *args, **kwargs):
+        self.kwargs['node_id'] = self.get_preprint(check_object_permissions=False).node._id
+        return super(PreprintContributorsList, self).create(request, *args, **kwargs)

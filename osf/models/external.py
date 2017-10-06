@@ -182,6 +182,7 @@ class ExternalProvider(object):
 
             url = oauth.authorization_url(self.auth_url_base)
 
+        session.save()
         return url
 
     @abc.abstractproperty
@@ -301,6 +302,10 @@ class ExternalProvider(object):
         if not user.external_accounts.filter(id=self.account.id).exists():
             user.external_accounts.add(self.account)
             user.save()
+
+        if self.short_name in session.data.get('oauth_states', {}):
+            del session.data['oauth_states'][self.short_name]
+            session.save()
 
         return True
 

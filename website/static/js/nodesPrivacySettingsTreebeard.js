@@ -64,7 +64,7 @@ function NodesPrivacyTreebeard(divID, data, nodesState, nodesOriginal) {
                 }
             ];
         },
-        onload : function () {
+        ondataload : function () {
             var tb = this;
             expandOnLoad.call(tb);
         },

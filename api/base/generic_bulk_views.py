@@ -1,10 +1,9 @@
-
+from modularodm import Q
 from rest_framework import status
 from rest_framework.response import Response
 from rest_framework_bulk import generics as bulk_generics
 from rest_framework.exceptions import PermissionDenied, ValidationError
 
-from website.project.model import Q
 from api.base.settings import BULK_SETTINGS
 from api.base.exceptions import Conflict, JSONAPIException, Gone
 from api.base.utils import is_bulk_request

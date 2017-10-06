@@ -1,18 +1,17 @@
 from rest_framework import serializers as ser
 
-from modularodm.exceptions import ValidationValueError, ValidationError
-
-from website import util as website_utils
 from api.base.exceptions import InvalidModelValueError
-from api.files.serializers import QuickFilesSerializer
-from api.base.serializers import JSONAPIRelationshipSerializer, HideIfDisabled, BaseAPISerializer, WaterbutlerLink, Link
-from osf.models import OSFUser, QuickFilesNode
-
 from api.base.serializers import (
-    JSONAPISerializer, LinksField, RelationshipField, DevOnly, IDField, TypeField, ListDictField,
-    DateByVersion,
+    BaseAPISerializer, JSONAPISerializer, JSONAPIRelationshipSerializer,
+    DateByVersion, DevOnly, HideIfDisabled, IDField,
+    Link, LinksField, ListDictField, TypeField, RelationshipField,
+    WaterbutlerLink
 )
 from api.base.utils import absolute_reverse, get_user_auth
+from api.files.serializers import QuickFilesSerializer
+from osf.exceptions import ValidationValueError, ValidationError
+from osf.models import OSFUser, QuickFilesNode
+from website import util as website_utils
 
 
 class QuickFilesRelationshipField(RelationshipField):

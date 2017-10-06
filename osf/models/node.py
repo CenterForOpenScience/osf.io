@@ -19,7 +19,7 @@ from django.utils.functional import cached_property
 from keen import scoped_keys
 from psycopg2._psycopg import AsIs
 from typedmodels.models import TypedModel, TypedModelManager
-from include import IncludeQuerySet, IncludeManager
+from include import IncludeManager
 
 from framework import status
 from framework.celery_tasks.handlers import enqueue_task
@@ -61,13 +61,13 @@ from website.util.permissions import (ADMIN, CREATOR_PERMISSIONS,
                                       DEFAULT_CONTRIBUTOR_PERMISSIONS, READ,
                                       WRITE, expand_permissions,
                                       reduce_permissions)
-from .base import BaseModel, Guid, GuidMixin
+from .base import BaseModel, Guid, GuidMixin, GuidMixinQuerySet
 
 
 logger = logging.getLogger(__name__)
 
 
-class AbstractNodeQuerySet(IncludeQuerySet):
+class AbstractNodeQuerySet(GuidMixinQuerySet):
 
     def get_roots(self):
         return self.filter(id__in=self.exclude(type='osf.collection').exclude(type='osf.quickfilesnode').values_list('root_id', flat=True))
@@ -133,7 +133,8 @@ class AbstractNodeQuerySet(IncludeQuerySet):
             if not isinstance(user, int):
                 raise TypeError('"user" must be either {} or {}. Got {!r}'.format(int, OSFUser, user))
 
-            qs |= self.filter(contributor__user_id=user, contributor__read=True)
+            sqs = Contributor.objects.filter(node=models.OuterRef('pk'), user__id=user, read=True)
+            qs |= self.annotate(can_view=models.Exists(sqs)).filter(can_view=True)
             qs |= self.extra(where=['''
                 "osf_abstractnode".id in (
                     WITH RECURSIVE implicit_read AS (
@@ -150,7 +151,7 @@ class AbstractNodeQuerySet(IncludeQuerySet):
                 )
             '''], params=(user, ))
 
-        return qs.distinct()
+        return qs
 
 class AbstractNodeManager(TypedModelManager, IncludeManager):
 
@@ -1421,10 +1422,6 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
             self.save()
         self.save_node_preprints()
 
-    @classmethod
-    def find_for_user(cls, user, subquery=None):
-        return user.nodes.filter(subquery) if subquery else user.nodes.all()
-
     def can_comment(self, auth):
         if self.comment_level == 'public':
             return auth.logged_in and (
@@ -1927,6 +1924,10 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         except (AttributeError, KeyError):
             attributes = dict()
 
+        # Non-contributors can't fork private nodes
+        if not (self.is_public or self.has_permission(auth.user, 'read')):
+            raise PermissionsError('{0!r} does not have permission to template node {1!r}'.format(auth.user, self._id))
+
         new = self.clone()
         new._is_templated_clone = True  # This attribute may be read in post_save handlers
 
@@ -1989,11 +1990,19 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         new.save()
         # deal with the children of the node, if any
         for node_relation in self.node_relations.select_related('child').filter(child__is_deleted=False):
-            child = node_relation.child
-            if child.can_view(auth):
-                templated_child = child.use_as_template(auth, changes, top_level=False)
-                NodeRelation.objects.get_or_create(parent=new, child=templated_child,
-                                                   is_node_link=node_relation.is_node_link)
+            node_contained = node_relation.child
+            # template child nodes
+            if not node_relation.is_node_link:
+                try:  # Catch the potential PermissionsError above
+                    templated_child = node_contained.use_as_template(auth, changes, top_level=False)
+                except PermissionsError:
+                    pass
+                else:
+                    NodeRelation.objects.get_or_create(
+                        parent=new, child=templated_child,
+                        is_node_link=False
+                    )
+                    templated_child.save()  # Recompute root on save()
 
         return new
 

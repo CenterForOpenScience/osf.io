@@ -15,9 +15,9 @@ from api.base.utils import (absolute_reverse, get_object_or_error,
                             get_user_auth, is_truthy)
 from django.apps import apps
 from django.conf import settings
+from django.core.exceptions import ValidationError
 from framework.auth.core import Auth
 from framework.exceptions import PermissionsError
-from modularodm.exceptions import ValidationError
 from osf.models import Tag
 from rest_framework import serializers as ser
 from rest_framework import exceptions
@@ -1119,7 +1119,7 @@ class DraftRegistrationSerializer(JSONAPISerializer):
         metadata = validated_data.pop('registration_metadata', None)
 
         schema_id = validated_data.pop('registration_schema').get('_id')
-        schema = get_object_or_error(MetaSchema, schema_id)
+        schema = get_object_or_error(MetaSchema, schema_id, self.context['request'])
         if schema.schema_version != LATEST_SCHEMA_VERSION or not schema.active:
             raise exceptions.ValidationError('Registration supplement must be an active schema.')
 

@@ -2,7 +2,6 @@ from datetime import datetime
 from collections import OrderedDict
 
 from django.core.urlresolvers import resolve, reverse
-from modularodm import Q
 import furl
 import pytz
 
@@ -86,7 +85,7 @@ class CheckoutField(ser.HyperlinkedRelatedField):
         ])
 
     def get_queryset(self):
-        return OSFUser.find(Q('_id', 'eq', self.context['request'].user._id))
+        return OSFUser.objects.filter(guids___id=self.context['request'].user._id)
 
     def get_url(self, obj, view_name, request, format):
         if obj is None:
@@ -163,7 +162,7 @@ class BaseFileSerializer(JSONAPISerializer):
     extra = ser.SerializerMethodField(read_only=True, help_text='Additional metadata about this file')
     tags = JSONAPIListField(child=FileTagField(), required=False)
     current_user_can_comment = ser.SerializerMethodField(help_text='Whether the current user is allowed to post comments')
-    current_version = ser.SerializerMethodField(help_text='Latest file version')
+    current_version = ser.IntegerField(help_text='Latest file version', read_only=True, source='current_version_number')
     delete_allowed = ser.BooleanField(read_only=True, required=False)
 
     files = NodeFileHyperLinkField(
@@ -194,14 +193,9 @@ class BaseFileSerializer(JSONAPISerializer):
     class Meta:
         type_ = 'files'
 
-    def get_current_version(self, obj):
-        if obj.history:
-            return len(obj.history)
-        return 1
-
     def get_size(self, obj):
         if obj.versions.exists():
-            self.size = obj.versions.last().size
+            self.size = obj.versions.first().size
             return self.size
         return None
 
@@ -212,7 +206,7 @@ class BaseFileSerializer(JSONAPISerializer):
             # date_created equal to the time of the update.  The date_modified is the modified date
             # from the backend the file is stored on.  This field refers to the modified date on osfstorage,
             # so prefer to use the date_created of the latest version.
-            mod_dt = obj.versions.last().date_created
+            mod_dt = obj.versions.first().date_created
         elif obj.provider != 'osfstorage' and obj.history:
             mod_dt = obj.history[-1].get('modified', None)
 
@@ -224,7 +218,7 @@ class BaseFileSerializer(JSONAPISerializer):
     def get_date_created(self, obj):
         creat_dt = None
         if obj.provider == 'osfstorage' and obj.versions.exists():
-            creat_dt = obj.versions.first().date_created
+            creat_dt = obj.versions.last().date_created
         elif obj.provider != 'osfstorage' and obj.history:
             # Non-osfstorage files don't store a created date, so instead get the modified date of the
             # earliest entry in the file history.
@@ -238,7 +232,7 @@ class BaseFileSerializer(JSONAPISerializer):
     def get_extra(self, obj):
         metadata = {}
         if obj.provider == 'osfstorage' and obj.versions.exists():
-            metadata = obj.versions.last().metadata
+            metadata = obj.versions.first().metadata
         elif obj.provider != 'osfstorage' and obj.history:
             metadata = obj.history[-1].get('extra', {})
 
@@ -249,6 +243,7 @@ class BaseFileSerializer(JSONAPISerializer):
         }
         if obj.provider == 'osfstorage' and obj.is_file:
             extras['downloads'] = obj.get_download_count()
+            extras['views'] = obj.get_view_count()
         return extras
 
     def get_current_user_can_comment(self, obj):

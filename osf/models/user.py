@@ -36,7 +36,7 @@ from framework.sessions.utils import remove_sessions_for_user
 from osf.utils.requests import get_current_request
 from osf.exceptions import reraise_django_validation_errors, MaxRetriesError
 from osf.models.base import BaseModel, GuidMixin, GuidMixinQuerySet
-from osf.models.contributor import RecentlyAddedContributor
+from osf.models.contributor import Contributor, RecentlyAddedContributor
 from osf.models.institution import Institution
 from osf.models.mixins import AddonModelMixin
 from osf.models.session import Session
@@ -45,6 +45,7 @@ from osf.models.validators import validate_email, validate_social, validate_hist
 from osf.utils.datetime_aware_jsonfield import DateTimeAwareJSONField
 from osf.utils.fields import NonNaiveDateTimeField, LowercaseEmailField
 from osf.utils.names import impute_names
+from osf.utils.requests import check_select_for_update
 from website import settings as website_settings
 from website import filters, mails
 from website.project import new_bookmark_collection
@@ -85,9 +86,7 @@ class OSFUserManager(BaseUserManager):
     _queryset_class = GuidMixinQuerySet
 
     def all(self):
-        qs = super(OSFUserManager, self).all()
-        qs.annotate_query_with_guids()
-        return qs
+        return self.get_queryset().all()
 
     def eager(self, *fields):
         fk_fields = set(self.model.get_fk_field_names()) & set(fields)
@@ -1131,7 +1130,10 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
 
         # If this email is confirmed on another account, abort
         try:
-            user_to_merge = OSFUser.objects.get(emails__address=email)
+            if check_select_for_update():
+                user_to_merge = OSFUser.objects.filter(emails__address=email).select_for_update().get()
+            else:
+                user_to_merge = OSFUser.objects.get(emails__address=email)
         except OSFUser.DoesNotExist:
             user_to_merge = None
 
@@ -1303,11 +1305,12 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
         )
 
     def _projects_in_common_query(self, other_user):
+        sqs = Contributor.objects.filter(node=models.OuterRef('pk'), user=other_user)
         return (self.nodes
                  .filter(is_deleted=False)
                  .exclude(type='osf.collection')
-                 .filter(_contributors=other_user)
-                 .distinct())
+                 .annotate(contrib=models.Exists(sqs))
+                 .filter(contrib=True))
 
     def get_projects_in_common(self, other_user):
         """Returns either a collection of "shared projects" (projects that both users are contributors for)

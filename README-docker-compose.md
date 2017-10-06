@@ -93,7 +93,7 @@ Ubuntu: Skip install of docker-sync, fswatch, and unison. instead...
         Ignore future steps that start, stop, or wait for docker-sync
 
 1. Install Docker Sync 0.3.5
-  - Mac: `$ gem install docker-sync -v 0.3.5`
+  - Mac: `$ gem install docker-sync`
   - [Instructions](http://docker-sync.io)
 
 1. Install fswatch and unison
@@ -368,4 +368,38 @@ $ docker-compose pull
 $ docker-compose up requirements mfr_requirements wb_requirements
 # Run db migrations
 $ docker-compose run --rm web python manage.py migrate
+```
+
+## Miscellaneous
+
+### Runtime Privilege
+
+When running privileged commands such as `strace` inside a docker container, you may encounter the following error.
+
+```bash
+strace: test_ptrace_setoptions_followfork: PTRACE_TRACEME doesn't work: Operation not permitted
+```
+
+The issue is that docker containers run in unprivileged mode by default.
+
+For `docker run`, you can use `--privilege=true` to give the container extended privileges. You can also add or drop capabilities by using `cap-add` and `cap-drop`. Since Docker 1.12, there is no need to add `--security-opt seccomp=unconfined` because the seccomp profile will adjust to selected capabilities. ([Reference](https://docs.docker.com/engine/reference/run/#runtime-privilege-and-linux-capabilities))
+
+When using `docker-compose`, set `privileged: true` for individual containers in the `docker-compose.yml`. ([Reference](https://docs.docker.com/compose/compose-file/#domainname-hostname-ipc-mac_address-privileged-read_only-shm_size-stdin_open-tty-user-working_dir)) Here is an example for WaterButler:
+
+```yml
+wb:
+  image: quay.io/centerforopenscience/waterbutler:develop
+  command: invoke server
+  privileged: true
+  restart: unless-stopped
+  ports:
+    - 7777:7777
+  env_file:
+    - .docker-compose.wb.env
+  volumes:
+    - wb_requirements_vol:/usr/local/lib/python3.5
+    - wb_requirements_local_bin_vol:/usr/local/bin
+    - osfstoragecache_vol:/code/website/osfstoragecache
+    - wb_tmp_vol:/tmp
+  stdin_open: true
 ```
