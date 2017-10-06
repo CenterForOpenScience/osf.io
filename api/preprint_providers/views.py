@@ -257,7 +257,7 @@ class PreprintProviderTaxonomies(JSONAPIBaseView, generics.ListAPIView):
                 #  Calculate this here to only have to do it once.
                 allowed_parents = [id_ for sublist in provider.subjects_acceptable for id_ in sublist[0]]
                 allows_children = [subs[0][-1] for subs in provider.subjects_acceptable if subs[1]]
-                return [sub for sub in Subject.objects.filter(parent___id=parent) if provider.subjects_acceptable == [] or self.is_valid_subject(allows_children=allows_children, allowed_parents=allowed_parents, sub=sub)]
+                return [sub for sub in optimize_subject_query(Subject.objects.filter(parent___id=parent)) if provider.subjects_acceptable == [] or self.is_valid_subject(allows_children=allows_children, allowed_parents=allowed_parents, sub=sub)]
         return optimize_subject_query(provider.all_subjects)
 
 
