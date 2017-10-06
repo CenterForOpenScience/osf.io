@@ -205,14 +205,14 @@ class TestOsfstorageFileNode(StorageTestCase):
             kid = parent.append_file(str(x))
             kid.save()
             kids.append(kid)
-        count = OsfStorageFileNode.find().count()
-        tcount = models.TrashedFileNode.find().count()
+        count = OsfStorageFileNode.objects.all().count()
+        tcount = models.TrashedFileNode.objects.all().count()
 
         parent.delete()
 
         assert_is(OsfStorageFileNode.load(parent._id), None)
-        assert_equals(count - 11, OsfStorageFileNode.find().count())
-        assert_equals(tcount + 11, models.TrashedFileNode.find().count())
+        assert_equals(count - 11, OsfStorageFileNode.objects.all().count())
+        assert_equals(tcount + 11, models.TrashedFileNode.objects.all().count())
 
         for kid in kids:
             assert_is(
