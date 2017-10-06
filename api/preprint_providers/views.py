@@ -14,6 +14,7 @@ from api.base.pagination import MaxSizePagination
 from api.base.utils import get_object_or_error, get_user_auth
 from api.licenses.views import LicenseList
 from api.taxonomies.serializers import TaxonomySerializer
+from api.taxonomies.utils import optimize_subject_query
 from api.preprint_providers.serializers import PreprintProviderSerializer
 from api.preprints.serializers import PreprintSerializer
 
@@ -257,7 +258,7 @@ class PreprintProviderTaxonomies(JSONAPIBaseView, generics.ListAPIView):
                 allowed_parents = [id_ for sublist in provider.subjects_acceptable for id_ in sublist[0]]
                 allows_children = [subs[0][-1] for subs in provider.subjects_acceptable if subs[1]]
                 return [sub for sub in Subject.objects.filter(parent___id=parent) if provider.subjects_acceptable == [] or self.is_valid_subject(allows_children=allows_children, allowed_parents=allowed_parents, sub=sub)]
-        return provider.all_subjects
+        return optimize_subject_query(provider.all_subjects)
 
 
 class PreprintProviderHighlightedSubjectList(JSONAPIBaseView, generics.ListAPIView):
