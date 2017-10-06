@@ -7,6 +7,7 @@ from api.base.pagination import NoMaxPageSizePagination
 from api.base import permissions as base_permissions
 from api.base.versioning import DeprecatedEndpointMixin
 from api.taxonomies.serializers import TaxonomySerializer
+from api.taxonomies.utils import optimize_subject_query
 from osf.models import Subject
 from framework.auth.oauth_scopes import CoreScopes
 
@@ -53,7 +54,7 @@ class TaxonomyList(DeprecatedEndpointMixin, JSONAPIBaseView, generics.ListAPIVie
     ordering = ('-id',)
 
     def get_default_queryset(self):
-        return Subject.objects.all()
+        return optimize_subject_query(Subject.objects.all())
 
     def get_queryset(self):
         return self.get_queryset_from_request()
