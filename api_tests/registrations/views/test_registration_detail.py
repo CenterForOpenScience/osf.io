@@ -385,18 +385,19 @@ class TestRegistrationTags:
             }
         }
 
-    def test_registration_starts_with_no_tags(self, app, url_registration_public):
+    def test_registration_tags(self, app, registration_public, registration_private, url_registration_public, url_registration_private, new_tag_payload_public, new_tag_payload_private, user_admin, user_non_contrib):
+        # test_registration_starts_with_no_tags
         res = app.get(url_registration_public)
         assert res.status_code == 200
         assert len(res.json['data']['attributes']['tags']) == 0
 
-    def test_registration_detail_does_not_expose_system_tags(self, app, registration_public, url_registration_public):
+        # test_registration_does_not_expose_system_tags
         registration_public.add_system_tag('systag', save=True)
         res = app.get(url_registration_public)
         assert res.status_code == 200
         assert len(res.json['data']['attributes']['tags']) == 0
 
-    def test_contributor_can_add_tag_to_public_registration(self, app, user_admin,registration_public, new_tag_payload_public, url_registration_public):
+        # test_contributor_can_add_tag_to_public_registration
         with assert_latest_log(NodeLog.TAG_ADDED, registration_public):
             res = app.patch_json_api(url_registration_public, new_tag_payload_public, auth=user_admin.auth)
             assert res.status_code == 200
@@ -412,7 +413,7 @@ class TestRegistrationTags:
             assert len(reload_res.json['data']['attributes']['tags']) == 1
             assert reload_res.json['data']['attributes']['tags'][0] == 'new-tag'
 
-    def test_contributor_can_add_tag_to_private_registration(self, app, user_admin,registration_private, new_tag_payload_private, url_registration_private):
+        # test_contributor_can_add_tag_to_private_registration
         with assert_latest_log(NodeLog.TAG_ADDED, registration_private):
             res = app.patch_json_api(url_registration_private, new_tag_payload_private, auth=user_admin.auth)
             assert res.status_code == 200
@@ -428,14 +429,11 @@ class TestRegistrationTags:
             assert len(reload_res.json['data']['attributes']['tags']) == 1
             assert reload_res.json['data']['attributes']['tags'][0] == 'new-tag'
 
-    def test_non_contributor_cannot_add_tag_to_registration(self, app, user_non_contrib, new_tag_payload_public, url_registration_public):
+        # test_non_contributor_cannot_add_tag_to_registration
         res = app.patch_json_api(url_registration_public, new_tag_payload_public, expect_errors=True, auth=user_non_contrib.auth)
         assert res.status_code == 403
 
-    def test_partial_update_registration_does_not_clear_tags(self, app, user_admin, registration_private, url_registration_private, new_tag_payload_private):
-        res = app.patch_json_api(url_registration_private, new_tag_payload_private, expect_errors=True, auth=user_admin.auth)
-        assert res.status_code == 200
-        assert len(res.json['data']['attributes']['tags']) == 1
+        # test_partial_update_registration_does_not_clear_tagsb
         new_payload = {
             'data': {
                 'id': registration_private._id,
