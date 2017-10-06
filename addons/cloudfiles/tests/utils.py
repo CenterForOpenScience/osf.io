@@ -9,7 +9,7 @@ class CloudFilesAddonTestCase(OAuthAddonTestCaseMixin, AddonTestCase):
     ADDON_SHORT_NAME = 'cloudfiles'
     ExternalAccountFactory = CloudFilesAccountFactory
     Serializer = CloudFilesSerializer
-    client = True
+    client = None
     folder = {
         'path': 'container',
         'name': 'container',
