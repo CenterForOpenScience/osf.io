@@ -1551,18 +1551,21 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
               SELECT
                 parent_id,
                 child_id,
-                1 AS LEVEL
+                1 AS LEVEL,
+                ARRAY[child_id] as cids
               FROM %s
-              WHERE is_node_link IS FALSE
+              WHERE is_node_link IS FALSE and child_id = %s
               UNION ALL
               SELECT
                 S.parent_id,
                 D.child_id,
-                D.level + 1
+                D.level + 1,
+                D.cids || S.child_id
               FROM ascendants AS D
                 JOIN %s AS S
                   ON D.parent_id = S.child_id
               WHERE S.is_node_link IS FALSE
+                AND %s = ANY(cids)
             ) SELECT parent_id
               FROM ascendants
               WHERE child_id = %s
@@ -1571,7 +1574,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         """
         with connection.cursor() as cursor:
             node_relation_table = AsIs(NodeRelation._meta.db_table)
-            cursor.execute(sql, [node_relation_table, node_relation_table, self.pk])
+            cursor.execute(sql, [node_relation_table, self.pk, node_relation_table, self.pk, self.pk])
             res = cursor.fetchone()
             if res:
                 return AbstractNode.objects.get(pk=res[0])
