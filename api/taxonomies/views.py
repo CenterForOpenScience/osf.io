@@ -3,7 +3,6 @@ from rest_framework.exceptions import NotFound
 from django.core.exceptions import ObjectDoesNotExist
 
 from api.base.views import JSONAPIBaseView
-from api.base.utils import get_object_or_error
 from api.base.filters import ListFilterMixin
 from api.base.pagination import NoMaxPageSizePagination
 from api.base import permissions as base_permissions
@@ -103,6 +102,6 @@ class TaxonomyDetail(JSONAPIBaseView, generics.RetrieveAPIView):
 
     def get_object(self):
         try:
-             return optimize_subject_query(Subject.objects).get(_id=self.kwargs['taxonomy_id'])
+            return optimize_subject_query(Subject.objects).get(_id=self.kwargs['taxonomy_id'])
         except ObjectDoesNotExist:
             raise NotFound
