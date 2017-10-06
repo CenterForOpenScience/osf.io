@@ -478,7 +478,7 @@ var NameViewModel = function(urls, modes, preventUnsaved, fetchCallback) {
     };
 
     self.hasDetail = ko.computed(function() {
-        return !! self.given();
+        return !! (self.given() && self.family());
     });
 
     self.citeApa = ko.computed(function() {
