@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 from django.db import models
 from django.contrib.postgres import fields
+from api.taxonomies.utils import optimize_subject_query
 
 from osf.models.base import BaseModel, ObjectIDMixin
 from osf.models.licenses import NodeLicense
@@ -71,11 +72,11 @@ class PreprintProvider(ObjectIDMixin, BaseModel):
     @property
     def top_level_subjects(self):
         if self.subjects.exists():
-            return self.subjects.filter(parent__isnull=True)
+            return optimize_subject_query(self.subjects.filter(parent__isnull=True))
         else:
             # TODO: Delet this when all PreprintProviders have a mapping
             if len(self.subjects_acceptable) == 0:
-                return Subject.objects.filter(parent__isnull=True, provider___id='osf')
+                return optimize_subject_query(Subject.objects.filter(parent__isnull=True, provider___id='osf'))
             tops = set([sub[0][0] for sub in self.subjects_acceptable])
             return [Subject.load(sub) for sub in tops]
 
