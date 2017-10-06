@@ -49,6 +49,17 @@ var STATE_MAP = {
 
 var SYNC_UPLOAD_ADDONS = ['github', 'dataverse'];
 
+var CONFLICT_INFO = {
+    skip: {
+        passed: 'Skipped'
+    },
+    replace: {
+        passed: 'Replaced old version'
+    },
+    keep: {
+        passed: 'Kept both versions'
+    }
+};
 
 var OPERATIONS = {
     RENAME: {
@@ -457,20 +468,13 @@ function checkConflicts(items, folder){
     return ret;
 }
 
-function handleCancel(tb, provider, mode){
-    conflictsCount = tb.syncFileMoveCache[provider].conflicts.length;
+function handleCancel(tb, provider, mode, item){
     if (mode === 'stop') {
         tb.syncFileMoveCache[provider].conflicts.length = 0;
         tb.modal.dismiss();
     } else {
-        var file = conflictsCount > 0 && tb.syncFileMoveCache[provider].conflicts[conflictsCount-1];
-        addMoveStatus(tb, file, true, '', 'skip');
-        if (conflictsCount > 0){
-            doSyncMove(tb, provider);
-        }
-         else {
-            tb.modal.dismiss();
-        }
+        addFileStatus(tb, item, false, '', '', 'skip');
+        doSyncMove(tb, provider);
     }
 }
 
@@ -483,13 +487,13 @@ function displayConflict(tb, item, folder, cb) {
             '"Replace" will overwrite the existing file in this location. ' +
             'You will lose previous versions of the overwritten file. ' +
             'You will keep previous versions of the moved file.'),
-        m('h5.replace-file', '"Skip" will skip the current move.'),
+        m('h5.replace-file', '"Skip" will skip the current file.'),
         m('h5.replace-file', '"Stop" will only move files with no conflicts.')
     ]);
     var mithrilButtons = [
         m('span.btn.btn-primary.btn-sm', {onclick: cb.bind(tb, 'keep')}, 'Keep Both'),
         m('span.btn.btn-primary.btn-sm', {onclick: cb.bind(tb, 'replace')}, 'Replace'),
-        m('span.btn.btn-default.btn-sm', {onclick: function() {handleCancel(tb, folder.data.provider, 'skip');}}, 'Skip'),
+        m('span.btn.btn-default.btn-sm', {onclick: function() {handleCancel(tb, folder.data.provider, 'skip', item);}}, 'Skip'),
         m('span.btn.btn-danger.btn-sm', {onclick: function() {handleCancel(tb, folder.data.provider, 'stop');}}, 'Stop')
     ];
     var header = m('h3.break-word.modal-title', 'Replace "' + item.data.name + '"?');
@@ -538,7 +542,7 @@ function doItemOp(operation, to, from, rename, conflict) {
     var tb = this;
     var inReadyQueue;
     var filesRemaining = tb.syncFileMoveCache && tb.syncFileMoveCache[to.data.provider];
-    var inConflictsQueue = filesRemaining && filesRemaining.conflicts && filesRemaining.conflicts.length > 0;
+    var inConflictsQueue = filesRemaining.conflicts && filesRemaining.conflicts.length > 0;
     var syncMoves = SYNC_UPLOAD_ADDONS.indexOf(from.data.provider) !== -1;
     if (syncMoves) {
         inReadyQueue = filesRemaining && filesRemaining.ready && filesRemaining.ready.length > 0;
@@ -659,7 +663,7 @@ function doItemOp(operation, to, from, rename, conflict) {
             from.load = true;
         }
         var url = from.data.nodeUrl + 'files/' + from.data.provider + from.data.path;
-        addMoveStatus(tb, from, true, url, conflict);
+        addFileStatus(tb, from, true, '', url, conflict);
         // no need to redraw because fangornOrderFolder does it
         orderFolder.call(tb, from.parent());
     }).fail(function(xhr, textStatus) {
@@ -693,13 +697,13 @@ function doItemOp(operation, to, from, rename, conflict) {
                 requestData: moveSpec
             }
         });
-        addMoveStatus(tb, from, false, '', conflict);
+        addFileStatus(tb, from, false, '', '', conflict);
         orderFolder.call(tb, from.parent());
     }).always(function(){
         from.inProgress = false;
-        // if (inConflictsQueue || (syncMoves && inReadyQueue)) {
-        doSyncMove(tb, to.data.provider);
-        // }
+        if (typeof inConflictsQueue !== 'undefined' || syncMoves){
+            doSyncMove(tb, to.data.provider);
+        }
     });
 }
 
@@ -2377,12 +2381,20 @@ function _fangornOver(event, ui) {
  * @param success Boolean on whether upload actually happened
  * @param message String failure reason message, '' if success === true
  * @param link String with url to file, '' if success === false
+ * @param op String specifying type of move conflict resolution; ['keep', 'skip', 'replace']
  * @private
  */
-function addFileStatus(treebeard, file, success, message, link){
-    treebeard.uploadStates.push(
-        {'name': file.name, 'success': success, 'link': link, 'message': message}
-    );
+function addFileStatus(treebeard, file, success, message, link, op){
+    if (typeof op !== 'undefined'){
+        treebeard.moveStates.push(
+            {'name': file.data.name, 'success': success, 'link': link, 'op': op}
+        );
+    } else {
+        treebeard.uploadStates.push(
+            {'name': file.name, 'success': success, 'link': link, 'message': message}
+        );
+    }
+
 }
 
 /**
@@ -2459,7 +2471,7 @@ function _dropLogic(event, items, folder) {
 
     tb.syncFileMoveCache = tb.syncFileMoveCache || {};
     tb.syncFileMoveCache[folder.data.provider] = tb.syncFileMoveCache[folder.data.provider] || {};
-    tb.syncFileMoveCache.moveStates = tb.syncFileMoveCache.moveStates || [];
+    tb.moveStates = tb.moveStates || [];
 
     if (toMove.ready.length > 0) {
         tb.syncFileMoveCache[folder.data.provider].ready = tb.syncFileMoveCache[folder.data.provider].ready || [];
@@ -2487,10 +2499,47 @@ function _dropLogic(event, items, folder) {
     }
 }
 
-function addMoveStatus(treebeard, file, success, link, op){
-    treebeard.syncFileMoveCache.moveStates.push(
-        {'name': file.name || file.data.name, 'success': success, 'link': link, 'op': op}
-    );
+function displayMoveStats(tb) {
+   var moveStatuses = tb.moveStates;
+   var total = moveStatuses && moveStatuses.length;
+   if (moveStatuses.length) {
+       tb.moveStates = [];
+       var failed = 0;
+       var skipped = 0;
+       tb.modal.update(m('', [
+           m('', [
+               moveStatuses.map(function(status){
+                  if (!status.success){
+                      failed++;
+                  }
+                  if (status.op === 'skip'){
+                      skipped++;
+                  }
+                  return m('',
+                       [
+                           m('.row', [
+                               m((status.success ? 'a[href="' + status.link + '"]' : '') + '.col-sm-7', status.name),
+                               m('.col-sm-1', m(status.success ? '.fa.fa-check.text-success' : '.fa.fa-times.text-danger')),
+                               m('.col-sm-4' + (status.success ? '.text-info' : '.text-danger'), CONFLICT_INFO[status.op].passed)
+                           ]),
+                           m('hr')
+                       ]
+                   );
+               })
+           ])
+       ]), m('', [
+           m('a.btn.btn-primary', {onclick: function() {tb.modal.dismiss();}}, 'Done'), //jshint ignore:line
+       ]), m('', [
+              m('h3.break-word.modal-title', 'Move Status'),
+              m('p', [
+                  m('span', failed !== total ? total - failed + '/' + total + ' files successfully moved.': ''),
+                  m('span', skipped ? ' Skipped ' + skipped + '/' + total + ' files.': '')
+                ])
+      ]));
+    } else {
+        tb.modal.dismiss();
+    }
+
 }
 
 function doSyncMove(tb, provider){
@@ -2503,29 +2552,8 @@ function doSyncMove(tb, provider){
         itemData = cache.ready.pop();
         doItemOp.call(tb, copyMode === 'move' ? OPERATIONS.MOVE : OPERATIONS.COPY, itemData.folder, itemData.item, undefined, 'replace');
     } else {
-       var moveStates = tb.syncFileMoveCache.moveStates;
-       if (moveStates.length) {
-           tb.syncFileMoveCache.moveStates = [];
-           tb.modal.update(m('', [
-               m('', [
-                   moveStates.map(function(status){
-                       return m('',
-                           [
-                               m('.row', [
-                                   m((status.success ? 'a[href="' + status.link + '"]' : '') + '.col-sm-8', status.name),
-                                   m('.col-sm-2' + (status.success ? '.text-success' : '.text-danger') , status.op),
-                                   m('.col-sm-2', m(status.success ? '.fa.fa-check[style="color: green"]' : '.fa.fa-times[style="color: red"]')),
-                               ]),
-                               m('hr')
-                           ]
-                       );
-                   })
-               ])
-           ]), m('', [
-               m('a.btn.btn-primary', {onclick: function() {tb.modal.dismiss();}}, 'Done'), //jshint ignore:line
-           ]), m('h3.break-word.modal-title', 'Move Status'));
-     }
-   }
+        displayMoveStats(tb);
+    }
 }
 
 /**
