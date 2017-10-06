@@ -277,7 +277,7 @@ class PreprintProviderHighlightedSubjectList(JSONAPIBaseView, generics.ListAPIVi
 
     def get_queryset(self):
         provider = get_object_or_error(PreprintProvider, self.kwargs['provider_id'], self.request, display_name='PreprintProvider')
-        return Subject.objects.filter(id__in=[s.id for s in provider.highlighted_subjects]).order_by('text')
+        return optimize_subject_query(Subject.objects.filter(id__in=[s.id for s in provider.highlighted_subjects]).order_by('text'))
 
 
 class PreprintProviderLicenseList(LicenseList):
