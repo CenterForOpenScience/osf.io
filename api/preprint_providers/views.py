@@ -251,7 +251,7 @@ class PreprintProviderTaxonomies(JSONAPIBaseView, generics.ListAPIView):
             if parent == 'null':
                 return provider.top_level_subjects
             if provider.subjects.exists():
-                return provider.subjects.filter(parent___id=parent)
+                return optimize_subject_query(provider.subjects.filter(parent___id=parent))
             else:
                 # TODO: Delet this when all PreprintProviders have a mapping
                 #  Calculate this here to only have to do it once.
