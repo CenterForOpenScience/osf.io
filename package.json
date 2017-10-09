@@ -30,7 +30,7 @@
     "jstimezonedetect": "^1.0.6",
     "keen-analysis": "^1.1.0",
     "keen-dataviz": "^1.0.2",
-    "keen-tracking": "^1.0.3",
+    "keen-tracking": "1.0.3",
     "knockout": "~3.4.2",
     "knockout.validation": "^2.0.2",
     "less": "^2.5.3",
