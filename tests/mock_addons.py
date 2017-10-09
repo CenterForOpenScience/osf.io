@@ -19,7 +19,7 @@ from framework.mongo import StoredObject
 from website import settings
 from addons.base import serializer, logger
 from osf.models import OSFUser, AbstractNode
-from website.util import waterbutler_url_for
+from website.util import waterbutler_api_url_for
 
 from website.oauth.signals import oauth_complete
 
@@ -552,30 +552,37 @@ class StorageAddonBase(object):
         return name
 
     def _get_fileobj_child_metadata(self, filenode, user, cookie=None, version=None):
-        kwargs = dict(
-            provider=self.config.short_name,
-            path=filenode.get('path', ''),
-            node=self.owner,
-            user=user,
-            view_only=True,
-        )
-        if cookie:
-            kwargs['cookie'] = cookie
+
+        kwargs = {}
         if version:
             kwargs['version'] = version
-        metadata_url = waterbutler_url_for(
-            'metadata',
-            _internal=True,
+        if cookie:
+            kwargs['cookie'] = cookie
+        elif user:
+            kwargs['cookie'] = user.get_or_create_cookie()
+
+        metadata_url = waterbutler_api_url_for(
+            self.owner._id,
+            self.config.short_name,
+            path=filenode.get('path', '/'),
+            user=user,
+            view_only=True,
+            _internal=True, 
             **kwargs
         )
+
         res = requests.get(metadata_url)
+
         if res.status_code != 200:
-            raise HTTPError(res.status_code, data={
-                'error': res.json(),
-            })
+            raise HTTPError(res.status_code,  data={'error': res.json()})
+
         # TODO: better throttling?
-        sleep(1.0 / 5.0)
-        return res.json().get('data', [])
+        time.sleep(1.0 / 5.0)
+
+        data = res.json().get('data', None)
+        if data:
+            return [child['attributes'] for child in data]
+        return []
 
     def _get_file_tree(self, filenode=None, user=None, cookie=None, version=None):
         """

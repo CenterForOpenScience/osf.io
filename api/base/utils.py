@@ -2,7 +2,6 @@
 import urllib
 import urlparse
 
-import furl
 from django.core.exceptions import ObjectDoesNotExist
 from django.db.models import Q
 from rest_framework.exceptions import NotFound
@@ -125,33 +124,6 @@ def get_object_or_error(model_cls, query_or_pk, request, display_name=None):
             raise Gone(detail='The requested {name} is no longer available.'.format(name=display_name))
     return obj
 
-
-def waterbutler_url_for(request_type, provider, path, node_id, token, obj_args=None, **query):
-    """Reverse URL lookup for WaterButler routes
-    :param str request_type: data or metadata
-    :param str provider: The name of the requested provider
-    :param str path: The path of the requested file or folder
-    :param str node_id: The id of the node being accessed
-    :param str token: The cookie to be used or None
-    :param dict **query: Addition query parameters to be appended
-    """
-    url = furl.furl(website_settings.WATERBUTLER_URL)
-    url.path.segments.append(request_type)
-
-    url.args.update({
-        'path': path,
-        'nid': node_id,
-        'provider': provider,
-    })
-
-    if token is not None:
-        url.args['cookie'] = token
-
-    if 'view_only' in obj_args:
-        url.args['view_only'] = obj_args['view_only']
-
-    url.args.update(query)
-    return url.url
 
 def default_node_list_queryset():
     return Node.objects.filter(is_deleted=False)
