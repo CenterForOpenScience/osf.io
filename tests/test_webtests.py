@@ -302,7 +302,7 @@ class TestComponents(OsfTestCase):
 
     def test_delete_project(self):
         res = self.app.get(
-            self.component.url + 'addons/',
+            self.component.url + 'settings/',
             auth=self.user.auth
         ).maybe_follow()
         assert_in(
@@ -329,7 +329,7 @@ class TestComponents(OsfTestCase):
 
     def test_can_configure_comments_if_admin(self):
         res = self.app.get(
-            self.component.url + 'addons/',
+            self.component.url + 'settings/',
             auth=self.user.auth,
         ).maybe_follow()
         assert_in('Commenting', res)
