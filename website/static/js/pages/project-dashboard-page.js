@@ -129,7 +129,7 @@ $(document).ready(function () {
 
         // Treebeard Files view
         var urlFilesGrid = nodeApiUrl + 'files/grid/';
-        var promise = m.request({ method: 'GET', background: true, config: $osf.setXHRAuthorization, url: urlFilesGrid});
+        var promise = m.request({ method: 'GET', config: $osf.setXHRAuthorization, url: urlFilesGrid});
         promise.then(function (data) {
             var fangornOpts = {
                 divID: 'treeGrid',

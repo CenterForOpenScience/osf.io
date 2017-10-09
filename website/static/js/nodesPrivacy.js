@@ -67,11 +67,11 @@ function getNodesOriginal(nodeTree, nodesOriginal) {
  * patches all the nodes in a changed state
  * uses API v2 bulk requests
  */
-function patchNodesPrivacy(nodes) {
-    var nodesV2Url = window.contextVars.apiV2Prefix + 'nodes/';
+function patchNodesPrivacy(nodes, type) {
+    var nodesV2Url = window.contextVars.apiV2Prefix + type + '/';
     var nodesPatch = $.map(nodes, function (node) {
         return {
-            'type': 'nodes',
+            'type': type,
             'id': node.id,
             'attributes': {
                 'public': node.public
@@ -238,7 +238,7 @@ NodesPrivacyViewModel.prototype.confirmChanges =  function() {
     //The API's bulk limit is 100 nodes.  We catch the exception in nodes_privacy.mako.
     if (nodesChanged.length <= 100) {
         $osf.block('Updating Privacy');
-        patchNodesPrivacy(nodesChanged).then(function () {
+        patchNodesPrivacy(nodesChanged, 'nodes').then(function () {
             self.onSetPrivacy(nodesChanged);
 
             self.nodesChangedPublic([]);
@@ -309,7 +309,7 @@ NodesPrivacyViewModel.prototype.makeEmbargoPublic = function() {
 	return null;
     }).filter(Boolean);
     $osf.block('Submitting request to end embargo early ...');
-    patchNodesPrivacy(nodesChanged).then(function (res) {
+    patchNodesPrivacy(nodesChanged, 'registrations').then(function (res) {
         $osf.unblock();
         $('.modal').modal('hide');
         self.onSetPrivacy(nodesChanged, true);

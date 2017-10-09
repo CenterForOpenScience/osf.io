@@ -159,7 +159,7 @@
 
             <!-- ko if: replying -->
 
-                <div data-bind="template {afterRender: autosizeText.bind($data)}">
+                <div data-bind="template: {afterRender: autosizeText.bind($data)}">
                     <div class="form-group" style="padding-top: 10px">
                         <div class="form-control atwho-input" placeholder="Add a comment" data-bind="editableHTML: {observable: replyContent, onUpdate: handleEditableUpdate}, attr: {maxlength: $root.MAXLENGTH}" contenteditable="true"></div>
                     </div>

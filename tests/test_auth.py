@@ -4,6 +4,7 @@ import unittest
 from nose.tools import *  # noqa; PEP8 asserts
 from webtest_plus import TestApp as WebtestApp  # py.test tries to collect `TestApp`
 import mock
+import urllib
 import urlparse
 import httplib as http
 
@@ -143,7 +144,10 @@ class TestAuthUtils(OsfTestCase):
         resp = cas.make_response_from_ticket(ticket, service_url)
         assert_equal(resp.status_code, 302, 'redirect to CAS login')
         assert_in('/login?service=', resp.location)
-        assert_in('username={}'.format(user.username), resp.location)
+
+        # the valid username will be double quoted as it is furl quoted in both get_login_url and get_logout_url in order
+        username_quoted = urllib.quote(urllib.quote(user.username, safe='@'), safe='@')
+        assert_in('username={}'.format(username_quoted), resp.location)
         assert_in('verification_key={}'.format(user.verification_key), resp.location)
 
     @mock.patch('framework.auth.cas.get_user_from_cas_resp')

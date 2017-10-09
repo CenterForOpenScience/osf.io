@@ -32,8 +32,8 @@ SORT_BY = {
     'n_initiator': '-initiator__fullname',
     'title': 'branched_from__title',
     'n_title': '-branched_from__title',
-    'date': 'datetime_initiated',
-    'n_date': '-datetime_initiated',
+    'date': 'approval__initiation_date',
+    'n_date': '-approval__initiation_date',
     'state': 'approval__state',
     'n_state': '-approval__state',
 }
@@ -41,7 +41,7 @@ SORT_BY = {
 
 class DraftListView(PermissionRequiredMixin, ListView):
     template_name = 'pre_reg/draft_list.html'
-    ordering = '-datetime_initiated'
+    ordering = '-approval__initiation_date'
     context_object_name = 'draft'
     permission_required = 'osf.view_prereg'
     raise_exception = True
