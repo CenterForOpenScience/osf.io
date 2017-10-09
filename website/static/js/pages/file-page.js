@@ -89,9 +89,9 @@ $(function() {
             },
             error: function (response) {
                 if (response.status === 409){
-                    $osf.growl('Cannot rename file.', 'An item with the same name already exists in this location.')
+                    $osf.growl('Cannot rename file.', 'An item with the same name already exists in this location.');
                 } else {
-                    return $osf.handleEditableError
+                    return $osf.handleEditableError;
                 }
             }
         });
