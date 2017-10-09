@@ -34,6 +34,21 @@
     </script>
     % endif
 
+    <!-- Dublin Core (DC), Highwire Press metadata tags-->
+    <meta name="dc.title" content="${self.dc_title()}" />
+    <meta name="citation_doi" content="${self.highwire_doi()}" />
+    <meta name="citation_publisher" content="Open Science Framework" />
+    <meta name="dc.identifier" content="${self.dc_identifier()}" />
+    <meta name="dc.abstract" content="${self.og_description()}" />
+    <meta name="dc.license" content="${self.dc_license()}" />
+    <meta name="dc.subject" content="${self.dc_tags()}" />
+    <meta name="citation_keywords" content="${self.dc_tags()}" />
+    <meta name="dc.creator" content="${self.dc_authors()}" />
+    <meta name="dc.date" content="${self.dc_date()}" />
+    <meta name="dc.publisher" content="Open Science Framework" />
+    <meta name="dc.type" content="Open Science Framework" />
+    <meta name="dc.language" content="en" />
+
     <!-- Facebook display -->
     <meta name="og:image" content="https://cos.io/static/img/cos_center_logo_small.png"/>
     <meta name="og:title" content="${self.title()}"/>
@@ -223,6 +238,36 @@
 <%def name="og_description()">
     Hosted on the Open Science Framework
 </%def>
+
+<!-- Dublin Core (DC) metadata tags-->
+<%def name="dc_title()">
+    ### The page title ###
+</%def>
+
+<%def name="dc_authors()">
+    ### The list of project contributors ###
+</%def>
+
+<%def name="dc_date()">
+    ### The project last modified data.
+</%def>
+
+<%def name="dc_identifier()">
+    ### The project doi ###
+</%def>
+
+<%def name="dc_license()">
+    ### The project license ###
+</%def>
+
+<%def name="dc_tags()">
+    ### The project tags ###
+</%def>
+
+<%def name="highwire_doi()">
+    ### The project doi ###
+</%def>
+<!-- End: Dublin Core (DC) metadata tags-->
 
 <%def name="stylesheets()">
     ### Extra css for this page. ###

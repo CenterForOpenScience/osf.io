@@ -4,6 +4,12 @@
 <%namespace name="render_addon_widget" file="util/render_addon_widget.mako" />
 <%include file="project/nodes_privacy.mako"/>
 
+<%def name="dc_authors()">
+    %if node['contributors']:
+        ${','.join([contrib['fullname'] for contrib in node['contributors']])}
+    %endif
+</%def>
+
 <%
     is_project = node['node_type'] == 'project'
 %>

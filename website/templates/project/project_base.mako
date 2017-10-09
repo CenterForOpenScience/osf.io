@@ -3,12 +3,56 @@
 <%def name="og_description()">
 
     %if node['description']:
-        ${sanitize.strip_html(node['description']) + ' | '}
+        ${sanitize.strip_html(node['description']) + ' '}
     %endif
     Hosted on the Open Science Framework
 
 
 </%def>
+
+<!-- Dublin Core (DC) and Highwire metadata tags-->
+<%def name="dc_title()">
+    %if node['title']:
+        ${sanitize.strip_html(node['title'])}
+    %endif
+</%def>
+
+<%def name="dc_date()">
+    %if node['date_modified']:
+        ${node['date_modified']}
+    %endif
+</%def>
+
+<%def name="dc_identifier()">
+    %if node['identifiers']:
+      %if node['identifiers']['doi']:
+          doi: ${sanitize.strip_html(node['identifiers']['doi'])}
+      %endif
+      %if node['identifiers']['ark']:
+          ark: ${sanitize.strip_html(node['identifiers']['ark'])}
+      %endif
+    %endif
+</%def>
+
+<%def name="highwire_doi()">
+    %if node['identifiers']:
+        ${node['identifiers']['doi']}
+    %endif
+</%def>
+
+<%def name="dc_license()">
+    %if node['license']:
+        ${sanitize.strip_html(node['license']['name'])}
+    %endif
+</%def>
+
+<%def name="dc_tags()">
+    %if node['tags']:
+        ${','.join([tag for tag in node['tags']] + [node['category']])}
+    %endif
+</%def>
+<!-- End: Dublin Core (DC) and Highwire metadata tags-->
+
 
 ## To change the postion of alert on project pages, override alert()
 <%def name="alert()"> </%def>
