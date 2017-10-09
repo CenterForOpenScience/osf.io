@@ -180,16 +180,16 @@ class TestProvisionNode(ContextTestCase):
     @mock.patch('website.conferences.utils.requests.put')
     def test_upload(self, mock_put, mock_get_url):
         mock_get_url.return_value = 'http://queen.com/'
-        self.attachment.filename = 'hammer-to-fall'
+        file_name = 'hammer-to-fall'
+        self.attachment.filename = file_name
         self.attachment.content_type = 'application/json'
         utils.upload_attachment(self.user, self.node, self.attachment)
         mock_get_url.assert_called_with(
-            'upload',
+            self.node._id,
             'osfstorage',
-            '/' + self.attachment.filename,
-            self.node,
             _internal=True,
-            user=self.user,
+            cookie=self.user.get_or_create_cookie(),
+            name='/' + file_name
         )
         mock_put.assert_called_with(
             mock_get_url.return_value,
@@ -204,12 +204,11 @@ class TestProvisionNode(ContextTestCase):
         self.attachment.content_type = 'application/json'
         utils.upload_attachment(self.user, self.node, self.attachment)
         mock_get_url.assert_called_with(
-            'upload',
+            self.node._id,
             'osfstorage',
-            '/' + settings.MISSING_FILE_NAME,
-            self.node,
             _internal=True,
-            user=self.user,
+            cookie=self.user.get_or_create_cookie(),
+            name='/' + settings.MISSING_FILE_NAME,
         )
         mock_put.assert_called_with(
             mock_get_url.return_value,
