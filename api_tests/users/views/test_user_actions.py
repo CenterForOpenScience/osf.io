@@ -63,7 +63,7 @@ class TestActionCreate(object):
 
     @pytest.fixture()
     def preprint(self, node_admin, provider):
-        preprint = PreprintFactory(provider=provider, node__creator=node_admin)
+        preprint = PreprintFactory(provider=provider, node__creator=node_admin, is_published=False)
         preprint.node.add_contributor(node_admin, permissions=[osf_permissions.ADMIN])
         return preprint
 
