@@ -58,4 +58,42 @@ $(function() {
         });
     }
 
+    if(window.contextVars.currentUser.canEdit && !window.contextVars.node.isRegistration) {
+        $('#fileTitleEditable').editable({
+            type: 'text',
+            mode: 'inline',
+            send: 'always',
+            url: window.contextVars.file.urls.delete,
+            ajaxOptions: {
+                type: 'post',
+                contentType: 'application/json',
+                dataType: 'json',
+                beforeSend: $osf.setXHRAuthorization
+            },
+            validate: function(value) {
+                if($.trim(value) === ''){
+                    return 'The file title cannot be empty.';
+                } else if(value.length > 100){
+                    return 'The file title cannot be more than 100 characters.';
+                }
+            },
+            params: function(params) {
+                var payload = {
+                    action: 'rename',
+                    rename: params.value,
+                };
+                return JSON.stringify(payload);
+            },
+            success: function(response) {
+                window.location.reload();
+            },
+            error: function (response) {
+                if (response.status === 409){
+                    $osf.growl('Cannot rename file.', 'An item with the same name already exists in this location.')
+                } else {
+                    return $osf.handleEditableError
+                }
+            }
+        });
+    }
 });
