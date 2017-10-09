@@ -484,8 +484,5 @@
         <script type="text/javascript" src=${"/static/public/js/forward/node-cfg.js" | webpack_asset}></script>
     % endif
     
-    % for js_asset in addon_js:
-        <script src="${js_asset | webpack_asset}"></script>
-    % endfor
 
 </%def>
