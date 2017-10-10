@@ -98,6 +98,11 @@ class Zotero(CitationsOauthProvider):
                 offset = offset + len(page)
         return citations
 
+    @property
+    def auth_url(self):
+        url = super(Zotero, self).auth_url
+        return url + '&all_groups=read'
+
 
 class UserSettings(BaseOAuthUserSettings):
     oauth_provider = Zotero
