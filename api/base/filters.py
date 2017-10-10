@@ -12,8 +12,10 @@ from api.base.exceptions import (InvalidFilterComparisonType,
 from api.base.serializers import RelationshipField, ShowIfVersion, TargetField
 from dateutil import parser as date_parser
 from django.core.exceptions import ValidationError
+from django.db.models import QuerySet as DjangoQuerySet
 from django.db.models import Q
 from rest_framework import serializers as ser
+from rest_framework.filters import OrderingFilter
 from osf.models import Subject
 from osf.models.base import GuidMixin
 
@@ -40,6 +42,26 @@ def sort_multiple(fields):
                 return -1 * sort_direction
         return 0
     return sort_fn
+
+class OSFOrderingFilter(OrderingFilter):
+    """Adaptation of rest_framework.filters.OrderingFilter to work with modular-odm."""
+    # override
+    def filter_queryset(self, request, queryset, view):
+        ordering = self.get_ordering(request, queryset, view)
+        if isinstance(queryset, DjangoQuerySet):
+            if queryset.ordered:
+                return queryset
+            elif ordering and getattr(queryset.query, 'distinct_fields', None):
+                order_fields = tuple([field.lstrip('-') for field in ordering])
+                distinct_fields = queryset.query.distinct_fields
+                queryset.query.distinct_fields = tuple(set(distinct_fields + order_fields))
+            return super(OSFOrderingFilter, self).filter_queryset(request, queryset, view)
+        if ordering:
+            if isinstance(ordering, (list, tuple)):
+                sorted_list = sorted(queryset, cmp=sort_multiple(ordering))
+                return sorted_list
+            return queryset.sort(*ordering)
+        return queryset
 
 
 class FilterMixin(object):

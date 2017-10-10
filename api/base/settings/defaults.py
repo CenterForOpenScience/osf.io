@@ -152,7 +152,7 @@ REST_FRAMEWORK = {
         '2.5',
         '2.6',
     ),
-    'DEFAULT_FILTER_BACKENDS': ('rest_framework.filters.OrderingFilter',),
+    'DEFAULT_FILTER_BACKENDS': ('api.base.filters.OSFOrderingFilter',),
     'DEFAULT_PAGINATION_CLASS': 'api.base.pagination.JSONAPIPagination',
     'ORDERING_PARAM': 'sort',
     'DEFAULT_AUTHENTICATION_CLASSES': (
