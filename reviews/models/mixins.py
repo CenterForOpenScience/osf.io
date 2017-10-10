@@ -240,8 +240,8 @@ class ReviewsMachine(Machine):
 def reviews_notification(self, context):
     timestamp = timezone.now()
     event_type = utils.find_subscription_type('global_reviews')
-    template = ''.join(context.get('template')) + '.html.mako'
-    for user_id in context.get('email_recipients'):
+    template = context['template'] + '.html.mako'
+    for user_id in context['email_recipients']:
         user = OSFUser.load(user_id)
         subscriptions = get_user_subscriptions(user, event_type)
         for notification_type in subscriptions:
@@ -268,9 +268,6 @@ def reviews_submit_notification(self, context):
     template = ''.join(context.get('template'))
     for user_id in context.get('email_recipients'):
         user = OSFUser.load(user_id)
-        if user == context.get('reviewable').node.creator:
-            context['is_creator'] = True
-        else:
-            context['is_creator'] = False
+        context['is_creator'] = user == context.get('reviewable').node.creator
         email = mails.Mail(template, subject='Confirmation of your submission to {provider}'.format(provider=context.get('reviewable').provider.name))
         mails.send_mail(user.username, email, user=user, **context)
