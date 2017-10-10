@@ -1,6 +1,7 @@
 from __future__ import unicode_literals
 
 import json
+import urlparse
 
 from django.core import serializers
 from django.core.urlresolvers import reverse_lazy
@@ -10,6 +11,7 @@ from django.contrib.auth.mixins import PermissionRequiredMixin
 from django.forms.models import model_to_dict
 from django.shortcuts import redirect
 
+from website import settings as web_settings
 from admin.base import settings
 from admin.base.forms import ImportFileForm
 from admin.preprint_providers.forms import PreprintProviderForm
@@ -41,7 +43,6 @@ class PreprintProviderList(PermissionRequiredMixin, ListView):
         return {
             'preprint_providers': query_set,
             'page': page,
-            'logohost': settings.OSF_URL
         }
 
 
@@ -114,10 +115,11 @@ class PreprintProviderDisplay(PermissionRequiredMixin, DetailView):
 
         subject_html += '</ul>'
         preprint_provider_attributes['subjects_acceptable'] = subject_html
+        preprint_provider_attributes['lower_name'] = preprint_provider._id
 
         kwargs['preprint_provider'] = preprint_provider_attributes
         kwargs['subject_ids'] = list(subject_ids)
-        kwargs['logohost'] = settings.OSF_URL
+        kwargs['logohost'] = urlparse.urljoin(web_settings.DOMAIN, web_settings.PREPRINTS_ASSETS)
         fields = model_to_dict(preprint_provider)
         fields['toplevel_subjects'] = list(subject_ids)
         fields['subjects_chosen'] = ', '.join(str(i) for i in subject_ids)
