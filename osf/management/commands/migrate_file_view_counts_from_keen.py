@@ -18,7 +18,7 @@ from scripts import utils as script_utils
 logger = logging.getLogger(__name__)
 
 
-def set_file_view_counts(state, *args, **kwargs):
+def set_file_view_counts():
     # get all osfstorage files which is_deleted == False, the file size in production database > 1730325
     files = OsfStorageFile.objects.all()
 
@@ -75,6 +75,6 @@ class Command(BaseCommand):
         if not dry_run:
             script_utils.add_file_logger(logger, __file__)
         with transaction.atomic():
-            set_file_view_counts
+            set_file_view_counts()
             if dry_run:
                 raise RuntimeError('Dry run, transaction rolled back.')
