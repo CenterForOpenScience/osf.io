@@ -58,7 +58,16 @@ $(function() {
         });
     }
 
-    if(window.contextVars.currentUser.canEdit && !window.contextVars.node.isRegistration) {
+    var titleEditable = function () {
+        var readOnlyProviders = ['bitbucket', 'figshare', 'dataverse'];
+        var ctx = window.contextVars;
+        if (readOnlyProviders.includes(ctx.file.provider) || ctx.file.checkoutUser || !ctx.currentUser.canEdit || ctx.node.isRegistration)
+            return false;
+        else
+            return true;
+    };
+
+    if(titleEditable()) {
         $('#fileTitleEditable').editable({
             type: 'text',
             mode: 'inline',
@@ -88,10 +97,11 @@ $(function() {
                 window.location.reload();
             },
             error: function (response) {
-                if (response.status === 409){
-                    $osf.growl('Cannot rename file.', 'An item with the same name already exists in this location.');
-                } else {
-                    return $osf.handleEditableError;
+                var msg = response.responseJSON.message;
+                if (msg) {
+                    // This is done to override inherited css style and prevent error message lines from overlapping with each other
+                    $('.editable-error-block').css('line-height', '35px');
+                    return msg;
                 }
             }
         });
