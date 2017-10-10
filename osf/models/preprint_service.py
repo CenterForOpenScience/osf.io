@@ -19,6 +19,7 @@ from website.util.permissions import ADMIN
 from website import settings
 
 from reviews.models.mixins import ReviewableMixin
+from reviews.workflow import States
 
 from osf.models.base import BaseModel, GuidMixin
 from osf.models.identifiers import IdentifierMixin, Identifier
@@ -181,6 +182,10 @@ class PreprintService(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMi
                 raise ValueError('Preprint must have at least one subject to be published.')
             self.date_published = timezone.now()
             self.node._has_abandoned_preprint = False
+
+            # In case this provider is ever set up to use a reviews workflow, put this preprint in a sensible state
+            self.reviews_state = States.ACCEPTED.value
+            self.date_last_transitioned = self.date_published
 
             self.node.add_log(
                 action=NodeLog.PREPRINT_INITIATED,

@@ -101,7 +101,7 @@ class TestPreprintProviderPreprintsListFiltering(PreprintsListFilteringMixin):
 class TestPreprintProviderPreprintListFilteringByReviewableFields(ReviewableFilterMixin):
     @pytest.fixture()
     def provider(self):
-        return PreprintProviderFactory()
+        return PreprintProviderFactory(reviews_workflow='post-moderation')
 
     @pytest.fixture()
     def url(self, provider):
@@ -110,9 +110,9 @@ class TestPreprintProviderPreprintListFilteringByReviewableFields(ReviewableFilt
     @pytest.fixture()
     def expected_reviewables(self, provider, user):
         preprints = [
-            PreprintFactory(is_published=True, provider=provider),
-            PreprintFactory(is_published=True, provider=provider),
-            PreprintFactory(is_published=True, provider=provider),
+            PreprintFactory(is_published=False, provider=provider, project=ProjectFactory(is_public=True)),
+            PreprintFactory(is_published=False, provider=provider, project=ProjectFactory(is_public=True)),
+            PreprintFactory(is_published=False, provider=provider, project=ProjectFactory(is_public=True)),
         ]
         preprints[0].reviews_submit(user)
         preprints[0].reviews_accept(user, 'comment')

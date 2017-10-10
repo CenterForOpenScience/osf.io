@@ -9,7 +9,7 @@ class TestReviewable:
 
     def test_state_changes(self):
         user = AuthUserFactory()
-        preprint = PreprintFactory()
+        preprint = PreprintFactory(provider__reviews_workflow='pre-moderation', is_published=False)
         assert preprint.reviews_state == States.INITIAL.value
 
         preprint.reviews_submit(user)
