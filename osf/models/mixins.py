@@ -92,6 +92,13 @@ class Taggable(models.Model):
 
     tags = models.ManyToManyField('Tag', related_name='%(class)s_tagged')
 
+    def update_tags(self, new_tags, auth=None, save=True, log=True, system=False):
+        old_tags = set(self.tags.values_list('name', flat=True))
+        for tag in (set(new_tags) - old_tags):
+            self.add_tag(tag, auth=auth, save=save, log=log, system=system)
+        for tag in (old_tags - set(new_tags)):
+            self.remove_tag(tag, auth, save=save)
+
     def add_tag(self, tag, auth=None, save=True, log=True, system=False):
         if not system and not auth:
             raise ValueError('Must provide auth if adding a non-system tag')
@@ -110,6 +117,9 @@ class Taggable(models.Model):
                 self.save()
             self.on_tag_added(tag_instance)
         return tag_instance
+
+    def remove_tag(self, *args, **kwargs):
+        raise NotImplementedError('Removing tags requires that remove_tag is implemented')
 
     def add_system_tag(self, tag, save=True):
         if isinstance(tag, Tag) and not tag.system:
