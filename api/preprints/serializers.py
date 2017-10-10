@@ -65,6 +65,7 @@ class PreprintSerializer(JSONAPISerializer):
         'is_published',
         'subjects',
         'reviews_state',
+        'node_is_public',
     ])
 
     id = IDField(source='_id', read_only=True)
@@ -79,6 +80,7 @@ class PreprintSerializer(JSONAPISerializer):
     title = ser.CharField(source='node.title', required=False)
     description = ser.CharField(required=False, allow_blank=True, allow_null=True, source='node.description')
     tags = JSONAPIListField(child=NodeTagField(), required=False, source='node.tags')
+    node_is_public = ser.BooleanField(read_only=True, source='node__is_public')
 
     contributors = RelationshipField(
         related_view='nodes:node-contributors',

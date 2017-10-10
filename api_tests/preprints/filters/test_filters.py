@@ -104,6 +104,10 @@ class PreprintsListFilteringMixin(object):
         return '{}filter[is_published]=true&filter[date_created]=2013-12-11'.format(url)
 
     @pytest.fixture()
+    def node_is_public_url(self, url):
+        return '{}filter[node_is_public]='.format(url)
+
+    @pytest.fixture()
     def has_subject(self, url):
         return '{}filter[subjects]='.format(url)
 
@@ -216,6 +220,24 @@ class PreprintsListFilteringMixin(object):
             auth=user.auth
         )
         assert len(res.json['data']) == 0
+
+    def test_node_is_public_filter(self, app, user, preprint_one, preprint_two, preprint_three, node_is_public_url):
+        preprint_one.node.is_public = False
+        preprint_one.node.save()
+        preprint_two.node.is_public = True
+        preprint_two.node.save()
+        preprint_three.node.is_public = True
+        preprint_three.node.save()
+
+        res = app.get('{}{}'.format(node_is_public_url, 'false'), auth=user.auth)
+        expected = set([preprint_one._id])
+        actual = set([preprint['id'] for preprint in res.json['data']])
+        assert expected == actual
+
+        res = app.get('{}{}'.format(node_is_public_url, 'true'), auth=user.auth)
+        expected = set([preprint_two._id, preprint_three._id])
+        actual = set([preprint['id'] for preprint in res.json['data']])
+        assert expected == actual
 
     @pytest.mark.parametrize('group_name', ['admin', 'moderator'])
     def test_permissions(self, app, url, preprint_one, preprint_two, preprint_three, group_name):
