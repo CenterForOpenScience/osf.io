@@ -3,7 +3,7 @@ var assign = require('object-assign');
 
 module.exports = function (config) {
     config.set(assign(commonConfig, {
-        browsers: ['PhantomJS'],
+        browsers: ['ChromeHeadless'],
         reporters: ['spec'],
     }));
 };
