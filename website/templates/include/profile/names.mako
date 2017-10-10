@@ -4,7 +4,7 @@
 
         <div class="form-group">
             <label>Full name (e.g. Rosalind Elsie Franklin)</label>
-            <input class="form-control" data-bind="value: full" />
+            <input class="form-control" data-bind="value: full" maxlength="255"/>
             <div data-bind="visible: showMessages, css:'text-danger'">
                 <p data-bind="validationMessage: full"></p>
             </div>
@@ -23,22 +23,22 @@
 
         <div class="form-group">
             <label>Given name (e.g. Rosalind)</label>
-            <input class="form-control" data-bind="value: given" />
+            <input class="form-control" data-bind="value: given" maxlength="255"/>
         </div>
 
         <div class="form-group">
             <label>Middle name(s) (e.g. Elsie)</label>
-            <input class="form-control" data-bind="value: middle" />
+            <input class="form-control" data-bind="value: middle" maxlength="255"/>
         </div>
 
         <div class="form-group">
             <label>Family name (e.g. Franklin)</label>
-            <input class="form-control" data-bind="value: family" />
+            <input class="form-control" data-bind="value: family" maxlength="255"/>
         </div>
 
         <div class="form-group">
             <label>Suffix</label>
-            <input class="form-control" data-bind="value: suffix" />
+            <input class="form-control" data-bind="value: suffix" maxlength="255"/>
         </div>
 
         <hr />
