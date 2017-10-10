@@ -557,7 +557,7 @@ function doItemOp(operation, to, from, rename, conflict) {
         beforeSend: $osf.setXHRAuthorization,
         url: waterbutler.buildTreeBeardFileOp(from, options),
         headers: {
-            'Content-Type': 'Application/json'
+            'Content-Type': 'application/json'
         },
         data: JSON.stringify(moveSpec)
     }).done(function(resp, _, xhr) {
