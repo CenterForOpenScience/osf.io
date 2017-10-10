@@ -6,6 +6,7 @@ from django.db import migrations
 
 
 class Migration(migrations.Migration):
+    atomic = False  # CREATE INDEX CONCURRENTLY cannot be run in a txn
 
     dependencies = [
         ('osf', '0059_merge_20170914_1100'),
@@ -14,7 +15,6 @@ class Migration(migrations.Migration):
     operations = [
         migrations.RunSQL([
             'CREATE INDEX CONCURRENTLY osf_nodelog_should_hide_nid ON osf_nodelog (should_hide, node_id);',
-            # 'VACUUM ANALYZE osf_nodelog;'  # Run this manually, requires <1 min downtime
         ], [
             'DROP INDEX IF EXISTS osf_nodelog_should_hide_nid, RESTRICT;'
         ])
