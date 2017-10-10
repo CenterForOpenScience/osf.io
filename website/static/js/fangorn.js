@@ -1593,12 +1593,16 @@ function expandStateLoad(item) {
     var tb = this,
         i;
     if (item.children.length > 0 && item.depth === 1) {
-        // NOTE: On the RPP *only*: Load the top-level project's OSF Storage
+        // NOTE: On the RPP and a few select projects *only*: Load the top-level project's OSF Storage
         // but do NOT lazy-load children in order to save hundreds of requests.
         // TODO: We might want to do this for every project, but that's TBD.
         // /sloria
         if (window.contextVars && window.contextVars.node && NO_AUTO_EXPAND_PROJECTS.indexOf(window.contextVars.node.id) > -1) {
-            tb.updateFolder(null, item.children[0]);
+            var osfsItems = item.children.filter(function(child) { return child.isAddonRoot && child.provider === 'osfstorage'; });
+            if (osfsItems.length) {
+                var osfsItem = osfsItems[0];
+                tb.updateFolder(null, osfsItem);
+            }
         } else {
             for (i = 0; i < item.children.length; i++) {
                 tb.updateFolder(null, item.children[i]);
