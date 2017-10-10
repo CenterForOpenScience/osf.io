@@ -51,6 +51,12 @@
         ${','.join([tag for tag in node['tags']] + [node['category']])}
     %endif
 </%def>
+
+<%def name="dc_authors()">
+    %if node['contributors'] and not node['anonymous']:
+        ${','.join([contrib['fullname'] for contrib in node['contributors'] if isinstance(contrib, dict)])}
+    %endif
+</%def>
 <!-- End: Dublin Core (DC) and Highwire metadata tags-->
 
 
