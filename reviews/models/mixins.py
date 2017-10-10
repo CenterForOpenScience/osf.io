@@ -265,8 +265,8 @@ def reviews_notification(self, context):
 # Handle email notifications for a new submission.
 @reviews_signals.reviews_email_submit.connect
 def reviews_submit_notification(self, context):
-    template = ''.join(context.get('template'))
-    for user_id in context.get('email_recipients'):
+    template = context['template']
+    for user_id in context['email_recipients']:
         user = OSFUser.load(user_id)
         context['is_creator'] = user == context.get('reviewable').node.creator
         email = mails.Mail(template, subject='Confirmation of your submission to {provider}'.format(provider=context.get('reviewable').provider.name))
