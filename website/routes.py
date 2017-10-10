@@ -46,6 +46,7 @@ from website.preprints import views as preprint_views
 from website.registries import views as registries_views
 from website.institutions import views as institution_views
 from website.notifications import views as notification_views
+from website.ember_osf_web import views as ember_osf_web_views
 from website.closed_challenges import views as closed_challenges_views
 
 
@@ -296,17 +297,15 @@ def make_url_map(app):
                 ),
             ], prefix='/' + prefix)
 
-            if value.get('has_additional_routes', False):
-                import imp
-                app_views = imp.load_source('views', 'website/' + value['url'] + '/views.py')
-                process_rules(app, [
-                    Rule(
-                        [route for route in app_views.routes],
-                        'get',
-                        app_views.use_ember_app,
-                        notemplate
-                    )
-                ])
+        if settings.EXTERNAL_EMBER_APPS.get('ember_osf_web'):
+            process_rules(app, [
+                Rule(
+                    ember_osf_web_views.routes,
+                    'get',
+                    ember_osf_web_views.use_ember_app,
+                    notemplate
+                )
+            ])
 
     ### Base ###
 
