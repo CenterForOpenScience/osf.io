@@ -14,9 +14,9 @@
     Sincerely,
     <br>
     Your ${reviewable.provider.name} and OSF teams
-    <br><br>
+    <p>
     Center for Open Science<br>
     210 Ridge McIntire Road, Suite 500, Charlottesville, VA 22903-5083
-    <br><br>
+    </p>
     <a href="https://github.com/CenterForOpenScience/cos.io/blob/master/PRIVACY_POLICY.md">Privacy Policy</a>
 </div>
