@@ -188,9 +188,9 @@ class TestPreprintListFilteringByReviewableFields(ReviewableFilterMixin):
     @pytest.fixture()
     def expected_reviewables(self, user):
         preprints = [
-            PreprintFactory(is_published=True),
-            PreprintFactory(is_published=True),
-            PreprintFactory(is_published=True),
+            PreprintFactory(is_published=False, project=ProjectFactory(is_public=True)),
+            PreprintFactory(is_published=False, project=ProjectFactory(is_public=True)),
+            PreprintFactory(is_published=False, project=ProjectFactory(is_public=True)),
         ]
         preprints[0].reviews_submit(user)
         preprints[0].reviews_accept(user, 'comment')
