@@ -229,13 +229,15 @@ class PreprintsListFilteringMixin(object):
         preprint_three.node.is_public = True
         preprint_three.node.save()
 
+        preprints = [preprint_one, preprint_two, preprint_three]
+
         res = app.get('{}{}'.format(node_is_public_url, 'false'), auth=user.auth)
-        expected = set([preprint_one._id])
+        expected = set([p._id for p in preprints if not p.node.is_public])
         actual = set([preprint['id'] for preprint in res.json['data']])
         assert expected == actual
 
         res = app.get('{}{}'.format(node_is_public_url, 'true'), auth=user.auth)
-        expected = set([preprint_two._id, preprint_three._id])
+        expected = set([p._id for p in preprints if p.node.is_public])
         actual = set([preprint['id'] for preprint in res.json['data']])
         assert expected == actual
 
