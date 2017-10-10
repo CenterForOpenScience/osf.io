@@ -107,7 +107,7 @@
     });
 </script>
 
-<script type="text/javascript" async
+<script type="text/javascript"
 % if settings.USE_CDN_FOR_CLIENT_LIBS:
     src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.2/MathJax.js?config=TeX-AMS-MML_HTMLorMML"
 % else:
