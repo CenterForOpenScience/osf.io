@@ -31,7 +31,7 @@ def load_origins_whitelist():
 
     institution_origins = tuple(domain.lower() for domain in itertools.chain(*[
         institution.domains
-        for institution in Institution.find()
+        for institution in Institution.objects.all()
     ]))
 
     preprintprovider_origins = tuple(preprintprovider.domain.lower() for preprintprovider in PreprintProvider.objects.exclude(domain=''))
