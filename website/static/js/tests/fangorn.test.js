@@ -333,7 +333,7 @@ describe('fangorn', () => {
                 var item = getItem('file', 5, 'exp.csv');
                 var itemDropped = getItem('file', 6, 'exp.csv');
                 folder.children = [item];
-                assert.equal(Fangorn.checkConflicts([itemDropped], folder).conflicts, [itemDropped]);
+                assert.deepEqual(Fangorn.checkConflicts([itemDropped], folder).conflicts, [itemDropped]);
                 assert.equal(Fangorn.checkConflicts([itemDropped], folder).ready.length, 0);
             });
 
@@ -346,8 +346,7 @@ describe('fangorn', () => {
                 folder.children = [item];
                 assert.equal(Fangorn.checkConflicts(movedItems, folder).conflicts.length, 0);
                 assert.equal(Fangorn.checkConflicts(movedItems, folder).ready.length, movedItems.length);
-                assert.include(Fangorn.checkConflicts(movedItems, folder).ready, movedItems[0]);
-                assert.include(Fangorn.checkConflicts(movedItems, folder).ready, movedItems[1]);
+                assert.deepEqual(Fangorn.checkConflicts(movedItems, folder).ready, movedItems);
 
             });
 
@@ -364,7 +363,7 @@ describe('fangorn', () => {
 
                 var movedFolder = folder2;
                 assert.equal(Fangorn.checkConflicts([movedFolder], folder).conflicts.length, 0);
-                assert.equal(Fangorn.checkConflicts([movedFolder], folder).ready, [movedFolder]);
+                assert.deepEqual(Fangorn.checkConflicts([movedFolder], folder).ready, [movedFolder]);
             });
 
         });
