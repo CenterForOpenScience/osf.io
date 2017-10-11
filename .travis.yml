@@ -42,6 +42,7 @@ before_install:
       mkdir -p $HOME/.cache/downloads
       mkdir -p $HOME/.cache/pip
       mkdir -p $HOME/.cache/wheelhouse
+      rm -rf node_modules  ## TODO remove this later
     # postgres
     - |
       cd $HOME/.cache/downloads
@@ -80,6 +81,16 @@ before_install:
       mkdir -p /tmp/elasticsearch
       tar xzf $ELASTICSEARCH_ARCHIVE -C /tmp/elasticsearch --strip-components=1
     - /tmp/elasticsearch/bin/elasticsearch > /dev/null & export ELASTICSEARCH_PID=$!
+    # Wait for elasticsearch to come online
+    - |-
+      while true; do
+          sleep 5
+          curl -sf http://localhost:9200/_cluster/health?wait_for_status=yellow
+          if [ $? -eq 0 ]; then
+              break
+          fi
+      done
+
     # varnish
     # - |
     #   cd $HOME/.cache/downloads
@@ -139,9 +150,6 @@ before_cache:
   - rm -f $HOME/.cache/wheelhouse/httpretty-*.whl
   - rm -f $HOME/.cache/wheelhouse/mendeley-*.whl
   - rm -f $HOME/.cache/wheelhouse/feedparser-*.whl
-  # exclude npm from github repo's
-  - rm -Rf node_modules/dropzone
-  - rm -Rf node_modules/treebeard
   # kill any running processes
   - kill -9 $POSTGRES_PID
   - kill -9 $ELASTICSEARCH_PID
