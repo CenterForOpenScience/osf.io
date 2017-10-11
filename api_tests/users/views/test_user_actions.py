@@ -23,11 +23,11 @@ class TestActionFilters(ActionFilterMixin):
 
     @pytest.fixture()
     def expected_actions(self, all_actions, allowed_providers):
-        expected = super(TestActionFilters, self).expected_actions(all_actions, allowed_providers)
+        actions = super(TestActionFilters, self).expected_actions(all_actions, allowed_providers)
         node = expected[0].target.node
         node.is_public = False
         node.save()
-        return [a for a in expected if a.target.node.is_public]
+        return [a for a in actions if a.target.node.is_public]
 
     def test_no_permission(self, app, url, expected_actions):
         res = app.get(url, expect_errors=True)

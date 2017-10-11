@@ -55,8 +55,8 @@ class ActionFilterMixin(object):
     @pytest.fixture()
     def all_actions(self, providers):
         actions = []
-        for p in providers:
-            preprint = PreprintFactory(provider=p, project=ProjectFactory(is_public=True))
+        for provider in providers:
+            preprint = PreprintFactory(provider=provider, project=ProjectFactory(is_public=True))
             for _ in range(5):
                 actions.append(ActionFactory(target=preprint))
         return actions
