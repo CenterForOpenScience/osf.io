@@ -335,8 +335,8 @@ class BaseFileNode(TypedModel, CommentableMixin, OptionalGuidMixin, Taggable, Ob
         parts = ['view', self.node._id, self._id]
         if version is not None:
             parts.append(version)
-            page = ':'.join([format(part) for part in parts])
-            _, count = get_basic_counters(page)
+        page = ':'.join([format(part) for part in parts])
+        _, count = get_basic_counters(page)
 
         return count or 0
 
