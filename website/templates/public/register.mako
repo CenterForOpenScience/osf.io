@@ -83,7 +83,8 @@
                 <div class="form-group" data-bind=" css: { 'has-error': fullName() && !fullName.isValid(), 'has-success': fullName() && fullName.isValid() }">
                     <label for="inputName" class="col-sm-4 control-label">Full Name</label>
                     <div class="col-sm-8">
-                        <input autofocus type="text" class="form-control" id="inputName" placeholder="Name" data-bind="value: fullName, disable: submitted(), event: { blur: trim.bind($data, fullName) }" maxlength="255">
+                        ## Maxlength for full names must be 200 - quickfile titles use fullname
+                        <input autofocus type="text" class="form-control" id="inputName" placeholder="Name" data-bind="value: fullName, disable: submitted(), event: { blur: trim.bind($data, fullName) }" maxlength="200">
                         <p class="help-block" data-bind="validationMessage: fullName" style="display: none;"></p>
                     </div>
                 </div>
@@ -104,7 +105,7 @@
                 <div class="form-group" data-bind="css: { 'has-error': password() && !password.isValid(), 'has-success': password() && password.isValid() }">
                     <label for="inputPassword3" class="col-sm-4 control-label">Password</label>
                     <div class="col-sm-8">
-                        <input type="password" class="form-control" id="inputPassword3" placeholder="Password" data-bind="textInput: typedPassword, value: password, disable: submitted(), event: { blur: trim.bind($data, password) }" maxlength="255">
+                        <input type="password" class="form-control" id="inputPassword3" placeholder="Password" data-bind="textInput: typedPassword, value: password, disable: submitted(), event: { blur: trim.bind($data, password) }" maxlength="256">
                         <div class="row" data-bind="visible: typedPassword().length > 0">
                             <div class="col-xs-8">
                                 <div class="progress create-password">
