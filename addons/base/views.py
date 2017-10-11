@@ -17,6 +17,7 @@ from django.db import transaction
 from addons.base.models import BaseStorageAddon
 from addons.osfstorage.models import OsfStorageFile
 from addons.osfstorage.models import OsfStorageFileNode
+from addons.osfstorage.utils import update_analytics
 
 from framework import sentry
 from framework.auth import Auth
@@ -663,6 +664,9 @@ def addon_view_or_download_file(auth, path, provider, **kwargs):
         return make_response(('', httplib.FOUND, {
             'Location': file_node.generate_waterbutler_url(**dict(extras, direct=None, version=version.identifier, _internal=extras.get('mode') == 'render'))
         }))
+
+    if action == 'view' and provider == 'osfstorage':
+        update_analytics(node_addon.owner, file_node._id, int(version.identifier) - 1, download=False)
 
     if action == 'download':
         format = extras.get('format')
