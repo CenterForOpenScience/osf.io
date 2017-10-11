@@ -21,6 +21,7 @@ def update_analytics(node, file_id, version_idx, download=True):
     :param Node node: Root node to update
     :param str file_id: The _id field of a filenode
     :param int version_idx: Zero-based version index
+    :param bool download: Whether the count is a download
     """
     # Pass in contributors to check that contributors' downloads
     # do not count towards total download count
