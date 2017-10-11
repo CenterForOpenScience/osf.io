@@ -640,7 +640,6 @@ def addon_view_or_download_file(auth, path, provider, **kwargs):
             cookie=request.cookies.get(settings.COOKIE_NAME)
         )
     )
-
     if version is None:
         # File is either deleted or unable to be found in the provider location
         # Rollback the insertion of the file_node
