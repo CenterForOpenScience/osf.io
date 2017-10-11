@@ -116,6 +116,7 @@ class NodeSettings(BaseCitationsNodeSettings):
     user_settings = models.ForeignKey(UserSettings, null=True, blank=True)
 
     list_id = models.TextField(blank=True, null=True)
+    library_id = models.TextField(blank=True, null=True)
     _api = None
 
     @property
