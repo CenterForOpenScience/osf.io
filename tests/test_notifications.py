@@ -1802,41 +1802,53 @@ class TestSendDigest(OsfTestCase):
         with assert_raises(NotificationDigest.DoesNotExist):
             NotificationDigest.objects.get(_id=digest_id)
 
-@mock.patch('website.mails.mails.send_mail')
 class TestNotificationsReviews(OsfTestCase):
-    def test_reviews_notification(self, mock_send_email):
-        provider = factories.PreprintProviderFactory(_id = 'engrxiv')
-        preprint = factories.PreprintFactory(provider = provider)
-        user = factories.UserFactory()
-        context =  {
-            'email_recipients': [user._id],
+    def setUp(self):
+        super(TestNotificationsReviews, self).setUp()
+        self.provider = factories.PreprintProviderFactory(_id='engrxiv')
+        self.preprint = factories.PreprintFactory(provider=self.provider)
+        self.user = factories.UserFactory()
+        self.context_info = {
+            'email_recipients': [self.user._id],
             'template': 'test',
             'domain': 'osf.io',
-            'referrer': user,
-            'reviewable': preprint,
+            'referrer': self.user,
+            'reviewable': self.preprint,
             'workflow': 'pre-moderation',
             'provider_contact_email': 'contact@osf.io',
             'provider_support_email': 'support@osf.io',
         }
         factories.NotificationSubscriptionFactory(
-            _id=user._id + '_' + 'global_comments',
-            user=user,
+            _id=self.user._id + '_' + 'global_comments',
+            user=self.user,
             event_name='global_comments'
-        ).add_user_to_subscription(user, 'email_transactional')
+        ).add_user_to_subscription(self.user, 'email_transactional')
 
         factories.NotificationSubscriptionFactory(
-            _id=user._id + '_' + 'global_file_updated',
-            user=user,
+            _id=self.user._id + '_' + 'global_file_updated',
+            user=self.user,
             event_name='global_file_updated'
-        ).add_user_to_subscription(user, 'email_transactional')
+        ).add_user_to_subscription(self.user, 'email_transactional')
 
         factories.NotificationSubscriptionFactory(
-            _id=user._id + '_' + 'global_reviews',
-            user=user,
+            _id=self.user._id + '_' + 'global_reviews',
+            user=self.user,
             event_name='global_reviews'
-        ).add_user_to_subscription(user, 'email_transactional')
-        mixins.reviews_submit_notification(self, context=context)
-        assert_true(mock_send_email.called)
-        contributor_subscriptions = list(utils.get_all_user_subscriptions(user))
+        ).add_user_to_subscription(self.user, 'email_transactional')
+
+    def test_reviews_base_notification(self):
+        contributor_subscriptions = list(utils.get_all_user_subscriptions(self.user))
         event_types = [sub.event_name for sub in contributor_subscriptions]
         assert_in('global_reviews', event_types)
+
+    @mock.patch('website.mails.mails.send_mail')
+    def test_reviews_submit_notification(self, mock_send_email):
+        mixins.reviews_submit_notification(self, context=self.context_info)
+        assert_true(mock_send_email.called)
+
+    @mock.patch('website.mails.mails.render_message')
+    def test_reviews_notification(self, mock_render):
+        mixins.reviews_notification(self, context=self.context_info)
+        assert_true(mock_render.called)
+        template = self.context_info['template'] + '.html.mako'
+        mock_render.assert_called_with(template, **self.context_info)
