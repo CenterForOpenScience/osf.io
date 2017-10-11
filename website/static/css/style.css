@@ -719,10 +719,14 @@ div.ball-scale-blue>div {
 }
 
 /* To be added to osf-style: generic dropdown-menu */
+.generic-dropdown ul.dropdown-menu > li > a {
+    color: #000;
+}
+
 .generic-dropdown ul.dropdown-menu > li > a:hover,
 .generic-dropdown ul.dropdown-menu > li > a:focus {
     background-image: none;
-    background-color: #D9D9D9 !important;
+    background-color: #D9D9D9;
 }
 
 .generic-dropdown button {
@@ -731,12 +735,12 @@ div.ball-scale-blue>div {
 }
 
 .generic-dropdown ul {
-    background-color: #EFEFEF !important;
+    background-color: #EFEFEF;
     min-width: 180px;
 }
 
 .generic-dropdown a {
-    color: #333 !important;
+    color: #333;
 }
 
 .generic-dropdown .fa {
