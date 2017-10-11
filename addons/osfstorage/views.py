@@ -125,13 +125,12 @@ def osfstorage_get_lineage(file_node, node_addon, **kwargs):
 
 @must_be_signed
 @decorators.autoload_filenode(default_root=True)
-def osfstorage_get_metadata(file_node, node_addon, **kwargs):
+def osfstorage_get_metadata(file_node, **kwargs):
     try:
         # TODO This should change to version as its internal it can be changed anytime
         version = int(request.args.get('revision'))
     except (ValueError, TypeError):  # If its not a number
         version = None
-
     return file_node.serialize(version=version, include_full=True)
 
 
