@@ -333,7 +333,7 @@ describe('fangorn', () => {
                 var item = getItem('file', 5, 'exp.csv');
                 var itemDropped = getItem('file', 6, 'exp.csv');
                 folder.children = [item];
-                assert.equal(Fangorn.checkConflicts([itemDropped], folder).conflicts, itemDropped);
+                assert.equal(Fangorn.checkConflicts([itemDropped], folder).conflicts, [itemDropped]);
                 assert.equal(Fangorn.checkConflicts([itemDropped], folder).ready.length, 0);
             });
 
@@ -345,7 +345,10 @@ describe('fangorn', () => {
                 var movedItems = [item1, item2];
                 folder.children = [item];
                 assert.equal(Fangorn.checkConflicts(movedItems, folder).conflicts.length, 0);
-                assert.equal(Fangorn.checkConflicts(movedItems, folder).ready, movedItems);
+                assert.equal(Fangorn.checkConflicts(movedItems, folder).ready.length, movedItems.length);
+                assert.include(Fangorn.checkConflicts(movedItems, folder).ready, movedItems[0]);
+                assert.include(Fangorn.checkConflicts(movedItems, folder).ready, movedItems[1]);
+
             });
 
             it('returns no conflicts if folder with similar files is dropped', () => {
@@ -360,8 +363,8 @@ describe('fangorn', () => {
                 folder2.children = [item7, item8];
 
                 var movedFolder = folder2;
-                assert.equal(Fangorn.checkConflicts(movedFolder, folder).conflicts.length, 0);
-                assert.equal(Fangorn.checkConflicts(movedFolder, folder).ready, movedFolder);
+                assert.equal(Fangorn.checkConflicts([movedFolder], folder).conflicts.length, 0);
+                assert.equal(Fangorn.checkConflicts([movedFolder], folder).ready, [movedFolder]);
             });
 
         });
