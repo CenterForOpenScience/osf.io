@@ -13,15 +13,18 @@ from django.db.models import Q
 from framework.auth.core import Auth
 from osf.models import MetaSchema, DraftRegistration
 from osf_tests.factories import (
+    EmbargoFactory,
     ProjectFactory,
     RegistrationFactory,
     AuthUserFactory,
     CollectionFactory,
     DraftRegistrationFactory,
 )
+from rest_framework import exceptions
 from tests.base import ApiTestCase
 from website.project.metadata.schemas import LATEST_SCHEMA_VERSION
 from website.views import find_bookmark_collection
+from website.util import permissions
 
 
 class TestRegistrationList(ApiTestCase):
@@ -835,6 +838,229 @@ class TestRegistrationCreate(DraftRegistrationTestCase):
             res = app.post_json_api(url_registrations, payload, auth=user.auth, expect_errors=True)
         assert res.status_code == 403
         assert res.json['errors'][0]['detail'] == 'This draft has already been approved and cannot be modified.'
+
+
+@pytest.mark.django_db
+class TestRegistrationBulkUpdate:
+
+    @pytest.fixture()
+    def url(self):
+        return '/{}registrations/'.format(API_BASE)
+
+    @pytest.fixture()
+    def user(self):
+        return AuthUserFactory()
+
+    @pytest.fixture()
+    def registration_one(self, user):
+        return RegistrationFactory(creator=user, title='Birds', embargo=EmbargoFactory(user=user), is_public=False)
+
+    @pytest.fixture()
+    def registration_two(self, user):
+        return RegistrationFactory(creator=user, title='Birds II', embargo=EmbargoFactory(user=user), is_public=False)
+
+    @pytest.fixture()
+    def private_payload(self, registration_one, registration_two):
+        return {
+            'data': [
+                {
+                    'id': registration_one._id,
+                    'type': 'registrations',
+                    'attributes': {
+                        'public': False
+                    }
+                },
+                {
+                    'id': registration_two._id,
+                    'type': 'registrations',
+                    'attributes': {
+                        'public': False
+                    }
+                }
+            ]
+        }
+
+    @pytest.fixture()
+    def public_payload(self, registration_one, registration_two):
+        return {
+            'data': [
+                {
+                    'id': registration_one._id,
+                    'type': 'registrations',
+                    'attributes': {
+                        'public': True
+                    }
+                },
+                {
+                    'id': registration_two._id,
+                    'type': 'registrations',
+                    'attributes': {
+                        'public': True
+                    }
+                }
+            ]
+        }
+
+    @pytest.fixture()
+    def empty_payload(self, registration_one, registration_two):
+        return {
+            'data': [
+                {
+                    'id': registration_one._id,
+                    'type': 'registrations',
+                    'attributes': {}
+                },
+                {
+                    'id': registration_two._id,
+                    'type': 'registrations',
+                    'attributes': {}
+                }
+            ]
+        }
+
+    @pytest.fixture()
+    def bad_payload(self, registration_one, registration_two):
+        return {
+            'data': [
+                {
+                    'id': registration_one._id,
+                    'type': 'registrations',
+                    'attributes': {
+                        'public': True,
+                    }
+                },
+                {
+                    'id': registration_two._id,
+                    'type': 'registrations',
+                    'attributes': {
+                        'title': 'Nerds II: Attack of the Nerds',
+                    }
+                }
+            ]
+        }
+
+
+    def test_bulk_update_errors(self, app, user, registration_one, registration_two, public_payload, private_payload, empty_payload, bad_payload, url):
+
+        # test_bulk_update_registrations_blank_request
+        res = app.put_json_api(url, auth=user.auth, expect_errors=True, bulk=True)
+        assert res.status_code == 400
+
+        # test_bulk_update_registrations_one_not_found
+        payload = {'data': [
+            {
+                'id': '12345',
+                'type': 'registrations',
+                'attributes': {
+                    'public': True,
+                }
+            }, public_payload['data'][0]
+        ]}
+
+        res = app.put_json_api(url, payload, auth=user.auth, expect_errors=True, bulk=True)
+        assert res.status_code == 400
+        assert res.json['errors'][0]['detail'] == 'Could not find all objects to update.'
+
+        # test_bulk_update_registrations_logged_out
+        res = app.put_json_api(url, public_payload, expect_errors=True, bulk=True)
+        assert res.status_code == 401
+        assert res.json['errors'][0]['detail'] == exceptions.NotAuthenticated.default_detail
+
+        # test_bulk_update_registrations_logged_in_non_contrib
+        non_contrib = AuthUserFactory()
+        res = app.put_json_api(url, private_payload, auth=non_contrib.auth, expect_errors=True, bulk=True)
+        assert res.status_code == 403
+        assert res.json['errors'][0]['detail'] == exceptions.PermissionDenied.default_detail
+
+        # test_bulk_update_registrations_send_dictionary_not_list
+        res = app.put_json_api(url, {'data': {'id': registration_one._id, 'type': 'nodes',
+                                                        'attributes': {'public': True}}},
+                                    auth=user.auth, expect_errors=True, bulk=True)
+        assert res.status_code == 400
+        assert res.json['errors'][0]['detail'] == 'Expected a list of items but got type "dict".'
+
+        # test_bulk_update_id_not_supplied
+        res = app.put_json_api(url, {'data': [public_payload['data'][1], {'type': 'registrations', 'attributes':
+            {'public': True}}]}, auth=user.auth, expect_errors=True, bulk=True)
+        assert res.status_code == 400
+        assert len(res.json['errors']) == 1
+        assert res.json['errors'][0]['source']['pointer'] == '/data/1/id'
+        assert res.json['errors'][0]['detail'] == "This field may not be null."
+
+        # test_bulk_update_type_not_supplied
+        res = app.put_json_api(url, {'data': [public_payload['data'][1], {'id': registration_one._id, 'attributes':
+            {'public': True}}]}, auth=user.auth, expect_errors=True, bulk=True)
+        assert res.status_code == 400
+        assert len(res.json['errors']) == 1
+        assert res.json['errors'][0]['source']['pointer'] == '/data/1/type'
+        assert res.json['errors'][0]['detail'] == "This field may not be null."
+
+        # test_bulk_update_incorrect_type
+        res = app.put_json_api(url, {'data': [public_payload['data'][1], {'id': registration_one._id, 'type': 'Incorrect', 'attributes':
+            {'public': True}}]}, auth=user.auth, expect_errors=True, bulk=True)
+        assert res.status_code == 409
+
+        # test_bulk_update_limits
+        registration_update_list = {'data': [public_payload['data'][0]] * 101}
+        res = app.put_json_api(url, registration_update_list, auth=user.auth, expect_errors=True, bulk=True)
+        assert res.json['errors'][0]['detail'] == 'Bulk operation limit is 100, got 101.'
+        assert res.json['errors'][0]['source']['pointer'] == '/data'
+
+        # 400 from attempting to make a registration private
+        res = app.put_json_api(url, private_payload, auth=user.auth, bulk=True, expect_errors=True)
+        assert res.status_code == 400
+        assert res.json['errors'][0]['detail'] == 'Registrations can only be turned from private to public.'
+
+        # 400 from attempting to update with empty data
+        res = app.put_json_api(url, empty_payload, auth=user.auth, bulk=True, expect_errors=True)
+        assert res.status_code == 400
+        assert res.json['errors'][0]['detail'] == 'Registrations can only be turned from private to public.'
+
+        # 400 from attempting to update with bad data
+        res = app.put_json_api(url, bad_payload, auth=user.auth, bulk=True, expect_errors=True)
+        assert res.json['errors'][0]['detail'] == 'Registrations can only be turned from private to public.'
+        assert res.status_code == 400
+
+        # Confirm no changes have occured
+        registration_one.refresh_from_db()
+        registration_two.refresh_from_db()
+
+        assert registration_one.embargo_termination_approval is None
+        assert registration_two.embargo_termination_approval is None
+
+        assert registration_one.is_public is False
+        assert registration_two.is_public is False
+
+        assert registration_one.title == 'Birds'
+        assert registration_two.title == 'Birds II'
+
+    def test_bulk_update_embargo_logged_in_read_only_contrib(self, app, user, registration_one, registration_two, public_payload, url):
+        read_contrib = AuthUserFactory()
+        registration_one.add_contributor(read_contrib, permissions=[permissions.READ], save=True)
+        registration_two.add_contributor(read_contrib, permissions=[permissions.READ], save=True)
+
+        res = app.put_json_api(url, public_payload, auth=read_contrib.auth, expect_errors=True, bulk=True)
+        assert res.status_code == 403
+        assert res.json['errors'][0]['detail'] == exceptions.PermissionDenied.default_detail
+
+    def test_bulk_update_embargo_logged_in_contrib(self, app, user, registration_one, registration_two, public_payload, url):
+        assert registration_one.embargo_termination_approval is None
+        assert registration_two.embargo_termination_approval is None
+
+        res = app.put_json_api(url, public_payload, auth=user.auth, bulk=True)
+        assert res.status_code == 200
+        assert ({registration_one._id, registration_two._id} == {res.json['data'][0]['id'], res.json['data'][1]['id']})
+
+        # Needs confirmation before it will become public
+        assert res.json['data'][0]['attributes']['public'] is False
+        assert res.json['data'][1]['attributes']['public'] is False
+
+        registration_one.refresh_from_db()
+        registration_two.refresh_from_db()
+
+        # registrations should have pending terminations
+        assert registration_one.embargo_termination_approval and registration_one.embargo_termination_approval.is_pending_approval
+        assert registration_two.embargo_termination_approval and registration_two.embargo_termination_approval.is_pending_approval
 
 
 class TestRegistrationListFiltering(RegistrationListFilteringMixin, ApiTestCase):

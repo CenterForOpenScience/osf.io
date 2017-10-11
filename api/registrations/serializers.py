@@ -17,6 +17,7 @@ from api.nodes.serializers import NodeContributorsSerializer, NodeTagField
 from api.base.serializers import (IDField, RelationshipField, LinksField, HideIfWithdrawal,
                                   FileCommentRelationshipField, NodeFileHyperLinkField, HideIfRegistration,
                                   JSONAPIListField, ShowIfVersion, DateByVersion,)
+from framework.auth.core import Auth
 from osf.exceptions import ValidationValueError
 
 
@@ -277,8 +278,9 @@ class BaseRegistrationSerializer(NodeSerializer):
     def update(self, registration, validated_data):
         is_public = validated_data.get('is_public', False)
         if is_public:
+            auth = Auth(self.context['request'].user)
             try:
-                registration.update(validated_data)
+                registration.update(validated_data, auth=auth)
             except NodeUpdateError as err:
                 raise exceptions.ValidationError(err.reason)
             except NodeStateError as err:
