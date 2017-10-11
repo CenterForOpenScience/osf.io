@@ -39,13 +39,19 @@
             <div class="col-md-12">
                 <p class="break-word">
                     <strong>Current Library:</strong>
+                    <span data-bind="if: libraryName">
+                        <a data-bind="attr: {href: urls().files}, text: libraryName"></a>
+                    </span>
+                    <span class="text-muted" data-bind="ifnot: libraryName">
+                        None
+                    </span>
                 </p>
 
             </div>
         </div>
     </div>
     <!-- Settings Pane -->
-    <div class="${addon_short_name}-settings" data-bind='visible: showSettings'>
+    <div class="${addon_short_name}-settings" data-bind='visible: showSettings && libraryName'>
         <div class="row">
             <div class="col-md-12">
                 <p class="break-word">

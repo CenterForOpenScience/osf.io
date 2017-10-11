@@ -66,6 +66,11 @@ class Zotero(CitationsOauthProvider):
         collection = self.client.collection(folder_id)
         return collection
 
+    def _library_metadata(self, library_id):
+        for library in self.client.groups():
+            if library['id'] == library_id:
+                return library
+
     def _citations_for_folder(self, list_id):
         """Get all the citations in a specified collection
 
@@ -118,6 +123,15 @@ class NodeSettings(BaseCitationsNodeSettings):
     list_id = models.TextField(blank=True, null=True)
     library_id = models.TextField(blank=True, null=True)
     _api = None
+
+    @property
+    def fetch_library_name(self):
+        """Returns a displayable library name"""
+        if self.library_id is None:
+            return ''
+        else:
+            library = self.api._library_metadata(self.library_id)
+            return library['data'].get('name')
 
     @property
     def _fetch_folder_name(self):

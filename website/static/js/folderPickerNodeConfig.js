@@ -58,6 +58,12 @@ var FolderPickerViewModel = oop.defclass({
             id: null,
             path: null
         });
+        // current library
+        self.library = ko.observable({
+            name: null,
+            id: null,
+            path: null
+        });
         // set of urls used for API calls internally
         self.urls = ko.observable({});
         // Flashed messages
@@ -181,6 +187,13 @@ var FolderPickerViewModel = oop.defclass({
             return (nodeHasAuth && folder && folder.name) ? folder.name.trim() : '';
         });
 
+        /** Computed functions for the linked and selected library' display text.*/
+        self.libraryName = ko.pureComputed(function() {
+            var nodeHasAuth = self.nodeHasAuth();
+            var library = self.library();
+            return (nodeHasAuth && library && library.name) ? library.name.trim() : '';
+        });
+
         self.selectedFolderName = ko.pureComputed(function() {
             var userIsOwner = self.userIsOwner();
             var selected = self.selected();
@@ -254,6 +267,7 @@ var FolderPickerViewModel = oop.defclass({
                 path: null,
                 id: null
             });
+            self.library(settings.library || {});
             self.urls(settings.urls);
             self._updateCustomFields(settings);
             self.afterUpdate();
