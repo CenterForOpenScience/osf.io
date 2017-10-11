@@ -24,7 +24,7 @@ class TestActionFilters(ActionFilterMixin):
     @pytest.fixture()
     def expected_actions(self, all_actions, allowed_providers):
         actions = super(TestActionFilters, self).expected_actions(all_actions, allowed_providers)
-        node = expected[0].target.node
+        node = actions[0].target.node
         node.is_public = False
         node.save()
         return [a for a in actions if a.target.node.is_public]
