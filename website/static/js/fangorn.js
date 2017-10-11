@@ -3025,5 +3025,6 @@ module.exports = {
     isInvalidDropItem : isInvalidDropItem,
     getCopyMode : getCopyMode,
     multiselectContainsPreprint : multiselectContainsPreprint,
-    showDeleteMultiple : showDeleteMultiple
+    showDeleteMultiple : showDeleteMultiple,
+    checkConflicts : checkConflicts
 };
