@@ -318,8 +318,6 @@ def osfstorage_download(file_node, payload, node_addon, **kwargs):
 
     if request.args.get('mode') not in ('render', ):
         utils.update_analytics(node_addon.owner, file_node._id, int(version.identifier) - 1)
-    else:
-        utils.update_analytics(node_addon.owner, file_node._id, int(version.identifier) - 1, download=False)
 
     return {
         'data': {
