@@ -119,7 +119,7 @@ class PageCounter(BaseModel):
             # if a download counter is being updated, only perform the update
             # if the user who is downloading isn't a contributor to the project
             page_type = cleaned_page.split(':')[0]
-            if page_type == 'download' and node_info:
+            if page_type == ('download' or 'view') and node_info:
                 if node_info['contributors'].filter(guids___id__isnull=False, guids___id=session.data.get('auth_user_id')).exists():
                     model_instance.save()
                     return
@@ -142,3 +142,17 @@ class PageCounter(BaseModel):
             return (counter.unique, counter.total)
         except cls.DoesNotExist:
             return (None, None)
+
+    @classmethod
+    def set_basic_counters(cls, page, count, date=None):
+        cleaned_page = cls.clean_page(page)
+
+        if not date:
+            date = timezone.now()
+        date_string = date.strftime('%Y/%m/%d')
+
+        with transaction.atomic():
+            model_instance, created = cls.objects.select_for_update().get_or_create(_id=cleaned_page)
+            model_instance.date[date_string] = dict(total=count)
+            model_instance.total = count
+            model_instance.save()
