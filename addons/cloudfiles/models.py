@@ -8,6 +8,21 @@ from addons.cloudfiles.serializer import CloudFilesSerializer
 from addons.base.models import (BaseOAuthNodeSettings,
                                 BaseOAuthUserSettings,
                                 BaseStorageAddon)
+from osf.models.files import (File,
+                              Folder,
+                              BaseFileNode)
+
+
+class CloudFilesFileNode(BaseFileNode):
+    _provider = 'cloudfiles'
+
+
+class CloudFilesFolder(CloudFilesFileNode, Folder):
+    pass
+
+
+class CloudFilesFile(CloudFilesFileNode, File):
+    version_identifier = 'version'
 
 
 class CloudFilesProvider(object):
@@ -90,8 +105,9 @@ class NodeSettings(BaseStorageAddon, BaseOAuthNodeSettings):
         if not self.has_auth:
             raise exceptions.AddonError('Cannot serialize credentials for Cloud Files addon')
         return {
-            'access_key': self.external_account.oauth_key,
-            'secret_key': self.external_account.oauth_secret,
+            'username': self.external_account.provider_id,
+            'token': self.external_account.oauth_secret,
+            'region': self.folder_region,
         }
 
     def serialize_waterbutler_settings(self):
@@ -102,7 +118,9 @@ class NodeSettings(BaseStorageAddon, BaseOAuthNodeSettings):
         }
 
     def create_waterbutler_log(self, auth, action, metadata):
-        url = self.owner.web_url_for('addon_view_or_download_file', path=metadata['path'], provider='cloudfiles')
+        url = self.owner.web_url_for('addon_view_or_download_file',
+                                     path=metadata['path'],
+                                     provider='cloudfiles')
 
         self.owner.add_log(
             'cloudfiles_{0}'.format(action),

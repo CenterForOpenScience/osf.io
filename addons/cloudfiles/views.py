@@ -84,6 +84,7 @@ def cloudfiles_add_user_account(auth, **kwargs):
         )
         if account.oauth_key != username or account.oauth_secret != secret_key:
             account.oauth_secret = secret_key
+            account.provider_id = username
             account.save()
 
     assert account is not None
