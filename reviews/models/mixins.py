@@ -21,7 +21,7 @@ from website import settings
 from osf.models import NotificationDigest
 from osf.models import OSFUser
 
-from website import mails
+from website.mails import mails
 from website.notifications.emails import get_user_subscriptions, get_node_lineage
 from website.notifications import utils
 from website.reviews import signals as reviews_signals
@@ -209,7 +209,7 @@ class ReviewsMachine(Machine):
             auth=auth,
             save=False,
         )
-        reviews_signals.reviews_email.send(context=context, notify_submit=True)
+        reviews_signals.reviews_email_submit.send(context=context)
 
     def notify_accept_reject(self, ev):
         context = self.get_context()
@@ -235,22 +235,18 @@ class ReviewsMachine(Machine):
             'provider_support_email': self.reviewable.provider.email_support if self.reviewable.provider.email_support is not None else 'support@osf.io',
         }
 
+# Handle email notifications including: update comment, accept, and reject of submission.
 @reviews_signals.reviews_email.connect
-def reviews_notification(self, context, notify_submit=False):
+def reviews_notification(self, context):
     timestamp = timezone.now()
     event_type = utils.find_subscription_type('global_reviews')
-    template = ''.join(context.get('template')) + '.html.mako'
-    for user_id in context.get('email_recipients'):
+    template = context['template'] + '.html.mako'
+    for user_id in context['email_recipients']:
         user = OSFUser.load(user_id)
         subscriptions = get_user_subscriptions(user, event_type)
-        if user == context.get('reviewable').node.creator:
-            context['is_creator'] = True
-        else:
-            context['is_creator'] = False
         for notification_type in subscriptions:
-            check_user_subscribe = subscriptions[notification_type] and user_id in subscriptions[notification_type]  # check if user is subscribed to this type of notifications
-            check_submission = notify_submit or notification_type != 'none'  # check if submission and bypass user subscription if none. Users will receive email for submission only with no more notifications in future.
-            if (check_submission and check_user_subscribe):
+            check_user_subscribe = subscriptions[notification_type] and user_id in subscriptions[notification_type] and notification_type != 'none'  # check if user is subscribed to this type of notifications
+            if check_user_subscribe:
                 node_lineage_ids = get_node_lineage(context.get('reviewable').node) if context.get('reviewable').node else []
                 context['user'] = user
                 context['no_future_emails'] = notification_type == 'none'
@@ -265,3 +261,13 @@ def reviews_notification(self, context, notify_submit=False):
                     node_lineage=node_lineage_ids
                 )
                 digest.save()
+
+# Handle email notifications for a new submission.
+@reviews_signals.reviews_email_submit.connect
+def reviews_submit_notification(self, context):
+    template = context['template']
+    for user_id in context['email_recipients']:
+        user = OSFUser.load(user_id)
+        context['is_creator'] = user == context.get('reviewable').node.creator
+        email = mails.Mail(template, subject='Confirmation of your submission to {provider}'.format(provider=context.get('reviewable').provider.name))
+        mails.send_mail(user.username, email, user=user, **context)
