@@ -358,6 +358,7 @@ LOW_PRI_MODULES = {
     'scripts.populate_new_and_noteworthy_projects',
     'scripts.populate_popular_projects_and_registrations',
     'website.search.elastic_search',
+    'scripts.generate_sitemap',
 }
 
 MED_PRI_MODULES = {
@@ -366,6 +367,9 @@ MED_PRI_MODULES = {
     'scripts.triggered_mails',
     'website.mailchimp_utils',
     'website.notifications.tasks',
+    'scripts.analytics.run_keen_summaries',
+    'scripts.analytics.run_keen_snapshots',
+    'scripts.analytics.run_keen_events',
 }
 
 HIGH_PRI_MODULES = {
