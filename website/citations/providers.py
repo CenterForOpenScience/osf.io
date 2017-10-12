@@ -109,19 +109,24 @@ class CitationsProvider(object):
             ]
         }
 
-    def set_config(self, node_addon, user, external_list_id, external_list_name, auth):
+    def set_config(self, node_addon, user, external_list_id, external_list_name, auth, external_library_id=None):
         """ Changes folder associated with addon and logs event"""
         # Ensure request has all required information
         # Tell the user's addon settings that this node is connecting
+        metadata = {'folder': external_list_id}
+        if external_library_id:
+            metadata['library'] = external_library_id
         node_addon.user_settings.grant_oauth_access(
             node=node_addon.owner,
             external_account=node_addon.external_account,
-            metadata={'folder': external_list_id}
+            metadata=metadata
         )
         node_addon.user_settings.save()
 
         # update this instance
         node_addon.list_id = external_list_id
+        if external_library_id:
+            node_addon.library_id = external_library_id
         node_addon.save()
 
         node_addon.owner.add_log(
