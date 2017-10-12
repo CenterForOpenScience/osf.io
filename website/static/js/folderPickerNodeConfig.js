@@ -351,10 +351,17 @@ var FolderPickerViewModel = oop.defclass({
     saveLibrary: function() {
         var self = this;
         function onSubmitSuccess(response) {
-            // Update folder in ViewModel
+            // Update library in ViewModel
             self.library(response.result.library);
-            self.urls(response.result.urls);
             self.cancelLibrarySelection();
+            // Update folder in ViewModel - after library changed,
+            // folders need to be reloaded
+            self.folder(response.result.folder);
+            self.loadedFolders(false);
+            self.currentDisplay(null);
+            self.loadedFolders(false);
+            self.destroyPicker();
+            self.urls(response.result.urls);
             self.changeMessage(self.messages.submitLibrarySettingsSuccess(), 'text-success');
         }
         function onSubmitError(xhr, status, error) {

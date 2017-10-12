@@ -75,7 +75,7 @@
     <!-- Settings Pane -->
     <div class="${addon_short_name}-settings" data-bind='visible: showSettings && libraryName'>
         <div class="row">
-            <div class="col-md-12">
+            <div class="col-md-12 m-t-sm">
                 <p class="break-word">
                     <strong>Current Folder:</strong>
                     <span data-bind="if: folderName">
