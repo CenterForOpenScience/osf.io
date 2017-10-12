@@ -270,4 +270,4 @@ def reviews_submit_notification(self, context):
         user = OSFUser.load(user_id)
         context['is_creator'] = user == context.get('reviewable').node.creator
         email = mails.Mail(template, subject='Confirmation of your submission to {provider}'.format(provider=context.get('reviewable').provider.name))
-        mails.send_mail(user.username, email, user=user, **context)
+        mails.send_mail(user.username, email, mimetype='html', user=user, **context)
