@@ -46,9 +46,22 @@
                         None
                     </span>
                 </p>
-
             </div>
         </div>
+        <!-- Library buttons -->
+        <div class="btn-group" data-bind="visible: userIsOwner() && validCredentials()">
+            <button  data-bind="click: toggleLibraryPicker" class="btn btn-primary">
+                <span data-bind="text: toggleChangeLibraryText"></span>
+            </button>
+        </div>
+        <!-- Library picker -->
+        <div data-bind="visible: toggleChangeLibraryText() === 'Close'">
+            <div data-bind="foreach: groups">
+               <div>
+                   ID:  <span data-bind="text: id"> </span>
+                   Name:  <span data-bind="text: data['name']"> </span>
+               </div>
+           </div>
     </div>
     <!-- Settings Pane -->
     <div class="${addon_short_name}-settings" data-bind='visible: showSettings && libraryName'>
