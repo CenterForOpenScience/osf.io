@@ -17,9 +17,10 @@ class PreprintPublishedOrAdmin(permissions.BasePermission):
             if auth.user is None:
                 return obj.verified_publishable
             else:
+                user_has_permissions = obj.verified_publishable or (node.is_public and auth.user.has_perm('view_submissions', obj.provider)) or node.has_permission(auth.user, osf_permissions.ADMIN)
                 if obj.provider.reviews_workflow:
-                    return obj.verified_publishable or (node.is_public and auth.user.has_perm('view_submissions', obj.provider)) or node.has_permission(auth.user, osf_permissions.ADMIN) or (node.is_contributor(auth.user) and obj.reviews_state != 'initial')
-                return obj.verified_publishable or (node.is_public and auth.user.has_perm('view_submissions', obj.provider)) or node.has_permission(auth.user, osf_permissions.ADMIN)
+                    return user_has_permissions or (node.is_contributor(auth.user) and obj.reviews_state != 'initial')
+                return user_has_permissions
         else:
             if not node.has_permission(auth.user, osf_permissions.ADMIN):
                 raise exceptions.PermissionDenied(detail='User must be an admin to update a preprint.')
