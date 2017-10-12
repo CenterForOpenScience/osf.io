@@ -56,12 +56,15 @@
         </div>
         <!-- Library picker -->
         <div data-bind="visible: toggleChangeLibraryText() === 'Close'">
-            <div data-bind="foreach: groups">
-               <div>
-                   ID:  <span data-bind="text: id"> </span>
-                   Name:  <span data-bind="text: data['name']"> </span>
+            <form action="">
+                <input type="radio" name="group" value="personal">  Personal Library<br>
+                <div data-bind="foreach: groups">
+                   <div>
+                     <input type="radio" name="group" data-bind="value: id">  <span data-bind="text: data['name']"></span><br>
+                   </div>
                </div>
-           </div>
+            </form>
+        </div>
     </div>
     <!-- Settings Pane -->
     <div class="${addon_short_name}-settings" data-bind='visible: showSettings && libraryName'>
