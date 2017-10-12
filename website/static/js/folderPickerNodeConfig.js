@@ -491,7 +491,6 @@ var FolderPickerViewModel = oop.defclass({
      */
     cancelLibrarySelection: function() {
         this.selectedLibrary(null);
-        this.toggleLibraryPicker()
     },
     /**
      *  Toggles the visibility of the folder picker and toggles
