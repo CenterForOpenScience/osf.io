@@ -36,17 +36,30 @@
 
     <!-- Dublin Core (DC), Highwire Press metadata tags-->
     <meta name="dc.title" content="${self.dc_title()}" />
-    <meta name="citation_doi" content="${self.highwire_doi()}" />
-    <meta name="citation_publisher" content="Open Science Framework" />
-    <meta name="dc.identifier" content="${self.dc_identifier()}" />
+    %if self.dc_identifier():
+        <meta name="citation_doi" content="${self.dc_identifier()['doi']}" />
+        <meta name="dc.identifier" content="${self.dc_identifier()['doi']}" />
+        <meta name="dc.identifier" content="${self.dc_identifier()['ark']}" />
+    %endif
+        <meta name="citation_publisher" content="Open Science Framework" />
+    %for author in self.dc_authors()[:5]:
+        <meta name="dc.creator" content="${author}" />
+    %endfor
+    %for institution in self.dc_institutions()[:5]:
+        <meta name="citation_author_institution" content="${institution}" />
+    %endfor
+    %for tag in self.dc_tags()[:10]:
+        <meta name="citation_keywords" content="${tag}" />
+    %endfor
+    %for rel in self.dc_relations():
+        %if rel:
+            <meta name="dc_relation" scheme="DCTERMS.URI" content="${rel}" />
+        %endif
+    %endfor
     <meta name="dc.abstract" content="${self.og_description()}" />
     <meta name="dc.license" content="${self.dc_license()}" />
-    <meta name="dc.subject" content="${self.dc_tags()}" />
-    <meta name="citation_keywords" content="${self.dc_tags()}" />
-    <meta name="dc.creator" content="${self.dc_authors()}" />
     <meta name="dc.date" content="${self.dc_date()}" />
     <meta name="dc.publisher" content="Open Science Framework" />
-    <meta name="dc.type" content="Open Science Framework" />
     <meta name="dc.language" content="en" />
 
     <!-- Facebook display -->
@@ -241,7 +254,11 @@
 
 <!-- Dublin Core (DC) metadata tags-->
 <%def name="dc_title()">
-    ### The page title ###
+    ### The project title ###
+</%def>
+
+<%def name="dc_institutions()">
+  ### The list of affiliated institutions ###
 </%def>
 
 <%def name="dc_authors()">
@@ -264,8 +281,8 @@
     ### The project tags ###
 </%def>
 
-<%def name="highwire_doi()">
-    ### The project doi ###
+<%def name="dc_relations()">
+    ### The list of url for related nodes ###
 </%def>
 <!-- End: Dublin Core (DC) metadata tags-->
 

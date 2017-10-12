@@ -13,31 +13,26 @@
 <!-- Dublin Core (DC) and Highwire metadata tags-->
 <%def name="dc_title()">
     %if node['title']:
-        ${sanitize.strip_html(node['title'])}
+        ${node['title']}
     %endif
 </%def>
 
 <%def name="dc_date()">
     %if node['date_modified']:
-        ${node['date_modified']}
+        ${node['date_modified'].split('T')[0]}
     %endif
 </%def>
 
 <%def name="dc_identifier()">
-    %if node['identifiers']:
-      %if node['identifiers']['doi']:
-          doi: ${sanitize.strip_html(node['identifiers']['doi'])}
-      %endif
-      %if node['identifiers']['ark']:
-          ark: ${sanitize.strip_html(node['identifiers']['ark'])}
-      %endif
-    %endif
-</%def>
-
-<%def name="highwire_doi()">
-    %if node['identifiers']:
-        ${node['identifiers']['doi']}
-    %endif
+    <%
+        identifiers = {}
+        if node['identifiers']:
+            identifiers = {
+              'doi' : node['identifiers']['doi'],
+              'ark' : node['identifiers']['ark']
+            }
+        return identifiers
+    %>
 </%def>
 
 <%def name="dc_license()">
@@ -48,15 +43,41 @@
 
 <%def name="dc_tags()">
     %if node['tags']:
-        ${','.join([tag for tag in node['tags']] + [node['category']])}
+        <%
+            return [tag for tag in node['tags']] + [node['category']]
+        %>
     %endif
 </%def>
 
 <%def name="dc_authors()">
     %if node['contributors'] and not node['anonymous']:
-        ${','.join([contrib['fullname'] for contrib in node['contributors'] if isinstance(contrib, dict)])}
+        <%
+            return [contrib['fullname'] for contrib in node['contributors'] if isinstance(contrib, dict)]
+        %>
     %endif
 </%def>
+
+<%def name="dc_institutions()">
+    %if node['institutions']:
+        <%
+            return [ins['name'] for ins in node['institutions'] if isinstance(ins, dict)]
+        %>
+    %endif
+</%def>
+
+<%def name="dc_relations()">
+    <%
+        relations = []
+        relations.extend([
+            node['registered_from_url'],
+            node['forked_from_display_absolute_url'],
+            node['preprint_url'] or '',
+            parent_node['absolute_url'] if parent_node['exists'] else ''
+        ])
+        return relations
+    %>
+</%def>
+
 <!-- End: Dublin Core (DC) and Highwire metadata tags-->
 
 
