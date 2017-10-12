@@ -118,10 +118,10 @@ function NodeFetcher(type, link, handleOrphans, regType, regLink) {
 
     // TODO Use sparse fields on preprints, users/contributors already added
     if (this.type === 'preprints') {
-        link = link ? link : $osf.apiV2Url('users/me/nodes/', { query : { 'filter[preprint]': true, 'related_counts' : 'children', 'embed' : ['contributors', 'preprints'], 'fields[users]' : sparseUserFields, 'fields[contributors]' : sparseContributorFields}});
+        link = link ? link : $osf.apiV2Url('users/me/nodes/', { query : { 'filter[preprint]': true, 'include_unpublished_preprints': true, 'related_counts' : 'children', 'embed' : ['contributors', 'preprints'], 'fields[users]' : sparseUserFields, 'fields[contributors]' : sparseContributorFields}});
     }
 
-    this.nextLink = link ? 
+    this.nextLink = link ?
         link + '&version=2.2' :
         $osf.apiV2Url('users/me/' + this.type + '/', { query: params});
 }
@@ -1919,7 +1919,8 @@ var Information = {
                     m('.tab-content', [
                         m('[role="tabpanel"].tab-pane.active#tab-information',[
                             m('p.db-info-meta.text-muted', [
-                                item.attributes.preprint ? m('.fangorn-preprint.p-xs.m-b-xs', 'This project is a Preprint') : '',
+                                item.embeds.preprints ? m('.fangorn-preprint.p-xs.m-b-xs', 'This project is a Preprint') : '',  // TODO: update once preprint node divorce is finished
+                                item.embeds.preprints && item.embeds.preprints.data[0].attributes.reviews_state && item.embeds.preprints.data[0].attributes.reviews_state !== 'initial' ? m('.text-capitalize', 'Status: ' + item.embeds.preprints.data[0].attributes.reviews_state) : '',  // is a preprint, has a state, provider uses moderation
                                 m('', 'Visibility : ' + (item.attributes.public ? 'Public' : 'Private')),
                                 m('.text-capitalize', 'Category: ' + category),
                                 m('.text-capitalize', 'Permission: ' + permission),

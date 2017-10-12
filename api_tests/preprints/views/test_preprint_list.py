@@ -7,6 +7,7 @@ from api.base.settings.defaults import API_BASE
 from api_tests import utils as test_utils
 from api_tests.preprints.filters.test_filters import PreprintsListFilteringMixin
 from api_tests.preprints.views.test_preprint_list_mixin import PreprintIsPublishedListMixin, PreprintIsValidListMixin
+from api_tests.reviews.mixins.filter_mixins import ReviewableFilterMixin
 from framework.auth.core import Auth
 from osf.models import PreprintService, Node
 from osf_tests.factories import (
@@ -177,6 +178,31 @@ class TestPreprintsListFiltering(PreprintsListFilteringMixin):
         res = app.get('{}{}'.format(provider_url, provider_two._id), auth=user.auth)
         actual = [preprint['id'] for preprint in res.json['data']]
         assert expected == actual
+
+
+class TestPreprintListFilteringByReviewableFields(ReviewableFilterMixin):
+    @pytest.fixture()
+    def url(self):
+        return '/{}preprints/'.format(API_BASE)
+
+    @pytest.fixture()
+    def expected_reviewables(self, user):
+        preprints = [
+            PreprintFactory(is_published=False, project=ProjectFactory(is_public=True)),
+            PreprintFactory(is_published=False, project=ProjectFactory(is_public=True)),
+            PreprintFactory(is_published=False, project=ProjectFactory(is_public=True)),
+        ]
+        preprints[0].reviews_submit(user)
+        preprints[0].reviews_accept(user, 'comment')
+        preprints[1].reviews_submit(user)
+        preprints[1].reviews_reject(user, 'comment')
+        preprints[2].reviews_submit(user)
+        return preprints
+
+    @pytest.fixture
+    def user(self):
+        return AuthUserFactory()
+
 
 class TestPreprintCreate(ApiTestCase):
     def setUp(self):
@@ -375,6 +401,25 @@ class TestPreprintCreate(ApiTestCase):
                 'is_published': False
             })
         res = self.app.post_json_api(self.url, private_project_payload, auth=self.user.auth)
+        assert not mock_on_preprint_updated.called
+
+    @mock.patch('website.preprints.tasks.get_and_set_preprint_identifiers.si')
+    @mock.patch('website.preprints.tasks.on_preprint_updated.si')
+    def test_setting_is_published_with_moderated_provider_fails(self, mock_get_identifiers, mock_on_preprint_updated):
+        self.provider.reviews_workflow = 'pre-moderation'
+        self.provider.save()
+        public_project_payload = build_preprint_create_payload(
+            self.public_project._id,
+            self.provider._id,
+            self.file_one_public_project._id,
+            {
+                'is_published': True,
+                'subjects': [[SubjectFactory()._id]],
+            }
+        )
+        res = self.app.post_json_api(self.url, public_project_payload, auth=self.user.auth, expect_errors=True)
+        assert res.status_code == 409
+        assert not mock_get_identifiers.called
         assert not mock_on_preprint_updated.called
 
 

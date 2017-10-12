@@ -59,11 +59,19 @@ class NodesFilterMixin(ListFilterMixin):
             return Q(root__guids___id__in=operation['value'])
 
         if field_name == 'preprint':
-            not_preprint_query = (
-                Q(preprint_file=None) |
-                Q(_is_preprint_orphan=True) |
-                Q(_has_abandoned_preprint=True)
-            )
+            # required for "All my preprints" section on the "My Projects" page until preprint/node divorce
+            if utils.is_truthy(self.request.query_params.get('include_unpublished_preprints')):
+                not_preprint_query = (
+                    Q(preprint_file=None) |
+                    Q(_is_preprint_orphan=True)
+                )
+            else:
+                not_preprint_query = (
+                    Q(preprint_file=None) |
+                    Q(_is_preprint_orphan=True) |
+                    Q(_has_abandoned_preprint=True)
+                )
+
             return ~not_preprint_query if utils.is_truthy(operation['value']) else not_preprint_query
 
         return super(NodesFilterMixin, self).build_query_from_field(field_name, operation)

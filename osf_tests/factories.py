@@ -15,6 +15,7 @@ from django.utils import timezone
 from django.db.utils import IntegrityError
 from faker import Factory
 
+from reviews import workflow
 from website import settings
 from website.notifications.constants import NOTIFICATION_TYPES
 from website.util import permissions
@@ -801,3 +802,18 @@ class SessionFactory(DjangoModelFactory):
 class ArchiveJobFactory(DjangoModelFactory):
     class Meta:
         model = models.ArchiveJob
+
+
+class ActionFactory(DjangoModelFactory):
+    class Meta:
+        model = models.Action
+
+    trigger = FuzzyChoice(choices=workflow.Triggers.values())
+    comment = factory.Faker('text')
+    from_state = FuzzyChoice(choices=workflow.States.values())
+    to_state = FuzzyChoice(choices=workflow.States.values())
+
+    target = factory.SubFactory(PreprintFactory)
+    creator = factory.SubFactory(AuthUserFactory)
+
+    is_deleted = False
