@@ -350,7 +350,7 @@ var FolderPickerViewModel = oop.defclass({
      */
     saveLibrary: function() {
         var self = this;
-        return {}
+        return $osf.putJSON(self.urls().config, {"external_library_id": self.selectedLibrary()})
     },
     onImportSuccess: function(response) {
         var self = this;

@@ -73,8 +73,9 @@ class Zotero(CitationsOauthProvider):
 
     def _library_metadata(self, library_id):
         for library in self.client.groups():
-            if library['id'] == library_id:
+            if str(library['id']) == library_id:
                 return library
+        return None
 
     def _citations_for_folder(self, list_id):
         """Get all the citations in a specified collection

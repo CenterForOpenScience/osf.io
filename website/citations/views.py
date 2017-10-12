@@ -109,12 +109,14 @@ class GenericCitationViews(object):
             args = request.get_json()
             external_list_id = args.get('external_list_id')
             external_list_name = args.get('external_list_name')
+            external_library_id = args.get('external_library_id', None)
             provider.set_config(
                 node_addon,
                 auth.user,
                 external_list_id,
                 external_list_name,
                 auth,
+                external_library_id
             )
             return {
                 'result': provider.serializer(
