@@ -58,10 +58,10 @@
         <div data-bind="visible: toggleChangeLibraryText() === 'Close'">
             <form class="m-t-md m-l-md" data-bind="submit: saveLibrary">
                 <hr>
-                <input type="radio" name="group" value="personal">  Personal Library<br>
+                <input type="radio" name="library-group" value="personal" data-bind="checked: selectedLibrary">  Personal Library<br>
                 <div data-bind="foreach: groups">
                    <div>
-                     <input type="radio" name="group" data-bind="value: id">  <span data-bind="text: data['name']"></span><br>
+                     <input type="radio" name="library-group" data-bind="attr: {value: id}, checked: $root.selectedLibrary">  <span data-bind="text: data['name']"></span><br>
                    </div>
                </div>
                <div class="pull-right">
