@@ -5,6 +5,7 @@ from rest_framework import exceptions
 from api.base.utils import get_user_auth
 from osf.models import PreprintService
 from website.util import permissions as osf_permissions
+from reviews.workflow import States
 
 
 class PreprintPublishedOrAdmin(permissions.BasePermission):
@@ -19,7 +20,7 @@ class PreprintPublishedOrAdmin(permissions.BasePermission):
             else:
                 user_has_permissions = obj.verified_publishable or (node.is_public and auth.user.has_perm('view_submissions', obj.provider)) or node.has_permission(auth.user, osf_permissions.ADMIN)
                 if obj.provider.reviews_workflow:
-                    return user_has_permissions or (node.is_contributor(auth.user) and obj.reviews_state != 'initial')
+                    return user_has_permissions or (node.is_contributor(auth.user) and obj.reviews_state != States.INITIAL.value)
                 return user_has_permissions
         else:
             if not node.has_permission(auth.user, osf_permissions.ADMIN):
