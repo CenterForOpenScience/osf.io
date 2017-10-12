@@ -64,6 +64,8 @@ var FolderPickerViewModel = oop.defclass({
             id: null,
             path: null
         });
+        // current groups that the user has access to
+        self.groups = ko.observable([]);
         // set of urls used for API calls internally
         self.urls = ko.observable({});
         // Flashed messages
@@ -83,6 +85,9 @@ var FolderPickerViewModel = oop.defclass({
         self.loadedFolders = ko.observable(false);
         // Button text for changing folders
         self.toggleChangeText = ko.observable('Change');
+
+        // Button text for changing libraries
+        self.toggleChangeLibraryText = ko.observable('Change');
 
         var addonSafeName = $osf.htmlEscape(self.addonName);
         self.messages = {
@@ -268,6 +273,7 @@ var FolderPickerViewModel = oop.defclass({
                 id: null
             });
             self.library(settings.library || {});
+            self.groups(settings.groups || []);
             self.urls(settings.urls);
             self._updateCustomFields(settings);
             self.afterUpdate();
@@ -460,6 +466,17 @@ var FolderPickerViewModel = oop.defclass({
             this.currentDisplay(null);
             // Clear selection
             this.cancelSelection();
+        }
+    },
+    /**
+     *  Toggles the visibility of the Library picker and toggles
+     *  Change button text between 'Change' and 'Close'
+     */
+    toggleLibraryPicker: function() {
+        if (this.toggleChangeLibraryText() === "Change") {
+            this.toggleChangeLibraryText('Close')
+        } else {
+            this.toggleChangeLibraryText('Change')
         }
     },
     destroyPicker: function() {
