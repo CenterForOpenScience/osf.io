@@ -75,6 +75,8 @@ var FolderPickerViewModel = oop.defclass({
         self.PICKER = 'picker';
         // Currently selected folder name
         self.selected = ko.observable(false);
+        // Currently selected library name
+        self.selectedLibrary = ko.observable(false);
         self.loading = ko.observable(false);
         // Whether the initial data has been fetched form the server. Used for
         // error handling.
@@ -343,6 +345,13 @@ var FolderPickerViewModel = oop.defclass({
             .done(onSubmitSuccess)
             .fail(onSubmitError);
     },
+    /**
+     * Send a PUT request to save the library
+     */
+    saveLibrary: function() {
+        var self = this;
+        return {}
+    },
     onImportSuccess: function(response) {
         var self = this;
         var msg = response.message || self.messages.tokenImportSuccess();
@@ -450,6 +459,13 @@ var FolderPickerViewModel = oop.defclass({
      */
     cancelSelection: function() {
         this.selected(null);
+    },
+    /**
+     * Must be used to update radio buttons and knockout view model simultaneously
+     */
+    cancelLibrarySelection: function() {
+        this.selectedLibrary(null);
+        this.toggleLibraryPicker()
     },
     /**
      *  Toggles the visibility of the folder picker and toggles
