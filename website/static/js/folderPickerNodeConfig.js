@@ -350,7 +350,26 @@ var FolderPickerViewModel = oop.defclass({
      */
     saveLibrary: function() {
         var self = this;
+        function onSubmitSuccess(response) {
+            // Update folder in ViewModel
+            self.library(response.result.library);
+            self.urls(response.result.urls);
+            self.cancelLibrarySelection();
+            self.changeMessage(self.messages.submitLibrarySettingsSuccess(), 'text-success');
+        }
+        function onSubmitError(xhr, status, error) {
+            self.changeMessage(self.messages.submitSettingsError(), 'text-danger');
+            Raven.captureMessage('Failed to update ' + self.addonName + ' settings.', {
+                extra: {
+                    xhr: xhr,
+                    status: status,
+                    error: error
+                }
+            });
+        }
         return $osf.putJSON(self.urls().config, {"external_library_id": self.selectedLibrary()})
+            .done(onSubmitSuccess)
+            .fail(onSubmitError);
     },
     onImportSuccess: function(response) {
         var self = this;

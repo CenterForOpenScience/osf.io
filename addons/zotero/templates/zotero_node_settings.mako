@@ -56,15 +56,14 @@
         </div>
         <!-- Library picker -->
         <div data-bind="visible: toggleChangeLibraryText() === 'Close'">
-            <form class="m-t-md m-l-md" data-bind="submit: saveLibrary">
-                <hr>
+            <form class="m-t-md m-l-md m-b-md" data-bind="submit: saveLibrary">
                 <input type="radio" name="library-group" value="personal" data-bind="checked: selectedLibrary">  Personal Library<br>
                 <div data-bind="foreach: groups">
                    <div>
                      <input type="radio" name="library-group" data-bind="attr: {value: id}, checked: $root.selectedLibrary">  <span data-bind="text: data['name']"></span><br>
                    </div>
                </div>
-               <div class="pull-right">
+               <div class="pull-right" data-bind="visible: selectedLibrary()">
                    <button class="btn btn-default" data-bind="click: cancelLibrarySelection">
                        Cancel
                    </button>
