@@ -62,6 +62,11 @@ class Zotero(CitationsOauthProvider):
             else:
                 raise err
 
+    def _fetch_groups(self):
+        """ Retrieves the Zotero group data to which the current library_id and api_key has access """
+        groups = self.client.groups()
+        return groups
+
     def _folder_metadata(self, folder_id):
         collection = self.client.collection(folder_id)
         return collection
@@ -137,3 +142,7 @@ class NodeSettings(BaseCitationsNodeSettings):
     def _fetch_folder_name(self):
         folder = self.api._folder_metadata(self.list_id)
         return folder['data'].get('name')
+
+    @property
+    def fetch_groups(self):
+        return self.api._fetch_groups()
