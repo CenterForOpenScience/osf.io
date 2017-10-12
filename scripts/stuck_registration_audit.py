@@ -67,7 +67,7 @@ def analyze_failed_registration_nodes():
         for other_reg in Registration.objects.filter(
             registered_from=broken_registration.registered_from,
             registered_date__gt=broken_registration.registered_date
-        ).prefetch_related('sanction'):
+        ):
             if other_reg.sanction:
                 if other_reg.sanction.is_approved:
                     succeeded_registrations_after_failed.append(other_reg._id)
