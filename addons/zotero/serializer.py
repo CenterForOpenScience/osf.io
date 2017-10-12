@@ -9,4 +9,5 @@ class ZoteroSerializer(CitationsAddonSerializer):
         result['library'] = {
             'name': self.node_settings.fetch_library_name
         }
+        result['groups'] = self.node_settings.fetch_groups
         return result
