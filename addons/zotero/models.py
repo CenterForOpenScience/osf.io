@@ -39,14 +39,20 @@ class Zotero(CitationsOauthProvider):
             ),
         }
 
-    def _get_folders(self):
+    def _get_folders(self, library_id=None):
         """Get a list of a user's folders"""
-        client = self.client
+        client = self._get_group(library_id)
 
         # Note: Pagination is the only way to ensure all of the collections
         #       are retrieved. 100 is the limit per request. This applies
         #       to Mendeley too, though that limit is 500.
         return client.collections(limit=100)
+
+    def _get_group(self, group_id):
+        if group_id and group_id != 'personal':
+            return zotero.Zotero(str(group_id), 'group', self.account.oauth_key)
+        else:
+            return self._get_client()
 
     def _get_client(self):
         return zotero.Zotero(self.account.provider_id, 'user', self.account.oauth_key)
@@ -67,8 +73,9 @@ class Zotero(CitationsOauthProvider):
         groups = self.client.groups()
         return groups
 
-    def _folder_metadata(self, folder_id):
-        collection = self.client.collection(folder_id)
+    def _folder_metadata(self, folder_id, library_id=None):
+        client = self._get_group(library_id)
+        collection = client.collection(folder_id)
         return collection
 
     def _library_metadata(self, library_id):
@@ -77,17 +84,19 @@ class Zotero(CitationsOauthProvider):
                 return library
         return None
 
-    def _citations_for_folder(self, list_id):
+    def _citations_for_folder(self, list_id, library_id=None):
         """Get all the citations in a specified collection
 
         :param  str list_id: ID for a Zotero collection.
         :return list of csljson objects representing documents.
         """
+        client = self._get_group(library_id)
+
         citations = []
         more = True
         offset = 0
         while more and len(citations) <= MAX_CITATION_LOAD:
-            page = self.client.collection_items(list_id, content='csljson', limit=100, start=offset)
+            page = client.collection_items(list_id, content='csljson', limit=100, start=offset)
             citations = citations + page
             if len(page) == 0 or len(page) < 100:
                 more = False
@@ -95,13 +104,15 @@ class Zotero(CitationsOauthProvider):
                 offset = offset + len(page)
         return citations
 
-    def _citations_for_user(self):
+    def _citations_for_user(self, library_id=None):
         """Get all the citations from the user """
         citations = []
         more = True
         offset = 0
+        client = self._get_group(library_id)
+
         while more and len(citations) <= MAX_CITATION_LOAD:
-            page = self.client.items(content='csljson', limit=100, start=offset)
+            page = client.items(content='csljson', limit=100, start=offset)
             citations = citations + page
             if len(page) == 0 or len(page) < 100:
                 more = False
@@ -141,7 +152,7 @@ class NodeSettings(BaseCitationsNodeSettings):
 
     @property
     def _fetch_folder_name(self):
-        folder = self.api._folder_metadata(self.list_id)
+        folder = self.api._folder_metadata(self.list_id, self.library_id)
         return folder['data'].get('name')
 
     @property
