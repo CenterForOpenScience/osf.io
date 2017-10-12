@@ -475,7 +475,7 @@ class TestFileView:
         attributes = res.json['data']['attributes']
         assert attributes['path'] == file_one.path
         assert attributes['kind'] == file_one.kind
-        assert attributes['name'] == file_one.nameis
+        assert attributes['name'] == file_one.name
         assert attributes['materialized_path'] == file_one.materialized_path
         assert attributes['last_touched'] is None
         assert attributes['provider'] == file_one.provider
