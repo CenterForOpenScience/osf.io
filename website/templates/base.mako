@@ -42,10 +42,10 @@
         <meta name="dc.identifier" content="${self.dc_identifier()['ark']}" />
     %endif
         <meta name="citation_publisher" content="Open Science Framework" />
-    %for author in self.dc_authors()[:5]:
+    %for author in self.dc_authors()[:10]:
         <meta name="dc.creator" content="${author}" />
     %endfor
-    %for institution in self.dc_institutions()[:5]:
+    %for institution in self.dc_institutions()[:10]:
         <meta name="citation_author_institution" content="${institution}" />
     %endfor
     %for tag in self.dc_tags()[:10]:
