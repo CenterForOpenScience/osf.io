@@ -8,6 +8,7 @@ from osf_tests.factories import (
     AuthUserFactory,
     PreprintFactory,
     PreprintProviderFactory,
+    ProjectFactory,
 )
 from reviews.permissions import GroupHelper
 
@@ -54,8 +55,8 @@ class ActionFilterMixin(object):
     @pytest.fixture()
     def all_actions(self, providers):
         actions = []
-        for p in providers:
-            preprint = PreprintFactory(provider=p)
+        for provider in providers:
+            preprint = PreprintFactory(provider=provider, project=ProjectFactory(is_public=True))
             for _ in range(5):
                 actions.append(ActionFactory(target=preprint))
         return actions
@@ -67,7 +68,7 @@ class ActionFilterMixin(object):
     @pytest.fixture()
     def expected_actions(self, all_actions, allowed_providers):
         provider_ids = set([p.id for p in allowed_providers])
-        return [l for l in all_actions if l.target.provider_id in provider_ids]
+        return [a for a in all_actions if a.target.provider_id in provider_ids]
 
     @pytest.fixture()
     def user(self, allowed_providers):
