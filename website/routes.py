@@ -270,7 +270,7 @@ def make_url_map(app):
     # Ember Applications
     if settings.USE_EXTERNAL_EMBER:
         # Routes that serve up the Ember application. Hide behind feature flag.
-        for prefix, value in settings.EXTERNAL_EMBER_APPS.iteritems():
+        for prefix in settings.EXTERNAL_EMBER_APPS.keys():
             process_rules(app, [
                 Rule(
                     [
@@ -1230,14 +1230,6 @@ def make_url_map(app):
             ],
             'get',
             addon_views.addon_view_or_download_file_legacy,
-            json_renderer
-        ),
-        Rule(
-            [
-                '/file_redirect/<fid>/'
-            ],
-            'get',
-            addon_views.addon_view_or_download_file_by_fid,
             json_renderer
         )
     ])
