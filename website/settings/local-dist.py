@@ -55,7 +55,7 @@ ELASTIC_TIMEOUT = 10
 USE_CELERY = False
 
 # Email
-USE_EMAIL = False
+USE_EMAIL = True
 MAIL_SERVER = 'localhost:1025'  # For local testing
 MAIL_USERNAME = 'osf-smtp'
 MAIL_PASSWORD = 'CHANGEME'
@@ -79,6 +79,10 @@ BROKER_URL = 'amqp://'
 CELERY_RESULT_BACKEND = 'amqp://'
 
 USE_CDN_FOR_CLIENT_LIBS = False
+
+# When DEV_MODE == True and sendgrid is configured locally.
+# `send_mail` would only send emails to addresses included in this whitelist to prevent unintentional spamming
+SENDGRID_EMAIL_WHITELIST= ['']
 
 # Example of extending default settings
 # defaults.IMG_FMTS += ["pdf"]

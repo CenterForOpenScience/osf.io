@@ -85,19 +85,22 @@ def _send_with_smtp(from_addr, to_addr, subject, message, mimetype='html', ttls=
     return True
 
 def _send_with_sendgrid(from_addr, to_addr, subject, message, mimetype='html', categories=None, attachment_name=None, attachment_content=None, client=None):
-    client = client or sendgrid.SendGridClient(settings.SENDGRID_API_KEY)
-    mail = sendgrid.Mail()
-    mail.set_from(from_addr)
-    mail.add_to(to_addr)
-    mail.set_subject(subject)
-    if mimetype == 'html':
-        mail.set_html(message)
-    else:
-        mail.set_text(message)
-    if categories:
-        mail.set_categories(categories)
-    if attachment_name and attachment_content:
-        mail.add_attachment_stream(attachment_name, attachment_content)
+    if settings.DEV_MODE is False or (settings.SENDGRID_EMAIL_WHITELIST and to_addr in settings.SENDGRID_EMAIL_WHITELIST):
+        client = client or sendgrid.SendGridClient(settings.SENDGRID_API_KEY)
+        mail = sendgrid.Mail()
+        mail.set_from(from_addr)
+        mail.add_to(to_addr)
+        mail.set_subject(subject)
+        if mimetype == 'html':
+            mail.set_html(message)
+        else:
+            mail.set_text(message)
+        if categories:
+            mail.set_categories(categories)
+        if attachment_name and attachment_content:
+            mail.add_attachment_stream(attachment_name, attachment_content)
 
-    status, msg = client.send(mail)
-    return status < 400
+        status, msg = client.send(mail)
+        return status < 400
+    else:
+        pass
