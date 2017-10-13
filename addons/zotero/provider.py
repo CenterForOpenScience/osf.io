@@ -13,3 +13,8 @@ class ZoteroCitationsProvider(CitationsProvider):
             parent_id=data['data'].get('parentCollection'),
             id=data['data'].get('key'),
         )
+
+    def group_list(self, node_addon, user):
+        """Returns a list of groups"""
+        groups = node_addon.api._fetch_groups()
+        return groups

@@ -85,6 +85,8 @@ var FolderPickerViewModel = oop.defclass({
         self.currentDisplay = ko.observable(null);
         // Whether the folders have been loaded from the API
         self.loadedFolders = ko.observable(false);
+        // Whether the groups have been loaded from the API
+        self.loadedGroups = ko.observable(false);
         // Button text for changing folders
         self.toggleChangeText = ko.observable('Change');
 
@@ -265,7 +267,6 @@ var FolderPickerViewModel = oop.defclass({
         var self = this;
         var ret = $.Deferred();
         var applySettings = function(settings){
-            settings.groups.unshift({"id": "personal", "data": {"name": "My Library"}});
             self.ownerName(settings.ownerName);
             self.nodeHasAuth(settings.nodeHasAuth);
             self.userIsOwner(settings.userIsOwner);
@@ -276,7 +277,6 @@ var FolderPickerViewModel = oop.defclass({
                 id: null
             });
             self.library(settings.library || {});
-            self.groups(settings.groups || []);
             self.urls(settings.urls);
             self._updateCustomFields(settings);
             self.afterUpdate();
@@ -388,6 +388,15 @@ var FolderPickerViewModel = oop.defclass({
         self.loadedFolders(false);
         self.activatePicker();
     },
+    onImportGroupSuccess: function(response) {
+        var self = this;
+        if (response) {
+            response.unshift({"id": "personal", "data": {"name": "My Library"}});
+        }
+        self.groups(response);
+        // Update view model based on response
+        self.loadedFolders(true);
+    },
     onImportError: function(xhr, status, error) {
         var self = this;
         self.changeMessage(self.messages.tokenImportError(), 'text-danger');
@@ -407,6 +416,11 @@ var FolderPickerViewModel = oop.defclass({
         return $osf.putJSON(self.urls().importAuth, self._importAuthPayload())
             .done(self.onImportSuccess.bind(self))
             .fail(self.onImportError.bind(self));
+    },
+    importGroups: function() {
+        var self = this;
+        return $.getJSON(self.urls().groups)
+            .done(self.onImportGroupSuccess.bind(self))
     },
     /**
      * Send PUT request to import access token from user profile.
@@ -517,6 +531,9 @@ var FolderPickerViewModel = oop.defclass({
     toggleLibraryPicker: function() {
         if (this.toggleChangeLibraryText() === "Change") {
             this.toggleChangeLibraryText('Close')
+            if (!this.loadedGroups()) {
+                this.importGroups();
+            }
         } else {
             this.toggleChangeLibraryText('Change')
         }

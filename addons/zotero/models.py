@@ -154,7 +154,3 @@ class NodeSettings(BaseCitationsNodeSettings):
     def _fetch_folder_name(self):
         folder = self.api._folder_metadata(self.list_id, self.library_id)
         return folder['data'].get('name')
-
-    @property
-    def fetch_groups(self):
-        return self.api._fetch_groups()
