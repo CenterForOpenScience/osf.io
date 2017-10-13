@@ -20,6 +20,7 @@ from rest_framework import serializers as ser
 from rest_framework.filters import OrderingFilter
 from osf.models import Subject, PreprintProvider
 from osf.models.base import GuidMixin
+from reviews.workflow import States
 
 
 def lowercase(lower):
@@ -504,8 +505,10 @@ class PreprintFilterMixin(ListFilterMixin):
             admin_user_query = Q(node__contributor__user_id=auth_user.id, node__contributor__admin=True)
             reviews_user_query = Q(node__is_public=True, provider__in=get_objects_for_user(auth_user, 'view_submissions', PreprintProvider))
             if allow_contribs:
-                contrib_user_query = Q(is_published=True, node__contributor__user_id=auth_user.id, node__contributor__read=True)
-                query = default_query & (no_user_query | contrib_user_query | admin_user_query | reviews_user_query)
+                contrib_query_base = Q(node__contributor__user_id=auth_user.id, node__contributor__read=True)
+                not_reviews_contrib_query = contrib_query_base & Q(is_published=True)
+                reviews_contrib_query = contrib_query_base & (Q(provider__reviews_workflow__isnull=False) & ~Q(reviews_state=States.INITIAL.value))
+                query = default_query & (no_user_query | not_reviews_contrib_query | reviews_contrib_query | admin_user_query | reviews_user_query)
             else:
                 query = default_query & (no_user_query | admin_user_query | reviews_user_query)
         else:
