@@ -55,7 +55,7 @@ ELASTIC_TIMEOUT = 10
 USE_CELERY = False
 
 # Email
-USE_EMAIL = True
+USE_EMAIL = False
 MAIL_SERVER = 'localhost:1025'  # For local testing
 MAIL_USERNAME = 'osf-smtp'
 MAIL_PASSWORD = 'CHANGEME'
