@@ -265,6 +265,7 @@ var FolderPickerViewModel = oop.defclass({
         var self = this;
         var ret = $.Deferred();
         var applySettings = function(settings){
+            settings.groups.unshift({"id": "personal", "data": {"name": "My Library"}});
             self.ownerName(settings.ownerName);
             self.nodeHasAuth(settings.nodeHasAuth);
             self.userIsOwner(settings.userIsOwner);

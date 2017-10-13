@@ -56,24 +56,27 @@
         </div>
         <!-- Library picker -->
         <div data-bind="visible: toggleChangeLibraryText() === 'Close'">
-            <form class="m-t-md m-l-md m-b-md" data-bind="submit: saveLibrary">
-                <div class="m-t-lg">
-                    <input class="m-t-sm" type="radio" name="library-group" value="personal" data-bind="checked: selectedLibrary">   My Library
-                </div>
-                <span data-bind="visible: groups().length !== 0">
-                    <p class="m-t-md"><em> Group Libraries </em></p>
-                    <div data-bind="foreach: groups">
-                       <div class="m-t-sm m-l-lg">
-                         <input type="radio" name="library-group" data-bind="attr: {value: id}, checked: $root.selectedLibrary">  <span data-bind="text: data['name']"></span><br>
-                       </div>
-                   </div>
-                </span>
-               <div class="pull-right" data-bind="visible: selectedLibrary()">
+            <form data-bind="submit: saveLibrary">
+                <table class="table tb-table m-t-sm">
+                    <thead class="tb-row-titles">
+                        <tr>
+                            <th width="75%">Libraries</th>
+                            <th style="border-left: 1px solid #CCC;" width="25%">Select</th>
+                        </tr>
+                    </thead>
+                    <tbody class="tb-tbody" data-bind="foreach: groups">
+                        <tr>
+                            <td data-bind="text: data['name']"></td>
+                            <td><input data-bind="attr: {value: id}, checked: $root.selectedLibrary" name="library-group" type="radio"></td>
+                        </tr>
+                    </tbody>
+                </table>
+                <div class="pull-right" data-bind="visible: selectedLibrary()">
                    <button class="btn btn-default" data-bind="click: cancelLibrarySelection">
                        Cancel
                    </button>
                    <input type="submit" class="btn btn-success" value="Save" />
-               </div>
+                </div>
             </form>
         </div>
     </div>
