@@ -160,6 +160,12 @@ class PreprintIsPublishedListMixin:
         res = app.get('{}filter[is_published]=false'.format(url))
         assert len(res.json['data']) == 0
 
+    def test_filter_published_false_admin(self, app, user_admin_contrib, preprint_unpublished, preprint_published, url):
+        res = app.get('{}filter[is_published]=false'.format(url), auth=user_admin_contrib.auth)
+        assert len(res.json['data']) == 1
+        assert preprint_unpublished._id in [d['id'] for d in res.json['data']]
+
+
 @pytest.mark.django_db
 class PreprintIsValidListMixin:
 

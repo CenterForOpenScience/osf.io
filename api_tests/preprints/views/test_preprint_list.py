@@ -470,11 +470,6 @@ class TestPreprintIsPublishedList(PreprintIsPublishedListMixin):
         assert len(res.json['data']) == 1
         assert preprint_unpublished._id not in [d['id'] for d in res.json['data']]
 
-    def test_filter_published_false_admin(self, app, user_admin_contrib, preprint_unpublished, preprint_published, url):
-        res = app.get('{}filter[is_published]=false'.format(url), auth=user_admin_contrib.auth)
-        assert len(res.json['data']) == 1
-        assert preprint_unpublished._id in [d['id'] for d in res.json['data']]
-
     def test_filter_published_false_write_contrib(self, app, user_write_contrib, preprint_unpublished, url):
         res = app.get('{}filter[is_published]=false'.format(url), auth=user_write_contrib.auth)
         assert len(res.json['data']) == 0
@@ -520,11 +515,6 @@ class TestReviewsPendingPreprintIsPublishedList(PreprintIsPublishedListMixin):
     def test_unpublished_visible_to_write_contribs(self, app, user_write_contrib, preprint_unpublished, preprint_published, url):
         res = app.get(url, auth=user_write_contrib.auth)
         assert len(res.json['data']) == 2
-        assert preprint_unpublished._id in [d['id'] for d in res.json['data']]
-
-    def test_filter_published_false_admin(self, app, user_admin_contrib, preprint_unpublished, preprint_published, url):
-        res = app.get('{}filter[is_published]=false'.format(url), auth=user_admin_contrib.auth)
-        assert len(res.json['data']) == 1
         assert preprint_unpublished._id in [d['id'] for d in res.json['data']]
 
     def test_filter_published_false_write_contrib(self, app, user_write_contrib, preprint_unpublished, url):
@@ -573,11 +563,6 @@ class TestReviewsInitialPreprintIsPublishedList(PreprintIsPublishedListMixin):
         res = app.get(url, auth=user_write_contrib.auth)
         assert len(res.json['data']) == 1
         assert preprint_unpublished._id not in [d['id'] for d in res.json['data']]
-
-    def test_filter_published_false_admin(self, app, user_admin_contrib, preprint_unpublished, preprint_published, url):
-        res = app.get('{}filter[is_published]=false'.format(url), auth=user_admin_contrib.auth)
-        assert len(res.json['data']) == 1
-        assert preprint_unpublished._id in [d['id'] for d in res.json['data']]
 
     def test_filter_published_false_write_contrib(self, app, user_write_contrib, preprint_unpublished, url):
         res = app.get('{}filter[is_published]=false'.format(url), auth=user_write_contrib.auth)
