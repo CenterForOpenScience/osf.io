@@ -191,7 +191,6 @@ class GenericCitationViews(object):
         def _group_list(auth, node_addon, **kwargs):
             """ Returns a list of groups
             """
-            show = request.args.get('view', 'all')
             return Provider().group_list(node_addon, auth.user)
         _group_list.__name__ = '{0}_group_list'.format(addon_short_name)
         return _group_list
