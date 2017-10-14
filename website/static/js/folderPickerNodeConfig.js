@@ -428,7 +428,7 @@ var FolderPickerViewModel = oop.defclass({
     },
     onLibraryChange: function() {
         var self = this;
-        self.currentLibraryDisplay(true);
+        self.currentLibraryDisplay('picker');
     },
     /**
      * Send PUT request to import access token from user profile.
@@ -539,14 +539,12 @@ var FolderPickerViewModel = oop.defclass({
      */
     toggleLibraryPicker: function() {
         if (this.toggleChangeLibraryText() === "Change") {
-            this.currentLibraryDisplay('picker');
             this.toggleChangeLibraryText('Close')
             if (!this.loadedGroups()) {
                 this.importGroups();
             }
         } else {
             this.toggleChangeLibraryText('Change')
-            this.currentLibraryDisplay(null);
         }
     },
     destroyPicker: function() {
