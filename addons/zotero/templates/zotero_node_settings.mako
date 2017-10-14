@@ -55,7 +55,10 @@
             </button>
         </div>
         <!-- Library picker -->
-        <div data-bind="visible: toggleChangeLibraryText() === 'Close'">
+        <p class="text-muted text-center ${addon_short_name}-loading-text" data-bind="visible: libraryLoading">
+            Loading libraries...
+        </p>
+        <div data-bind="visible: toggleChangeLibraryText() === 'Close' & !libraryLoading()">
             <form data-bind="submit: saveLibrary">
                 <table class="table tb-table m-t-sm">
                     <thead class="tb-row-titles">
@@ -67,11 +70,11 @@
                     <tbody class="tb-tbody" data-bind="foreach: groups">
                         <tr>
                             <td data-bind="text: data['name']"></td>
-                            <td><input data-bind="attr: {value: id}, checked: $root.selectedLibrary" name="library-group" type="radio"></td>
+                            <td><input data-bind="attr: {value: id}, checked: $root.selectedLibrary, event: { click: $root.onLibraryChange()}" name="library-group" type="radio"></td>
                         </tr>
                     </tbody>
                 </table>
-                <div class="pull-right" data-bind="visible: selectedLibrary()">
+                <div class="pull-right" data-bind="visible: selectedLibrary() && currentLibraryDisplay()">
                    <button class="btn btn-default" data-bind="click: cancelLibrarySelection">
                        Cancel
                    </button>

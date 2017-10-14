@@ -78,11 +78,14 @@ var FolderPickerViewModel = oop.defclass({
         // Currently selected library name
         self.selectedLibrary = ko.observable(false);
         self.loading = ko.observable(false);
+        self.libraryLoading = ko.observable(false);
         // Whether the initial data has been fetched form the server. Used for
         // error handling.
         self.loadedSettings = ko.observable(false);
         // Current folder display
         self.currentDisplay = ko.observable(null);
+        // Current library display
+        this.currentLibraryDisplay = ko.observable(null);
         // Whether the folders have been loaded from the API
         self.loadedFolders = ko.observable(false);
         // Whether the groups have been loaded from the API
@@ -354,11 +357,10 @@ var FolderPickerViewModel = oop.defclass({
         function onSubmitSuccess(response) {
             // Update library in ViewModel
             self.library(response.result.library);
-            self.cancelLibrarySelection();
+            self.currentLibraryDisplay(null);
             // Update folder in ViewModel - after library changed,
             // folders need to be reloaded
             self.folder(response.result.folder);
-            self.loadedFolders(false);
             self.currentDisplay(null);
             self.loadedFolders(false);
             self.destroyPicker();
@@ -395,7 +397,8 @@ var FolderPickerViewModel = oop.defclass({
         }
         self.groups(response);
         // Update view model based on response
-        self.loadedFolders(true);
+        self.libraryLoading(false);
+        self.loadedGroups(true);
     },
     onImportError: function(xhr, status, error) {
         var self = this;
@@ -419,8 +422,13 @@ var FolderPickerViewModel = oop.defclass({
     },
     importGroups: function() {
         var self = this;
+        self.libraryLoading(true);
         return $.getJSON(self.urls().groups)
             .done(self.onImportGroupSuccess.bind(self))
+    },
+    onLibraryChange: function() {
+        var self = this;
+        self.currentLibraryDisplay(true);
     },
     /**
      * Send PUT request to import access token from user profile.
@@ -457,6 +465,7 @@ var FolderPickerViewModel = oop.defclass({
             self.nodeHasAuth(false);
             self.cancelSelection();
             self.currentDisplay(null);
+            self.currentLibraryDisplay(null);
             self.changeMessage(self.messages.deauthorizeSuccess(), 'text-warning', 3000);
             self.loadedFolders(false);
             self.destroyPicker();
@@ -505,7 +514,7 @@ var FolderPickerViewModel = oop.defclass({
      * Must be used to update radio buttons and knockout view model simultaneously
      */
     cancelLibrarySelection: function() {
-        this.selectedLibrary(null);
+        this.currentLibraryDisplay(null);
     },
     /**
      *  Toggles the visibility of the folder picker and toggles
@@ -530,12 +539,14 @@ var FolderPickerViewModel = oop.defclass({
      */
     toggleLibraryPicker: function() {
         if (this.toggleChangeLibraryText() === "Change") {
+            this.currentLibraryDisplay('picker');
             this.toggleChangeLibraryText('Close')
             if (!this.loadedGroups()) {
                 this.importGroups();
             }
         } else {
             this.toggleChangeLibraryText('Change')
+            this.currentLibraryDisplay(null);
         }
     },
     destroyPicker: function() {
