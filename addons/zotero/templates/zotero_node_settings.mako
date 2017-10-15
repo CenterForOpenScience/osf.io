@@ -70,7 +70,7 @@
                     <tbody class="tb-tbody" data-bind="foreach: libraries">
                         <tr>
                             <td data-bind="text: data['name']"></td>
-                            <td><input data-bind="attr: {value: id}, checked: $root.selectedLibrary, event: { click: $root.onLibraryChange()}" name="library-group" type="radio"></td>
+                            <td><input data-bind="attr: {value: id + ',' + data['name']}, checked: $root.selectedLibrary, event: { click: $root.onLibraryChange()}" name="library-group" type="radio"></td>
                         </tr>
                     </tbody>
                 </table>

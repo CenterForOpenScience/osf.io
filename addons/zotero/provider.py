@@ -21,7 +21,7 @@ class ZoteroCitationsProvider(CitationsProvider):
         """Returns a list of zotero group libraries"""
         return node_addon.api._fetch_libraries()
 
-    def set_config(self, node_addon, user, external_list_id, external_list_name, auth, external_library_id=None):
+    def set_config(self, node_addon, user, external_list_id, external_list_name, auth, external_library_id=None, external_library_name=None):
         """ Changes folder associated with addon and logs event"""
         # Ensure request has all required information
         # Tell the user's addon settings that this node is connecting
@@ -43,16 +43,28 @@ class ZoteroCitationsProvider(CitationsProvider):
             node_addon.list_id = None
         node_addon.save()
 
-        node_addon.owner.add_log(
-            '{0}_folder_selected'.format(self.provider_name),
-            params={
-                'project': node_addon.owner.parent_id,
-                'node': node_addon.owner._id,
-                'folder_id': external_list_id,
-                'folder_name': external_list_name,
-            },
-            auth=auth,
-        )
+        if external_library_id:
+            node_addon.owner.add_log(
+                '{0}_library_selected'.format(self.provider_name),
+                params={
+                    'project': node_addon.owner.parent_id,
+                    'node': node_addon.owner._id,
+                    'library_name': external_library_name,
+                    'library_id': external_library_id
+                },
+                auth=auth,
+            )
+        else:
+            node_addon.owner.add_log(
+                '{0}_folder_selected'.format(self.provider_name),
+                params={
+                    'project': node_addon.owner.parent_id,
+                    'node': node_addon.owner._id,
+                    'folder_id': external_list_id,
+                    'folder_name': external_list_name,
+                },
+                auth=auth,
+            )
 
     def citation_list(self, node_addon, user, list_id, show='all'):
         """Returns a list of citations"""

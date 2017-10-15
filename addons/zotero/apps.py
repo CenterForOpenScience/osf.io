@@ -25,9 +25,11 @@ class ZoteroAddonAppConfig(BaseAddonAppConfig):
     FOLDER_SELECTED = 'zotero_folder_selected'
     NODE_AUTHORIZED = 'zotero_node_authorized'
     NODE_DEAUTHORIZED = 'zotero_node_deauthorized'
+    LIBRARY_SELECTED = 'zotero_library_selected'
 
     actions = (
         FOLDER_SELECTED,
+        LIBRARY_SELECTED,
         NODE_AUTHORIZED,
         NODE_DEAUTHORIZED)
 

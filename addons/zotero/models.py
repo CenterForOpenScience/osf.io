@@ -180,7 +180,10 @@ class NodeSettings(BaseCitationsNodeSettings):
 
     @property
     def complete(self):
-        """Boolean indication of addon completeness"""
+        """
+        Boolean indication of addon completeness
+        Requires that both library_id and list_id have been defined.
+        """
         return bool(self.has_auth and self.list_id and self.library_id and self.user_settings.verify_oauth_access(
             node=self.owner,
             external_account=self.external_account,

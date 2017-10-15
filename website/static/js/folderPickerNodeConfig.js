@@ -381,7 +381,11 @@ var FolderPickerViewModel = oop.defclass({
                 }
             });
         }
-        return $osf.putJSON(self.urls().config, {'external_library_id': self.selectedLibrary()})
+        var metadata = {
+            'external_library_id': self.selectedLibrary().split(/,(.+)/)[0],
+            'external_library_name': self.selectedLibrary().split(/,(.+)/)[1]
+        };
+        return $osf.putJSON(self.urls().config, metadata)
             .done(onSubmitSuccess)
             .fail(onSubmitError);
     },
