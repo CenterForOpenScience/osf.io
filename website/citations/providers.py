@@ -49,10 +49,10 @@ class CitationsOauthProvider(ExternalProvider):
 
         return self._client
 
-    def citation_lists(self, extract_folder, library_id=None):
+    def citation_lists(self, extract_folder):
         """List of CitationList objects, derived from Mendeley folders"""
 
-        folders = self._get_folders(library_id)
+        folders = self._get_folders()
         # TODO: Verify OAuth access to each folder
         all_documents = self.serializer.serialized_root_folder
 
@@ -62,15 +62,15 @@ class CitationsOauthProvider(ExternalProvider):
         ]
         return [all_documents] + serialized_folders
 
-    def get_list(self, list_id=None, library_id=None):
+    def get_list(self, list_id=None):
         """Get a single CitationList
         :param str list_id: ID for a folder. Optional.
         :return CitationList: CitationList for the folder, or for all documents
         """
         if not list_id or list_id == 'ROOT':
-            return self._citations_for_user(library_id)
+            return self._citations_for_user()
 
-        return self._citations_for_folder(list_id, library_id)
+        return self._citations_for_folder(list_id)
 
 class CitationsProvider(object):
 
@@ -109,26 +109,19 @@ class CitationsProvider(object):
             ]
         }
 
-    def set_config(self, node_addon, user, external_list_id, external_list_name, auth, external_library_id=None):
+    def set_config(self, node_addon, user, external_list_id, external_list_name, auth):
         """ Changes folder associated with addon and logs event"""
         # Ensure request has all required information
         # Tell the user's addon settings that this node is connecting
-        metadata = {'folder': external_list_id}
-        if external_library_id:
-            metadata['library'] = external_library_id
-            metadata['folder'] = None
         node_addon.user_settings.grant_oauth_access(
             node=node_addon.owner,
             external_account=node_addon.external_account,
-            metadata=metadata
+            metadata={'folder': external_list_id}
         )
         node_addon.user_settings.save()
 
         # update this instance
         node_addon.list_id = external_list_id
-        if external_library_id:
-            node_addon.library_id = external_library_id
-            node_addon.list_id = None
         node_addon.save()
 
         node_addon.owner.add_log(
@@ -202,8 +195,7 @@ class CitationsProvider(object):
     def citation_list(self, node_addon, user, list_id, show='all'):
         """Returns a list of citations"""
         attached_list_id = self._folder_id(node_addon)
-        attached_library_id = getattr(node_addon, 'library_id', None)
-        account_folders = node_addon.api.citation_lists(self._extract_folder, attached_library_id)
+        account_folders = node_addon.api.citation_lists(self._extract_folder)
 
         # Folders with 'parent_list_id'==None are children of 'All Documents'
         for folder in account_folders:
@@ -253,7 +245,7 @@ class CitationsProvider(object):
                         node_settings=node_addon,
                         user_settings=user_settings,
                     ).serialize_citation(each)
-                    for each in node_addon.api.get_list(list_id=list_id, library_id=attached_library_id)
+                    for each in node_addon.api.get_list(list_id=list_id)
                 ]
 
         return {

@@ -109,15 +109,14 @@ class GenericCitationViews(object):
             args = request.get_json()
             external_list_id = args.get('external_list_id')
             external_list_name = args.get('external_list_name')
-            external_library_id = args.get('external_library_id', None)
             provider.set_config(
                 node_addon,
                 auth.user,
                 external_list_id,
                 external_list_name,
                 auth,
-                external_library_id
             )
+
             return {
                 'result': provider.serializer(
                     node_settings=node_addon,
@@ -182,15 +181,3 @@ class GenericCitationViews(object):
             return Provider().citation_list(node_addon, auth.user, list_id, show)
         _citation_list.__name__ = '{0}_citation_list'.format(addon_short_name)
         return _citation_list
-
-    def group_list(self):
-        addon_short_name = self.addon_short_name
-        Provider = self.Provider
-        @must_be_contributor_or_public
-        @must_have_addon(addon_short_name, 'node')
-        def _group_list(auth, node_addon, **kwargs):
-            """ Returns a list of groups
-            """
-            return Provider().group_list(node_addon, auth.user)
-        _group_list.__name__ = '{0}_group_list'.format(addon_short_name)
-        return _group_list

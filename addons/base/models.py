@@ -896,7 +896,6 @@ class BaseCitationsNodeSettings(BaseOAuthNodeSettings):
     def clear_settings(self):
         """Clears selected folder configuration"""
         self.list_id = None
-        self.library_id = None
 
     def set_auth(self, *args, **kwargs):
         """Connect the node addon to a user's external account.

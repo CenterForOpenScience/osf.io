@@ -39,6 +39,30 @@ class Zotero(CitationsOauthProvider):
             ),
         }
 
+    def citation_lists(self, extract_folder, library_id=None):
+        """List of CitationList objects, derived from Mendeley folders"""
+
+        folders = self._get_folders(library_id)
+        # TODO: Verify OAuth access to each folder
+        all_documents = self.serializer.serialized_root_folder
+
+        serialized_folders = [
+            extract_folder(each)
+            for each in folders
+        ]
+        return [all_documents] + serialized_folders
+
+    def get_list(self, list_id=None, library_id=None):
+        """Get a single CitationList
+        :param str list_id: ID for a folder. Optional.
+        :param str list_id: ID for library. Optional.
+        :return CitationList: CitationList for the folder, or for all documents
+        """
+        if not list_id or list_id == 'ROOT':
+            return self._citations_for_user(library_id)
+
+        return self._citations_for_folder(list_id, library_id)
+
     def _get_folders(self, library_id=None):
         """Get a list of a user's folders"""
         client = self._get_group(library_id)
@@ -154,3 +178,8 @@ class NodeSettings(BaseCitationsNodeSettings):
     def _fetch_folder_name(self):
         folder = self.api._folder_metadata(self.list_id, self.library_id)
         return folder['data'].get('name')
+
+    def clear_settings(self):
+        """Clears selected folder and selected library configuration"""
+        self.list_id = None
+        self.library_id = None
