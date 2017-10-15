@@ -171,7 +171,7 @@ class NodeSettings(BaseCitationsNodeSettings):
             return ''
         else:
             library = self.api._library_metadata(self.library_id)
-            return library['data'].get('name') if library else "My library"
+            return library['data'].get('name') if library else 'My library'
 
     @property
     def _fetch_folder_name(self):
