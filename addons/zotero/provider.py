@@ -17,10 +17,9 @@ class ZoteroCitationsProvider(CitationsProvider):
             id=data['data'].get('key'),
         )
 
-    def group_list(self, node_addon, user):
-        """Returns a list of groups"""
-        groups = node_addon.api._fetch_groups()
-        return groups
+    def library_list(self, node_addon, user):
+        """Returns a list of zotero group libraries"""
+        return node_addon.api._fetch_libraries()
 
     def set_config(self, node_addon, user, external_list_id, external_list_name, auth, external_library_id=None):
         """ Changes folder associated with addon and logs event"""

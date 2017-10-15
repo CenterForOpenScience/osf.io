@@ -44,16 +44,16 @@ class ZoteroViews(GenericCitationViews):
         _set_config.__name__ = '{0}_set_config'.format(addon_short_name)
         return _set_config
 
-    def group_list(self):
+    def library_list(self):
         addon_short_name = self.addon_short_name
         Provider = self.Provider
         @must_be_contributor_or_public
         @must_have_addon(addon_short_name, 'node')
-        def _group_list(auth, node_addon, **kwargs):
-            """ Returns a list of groups - for use with Zotero addon
+        def _library_list(auth, node_addon, **kwargs):
+            """ Returns a list of group libraries - for use with Zotero addon
             """
-            return Provider().group_list(node_addon, auth.user)
-        _group_list.__name__ = '{0}_group_list'.format(addon_short_name)
-        return _group_list
+            return Provider().library_list(node_addon, auth.user)
+        _library_list.__name__ = '{0}_library_list'.format(addon_short_name)
+        return _library_list
 
 zotero_views = ZoteroViews('zotero', ZoteroCitationsProvider)

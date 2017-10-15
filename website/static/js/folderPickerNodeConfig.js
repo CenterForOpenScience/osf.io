@@ -64,8 +64,8 @@ var FolderPickerViewModel = oop.defclass({
             id: null,
             path: null
         });
-        // current groups that the user has access to
-        self.groups = ko.observable([]);
+        // current libraries that the user has access to
+        self.libraries = ko.observable([]);
         // set of urls used for API calls internally
         self.urls = ko.observable({});
         // Flashed messages
@@ -88,8 +88,8 @@ var FolderPickerViewModel = oop.defclass({
         this.currentLibraryDisplay = ko.observable(null);
         // Whether the folders have been loaded from the API
         self.loadedFolders = ko.observable(false);
-        // Whether the groups have been loaded from the API
-        self.loadedGroups = ko.observable(false);
+        // Whether the group libraries have been loaded from the API
+        self.loadedLibraries = ko.observable(false);
         // Button text for changing folders
         self.toggleChangeText = ko.observable('Change');
 
@@ -389,15 +389,15 @@ var FolderPickerViewModel = oop.defclass({
         self.loadedFolders(false);
         self.activatePicker();
     },
-    onImportGroupSuccess: function(response) {
+    onImportLibrarySuccess: function(response) {
         var self = this;
         if (response) {
             response.unshift({"id": "personal", "data": {"name": "My Library"}});
         }
-        self.groups(response);
+        self.libraries(response);
         // Update view model based on response
         self.libraryLoading(false);
-        self.loadedGroups(true);
+        self.loadedLibraries(true);
     },
     onImportError: function(xhr, status, error) {
         var self = this;
@@ -419,11 +419,11 @@ var FolderPickerViewModel = oop.defclass({
             .done(self.onImportSuccess.bind(self))
             .fail(self.onImportError.bind(self));
     },
-    importGroups: function() {
+    importLibraries: function() {
         var self = this;
         self.libraryLoading(true);
-        return $.getJSON(self.urls().groups)
-            .done(self.onImportGroupSuccess.bind(self))
+        return $.getJSON(self.urls().libraries)
+            .done(self.onImportLibrarySuccess.bind(self))
     },
     onLibraryChange: function() {
         var self = this;
@@ -539,8 +539,8 @@ var FolderPickerViewModel = oop.defclass({
     toggleLibraryPicker: function() {
         if (this.toggleChangeLibraryText() === "Change") {
             this.toggleChangeLibraryText('Close')
-            if (!this.loadedGroups()) {
-                this.importGroups();
+            if (!this.loadedLibraries()) {
+                this.importLibraries();
             }
         } else {
             this.toggleChangeLibraryText('Change')

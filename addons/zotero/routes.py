@@ -76,7 +76,7 @@ api_routes = {
                 '/project/<pid>/node/<nid>/zotero/groups/',
             ],
             'get',
-            zotero_views.group_list(),
+            zotero_views.library_list(),
             json_renderer,
         ),
     ],

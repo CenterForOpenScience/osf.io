@@ -15,5 +15,5 @@ class ZoteroSerializer(CitationsAddonSerializer):
     def addon_serialized_urls(self):
         node = self.node_settings.owner
         serialized_urls = super(ZoteroSerializer, self).addon_serialized_urls
-        serialized_urls['groups'] = node.api_url_for('{0}_group_list'.format(self.addon_short_name))
+        serialized_urls['libraries'] = node.api_url_for('{0}_library_list'.format(self.addon_short_name))
         return serialized_urls

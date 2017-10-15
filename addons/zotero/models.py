@@ -65,16 +65,16 @@ class Zotero(CitationsOauthProvider):
 
     def _get_folders(self, library_id=None):
         """Get a list of a user's folders"""
-        client = self._get_group(library_id)
+        client = self._get_library(library_id)
 
         # Note: Pagination is the only way to ensure all of the collections
         #       are retrieved. 100 is the limit per request. This applies
         #       to Mendeley too, though that limit is 500.
         return client.collections(limit=100)
 
-    def _get_group(self, group_id):
-        if group_id and group_id != 'personal':
-            return zotero.Zotero(str(group_id), 'group', self.account.oauth_key)
+    def _get_library(self, library_id):
+        if library_id and library_id != 'personal':
+            return zotero.Zotero(str(library_id), 'group', self.account.oauth_key)
         else:
             return self.client
 
@@ -92,13 +92,12 @@ class Zotero(CitationsOauthProvider):
             else:
                 raise err
 
-    def _fetch_groups(self):
-        """ Retrieves the Zotero group data to which the current library_id and api_key has access """
-        groups = self.client.groups()
-        return groups
+    def _fetch_libraries(self):
+        """ Retrieves the Zotero library data to which the current library_id and api_key has access """
+        return self.client.groups()
 
     def _folder_metadata(self, folder_id, library_id=None):
-        client = self._get_group(library_id)
+        client = self._get_library(library_id)
         collection = client.collection(folder_id)
         return collection
 
@@ -114,7 +113,7 @@ class Zotero(CitationsOauthProvider):
         :param  str list_id: ID for a Zotero collection.
         :return list of csljson objects representing documents.
         """
-        client = self._get_group(library_id)
+        client = self._get_library(library_id)
 
         citations = []
         more = True
@@ -133,7 +132,7 @@ class Zotero(CitationsOauthProvider):
         citations = []
         more = True
         offset = 0
-        client = self._get_group(library_id)
+        client = self._get_library(library_id)
 
         while more and len(citations) <= MAX_CITATION_LOAD:
             page = client.items(content='csljson', limit=100, start=offset)

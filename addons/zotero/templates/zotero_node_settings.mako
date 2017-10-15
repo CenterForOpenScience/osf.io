@@ -67,7 +67,7 @@
                             <th style="border-left: 1px solid #CCC;" width="25%">Select</th>
                         </tr>
                     </thead>
-                    <tbody class="tb-tbody" data-bind="foreach: groups">
+                    <tbody class="tb-tbody" data-bind="foreach: libraries">
                         <tr>
                             <td data-bind="text: data['name']"></td>
                             <td><input data-bind="attr: {value: id}, checked: $root.selectedLibrary, event: { click: $root.onLibraryChange()}" name="library-group" type="radio"></td>
