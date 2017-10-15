@@ -279,6 +279,11 @@ var FolderPickerViewModel = oop.defclass({
                 path: null,
                 id: null
             });
+            self.library(settings.library || {
+                name: null,
+                path: null,
+                id: null
+            });
             self.urls(settings.urls);
             self._updateCustomFields(settings);
             self.afterUpdate();

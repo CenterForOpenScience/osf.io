@@ -179,6 +179,15 @@ class NodeSettings(BaseCitationsNodeSettings):
     _api = None
 
     @property
+    def complete(self):
+        """Boolean indication of addon completeness"""
+        return bool(self.has_auth and self.list_id and self.library_id and self.user_settings.verify_oauth_access(
+            node=self.owner,
+            external_account=self.external_account,
+            metadata={'folder': self.list_id, 'library': self.library_id},
+        ))
+
+    @property
     def fetch_library_name(self):
         """Returns a displayable library name"""
         if self.library_id is None:
