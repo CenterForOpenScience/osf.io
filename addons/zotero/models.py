@@ -40,15 +40,18 @@ class Zotero(CitationsOauthProvider):
         }
 
     def citation_lists(self, extract_folder, library_id=None):
-        """List of CitationList objects, derived from Mendeley folders"""
+        """
+        List of CitationList objects, derived from Mendeley folders
 
-        folders = self._get_folders(library_id)
+        Modified to add library_id to arguments, because folders are going
+        to be selected from library (either personal library or one of group libraries)
+        """
         # TODO: Verify OAuth access to each folder
         all_documents = self.serializer.serialized_root_folder
 
         serialized_folders = [
             extract_folder(each)
-            for each in folders
+            for each in self._get_folders(library_id)
         ]
         return [all_documents] + serialized_folders
 
@@ -73,6 +76,10 @@ class Zotero(CitationsOauthProvider):
         return client.collections(limit=100)
 
     def _get_library(self, library_id):
+        """
+        If library id specified, fetch the group library from Zotero. Otherwise, use
+        your personal library.
+        """
         if library_id and library_id != 'personal':
             return zotero.Zotero(str(library_id), 'group', self.account.oauth_key)
         else:
@@ -93,13 +100,14 @@ class Zotero(CitationsOauthProvider):
                 raise err
 
     def _fetch_libraries(self):
-        """ Retrieves the Zotero library data to which the current library_id and api_key has access """
+        """
+        Retrieves the Zotero library data to which the current library_id and api_key has access
+        """
         return self.client.groups()
 
     def _folder_metadata(self, folder_id, library_id=None):
         client = self._get_library(library_id)
-        collection = client.collection(folder_id)
-        return collection
+        return client.collection(folder_id)
 
     def _library_metadata(self, library_id):
         for library in self.client.groups():
@@ -145,6 +153,9 @@ class Zotero(CitationsOauthProvider):
 
     @property
     def auth_url(self):
+        """
+        Add all_groups query param so Zotero API key will have permissions to user's groups
+        """
         url = super(Zotero, self).auth_url
         return url + '&all_groups=read'
 

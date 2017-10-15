@@ -38,7 +38,7 @@ var CitationsFolderPickerViewModel = oop.extend(FolderPickerViewModel, {
         });
 
         self.messages.submitLibrarySettingsSuccess = ko.pureComputed(function(){
-            return 'Successfully linked "' + $osf.htmlEscape(self.library().name) + '". Next, choose which folder to link above.'
+            return 'Successfully linked "' + $osf.htmlEscape(self.library().name) + '". Next, choose which folder to link above.';
         });
 
         self.treebeardOptions = $.extend(
