@@ -376,7 +376,7 @@ var FolderPickerViewModel = oop.defclass({
                 }
             });
         }
-        return $osf.putJSON(self.urls().config, {"external_library_id": self.selectedLibrary()})
+        return $osf.putJSON(self.urls().config, {'external_library_id': self.selectedLibrary()})
             .done(onSubmitSuccess)
             .fail(onSubmitError);
     },
@@ -392,7 +392,7 @@ var FolderPickerViewModel = oop.defclass({
     onImportLibrarySuccess: function(response) {
         var self = this;
         if (response) {
-            response.unshift({"id": "personal", "data": {"name": "My Library"}});
+            response.unshift({'id': 'personal', 'data': {'name': 'My Library'}});
         }
         self.libraries(response);
         // Update view model based on response
@@ -423,7 +423,7 @@ var FolderPickerViewModel = oop.defclass({
         var self = this;
         self.libraryLoading(true);
         return $.getJSON(self.urls().libraries)
-            .done(self.onImportLibrarySuccess.bind(self))
+            .done(self.onImportLibrarySuccess.bind(self));
     },
     onLibraryChange: function() {
         var self = this;
@@ -537,13 +537,13 @@ var FolderPickerViewModel = oop.defclass({
      *  Change button text between 'Change' and 'Close'
      */
     toggleLibraryPicker: function() {
-        if (this.toggleChangeLibraryText() === "Change") {
-            this.toggleChangeLibraryText('Close')
+        if (this.toggleChangeLibraryText() === 'Change') {
+            this.toggleChangeLibraryText('Close');
             if (!this.loadedLibraries()) {
                 this.importLibraries();
             }
         } else {
-            this.toggleChangeLibraryText('Change')
+            this.toggleChangeLibraryText('Change');
         }
     },
     destroyPicker: function() {
