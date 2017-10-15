@@ -76,7 +76,7 @@ class Zotero(CitationsOauthProvider):
         if group_id and group_id != 'personal':
             return zotero.Zotero(str(group_id), 'group', self.account.oauth_key)
         else:
-            return self._get_client()
+            return self.client
 
     def _get_client(self):
         return zotero.Zotero(self.account.provider_id, 'user', self.account.oauth_key)
