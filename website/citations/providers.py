@@ -245,7 +245,7 @@ class CitationsProvider(object):
                         node_settings=node_addon,
                         user_settings=user_settings,
                     ).serialize_citation(each)
-                    for each in node_addon.api.get_list(list_id=list_id)
+                    for each in node_addon.api.get_list(list_id)
                 ]
 
         return {

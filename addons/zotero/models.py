@@ -44,7 +44,7 @@ class Zotero(CitationsOauthProvider):
         List of CitationList objects, derived from Mendeley folders
 
         Modified to add library_id to arguments, because folders are going
-        to be selected from library (either personal library or one of group libraries)
+        to be loaded from library (either personal library or one of group libraries)
         """
         # TODO: Verify OAuth access to each folder
         all_documents = self.serializer.serialized_root_folder
@@ -67,7 +67,10 @@ class Zotero(CitationsOauthProvider):
         return self._citations_for_folder(list_id, library_id)
 
     def _get_folders(self, library_id=None):
-        """Get a list of a user's folders"""
+        """
+        Get a list of a user's folders, either from the personal library,
+        or a group library, if specified
+        """
         client = self._get_library(library_id)
 
         # Note: Pagination is the only way to ensure all of the collections
@@ -78,7 +81,7 @@ class Zotero(CitationsOauthProvider):
     def _get_library(self, library_id):
         """
         If library id specified, fetch the group library from Zotero. Otherwise, use
-        your personal library.
+        the user's personal library.
         """
         if library_id and library_id != 'personal':
             return zotero.Zotero(str(library_id), 'group', self.account.oauth_key)

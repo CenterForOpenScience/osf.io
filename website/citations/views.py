@@ -116,7 +116,6 @@ class GenericCitationViews(object):
                 external_list_name,
                 auth,
             )
-
             return {
                 'result': provider.serializer(
                     node_settings=node_addon,
