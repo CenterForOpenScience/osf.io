@@ -82,6 +82,23 @@ services:
 #    volumes:
 #      - emberosf-sync:/code:nocopy
 
+#  ####################
+#  # RabbitMQ SSL
+#  # Enable this, place the certs in ./ssl, and uncomment the BROKER_USE_SSL dictionary in local.py
+#  # Uncomment lines under worker in docker-compose
+#  #####################
+#  rabbitmq:
+#    ports:
+#      - 5671:5671
+#    environment:
+#      RABBITMQ_SSL_CERTFILE: /etc/ssl/server_certificate.pem
+#      RABBITMQ_SSL_KEYFILE: /etc/ssl/server_key.pem
+#      RABBITMQ_SSL_CACERTFILE: /etc/ssl/ca_certificate.pem
+#    volumes:
+#      - ./ssl/celery-server.cert.pem:/etc/ssl/server_certificate.pem:ro
+#      - ./ssl/celery-server.key.pem:/etc/ssl/server_key.pem:ro
+#      - ./ssl/ca-chain.cert.pem:/etc/ssl/ca_certificate.pem:ro
+
 volumes:
   osf-sync:
     external: true
