@@ -40,11 +40,10 @@ class TestNodeSettings(OAuthAddonNodeSettingsTestSuiteMixin, unittest.TestCase):
     def test_serialize_credentials(self):
         self.user_settings.external_accounts[0].oauth_key = 'key-11'
         self.user_settings.external_accounts[0].oauth_secret = 'secret-15'
+        self.node_settings.folder_region = 'Narnia'
         self.user_settings.save()
         credentials = self.node_settings.serialize_waterbutler_credentials()
-
-        expected = {'access_key': self.node_settings.external_account.oauth_key,
-                    'secret_key': self.node_settings.external_account.oauth_secret}
+        expected = {'username': 'user-0', 'token': 'some-super-secret', 'region': 'Narnia'}
         assert_equal(credentials, expected)
 
     def test_set_folder(self):
