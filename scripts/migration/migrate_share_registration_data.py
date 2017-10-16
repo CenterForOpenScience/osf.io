@@ -1,3 +1,4 @@
+# TODO: Consider rewriting as management command
 import logging
 import sys
 import django

@@ -3535,18 +3535,39 @@ class TestTemplateNode:
             return str(language.TEMPLATED_FROM_PREFIX + x.title)
         return str(x.title)
 
-    def test_complex_template(self, auth, project, pointee, component, subproject):
+    def test_complex_template_without_pointee(self, auth, user):
+        """Create a templated node from a node with children"""
+
+        # create templated node
+        project1 = ProjectFactory(creator=user)
+        subproject1 = ProjectFactory(creator=user, parent=project1)
+
+        new = project1.use_as_template(auth=auth)
+
+        assert new.title == self._default_title(project1)
+        assert len(list(new.nodes)) == len(list(project1.nodes))
+        # check that all children were copied
+        assert (
+            [x.title for x in new.nodes] ==
+            [x.title for x in project1.nodes if x not in project1.linked_nodes]
+        )
+        # ensure all child nodes were actually copied, instead of moved
+        assert {x._primary_key for x in new.nodes}.isdisjoint(
+            {x._primary_key for x in project1.nodes}
+        )
+
+    def test_complex_template_with_pointee(self, auth, project, pointee, component, subproject):
         """Create a templated node from a node with children"""
 
         # create templated node
         new = project.use_as_template(auth=auth)
 
         assert new.title == self._default_title(project)
-        assert len(list(new.nodes)) == len(list(project.nodes))
+        assert len(list(new.nodes)) == len(list(project.nodes)) - 1
         # check that all children were copied
         assert (
             [x.title for x in new.nodes] ==
-            [x.title for x in project.nodes]
+            [x.title for x in project.nodes if x not in project.linked_nodes]
         )
         # ensure all child nodes were actually copied, instead of moved
         assert {x._primary_key for x in new.nodes}.isdisjoint(
@@ -3567,8 +3588,9 @@ class TestTemplateNode:
             auth=auth,
             changes=changes
         )
+        old_nodes = [x for x in project.nodes if x not in project.linked_nodes]
 
-        for old_node, new_node in zip(project.nodes, new.nodes):
+        for old_node, new_node in zip(old_nodes, new.nodes):
             if isinstance(old_node, Node):
                 assert (
                     changes[old_node._primary_key]['title'] ==
@@ -3643,7 +3665,7 @@ class TestTemplateNode:
         # check that all children were copied
         assert (
             set(x.template_node._id for x in new.nodes) ==
-            set(x._id for x in visible_nodes)
+            set(x._id for x in visible_nodes if x not in project.linked_nodes)
         )
         # ensure all child nodes were actually copied, instead of moved
         assert bool({x._primary_key for x in new.nodes}.isdisjoint(

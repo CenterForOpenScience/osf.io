@@ -8,13 +8,12 @@ import urllib
 
 import django
 from django.db import transaction
-from modularodm import Q
 django.setup()
 
 from website import settings
 from website.app import init_app
-from osf.models import Institution, Node
-from website.search.search import update_institution, update_node
+from osf.models import Institution
+from website.search.search import update_institution
 
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO)
@@ -121,6 +120,18 @@ def main(env):
                 'domains': ['osf.cos.io'],
                 'email_domains': ['cos.io'],
                 'delegation_protocol': '',
+            },
+            {
+                '_id': 'csic',
+                'name': 'Spanish National Research Council',
+                'description': 'Related resources are in the institutional intranet web site only.',
+                'banner_name': 'csic-banner.png',
+                'logo_name': 'csic-shield.png',
+                'login_url': SHIBBOLETH_SP_LOGIN.format(encode_uri_component('https://www.rediris.es/sir/csicidp')),
+                'logout_url': SHIBBOLETH_SP_LOGOUT.format(encode_uri_component('https://osf.io/goodbye')),
+                'domains': [],
+                'email_domains': [],
+                'delegation_protocol': 'saml-shib',
             },
             {
                 '_id': 'duke',
@@ -573,6 +584,18 @@ def main(env):
                 'domains': ['test-osf.cos.io'],
                 'email_domains': ['cos.io'],
                 'delegation_protocol': '',
+            },
+            {
+                '_id': 'csic',
+                'name': 'Spanish National Research Council [Test]',
+                'description': 'Related resources are in the institutional intranet web site only.',
+                'banner_name': 'csic-banner.png',
+                'logo_name': 'csic-shield.png',
+                'login_url': SHIBBOLETH_SP_LOGIN.format(encode_uri_component('https://www.rediris.es/sir/csicidp')),
+                'logout_url': SHIBBOLETH_SP_LOGOUT.format(encode_uri_component('https://test.osf.io/goodbye')),
+                'domains': [],
+                'email_domains': [],
+                'delegation_protocol': 'saml-shib',
             },
             {
                 '_id': 'duke',

@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 import functools
+import time
 
 import datetime
 import mock
@@ -19,6 +20,7 @@ from website.notifications.constants import NOTIFICATION_TYPES
 from website.util import permissions
 from website.archiver import ARCHIVER_SUCCESS
 from website.identifiers.utils import parse_identifiers
+from website.settings import FAKE_EMAIL_NAME, FAKE_EMAIL_DOMAIN
 from framework.auth.core import Auth
 
 from osf import models
@@ -28,6 +30,9 @@ from osf.modm_compat import Q
 from addons.osfstorage.models import OsfStorageFile
 
 fake = Factory.create()
+
+# If tests are run on really old processors without high precision this might fail. Unlikely to occur.
+fake_email = lambda: '{}+{}@{}'.format(FAKE_EMAIL_NAME, int(time.clock() * 1000000), FAKE_EMAIL_DOMAIN)
 
 def get_default_metaschema():
     """This needs to be a method so it gets called after the test database is set up"""
@@ -41,7 +46,7 @@ class UserFactory(DjangoModelFactory):
     # TODO: Change this to only generate long names and see what breaks
     fullname = factory.Sequence(lambda n: 'Freddie Mercury{0}'.format(n))
 
-    username = factory.Faker('email')
+    username = factory.LazyFunction(fake_email)
     password = factory.PostGenerationMethodCall('set_password',
                                                 'queenfan86')
     is_registered = True
@@ -115,7 +120,7 @@ class AuthFactory(factory.base.Factory):
     user = factory.SubFactory(UserFactory)
 
 class UnregUserFactory(DjangoModelFactory):
-    email = factory.Faker('email')
+    email = factory.LazyFunction(fake_email)
     fullname = factory.Sequence(lambda n: 'Freddie Mercury{0}'.format(n))
     date_registered = factory.Faker('date_time', tzinfo=pytz.utc)
 
@@ -145,7 +150,7 @@ class UnconfirmedUserFactory(DjangoModelFactory):
     """
     class Meta:
         model = models.OSFUser
-    username = factory.Faker('email')
+    username = factory.LazyFunction(fake_email)
     fullname = factory.Sequence(lambda n: 'Freddie Mercury{0}'.format(n))
     password = 'lolomglgt'
 
