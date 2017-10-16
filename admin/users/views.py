@@ -38,7 +38,7 @@ from osf.models.admin_log_entry import (
 from admin.users.serializers import serialize_user
 from admin.users.forms import EmailResetForm, WorkshopForm, UserSearchForm
 from admin.users.templatetags.user_extras import reverse_user
-from website.settings import DOMAIN, SUPPORT_EMAIL
+from website.settings import DOMAIN, OSF_SUPPORT_EMAIL
 
 
 class UserDeleteView(PermissionRequiredMixin, DeleteView):
@@ -553,7 +553,7 @@ class ResetPasswordView(PermissionRequiredMixin, FormView):
             message='Follow this link to reset your password: {}'.format(
                 reset_abs_url.url
             ),
-            from_email=SUPPORT_EMAIL,
+            from_email=OSF_SUPPORT_EMAIL,
             recipient_list=[email]
         )
         update_admin_log(

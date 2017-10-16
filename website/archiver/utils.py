@@ -19,7 +19,7 @@ from website.util import sanitize
 
 def send_archiver_size_exceeded_mails(src, user, stat_result, url):
     mails.send_mail(
-        to_addr=settings.SUPPORT_EMAIL,
+        to_addr=settings.OSF_SUPPORT_EMAIL,
         mail=mails.ARCHIVE_SIZE_EXCEEDED_DESK,
         user=user,
         src=src,
@@ -38,7 +38,7 @@ def send_archiver_size_exceeded_mails(src, user, stat_result, url):
 
 def send_archiver_copy_error_mails(src, user, results, url):
     mails.send_mail(
-        to_addr=settings.SUPPORT_EMAIL,
+        to_addr=settings.OSF_SUPPORT_EMAIL,
         mail=mails.ARCHIVE_COPY_ERROR_DESK,
         user=user,
         src=src,
@@ -57,7 +57,7 @@ def send_archiver_copy_error_mails(src, user, results, url):
 
 def send_archiver_file_not_found_mails(src, user, results, url):
     mails.send_mail(
-        to_addr=settings.SUPPORT_EMAIL,
+        to_addr=settings.OSF_SUPPORT_EMAIL,
         mail=mails.ARCHIVE_FILE_NOT_FOUND_DESK,
         user=user,
         src=src,
@@ -76,7 +76,7 @@ def send_archiver_file_not_found_mails(src, user, results, url):
 
 def send_archiver_uncaught_error_mails(src, user, results, url):
     mails.send_mail(
-        to_addr=settings.SUPPORT_EMAIL,
+        to_addr=settings.OSF_SUPPORT_EMAIL,
         mail=mails.ARCHIVE_UNCAUGHT_ERROR_DESK,
         user=user,
         src=src,

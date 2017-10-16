@@ -42,11 +42,12 @@ var ensureUserTimezone = function(savedTimezone, savedLocale, id) {
 
 $(document).ready(function() {
     m.mount(document.getElementById('dashboard'), m.component(MyProjects, {wrapperSelector : '#dashboard'}));
+    var COS_SUPPORT_EMAIL = '{{settings.COS_SUPPORT_EMAIL }}';
 
     // Appears in 10 second if the spinner is still there.
     setTimeout(function(){
         if($('#dashboard>.ball-scale').length > 0) {
-            $('#dashboard').append('<div class="text-danger text-center text-bigger">This is taking longer than normal. <br>  Try reloading the page. If the problem persist contact us at support@cos.io.</div>');
+            $('#dashboard').append('<div class="text-danger text-center text-bigger">This is taking longer than normal. <br>  Try reloading the page. If the problem persist contact us at ' + COS_SUPPORT_EMAIL + '.</div>');
         }
     }, 10000);
 });

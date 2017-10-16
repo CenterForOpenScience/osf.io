@@ -801,7 +801,7 @@ class TestArchiverUtils(ArchiverTestCase):
             mimetype='html',
         )
         args_desk = dict(
-            to_addr=settings.SUPPORT_EMAIL,
+            to_addr=settings.OSF_SUPPORT_EMAIL,
             user=self.user,
             src=self.src,
             mail=mails.ARCHIVE_COPY_ERROR_DESK,
@@ -830,7 +830,7 @@ class TestArchiverUtils(ArchiverTestCase):
             mimetype='html',
         )
         args_desk = dict(
-            to_addr=settings.SUPPORT_EMAIL,
+            to_addr=settings.OSF_SUPPORT_EMAIL,
             user=self.user,
             src=self.src,
             mail=mails.ARCHIVE_SIZE_EXCEEDED_DESK,
