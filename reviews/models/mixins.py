@@ -177,6 +177,7 @@ class ReviewsMachine(Machine):
     def save_changes(self, ev):
         now = self.action.date_created if self.action is not None else timezone.now()
         should_publish = self.reviewable.in_public_reviews_state
+        self.reviewable.node._has_abandoned_preprint = False
         if should_publish and not self.reviewable.is_published:
             if not (self.reviewable.node.preprint_file and self.reviewable.node.preprint_file.node == self.reviewable.node):
                 raise ValueError('Preprint node is not a valid preprint; cannot publish.')
@@ -185,12 +186,12 @@ class ReviewsMachine(Machine):
             if not self.reviewable.subjects.exists():
                 raise ValueError('Preprint must have at least one subject to be published.')
             self.reviewable.date_published = now
-            self.reviewable.node._has_abandoned_preprint = False
             self.reviewable.is_published = True
             enqueue_postcommit_task(get_and_set_preprint_identifiers, (), {'preprint': self.reviewable}, celery=True)
         elif not should_publish and self.reviewable.is_published:
             self.reviewable.is_published = False
         self.reviewable.save()
+        self.reviewable.node.save()
 
     def resubmission_allowed(self, ev):
         return self.reviewable.provider.reviews_workflow == workflow.Workflows.PRE_MODERATION.value
