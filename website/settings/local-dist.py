@@ -41,7 +41,7 @@ EXTERNAL_EMBER_APPS = {
         'server': 'http://192.168.168.167:4300',
         'path': '/registries/'
     },
-    'quickfiles': {
+    'ember_osf_web': {
         'url': '/ember_osf_web/',
         'server': 'http://localhost:4201',
         'path': '/ember_osf_web/'
