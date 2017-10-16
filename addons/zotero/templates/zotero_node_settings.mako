@@ -60,20 +60,24 @@
         </p>
         <div data-bind="visible: toggleChangeLibraryText() === 'Close' & !libraryLoading()">
             <form data-bind="submit: saveLibrary">
-                <table class="table tb-table m-t-sm">
-                    <thead class="tb-row-titles">
-                        <tr>
-                            <th width="75%">Libraries</th>
-                            <th style="border-left: 1px solid #CCC;" width="25%">Select</th>
-                        </tr>
-                    </thead>
-                    <tbody class="tb-tbody" data-bind="foreach: libraries">
-                        <tr>
-                            <td data-bind="text: data['name']"></td>
-                            <td><input data-bind="attr: {value: id + ',' + data['name']}, checked: $root.selectedLibrary, event: { click: $root.onLibraryChange()}" name="library-group" type="radio"></td>
-                        </tr>
-                    </tbody>
-                </table>
+                <div class="tb-table m-t-sm">
+                    <div class="tb-row-titles">
+                        <div class="tb-th" data-tb-th-col="0" style="width: 75%">
+                            Libraries
+                        </div>
+                        <div class="tb-th" data-tb-th-col="1" style="width: 25%, border-left: 1px solid #CCC;">
+                            Select
+                        </div>
+                    </div>
+                    <div class="tb-tbody" data-bind="foreach: libraries">
+                        <div class="tb-row" style="width:100%;">
+                            <div class="tb-td td-title" style="width: 74%" data-bind="text: data['name']"></div>
+                            <div class="tb-td p-l-md" style="width: 25%">
+                                <input data-bind="attr: {value: id + ',' + data['name']}, checked: $root.selectedLibrary, event: { click: $root.onLibraryChange()}" name="library-group" type="radio">
+                            </div>
+                        </div>
+                    </div>
+                </div>
                 <div class="pull-right" data-bind="visible: selectedLibrary() && currentLibraryDisplay()">
                    <button class="btn btn-default" data-bind="click: cancelLibrarySelection">
                        Cancel
