@@ -17,6 +17,17 @@ class ZoteroCitationsProvider(CitationsProvider):
             id=data['data'].get('key'),
         )
 
+    def widget(self, node_addon):
+        """
+        Serializes setting needed to build the widget
+        library_id added specifically for zotero
+        """
+        ret = super(ZoteroCitationsProvider, self).widget(node_addon)
+        ret.update({
+            'library_id': node_addon.library_id
+        })
+        return ret
+
     def library_list(self, node_addon, user):
         """Returns a list of zotero group libraries"""
         return node_addon.api._fetch_libraries()

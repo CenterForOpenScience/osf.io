@@ -63,7 +63,8 @@ class TestConfigViews(ZoteroTestCase, views.OAuthCitationAddonConfigViewsTestCas
         res = self.app.get(url, auth=self.user.auth).json
 
         assert_false(res['complete'])
-        assert_equal(res['list_id'], 'None')
+        assert_equal(res['list_id'], None)
+        assert_equal(res['library_id'], 'Fake Library Key')
 
     def test_widget_view_complete(self):
         # JSON: everything a widget needs
@@ -88,7 +89,6 @@ class TestConfigViews(ZoteroTestCase, views.OAuthCitationAddonConfigViewsTestCas
         assert_equal(self.node_settings.list_id, 'Fake Key')
         assert_equal(self.node_settings.library_id, 'Fake Library Key')
         url = self.project.api_url_for('{0}_widget'.format(self.ADDON_SHORT_NAME))
-        import pdb; pdb.set_trace()
         res = self.app.get(url, auth=self.user.auth).json
         assert_true(res['complete'])
         assert_equal(res['list_id'], 'Fake Key')
