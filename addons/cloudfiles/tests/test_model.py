@@ -38,12 +38,12 @@ class TestNodeSettings(OAuthAddonNodeSettingsTestSuiteMixin, unittest.TestCase):
 
     ## Overrides ##
     def test_serialize_credentials(self):
-        self.user_settings.external_accounts[0].oauth_key = 'key-11'
-        self.user_settings.external_accounts[0].oauth_secret = 'secret-15'
         self.node_settings.folder_region = 'Narnia'
-        self.user_settings.save()
+        self.node_settings.save()
         credentials = self.node_settings.serialize_waterbutler_credentials()
-        expected = {'username': 'user-0', 'token': 'some-super-secret', 'region': 'Narnia'}
+        expected = {'username': self.user_settings.external_accounts[0].provider_id,
+                    'token': 'some-super-secret',
+                    'region': 'Narnia'}
         assert_equal(credentials, expected)
 
     def test_set_folder(self):
