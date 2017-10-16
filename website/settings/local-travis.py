@@ -90,3 +90,8 @@ POPULAR_LINKS_REGISTRATIONS = 'woooo'
 
 EZID_USERNAME = 'testfortravisnotreal'
 EZID_PASSWORD = 'testfortravisnotreal'
+
+if not DEV_MODE and not DEBUG_MODE:
+    SUPPORT_EMAIL = 'support@osf.io'
+else:
+    SUPPORT_EMAIL = 'support-test@osf.io'
