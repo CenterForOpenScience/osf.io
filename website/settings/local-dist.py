@@ -80,9 +80,10 @@ CELERY_RESULT_BACKEND = 'amqp://'
 
 USE_CDN_FOR_CLIENT_LIBS = False
 
-# When DEV_MODE == True and sendgrid is configured locally.
-# `send_mail` would only send emails to addresses included in this whitelist to prevent unintentional spamming
-SENDGRID_EMAIL_WHITELIST= ['']
+# WARNING: `SENDGRID_WHITELIST_MODE` should always be True in local dev env to prevent unintentional spamming.
+# Add specific email addresses to `SENDGRID_EMAIL_WHITELIST` for testing purposes.
+SENDGRID_WHITELIST_MODE = True
+SENDGRID_EMAIL_WHITELIST = []
 
 # Example of extending default settings
 # defaults.IMG_FMTS += ["pdf"]
