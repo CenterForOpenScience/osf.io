@@ -12,6 +12,7 @@ NO_DATA_ERROR = 'Request must include /data.'
 NO_TYPE_ERROR = 'Request must include /type.'
 NO_ID_ERROR = 'Request must include /data/id.'
 
+
 class JSONAPIParser(JSONParser):
     """
     Parses JSON-serialized data. Overrides media_type.
@@ -68,6 +69,13 @@ class JSONAPIParser(JSONParser):
 
         # For validating type and id for bulk delete:
         if is_list and request_method == 'DELETE':
+            if object_id is None:
+                raise JSONAPIException(source={'pointer': '/data/id'}, detail=NO_ID_ERROR)
+
+            if object_type is None:
+                raise JSONAPIException(source={'pointer': '/data/type'}, detail=NO_TYPE_ERROR)
+
+        if request_method == 'PATCH':
             if object_id is None:
                 raise JSONAPIException(source={'pointer': '/data/id'}, detail=NO_ID_ERROR)
 
