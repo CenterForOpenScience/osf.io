@@ -152,6 +152,9 @@ var FolderPickerViewModel = oop.defclass({
             tokenImportError: ko.pureComputed(function() {
                 return 'Error occurred while importing ' + addonSafeName + ' account.';
             }),
+            libraryImportError: ko.pureComputed(function() {
+                return 'Error occurred while importing ' + addonSafeName + ' group libraries.';
+            }),
             connectError: ko.pureComputed(function() {
                 return 'Could not connect to ' + addonSafeName + ' at this time. Please try again later.';
             })
@@ -419,6 +422,17 @@ var FolderPickerViewModel = oop.defclass({
             }
         });
     },
+    onImportLibraryError: function(xhr, status, error) {
+        var self = this;
+        self.changeMessage(self.messages.libraryImportError(), 'text-danger');
+        Raven.captureMessage('Failed to import ' + self.addonName + ' group libraries.', {
+            extra: {
+                xhr: xhr,
+                status: status,
+                error: error
+            }
+        });
+    },
     _importAuthPayload: function() {
         return {};
     },
@@ -432,7 +446,8 @@ var FolderPickerViewModel = oop.defclass({
         var self = this;
         self.libraryLoading(true);
         return $.getJSON(self.urls().libraries)
-            .done(self.onImportLibrarySuccess.bind(self));
+            .done(self.onImportLibrarySuccess.bind(self))
+            .fail(self.onImportLibraryError.bind(self));
     },
     onLibraryChange: function() {
         var self = this;
