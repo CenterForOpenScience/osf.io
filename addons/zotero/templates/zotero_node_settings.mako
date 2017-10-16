@@ -60,7 +60,7 @@
         </p>
         <div data-bind="visible: toggleChangeLibraryText() === 'Close' & !libraryLoading()">
             <form data-bind="submit: saveLibrary">
-                <div class="tb-table m-t-sm">
+                <div class="tb-table m-v-md" style="width:100%">
                     <div class="tb-row-titles">
                         <div class="tb-th" data-tb-th-col="0" style="width: 75%">
                             Libraries
@@ -70,9 +70,9 @@
                         </div>
                     </div>
                     <div class="tb-tbody" data-bind="foreach: libraries">
-                        <div class="tb-row" style="width:100%;">
-                            <div class="tb-td td-title" style="width: 74%" data-bind="text: data['name']"></div>
-                            <div class="tb-td p-l-md" style="width: 25%">
+                        <div class="tb-row" style="display:block;width:100%;">
+                            <div class="tb-td" style="width: 75%" data-bind="text: data['name']"></div>
+                            <div style="width:10%;" class="tb-td">
                                 <input data-bind="attr: {value: id + ',' + data['name']}, checked: $root.selectedLibrary, event: { click: $root.onLibraryChange()}" name="library-group" type="radio">
                             </div>
                         </div>
@@ -84,6 +84,7 @@
                    </button>
                    <input type="submit" class="btn btn-success" value="Save" />
                 </div>
+                <div class="clearfix"></div>
             </form>
         </div>
     </div>
