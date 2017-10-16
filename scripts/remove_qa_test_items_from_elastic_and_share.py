@@ -8,6 +8,7 @@ django.setup()
 from website.app import init_app
 from django.db.models import Q
 from osf.models import AbstractNode
+from website.project.tasks import update_node_share
 
 logger = logging.getLogger(__name__)
 
@@ -16,10 +17,11 @@ def remove_search_index(dry_run=True):
     if dry_run:
         logger.warn('Dry run mode.')
         for node in nodes:
-            logger.info('Removing {} with title \'{}\' from search index.'.format(node._id, node.title))
+            logger.info('Removing {} with title \'{}\' from search index and SHARE.'.format(node._id, node.title))
     else:
         for node in nodes:
             node.delete_search_entry()
+            update_node_share(node)
 
 if __name__ == '__main__':
     dry_run = '--dry' in sys.argv

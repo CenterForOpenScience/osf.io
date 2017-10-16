@@ -102,7 +102,7 @@ def format_node(node):
         }, {
             '@id': '_:789',
             '@type': 'project',
-            'is_deleted': not node.is_public or node.is_deleted or node.is_spammy,
+            'is_deleted': not node.is_public or node.is_deleted or node.is_spammy or 'qatest' in (node.tags.all() or [])
         }
     ]
 
