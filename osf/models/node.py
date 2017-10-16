@@ -1018,7 +1018,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
 
     # Override Taggable
     def on_tag_added(self, tag):
-            self.update_search()
+        self.update_search()
 
     def remove_tag(self, tag, auth, save=True):
         if not tag:
