@@ -3,9 +3,19 @@
     <p>Hello ${user.fullname},</p>
     <p>
         % if workflow == 'pre-moderation':
-            Your submission "${reviewable.node.title}", submitted to ${reviewable.provider.name} has ${'not been accepted. You may edit the ' + reviewable.provider.preprint_word + ' and resubmit, at which time it will becoming pending moderation.' if is_rejected else 'been accepted by the moderator and is now discoverable to others. '}
+            Your submission "${reviewable.node.title}", submitted to ${reviewable.provider.name} has
+            % if is_rejected
+                not been accepted. You may edit the ${reviewable.provider.preprint_word} and resubmit, at which time it will becoming pending moderation.
+            % else
+                been accepted by the moderator and is now discoverable to others.
+            % endif
         % elif workflow == 'post-moderation':
-            Your submission "${reviewable.node.title}", submitted to ${reviewable.provider.name} has ${'not been accepted and will be made private and not discoverable by others. You may edit the ' + reviewable.provider.preprint_word + ' and contact the moderator at ' + provider_support_email + ' to resubmit.' if is_rejected else 'been accepted by the moderator and remains discoverable to others. '}
+            Your submission "${reviewable.node.title}", submitted to ${reviewable.provider.name} has
+            % if is_rejected
+                not been accepted and will be made private and not discoverable by others. You may edit the ${reviewable.provider.preprint_word} and contact the moderator at ${provider_support_email} to resubmit.
+            % else
+                been accepted by the moderator and remains discoverable to others.
+            % endif
         % endif
 
         % if notify_comment:
@@ -28,8 +38,8 @@
     Sincerely,<br>
     Your ${reviewable.provider.name} and OSF teams
     <p>
-    Center for Open Science<br>
-    210 Ridge McIntire Road, Suite 500, Charlottesville, VA 22903-5083
+        Center for Open Science<br>
+        210 Ridge McIntire Road, Suite 500, Charlottesville, VA 22903-5083
     </p>
     <a href="https://github.com/CenterForOpenScience/cos.io/blob/master/PRIVACY_POLICY.md">Privacy Policy</a>
 </div>
