@@ -43,7 +43,6 @@ from addons.base import views as addon_views
 from website.discovery import views as discovery_views
 from website.conferences import views as conference_views
 from website.preprints import views as preprint_views
-from website.quickfiles import views as quickfiles_views
 from website.registries import views as registries_views
 from website.institutions import views as institution_views
 from website.notifications import views as notification_views
