@@ -89,6 +89,7 @@ class JSONAPIPagination(pagination.PageNumberPagination):
             ('meta', OrderedDict([
                 ('total', self.page.paginator.count),
                 ('per_page', self.page.paginator.per_page),
+                ('version', self.request.version),
             ])),
             ('links', OrderedDict([
                 ('self', self.get_self_real_link(url)),
