@@ -22,6 +22,7 @@ from website.project.decorators import (
     must_be_addon_authorizer,
 )
 
+
 logger = logging.getLogger(__name__)
 debug = logger.debug
 
