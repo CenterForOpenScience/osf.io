@@ -1018,9 +1018,6 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
 
     # Override Taggable
     def on_tag_added(self, tag):
-        if tag.name == 'qatest':
-            self.delete_search_entry()
-        else:
             self.update_search()
 
     def remove_tag(self, tag, auth, save=True):

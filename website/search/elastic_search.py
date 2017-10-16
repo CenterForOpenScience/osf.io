@@ -388,7 +388,7 @@ def update_node(node, index=None, bulk=False, async=False):
     for file_ in paginated(OsfStorageFile, Q(node=node)):
         update_file(file_, index=index)
 
-    if node.is_deleted or not node.is_public or node.archiving or (node.is_spammy and settings.SPAM_FLAGGED_REMOVE_FROM_SEARCH) or node.is_quickfiles:
+    if node.is_deleted or not node.is_public or node.archiving or (node.is_spammy and settings.SPAM_FLAGGED_REMOVE_FROM_SEARCH) or node.is_quickfiles or 'qatest' in node.tags.all().values_list('name', flat=True):
         delete_doc(node._id, node, index=index)
     else:
         category = get_doctype_from_node(node)
