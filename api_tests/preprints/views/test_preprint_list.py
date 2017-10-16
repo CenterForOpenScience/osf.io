@@ -6,7 +6,11 @@ from addons.github.models import GithubFile
 from api.base.settings.defaults import API_BASE
 from api_tests import utils as test_utils
 from api_tests.preprints.filters.test_filters import PreprintsListFilteringMixin
-from api_tests.preprints.views.test_preprint_list_mixin import PreprintIsPublishedListMixin, PreprintIsValidListMixin
+from api_tests.preprints.views.test_preprint_list_mixin import (
+    PreprintIsPublishedListMixin,
+    PreprintListMatchesPreprintDetailMixin,
+    PreprintIsValidListMixin,
+)
 from api_tests.reviews.mixins.filter_mixins import ReviewableFilterMixin
 from framework.auth.core import Auth
 from osf.models import PreprintService, Node
@@ -20,6 +24,7 @@ from osf_tests.factories import (
 from tests.base import ApiTestCase, capture_signals
 from website.project import signals as project_signals
 from website.util import permissions
+from reviews.workflow import States
 
 def build_preprint_create_payload(node_id=None, provider_id=None, file_id=None, attrs={}):
     payload = {
@@ -450,6 +455,278 @@ class TestPreprintIsPublishedList(PreprintIsPublishedListMixin):
     @pytest.fixture()
     def url(self):
         return '/{}preprints/?version=2.2&'.format(API_BASE)
+
+    @pytest.fixture()
+    def preprint_unpublished(self, user_admin_contrib, provider_one, project_public, subject):
+        return PreprintFactory(creator=user_admin_contrib, filename='mgla.pdf', provider=provider_one, subjects=[[subject._id]], project=project_public, is_published=False)
+
+    def test_unpublished_visible_to_admins(self, app, user_admin_contrib, preprint_unpublished, preprint_published, url):
+        res = app.get(url, auth=user_admin_contrib.auth)
+        assert len(res.json['data']) == 2
+        assert preprint_unpublished._id in [d['id'] for d in res.json['data']]
+
+    def test_unpublished_invisible_to_write_contribs(self, app, user_write_contrib, preprint_unpublished, preprint_published, url):
+        res = app.get(url, auth=user_write_contrib.auth)
+        assert len(res.json['data']) == 1
+        assert preprint_unpublished._id not in [d['id'] for d in res.json['data']]
+
+    def test_filter_published_false_write_contrib(self, app, user_write_contrib, preprint_unpublished, url):
+        res = app.get('{}filter[is_published]=false'.format(url), auth=user_write_contrib.auth)
+        assert len(res.json['data']) == 0
+
+
+class TestReviewsPendingPreprintIsPublishedList(PreprintIsPublishedListMixin):
+
+    @pytest.fixture()
+    def user_admin_contrib(self):
+        return AuthUserFactory()
+
+    @pytest.fixture()
+    def provider_one(self):
+        return PreprintProviderFactory(reviews_workflow='pre-moderation')
+
+    @pytest.fixture()
+    def provider_two(self, provider_one):
+        return provider_one
+
+    @pytest.fixture()
+    def project_public(self, user_admin_contrib, user_write_contrib):
+        project_public = ProjectFactory(creator=user_admin_contrib, is_public=True)
+        project_public.add_contributor(user_write_contrib, permissions=permissions.DEFAULT_CONTRIBUTOR_PERMISSIONS, save=True)
+        return project_public
+
+    @pytest.fixture()
+    def project_published(self, user_admin_contrib):
+        return ProjectFactory(creator=user_admin_contrib, is_public=True)
+
+    @pytest.fixture()
+    def url(self):
+        return '/{}preprints/?version=2.2&'.format(API_BASE)
+
+    @pytest.fixture()
+    def preprint_unpublished(self, user_admin_contrib, provider_one, project_public, subject):
+        return PreprintFactory(creator=user_admin_contrib, filename='mgla.pdf', provider=provider_one, subjects=[[subject._id]], project=project_public, is_published=False, reviews_state=States.PENDING.value)
+
+    def test_unpublished_visible_to_admins(self, app, user_admin_contrib, preprint_unpublished, preprint_published, url):
+        res = app.get(url, auth=user_admin_contrib.auth)
+        assert len(res.json['data']) == 2
+        assert preprint_unpublished._id in [d['id'] for d in res.json['data']]
+
+    def test_unpublished_visible_to_write_contribs(self, app, user_write_contrib, preprint_unpublished, preprint_published, url):
+        res = app.get(url, auth=user_write_contrib.auth)
+        assert len(res.json['data']) == 2
+        assert preprint_unpublished._id in [d['id'] for d in res.json['data']]
+
+    def test_filter_published_false_write_contrib(self, app, user_write_contrib, preprint_unpublished, url):
+        res = app.get('{}filter[is_published]=false'.format(url), auth=user_write_contrib.auth)
+        assert len(res.json['data']) == 1
+
+
+class TestReviewsInitialPreprintIsPublishedList(PreprintIsPublishedListMixin):
+
+    @pytest.fixture()
+    def user_admin_contrib(self):
+        return AuthUserFactory()
+
+    @pytest.fixture()
+    def provider_one(self):
+        return PreprintProviderFactory(reviews_workflow='pre-moderation')
+
+    @pytest.fixture()
+    def provider_two(self, provider_one):
+        return provider_one
+
+    @pytest.fixture()
+    def project_public(self, user_admin_contrib, user_write_contrib):
+        project_public = ProjectFactory(creator=user_admin_contrib, is_public=True)
+        project_public.add_contributor(user_write_contrib, permissions=permissions.DEFAULT_CONTRIBUTOR_PERMISSIONS, save=True)
+        return project_public
+
+    @pytest.fixture()
+    def project_published(self, user_admin_contrib):
+        return ProjectFactory(creator=user_admin_contrib, is_public=True)
+
+    @pytest.fixture()
+    def url(self):
+        return '/{}preprints/?version=2.2&'.format(API_BASE)
+
+    @pytest.fixture()
+    def preprint_unpublished(self, user_admin_contrib, provider_one, project_public, subject):
+        return PreprintFactory(creator=user_admin_contrib, filename='mgla.pdf', provider=provider_one, subjects=[[subject._id]], project=project_public, is_published=False, reviews_state=States.INITIAL.value)
+
+    def test_unpublished_visible_to_admins(self, app, user_admin_contrib, preprint_unpublished, preprint_published, url):
+        res = app.get(url, auth=user_admin_contrib.auth)
+        assert len(res.json['data']) == 2
+        assert preprint_unpublished._id in [d['id'] for d in res.json['data']]
+
+    def test_unpublished_invisible_to_write_contribs(self, app, user_write_contrib, preprint_unpublished, preprint_published, url):
+        res = app.get(url, auth=user_write_contrib.auth)
+        assert len(res.json['data']) == 1
+        assert preprint_unpublished._id not in [d['id'] for d in res.json['data']]
+
+    def test_filter_published_false_write_contrib(self, app, user_write_contrib, preprint_unpublished, url):
+        res = app.get('{}filter[is_published]=false'.format(url), auth=user_write_contrib.auth)
+        assert len(res.json['data']) == 0
+
+
+class TestPreprintIsPublishedListMatchesDetail(PreprintListMatchesPreprintDetailMixin):
+
+    @pytest.fixture()
+    def user_admin_contrib(self):
+        return AuthUserFactory()
+
+    @pytest.fixture()
+    def provider_one(self):
+        return PreprintProviderFactory()
+
+    @pytest.fixture()
+    def provider_two(self, provider_one):
+        return provider_one
+
+    @pytest.fixture()
+    def project_published(self, user_admin_contrib):
+        return ProjectFactory(creator=user_admin_contrib, is_public=True)
+
+    @pytest.fixture()
+    def project_public(self, user_admin_contrib, user_write_contrib):
+        project_public = ProjectFactory(creator=user_admin_contrib, is_public=True)
+        project_public.add_contributor(user_write_contrib, permissions=permissions.DEFAULT_CONTRIBUTOR_PERMISSIONS, save=True)
+        return project_public
+
+    @pytest.fixture()
+    def preprint_unpublished(self, user_admin_contrib, provider_one, project_public, subject):
+        return PreprintFactory(creator=user_admin_contrib, filename='mgla.pdf', provider=provider_one, subjects=[[subject._id]], project=project_public, is_published=False)
+
+    @pytest.fixture()
+    def list_url(self):
+        return '/{}preprints/?version=2.2&'.format(API_BASE)
+
+    @pytest.fixture()
+    def detail_url(self, preprint_unpublished):
+        return '/{}preprints/{}/'.format(API_BASE, preprint_unpublished._id)
+
+    def test_unpublished_visible_to_admins(self, app, user_admin_contrib, preprint_unpublished, preprint_published, list_url, detail_url):
+        res = app.get(list_url, auth=user_admin_contrib.auth)
+        assert len(res.json['data']) == 2
+        assert preprint_unpublished._id in [d['id'] for d in res.json['data']]
+
+        res = app.get(detail_url, auth=user_admin_contrib.auth)
+        assert res.json['data']['id'] == preprint_unpublished._id
+
+    def test_unpublished_invisible_to_write_contribs(self, app, user_write_contrib, preprint_unpublished, preprint_published, list_url, detail_url):
+        res = app.get(list_url, auth=user_write_contrib.auth)
+        assert len(res.json['data']) == 1
+        assert preprint_unpublished._id not in [d['id'] for d in res.json['data']]
+
+        res = app.get(detail_url, auth=user_write_contrib.auth, expect_errors=True)
+        assert res.status_code == 403
+
+
+class TestReviewsInitialPreprintIsPublishedListMatchesDetail(PreprintListMatchesPreprintDetailMixin):
+
+    @pytest.fixture()
+    def user_admin_contrib(self):
+        return AuthUserFactory()
+
+    @pytest.fixture()
+    def provider_one(self):
+        return PreprintProviderFactory(reviews_workflow='pre-moderation')
+
+    @pytest.fixture()
+    def provider_two(self, provider_one):
+        return provider_one
+
+    @pytest.fixture()
+    def project_published(self, user_admin_contrib):
+        return ProjectFactory(creator=user_admin_contrib, is_public=True)
+
+    @pytest.fixture()
+    def project_public(self, user_admin_contrib, user_write_contrib):
+        project_public = ProjectFactory(creator=user_admin_contrib, is_public=True)
+        project_public.add_contributor(user_write_contrib, permissions=permissions.DEFAULT_CONTRIBUTOR_PERMISSIONS, save=True)
+        return project_public
+
+    @pytest.fixture()
+    def preprint_unpublished(self, user_admin_contrib, provider_one, project_public, subject):
+        return PreprintFactory(creator=user_admin_contrib, filename='mgla.pdf', provider=provider_one, subjects=[[subject._id]], project=project_public, is_published=False, reviews_state=States.INITIAL.value)
+
+    @pytest.fixture()
+    def list_url(self):
+        return '/{}preprints/?version=2.2&'.format(API_BASE)
+
+    @pytest.fixture()
+    def detail_url(self, preprint_unpublished):
+        return '/{}preprints/{}/'.format(API_BASE, preprint_unpublished._id)
+
+    def test_unpublished_visible_to_admins(self, app, user_admin_contrib, preprint_unpublished, preprint_published, list_url, detail_url):
+        res = app.get(list_url, auth=user_admin_contrib.auth)
+        assert len(res.json['data']) == 2
+        assert preprint_unpublished._id in [d['id'] for d in res.json['data']]
+
+        res = app.get(detail_url, auth=user_admin_contrib.auth)
+        assert res.json['data']['id'] == preprint_unpublished._id
+
+    def test_unpublished_invisible_to_write_contribs(self, app, user_write_contrib, preprint_unpublished, preprint_published, list_url, detail_url):
+        res = app.get(list_url, auth=user_write_contrib.auth)
+        assert len(res.json['data']) == 1
+        assert preprint_unpublished._id not in [d['id'] for d in res.json['data']]
+
+        res = app.get(detail_url, auth=user_write_contrib.auth, expect_errors=True)
+        assert res.status_code == 403
+
+
+class TestReviewsPendingPreprintIsPublishedListMatchesDetail(PreprintListMatchesPreprintDetailMixin):
+
+    @pytest.fixture()
+    def user_admin_contrib(self):
+        return AuthUserFactory()
+
+    @pytest.fixture()
+    def provider_one(self):
+        return PreprintProviderFactory(reviews_workflow='pre-moderation')
+
+    @pytest.fixture()
+    def provider_two(self, provider_one):
+        return provider_one
+
+    @pytest.fixture()
+    def project_published(self, user_admin_contrib):
+        return ProjectFactory(creator=user_admin_contrib, is_public=True)
+
+    @pytest.fixture()
+    def project_public(self, user_admin_contrib, user_write_contrib):
+        project_public = ProjectFactory(creator=user_admin_contrib, is_public=True)
+        project_public.add_contributor(user_write_contrib, permissions=permissions.DEFAULT_CONTRIBUTOR_PERMISSIONS, save=True)
+        return project_public
+
+    @pytest.fixture()
+    def preprint_unpublished(self, user_admin_contrib, provider_one, project_public, subject):
+        return PreprintFactory(creator=user_admin_contrib, filename='mgla.pdf', provider=provider_one, subjects=[[subject._id]], project=project_public, is_published=False, reviews_state=States.PENDING.value)
+
+    @pytest.fixture()
+    def list_url(self):
+        return '/{}preprints/?version=2.2&'.format(API_BASE)
+
+    @pytest.fixture()
+    def detail_url(self, preprint_unpublished):
+        return '/{}preprints/{}/'.format(API_BASE, preprint_unpublished._id)
+
+    def test_unpublished_visible_to_admins(self, app, user_admin_contrib, preprint_unpublished, preprint_published, list_url, detail_url):
+        res = app.get(list_url, auth=user_admin_contrib.auth)
+        assert len(res.json['data']) == 2
+        assert preprint_unpublished._id in [d['id'] for d in res.json['data']]
+
+        res = app.get(detail_url, auth=user_admin_contrib.auth)
+        assert res.json['data']['id'] == preprint_unpublished._id
+
+    def test_unpublished_visible_to_write_contribs(self, app, user_write_contrib, preprint_unpublished, preprint_published, list_url, detail_url):
+        res = app.get(list_url, auth=user_write_contrib.auth)
+        assert len(res.json['data']) == 2
+        assert preprint_unpublished._id in [d['id'] for d in res.json['data']]
+
+        res = app.get(detail_url, auth=user_write_contrib.auth, expect_errors=True)
+        assert res.json['data']['id'] == preprint_unpublished._id
+
 
 class TestPreprintIsValidList(PreprintIsValidListMixin):
 
