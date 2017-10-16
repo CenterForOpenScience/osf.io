@@ -80,7 +80,7 @@ class GenericCitationViews(object):
         @must_be_valid_project
         @must_have_permission('write')
         def _get_config(auth, node_addon, **kwargs):
-            """ Returns the serialized node settigs,
+            """ Returns the serialized node settings,
             with a boolean indicator for credential validity.
             """
             provider = Provider()
