@@ -2,10 +2,10 @@
 import mock
 import pytest
 import urlparse
-
+from framework.auth import Auth
+from nose.tools import (assert_equal, assert_true, assert_false)
 from addons.base.tests import views
-from addons.base.tests.utils import MockFolder
-
+from addons.base.tests.utils import MockLibrary, MockFolder
 from addons.zotero.models import Zotero
 from addons.zotero.provider import ZoteroCitationsProvider
 from addons.zotero.serializer import ZoteroSerializer
@@ -29,6 +29,7 @@ class TestAuthViews(ZoteroTestCase, views.OAuthAddonAuthViewsTestCaseMixin, OsfT
 
 class TestConfigViews(ZoteroTestCase, views.OAuthCitationAddonConfigViewsTestCaseMixin, OsfTestCase):
     folder = MockFolder()
+    library = MockLibrary()
     Serializer = ZoteroSerializer
     client = Zotero
     citationsProvider = ZoteroCitationsProvider
@@ -42,3 +43,53 @@ class TestConfigViews(ZoteroTestCase, views.OAuthCitationAddonConfigViewsTestCas
             .format(self.external_account.provider_id))
         self.documentsApiUrl = urlparse.urljoin(API_URL, 'users/{}/items'
             .format(self.external_account.provider_id))
+
+    def test_widget_view_incomplete_library_set_only(self):
+        # JSON: everything a widget needs
+        # When library is set in zotero, folder is cleared.
+        self.citationsProvider().set_config(
+            self.node_settings,
+            self.user,
+            self.folder.json['id'],
+            self.folder.name,
+            Auth(self.user),
+            self.library.json['id'],
+            self.library.name
+        )
+        assert_false(self.node_settings.complete)
+        assert_equal(self.node_settings.list_id, None)
+        assert_equal(self.node_settings.library_id, 'Fake Library Key')
+        url = self.project.api_url_for('{0}_widget'.format(self.ADDON_SHORT_NAME))
+        res = self.app.get(url, auth=self.user.auth).json
+
+        assert_false(res['complete'])
+        assert_equal(res['list_id'], 'None')
+
+    def test_widget_view_complete(self):
+        # JSON: everything a widget needs
+        # Library must be set, then folder.
+        self.citationsProvider().set_config(
+            self.node_settings,
+            self.user,
+            self.folder.json['id'],
+            self.folder.name,
+            Auth(self.user),
+            self.library.json['id'],
+            self.library.name
+        )
+        self.citationsProvider().set_config(
+            self.node_settings,
+            self.user,
+            self.folder.json['id'],
+            self.folder.name,
+            Auth(self.user),
+        )
+        assert_true(self.node_settings.complete)
+        assert_equal(self.node_settings.list_id, 'Fake Key')
+        assert_equal(self.node_settings.library_id, 'Fake Library Key')
+        url = self.project.api_url_for('{0}_widget'.format(self.ADDON_SHORT_NAME))
+        import pdb; pdb.set_trace()
+        res = self.app.get(url, auth=self.user.auth).json
+        assert_true(res['complete'])
+        assert_equal(res['list_id'], 'Fake Key')
+        assert_equal(res['library_id'], 'Fake Library Key')

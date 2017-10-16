@@ -53,6 +53,23 @@ class ZoteroNodeSettingsTestCase(OAuthCitationsNodeSettingsTestSuiteMixin, unitt
     NodeSettingsClass = NodeSettings
     UserSettingsFactory = ZoteroUserSettingsFactory
 
+    def setUp(self):
+        super(ZoteroNodeSettingsTestCase, self).setUp()
+        self.user_settings.grant_oauth_access(
+            node=self.node,
+            external_account=self.external_account,
+            metadata={'folder': 'fake_folder_id', 'library': 'fake_library_id'}
+        )
+        self.user_settings.save()
+
+    def _node_settings_class_kwargs(self, node, user_settings):
+        return {
+            'user_settings': self.user_settings,
+            'list_id': 'fake_folder_id',
+            'library_id': 'fake_library_id',
+            'owner': self.node
+        }
+
 
 class ZoteroUserSettingsTestCase(OAuthAddonUserSettingTestSuiteMixin, unittest.TestCase):
     short_name = 'zotero'
