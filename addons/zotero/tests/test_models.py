@@ -2,7 +2,8 @@
 import pytest
 import unittest
 import mock
-from nose.tools import assert_equal
+from framework.auth import Auth
+from nose.tools import (assert_equal, assert_is_none, assert_true)
 
 from addons.base.tests.utils import MockFolder, MockLibrary
 
@@ -105,6 +106,86 @@ class ZoteroNodeSettingsTestCase(OAuthCitationsNodeSettingsTestSuiteMixin, unitt
             'library_id': 'fake_library_id',
             'owner': self.node
         }
+
+    def test_fetch_library_name_personal(self):
+        self.node_settings.library_id = 'personal'
+
+        assert_equal(
+            self.node_settings.fetch_library_name,
+            'My library'
+        )
+
+    def test_selected_library_name_empty(self):
+        self.node_settings.library_id = None
+
+        assert_equal(
+            self.node_settings.fetch_library_name,
+            ''
+        )
+
+    def test_selected_library_name(self):
+        # Mock the return from api call to get the library's name
+        mock_library = MockLibrary()
+        name = None
+
+        with mock.patch.object(self.OAuthProviderClass, '_library_metadata', return_value=mock_library):
+            name = self.node_settings.fetch_library_name
+
+        assert_equal(
+            name,
+            'Fake Library'
+        )
+
+    def test_set_library(self):
+        folder_id = 'fake-folder-id'
+        folder_name = 'fake-folder-name'
+        library_id = 'fake-library-id'
+        library_name = 'fake-library-name'
+
+        self.node_settings.clear_settings()
+        self.node_settings.save()
+        self.node_settings.list_id = folder_id
+        self.node_settings.save()
+        assert_equal(self.node_settings.list_id, folder_id)
+
+        provider = self.ProviderClass()
+
+        provider.set_config(
+            self.node_settings,
+            self.user,
+            folder_id,
+            folder_name,
+            Auth(user=self.user),
+            library_id,
+            library_name,
+        )
+
+        # instance was updated
+        assert_equal(
+            self.node_settings.library_id,
+            'fake-library-id',
+        )
+        # If library_id is being set, the folder_id is cleared.
+        assert_equal(
+            self.node_settings.list_id,
+            None,
+        )
+
+        # user_settings was updated
+        # TODO: the call to grant_oauth_access should be mocked
+        assert_true(
+            self.user_settings.verify_oauth_access(
+                node=self.node,
+                external_account=self.external_account,
+                metadata={'library': 'fake-library-id'}
+            )
+        )
+
+        log = self.node.logs.latest()
+        assert_equal(log.action, '{}_library_selected'.format(self.short_name))
+        assert_equal(log.params['library_id'], library_id)
+        assert_equal(log.params['library_name'], library_name)
+
 
 
 class ZoteroUserSettingsTestCase(OAuthAddonUserSettingTestSuiteMixin, unittest.TestCase):
