@@ -216,6 +216,7 @@ class ReviewsMachine(Machine):
         context['template'] = 'reviews_submission_status'
         context['notify_comment'] = not self.reviewable.provider.reviews_comments_private and self.action.comment
         context['is_rejected'] = self.action.to_state == workflow.States.REJECTED.value
+        context['was_pending'] = self.action.from_state == workflow.States.PENDING.value
         reviews_signals.reviews_email.send(context=context)
 
     def notify_edit_comment(self, ev):
@@ -230,9 +231,9 @@ class ReviewsMachine(Machine):
             'email_recipients': [contributor._id for contributor in self.reviewable.node.contributors],
             'reviewable': self.reviewable,
             'workflow': self.reviewable.provider.reviews_workflow,
-            'provider_url': self.reviewable.provider.domain if self.reviewable.provider.domain is not None else settings.DOMAIN + 'preprints/' + self.reviewable.provider._id,
-            'provider_contact_email': self.reviewable.provider.email_contact if self.reviewable.provider.email_contact is not None else 'contact@osf.io',
-            'provider_support_email': self.reviewable.provider.email_support if self.reviewable.provider.email_support is not None else 'support@osf.io',
+            'provider_url': self.reviewable.provider.domain if self.reviewable.provider.domain else settings.DOMAIN + 'preprints/' + self.reviewable.provider._id,
+            'provider_contact_email': self.reviewable.provider.email_contact if self.reviewable.provider.email_contact else 'contact@osf.io',
+            'provider_support_email': self.reviewable.provider.email_support if self.reviewable.provider.email_support else 'support@osf.io',
         }
 
 # Handle email notifications including: update comment, accept, and reject of submission.
