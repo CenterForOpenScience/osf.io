@@ -199,6 +199,8 @@ class NodeSettings(BaseCitationsNodeSettings):
         if self.library_id is None:
             return ''
         else:
+            if self.library_id == 'personal':
+                return 'My library'
             library = self.api._library_metadata(self.library_id)
             return library['data'].get('name') if library else 'My library'
 
