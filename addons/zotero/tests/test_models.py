@@ -3,11 +3,13 @@ import pytest
 import unittest
 import mock
 from framework.auth import Auth
-from nose.tools import (assert_equal, assert_is_none, assert_true)
+from nose.tools import (assert_equal, assert_is_none, assert_true, assert_false,
+    assert_is, assert_in)
 
 from addons.base.tests.utils import MockFolder, MockLibrary
 
 from pyzotero.zotero_errors import UserNotAuthorised
+from osf_tests.factories import ProjectFactory
 
 from addons.base.tests.models import (
     CitationAddonProviderTestSuiteMixin,
@@ -106,6 +108,57 @@ class ZoteroNodeSettingsTestCase(OAuthCitationsNodeSettingsTestSuiteMixin, unitt
             'library_id': 'fake_library_id',
             'owner': self.node
         }
+
+    def test_fields(self):
+        node_settings = self.NodeSettingsClass(owner=ProjectFactory(), user_settings=self.user_settings)
+        node_settings.save()
+        assert_true(node_settings.user_settings)
+        assert_equal(node_settings.user_settings.owner, self.user)
+        assert_true(hasattr(node_settings, 'folder_id'))
+        assert_true(hasattr(node_settings, 'library_id'))
+        assert_true(hasattr(node_settings, 'user_settings'))
+
+    def test_library_defaults_to_none(self):
+        node_settings = self.NodeSettingsClass(user_settings=self.user_settings)
+        node_settings.save()
+        assert_is_none(node_settings.library_id)
+
+    def test_clear_settings(self):
+        node_settings = self.NodeSettingsFactory()
+        node_settings.external_account = self.ExternalAccountFactory()
+        node_settings.user_settings = self.UserSettingsFactory()
+        node_settings.save()
+
+        node_settings.clear_settings()
+        assert_is_none(node_settings.folder_id)
+        assert_is_none(node_settings.library_id)
+
+    def test_delete(self):
+        assert_true(self.node_settings.user_settings)
+        assert_true(self.node_settings.folder_id)
+        old_logs = list(self.node.logs.all())
+        self.node_settings.delete()
+        self.node_settings.save()
+        assert_is(self.node_settings.user_settings, None)
+        assert_is(self.node_settings.folder_id, None)
+        assert_is(self.node_settings.library_id, None)
+        assert_true(self.node_settings.deleted)
+        assert_equal(list(self.node.logs.all()), list(old_logs))
+
+    def test_deauthorize(self):
+        assert_true(self.node_settings.user_settings)
+        assert_true(self.node_settings.folder_id)
+        self.node_settings.deauthorize(auth=Auth(self.user))
+        self.node_settings.save()
+        assert_is(self.node_settings.user_settings, None)
+        assert_is(self.node_settings.folder_id, None)
+        assert_is(self.node_settings.library_id, None)
+
+        last_log = self.node.logs.first()
+        assert_equal(last_log.action, '{0}_node_deauthorized'.format(self.short_name))
+        params = last_log.params
+        assert_in('node', params)
+        assert_in('project', params)
 
     def test_fetch_library_name_personal(self):
         self.node_settings.library_id = 'personal'
