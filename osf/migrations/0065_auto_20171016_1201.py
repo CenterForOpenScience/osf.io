@@ -9,11 +9,13 @@ from reviews.workflow import States
 
 # Make sure all submitted preprints have _has_abandoned_preprint=False.
 def set_abandoned_false_for_all_submitted_preprints(apps, schema_editor):
-    Preprint = apps.get_model('osf', 'PreprintService')
-    abandoned_submitted_preprints = Preprint.objects.filter(node___has_abandoned_preprint=True).exclude(reviews_state=States.INITIAL.value)
-    for preprint in abandoned_submitted_preprints.iterator():
-        preprint.node._has_abandoned_preprint=False
-        preprint.node.save()
+    Node = apps.get_model('osf', 'AbstractNode')
+    Node.objects.filter(
+        _has_abandoned_preprint=True,
+        preprints__isnull=False
+    ).exclude(
+        preprints__reviews_state=States.INITIAL.value
+    ).update(_has_abandoned_preprint=False)
 
 
 class Migration(migrations.Migration):
