@@ -28,6 +28,7 @@ class Zotero(CitationsOauthProvider):
     default_scopes = ['all']
 
     serializer = ZoteroSerializer
+    _library_client = None
 
     def handle_callback(self, response):
 
@@ -84,7 +85,9 @@ class Zotero(CitationsOauthProvider):
         the user's personal library.
         """
         if library_id and library_id != 'personal':
-            return zotero.Zotero(str(library_id), 'group', self.account.oauth_key)
+            if not self._library_client:
+                self._library_client = zotero.Zotero(str(library_id), 'group', self.account.oauth_key)
+            return self._library_client
         else:
             return self.client
 
