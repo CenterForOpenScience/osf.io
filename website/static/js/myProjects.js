@@ -118,7 +118,7 @@ function NodeFetcher(type, link, handleOrphans, regType, regLink) {
 
     // TODO Use sparse fields on preprints, users/contributors already added
     if (this.type === 'preprints') {
-        link = link ? link : $osf.apiV2Url('users/me/nodes/', { query : { 'filter[preprint]': true, 'include_unpublished_preprints': true, 'related_counts' : 'children', 'embed' : ['contributors', 'preprints'], 'fields[users]' : sparseUserFields, 'fields[contributors]' : sparseContributorFields}});
+        link = link ? link : $osf.apiV2Url('users/me/nodes/', { query : { 'filter[preprint]': true, 'related_counts' : 'children', 'embed' : ['contributors', 'preprints'], 'fields[users]' : sparseUserFields, 'fields[contributors]' : sparseContributorFields}});
     }
 
     this.nextLink = link ?
