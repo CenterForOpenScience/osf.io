@@ -4,16 +4,16 @@
     <p>
         % if workflow == 'pre-moderation':
             Your submission "${reviewable.node.title}", submitted to ${reviewable.provider.name} has
-            % if is_rejected
+            % if is_rejected:
                 not been accepted. You may edit the ${reviewable.provider.preprint_word} and resubmit, at which time it will becoming pending moderation.
-            % else
+            % else:
                 been accepted by the moderator and is now discoverable to others.
             % endif
         % elif workflow == 'post-moderation':
             Your submission "${reviewable.node.title}", submitted to ${reviewable.provider.name} has
-            % if is_rejected
+            % if is_rejected:
                 not been accepted and will be made private and not discoverable by others. You may edit the ${reviewable.provider.preprint_word} and contact the moderator at ${provider_support_email} to resubmit.
-            % else
+            % else:
                 been accepted by the moderator and remains discoverable to others.
             % endif
         % endif
