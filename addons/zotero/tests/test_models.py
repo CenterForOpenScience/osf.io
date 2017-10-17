@@ -1,6 +1,10 @@
 # -*- coding: utf-8 -*-
 import pytest
 import unittest
+import mock
+from nose.tools import assert_equal
+
+from addons.base.tests.utils import MockFolder, MockLibrary
 
 from pyzotero.zotero_errors import UserNotAuthorised
 
@@ -17,6 +21,7 @@ from addons.zotero.tests.factories import (
     ZoteroNodeSettingsFactory,
     ZoteroUserSettingsFactory,
 )
+
 from addons.zotero.provider import ZoteroCitationsProvider
 
 pytestmark = pytest.mark.django_db
@@ -40,6 +45,37 @@ class ZoteroProviderTestCase(CitationAddonProviderTestSuiteMixin, unittest.TestC
 
         assert(res.get('display_name') == 'Fake User Name')
         assert(res.get('provider_id') == 'Fake User ID')
+
+    def test_citation_lists_from_personal_library(self):
+        # mock_library_client doesn't need to specified b/c personal libraries
+        # use the client.
+        mock_client = mock.Mock()
+        mock_folders = [MockFolder()]
+        mock_list = mock.Mock()
+        mock_list.items = mock_folders
+        mock_client.folders.list.return_value = mock_list
+        mock_client.collections.return_value = mock_folders
+        self.provider._client = mock_client
+        mock_account = mock.Mock()
+        self.provider.account = mock_account
+        res = self.provider.citation_lists(self.ProviderClass()._extract_folder, "personal")
+        assert_equal(res[1]['name'], mock_folders[0].name)
+        assert_equal(res[1]['id'], mock_folders[0].json['id'])
+
+    def test_citation_lists_from_group_library(self):
+        mock_library_client = mock.Mock()
+        mock_folders = [MockFolder()]
+        mock_list = mock.Mock()
+        mock_list.items = mock_folders
+        mock_library_client.folders.list.return_value = mock_list
+        mock_library_client.collections.return_value = mock_folders
+        self.provider._library_client = mock_library_client
+        mock_account = mock.Mock()
+        self.provider.account = mock_account
+        res = self.provider.citation_lists(self.ProviderClass()._extract_folder, "Test Group")
+        assert_equal(res[1]['name'], mock_folders[0].name)
+        assert_equal(res[1]['id'], mock_folders[0].json['id'])
+
 
 
 class ZoteroNodeSettingsTestCase(OAuthCitationsNodeSettingsTestSuiteMixin, unittest.TestCase):
