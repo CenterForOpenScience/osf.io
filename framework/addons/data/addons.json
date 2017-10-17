@@ -324,32 +324,32 @@
         },
         "Cloud Files": {
             "Permissions": {
-                "status": "full",
-                "text": ""
+                "status": "partial",
+                "text": "Making an OSF project public or private is independent of making an Cloud Files container public or private. The OSF does not alter the permissions of linked Cloud Files containers."
             },
             "View / download file versions": {
-                "status": "full",
-                "text": ""
+                "status": "partial",
+                "text": "The Cloud Files add-on supports file versions if versioning is enabled for your Cloud Files container."
             },
             "Add / update files": {
                 "status": "full",
-                "text": ""
+                "text": "Adding/updating files in the project via OSF will be reflected in Cloud Files."
             },
             "Delete files": {
                 "status": "full",
-                "text": ""
+                "text": "Files deleted via OSF will be deleted in Cloud Files."
             },
             "Logs": {
                 "status": "full",
-                "text": ""
+                "text": "OSF keeps track of changes you make to your Cloud Files content through OSF, but not for changes made using Cloud Files directly."
             },
             "Forking": {
-                "status": "full",
-                "text": ""
+                "status": "partial",
+                "text": "Forking a project or component does not copy Cloud Files authorization unless the user forking the project is the same user who authorized the Cloud Files add-on in the source project being forked."
             },
             "Registering": {
                 "status": "full",
-                "text": ""
+                "text": "Cloud Files content will be registered, but version history will not be copied to the registration, unless done in seperate container."
             }
         }
     },
