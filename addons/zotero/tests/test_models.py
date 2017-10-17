@@ -192,3 +192,41 @@ class ZoteroUserSettingsTestCase(OAuthAddonUserSettingTestSuiteMixin, unittest.T
     short_name = 'zotero'
     full_name = 'Zotero'
     ExternalAccountFactory = ZoteroAccountFactory
+
+    def test_grant_oauth_access_metadata_with_library(self):
+        self.user_settings.grant_oauth_access(
+            node=self.node,
+            external_account=self.external_account,
+            metadata={'library': 'fake_library_id'}
+        )
+        self.user_settings.save()
+
+        assert self.user_settings.oauth_grants == {
+            self.node._id: {
+                self.external_account._id: {'library': 'fake_library_id'}
+            },
+        }
+
+    def test_verify_oauth_access_metadata_with_library(self):
+        self.user_settings.grant_oauth_access(
+            node=self.node,
+            external_account=self.external_account,
+            metadata={'library': 'fake_library_id'}
+        )
+        self.user_settings.save()
+
+        assert_true(
+            self.user_settings.verify_oauth_access(
+                node=self.node,
+                external_account=self.external_account,
+                metadata={'library': 'fake_library_id'}
+            )
+        )
+
+        assert_false(
+            self.user_settings.verify_oauth_access(
+                node=self.node,
+                external_account=self.external_account,
+                metadata={'library': 'another_library_id'}
+            )
+        )
