@@ -1930,6 +1930,10 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         except (AttributeError, KeyError):
             attributes = dict()
 
+        # Non-contributors can't fork private nodes
+        if not (self.is_public or self.has_permission(auth.user, 'read')):
+            raise PermissionsError('{0!r} does not have permission to template node {1!r}'.format(auth.user, self._id))
+
         new = self.clone()
         new._is_templated_clone = True  # This attribute may be read in post_save handlers
 
@@ -1992,11 +1996,19 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         new.save()
         # deal with the children of the node, if any
         for node_relation in self.node_relations.select_related('child').filter(child__is_deleted=False):
-            child = node_relation.child
-            if child.can_view(auth):
-                templated_child = child.use_as_template(auth, changes, top_level=False)
-                NodeRelation.objects.get_or_create(parent=new, child=templated_child,
-                                                   is_node_link=node_relation.is_node_link)
+            node_contained = node_relation.child
+            # template child nodes
+            if not node_relation.is_node_link:
+                try:  # Catch the potential PermissionsError above
+                    templated_child = node_contained.use_as_template(auth, changes, top_level=False)
+                except PermissionsError:
+                    pass
+                else:
+                    NodeRelation.objects.get_or_create(
+                        parent=new, child=templated_child,
+                        is_node_link=False
+                    )
+                    templated_child.save()  # Recompute root on save()
 
         return new
 

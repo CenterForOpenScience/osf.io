@@ -223,7 +223,7 @@
                     %if wiki:
                         <form id="selectWikiForm">
                             <div>
-                                <label>
+                                <label class="break-word">
                                     <input
                                             type="checkbox"
                                             name="${wiki.short_name}"

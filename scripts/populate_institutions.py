@@ -8,13 +8,12 @@ import urllib
 
 import django
 from django.db import transaction
-from modularodm import Q
 django.setup()
 
 from website import settings
 from website.app import init_app
-from osf.models import Institution, Node
-from website.search.search import update_institution, update_node
+from osf.models import Institution
+from website.search.search import update_institution
 
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO)

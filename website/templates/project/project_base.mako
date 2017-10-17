@@ -32,7 +32,7 @@
 </%def>
 
 <%def name="javascript_bottom()">
-
+<% from website import settings %>
 <script src="/static/vendor/citeproc-js/xmldom.js"></script>
 <script src="/static/vendor/citeproc-js/citeproc.js"></script>
 
@@ -98,7 +98,6 @@
             contributors: ${ node['contributors'] | sjson, n }
         }
     });
-
 </script>
 <script type="text/x-mathjax-config">
     MathJax.Hub.Config({
@@ -107,10 +106,14 @@
         skipStartupTypeset: true
     });
 </script>
-<script type="text/javascript"
-    src="/static/vendor/bower_components/MathJax/unpacked/MathJax.js?config=TeX-AMS-MML_HTMLorMML">
-</script>
 
+<script type="text/javascript"
+% if settings.USE_CDN_FOR_CLIENT_LIBS:
+    src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.2/MathJax.js?config=TeX-AMS-MML_HTMLorMML"
+% else:
+    src="/static/vendor/bower_components/MathJax/unpacked/MathJax.js?config=TeX-AMS-MML_HTMLorMML"
+% endif
+></script>
 
 <script src=${"/static/public/js/project-base-page.js" | webpack_asset}> </script>
 </%def>

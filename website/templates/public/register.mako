@@ -34,7 +34,7 @@
     %for provider in preprint_campaigns.keys():
         %if campaign == provider:
             <div class="text-center m-t-lg">
-                <h3>${preprint_campaigns[provider]['name'] | n} Preprints</h3><hr>
+                <h3>${preprint_campaigns[provider]['name'] | n}</h3><hr>
             </div>
         %endif
     %endfor
