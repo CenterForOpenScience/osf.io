@@ -211,6 +211,11 @@ class ReviewsMachine(Machine):
         )
         reviews_signals.reviews_email_submit.send(context=context)
 
+    def notify_resubmit(self, ev):
+        context = self.get_context()
+        context['template'] = 'reviews_resubmission_confirmation'
+        reviews_signals.reviews_email.send(context=context)
+
     def notify_accept_reject(self, ev):
         context = self.get_context()
         context['template'] = 'reviews_submission_status'
