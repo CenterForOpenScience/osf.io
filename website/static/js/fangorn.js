@@ -556,9 +556,7 @@ function doItemOp(operation, to, from, rename, conflict) {
         type: 'POST',
         beforeSend: $osf.setXHRAuthorization,
         url: waterbutler.buildTreeBeardFileOp(from, options),
-        headers: {
-            'Content-Type': 'Application/json'
-        },
+        contentType: 'application/json',
         data: JSON.stringify(moveSpec)
     }).done(function(resp, _, xhr) {
         if (to.data.provider === from.provider) {
@@ -1597,7 +1595,7 @@ function expandStateLoad(item) {
         addonList = [],
         i;
 
-    if (item.depth > 1 && !item.data.isAddonRoot && item.children.length == 0 && item.open) {
+    if (item.depth > 1 && !item.data.isAddonRoot && item.children.length === 0 && item.open) {
         m.render(icon.get(0), tbOptions.resolveRefreshIcon());
         $osf.ajaxJSON(
             'GET',

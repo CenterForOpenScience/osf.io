@@ -86,19 +86,21 @@ class AbstractNodeQuerySet(GuidMixinQuerySet):
                 SELECT
                     parent_id,
                     child_id,
-                    1 AS LEVEL
+                    1 AS LEVEL,
+                    ARRAY[parent_id] as pids
                 FROM %s
                 %s
-                WHERE is_node_link IS FALSE %s
+                WHERE is_node_link IS FALSE AND parent_id = %s %s
                 UNION ALL
                 SELECT
-                    s.parent_id,
-                    d.child_id,
-                    d.level + 1
+                    d.parent_id,
+                    s.child_id,
+                    d.level + 1,
+                    d.pids || s.parent_id
                 FROM descendants AS d
                     JOIN %s AS s
-                    ON d.parent_id = s.child_id
-                WHERE s.is_node_link IS FALSE
+                    ON d.child_id = s.parent_id
+                WHERE s.is_node_link IS FALSE AND %s = ANY(pids)
                 ) SELECT array_agg(DISTINCT child_id)
                 FROM descendants
                 WHERE parent_id = %s;
@@ -108,8 +110,10 @@ class AbstractNodeQuerySet(GuidMixinQuerySet):
                 cursor.execute(sql, [
                     node_relation_table,
                     AsIs('LEFT JOIN osf_abstractnode ON {}.child_id = osf_abstractnode.id'.format(node_relation_table) if active else ''),
+                    root.pk,
                     AsIs('AND osf_abstractnode.is_deleted IS FALSE' if active else ''),
                     node_relation_table,
+                    root.pk,
                     root.pk])
                 row = cursor.fetchone()[0]
                 if not row:
@@ -775,8 +779,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
     def get_aggregate_logs_query(self, auth):
         return (
             (
-                Q(node_id__in=list(Node.objects.get_children(self).can_view(user=auth.user, private_link=auth.private_link).values_list('id', flat=True))) |
-                Q(node_id=self.id)
+                Q(node_id__in=list(Node.objects.get_children(self).can_view(user=auth.user, private_link=auth.private_link).values_list('id', flat=True)) + [self.id])
             ) & Q(should_hide=False)
         )
 
@@ -1551,18 +1554,21 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
               SELECT
                 parent_id,
                 child_id,
-                1 AS LEVEL
+                1 AS LEVEL,
+                ARRAY[child_id] as cids
               FROM %s
-              WHERE is_node_link IS FALSE
+              WHERE is_node_link IS FALSE and child_id = %s
               UNION ALL
               SELECT
                 S.parent_id,
                 D.child_id,
-                D.level + 1
+                D.level + 1,
+                D.cids || S.child_id
               FROM ascendants AS D
                 JOIN %s AS S
                   ON D.parent_id = S.child_id
               WHERE S.is_node_link IS FALSE
+                AND %s = ANY(cids)
             ) SELECT parent_id
               FROM ascendants
               WHERE child_id = %s
@@ -1571,7 +1577,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         """
         with connection.cursor() as cursor:
             node_relation_table = AsIs(NodeRelation._meta.db_table)
-            cursor.execute(sql, [node_relation_table, node_relation_table, self.pk])
+            cursor.execute(sql, [node_relation_table, self.pk, node_relation_table, self.pk, self.pk])
             res = cursor.fetchone()
             if res:
                 return AbstractNode.objects.get(pk=res[0])
@@ -1924,6 +1930,10 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         except (AttributeError, KeyError):
             attributes = dict()
 
+        # Non-contributors can't fork private nodes
+        if not (self.is_public or self.has_permission(auth.user, 'read')):
+            raise PermissionsError('{0!r} does not have permission to template node {1!r}'.format(auth.user, self._id))
+
         new = self.clone()
         new._is_templated_clone = True  # This attribute may be read in post_save handlers
 
@@ -1986,11 +1996,19 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         new.save()
         # deal with the children of the node, if any
         for node_relation in self.node_relations.select_related('child').filter(child__is_deleted=False):
-            child = node_relation.child
-            if child.can_view(auth):
-                templated_child = child.use_as_template(auth, changes, top_level=False)
-                NodeRelation.objects.get_or_create(parent=new, child=templated_child,
-                                                   is_node_link=node_relation.is_node_link)
+            node_contained = node_relation.child
+            # template child nodes
+            if not node_relation.is_node_link:
+                try:  # Catch the potential PermissionsError above
+                    templated_child = node_contained.use_as_template(auth, changes, top_level=False)
+                except PermissionsError:
+                    pass
+                else:
+                    NodeRelation.objects.get_or_create(
+                        parent=new, child=templated_child,
+                        is_node_link=False
+                    )
+                    templated_child.save()  # Recompute root on save()
 
         return new
 

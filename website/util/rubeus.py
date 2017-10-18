@@ -169,7 +169,7 @@ class NodeFileCollector(object):
         root = self._get_nodes(self.node)
         return [root]
 
-    def _get_node_name(self, node, can_view):
+    def _get_node_name(self, node, can_view, is_pointer=False):
         """Input node object, return the project name to be display.
         """
         if can_view:
@@ -178,7 +178,7 @@ class NodeFileCollector(object):
             node_name = u'Private Registration'
         elif node.is_fork:
             node_name = u'Private Fork'
-        elif is_node_relation:
+        elif is_pointer:
             node_name = u'Private Link'
         else:
             node_name = u'Private Component'
@@ -192,7 +192,7 @@ class NodeFileCollector(object):
 
         return {
             # TODO: Remove safe_unescape_html when mako html safe comes in
-            'name': self._get_node_name(node, can_view),
+            'name': self._get_node_name(node, can_view, is_pointer),
             'category': node.category,
             'kind': FOLDER,
             'permissions': {

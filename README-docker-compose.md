@@ -88,16 +88,13 @@
 
 ## Docker Sync
 
-Ubuntu: Skip install of docker-sync, fswatch, and unison. instead...
+Ubuntu: Skip install of docker-sync. instead...
         `cp docker-compose.linux.yml docker-compose.override.yml`
         Ignore future steps that start, stop, or wait for docker-sync
 
-1. Install Docker Sync 0.3.5
-  - Mac: `$ gem install docker-sync -v 0.3.5`
+1. Install Docker Sync
+  - Mac: `$ gem install docker-sync`
   - [Instructions](http://docker-sync.io)
-
-1. Install fswatch and unison
-  - Mac: `$ brew install fswatch unison`
 
 1. Running Docker Sync
 
@@ -105,7 +102,7 @@ Ubuntu: Skip install of docker-sync, fswatch, and unison. instead...
 
     **IMPORTANT**: docker-sync may ask you to upgrade to a newer version. Type `n` to decline the upgrade then rerun the `start` command.
 
-  - `$ docker-sync start --daemon`
+  - `$ docker-sync start`
 
 1. OPTIONAL: If you have problems trying installing macfsevents
   - `$ sudo pip install macfsevents`
@@ -213,7 +210,7 @@ The OSF is supported by several services which function independently from the m
       wb-sync:
         src: '../waterbutler'
         dest: '/code'
-        sync_strategy: 'unison'
+        sync_strategy: 'native_osx'
         sync_excludes_type: 'Name'
         sync_excludes: ['.DS_Store', '*.pyc', '*.tmp', '.git', '.idea']
         watch_excludes: ['.*\.DS_Store', '.*\.pyc', '.*\.tmp', '.*/\.git', '.*/\.idea']
