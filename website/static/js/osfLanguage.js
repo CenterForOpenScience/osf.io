@@ -1,5 +1,5 @@
-var SUPPORT_EMAIL = 'support@osf.io';
-var SUPPORT_LINK = '<a href="mailto:' + SUPPORT_EMAIL + '">' + SUPPORT_EMAIL +'</a>';
+var OSF_SUPPORT_EMAIL = window.contextVars.osfSupportEmail;
+var SUPPORT_LINK = '<a href="mailto:' + OSF_SUPPORT_EMAIL + '">' + OSF_SUPPORT_EMAIL +'</a>';
 
 var REFRESH_OR_SUPPORT = 'Please refresh the page and try again or contact ' + SUPPORT_LINK + ' if the problem persists.';
 
@@ -10,7 +10,7 @@ module.exports = {
     makePublic: null,
     makePrivate: null,
     registrations: {
-        registrationFailed: 'Registration failed. If this problem persists, please contact ' + SUPPORT_EMAIL + '.',
+        registrationFailed: 'Registration failed. If this problem persists, please contact ' + OSF_SUPPORT_EMAIL + '.',
         invalidEmbargoTitle: 'Invalid embargo end date',
         invalidEmbargoMessage: 'Please choose a date more than two days, but less than four years, from today.',
         registerConfirm: 'Before you continue...',
