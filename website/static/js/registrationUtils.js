@@ -1389,7 +1389,7 @@ RegistrationManager.prototype.init = function() {
                         self.selectedSchema(preregSchema);
                         $('#newDraftRegistrationForm').submit();
                     });
-                }).always($osf.unblock);   
+                }).always($osf.unblock);
             }
         }
     }
