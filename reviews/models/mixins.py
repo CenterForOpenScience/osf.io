@@ -21,7 +21,7 @@ from website import settings
 from osf.models import OSFUser
 
 from website.mails import mails
-from website.notifications.emails import notify
+from website.notifications import emails
 from website.reviews import signals as reviews_signals
 
 
@@ -246,7 +246,7 @@ def reviews_notification(self, context, node):
     email_recipients.remove(user._id)  # remove email sender
     for user_id in email_recipients:
         context['target_user'] = OSFUser.load(user_id)
-        notify(event='global_reviews', user=auth.user, node=node, timestamp=time_now, **context)
+        emails.notify(event='global_reviews', user=auth.user, node=node, timestamp=time_now, **context)
 
 # Handle email notifications for a new submission.
 @reviews_signals.reviews_email_submit.connect
