@@ -1,29 +1,25 @@
 <%inherit file="../base.mako"/>
 
-<%def name="og_description()">
-
+<%def name="description_meta()">
     %if node['description']:
         ${sanitize.strip_html(node['description']) + ' '}
     %endif
     Hosted on the Open Science Framework
-
-
 </%def>
 
-<!-- Dublin Core (DC) and Highwire metadata tags-->
-<%def name="dc_title()">
+<%def name="title_meta()">
     %if node['title']:
         ${node['title']}
     %endif
 </%def>
 
-<%def name="dc_date()">
+<%def name="date_meta()">
     %if node['date_modified']:
         ${node['date_modified'].split('T')[0]}
     %endif
 </%def>
 
-<%def name="dc_identifier()">
+<%def name="identifier_meta()">
     <%
         identifiers = {}
         if node['identifiers']:
@@ -35,13 +31,13 @@
     %>
 </%def>
 
-<%def name="dc_license()">
+<%def name="license_meta()">
     %if node['license']:
         ${sanitize.strip_html(node['license']['name'])}
     %endif
 </%def>
 
-<%def name="dc_tags()">
+<%def name="keywords_meta()">
     %if node['tags']:
         <%
             return [tag for tag in node['tags']] + [node['category']]
@@ -49,7 +45,7 @@
     %endif
 </%def>
 
-<%def name="dc_authors()">
+<%def name="authors_meta()">
     %if node['contributors'] and not node['anonymous']:
         <%
             return [contrib['fullname'] for contrib in node['contributors'] if isinstance(contrib, dict)]
@@ -57,7 +53,7 @@
     %endif
 </%def>
 
-<%def name="dc_institutions()">
+<%def name="institutions_meta()">
     %if node['institutions']:
         <%
             return [ins['name'] for ins in node['institutions'] if isinstance(ins, dict)]
@@ -65,7 +61,7 @@
     %endif
 </%def>
 
-<%def name="dc_relations()">
+<%def name="relations_meta()">
     <%
         relations = []
         relations.extend([
@@ -78,10 +74,27 @@
     %>
 </%def>
 
-<!-- End: Dublin Core (DC) and Highwire metadata tags-->
+<%def name="category_meta()">
+    %if node['category']:
+        ${node['category']}
+    %endif
+</%def>
+
+<%def name="url_meta()">
+    %if node['absolute_url']:
+        ${node['absolute_url']}
+    %endif
+</%def>
+
+<%def name="image_meta()">
+    <%
+        from website import settings
+        return settings.DOMAIN.rstrip('/') + settings.PREPRINTS_ASSETS + 'osf/osf-dark.png'
+    %>
+</%def>
 
 
-## To change the postion of alert on project pages, override alert()
+## To change the position of alert on project pages, override alert()
 <%def name="alert()"> </%def>
 
 <%def name="content()">

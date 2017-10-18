@@ -34,39 +34,56 @@
     </script>
     % endif
 
-    <!-- Dublin Core (DC), Highwire Press metadata tags-->
-    <meta name="dc.title" content="${self.dc_title()}" />
-    %if self.dc_identifier():
-        <meta name="citation_doi" content="${self.dc_identifier()['doi']}" />
-        <meta name="dc.identifier" content="${self.dc_identifier()['doi']}" />
-        <meta name="dc.identifier" content="${self.dc_identifier()['ark']}" />
+    <!-- Metadata tags-->
+    <meta name="citation_title" content="${self.title_meta()}" />
+    %if self.identifier_meta():
+        <meta name="citation_doi" content="${self.identifier_meta()['doi']}" />
+        <meta name="dc.identifier" content="${self.identifier_meta()['doi']}" />
+        <meta name="dc.identifier" content="${self.identifier_meta()['ark']}" />
     %endif
-        <meta name="citation_publisher" content="Open Science Framework" />
-    %for author in self.dc_authors()[:10]:
-        <meta name="dc.creator" content="${author}" />
-    %endfor
-    %for institution in self.dc_institutions()[:10]:
+    <meta name="citation_publisher" content="Open Science Framework" />
+    %for institution in self.institutions_meta()[:10]:
         <meta name="citation_author_institution" content="${institution}" />
     %endfor
-    %for tag in self.dc_tags()[:10]:
-        <meta name="citation_keywords" content="${tag}" />
-    %endfor
-    %for rel in self.dc_relations():
+    %for rel in self.relations_meta():
         %if rel:
             <meta name="dc_relation" scheme="DCTERMS.URI" content="${rel}" />
         %endif
     %endfor
-    <meta name="dc.abstract" content="${self.og_description()}" />
-    <meta name="dc.license" content="${self.dc_license()}" />
-    <meta name="dc.date" content="${self.dc_date()}" />
+    <meta name="dc.abstract" content="${self.description_meta()}" />
+    <meta name="dc.license" content="${self.license_meta()}" />
+    <meta name="dc.date" content="${self.date_meta()}" />
     <meta name="dc.publisher" content="Open Science Framework" />
     <meta name="dc.language" content="en" />
 
     <!-- Facebook display -->
-    <meta name="og:image" content="https://cos.io/static/img/cos_center_logo_small.png"/>
-    <meta name="og:title" content="${self.title()}"/>
-    <meta name="og:ttl" content="3"/>
-    <meta name="og:description" content="${self.og_description()}"/>
+    <meta property="og:ttl" content="3" />
+    <meta property="og:site_name" content="Open Science Framework" />
+    <meta property="og:url" content="${self.url_meta()}" />
+    <meta property="og:title" content="${self.title_meta()}" />
+    <meta property="og:description" content="${self.description_meta()}" />
+    <meta property="og:image" content="${self.image_meta()}" />
+    <meta property="og:image:type" content="image/png" />
+    <meta property="og:image:width" content="363" />
+    <meta property="og:image:height" content="242" />
+    <meta property="og:image:alt" content="Open Science Framework" />
+    <meta property="article:modified_time" content="${self.date_meta()}" />
+    <meta property="article:section" content="${self.category_meta()}" />
+    <meta property="og:type" content="article"/>
+    %for author in self.authors_meta()[:10]:
+        <meta name="dc.creator" content="${author}" />
+        <meta name="citation_author" content="${author}" />
+        <meta property="article:author" content="${author}" />
+    %endfor
+    %for tag in self.keywords_meta()[:10]:
+        <meta name="citation_keywords" content="${tag}" />
+        <meta property="article:tag" content="${tag}" />
+    %endfor
+
+    <!-- Twitter display -->
+    <meta name="twitter:card" content="summary">
+    <meta name="twitter:site" content="@OSFramework">
+    <meta name="twitter:creator" content="@OSFramework">
 
     ${includes_top()}
     ${self.stylesheets()}
@@ -248,43 +265,55 @@
     ### The page description ###
 </%def>
 
-<%def name="og_description()">
+<!-- Metadata tags-->
+<%def name="description_meta()">
     Hosted on the Open Science Framework
 </%def>
 
-<!-- Dublin Core (DC) metadata tags-->
-<%def name="dc_title()">
+<%def name="title_meta()">
     ### The project title ###
 </%def>
 
-<%def name="dc_institutions()">
+<%def name="institutions_meta()">
   ### The list of affiliated institutions ###
 </%def>
 
-<%def name="dc_authors()">
+<%def name="authors_meta()">
     ### The list of project contributors ###
 </%def>
 
-<%def name="dc_date()">
+<%def name="date_meta()">
     ### The project last modified data.
 </%def>
 
-<%def name="dc_identifier()">
+<%def name="identifier_meta()">
     ### The project doi ###
 </%def>
 
-<%def name="dc_license()">
+<%def name="license_meta()">
     ### The project license ###
 </%def>
 
-<%def name="dc_tags()">
+<%def name="keywords_meta()">
     ### The project tags ###
 </%def>
 
-<%def name="dc_relations()">
+<%def name="relations_meta()">
     ### The list of url for related nodes ###
 </%def>
-<!-- End: Dublin Core (DC) metadata tags-->
+
+<%def name="category_meta()">
+    ### The project category ###
+</%def>
+
+<%def name="url_meta()">
+    ### The project canonical url ###
+</%def>
+
+<%def name="image_meta()">
+    ### The project image url ###
+</%def>
+<!--Metadata tags-->
 
 <%def name="stylesheets()">
     ### Extra css for this page. ###
