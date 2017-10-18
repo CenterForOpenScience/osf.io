@@ -86,6 +86,6 @@ class NotificationDigest(ObjectIDMixin, BaseModel):
     timestamp = NonNaiveDateTimeField()
     send_type = models.CharField(max_length=50, db_index=True, validators=[validate_subscription_type, ])
     event = models.CharField(max_length=50)
-    message = models.CharField(max_length=10000)
+    message = models.TextField()
     # TODO: Could this be a m2m with or without an order field?
     node_lineage = ArrayField(models.CharField(max_length=5))

@@ -175,9 +175,10 @@ class ReviewsMachine(Machine):
         self.reviewable.date_last_transitioned = now
 
     def save_changes(self, ev):
+        node = self.reviewable.node
+        node._has_abandoned_preprint = False
         now = self.action.date_created if self.action is not None else timezone.now()
         should_publish = self.reviewable.in_public_reviews_state
-        self.reviewable.node._has_abandoned_preprint = False
         if should_publish and not self.reviewable.is_published:
             if not (self.reviewable.node.preprint_file and self.reviewable.node.preprint_file.node == self.reviewable.node):
                 raise ValueError('Preprint node is not a valid preprint; cannot publish.')
@@ -191,7 +192,7 @@ class ReviewsMachine(Machine):
         elif not should_publish and self.reviewable.is_published:
             self.reviewable.is_published = False
         self.reviewable.save()
-        self.reviewable.node.save()
+        node.save()
 
     def resubmission_allowed(self, ev):
         return self.reviewable.provider.reviews_workflow == workflow.Workflows.PRE_MODERATION.value
@@ -199,7 +200,6 @@ class ReviewsMachine(Machine):
     def notify_submit(self, ev):
         context = self.get_context()
         context['referrer'] = ev.kwargs.get('user')
-        context['template'] = 'reviews_submission_confirmation'
         user = ev.kwargs.get('user')
         auth = Auth(user)
         self.reviewable.node.add_log(
@@ -266,12 +266,16 @@ def reviews_notification(self, context):
 # Handle email notifications for a new submission.
 @reviews_signals.reviews_email_submit.connect
 def reviews_submit_notification(self, context):
-    template = context['template']
     event_type = utils.find_subscription_type('global_reviews')
     for user_id in context['email_recipients']:
         user = OSFUser.load(user_id)
         user_subscriptions = get_user_subscriptions(user, event_type)
         context['no_future_emails'] = user_subscriptions['none']
         context['is_creator'] = user == context.get('reviewable').node.creator
-        email = mails.Mail(template, subject='Confirmation of your submission to {provider}'.format(provider=context.get('reviewable').provider.name))
-        mails.send_mail(user.username, email, mimetype='html', user=user, **context)
+        mails.send_mail(
+            user.username,
+            getattr(mails, 'REVIEWS_SUBMISSION_CONFIRMATION')(context.get('reviewable').provider.name),
+            mimetype='html',
+            user=user,
+            **context
+        )
