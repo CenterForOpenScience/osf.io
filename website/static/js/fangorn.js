@@ -1590,31 +1590,46 @@ function _loadTopLevelChildren() {
  * @this Treebeard.controller
  * @private
  */
-var NO_AUTO_EXPAND_PROJECTS = ['ezcuj', 'ecmz4', 'w4wvg', 'sn64d'];
 function expandStateLoad(item) {
     var tb = this,
+        icon = $('.tb-row[data-id="' + item.id + '"]').find('.tb-toggle-icon'),
+        toggleIcon = tbOptions.resolveToggle(item),
+        addonList = [],
         i;
-    if (item.children.length > 0 && item.depth === 1) {
-        // NOTE: On the RPP *only*: Load the top-level project's OSF Storage
-        // but do NOT lazy-load children in order to save hundreds of requests.
-        // TODO: We might want to do this for every project, but that's TBD.
-        // /sloria
-        if (window.contextVars && window.contextVars.node && NO_AUTO_EXPAND_PROJECTS.indexOf(window.contextVars.node.id) > -1) {
-            tb.updateFolder(null, item.children[0]);
-        } else {
-            for (i = 0; i < item.children.length; i++) {
-                tb.updateFolder(null, item.children[i]);
+
+    if (item.depth > 1 && !item.data.isAddonRoot && item.children.length == 0 && item.open) {
+        m.render(icon.get(0), tbOptions.resolveRefreshIcon());
+        $osf.ajaxJSON(
+            'GET',
+            '/api/v1/project/' + item.data.nodeID + '/files/grid/'
+        ).done(function(xhr) {
+            var data = xhr.data[0].children;
+            for (i = 0; i < data.length; i++) {
+                var child = tb.buildTree(data[i], item);
+                if (child.data.isAddonRoot) {
+                    addonList.push(child);
+                }
+                item.add(child);
             }
-        }
-    }
-    if (item.children.length > 0 && item.depth === 2) {
-        for (i = 0; i < item.children.length; i++) {
-            if (item.children[i].data.isAddonRoot || item.children[i].data.addonFullName === 'OSF Storage' ) {
-                tb.updateFolder(null, item.children[i]);
+
+            item.open = true;
+            tb.redraw();
+
+            for (i=0; i < addonList.length; ++i) {
+                tb.toggleFolder(tb.returnIndex(addonList[i].id));
             }
-        }
+
+            m.render(icon.get(0), tbOptions.resolveToggle(item));
+            tb.redraw();
+
+        }).fail(function(xhr) {
+            item.notify.update('Unable to retrieve components.', 'danger', undefined, 3000);
+            item.open = false;
+        });
     }
-        $('.fangorn-toolbar-icon').tooltip();
+
+    $('.fangorn-toolbar-icon').tooltip();
+
 }
 
 /**
