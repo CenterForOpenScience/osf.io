@@ -14,6 +14,7 @@ var $osf = require('js/osfHelpers');
 var iconmap = require('js/iconmap');
 var NodeActions = require('js/project.js');
 var NodesPrivacy = require('js/nodesPrivacy').NodesPrivacy;
+var OSF_SUPPORT_EMAIL = window.contextVars.osfSupportEmail;
 
 /**
  * The ProjectViewModel, scoped to the project header.
@@ -227,7 +228,7 @@ var ProjectViewModel = function(data, options) {
             var message = 'We could not create the identifier at this time. ' +
                 'The DOI/ARK acquisition service may be down right now. ' +
                 'Please try again soon and/or contact ' +
-                '<a href="mailto: support@osf.io">support@osf.io</a>';
+                '<a href="mailto:' + OSF_SUPPORT_EMAIL + '">' + OSF_SUPPORT_EMAIL + '</a>';
             $osf.growl('Error', message, 'danger');
             Raven.captureMessage('Could not create identifiers', {extra: {url: url, status: xhr.status}});
         }).always(function() {

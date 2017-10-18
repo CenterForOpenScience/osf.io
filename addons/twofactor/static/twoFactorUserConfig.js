@@ -10,7 +10,7 @@ require('jquery-qrcode');
 
 var osfHelpers = require('js/osfHelpers');
 var ChangeMessageMixin = require('js/changeMessage');
-
+var OSF_SUPPORT_EMAIL = window.contextVars.osfSupportEmail;
 
 function ViewModel(settingsUrl, qrCodeSelector) {
     var self = this;
@@ -67,7 +67,7 @@ ViewModel.prototype.fetchFromServer = function() {
             self.changeMessage('Could not retrieve two-factor settings at ' +
                 'this time. Please refresh the page. ' +
                 'If the problem persists, email ' +
-                '<a href="mailto:support@osf.io">support@osf.io</a>.', 'text-danger', 5000);
+                '<a href="mailto: ' + OSF_SUPPORT_EMAIL + '">' + OSF_SUPPORT_EMAIL + '</a>.', 'text-danger', 5000);
         });
 };
 
@@ -124,7 +124,7 @@ ViewModel.prototype.disableTwofactorConfirm = function() {
             self.changeMessage(
                 'Could not disable two-factor authentication at this time. Please refresh ' +
                 'the page. If the problem persists, email ' +
-                '<a href="mailto:support@osf.io">support@osf.io</a>.',
+                '<a href="mailto: ' + OSF_SUPPORT_EMAIL + '">' + OSF_SUPPORT_EMAIL + '</a>.',
                 5000);
         });
 };
@@ -165,7 +165,7 @@ ViewModel.prototype.enableTwofactorConfirm = function() {
             self.changeMessage(
                 'Could not enable two-factor authentication at this time. Please refresh ' +
                 'the page. If the problem persists, email ' +
-                '<a href="mailto:support@osf.io">support@osf.io</a>.',
+                '<a href="mailto: ' + OSF_SUPPORT_EMAIL + '">' + OSF_SUPPORT_EMAIL + '</a>.',
                 5000);
         });
 };

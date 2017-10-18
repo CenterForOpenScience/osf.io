@@ -6,6 +6,7 @@ var $osf = require('js/osfHelpers');
 var mHelpers = require('js/mithrilHelpers');
 var Raven = require('raven-js');
 var LogText = require('js/logTextParser');
+var OSF_SUPPORT_EMAIL = window.contextVars.osfSupportEmail;
 
 var MAX_PAGES_ON_PAGINATOR = 7;
 var MAX_PAGES_ON_PAGINATOR_SIDE = 5;
@@ -198,7 +199,7 @@ var LogFeed = {
             // Error message if the log request fails
             ctrl.failed ? m('p', [
                 'Unable to retrieve logs at this time. Please refresh the page or contact ',
-                m('a', {'href': 'mailto:support@osf.io'}, 'support@osf.io'),
+                m('a', {'href': 'mailto:' + OSF_SUPPORT_EMAIL}, OSF_SUPPORT_EMAIL),
                 ' if the problem persists.'
             ]) :
             // Show OSF spinner while there is a pending log request

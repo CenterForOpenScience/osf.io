@@ -10,6 +10,7 @@ var Raven = require('raven-js');
 var $osf = require('js/osfHelpers');
 
 var $modal = $('#dataverseInputCredentials');
+var OSF_SUPPORT_EMAIL = window.contextVars.osfSupportEmail;
 
 
 function ViewModel(url) {
@@ -72,7 +73,7 @@ function ViewModel(url) {
     self.messages = {
         userSettingsError: ko.pureComputed(function() {
             return 'Could not retrieve settings. Please refresh the page or ' +
-                'contact <a href="mailto: support@osf.io">support@osf.io</a> if the ' +
+                'contact <a href="mailto: ' + OSF_SUPPORT_EMAIL + '">' + OSF_SUPPORT_EMAIL + '</a> if the ' +
                 'problem persists.';
         }),
         confirmDeauth: ko.pureComputed(function() {
@@ -93,8 +94,7 @@ function ViewModel(url) {
         authError: ko.pureComputed(function() {
             return 'Sorry, but there was a problem connecting to that instance of Dataverse. It ' +
                 'is likely that the instance hasn\'t been upgraded to Dataverse 4.0. If you ' +
-                'have any questions or believe this to be an error, please contact ' +
-                'support@osf.io.';
+                'have any questions or believe this to be an error, please contact ' + OSF_SUPPORT_EMAIL;
         }),
         tokenImportSuccess: ko.pureComputed(function() {
             return 'Successfully imported access token from profile.';
@@ -105,7 +105,7 @@ function ViewModel(url) {
         updateAccountsError: ko.pureComputed(function() {
             return 'Could not retrieve ' + self.addonName + ' account list at ' +
                 'this time. Please refresh the page. If the problem persists, email ' +
-                '<a href="mailto:support@osf.io">support@osf.io</a>.';
+                '<a href="mailto: ' + OSF_SUPPORT_EMAIL + '">' + OSF_SUPPORT_EMAIL + '</a>.';
         }),
         datasetDeaccessioned: ko.pureComputed(function() {
             return 'This dataset has already been deaccessioned on Dataverse ' +
@@ -123,12 +123,12 @@ function ViewModel(url) {
         }),
         setDatasetError: ko.pureComputed(function() {
             return 'Could not connect to this dataset. Please refresh the page or ' +
-                'contact <a href="mailto: support@osf.io">support@osf.io</a> if the ' +
+                'contact <a href="mailto: ' + OSF_SUPPORT_EMAIL + '">' + OSF_SUPPORT_EMAIL + '</a> if the ' +
                 'problem persists.';
         }),
         getDatasetsError: ko.pureComputed(function() {
             return 'Could not load datasets. Please refresh the page or ' +
-                'contact <a href="mailto: support@osf.io">support@osf.io</a> if the ' +
+                'contact <a href="mailto: ' + OSF_SUPPORT_EMAIL + '">' + OSF_SUPPORT_EMAIL + '</a> if the ' +
                 'problem persists.';
         })
     };

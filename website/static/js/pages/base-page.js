@@ -22,6 +22,7 @@ var moment = require('moment');
 var KeenTracker = require('js/keen');
 var DevModeControls = require('js/devModeControls');
 var bootbox = require('bootbox');
+var OSF_SUPPORT_EMAIL = window.contextVars.osfSupportEmail;
 
 // Prevent IE from caching responses
 $.ajaxSetup({cache: false});
@@ -119,10 +120,10 @@ function confirmEmails(emailsToAdd) {
         }
 
         var confirmFailMessage = 'There was a problem adding \<b>' + email.address +
-            '\</b>. Please contact <a href="mailto: support@osf.io">support@osf.io</a> if the problem persists.';
+            '\</b>. Please contact <a href="mailto:' + OSF_SUPPORT_EMAIL + '">' + OSF_SUPPORT_EMAIL +'</a> if the problem persists.';
 
         var cancelFailMessage = 'There was a problem removing \<b>' + email.address +
-            '\</b>. Please contact <a href="mailto: support@osf.io">support@osf.io</a> if the problem persists.';
+            '\</b>. Please contact <a href="mailto:' + OSF_SUPPORT_EMAIL + '">' + OSF_SUPPORT_EMAIL +'</a> if the problem persists.';
 
         bootbox.dialog({
             title: title,

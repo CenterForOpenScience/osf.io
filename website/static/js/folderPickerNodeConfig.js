@@ -15,7 +15,7 @@ var FolderPicker = require('js/folderpicker');
 var $osf = require('js/osfHelpers');
 
 var oop = require('js/oop');
-
+var OSF_SUPPORT_EMAIL = window.contextVars.osfSupportEmail;
 
 /**
  * @class FolderPickerViewModel
@@ -95,12 +95,12 @@ var FolderPickerViewModel = oop.defclass({
                 return 'Could not retrieve ' + addonSafeName + ' settings at ' +
                     'this time. Please refresh ' +
                     'the page. If the problem persists, email ' +
-                    '<a href="mailto:support@osf.io">support@osf.io</a>.';
+                    '<a href="mailto:' + OSF_SUPPORT_EMAIL + '">' + OSF_SUPPORT_EMAIL + '</a>.';
             }),
             updateAccountsError: ko.pureComputed(function() {
                 return 'Could not retrieve ' + addonSafeName + ' account list at ' +
                     'this time. Please refresh the page. If the problem persists, email ' +
-                    '<a href="mailto:support@osf.io">support@osf.io</a>.';
+                    '<a href="mailto:' + OSF_SUPPORT_EMAIL + '">' + OSF_SUPPORT_EMAIL + '</a>.';
             }),
             deauthorizeSuccess: ko.pureComputed(function() {
                 return 'Disconnected ' + addonSafeName + '.';

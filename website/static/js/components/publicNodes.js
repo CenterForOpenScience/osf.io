@@ -6,6 +6,7 @@ var iconmap = require('js/iconmap');
 var lodashFind = require('lodash.find');
 var mHelpers = require('js/mithrilHelpers');
 var Raven = require('raven-js');
+var OSF_SUPPORT_EMAIL = window.contextVars.osfSupportEmail;
 
 var MAX_PAGES_ON_PAGINATOR = 7;
 var MAX_PAGES_ON_PAGINATOR_SIDE = 5;
@@ -313,7 +314,7 @@ var PublicNodes = {
             // Error message if the request fails
             ctrl.failed ? m('p', [
                 'Unable to retrieve public ' + ctrl.nodeType + ' at this time. Please refresh the page or contact ',
-                m('a', {'href': 'mailto:support@osf.io'}, 'support@osf.io'),
+                m('a', {'href': 'mailto:' + OSF_SUPPORT_EMAIL}, OSF_SUPPORT_EMAIL),
                 ' if the problem persists.'
             ]) :
 

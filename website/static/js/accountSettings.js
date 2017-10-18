@@ -7,6 +7,7 @@ var ko = require('knockout');
 var oop = require('js/oop');
 var Raven = require('raven-js');
 var ChangeMessageMixin = require('js/changeMessage');
+var OSF_SUPPORT_EMAIL = window.contextVars.osfSupportEmail;
 
 
 var UserEmail = oop.defclass({
@@ -106,7 +107,7 @@ var UserProfileClient = oop.defclass({
 
             } else {
                 $osf.growl('Error', 'User profile not updated. Please refresh the page and try ' +
-                'again or contact <a href="mailto: support@osf.io">support@osf.io</a> ' +
+                'again or contact <a href="mailto:' + OSF_SUPPORT_EMAIL + '">' + OSF_SUPPORT_EMAIL + '</a> ' +
                 'if the problem persists.', 'danger');
             }
 
@@ -312,7 +313,7 @@ var ExternalIdentityViewModel = oop.defclass({
         }.bind(this));
         request.fail(function(xhr, status, error) {
             $osf.growl('Error',
-                'Revocation request failed. Please contact <a href="mailto: support@osf.io">support@osf.io</a> if the problem persists.',
+                'Revocation request failed. Please contact <a href="mailto:' + OSF_SUPPORT_EMAIL + '">' + OSF_SUPPORT_EMAIL + '</a> if the problem persists.',
                 'danger'
             );
             Raven.captureMessage('Error revoking connected identity', {
@@ -363,7 +364,7 @@ var DeactivateAccountViewModel = oop.defclass({
                 $osf.growl('Error', xhr.responseJSON.message_long, 'danger');
             } else {
                 $osf.growl('Error',
-                    'Deactivation request failed. Please contact <a href="mailto: support@osf.io">support@osf.io</a> if the problem persists.',
+                    'Deactivation request failed. Please contact <a href="mailto:' + OSF_SUPPORT_EMAIL + '">' + OSF_SUPPORT_EMAIL + '</a> if the problem persists.',
                     'danger'
                 );
             }
@@ -416,7 +417,7 @@ var ExportAccountViewModel = oop.defclass({
                 $osf.growl('Error', xhr.responseJSON.message_long, 'danger');
             } else {
                 $osf.growl('Error',
-                    'Export request failed. Please contact <a href="mailto: support@osf.io">support@osf.io</a> if the problem persists.',
+                    'Export request failed. Please contact <a href="mailto:' + OSF_SUPPORT_EMAIL + '">' + OSF_SUPPORT_EMAIL + '</a> if the problem persists.',
                     'danger'
                 );
             }

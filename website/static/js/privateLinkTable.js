@@ -10,6 +10,7 @@ require('js/osfToggleHeight');
 require('bootstrap-editable');
 
 var ctx = window.contextVars;
+var OSF_SUPPORT_EMAIL = ctx.osfSupportEmail;
 
 function LinkViewModel(data, $root) {
 
@@ -67,7 +68,7 @@ function ViewModel(url, nodeIsPublic, table) {
 
     function onFetchError() {
         $osf.growl('Could not retrieve view-only links.', 'Please refresh the page or ' +
-                'contact <a href="mailto: support@osf.io">support@osf.io</a> if the ' +
+                'contact <a href="mailto:' + OSF_SUPPORT_EMAIL + '">' + OSF_SUPPORT_EMAIL + '</a> if the ' +
                 'problem persists.');
     }
 

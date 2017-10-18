@@ -40,7 +40,7 @@ module.exports = {
             authError: 'Sorry, but there was a problem connecting to that instance of Dataverse. It ' +
                 'is likely that the instance hasn\'t been upgraded to Dataverse 4.0. If you ' +
                 'have any questions or believe this to be an error, please contact ' +
-                'support@osf.io.',
+                OSF_SUPPORT_EMAIL,
             authInvalid: 'Your Dataverse API token is invalid.',
             authSuccess: 'Your Dataverse account was linked.',
             datasetDeaccessioned: 'This dataset has already been deaccessioned on the Dataverse ' +
@@ -96,7 +96,7 @@ module.exports = {
             confirmAuth : 'Are you sure you want to authorize this project with your ownCloud credentials?',
             updateAccountsError : 'Could not retrieve ownCloud account list at ' +
                         'this time. Please refresh the page. If the problem persists, email ' +
-                        '<a href="mailto:support@osf.io">support@osf.io</a>.',
+                        '<a href="mailto:' + OSF_SUPPORT_EMAIL + '">' + OSF_SUPPORT_EMAIL + '</a>.',
             submitSettingsSuccess : 'Folder Successfully linked',
         },
     },

@@ -9,7 +9,7 @@ var bootbox = require('bootbox');
 var lodashGet = require('lodash.get');
 var KeenTracker = require('js/keen');
 var linkify = require('linkifyjs/html');
-
+var OSF_SUPPORT_EMAIL = window.contextVars.osfSupportEmail;
 
 // TODO: For some reason, this require is necessary for custom ko validators to work
 // Why?!
@@ -283,7 +283,7 @@ var setXHRAuthorization = function (xhr, options) {
 
 var errorDefaultShort = 'Unable to resolve';
 var errorDefaultLong = 'OSF was unable to resolve your request. If this issue persists, ' +
-    'please report it to <a href="mailto:support@osf.io">support@osf.io</a>.';
+    'please report it to <a href="mailto:' + OSF_SUPPORT_EMAIL + '">' + OSF_SUPPORT_EMAIL + '</a>.';
 
 var handleAddonApiHTTPError = function(error){
     var response;

@@ -19,6 +19,7 @@ var waterbutler = require('js/waterbutler');
 
 var iconmap = require('js/iconmap');
 var storageAddons = require('json!storageAddons.json');
+var OSF_SUPPORT_EMAIL = window.contextVars.osfSupportEmail;
 
 // CSS
 require('css/fangorn.css');
@@ -621,7 +622,7 @@ function doItemOp(operation, to, from, rename, conflict) {
             message = textStatus;
         } else {
             message = 'Please refresh the page or ' +
-                'contact <a href="mailto: support@osf.io">support@osf.io</a> if the ' +
+                'contact <a href="mailto:' + OSF_SUPPORT_EMAIL + '">' + OSF_SUPPORT_EMAIL + '</a> if the ' +
                 'problem persists.';
         }
 
@@ -929,7 +930,7 @@ function _fangornDropzoneError(treebeard, file, message, xhr) {
              msgText += '1. Cannot upload folders. <br>2. ';
          }
          msgText += 'Unable to reach the provider, please try again later. ';
-         msgText += 'If the problem persists, please contact support@osf.io.';
+         msgText += 'If the problem persists, please contact ' + OSF_SUPPORT_EMAIL + '.';
     } else {
         //Osfstorage and most providers store message in {Object}message.{string}message,
         //but some, like Dataverse, have it in {string} message.

@@ -6,6 +6,7 @@ var bootbox = require('bootbox');
 
 var $osf = require('js/osfHelpers');
 var projectSettingsTreebeardBase = require('js/projectSettingsTreebeardBase');
+var OSF_SUPPORT_EMAIL = window.contextVars.osfSupportEmail;
 
 var ViewModel = function(data) {
     var self = this;
@@ -190,7 +191,7 @@ var ViewModel = function(data) {
                 }
             }
         }).fail(function (xhr, status, error) {
-            $osf.growl('Unable to modify the institution on this node. Please try again. If the problem persists, email <a href="mailto:support@osf.io.">support@osf.io</a>');
+            $osf.growl('Unable to modify the institution on this node. Please try again. If the problem persists, email <a href="mailto:' + OSF_SUPPORT_EMAIL + '">' + OSF_SUPPORT_EMAIL + '</a>');
             Raven.captureMessage('Unable to modify this institution!', {
                 extra: {
                     url: url,

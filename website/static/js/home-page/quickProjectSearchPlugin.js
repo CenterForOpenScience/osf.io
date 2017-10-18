@@ -8,6 +8,7 @@ var Raven = require('raven-js');
 var AddProject = require('js/addProjectPlugin');
 var NodeFetcher = require('js/myProjects').NodeFetcher;
 var lodashGet = require('lodash.get');
+var OSF_SUPPORT_EMAIL = window.contextVars.osfSupportEmail;
 
 // CSS
 require('css/quick-project-search-plugin.css');
@@ -359,7 +360,7 @@ var QuickSearchProject = {
     },
     view : function(ctrl) {
         if (ctrl.errorLoading()) {
-            return m('p.text-center.m-v-md', 'Error loading projects. Please refresh the page. Contact support@osf.io for further assistance.');
+            return m('p.text-center.m-v-md', 'Error loading projects. Please refresh the page. Contact ' + OSF_SUPPORT_EMAIL + ' for further assistance.');
         }
 
         if (!ctrl.someDataLoaded()) {
