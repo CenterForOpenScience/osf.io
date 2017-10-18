@@ -14,13 +14,7 @@
             % if is_rejected:
                 not been accepted and will be made private and not discoverable by others. Admins may edit the ${reviewable.provider.preprint_word} and resubmit.
             % else:
-                been accepted by the moderator and
-                % if was_pending:
-                    remains
-                % else:
-                    is now
-                % endif
-                discoverable to others.
+                been accepted by the moderator and ${'remains' if was_pending else 'is now'} discoverable to others.
             % endif
         % endif
 
@@ -45,7 +39,7 @@
     Your ${reviewable.provider.name} and OSF teams
     <p>
         Center for Open Science<br>
-        210 Ridge McIntire Road, Suite 500, Charlottesville, VA 22903-5083
+        210 Ridge McIntire Road, Suite 500, Charlottesville, VA 22903
     </p>
     <a href="https://github.com/CenterForOpenScience/cos.io/blob/master/PRIVACY_POLICY.md">Privacy Policy</a>
 </div>
