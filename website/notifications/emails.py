@@ -43,7 +43,8 @@ def notify(event, user, node, timestamp, **context):
         # If target, they get a reply email and are removed from the general email
         if target_user and target_user._id in subscriptions[notification_type]:
             subscriptions[notification_type].remove(target_user._id)
-            store_emails([target_user._id], notification_type, 'comment_replies', user, node, timestamp, **context)
+            event_name = 'global_reviews' if event_type == 'global_reviews' else 'comment_replies'
+            store_emails([target_user._id], notification_type, event_name, user, node, timestamp, **context)
             sent_users.append(target_user._id)
 
         if subscriptions[notification_type]:
@@ -87,7 +88,8 @@ def store_emails(recipient_ids, notification_type, event, user, node, timestamp,
     if notification_type == 'none':
         return
 
-    template = event + '.html.mako'
+    # Reviews has three email templates for the global_reviews event.
+    template = context['template'] + '.html.mako' if event == 'global_reviews' else event + '.html.mako'
     # user whose action triggered email sending
     context['user'] = user
     node_lineage_ids = get_node_lineage(node) if node else []

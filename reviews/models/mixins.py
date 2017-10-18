@@ -18,12 +18,10 @@ from website.preprints.tasks import get_and_set_preprint_identifiers
 
 from website import settings
 
-from osf.models import NotificationDigest
 from osf.models import OSFUser
 
 from website.mails import mails
-from website.notifications.emails import get_user_subscriptions, get_node_lineage
-from website.notifications import utils
+from website.notifications.emails import notify
 from website.reviews import signals as reviews_signals
 
 
@@ -217,13 +215,15 @@ class ReviewsMachine(Machine):
         context['template'] = 'reviews_submission_status'
         context['notify_comment'] = not self.reviewable.provider.reviews_comments_private and self.action.comment
         context['is_rejected'] = self.action.to_state == workflow.States.REJECTED.value
-        reviews_signals.reviews_email.send(context=context)
+        context['email_sender'] = self.reviewable.node.creator
+        reviews_signals.reviews_email.send(context=context, node=self.reviewable.node)
 
     def notify_edit_comment(self, ev):
         context = self.get_context()
         context['template'] = 'reviews_update_comment'
+        context['email_sender'] = self.reviewable.node.creator
         if not self.reviewable.provider.reviews_comments_private and self.action.comment:
-            reviews_signals.reviews_email.send(context=context)
+            reviews_signals.reviews_email.send(context=context, node=self.reviewable.node)
 
     def get_context(self):
         return {
@@ -238,30 +238,15 @@ class ReviewsMachine(Machine):
 
 # Handle email notifications including: update comment, accept, and reject of submission.
 @reviews_signals.reviews_email.connect
-def reviews_notification(self, context):
-    timestamp = timezone.now()
-    event_type = utils.find_subscription_type('global_reviews')
-    template = context['template'] + '.html.mako'
-    for user_id in context['email_recipients']:
-        user = OSFUser.load(user_id)
-        subscriptions = get_user_subscriptions(user, event_type)
-        for notification_type in subscriptions:
-            check_user_subscribe = subscriptions[notification_type] and user_id in subscriptions[notification_type] and notification_type != 'none'  # check if user is subscribed to this type of notifications
-            if check_user_subscribe:
-                node_lineage_ids = get_node_lineage(context.get('reviewable').node) if context.get('reviewable').node else []
-                context['user'] = user
-                context['no_future_emails'] = notification_type == 'none'
-                send_type = notification_type if notification_type != 'none' else 'email_transactional'
-                message = mails.render_message(template, **context)
-                digest = NotificationDigest(
-                    user=user,
-                    timestamp=timestamp,
-                    send_type=send_type,
-                    event='global_reviews',
-                    message=message,
-                    node_lineage=node_lineage_ids
-                )
-                digest.save()
+def reviews_notification(self, context, node):
+    user = context['email_sender']
+    auth = Auth(user)
+    time_now = timezone.now()
+    email_recipients = context['email_recipients']
+    email_recipients.remove(user._id)  # remove email sender
+    for user_id in email_recipients:
+        context['target_user'] = OSFUser.load(user_id)
+        notify(event='global_reviews', user=auth.user, node=node, timestamp=time_now, **context)
 
 # Handle email notifications for a new submission.
 @reviews_signals.reviews_email_submit.connect
