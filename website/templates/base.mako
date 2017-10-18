@@ -175,6 +175,8 @@
                 newAndNoteworthy: ${ noteworthy_links_node | sjson, n },
                 maintenance: ${ maintenance | sjson, n},
                 analyticsMeta: {},
+                cosSupportEmail: ${cos_support_email | sjson, n },
+                osfSupportEmail: ${osf_support_email | sjson, n },
             });
         </script>
 

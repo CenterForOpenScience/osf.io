@@ -82,8 +82,3 @@ USE_CDN_FOR_CLIENT_LIBS = False
 
 # Example of extending default settings
 # defaults.IMG_FMTS += ["pdf"]
-
-if not DEV_MODE and not DEBUG_MODE:
-    SUPPORT_EMAIL = 'support@osf.io'
-else:
-    SUPPORT_EMAIL = 'support-test@osf.io'
