@@ -236,7 +236,7 @@ class ReviewsMachine(Machine):
             'provider_support_email': self.reviewable.provider.email_support if self.reviewable.provider.email_support is not None else 'support@osf.io',
         }
 
-# Handle email notifications including: update comment, accept, and reject of submission.
+# Handle email notifications including: update comment, accept, and reject of submission. Uses existing OSF notify method.
 @reviews_signals.reviews_email.connect
 def reviews_notification(self, context, node):
     user = context['email_sender']
