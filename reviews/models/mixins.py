@@ -267,8 +267,11 @@ def reviews_notification(self, context):
 @reviews_signals.reviews_email_submit.connect
 def reviews_submit_notification(self, context):
     template = context['template']
+    event_type = utils.find_subscription_type('global_reviews')
     for user_id in context['email_recipients']:
         user = OSFUser.load(user_id)
+        user_subscriptions = get_user_subscriptions(user, event_type)
+        context['no_future_emails'] = user_subscriptions['none']
         context['is_creator'] = user == context.get('reviewable').node.creator
         email = mails.Mail(template, subject='Confirmation of your submission to {provider}'.format(provider=context.get('reviewable').provider.name))
         mails.send_mail(user.username, email, mimetype='html', user=user, **context)
