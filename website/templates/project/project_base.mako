@@ -89,7 +89,7 @@
 <%def name="image_meta()">
     <%
         from website import settings
-        return settings.DOMAIN.rstrip('/') + settings.PREPRINTS_ASSETS + 'osf/osf-dark.png'
+        return settings.DOMAIN.rstrip('/') + settings.PREPRINTS_ASSETS + 'osf/sharing.png'
     %>
 </%def>
 

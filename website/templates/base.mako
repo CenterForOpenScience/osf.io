@@ -64,8 +64,8 @@
     <meta property="og:description" content="${self.description_meta()}" />
     <meta property="og:image" content="${self.image_meta()}" />
     <meta property="og:image:type" content="image/png" />
-    <meta property="og:image:width" content="363" />
-    <meta property="og:image:height" content="242" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
     <meta property="og:image:alt" content="Open Science Framework" />
     <meta property="article:modified_time" content="${self.date_meta()}" />
     <meta property="article:section" content="${self.category_meta()}" />
