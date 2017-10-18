@@ -5,7 +5,6 @@ import requests
 from dateutil.parser import parse
 from datetime import datetime, timedelta
 
-from django.db.models import Q
 from website.app import init_app
 from scripts.analytics.base import SummaryAnalytics
 
@@ -23,7 +22,7 @@ class PreprintSummary(SummaryAnalytics):
 
     def get_events(self, date):
         super(PreprintSummary, self).get_events(date)
-        from osf.models import PreprintService, PreprintProvider
+        from osf.models import PreprintProvider
 
         # Convert to a datetime at midnight for queries and the timestamp
         timestamp_datetime = datetime(date.year, date.month, date.day).replace(tzinfo=pytz.UTC)
@@ -67,7 +66,6 @@ class PreprintSummary(SummaryAnalytics):
                     'total': resp['hits']['total'],
                 },
             })
-
 
         return counts
 

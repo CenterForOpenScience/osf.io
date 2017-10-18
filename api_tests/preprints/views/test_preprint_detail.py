@@ -257,6 +257,27 @@ class TestPreprintUpdate:
         assert mock_preprint_updated.called
 
     @mock.patch('website.preprints.tasks.on_preprint_updated.s')
+    def test_update_tags(self, mock_preprint_updated, app, user, preprint, url):
+        new_tags = ['hey', 'sup']
+
+        for tag in new_tags:
+            assert tag not in preprint.node.tags.all().values_list('name', flat=True)
+
+        update_tags_payload = build_preprint_update_payload(
+            preprint._id,
+            attributes={
+                'tags': new_tags
+            }
+        )
+        res = app.patch_json_api(url, update_tags_payload, auth=user.auth)
+
+        assert res.status_code == 200
+        preprint.node.reload()
+
+        assert sorted(list(preprint.node.tags.all().values_list('name', flat=True))) == new_tags
+        assert mock_preprint_updated.called
+
+    @mock.patch('website.preprints.tasks.on_preprint_updated.s')
     def test_update_contributors(self, mock_preprint_updated, app, user, preprint, url):
         new_user = AuthUserFactory()
         contributor_payload = {

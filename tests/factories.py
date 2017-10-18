@@ -35,6 +35,7 @@ from osf.models import (Subject, NotificationSubscription, NotificationDigest,
                         ApiOAuth2PersonalToken, ApiOAuth2Application, ExternalAccount,
                         ExternalProvider, OSFUser, PreprintService,
                         PreprintProvider, Session, Guid)
+from osf_tests.factories import fake_email
 from website.archiver import ARCHIVER_SUCCESS
 from website.util import permissions
 from website.exceptions import InvalidSanctionApprovalToken
@@ -874,7 +875,7 @@ def render_generations_from_node_structure_list(parent, creator, node_structure_
 
 
 def create_fake_user():
-    email = fake.email()
+    email = fake_email()
     name = fake.name()
     parsed = impute_names(name)
     user = UserFactory(
