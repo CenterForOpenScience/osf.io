@@ -160,6 +160,10 @@ var ContributorModel = function(contributor, currentUserCanEdit, pageOwner, isRe
         return (self.id === pageOwner.id) && !isRegistration && !self.isAdmin;
     });
 
+    self.canAddAdminContrib = ko.computed(function() {
+        return self.currentUserCanEdit && self.isAdmin;
+    });
+
     self.isDirty = ko.pureComputed(function() {
         return self.permissionChange() ||
             self.visible() !== self.originals.visible || self.deleteStaged();

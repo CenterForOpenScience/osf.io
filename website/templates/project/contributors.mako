@@ -270,7 +270,7 @@
                            data-bind="click: remove"
                            data-toggle="modal">Remove</button>
                 <!-- /ko -->
-                <!-- ko if: (canEdit && contributor.isAdmin) -->
+                <!-- ko if: (canAddAdminContrib) -->
                         <button class="btn btn-success btn-sm m-l-md"
                            data-bind="click: addParentAdmin"
                         ><i class="fa fa-plus"></i> Add</button>
