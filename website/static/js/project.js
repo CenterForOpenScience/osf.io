@@ -15,7 +15,7 @@ var ctx = window.contextVars;
 var NodeActions = {}; // Namespace for NodeActions
 require('loaders.css/loaders.min.css');
 require('css/add-project-plugin.css');
-
+var COS_SUPPORT_EMAIL = '{{settings.COS_SUPPORT_EMAIL}}';
 
 // TODO: move me to the NodeControl or separate module
 NodeActions.beforeForkNode = function(url, done) {
@@ -89,7 +89,7 @@ NodeActions.forkNode = function() {
                 $osf.growl('Sorry:', 'you do not have permission to fork this project');
             } else if (response.status === 504) {
                 $osf.growl('Sorry:', 'This is taking longer than normal. </br>' +
-                    'Please check back later to access your new fork and if still unavailable, contact support@cos.io');
+                    'Please check back later to access your new fork and if still unavailable, contact ' + COS_SUPPORT_EMAIL );
             } else {
                 $osf.growl('Error:', 'Forking failed');
                 Raven.captureMessage('Error occurred during forking');

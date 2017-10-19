@@ -197,7 +197,7 @@ def update_ezid_metadata_on_change(target_object, status):
 
 def send_desk_share_preprint_error(preprint, resp, retries):
     mails.send_mail(
-        to_addr=settings.SUPPORT_EMAIL,
+        to_addr=settings.OSF_SUPPORT_EMAIL,
         mail=mails.SHARE_PREPRINT_ERROR_DESK,
         preprint=preprint,
         resp=resp,

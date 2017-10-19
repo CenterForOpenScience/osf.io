@@ -36,9 +36,10 @@ $(document).ready(function() {
         },
         institutionId: institutionId,
     }));
+    var COS_SUPPORT_EMAIL = '{{settings.COS_SUPPORT_EMAIL }}';
     setTimeout(function(){
         if($('#inst .spinner-loading-wrapper').length > 0) {
-            $('#inst').append('<div class="text-danger text-center text-bigger">This is taking longer than normal. <br>  Try reloading the page. If the problem persist contact us at support@cos.io.</div>');
+            $('#inst').append('<div class="text-danger text-center text-bigger">This is taking longer than normal. <br>  Try reloading the page. If the problem persist contact us at ' + COS_SUPPORT_EMAIL + '.</div>');
         }
     }, 10000);
 });
