@@ -21,6 +21,8 @@ from website import settings
 from osf.models import OSFUser
 
 from website.mails import mails
+from website.notifications.emails import get_user_subscriptions
+from website.notifications import utils
 from website.notifications import emails
 from website.reviews import signals as reviews_signals
 
