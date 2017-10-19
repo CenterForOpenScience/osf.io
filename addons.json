@@ -66,7 +66,7 @@
         "wiki": "The wiki is a versatile communication tool. Wikis can be used to explain the main points of your project and can contain information like lab notes or contact information.",
         "googledrive": "Google Drive is a file storage add-on. Connect your Google Drive account to an OSF project to interact with files hosted on Google Drive via the OSF.",
         "bitbucket": "Bitbucket is a web-based Git repository hosting service. Connect your Bitbucket repo to your OSF project to share your code alongside other materials in your OSF project.",
-        "cloudfiles": "Cloudfiles is a ..."
+        "cloudfiles": "Cloudfiles is a file storage add-on. Connect your Cloud Files account to an OSF project to interact with files hosted on Cloud Files via the OSF."
     },
     "addons_url": {
         "box": "http://www.box.com",

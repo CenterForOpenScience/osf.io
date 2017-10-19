@@ -185,8 +185,8 @@ var ViewModel = oop.extend(OauthAddonFolderPicker,{
     },
     isValidContainerName: function(containerName) {
         if(containerName) {
-            var strictBucketName = new RegExp('[^?/]');
-            return strictBucketName.exec(containerName);
+            var strictContainerName = new RegExp('[^?/]');
+            return strictContainerName.test(containerName);
         } else {
            return false
         }

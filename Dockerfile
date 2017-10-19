@@ -108,6 +108,7 @@ COPY ./addons/mendeley/requirements.txt ./addons/mendeley/
 #COPY ./addons/osfstorage/requirements.txt ./addons/osfstorage/
 COPY ./addons/owncloud/requirements.txt ./addons/owncloud/
 COPY ./addons/s3/requirements.txt ./addons/s3/
+COPY ./addons/cloudfiles/requirements.txt ./addons/cloudfiles/
 COPY ./addons/twofactor/requirements.txt ./addons/twofactor/
 #COPY ./addons/wiki/requirements.txt ./addons/wiki/
 COPY ./addons/zotero/requirements.txt ./addons/zotero/

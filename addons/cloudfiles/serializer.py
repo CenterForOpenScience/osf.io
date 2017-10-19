@@ -28,7 +28,7 @@ class CloudFilesSerializer(StorageAddonSerializer):
     def serialized_folder(self, node_settings):
         path = node_settings.folder_name
         return {
-            'name': path if path != '/' else '/ (Full Cloud Files)',
+            'name': path if path != '/' else '/ (Full Rackspace Cloud Files)',
             'path': path
         }
 

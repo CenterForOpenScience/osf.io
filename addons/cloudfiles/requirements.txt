@@ -1,2 +1,3 @@
 # Requirements for the cloudfiles add-on
+openstack
 rackspacesdk

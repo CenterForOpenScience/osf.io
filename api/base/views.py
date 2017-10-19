@@ -739,6 +739,7 @@ def root(request, format=None, **kwargs):
         googledrive  Google Drive
         osfstorage   OSF Storage
         s3           Amazon S3
+        cloudfiles   Cloud Files
 
     """
     if request.user and not request.user.is_anonymous:
