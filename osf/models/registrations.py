@@ -568,6 +568,16 @@ class DraftRegistration(ObjectIDMixin, BaseModel):
         log = DraftRegistrationLog(action=action, user=user, draft=self)
         log.save()
 
+    @classmethod
+    def remove_one(self, obj):
+        # Check in files associated with Prereg (schema) that has been submitted (approval_id)
+        if obj.registration_schema.name == 'Prereg Challenge' and obj.approval_id:
+            from admin.pre_reg import views as prereg_view_utils  # Avoid circular import
+            for item in prereg_view_utils.get_metadata_files(obj):
+                item.checkout = None
+                item.save()
+        super(DraftRegistration, self).remove_one(obj)
+
     def validate_metadata(self, *args, **kwargs):
         """
         Validates draft's metadata

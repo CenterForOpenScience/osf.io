@@ -172,10 +172,16 @@ class OsfStorageFileNode(BaseFileNode):
         """
         from osf.models import NodeLog  # Avoid circular import
 
-        if (
-                self.is_checked_out and self.checkout != user and permissions.ADMIN not in self.node.get_permissions(
-                user)) \
-                or permissions.WRITE not in self.node.get_permissions(user):
+        if self.is_checked_out and self.checkout != user:
+            # Allow project admins to force check in
+            if permissions.ADMIN in self.node.get_permissions(user):
+                # But don't allow force check in for prereg admin checked out files
+                if (self.checkout.has_perm('osf.prereg_view') and self.node.draft_registrations_active.filter(registration_schema__name='Prereg Challenge').exists()):
+                    raise exceptions.FileNodeCheckedOutError()
+            else:
+                raise exceptions.FileNodeCheckedOutError()
+
+        if permissions.WRITE not in self.node.get_permissions(user):
             raise exceptions.FileNodeCheckedOutError()
 
         action = NodeLog.CHECKED_OUT if checkout else NodeLog.CHECKED_IN

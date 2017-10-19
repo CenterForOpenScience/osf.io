@@ -19,6 +19,7 @@ from osf_tests.factories import (
 from osf.models.registrations import DraftRegistration
 from addons.osfstorage.models import OsfStorageFile, OsfStorageFileNode
 
+from website.files import exceptions as file_exceptions
 from website.prereg.utils import get_prereg_schema
 
 from admin_tests.utilities import setup_view, setup_form_view, setup_user_view
@@ -364,11 +365,14 @@ class TestPreregFiles(AdminTestCase):
             }
         self.draft = DraftRegistrationFactory(
             initiator=self.user,
+            branched_from=self.node,
             registration_schema=prereg_schema,
             registration_metadata=data
         )
         self.prereg_user.save()
         self.admin_user = UserFactory()
+        self.admin_user.is_superuser = True
+        self.admin_user.save()
 
     def test_checkout_files(self):
         self.draft.submit_for_review(self.user, {}, save=True)
@@ -380,6 +384,16 @@ class TestPreregFiles(AdminTestCase):
         for q, f in self.d_of_qs.iteritems():
             f.refresh_from_db()
             nt.assert_equal(self.admin_user, f.checkout)
+
+        # test user attempt force checkin
+        with nt.assert_raises(file_exceptions.FileNodeCheckedOutError):
+            self.d_of_qs['q7'].check_in_or_out(self.user, self.admin_user)
+
+        # test delete draft returns files
+        DraftRegistration.remove_one(self.draft)
+        for q, f in self.d_of_qs.iteritems():
+            f.refresh_from_db()
+            nt.assert_equal(None, f.checkout)
 
     def test_checkin_files(self):
         self.draft.submit_for_review(self.user, {}, save=True)
@@ -443,3 +457,11 @@ class TestPreregFiles(AdminTestCase):
         with nt.assert_raises(Http404):
             for item in get_metadata_files(self.draft):
                 pass
+
+    def test_delete_pre_submit_draft_does_not_change_checkouts(self):
+        file_q7 = self.d_of_qs['q7']
+        file_q7.checkout = self.user
+        file_q7.save()
+        DraftRegistration.remove_one(self.draft)
+        file_q7.refresh_from_db()
+        nt.assert_equal(file_q7.checkout, self.user)

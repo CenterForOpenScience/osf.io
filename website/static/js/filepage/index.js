@@ -126,7 +126,7 @@ var FileViewPage = {
             if (self.file.isPreregCheckout){
                 m.render(document.getElementById('alertBar'), m('.alert.alert-warning[role="alert"]', m('span', [
                     m('strong', 'File is checked out.'),
-                    ' This file has been checked out by a COS Preregistration Challenge Reviewer. It needs to be checked in before any changes can be made.',
+                    ' This file has been checked out by a COS Preregistration Challenge Reviewer and will become available when review is complete.',
                 ])));
             } else if ((self.file.checkoutUser) && (self.file.checkoutUser !== self.context.currentUser.id)) {
                 m.render(document.getElementById('alertBar'), m('.alert.alert-warning[role="alert"]', m('span', [
@@ -514,7 +514,7 @@ var FileViewPage = {
             ) ? m('.btn-group.m-l-xs.m-t-xs', [
                         ctrl.isLatestVersion ? m('button.btn.btn-sm.btn-danger.file-delete', {onclick: $(document).trigger.bind($(document), 'fileviewpage:delete') }, 'Delete') : null
             ]) : '',
-            ctrl.context.currentUser.canEdit && (ctrl.file.provider !== 'bitbucket') && (!ctrl.canEdit()) && (ctrl.context.currentUser.isAdmin) ? m('.btn-group.m-l-xs.m-t-xs', [
+            ctrl.context.currentUser.canEdit && (ctrl.file.provider !== 'bitbucket') && (!ctrl.canEdit()) && (ctrl.context.currentUser.isAdmin) && !ctrl.context.file.isPreregCheckout ? m('.btn-group.m-l-xs.m-t-xs', [
                 ctrl.isLatestVersion ? m('.btn.btn-sm.btn-danger', {onclick: $(document).trigger.bind($(document), 'fileviewpage:force_checkin')}, 'Force check in') : null
             ]) : '',
             ctrl.canEdit() && (!ctrl.file.checkoutUser) && (ctrl.file.provider === 'osfstorage') ? m('.btn-group.m-l-xs.m-t-xs', [
