@@ -16,6 +16,7 @@ import pytz
 from dirtyfields import DirtyFieldsMixin
 
 from django.conf import settings
+from django.contrib.contenttypes.models import ContentType
 from django.contrib.auth.base_user import AbstractBaseUser, BaseUserManager
 from django.contrib.auth.hashers import check_password
 from django.contrib.auth.models import PermissionsMixin
@@ -708,10 +709,11 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
         from addons.osfstorage.models import OsfStorageFileNode
         primary_quickfiles = QuickFilesNode.objects.get(creator=self)
         merging_user_quickfiles = QuickFilesNode.objects.get(creator=user)
+        content_type = ContentType.objects.get_for_model(primary_quickfiles)
 
         files_in_merging_user_quickfiles = merging_user_quickfiles.files.filter(type='osf.osfstoragefile')
         for merging_user_file in files_in_merging_user_quickfiles:
-            if OsfStorageFileNode.objects.filter(node=primary_quickfiles, name=merging_user_file.name).exists():
+            if OsfStorageFileNode.objects.filter(object_id=primary_quickfiles.id, content_type=content_type, name=merging_user_file.name).exists():
                 digit = 1
                 split_filename = splitext(merging_user_file.name)
                 name_without_extension = split_filename[0]
@@ -726,7 +728,7 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
 
                 # check if new name conflicts, update til it does not (try up to 1000 times)
                 rename_count = 0
-                while OsfStorageFileNode.objects.filter(node=primary_quickfiles, name=new_name).exists():
+                while OsfStorageFileNode.objects.filter(object_id=primary_quickfiles.id, content_type=content_type, name=new_name).exists():
                     digit += 1
                     new_name = new_name_format.format(name_without_extension, digit, extension)
                     rename_count += 1
@@ -736,7 +738,7 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
                 merging_user_file.name = new_name
                 merging_user_file.save()
 
-            merging_user_file.node = primary_quickfiles
+            merging_user_file.target = primary_quickfiles
             merging_user_file.save()
 
         # finalize the merge
