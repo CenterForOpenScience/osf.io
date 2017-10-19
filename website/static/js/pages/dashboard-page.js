@@ -11,7 +11,6 @@ var jstz = require('jstimezonedetect');
 var $osf = require('js/osfHelpers');
 var MyProjects = require('js/myProjects.js').MyProjects;
 var m = require('mithril'); // exposes mithril methods, useful for redraw etc.
-var COS_SUPPORT_EMAIL = window.contextVars.cosSupportEmail;
 require('loaders.css/loaders.min.css');
 
 var ensureUserTimezone = function(savedTimezone, savedLocale, id) {
@@ -44,6 +43,7 @@ var ensureUserTimezone = function(savedTimezone, savedLocale, id) {
 $(document).ready(function() {
     m.mount(document.getElementById('dashboard'), m.component(MyProjects, {wrapperSelector : '#dashboard'}));
 
+    var COS_SUPPORT_EMAIL = window.contextVars.cosSupportEmail;
     // Appears in 10 second if the spinner is still there.
     setTimeout(function(){
         if($('#dashboard>.ball-scale').length > 0) {

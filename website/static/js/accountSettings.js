@@ -7,7 +7,6 @@ var ko = require('knockout');
 var oop = require('js/oop');
 var Raven = require('raven-js');
 var ChangeMessageMixin = require('js/changeMessage');
-var OSF_SUPPORT_EMAIL = window.contextVars.osfSupportEmail;
 
 
 var UserEmail = oop.defclass({
@@ -92,6 +91,7 @@ var UserProfileClient = oop.defclass({
     },
     update: function (profile, email) {
         var url = this.urls.update;
+        var OSF_SUPPORT_EMAIL = window.contextVars.osfSupportEmail;
         if(email) {
             url = this.urls.resend;
         }
@@ -306,6 +306,7 @@ var ExternalIdentityViewModel = oop.defclass({
         'delete': '/api/v1/profile/logins/'
     },
     _removeIdentity: function(identity) {
+        var OSF_SUPPORT_EMAIL = window.contextVars.osfSupportEmail;
         var request = $osf.ajaxJSON('PATCH', this.urls.delete, {'data': {'identity': identity}});
         request.done(function() {
             $osf.growl('Success', 'You have revoked this connected identity.', 'success');
@@ -355,6 +356,7 @@ var DeactivateAccountViewModel = oop.defclass({
     },
     _requestDeactivation: function() {
         var request = $osf.postJSON(this.urls.update, {});
+        var OSF_SUPPORT_EMAIL = window.contextVars.osfSupportEmail;
         request.done(function() {
             $osf.growl('Success', 'An OSF administrator will contact you shortly to confirm your deactivation request.', 'success');
             this.success(true);
@@ -407,6 +409,7 @@ var ExportAccountViewModel = oop.defclass({
         'update': '/api/v1/profile/export/'
     },
     _requestExport: function() {
+        var OSF_SUPPORT_EMAIL = window.contextVars.osfSupportEmail;
         var request = $osf.postJSON(this.urls.update, {});
         request.done(function() {
             $osf.growl('Success', 'An OSF administrator will contact you shortly to confirm your export request.', 'success');

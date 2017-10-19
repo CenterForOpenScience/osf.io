@@ -10,11 +10,11 @@ var Raven = require('raven-js');
 var $osf = require('js/osfHelpers');
 
 var $modal = $('#dataverseInputCredentials');
-var OSF_SUPPORT_EMAIL = window.contextVars.osfSupportEmail;
 
 
 function ViewModel(url) {
     var self = this;
+    var OSF_SUPPORT_EMAIL = window.contextVars.osfSupportEmail;
     const otherString = 'Other (Please Specify)';
 
     self.addonName = 'Dataverse';

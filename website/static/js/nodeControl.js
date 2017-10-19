@@ -14,7 +14,6 @@ var $osf = require('js/osfHelpers');
 var iconmap = require('js/iconmap');
 var NodeActions = require('js/project.js');
 var NodesPrivacy = require('js/nodesPrivacy').NodesPrivacy;
-var OSF_SUPPORT_EMAIL = window.contextVars.osfSupportEmail;
 
 /**
  * The ProjectViewModel, scoped to the project header.
@@ -225,6 +224,7 @@ var ProjectViewModel = function(data, options) {
             self.doi(resp.doi);
             self.ark(resp.ark);
         }).fail(function(xhr) {
+            var OSF_SUPPORT_EMAIL = window.contextVars.osfSupportEmail;
             var message = 'We could not create the identifier at this time. ' +
                 'The DOI/ARK acquisition service may be down right now. ' +
                 'Please try again soon and/or contact ' +

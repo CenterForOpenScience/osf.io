@@ -10,7 +10,7 @@ require('jquery-qrcode');
 
 var osfHelpers = require('js/osfHelpers');
 var ChangeMessageMixin = require('js/changeMessage');
-var OSF_SUPPORT_EMAIL = window.contextVars.osfSupportEmail;
+
 
 function ViewModel(settingsUrl, qrCodeSelector) {
     var self = this;
@@ -52,6 +52,7 @@ ViewModel.prototype.updateFromData = function(data) {
 
 ViewModel.prototype.fetchFromServer = function() {
     var self = this;
+    var OSF_SUPPORT_EMAIL = window.contextVars.osfSupportEmail;
     return $.getJSON(self.settingsUrl)
         .then(function(response) {
             return response.result;
@@ -102,6 +103,7 @@ ViewModel.prototype.submitSettings = function() {
 
 ViewModel.prototype.disableTwofactorConfirm = function() {
     var self = this;
+    var OSF_SUPPORT_EMAIL = window.contextVars.osfSupportEmail;
     return $.ajax({
             method: 'DELETE',
             url: self.urls.disable,
@@ -150,6 +152,7 @@ ViewModel.prototype.disableTwofactor = function() {
 
 ViewModel.prototype.enableTwofactorConfirm = function() {
     var self = this;
+    var OSF_SUPPORT_EMAIL = window.contextVars.osfSupportEmail;
     return osfHelpers.postJSON(self.urls.enable, {})
         .done(function(response) {
             self.updateFromData(response.result);

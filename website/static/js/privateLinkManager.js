@@ -4,7 +4,7 @@ var $ = require('jquery');
 var ko = require('knockout');
 var $osf = require('./osfHelpers');
 var ChangeMessageMixin = require('js/changeMessage');
-var OSF_SUPPORT_EMAIL = window.contextVars.osfSupportEmail;
+
 
 var NODE_OFFSET = 25;
 
@@ -57,6 +57,7 @@ var PrivateLinkViewModel = function(url) {
     }
 
     function onFetchError() {
+        var OSF_SUPPORT_EMAIL = window.contextVars.osfSupportEmail;
         $osf.growl('Could not retrieve projects.', 'Please refresh the page or ' +
                 'contact <a href="mailto:' + OSF_SUPPORT_EMAIL + '">' + OSF_SUPPORT_EMAIL + '</a> if the ' +
                 'problem persists.');

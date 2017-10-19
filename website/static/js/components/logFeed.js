@@ -6,7 +6,6 @@ var $osf = require('js/osfHelpers');
 var mHelpers = require('js/mithrilHelpers');
 var Raven = require('raven-js');
 var LogText = require('js/logTextParser');
-var OSF_SUPPORT_EMAIL = window.contextVars.osfSupportEmail;
 
 var MAX_PAGES_ON_PAGINATOR = 7;
 var MAX_PAGES_ON_PAGINATOR_SIDE = 5;
@@ -85,6 +84,7 @@ var LogFeed = {
     view : function (ctrl) {
 
         var i;
+        var OSF_SUPPORT_EMAIL = window.contextVars.osfSupportEmail;
         ctrl.paginators([]);
         if (ctrl.totalPages() > 1 && !ctrl.limitLogs) {
             // previous page

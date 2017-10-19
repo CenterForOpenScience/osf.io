@@ -8,7 +8,6 @@ var _myProjects = require('js/myProjects.js');
 var Projects = _myProjects.MyProjects;
 var LinkObject = _myProjects.LinkObject;
 var InstitutionNodes = require('js/institutionNodes.js');
-var COS_SUPPORT_EMAIL = window.contextVars.cosSupportEmail;
 
 
 $(document).ready(function() {
@@ -39,6 +38,7 @@ $(document).ready(function() {
     }));
     setTimeout(function(){
         if($('#inst .spinner-loading-wrapper').length > 0) {
+            var COS_SUPPORT_EMAIL = window.contextVars.cosSupportEmail;
             $('#inst').append('<div class="text-danger text-center text-bigger">This is taking longer than normal. <br>  Try reloading the page. If the problem persist contact us at ' + COS_SUPPORT_EMAIL + '.</div>');
         }
     }, 10000);

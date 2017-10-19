@@ -15,7 +15,6 @@ var FolderPicker = require('js/folderpicker');
 var $osf = require('js/osfHelpers');
 
 var oop = require('js/oop');
-var OSF_SUPPORT_EMAIL = window.contextVars.osfSupportEmail;
 
 /**
  * @class FolderPickerViewModel
@@ -79,6 +78,7 @@ var FolderPickerViewModel = oop.defclass({
         self.toggleChangeText = ko.observable('Change');
 
         var addonSafeName = $osf.htmlEscape(self.addonName);
+        var OSF_SUPPORT_EMAIL = window.contextVars.osfSupportEmail;
         self.messages = {
             invalidCredOwner: ko.pureComputed(function() {
                 return 'Could not retrieve ' + addonSafeName + ' settings at ' +

@@ -3,7 +3,6 @@
 var ko = require('knockout');
 var $ = require('jquery');
 var $osf = require('js/osfHelpers');
-var OSF_SUPPORT_EMAIL = window.contextVars.osfSupportEmail;
 
 
 var ViewModel = function(list) {
@@ -59,6 +58,7 @@ var ViewModel = function(list) {
         });
         request.fail(function (xhr) {
             if (xhr.responseJSON.error_type !== 'not_subscribed') {
+                var OSF_SUPPORT_EMAIL = window.contextVars.osfSupportEmail;
                 var message = 'Could not update email preferences at this time. If this issue persists, ' +
                     'please report it to <a href="mailto:' + OSF_SUPPORT_EMAIL + '">' + OSF_SUPPORT_EMAIL + '</a>.';
                 self.changeMessage(message, 'text-danger', 5000);

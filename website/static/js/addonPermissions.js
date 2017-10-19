@@ -9,13 +9,14 @@ var $ = require('jquery');
 var bootbox = require('bootbox');
 
 var $osf = require('js/osfHelpers');
-var OSF_SUPPORT_EMAIL = window.contextVars.osfSupportEmail;
+
 
 var AddonPermissionsTable = {
     init: function(addonShortName, addonFullname) {
         $('.' + addonShortName + '-remove-token').on('click', function (event) {
             var nodeId = $(this).attr('node-id');
             var apiUrl = $(this).attr('api-url')+ addonShortName + '/config/';
+            var OSF_SUPPORT_EMAIL = window.contextVars.osfSupportEmail;
             bootbox.confirm({
                 title: 'Remove addon?',
                 message: 'Are you sure you want to disconnnect the ' + $osf.htmlEscape(addonFullname) + ' account from this project?',

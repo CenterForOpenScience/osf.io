@@ -8,7 +8,7 @@ require('js/osfToggleHeight');
 var $osf = require('js/osfHelpers');
 var AddonPermissionsTable = require('js/addonPermissions');
 var addonSettings = require('js/addonSettings');
-var OSF_SUPPORT_EMAIL = window.contextVars.osfSupportEmail;
+
 
 // Show capabilities modal on selecting an addon; unselect if user
 // rejects terms
@@ -59,6 +59,7 @@ $('#selectAddonsForm').on('submit', function() {
             window.location.reload();
         });
         request.fail(function() {
+            var OSF_SUPPORT_EMAIL = window.contextVars.osfSupportEmail;
             var msg = 'Sorry, we had trouble saving your settings. If this persists please contact <a href="mailto:' + OSF_SUPPORT_EMAIL + '">' + OSF_SUPPORT_EMAIL + '</a>';
             bootbox.alert({
                 title: 'Request failed',

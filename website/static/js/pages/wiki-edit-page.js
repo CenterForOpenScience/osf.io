@@ -17,7 +17,7 @@ var WikiMenu = require('../wikiMenu');
 var Comment = require('js/comment'); //jshint ignore:line
 
 var ctx = window.contextVars.wiki;  // mako context variables
-var OSF_SUPPORT_EMAIL = ctx.osfSupportEmail;
+var OSF_SUPPORT_EMAIL = window.contextVars.osfSupportEmail;
 
 var editable = (ctx.panelsUsed.indexOf('edit') !== -1);
 var viewable = (ctx.panelsUsed.indexOf('view') !== -1);
