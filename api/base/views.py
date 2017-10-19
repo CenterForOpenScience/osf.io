@@ -1,3 +1,4 @@
+from bulk_update.helper import bulk_update
 from django.conf import settings as django_settings
 from django.db import transaction
 from django.http import JsonResponse
@@ -879,18 +880,23 @@ class WaterButlerMixin(object):
     path_lookup_url_kwarg = 'path'
     provider_lookup_url_kwarg = 'provider'
 
-    def get_file_item(self, item):
+    def bulk_get_file_nodes_from_wb_resp(self, files_list):
+        """Takes a list of file data from wb response, touches/updates metadata for each, and returns list of file objects"""
+        node = self.get_node(check_object_permissions=False)
+        # save=False so that bulk_update can save everything at the end (faster)
+        file_nodes = [self.get_file_node_from_wb_resp(item, node, save=False) for item in files_list]
+        bulk_update(file_nodes)
+        return file_nodes
+
+    def get_file_node_from_wb_resp(self, item, node, save=True):
+        """Takes file data from wb response, touches/updates metadata for it, and returns file object"""
         attrs = item['attributes']
         file_node = BaseFileNode.resolve_class(
             attrs['provider'],
             BaseFileNode.FOLDER if attrs['kind'] == 'folder'
             else BaseFileNode.FILE
-        ).get_or_create(self.get_node(check_object_permissions=False), attrs['path'])
-
-        file_node.update(None, attrs, user=self.request.user)
-
-        self.check_object_permissions(self.request, file_node)
-
+        ).get_or_create(node, attrs['path'])
+        file_node.update(None, attrs, user=self.request.user, save=save)
         return file_node
 
     def fetch_from_waterbutler(self):
