@@ -273,7 +273,7 @@
                 <!-- ko if: (canEdit && contributor.isAdmin) -->
                         <button class="btn btn-success btn-sm m-l-md"
                            data-bind="click: addParentAdmin"
-                           data-toggle="modal"><i class="fa fa-plus"></i> Add</button>
+                        ><i class="fa fa-plus"></i> Add</button>
                 <!-- /ko -->
             </div>
         </td>
