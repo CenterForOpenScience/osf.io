@@ -67,7 +67,7 @@ TRANSITIONS = [
         'source': [States.PENDING.value, States.REJECTED.value],
         'conditions': 'resubmission_allowed',
         'dest': States.PENDING.value,
-        'after': ['save_action', 'update_last_transitioned', 'save_changes', 'notify_submit'],
+        'after': ['save_action', 'update_last_transitioned', 'save_changes', 'notify_resubmit'],
     },
     {
         'trigger': Triggers.ACCEPT.value,
