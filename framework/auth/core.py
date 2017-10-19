@@ -115,7 +115,7 @@ def get_user(email=None, password=None, token=None, external_id_provider=None, e
 
     if email:
         email = email.strip().lower()
-        qs = qs.filter(Q(Q(username=email) | Q(id=Subquery(Email.objects.filter(address=email).values_list('user_id', flat=True)))))
+        qs = qs.filter(Q(Q(username=email) | Q(id=Subquery(Email.objects.filter(address=email).values('user_id')))))
 
     if password:
         password = password.strip()

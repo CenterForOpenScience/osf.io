@@ -903,7 +903,7 @@ class RegistrationEmbargoViewsTestCase(OsfTestCase):
 
         assert_equal(res.status_code, 202)
 
-        registration = Registration.objects.all().order_by('-registered_date').first()
+        registration = Registration.objects.order_by('-registered_date').first()
 
         assert_false(registration.is_public)
         assert_true(registration.is_pending_embargo_for_existing_registration)

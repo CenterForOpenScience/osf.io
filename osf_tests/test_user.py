@@ -1388,7 +1388,7 @@ class TestUser(OsfTestCase):
             self.user.get_unconfirmed_email_for_token(token1)
 
     def test_contributed_property(self):
-        projects_contributed_to = AbstractNode.objects.filter(_contributors=self.user)
+        projects_contributed_to = self.user.nodes.all()
         assert list(self.user.contributed.all()) == list(projects_contributed_to)
 
     def test_contributor_to_property(self):
@@ -1628,7 +1628,7 @@ class TestUserMerging(OsfTestCase):
         # check fields set on merged user
         assert other_user.merged_by == self.user
 
-        assert Session.objects.filter(data__auth_user_id=other_user._id).count() == 0
+        assert not Session.objects.filter(data__auth_user_id=other_user._id).exists()
 
     def test_merge_unconfirmed(self):
         self._add_unconfirmed_user()

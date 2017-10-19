@@ -370,7 +370,7 @@ def render_generations_from_node_structure_list(parent, creator, node_structure_
 
 def main():
     args = parse_args()
-    creator = models.OSFUser.objects.filter(username=args.user).first()
+    creator = models.OSFUser.objects.get(username=args.user)
     for i in range(args.n_projects):
         name = args.name + str(i) if args.name else ''
         create_fake_project(creator, args.n_users, args.privacy, args.n_components, name, args.n_tags,
