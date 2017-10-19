@@ -373,7 +373,7 @@ SHARE_PREPRINT_ERROR_DESK = Mail(
     subject='Share Error'
 )
 
-REVIEWS_SUBMISSION_CONFIRMATION = lambda provider_name: Mail(
+REVIEWS_SUBMISSION_CONFIRMATION = Mail(
     'reviews_submission_confirmation',
-    subject='Confirmation of your submission to {}'.format(provider_name)
+    subject='Confirmation of your submission to ${provider_name}'
 )

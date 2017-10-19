@@ -271,10 +271,11 @@ def reviews_submit_notification(self, context):
         user = OSFUser.load(user_id)
         user_subscriptions = get_user_subscriptions(user, event_type)
         context['no_future_emails'] = user_subscriptions['none']
-        context['is_creator'] = user == context.get('reviewable').node.creator
+        context['is_creator'] = user == context['reviewable'].node.creator
+        context['provider_name'] = context['reviewable'].provider.name
         mails.send_mail(
             user.username,
-            getattr(mails, 'REVIEWS_SUBMISSION_CONFIRMATION')(context.get('reviewable').provider.name),
+            mails.REVIEWS_SUBMISSION_CONFIRMATION,
             mimetype='html',
             user=user,
             **context
