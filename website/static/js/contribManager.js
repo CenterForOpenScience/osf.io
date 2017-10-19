@@ -157,7 +157,7 @@ var ContributorModel = function(contributor, currentUserCanEdit, pageOwner, isRe
     self.profileUrl = ko.observable(contributor.url);
 
     self.canRemove = ko.computed(function(){
-        return (self.id === pageOwner.id) && !isRegistration;
+        return (self.id === pageOwner.id) && !isRegistration && !self.isAdmin;
     });
 
     self.isDirty = ko.pureComputed(function() {
