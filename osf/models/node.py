@@ -320,6 +320,8 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
                                     through_fields=('parent', 'child'),
                                     related_name='parent_nodes')
 
+    files = GenericRelation('osf.OsfStorageFile')
+
     class Meta:
         base_manager_name = 'objects'
         index_together = (('is_public', 'is_deleted', 'type'))
@@ -440,7 +442,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         # TODO: This is a temporary implementation.
         if not self.preprint_file_id or not self.is_public:
             return False
-        if self.preprint_file.node_id == self.id:
+        if self.preprint_file.target == self.id or self.preprint_file.target in self.preprints.all():
             return self.has_submitted_preprint
         else:
             self._is_preprint_orphan = True

@@ -4,19 +4,30 @@ import logging
 
 from django.apps import apps
 from django.db import models, connection
+from django.contrib.contenttypes.models import ContentType
 from psycopg2._psycopg import AsIs
 
 from addons.base.models import BaseNodeSettings, BaseStorageAddon
 from osf.exceptions import InvalidTagError, NodeStateError, TagNotFoundError
-from osf.models import File, FileVersion, Folder, TrashedFileNode, BaseFileNode
-from osf.utils import permissions
 from framework.auth.core import Auth
+from osf.models.node import Node
+from osf.models.files import File, FileVersion, Folder, TrashedFileNode, BaseFileNode, BaseFileNodeManager
+from osf.utils.auth import Auth
+from osf.utils import permissions
 from website.files import exceptions
 from website.files import utils as files_utils
 
 settings = apps.get_app_config('addons_osfstorage')
 
 logger = logging.getLogger(__name__)
+
+
+class OsfStorageFolderManager(BaseFileNodeManager):
+
+    def get_root(self, target):
+        # Get the root folder that the target file belongs to
+        content_type = ContentType.objects.get_for_model(target)
+        return self.get(object_id=target.id, content_type=content_type, is_root=True)
 
 
 class OsfStorageFileNode(BaseFileNode):
@@ -61,11 +72,11 @@ class OsfStorageFileNode(BaseFileNode):
         logger.warn('Cannot set materialized path on OSFStorage because it\'s computed.')
 
     @classmethod
-    def get(cls, _id, node):
-        return cls.objects.get(_id=_id, node=node)
+    def get(cls, _id, target):
+        return cls.objects.get(_id=_id, object_id=target.id, content_type=ContentType.objects.get_for_model(target))
 
     @classmethod
-    def get_or_create(cls, node, path):
+    def get_or_create(cls, target, path):
         """Override get or create for osfstorage
         Path is always the _id of the osfstorage filenode.
         Use load here as its way faster than find.
@@ -73,14 +84,14 @@ class OsfStorageFileNode(BaseFileNode):
         """
         inst = cls.load(path.strip('/'))
         # Use _id as odms default comparison mucks up sometimes
-        if inst and inst.node._id == node._id:
+        if inst and inst.target._id == target._id:
             return inst
 
         # Dont raise anything a 404 will be raised later
-        return cls(node=node, path=path)
+        return cls(target=target, path=path)
 
     @classmethod
-    def get_file_guids(cls, materialized_path, provider, node=None):
+    def get_file_guids(cls, materialized_path, provider, target=None):
         guids = []
         path = materialized_path.strip('/')
         file_obj = cls.load(path)
@@ -100,7 +111,7 @@ class OsfStorageFileNode(BaseFileNode):
                 children = file_obj.children
 
             for item in children:
-                guids.extend(cls.get_file_guids(item.path, provider, node=node))
+                guids.extend(cls.get_file_guids(item.path, provider, target=target))
         else:
             guid = file_obj.get_guid()
             if guid:
@@ -137,16 +148,24 @@ class OsfStorageFileNode(BaseFileNode):
 
     @property
     def is_preprint_primary(self):
-        return self.node.preprint_file == self and not self.node._has_abandoned_preprint
+        if self.preprint.exists():
+            return True
+        else:
+            return getattr(self.target, 'preprint_file', None) == self and not getattr(self.target, '_has_abandoned_preprint')
 
     def delete(self, user=None, parent=None, **kwargs):
         self._path = self.path
         self._materialized_path = self.materialized_path
         return super(OsfStorageFileNode, self).delete(user=user, parent=parent) if self._check_delete_allowed() else None
 
+    def copy_under(self, destination_parent, name=None):
+        if getattr(self.target, 'is_quickfiles', False):
+            raise exceptions.FileNodeIsQuickFilesNode()
+        return super(OsfStorageFileNode, self).copy_under(destination_parent, name)
+
     def move_under(self, destination_parent, name=None):
         if self.is_preprint_primary:
-            if self.node != destination_parent.node or self.provider != destination_parent.provider:
+            if self.target != destination_parent.target or self.provider != destination_parent.provider:
                 raise exceptions.FileNodeIsPrimaryFile()
         if self.is_checked_out:
             raise exceptions.FileNodeCheckedOutError()
@@ -156,7 +175,7 @@ class OsfStorageFileNode(BaseFileNode):
         """
         Updates self.checkout with the requesting user or None,
         iff user has permission to check out file or folder.
-        Adds log to self.node.
+        Adds log to self.target if target is a node.
 
 
         :param user:        User making the request
@@ -167,43 +186,43 @@ class OsfStorageFileNode(BaseFileNode):
 
         if self.is_checked_out and self.checkout != user:
             # Allow project admins to force check in
-            if self.node.has_permission(user, permissions.ADMIN):
+            if self.target.has_permission(user, permissions.ADMIN):
                 # But don't allow force check in for prereg admin checked out files
-                if self.checkout.has_perm('osf.view_prereg') and self.node.draft_registrations_active.filter(
+                if self.checkout.has_perm('osf.view_prereg') and self.target.draft_registrations_active.filter(
                         registration_schema__name='Prereg Challenge').exists():
                     raise exceptions.FileNodeCheckedOutError()
             else:
                 raise exceptions.FileNodeCheckedOutError()
 
-        if not self.node.has_permission(user, permissions.WRITE):
+        if not self.target.has_permission(user, permissions.WRITE):
             raise exceptions.FileNodeCheckedOutError()
 
         action = NodeLog.CHECKED_OUT if checkout else NodeLog.CHECKED_IN
 
         if self.is_checked_out and action == NodeLog.CHECKED_IN or not self.is_checked_out and action == NodeLog.CHECKED_OUT:
             self.checkout = checkout
-
-            self.node.add_log(
-                action=action,
-                params={
-                    'kind': self.kind,
-                    'project': self.node.parent_id,
-                    'node': self.node._id,
-                    'urls': {
-                        # web_url_for unavailable -- called from within the API, so no flask app
-                        'download': '/project/{}/files/{}/{}/?action=download'.format(self.node._id,
-                                                                                      self.provider,
-                                                                                      self._id),
-                        'view': '/project/{}/files/{}/{}'.format(self.node._id, self.provider, self._id)},
-                    'path': self.materialized_path
-                },
-                auth=Auth(user),
-            )
+            if isinstance(self.target, Node):
+                self.target.add_log(
+                    action=action,
+                    params={
+                        'kind': self.kind,
+                        'project': self.target.parent_id,
+                        'node': self.target._id,
+                        'urls': {
+                            # web_url_for unavailable -- called from within the API, so no flask app
+                            'download': '/project/{}/files/{}/{}/?action=download'.format(self.target._id,
+                                                                                          self.provider,
+                                                                                          self._id),
+                            'view': '/project/{}/files/{}/{}'.format(self.target._id, self.provider, self._id)},
+                        'path': self.materialized_path
+                    },
+                    auth=Auth(user),
+                )
 
             if save:
                 self.save()
 
-    def save(self):
+    def save(self, *args, **kwargs):
         self._path = ''
         self._materialized_path = ''
         return super(OsfStorageFileNode, self).save()
@@ -298,25 +317,26 @@ class OsfStorageFile(OsfStorageFileNode, File):
             return None
 
     def add_tag_log(self, action, tag, auth):
-        node = self.node
-        node.add_log(
-            action=action,
-            params={
-                'parent_node': node.parent_id,
-                'node': node._id,
-                'urls': {
-                    'download': '/project/{}/files/osfstorage/{}/?action=download'.format(node._id, self._id),
-                    'view': '/project/{}/files/osfstorage/{}/'.format(node._id, self._id)},
-                'path': self.materialized_path,
-                'tag': tag,
-            },
-            auth=auth,
-        )
+        if isinstance(self.target, Node):
+            node = self.target
+            node.add_log(
+                action=action,
+                params={
+                    'parent_node': node.parent_id,
+                    'node': node._id,
+                    'urls': {
+                        'download': '/project/{}/files/osfstorage/{}/?action=download'.format(node._id, self._id),
+                        'view': '/project/{}/files/osfstorage/{}/'.format(node._id, self._id)},
+                    'path': self.materialized_path,
+                    'tag': tag,
+                },
+                auth=auth,
+            )
 
     def add_tag(self, tag, auth, save=True, log=True):
         from osf.models import Tag, NodeLog  # Prevent import error
 
-        if not self.tags.filter(system=False, name=tag).exists() and not self.node.is_registration:
+        if not self.tags.filter(system=False, name=tag).exists() and not getattr(self.target, 'is_registration', False):
             new_tag = Tag.load(tag)
             if not new_tag:
                 new_tag = Tag(name=tag)
@@ -331,7 +351,7 @@ class OsfStorageFile(OsfStorageFileNode, File):
 
     def remove_tag(self, tag, auth, save=True, log=True):
         from osf.models import Tag, NodeLog  # Prevent import error
-        if self.node.is_registration:
+        if getattr(self.target, 'is_registration', False):
             # Can't perform edits on a registration
             raise NodeStateError
         tag_instance = Tag.objects.filter(system=False, name=tag).first()
@@ -353,7 +373,7 @@ class OsfStorageFile(OsfStorageFileNode, File):
         search.update_file(self, delete=True)
         return super(OsfStorageFile, self).delete(user, parent, **kwargs)
 
-    def save(self, skip_search=False):
+    def save(self, skip_search=False, *args, **kwargs):
         from website.search import search
 
         ret = super(OsfStorageFile, self).save()
@@ -363,6 +383,10 @@ class OsfStorageFile(OsfStorageFileNode, File):
 
 
 class OsfStorageFolder(OsfStorageFileNode, Folder):
+
+    is_root = models.NullBooleanField(default=False)
+
+    objects = OsfStorageFolderManager()
 
     @property
     def is_checked_out(self):
@@ -399,10 +423,11 @@ class OsfStorageFolder(OsfStorageFileNode, Folder):
 
     @property
     def is_preprint_primary(self):
-        if self.node.preprint_file:
-            for child in self.children.filter(node__preprint_file=self.node.preprint_file).select_related('node'):
-                if child.is_preprint_primary:
-                    return True
+        if self.target.preprint_file:
+            for child in self.children.all():
+                if getattr(child.target, 'preprint_file', None):
+                    if child.is_preprint_primary:
+                        return True
         return False
 
     def serialize(self, include_full=False, version=None):
@@ -436,7 +461,7 @@ class NodeSettings(BaseNodeSettings, BaseStorageAddon):
         # in the database and thus odm cannot attach foreign fields to it
         self.save()
         # Note: The "root" node will always be "named" empty string
-        root = OsfStorageFolder(name='', node=self.owner)
+        root = OsfStorageFolder(name='', target=self.owner, is_root=True)
         root.save()
         self.root_node = root
         self.save()
