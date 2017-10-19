@@ -32,7 +32,7 @@
             You will ${'not receive ' if no_future_emails else 'be automatically subscribed to '}future notification
             emails for this ${reviewable.provider.preprint_word}. Each ${reviewable.provider.preprint_word} is associated
             with a project on the Open Science Framework for managing the ${reviewable.provider.preprint_word}. To change
-            your email notification preferences, visit your <a href="${'{domain}settings/notifications/'.format(domain=domain)}">user settings</a>.
+            your email notification preferences, visit your <a href="${'{}settings/notifications/'.format(domain)}">user settings</a>.
         </p>
         <p>
             If you have been erroneously associated with "${reviewable.node.title}", then you may visit the project's
@@ -49,7 +49,7 @@
         Your ${reviewable.provider.name} and OSF teams
         <p>
         Center for Open Science<br>
-        210 Ridge McIntire Road, Suite 500, Charlottesville, VA 22903-5083
+        210 Ridge McIntire Road, Suite 500, Charlottesville, VA 22903
         </p>
         <a href="https://github.com/CenterForOpenScience/cos.io/blob/master/PRIVACY_POLICY.md">Privacy Policy</a>
     </div>

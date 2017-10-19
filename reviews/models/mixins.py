@@ -177,6 +177,7 @@ class ReviewsMachine(Machine):
     def save_changes(self, ev):
         now = self.action.date_created if self.action is not None else timezone.now()
         should_publish = self.reviewable.in_public_reviews_state
+        self.reviewable.node._has_abandoned_preprint = False
         if should_publish and not self.reviewable.is_published:
             if not (self.reviewable.node.preprint_file and self.reviewable.node.preprint_file.node == self.reviewable.node):
                 raise ValueError('Preprint node is not a valid preprint; cannot publish.')
@@ -185,12 +186,12 @@ class ReviewsMachine(Machine):
             if not self.reviewable.subjects.exists():
                 raise ValueError('Preprint must have at least one subject to be published.')
             self.reviewable.date_published = now
-            self.reviewable.node._has_abandoned_preprint = False
             self.reviewable.is_published = True
             enqueue_postcommit_task(get_and_set_preprint_identifiers, (), {'preprint': self.reviewable}, celery=True)
         elif not should_publish and self.reviewable.is_published:
             self.reviewable.is_published = False
         self.reviewable.save()
+        self.reviewable.node.save()
 
     def resubmission_allowed(self, ev):
         return self.reviewable.provider.reviews_workflow == workflow.Workflows.PRE_MODERATION.value
@@ -221,6 +222,7 @@ class ReviewsMachine(Machine):
         context['template'] = 'reviews_submission_status'
         context['notify_comment'] = not self.reviewable.provider.reviews_comments_private and self.action.comment
         context['is_rejected'] = self.action.to_state == workflow.States.REJECTED.value
+        context['was_pending'] = self.action.from_state == workflow.States.PENDING.value
         reviews_signals.reviews_email.send(context=context)
 
     def notify_edit_comment(self, ev):
@@ -235,9 +237,9 @@ class ReviewsMachine(Machine):
             'email_recipients': [contributor._id for contributor in self.reviewable.node.contributors],
             'reviewable': self.reviewable,
             'workflow': self.reviewable.provider.reviews_workflow,
-            'provider_url': self.reviewable.provider.domain if self.reviewable.provider.domain is not None else settings.DOMAIN + 'preprints/' + self.reviewable.provider._id,
-            'provider_contact_email': self.reviewable.provider.email_contact if self.reviewable.provider.email_contact is not None else 'contact@osf.io',
-            'provider_support_email': self.reviewable.provider.email_support if self.reviewable.provider.email_support is not None else 'support@osf.io',
+            'provider_url': self.reviewable.provider.domain or '{domain}preprints/{provider_id}'.format(domain=settings.DOMAIN, provider_id=self.reviewable.provider._id),
+            'provider_contact_email': self.reviewable.provider.email_contact or 'contact@osf.io',
+            'provider_support_email': self.reviewable.provider.email_support or 'support@osf.io',
         }
 
 # Handle email notifications including: update comment, accept, and reject of submission.
@@ -271,8 +273,11 @@ def reviews_notification(self, context):
 @reviews_signals.reviews_email_submit.connect
 def reviews_submit_notification(self, context):
     template = context['template']
+    event_type = utils.find_subscription_type('global_reviews')
     for user_id in context['email_recipients']:
         user = OSFUser.load(user_id)
+        user_subscriptions = get_user_subscriptions(user, event_type)
+        context['no_future_emails'] = user_subscriptions['none']
         context['is_creator'] = user == context.get('reviewable').node.creator
         email = mails.Mail(template, subject='Confirmation of your submission to {provider}'.format(provider=context.get('reviewable').provider.name))
         mails.send_mail(user.username, email, mimetype='html', user=user, **context)
