@@ -76,9 +76,9 @@ var FolderPickerViewModel = oop.defclass({
         self.loadedFolders = ko.observable(false);
         // Button text for changing folders
         self.toggleChangeText = ko.observable('Change');
-
         var addonSafeName = $osf.htmlEscape(self.addonName);
-        var OSF_SUPPORT_EMAIL = window.contextVars.osfSupportEmail;
+        var OSF_SUPPORT_EMAIL = $osf.osfSupportEmail();
+
         self.messages = {
             invalidCredOwner: ko.pureComputed(function() {
                 return 'Could not retrieve ' + addonSafeName + ' settings at ' +
