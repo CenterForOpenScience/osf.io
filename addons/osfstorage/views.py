@@ -268,18 +268,26 @@ def osfstorage_get_children(file_node, **kwargs):
 
 
 @must_be_signed
-@must_not_be_registration
 @decorators.autoload_filenode(must_be='folder')
-def osfstorage_create_child(file_node, payload, node_addon, **kwargs):
+def osfstorage_create_child(file_node, payload, **kwargs):
     parent = file_node  # Just for clarity
     name = payload.get('name')
     user = OSFUser.load(payload.get('user'))
     is_folder = payload.get('kind') == 'folder'
 
+    if getattr(file_node.target, 'is_registration', False) and not getattr(file_node.target, 'archiving', False):
+        raise HTTPError(
+            httplib.BAD_REQUEST,
+            data={
+                'message_short': 'Registered Nodes are immutable',
+                'message_long': "The operation you're trying to do cannot be applied to registered Nodes, which are immutable",
+            }
+        )
+
     if not (name or user) or '/' in name:
         raise HTTPError(httplib.BAD_REQUEST)
 
-    if file_node.node.is_quickfiles and is_folder:
+    if getattr(file_node.target, 'is_quickfiles', False) and is_folder:
         raise HTTPError(httplib.BAD_REQUEST, data={'message_long': 'You may not create a folder for QuickFiles'})
 
     try:
