@@ -215,21 +215,19 @@ class ReviewsMachine(Machine):
     def notify_resubmit(self, ev):
         context = self.get_context()
         context['template'] = 'reviews_resubmission_confirmation'
-        reviews_signals.reviews_email.send(context=context)
+        reviews_signals.reviews_email.send(context=context, node=self.reviewable.node)
 
     def notify_accept_reject(self, ev):
         context = self.get_context()
         context['template'] = 'reviews_submission_status'
         context['notify_comment'] = not self.reviewable.provider.reviews_comments_private and self.action.comment
         context['is_rejected'] = self.action.to_state == workflow.States.REJECTED.value
-        context['email_sender'] = self.reviewable.node.creator
         context['was_pending'] = self.action.from_state == workflow.States.PENDING.value
         reviews_signals.reviews_email.send(context=context, node=self.reviewable.node)
 
     def notify_edit_comment(self, ev):
         context = self.get_context()
         context['template'] = 'reviews_update_comment'
-        context['email_sender'] = self.reviewable.node.creator
         if not self.reviewable.provider.reviews_comments_private and self.action.comment:
             reviews_signals.reviews_email.send(context=context, node=self.reviewable.node)
 
@@ -237,6 +235,7 @@ class ReviewsMachine(Machine):
         return {
             'domain': settings.DOMAIN,
             'email_recipients': [contributor._id for contributor in self.reviewable.node.contributors],
+            'email_sender': self.reviewable.node.creator,
             'reviewable': self.reviewable,
             'workflow': self.reviewable.provider.reviews_workflow,
             'provider_url': self.reviewable.provider.domain or '{domain}preprints/{provider_id}'.format(domain=settings.DOMAIN, provider_id=self.reviewable.provider._id),
