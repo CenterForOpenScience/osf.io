@@ -1,4 +1,5 @@
 from website.settings import DOMAIN as OSF_DOMAIN
+from website.settings import OSF_SUPPORT_EMAIL
 from osf.models import OSFUser
 from furl import furl
 
@@ -26,6 +27,7 @@ def serialize_comment(comment):
         'reports': reports,
         'node': comment.node,
         'category': reports[0]['category'],
+        'osf_support_email': OSF_SUPPORT_EMAIL,
     }
 
 

@@ -2340,7 +2340,12 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
             if not user.is_disabled:
                 user.disable_account()
                 user.is_registered = False
-                mails.send_mail(to_addr=user.username, mail=mails.SPAM_USER_BANNED, user=user)
+                mails.send_mail(
+                    to_addr=user.username,
+                    mail=mails.SPAM_USER_BANNED,
+                    user=user,
+                    osf_support_email=settings.OSF_SUPPORT_EMAIL
+                )
             user.save()
 
             # Make public nodes private from this contributor
