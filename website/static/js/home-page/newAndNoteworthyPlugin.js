@@ -7,7 +7,6 @@ var m = require('mithril');
 var $osf = require('js/osfHelpers');
 var Raven = require('raven-js');
 var lodashGet = require('lodash.get');
-var OSF_SUPPORT_EMAIL = window.contextVars.osfSupportEmail;
 
 // CSS
 require('css/new-and-noteworthy-plugin.css');
@@ -122,6 +121,7 @@ var NewAndNoteworthy = {
 
     },
     view : function(ctrl) {
+        var OSF_SUPPORT_EMAIL = window.contextVars.osfSupportEmail;
         if (ctrl.errorLoading()) {
             return m('p.text-center.m-v-lg', 'Error loading projects. Please refresh the page. Contact ' + OSF_SUPPORT_EMAIL + ' for further assistance.');
         }

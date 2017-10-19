@@ -19,7 +19,6 @@ var waterbutler = require('js/waterbutler');
 
 var iconmap = require('js/iconmap');
 var storageAddons = require('json!storageAddons.json');
-var OSF_SUPPORT_EMAIL = window.contextVars.osfSupportEmail;
 
 // CSS
 require('css/fangorn.css');
@@ -615,6 +614,7 @@ function doItemOp(operation, to, from, rename, conflict) {
         }
 
         var message;
+        var OSF_SUPPORT_EMAIL = window.contextVars.osfSupportEmail;
 
         if (xhr.status !== 500 && xhr.responseJSON && (xhr.responseJSON.message || xhr.responseJSON.message_long)) {
             message = xhr.responseJSON.message || xhr.responseJSON.message_long;
@@ -910,6 +910,7 @@ var DEFAULT_ERROR_MESSAGE = 'Could not upload file. The file may be invalid ' +
 function _fangornDropzoneError(treebeard, file, message, xhr) {
     var tb = treebeard;
     var msgText;
+    var OSF_SUPPORT_EMAIL = window.contextVars.osfSupportEmail;
 
     // Unpatched Dropzone silently does nothing when folders are uploaded on Windows IE
     // Patched Dropzone.prototype.drop to emit error with file = 'None' to catch the error

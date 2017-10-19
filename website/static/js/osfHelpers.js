@@ -9,7 +9,6 @@ var bootbox = require('bootbox');
 var lodashGet = require('lodash.get');
 var KeenTracker = require('js/keen');
 var linkify = require('linkifyjs/html');
-var OSF_SUPPORT_EMAIL = window.contextVars.osfSupportEmail;
 
 // TODO: For some reason, this require is necessary for custom ko validators to work
 // Why?!
@@ -282,8 +281,12 @@ var setXHRAuthorization = function (xhr, options) {
 };
 
 var errorDefaultShort = 'Unable to resolve';
-var errorDefaultLong = 'OSF was unable to resolve your request. If this issue persists, ' +
-    'please report it to <a href="mailto:' + OSF_SUPPORT_EMAIL + '">' + OSF_SUPPORT_EMAIL + '</a>.';
+
+var errorDefaultLong = function(){
+    var OSF_SUPPORT_EMAIL = window.contextVars.osfSupportEmail;
+    return 'OSF was unable to resolve your request. If this issue persists, ' +
+        'please report it to <a href="mailto:' + OSF_SUPPORT_EMAIL + '">' + OSF_SUPPORT_EMAIL + '</a>.';
+};
 
 var handleAddonApiHTTPError = function(error){
     var response;
@@ -293,14 +296,14 @@ var handleAddonApiHTTPError = function(error){
         response = '';
     }
     var title = response.message_short || errorDefaultShort;
-    var message = response.message_long || errorDefaultLong;
+    var message = response.message_long || errorDefaultLong();
 
     $.osf.growl(title, message);
 };
 
 var handleJSONError = function(response) {
     var title = (response.responseJSON && response.responseJSON.message_short) || errorDefaultShort;
-    var message = (response.responseJSON && response.responseJSON.message_long) || errorDefaultLong;
+    var message = (response.responseJSON && response.responseJSON.message_long) || errorDefaultLong();
     // We can reach this error handler when the user leaves a page while a request is pending. In that
     // case, response.status === 0, and we don't want to show an error message.
     if (response && response.status && response.status >= 400) {

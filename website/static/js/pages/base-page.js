@@ -22,7 +22,6 @@ var moment = require('moment');
 var KeenTracker = require('js/keen');
 var DevModeControls = require('js/devModeControls');
 var bootbox = require('bootbox');
-var OSF_SUPPORT_EMAIL = window.contextVars.osfSupportEmail;
 
 // Prevent IE from caching responses
 $.ajaxSetup({cache: false});
@@ -103,6 +102,7 @@ function confirmEmails(emailsToAdd) {
         var requestMessage;
         var confirmMessage;
         var nopeMessage;
+        var OSF_SUPPORT_EMAIL = window.contextVars.osfSupportEmail;
         if (email.user_merge) {
             title = 'Merge account';
             requestMessage = 'Would you like to merge \<b>' + email.address + '\</b> into your account?  ' +
