@@ -5,14 +5,15 @@ from rest_framework import serializers as ser
 from api.base.exceptions import Conflict
 from api.base.serializers import (
     JSONAPISerializer, IDField,
-    LinksField, RelationshipField, DateByVersion,
+    LinksField, RelationshipField, DateByVersion, JSONAPIListField
 )
 from api.base.utils import absolute_reverse, get_user_auth
 from api.taxonomies.serializers import TaxonomyField
 from api.nodes.serializers import (
     NodeCitationSerializer,
     NodeLicenseSerializer,
-    get_license_details
+    get_license_details,
+    NodeTagField
 )
 from framework.exceptions import PermissionsError
 from website.util import permissions
@@ -76,6 +77,7 @@ class PreprintSerializer(JSONAPISerializer):
     license_record = NodeLicenseSerializer(required=False, source='license')
     title = ser.CharField(source='node.title', required=False)
     description = ser.CharField(required=False, allow_blank=True, allow_null=True, source='node.description')
+    tags = JSONAPIListField(child=NodeTagField(), required=False, source='node.tags')
 
     contributors = RelationshipField(
         related_view='nodes:node-contributors',
@@ -108,6 +110,11 @@ class PreprintSerializer(JSONAPISerializer):
         related_view='preprint_providers:preprint_provider-detail',
         related_view_kwargs={'provider_id': '<provider._id>'},
         read_only=False
+    )
+
+    files = RelationshipField(
+        related_view='nodes:node-providers',
+        related_view_kwargs={'node_id': '<_id>'}
     )
 
     primary_file = PrimaryFileRelationshipField(
@@ -172,6 +179,19 @@ class PreprintSerializer(JSONAPISerializer):
         if primary_file:
             self.set_field(preprint.set_primary_file, primary_file, auth)
             save_node = True
+
+        old_tags = set(preprint.node.tags.values_list('name', flat=True))
+        if validated_data.get('node') and 'tags' in validated_data['node']:
+            current_tags = set(validated_data['node'].pop('tags', []))
+        elif self.partial:
+            current_tags = set(old_tags)
+        else:
+            current_tags = set()
+
+        for new_tag in (current_tags - old_tags):
+            preprint.node.add_tag(new_tag, auth=auth)
+        for deleted_tag in (old_tags - current_tags):
+            preprint.node.remove_tag(deleted_tag, auth=auth)
 
         if 'node' in validated_data:
             preprint.node.update(fields=validated_data.pop('node'))

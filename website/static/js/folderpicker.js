@@ -136,7 +136,7 @@ function treebeardOnload() {
     }
 
     var node = tb.treeData.children[0];
-    if ((typeof node.data.hasChildren === 'undefined') || node.data.hasChildren) {
+    if (node && node.data && ((typeof node.data.hasChildren === 'undefined') || node.data.hasChildren)) {
         tb.updateFolder(null, tb.treeData.children[0]);
     }
     tb.options.folderPickerOnload();

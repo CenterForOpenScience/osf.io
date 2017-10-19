@@ -9,6 +9,7 @@ import sendgrid
 from framework.email.tasks import send_email, _send_with_sendgrid
 from website import settings
 from tests.base import fake
+from osf_tests.factories import fake_email
 
 # Check if local mail server is running
 SERVER_RUNNING = True
@@ -32,7 +33,7 @@ class TestEmail(unittest.TestCase):
     def test_send_with_sendgrid_success(self):
         mock_client = mock.MagicMock()
         mock_client.send.return_value = 200, 'success'
-        from_addr, to_addr = fake.email(), fake.email()
+        from_addr, to_addr = fake_email(), fake_email()
         category1, category2 = fake.word(), fake.word()
         subject = fake.bs()
         message = fake.text()
@@ -62,7 +63,7 @@ class TestEmail(unittest.TestCase):
     def test_send_with_sendgrid_failure_returns_false(self):
         mock_client = mock.MagicMock()
         mock_client.send.return_value = 400, 'failed'
-        from_addr, to_addr = fake.email(), fake.email()
+        from_addr, to_addr = fake_email(), fake_email()
         subject = fake.bs()
         message = fake.text()
         ret = _send_with_sendgrid(
