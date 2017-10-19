@@ -836,7 +836,6 @@ class TestArchiverUtils(ArchiverTestCase):
             mail=mails.ARCHIVE_SIZE_EXCEEDED_DESK,
             stat_result={},
         )
-
         mock_send_mail.assert_has_calls([
             call(**args_user),
             call(**args_desk),
