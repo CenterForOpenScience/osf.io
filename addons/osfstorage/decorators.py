@@ -9,7 +9,7 @@ from framework.auth.decorators import must_be_signed
 from framework.exceptions import HTTPError
 
 from addons.osfstorage.models import OsfStorageFileNode, OsfStorageFolder
-from osf.models import OSFUser, AbstractNode
+from osf.models import OSFUser, AbstractNode, Guid
 from website.files import exceptions
 from website.project.decorators import (
     must_not_be_registration, must_have_addon,
@@ -35,15 +35,25 @@ def autoload_filenode(must_be=None, default_root=False):
     """
     def _autoload_filenode(func):
         @handle_django_errors
-        @must_have_addon('osfstorage', 'node')
         @functools.wraps(func)
         def wrapped(*args, **kwargs):
-            node = kwargs['node']
+
+            guid = kwargs.get('guid')
+
+            target = getattr(Guid.load(guid), 'referent', None)
+            if not target:
+                raise HTTPError(
+                    httplib.NOT_FOUND,
+                    data={
+                        'message_short': 'Guid not resolved',
+                        'message_long': 'No object with that guid could be found',
+                    }
+                )
 
             if 'fid' not in kwargs and default_root:
                 file_node = kwargs['node_addon'].get_root()
             else:
-                file_node = OsfStorageFileNode.get(kwargs.get('fid'), node)
+                file_node = OsfStorageFileNode.get(kwargs.get('fid'), target)
 
             if must_be and file_node.kind != must_be:
                 raise HTTPError(httplib.BAD_REQUEST, data={
