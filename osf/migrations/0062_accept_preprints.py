@@ -19,7 +19,7 @@ def accept_all_published_preprints(apps, schema_editor):
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('osf', '0062_auto_20171004_1506'),
+        ('osf', '0061_add_reviews_notification_subscription'),
     ]
 
     operations = [
