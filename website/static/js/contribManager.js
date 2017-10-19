@@ -2,11 +2,14 @@
 
 var $ = require('jquery');
 var ko = require('knockout');
+var Raven = require('raven-js');
 var bootbox = require('bootbox');
 require('jquery-ui');
 require('knockout-sortable');
+var lodashGet = require('lodash.get');
 var ContribAdder = require('js/contribAdder');
 var ContribRemover = require('js/contribRemover');
+var osfLanguage = require('js/osfLanguage');
 
 var rt = require('js/responsiveTable');
 var $osf = require('./osfHelpers');
@@ -111,6 +114,35 @@ var ContributorModel = function(contributor, currentUserCanEdit, pageOwner, isRe
         self.contributorToRemove({
             fullname: self.fullname,
             id:self.id});
+    };
+
+    self.addParentAdmin = function () {
+        // Immediately adds admin on parent to component, with write permissions and visible=True
+        var self = this;
+        self.nodeId = window.contextVars.node.id
+        self.nodeApiUrl = '/api/v1/project/' + self.nodeId + '/';
+        var url = self.nodeApiUrl + 'contributors/';
+        var userData = JSON.parse(ko.toJSON(self));
+        userData.permission = 'write'; // default permission write
+        userData.visible = true; // default visible is true
+        return $osf.postJSON(
+            url, {
+                users: [userData],
+                node_ids: []
+            }
+        ).done(function(response) {
+            window.location.reload();
+        }).fail(function(xhr, status, error){
+            var errorMessage = lodashGet(xhr, 'responseJSON.message') || ('There was a problem trying to add the contributor. ' + osfLanguage.REFRESH_OR_SUPPORT);
+            $osf.growl('Could not add contributor', errorMessage);
+            Raven.captureMessage('Error adding contributors', {
+                extra: {
+                    url: url,
+                    status: status,
+                    error: error
+                }
+            });
+        });
     };
 
     self.unremove = function() {
