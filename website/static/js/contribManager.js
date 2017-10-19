@@ -119,6 +119,7 @@ var ContributorModel = function(contributor, currentUserCanEdit, pageOwner, isRe
     self.addParentAdmin = function () {
         // Immediately adds admin on parent to component, with write permissions and visible=True
         var self = this;
+        $osf.block();
         self.nodeId = window.contextVars.node.id
         self.nodeApiUrl = '/api/v1/project/' + self.nodeId + '/';
         var url = self.nodeApiUrl + 'contributors/';
@@ -133,6 +134,7 @@ var ContributorModel = function(contributor, currentUserCanEdit, pageOwner, isRe
         ).done(function(response) {
             window.location.reload();
         }).fail(function(xhr, status, error){
+            $osf.unblock();
             var errorMessage = lodashGet(xhr, 'responseJSON.message') || ('There was a problem trying to add the contributor. ' + osfLanguage.REFRESH_OR_SUPPORT);
             $osf.growl('Could not add contributor', errorMessage);
             Raven.captureMessage('Error adding contributors', {
