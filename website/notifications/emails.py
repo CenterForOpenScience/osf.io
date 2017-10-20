@@ -68,7 +68,7 @@ def notify_global_event(event, sender_user, node, timestamp, target_users, **con
                 store_emails([target_id], notification_type, event, sender_user, node, timestamp, **context)
                 sent_users.extend([target_id])
 
-    return sent_users, target_users
+    return sent_users
 
 
 def store_emails(recipient_ids, notification_type, event, user, node, timestamp, **context):
