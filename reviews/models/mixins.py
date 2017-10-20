@@ -215,7 +215,7 @@ class ReviewsMachine(Machine):
     def notify_resubmit(self, ev):
         context = self.get_context()
         context['template'] = 'reviews_resubmission_confirmation'
-        reviews_signals.reviews_email.send(context=context, node=self.reviewable.node)
+        reviews_signals.reviews_email.send(ev=ev, context=context, node=self.reviewable.node)
 
     def notify_accept_reject(self, ev):
         context = self.get_context()
@@ -223,19 +223,18 @@ class ReviewsMachine(Machine):
         context['notify_comment'] = not self.reviewable.provider.reviews_comments_private and self.action.comment
         context['is_rejected'] = self.action.to_state == workflow.States.REJECTED.value
         context['was_pending'] = self.action.from_state == workflow.States.PENDING.value
-        reviews_signals.reviews_email.send(context=context, node=self.reviewable.node)
+        reviews_signals.reviews_email.send(ev=ev, context=context, node=self.reviewable.node)
 
     def notify_edit_comment(self, ev):
         context = self.get_context()
         context['template'] = 'reviews_update_comment'
         if not self.reviewable.provider.reviews_comments_private and self.action.comment:
-            reviews_signals.reviews_email.send(context=context, node=self.reviewable.node)
+            reviews_signals.reviews_email.send(ev=ev, context=context, node=self.reviewable.node)
 
     def get_context(self):
         return {
             'domain': settings.DOMAIN,
             'email_recipients': [contributor._id for contributor in self.reviewable.node.contributors],
-            'email_sender': self.reviewable.node.creator,
             'reviewable': self.reviewable,
             'workflow': self.reviewable.provider.reviews_workflow,
             'provider_url': self.reviewable.provider.domain or '{domain}preprints/{provider_id}'.format(domain=settings.DOMAIN, provider_id=self.reviewable.provider._id),
@@ -245,15 +244,18 @@ class ReviewsMachine(Machine):
 
 # Handle email notifications including: update comment, accept, and reject of submission.
 @reviews_signals.reviews_email.connect
-def reviews_notification(self, context, node):
-    user = context['email_sender']
-    auth = Auth(user)
+def reviews_notification(self, ev, context, node):
+    user = ev.kwargs.get('user')
     time_now = timezone.now()
     email_recipients = context['email_recipients']
-    email_recipients.remove(user._id)  # remove email sender
-    for user_id in email_recipients:
-        context['target_user'] = OSFUser.load(user_id)
-        emails.notify(event='global_reviews', user=auth.user, node=node, timestamp=time_now, **context)
+    emails.notify_global_event(
+        event='global_reviews',
+        sender_user=user,
+        node=node,
+        timestamp=time_now,
+        target_users=email_recipients,
+        **context
+    )
 
 # Handle email notifications for a new submission.
 @reviews_signals.reviews_email_submit.connect

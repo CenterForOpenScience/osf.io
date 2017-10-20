@@ -43,8 +43,7 @@ def notify(event, user, node, timestamp, **context):
         # If target, they get a reply email and are removed from the general email
         if target_user and target_user._id in subscriptions[notification_type]:
             subscriptions[notification_type].remove(target_user._id)
-            event_name = 'global_reviews' if event_type == 'global_reviews' else 'comment_replies'
-            store_emails([target_user._id], notification_type, event_name, user, node, timestamp, **context)
+            store_emails([target_user._id], notification_type, 'comment_replies', user, node, timestamp, **context)
             sent_users.append(target_user._id)
 
         if subscriptions[notification_type]:
@@ -53,22 +52,23 @@ def notify(event, user, node, timestamp, **context):
     return sent_users
 
 def notify_mentions(event, user, node, timestamp, **context):
+    new_mentions = context.get('new_mentions', [])
+    sent_users = notify_global_event(event, user, node, timestamp, new_mentions, **context)
+    return sent_users
+
+def notify_global_event(event, sender_user, node, timestamp, target_users, **context):
     event_type = utils.find_subscription_type(event)
     sent_users = []
-    new_mentions = context.get('new_mentions', [])
-    for m in new_mentions:
-        mentioned_user = OSFUser.load(m)
-        subscriptions = get_user_subscriptions(mentioned_user, event_type)
+
+    for target_id in target_users:
+        target_user = OSFUser.load(target_id)
+        subscriptions = get_user_subscriptions(target_user, event_type)
         for notification_type in subscriptions:
-            if (
-                notification_type != 'none' and
-                subscriptions[notification_type] and
-                m in subscriptions[notification_type]
-            ):
-                store_emails([m], notification_type, 'mentions', user, node,
-                                 timestamp, **context)
-                sent_users.extend([m])
-    return sent_users
+            if (notification_type != 'none' and subscriptions[notification_type] and target_id in subscriptions[notification_type]):
+                store_emails([target_id], notification_type, event, sender_user, node, timestamp, **context)
+                sent_users.extend([target_id])
+
+    return sent_users, target_users
 
 
 def store_emails(recipient_ids, notification_type, event, user, node, timestamp, **context):
@@ -88,7 +88,7 @@ def store_emails(recipient_ids, notification_type, event, user, node, timestamp,
     if notification_type == 'none':
         return
 
-    # Reviews has three email templates for the global_reviews event.
+    # Reviews has multiple email templates for the global_reviews event.
     template = context['template'] + '.html.mako' if event == 'global_reviews' else event + '.html.mako'
     # user whose action triggered email sending
     context['user'] = user
@@ -99,6 +99,7 @@ def store_emails(recipient_ids, notification_type, event, user, node, timestamp,
             continue
         recipient = OSFUser.load(recipient_id)
         context['localized_timestamp'] = localize_timestamp(timestamp, recipient)
+        context['recipient'] = recipient
         message = mails.render_message(template, **context)
 
         digest = NotificationDigest(
