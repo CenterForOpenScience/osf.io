@@ -1476,7 +1476,7 @@ class TestSendEmails(NotificationTestCase):
         time_now = timezone.now()
         emails.notify_mentions('global_mentions', user=user, node=node, timestamp=time_now, new_mentions=[user._id])
         assert_true(mock_store.called)
-        mock_store.assert_called_with([node.creator._id], 'email_transactional', 'mentions', user,
+        mock_store.assert_called_with([node.creator._id], 'email_transactional', 'global_mentions', user,
                                       node, time_now, new_mentions=[node.creator._id])
 
     @mock.patch('website.notifications.emails.store_emails')
