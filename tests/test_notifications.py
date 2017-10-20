@@ -1848,7 +1848,7 @@ class TestNotificationsReviews(OsfTestCase):
         mixins.reviews_submit_notification(self, context=self.context_info)
         assert_true(mock_send_email.called)
 
-    @mock.patch('website.notifications.emails.notify')
+    @mock.patch('website.notifications.emails.notify_global_event')
     def test_reviews_notification(self, mock_notify):
-        mixins.reviews_notification(self, context=self.context_info, node=self.preprint.node)
+        mixins.reviews_notification(self, creator=self.sender, context=self.context_info, node=self.preprint.node)
         assert_true(mock_notify.called)
