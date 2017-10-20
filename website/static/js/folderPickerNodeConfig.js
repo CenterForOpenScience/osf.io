@@ -77,7 +77,6 @@ var FolderPickerViewModel = oop.defclass({
         // Button text for changing folders
         self.toggleChangeText = ko.observable('Change');
         var addonSafeName = $osf.htmlEscape(self.addonName);
-        var OSF_SUPPORT_EMAIL = $osf.osfSupportEmail(window);
 
         self.messages = {
             invalidCredOwner: ko.pureComputed(function() {
@@ -92,12 +91,14 @@ var FolderPickerViewModel = oop.defclass({
                     ' Contact ' + $osf.htmlEscape(self.ownerName()) + ' to verify.';
             }),
             cantRetrieveSettings: ko.pureComputed(function() {
+                var OSF_SUPPORT_EMAIL = window.contextVars.osfSupportEmail;
                 return 'Could not retrieve ' + addonSafeName + ' settings at ' +
                     'this time. Please refresh ' +
                     'the page. If the problem persists, email ' +
                     '<a href="mailto:' + OSF_SUPPORT_EMAIL + '">' + OSF_SUPPORT_EMAIL + '</a>.';
             }),
             updateAccountsError: ko.pureComputed(function() {
+                var OSF_SUPPORT_EMAIL = window.contextVars.osfSupportEmail;
                 return 'Could not retrieve ' + addonSafeName + ' account list at ' +
                     'this time. Please refresh the page. If the problem persists, email ' +
                     '<a href="mailto:' + OSF_SUPPORT_EMAIL + '">' + OSF_SUPPORT_EMAIL + '</a>.';

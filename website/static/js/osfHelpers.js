@@ -1033,11 +1033,6 @@ function linkifyText(content) {
     return linkify(content);
 }
 
-//return global osfsuppoertemail from settings.py where window is loaded
-function osfSupportEmail(window){
-    return window.contextVars.osfSupportEmail;
-}
-
 // Also export these to the global namespace so that these can be used in inline
 // JS. This is used on the /goodbye page at the moment.
 module.exports = window.$.osf = {
@@ -1087,5 +1082,4 @@ module.exports = window.$.osf = {
     linkifyText: linkifyText,
     getConfirmationString: getConfirmationString,
     decodeText: decodeText,
-    osfSupportEmail: osfSupportEmail,
 };
