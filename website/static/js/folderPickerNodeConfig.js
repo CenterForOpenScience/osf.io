@@ -79,6 +79,9 @@ var FolderPickerViewModel = oop.defclass({
         self.selectedLibrary = ko.observable(false);
         self.loading = ko.observable(false);
         self.libraryLoading = ko.observable(false);
+        self.totalLibraries = ko.observable(null);
+        self.libraryFirstLoad = ko.observable(true);
+        self.numberLibrariesLoaded = ko.observable(0);
         // Whether the initial data has been fetched form the server. Used for
         // error handling.
         self.loadedSettings = ko.observable(false);
