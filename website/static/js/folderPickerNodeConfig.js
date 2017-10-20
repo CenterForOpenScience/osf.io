@@ -163,6 +163,10 @@ var FolderPickerViewModel = oop.defclass({
             })
         };
 
+        self.librariesPending = ko.pureComputed(function() {
+            return (self.totalLibraries() && parseInt(self.numberLibrariesLoaded()) < parseInt(self.totalLibraries()));
+        });
+
         /**
          * Whether or not to show the Import Access Token Button
          */
