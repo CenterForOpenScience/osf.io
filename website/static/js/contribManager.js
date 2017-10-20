@@ -120,7 +120,7 @@ var ContributorModel = function(contributor, currentUserCanEdit, pageOwner, isRe
         // Immediately adds admin on parent to component, with write permissions and visible=True
         var self = this;
         $osf.block();
-        self.nodeId = window.contextVars.node.id
+        self.nodeId = window.contextVars.node.id;
         self.nodeApiUrl = '/api/v1/project/' + self.nodeId + '/';
         var url = self.nodeApiUrl + 'contributors/';
         var userData = JSON.parse(ko.toJSON(self));
