@@ -408,12 +408,20 @@ var FolderPickerViewModel = oop.defclass({
         self.loadedFolders(false);
         self.activatePicker();
     },
-    onImportLibrarySuccess: function(response) {
+    onImportLibrarySuccess: function(response, textStatus, xhr) {
         var self = this;
         if (response) {
-            response.unshift({'id': 'personal', 'data': {'name': 'My Library'}});
+            var loaded = self.numberLibrariesLoaded();
+            self.totalLibraries(response.pop());
+            self.numberLibrariesLoaded(loaded + response.length);
+            if (self.libraryFirstLoad()) {
+                response.unshift({'id': 'personal', 'data': {'name': 'My Library'}});
+                self.libraryFirstLoad(false);
+            }
         }
-        self.libraries(response);
+        var libraries = self.libraries()
+        Array.prototype.push.apply(libraries, response)
+        self.libraries(libraries);
         // Update view model based on response
         self.libraryLoading(false);
         self.loadedLibraries(true);
