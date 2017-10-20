@@ -451,8 +451,14 @@ var FolderPickerViewModel = oop.defclass({
     },
     importLibraries: function() {
         var self = this;
-        self.libraryLoading(true);
-        return $.getJSON(self.urls().libraries)
+        if (self.libraryFirstLoad()) {
+            self.libraryLoading(true);
+        }
+        var metadata = {
+            'limit': 5,
+            'start': self.numberLibrariesLoaded()
+        };
+        return $.getJSON(self.urls().libraries, metadata)
             .done(self.onImportLibrarySuccess.bind(self))
             .fail(self.onImportLibraryError.bind(self));
     },
