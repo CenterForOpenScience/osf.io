@@ -1,6 +1,4 @@
-var $osf = require('js/osfHelpers');
-
-var OSF_SUPPORT_EMAIL = $osf.osfSupportEmail();
+var OSF_SUPPORT_EMAIL = window.contextVars.osfSupportEmail;
 var SUPPORT_LINK = '<a href="mailto:' + OSF_SUPPORT_EMAIL + '">' + OSF_SUPPORT_EMAIL +'</a>';
 
 var REFRESH_OR_SUPPORT = 'Please refresh the page and try again or contact ' + SUPPORT_LINK + ' if the problem persists.';

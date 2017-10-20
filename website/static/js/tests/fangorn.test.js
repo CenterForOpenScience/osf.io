@@ -12,6 +12,10 @@ var $ = require('jquery');
 var Raven = require('raven-js');
 var language = require('js/osfLanguage').projectSettings;
 
+window.contextVars = {
+    osfSupportEmail : 'fake-support@osf.io',
+};
+
 describe('fangorn', () => {
     describe('FangornMoveAndDeleteUnitTests', () => {
         // folder setup

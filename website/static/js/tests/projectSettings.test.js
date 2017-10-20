@@ -24,8 +24,10 @@ window.contextVars = {
     },
     currentUser: {
         fullname: 'John Cena'
-    }
+    },
+    osfSupportEmail : 'fake-support@osf.io',
 };
+
 sinon.stub($, 'ajax', function() {
     var ret = $.Deferred();
     ret.resolve({
