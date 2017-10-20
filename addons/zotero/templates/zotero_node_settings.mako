@@ -78,6 +78,9 @@
                         </div>
                     </div>
                 </div>
+                <div class="pull-right" data-bind="visible: librariesPending()">
+                    <button class="btn btn-primary" data-bind="click: importLibraries"> Load more libraries </button>
+                </div>
                 <div class="pull-right" data-bind="visible: selectedLibrary() && currentLibraryDisplay()">
                    <button class="btn btn-default" data-bind="click: cancelLibrarySelection">
                        Cancel
