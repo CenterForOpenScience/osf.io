@@ -1034,7 +1034,7 @@ function linkifyText(content) {
 }
 
 //return global osfsuppoertemail from settings.py where window is loaded
-function osfSupportEmail(){
+function osfSupportEmail(window){
     return window.contextVars.osfSupportEmail;
 }
 

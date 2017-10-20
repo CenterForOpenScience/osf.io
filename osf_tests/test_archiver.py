@@ -800,7 +800,6 @@ class TestArchiverUtils(ArchiverTestCase):
             results={},
             can_change_preferences=False,
             mimetype='html',
-            url=url,
         )
         args_desk = dict(
             to_addr=settings.OSF_SUPPORT_EMAIL,
@@ -808,6 +807,7 @@ class TestArchiverUtils(ArchiverTestCase):
             src=self.src,
             mail=mails.ARCHIVE_COPY_ERROR_DESK,
             results={},
+            url=url,
         )
         mock_send_mail.assert_has_calls([
             call(**args_user),
@@ -831,7 +831,6 @@ class TestArchiverUtils(ArchiverTestCase):
             mail=mails.ARCHIVE_SIZE_EXCEEDED_USER,
             can_change_preferences=False,
             mimetype='html',
-            url=url,
         )
         args_desk = dict(
             to_addr=settings.OSF_SUPPORT_EMAIL,
@@ -839,6 +838,7 @@ class TestArchiverUtils(ArchiverTestCase):
             src=self.src,
             mail=mails.ARCHIVE_SIZE_EXCEEDED_DESK,
             stat_result={},
+            url=url,
         )
         mock_send_mail.assert_has_calls([
             call(**args_user),
