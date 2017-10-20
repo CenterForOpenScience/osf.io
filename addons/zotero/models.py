@@ -105,11 +105,14 @@ class Zotero(CitationsOauthProvider):
             else:
                 raise err
 
-    def _fetch_libraries(self):
+    def _fetch_libraries(self, limit, start):
         """
         Retrieves the Zotero library data to which the current library_id and api_key has access
         """
-        return self.client.groups()
+        total_libraries = self.client._totals('/users/{u}/groups')
+        libraries = self.client.groups(limit=limit, start=start, sort='title')
+        libraries.append(total_libraries)
+        return libraries
 
     def _folder_metadata(self, folder_id, library_id=None):
         client = self._get_library(library_id)
