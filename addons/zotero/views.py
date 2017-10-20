@@ -54,7 +54,9 @@ class ZoteroViews(GenericCitationViews):
         def _library_list(auth, node_addon, **kwargs):
             """ Returns a list of group libraries - for use with Zotero addon
             """
-            return Provider().library_list(node_addon, auth.user)
+            limit = request.args.get('limit')
+            start = request.args.get('start')
+            return Provider().library_list(node_addon, auth.user, limit, start)
         _library_list.__name__ = '{0}_library_list'.format(addon_short_name)
         return _library_list
 
