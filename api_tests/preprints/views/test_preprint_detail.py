@@ -293,7 +293,7 @@ class TestPreprintUpdate:
         res = app.patch_json_api(url, update_file_payload, auth=user.auth)
         assert res.status_code == 200
 
-        preprint.node.reload()
+        preprint.reload()
         assert preprint.primary_file == new_file
 
         log = preprint.node.logs.latest()

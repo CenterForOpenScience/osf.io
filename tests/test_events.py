@@ -149,7 +149,7 @@ class TestSignalEvent(OsfTestCase):
     @mock.patch('website.notifications.events.files.FileAdded.perform')
     def test_event_signal(self, mock_perform):
         signals.file_updated.send(
-            user=self.user, node=self.node, event_type='file_added', payload=file_payload
+            user=self.user, target=self.node, event_type='file_added', payload=file_payload
         )
         assert_true(mock_perform.called)
 

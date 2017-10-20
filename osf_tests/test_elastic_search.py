@@ -6,6 +6,7 @@ import unittest
 import logging
 import functools
 
+from django.contrib.contenttypes.models import ContentType
 from nose.tools import *  # flake8: noqa (PEP8 asserts)
 import mock
 
@@ -968,8 +969,9 @@ class TestSearchFiles(OsfTestCase):
 
     def test_file_download_url_no_guid(self):
         file_ = self.root.append_file('Timber.mp3')
-        path = OsfStorageFile.objects.get(node=file_.node).path
-        deep_url = '/' + file_.node._id + '/files/osfstorage' + path + '/'
+        content_type = ContentType.objects.get_for_model(file_.target)
+        path = OsfStorageFile.objects.get(object_id=file_.target.id, content_type=content_type).path
+        deep_url = '/' + file_.target._id + '/files/osfstorage' + path + '/'
         find = query_file('Timber.mp3')['results']
         assert_not_equal(file_.path, '')
         assert_equal(file_.path, path)
