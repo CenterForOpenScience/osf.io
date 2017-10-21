@@ -419,8 +419,8 @@ var FolderPickerViewModel = oop.defclass({
                 self.libraryFirstLoad(false);
             }
         }
-        var libraries = self.libraries()
-        Array.prototype.push.apply(libraries, response)
+        var libraries = self.libraries();
+        Array.prototype.push.apply(libraries, response);
         self.libraries(libraries);
         // Update view model based on response
         self.libraryLoading(false);
