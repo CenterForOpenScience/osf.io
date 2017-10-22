@@ -66,6 +66,7 @@ var FolderPickerViewModel = oop.defclass({
         });
         // current libraries that the user has access to
         self.libraries = ko.observable([]);
+        self.pendingLibraryRequest = ko.observable(false);
         // set of urls used for API calls internally
         self.urls = ko.observable({});
         // Flashed messages
@@ -410,6 +411,7 @@ var FolderPickerViewModel = oop.defclass({
     },
     onImportLibrarySuccess: function(response, textStatus, xhr) {
         var self = this;
+        self.pendingLibraryRequest(false);
         if (response) {
             var loaded = self.numberLibrariesLoaded();
             self.totalLibraries(response.pop());
@@ -439,6 +441,7 @@ var FolderPickerViewModel = oop.defclass({
     },
     onImportLibraryError: function(xhr, status, error) {
         var self = this;
+        self.pendingLibraryRequest(false);
         self.changeMessage(self.messages.libraryImportError(), 'text-danger');
         Raven.captureMessage('Failed to import ' + self.addonName + ' group libraries.', {
             extra: {
@@ -459,17 +462,29 @@ var FolderPickerViewModel = oop.defclass({
     },
     importLibraries: function() {
         var self = this;
-        if (self.libraryFirstLoad()) {
-            self.libraryLoading(true);
+        if (!self.pendingLibraryRequest()) {
+            if (self.libraryFirstLoad()) {
+                self.libraryLoading(true);
+            }
+            var metadata = {
+                'limit': 5,
+                'start': self.numberLibrariesLoaded()
+            };
+            self.pendingLibraryRequest(true);
+            return $.getJSON(self.urls().libraries, metadata)
+                .done(self.onImportLibrarySuccess.bind(self))
+                .fail(self.onImportLibraryError.bind(self));
         }
-        var metadata = {
-            'limit': 5,
-            'start': self.numberLibrariesLoaded()
-        };
-        return $.getJSON(self.urls().libraries, metadata)
-            .done(self.onImportLibrarySuccess.bind(self))
-            .fail(self.onImportLibraryError.bind(self));
     },
+    scrolled: function(data, event) {
+       var self = this;
+       var elem = event.target;
+       if (elem.scrollTop > (elem.scrollHeight - elem.offsetHeight - 200)) {
+           if (self.librariesPending()) {
+                this.importLibraries();
+           }  
+       }
+   },
     onLibraryChange: function() {
         var self = this;
         self.currentLibraryDisplay('picker');

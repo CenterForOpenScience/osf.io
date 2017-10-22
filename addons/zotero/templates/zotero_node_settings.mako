@@ -60,7 +60,7 @@
         </p>
         <div data-bind="visible: toggleChangeLibraryText() === 'Close' & !libraryLoading()">
             <form data-bind="submit: saveLibrary">
-                <div class="tb-table m-v-sm" style="width:100%">
+                <div class="tb-table m-v-sm" style="width:100%; overflow-y: scroll; height: 200px;" data-bind="event: { scroll: scrolled }">
                     <div class="tb-row-titles">
                         <div class="tb-th" data-tb-th-col="0" style="width: 75%">
                             Libraries
@@ -77,9 +77,6 @@
                             </div>
                         </div>
                     </div>
-                </div>
-                <div class="pull-right" data-bind="visible: librariesPending()">
-                    <button class="btn btn-primary" data-bind="click: importLibraries"> Load more libraries </button>
                 </div>
                 <div class="pull-right" data-bind="visible: selectedLibrary() && currentLibraryDisplay()">
                    <button class="btn btn-default" data-bind="click: cancelLibrarySelection">
