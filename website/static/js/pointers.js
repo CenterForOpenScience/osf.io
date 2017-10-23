@@ -106,7 +106,7 @@ var AddPointerViewModel = oop.extend(Paginator, {
         var url = $osf.apiV2Url(
              userOrPublicNodes + self.inputType() + '/', {
                 query : {
-                  'filter[title]' : self.query(),
+                  'filter[title,id]' : self.query(),
                   'page' : pageNum,
                   'embed' : 'contributors',
                   'page[size]' : '4',
