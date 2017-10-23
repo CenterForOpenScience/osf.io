@@ -43,7 +43,7 @@ def make_error(code, message_short=None, message_long=None):
 
 @must_be_signed
 @must_have_addon('osfstorage', 'node')
-def osfstorage_update_metadata(node_addon, payload, **kwargs):
+def osfstorage_update_metadata(payload, **kwargs):
     """Metadata received from WaterButler, is built incrementally via latent task calls to this endpoint.
 
     The basic metadata response looks like::
@@ -96,11 +96,11 @@ def osfstorage_update_metadata(node_addon, payload, **kwargs):
 
 @must_be_signed
 @decorators.autoload_filenode(must_be='file')
-def osfstorage_get_revisions(file_node, node_addon, payload, **kwargs):
+def osfstorage_get_revisions(file_node, payload, **kwargs):
     from osf.models import PageCounter, FileVersion  # TODO Fix me onces django works
-    is_anon = has_anonymous_link(node_addon.owner, Auth(private_key=request.args.get('view_only')))
+    is_anon = has_anonymous_link(kwargs['target'], Auth(private_key=request.args.get('view_only')))
 
-    counter_prefix = 'download:{}:{}:'.format(file_node.node._id, file_node._id)
+    counter_prefix = 'download:{}:{}:'.format(file_node.target._id, file_node._id)
 
     version_count = file_node.versions.count()
     # Don't worry. The only % at the end of the LIKE clause, the index is still used
@@ -113,7 +113,7 @@ def osfstorage_get_revisions(file_node, node_addon, payload, **kwargs):
     # Return revisions in descending order
     return {
         'revisions': [
-            utils.serialize_revision(node_addon.owner, file_node, version, index=version_count - idx - 1, anon=is_anon)
+            utils.serialize_revision(kwargs['target'], file_node, version, index=version_count - idx - 1, anon=is_anon)
             for idx, version in enumerate(qs)
         ]
     }
@@ -222,7 +222,7 @@ def osfstorage_get_children(file_node, **kwargs):
             ) DOWNLOAD_COUNT ON TRUE
             WHERE parent_id = %s
             AND (NOT F.type IN ('osf.trashedfilenode', 'osf.trashedfile', 'osf.trashedfolder'))
-        ''', [ContentType.objects.get_for_model(OSFUser).id, file_node.node._id, file_node.id])
+        ''', [ContentType.objects.get_for_model(OSFUser).id, file_node.target._id, file_node.id])
 
         return cursor.fetchone()[0] or []
 
