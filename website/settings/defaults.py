@@ -383,6 +383,7 @@ HIGH_PRI_MODULES = {
     'scripts.refresh_addon_tokens',
     'scripts.retract_registrations',
     'website.archiver.tasks',
+    'scripts.add_missing_identifiers_to_preprints'
 }
 
 try:
@@ -440,6 +441,7 @@ CELERY_IMPORTS = (
     'scripts.analytics.run_keen_snapshots',
     'scripts.analytics.run_keen_events',
     'scripts.generate_sitemap',
+    'scripts.add_missing_identifiers_to_preprints',
 )
 
 # Modules that need metrics and release requirements
@@ -492,6 +494,11 @@ else:
         },
         'approve_registrations': {
             'task': 'scripts.approve_registrations',
+            'schedule': crontab(minute=0, hour=0),  # Daily 12 a.m
+            'kwargs': {'dry_run': False},
+        },
+        'add_missing_identifiers_to_preprints': {
+            'task': 'scripts.add_missing_identifiers_to_preprints',
             'schedule': crontab(minute=0, hour=0),  # Daily 12 a.m
             'kwargs': {'dry_run': False},
         },

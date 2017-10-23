@@ -1,17 +1,19 @@
-import sys
 import time
 import logging
+import django
 from scripts import utils as script_utils
 from django.db import transaction
 
-from website.app import setup_django
+from framework.celery_tasks import app as celery_app
+
+from website.app import init_app
 from website.identifiers.utils import request_identifiers_from_ezid, parse_identifiers
 
-setup_django()
+django.setup()
 logger = logging.getLogger(__name__)
 
 
-def add_identifiers_to_preprints(dry=True):
+def add_identifiers_to_preprints(dry_run=True):
     from osf.models import PreprintService
 
     preprints_without_identifiers = PreprintService.objects.filter(identifiers__isnull=True)
@@ -21,7 +23,7 @@ def add_identifiers_to_preprints(dry=True):
     for preprint in preprints_without_identifiers:
         logger.info('Saving identifier for preprint {} from source {}'.format(preprint._id, preprint.provider.name))
 
-        if not dry:
+        if not dry_run:
             ezid_response = request_identifiers_from_ezid(preprint)
             id_dict = parse_identifiers(ezid_response)
             preprint.set_identifier_values(doi=id_dict['doi'], ark=id_dict['ark'])
@@ -39,29 +41,19 @@ def add_identifiers_to_preprints(dry=True):
     logger.info('Finished Adding identifiers to {} preprints.'.format(identifiers_added))
 
 
-def main(dry=True):
-    # Start a transaction that will be rolled back if any exceptions are un
-    add_identifiers_to_preprints(dry)
-    if dry:
-        # When running in dry mode force the transaction to rollback
+def main(dry_run=True):
+    add_identifiers_to_preprints(dry_run)
+    if dry_run:
+        # When running in dry_run mode force the transaction to rollback
         raise Exception('Dry Run complete -- not actually saved')
 
-
-if __name__ == '__main__':
-    dry = '--dry' in sys.argv
-    if not dry:
+@celery_app.task(name='scripts.add_missing_identifiers_to_preprints')
+def run_main(dry_run=True):
+    init_app(routes=False)
+    if not dry_run:
         # If we're not running in dry mode log everything to a file
         script_utils.add_file_logger(logger, __file__)
-
-    # Allow setting the log level just by appending the level to the command
-    if '--debug' in sys.argv:
-        logger.setLevel(logging.DEBUG)
-    elif '--warning' in sys.argv:
-        logger.setLevel(logging.WARNING)
-    elif '--info' in sys.argv:
-        logger.setLevel(logging.INFO)
-    elif '--error' in sys.argv:
-        logger.setLevel(logging.ERROR)
-
+    
     # Finally run the migration
-    main(dry=dry)
+    with transaction.atomic():
+        main(dry_run=dry_run)
