@@ -245,7 +245,7 @@
         <!-- /ko -->
       <!-- ko if: affiliated_institutions ? affiliated_institutions.length > 0 : false -->
         <p><strong>Affiliated institutions:</strong>
-            <!-- ko foreach {data: affiliated_institutions, as: 'item'} -->
+            <!-- ko foreach: {data: affiliated_institutions, as: 'item'} -->
                 <!-- ko if: item == $parent.affiliated_institutions[$parent.affiliated_institutions.length -1] -->
                 <span data-bind="text: item"></span>
                 <!-- /ko -->
@@ -294,7 +294,7 @@
         <!-- /ko -->
       <!-- ko if: affiliated_institutions ? affiliated_institutions.length > 0 : false -->
         <p><strong>Affiliated institutions:</strong>
-            <!-- ko foreach {data: affiliated_institutions, as: 'item'} -->
+            <!-- ko foreach: {data: affiliated_institutions, as: 'item'} -->
                 <!-- ko if: item == $parent.affiliated_institutions[$parent.affiliated_institutions.length -1] -->
                 <span data-bind="text: item"></span>
                 <!-- /ko -->

@@ -1,9 +1,10 @@
 from rest_framework import generics, permissions as drf_permissions
-from rest_framework.exceptions import ValidationError, NotFound
+from rest_framework.exceptions import ValidationError, NotFound, PermissionDenied
 from framework.auth.oauth_scopes import CoreScopes
 
 from osf.models import AbstractNode, Registration
 from api.base import permissions as base_permissions
+from api.base import generic_bulk_views as bulk_views
 from api.base.filters import ListFilterMixin
 from api.base.views import JSONAPIBaseView, BaseContributorDetail, BaseContributorList, BaseNodeLinksDetail, BaseNodeLinksList, WaterButlerMixin
 
@@ -12,7 +13,7 @@ from api.base.serializers import LinkedNodesRelationshipSerializer
 from api.base.pagination import NodeContributorPagination
 from api.base.parsers import JSONAPIRelationshipParser
 from api.base.parsers import JSONAPIRelationshipParserForRegularJSON
-from api.base.utils import get_user_auth, default_registration_list_queryset, default_registration_permission_queryset
+from api.base.utils import get_user_auth, default_registration_list_queryset, default_registration_permission_queryset, is_bulk_request, is_truthy
 from api.comments.serializers import RegistrationCommentSerializer, CommentCreateSerializer
 from api.identifiers.serializers import RegistrationIdentifierSerializer
 from api.nodes.views import NodeIdentifierList
@@ -76,7 +77,7 @@ class RegistrationMixin(NodeMixin):
         return node
 
 
-class RegistrationList(JSONAPIBaseView, generics.ListAPIView, NodesFilterMixin):
+class RegistrationList(JSONAPIBaseView, generics.ListAPIView, bulk_views.BulkUpdateJSONAPIView, NodesFilterMixin):
     """Node Registrations.
 
     Registrations are read-only snapshots of a project. This view is a list of all current registrations for which a user
@@ -155,6 +156,16 @@ class RegistrationList(JSONAPIBaseView, generics.ListAPIView, NodesFilterMixin):
     ordering = ('-date_modified',)
     model_class = Registration
 
+    # overrides BulkUpdateJSONAPIView
+    def get_serializer_class(self):
+        """
+        Use RegistrationDetailSerializer which requires 'id'
+        """
+        if self.request.method in ('PUT', 'PATCH'):
+            return RegistrationDetailSerializer
+        else:
+            return RegistrationSerializer
+
     # overrides NodesFilterMixin
     def get_default_queryset(self):
         return default_registration_list_queryset() & default_registration_permission_queryset(self.request.user)
@@ -168,8 +179,23 @@ class RegistrationList(JSONAPIBaseView, generics.ListAPIView, NodesFilterMixin):
                     return True
         return False
 
-    # overrides ListAPIView
+    # overrides ListAPIView, ListBulkCreateJSONAPIView
     def get_queryset(self):
+        # For bulk requests, queryset is formed from request body.
+        if is_bulk_request(self.request):
+            auth = get_user_auth(self.request)
+            registrations = Registration.objects.filter(guids___id__in=[registration['id'] for registration in self.request.data])
+
+            # If skip_uneditable=True in query_params, skip nodes for which the user
+            # does not have EDIT permissions.
+            if is_truthy(self.request.query_params.get('skip_uneditable', False)):
+                has_permission = registrations.filter(contributor__user_id=auth.user.id, contributor__write=True).values_list('guids___id', flat=True)
+                return Registration.objects.filter(guids___id__in=has_permission)
+
+            for registration in registrations:
+                if not registration.can_edit(auth):
+                    raise PermissionDenied
+            return registrations
         blacklisted = self.is_blacklisted()
         registrations = self.get_queryset_from_request().distinct('id', 'date_modified')
         # If attempting to filter on a blacklisted field, exclude withdrawals.

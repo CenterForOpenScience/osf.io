@@ -15,6 +15,7 @@
 
 .db-log-avatar {
     display: inline-block;
+    position: absolute;
 }
 
 #poFilter {

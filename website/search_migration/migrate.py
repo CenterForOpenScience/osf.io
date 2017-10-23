@@ -26,7 +26,7 @@ def migrate_nodes(index, query=None):
     if query:
         node_query = query & node_query
     total = AbstractNode.objects.filter(node_query).count()
-    increment = 200
+    increment = 100
     total_pages = (total // increment) + 1
     pages = paginated(AbstractNode, query=node_query, increment=increment, each=False, include=['contributor__user__guids'])
 

@@ -59,7 +59,7 @@ var LogFeed = {
                 self.totalPages(Math.ceil(result.links.meta.total / result.links.meta.per_page));
             }
             self.logRequestPending(true);
-            var promise = m.request({method : 'GET', background: true, url : url, config: mHelpers.apiV2Config({withCredentials: window.contextVars.isOnRootDomain})});
+            var promise = m.request({method : 'GET', url : url, config: mHelpers.apiV2Config({withCredentials: window.contextVars.isOnRootDomain})});
             promise.then(
                 function(result) {
                     _processResults(result);
@@ -217,7 +217,7 @@ var LogFeed = {
                     image = m('img', { src : item.embeds.user.errors[0].meta.profile_image});
                 }
                 return m('.db-activity-item', [
-                    m('', [m('.db-log-avatar.m-r-xs', image), m.component(LogText.LogText, item)]),
+                    m('', [m('.db-log-avatar.m-r-xs', image), m('span.p-l-sm.p-r-sm', ''), m.component(LogText.LogText, item)]),
                     m('.text-right', m('span.text-muted.m-r-xs', item.attributes.formattableDate.local))
                 ]);
             }) : '',
