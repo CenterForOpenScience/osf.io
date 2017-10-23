@@ -33,7 +33,10 @@ from django.db.models import Q
 from rest_framework import permissions as drf_permissions
 from rest_framework import generics
 from rest_framework.exceptions import NotAuthenticated, NotFound
-from osf.models import Contributor, ExternalAccount, QuickFilesNode, AbstractNode, PreprintService, OSFUser
+from osf.models import (Contributor, ExternalAccount,
+                        QuickFilesNode, AbstractNode,
+                        Registration, PreprintService,
+                        OSFUser,)
 
 
 class UserMixin(object):
@@ -516,6 +519,8 @@ class UserNodes(JSONAPIBaseView, generics.ListAPIView, UserMixin, NodesFilterMix
         base_permissions.TokenHasScope,
     )
 
+    model_class = AbstractNode
+
     required_read_scopes = [CoreScopes.USERS_READ, CoreScopes.NODE_BASE_READ]
     required_write_scopes = [CoreScopes.USERS_WRITE, CoreScopes.NODE_BASE_WRITE]
 
@@ -725,6 +730,8 @@ class UserRegistrations(JSONAPIBaseView, generics.ListAPIView, UserMixin, NodesF
         drf_permissions.IsAuthenticatedOrReadOnly,
         base_permissions.TokenHasScope,
     )
+
+    model_class = Registration
 
     required_read_scopes = [CoreScopes.USERS_READ, CoreScopes.NODE_REGISTRATIONS_READ]
     required_write_scopes = [CoreScopes.USERS_WRITE, CoreScopes.NODE_REGISTRATIONS_WRITE]
