@@ -8,16 +8,17 @@ from api_tests import utils as test_utils
 from framework.auth.core import Auth
 from osf.models import PreprintService, NodeLicense
 from osf_tests.factories import (
-    PreprintFactory, 
-    AuthUserFactory, 
-    ProjectFactory, 
-    SubjectFactory, 
+    PreprintFactory,
+    AuthUserFactory,
+    ProjectFactory,
+    SubjectFactory,
     PreprintProviderFactory,
 )
 from rest_framework import exceptions
 from tests.base import fake, capture_signals
 from website.project.signals import contributor_added
 from website.identifiers.utils import build_ezid_metadata
+from website.settings import EZID_FORMAT, DOI_NAMESPACE
 
 
 def build_preprint_update_payload(node_id, attributes=None, relationships=None):
@@ -42,8 +43,16 @@ class TestPreprintDetail:
         return PreprintFactory(creator=user)
 
     @pytest.fixture()
+    def unpublished_preprint(self, user):
+        return PreprintFactory(creator=user, is_published=False)
+
+    @pytest.fixture()
     def url(self, preprint):
         return '/{}preprints/{}/'.format(API_BASE, preprint._id)
+
+    @pytest.fixture()
+    def unpublished_url(self, unpublished_preprint):
+        return '/{}preprints/{}/'.format(API_BASE, unpublished_preprint._id)
 
     @pytest.fixture()
     def res(self, app, url):
@@ -87,6 +96,26 @@ class TestPreprintDetail:
         ids = ['{}-{}'.format(preprint.node._id, id_) for id_ in ids]
         for contrib in embeds['contributors']['data']:
             assert contrib['id'] in ids
+
+    def test_preprint_doi_link_absent_in_unpublished_preprints(self, app, user, unpublished_preprint, unpublished_url):
+        res = app.get(unpublished_url, auth=user.auth)
+        assert res.json['data']['id'] == unpublished_preprint._id
+        assert res.json['data']['attributes']['is_published'] == False
+        assert 'self' in res.json['data']['links'].keys()
+        assert 'html' in res.json['data']['links'].keys()
+        assert 'preprint_doi' not in res.json['data']['links'].keys()
+
+    def test_preprint_doi_link_present_after_preprint_published(self, app, user, unpublished_preprint, unpublished_url):
+        unpublished_preprint.is_published = True
+        unpublished_preprint.save()
+        res = app.get(unpublished_url, auth=user.auth)
+        assert res.json['data']['id'] == unpublished_preprint._id
+        assert res.json['data']['attributes']['is_published'] == True
+        assert 'self' in res.json['data']['links'].keys()
+        assert 'html' in res.json['data']['links'].keys()
+        assert 'preprint_doi' in res.json['data']['links'].keys()
+        expected_doi = EZID_FORMAT.format(namespace=DOI_NAMESPACE, guid=unpublished_preprint._id).replace('doi:', '').upper()
+        assert res.json['data']['links']['preprint_doi'] == 'https://dx.doi.org/{}'.format(expected_doi)
 
 
 @pytest.mark.django_db
