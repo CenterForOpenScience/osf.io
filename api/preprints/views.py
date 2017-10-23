@@ -76,6 +76,7 @@ class PreprintList(JSONAPIBaseView, generics.ListCreateAPIView, PreprintFilterMi
         is_preprint_orphan              boolean                             whether or not this preprint is orphaned
         subjects                        list of lists of dictionaries       ids of Subject in the BePress taxonomy. Dictionary, containing the subject text and subject ID
         doi                             string                              bare DOI for the manuscript, as entered by the user
+        preprint_doi_on_datacite        boolean                             whether or not the preprint doi has been added on datacite
 
     ##Relationships
 
@@ -203,6 +204,8 @@ class PreprintDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView, Pre
         is_preprint_orphan              boolean                             whether or not this preprint is orphaned
         subjects                        array of tuples of dictionaries     ids of Subject in the BePress taxonomy. Dictionary, containing the subject text and subject ID
         doi                             string                              bare DOI for the manuscript, as entered by the user
+        preprint_doi_on_datacite        boolean                             whether or not the preprint doi has been added on datacite
+
 
     ##Relationships
 

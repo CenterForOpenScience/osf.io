@@ -79,6 +79,7 @@ class PreprintSerializer(JSONAPISerializer):
     title = ser.CharField(source='node.title', required=False)
     description = ser.CharField(required=False, allow_blank=True, allow_null=True, source='node.description')
     tags = JSONAPIListField(child=NodeTagField(), required=False, source='node.tags')
+    preprint_doi_on_datacite = ser.SerializerMethodField(read_only=True)
 
     contributors = RelationshipField(
         related_view='nodes:node-contributors',
@@ -136,6 +137,10 @@ class PreprintSerializer(JSONAPISerializer):
 
     class Meta:
         type_ = 'preprints'
+
+    def get_preprint_doi_on_datacite(self, obj):
+        doi_identifier = obj.get_identifier('doi')
+        return doi_identifier is not None
 
     def get_subjects(self, obj):
         return [
