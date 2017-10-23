@@ -16,6 +16,7 @@ def add_identifiers_to_preprints(dry=True):
 
     preprints_without_identifiers = PreprintService.objects.filter(identifiers__isnull=True)
     logger.info('About to add identifiers to {} preprints.'.format(preprints_without_identifiers.count()))
+    identifiers_added = 0
 
     for preprint in preprints_without_identifiers:
         logger.info('Saving identifier for preprint {} from source {}'.format(preprint._id, preprint.provider.name))
@@ -28,13 +29,14 @@ def add_identifiers_to_preprints(dry=True):
 
             doi = preprint.get_identifier('doi')
             assert preprint._id.upper() in doi.value
+            identifiers_added += 1
 
             logger.info('Created DOI {} for Preprint with guid {} from service {}'.format(doi.value, preprint._id, preprint.provider.name))
             time.sleep(1)
         else:
             logger.info('Dry run - would have created identifier for preprint {} from service {}'.format(preprint._id, preprint.provider.name))
 
-    logger.info('Finished Adding identifiers to {} preprints.'.format(preprints_without_identifiers.count()))
+    logger.info('Finished Adding identifiers to {} preprints.'.format(identifiers_added))
 
 
 def main(dry=True):
