@@ -4,6 +4,7 @@ import operator
 import re
 
 import pytz
+from guardian.shortcuts import get_objects_for_user
 from api.base import utils
 from api.base.exceptions import (InvalidFilterComparisonType,
                                  InvalidFilterError, InvalidFilterFieldError,
@@ -17,8 +18,9 @@ from django.db.models import Q
 from modularodm.query import queryset as modularodm_queryset
 from rest_framework import serializers as ser
 from rest_framework.filters import OrderingFilter
-from osf.models import Subject
+from osf.models import Subject, PreprintProvider
 from osf.models.base import GuidMixin
+from reviews.workflow import States
 
 
 def lowercase(lower):
@@ -502,3 +504,20 @@ class PreprintFilterMixin(ListFilterMixin):
             except Subject.DoesNotExist:
                 operation['source_field_name'] = 'subjects__text'
                 operation['op'] = 'iexact'
+
+    def preprints_queryset(self, base_queryset, auth_user, allow_contribs=True):
+        default_query = Q(node__isnull=False, node__is_deleted=False)
+        no_user_query = Q(is_published=True, node__is_public=True)
+
+        if auth_user:
+            admin_user_query = Q(node__contributor__user_id=auth_user.id, node__contributor__admin=True)
+            reviews_user_query = Q(node__is_public=True, provider__in=get_objects_for_user(auth_user, 'view_submissions', PreprintProvider))
+            if allow_contribs:
+                contrib_user_query = ~Q(reviews_state=States.INITIAL.value) & Q(node__contributor__user_id=auth_user.id, node__contributor__read=True)
+                query = default_query & (no_user_query | contrib_user_query | admin_user_query | reviews_user_query)
+            else:
+                query = default_query & (no_user_query | admin_user_query | reviews_user_query)
+        else:
+            query = default_query & no_user_query
+
+        return base_queryset.filter(query)

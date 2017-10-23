@@ -140,7 +140,7 @@ class JSONAPIBaseView(generics.GenericAPIView):
         if self.kwargs.get('is_embedded'):
             embeds = []
         else:
-            embeds = self.request.query_params.getlist('embed')
+            embeds = self.request.query_params.getlist('embed') or self.request.query_params.getlist('embed[]')
 
         fields_check = self.serializer_class._declared_fields.copy()
         if 'fields[{}]'.format(self.serializer_class.Meta.type_) in self.request.query_params:
