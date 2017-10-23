@@ -17,7 +17,7 @@ from api.nodes.serializers import (
 )
 from framework.exceptions import PermissionsError
 from website.util import permissions
-from website.identifiers import utils
+from website import settings
 from website.exceptions import NodeStateError
 from website.project import signals as project_signals
 from osf.models import BaseFileNode, PreprintService, PreprintProvider, Node, NodeLicense
@@ -158,8 +158,8 @@ class PreprintSerializer(JSONAPISerializer):
         if doi_identifier:
             return 'https://dx.doi.org/{}'.format(doi_identifier.value)
         else:
-            built_identifier = utils.get_or_create_identifiers(obj).get('doi', None)
-            return 'https://dx.doi.org/{}'.format(built_identifier) if built_identifier else None
+            built_identifier = settings.EZID_FORMAT.format(namespace=settings.DOI_NAMESPACE, guid=obj._id).replace('doi:', '').upper()
+            return 'https://dx.doi.org/{}'.format(built_identifier) if built_identifier and obj.is_published else None
 
     def run_validation(self, *args, **kwargs):
         # Overrides construtor for validated_data to allow writes to a SerializerMethodField
