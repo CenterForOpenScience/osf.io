@@ -117,7 +117,7 @@ var ContributorModel = function(contributor, currentUserCanEdit, pageOwner, isRe
     };
 
     self.addParentAdmin = function () {
-        // Immediately adds admin on parent to component, with write permissions and visible=True
+        // Immediately adds parent admin to the component with permissions=write and visible=True
         var self = this;
         $osf.block();
         self.nodeId = window.contextVars.node.id;
