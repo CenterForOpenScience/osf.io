@@ -93,6 +93,8 @@ def serialize_share_node_data(node):
     }
 
 def format_node(node):
+    is_qa_node = bool(set(settings.DO_NOT_INDEX_LIST['tags']).intersection(node.tags.all().values_list('name', flat=True))) \
+                 or any(substring in node.title for substring in settings.DO_NOT_INDEX_LIST['titles'])
     return [
         {
             '@id': '_:123',
@@ -102,15 +104,17 @@ def format_node(node):
         }, {
             '@id': '_:789',
             '@type': 'project',
-            'is_deleted': not node.is_public or node.is_deleted or node.is_spammy or 'qatest' in node.tags.all().values_list('name', flat=True)
+            'is_deleted': not node.is_public or node.is_deleted or node.is_spammy or is_qa_node
         }
     ]
 
 def format_registration(node):
+    is_qa_node = bool(set(settings.DO_NOT_INDEX_LIST['tags']).intersection(node.tags.all().values_list('name', flat=True))) \
+                 or any(substring in node.title for substring in settings.DO_NOT_INDEX_LIST['titles'])
     registration_graph = GraphNode('registration', **{
         'title': node.title,
         'description': node.description or '',
-        'is_deleted': not node.is_public or 'qatest' in node.tags.all().values_list('name', flat=True) or node.is_deleted,
+        'is_deleted': not node.is_public or is_qa_node,
         'date_published': node.registered_date.isoformat() if node.registered_date else None,
         'registration_type': node.registered_schema.first().name if node.registered_schema else None,
         'withdrawn': node.is_retracted,

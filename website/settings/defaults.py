@@ -1840,6 +1840,12 @@ SITEMAP_REGISTRATION_CONFIG = OrderedDict([('loc', ''), ('lastmod', ''), ('chang
 SITEMAP_PREPRINT_CONFIG = OrderedDict([('loc', ''), ('lastmod', ''), ('changefreq', 'yearly'), ('priority', '0.5')])
 SITEMAP_PREPRINT_FILE_CONFIG = OrderedDict([('loc', ''), ('lastmod', ''), ('changefreq', 'yearly'), ('priority', '0.5')])
 
+# For preventing indexing of QA nodes by Elastic and SHARE
+DO_NOT_INDEX_LIST = {
+    'tags': ['qatest', 'qa test'],
+    'titles': ['Bulk stress 201', 'Bulk stress 202', 'OSF API Registration test'],
+}
+
 CUSTOM_CITATIONS = {
     'bluebook-law-review': 'bluebook',
     'bluebook2': 'bluebook',

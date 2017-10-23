@@ -10,11 +10,20 @@ from django.db.models import Q
 from osf.models import AbstractNode
 from website.project.tasks import update_node_share
 from website.search.elastic_search import update_node
+from website.settings import DO_NOT_INDEX_LIST
 
 logger = logging.getLogger(__name__)
 
 def remove_search_index(dry_run=True):
-    nodes = AbstractNode.objects.filter(Q(tags__name= 'qatest') or Q(tags__name = 'qa test'))
+    tag_query = Q()
+    title_query = Q()
+    for tag in DO_NOT_INDEX_LIST['tags']:
+        tag_query |= Q(tags__name = tag)
+
+    for title in DO_NOT_INDEX_LIST['titles']:
+        title_query |= Q(title__contains = title)
+
+    nodes = AbstractNode.objects.filter(Q(is_public=True) & (tag_query | title_query))
     if dry_run:
         logger.warn('Dry run mode.')
         for node in nodes:
