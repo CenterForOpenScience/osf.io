@@ -62,16 +62,8 @@ class GitHubClient(object):
         raise NotFoundError
 
     def repos(self):
-        repos = self.gh3.repositories(type='all', sort='full_name')
+        repos = self.gh3.repositories(type='all', sort='pushed')
         return [repo for repo in repos if repo.permissions['push']]
-
-    def user_team_repos(self, permissions=None):
-        permissions = permissions or ['push']
-        return itertools.chain.from_iterable(
-            team.iter_repos()
-            for team in self.gh3.user_teams()
-            if team.permission in permissions
-        )
 
     def create_repo(self, repo, **kwargs):
         return self.gh3.create_repository(repo, **kwargs)

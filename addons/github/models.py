@@ -200,11 +200,10 @@ class NodeSettings(BaseStorageAddon, BaseOAuthNodeSettings):
 
             valid_credentials = True
             try:
-                repos = itertools.chain.from_iterable((connection.repos(), connection.user_team_repos()))
-                repo_names = {
+                repo_names = [
                     '{0} / {1}'.format(repo.owner.login, repo.name)
-                    for repo in repos
-                }
+                    for repo in connection.repos()
+                ]
             except GitHubError:
                 repo_names = []
                 valid_credentials = False
