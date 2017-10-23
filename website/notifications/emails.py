@@ -89,7 +89,7 @@ def store_emails(recipient_ids, notification_type, event, user, node, timestamp,
         return
 
     # Reviews has multiple email templates for the global_reviews event.
-    template = context['template'] + '.html.mako' if event == 'global_reviews' else event + '.html.mako'
+    template = '{template}.html.mako'.format(template=context['template']) if event == 'global_reviews' else '{event}.html.mako'.format(event=event)
     # user whose action triggered email sending
     context['user'] = user
     node_lineage_ids = get_node_lineage(node) if node else []
