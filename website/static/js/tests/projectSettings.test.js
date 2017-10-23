@@ -7,7 +7,6 @@ var $ = require('jquery');
 var $osf = require('js/osfHelpers');
 var Raven = require('raven-js');
 
-
 /*
  * Dear sloria,
  *

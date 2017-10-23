@@ -18,7 +18,6 @@ window.contextVars = {
 var language = require('js/osfLanguage').projectSettings;
 
 
-
 describe('fangorn', () => {
     describe('FangornMoveAndDeleteUnitTests', () => {
         // folder setup
