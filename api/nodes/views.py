@@ -913,8 +913,8 @@ class NodeFilesList(JSONAPIBaseView, generics.ListAPIView, WaterButlerMixin, Lis
     """
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
-        base_permissions.PermissionWithGetter(ContributorOrPublic, 'node'),
-        base_permissions.PermissionWithGetter(ReadOnlyIfRegistration, 'node'),
+        base_permissions.PermissionWithGetter(ContributorOrPublic, 'target'),
+        base_permissions.PermissionWithGetter(ReadOnlyIfRegistration, 'target'),
         base_permissions.TokenHasScope,
         ExcludeWithdrawals
     )
@@ -1006,8 +1006,8 @@ class NodeFileDetail(JSONAPIBaseView, generics.RetrieveAPIView, WaterButlerMixin
     """
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
-        base_permissions.PermissionWithGetter(ContributorOrPublic, 'node'),
-        base_permissions.PermissionWithGetter(ReadOnlyIfRegistration, 'node'),
+        base_permissions.PermissionWithGetter(ContributorOrPublic, 'target'),
+        base_permissions.PermissionWithGetter(ReadOnlyIfRegistration, 'target'),
         base_permissions.TokenHasScope,
         ExcludeWithdrawals
     )
