@@ -61,6 +61,7 @@ class PreprintSerializer(JSONAPISerializer):
         'date_created',
         'date_modified',
         'date_published',
+        'original_date_published',
         'provider',
         'is_published',
         'subjects',
@@ -73,6 +74,7 @@ class PreprintSerializer(JSONAPISerializer):
     date_created = DateByVersion(read_only=True)
     date_modified = DateByVersion(read_only=True)
     date_published = DateByVersion(read_only=True)
+    original_date_published = DateByVersion(required=False)
     doi = ser.CharField(source='article_doi', required=False, allow_null=True)
     is_published = ser.BooleanField(required=False)
     is_preprint_orphan = ser.BooleanField(read_only=True)
@@ -229,6 +231,10 @@ class PreprintSerializer(JSONAPISerializer):
         if 'license_type' in validated_data or 'license' in validated_data:
             license_details = get_license_details(preprint, validated_data)
             self.set_field(preprint.set_preprint_license, license_details, auth)
+            save_preprint = True
+
+        if 'original_date_published' in validated_data:
+            preprint.original_date_published = validated_data['original_date_published']
             save_preprint = True
 
         if published is not None:
