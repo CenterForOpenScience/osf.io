@@ -358,9 +358,8 @@ var QuickSearchProject = {
 
     },
     view : function(ctrl) {
-        var OSF_SUPPORT_EMAIL = $osf.osfSupportEmail();
         if (ctrl.errorLoading()) {
-            return m('p.text-center.m-v-md', 'Error loading projects. Please refresh the page. Contact ' + OSF_SUPPORT_EMAIL + ' for further assistance.');
+            return m('p.text-center.m-v-md', 'Error loading projects. Please refresh the page. Contact ' + $osf.osfSupportEmail() + ' for further assistance.');
         }
 
         if (!ctrl.someDataLoaded()) {

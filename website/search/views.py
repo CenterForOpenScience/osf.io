@@ -39,7 +39,7 @@ def handle_search_errors(func):
             raise HTTPError(http.SERVICE_UNAVAILABLE, data={
                 'message_short': 'Search unavailable',
                 'message_long': ('Our search service is currently unavailable, if the issue persists, '
-                                 'please report it to <a href="mailto:' + settings.OSF_SUPPORT_EMAIL + '">' + settings.OSF_SUPPORT_EMAIL + '</a>..'),
+                                 + language.SUPPORT_LINK),
             })
         except exceptions.SearchException:
             # Interim fix for issue where ES fails with 500 in some settings- ensure exception is still logged until it can be better debugged. See OSF-4538

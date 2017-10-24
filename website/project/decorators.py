@@ -13,7 +13,7 @@ from framework.auth.decorators import collect_auth
 from framework.database import get_or_http_error
 
 from osf.models import AbstractNode
-from website import settings
+from website import settings, language
 
 _load_node_or_fail = lambda pk: get_or_http_error(AbstractNode, pk)
 
@@ -179,8 +179,7 @@ def check_can_access(node, user, key=None, api_node=None):
         raise HTTPError(
             http.FORBIDDEN,
             data={'message_long': ('User has restricted access to this page. If this should not '
-                                   'have occurred and the issue persists, please report it to '
-                                   '<a href="mailto:' + settings.OSF_SUPPORT_EMAIL + '">' + settings.OSF_SUPPORT_EMAIL + '</a>..')}
+                                   'have occurred and the issue persists, ' + language.SUPPORT_LINK)}
         )
     return True
 
