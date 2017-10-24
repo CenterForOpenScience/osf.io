@@ -57,12 +57,12 @@ services:
 
   postgres:
     image: postgres:9.6
-    command: |-
-      /bin/bash -c "
-        echo \"$$POSTGRES_INITDB\" > /docker-entrypoint-initdb.d/commands.sh &&
+    command:
+      - /bin/bash
+      - -c
+      - echo "$$POSTGRES_INITDB" > /docker-entrypoint-initdb.d/commands.sh &&
         chmod +x /docker-entrypoint-initdb.d/commands.sh &&
         /docker-entrypoint.sh postgres
-      "
     ports:
       - 5432:5432
     environment:
@@ -111,13 +111,13 @@ services:
 
   mfr_requirements:
     image: quay.io/centerforopenscience/mfr:develop
-    command: |-
-      /bin/bash -c "
-        invoke install --develop &&
+    command:
+      - /bin/bash
+      - -c
+      - invoke install --develop &&
         (python -m compileall /usr/local/lib/python3.5 || true) &&
         rm -Rf /python3.5/* &&
         cp -Rf -p /usr/local/lib/python3.5 /
-      "
     restart: 'no'
     volumes:
       - mfr_requirements_vol:/python3.5
@@ -142,13 +142,13 @@ services:
 
   wb_requirements:
     image: quay.io/centerforopenscience/waterbutler:develop
-    command: |-
-      /bin/bash -c "
-        invoke install --develop &&
+    command:
+      - /bin/bash
+      - -c
+      - invoke install --develop &&
         (python -m compileall /usr/local/lib/python3.5 || true) &&
         rm -Rf /python3.5/* &&
         cp -Rf -p /usr/local/lib/python3.5 /
-      "
     restart: 'no'
     volumes:
       - wb_requirements_vol:/python3.5
@@ -200,14 +200,18 @@ services:
       - postgres
     stdin_open: true
 
-
   #############
   # Preprints #
   #############
 
   preprints:
     image: quay.io/centerforopenscience/ember-preprints:develop-development-local
-    command: /bin/bash -c "yarn --pure-lockfile --ignore-engines --no-progress --no-emoji && ./node_modules/bower/bin/bower install --allow-root --config.interactive=false && ./node_modules/ember-cli/bin/ember serve --host 0.0.0.0 --port 4200 --live-reload-port 41953"
+    command:
+      - /bin/bash
+      - -c 
+      - yarn --pure-lockfile --ignore-engines --no-progress --no-emoji &&
+       ./node_modules/.bin/bower install --allow-root --config.interactive=false &&
+       ./node_modules/.bin/ember serve --host 0.0.0.0 --port 4200 --live-reload-port 41953
     restart: unless-stopped
     depends_on:
       - api
@@ -230,7 +234,12 @@ services:
 
   registries:
     image: quay.io/centerforopenscience/ember-osf-registries:develop-development-local
-    command: /bin/bash -c "yarn --pure-lockfile --ignore-engines --no-progress --no-emoji && ./node_modules/bower/bin/bower install --allow-root --config.interactive=false && ./node_modules/ember-cli/bin/ember serve --host 0.0.0.0 --port 4300"
+    command: 
+      - /bin/bash
+      - -c
+      - yarn --pure-lockfile --ignore-engines --no-progress --no-emoji &&
+       ./node_modules/.bin/bower install --allow-root --config.interactive=false &&
+       ./node_modules/.bin/ember serve --host 0.0.0.0 --port 4300
     restart: unless-stopped
     depends_on:
       - api
@@ -250,8 +259,12 @@ services:
   ##############
 
   reviews:
-    image: quay.io/centerforopenscience/ember-osf-reviews:develop-development-local
-    command: /bin/bash -c "yarn --pure-lockfile --no-progress --no-emoji && ./node_modules/ember-cli/bin/ember serve --host 0.0.0.0 --port 4400"
+    image: quay.io/centerforopenscience/osf-reviews:develop
+    command:
+      - /bin/bash
+      - -c 
+      - yarn --pure-lockfile --no-progress --no-emoji &&
+        ./node_modules/.bin/ember serve --host 0.0.0.0 --port 4400
     restart: unless-stopped
     depends_on:
       - api
@@ -274,13 +287,13 @@ services:
 
   requirements:
     image: quay.io/centerforopenscience/osf:develop
-    command: |-
-      /bin/bash -c "
-        invoke requirements --quick &&
+    command:
+      - /bin/bash
+      - -c
+      - invoke requirements --quick &&
         (python -m compileall /usr/local/lib/python2.7 || true) &&
         rm -Rf /python2.7/* &&
         cp -Rf -p /usr/local/lib/python2.7 /
-      "
     restart: 'no'
     environment:
       DJANGO_SETTINGS_MODULE: api.base.settings
