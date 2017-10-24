@@ -1,7 +1,6 @@
-from nose.tools import *    # flake8: noqa
+import pytest
 
 from api.base import settings
-from tests.base import ApiTestCase
 
 # The versions below are specifically for testing purposes and do not reflect the actual versioning of the API.
 # If changes are made to this list, or to DEFAULT_VERSION, please reflect those changes in:
@@ -18,126 +17,139 @@ TESTING_ALLOWED_VERSIONS = (
 DEFAULT_VERSION = '2.0'
 
 
-class VersioningTestCase(ApiTestCase):
+@pytest.mark.django_db
+class TestBaseVersioning:
 
-    def setUp(self):
-        super(VersioningTestCase, self).setUp()
-
-        self.valid_url_path_version = '2.0'
-        self.valid_header_version = '2.0.1'
-        self.valid_query_parameter_version = '2.1'
-
-        self.invalid_url_path_version = '1.0'
-        self.invalid_header_version = '1.0.1'
-        self.invalid_query_parameter_version = '1.1'
-
-        self.valid_url_path_version_url = '/v2/'
-        self.invalid_url_path_version_url = '/v1/'
-
-        self.valid_query_parameter_version_url = '/v2/?version={}'.format(self.valid_query_parameter_version)
-        self.invalid_query_parameter_version_url = '/v2/?version={}'.format(self.invalid_query_parameter_version)
-
-        self._ALLOWED_VERSIONS = settings.REST_FRAMEWORK['ALLOWED_VERSIONS']
-        self._DEFAULT_VERSION = settings.REST_FRAMEWORK['DEFAULT_VERSION']
+    @pytest.fixture()
+    def versions(self):
 
         settings.REST_FRAMEWORK['ALLOWED_VERSIONS'] = TESTING_ALLOWED_VERSIONS
         settings.REST_FRAMEWORK['DEFAULT_VERSION'] = DEFAULT_VERSION
 
-    def tearDown(self):
-        super(VersioningTestCase, self).tearDown()
-        settings.REST_FRAMEWORK['ALLOWED_VERSIONS'] = self._ALLOWED_VERSIONS
-        settings.REST_FRAMEWORK['DEFAULT_VERSION'] = self._DEFAULT_VERSION
+        valid_query_parameter_version = '2.1'
+        invalid_query_parameter_version = '1.1'
 
+        versions = {
+            'valid_url_path_version': '2.0',
+            'valid_header_version': '2.0.1',
+            'valid_query_parameter_version': valid_query_parameter_version,
+            'invalid_url_path_version': '1.0',
+            'invalid_header_version': '1.0.1',
+            'invalid_query_parameter_version': invalid_query_parameter_version,
+            'valid_url_path_version_url': '/v2/',
+            'invalid_url_path_version_url': '/v1/',
+            'valid_query_parameter_version_url': '/v2/?version={}'.format(valid_query_parameter_version),
+            'invalid_query_parameter_version_url': '/v2/?version={}'.format(invalid_query_parameter_version),
+            '_ALLOWED_VERSIONS': settings.REST_FRAMEWORK['ALLOWED_VERSIONS'],
+            '_DEFAULT_VERSION': settings.REST_FRAMEWORK['DEFAULT_VERSION']}
 
+        yield versions
 
-class TestBaseVersioning(VersioningTestCase):
+        settings.REST_FRAMEWORK['ALLOWED_VERSIONS'] = versions['_ALLOWED_VERSIONS']
+        settings.REST_FRAMEWORK['DEFAULT_VERSION'] = versions['_DEFAULT_VERSION']
 
-    def setUp(self):
-        super(TestBaseVersioning, self).setUp()
+    def test_url_path_version(self, app, versions):
+        res = app.get(versions['valid_url_path_version_url'])
+        assert res.status_code == 200
+        assert res.json['meta']['version'] == versions['valid_url_path_version']
 
-    def test_url_path_version(self):
-        res = self.app.get(self.valid_url_path_version_url)
-        assert_equal(res.status_code, 200)
-        assert_equal(res.json['meta']['version'], self.valid_url_path_version)
+    def test_header_version(self, app, versions):
+        headers = {
+            'accept': 'application/vnd.api+json;version={}'.format(versions['valid_header_version'])}
+        res = app.get(versions['valid_url_path_version_url'], headers=headers)
+        assert res.status_code == 200
+        assert res.json['meta']['version'] == versions['valid_header_version']
 
-    def test_header_version(self):
-        headers = {'accept': 'application/vnd.api+json;version={}'.format(self.valid_header_version)}
-        res = self.app.get(self.valid_url_path_version_url, headers=headers)
-        assert_equal(res.status_code, 200)
-        assert_equal(res.json['meta']['version'], self.valid_header_version)
+    def test_query_param_version(self, app, versions):
+        res = app.get(versions['valid_query_parameter_version_url'])
+        assert res.status_code == 200
+        assert res.json['meta']['version'] == versions['valid_query_parameter_version']
 
-    def test_query_param_version(self):
-        res = self.app.get(self.valid_query_parameter_version_url)
-        assert_equal(res.status_code, 200)
-        assert_equal(res.json['meta']['version'], self.valid_query_parameter_version)
+    def test_header_version_and_query_parameter_version_match(
+            self, app, versions):
+        headers = {
+            'accept': 'application/vnd.api+json;version={}'.format(versions['valid_header_version'])}
+        url = '/v2/?version={}'.format(versions['valid_header_version'])
+        res = app.get(url, headers=headers)
+        assert res.status_code == 200
+        assert res.json['meta']['version'] == versions['valid_header_version']
 
-    def test_url_path_version_not_in_allowed_versions(self):
-        res = self.app.get(self.invalid_url_path_version_url, expect_errors=True)
-        assert_equal(res.status_code, 404)
+    def test_non_mutational_base_versioning_tests(self, app, versions):
 
-    def test_header_version_not_in_allowed_versions(self):
-        headers = {'accept': 'application/vnd.api+json;version={}'.format(self.invalid_header_version)}
-        res = self.app.get(self.valid_url_path_version_url, headers=headers, expect_errors=True)
-        assert_equal(res.status_code, 406)
-        assert_equal(res.json['errors'][0]['detail'], 'Invalid version in "Accept" header.')
+        # test_url_path_version_not_in_allowed_versions
+        res = app.get(
+            versions['invalid_url_path_version_url'],
+            expect_errors=True)
+        assert res.status_code == 404
 
-    def test_query_param_version_not_in_allowed_versions(self):
-        res = self.app.get(self.invalid_query_parameter_version_url, expect_errors=True)
-        assert_equal(res.status_code, 404)
-        assert_equal(res.json['errors'][0]['detail'], 'Invalid version in query parameter.')
+        # test_header_version_not_in_allowed_versions
+        headers = {
+            'accept': 'application/vnd.api+json;version={}'.format(versions['invalid_header_version'])}
+        res = app.get(
+            versions['valid_url_path_version_url'],
+            headers=headers,
+            expect_errors=True)
+        assert res.status_code == 406
+        assert res.json['errors'][0]['detail'] == 'Invalid version in "Accept" header.'
 
-    def test_query_parameter_version_not_within_url_path_major_version(self):
+        # test_query_param_version_not_in_allowed_versions
+        res = app.get(
+            versions['invalid_query_parameter_version_url'],
+            expect_errors=True)
+        assert res.status_code == 404
+        assert res.json['errors'][0]['detail'] == 'Invalid version in query parameter.'
+
+        # test_query_parameter_version_not_within_url_path_major_version
         url = '/v2/?version=3.0.1'
-        res = self.app.get(url, expect_errors=True)
-        assert_equal(res.status_code, 409)
-        assert_equal(
-            res.json['errors'][0]['detail'],
+        res = app.get(url, expect_errors=True)
+        assert res.status_code == 409
+        assert (
+            res.json['errors'][0]['detail'] ==
             'Version {} specified in query parameter does not fall within URL path version {}'.format(
                 '3.0.1',
-                self.valid_url_path_version
-            )
-        )
+                versions['valid_url_path_version']
+            ))
 
-    def test_header_version_not_within_url_path_major_version(self):
+        # test_header_version_not_within_url_path_major_version
         headers = {'accept': 'application/vnd.api+json;version=3.0.1'}
-        res = self.app.get(self.valid_url_path_version_url, headers=headers, expect_errors=True)
-        assert_equal(res.status_code, 409)
-        assert_equal(
-            res.json['errors'][0]['detail'],
+        res = app.get(
+            versions['valid_url_path_version_url'],
+            headers=headers,
+            expect_errors=True)
+        assert res.status_code == 409
+        assert (
+            res.json['errors'][0]['detail'] ==
             'Version {} specified in "Accept" header does not fall within URL path version {}'.format(
-                    '3.0.1',
-                    self.valid_url_path_version
-            )
-        )
+                '3.0.1',
+                versions['valid_url_path_version']
+            ))
 
-    def test_header_version_and_query_parameter_version_match(self):
-        headers = {'accept': 'application/vnd.api+json;version={}'.format(self.valid_header_version)}
-        url = '/v2/?version={}'.format(self.valid_header_version)
-        res = self.app.get(url, headers=headers)
-        assert_equal(res.status_code, 200)
-        assert_equal(res.json['meta']['version'], self.valid_header_version)
-
-    def test_header_version_and_query_parameter_version_mismatch(self):
-        headers = {'accept': 'application/vnd.api+json;version={}'.format(self.valid_header_version)}
-        url = '/v2/?version={}'.format(self.valid_query_parameter_version)
-        res = self.app.get(url, headers=headers, expect_errors=True)
-        assert_equal(res.status_code, 409)
-        assert_equal(
-            res.json['errors'][0]['detail'],
+        # test_header_version_and_query_parameter_version_mismatch
+        headers = {
+            'accept': 'application/vnd.api+json;version={}'.format(versions['valid_header_version'])}
+        url = '/v2/?version={}'.format(
+            versions['valid_query_parameter_version'])
+        res = app.get(url, headers=headers, expect_errors=True)
+        assert res.status_code == 409
+        assert (
+            res.json['errors'][0]['detail'] ==
             'Version {} specified in "Accept" header does not match version {} specified in query parameter'.format(
-                self.valid_header_version,
-                self.valid_query_parameter_version
-            )
-        )
+                versions['valid_header_version'],
+                versions['valid_query_parameter_version']
+            ))
 
-    def test_header_version_bad_format(self):
-        headers = {'accept': 'application/vnd.api+json;version=not_at_all_a_version'}
-        res = self.app.get(self.valid_url_path_version_url, headers=headers, expect_errors=True)
-        assert_equal(res.status_code, 406)
-        assert_equal(res.json['errors'][0]['detail'], 'Invalid version in "Accept" header.')
+        # test_header_version_bad_format
+        headers = {
+            'accept': 'application/vnd.api+json;version=not_at_all_a_version'}
+        res = app.get(
+            versions['valid_url_path_version_url'],
+            headers=headers,
+            expect_errors=True)
+        assert res.status_code == 406
+        assert res.json['errors'][0]['detail'] == 'Invalid version in "Accept" header.'
 
-    def test_query_version_bad_format(self):
+        # test_query_version_bad_format
         url = '/v2/?version=not_at_all_a_version'
-        res = self.app.get(url, expect_errors=True)
-        assert_equal(res.status_code, 404)
-        assert_equal(res.json['errors'][0]['detail'], 'Invalid version in query parameter.')
+        res = app.get(url, expect_errors=True)
+        assert res.status_code == 404
+        assert res.json['errors'][0]['detail'] == 'Invalid version in query parameter.'
