@@ -26,7 +26,7 @@ from website.project.views.contributor import notify_added_contributor
 from website.views import find_bookmark_collection
 
 from osf.models import AbstractNode, OSFUser, Tag, Contributor, Session
-from osf.utils.auth import Auth
+from framework.auth.core import Auth
 from osf.utils.names import impute_names_model
 from osf.exceptions import ValidationError
 from osf.modm_compat import Q

@@ -7,7 +7,7 @@ from django.db import models
 from framework.auth.decorators import Auth
 from framework.exceptions import HTTPError
 from osf.models.files import File, Folder, FileVersion, BaseFileNode
-from osf.utils.auth import _get_current_user
+from framework.auth.core import _get_current_user
 from addons.base import exceptions
 from addons.dataverse.client import connect_from_settings_or_401
 from addons.dataverse.serializer import DataverseSerializer
