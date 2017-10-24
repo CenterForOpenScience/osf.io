@@ -52,7 +52,7 @@
     "mithril": "0.2.0",
     "moment": "^2.14.1",
     "object-assign": "^2.0.0",
-    "@centerforopenscience/osf-style": "git://github.com/CenterForOpenScience/osf-style.git#6e1b6fb35a5dfd03530f2b8e55e0a27e01b9d080",
+    "@centerforopenscience/osf-style": "^1.5.1",
     "pikaday": "^1.3.2",
     "pretty-data": "^0.40.0",
     "raw-loader": "^0.5.1",
