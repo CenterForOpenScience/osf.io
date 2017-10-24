@@ -3,7 +3,7 @@
 import copy
 import httplib as http
 from flask import request
-from website import settings, language
+from website import language
 
 
 class FrameworkError(Exception):

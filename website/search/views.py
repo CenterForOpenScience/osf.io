@@ -18,7 +18,6 @@ from website.project.views.contributor import get_node_contributors_abbrev
 from website.search import exceptions
 import website.search.search as search
 from website.search.util import build_query
-from website import settings
 
 logger = logging.getLogger(__name__)
 
