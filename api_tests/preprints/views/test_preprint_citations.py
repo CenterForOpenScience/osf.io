@@ -63,10 +63,10 @@ class TestPreprintCitationContent(PreprintCitationsMixin, ApiTestCase):
 		expected_date = self.published_preprint.date_modified.strftime('%Y, %B %-d')
 		assert_true(expected_date in res.json['data']['attributes']['citation'])
 
-		self.published_preprint.original_date_published = datetime(2017, 12, 24)
+		self.published_preprint.original_publication_date = datetime(2017, 12, 24)
 		self.published_preprint.save()
 
 		res = self.app.get(self.published_preprint_url)
 		assert_equal(res.status_code, 200)
-		expected_date = self.published_preprint.original_date_published.strftime('%Y, %B %-d')
+		expected_date = self.published_preprint.original_publication_date.strftime('%Y, %B %-d')
 		assert_true(expected_date in res.json['data']['attributes']['citation'])

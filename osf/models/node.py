@@ -658,8 +658,8 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         if self.logs.exists():
             citation_date = self.logs.latest().date
 
-            if self.is_preprint and self.preprints.get_queryset()[0].original_date_published:
-                citation_date = self.preprints.get_queryset()[0].original_date_published
+            if self.is_preprint and self.preprints.get_queryset()[0].original_publication_date:
+                citation_date = self.preprints.get_queryset()[0].original_publication_date
 
             csl['issued'] = datetime_to_csl(citation_date)
 
