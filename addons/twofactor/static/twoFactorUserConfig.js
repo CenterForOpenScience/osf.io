@@ -52,7 +52,6 @@ ViewModel.prototype.updateFromData = function(data) {
 
 ViewModel.prototype.fetchFromServer = function() {
     var self = this;
-    var OSF_SUPPORT_EMAIL = window.contextVars.osfSupportEmail;
     return $.getJSON(self.settingsUrl)
         .then(function(response) {
             return response.result;
@@ -67,8 +66,8 @@ ViewModel.prototype.fetchFromServer = function() {
             });
             self.changeMessage('Could not retrieve two-factor settings at ' +
                 'this time. Please refresh the page. ' +
-                'If the problem persists, email ' +
-                '<a href="mailto: ' + OSF_SUPPORT_EMAIL + '">' + OSF_SUPPORT_EMAIL + '</a>.', 'text-danger', 5000);
+                'If the problem persists, email ' + $osf.osfSupportLink(),
+                'text-danger', 5000);
         });
 };
 
@@ -103,7 +102,6 @@ ViewModel.prototype.submitSettings = function() {
 
 ViewModel.prototype.disableTwofactorConfirm = function() {
     var self = this;
-    var OSF_SUPPORT_EMAIL = window.contextVars.osfSupportEmail;
     return $.ajax({
             method: 'DELETE',
             url: self.urls.disable,
@@ -125,8 +123,7 @@ ViewModel.prototype.disableTwofactorConfirm = function() {
             });
             self.changeMessage(
                 'Could not disable two-factor authentication at this time. Please refresh ' +
-                'the page. If the problem persists, email ' +
-                '<a href="mailto: ' + OSF_SUPPORT_EMAIL + '">' + OSF_SUPPORT_EMAIL + '</a>.',
+                'the page. If the problem persists, email ' + $osf.osfSupportLink(),
                 5000);
         });
 };
@@ -152,7 +149,6 @@ ViewModel.prototype.disableTwofactor = function() {
 
 ViewModel.prototype.enableTwofactorConfirm = function() {
     var self = this;
-    var OSF_SUPPORT_EMAIL = window.contextVars.osfSupportEmail;
     return osfHelpers.postJSON(self.urls.enable, {})
         .done(function(response) {
             self.updateFromData(response.result);
@@ -167,8 +163,7 @@ ViewModel.prototype.enableTwofactorConfirm = function() {
             });
             self.changeMessage(
                 'Could not enable two-factor authentication at this time. Please refresh ' +
-                'the page. If the problem persists, email ' +
-                '<a href="mailto: ' + OSF_SUPPORT_EMAIL + '">' + OSF_SUPPORT_EMAIL + '</a>.',
+                'the page. If the problem persists, email ' + $osf.osfSupportLink(),
                 5000);
         });
 };

@@ -224,11 +224,9 @@ var ProjectViewModel = function(data, options) {
             self.doi(resp.doi);
             self.ark(resp.ark);
         }).fail(function(xhr) {
-            var OSF_SUPPORT_EMAIL = window.contextVars.osfSupportEmail;
             var message = 'We could not create the identifier at this time. ' +
                 'The DOI/ARK acquisition service may be down right now. ' +
-                'Please try again soon and/or contact ' +
-                '<a href="mailto:' + OSF_SUPPORT_EMAIL + '">' + OSF_SUPPORT_EMAIL + '</a>';
+                'Please try again soon and/or contact ' + $osf.osfSupportLink();
             $osf.growl('Error', message, 'danger');
             Raven.captureMessage('Could not create identifiers', {extra: {url: url, status: xhr.status}});
         }).always(function() {

@@ -282,10 +282,21 @@ var setXHRAuthorization = function (xhr, options) {
 
 var errorDefaultShort = 'Unable to resolve';
 
+function osfSupportEmail() {
+    return window.contextVars.osfSupportEmail;
+}
+
+function osfSupportLink() {
+    return '<a href="mailto:' + osfSupportEmail() + '">' + osfSupportEmail() +'</a>';
+}
+
+function refreshOrSupport() {
+    return 'Please refresh the page and try again or contact ' + osfSupportLink() + ' if the problem persists.';
+}
+
 var errorDefaultLong = function(){
-    var OSF_SUPPORT_EMAIL = window.contextVars.osfSupportEmail;
     return 'OSF was unable to resolve your request. If this issue persists, ' +
-        'please report it to <a href="mailto:' + OSF_SUPPORT_EMAIL + '">' + OSF_SUPPORT_EMAIL + '</a>.';
+        'please report it to ' + osfSupportLink() + '.';
 };
 
 var handleAddonApiHTTPError = function(error){
@@ -1031,18 +1042,6 @@ function toRelativeUrl(url, window) {
 function linkifyText(content) {
     var linkifyOpts = { target: function (href, type) { return type === 'url' ? '_top' : null; } };
     return linkify(content);
-}
-
-function osfSupportEmail() {
-    return window.contextVars.osfSupportEmail;
-}
-
-function osfSupportLink() {
-    return '<a href="mailto:' + osfSupportEmail() + '">' + osfSupportEmail() +'</a>';
-}
-
-function refreshOrSupport() {
-    return 'Please refresh the page and try again or contact ' + osfSupportLink() + ' if the problem persists.';
 }
 
 // Also export these to the global namespace so that these can be used in inline

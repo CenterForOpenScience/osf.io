@@ -16,7 +16,6 @@ var AddonPermissionsTable = {
         $('.' + addonShortName + '-remove-token').on('click', function (event) {
             var nodeId = $(this).attr('node-id');
             var apiUrl = $(this).attr('api-url')+ addonShortName + '/config/';
-            var OSF_SUPPORT_EMAIL = window.contextVars.osfSupportEmail;
             bootbox.confirm({
                 title: 'Remove addon?',
                 message: 'Are you sure you want to disconnnect the ' + $osf.htmlEscape(addonFullname) + ' account from this project?',
@@ -41,7 +40,7 @@ var AddonPermissionsTable = {
 
                             error: function () {
                                 $osf.growl('An error occurred, the account is still connected to the project. ',
-                                    'If the issue persists, please report it to <a href="mailto:' + OSF_SUPPORT_EMAIL + '">' + OSF_SUPPORT_EMAIL + '</a>.');
+                                    'If the issue persists, please report it to ' + $osf.osfSupportLink() + '.');
                             }
                         });
                     }

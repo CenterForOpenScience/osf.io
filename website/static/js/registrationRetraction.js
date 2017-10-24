@@ -11,7 +11,6 @@ require('knockout.validation');
 var ChangeMessageMixin = require('js/changeMessage');
 var oop = require('js/oop');
 var Raven = require('raven-js');
-var OSF_SUPPORT_EMAIL = window.contextVars.osfSupportEmail;
 
 var RegistrationRetractionViewModel = oop.extend(
     ChangeMessageMixin,
@@ -39,7 +38,7 @@ var RegistrationRetractionViewModel = oop.extend(
             });
         },
         SUBMIT_ERROR_MESSAGE: 'Error submitting your withdrawal request, please try again. If the problem ' +
-                'persists, email <a href="mailto:' + OSF_SUPPORT_EMAIL + '">' + OSF_SUPPORT_EMAIL + '</a>',
+                'persists, email ' + $osf.osfSupportLink(),
         CONFIRMATION_ERROR_MESSAGE: 'Please enter the registration title before clicking Withdraw Registration',
         JUSTIFICATON_ERROR_MESSAGE: 'Your justification is too long, please enter a justification with no more ' +
             'than 2048 characters long.',

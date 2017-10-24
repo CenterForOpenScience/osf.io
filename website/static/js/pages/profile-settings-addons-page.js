@@ -59,8 +59,7 @@ $('#selectAddonsForm').on('submit', function() {
             window.location.reload();
         });
         request.fail(function() {
-            var OSF_SUPPORT_EMAIL = window.contextVars.osfSupportEmail;
-            var msg = 'Sorry, we had trouble saving your settings. If this persists please contact <a href="mailto:' + OSF_SUPPORT_EMAIL + '">' + OSF_SUPPORT_EMAIL + '</a>';
+            var msg = 'Sorry, we had trouble saving your settings. If this persists please contact ' + $osf.osfSupportLink();
             bootbox.alert({
                 title: 'Request failed',
                 message: msg,

@@ -17,7 +17,6 @@ var WikiMenu = require('../wikiMenu');
 var Comment = require('js/comment'); //jshint ignore:line
 
 var ctx = window.contextVars.wiki;  // mako context variables
-var OSF_SUPPORT_EMAIL = window.contextVars.osfSupportEmail;
 
 var editable = (ctx.panelsUsed.indexOf('edit') !== -1);
 var viewable = (ctx.panelsUsed.indexOf('view') !== -1);
@@ -103,7 +102,7 @@ $(document).ready(function () {
         grid.addClass('hidden');
         errorMsg.removeClass('hidden');
         errorMsg.append('<p>Could not retrieve wiki pages. If this issue persists, ' +
-            'please report it to <a href="mailto:' + OSF_SUPPORT_EMAIL + '">' + OSF_SUPPORT_EMAIL + '</a>.</p>');
+            'please report it to ' + $osf.osfSupportLink());
         Raven.captureMessage('Could not GET wiki menu pages', {
             extra: { url: ctx.urls.grid, status: status, error: error }
         });

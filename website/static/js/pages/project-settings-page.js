@@ -12,7 +12,6 @@ var $osf = require('js/osfHelpers');
 require('css/addonsettings.css');
 
 var ctx = window.contextVars;
-var OSF_SUPPORT_EMAIL = ctx.osfSupportEmail;
 
 
 // Initialize treebeard grid for notifications
@@ -169,7 +168,7 @@ $(document).ready(function() {
             }
         }
         function failedAddonUpdate() {
-            var msg = 'Sorry, we had trouble saving your settings. If this persists please contact <a href="mailto:' + OSF_SUPPORT_EMAIL + '">' + OSF_SUPPORT_EMAIL + '</a>';
+            var msg = 'Sorry, we had trouble saving your settings. If this persists please contact ' + $osf.osfSupportLink();
             bootbox.alert({
                 title: 'Request failed',
                 message: msg,

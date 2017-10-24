@@ -102,7 +102,6 @@ function confirmEmails(emailsToAdd) {
         var requestMessage;
         var confirmMessage;
         var nopeMessage;
-        var OSF_SUPPORT_EMAIL = window.contextVars.osfSupportEmail;
         if (email.user_merge) {
             title = 'Merge account';
             requestMessage = 'Would you like to merge \<b>' + email.address + '\</b> into your account?  ' +
@@ -120,10 +119,10 @@ function confirmEmails(emailsToAdd) {
         }
 
         var confirmFailMessage = 'There was a problem adding \<b>' + email.address +
-            '\</b>. Please contact <a href="mailto:' + OSF_SUPPORT_EMAIL + '">' + OSF_SUPPORT_EMAIL +'</a> if the problem persists.';
+            '\</b>. Please contact ' + $osf.osfSupportLink() + ' if the problem persists.';
 
         var cancelFailMessage = 'There was a problem removing \<b>' + email.address +
-            '\</b>. Please contact <a href="mailto:' + OSF_SUPPORT_EMAIL + '">' + OSF_SUPPORT_EMAIL +'</a> if the problem persists.';
+            '\</b>. Please contact ' + $osf.osfSupportLink() + ' if the problem persists.';
 
         bootbox.dialog({
             title: title,

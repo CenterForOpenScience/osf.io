@@ -191,8 +191,7 @@ var ViewModel = function(data) {
                 }
             }
         }).fail(function (xhr, status, error) {
-            var OSF_SUPPORT_EMAIL = window.contextVars.osfSupportEmail;
-            $osf.growl('Unable to modify the institution on this node. Please try again. If the problem persists, email <a href="mailto:' + OSF_SUPPORT_EMAIL + '">' + OSF_SUPPORT_EMAIL + '</a>');
+            $osf.growl('Unable to modify the institution on this node. Please try again. If the problem persists, email ' + $osf.osfSupportLink());
             Raven.captureMessage('Unable to modify this institution!', {
                 extra: {
                     url: url,

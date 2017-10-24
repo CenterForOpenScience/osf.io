@@ -91,7 +91,6 @@ var UserProfileClient = oop.defclass({
     },
     update: function (profile, email) {
         var url = this.urls.update;
-        var OSF_SUPPORT_EMAIL = window.contextVars.osfSupportEmail;
         if(email) {
             url = this.urls.resend;
         }
@@ -107,8 +106,7 @@ var UserProfileClient = oop.defclass({
 
             } else {
                 $osf.growl('Error', 'User profile not updated. Please refresh the page and try ' +
-                'again or contact <a href="mailto:' + OSF_SUPPORT_EMAIL + '">' + OSF_SUPPORT_EMAIL + '</a> ' +
-                'if the problem persists.', 'danger');
+                'again or contact ' + $osf.osfSupportLink() + ' if the problem persists.', 'danger');
             }
 
             Raven.captureMessage('Error fetching user profile', {
@@ -306,7 +304,6 @@ var ExternalIdentityViewModel = oop.defclass({
         'delete': '/api/v1/profile/logins/'
     },
     _removeIdentity: function(identity) {
-        var OSF_SUPPORT_EMAIL = window.contextVars.osfSupportEmail;
         var request = $osf.ajaxJSON('PATCH', this.urls.delete, {'data': {'identity': identity}});
         request.done(function() {
             $osf.growl('Success', 'You have revoked this connected identity.', 'success');
@@ -314,7 +311,7 @@ var ExternalIdentityViewModel = oop.defclass({
         }.bind(this));
         request.fail(function(xhr, status, error) {
             $osf.growl('Error',
-                'Revocation request failed. Please contact <a href="mailto:' + OSF_SUPPORT_EMAIL + '">' + OSF_SUPPORT_EMAIL + '</a> if the problem persists.',
+                'Revocation request failed. Please contact ' + $osf.osfSupportLink() + ' if the problem persists.',
                 'danger'
             );
             Raven.captureMessage('Error revoking connected identity', {
@@ -356,7 +353,6 @@ var DeactivateAccountViewModel = oop.defclass({
     },
     _requestDeactivation: function() {
         var request = $osf.postJSON(this.urls.update, {});
-        var OSF_SUPPORT_EMAIL = window.contextVars.osfSupportEmail;
         request.done(function() {
             $osf.growl('Success', 'An OSF administrator will contact you shortly to confirm your deactivation request.', 'success');
             this.success(true);
@@ -366,7 +362,7 @@ var DeactivateAccountViewModel = oop.defclass({
                 $osf.growl('Error', xhr.responseJSON.message_long, 'danger');
             } else {
                 $osf.growl('Error',
-                    'Deactivation request failed. Please contact <a href="mailto:' + OSF_SUPPORT_EMAIL + '">' + OSF_SUPPORT_EMAIL + '</a> if the problem persists.',
+                    'Deactivation request failed. Please contact ' + $osf.osfSupportLink() + ' if the problem persists.',
                     'danger'
                 );
             }
@@ -409,7 +405,6 @@ var ExportAccountViewModel = oop.defclass({
         'update': '/api/v1/profile/export/'
     },
     _requestExport: function() {
-        var OSF_SUPPORT_EMAIL = window.contextVars.osfSupportEmail;
         var request = $osf.postJSON(this.urls.update, {});
         request.done(function() {
             $osf.growl('Success', 'An OSF administrator will contact you shortly to confirm your export request.', 'success');
@@ -420,7 +415,7 @@ var ExportAccountViewModel = oop.defclass({
                 $osf.growl('Error', xhr.responseJSON.message_long, 'danger');
             } else {
                 $osf.growl('Error',
-                    'Export request failed. Please contact <a href="mailto:' + OSF_SUPPORT_EMAIL + '">' + OSF_SUPPORT_EMAIL + '</a> if the problem persists.',
+                    'Export request failed. Please contact ' + $osf.osfSupportLink() + ' if the problem persists.',
                     'danger'
                 );
             }

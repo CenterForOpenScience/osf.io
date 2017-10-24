@@ -121,7 +121,7 @@ var NewAndNoteworthy = {
 
     },
     view : function(ctrl) {
-        var OSF_SUPPORT_EMAIL = window.contextVars.osfSupportEmail;
+        var OSF_SUPPORT_EMAIL = $osf.osfSupportEmail();
         if (ctrl.errorLoading()) {
             return m('p.text-center.m-v-lg', 'Error loading projects. Please refresh the page. Contact ' + OSF_SUPPORT_EMAIL + ' for further assistance.');
         }

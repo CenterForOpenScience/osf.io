@@ -57,9 +57,8 @@ var PrivateLinkViewModel = function(url) {
     }
 
     function onFetchError() {
-        var OSF_SUPPORT_EMAIL = window.contextVars.osfSupportEmail;
         $osf.growl('Could not retrieve projects.', 'Please refresh the page or ' +
-                'contact <a href="mailto:' + OSF_SUPPORT_EMAIL + '">' + OSF_SUPPORT_EMAIL + '</a> if the ' +
+                'contact ' + $osf.osfSupportLink() + ' if the ' +
                 'problem persists.');
     }
 

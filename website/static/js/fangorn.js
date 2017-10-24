@@ -614,16 +614,14 @@ function doItemOp(operation, to, from, rename, conflict) {
         }
 
         var message;
-        var OSF_SUPPORT_EMAIL = window.contextVars.osfSupportEmail;
 
         if (xhr.status !== 500 && xhr.responseJSON && (xhr.responseJSON.message || xhr.responseJSON.message_long)) {
             message = xhr.responseJSON.message || xhr.responseJSON.message_long;
         } else if (xhr.status === 503) {
             message = textStatus;
         } else {
-            message = 'Please refresh the page or ' +
-                'contact <a href="mailto:' + OSF_SUPPORT_EMAIL + '">' + OSF_SUPPORT_EMAIL + '</a> if the ' +
-                'problem persists.';
+            message = 'Please refresh the page or contact '
+                + $osf.osfSupportlink() + ' if the problem persists.';
         }
 
         $osf.growl(operation.verb + ' failed.', message);
@@ -910,7 +908,6 @@ var DEFAULT_ERROR_MESSAGE = 'Could not upload file. The file may be invalid ' +
 function _fangornDropzoneError(treebeard, file, message, xhr) {
     var tb = treebeard;
     var msgText;
-    var OSF_SUPPORT_EMAIL = window.contextVars.osfSupportEmail;
 
     // Unpatched Dropzone silently does nothing when folders are uploaded on Windows IE
     // Patched Dropzone.prototype.drop to emit error with file = 'None' to catch the error
@@ -931,7 +928,7 @@ function _fangornDropzoneError(treebeard, file, message, xhr) {
              msgText += '1. Cannot upload folders. <br>2. ';
          }
          msgText += 'Unable to reach the provider, please try again later. ';
-         msgText += 'If the problem persists, please contact ' + OSF_SUPPORT_EMAIL + '.';
+         msgText += 'If the problem persists, please contact ' + $osf.osfSupportEmail() + '.';
     } else {
         //Osfstorage and most providers store message in {Object}message.{string}message,
         //but some, like Dataverse, have it in {string} message.

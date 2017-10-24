@@ -199,7 +199,7 @@ var PublicNodes = {
     view : function (ctrl) {
 
         var i;
-        var OSF_SUPPORT_EMAIL = window.contextVars.osfSupportEmail;
+        var OSF_SUPPORT_EMAIL = $osf.osfSupportEmail();
         ctrl.paginators([]);
         if (ctrl.totalPages() > 1) {
             // previous page
