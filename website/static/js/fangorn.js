@@ -620,8 +620,7 @@ function doItemOp(operation, to, from, rename, conflict) {
         } else if (xhr.status === 503) {
             message = textStatus;
         } else {
-            message = 'Please refresh the page or contact '
-                + $osf.osfSupportlink() + ' if the problem persists.';
+            message = 'Please refresh the page or contact ' + $osf.osfSupportlink() + ' if the problem persists.';
         }
 
         $osf.growl(operation.verb + ' failed.', message);

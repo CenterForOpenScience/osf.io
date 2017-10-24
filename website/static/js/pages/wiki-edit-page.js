@@ -15,6 +15,7 @@ require('../../vendor/ace-plugins/spellcheck_ace.js');
 
 var WikiMenu = require('../wikiMenu');
 var Comment = require('js/comment'); //jshint ignore:line
+var $osf = require('js/osfHelpers');
 
 var ctx = window.contextVars.wiki;  // mako context variables
 

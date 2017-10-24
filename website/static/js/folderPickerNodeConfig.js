@@ -97,8 +97,7 @@ var FolderPickerViewModel = oop.defclass({
             }),
             updateAccountsError: ko.pureComputed(function() {
                 return 'Could not retrieve ' + addonSafeName + ' account list at ' +
-                    'this time. Please refresh the page. If the problem persists, email '
-                    + $osf.osfSupportLink() + '.';
+                    'this time. Please refresh the page. If the problem persists, email ' + $osf.osfSupportLink() + '.';
             }),
             deauthorizeSuccess: ko.pureComputed(function() {
                 return 'Disconnected ' + addonSafeName + '.';
