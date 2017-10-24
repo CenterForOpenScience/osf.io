@@ -171,7 +171,7 @@ class PreprintProviderChangeForm(PermissionRequiredMixin, UpdateView):
 
 class ProcessCustomTaxonomy(PermissionRequiredMixin, View):
 
-    permission_required = 'osf.view_preprintprovider'
+    permission_required = 'osf.change_preprintprovider'
     raise_exception = True
 
     def post(self, request, *args, **kwargs):
