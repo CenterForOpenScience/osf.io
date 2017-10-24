@@ -17,8 +17,6 @@ from django.utils import timezone
 from factory import base, Sequence, SubFactory, post_generation, LazyAttribute
 import mock
 from mock import patch, Mock
-from modularodm import Q
-from modularodm.exceptions import NoResultsFound
 
 from framework.auth import Auth
 from framework.auth.utils import impute_names_model, impute_names
@@ -33,10 +31,11 @@ from osf.models import (Subject, NotificationSubscription, NotificationDigest,
                         NodeLicenseRecord, Embargo, RegistrationApproval,
                         Retraction, Sanction, Comment, DraftRegistration,
                         MetaSchema, AbstractNode, NodeLog,
-                        PrivateLink, Tag, AlternativeCitation, Institution,
+                        PrivateLink, Tag, Institution,
                         ApiOAuth2PersonalToken, ApiOAuth2Application, ExternalAccount,
                         ExternalProvider, OSFUser, PreprintService,
                         PreprintProvider, Session, Guid)
+from osf_tests.factories import fake_email
 from website.archiver import ARCHIVER_SUCCESS
 from website.util import permissions
 from website.exceptions import InvalidSanctionApprovalToken
@@ -296,8 +295,8 @@ class SubjectFactory(ModularOdmFactory):
     @classmethod
     def _create(cls, target_class, text=None, parents=[], *args, **kwargs):
         try:
-            subject = Subject.find_one(Q('text', 'eq', text))
-        except NoResultsFound:
+            subject = Subject.objects.get(text=text)
+        except Subject.DoesNotExist:
             subject = target_class(*args, **kwargs)
             subject.text = text
             subject.save()
@@ -799,21 +798,6 @@ class ArchiveJobFactory(ModularOdmFactory):
     class Meta:
         model = ArchiveJob
 
-class AlternativeCitationFactory(ModularOdmFactory):
-    class Meta:
-        model = AlternativeCitation
-
-    @classmethod
-    def _create(cls, target_class, *args, **kwargs):
-        name = kwargs.get('name')
-        text = kwargs.get('text')
-        instance = target_class(
-            name=name,
-            text=text
-        )
-        instance.save()
-        return instance
-
 class DraftRegistrationFactory(ModularOdmFactory):
     class Meta:
         model = DraftRegistration
@@ -846,14 +830,9 @@ class NodeLicenseRecordFactory(ModularOdmFactory):
 
     @classmethod
     def _create(cls, *args, **kwargs):
-        NodeLicense.find_one(
-            Q('name', 'eq', 'No license')
-        )
         kwargs['node_license'] = kwargs.get(
             'node_license',
-            NodeLicense.find_one(
-                Q('name', 'eq', 'No license')
-            )
+            NodeLicense.objects.get(name='No license')
         )
         return super(NodeLicenseRecordFactory, cls)._create(*args, **kwargs)
 
@@ -896,7 +875,7 @@ def render_generations_from_node_structure_list(parent, creator, node_structure_
 
 
 def create_fake_user():
-    email = fake.email()
+    email = fake_email()
     name = fake.name()
     parsed = impute_names(name)
     user = UserFactory(

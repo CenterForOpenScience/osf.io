@@ -1,6 +1,5 @@
 # -*- coding: utf-8 -*-
 from django.utils import timezone
-from modularodm import Q
 
 from website import settings
 
@@ -9,8 +8,8 @@ def no_addon(email):
 
 def no_login(email):
     from osf.models.queued_mail import QueuedMail, NO_LOGIN_TYPE
-    sent = QueuedMail.find(Q('user', 'eq', email.user) & Q('email_type', 'eq', NO_LOGIN_TYPE) & Q('_id', 'ne', email._id))
-    if sent.count():
+    sent = QueuedMail.objects.filter(user=email.user, email_type=NO_LOGIN_TYPE).exclude(_id=email._id)
+    if sent.exists():
         return False
     return email.user.date_last_login < timezone.now() - settings.NO_LOGIN_WAIT_TIME
 

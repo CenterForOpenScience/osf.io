@@ -82,6 +82,7 @@ PREPRINT_PROVIDER_DOMAINS = {
 }
 # External Ember App Local Development
 USE_EXTERNAL_EMBER = False
+PROXY_EMBER_APPS = False
 EXTERNAL_EMBER_APPS = {}
 
 LOG_PATH = os.path.join(APP_PATH, 'logs')
@@ -122,6 +123,10 @@ USE_CDN_FOR_CLIENT_LIBS = True
 USE_EMAIL = True
 FROM_EMAIL = 'openscienceframework-noreply@osf.io'
 SUPPORT_EMAIL = 'support@osf.io'
+
+# Default settings for fake email address generation
+FAKE_EMAIL_NAME = 'freddiemercury'
+FAKE_EMAIL_DOMAIN = 'cos.io'
 
 # SMTP Settings
 MAIL_SERVER = 'smtp.sendgrid.net'
@@ -201,11 +206,11 @@ WIKI_WHITELIST = {
     'attributes': [
         'align', 'alt', 'border', 'cite', 'class', 'dir',
         'height', 'href', 'id', 'src', 'style', 'title', 'type', 'width',
-        'face', 'size', # font tags
+        'face', 'size',  # font tags
         'salign', 'align', 'wmode', 'target',
     ],
     # Styles currently used in Reproducibility Project wiki pages
-    'styles' : [
+    'styles': [
         'top', 'left', 'width', 'height', 'position',
         'background', 'font-size', 'text-align', 'z-index',
         'list-style',
@@ -357,6 +362,7 @@ LOW_PRI_MODULES = {
     'scripts.populate_new_and_noteworthy_projects',
     'scripts.populate_popular_projects_and_registrations',
     'website.search.elastic_search',
+    'scripts.generate_sitemap',
 }
 
 MED_PRI_MODULES = {
@@ -365,6 +371,9 @@ MED_PRI_MODULES = {
     'scripts.triggered_mails',
     'website.mailchimp_utils',
     'website.notifications.tasks',
+    'scripts.analytics.run_keen_summaries',
+    'scripts.analytics.run_keen_snapshots',
+    'scripts.analytics.run_keen_events',
 }
 
 HIGH_PRI_MODULES = {
@@ -398,10 +407,16 @@ else:
     CELERY_STORE_ERRORS_EVEN_IF_IGNORED = True
 
 # Default RabbitMQ broker
-BROKER_URL = 'amqp://'
+RABBITMQ_USERNAME = os.environ.get('RABBITMQ_USERNAME', 'guest')
+RABBITMQ_PASSWORD = os.environ.get('RABBITMQ_PASSWORD', 'guest')
+RABBITMQ_HOST = os.environ.get('RABBITMQ_HOST', 'localhost')
+RABBITMQ_PORT = os.environ.get('RABBITMQ_PORT', '5672')
+RABBITMQ_VHOST = os.environ.get('RABBITMQ_VHOST', '/')
+
+BROKER_URL = os.environ.get('BROKER_URL', 'amqp://{}:{}@{}:{}/{}'.format(RABBITMQ_USERNAME, RABBITMQ_PASSWORD, RABBITMQ_HOST, RABBITMQ_PORT, RABBITMQ_VHOST))
 
 # Default RabbitMQ backend
-CELERY_RESULT_BACKEND = 'amqp://'
+CELERY_RESULT_BACKEND = os.environ.get('CELERY_RESULT_BACKEND', BROKER_URL)
 
 # Modules to import when celery launches
 CELERY_IMPORTS = (
@@ -458,7 +473,7 @@ else:
         },
         'refresh_addons': {
             'task': 'scripts.refresh_addon_tokens',
-            'schedule': crontab(minute=0, hour= 2),  # Daily 2:00 a.m
+            'schedule': crontab(minute=0, hour=2),  # Daily 2:00 a.m
             'kwargs': {'dry_run': False, 'addons': {
                 'box': 60,          # https://docs.box.com/docs/oauth-20#section-6-using-the-access-and-refresh-tokens
                 'googledrive': 14,  # https://developers.google.com/identity/protocols/OAuth2#expiration
@@ -1813,6 +1828,7 @@ SITEMAP_STATIC_URLS = [
     OrderedDict([('loc', 'prereg'), ('changefreq', 'yearly'), ('priority', '0.5')]),
     OrderedDict([('loc', 'meetings'), ('changefreq', 'yearly'), ('priority', '0.5')]),
     OrderedDict([('loc', 'registries'), ('changefreq', 'yearly'), ('priority', '0.5')]),
+    OrderedDict([('loc', 'reviews'), ('changefreq', 'yearly'), ('priority', '0.5')]),
     OrderedDict([('loc', 'explore/activity'), ('changefreq', 'weekly'), ('priority', '0.5')]),
     OrderedDict([('loc', 'support'), ('changefreq', 'yearly'), ('priority', '0.5')]),
     OrderedDict([('loc', 'faq'), ('changefreq', 'yearly'), ('priority', '0.5')]),
@@ -1822,6 +1838,7 @@ SITEMAP_STATIC_URLS = [
 SITEMAP_USER_CONFIG = OrderedDict([('loc', ''), ('changefreq', 'yearly'), ('priority', '0.5')])
 SITEMAP_NODE_CONFIG = OrderedDict([('loc', ''), ('lastmod', ''), ('changefreq', 'monthly'), ('priority', '0.5')])
 SITEMAP_REGISTRATION_CONFIG = OrderedDict([('loc', ''), ('lastmod', ''), ('changefreq', 'never'), ('priority', '0.5')])
+SITEMAP_REVIEWS_CONFIG = OrderedDict([('loc', ''), ('lastmod', ''), ('changefreq', 'never'), ('priority', '0.5')])
 SITEMAP_PREPRINT_CONFIG = OrderedDict([('loc', ''), ('lastmod', ''), ('changefreq', 'yearly'), ('priority', '0.5')])
 SITEMAP_PREPRINT_FILE_CONFIG = OrderedDict([('loc', ''), ('lastmod', ''), ('changefreq', 'yearly'), ('priority', '0.5')])
 

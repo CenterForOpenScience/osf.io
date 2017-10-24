@@ -23,12 +23,13 @@ from api.base.serializers import (
 )
 from api.base.throttling import RootAnonThrottle, UserRateThrottle
 from api.base.utils import is_bulk_request, get_user_auth
+from api.nodes.utils import get_file_object
 from api.nodes.permissions import ContributorOrPublic
 from api.nodes.permissions import ContributorOrPublicForRelationshipPointers
 from api.nodes.permissions import ReadOnlyIfRegistration
 from api.users.serializers import UserSerializer
 from framework.auth.oauth_scopes import CoreScopes
-from osf.models import Contributor, MaintenanceState
+from osf.models import Contributor, MaintenanceState, BaseFileNode
 
 
 class JSONAPIBaseView(generics.GenericAPIView):
@@ -139,7 +140,7 @@ class JSONAPIBaseView(generics.GenericAPIView):
         if self.kwargs.get('is_embedded'):
             embeds = []
         else:
-            embeds = self.request.query_params.getlist('embed')
+            embeds = self.request.query_params.getlist('embed') or self.request.query_params.getlist('embed[]')
 
         fields_check = self.serializer_class._declared_fields.copy()
         if 'fields[{}]'.format(self.serializer_class.Meta.type_) in self.request.query_params:
@@ -871,3 +872,36 @@ class BaseLinkedList(JSONAPIBaseView, generics.ListAPIView):
         auth = get_user_auth(self.request)
 
         return self.get_node().linked_nodes.filter(is_deleted=False).exclude(type='osf.collection').can_view(user=auth.user, private_link=auth.private_link).order_by('-date_modified')
+
+
+class WaterButlerMixin(object):
+
+    path_lookup_url_kwarg = 'path'
+    provider_lookup_url_kwarg = 'provider'
+
+    def get_file_item(self, item):
+        attrs = item['attributes']
+        file_node = BaseFileNode.resolve_class(
+            attrs['provider'],
+            BaseFileNode.FOLDER if attrs['kind'] == 'folder'
+            else BaseFileNode.FILE
+        ).get_or_create(self.get_node(check_object_permissions=False), attrs['path'])
+
+        file_node.update(None, attrs, user=self.request.user)
+
+        self.check_object_permissions(self.request, file_node)
+
+        return file_node
+
+    def fetch_from_waterbutler(self):
+        node = self.get_node(check_object_permissions=False)
+        path = self.kwargs[self.path_lookup_url_kwarg]
+        provider = self.kwargs[self.provider_lookup_url_kwarg]
+        return self.get_file_object(node, path, provider)
+
+    def get_file_object(self, node, path, provider, check_object_permissions=True):
+        obj = get_file_object(node=node, path=path, provider=provider, request=self.request)
+        if provider == 'osfstorage':
+            if check_object_permissions:
+                self.check_object_permissions(self.request, obj)
+        return obj

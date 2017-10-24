@@ -4,8 +4,6 @@ from urlparse import urlparse
 from nose.tools import *  # flake8: noqa
 import unittest
 
-from modularodm import Q
-
 from framework.auth import Auth
 from osf.models import AbstractNode, NodeLog
 

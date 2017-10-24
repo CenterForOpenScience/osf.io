@@ -10,9 +10,6 @@ services:
   admin_assets:
     volumes:
       - osf-sync:/code:nocopy
-  sharejs:
-    volumes:
-      - osf-sync:/code:nocopy
   worker:
     volumes:
       - osf-sync:/code:nocopy
@@ -33,8 +30,8 @@ services:
 #      - osf-sync:/code:nocopy
 
 #  fakecas:
-#    image: quay.io/centerforopenscience/fakecas:latest
-#    command: fakecas -host=0.0.0.0:8080 -dbaddress=172.19.0.7:27017
+#    image: quay.io/centerforopenscience/fakecas:master
+#    command: fakecas -host=0.0.0.0:8080 -osfhost=localhost:5000 -dbaddress=postgres://postgres@postgres:5432/osf?sslmode=disable
 
 #  wb:
 #    volumes:
@@ -78,6 +75,17 @@ services:
 ##      - emberosf
 ##    command: /bin/bash -c "cd /ember-osf && yarn link && cd /code && yarn link @centerforopenscience/ember-osf && yarn --pure-lockfile --ignore-engines && ./node_modules/bower/bin/bower install --allow-root --config.interactive=false && ./node_modules/ember-cli/bin/ember serve --host 0.0.0.0 --port 4300"
 
+#  reviews:
+#    volumes:
+#      - reviews-sync:/code:nocopy
+#
+##      # Use this for ember-osf linked development (with docker-sync):
+##      - reviews_dist_vol:/code/dist
+##      - emberosf-sync:/ember-osf
+##    depends_on:
+##      - emberosf
+##    command: /bin/bash -c "cd /ember-osf && yarn link && cd /code && yarn link ember-osf && yarn --pure-lockfile && ./node_modules/bower/bin/bower install --allow-root --config.interactive=false && ./node_modules/ember-cli/bin/ember serve --host 0.0.0.0 --port 4400"
+
 #  # Use this for ember-osf linked development (with docker-sync):
 #  emberosf:
 #    build: ../ember-osf
@@ -102,4 +110,7 @@ volumes:
 #    external: true
 
 #  registries-sync:
+#    external: true
+
+#  reviews-sync:
 #    external: true

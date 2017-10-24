@@ -1,4 +1,3 @@
-from modularodm import Q
 import pytest
 
 from osf.models import ArchiveTarget
@@ -9,4 +8,4 @@ def test_querying_on_id():
     # translated properly
     archive_target = ArchiveTarget(name='s3', stat_result={}, errors=[])
     archive_target.save()
-    assert archive_target in ArchiveTarget.find(Q('_id', 'eq', archive_target._id))
+    assert archive_target in ArchiveTarget.objects.filter(_id=archive_target._id)

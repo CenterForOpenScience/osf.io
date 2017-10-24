@@ -27,7 +27,6 @@ class TestAddPreprintProviders(OsfTestCase):
         for id in set(STAGING_PREPRINT_PROVIDERS) - set(PROD_PREPRINT_PROVIDERS):
             assert_not_in(id, ids)
 
-
     def test_add_default_providers(self):
         populate_main(None)
         providers = PreprintProvider.find()
@@ -37,7 +36,6 @@ class TestAddPreprintProviders(OsfTestCase):
             assert_in(id, ids)
         for id in set(STAGING_PREPRINT_PROVIDERS) - set(PROD_PREPRINT_PROVIDERS):
             assert_not_in(id, ids)
-
 
     def test_add_staging_providers(self):
         populate_main('stage')

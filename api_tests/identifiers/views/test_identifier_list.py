@@ -220,10 +220,13 @@ class TestPreprintIdentifierList:
         assert res_preprint_identifier.status_code == 200
         assert res_preprint_identifier.content_type == 'application/vnd.api+json'
 
-    def test_identifier_list_returns_correct_number_and_referent(self, preprint, res_preprint_identifier, data_preprint_identifier, all_identifiers):
+    def test_identifier_list_returns_correct_number_and_referent(self, preprint, res_preprint_identifier, data_preprint_identifier, all_identifiers, user):
+        # add another preprint so there are more identifiers
+        PreprintFactory(creator=user)
+
         # test_identifier_list_returns_correct_number
         total = res_preprint_identifier.json['links']['meta']['total']
-        assert total == all_identifiers.count()
+        assert total == Identifier.objects.filter(object_id=preprint.id).count()
 
         # test_identifier_list_returns_correct_referent
         paths = [

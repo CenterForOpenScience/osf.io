@@ -6,7 +6,6 @@ from django.views.generic import ListView, DeleteView
 from django.shortcuts import redirect
 from django.views.defaults import page_not_found
 from django.contrib.auth.mixins import PermissionRequiredMixin
-from modularodm import Q
 
 from website import search
 from osf.models import NodeLog
@@ -241,10 +240,7 @@ class NodeSpamList(PermissionRequiredMixin, ListView):
     raise_exception = True
 
     def get_queryset(self):
-        query = (
-            Q('spam_status', 'eq', self.SPAM_STATE)
-        )
-        return Node.find(query).order_by(self.ordering)
+        return Node.objects.filter(spam_status=self.SPAM_STATE).order_by(self.ordering)
 
     def get_context_data(self, **kwargs):
         query_set = kwargs.pop('object_list', self.object_list)

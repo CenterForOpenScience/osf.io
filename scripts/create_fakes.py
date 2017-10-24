@@ -49,8 +49,7 @@ from modularodm.query.querydialect import DefaultQueryDialect as Q
 django.setup()
 
 from framework.auth import Auth
-from framework.auth import utils
-from osf_tests.factories import UserFactory, ProjectFactory, NodeFactory, RegistrationFactory, PreprintFactory, PreprintProviderFactory
+from osf_tests.factories import UserFactory, ProjectFactory, NodeFactory, RegistrationFactory, PreprintFactory, PreprintProviderFactory, fake_email
 from osf import models
 from website.app import init_app
 
@@ -270,7 +269,7 @@ fake.add_provider(Sciencer)
 
 
 def create_fake_user():
-    email = fake.email()
+    email = fake_email()
     name = fake.name()
     user = UserFactory(username=email, fullname=name,
                        is_registered=True, is_claimed=True,

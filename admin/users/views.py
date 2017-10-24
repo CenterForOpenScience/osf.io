@@ -17,7 +17,6 @@ from django.shortcuts import redirect
 from osf.models.user import OSFUser
 from osf.models.node import Node, NodeLog
 from osf.models.spam import SpamStatus
-from osf.models.tag import Tag
 from framework.auth import get_user
 from framework.auth.utils import impute_names
 from framework.auth.core import generate_verification_key
@@ -59,14 +58,10 @@ class UserDeleteView(PermissionRequiredMixin, DeleteView):
             if user.date_disabled is None or kwargs.get('is_spam'):
                 user.disable_account()
                 user.is_registered = False
-                if 'spam_flagged' in user.system_tags or 'ham_confirmed' in user.system_tags:
-                    if 'spam_flagged' in user.system_tags:
-                        t = Tag.all_tags.get(name='spam_flagged', system=True)
-                        # TODO: removing system tags this way does not currently work -- https://openscience.atlassian.net/browse/OSF-7760
-                        user.tags.remove(t)
-                    if 'ham_confirmed' in user.system_tags:
-                        t = Tag.all_tags.get(name='ham_confirmed', system=True)
-                        user.tags.remove(t)
+                if 'spam_flagged' in user.system_tags:
+                    user.tags.through.objects.filter(tag__name='spam_flagged').delete()
+                if 'ham_confirmed' in user.system_tags:
+                    user.tags.through.objects.filter(tag__name='ham_confirmed').delete()
 
                 if kwargs.get('is_spam') and 'spam_confirmed' not in user.system_tags:
                     user.add_system_tag('spam_confirmed')
@@ -76,15 +71,9 @@ class UserDeleteView(PermissionRequiredMixin, DeleteView):
                 user.date_disabled = None
                 subscribe_on_confirm(user)
                 user.is_registered = True
-                if 'spam_flagged' in user.system_tags or 'spam_confirmed' in user.system_tags:
-                    if 'spam_flagged' in user.system_tags:
-                        t = Tag.all_tags.get(name='spam_flagged', system=True)
-                        user.tags.remove(t)
-                    if 'spam_confirmed' in user.system_tags:
-                        t = Tag.all_tags.get(name='spam_confirmed', system=True)
-                        user.tags.remove(t)
-                    if 'ham_confirmed' not in user.system_tags:
-                        user.add_system_tag('ham_confirmed')
+                user.tags.through.objects.filter(tag__name__in=['spam_flagged', 'spam_confirmed'], tag__system=True).delete()
+                if 'ham_confirmed' not in user.system_tags:
+                    user.add_system_tag('ham_confirmed')
                 flag = USER_RESTORED
                 message = 'User account {} reenabled'.format(user.pk)
             user.save()
@@ -424,7 +413,7 @@ class UserWorkshopFormView(PermissionRequiredMixin, FormView):
             else:
                 user = user_by_email
 
-            workshop_date = datetime.strptime(row[1], '%m/%d/%y')
+            workshop_date = pytz.utc.localize(datetime.strptime(row[1], '%m/%d/%y'))
             nodes = self.get_user_nodes_since_workshop(user, workshop_date)
             user_logs = self.get_user_logs_since_workshop(user, workshop_date)
             last_log_date = user_logs.latest().date.strftime('%m/%d/%y') if user_logs else ''

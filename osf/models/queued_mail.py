@@ -7,7 +7,6 @@ from website.mails import presends
 from website import settings as osf_settings
 
 from osf.models.base import BaseModel, ObjectIDMixin
-from osf.modm_compat import Q
 from osf.utils.datetime_aware_jsonfield import DateTimeAwareJSONField
 
 
@@ -68,11 +67,7 @@ class QueuedMail(ObjectIDMixin, BaseModel):
         Does not look for queue-up emails.
         :return: a list of those emails
         """
-        return self.__class__.find(
-            Q('email_type', 'eq', self.email_type) &
-            Q('user', 'eq', self.user) &
-            Q('sent_at', 'ne', None)
-        )
+        return self.__class__.objects.filter(email_type=self.email_type, user=self.user).exclude(sent_at=None)
 
 
 def queue_mail(to_addr, mail, send_at, user, **context):
