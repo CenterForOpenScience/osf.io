@@ -1810,11 +1810,8 @@ class TestNotificationsReviews(OsfTestCase):
         self.user = factories.UserFactory()
         self.sender = factories.UserFactory()
         self.context_info = {
-            'email_recipients': [self.sender._id, self.user._id],
             'email_sender': self.sender,
-            'template': 'test',
             'domain': 'osf.io',
-            'referrer': self.sender,
             'reviewable': self.preprint,
             'workflow': 'pre-moderation',
             'provider_contact_email': 'contact@osf.io',
@@ -1845,10 +1842,12 @@ class TestNotificationsReviews(OsfTestCase):
 
     @mock.patch('website.mails.mails.send_mail')
     def test_reviews_submit_notification(self, mock_send_email):
-        mixins.reviews_submit_notification(self, context=self.context_info)
+        mixins.reviews_submit_notification(self, context=self.context_info, recipients=[self.sender, self.user])
         assert_true(mock_send_email.called)
 
     @mock.patch('website.notifications.emails.notify_global_event')
     def test_reviews_notification(self, mock_notify):
-        mixins.reviews_notification(self, creator=self.sender, context=self.context_info, node=self.preprint.node)
+        mixins.reviews_notification(self, creator=self.sender, context=self.context_info,
+                                    node=self.preprint.node, recipients=[self.sender, self.user],
+                                    time_now=timezone.now(), template='test.html.mako')
         assert_true(mock_notify.called)

@@ -52,26 +52,39 @@ def notify(event, user, node, timestamp, **context):
     return sent_users
 
 def notify_mentions(event, user, node, timestamp, **context):
-    new_mentions = context.get('new_mentions', [])
-    sent_users = notify_global_event(event, user, node, timestamp, new_mentions, **context)
+    recipient_ids = context.get('new_mentions', [])
+    sent_users = notify_global_event(event, user, node, timestamp, recipient_ids, context=context)
     return sent_users
 
-def notify_global_event(event, sender_user, node, timestamp, target_users, **context):
+def notify_global_event(event, sender_user, node, timestamp, recipients, template=None, context=None):
     event_type = utils.find_subscription_type(event)
     sent_users = []
 
-    for target_id in target_users:
-        target_user = OSFUser.load(target_id)
-        subscriptions = get_user_subscriptions(target_user, event_type)
+    # Initialize the subscriptions dict
+    users_subscriptions = {}
+    for key in constants.NOTIFICATION_TYPES:
+        users_subscriptions[key] = []
+
+    # Group recipients IDs per each notification type
+    # e.g. {'email_transactional': [u'vsu7t', u'evz43'], 'none': [], 'email_digest': []}
+    for recipient in recipients:
+        subscriptions = get_user_subscriptions(recipient, event_type)
         for notification_type in subscriptions:
-            if (notification_type != 'none' and subscriptions[notification_type] and target_id in subscriptions[notification_type]):
-                store_emails([target_id], notification_type, event, sender_user, node, timestamp, **context)
-                sent_users.extend([target_id])
+            if (notification_type != 'none' and subscriptions[notification_type] and recipient._id in subscriptions[notification_type]):
+                users_subscriptions[notification_type].append(recipient._id)
+                if (sender_user._id != recipient):
+                    sent_users.append(recipient._id)
+
+    # For each notification type store the list of users
+    for type in users_subscriptions:
+        # Check if list is empty
+        if users_subscriptions[type]:
+            store_emails(users_subscriptions[type], type, event, sender_user, node, timestamp, template, **context)
 
     return sent_users
 
 
-def store_emails(recipient_ids, notification_type, event, user, node, timestamp, **context):
+def store_emails(recipient_ids, notification_type, event, user, node, timestamp, template=None, **context):
     """Store notification emails
 
     Emails are sent via celery beat as digests
@@ -89,7 +102,8 @@ def store_emails(recipient_ids, notification_type, event, user, node, timestamp,
         return
 
     # Reviews has multiple email templates for the global_reviews event.
-    template = '{template}.html.mako'.format(template=context['template']) if event == 'global_reviews' else '{event}.html.mako'.format(event=event)
+    template = '{template}.html.mako'.format(template=template) if template else '{event}.html.mako'.format(event=event)
+
     # user whose action triggered email sending
     context['user'] = user
     node_lineage_ids = get_node_lineage(node) if node else []
