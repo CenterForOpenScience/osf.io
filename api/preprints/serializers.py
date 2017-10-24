@@ -61,6 +61,7 @@ class PreprintSerializer(JSONAPISerializer):
         'date_created',
         'date_modified',
         'date_published',
+        'original_publication_date',
         'provider',
         'is_published',
         'subjects',
