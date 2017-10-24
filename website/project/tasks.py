@@ -94,7 +94,7 @@ def serialize_share_node_data(node):
 
 def format_node(node):
     is_qa_node = bool(set(settings.DO_NOT_INDEX_LIST['tags']).intersection(node.tags.all().values_list('name', flat=True))) \
-                 or any(substring in node.title for substring in settings.DO_NOT_INDEX_LIST['titles'])
+        or any(substring in node.title for substring in settings.DO_NOT_INDEX_LIST['titles'])
     return [
         {
             '@id': '_:123',
@@ -110,7 +110,8 @@ def format_node(node):
 
 def format_registration(node):
     is_qa_node = bool(set(settings.DO_NOT_INDEX_LIST['tags']).intersection(node.tags.all().values_list('name', flat=True))) \
-                 or any(substring in node.title for substring in settings.DO_NOT_INDEX_LIST['titles'])
+        or any(substring in node.title for substring in settings.DO_NOT_INDEX_LIST['titles'])
+    
     registration_graph = GraphNode('registration', **{
         'title': node.title,
         'description': node.description or '',
