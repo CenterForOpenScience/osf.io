@@ -37,6 +37,7 @@ def preprint_csl(preprint, node):
 
     return csl
 
+
 def render_citation(node, style='apa'):
     """Given a node, return a citation"""
     csl = None

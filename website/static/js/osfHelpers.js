@@ -1033,6 +1033,18 @@ function linkifyText(content) {
     return linkify(content);
 }
 
+function osfSupportEmail() {
+    return window.contextVars.osfSupportEmail;
+}
+
+function osfSupportLink() {
+    return '<a href="mailto:' + osfSupportEmail() + '">' + osfSupportEmail() +'</a>';
+}
+
+function refreshOrSupport() {
+    return 'Please refresh the page and try again or contact ' + osfSupportLink() + ' if the problem persists.';
+}
+
 // Also export these to the global namespace so that these can be used in inline
 // JS. This is used on the /goodbye page at the moment.
 module.exports = window.$.osf = {
@@ -1082,4 +1094,7 @@ module.exports = window.$.osf = {
     linkifyText: linkifyText,
     getConfirmationString: getConfirmationString,
     decodeText: decodeText,
+    osfSupportEmail: osfSupportEmail,
+    osfSupportLink: osfSupportLink,
+    refreshOrSupport: refreshOrSupport,
 };
