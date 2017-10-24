@@ -18,6 +18,15 @@ class JSONAPIRenderer(JSONRendererWithESISupport):
     format = 'jsonapi'
     media_type = 'application/vnd.api+json'
 
+    def render(self, data, accepted_media_type=None, renderer_context=None):
+        # Allow adding a top-level `meta` object to the response by including it in renderer_context
+        # See JSON-API documentation on meta information: http://jsonapi.org/format/#document-meta
+        if renderer_context is not None:
+            meta_dict = renderer_context.get('meta')
+            if meta_dict is not None:
+                data.setdefault('meta', {}).update(meta_dict)
+        return super(JSONAPIRenderer, self).render(data, accepted_media_type, renderer_context)
+
 
 class BrowsableAPIRendererNoForms(BrowsableAPIRenderer):
     """

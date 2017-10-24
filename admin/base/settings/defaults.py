@@ -88,9 +88,11 @@ INSTALLED_APPS = (
     'webpack_loader',
     'django_nose',
     'password_reset',
+    'guardian',
 
     # OSF
     'osf',
+    'reviews',
 
     # Addons
     'addons.osfstorage',
@@ -114,6 +116,7 @@ INSTALLED_APPS = (
 
 MIGRATION_MODULES = {
     'osf': None,
+    'reviews': None,
     'addons_osfstorage': None,
     'addons_wiki': None,
     'addons_twofactor': None,

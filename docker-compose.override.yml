@@ -87,6 +87,18 @@ services:
 ##    command: /bin/bash -c "cd /ember-osf && yarn link && cd /code && yarn link @centerforopenscience/ember-osf && yarn --pure-lockfile --ignore-engines && ./node_modules/bower/bin/bower install --allow-root --config.interactive=false && ./node_modules/ember-cli/bin/ember serve --host 0.0.0.0 --port 4300"
 
 # Use this for ember-osf linked development (with docker-sync):
+#  reviews:
+#    volumes:
+#      - reviews-sync:/code:nocopy
+#
+##      # Use this for ember-osf linked development (with docker-sync):
+##      - reviews_dist_vol:/code/dist
+##      - emberosf-sync:/ember-osf
+##    depends_on:
+##      - emberosf
+##    command: /bin/bash -c "cd /ember-osf && yarn link && cd /code && yarn link ember-osf && yarn --pure-lockfile && ./node_modules/bower/bin/bower install --allow-root --config.interactive=false && ./node_modules/ember-cli/bin/ember serve --host 0.0.0.0 --port 4400"
+
+#  # Use this for ember-osf linked development (with docker-sync):
 #  emberosf:
 #    build: ../ember-osf
 #    command: /bin/bash -c "yarn --pure-lockfile --ignore-engines && ./node_modules/bower/bin/bower install --allow-root --config.interactive=false"
@@ -113,4 +125,7 @@ volumes:
 #    external: true
 
 #  registries-sync:
+#    external: true
+
+#  reviews-sync:
 #    external: true
