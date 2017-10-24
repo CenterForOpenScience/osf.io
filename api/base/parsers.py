@@ -75,7 +75,7 @@ class JSONAPIParser(JSONParser):
             if object_type is None:
                 raise JSONAPIException(source={'pointer': '/data/type'}, detail=NO_TYPE_ERROR)
 
-        if 'preprint' in parser_context['request'].url and request_method == 'PATCH':
+        if 'preprint' in parser_context['request'].path and request_method == 'PATCH':
             if object_id is None:
                 raise JSONAPIException(source={'pointer': '/data/id'}, detail=NO_ID_ERROR)
 
