@@ -6,7 +6,7 @@ from osf_tests.factories import (
     NodeRelationFactory,
     ProjectFactory,
 )
-from osf.utils.auth import Auth
+from framework.auth.core import Auth
 
 
 class NodesListFilteringMixin(object):
