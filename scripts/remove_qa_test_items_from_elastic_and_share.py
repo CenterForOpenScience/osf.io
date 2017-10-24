@@ -11,6 +11,8 @@ from osf.models import AbstractNode
 from website.project.tasks import update_node_share
 from website.search.elastic_search import update_node
 from website.settings import DO_NOT_INDEX_LIST
+from framework.database import paginated
+
 
 logger = logging.getLogger(__name__)
 
@@ -23,7 +25,8 @@ def remove_search_index(dry_run=True):
     for title in DO_NOT_INDEX_LIST['titles']:
         title_query |= Q(title__contains = title)
 
-    nodes = AbstractNode.objects.filter(Q(is_public=True) & (tag_query | title_query))
+    increment = 20
+    nodes = paginated(AbstractNode, query=Q(is_public=True) & (tag_query | title_query), increment=increment, each=True)
     if dry_run:
         logger.warn('Dry run mode.')
         for node in nodes:
