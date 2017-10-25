@@ -68,9 +68,10 @@ services:
 ##      - cd /ember-osf &&
 ##        yarn link &&
 ##        cd /code &&
-##        yarn link @centerforopenscience/ember-osf &&
+##        (rm -r node_modules || true) &&
 ##        ./node_modules/.bin/bower install --allow-root --config.interactive=false &&
 ##        yarn --frozen-lockfile &&
+##        yarn link @centerforopenscience/ember-osf &&
 ##        yarn start --host 0.0.0.0 --port 4201 --live-reload-port 41954
 
 #  registries:
@@ -88,9 +89,11 @@ services:
 ##      - cd /ember-osf &&
 ##        yarn link &&
 ##        cd /code &&
-##        yarn link @centerforopenscience/ember-osf &&
+##        (rm -r node_modules || true) &&
+##        (rm -r bower_components || true) &&
 ##        ./node_modules/.bin/bower install --allow-root --config.interactive=false &&
 ##        yarn --frozen-lockfile &&
+##        yarn link @centerforopenscience/ember-osf &&
 ##        yarn start --host 0.0.0.0 --port 4202 --live-reload-port 41955
 
 #  reviews:
@@ -120,6 +123,8 @@ services:
 #      - /bin/bash
 #      - -c 
 #      - yarn --frozen-lockfile --ignore-engines &&
+#       (rm -r node_modules || true) &&
+#       (rm -r bower_components || true) &&
 #       ./node_modules/.bin/bower install --allow-root --config.interactive=false
 #    volumes:
 #      - emberosf-sync:/code:nocopy
