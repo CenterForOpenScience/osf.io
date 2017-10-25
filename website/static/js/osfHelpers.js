@@ -290,10 +290,6 @@ function osfSupportLink() {
     return '<a href="mailto:' + osfSupportEmail() + '">' + osfSupportEmail() +'</a>';
 }
 
-function refreshOrSupport() {
-    return 'Please refresh the page and try again or contact ' + osfSupportLink() + ' if the problem persists.';
-}
-
 var errorDefaultLong = function(){
     return 'OSF was unable to resolve your request. If this issue persists, ' +
         'please report it to ' + osfSupportLink() + '.';
@@ -1095,5 +1091,4 @@ module.exports = window.$.osf = {
     decodeText: decodeText,
     osfSupportEmail: osfSupportEmail,
     osfSupportLink: osfSupportLink,
-    refreshOrSupport: refreshOrSupport,
 };
