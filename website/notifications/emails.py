@@ -53,7 +53,8 @@ def notify(event, user, node, timestamp, **context):
 
 def notify_mentions(event, user, node, timestamp, **context):
     recipient_ids = context.get('new_mentions', [])
-    sent_users = notify_global_event(event, user, node, timestamp, recipient_ids, context=context)
+    recipients = OSFUser.objects.filter(guids___id__in=recipient_ids)
+    sent_users = notify_global_event(event, user, node, timestamp, recipients, context=context)
     return sent_users
 
 def notify_global_event(event, sender_user, node, timestamp, recipients, template=None, context=None):
