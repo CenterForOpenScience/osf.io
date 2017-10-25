@@ -39,6 +39,7 @@ from osf.models import (Contributor,
                         QuickFilesNode,
                         AbstractNode,
                         PreprintService,
+                        Node,
                         OSFUser,
                         PreprintProvider,
                         Action,)
