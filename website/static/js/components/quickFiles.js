@@ -41,7 +41,11 @@ var QuickFile = {
                     m('span.component-overflow.f-w-lg', {style: 'line-height: 1.5; width: 100%'}, [
                         m('span.project-statuses-lg', {style: 'width: 50%; float:left'}, [
                             m('span', {class: ctrl.icon, style: 'padding-right: 5px;'}, ''),
-                            m('a', {'href': viewUrl}, ctrl.file.attributes.name),
+                            m('a', {'href': viewUrl,
+                                onclick : function () {
+                                    $osf.trackClick('QuickFiles', 'view', 'view-quickfile-from-profile-page');
+                                }
+                            }, ctrl.file.attributes.name),
                         ]),
                         m('div', {style: 'width: 50%; float:right; font-size:small; line-height:2;'}, 'downloads: ' + ctrl.file.attributes.extra.downloads)
                     ])
