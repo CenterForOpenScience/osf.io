@@ -283,11 +283,20 @@ var setXHRAuthorization = function (xhr, options) {
 var errorDefaultShort = 'Unable to resolve';
 
 function osfSupportEmail() {
-    return window.contextVars.osfSupportEmail;
+    if(window.contextVars){
+        return window.contextVars.osfSupportEmail;
+    }
+    // currently have problem with osfLanguage.js doesn't have window imported,
+    // change this hard coded address later when we have improvement to that
+    return 'support@osf.io'
 }
 
 function osfSupportLink() {
     return '<a href="mailto:' + osfSupportEmail() + '">' + osfSupportEmail() +'</a>';
+}
+
+function refreshOrSupport() {
+    return 'Please refresh the page and try again or contact ' + osfSupportLink() + ' if the problem persists.';
 }
 
 var errorDefaultLong = function(){
@@ -1091,4 +1100,5 @@ module.exports = window.$.osf = {
     decodeText: decodeText,
     osfSupportEmail: osfSupportEmail,
     osfSupportLink: osfSupportLink,
+    refreshOrSupport: refreshOrSupport,
 };
