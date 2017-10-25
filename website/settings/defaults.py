@@ -124,6 +124,10 @@ USE_EMAIL = True
 FROM_EMAIL = 'openscienceframework-noreply@osf.io'
 SUPPORT_EMAIL = 'support@osf.io'
 
+# Default settings for fake email address generation
+FAKE_EMAIL_NAME = 'freddiemercury'
+FAKE_EMAIL_DOMAIN = 'cos.io'
+
 # SMTP Settings
 MAIL_SERVER = 'smtp.sendgrid.net'
 MAIL_USERNAME = 'osf-smtp'
@@ -358,6 +362,7 @@ LOW_PRI_MODULES = {
     'scripts.populate_new_and_noteworthy_projects',
     'scripts.populate_popular_projects_and_registrations',
     'website.search.elastic_search',
+    'scripts.generate_sitemap',
 }
 
 MED_PRI_MODULES = {
@@ -366,6 +371,9 @@ MED_PRI_MODULES = {
     'scripts.triggered_mails',
     'website.mailchimp_utils',
     'website.notifications.tasks',
+    'scripts.analytics.run_keen_summaries',
+    'scripts.analytics.run_keen_snapshots',
+    'scripts.analytics.run_keen_events',
 }
 
 HIGH_PRI_MODULES = {
@@ -1820,6 +1828,7 @@ SITEMAP_STATIC_URLS = [
     OrderedDict([('loc', 'prereg'), ('changefreq', 'yearly'), ('priority', '0.5')]),
     OrderedDict([('loc', 'meetings'), ('changefreq', 'yearly'), ('priority', '0.5')]),
     OrderedDict([('loc', 'registries'), ('changefreq', 'yearly'), ('priority', '0.5')]),
+    OrderedDict([('loc', 'reviews'), ('changefreq', 'yearly'), ('priority', '0.5')]),
     OrderedDict([('loc', 'explore/activity'), ('changefreq', 'weekly'), ('priority', '0.5')]),
     OrderedDict([('loc', 'support'), ('changefreq', 'yearly'), ('priority', '0.5')]),
     OrderedDict([('loc', 'faq'), ('changefreq', 'yearly'), ('priority', '0.5')]),
@@ -1829,6 +1838,7 @@ SITEMAP_STATIC_URLS = [
 SITEMAP_USER_CONFIG = OrderedDict([('loc', ''), ('changefreq', 'yearly'), ('priority', '0.5')])
 SITEMAP_NODE_CONFIG = OrderedDict([('loc', ''), ('lastmod', ''), ('changefreq', 'monthly'), ('priority', '0.5')])
 SITEMAP_REGISTRATION_CONFIG = OrderedDict([('loc', ''), ('lastmod', ''), ('changefreq', 'never'), ('priority', '0.5')])
+SITEMAP_REVIEWS_CONFIG = OrderedDict([('loc', ''), ('lastmod', ''), ('changefreq', 'never'), ('priority', '0.5')])
 SITEMAP_PREPRINT_CONFIG = OrderedDict([('loc', ''), ('lastmod', ''), ('changefreq', 'yearly'), ('priority', '0.5')])
 SITEMAP_PREPRINT_FILE_CONFIG = OrderedDict([('loc', ''), ('lastmod', ''), ('changefreq', 'yearly'), ('priority', '0.5')])
 

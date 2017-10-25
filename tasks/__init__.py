@@ -441,6 +441,7 @@ API_TESTS3 = [
     'api_tests/comments',
     'api_tests/files',
     'api_tests/guids',
+    'api_tests/reviews',
     'api_tests/search',
     'api_tests/taxonomies',
     'api_tests/test',
@@ -533,13 +534,13 @@ def test(ctx, all=False, syntax=False):
         test_addons(ctx)
         # TODO: Enable admin tests
         test_admin(ctx)
-        karma(ctx, single=True, browsers='PhantomJS')
+        karma(ctx)
 
 
 @task
 def test_js(ctx):
     jshint(ctx)
-    karma(ctx, single=True, browsers='PhantomJS')
+    karma(ctx)
 
 @task
 def test_travis_osf(ctx, numprocesses=None):
@@ -566,7 +567,7 @@ def test_travis_else(ctx, numprocesses=None):
 def test_travis_api1_and_js(ctx, numprocesses=None):
     flake(ctx)
     jshint(ctx)
-    karma(ctx, single=True, browsers='PhantomJS')
+    karma(ctx)
     test_api1(ctx, numprocesses=numprocesses)
 
 
@@ -596,19 +597,9 @@ def test_travis_varnish(ctx):
 
 
 @task
-def karma(ctx, single=False, sauce=False, browsers=None):
-    """Run JS tests with Karma. Requires PhantomJS to be installed."""
-    karma_bin = os.path.join(
-        HERE, 'node_modules', 'karma', 'bin', 'karma'
-    )
-    cmd = '{} start'.format(karma_bin)
-    if single:
-        cmd += ' --single-run'
-    # Use browsers if specified on the command-line, otherwise default
-    # what's specified in karma.conf.js
-    if browsers:
-        cmd += ' --browsers {}'.format(browsers)
-    ctx.run(cmd, echo=True)
+def karma(ctx):
+    """Run JS tests with Karma. Requires Chrome to be installed."""
+    ctx.run('yarn test', echo=True)
 
 
 @task
@@ -699,7 +690,7 @@ def copy_settings(ctx, addons=False):
 @task(aliases=['bower'])
 def bower_install(ctx):
     print('Installing bower-managed packages')
-    bower_bin = os.path.join(HERE, 'node_modules', 'bower', 'bin', 'bower')
+    bower_bin = os.path.join(HERE, 'node_modules', '.bin', 'bower')
     ctx.run('{} prune --allow-root'.format(bower_bin), echo=True)
     ctx.run('{} install --allow-root'.format(bower_bin), echo=True)
 
@@ -894,15 +885,12 @@ def webpack(ctx, clean=False, watch=False, dev=False, colors=False):
     """Build static assets with webpack."""
     if clean:
         clean_assets(ctx)
-    webpack_bin = os.path.join(HERE, 'node_modules', 'webpack', 'bin', 'webpack.js')
-    args = [webpack_bin]
+    args = ['yarn run webpack-{}'.format('dev' if dev else 'prod')]
     args += ['--progress']
     if watch:
         args += ['--watch']
     if colors:
         args += ['--colors']
-    config_file = 'webpack.dev.config.js' if dev else 'webpack.prod.config.js'
-    args += ['--config {0}'.format(config_file)]
     command = ' '.join(args)
     ctx.run(command, echo=True)
 
@@ -919,10 +907,10 @@ def build_js_config_files(ctx):
 @task()
 def assets(ctx, dev=False, watch=False, colors=False):
     """Install and build static assets."""
-    npm = 'npm install'
+    command = 'yarn install --frozen-lockfile'
     if not dev:
-        npm += ' --production'
-    ctx.run(npm, echo=True)
+        command += ' --production'
+    ctx.run(command, echo=True)
     bower_install(ctx)
     build_js_config_files(ctx)
     # Always set clean=False to prevent possible mistakes

@@ -322,6 +322,32 @@ class TestNodeFiltering:
         assert private_project._id not in ids
         assert public_project._id in ids
 
+    def test_filtering_by_public_toplevel(self, app, user_one):
+        public_project = ProjectFactory(creator=user_one, is_public=True)
+        private_project = ProjectFactory(creator=user_one, is_public=False)
+
+        url = '/{}nodes/?filter[public]=false&filter[parent]=null'.format(API_BASE)
+        res = app.get(url, auth=user_one.auth)
+        node_json = res.json['data']
+
+        # No public projects returned
+        assert not any([each['attributes']['public'] for each in node_json])
+
+        ids = [each['id'] for each in node_json]
+        assert public_project._id not in ids
+        assert private_project._id in ids
+
+        url = '/{}nodes/?filter[public]=true&filter[parent]=null'.format(API_BASE)
+        res = app.get(url, auth=user_one.auth)
+        node_json = res.json['data']
+
+        # No private projects returned
+        assert all([each['attributes']['public'] for each in node_json])
+
+        ids = [each['id'] for each in node_json]
+        assert private_project._id not in ids
+        assert public_project._id in ids
+
     def test_filtering_tags(self, app, public_project_one, public_project_two, tag_one, tag_two):
         url = '/{}nodes/?filter[tags]={}'.format(API_BASE, tag_one)
 

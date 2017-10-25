@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-from datetime import date, datetime, timedelta
+from datetime import timedelta
 
 from django.utils import timezone
 from nose.tools import *  # noqa
