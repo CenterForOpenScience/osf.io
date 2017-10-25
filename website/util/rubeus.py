@@ -11,7 +11,6 @@ from framework import sentry
 from framework.auth.decorators import Auth
 
 from django.apps import apps
-from django.db import connection
 from django.db.models import Exists, OuterRef
 
 from website import settings
@@ -165,7 +164,6 @@ class NodeFileCollector(object):
         """Return the Rubeus.JS representation of the node's file data, including
         addons and components
         """
-        print(len(connection.queries))
         root = self._get_nodes(self.node)
         return [root]
 
@@ -189,6 +187,9 @@ class NodeFileCollector(object):
         is_pointer = parent and node.linked_node
         can_view = node.can_view(auth=self.auth)
         can_edit = node.has_write_perm if hasattr(node, 'has_write_perm') else node.can_edit(auth=self.auth)
+
+        if parent and parent.root.title == parent.title:
+            children = self._get_nodes(node)['children']
 
         return {
             # TODO: Remove safe_unescape_html when mako html safe comes in
