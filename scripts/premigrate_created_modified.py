@@ -115,6 +115,8 @@ FINALIZE_MIGRATION = [
     "ALTER TABLE osf_useractivitycounter ADD COLUMN modified timestamp with time zone;",
     "ALTER TABLE osf_abstractnode RENAME COLUMN date_created TO created;",
     "ALTER TABLE osf_abstractnode RENAME COLUMN date_modified TO modified;",
+    "ALTER TABLE osf_action RENAME COLUMN date_created TO created;",
+    "ALTER TABLE osf_action RENAME COLUMN date_modified TO modified;",
     "ALTER TABLE osf_apioauth2application RENAME COLUMN date_created TO created;",
     "ALTER TABLE osf_comment RENAME COLUMN date_created TO created;",
     "ALTER TABLE osf_comment RENAME COLUMN date_modified TO modified;",

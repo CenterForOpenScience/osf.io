@@ -457,7 +457,7 @@ class PreprintActionList(JSONAPIBaseView, generics.ListAPIView, ListFilterMixin,
     serializer_class = ActionSerializer
     model_class = Action
 
-    ordering = ('-date_created',)
+    ordering = ('-created',)
     view_category = 'preprints'
     view_name = 'preprint-action-list'
 

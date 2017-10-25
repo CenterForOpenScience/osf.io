@@ -839,7 +839,7 @@ class UserActionList(JSONAPIBaseView, generics.ListAPIView, ListFilterMixin, Use
     serializer_class = ActionSerializer
     model_class = Action
 
-    ordering = ('-date_created',)
+    ordering = ('-created',)
     view_category = 'users'
     view_name = 'user-action-list'
 

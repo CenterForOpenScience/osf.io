@@ -53,12 +53,12 @@ class GitLabProvider(object):
         )
 
 
-class UserSettings(BaseStorageAddon, BaseOAuthUserSettings):
+class UserSettings(BaseOAuthUserSettings):
     oauth_provider = GitLabProvider
     serializer = GitLabSerializer
 
 
-class NodeSettings(BaseStorageAddon, BaseOAuthNodeSettings):
+class NodeSettings(BaseOAuthNodeSettings, BaseStorageAddon):
     oauth_provider = GitLabProvider
     serializer = GitLabSerializer
 
