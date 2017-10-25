@@ -60,7 +60,7 @@ class TestPreprintCitationContent(PreprintCitationsMixin, ApiTestCase):
 	def test_citation_contains_correct_date(self):
 		res = self.app.get(self.published_preprint_url)
 		assert_equal(res.status_code, 200)
-		expected_date = self.published_preprint.date_modified.strftime('%Y, %B %-d')
+		expected_date = self.published_preprint.node.logs.latest().date.strftime('%Y, %B %-d')
 		assert_true(expected_date in res.json['data']['attributes']['citation'])
 
 		self.published_preprint.original_publication_date = datetime(2017, 12, 24)
