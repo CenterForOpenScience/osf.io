@@ -917,7 +917,7 @@ class WaterButlerMixin(object):
 
         for base_class in objs_to_create:
             base_class.objects.bulk_create(objs_to_create[base_class])
-            file_objs += objs_to_create[base_class] 
+            file_objs += objs_to_create[base_class]
 
         return file_objs
 
