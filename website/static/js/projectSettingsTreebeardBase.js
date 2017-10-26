@@ -7,7 +7,6 @@
 
 var m = require('mithril');
 var Fangorn = require('js/fangorn').Fangorn;
-var lodashGet = require('lodash.get');
 
 
 function resolveToggle(item) {
@@ -46,7 +45,7 @@ function getNodesOriginal(nodeTree, nodesOriginal) {
             visibleContributors.push(nodeTree.node.contributors[i].id);
         }
     }
-    var nodeInstitutions = lodashGet(nodeTree.node, 'affiliated_institutions', []);
+    var nodeInstitutions = nodeTree.node.affiliated_institutions || [];
 
     nodeInstitutions = nodeInstitutions.map(function(item) {
         return item.id;
