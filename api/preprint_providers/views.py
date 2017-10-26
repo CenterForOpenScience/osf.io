@@ -4,11 +4,9 @@ from rest_framework import generics
 from rest_framework import permissions as drf_permissions
 from rest_framework.exceptions import NotAuthenticated
 
-from django.db.models import Q, Exists, OuterRef
-
 from framework.auth.oauth_scopes import CoreScopes
 
-from osf.models import AbstractNode, Subject, PreprintProvider, Contributor
+from osf.models import AbstractNode, Subject, PreprintProvider
 
 from reviews import permissions as reviews_permissions
 

@@ -40,6 +40,7 @@ from osf.models import (Contributor,
                         AbstractNode,
                         PreprintService,
                         Node,
+                        Registration,
                         OSFUser,
                         PreprintProvider,
                         Action,)

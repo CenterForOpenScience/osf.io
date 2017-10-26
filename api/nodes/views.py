@@ -98,7 +98,7 @@ from framework.auth.oauth_scopes import CoreScopes
 from framework.postcommit_tasks.handlers import enqueue_postcommit_task
 from osf.models import AbstractNode
 from osf.models import (Node, PrivateLink, Institution, Comment, DraftRegistration,)
-from osf.models import OSFUser, Contributor
+from osf.models import OSFUser
 from osf.models import NodeRelation, Guid
 from osf.models import BaseFileNode
 from osf.models.files import File, Folder
