@@ -724,11 +724,10 @@ class TestArchiverTasks(ArchiverTestCase):
         schema = generate_schema_from_data(data)
         draft = factories.DraftRegistrationFactory(branched_from=node, registration_schema=schema, registered_metadata=data)
 
-        with test_utils.mock_archive(node, schema=schema, data=data, autocomplete=True, autoapprove=True) as registration:
+        with test_utils.mock_archive(node, schema=schema, data=data, draft=draft, autocomplete=True, autoapprove=True) as registration:
             with mock.patch.object(BaseStorageAddon, '_get_file_tree', mock.Mock(return_value=file_tree)):
                 job = factories.ArchiveJobFactory(initiator=registration.creator)
-                draft.registered_node = registration
-                draft.save()
+
                 with assert_raises(ArchivedFileNotFound):
                     archive_success(registration._id, job._id)
 
@@ -757,7 +756,6 @@ class TestArchiverTasks(ArchiverTestCase):
             }
         }
         schema = generate_schema_from_data(data)
-
         with test_utils.mock_archive(node, schema=schema, data=data, autocomplete=True, autoapprove=True) as registration:
             with mock.patch.object(BaseStorageAddon, '_get_file_tree', mock.Mock(return_value=file_tree)):
                 job = factories.ArchiveJobFactory(initiator=registration.creator)

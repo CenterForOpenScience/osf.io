@@ -1,9 +1,12 @@
 import mock
-from nose.tools import assert_false, assert_equal
+from nose.tools import (
+    assert_false, assert_equal,
+    assert_true,
+)
 import pytest
 import unittest
 
-from tests.base import get_default_metaschema
+from osf_tests.utils import mock_archive
 
 from framework.auth import Auth
 
@@ -38,15 +41,11 @@ class TestNodeSettings(models.OAuthAddonNodeSettingsTestSuiteMixin, unittest.Tes
             'owner': self.node
         }
 
-    @mock.patch('website.archiver.tasks.archive')
     @mock.patch('addons.figshare.models.NodeSettings.archive_errors')
-    def test_does_not_get_copied_to_registrations(self, mock_errors, mock_archive):
-        registration = self.node.register_node(
-            schema=get_default_metaschema(),
-            auth=Auth(user=self.node.creator),
-            data='hodor'
-        )
-        assert_false(registration.has_addon('figshare'))
+    def test_does_not_get_copied_to_registrations(self, mock_errors):
+        with mock_archive(self.node, data='hodor', autoapprove=True) as registration:
+            assert_true(registration.title)
+            assert_false(registration.has_addon('figshare'))
 
     # Overrides
 

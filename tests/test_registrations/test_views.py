@@ -11,6 +11,7 @@ from django.utils import timezone
 from nose.tools import *  # noqa PEP8 asserts
 
 from framework.exceptions import HTTPError
+from django.core.exceptions import ValidationError
 
 from osf.models import MetaSchema, DraftRegistration
 from website.project.metadata.schemas import _name_to_id, LATEST_SCHEMA_VERSION
@@ -34,7 +35,8 @@ class TestRegistrationViews(RegistrationsTestBase):
 
     @mock.patch('website.archiver.tasks.archive')
     def test_node_register_page_registration(self, mock_archive):
-        reg = self.node.register_node(get_default_metaschema(), self.auth, '', None)
+        draft = DraftRegistrationFactory(branched_from=self.node, initiator=self.user)
+        reg = self.node.register_node(get_default_metaschema(), self.auth, draft=draft, data='', parent=None, celery=False)
         url = reg.web_url_for('node_register_page')
         res = self.app.get(url, auth=self.user.auth)
         assert_equal(res.status_code, http.OK)
@@ -155,7 +157,7 @@ class TestDraftRegistrationViews(RegistrationsTestBase):
 
     @mock.patch('framework.celery_tasks.handlers.enqueue_task')
     def test_register_template_make_public_creates_pending_registration(self, mock_enqueue):
-        url = self.node.api_url_for('register_draft_registration', draft_id=self.draft._id)
+        url = self.node.api_url_for('register_draft_registration', draft_id=self.draft._id, celery=False)
         res = self.app.post_json(url, self.immediate_payload, auth=self.user.auth)
 
         assert_equal(res.status_code, http.ACCEPTED)
@@ -171,7 +173,7 @@ class TestDraftRegistrationViews(RegistrationsTestBase):
         comp1 = NodeFactory(parent=self.node)
         NodeFactory(parent=comp1)
 
-        url = self.node.api_url_for('register_draft_registration', draft_id=self.draft._id)
+        url = self.node.api_url_for('register_draft_registration', draft_id=self.draft._id, celery=False)
         res = self.app.post_json(url, self.immediate_payload, auth=self.user.auth)
 
         assert_equal(res.status_code, http.ACCEPTED)
@@ -184,7 +186,7 @@ class TestDraftRegistrationViews(RegistrationsTestBase):
 
     @mock.patch('framework.celery_tasks.handlers.enqueue_task')
     def test_register_draft_registration_with_embargo_creates_embargo(self, mock_enqueue):
-        url = self.node.api_url_for('register_draft_registration', draft_id=self.draft._id)
+        url = self.node.api_url_for('register_draft_registration', draft_id=self.draft._id, celery=False)
         end_date = timezone.now() + dt.timedelta(days=3)
         res = self.app.post_json(
             url,
@@ -209,7 +211,7 @@ class TestDraftRegistrationViews(RegistrationsTestBase):
     def test_register_draft_registration_with_embargo_adds_to_parent_project_logs(self, mock_enqueue):
         initial_project_logs = self.node.logs.count()
         res = self.app.post_json(
-            self.node.api_url_for('register_draft_registration', draft_id=self.draft._id),
+            self.node.api_url_for('register_draft_registration', draft_id=self.draft._id, celery=False),
             self.embargo_payload,
             auth=self.user.auth
         )
@@ -222,7 +224,7 @@ class TestDraftRegistrationViews(RegistrationsTestBase):
     @mock.patch('framework.celery_tasks.handlers.enqueue_task')
     def test_register_draft_registration_with_embargo_is_not_public(self, mock_enqueue):
         res = self.app.post_json(
-            self.node.api_url_for('register_draft_registration', draft_id=self.draft._id),
+            self.node.api_url_for('register_draft_registration', draft_id=self.draft._id, celery=False),
             self.embargo_payload,
             auth=self.user.auth
         )
@@ -238,17 +240,16 @@ class TestDraftRegistrationViews(RegistrationsTestBase):
     @mock.patch('framework.celery_tasks.handlers.enqueue_task')
     def test_register_draft_registration_invalid_embargo_end_date_raises_HTTPError(self, mock_enqueue):
         res = self.app.post_json(
-            self.node.api_url_for('register_draft_registration', draft_id=self.draft._id),
+            self.node.api_url_for('register_draft_registration', draft_id=self.draft._id, celery=False),
             self.invalid_embargo_date_payload,
             auth=self.user.auth,
             expect_errors=True
         )
-
         assert_equal(res.status_code, http.BAD_REQUEST)
 
     def test_register_draft_registration_invalid_registrationChoice(self):
         res = self.app.post_json(
-            self.node.api_url_for('register_draft_registration', draft_id=self.draft._id),
+            self.node.api_url_for('register_draft_registration', draft_id=self.draft._id, celery=False),
             self.invalid_payload,
             auth=self.user.auth,
             expect_errors=True

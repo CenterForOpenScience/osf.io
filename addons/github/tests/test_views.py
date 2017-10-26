@@ -19,8 +19,9 @@ from addons.github import utils
 from addons.github.api import GitHubClient
 from addons.github.serializer import GitHubSerializer
 from addons.github.utils import check_permissions
-from tests.base import OsfTestCase, get_default_metaschema
+from tests.base import OsfTestCase
 from osf_tests.factories import ProjectFactory, UserFactory, AuthUserFactory
+from osf_tests.utils import mock_archive
 
 pytestmark = pytest.mark.django_db
 
@@ -495,6 +496,10 @@ class TestGithubSettings(OsfTestCase):
     @mock.patch('addons.github.api.GitHubClient.branches')
     def test_link_repo_registration(self, mock_branches):
 
+        with mock_archive(self.project, data='', autoapprove=True) as registration:
+            assert_true(registration.title)
+            url = registration.api_url + 'github/settings/'
+
         mock_branches.return_value = [
             Branch.from_json({
                 'name': 'master',
@@ -512,13 +517,6 @@ class TestGithubSettings(OsfTestCase):
             })
         ]
 
-        registration = self.project.register_node(
-            schema=get_default_metaschema(),
-            auth=self.consolidated_auth,
-            data=''
-        )
-
-        url = registration.api_url + 'github/settings/'
         res = self.app.post_json(
             url,
             {

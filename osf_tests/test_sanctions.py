@@ -45,7 +45,7 @@ class TestNodeEmbargoTerminations:
 
     @pytest.yield_fixture()
     def registration(self, node):
-        with mock_archive(node, embargo=True, autoapprove=True) as registration:
+        with mock_archive(node, embargo=True, autocomplete=True, autoapprove=True) as registration:
             yield registration
 
     @pytest.fixture()

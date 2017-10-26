@@ -538,19 +538,21 @@ class DraftRegistration(ObjectIDMixin, BaseModel):
         if save:
             self.save()
 
-    def register(self, auth, save=False):
+    def register(self, auth, data=None, save=False, reg_choice=None, celery=False):
         node = self.branched_from
 
         # Create the registration
         register = node.register_node(
-            schema=self.registration_schema,
-            auth=auth,
-            data=self.registration_metadata
-        )
-        self.registered_node = register
-        self.add_status_log(auth.user, DraftRegistrationLog.REGISTERED)
-        if save:
+            self.registration_schema,
+            auth,
+            draft=self,
+            data=data,
+            reg_choice=reg_choice,
+            celery=celery)
+
+        if register and save:
             self.save()
+
         return register
 
     def approve(self, user):

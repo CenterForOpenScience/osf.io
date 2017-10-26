@@ -509,7 +509,7 @@ CommentModel.prototype.autosizeText = function(elm) {
     var self = this;
     var $elm = $(elm);
     $elm.find('textarea').autosize().focus();
-    initAtMention(self.$root.nodeId(), $elm.find(self.$root.inputSelector));
+    initAtMention(self.$root.nodeId(), $elm.find(self.$root.inputSelector), self.$root.isRegistration);
 };
 
 CommentModel.prototype.cancelEdit = function() {
@@ -739,6 +739,7 @@ var CommentListModel = function(options) {
     self.editors = 0;
     self.nodeId = ko.observable(options.nodeId);
     self.nodeApiUrl = options.nodeApiUrl;
+    self.isRegistration = options.isRegistration;
     self.nodeType = options.isRegistration ? 'registrations' : 'nodes';
     self.page(options.page);
     self.pageTitle = options.pageTitle;
@@ -809,8 +810,9 @@ var onOpen = function(page, rootId, nodeApiUrl, currentUserId) {
 };
 
 
-function initAtMention(nodeId, selectorOrElem) {
-    var url = osfHelpers.apiV2Url('nodes/' + nodeId + '/contributors/', {
+function initAtMention(nodeId, selectorOrElem, isRegistration) {
+    var nodeType = isRegistration ? 'registrations' : 'nodes';
+    var url = osfHelpers.apiV2Url(nodeType + '/' + nodeId + '/contributors/', {
         query: {
             'page[size]': 50,
             'fields[users]': 'given_name,full_name,active',
@@ -836,7 +838,7 @@ function initAtMention(nodeId, selectorOrElem) {
  */
 var init = function(commentLinkSelector, commentPaneSelector, options) {
     // TODO: Don't hardcode selector here; pass argument in page module
-    initAtMention(options.nodeId, options.inputSelector);
+    initAtMention(options.nodeId, options.inputSelector, options.isRegistration);
     var cp = new CommentPane(commentPaneSelector, {
         onOpen: function(){
             return onOpen(options.page, options.rootId, options.nodeApiUrl, options.currentUser.id);

@@ -5,9 +5,9 @@ import pytest
 import unittest
 from nose.tools import *  # noqa
 
-from tests.base import OsfTestCase, get_default_metaschema
+from tests.base import OsfTestCase
 from osf_tests.factories import ExternalAccountFactory, ProjectFactory, UserFactory
-
+from osf_tests.utils import mock_archive
 from framework.auth import Auth
 
 from addons.bitbucket.exceptions import NotFoundError
@@ -49,7 +49,7 @@ class TestNodeSettings(models.OAuthAddonNodeSettingsTestSuiteMixin, unittest.Tes
         pass
 
     def test_serialize_settings(self):
-        # Bitbucket's serialized_settings are a little different from 
+        # Bitbucket's serialized_settings are a little different from
         # common storage addons.
         settings = self.node_settings.serialize_waterbutler_settings()
         expected = {'owner': self.node_settings.user, 'repo': self.node_settings.repo}
@@ -267,11 +267,7 @@ class TestCallbacks(OsfTestCase):
         self.node_settings.reload()
         assert_true(self.node_settings.user_settings is None)
 
-    @mock.patch('website.archiver.tasks.archive')
-    def test_does_not_get_copied_to_registrations(self, mock_archive):
-        registration = self.project.register_node(
-            schema=get_default_metaschema(),
-            auth=Auth(user=self.project.creator),
-            data='hodor',
-        )
-        assert_false(registration.has_addon('bitbucket'))
+    def test_does_not_get_copied_to_registrations(self):
+        with mock_archive(self.project, data='hodor', autoapprove=True) as registration:
+            assert_true(registration.title)
+            assert_false(registration.has_addon('bitbucket'))

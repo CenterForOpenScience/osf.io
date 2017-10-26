@@ -5,19 +5,18 @@ import itertools
 from operator import itemgetter
 
 from dateutil.parser import parse as parse_date
-from django.core.exceptions import ValidationError
 from django.db.models import Q
 from django.utils import timezone
 from flask import request, redirect
 import pytz
 
+from api.base.utils import is_truthy
 from framework.database import get_or_http_error, autoload
 from framework.exceptions import HTTPError
 from framework.status import push_status_message
 
 from osf.models import NodeLog, MetaSchema, DraftRegistration, Sanction
 
-from website.exceptions import NodeStateError
 from website.util.permissions import ADMIN
 from website.project.decorators import (
     must_be_valid_project,
@@ -32,6 +31,7 @@ from website.project.metadata.utils import serialize_meta_schema, serialize_draf
 from website.project.utils import serialize_node
 from website.util import rapply
 from website.util.sanitize import strip_html
+
 
 get_schema_or_fail = lambda query: get_or_http_error(MetaSchema, query)
 autoload_draft = functools.partial(autoload, DraftRegistration, 'draft_id', 'draft')
@@ -189,26 +189,21 @@ def register_draft_registration(auth, node, draft, *args, **kwargs):
     if draft.approval and draft.approval.state != Sanction.REJECTED:
         raise HTTPError(http.CONFLICT, data=dict(message_long='Cannot resubmit previously submitted draft.'))
 
-    register = draft.register(auth)
-    draft.save()
-
     if registration_choice == 'embargo':
-        # Initiate embargo
-        embargo_end_date = parse_date(data['embargoEndDate'], ignoretz=True).replace(tzinfo=pytz.utc)
-        try:
-            register.embargo_registration(auth.user, embargo_end_date)
-        except ValidationError as err:
-            raise HTTPError(http.BAD_REQUEST, data=dict(message_long=err.message))
-    else:
-        try:
-            register.require_approval(auth.user)
-        except NodeStateError as err:
-            raise HTTPError(http.BAD_REQUEST, data=dict(message_long=err.message))
+        end_date = parse_date(data['embargoEndDate'], ignoretz=True).replace(tzinfo=pytz.utc)
+        if not node._is_embargo_date_valid(end_date):
+            error_msg = 'Registrations can only be embargoed for up to four years.'
+            if (end_date - timezone.now()) < settings.EMBARGO_END_DATE_MIN:
+                error_msg = 'Embargo end date must be at least three days in the future.'
+            raise HTTPError(http.BAD_REQUEST, data=dict(message_long=error_msg))
 
-    register.save()
+    use_celery = is_truthy(request.args.get('celery', True))
+    draft.register(auth, data=data, reg_choice=registration_choice, celery=use_celery)
+
     push_status_message(language.AFTER_REGISTER_ARCHIVING,
                         kind='info',
                         trust=False)
+
     return {
         'status': 'initiated',
         'urls': {
