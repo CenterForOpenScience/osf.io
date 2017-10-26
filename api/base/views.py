@@ -908,14 +908,17 @@ class WaterButlerMixin(object):
                 # create method on BaseFileNode appends provider, bulk_create bypasses this step so it is added here
                 file_obj = base_class(node=node, _path='/' + attrs['path'].lstrip('/'), provider=base_class._provider)
                 objs_to_create[base_class].append(file_obj)
+            else:
+                file_objs.append(file_obj)
 
             file_obj.update(None, attrs, user=self.request.user, save=False)
-            file_objs.append(file_obj)
+
+        bulk_update(file_objs)
 
         for base_class in objs_to_create:
             base_class.objects.bulk_create(objs_to_create[base_class])
+            file_objs += objs_to_create[base_class] 
 
-        bulk_update(file_objs)
         return file_objs
 
     def get_file_node_from_wb_resp(self, item):
