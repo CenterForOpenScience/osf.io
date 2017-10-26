@@ -1959,7 +1959,7 @@ class NodeFileDetail(JSONAPIBaseView, generics.RetrieveAPIView, WaterButlerMixin
         fobj = self.fetch_from_waterbutler()
         if isinstance(fobj, dict):
             # if dict it is a wb response, not file object yet
-            return self.get_file_node_from_wb_resp(fobj, self.get_node(check_object_permissions=False))
+            return self.get_file_node_from_wb_resp(fobj)
 
         if isinstance(fobj, list) or not isinstance(fobj, File):
             # We should not have gotten a folder here
