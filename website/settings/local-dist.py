@@ -82,3 +82,7 @@ USE_CDN_FOR_CLIENT_LIBS = False
 
 # Example of extending default settings
 # defaults.IMG_FMTS += ["pdf"]
+
+# support email
+OSF_SUPPORT_EMAIL = 'fake-support@osf.io'
+COS_SUPPORT_EMAIL = 'fake-support@cos.io'
