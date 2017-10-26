@@ -208,13 +208,13 @@ class ReviewsMachine(Machine):
             auth=auth,
             save=False,
         )
-        recipients = [contributor for contributor in self.reviewable.node.contributors]
+        recipients = list(self.reviewable.node.contributors)
         reviews_signals.reviews_email_submit.send(context=context, recipients=recipients)
 
     def notify_resubmit(self, ev):
         context = self.get_context()
         time_now = self.action.date_created if self.action is not None else timezone.now()
-        recipients = [contributor for contributor in self.reviewable.node.contributors]
+        recipients = list(self.reviewable.node.contributors)
         reviews_signals.reviews_email.send(creator=ev.kwargs.get('user'), context=context,
                                            node=self.reviewable.node, template='reviews_resubmission_confirmation',
                                            recipients=recipients, time_now=time_now)
@@ -225,7 +225,7 @@ class ReviewsMachine(Machine):
         context['notify_comment'] = not self.reviewable.provider.reviews_comments_private and self.action.comment
         context['is_rejected'] = self.action.to_state == workflow.States.REJECTED.value
         context['was_pending'] = self.action.from_state == workflow.States.PENDING.value
-        recipients = [contributor for contributor in self.reviewable.node.contributors]
+        recipients = list(self.reviewable.node.contributors)
         reviews_signals.reviews_email.send(creator=ev.kwargs.get('user'), context=context,
                                            node=self.reviewable.node, template='reviews_submission_status',
                                            recipients=recipients, time_now=time_now)
@@ -234,7 +234,7 @@ class ReviewsMachine(Machine):
         context = self.get_context()
         time_now = self.action.date_created if self.action is not None else timezone.now()
         if not self.reviewable.provider.reviews_comments_private and self.action.comment:
-            recipients = [contributor for contributor in self.reviewable.node.contributors]
+            recipients = list(self.reviewable.node.contributors)
             reviews_signals.reviews_email.send(creator=ev.kwargs.get('user'), context=context,
                                                node=self.reviewable.node, template='reviews_update_comment',
                                                recipients=recipients, time_now=time_now)

@@ -62,9 +62,7 @@ def notify_global_event(event, sender_user, node, timestamp, recipients, templat
     sent_users = []
 
     # Initialize the subscriptions dict
-    users_subscriptions = {}
-    for key in constants.NOTIFICATION_TYPES:
-        users_subscriptions[key] = []
+    users_subscriptions = {key: [] for key in constants.NOTIFICATION_TYPES}
 
     # Group recipients IDs per each notification type
     # e.g. {'email_transactional': [u'vsu7t', u'evz43'], 'none': [], 'email_digest': []}
@@ -77,10 +75,10 @@ def notify_global_event(event, sender_user, node, timestamp, recipients, templat
                     sent_users.append(recipient._id)
 
     # For each notification type store the list of users
-    for type in users_subscriptions:
+    for notify_type in users_subscriptions:
         # Check if list is empty
-        if users_subscriptions[type]:
-            store_emails(users_subscriptions[type], type, event, sender_user, node, timestamp, template, **context)
+        if users_subscriptions[notify_type]:
+            store_emails(users_subscriptions[notify_type], notify_type, event, sender_user, node, timestamp, template, **context)
 
     return sent_users
 
@@ -102,8 +100,8 @@ def store_emails(recipient_ids, notification_type, event, user, node, timestamp,
     if notification_type == 'none':
         return
 
-    # Reviews has multiple email templates for the global_reviews event.
-    template = '{template}.html.mako'.format(template=template) if template else '{event}.html.mako'.format(event=event)
+    # If `template` is not specified, default to using a template with name `event`
+    template = '{template}.html.mako'.format(template=template or event)
 
     # user whose action triggered email sending
     context['user'] = user
