@@ -1,4 +1,5 @@
 from guardian.shortcuts import get_objects_for_user
+from django.db.models import Q
 
 from rest_framework import generics
 from rest_framework import permissions as drf_permissions
