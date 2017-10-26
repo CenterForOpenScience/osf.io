@@ -1,5 +1,8 @@
+from guardian.shortcuts import get_objects_for_user
+
 from rest_framework import generics
 from rest_framework import permissions as drf_permissions
+from rest_framework.exceptions import NotAuthenticated
 
 from django.db.models import Q
 
@@ -7,11 +10,14 @@ from framework.auth.oauth_scopes import CoreScopes
 
 from osf.models import AbstractNode, Subject, PreprintProvider
 
+from reviews import permissions as reviews_permissions
+
 from api.base import permissions as base_permissions
+from api.base.exceptions import InvalidFilterValue, InvalidFilterOperator, Conflict
 from api.base.filters import PreprintFilterMixin, ListFilterMixin
 from api.base.views import JSONAPIBaseView
 from api.base.pagination import MaxSizePagination
-from api.base.utils import get_object_or_error, get_user_auth
+from api.base.utils import get_object_or_error, get_user_auth, is_truthy
 from api.licenses.views import LicenseList
 from api.taxonomies.serializers import TaxonomySerializer
 from api.taxonomies.utils import optimize_subject_query
@@ -30,21 +36,24 @@ class PreprintProviderList(JSONAPIBaseView, generics.ListAPIView, ListFilterMixi
 
     OSF Preprint Providers have the "preprint_providers" `type`.
 
-        name                     type                description
+        name                       type                description
         =============================================================================================================
-        name                     string              name of the preprint provider
-        logo_path                string              a path to the preprint provider's static logo
-        banner_path              string              a path to the preprint provider's banner
-        description              string              description of the preprint provider
-        advisory_board           string              HTML for the advisory board/steering committee section
-        email_contact            string              the contact email for the preprint provider
-        email_support            string              the support email for the preprint provider
-        social_facebook          string              the preprint provider's Facebook account
-        social_instagram         string              the preprint provider's Instagram account
-        social_twitter           string              the preprint provider's Twitter account
-        domain                   string              the domain name of the preprint provider
-        domain_redirect_enabled  boolean             whether or not redirects are enabled for the provider's domain
-        example                  string              an example guid for a preprint created for the preprint provider
+        name                       string              name of the preprint provider
+        logo_path                  string              a path to the preprint provider's static logo
+        banner_path                string              a path to the preprint provider's banner
+        description                string              description of the preprint provider
+        advisory_board             string              HTML for the advisory board/steering committee section
+        email_contact              string              the contact email for the preprint provider
+        email_support              string              the support email for the preprint provider
+        social_facebook            string              the preprint provider's Facebook account
+        social_instagram           string              the preprint provider's Instagram account
+        social_twitter             string              the preprint provider's Twitter account
+        domain                     string              the domain name of the preprint provider
+        domain_redirect_enabled    boolean             whether or not redirects are enabled for the provider's domain
+        example                    string              an example guid for a preprint created for the preprint provider
+        reviews_workflow           string              the workflow used for reviewing/moderating preprints, if any
+        reviews_comments_private   boolean             whether comments made by moderators are visible to authors
+        reviews_comments_anonymous boolean             if comments are not private, whether the name of the moderator is visible to authors
 
     ##Relationships
 
@@ -82,9 +91,26 @@ class PreprintProviderList(JSONAPIBaseView, generics.ListAPIView, ListFilterMixi
     def get_queryset(self):
         return self.get_queryset_from_request()
 
+    def build_query_from_field(self, field_name, operation):
+        if field_name == 'permissions':
+            if operation['op'] != 'eq':
+                raise InvalidFilterOperator(value=operation['op'], valid_operators=['eq'])
+            auth = get_user_auth(self.request)
+            auth_user = getattr(auth, 'user', None)
+            if not auth_user:
+                raise NotAuthenticated()
+            value = operation['value'].lstrip('[').rstrip(']')
+            permissions = [v.strip() for v in value.split(',')]
+            if any(p not in reviews_permissions.PERMISSIONS for p in permissions):
+                valid_permissions = ', '.join(reviews_permissions.PERMISSIONS.keys())
+                raise InvalidFilterValue('Invalid permission! Valid values are: {}'.format(valid_permissions))
+            return Q(id__in=get_objects_for_user(auth_user, permissions, PreprintProvider, any_perm=True))
 
-class PreprintProviderDetail(JSONAPIBaseView, generics.RetrieveAPIView):
-    """ Details about a given preprint provider. *Read-only*
+        return super(PreprintProviderList, self).build_query_from_field(field_name, operation)
+
+
+class PreprintProviderDetail(JSONAPIBaseView, generics.RetrieveUpdateAPIView):
+    """ Details about a given preprint provider. *Writeable*
 
     Assume undocumented fields are unstable.
 
@@ -92,21 +118,24 @@ class PreprintProviderDetail(JSONAPIBaseView, generics.RetrieveAPIView):
 
     OSF Preprint Providers have the "preprint_providers" `type`.
 
-        name                     type                description
+        name                       type                description
         =============================================================================================================
-        name                     string              name of the preprint provider
-        logo_path                string              a path to the preprint provider's static logo
-        banner_path              string              a path to the preprint provider's banner
-        description              string              description of the preprint provider
-        advisory_board           string              HTML for the advisory board/steering committee section
-        email_contact            string              the contact email for the preprint provider
-        email_support            string              the support email for the preprint provider
-        social_facebook          string              the preprint provider's Facebook account
-        social_instagram         string              the preprint provider's Instagram account
-        social_twitter           string              the preprint provider's Twitter account
-        domain                   string              the domain name of the preprint provider
-        domain_redirect_enabled  boolean             whether or not redirects are enabled for the provider's domain
-        example                  string              an example guid for a preprint created for the preprint provider
+        name                       string              name of the preprint provider
+        logo_path                  string              a path to the preprint provider's static logo
+        banner_path                string              a path to the preprint provider's banner
+        description                string              description of the preprint provider
+        advisory_board             string              HTML for the advisory board/steering committee section
+        email_contact              string              the contact email for the preprint provider
+        email_support              string              the support email for the preprint provider
+        social_facebook            string              the preprint provider's Facebook account
+        social_instagram           string              the preprint provider's Instagram account
+        social_twitter             string              the preprint provider's Twitter account
+        domain                     string              the domain name of the preprint provider
+        domain_redirect_enabled    boolean             whether or not redirects are enabled for the provider's domain
+        example                    string              an example guid for a preprint created for the preprint provider
+        reviews_workflow           string              the workflow used for reviewing/moderating preprints, if any
+        reviews_comments_private   boolean             whether comments made by moderators are visible to authors
+        reviews_comments_anonymous boolean             if comments are not private, whether the name of the moderator is visible to authors
 
     ##Relationships
 
@@ -119,16 +148,44 @@ class PreprintProviderDetail(JSONAPIBaseView, generics.RetrieveAPIView):
         preprints: link to the provider's preprints
         external_url: link to the preprint provider's external URL (e.g. https://socarxiv.org)
 
+    ##Setting up Moderation
+
+    Set up moderation for a provider by sending a patch request to the ID of the existing provider.
+
+    Currently, the only parameters which may be set are `reviews_workflow`,
+    `reviews_comments_private`, and `reviews_comments_anonymous`. These parameters may be set
+    only once, after which they may be updated only by an OSF Admin.
+
+    If `reviews_workflow` is already non-null, attempting to update the provider will return
+    a `409` Conflict error. If you need to change your provider's moderation settings, contact
+    [support@osf.io](mailto:support@osf.io) for help.
+
+        Method:        PATCH
+        URL:           /preprint_providers/{provider_id}/
+        Query Params:  <none>
+        Body (JSON):   {
+                        "data": {
+                            "id": provider_id,
+                            "attributes": {
+                                "reviews_workflow": {workflow},  # Valid workflows: "pre-moderation", "post-moderation"
+                                "reviews_comments_private": {boolean},
+                                "reviews_comments_anonymous": {boolean}
+                            },
+                        }
+                    }
+        Success:       200 OK + provider representation
+
     #This Request/Response
 
     """
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
         base_permissions.TokenHasScope,
+        reviews_permissions.CanSetUpProvider,
     )
 
     required_read_scopes = [CoreScopes.ALWAYS_PUBLIC]
-    required_write_scopes = [CoreScopes.NULL]
+    required_write_scopes = [CoreScopes.PROVIDERS_WRITE]
     model_class = PreprintProvider
 
     serializer_class = PreprintProviderSerializer
@@ -136,7 +193,14 @@ class PreprintProviderDetail(JSONAPIBaseView, generics.RetrieveAPIView):
     view_name = 'preprint_provider-detail'
 
     def get_object(self):
-        return get_object_or_error(PreprintProvider, self.kwargs['provider_id'], self.request, display_name='PreprintProvider')
+        provider = get_object_or_error(PreprintProvider, self.kwargs['provider_id'], self.request, display_name='PreprintProvider')
+        self.check_object_permissions(self.request, provider)
+        return provider
+
+    def perform_update(self, serializer):
+        if serializer.instance.is_reviewed:
+            raise Conflict('Reviews settings may be set only once. Contact support@osf.io if you need to update them.')
+        super(PreprintProviderDetail, self).perform_update(serializer)
 
 
 class PreprintProviderPreprintList(JSONAPIBaseView, generics.ListAPIView, PreprintFilterMixin):
@@ -202,18 +266,26 @@ class PreprintProviderPreprintList(JSONAPIBaseView, generics.ListAPIView, Prepri
         provider = get_object_or_error(PreprintProvider, self.kwargs['provider_id'], self.request, display_name='PreprintProvider')
 
         # Permissions on the list objects are handled by the query
-        default_qs = provider.preprint_services.filter(node__isnull=False, node__is_deleted=False)
-        no_user_query = Q(is_published=True, node__is_public=True)
-
-        if auth_user:
-            contrib_user_query = Q(is_published=True, node__contributor__user_id=auth_user.id, node__contributor__read=True)
-            admin_user_query = Q(node__contributor__user_id=auth_user.id, node__contributor__admin=True)
-            return default_qs.filter(no_user_query | contrib_user_query | admin_user_query)
-        return default_qs.filter(no_user_query)
+        return self.preprints_queryset(provider.preprint_services.all(), auth_user)
 
     # overrides ListAPIView
     def get_queryset(self):
         return self.get_queryset_from_request().distinct('id', 'date_created')
+
+    # overrides APIView
+    def get_renderer_context(self):
+        context = super(PreprintProviderPreprintList, self).get_renderer_context()
+        show_counts = is_truthy(self.request.query_params.get('meta[reviews_state_counts]', False))
+        if show_counts:
+            # TODO don't duplicate the above
+            auth = get_user_auth(self.request)
+            auth_user = getattr(auth, 'user', None)
+            provider = get_object_or_error(PreprintProvider, self.kwargs['provider_id'], self.request, display_name='PreprintProvider')
+            if auth_user and auth_user.has_perm('view_submissions', provider):
+                context['meta'] = {
+                    'reviews_state_counts': provider.get_reviewable_state_counts(),
+                }
+        return context
 
 
 class PreprintProviderTaxonomies(JSONAPIBaseView, generics.ListAPIView):

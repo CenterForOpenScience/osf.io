@@ -846,9 +846,9 @@ class TestMoveHook(HookTestCase):
         )
         assert_equal(res.status_code, 200)
 
-    def test_cannot_move_file_out_of_quickfiles_node(self):
+    def test_can_move_file_out_of_quickfiles_node(self):
         quickfiles_node = QuickFilesNode.objects.get_for_user(self.user)
-        quickfiles_file = create_test_file(quickfiles_node, self.user, filename='slippery.mp3')
+        create_test_file(quickfiles_node, self.user, filename='slippery.mp3')
         quickfiles_folder = OsfStorageFolder.objects.get(node=quickfiles_node)
         dest_folder = OsfStorageFolder.objects.get(node=self.project)
 
@@ -856,7 +856,7 @@ class TestMoveHook(HookTestCase):
             'osfstorage_move_hook',
             {'nid': quickfiles_node._id},
             payload={
-                'source': quickfiles_file._id,
+                'source': quickfiles_folder._id,
                 'node': quickfiles_node._id,
                 'user': self.user._id,
                 'destination': {
@@ -866,9 +866,8 @@ class TestMoveHook(HookTestCase):
                 }
             },
             method='post_json',
-            expect_errors=True,
         )
-        assert_equal(res.status_code, 400)
+        assert_equal(res.status_code, 200)
 
     def test_can_rename_file_in_quickfiles_node(self):
         quickfiles_node = QuickFilesNode.objects.get_for_user(self.user)
@@ -903,7 +902,7 @@ class TestMoveHook(HookTestCase):
 
 @pytest.mark.django_db
 class TestCopyHook(HookTestCase):
-    def test_cannot_copy_file_out_of_quickfiles_node(self):
+    def test_can_copy_file_out_of_quickfiles_node(self):
         quickfiles_node = QuickFilesNode.objects.get_for_user(self.user)
         create_test_file(quickfiles_node, self.user, filename='dont_copy_meeeeeeeee.mp3')
         quickfiles_folder = OsfStorageFolder.objects.get(node=quickfiles_node)
@@ -923,9 +922,8 @@ class TestCopyHook(HookTestCase):
                 }
             },
             method='post_json',
-            expect_errors=True,
         )
-        assert_equal(res.status_code, 400)
+        assert_equal(res.status_code, 201)
 
 
 @pytest.mark.django_db
