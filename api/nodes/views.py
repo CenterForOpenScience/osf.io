@@ -3450,9 +3450,7 @@ class NodePreprintsList(JSONAPIBaseView, generics.ListAPIView, NodeMixin, Prepri
         node = self.get_node()
         # Permissions on the node are handled by the permissions_classes
         # Permissions on the list objects are handled by the query
-        if auth_user:
-            return node.preprints.filter(Q(is_published=True) | Q(node__contributor__user_id=auth_user.id, node__contributor__admin=True))
-        return node.preprints.filter(is_published=True)
+        return self.preprints_queryset(node.preprints.all(), auth_user)
 
     def get_queryset(self):
         return self.get_queryset_from_request().distinct('id', 'date_modified')
