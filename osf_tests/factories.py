@@ -15,6 +15,7 @@ from django.utils import timezone
 from django.db.utils import IntegrityError
 from faker import Factory
 
+from reviews import workflow
 from website import settings
 from website.notifications.constants import NOTIFICATION_TYPES
 from website.util import permissions
@@ -585,6 +586,8 @@ class PreprintFactory(DjangoModelFactory):
         subjects = kwargs.pop('subjects', None) or [[SubjectFactory()._id]]
         instance.node.preprint_article_doi = doi
 
+        instance.reviews_state = kwargs.pop('reviews_state', 'initial')
+
         user = kwargs.pop('creator', None) or instance.node.creator
         if not instance.node.is_contributor(user):
             instance.node.add_contributor(
@@ -812,3 +815,18 @@ class SessionFactory(DjangoModelFactory):
 class ArchiveJobFactory(DjangoModelFactory):
     class Meta:
         model = models.ArchiveJob
+
+
+class ActionFactory(DjangoModelFactory):
+    class Meta:
+        model = models.Action
+
+    trigger = FuzzyChoice(choices=workflow.Triggers.values())
+    comment = factory.Faker('text')
+    from_state = FuzzyChoice(choices=workflow.States.values())
+    to_state = FuzzyChoice(choices=workflow.States.values())
+
+    target = factory.SubFactory(PreprintFactory)
+    creator = factory.SubFactory(AuthUserFactory)
+
+    is_deleted = False
