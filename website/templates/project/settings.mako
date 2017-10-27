@@ -255,9 +255,10 @@
 
                             <form id="wikiSettings" class="osf-treebeard-minimal">
                                 <div id="wgrid">
-                                    <div class="spinner-loading-wrapper">
-                                        <div class="logo-spin logo-lg"></div>
-                                        <p class="m-t-sm fg-load-message"> Loading wiki settings...  </p>
+                                    <div class="ball-pulse ball-scale-blue text-center spinner-loading-wrapper">
+                                      <div></div>
+                                      <div></div>
+                                      <div></div>
                                     </div>
                                 </div>
                                 <div class="help-block" style="padding-left: 15px">
@@ -397,9 +398,10 @@
                         </div>
                         <form id="notificationSettings" class="osf-treebeard-minimal">
                             <div id="grid">
-                                <div class="spinner-loading-wrapper">
-                                    <div class="logo-spin logo-lg"></div>
-                                    <p class="m-t-sm fg-load-message"> Loading notification settings...  </p>
+                                <div class="ball-pulse ball-scale-blue text-center spinner-loading-wrapper">
+                                  <div></div>
+                                  <div></div>
+                                  <div></div>
                                 </div>
                             </div>
                             <div class="help-block" style="padding-left: 15px">
@@ -582,7 +584,7 @@
     % if not node['is_registration']:
         <script type="text/javascript" src=${"/static/public/js/forward/node-cfg.js" | webpack_asset}></script>
     % endif
-    
+
     % for js_asset in addon_js:
         <script src="${js_asset | webpack_asset}"></script>
     % endfor

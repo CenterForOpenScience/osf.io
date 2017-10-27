@@ -324,9 +324,10 @@
                <div class="panel-body">
             %endif
                     <div id="treeGrid">
-                        <div class="spinner-loading-wrapper">
-                            <div class="logo-spin logo-lg"></div>
-                             <p class="m-t-sm fg-load-message"> Loading files...  </p>
+                        <div class="ball-pulse ball-scale-blue text-center spinner-loading-wrapper">
+                          <div></div>
+                          <div></div>
+                          <div></div>
                         </div>
                     </div>
                 </div><!-- end .panel-body -->
@@ -409,9 +410,10 @@
             </div>
             <div class="panel-body">
                 <div id="logFeed">
-                    <div class="spinner-loading-wrapper">
-                        <div class="logo-spin logo-lg"></div>
-                         <p class="m-t-sm fg-load-message"> Loading logs...  </p>
+                    <div class="ball-pulse ball-scale-blue text-center spinner-loading-wrapper">
+                      <div></div>
+                      <div></div>
+                      <div></div>
                     </div>
                 </div>
             </div>

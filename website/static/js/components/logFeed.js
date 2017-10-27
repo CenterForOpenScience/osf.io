@@ -203,8 +203,7 @@ var LogFeed = {
             ]) :
             // Show OSF spinner while there is a pending log request
             ctrl.logRequestPending() ?  m('.spinner-loading-wrapper', [
-                m('.logo-spin.logo-lg'),
-                m('p.m-t-sm.fg-load-message', 'Loading logs...')
+                m('.ball-pulse.ball-scale-blue.text-center', [m('div'), m('div'), m('div')]),
             ]) :
             // Display each log item (text and user image)
             [ctrl.activityLogs() ? ctrl.activityLogs().map(function(item) {

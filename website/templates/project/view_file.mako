@@ -48,10 +48,11 @@
     <div class="osf-panel panel panel-default osf-panel-hide osf-panel-flex reset-height">
       <div class="osf-panel-body-flex file-page reset-height">
         <div id="grid">
-          <div class="spinner-loading-wrapper">
-            <div class="logo-spin logo-lg"></div>
-            <p class="m-t-sm fg-load-message"> Loading files...  </p>
-          </div>
+            <div class="ball-pulse ball-scale-blue text-center spinner-loading-wrapper">
+              <div></div>
+              <div></div>
+              <div></div>
+            </div>
         </div>
       </div>
     </div>
