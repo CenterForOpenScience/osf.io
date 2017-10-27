@@ -1817,6 +1817,7 @@ class TestNotificationsReviews(OsfTestCase):
             'provider_contact_email': 'contact@osf.io',
             'provider_support_email': 'support@osf.io',
         }
+        self.action = factories.ActionFactory()
         factories.NotificationSubscriptionFactory(
             _id=self.user._id + '_' + 'global_comments',
             user=self.user,
@@ -1847,7 +1848,5 @@ class TestNotificationsReviews(OsfTestCase):
 
     @mock.patch('website.notifications.emails.notify_global_event')
     def test_reviews_notification(self, mock_notify):
-        mixins.reviews_notification(self, creator=self.sender, context=self.context_info,
-                                    node=self.preprint.node, recipients=[self.sender, self.user],
-                                    time_now=timezone.now(), template='test.html.mako')
+        mixins.reviews_notification(self, creator=self.sender, context=self.context_info, action=self.action, template='test.html.mako')
         assert_true(mock_notify.called)
