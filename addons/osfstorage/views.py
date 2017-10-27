@@ -19,13 +19,14 @@ from osf.exceptions import InvalidTagError, TagNotFoundError
 from osf.models import FileVersion, OSFUser
 from osf.utils.requests import check_select_for_update
 from website.project.decorators import (
-    must_not_be_registration, must_have_addon, must_have_permission
+    must_not_be_registration, must_have_permission
 )
 from website.project.model import has_anonymous_link
 
 from website.files import exceptions
 from addons.osfstorage import utils
 from addons.osfstorage import decorators
+from addons.osfstorage.models import OsfStorageFolder
 from addons.osfstorage import settings as osf_storage_settings
 
 
@@ -305,16 +306,16 @@ def osfstorage_create_child(file_node, payload, **kwargs):
 @must_be_signed
 @must_not_be_registration
 @decorators.autoload_filenode()
-def osfstorage_delete(file_node, payload, node_addon, **kwargs):
+def osfstorage_delete(file_node, payload, **kwargs):
     user = OSFUser.load(payload['user'])
     auth = Auth(user)
 
     #TODO Auth check?
     if not auth:
         raise HTTPError(httplib.BAD_REQUEST)
-
-    if file_node == node_addon.get_root():
-        raise HTTPError(httplib.BAD_REQUEST)
+    target = kwargs['target']
+    if file_node == OsfStorageFolder.objects.get_root(target=target):
+            raise HTTPError(httplib.BAD_REQUEST)
 
     try:
         file_node.delete(user=user)
