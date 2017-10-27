@@ -5,10 +5,7 @@ from django.shortcuts import get_object_or_404
 from rest_framework import generics
 from rest_framework import permissions
 
-from framework.auth.oauth_scopes import CoreScopes
-from osf.models import Action
-from reviews import permissions as reviews_permissions
-
+from api.actions.permissions import ActionPermission
 from api.actions.serializers import ActionSerializer
 from api.base.exceptions import Conflict
 from api.base.parsers import (
@@ -18,6 +15,8 @@ from api.base.parsers import (
 from api.base.utils import absolute_reverse
 from api.base.views import JSONAPIBaseView
 from api.base import permissions as base_permissions
+from framework.auth.oauth_scopes import CoreScopes
+from osf.models import Action
 
 
 def get_actions_queryset():
@@ -63,7 +62,7 @@ class ActionDetail(JSONAPIBaseView, generics.RetrieveAPIView):
     permission_classes = (
         permissions.IsAuthenticatedOrReadOnly,
         base_permissions.TokenHasScope,
-        reviews_permissions.ActionPermission,
+        ActionPermission,
     )
 
     required_read_scopes = [CoreScopes.ACTIONS_READ]
@@ -150,7 +149,7 @@ class CreateAction(JSONAPIBaseView, generics.ListCreateAPIView):
     permission_classes = (
         permissions.IsAuthenticatedOrReadOnly,
         base_permissions.TokenHasScope,
-        reviews_permissions.ActionPermission,
+        ActionPermission,
     )
 
     required_read_scopes = [CoreScopes.NULL]

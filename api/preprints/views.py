@@ -7,8 +7,8 @@ from rest_framework import permissions as drf_permissions
 from framework.auth.oauth_scopes import CoreScopes
 from osf.models import Action, PreprintService
 from osf.utils.requests import check_select_for_update
-from reviews import permissions as reviews_permissions
 
+from api.actions.permissions import ActionPermission
 from api.actions.serializers import ActionSerializer
 from api.actions.views import get_actions_queryset
 from api.base.exceptions import Conflict
@@ -448,7 +448,7 @@ class PreprintActionList(JSONAPIBaseView, generics.ListAPIView, ListFilterMixin,
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
         base_permissions.TokenHasScope,
-        reviews_permissions.ActionPermission,
+        ActionPermission,
     )
 
     required_read_scopes = [CoreScopes.ACTIONS_READ]

@@ -12,12 +12,9 @@ from api.base.serializers import LinksField
 from api.base.serializers import RelationshipField
 from api.base.serializers import HideIfProviderCommentsAnonymous
 from api.base.serializers import HideIfProviderCommentsPrivate
-
+from osf.exceptions import InvalidTriggerError
 from osf.models import PreprintService
-
-from reviews.exceptions import InvalidTriggerError
-from reviews.workflow import Triggers
-from reviews.workflow import States
+from osf.utils.workflows import DefaultStates, DefaultTriggers
 
 
 class ReviewableCountsRelationshipField(RelationshipField):
@@ -73,12 +70,12 @@ class ActionSerializer(JSONAPISerializer):
 
     id = ser.CharField(source='_id', read_only=True)
 
-    trigger = ser.ChoiceField(choices=Triggers.choices())
+    trigger = ser.ChoiceField(choices=DefaultTriggers.choices())
 
     comment = HideIfProviderCommentsPrivate(ser.CharField(max_length=65535, required=False))
 
-    from_state = ser.ChoiceField(choices=States.choices(), read_only=True)
-    to_state = ser.ChoiceField(choices=States.choices(), read_only=True)
+    from_state = ser.ChoiceField(choices=DefaultStates.choices(), read_only=True)
+    to_state = ser.ChoiceField(choices=DefaultStates.choices(), read_only=True)
 
     date_created = ser.DateTimeField(read_only=True)
     date_modified = ser.DateTimeField(read_only=True)
@@ -124,13 +121,13 @@ class ActionSerializer(JSONAPISerializer):
         target = validated_data.pop('target')
         comment = validated_data.pop('comment', '')
         try:
-            if trigger == Triggers.ACCEPT.value:
+            if trigger == DefaultTriggers.ACCEPT.value:
                 return target.reviews_accept(user, comment)
-            if trigger == Triggers.REJECT.value:
+            if trigger == DefaultTriggers.REJECT.value:
                 return target.reviews_reject(user, comment)
-            if trigger == Triggers.EDIT_COMMENT.value:
+            if trigger == DefaultTriggers.EDIT_COMMENT.value:
                 return target.reviews_edit_comment(user, comment)
-            if trigger == Triggers.SUBMIT.value:
+            if trigger == DefaultTriggers.SUBMIT.value:
                 return target.reviews_submit(user)
         except InvalidTriggerError as e:
             # Invalid transition from the current state

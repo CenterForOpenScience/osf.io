@@ -2,16 +2,13 @@ import pytest
 import mock
 
 from api.base.settings.defaults import API_BASE
-
+from api.preprint_providers.permissions import GroupHelper
 from osf_tests.factories import (
     PreprintFactory,
     AuthUserFactory,
     PreprintProviderFactory,
 )
-
 from website.util import permissions as osf_permissions
-
-from reviews.permissions import GroupHelper
 
 from api_tests.reviews.mixins.filter_mixins import ActionFilterMixin
 

@@ -1,5 +1,4 @@
 # -*- coding: utf-8 -*-
-import functools
 import time
 
 import datetime
@@ -15,7 +14,6 @@ from django.utils import timezone
 from django.db.utils import IntegrityError
 from faker import Factory
 
-from reviews import workflow
 from website import settings
 from website.notifications.constants import NOTIFICATION_TYPES
 from website.util import permissions
@@ -27,6 +25,7 @@ from framework.auth.core import Auth
 from osf import models
 from osf.models.sanctions import Sanction
 from osf.utils.names import impute_names_model
+from osf.utils.workflows import DefaultStates, DefaultTriggers
 from addons.osfstorage.models import OsfStorageFile
 
 fake = Factory.create()
@@ -807,10 +806,10 @@ class ActionFactory(DjangoModelFactory):
     class Meta:
         model = models.Action
 
-    trigger = FuzzyChoice(choices=workflow.Triggers.values())
+    trigger = FuzzyChoice(choices=DefaultTriggers.values())
     comment = factory.Faker('text')
-    from_state = FuzzyChoice(choices=workflow.States.values())
-    to_state = FuzzyChoice(choices=workflow.States.values())
+    from_state = FuzzyChoice(choices=DefaultStates.values())
+    to_state = FuzzyChoice(choices=DefaultStates.values())
 
     target = factory.SubFactory(PreprintFactory)
     creator = factory.SubFactory(AuthUserFactory)

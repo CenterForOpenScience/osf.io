@@ -3,6 +3,7 @@ from datetime import timedelta
 import pytest
 from furl import furl
 
+from api.preprint_providers.permissions import GroupHelper
 from osf_tests.factories import (
     ActionFactory,
     AuthUserFactory,
@@ -10,7 +11,6 @@ from osf_tests.factories import (
     PreprintProviderFactory,
     ProjectFactory,
 )
-from reviews.permissions import GroupHelper
 
 
 def get_actual(app, url, user=None, sort=None, expect_errors=False, **filters):
