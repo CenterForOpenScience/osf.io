@@ -40,6 +40,7 @@ urlpatterns = [
                 url(r'^users/', include('api.users.urls', namespace='users')),
                 url(r'^view_only_links/', include('api.view_only_links.urls', namespace='view-only-links')),
                 url(r'^wikis/', include('api.wikis.urls', namespace='wikis')),
+                url(r'^alerts/', include('api.alerts.urls', namespace='alerts')),
             ],
         )
         ),
