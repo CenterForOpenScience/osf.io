@@ -238,8 +238,7 @@ class ReviewsMachine(Machine):
             'domain': settings.DOMAIN,
             'reviewable': self.reviewable,
             'workflow': self.reviewable.provider.reviews_workflow,
-            'provider_url': self.reviewable.provider.domain or
-                            '{domain}preprints/{provider_id}'.format(domain=settings.DOMAIN, provider_id=self.reviewable.provider._id),
+            'provider_url': self.reviewable.provider.domain or '{domain}preprints/{provider_id}'.format(domain=settings.DOMAIN, provider_id=self.reviewable.provider._id),
             'provider_contact_email': self.reviewable.provider.email_contact or 'contact@osf.io',
             'provider_support_email': self.reviewable.provider.email_support or 'support@osf.io',
         }
@@ -249,7 +248,7 @@ class ReviewsMachine(Machine):
 def reviews_notification(self, creator, template, context, action):
     recipients = list(action.target.node.contributors)
     time_now = action.date_created if action is not None else timezone.now()
-    node=action.target.node
+    node = action.target.node
     emails.notify_global_event(
         event='global_reviews',
         sender_user=creator,
