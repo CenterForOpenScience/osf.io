@@ -13,9 +13,15 @@
     %endif
 </%def>
 
-<%def name="date_meta()">
+<%def name="datemodified_meta()">
     %if node['date_modified']:
         ${node['date_modified'].split('T')[0]}
+    %endif
+</%def>
+
+<%def name="datecreated_meta()">
+    %if node['date_created']:
+        ${node['date_created'].split('T')[0]}
     %endif
 </%def>
 

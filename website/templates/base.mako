@@ -35,6 +35,8 @@
     % endif
 
     <!-- Metadata tags-->
+    <meta name="dc.title" content="${self.title_meta()}" />
+    <meta name="dc.type" content="collection" />
     <meta name="citation_title" content="${self.title_meta()}" />
     %if self.identifier_meta():
         <meta name="citation_doi" content="${self.identifier_meta()['doi']}" />
@@ -47,14 +49,19 @@
     %endfor
     %for rel in self.relations_meta():
         %if rel:
-            <meta name="dc_relation" scheme="DCTERMS.URI" content="${rel}" />
+            <meta name="dc.relation" scheme="DCTERMS.URI" content="${rel}" />
         %endif
     %endfor
     <meta name="dc.abstract" content="${self.description_meta()}" />
     <meta name="dc.license" content="${self.license_meta()}" />
-    <meta name="dc.date" content="${self.date_meta()}" />
+    <meta name="dc.datemodified" content="${self.datemodified_meta()}" />
+    <meta name="dc.datesubmitted" content="${self.datecreated_meta()}" />
     <meta name="dc.publisher" content="Open Science Framework" />
     <meta name="dc.language" content="en" />
+    <meta name="dc.identifier" content="${self.url_meta()}" />
+    <meta name="citation_description" content="${self.description_meta()}" />
+    <meta name="citation_public_url" content="${self.url_meta()}" />
+    <meta name="citation_publication_date" content="${self.datecreated_meta()}" />
 
     <!-- Facebook display -->
     <meta property="og:ttl" content="3" />
@@ -67,17 +74,14 @@
     <meta property="og:image:width" content="1200" />
     <meta property="og:image:height" content="630" />
     <meta property="og:image:alt" content="Open Science Framework" />
-    <meta property="article:modified_time" content="${self.date_meta()}" />
-    <meta property="article:section" content="${self.category_meta()}" />
-    <meta property="og:type" content="article"/>
+
     %for author in self.authors_meta()[:10]:
         <meta name="dc.creator" content="${author}" />
         <meta name="citation_author" content="${author}" />
-        <meta property="article:author" content="${author}" />
     %endfor
     %for tag in self.keywords_meta()[:10]:
         <meta name="citation_keywords" content="${tag}" />
-        <meta property="article:tag" content="${tag}" />
+        <meta name="dc.subject" content="${tag}" />
     %endfor
 
     <!-- Twitter display -->
@@ -282,8 +286,12 @@
     ### The list of project contributors ###
 </%def>
 
-<%def name="date_meta()">
-    ### The project last modified data.
+<%def name="datemodified_meta()">
+    ### The project last modified date.
+</%def>
+
+<%def name="datecreated_meta()">
+    ### The project creation date.
 </%def>
 
 <%def name="identifier_meta()">
