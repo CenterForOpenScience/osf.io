@@ -203,13 +203,13 @@ services:
     stdin_open: true
 
 
-  #############
+  #################
   # Ember OSF Web #
-  #############
+  #################
 
   ember_osf_web:
-    build: github.com/hmoco/ember-osf-web
-    command: /bin/bash -c "yarn --pure-lockfile --ignore-engines --no-progress --no-emoji && ./node_modules/bower/bin/bower install --allow-root --config.interactive=false && ./node_modules/ember-cli/bin/ember serve --host 0.0.0.0 --port 4201"
+    build: github.com/CenterForOpenScience/ember-osf-web
+    command: /bin/bash -c "yarn --pure-lockfile --ignore-engines --no-progress --no-emoji && ./node_modules/ember-cli/bin/ember serve --host 0.0.0.0 --port 4201"
     restart: unless-stopped
     depends_on:
       - api
