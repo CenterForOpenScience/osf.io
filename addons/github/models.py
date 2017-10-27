@@ -2,7 +2,6 @@
 
 import os
 import urlparse
-import itertools
 
 import markupsafe
 from addons.base.models import (BaseOAuthNodeSettings, BaseOAuthUserSettings,

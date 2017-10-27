@@ -1,5 +1,4 @@
 import urllib
-import itertools
 
 import github3
 import cachecontrol

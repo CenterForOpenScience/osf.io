@@ -8,9 +8,7 @@ from api.base.serializers import (
     TypeField,
     IDField,
 )
-
 from api.base.exceptions import InvalidModelValueError
-
 
 
 class AlertSerializer(JSONAPISerializer):
