@@ -213,45 +213,43 @@ class ReviewsMachine(Machine):
 
     def notify_resubmit(self, ev):
         context = self.get_context()
-        time_now = self.action.date_created if self.action is not None else timezone.now()
-        recipients = list(self.reviewable.node.contributors)
         reviews_signals.reviews_email.send(creator=ev.kwargs.get('user'), context=context,
-                                           node=self.reviewable.node, template='reviews_resubmission_confirmation',
-                                           recipients=recipients, time_now=time_now)
+                                           template='reviews_resubmission_confirmation',
+                                           action=self.action)
 
     def notify_accept_reject(self, ev):
         context = self.get_context()
-        time_now = self.action.date_created if self.action is not None else timezone.now()
         context['notify_comment'] = not self.reviewable.provider.reviews_comments_private and self.action.comment
         context['is_rejected'] = self.action.to_state == workflow.States.REJECTED.value
         context['was_pending'] = self.action.from_state == workflow.States.PENDING.value
-        recipients = list(self.reviewable.node.contributors)
         reviews_signals.reviews_email.send(creator=ev.kwargs.get('user'), context=context,
-                                           node=self.reviewable.node, template='reviews_submission_status',
-                                           recipients=recipients, time_now=time_now)
+                                           template='reviews_submission_status',
+                                           action=self.action)
 
     def notify_edit_comment(self, ev):
         context = self.get_context()
-        time_now = self.action.date_created if self.action is not None else timezone.now()
         if not self.reviewable.provider.reviews_comments_private and self.action.comment:
-            recipients = list(self.reviewable.node.contributors)
             reviews_signals.reviews_email.send(creator=ev.kwargs.get('user'), context=context,
-                                               node=self.reviewable.node, template='reviews_update_comment',
-                                               recipients=recipients, time_now=time_now)
+                                               template='reviews_update_comment',
+                                               action=self.action)
 
     def get_context(self):
         return {
             'domain': settings.DOMAIN,
             'reviewable': self.reviewable,
             'workflow': self.reviewable.provider.reviews_workflow,
-            'provider_url': self.reviewable.provider.domain or '{domain}preprints/{provider_id}'.format(domain=settings.DOMAIN, provider_id=self.reviewable.provider._id),
+            'provider_url': self.reviewable.provider.domain or
+                            '{domain}preprints/{provider_id}'.format(domain=settings.DOMAIN, provider_id=self.reviewable.provider._id),
             'provider_contact_email': self.reviewable.provider.email_contact or 'contact@osf.io',
             'provider_support_email': self.reviewable.provider.email_support or 'support@osf.io',
         }
 
 # Handle email notifications including: update comment, accept, and reject of submission.
 @reviews_signals.reviews_email.connect
-def reviews_notification(self, creator, recipients, time_now, template, context, node):
+def reviews_notification(self, creator, template, context, action):
+    recipients = list(action.target.node.contributors)
+    time_now = action.date_created if action is not None else timezone.now()
+    node=action.target.node
     emails.notify_global_event(
         event='global_reviews',
         sender_user=creator,
