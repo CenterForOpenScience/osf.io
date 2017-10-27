@@ -1,6 +1,6 @@
 ## -*- coding: utf-8 -*-
 <div style="margin: 40px;">
-    <p>Hello ${user.fullname},</p>
+    <p>Hello ${recipient.fullname},</p>
     <p>
         Your ${reviewable.provider.preprint_word} "${reviewable.node.title}" has an updated comment by the moderator.
         To view the comment, go to your <a href="${reviewable.absolute_url}">${reviewable.provider.preprint_word}</a>.
