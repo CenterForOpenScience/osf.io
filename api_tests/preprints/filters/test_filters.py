@@ -7,6 +7,8 @@ from osf_tests.factories import (
     SubjectFactory,
     PreprintProviderFactory
 )
+from reviews.permissions import GroupHelper
+
 
 @pytest.mark.django_db
 class PreprintsListFilteringMixin(object):
@@ -100,6 +102,10 @@ class PreprintsListFilteringMixin(object):
     @pytest.fixture()
     def is_published_and_modified_url(self, url):
         return '{}filter[is_published]=true&filter[date_created]=2013-12-11'.format(url)
+
+    @pytest.fixture()
+    def node_is_public_url(self, url):
+        return '{}filter[node_is_public]='.format(url)
 
     @pytest.fixture()
     def has_subject(self, url):
@@ -214,3 +220,44 @@ class PreprintsListFilteringMixin(object):
             auth=user.auth
         )
         assert len(res.json['data']) == 0
+
+    def test_node_is_public_filter(self, app, user, preprint_one, preprint_two, preprint_three, node_is_public_url):
+        preprint_one.node.is_public = False
+        preprint_one.node.save()
+        preprint_two.node.is_public = True
+        preprint_two.node.save()
+        preprint_three.node.is_public = True
+        preprint_three.node.save()
+
+        preprints = [preprint_one, preprint_two, preprint_three]
+
+        res = app.get('{}{}'.format(node_is_public_url, 'false'), auth=user.auth)
+        expected = set([p._id for p in preprints if not p.node.is_public])
+        actual = set([preprint['id'] for preprint in res.json['data']])
+        assert expected == actual
+
+        res = app.get('{}{}'.format(node_is_public_url, 'true'), auth=user.auth)
+        expected = set([p._id for p in preprints if p.node.is_public])
+        actual = set([preprint['id'] for preprint in res.json['data']])
+        assert expected == actual
+
+    @pytest.mark.parametrize('group_name', ['admin', 'moderator'])
+    def test_permissions(self, app, url, preprint_one, preprint_two, preprint_three, group_name):
+        another_user = AuthUserFactory()
+        preprints = (preprint_one, preprint_two, preprint_three)
+
+        for preprint in preprints:
+            preprint.is_published = False
+            preprint.save()
+
+        def actual():
+            res = app.get(url, auth=another_user.auth)
+            return set([preprint['id'] for preprint in res.json['data']])
+
+        expected = set()
+        assert expected == actual()
+
+        for preprint in preprints:
+            another_user.groups.add(GroupHelper(preprint.provider).get_group(group_name))
+            expected.update([p._id for p in preprints if p.provider_id == preprint.provider_id])
+            assert expected == actual()
