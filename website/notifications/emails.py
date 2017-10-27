@@ -60,24 +60,13 @@ def notify_mentions(event, user, node, timestamp, **context):
 def notify_global_event(event, sender_user, node, timestamp, recipients, template=None, context=None):
     event_type = utils.find_subscription_type(event)
     sent_users = []
-    users_subscriptions = []
 
-    # Create a list of users' subscription dictionaries
     for recipient in recipients:
-        users_subscriptions.append(get_user_subscriptions(recipient, event_type))
-
-    # Merge the dictionaries using dict comprehension and exclude 'none' notification type.
-    # Output e.g. {'email_transactional': [u'vsu7t', u'evz43'], 'email_digest': [u'39dbp']}
-    merged_user_subscriptions = {k: [d[k][0] for d in users_subscriptions if d[k]] for k in users_subscriptions[0] if k != 'none'}
-
-    # For each notification type store the list of users
-    for notify_type in merged_user_subscriptions:
-        # Group of users assigned this notification type
-        user_group_type = merged_user_subscriptions[notify_type]
-        # Check if user group is empty
-        if user_group_type:
-            sent_users += user_group_type
-            store_emails(merged_user_subscriptions[notify_type], notify_type, event, sender_user, node, timestamp, template, **context)
+        subscriptions = get_user_subscriptions(recipient, event_type)
+        for notification_type in subscriptions:
+            if (notification_type != 'none' and subscriptions[notification_type] and recipient._id in subscriptions[notification_type]):
+                store_emails([recipient._id], notification_type, event, sender_user, node, timestamp, template, **context)
+                sent_users.append(recipient._id)
 
     return sent_users
 
