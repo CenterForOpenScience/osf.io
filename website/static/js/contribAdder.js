@@ -275,6 +275,12 @@ AddContributorViewModel = oop.extend(Paginator, {
                 var contributors = result.contributors.map(function (user) {
                     var added = (self.contributors().indexOf(user.id) !== -1);
                     var updatedUser = $.extend({}, user, {added: added});
+
+                    var user_permission = self.permissionList.find(function (permission) {
+                        return permission.value === user.permission;
+                    });
+                    updatedUser.permission = ko.observable(user_permission);
+
                     return updatedUser;
                 });
                 var pageToShow = [];
@@ -289,7 +295,7 @@ AddContributorViewModel = oop.extend(Paginator, {
                     }
                 }
                 self.doneSearching(true);
-                self.results(pageToShow);
+                self.selection(pageToShow);
                 self.currentPage(self.pageToGet());
                 self.numberOfPages(Math.ceil(contributors.length/5));
                 self.addNewPaginators(true);

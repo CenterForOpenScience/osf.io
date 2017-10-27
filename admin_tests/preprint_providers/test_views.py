@@ -250,9 +250,9 @@ class TestPreprintProviderExportImport(AdminTestCase):
 
         nt.assert_equal(res.status_code, 302)
         nt.assert_equal(new_provider._id, 'new_id')
-        # nt.assert_equal(new_provider.subjects.all().count(), 1)
+        nt.assert_equal(new_provider.subjects.all().count(), 1)
         nt.assert_equal(new_provider.licenses_acceptable.all().count(), 1)
-        # nt.assert_equal(new_provider.subjects.all()[0].text, self.subject.text)
+        nt.assert_equal(new_provider.subjects.all()[0].text, self.subject.text)
         nt.assert_equal(new_provider.licenses_acceptable.all()[0].license_id, 'NONE')
 
     def test_update_provider_existing_subjects(self):
@@ -281,9 +281,9 @@ class TestPreprintProviderExportImport(AdminTestCase):
 
         nt.assert_equal(res.status_code, 302)
         nt.assert_equal(new_provider_id, self.preprint_provider.id)
-        # nt.assert_equal(self.preprint_provider.subjects.all().count(), 1)
+        nt.assert_equal(self.preprint_provider.subjects.all().count(), 1)
         nt.assert_equal(self.preprint_provider.licenses_acceptable.all().count(), 1)
-        # nt.assert_equal(self.preprint_provider.subjects.all()[0].text, self.subject.text)
+        nt.assert_equal(self.preprint_provider.subjects.all()[0].text, self.subject.text)
         nt.assert_equal(self.preprint_provider.licenses_acceptable.all()[0].license_id, 'CCBY')
 
 

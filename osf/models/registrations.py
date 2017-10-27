@@ -326,6 +326,15 @@ class Registration(AbstractNode):
             self.save()
         return retraction
 
+    def copy_unclaimed_records(self):
+        """Copies unclaimed_records to unregistered contributors from the registered_from node"""
+        registered_from_id = self.registered_from._id
+        for contributor in self.contributors.filter(is_registered=False):
+            record = contributor.unclaimed_records.get(registered_from_id)
+            if record:
+                contributor.unclaimed_records[self._id] = record
+                contributor.save()
+
     def delete_registration_tree(self, save=False):
         logger.debug('Marking registration {} as deleted'.format(self._id))
         self.is_deleted = True
