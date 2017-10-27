@@ -675,7 +675,7 @@ def addon_view_or_download_file(auth, path, provider, **kwargs):
             # Allow osfstorage to redirect if the deep url can be used to find a valid file_node
             if file_node and file_node.provider == 'osfstorage' and not file_node.is_deleted:
                 return redirect(
-                    file_node.node.web_url_for('addon_view_or_download_file', path=file_node._id, provider=file_node.provider)
+                    file_node.target.web_url_for('addon_view_or_download_file', path=file_node._id, provider=file_node.provider)
                 )
         return addon_deleted_file(file_node=file_node, path=path, **kwargs)
     else:

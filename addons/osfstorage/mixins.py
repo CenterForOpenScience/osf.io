@@ -12,14 +12,13 @@ class UploadMixin(models.Model):
         abstract = True
 
 
-# hopefully this works; if not, then overrdie save in UploadMixin
 @receiver(post_save, sender='osf.PreprintService')
 def create_file_node(sender, instance, **kwargs):
     if instance.root_folder:
         return
 
     # Note: The "root" node will always be "named" empty string
-    root_folder = OsfStorageFolder(name='', target=instance)
+    root_folder = OsfStorageFolder(name='', target=instance, is_root=True)
     root_folder.save()
 
     instance.__class__.objects.filter(id=instance.id).update(root_folder=root_folder)
