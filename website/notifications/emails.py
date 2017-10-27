@@ -66,9 +66,9 @@ def notify_global_event(event, sender_user, node, timestamp, recipients, templat
     for recipient in recipients:
         users_subscriptions.append(get_user_subscriptions(recipient, event_type))
 
-    # Merge the dictionaries using dict comprehension
-    # Output e.g. {'email_transactional': [u'vsu7t', u'evz43'], 'none': [], 'email_digest': [u'39dbp']}
-    merged_user_subscriptions = {k: [d[k][0] for d in users_subscriptions if d[k]] for k in users_subscriptions[0]}
+    # Merge the dictionaries using dict comprehension and exclude 'none' notification type.
+    # Output e.g. {'email_transactional': [u'vsu7t', u'evz43'], 'email_digest': [u'39dbp']}
+    merged_user_subscriptions = {k: [d[k][0] for d in users_subscriptions if d[k]] for k in users_subscriptions[0] if k != 'none'}
 
     # For each notification type store the list of users
     for notify_type in merged_user_subscriptions:
