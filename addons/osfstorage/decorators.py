@@ -9,10 +9,10 @@ from framework.auth.decorators import must_be_signed
 from framework.exceptions import HTTPError
 
 from addons.osfstorage.models import OsfStorageFileNode, OsfStorageFolder
-from osf.models import OSFUser, AbstractNode, Guid
+from osf.models import OSFUser, Guid
 from website.files import exceptions
 from website.project.decorators import (
-    must_not_be_registration, must_have_addon,
+    must_not_be_registration,
 )
 
 def handle_django_errors(func):
@@ -28,6 +28,27 @@ def handle_django_errors(func):
             raise HTTPError(httplib.NOT_FOUND)
     return wrapped
 
+
+def load_guid_as_target(func):
+
+    @functools.wraps(func)
+    def wrapped(*args, **kwargs):
+        guid = kwargs.get('guid')
+        target = getattr(Guid.load(guid), 'referent', None)
+        if not target:
+            raise HTTPError(
+                httplib.NOT_FOUND,
+                data={
+                    'message_short': 'Guid not resolved',
+                    'message_long': 'No object with that guid could be found',
+                }
+            )
+        kwargs['target'] = target
+        return func(*args, **kwargs)
+
+    return wrapped
+
+
 def autoload_filenode(must_be=None, default_root=False):
     """Implies both must_have_addon osfstorage node and
     handle_odm_errors
@@ -35,26 +56,13 @@ def autoload_filenode(must_be=None, default_root=False):
     """
     def _autoload_filenode(func):
         @handle_django_errors
+        @load_guid_as_target
         @functools.wraps(func)
         def wrapped(*args, **kwargs):
-
-            guid = kwargs.get('guid')
-
-            target = getattr(Guid.load(guid), 'referent', None)
-            if not target:
-                raise HTTPError(
-                    httplib.NOT_FOUND,
-                    data={
-                        'message_short': 'Guid not resolved',
-                        'message_long': 'No object with that guid could be found',
-                    }
-                )
-
             if 'fid' not in kwargs and default_root:
-                file_node = kwargs['node_addon'].get_root()
+                file_node = OsfStorageFolder.objects.get_root(kwargs['target'])
             else:
-                file_node = OsfStorageFileNode.get(kwargs.get('fid'), target)
-
+                file_node = OsfStorageFileNode.get(kwargs.get('fid'), kwargs['target'])
             if must_be and file_node.kind != must_be:
                 raise HTTPError(httplib.BAD_REQUEST, data={
                     'message_short': 'incorrect type',
@@ -74,14 +82,15 @@ def waterbutler_opt_hook(func):
     @must_be_signed
     @handle_django_errors
     @must_not_be_registration
-    @must_have_addon('osfstorage', 'node')
+    @load_guid_as_target
     @functools.wraps(func)
     def wrapped(payload, *args, **kwargs):
         try:
             user = OSFUser.load(payload['user'])
-            dest_node = AbstractNode.load(payload['destination']['node'])
-            source = OsfStorageFileNode.get(payload['source'], kwargs['node'])
-            dest_parent = OsfStorageFolder.get(payload['destination']['parent'], dest_node)
+
+            dest_target = Guid.load(payload['destination']['target']).referent
+            source = OsfStorageFileNode.get(payload['source'], kwargs['target'])
+            dest_parent = OsfStorageFolder.get(payload['destination']['parent'], dest_target)
 
             kwargs.update({
                 'user': user,
