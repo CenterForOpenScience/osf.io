@@ -1476,8 +1476,8 @@ class TestSendEmails(NotificationTestCase):
         time_now = timezone.now()
         emails.notify_mentions('global_mentions', user=user, node=node, timestamp=time_now, new_mentions=[user._id])
         assert_true(mock_store.called)
-        mock_store.assert_called_with([node.creator._id], 'email_transactional', 'mentions', user,
-                                      node, time_now, new_mentions=[node.creator._id])
+        mock_store.assert_called_with([node.creator._id], 'email_transactional', 'global_mentions', user,
+                                      node, time_now, None, new_mentions=[node.creator._id])
 
     @mock.patch('website.notifications.emails.store_emails')
     def test_notify_sends_comment_reply_event_if_comment_is_direct_reply(self, mock_store):
@@ -1808,16 +1808,16 @@ class TestNotificationsReviews(OsfTestCase):
         self.provider = factories.PreprintProviderFactory(_id='engrxiv')
         self.preprint = factories.PreprintFactory(provider=self.provider)
         self.user = factories.UserFactory()
+        self.sender = factories.UserFactory()
         self.context_info = {
-            'email_recipients': [self.user._id],
-            'template': 'test',
+            'email_sender': self.sender,
             'domain': 'osf.io',
-            'referrer': self.user,
             'reviewable': self.preprint,
             'workflow': 'pre-moderation',
             'provider_contact_email': 'contact@osf.io',
             'provider_support_email': 'support@osf.io',
         }
+        self.action = factories.ActionFactory()
         factories.NotificationSubscriptionFactory(
             _id=self.user._id + '_' + 'global_comments',
             user=self.user,
@@ -1843,12 +1843,10 @@ class TestNotificationsReviews(OsfTestCase):
 
     @mock.patch('website.mails.mails.send_mail')
     def test_reviews_submit_notification(self, mock_send_email):
-        mixins.reviews_submit_notification(self, context=self.context_info)
+        mixins.reviews_submit_notification(self, context=self.context_info, recipients=[self.sender, self.user])
         assert_true(mock_send_email.called)
 
-    @mock.patch('website.mails.mails.render_message')
-    def test_reviews_notification(self, mock_render):
-        mixins.reviews_notification(self, context=self.context_info)
-        assert_true(mock_render.called)
-        template = self.context_info['template'] + '.html.mako'
-        mock_render.assert_called_with(template, **self.context_info)
+    @mock.patch('website.notifications.emails.notify_global_event')
+    def test_reviews_notification(self, mock_notify):
+        mixins.reviews_notification(self, creator=self.sender, context=self.context_info, action=self.action, template='test.html.mako')
+        assert_true(mock_notify.called)
