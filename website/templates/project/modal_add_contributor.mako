@@ -40,7 +40,7 @@
                     <!-- Choose which to add -->
                     <div class="row">
 
-                        <div class="col-md-6">
+                        <div class="col-md-4">
                             <div>
                                 <span class="modal-subheader">Results</span>
                                 <a data-bind="visible: addAllVisible, click:addAll">Add all</a>
@@ -49,7 +49,7 @@
                             <div data-bind="html: notification().message, css: 'alert alert-' + notification().level"></div>
                             <!-- /ko -->
                             <!-- ko if: doneSearching -->
-                            <table class="table-condensed">
+                            <table class="table-condensed table-hover">
                                 <thead data-bind="visible: foundResults">
                                 </thead>
                                 <tbody data-bind="foreach:{data:results, as: 'contributor', afterRender:addTips}">
@@ -71,8 +71,8 @@
                                             <!-- height and width are explicitly specified for faster rendering -->
                                             <img data-bind="attr: {src: contributor.gravatar_url}" height=35 width=35 />
                                         </td>
-                                        <td width="75%">
-                                            <a data-bind = "attr: {href: contributor.profile_url}" target="_blank">
+                                        <td width="75%" >
+                                            <a  data-bind="attr: {href: contributor.profile_url}" target="_blank">
                                                 <span data-bind= "text:contributor.fullname"></span>
                                             </a><br>
 
@@ -145,7 +145,7 @@
                             </div>
                         </div><!-- ./col-md -->
 
-                        <div class="col-md-6">
+                        <div class="col-md-8">
                             <div>
                                 <span class="modal-subheader">Adding</span>
                                 <a data-bind="visible: removeAllVisible, click:removeAll">Remove all</a>
@@ -156,16 +156,7 @@
                                 <thead data-bind="visible: selection().length">
                                     <th width="5%"></th>
                                     <th width="10%"></th>
-                                    <th>Name</th>
-                                    <th>
-                                        Permissions
-                                        <i class="fa fa-question-circle permission-info"
-                                                data-toggle="popover"
-                                                data-title="Permission Information"
-                                                data-container="#addContributors"
-                                                data-html="true"
-                                            ></i>
-                                    </th>
+                                    <th width="30%">Name</th>
                                     <th>
                                         Bibliographic Contributor
                                         <i class="fa fa-question-circle visibility-info"
@@ -175,6 +166,15 @@
                                             data-placement="right"
                                             data-html="true"
                                         ></i>
+                                    </th>
+                                    <th>
+                                        Permissions
+                                        <i class="fa fa-question-circle permission-info"
+                                                data-toggle="popover"
+                                                data-title="Permission Information"
+                                                data-container="#addContributors"
+                                                data-html="true"
+                                            ></i>
                                     </th>
                                 </thead>
                                 <tbody data-bind="foreach:{data:selection, as: 'contributor', afterRender:makeAfterRender()}">
@@ -196,6 +196,12 @@
                                             <span
                                                     class='text-muted'
                                                     data-bind="visible: !contributor.registered">(unregistered)</span>
+                                        </td>
+                                        <td>
+                                            <input
+                                                type="checkbox" class="biblio visible-filter"
+                                                data-bind="checked: contributor.visible"
+                                            />
                                         </td>
 
                                         <td>

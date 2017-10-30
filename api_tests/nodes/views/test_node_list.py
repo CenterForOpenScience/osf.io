@@ -322,6 +322,32 @@ class TestNodeFiltering:
         assert private_project._id not in ids
         assert public_project._id in ids
 
+    def test_filtering_by_public_toplevel(self, app, user_one):
+        public_project = ProjectFactory(creator=user_one, is_public=True)
+        private_project = ProjectFactory(creator=user_one, is_public=False)
+
+        url = '/{}nodes/?filter[public]=false&filter[parent]=null'.format(API_BASE)
+        res = app.get(url, auth=user_one.auth)
+        node_json = res.json['data']
+
+        # No public projects returned
+        assert not any([each['attributes']['public'] for each in node_json])
+
+        ids = [each['id'] for each in node_json]
+        assert public_project._id not in ids
+        assert private_project._id in ids
+
+        url = '/{}nodes/?filter[public]=true&filter[parent]=null'.format(API_BASE)
+        res = app.get(url, auth=user_one.auth)
+        node_json = res.json['data']
+
+        # No private projects returned
+        assert all([each['attributes']['public'] for each in node_json])
+
+        ids = [each['id'] for each in node_json]
+        assert private_project._id not in ids
+        assert public_project._id in ids
+
     def test_filtering_tags(self, app, public_project_one, public_project_two, tag_one, tag_two):
         url = '/{}nodes/?filter[tags]={}'.format(API_BASE, tag_one)
 
@@ -2038,6 +2064,14 @@ class TestNodeBulkDelete:
         return ProjectFactory(title='Project Two', description='One Three', is_public=True, creator=user_one)
 
     @pytest.fixture()
+    def public_project_parent(self, user_one):
+        return ProjectFactory(title='Project with Component', description='Project with component', is_public=True, creator=user_one)
+
+    @pytest.fixture()
+    def public_component(self, user_one, public_project_parent):
+        return NodeFactory(parent=public_project_parent, creator=user_one)
+
+    @pytest.fixture()
     def user_one_private_project(self, user_one):
         return ProjectFactory(title='User One Private Project', is_public=False, creator=user_one)
 
@@ -2244,6 +2278,15 @@ class TestNodeBulkDelete:
 
         res = app.get(public_project_one_url, auth=user_one.auth)
         assert res.status_code == 200
+
+    def test_bulk_delete_project_with_component(self, app, user_one, public_project_parent, public_component, url):
+        new_payload = {'data': [{'id': public_project_parent._id, 'type': 'nodes'}, {'id': public_component._id, 'type': 'nodes'}]}
+        res = app.delete_json_api(url, new_payload, auth=user_one.auth, expect_errors=True, bulk=True)
+        assert res.status_code == 400
+
+        new_payload = {'data': [{'id': public_component._id, 'type': 'nodes'}, {'id': public_project_parent._id, 'type': 'nodes'}]}
+        res = app.delete_json_api(url, new_payload, auth=user_one.auth, bulk=True)
+        assert res.status_code == 204
 
 
 @pytest.mark.django_db

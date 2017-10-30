@@ -12,7 +12,6 @@ import logging
 from boto.glacier.layer2 import Layer2
 from dateutil.parser import parse as parse_date
 from dateutil.relativedelta import relativedelta
-from django.db.models import Q
 
 from framework.celery_tasks import app as celery_app
 

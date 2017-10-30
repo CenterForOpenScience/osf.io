@@ -4,7 +4,7 @@ from dateutil.parser import parse
 from datetime import datetime, timedelta
 from django.db.models import Q
 
-from osf.models import OSFUser, NodeLog
+from osf.models import OSFUser
 from website.app import init_app
 from framework.database import paginated
 from scripts.analytics.base import SummaryAnalytics

@@ -1,3 +1,5 @@
+from copy import deepcopy
+
 from django.db.models import Q
 
 from api.base.exceptions import InvalidFilterOperator, InvalidFilterValue
@@ -18,8 +20,10 @@ class NodesFilterMixin(ListFilterMixin):
                 for field_name, operation in field_names.iteritems():
                     # filter[parent]=null
                     if field_name == 'parent' and operation['op'] == 'eq' and not operation['value']:
-                        return queryset.get_roots()
-        return super(NodesFilterMixin, self).param_queryset(query_params, default_queryset)
+                        queryset = queryset.get_roots()
+                        query_params = deepcopy(query_params)
+                        query_params.pop(key)
+        return super(NodesFilterMixin, self).param_queryset(query_params, queryset)
 
     def build_query_from_field(self, field_name, operation):
         if field_name == 'parent':
@@ -60,6 +64,7 @@ class NodesFilterMixin(ListFilterMixin):
                 Q(_is_preprint_orphan=True) |
                 Q(_has_abandoned_preprint=True)
             )
+
             return ~not_preprint_query if utils.is_truthy(operation['value']) else not_preprint_query
 
         return super(NodesFilterMixin, self).build_query_from_field(field_name, operation)
