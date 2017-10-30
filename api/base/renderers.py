@@ -24,7 +24,10 @@ class JSONAPIRenderer(JSONRendererWithESISupport):
         if renderer_context is not None:
             meta_dict = renderer_context.get('meta')
             if meta_dict is not None:
-                data.setdefault('meta', {}).update(meta_dict)
+                meta_dict['version'] = renderer_context['request'].version
+            else:
+                meta_dict = {'version': renderer_context['request'].version}
+            data.setdefault('meta', {}).update(meta_dict)
         return super(JSONAPIRenderer, self).render(data, accepted_media_type, renderer_context)
 
 
