@@ -504,7 +504,7 @@ class PreprintFilterMixin(ListFilterMixin):
             admin_user_query = Q(node__contributor__user_id=auth_user.id, node__contributor__admin=True)
             reviews_user_query = Q(node__is_public=True, provider__in=get_objects_for_user(auth_user, 'view_submissions', PreprintProvider))
             if allow_contribs:
-                contrib_user_query = ~Q(reviews_state=DefaultStates.INITIAL.value) & Q(node__contributor__user_id=auth_user.id, node__contributor__read=True)
+                contrib_user_query = ~Q(machine_state=DefaultStates.INITIAL.value) & Q(node__contributor__user_id=auth_user.id, node__contributor__read=True)
                 query = (no_user_query | contrib_user_query | admin_user_query | reviews_user_query)
             else:
                 query = (no_user_query | admin_user_query | reviews_user_query)

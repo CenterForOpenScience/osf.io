@@ -184,7 +184,7 @@ class PreprintService(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMi
             self.node._has_abandoned_preprint = False
 
             # In case this provider is ever set up to use a reviews workflow, put this preprint in a sensible state
-            self.reviews_state = DefaultStates.ACCEPTED.value
+            self.machine_state = DefaultStates.ACCEPTED.value
             self.date_last_transitioned = self.date_published
 
             self.node.add_log(

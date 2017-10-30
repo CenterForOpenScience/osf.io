@@ -122,13 +122,13 @@ class ActionSerializer(JSONAPISerializer):
         comment = validated_data.pop('comment', '')
         try:
             if trigger == DefaultTriggers.ACCEPT.value:
-                return target.reviews_accept(user, comment)
+                return target.run_accept(user, comment)
             if trigger == DefaultTriggers.REJECT.value:
-                return target.reviews_reject(user, comment)
+                return target.run_reject(user, comment)
             if trigger == DefaultTriggers.EDIT_COMMENT.value:
-                return target.reviews_edit_comment(user, comment)
+                return target.run_edit_comment(user, comment)
             if trigger == DefaultTriggers.SUBMIT.value:
-                return target.reviews_submit(user)
+                return target.run_submit(user)
         except InvalidTriggerError as e:
             # Invalid transition from the current state
             raise Conflict(e.message)

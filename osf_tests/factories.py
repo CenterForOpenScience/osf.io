@@ -582,7 +582,7 @@ class PreprintFactory(DjangoModelFactory):
         subjects = kwargs.pop('subjects', None) or [[SubjectFactory()._id]]
         instance.node.preprint_article_doi = doi
 
-        instance.reviews_state = kwargs.pop('reviews_state', 'initial')
+        instance.machine_state = kwargs.pop('machine_state', 'initial')
 
         user = kwargs.pop('creator', None) or instance.node.creator
         if not instance.node.is_contributor(user):

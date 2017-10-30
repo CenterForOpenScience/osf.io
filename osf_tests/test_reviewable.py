@@ -10,22 +10,22 @@ class TestReviewable:
     def test_state_changes(self):
         user = AuthUserFactory()
         preprint = PreprintFactory(provider__reviews_workflow='pre-moderation', is_published=False)
-        assert preprint.reviews_state == DefaultStates.INITIAL.value
+        assert preprint.machine_state == DefaultStates.INITIAL.value
 
-        preprint.reviews_submit(user)
-        assert preprint.reviews_state == DefaultStates.PENDING.value
+        preprint.run_submit(user)
+        assert preprint.machine_state == DefaultStates.PENDING.value
 
-        preprint.reviews_accept(user, 'comment')
-        assert preprint.reviews_state == DefaultStates.ACCEPTED.value
+        preprint.run_accept(user, 'comment')
+        assert preprint.machine_state == DefaultStates.ACCEPTED.value
         from_db = PreprintService.objects.get(id=preprint.id)
-        assert from_db.reviews_state == DefaultStates.ACCEPTED.value
+        assert from_db.machine_state == DefaultStates.ACCEPTED.value
 
-        preprint.reviews_reject(user, 'comment')
-        assert preprint.reviews_state == DefaultStates.REJECTED.value
+        preprint.run_reject(user, 'comment')
+        assert preprint.machine_state == DefaultStates.REJECTED.value
         from_db.refresh_from_db()
-        assert from_db.reviews_state == DefaultStates.REJECTED.value
+        assert from_db.machine_state == DefaultStates.REJECTED.value
 
-        preprint.reviews_accept(user, 'comment')
-        assert preprint.reviews_state == DefaultStates.ACCEPTED.value
+        preprint.run_accept(user, 'comment')
+        assert preprint.machine_state == DefaultStates.ACCEPTED.value
         from_db.refresh_from_db()
-        assert from_db.reviews_state == DefaultStates.ACCEPTED.value
+        assert from_db.machine_state == DefaultStates.ACCEPTED.value

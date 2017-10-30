@@ -164,8 +164,8 @@ class ReviewableFilterMixin(object):
         reviewable = expected_reviewables[0]
 
         # filter by reviews_state
-        expected = set([r._id for r in expected_reviewables if r.reviews_state == reviewable.reviews_state])
-        actual = get_actual(app, url, user, reviews_state=reviewable.reviews_state)
+        expected = set([r._id for r in expected_reviewables if r.machine_state == reviewable.machine_state])
+        actual = get_actual(app, url, user, reviews_state=reviewable.machine_state)
         assert expected == actual
 
         # order by date_last_transitioned

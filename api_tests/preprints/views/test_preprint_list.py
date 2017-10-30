@@ -197,11 +197,11 @@ class TestPreprintListFilteringByReviewableFields(ReviewableFilterMixin):
             PreprintFactory(is_published=False, project=ProjectFactory(is_public=True)),
             PreprintFactory(is_published=False, project=ProjectFactory(is_public=True)),
         ]
-        preprints[0].reviews_submit(user)
-        preprints[0].reviews_accept(user, 'comment')
-        preprints[1].reviews_submit(user)
-        preprints[1].reviews_reject(user, 'comment')
-        preprints[2].reviews_submit(user)
+        preprints[0].run_submit(user)
+        preprints[0].run_accept(user, 'comment')
+        preprints[1].run_submit(user)
+        preprints[1].run_reject(user, 'comment')
+        preprints[2].run_submit(user)
         return preprints
 
     @pytest.fixture
@@ -505,7 +505,7 @@ class TestReviewsPendingPreprintIsPublishedList(PreprintIsPublishedListMixin):
 
     @pytest.fixture()
     def preprint_unpublished(self, user_admin_contrib, provider_one, project_public, subject):
-        return PreprintFactory(creator=user_admin_contrib, filename='mgla.pdf', provider=provider_one, subjects=[[subject._id]], project=project_public, is_published=False, reviews_state=DefaultStates.PENDING.value)
+        return PreprintFactory(creator=user_admin_contrib, filename='mgla.pdf', provider=provider_one, subjects=[[subject._id]], project=project_public, is_published=False, machine_state=DefaultStates.PENDING.value)
 
     def test_unpublished_visible_to_admins(self, app, user_admin_contrib, preprint_unpublished, preprint_published, url):
         res = app.get(url, auth=user_admin_contrib.auth)
@@ -552,7 +552,7 @@ class TestReviewsInitialPreprintIsPublishedList(PreprintIsPublishedListMixin):
 
     @pytest.fixture()
     def preprint_unpublished(self, user_admin_contrib, provider_one, project_public, subject):
-        return PreprintFactory(creator=user_admin_contrib, filename='mgla.pdf', provider=provider_one, subjects=[[subject._id]], project=project_public, is_published=False, reviews_state=DefaultStates.INITIAL.value)
+        return PreprintFactory(creator=user_admin_contrib, filename='mgla.pdf', provider=provider_one, subjects=[[subject._id]], project=project_public, is_published=False, machine_state=DefaultStates.INITIAL.value)
 
     def test_unpublished_visible_to_admins(self, app, user_admin_contrib, preprint_unpublished, preprint_published, url):
         res = app.get(url, auth=user_admin_contrib.auth)
@@ -648,7 +648,7 @@ class TestReviewsInitialPreprintIsPublishedListMatchesDetail(PreprintListMatches
 
     @pytest.fixture()
     def preprint_unpublished(self, user_admin_contrib, provider_one, project_public, subject):
-        return PreprintFactory(creator=user_admin_contrib, filename='mgla.pdf', provider=provider_one, subjects=[[subject._id]], project=project_public, is_published=False, reviews_state=DefaultStates.INITIAL.value)
+        return PreprintFactory(creator=user_admin_contrib, filename='mgla.pdf', provider=provider_one, subjects=[[subject._id]], project=project_public, is_published=False, machine_state=DefaultStates.INITIAL.value)
 
     @pytest.fixture()
     def list_url(self):
@@ -701,7 +701,7 @@ class TestReviewsPendingPreprintIsPublishedListMatchesDetail(PreprintListMatches
 
     @pytest.fixture()
     def preprint_unpublished(self, user_admin_contrib, provider_one, project_public, subject):
-        return PreprintFactory(creator=user_admin_contrib, filename='mgla.pdf', provider=provider_one, subjects=[[subject._id]], project=project_public, is_published=False, reviews_state=DefaultStates.PENDING.value)
+        return PreprintFactory(creator=user_admin_contrib, filename='mgla.pdf', provider=provider_one, subjects=[[subject._id]], project=project_public, is_published=False, machine_state=DefaultStates.PENDING.value)
 
     @pytest.fixture()
     def list_url(self):

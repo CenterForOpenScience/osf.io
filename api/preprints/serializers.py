@@ -89,7 +89,7 @@ class PreprintSerializer(JSONAPISerializer):
         related_view_kwargs={'node_id': '<node._id>'},
     )
 
-    reviews_state = ser.CharField(read_only=True, max_length=15)
+    reviews_state = ser.CharField(source='machine_state', read_only=True, max_length=15)
     date_last_transitioned = DateByVersion(read_only=True)
 
     citation = RelationshipField(

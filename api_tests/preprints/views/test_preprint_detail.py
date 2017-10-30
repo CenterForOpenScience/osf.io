@@ -1009,15 +1009,15 @@ class TestReviewsPreprintDetailPermissions:
 
     @pytest.fixture()
     def unpublished_reviews_preprint(self, admin, reviews_provider, subject, public_project):
-        return PreprintFactory(creator=admin, filename='toe_socks_and_sunrises.pdf', provider=reviews_provider, subjects=[[subject._id]], project=public_project, is_published=False, reviews_state=DefaultStates.PENDING.value)
+        return PreprintFactory(creator=admin, filename='toe_socks_and_sunrises.pdf', provider=reviews_provider, subjects=[[subject._id]], project=public_project, is_published=False, machine_state=DefaultStates.PENDING.value)
 
     @pytest.fixture()
     def unpublished_reviews_initial_preprint(self, admin, reviews_provider, subject, public_project):
-        return PreprintFactory(creator=admin, filename='toe_socks_and_sunrises.pdf', provider=reviews_provider, subjects=[[subject._id]], project=public_project, is_published=False, reviews_state=DefaultStates.INITIAL.value)
+        return PreprintFactory(creator=admin, filename='toe_socks_and_sunrises.pdf', provider=reviews_provider, subjects=[[subject._id]], project=public_project, is_published=False, machine_state=DefaultStates.INITIAL.value)
 
     @pytest.fixture()
     def private_reviews_preprint(self, admin, reviews_provider, subject, private_project):
-        return PreprintFactory(creator=admin, filename='toe_socks_and_sunsets.pdf', provider=reviews_provider, subjects=[[subject._id]], project=private_project, is_published=False, reviews_state=DefaultStates.PENDING.value)
+        return PreprintFactory(creator=admin, filename='toe_socks_and_sunsets.pdf', provider=reviews_provider, subjects=[[subject._id]], project=private_project, is_published=False, machine_state=DefaultStates.PENDING.value)
 
     @pytest.fixture()
     def unpublished_url(self, unpublished_reviews_preprint):

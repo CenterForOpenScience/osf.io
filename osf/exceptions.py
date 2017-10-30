@@ -121,3 +121,7 @@ class InvalidTriggerError(Exception):
         self.state = state
         self.valid_triggers = valid_triggers
         self.message = 'Cannot trigger "{}" from state "{}". Valid triggers: {}'.format(trigger, state, valid_triggers)
+
+class InvalidTransitionError(Exception):
+    def __init__(self, machine, transition):
+        self.message = 'Machine "{}" received invalid transitions: "{}" expected but not defined'.format(machine, transition)

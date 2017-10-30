@@ -56,11 +56,11 @@ class TestPreprintProviderPreprintsListFiltering(PreprintsListFilteringMixin):
 
     def test_reviews_state_counts(self, app, user, provider_one, preprint_one, preprint_two, preprint_three, url):
         url = '{}meta[reviews_state_counts]=true'.format(url)
-        preprint_one.reviews_state = 'pending'
+        preprint_one.machine_state = 'pending'
         preprint_one.save()
-        preprint_two.reviews_state = 'pending'
+        preprint_two.machine_state = 'pending'
         preprint_two.save()
-        preprint_three.reviews_state = 'accepted'
+        preprint_three.machine_state = 'accepted'
         preprint_three.save()
 
         expected = {
