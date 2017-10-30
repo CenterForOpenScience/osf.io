@@ -86,11 +86,6 @@ class UserSerializer(JSONAPISerializer):
         self_view_kwargs={'user_id': '<_id>'},
     ))
 
-    actions = ShowIfCurrentUser(RelationshipField(
-        related_view='users:user-action-list',
-        related_view_kwargs={'user_id': '<_id>'},
-    ))
-
     class Meta:
         type_ = 'users'
 

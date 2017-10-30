@@ -6,7 +6,7 @@ from api.preprint_providers.workflows import Workflows
 from framework.auth import Auth
 from framework.postcommit_tasks.handlers import enqueue_postcommit_task
 from osf.exceptions import InvalidTransitionError
-from osf.models.action import Action
+from osf.models.action import ReviewAction
 from osf.models.nodelog import NodeLog
 from osf.utils.workflows import DefaultStates, DEFAULT_TRANSITIONS
 from website.preprints.tasks import get_and_set_preprint_identifiers
@@ -43,6 +43,10 @@ class BaseMachine(Machine):
     def state(self, value):
         setattr(self.machineable, self.__state_attr, value)
 
+    @property
+    def ActionClass(self):
+        raise NotImplementedError()
+
     def _validate_transitions(self, transitions):
         for transition in set(sum([t['after'] for t in transitions], [])):
             if not hasattr(self, transition):
@@ -54,7 +58,7 @@ class BaseMachine(Machine):
 
     def save_action(self, ev):
         user = ev.kwargs.get('user')
-        self.action = Action.objects.create(
+        self.action = self.ActionClass.objects.create(
             target=self.machineable,
             creator=user,
             trigger=ev.event.name,
@@ -68,6 +72,7 @@ class BaseMachine(Machine):
         self.machineable.date_last_transitioned = now
 
 class ReviewsMachine(BaseMachine):
+    ActionClass = ReviewAction
 
     def save_changes(self, ev):
         node = self.machineable.node

@@ -10,11 +10,12 @@ from osf.utils.fields import NonNaiveDateTimeField
 from osf.utils.workflows import DefaultStates, DefaultTriggers
 
 
-class Action(ObjectIDMixin, BaseModel):
+class BaseAction(ObjectIDMixin, BaseModel):
+    class Meta:
+        abstract = True
 
     objects = IncludeManager()
 
-    target = models.ForeignKey('PreprintService', related_name='actions', on_delete=models.CASCADE)
     creator = models.ForeignKey('OSFUser', related_name='+', on_delete=models.CASCADE)
 
     trigger = models.CharField(max_length=31, choices=DefaultTriggers.choices())
@@ -26,3 +27,10 @@ class Action(ObjectIDMixin, BaseModel):
     is_deleted = models.BooleanField(default=False)
     date_created = NonNaiveDateTimeField(auto_now_add=True)
     date_modified = NonNaiveDateTimeField(auto_now=True)
+
+    @property
+    def target(self):
+        raise NotImplementedError()
+
+class ReviewAction(BaseAction):
+    target = models.ForeignKey('PreprintService', related_name='actions', on_delete=models.CASCADE)

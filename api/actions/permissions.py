@@ -4,7 +4,7 @@ from __future__ import unicode_literals
 from rest_framework import permissions as drf_permissions
 
 from api.base.utils import get_user_auth
-from osf.models.action import Action
+from osf.models.action import ReviewAction
 from osf.models.mixins import ReviewableMixin, ReviewProviderMixin
 from osf.utils.workflows import DefaultTriggers
 from website.util import permissions as osf_permissions
@@ -18,7 +18,7 @@ TRIGGER_PERMISSIONS = {
 }
 
 
-class ActionPermission(drf_permissions.BasePermission):
+class ReviewActionPermission(drf_permissions.BasePermission):
     def has_object_permission(self, request, view, obj):
         auth = get_user_auth(request)
         if auth.user is None:
@@ -26,7 +26,7 @@ class ActionPermission(drf_permissions.BasePermission):
 
         target = None
         provider = None
-        if isinstance(obj, Action):
+        if isinstance(obj, ReviewAction):
             target = obj.target
             provider = target.provider
         elif isinstance(obj, ReviewableMixin):

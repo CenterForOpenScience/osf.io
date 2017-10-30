@@ -132,8 +132,8 @@ class PreprintSerializer(JSONAPISerializer):
         read_only=False
     )
 
-    actions = RelationshipField(
-        related_view='preprints:preprint-action-list',
+    review_actions = RelationshipField(
+        related_view='preprints:preprint-review-action-list',
         related_view_kwargs={'preprint_id': '<_id>'}
     )
 
@@ -189,8 +189,9 @@ class PreprintSerializer(JSONAPISerializer):
         if published and preprint.provider.is_reviewed:
             raise Conflict('{} uses a moderation workflow, so preprints must be submitted for review instead of published directly. Submit a preprint by creating a `submit` Action at {}'.format(
                 preprint.provider.name,
-                absolute_reverse('actions:create-action', kwargs={
-                    'version': self.context['request'].parser_context['kwargs']['version']
+                absolute_reverse('preprints:preprint-review-action-list', kwargs={
+                    'version': self.context['request'].parser_context['kwargs']['version'],
+                    'preprint_id': preprint._id
                 })
             ))
 

@@ -802,9 +802,9 @@ class ArchiveJobFactory(DjangoModelFactory):
         model = models.ArchiveJob
 
 
-class ActionFactory(DjangoModelFactory):
+class ReviewActionFactory(DjangoModelFactory):
     class Meta:
-        model = models.Action
+        model = models.ReviewAction
 
     trigger = FuzzyChoice(choices=DefaultTriggers.values())
     comment = factory.Faker('text')

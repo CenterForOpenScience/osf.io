@@ -1,8 +1,8 @@
 import pytz
 
 from django.apps import apps
-from django.db import models, transaction
 from django.core.exceptions import ObjectDoesNotExist
+from django.db import models, transaction
 from include import IncludeQuerySet
 
 from api.preprint_providers.workflows import Workflows, PUBLIC_STATES

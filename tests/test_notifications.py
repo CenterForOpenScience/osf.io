@@ -1816,7 +1816,7 @@ class TestNotificationsReviews(OsfTestCase):
             'provider_contact_email': 'contact@osf.io',
             'provider_support_email': 'support@osf.io',
         }
-        self.action = factories.ActionFactory()
+        self.action = factories.ReviewActionFactory()
         factories.NotificationSubscriptionFactory(
             _id=self.user._id + '_' + 'global_comments',
             user=self.user,

@@ -5,7 +5,7 @@ from furl import furl
 
 from api.preprint_providers.permissions import GroupHelper
 from osf_tests.factories import (
-    ActionFactory,
+    ReviewActionFactory,
     AuthUserFactory,
     PreprintFactory,
     PreprintProviderFactory,
@@ -42,7 +42,7 @@ def get_actual(app, url, user=None, sort=None, expect_errors=False, **filters):
 
 
 @pytest.mark.django_db
-class ActionFilterMixin(object):
+class ReviewActionFilterMixin(object):
 
     @pytest.fixture()
     def url(self):
@@ -58,7 +58,7 @@ class ActionFilterMixin(object):
         for provider in providers:
             preprint = PreprintFactory(provider=provider, project=ProjectFactory(is_public=True))
             for _ in range(5):
-                actions.append(ActionFactory(target=preprint))
+                actions.append(ReviewActionFactory(target=preprint))
         return actions
 
     @pytest.fixture()

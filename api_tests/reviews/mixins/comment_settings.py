@@ -2,7 +2,7 @@ import pytest
 
 from api.preprint_providers.permissions import GroupHelper
 from osf_tests.factories import (
-    ActionFactory,
+    ReviewActionFactory,
     AuthUserFactory,
     PreprintFactory,
     PreprintProviderFactory,
@@ -11,7 +11,7 @@ from website.util import permissions as osf_permissions
 
 
 @pytest.mark.django_db
-class ActionCommentSettingsMixin(object):
+class ReviewActionCommentSettingsMixin(object):
 
     @pytest.fixture()
     def url(self):
@@ -27,7 +27,7 @@ class ActionCommentSettingsMixin(object):
 
     @pytest.fixture()
     def actions(self, preprint):
-        return [ActionFactory(target=preprint) for _ in range(5)]
+        return [ReviewActionFactory(target=preprint) for _ in range(5)]
 
     @pytest.fixture()
     def provider_admin(self, provider):

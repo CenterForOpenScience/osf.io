@@ -10,17 +10,17 @@ from osf_tests.factories import (
 )
 from website.util import permissions as osf_permissions
 
-from api_tests.reviews.mixins.filter_mixins import ActionFilterMixin
+from api_tests.reviews.mixins.filter_mixins import ReviewActionFilterMixin
 
 
-class TestActionFilters(ActionFilterMixin):
+class TestReviewActionFilters(ReviewActionFilterMixin):
     @pytest.fixture()
     def url(self):
-        return '/{}users/me/actions/'.format(API_BASE)
+        return '/{}actions/reviews/'.format(API_BASE)
 
     @pytest.fixture()
     def expected_actions(self, all_actions, allowed_providers):
-        actions = super(TestActionFilters, self).expected_actions(all_actions, allowed_providers)
+        actions = super(TestReviewActionFilters, self).expected_actions(all_actions, allowed_providers)
         node = actions[0].target.node
         node.is_public = False
         node.save()
@@ -36,7 +36,7 @@ class TestActionFilters(ActionFilterMixin):
 
 
 @pytest.mark.django_db
-class TestActionCreate(object):
+class TestReviewActionCreate(object):
     def create_payload(self, reviewable_id=None, **attrs):
         payload = {
             'data': {
@@ -55,8 +55,8 @@ class TestActionCreate(object):
         return payload
 
     @pytest.fixture()
-    def url(self):
-        return '/{}actions/'.format(API_BASE)
+    def url(self, preprint):
+        return '/{}preprints/{}/actions/'.format(API_BASE, preprint._id)
 
     @pytest.fixture()
     def provider(self):
