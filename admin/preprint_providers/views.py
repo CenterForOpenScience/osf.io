@@ -6,6 +6,7 @@ from django.core import serializers
 from django.core.urlresolvers import reverse_lazy
 from django.http import HttpResponse, JsonResponse
 from django.views.generic import ListView, DetailView, View, CreateView, DeleteView, TemplateView, UpdateView
+from django.core.management import call_command
 from django.contrib.auth.mixins import PermissionRequiredMixin
 from django.forms.models import model_to_dict
 from django.shortcuts import redirect
@@ -248,8 +249,7 @@ class ImportPreprintProvider(PermissionRequiredMixin, View):
             return PreprintProvider.objects.get(id=page_provider_id)
 
     def add_subjects(self, provider, subject_data):
-        from osf.management.commands.populate_custom_taxonomies import migrate
-        migrate(provider=provider._id, data=subject_data)
+        call_command('populate_custom_taxonomies', '--provider', provider._id, '--data', json.dumps(subject_data))
 
     def create_or_update_provider(self, provider_data):
         provider = self.get_page_provider()
