@@ -154,18 +154,9 @@
                             <!-- TODO: Duplication here: Put this in a KO template -->
                             <table class="table-condensed table-hover">
                                 <thead class="keep-all" data-bind="visible: selection().length">
-                                    <th width="10%"></th>
+                                    <th width="5%"></th>
                                     <th width="10%"></th>
                                     <th width="30%">Name</th>
-                                    <th>
-                                        Bibliographic Contributor
-                                        <i class="fa fa-question-circle visibility-info"
-                                           data-toggle="popover"
-                                           data-title="Bibliographic Contributor Information"
-                                           data-container="body"
-                                           data-placement="right"
-                                           data-html="true">
-                                        </i>
                                     <th>
                                         Permissions
                                         <i class="fa fa-question-circle permission-info"
@@ -174,6 +165,16 @@
                                                 data-container="#addContributors"
                                                 data-html="true"
                                             ></i>
+                                    </th>
+                                    <th>
+                                        Bibliographic Contributor
+                                        <i class="fa fa-question-circle visibility-info"
+                                            data-toggle="popover"
+                                            data-title="Bibliographic Contributor Information"
+                                            data-container="#addContributors"
+                                            data-placement="right"
+                                            data-html="true"
+                                        ></i>
                                     </th>
                                 </thead>
                                 <tbody data-bind="foreach:{data:selection, as: 'contributor', afterRender:makeAfterRender()}">
@@ -197,18 +198,19 @@
                                                     data-bind="visible: !contributor.registered">(unregistered)</span>
                                         </td>
                                         <td>
-                                            <input
-                                                type="checkbox" class="biblio visible-filter"
-                                                data-bind="checked: contributor.visible"
-                                            />
-                                        </td>
-
-                                        <td>
                                             <select class="form-control input-sm" data-bind="
                                                 options: $root.permissionList,
                                                 value: permission,
                                                 optionsText: 'text'">
                                             </select>
+                                        </td>
+                                        <td>
+                                            <span class="m-l-sm">
+                                                <input
+                                                    type="checkbox" class="biblio visible-filter"
+                                                    data-bind="checked: visible"
+                                                />
+                                            </span>
                                         </td>
                                     </tr>
                                 </tbody>
