@@ -13,11 +13,12 @@ from nose.tools import *  # noqa
 from tests.base import fake, OsfTestCase
 from osf_tests.factories import (
     AuthUserFactory, EmbargoFactory, NodeFactory, ProjectFactory,
-    RegistrationFactory, UserFactory, UnconfirmedUserFactory, DraftRegistrationFactory
+    RegistrationFactory, UserFactory, UnconfirmedUserFactory, DraftRegistrationFactory, 
+    EmbargoTerminationApprovalFactory
 )
 from tests import utils
 
-from framework.exceptions import PermissionsError
+from framework.exceptions import PermissionsError, HTTPError
 from framework.auth import Auth
 from website.exceptions import (
     InvalidSanctionRejectionToken, InvalidSanctionApprovalToken, NodeStateError,
@@ -415,6 +416,21 @@ class RegistrationEmbargoModelsTestCase(OsfTestCase):
             with assert_raises(NodeStateError):
                 self.registration.embargo._on_complete(self.user)
         assert_equal(mock_notify.call_count, 0)
+
+    # Regression for OSF-8840
+    def test_public_embargo_cannot_be_deleted_with_initial_token(self):
+        embargo_termination_approval = EmbargoTerminationApprovalFactory()
+        registration = Registration.objects.get(embargo_termination_approval=embargo_termination_approval)
+        user = registration.contributors.first()
+
+        registration.terminate_embargo(Auth(user))  
+
+        rejection_token = registration.embargo.approval_state[user._id]['rejection_token']
+        with assert_raises(HTTPError) as e:
+            registration.embargo.disapprove_embargo(user, rejection_token)
+
+        registration.refresh_from_db()
+        assert registration.is_deleted is False
 
 
 class RegistrationWithChildNodesEmbargoModelTestCase(OsfTestCase):
