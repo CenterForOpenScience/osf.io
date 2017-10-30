@@ -12,7 +12,7 @@ from website.preprints.tasks import on_preprint_updated
 
 logger = logging.getLogger(__name__)
 
-BEPRESS_PROVIDER = PreprintProvider.objects.filter(_id='osf').first()
+BEPRESS_PROVIDER = None
 
 def validate_input(custom_provider, data, copy=False, add_missing=False):
     logger.info('Validating data')
@@ -211,6 +211,8 @@ class Command(BaseCommand):
         )
 
     def handle(self, *args, **options):
+        global BEPRESS_PROVIDER
+        BEPRESS_PROVIDER = PreprintProvider.objects.filter(_id='osf').first()
         dry_run = options.get('dry_run')
         provider = options['provider']
         data = json.loads(options['data'] or '{}')
