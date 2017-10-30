@@ -216,6 +216,7 @@ class PreprintProviderPreprintList(JSONAPIBaseView, generics.ListAPIView, Prepri
         date_created                    iso8601 timestamp                   timestamp that the preprint was created
         date_modified                   iso8601 timestamp                   timestamp that the preprint was last modified
         date_published                  iso8601 timestamp                   timestamp when the preprint was published
+        original_publication_date       iso8601 timestamp                   user-entered date of publication from external posting
         is_published                    boolean                             whether or not this preprint is published
         is_preprint_orphan              boolean                             whether or not this preprint is orphaned
         subjects                        array of tuples of dictionaries     ids of Subject in the BePress taxonomy. Dictionary, containing the subject text and subject ID

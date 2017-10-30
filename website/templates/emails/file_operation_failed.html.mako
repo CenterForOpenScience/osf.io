@@ -69,7 +69,9 @@
                 <tbody>
                     <tr>
                         <td style="border-collapse: collapse;">
-                            <p class="small text-center" style="text-align: center;font-size: 12px;">Copyright &copy; 2015 Center For Open Science, All rights reserved. </p>
+                            <p class="small text-center" style="text-align: center;font-size: 12px;">Copyright &copy; 2017 Center For Open Science, All rights reserved. |
+                                    <a href="https://github.com/CenterForOpenScience/centerforopenscience.org/blob/master/PRIVACY_POLICY.md">Privacy Policy</a></p>
+                            <p class="text-smaller text-center" style="text-align: center;font-size: 12px;">210 Ridge McIntire Road, Suite 500, Charlottesville, VA 22903-5083</p>
                             <p class="small text-center" style="text-align: center;font-size: 12px; line-height: 20px;">You received this email because you are subscribed to email notifications. <br><a href="${url}" style="padding: 0;margin: 0;border: none;list-style: none;color: #008de5;text-decoration: none;font-weight: bold;">Update Subscription Preferences</a></p>
                         </td>
                     </tr>

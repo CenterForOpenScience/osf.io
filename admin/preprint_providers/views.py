@@ -6,6 +6,7 @@ from django.core import serializers
 from django.core.urlresolvers import reverse_lazy
 from django.http import HttpResponse, JsonResponse
 from django.views.generic import ListView, DetailView, View, CreateView, DeleteView, TemplateView, UpdateView
+from django.core.management import call_command
 from django.contrib.auth.mixins import PermissionRequiredMixin
 from django.forms.models import model_to_dict
 from django.shortcuts import redirect
@@ -18,8 +19,7 @@ from osf.models.preprint_provider import rules_to_subjects
 
 # When preprint_providers exclusively use Subject relations for creation, set this to False
 SHOW_TAXONOMIES_IN_PREPRINT_PROVIDER_CREATE = True
-#TODO: Add subjects back in when custom taxonomies are fully integrated
-FIELDS_TO_NOT_IMPORT_EXPORT = ['access_token', 'share_source', 'subjects_acceptable', 'subjects']
+FIELDS_TO_NOT_IMPORT_EXPORT = ['access_token', 'share_source']
 
 
 class PreprintProviderList(PermissionRequiredMixin, ListView):
@@ -170,7 +170,7 @@ class ExportPreprintProvider(PermissionRequiredMixin, View):
         cleaned_fields = {key: value for key, value in cleaned_data['fields'].iteritems() if key not in FIELDS_TO_NOT_IMPORT_EXPORT}
         cleaned_fields['licenses_acceptable'] = [node_license.license_id for node_license in preprint_provider.licenses_acceptable.all()]
         cleaned_fields['default_license'] = preprint_provider.default_license.license_id if preprint_provider.default_license else ''
-        # cleaned_fields['subjects'] = self.serialize_subjects(preprint_provider)
+        cleaned_fields['subjects'] = self.serialize_subjects(preprint_provider)
         cleaned_data['fields'] = cleaned_fields
         filename = '{}_export.json'.format(preprint_provider.name)
         response = HttpResponse(json.dumps(cleaned_data), content_type='text/json')
@@ -178,7 +178,7 @@ class ExportPreprintProvider(PermissionRequiredMixin, View):
         return response
 
     def serialize_subjects(self, provider):
-        if provider._id != 'osf':
+        if provider._id != 'osf' and provider.subjects.count():
             result = {}
             result['include'] = []
             result['exclude'] = []
@@ -231,8 +231,9 @@ class ImportPreprintProvider(PermissionRequiredMixin, View):
         if form.is_valid():
             file_str = self.parse_file(request.FILES['file'])
             file_json = json.loads(file_str)
+            current_fields = [f.name for f in PreprintProvider._meta.get_fields()]
             # make sure not to import an exported access token for SHARE
-            cleaned_result = {key: value for key, value in file_json['fields'].iteritems() if key not in FIELDS_TO_NOT_IMPORT_EXPORT}
+            cleaned_result = {key: value for key, value in file_json['fields'].iteritems() if key not in FIELDS_TO_NOT_IMPORT_EXPORT and key in current_fields}
             preprint_provider = self.create_or_update_provider(cleaned_result)
             return redirect('preprint_providers:detail', preprint_provider_id=preprint_provider.id)
 
@@ -248,8 +249,7 @@ class ImportPreprintProvider(PermissionRequiredMixin, View):
             return PreprintProvider.objects.get(id=page_provider_id)
 
     def add_subjects(self, provider, subject_data):
-        from osf.management.commands.populate_custom_taxonomies import migrate
-        migrate(provider._id, subject_data)
+        call_command('populate_custom_taxonomies', '--provider', provider._id, '--data', json.dumps(subject_data))
 
     def create_or_update_provider(self, provider_data):
         provider = self.get_page_provider()

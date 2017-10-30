@@ -501,9 +501,6 @@ var FileViewPage = {
         var height = $('iframe').attr('height') ? $('iframe').attr('height') : '0px';
 
         m.render(document.getElementById('toggleBar'), m('.btn-toolbar.m-t-md', [
-            m('.btn-group.m-t-xs', [
-                ctrl.isLatestVersion ? m('a.btn.btn-sm.btn-primary.file-download', {href: 'download'}, 'Download') : null
-            ]),
             ctrl.context.currentUser.canEdit && (ctrl.file.provider !== 'bitbucket') && (!ctrl.canEdit()) && (ctrl.context.currentUser.isAdmin) ? m('.btn-group.m-l-xs.m-t-xs', [
                 ctrl.isLatestVersion ? m('.btn.btn-sm.btn-default', {onclick: $(document).trigger.bind($(document), 'fileviewpage:force_checkin')}, 'Force check in') : null
             ]) : '',
@@ -526,6 +523,9 @@ var FileViewPage = {
             ) ? m('.btn-group.m-l-xs.m-t-xs', [
                 ctrl.isLatestVersion ? m('button.btn.btn-sm.btn-default.file-delete', {onclick: $(document).trigger.bind($(document), 'fileviewpage:delete') }, 'Delete') : null
             ]) : '',
+            m('.btn-group.m-t-xs', [
+                ctrl.isLatestVersion ? m('a.btn.btn-sm.btn-primary.file-download', {href: 'download'}, 'Download') : null
+            ]),
             window.contextVars.node.isPublic? m('.btn-group.m-t-xs', [
                 m.component(SharePopover, {link: link, height: height})
             ]) : '',

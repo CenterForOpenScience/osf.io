@@ -299,6 +299,48 @@ class TestRegisterNode:
         assert registration.is_public
 
 
+class TestRegisterNodeContributors:
+
+    @pytest.fixture()
+    def project_two(self, user, auth):
+        return factories.ProjectFactory(creator=user)
+    
+    @pytest.fixture()
+    def component(self, user, auth, project_two):
+        return factories.NodeFactory(
+            creator=user,
+            parent=project_two,
+        )
+
+    @pytest.fixture()
+    def contributor_unregistered(self, user, auth, project_two):
+        ret = project_two.add_unregistered_contributor(fullname='Johnny Git Gud', email='ford.prefect@hitchhikers.com', auth=auth)
+        project_two.save()
+        return ret
+
+    @pytest.fixture()
+    def contributor_unregistered_no_email(self, user, auth, project_two, component):
+        ret = component.add_unregistered_contributor(fullname='Johnny B. Bard', email='', auth=auth)
+        component.save()
+        return ret
+
+    @pytest.fixture()
+    def registration(self, project_two, component, contributor_unregistered, contributor_unregistered_no_email):
+        with mock_archive(project_two, autoapprove=True) as registration:
+            return registration
+
+    def test_unregistered_contributors_unclaimed_records_get_copied(self, user, project, component, registration, contributor_unregistered, contributor_unregistered_no_email):
+        contributor_unregistered.refresh_from_db()
+        contributor_unregistered_no_email.refresh_from_db()
+        assert registration.contributors.filter(id=contributor_unregistered.id).exists()
+        assert registration._id in contributor_unregistered.unclaimed_records
+
+        # component
+        component_registration = registration.nodes[0]
+        assert component_registration.contributors.filter(id=contributor_unregistered_no_email.id).exists()
+        assert component_registration._id in contributor_unregistered_no_email.unclaimed_records
+
+
 # copied from tests/test_registrations
 class TestNodeSanctionStates:
 

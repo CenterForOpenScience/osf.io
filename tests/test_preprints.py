@@ -20,7 +20,7 @@ from osf_tests.factories import (
 from osf_tests.utils import MockShareResponse
 from tests.utils import assert_logs
 from tests.base import OsfTestCase
-from website import settings
+from website import settings, mails
 from website.identifiers.utils import get_doi_and_metadata_for_object
 from website.preprints.tasks import format_preprint, update_preprint_share, on_preprint_updated
 from website.project.views.contributor import find_preprint_provider
@@ -727,3 +727,31 @@ class TestPreprintSaveShareHook(OsfTestCase):
         update_preprint_share(self.preprint)
         assert not mock_async.called
         assert mock_mail.called
+
+class TestPreprintConfirmationEmails(OsfTestCase):
+    def setUp(self):
+        super(TestPreprintConfirmationEmails, self).setUp()
+        self.user = AuthUserFactory()
+        self.write_contrib = AuthUserFactory()
+        self.project = ProjectFactory(creator=self.user)
+        self.project.add_contributor(self.write_contrib, permissions=[permissions.WRITE])
+        self.preprint = PreprintFactory(project=self.project, provider=PreprintProviderFactory(_id='osf'), is_published=False)
+        self.preprint_branded = PreprintFactory(creator=self.user, is_published=False)
+
+    @mock.patch('website.mails.send_mail')
+    def test_creator_gets_email(self, send_mail):
+        self.preprint.set_published(True, auth=Auth(self.user), save=True)
+
+        send_mail.assert_called_with(
+            self.user.email,
+            mails.PREPRINT_CONFIRMATION_DEFAULT,
+            user=self.user,
+            node=self.preprint.node,
+            preprint=self.preprint
+        )
+
+        assert_equals(send_mail.call_count, 1)
+
+        self.preprint_branded.set_published(True, auth=Auth(self.user), save=True)
+        assert_equals(send_mail.call_count, 2)
+
