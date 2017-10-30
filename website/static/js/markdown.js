@@ -38,6 +38,7 @@ var markdown = new MarkdownIt('commonmark', {
     .use(require('markdown-it-video'))
     .use(require('@centerforopenscience/markdown-it-toc'))
     .use(require('markdown-it-sanitizer'))
+    .use(require('markdown-it-imsize'))
     .use(insDel)
     .enable('table')
     .use(bootstrapTable)
@@ -47,6 +48,7 @@ var markdown = new MarkdownIt('commonmark', {
 // Fast markdown renderer for active editing to prevent slow loading/rendering tasks
 var markdownQuick = new MarkdownIt(('commonmark'), { })
     .use(require('markdown-it-sanitizer'))
+    .use(require('markdown-it-imsize'))
     .disable('link')
     .disable('image')
     .use(insDel)
@@ -57,6 +59,7 @@ var markdownQuick = new MarkdownIt(('commonmark'), { })
 // Markdown renderer for older wikis rendered before switch date
 var markdownOld = new MarkdownIt(('commonmark'), { })
     .use(require('markdown-it-sanitizer'))
+    .use(require('markdown-it-imsize'))
     .use(insDel)
     .enable('table')
     .use(bootstrapTable)
