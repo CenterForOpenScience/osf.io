@@ -375,12 +375,16 @@ services:
     environment:
       C_FORCE_ROOT: 1
       DJANGO_SETTINGS_MODULE: api.base.settings
+#      BROKER_URL: amqp://guest:guest@192.168.168.167:5671/
     env_file:
       - .docker-compose.env
     volumes:
       - osf_requirements_vol:/usr/local/lib/python2.7
       - osf_bower_components_vol:/code/website/static/vendor/bower_components
       - osf_node_modules_vol:/code/node_modules
+#      - ./ssl/ca-chain.cert.pem:/etc/ssl/certs/ca-chain.cert.pem:ro
+#      - ./ssl/celery-client.cert.pem:/etc/ssl/certs/worker.pem:ro
+#      - ./ssl/celery-client.key.pem:/etc/ssl/private/worker.key:ro
     stdin_open: true
 
   admin:
