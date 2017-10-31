@@ -22,7 +22,7 @@ class JSONAPIRenderer(JSONRendererWithESISupport):
         # Allow adding a top-level `meta` object to the response by including it in renderer_context
         # See JSON-API documentation on meta information: http://jsonapi.org/format/#document-meta
         data_type = type(data)
-        if renderer_context is not None and data_type != str and data_type is not None:
+        if renderer_context is not None and data_type != str and data is not None:
             meta_dict = renderer_context.get('meta')
             version = getattr(renderer_context['request'], 'version', None)
             if meta_dict is not None:
