@@ -5,7 +5,7 @@ version: '3'
 volumes:
   postgres_data_vol:
     external: false
-  tokumx_data_vol:
+  mongo_data_vol:
     external: false
   elasticsearch_data_vol:
     external: false
@@ -57,12 +57,12 @@ services:
 
   postgres:
     image: postgres:9.6
-    command: |-
-      /bin/bash -c "
-        echo \"$$POSTGRES_INITDB\" > /docker-entrypoint-initdb.d/commands.sh &&
+    command:
+      - /bin/bash
+      - -c
+      - echo "$$POSTGRES_INITDB" > /docker-entrypoint-initdb.d/commands.sh &&
         chmod +x /docker-entrypoint-initdb.d/commands.sh &&
         /docker-entrypoint.sh postgres
-      "
     ports:
       - 5432:5432
     environment:
@@ -74,15 +74,22 @@ services:
       - "${POSTGRES_DATA_VOL:-postgres_data_vol}:/var/lib/postgresql/data/"
     stdin_open: true
 
-  tokumx:
-    image: quay.io/centerforopenscience/tokumx:latest
-    command: mongod --ipv6
+  mongo:
+    image: mongo:3.4
+    command: 
+      - /bin/bash
+      - -c 
+      - openssl req -newkey rsa:2048 -new -x509 -days 9999 -nodes 
+          -subj "/C=US/ST=Virginia/L=Charlottesville/O=COS/OU=Test/CN=192.168.168.167"
+          -out /etc/ssl/mongodb.crt -keyout /etc/ssl/mongodb.key &&
+        cat /etc/ssl/mongodb.key /etc/ssl/mongodb.crt > /etc/ssl/mongodb.pem &&
+        chown -R mongodb:mongodb /etc/ssl /data/db &&
+        chmod -R 0600 /etc/ssl/* &&
+        gosu mongodb mongod --sslMode requireSSL --sslDisabledProtocols=TLS1_0,TLS1_1 --sslPEMKeyFile /etc/ssl/mongodb.pem
     ports:
       - 27017:27017
-    environment:
-      TOKU_HUGE_PAGES_OK: 1
     volumes:
-      - tokumx_data_vol:/data/db
+      - mongo_data_vol:/data/db
     stdin_open: true
 
   rabbitmq:
@@ -111,13 +118,13 @@ services:
 
   mfr_requirements:
     image: quay.io/centerforopenscience/mfr:develop
-    command: |-
-      /bin/bash -c "
-        invoke install --develop &&
+    command:
+      - /bin/bash
+      - -c
+      - invoke install --develop &&
         (python -m compileall /usr/local/lib/python3.5 || true) &&
         rm -Rf /python3.5/* &&
         cp -Rf -p /usr/local/lib/python3.5 /
-      "
     restart: 'no'
     volumes:
       - mfr_requirements_vol:/python3.5
@@ -142,13 +149,13 @@ services:
 
   wb_requirements:
     image: quay.io/centerforopenscience/waterbutler:develop
-    command: |-
-      /bin/bash -c "
-        invoke install --develop &&
+    command:
+      - /bin/bash
+      - -c
+      - invoke install --develop &&
         (python -m compileall /usr/local/lib/python3.5 || true) &&
         rm -Rf /python3.5/* &&
         cp -Rf -p /usr/local/lib/python3.5 /
-      "
     restart: 'no'
     volumes:
       - wb_requirements_vol:/python3.5
@@ -200,14 +207,18 @@ services:
       - postgres
     stdin_open: true
 
-
   #############
   # Preprints #
   #############
 
   preprints:
     image: quay.io/centerforopenscience/ember-preprints:develop-development-local
-    command: /bin/bash -c "yarn --pure-lockfile --ignore-engines --no-progress --no-emoji && ./node_modules/bower/bin/bower install --allow-root --config.interactive=false && ./node_modules/ember-cli/bin/ember serve --host 0.0.0.0 --port 4200 --live-reload-port 41953"
+    command:
+      - /bin/bash
+      - -c 
+      - yarn --pure-lockfile --ignore-engines --no-progress --no-emoji &&
+       ./node_modules/.bin/bower install --allow-root --config.interactive=false &&
+       ./node_modules/.bin/ember serve --host 0.0.0.0 --port 4200 --live-reload-port 41953
     restart: unless-stopped
     depends_on:
       - api
@@ -230,7 +241,12 @@ services:
 
   registries:
     image: quay.io/centerforopenscience/ember-osf-registries:develop-development-local
-    command: /bin/bash -c "yarn --pure-lockfile --ignore-engines --no-progress --no-emoji && ./node_modules/bower/bin/bower install --allow-root --config.interactive=false && ./node_modules/ember-cli/bin/ember serve --host 0.0.0.0 --port 4300"
+    command: 
+      - /bin/bash
+      - -c
+      - yarn --pure-lockfile --ignore-engines --no-progress --no-emoji &&
+       ./node_modules/.bin/bower install --allow-root --config.interactive=false &&
+       ./node_modules/.bin/ember serve --host 0.0.0.0 --port 4300
     restart: unless-stopped
     depends_on:
       - api
@@ -250,8 +266,12 @@ services:
   ##############
 
   reviews:
-    image: quay.io/centerforopenscience/ember-osf-reviews:develop-development-local
-    command: /bin/bash -c "yarn --pure-lockfile --no-progress --no-emoji && ./node_modules/ember-cli/bin/ember serve --host 0.0.0.0 --port 4400"
+    image: quay.io/centerforopenscience/osf-reviews:develop
+    command:
+      - /bin/bash
+      - -c 
+      - yarn --pure-lockfile --no-progress --no-emoji &&
+        ./node_modules/.bin/ember serve --host 0.0.0.0 --port 4400
     restart: unless-stopped
     depends_on:
       - api
@@ -274,13 +294,13 @@ services:
 
   requirements:
     image: quay.io/centerforopenscience/osf:develop
-    command: |-
-      /bin/bash -c "
-        invoke requirements --quick &&
+    command:
+      - /bin/bash
+      - -c
+      - invoke requirements --quick &&
         (python -m compileall /usr/local/lib/python2.7 || true) &&
         rm -Rf /python2.7/* &&
         cp -Rf -p /usr/local/lib/python2.7 /
-      "
     restart: 'no'
     environment:
       DJANGO_SETTINGS_MODULE: api.base.settings
@@ -319,7 +339,8 @@ services:
     ports:
       - 7007:7007
     depends_on:
-      - tokumx
+      - mongo
+      - web
     env_file:
       - .docker-compose.sharejs.env
     volumes:
@@ -418,6 +439,7 @@ services:
       DJANGO_SETTINGS_MODULE: api.base.settings
     env_file:
       - .docker-compose.env
+      - .docker-compose.sharejs.env
     volumes:
       - osf_requirements_vol:/usr/local/lib/python2.7
       - osf_bower_components_vol:/code/website/static/vendor/bower_components
