@@ -28,7 +28,23 @@
           <div class="panel-heading clearfix"><h3 class="panel-title">Configure Add-on Accounts</h3></div>
           <div class="panel-body">
           % for addon in addon_settings:
-            ${render_user_settings(addon) }
+              % if addon['addon_short_name'] == 'github':
+                  <div class="dismissible-alerts hidden" data-bind="css: {'hidden': $root.isDismissed('githubOrgs')}">
+                      <div class="alert alert-info">
+                          <div>
+                              <h4>Having issues with your github organizations repos?</h4>
+                              <p>
+                                  Please visit <a href="http://help.osf.io/">Re-authorizing github repos</a> to learn more about how this issue can be fixed, or email <a href="mailto:contact@osf.io">contact@osf.io</a> with questions for support.<br>
+                              </p>
+                          </div>
+                          <div>
+                              <button type="button" class="btn btn-danger" data-bind="click: $root.dismiss.bind($root, 'githubOrgs')" data-dismiss="alert" aria-label="Close">Dismiss</button>
+                              <i>(Once dismissed, the alert will not be shown again)</i>
+                          </div>
+                      </div>
+                  </div>
+              % endif
+              ${ render_user_settings(addon) }
           % if not loop.last:
           <hr />
           % endif
