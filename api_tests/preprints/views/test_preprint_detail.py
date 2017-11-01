@@ -922,7 +922,7 @@ class TestPreprintDetailPermissions:
         assert res.json['data']['id'] == private_preprint._id
 
     #   test_private_visible_to_write_contribs
-        res = app.get(private_url, auth=write_contrib.auth, expect_errors=True)
+        res = app.get(private_url, auth=write_contrib.auth)
         assert res.status_code == 200
 
     #   test_private_invisible_to_non_contribs
