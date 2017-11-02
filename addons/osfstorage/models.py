@@ -158,11 +158,6 @@ class OsfStorageFileNode(BaseFileNode):
         self._materialized_path = self.materialized_path
         return super(OsfStorageFileNode, self).delete(user=user, parent=parent) if self._check_delete_allowed() else None
 
-    def copy_under(self, destination_parent, name=None):
-        if getattr(self.target, 'is_quickfiles', False):
-            raise exceptions.FileNodeIsQuickFilesNode()
-        return super(OsfStorageFileNode, self).copy_under(destination_parent, name)
-
     def move_under(self, destination_parent, name=None):
         if self.is_preprint_primary:
             if self.target != destination_parent.target or self.provider != destination_parent.provider:
