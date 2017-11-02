@@ -22,7 +22,7 @@ from framework.routing import proxy_url
 from framework.auth.core import get_current_user_id
 from website.institutions.views import serialize_institution
 
-from osf.models import BaseFileNode, Guid, Institution, PreprintService, AbstractNode
+from osf.models import BaseFileNode, Guid, Institution, PreprintService, AbstractNode, Node
 from website.settings import EXTERNAL_EMBER_APPS, PROXY_EMBER_APPS, INSTITUTION_DISPLAY_NODE_THRESHOLD
 from website.project.model import has_anonymous_link
 from website.util import permissions
@@ -92,7 +92,7 @@ def serialize_node_summary(node, auth, primary=True, show_path=False):
             'title': node.title,
             'category': node.category,
             'isPreprint': bool(node.preprint_file_id),
-            'childExists': node.nodes_active.exists(),
+            'childExists': bool(Node.objects.get_children(node, active=True)),
             'is_admin': node.has_permission(user, permissions.ADMIN),
             'is_contributor': node.is_contributor(user),
             'logged_in': auth.logged_in,
