@@ -1925,9 +1925,8 @@ class NodeFilesList(JSONAPIBaseView, generics.ListAPIView, WaterButlerMixin, Lis
             # Resolve to a provider-specific subclass, so that
             # trashed file nodes are filtered out automatically
             ConcreteFileNode = BaseFileNode.resolve_class(provider, BaseFileNode.ANY)
-            return ConcreteFileNode.objects.filter(
-                id__in=[self.get_file_item(file).id for file in files_list],
-            )
+            file_ids = [f.id for f in self.bulk_get_file_nodes_from_wb_resp(files_list)]
+            return ConcreteFileNode.objects.filter(id__in=file_ids)
 
         if isinstance(files_list, list) or not isinstance(files_list, Folder):
             # We should not have gotten a file here
@@ -1959,7 +1958,8 @@ class NodeFileDetail(JSONAPIBaseView, generics.RetrieveAPIView, WaterButlerMixin
     def get_object(self):
         fobj = self.fetch_from_waterbutler()
         if isinstance(fobj, dict):
-            return self.get_file_item(fobj)
+            # if dict it is a wb response, not file object yet
+            return self.get_file_node_from_wb_resp(fobj)
 
         if isinstance(fobj, list) or not isinstance(fobj, File):
             # We should not have gotten a folder here
@@ -3396,6 +3396,7 @@ class NodePreprintsList(JSONAPIBaseView, generics.ListAPIView, NodeMixin, Prepri
         date_created                    iso8601 timestamp                   timestamp that the preprint was created
         date_modified                   iso8601 timestamp                   timestamp that the preprint was last modified
         date_published                  iso8601 timestamp                   timestamp when the preprint was published
+        original_publication_date       iso8601 timestamp                   user-entered date of publication from external posting
         is_published                    boolean                             whether or not this preprint is published
         is_preprint_orphan              boolean                             whether or not this preprint is orphaned
         subjects                        list of lists of dictionaries       ids of Subject in the BePress taxonomy. Dictrionary, containing the subject text and subject ID

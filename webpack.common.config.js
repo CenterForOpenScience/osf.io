@@ -222,5 +222,8 @@ module.exports = {
             //Dirty hack because mime-type's json file is "special"
             {test: /db.json/, loader: 'json-loader'}
         ]
+    },
+    node: {
+       fs: 'empty'
     }
 };

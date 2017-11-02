@@ -24,13 +24,14 @@ class DataverseFolder(DataverseFileNode, Folder):
 class DataverseFile(DataverseFileNode, File):
     version_identifier = 'version'
 
-    def update(self, revision, data, user=None):
+    def update(self, revision, data, save=True, user=None):
         """Note: Dataverse only has psuedo versions, don't save them
         Dataverse requires a user for the weird check below
         """
         self.name = data['name']
         self.materialized_path = data['materialized']
-        self.save()
+        if save:
+            self.save()
 
         version = FileVersion(identifier=revision)
         version.update_metadata(data, save=False)

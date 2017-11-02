@@ -70,7 +70,7 @@ class NodeLogParamsSerializer(RestrictedDictSerializer):
     params_node = ser.SerializerMethodField(read_only=True)
     params_project = ser.SerializerMethodField(read_only=True)
     path = ser.CharField(read_only=True)
-    pointer = ser.DictField(read_only=True)
+    pointer = ser.SerializerMethodField(read_only=True)
     preprint = ser.CharField(read_only=True)
     preprint_provider = ser.SerializerMethodField(read_only=True)
     previous_institution = NodeLogInstitutionSerializer(read_only=True)
@@ -110,6 +110,17 @@ class NodeLogParamsSerializer(RestrictedDictSerializer):
         if project_id:
             node = AbstractNode.objects.filter(guids___id=project_id).values('title').get()
             return {'id': project_id, 'title': node['title']}
+        return None
+
+    def get_pointer(self, obj):
+        user = self.context['request'].user
+        pointer = obj.get('pointer', None)
+        if pointer:
+            pointer_node = AbstractNode.objects.get(guids___id=pointer['id'])
+            if not pointer_node.is_deleted:
+                if pointer_node.is_public or (user.is_authenticated and pointer_node.has_permission(user, osf_permissions.READ)):
+                    pointer['title'] = pointer_node.title
+                    return pointer
         return None
 
     def get_contributors(self, obj):
