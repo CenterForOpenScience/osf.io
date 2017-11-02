@@ -788,6 +788,10 @@ class FileCommentRelationshipField(RelationshipField):
             raise SkipField
         return super(FileCommentRelationshipField, self).get_url(obj, view_name, request, format)
 
+    def lookup_attribute(self, obj, lookup_field):
+        if lookup_field == '<node._id>':
+            lookup_field = '<target._id>'
+        return super(FileCommentRelationshipField, self).lookup_attribute(obj, lookup_field)
 
 class TargetField(ser.Field):
     """
@@ -804,6 +808,10 @@ class TargetField(ser.Field):
         'node': {
             'view': 'nodes:node-detail',
             'lookup_kwarg': 'node_id'
+        },
+        'preprint': {
+            'view': 'preprints:preprint-detail',
+            'lookup_kwarg': 'preprint_id'
         },
         'comment': {
             'view': 'comments:comment-detail',
@@ -1028,7 +1036,7 @@ class WaterbutlerLink(Link):
             if view_only:
                 self.kwargs['view_only'] = view_only
 
-        url = utils.waterbutler_api_url_for(obj.node._id, obj.provider, obj.path, **self.kwargs)
+        url = utils.waterbutler_api_url_for(obj.target._id, obj.provider, obj.path, **self.kwargs)
         if not url:
             raise SkipField
         else:
@@ -1045,6 +1053,11 @@ class NodeFileHyperLinkField(RelationshipField):
         if self.kind and obj.kind != self.kind:
             raise SkipField
         return super(NodeFileHyperLinkField, self).get_url(obj, view_name, request, format)
+
+    def lookup_attribute(self, obj, lookup_field):
+        if lookup_field == '<node._id>':
+            lookup_field = '<target._id>'
+        return super(NodeFileHyperLinkField, self).lookup_attribute(obj, lookup_field)
 
 
 class JSONAPIListSerializer(ser.ListSerializer):
