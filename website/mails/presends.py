@@ -32,6 +32,29 @@ def new_public_project(email):
     public = email.find_sent_of_same_type_and_user()
     return node.is_public and not len(public)
 
+def prereg_reminder(email):
+    """ Will check to make sure that the draft that triggered this presend is still incomplete
+    before sending the email. It also checks to make sure this is the only the third email a user has
+    received in the past two weeks. Also, if email passes requirements, marks `reminder_sent` to true.
+
+    :param email: QueuedMail object, with the 'draft_id' in its data field
+    :return: boolean based on whether the email should be sent
+    """
+
+    # In line import to prevent circular importing
+    from osf.models import DraftRegistration
+
+    draft = DraftRegistration.load(email.data['draft_id'])
+    # TODO: question should we check what exists in queue or what's been sent
+    reminder_emails = email.find_sent_of_same_type_and_user()
+
+    if (draft and not draft.reminder_sent and not draft.approval and
+                len(reminder_emails) < settings.MAX_PREREG_REMINDER_EMAILS):
+        draft.reminder_sent = True
+        draft.save()
+        return True
+    return False
+
 def welcome_osf4m(email):
     """ presend has two functions. First is to make sure that the user has not
     converted to a regular OSF user by logging in. Second is to populate the

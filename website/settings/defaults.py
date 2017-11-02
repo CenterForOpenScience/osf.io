@@ -151,6 +151,8 @@ MAILCHIMP_GENERAL_LIST = 'Open Science Framework General'
 
 #Triggered emails
 OSF_HELP_LIST = 'Open Science Framework Help'
+PREREG_AGE_LIMIT = timedelta(weeks=12)
+PREREG_WAIT_TIME = timedelta(weeks=2)
 WAIT_BETWEEN_MAILS = timedelta(days=7)
 NO_ADDON_WAIT_TIME = timedelta(weeks=8)
 NO_LOGIN_WAIT_TIME = timedelta(weeks=4)
@@ -158,6 +160,8 @@ WELCOME_OSF4M_WAIT_TIME = timedelta(weeks=2)
 NO_LOGIN_OSF4M_WAIT_TIME = timedelta(weeks=6)
 NEW_PUBLIC_PROJECT_WAIT_TIME = timedelta(hours=24)
 WELCOME_OSF4M_WAIT_TIME_GRACE = timedelta(days=12)
+
+MAX_PREREG_REMINDER_EMAILS = 3
 
 # TODO: Override in local.py
 MAILGUN_API_KEY = None
@@ -381,6 +385,7 @@ class CeleryConfig:
         'scripts.osfstorage.glacier_audit',
         'scripts.populate_new_and_noteworthy_projects',
         'scripts.populate_popular_projects_and_registrations',
+        'scripts.remind_draft_preregistrations',
         'website.search.elastic_search',
         'scripts.generate_sitemap',
         'scripts.generate_prereg_csv',
@@ -447,6 +452,7 @@ class CeleryConfig:
         'scripts.populate_new_and_noteworthy_projects',
         'scripts.populate_popular_projects_and_registrations',
         'scripts.refresh_addon_tokens',
+        'scripts.remind_draft_preregistrations',
         'scripts.retract_registrations',
         'scripts.embargo_registrations',
         'scripts.approve_registrations',
@@ -531,6 +537,11 @@ class CeleryConfig:
             'send_queued_mails': {
                 'task': 'scripts.send_queued_mails',
                 'schedule': crontab(minute=0, hour=12),  # Daily 12 p.m.
+                'kwargs': {'dry_run': False},
+            },
+            'prereg_reminder': {
+                'task': 'scripts.remind_draft_preregistrations',
+                'schedule': crontab(minute=0, hour=12), # Daily 12 p.m.
                 'kwargs': {'dry_run': False},
             },
             'new-and-noteworthy': {

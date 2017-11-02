@@ -416,6 +416,8 @@ class DraftRegistration(ObjectIDMixin, BaseModel):
 
     approval = models.ForeignKey('DraftRegistrationApproval', null=True, blank=True, on_delete=models.CASCADE)
 
+    reminder_sent = models.BooleanField(default=False)
+
     # Dictionary field mapping extra fields defined in the MetaSchema.schema to their
     # values. Defaults should be provided in the schema (e.g. 'paymentSent': false),
     # and these values are added to the DraftRegistration
