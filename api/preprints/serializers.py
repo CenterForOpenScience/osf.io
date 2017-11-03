@@ -193,6 +193,7 @@ class PreprintSerializer(TaxonomizableSerializerMixin, JSONAPISerializer):
         if primary_file:
             self.set_field(preprint.set_primary_file, primary_file, auth)
             save_node = True
+            save_preprint = True
 
         old_tags = set(preprint.node.tags.values_list('name', flat=True))
         if validated_data.get('node') and 'tags' in validated_data['node']:
