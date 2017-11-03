@@ -125,7 +125,7 @@ class BaseModel(models.Model):
     def refresh_from_db(self):
         super(BaseModel, self).refresh_from_db()
         # Django's refresh_from_db does not uncache GFKs
-        for field in self._meta.virtual_fields:
+        for field in self._meta.private_fields:
             if hasattr(field, 'cache_attr') and field.cache_attr in self.__dict__:
                 del self.__dict__[field.cache_attr]
 
