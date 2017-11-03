@@ -92,7 +92,7 @@ def serialize_node_summary(node, auth, primary=True, show_path=False):
             'title': node.title,
             'category': node.category,
             'isPreprint': bool(node.preprint_file_id),
-            'childExists': bool(Node.objects.get_children(node, active=True)),
+            'childExists': Node.objects.get_children(node, active=True).exists(),
             'is_admin': node.has_permission(user, permissions.ADMIN),
             'is_contributor': node.is_contributor(user),
             'logged_in': auth.logged_in,

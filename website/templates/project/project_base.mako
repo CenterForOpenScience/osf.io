@@ -92,7 +92,7 @@
             parentTitle: ${ parent_title | sjson, n },
             parentRegisterUrl: ${parent_registration_url | sjson, n },
             parentExists: ${ parent_exists | sjson, n},
-            childExists: ${ node['childExists'] | sjson, n},
+            childExists: ${ node['child_exists'] | sjson, n},
             registrationMetaSchemas: ${ node['registered_schemas'] | sjson, n },
             registrationMetaData: ${ node['registered_meta'] | sjson, n },
             contributors: ${ node['contributors'] | sjson, n }

@@ -175,6 +175,19 @@ class TestNodeSerializers(OsfTestCase):
         assert_false(res['can_view'])
         assert_true(res['is_fork'])
 
+    def test_serialize_node_summary_child_exists(self):
+        user = UserFactory()
+        parent_node = ProjectFactory(creator=user)
+        linked_node = ProjectFactory(creator=user)
+        result = _view_project(parent_node, Auth(user))
+        assert_equal(result['node']['child_exists'], False)
+        parent_node.add_node_link(linked_node, Auth(user), save=True)
+        result = _view_project(parent_node, Auth(user))
+        assert_equal(result['node']['child_exists'], False)
+        child_component = NodeFactory(creator=user, parent=parent_node)
+        result = _view_project(parent_node, Auth(user))
+        assert_equal(result['node']['child_exists'], True)
+
     def test_serialize_node_search_returns_only_visible_contributors(self):
         node = NodeFactory()
         non_visible_contributor = UserFactory()
@@ -212,6 +225,18 @@ class TestViewProject(OsfTestCase):
 
         assert_equal(result['node']['disapproval_link'], '')
         pending_reg.remove()
+
+    def test_view_project_child_exists(self):
+        linked_node = ProjectFactory(creator=self.user)
+        result = _view_project(self.node, Auth(self.user))
+        assert_equal(result['node']['child_exists'], False)
+        self.node.add_node_link(linked_node, Auth(self.user), save=True)
+        result = _view_project(self.node, Auth(self.user))
+        assert_equal(result['node']['child_exists'], False)
+        child_component = NodeFactory(creator=self.user, parent=self.node)
+        result = _view_project(self.node, Auth(self.user))
+        assert_equal(result['node']['child_exists'], True)
+
 
 
 class TestViewProjectEmbeds(OsfTestCase):
