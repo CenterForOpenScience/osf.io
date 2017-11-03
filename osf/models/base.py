@@ -167,7 +167,7 @@ class Guid(BaseModel):
     _id = LowercaseCharField(max_length=255, null=False, blank=False, default=generate_guid, db_index=True,
                            unique=True)
     referent = GenericForeignKey()
-    content_type = models.ForeignKey(ContentType, null=True, blank=True)
+    content_type = models.ForeignKey(ContentType, null=True, blank=True, on_delete=models.CASCADE)
     object_id = models.PositiveIntegerField(null=True, blank=True)
     created = NonNaiveDateTimeField(db_index=True, auto_now_add=True)
 

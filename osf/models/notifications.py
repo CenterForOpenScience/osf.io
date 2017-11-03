@@ -14,8 +14,10 @@ class NotificationSubscription(BaseModel):
 
     event_name = models.CharField(max_length=50)  # wiki_updated, comment_replies
 
-    user = models.ForeignKey('OSFUser', null=True, related_name='notification_subscriptions', blank=True)
-    node = models.ForeignKey('Node', null=True, blank=True, related_name='notification_subscriptions')
+    user = models.ForeignKey('OSFUser', related_name='notification_subscriptions',
+                             null=True, blank=True, on_delete=models.CASCADE)
+    node = models.ForeignKey('Node', related_name='notification_subscriptions',
+                             null=True, blank=True, on_delete=models.CASCADE)
 
     # Notification types
     none = models.ManyToManyField('OSFUser', related_name='+')  # reverse relationships
@@ -82,7 +84,7 @@ class NotificationSubscription(BaseModel):
             self.save()
 
 class NotificationDigest(ObjectIDMixin, BaseModel):
-    user = models.ForeignKey('OSFUser', null=True, blank=True)
+    user = models.ForeignKey('OSFUser', null=True, blank=True, on_delete=models.CASCADE)
     timestamp = NonNaiveDateTimeField()
     send_type = models.CharField(max_length=50, db_index=True, validators=[validate_subscription_type, ])
     event = models.CharField(max_length=50)

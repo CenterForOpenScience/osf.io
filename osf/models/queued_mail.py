@@ -11,7 +11,7 @@ from osf.utils.datetime_aware_jsonfield import DateTimeAwareJSONField
 
 
 class QueuedMail(ObjectIDMixin, BaseModel):
-    user = models.ForeignKey('OSFUser', db_index=True, null=True)
+    user = models.ForeignKey('OSFUser', db_index=True, null=True, on_delete=models.CASCADE)
     to_addr = models.CharField(max_length=255)
     send_at = NonNaiveDateTimeField(db_index=True, null=False)
 
