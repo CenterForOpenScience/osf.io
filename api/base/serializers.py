@@ -1055,13 +1055,6 @@ class NodeFileHyperLinkField(RelationshipField):
         return super(NodeFileHyperLinkField, self).get_url(obj, view_name, request, format)
 
 
-class TargetFileHyperLinkField(NodeFileHyperLinkField):
-    def lookup_attribute(self, obj, lookup_field):
-        if lookup_field == '<node._id>':
-            lookup_field = '<target._id>'
-        return super(NodeFileHyperLinkField, self).lookup_attribute(obj, lookup_field)
-
-
 class JSONAPIListSerializer(ser.ListSerializer):
     def to_representation(self, data):
         enable_esi = self.context.get('enable_esi', False)
