@@ -591,8 +591,8 @@ class WaterButlerMixin(object):
         provider = self.kwargs[self.provider_lookup_url_kwarg]
         return self.get_file_object(node, path, provider)
 
-    def get_file_object(self, node, path, provider, check_object_permissions=True):
-        obj = get_file_object(node=node, path=path, provider=provider, request=self.request)
+    def get_file_object(self, target, path, provider, check_object_permissions=True):
+        obj = get_file_object(target=target, path=path, provider=provider, request=self.request)
         if provider == 'osfstorage':
             if check_object_permissions:
                 self.check_object_permissions(self.request, obj)
