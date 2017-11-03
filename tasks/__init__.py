@@ -326,7 +326,9 @@ API_TESTS1 = [
     'api_tests/users',
 ]
 API_TESTS2 = [
+    'api_tests/actions',
     'api_tests/nodes',
+    'api_tests/requests'
 ]
 API_TESTS3 = [
     'api_tests/addons_tests',

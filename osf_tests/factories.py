@@ -843,3 +843,10 @@ class SwitchFactory(DjangoModelFactory):
 
     class Meta:
         model = Switch
+
+
+class NodeRequestFactory(DjangoModelFactory):
+    class Meta:
+        model = models.NodeRequest
+
+    comment = factory.Faker('text')

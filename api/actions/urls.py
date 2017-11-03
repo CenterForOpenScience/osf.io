@@ -6,5 +6,6 @@ app_name = 'osf'
 
 urlpatterns = [
     url(r'^reviews/$', views.ReviewActionListCreate.as_view(), name=views.ReviewActionListCreate.view_name),
+    url(r'^requests/$', views.NodeRequestActionCreate.as_view(), name=views.NodeRequestActionCreate.view_name),
     url(r'^(?P<action_id>\w+)/$', views.ActionDetail.as_view(), name=views.ActionDetail.view_name),
 ]
