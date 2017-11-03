@@ -121,10 +121,10 @@ services:
 #    build: ../ember-osf
 #    command:
 #      - /bin/bash
-#      - -c 
-#      - yarn --frozen-lockfile --ignore-engines &&
+#      - -c
 #       (rm -r node_modules || true) &&
 #       (rm -r bower_components || true) &&
+#      - yarn --frozen-lockfile --ignore-engines &&
 #       ./node_modules/.bin/bower install --allow-root --config.interactive=false
 #    volumes:
 #      - emberosf-sync:/code:nocopy
