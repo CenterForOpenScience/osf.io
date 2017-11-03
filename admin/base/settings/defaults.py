@@ -147,7 +147,7 @@ CORS_ORIGIN_WHITELIST = (urlparse(osf_settings.DOMAIN).netloc,
                          )
 CORS_ALLOW_CREDENTIALS = True
 
-MIDDLEWARE_CLASSES = (
+MIDDLEWARE = (
     # TokuMX transaction support
     # Needs to go before CommonMiddleware, so that transactions are always started,
     # even in the event of a redirect. CommonMiddleware may cause other middlewares'
@@ -240,7 +240,7 @@ TINYMCE_APIKEY = ''
 
 if DEBUG:
     INSTALLED_APPS += ('debug_toolbar', )
-    MIDDLEWARE_CLASSES += ('debug_toolbar.middleware.DebugToolbarMiddleware', )
+    MIDDLEWARE += ('debug_toolbar.middleware.DebugToolbarMiddleware', )
     DEBUG_TOOLBAR_CONFIG = {
         'SHOW_TOOLBAR_CALLBACK': lambda(_): True
     }

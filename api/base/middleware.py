@@ -5,6 +5,7 @@ import pstats
 import threading
 
 from django.conf import settings
+from django.utils.deprecation import MiddlewareMixin
 from raven.contrib.django.raven_compat.models import sentry_exception_handler
 import corsheaders.middleware
 
@@ -21,7 +22,7 @@ from .api_globals import api_globals
 from api.base import settings as api_settings
 
 
-class CeleryTaskMiddleware(object):
+class CeleryTaskMiddleware(MiddlewareMixin):
     """Celery Task middleware."""
 
     def process_request(self, request):
@@ -40,7 +41,7 @@ class CeleryTaskMiddleware(object):
         return response
 
 
-class DjangoGlobalMiddleware(object):
+class DjangoGlobalMiddleware(MiddlewareMixin):
     """
     Store request object on a thread-local variable for use in database caching mechanism.
     """
@@ -95,7 +96,7 @@ class CorsMiddleware(corsheaders.middleware.CorsMiddleware):
             self._context.request = None
 
 
-class PostcommitTaskMiddleware(object):
+class PostcommitTaskMiddleware(MiddlewareMixin):
     """
     Handle postcommit tasks for django.
     """
@@ -111,7 +112,7 @@ class PostcommitTaskMiddleware(object):
 # Original author: udfalkso
 # Modified by: Shwagroo Team and Gun.io
 # Modified by: COS
-class ProfileMiddleware(object):
+class ProfileMiddleware(MiddlewareMixin):
     """
     Displays hotshot profiling for any view.
     http://yoursite.com/yourview/?prof
