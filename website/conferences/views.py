@@ -6,7 +6,6 @@ import logging
 from django.db import transaction
 from django_bulk_update.helper import bulk_update
 
-from addons.osfstorage.models import OsfStorageFile
 from framework.auth import get_or_create_user
 from framework.exceptions import HTTPError
 from framework.flask import redirect
@@ -147,7 +146,7 @@ def add_poster_by_email(conference, message):
 
 
 def _render_conference_node(node, idx, conf):
-    record = OsfStorageFile.objects.filter(node=node).first()
+    record = node.files.first()
 
     if not record:
         download_url = ''
