@@ -4,6 +4,7 @@ from django_bulk_update.helper import bulk_update
 from django.conf import settings as django_settings
 from django.db import transaction
 from django.http import JsonResponse
+from django.contrib.contenttypes.models import ContentType
 from rest_framework import generics
 from rest_framework import permissions as drf_permissions
 from rest_framework import status
@@ -539,6 +540,7 @@ class WaterButlerMixin(object):
         done here where needed
         """
         node = self.get_node(check_object_permissions=False)
+        content_type = ContentType.objects.get_for_model(node)
 
         objs_to_create = defaultdict(lambda: [])
         file_objs = []
@@ -553,10 +555,10 @@ class WaterButlerMixin(object):
 
             # mirrors BaseFileNode get_or_create
             try:
-                file_obj = base_class.objects.get(node=node, _path='/' + attrs['path'].lstrip('/'))
+                file_obj = base_class.objects.get(object_id=node.id, content_type=content_type, _path='/' + attrs['path'].lstrip('/'))
             except base_class.DoesNotExist:
                 # create method on BaseFileNode appends provider, bulk_create bypasses this step so it is added here
-                file_obj = base_class(node=node, _path='/' + attrs['path'].lstrip('/'), provider=base_class._provider)
+                file_obj = base_class(target=node, _path='/' + attrs['path'].lstrip('/'), provider=base_class._provider)
                 objs_to_create[base_class].append(file_obj)
             else:
                 file_objs.append(file_obj)
