@@ -19,7 +19,7 @@ from api.base.serializers import (
     JSONAPISerializer,
     Link,
     LinksField,
-    NodeFileHyperLinkField,
+    TargetFileHyperLinkField,
     RelationshipField,
     TypeField,
     WaterbutlerLink,
@@ -167,12 +167,12 @@ class BaseFileSerializer(JSONAPISerializer):
     current_version = ser.IntegerField(help_text='Latest file version', read_only=True, source='current_version_number')
     delete_allowed = ser.BooleanField(read_only=True, required=False)
 
-    files = NodeFileHyperLinkField(
+    files = TargetFileHyperLinkField(
         related_view='nodes:node-files',
         related_view_kwargs={'node_id': '<node._id>', 'path': '<path>', 'provider': '<provider>'},
         kind='folder'
     )
-    versions = NodeFileHyperLinkField(
+    versions = TargetFileHyperLinkField(
         related_view='files:file-versions',
         related_view_kwargs={'file_id': '<_id>'},
         kind='file'
