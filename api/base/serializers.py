@@ -1069,6 +1069,8 @@ class NodeFileHyperLinkField(RelationshipField):
             raise SkipField
         return super(NodeFileHyperLinkField, self).get_url(obj, view_name, request, format)
 
+
+class TargetFileHyperLinkField(NodeFileHyperLinkField):
     def lookup_attribute(self, obj, lookup_field):
         if lookup_field == '<node._id>':
             lookup_field = '<target._id>'
