@@ -4,15 +4,15 @@
  * Remember to embed original_node, user, linked_node and template_node in api call i.e. var url = $osf.apiV2Url('nodes/' + nodeId + '/logs/', { query : { 'embed' : ['original_node', 'user']}});
  */
 var m = require('mithril'); // exposes mithril methods, useful for redraw etc.
-var logActions = require('json!js/_allLogTexts.json');
-var anonymousLogActions = require('json!js/_anonymousLogTexts.json');
+var logActions = require('json-loader!js/_allLogTexts.json');
+var anonymousLogActions = require('json-loader!js/_anonymousLogTexts.json');
 var $ = require('jquery');  // jQuery
 var $osf = require('js/osfHelpers');
 var Raven = require('raven-js');
 var lodashGet = require('lodash.get');
 
 var ravenMessagesCache = []; // Cache messages to avoid sending multiple times in one page view
-var nodeCategories = require('json!built/nodeCategories.json');
+var nodeCategories = require('json-loader!built/nodeCategories.json');
 
 //Used when calling getContributorList to limit the number of contributors shown in a single log when many are mentioned
 var numContributorsShown = 3;
