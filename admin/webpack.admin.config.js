@@ -15,6 +15,10 @@ var staticAdminPath = function(dir) {
 var plugins = common.plugins.concat([
     // for using webpack with Django
     new BundleTracker({filename: './webpack-stats.json'}),
+    new webpack.LoaderOptionsPlugin({
+        debug: true,
+        minimize: true
+    })
 ]);
 
 common.output = {
@@ -33,7 +37,6 @@ var config = Object.assign({}, common, {
         'metrics-page': staticAdminPath('js/pages/metrics-page.js'),
     },
     plugins: plugins,
-    debug: true,
     devtool: 'source-map',
 });
 config.resolve.root = [websiteRoot, adminRoot];

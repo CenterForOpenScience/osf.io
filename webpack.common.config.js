@@ -127,10 +127,12 @@ fs.writeFileSync(staticPath('js/_allLogTexts.json'), JSON.stringify(mainLogs));
 fs.writeFileSync(staticPath('js/_anonymousLogTexts.json'), JSON.stringify(anonymousLogs));
 
 var resolve = {
-    extensions: ['', '.es6.js', '.js', '.min.js'],
-    root: root,
-    // Look for required files in bower and npm directories
-    modulesDirectories: ['./website/static/vendor/bower_components', 'node_modules'],
+    modules: [
+        root,
+        './website/static/vendor/bower_components',
+        'node_modules',
+    ],
+    extensions: ['*', '.es6.js', '.js', '.min.js'],
     // Need to alias libraries that aren't managed by bower or npm
     alias: {
         'knockout-sortable': staticPath('vendor/knockout-sortable/knockout-sortable.js'),
@@ -175,7 +177,7 @@ var externals = {
 
 var plugins = [
     // Bundle common code between modules
-    new webpack.optimize.CommonsChunkPlugin('vendor', 'vendor.js'),
+    new webpack.optimize.CommonsChunkPlugin({ name: 'vendor', filename: 'vendor.js' }),
     // Bower support
     new webpack.ResolverPlugin(
         new webpack.ResolverPlugin.DirectoryDescriptionFilePlugin('bower.json', ['main'])
@@ -208,9 +210,9 @@ module.exports = {
     plugins: plugins,
     output: output,
     module: {
-        loaders: [
+        rules: [
             {test: /\.es6\.js$/, exclude: [/node_modules/, /bower_components/, /vendor/], loader: 'babel-loader'},
-            {test: /\.css$/, loaders: ['style', 'css']},
+            {test: /\.css$/, use: [{loader: 'style-loader'}, {loader: 'css-loader'}]},
             // url-loader uses DataUrls; files-loader emits files
             {test: /\.png$/, loader: 'url-loader?limit=100000&mimetype=image/ng'},
             {test: /\.gif$/, loader: 'url-loader?limit=10000&mimetype=image/gif'},
@@ -219,8 +221,7 @@ module.exports = {
             {test: /\.svg/, loader: 'file-loader'},
             {test: /\.eot/, loader: 'file-loader'},
             {test: /\.ttf/, loader: 'file-loader'},
-            //Dirty hack because mime-type's json file is "special"
-            {test: /db.json/, loader: 'json-loader'}
+
         ]
     },
     node: {
