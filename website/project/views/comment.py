@@ -19,7 +19,7 @@ from website.project.signals import comment_added, mention_added
 
 
 @file_updated.connect
-def update_file_guid_referent(self, node, event_type, payload, user=None):
+def update_file_guid_referent(self, target, event_type, payload, user=None):
     if event_type not in ('addon_file_moved', 'addon_file_renamed'):
         return  # Nothing to do
 
