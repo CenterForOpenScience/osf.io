@@ -194,9 +194,8 @@ var plugins = [
     }),
 ];
 
-
 var output = {
-    path: './website/static/public/js/',
+    path: path.join(__dirname, 'website', 'static', 'public', 'js'),
     // publicPath: '/static/', // used to generate urls to e.g. images
     filename: '[name].js',
     sourcePrefix: ''
