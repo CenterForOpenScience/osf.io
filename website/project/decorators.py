@@ -230,16 +230,15 @@ def _must_be_contributor_factory(include_public, include_view_only_anon=True):
     def wrapper(func):
         @functools.wraps(func)
         def wrapped(*args, **kwargs):
-            _inject_nodes(kwargs)
             response = None
             target = None
-            if kwargs.get('guid'):
-                guid = kwargs['guid']
-                target = getattr(Guid.load(guid), 'referent', None)
+            guid = Guid.load(kwargs.get('guid'))
+            if guid:
+                target = getattr(guid, 'referent', None)
             else:
                 _inject_nodes(kwargs)
 
-            target = kwargs.get('node') or target
+            target = target or kwargs.get('node')
 
             kwargs['auth'] = Auth.from_kwargs(request.args.to_dict(), kwargs)
 
