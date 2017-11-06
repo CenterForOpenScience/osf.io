@@ -5,10 +5,12 @@ import re
 import urlparse
 import warnings
 
+import bson
 from django.db.models import Q
 from dirtyfields import DirtyFieldsMixin
 from django.apps import apps
 from django.contrib.contenttypes.fields import GenericRelation
+from django.core.paginator import Paginator
 from django.core.exceptions import ValidationError
 from django.core.urlresolvers import reverse
 from django.db import models, transaction, connection
@@ -1650,11 +1652,10 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         registered.affiliated_institutions.add(*self.affiliated_institutions.values_list('pk', flat=True))
 
         # Clone each log from the original node for this registration.
-        logs = original.logs.all()
-        for log in logs:
-            log.clone_node_log(registered._id)
+        self.clone_logs(registered)
 
         registered.is_public = False
+        # TODO: Do we need to recurse? .register already recurses
         for node in registered.get_descendants_recursive():
             node.is_public = False
             node.save()
@@ -1901,9 +1902,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         )
 
         # Clone each log from the original node for this fork.
-        for log in original.logs.all():
-            log.clone_node_log(forked._id)
-
+        self.clone_logs(forked)
         forked.refresh_from_db()
 
         # After fork callback
@@ -1911,6 +1910,30 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
             addon.after_fork(original, forked, user)
 
         return forked
+
+    def clone_logs(self, node, page_size=100):
+        paginator = Paginator(self.logs.all(), page_size)
+        for page_num in paginator.page_range:
+            page = paginator.page(page_num)
+            # Instantiate NodeLogs "manually"
+            # because BaseModel#clone() is too slow for large projects
+            logs_to_create = [
+                NodeLog(
+                    _id=bson.ObjectId(),
+                    action=log.action,
+                    date=log.date,
+                    params=log.params,
+                    should_hide=log.should_hide,
+                    foreign_user=log.foreign_user,
+                    # Set foreign keys, not their objects
+                    # to speed things up
+                    node_id=node.pk,
+                    user_id=log.user_id,
+                    original_node_id=log.original_node_id
+                )
+                for log in page
+            ]
+            NodeLog.objects.bulk_create(logs_to_create)
 
     def use_as_template(self, auth, changes=None, top_level=True):
         """Create a new project, using an existing project as a template.
