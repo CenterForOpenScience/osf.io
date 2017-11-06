@@ -117,14 +117,14 @@ var ContributorModel = function(contributor, currentUserCanEdit, pageOwner, isRe
     };
 
     self.addParentAdmin = function () {
-        // Immediately adds parent admin to the component with permissions=write and visible=True
+        // Immediately adds parent admin to the component with permissions=read and visible=True
         var self = this;
         $osf.block();
         self.nodeId = window.contextVars.node.id;
         self.nodeApiUrl = '/api/v1/project/' + self.nodeId + '/';
         var url = self.nodeApiUrl + 'contributors/';
         var userData = JSON.parse(ko.toJSON(self));
-        userData.permission = 'write'; // default permission write
+        userData.permission = 'read'; // default permission read
         userData.visible = true; // default visible is true
         return $osf.postJSON(
             url, {
