@@ -43,7 +43,7 @@ from website.project.decorators import must_be_contributor_or_public, must_be_va
 from website.ember_osf_web.decorators import ember_flag_is_active
 from website.project.utils import serialize_node
 from website.settings import MFR_SERVER_URL
-from website.util import rubeus
+from website.util import rubeus, web_url_for
 
 # import so that associated listener is instantiated and gets emails
 from website.notifications.events.files import FileEvent  # noqa
@@ -629,7 +629,7 @@ def addon_view_or_download_file(auth, path, provider, **kwargs):
     action = extras.get('action', 'view')
     guid = kwargs.get('guid')
     guid_target = getattr(Guid.load(guid), 'referent', None)
-    target = kwargs.get('node') or guid_target or kwargs['project']
+    target = guid_target or kwargs.get('node') or kwargs['project']
 
     provider_safe = markupsafe.escape(provider)
     path_safe = markupsafe.escape(path)
