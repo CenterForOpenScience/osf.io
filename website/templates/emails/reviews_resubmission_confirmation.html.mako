@@ -1,6 +1,6 @@
 ## -*- coding: utf-8 -*-
 <div style="margin: 40px;">
-    <p>Hello ${user.fullname},</p>
+    <p>Hello ${recipient.fullname},</p>
         <p>
             The ${reviewable.provider.preprint_word}
             <a href="${reviewable.absolute_url}">${reviewable.node.title}</a>

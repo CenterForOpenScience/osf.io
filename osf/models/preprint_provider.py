@@ -14,6 +14,7 @@ from osf.utils.fields import EncryptedTextField
 from reviews import permissions as reviews_permissions
 from reviews.models import ReviewProviderMixin
 
+from website import settings
 from website.util import api_v2_url
 
 
@@ -94,6 +95,10 @@ class PreprintProvider(ObjectIDMixin, ReviewProviderMixin, BaseModel):
         else:
             # TODO: Delet this when all PreprintProviders have a mapping
             return rules_to_subjects(self.subjects_acceptable)
+
+    @property
+    def landing_url(self):
+        return self.domain if self.domain else '{}preprints/{}'.format(settings.DOMAIN, self.name.lower())
 
     def get_absolute_url(self):
         return '{}preprint_providers/{}'.format(self.absolute_api_v2_url, self._id)

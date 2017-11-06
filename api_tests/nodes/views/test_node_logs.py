@@ -43,8 +43,8 @@ class TestNodeLogList:
         return ProjectFactory()
 
     @pytest.fixture()
-    def pointer(self):
-        return ProjectFactory()
+    def pointer(self, user):
+        return ProjectFactory(creator=user)
 
     @pytest.fixture()
     def private_project(self, user):
@@ -141,14 +141,57 @@ class TestNodeLogList:
         assert len(res.json['data']) == public_project.logs.count()
         assert res.json['data'][API_LATEST]['attributes']['action'] == 'addon_removed'
 
-    def test_add_pointer(self, app, user_auth, public_project, pointer, public_url):
+    def test_pointers(self, app, user, user_auth, contrib, public_project, pointer, public_url):
         public_project.add_pointer(pointer, auth=user_auth, save=True)
         assert public_project.logs.latest().action == 'pointer_created'
-        res = app.get(public_url, auth=user_auth)
+        res = app.get(public_url, auth=user.auth)
         assert res.status_code == 200
         assert len(res.json['data']) == public_project.logs.count()
         assert res.json['data'][API_LATEST]['attributes']['action'] == 'pointer_created'
 
+        # Confirm pointer contains correct data for creator
+        assert res.json['data'][API_LATEST]['attributes']['params']['pointer']['id'] == pointer._id
+        
+        res = app.get(public_url)
+        assert res.status_code == 200
+        assert res.json['data'][API_LATEST]['attributes']['params']['pointer'] is None
+
+        res = app.get(public_url, auth=contrib.auth)
+        assert res.status_code == 200
+        assert res.json['data'][API_LATEST]['attributes']['params']['pointer'] is None
+
+        # Make pointer public and check data
+        pointer.is_public = True
+        pointer.save()
+
+        res = app.get(public_url, auth=user.auth)
+        assert res.status_code == 200
+        assert res.json['data'][API_LATEST]['attributes']['params']['pointer']['id'] == pointer._id
+        
+        res = app.get(public_url)
+        assert res.status_code == 200
+        assert res.json['data'][API_LATEST]['attributes']['params']['pointer']['id'] == pointer._id
+
+        res = app.get(public_url, auth=contrib.auth)
+        assert res.status_code == 200
+        assert res.json['data'][API_LATEST]['attributes']['params']['pointer']['id'] == pointer._id
+
+        # Delete pointer and make sure no data shown
+        pointer.remove_node(Auth(user))
+        pointer.save()
+
+        res = app.get(public_url, auth=user.auth)
+        assert res.status_code == 200
+        assert res.json['data'][API_LATEST]['attributes']['params']['pointer'] is None
+        
+        res = app.get(public_url)
+        assert res.status_code == 200
+        assert res.json['data'][API_LATEST]['attributes']['params']['pointer'] is None
+
+        res = app.get(public_url, auth=contrib.auth)
+        assert res.status_code == 200
+        assert res.json['data'][API_LATEST]['attributes']['params']['pointer'] is None
+        
 @pytest.mark.django_db
 class TestNodeLogFiltering(TestNodeLogList):
 
