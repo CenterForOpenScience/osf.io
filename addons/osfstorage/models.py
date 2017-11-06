@@ -144,19 +144,12 @@ class OsfStorageFileNode(BaseFileNode):
         self._materialized_path = self.materialized_path
         return super(OsfStorageFileNode, self).delete(user=user, parent=parent) if self._check_delete_allowed() else None
 
-    def copy_under(self, destination_parent, name=None):
-        if self.node.is_quickfiles:
-            raise exceptions.FileNodeIsQuickFilesNode()
-        return super(OsfStorageFileNode, self).copy_under(destination_parent, name)
-
     def move_under(self, destination_parent, name=None):
         if self.is_preprint_primary:
             if self.node != destination_parent.node or self.provider != destination_parent.provider:
                 raise exceptions.FileNodeIsPrimaryFile()
         if self.is_checked_out:
             raise exceptions.FileNodeCheckedOutError()
-        if self.node.is_quickfiles and self.node != destination_parent.node:
-            raise exceptions.FileNodeIsQuickFilesNode()
         return super(OsfStorageFileNode, self).move_under(destination_parent, name)
 
     def check_in_or_out(self, user, checkout, save=False):

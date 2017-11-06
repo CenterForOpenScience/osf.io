@@ -40,6 +40,11 @@ EXTERNAL_EMBER_APPS = {
         'url': '/registries/',
         'server': 'http://192.168.168.167:4300',
         'path': '/registries/'
+    },
+    'reviews': {
+        'url': '/reviews/',
+        'server': 'http://localhost:4400',
+        'path': '/reviews/'
     }
     # 'meetings': {
     #     'url': '/meetings/',
@@ -74,6 +79,16 @@ OSF_SERVER_CERT = None
 ##### Celery #####
 ## Default RabbitMQ broker
 BROKER_URL = 'amqp://'
+
+# Celery with SSL
+# import ssl
+#
+# BROKER_USE_SSL = {
+#     'keyfile': '/etc/ssl/private/worker.key',
+#     'certfile': '/etc/ssl/certs/worker.pem',
+#     'ca_certs': '/etc/ssl/certs/ca-chain.cert.pem',
+#     'cert_reqs': ssl.CERT_REQUIRED,
+# }
 
 # Default RabbitMQ backend
 CELERY_RESULT_BACKEND = 'amqp://'

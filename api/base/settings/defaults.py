@@ -50,6 +50,7 @@ SECRET_KEY = osf_settings.SECRET_KEY
 
 AUTHENTICATION_BACKENDS = (
     'api.base.authentication.backends.ODMBackend',
+    'guardian.backends.ObjectPermissionBackend',
 )
 
 # SECURITY WARNING: don't run with debug turned on in production!
@@ -87,9 +88,11 @@ INSTALLED_APPS = (
     'corsheaders',
     'raven.contrib.django.raven_compat',
     'django_extensions',
+    'guardian',
 
     # OSF
     'osf',
+    'reviews',
 
     # Addons
     'addons.osfstorage',
@@ -265,3 +268,6 @@ OSF_SHELL_USER_IMPORTS = None
 OSF_URL = 'https://osf.io'
 
 SELECT_FOR_UPDATE_ENABLED = True
+
+# Disable anonymous user permissions in django-guardian
+ANONYMOUS_USER_NAME = None

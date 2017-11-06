@@ -422,6 +422,11 @@ a {
     word-break: break-all;
 
 }
+
+.keep-all {
+    word-break: keep-all;
+}
+
 select {
     word-wrap: normal;
 }

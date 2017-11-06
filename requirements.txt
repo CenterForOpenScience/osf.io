@@ -70,6 +70,7 @@ pyjwt==1.4.0
 pycparser==2.13
 pyjwe==1.0.0
 jsonschema==2.5.1
+django-guardian==1.4.9
 
 # Admin requirements
 django-webpack-loader==0.2.3
@@ -92,3 +93,7 @@ sqlparse==0.2.2
 psycogreen==1.0
 django-bulk-update==1.1.10
 ciso8601==1.0.3
+
+# Reviews requirements
+transitions==0.5.3
+enum34==1.1.6
