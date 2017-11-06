@@ -22,7 +22,7 @@ var plugins = common.plugins.concat([
 ]);
 
 common.output = {
-    path: './static/public/js/',
+    path: path.join(__dirname, 'static', 'public', 'js'),
     // publicPath: '/static/', // used to generate urls to e.g. images
     filename: '[name].js',
     sourcePrefix: ''
@@ -39,5 +39,5 @@ var config = Object.assign({}, common, {
     plugins: plugins,
     devtool: 'source-map',
 });
-config.resolve.root = [websiteRoot, adminRoot];
+config.resolve.modules.push(websiteRoot, adminRoot);
 module.exports = config;
