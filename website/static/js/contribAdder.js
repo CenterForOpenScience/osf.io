@@ -111,10 +111,6 @@ AddContributorViewModel = oop.extend(Paginator, {
             return self.query() && self.results().length && !self.parentImport();
         });
 
-        self.parentPagination = ko.pureComputed(function () {
-            return self.doneSearching() && self.parentImport();
-        });
-
         self.noResults = ko.pureComputed(function () {
             return self.query() && !self.results().length && self.doneSearching();
         });
@@ -295,10 +291,7 @@ AddContributorViewModel = oop.extend(Paginator, {
                     }
                 }
                 self.doneSearching(true);
-                self.selection(pageToShow);
-                self.currentPage(self.pageToGet());
-                self.numberOfPages(Math.ceil(contributors.length/5));
-                self.addNewPaginators(true);
+                self.selection(contributors);
             }
         );
     },
