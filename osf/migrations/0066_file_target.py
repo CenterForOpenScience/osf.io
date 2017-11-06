@@ -32,15 +32,5 @@ class Migration(migrations.Migration):
             model_name='basefilenode',
             name='is_root',
             field=models.NullBooleanField(default=False),
-        ),
-        migrations.AddField(
-            model_name='preprintservice',
-            name='root_folder',
-            field=models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.CASCADE, to='osf.OsfStorageFolder'),
-        ),
-        migrations.AddField(
-            model_name='preprintservice',
-            name='primary_file',
-            field=models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.CASCADE, related_name='preprint', to='osf.OsfStorageFile'),
-        ),
+        )
     ]

@@ -442,7 +442,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         # TODO: This is a temporary implementation.
         if not self.preprint_file_id or not self.is_public:
             return False
-        if self.preprint_file.target == self.id or self.preprint_file.target in self.preprints.all():
+        if self.preprint_file.target == self:
             return self.has_submitted_preprint
         else:
             self._is_preprint_orphan = True
