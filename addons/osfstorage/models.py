@@ -152,10 +152,7 @@ class OsfStorageFileNode(BaseFileNode):
 
     @property
     def is_preprint_primary(self):
-        if self.preprint.exists():
-            return True
-        else:
-            return getattr(self.target, 'preprint_file', None) == self and not getattr(self.target, '_has_abandoned_preprint')
+        return getattr(self.target, 'preprint_file', None) == self and not getattr(self.target, '_has_abandoned_preprint')
 
     def delete(self, user=None, parent=None, **kwargs):
         self._path = self.path
