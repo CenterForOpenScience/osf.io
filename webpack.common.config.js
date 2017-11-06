@@ -178,10 +178,6 @@ var externals = {
 var plugins = [
     // Bundle common code between modules
     new webpack.optimize.CommonsChunkPlugin({ name: 'vendor', filename: 'vendor.js' }),
-    // Bower support
-    new webpack.ResolverPlugin(
-        new webpack.ResolverPlugin.DirectoryDescriptionFilePlugin('bower.json', ['main'])
-    ),
     // Make jQuery available in all modules without having to do require('jquery')
     new webpack.ProvidePlugin({
         $: 'jquery',
