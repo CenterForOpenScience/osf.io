@@ -18,12 +18,10 @@ from website.preprints.tasks import get_and_set_preprint_identifiers
 
 from website import settings
 
-from osf.models import NotificationDigest
-from osf.models import OSFUser
-
 from website.mails import mails
-from website.notifications.emails import get_user_subscriptions, get_node_lineage
+from website.notifications.emails import get_user_subscriptions
 from website.notifications import utils
+from website.notifications import emails
 from website.reviews import signals as reviews_signals
 
 
@@ -210,31 +208,34 @@ class ReviewsMachine(Machine):
             auth=auth,
             save=False,
         )
-        reviews_signals.reviews_email_submit.send(context=context)
+        recipients = list(self.reviewable.node.contributors)
+        reviews_signals.reviews_email_submit.send(context=context, recipients=recipients)
 
     def notify_resubmit(self, ev):
         context = self.get_context()
-        context['template'] = 'reviews_resubmission_confirmation'
-        reviews_signals.reviews_email.send(context=context)
+        reviews_signals.reviews_email.send(creator=ev.kwargs.get('user'), context=context,
+                                           template='reviews_resubmission_confirmation',
+                                           action=self.action)
 
     def notify_accept_reject(self, ev):
         context = self.get_context()
-        context['template'] = 'reviews_submission_status'
         context['notify_comment'] = not self.reviewable.provider.reviews_comments_private and self.action.comment
         context['is_rejected'] = self.action.to_state == workflow.States.REJECTED.value
         context['was_pending'] = self.action.from_state == workflow.States.PENDING.value
-        reviews_signals.reviews_email.send(context=context)
+        reviews_signals.reviews_email.send(creator=ev.kwargs.get('user'), context=context,
+                                           template='reviews_submission_status',
+                                           action=self.action)
 
     def notify_edit_comment(self, ev):
         context = self.get_context()
-        context['template'] = 'reviews_update_comment'
         if not self.reviewable.provider.reviews_comments_private and self.action.comment:
-            reviews_signals.reviews_email.send(context=context)
+            reviews_signals.reviews_email.send(creator=ev.kwargs.get('user'), context=context,
+                                               template='reviews_update_comment',
+                                               action=self.action)
 
     def get_context(self):
         return {
             'domain': settings.DOMAIN,
-            'email_recipients': [contributor._id for contributor in self.reviewable.node.contributors],
             'reviewable': self.reviewable,
             'workflow': self.reviewable.provider.reviews_workflow,
             'provider_url': self.reviewable.provider.domain or '{domain}preprints/{provider_id}'.format(domain=settings.DOMAIN, provider_id=self.reviewable.provider._id),
@@ -244,45 +245,33 @@ class ReviewsMachine(Machine):
 
 # Handle email notifications including: update comment, accept, and reject of submission.
 @reviews_signals.reviews_email.connect
-def reviews_notification(self, context):
-    timestamp = timezone.now()
-    event_type = utils.find_subscription_type('global_reviews')
-    template = context['template'] + '.html.mako'
-    for user_id in context['email_recipients']:
-        user = OSFUser.load(user_id)
-        subscriptions = get_user_subscriptions(user, event_type)
-        for notification_type in subscriptions:
-            check_user_subscribe = subscriptions[notification_type] and user_id in subscriptions[notification_type] and notification_type != 'none'  # check if user is subscribed to this type of notifications
-            if check_user_subscribe:
-                node_lineage_ids = get_node_lineage(context.get('reviewable').node) if context.get('reviewable').node else []
-                context['user'] = user
-                context['no_future_emails'] = notification_type == 'none'
-                send_type = notification_type if notification_type != 'none' else 'email_transactional'
-                message = mails.render_message(template, **context)
-                digest = NotificationDigest(
-                    user=user,
-                    timestamp=timestamp,
-                    send_type=send_type,
-                    event='global_reviews',
-                    message=message,
-                    node_lineage=node_lineage_ids
-                )
-                digest.save()
+def reviews_notification(self, creator, template, context, action):
+    recipients = list(action.target.node.contributors)
+    time_now = action.date_created if action is not None else timezone.now()
+    node = action.target.node
+    emails.notify_global_event(
+        event='global_reviews',
+        sender_user=creator,
+        node=node,
+        timestamp=time_now,
+        recipients=recipients,
+        template=template,
+        context=context
+    )
 
 # Handle email notifications for a new submission.
 @reviews_signals.reviews_email_submit.connect
-def reviews_submit_notification(self, context):
+def reviews_submit_notification(self, recipients, context):
     event_type = utils.find_subscription_type('global_reviews')
-    for user_id in context['email_recipients']:
-        user = OSFUser.load(user_id)
-        user_subscriptions = get_user_subscriptions(user, event_type)
+    for recipient in recipients:
+        user_subscriptions = get_user_subscriptions(recipient, event_type)
         context['no_future_emails'] = user_subscriptions['none']
-        context['is_creator'] = user == context['reviewable'].node.creator
+        context['is_creator'] = recipient == context['reviewable'].node.creator
         context['provider_name'] = context['reviewable'].provider.name
         mails.send_mail(
-            user.username,
+            recipient.username,
             mails.REVIEWS_SUBMISSION_CONFIRMATION,
             mimetype='html',
-            user=user,
+            user=recipient,
             **context
         )

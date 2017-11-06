@@ -56,7 +56,7 @@ def get_new_and_noteworthy_nodes(noteworthy_links_node):
     """
     today = timezone.now()
     last_month = (today - dateutil.relativedelta.relativedelta(months=1))
-    data = Node.objects.filter(Q(date_created__gte=last_month) & Q(is_public=True) & Q(is_deleted=False) & (Q(parent_nodes__isnull=True) | Q(parent_nodes=noteworthy_links_node)))
+    data = Node.objects.filter(Q(date_created__gte=last_month) & Q(is_public=True) & Q(is_deleted=False)).get_roots()
     nodes = []
     for node in data:
         unique_actions = NodeLog.objects.filter(node=node.pk).order_by('action').distinct('action').count()

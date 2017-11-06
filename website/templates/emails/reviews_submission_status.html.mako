@@ -1,6 +1,6 @@
 ## -*- coding: utf-8 -*-
 <div style="margin: 40px;">
-    <p>Hello ${user.fullname},</p>
+    <p>Hello ${recipient.fullname},</p>
     <p>
         % if workflow == 'pre-moderation':
             Your submission "${reviewable.node.title}", submitted to ${reviewable.provider.name} has
