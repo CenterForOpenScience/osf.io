@@ -68,8 +68,9 @@ services:
 ##      - cd /ember-osf &&
 ##        yarn link &&
 ##        cd /code &&
-##        yarn link @centerforopenscience/ember-osf &&
+##        (rm -r node_modules || true) &&
 ##        yarn --frozen-lockfile &&
+##        yarn link @centerforopenscience/ember-osf &&
 ##        yarn start --host 0.0.0.0 --port 4200 --live-reload-port 41953
 
 #  preprints:
