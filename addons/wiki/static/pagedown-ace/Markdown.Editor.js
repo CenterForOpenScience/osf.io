@@ -7,6 +7,7 @@
 var $ = require('jquery');
 var Range = ace.require('ace/range').Range;
 var Cookie = require('js-cookie');
+var addDragNDrop = require('../dragNDrop');
 
 $(function(){
     var toggled_off = Cookie.get('spellcheckPersistKey' + window.location.toString()) === '0';
@@ -214,6 +215,8 @@ $(function(){
             var commandManager = new CommandManager(hooks, getString);
             var previewManager = function(){};
             var uiManager;
+
+            addDragNDrop(aceEditor, panels, commandManager, TextareaState);
 
             var useragent = ace.require('ace/lib/useragent');
             var getKey = function (identifier) {
