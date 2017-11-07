@@ -738,7 +738,7 @@ def addon_view_or_download_quickfile(**kwargs):
             'message_short': 'File Not Found',
             'message_long': 'The requested file could not be found.'
         })
-    return proxy_url('/project/{}/files/osfstorage/{}/'.format(file_.node._id, fid))
+    return proxy_url('/project/{}/files/osfstorage/{}/'.format(file_.target._id, fid))
 
 def addon_view_file(auth, node, file_node, version):
     # TODO: resolve circular import issue
