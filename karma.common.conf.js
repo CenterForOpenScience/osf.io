@@ -9,10 +9,6 @@ var webpackCommon = require('./webpack.common.config.js');
 var webpackTestConfig = {
     devtool: 'inline-source-map',
     plugins: [
-        new webpack.ResolverPlugin(
-            new webpack.ResolverPlugin.DirectoryDescriptionFilePlugin('bower.json', ['main'])
-        ),
-
         // Make sure that CommonJS is always used
         new webpack.DefinePlugin({
             'define.amd': false
@@ -33,7 +29,7 @@ var webpackTestConfig = {
             {test: /\.test\.js$/, loader: 'babel-loader'},
         ])
     },
-        node: {
+    node: {
        fs: 'empty'
     }
 };
