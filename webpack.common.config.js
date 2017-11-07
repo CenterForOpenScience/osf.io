@@ -219,7 +219,7 @@ module.exports = {
             {test: /\.svg/, loader: 'file-loader'},
             {test: /\.eot/, loader: 'file-loader'},
             {test: /\.ttf/, loader: 'file-loader'},
-
+            { parser: { amd: false }}
         ]
     },
     node: {
