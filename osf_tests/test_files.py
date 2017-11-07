@@ -65,23 +65,3 @@ def test_folder_update_calls_folder_update_method(project, create_test_file):
     assert parent_folder.__class__.update != File.update
     # the file update method should be the File update method
     assert file.__class__.update == File.update
-
-
-def test_create_file_for_preprint(user, create_test_file):
-    preprint = PreprintFactory()
-
-    name = 'new_filename.png'
-    root_folder = preprint.root_folder
-    test_file = root_folder.append_file(name)
-
-    # test_file = create_test_file(target=preprint, user=user)
-    test_file.create_version(user, {
-        'object': '06d80e',
-        'service': 'cloud',
-        osfstorage_settings.WATERBUTLER_RESOURCE: 'osf',
-    }, {
-        'size': 1337,
-        'contentType': 'img/png'
-    }).save()
-
-    assert test_file in preprint.file_nodes.all()

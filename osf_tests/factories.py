@@ -602,11 +602,8 @@ class PreprintFactory(DjangoModelFactory):
                 save=True
             )
 
-        # save the instance to use it as target for the primary file
-        instance.save()
-
         preprint_file = OsfStorageFile.create(
-            target=instance,
+            target=instance.node,
             path='/{}'.format(filename),
             name=filename,
             materialized_path='/{}'.format(filename))
