@@ -67,8 +67,6 @@ def get_job(vault, job_id=None):
 def get_targets(date):
     return FileVersion.objects.filter(
         date_created__lt=date - DELTA_DATE, metadata__has_key='archive', location__isnull=False
-    ).exclude(
-        status='cached'
     ).iterator()
 
 
