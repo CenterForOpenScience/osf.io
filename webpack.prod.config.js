@@ -1,3 +1,5 @@
+var path = require('path');
+
 var webpack = require('webpack');
 var common = require('./webpack.common.config.js');
 var assign = require('object-assign');
@@ -31,7 +33,7 @@ module.exports = assign(common, {
         })
     ]),
     output: {
-        path: './website/static/public/js/',
+        path: path.join(__dirname, 'website', 'static', 'public', 'js'),
         // publicPath: '/static/', // used to generate urls to e.g. images
 
         // Append hash to filenames for cachebusting
