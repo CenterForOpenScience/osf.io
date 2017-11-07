@@ -87,9 +87,11 @@ services:
 ##      - cd /ember-osf &&
 ##        yarn link &&
 ##        cd /code &&
-##        yarn link @centerforopenscience/ember-osf &&
-##        ./node_modules/.bin/bower install --allow-root --config.interactive=false &&
+##        (rm -r node_modules || true) &&
 ##        yarn --frozen-lockfile &&
+##        yarn link @centerforopenscience/ember-osf &&
+##        (rm -r bower_components || true) &&
+##        ./node_modules/.bin/bower install --allow-root --config.interactive=false &&
 ##        yarn start --host 0.0.0.0 --port 4201 --live-reload-port 41954
 
 #  registries:
@@ -107,9 +109,11 @@ services:
 ##      - cd /ember-osf &&
 ##        yarn link &&
 ##        cd /code &&
-##        yarn link @centerforopenscience/ember-osf &&
-##        ./node_modules/.bin/bower install --allow-root --config.interactive=false &&
+##        (rm -r node_modules || true) &&
 ##        yarn --frozen-lockfile &&
+##        yarn link @centerforopenscience/ember-osf &&
+##        (rm -r bower_components || true) &&
+##        ./node_modules/.bin/bower install --allow-root --config.interactive=false &&
 ##        yarn start --host 0.0.0.0 --port 4202 --live-reload-port 41955
 
 # Use this for ember-osf linked development (with docker-sync):
@@ -138,9 +142,11 @@ services:
 #    build: ../ember-osf
 #    command:
 #      - /bin/bash
-#      - -c 
-#      - yarn --frozen-lockfile --ignore-engines &&
-#       ./node_modules/.bin/bower install --allow-root --config.interactive=false
+#      - -c
+#      - (rm -r node_modules || true) &&
+#        yarn --frozen-lockfile --ignore-engines &&
+#        (rm -r bower_components || true) &&
+#        ./node_modules/.bin/bower install --allow-root --config.interactive=false
 #    volumes:
 #      - emberosf-sync:/code:nocopy
 

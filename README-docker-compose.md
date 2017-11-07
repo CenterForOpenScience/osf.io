@@ -120,7 +120,7 @@ Ubuntu: Skip install of docker-sync. instead...
     _NOTE: When the various requirements installations are complete these containers will exit. You should only need to run these containers after pulling code that changes python requirements or if you update the python requirements._
 
 2. Start Core Component Services (Detached)
-  - `$ docker-compose up -d elasticsearch postgres tokumx rabbitmq`
+  - `$ docker-compose up -d elasticsearch postgres mongo rabbitmq`
 
 3. Remove your existing node_modules and start the assets watcher (Detached)
   - `$ rm -Rf ./node_modules`
