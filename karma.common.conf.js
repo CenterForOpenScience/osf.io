@@ -22,7 +22,7 @@ var webpackTestConfig = {
         }),
     ],
     resolve: webpackCommon.resolve,
-    externals: {'jquery': 'jQuery', 'jquery-ui': 'jQuery.ui'},
+    externals: {'jquery': 'jQuery', 'jquery-ui': 'jQuery.ui', 'raven-js': 'Raven'},
     module: {
         rules: webpackCommon.module.rules.concat([
             // Assume test files are ES6
