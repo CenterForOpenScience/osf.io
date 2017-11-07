@@ -1911,7 +1911,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         return forked
 
     def clone_logs(self, node, page_size=100):
-        paginator = Paginator(self.logs.all(), page_size)
+        paginator = Paginator(self.logs.order_by('pk').all(), page_size)
         for page_num in paginator.page_range:
             page = paginator.page(page_num)
             # Instantiate NodeLogs "manually"
