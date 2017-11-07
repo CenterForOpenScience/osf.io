@@ -24,7 +24,7 @@ var webpackTestConfig = {
     resolve: webpackCommon.resolve,
     externals: {'jquery': 'jQuery', 'jquery-ui': 'jQuery.ui'},
     module: {
-        loaders: webpackCommon.module.loaders.concat([
+        rules: webpackCommon.module.rules.concat([
             // Assume test files are ES6
             {test: /\.test\.js$/, loader: 'babel-loader'},
         ])
