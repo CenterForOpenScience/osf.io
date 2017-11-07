@@ -1348,7 +1348,7 @@ function gotoFileEvent (item, toUrl) {
     }
 
     if (COMMAND_KEYS.indexOf(tb.pressedKey) !== -1) {
-        window.open(fileurl, '_blank');
+        window.open(fileurl, item.data.materialized);
     } else {
         window.open(fileurl, '_self');
     }
@@ -1376,12 +1376,6 @@ function _fangornTitleColumnHelper(tb, item, col, nameTitle, toUrl, classNameOpt
             attrs = {
                 className: classNameOption,
                 onclick: function(event) {
-                    // Prevent gotoFileEvent from getting
-                    // called more than once after user has clicked once
-                    if (item.loading) {
-                        return false;
-                    }
-                    item.loading = true;
                     event.stopImmediatePropagation();
                     gotoFileEvent.call(tb, item, toUrl);
                 }
