@@ -150,7 +150,7 @@ var NodesDeleteViewModel = function(node) {
                 return 'The following project and components will be deleted';
 
             if (self.nodeType === 'component')
-                return 'The following components will be deleted'
+                return 'The following components will be deleted';
         }
 
         if (self.nodeType === 'project')
