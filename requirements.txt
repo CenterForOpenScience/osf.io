@@ -11,7 +11,6 @@ Flask==0.10.1
 gevent==1.2.2
 Mako==1.0.7
 Markdown==2.6.9
-Pygments==1.6
 WTForms==1.0.4
 beautifulsoup4==4.6.0
 celery==3.1.25
@@ -24,14 +23,14 @@ nameparser==0.5.3
 bcrypt==3.1.4
 python-dateutil==2.6.1
 python-gnupg==0.4.1
-pytz==2014.9
+pytz==2017.3
 bleach==1.4.1
-html5lib==0.999
+html5lib==0.999999999
 blinker==1.4
 furl==0.4.92
 elasticsearch==1.3.0
 google-api-python-client==1.6.4
-Babel==1.3
+Babel==2.5.1
 citeproc-py==0.4.0
 boto3==1.4.7
 # Support SSL SNI on Python < 2.7.9
@@ -56,7 +55,7 @@ keyring==9.1
 
 requests==2.18.4
 urllib3==1.22
-oauthlib==1.1.2
+oauthlib==2.0.6
 requests-oauthlib==0.8.0
 raven==5.32.0
 
@@ -75,7 +74,7 @@ django-guardian==1.4.9
 # Admin requirements
 django-webpack-loader==0.5.0
 django-nose==1.4.5
-django-password-reset==0.8.2
+django-password-reset==1.0
 sendgrid-django==2.0.0
 
 # Analytics requirements
@@ -91,7 +90,7 @@ psycopg2==2.6.2
 ujson==1.35
 sqlparse==0.2.4
 psycogreen==1.0
-django-bulk-update==1.1.10
+django-bulk-update==2.2.0
 ciso8601==1.0.5
 
 # Reviews requirements
