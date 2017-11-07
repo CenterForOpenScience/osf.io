@@ -208,15 +208,6 @@ class TestUploadFileHook(HookTestCase):
         assert_equal(record.serialize(), res.json['data'])
         assert_equal(res.json['data']['downloads'], self.record.get_download_count())
 
-    def test_upload_create_on_preprint(self):
-        preprint = PreprintFactory()
-        name = 'wassaaaaap'
-        res = self.send_upload_hook(preprint.root_folder, target=preprint, payload=self.make_payload(name=name))
-
-        assert_equal(res.status_code, 201)
-        assert_equal(res.json['status'], 'success')
-        assert name in preprint.file_nodes.all().values_list('name', flat=True)
-
     def test_upload_update(self):
         delta = Delta(lambda: self.record.versions.count(), lambda value: value + 1)
         with AssertDeltas(delta):

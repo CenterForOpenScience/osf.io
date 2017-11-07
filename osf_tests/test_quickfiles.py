@@ -1,8 +1,6 @@
 import mock
 import pytest
 
-from django.contrib.contenttypes.models import ContentType
-
 from framework.auth.core import Auth
 from osf.models import QuickFilesNode
 from addons.osfstorage.models import OsfStorageFile
@@ -172,8 +170,7 @@ class TestQuickFilesNode:
         user.merge_user(third_user)
         user.save()
 
-        content_type = ContentType.objects.get_for_model(quickfiles)
-        actual_filenames = list(OsfStorageFile.objects.filter(object_id=quickfiles.id, content_type=content_type).values_list('name', flat=True))
+        actual_filenames = list(quickfiles.files.all().values_list('name', flat=True))
         expected_filenames = ['Woo.pdf', 'Woo (1).pdf', 'Woo (2).pdf', 'Woo (3).pdf']
 
         assert_items_equal(actual_filenames, expected_filenames)
