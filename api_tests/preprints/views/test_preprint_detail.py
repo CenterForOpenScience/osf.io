@@ -867,11 +867,27 @@ class TestPreprintDetailPermissions:
 
     @pytest.fixture()
     def unpublished_preprint(self, admin, provider, subject, public_project):
-        return PreprintFactory(creator=admin, filename='toe_socks_and_sunrises.pdf', provider=provider, subjects=[[subject._id]], project=public_project, is_published=False)
+        return PreprintFactory(creator=admin, filename='toe_socks_and_sunrises.pdf', provider=provider, subjects=[[subject._id]], project=public_project, is_published=False, reviews_state='initial')
 
     @pytest.fixture()
     def private_preprint(self, admin, provider, subject, private_project):
-        return PreprintFactory(creator=admin, filename='toe_socks_and_sunrises.pdf', provider=provider, subjects=[[subject._id]], project=private_project, is_published=False)
+        return PreprintFactory(creator=admin, filename='toe_socks_and_sunrises.pdf', provider=provider, subjects=[[subject._id]], project=private_project, is_published=False, reviews_state='accepted')
+
+    @pytest.fixture()
+    def abandoned_private_preprint(self, admin, provider, subject, private_project):
+        return PreprintFactory(creator=admin, filename='toe_socks_and_sunrises.pdf', provider=provider, subjects=[[subject._id]], project=private_project, is_published=False, reviews_state='initial')
+
+    @pytest.fixture()
+    def abandoned_public_preprint(self, admin, provider, subject, public_project):
+        return PreprintFactory(creator=admin, filename='toe_socks_and_sunrises.pdf', provider=provider, subjects=[[subject._id]], project=public_project, is_published=False, reviews_state='initial')
+
+    @pytest.fixture()
+    def abandoned_private_url(self, abandoned_private_preprint):
+        return '/{}preprints/{}/'.format(API_BASE, abandoned_private_preprint._id)
+
+    @pytest.fixture()
+    def abandoned_public_url(self, abandoned_public_preprint):
+        return '/{}preprints/{}/'.format(API_BASE, abandoned_public_preprint._id)
 
     @pytest.fixture()
     def unpublished_url(self, unpublished_preprint):
@@ -905,9 +921,9 @@ class TestPreprintDetailPermissions:
         res = app.get(private_url, auth=admin.auth)
         assert res.json['data']['id'] == private_preprint._id
 
-    #   test_private_invisible_to_write_contribs
-        res = app.get(private_url, auth=write_contrib.auth, expect_errors=True)
-        assert res.status_code == 403
+    #   test_private_visible_to_write_contribs
+        res = app.get(private_url, auth=write_contrib.auth)
+        assert res.status_code == 200
 
     #   test_private_invisible_to_non_contribs
         res = app.get(private_url, auth=non_contrib.auth, expect_errors=True)
@@ -915,6 +931,40 @@ class TestPreprintDetailPermissions:
 
     #   test_private_invisible_to_public
         res = app.get(private_url, expect_errors=True)
+        assert res.status_code == 401
+
+    def test_preprint_is_abandoned_detail(self, app, admin, write_contrib, non_contrib, abandoned_private_preprint, abandoned_public_preprint, abandoned_private_url, abandoned_public_url):
+
+    #   test_abandoned_private_visible_to_admins
+        res = app.get(abandoned_private_url, auth=admin.auth)
+        assert res.json['data']['id'] == abandoned_private_preprint._id
+
+    #   test_abandoned_private_invisible_to_write_contribs
+        res = app.get(abandoned_private_url, auth=write_contrib.auth, expect_errors=True)
+        assert res.status_code == 403
+
+    #   test_abandoned_private_invisible_to_non_contribs
+        res = app.get(abandoned_private_url, auth=non_contrib.auth, expect_errors=True)
+        assert res.status_code == 403
+
+    #   test_abandoned_private_invisible_to_public
+        res = app.get(abandoned_private_url, expect_errors=True)
+        assert res.status_code == 401
+
+    #   test_abandoned_public_visible_to_admins
+        res = app.get(abandoned_public_url, auth=admin.auth)
+        assert res.json['data']['id'] == abandoned_public_preprint._id
+
+    #   test_abandoned_public_invisible_to_write_contribs
+        res = app.get(abandoned_public_url, auth=write_contrib.auth, expect_errors=True)
+        assert res.status_code == 403
+
+    #   test_abandoned_public_invisible_to_non_contribs
+        res = app.get(abandoned_public_url, auth=non_contrib.auth, expect_errors=True)
+        assert res.status_code == 403
+
+    #   test_abandoned_public_invisible_to_public
+        res = app.get(abandoned_public_url, expect_errors=True)
         assert res.status_code == 401
 
 
