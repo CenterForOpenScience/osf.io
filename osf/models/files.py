@@ -10,6 +10,7 @@ from django.db import models
 from django.db.models import Manager
 from django.core.exceptions import ObjectDoesNotExist
 from django.utils import timezone
+from django.contrib.contenttypes.models import ContentType
 from typedmodels.models import TypedModel, TypedModelManager
 from include import IncludeManager
 
@@ -92,6 +93,9 @@ class BaseFileNode(TypedModel, CommentableMixin, OptionalGuidMixin, Taggable, Ob
     _history = DateTimeAwareJSONField(default=list, blank=True)
     # A concrete version of a FileNode, must have an identifier
     versions = models.ManyToManyField('FileVersion')
+
+    target_content_type = models.ForeignKey(ContentType, null=True, blank=True)
+    target_object_id = models.PositiveIntegerField(null=True, blank=True)
 
     node = models.ForeignKey('osf.AbstractNode', blank=True, null=True, related_name='files', on_delete=models.CASCADE)
     parent = models.ForeignKey('self', blank=True, null=True, default=None, related_name='_children', on_delete=models.CASCADE)
