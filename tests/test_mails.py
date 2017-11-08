@@ -5,11 +5,12 @@ from datetime import timedelta
 from django.utils import timezone
 from nose.tools import *  # PEP 8 sserts
 
-from website import mails
+from website import mails, settings
 from osf.models.queued_mail import (
-    queue_mail, WELCOME_OSF4M,
-    NO_LOGIN, NO_ADDON, NEW_PUBLIC_PROJECT
+    queue_mail, WELCOME_OSF4M, NO_LOGIN, NO_ADDON,
+    NEW_PUBLIC_PROJECT, PREREG_REMINDER
 )
+from osf.models import MetaSchema, DraftRegistrationApproval
 from osf_tests import factories
 from tests.base import OsfTestCase
 
@@ -179,3 +180,49 @@ class TestQueuedMail(OsfTestCase):
             mail=NO_ADDON,
         )
         assert_false(mail.send_mail())
+
+    @mock.patch('osf.models.queued_mail.send_mail')
+    def test_remind_prereg_presend_with_approval(self, mock_mail):
+        prereg = factories.DraftRegistrationFactory(registration_schema=MetaSchema.objects.get(name='Prereg Challenge'))
+
+        approval = DraftRegistrationApproval(
+            meta={
+                'registration_choice': 'immediate'
+            }
+        )
+        approval.save()
+        prereg.approval = approval
+        prereg.save()
+
+        mail = self.queue_mail(mail=PREREG_REMINDER, draft_id=prereg._id)
+        assert_true(prereg.approval)
+        assert_false(mail.send_mail())
+
+    @mock.patch('osf.models.queued_mail.send_mail')
+    def test_remind_prereg_presend_deleted_draft(self, mock_mail):
+        prereg = factories.DraftRegistrationFactory(registration_schema=MetaSchema.objects.get(name='Prereg Challenge'))
+        mail = self.queue_mail(mail=PREREG_REMINDER, draft_id=prereg._id)
+        prereg.delete()
+        assert_false(mail.send_mail())
+
+    @mock.patch('osf.models.queued_mail.send_mail')
+    def test_remind_prereg_presend_already_sent(self, mock_mail):
+        prereg = factories.DraftRegistrationFactory(registration_schema=MetaSchema.objects.get(name='Prereg Challenge'))
+        mail = self.queue_mail(mail=PREREG_REMINDER, draft_id=prereg._id)
+        mail.send_mail()
+        mail = self.queue_mail(mail=PREREG_REMINDER, draft_id=prereg._id)
+        assert_false(mail.send_mail())
+
+    @mock.patch('osf.models.queued_mail.send_mail')
+    def test_remind_prereg_presend(self, mock_mail):
+        prereg = factories.DraftRegistrationFactory(registration_schema=MetaSchema.objects.get(name='Prereg Challenge'))
+        mail = self.queue_mail(mail=PREREG_REMINDER, draft_id=prereg._id)
+        assert_true(mail.send_mail())
+
+    @mock.patch('osf.models.queued_mail.send_mail')
+    def test_remind_prereg_presend_max(self, mock_mail):
+        for i in range(settings.MAX_PREREG_REMINDER_EMAILS +1):
+            prereg = factories.DraftRegistrationFactory(registration_schema=MetaSchema.objects.get(name='Prereg Challenge'))
+            mail = self.queue_mail(mail=PREREG_REMINDER, draft_id=prereg._id)
+            mail.send_mail()
+        assert_equal(len(mail.find_sent_of_same_type_and_user()), 3)
