@@ -4,6 +4,9 @@
 
 var webpack = require('webpack');
 var webpackCommon = require('./webpack.common.config.js');
+var staticPath = function(dir) {
+    return path.join(root, dir);
+};
 
 // A subset of the app webpack config
 var webpackTestConfig = {
@@ -33,6 +36,7 @@ var webpackTestConfig = {
        fs: 'empty'
     }
 };
+webpackTestConfig.resolve.alias['Raven'] = staticPath('vendor/raven-js/dist/raven.js')
 
 module.exports = {
     frameworks: ['mocha', 'sinon'],
