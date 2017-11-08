@@ -28,4 +28,9 @@ class Migration(migrations.Migration):
             name='target_object_id',
             field=models.PositiveIntegerField(blank=True, null=True),
         ),
+        migrations.AddField(
+            model_name='basefilenode',
+            name='is_root',
+            field=models.NullBooleanField(default=False),
+        ),
     ]
