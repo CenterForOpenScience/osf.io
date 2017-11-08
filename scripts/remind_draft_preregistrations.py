@@ -1,5 +1,3 @@
-import django; django.setup()
-
 import logging
 
 from django.db import transaction
@@ -20,13 +18,11 @@ logging.basicConfig(level=logging.INFO)
 
 def main(dry_run=True):
 
-    # import ipdb; ipdb.set_trace()
     user_email_counts = get_user_email_counts()
     for prereg in find_neglected_prereg_within_reminder_limit():
         logger.warn(len(find_neglected_prereg_within_reminder_limit()))
         if dry_run:
             logger.warn('Dry run mode')
-            #TODO: for some reason it's not printing everything it should
         user_email_counts[prereg.initiator.id] = user_email_counts.get(prereg.initiator.id, 0)
         if user_email_counts[prereg.initiator.id] < settings.MAX_PREREG_REMINDER_EMAILS:
             logger.info('Email of type prereg_reminder queued to send to {0}'.format(prereg.initiator.username))
@@ -39,7 +35,7 @@ def main(dry_run=True):
                         user=prereg.initiator,
                         fullname=prereg.initiator.username,
                         prereg_url=prereg.absolute_url,
-                        draft_id=prereg.id,
+                        draft_id=prereg._id,
                     )
 
             user_email_counts[prereg.initiator.id] += 1
@@ -74,5 +70,3 @@ def run_main(dry_run=True):
         add_file_logger(logger, __file__)
     main(dry_run=dry_run)
 
-if __name__ == '__main__':
-    main(dry_run=True)
