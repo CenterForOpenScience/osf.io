@@ -33,7 +33,7 @@ def main(dry_run=True):
                         mail=PREREG_REMINDER,
                         send_at=timezone.now(),
                         user=prereg.initiator,
-                        fullname=prereg.initiator.username,
+                        fullname=prereg.initiator.fullname,
                         prereg_url=prereg.absolute_url,
                         draft_id=prereg._id,
                     )
@@ -53,7 +53,7 @@ def find_neglected_prereg_within_reminder_limit():
 def get_user_email_counts():
     users_sent_ids = QueuedMail.objects.filter(
         email_type = PREREG_REMINDER_TYPE,
-        sent_at__gt = timezone.now() - settings.PREREG_WAIT_TIME
+        send_at__gt = timezone.now() - settings.PREREG_WAIT_TIME
     ).values_list('user__guids___id')
 
     user_email_counts = dict()

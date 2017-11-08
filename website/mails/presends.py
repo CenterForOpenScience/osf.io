@@ -45,8 +45,9 @@ def prereg_reminder(email):
     from osf.models import DraftRegistration
 
     draft = DraftRegistration.load(email.data['draft_id'])
-    # TODO: question should we check what exists in queue or what's been sent
-    reminder_emails = email.find_sent_of_same_type_and_user()
+    reminder_emails = email.find_sent_of_same_type_and_user().filter(
+        sent_at__gte=timezone.now() - settings.PREREG_WAIT_TIME
+    )
 
     if (draft and not draft.reminder_sent and not draft.approval and
                 len(reminder_emails) < settings.MAX_PREREG_REMINDER_EMAILS):

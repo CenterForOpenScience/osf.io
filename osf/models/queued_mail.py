@@ -133,7 +133,7 @@ PREREG_REMINDER = {
     'template': 'prereg_reminder',
     'subject': 'Reminder: Your draft preregistration on the OSF is not yet finished',
     'presend': presends.prereg_reminder,
-    'categories': ['engagement-prereg-challenge']
+    'categories': ['engagement', 'engagement-prereg-challenge']
 }
 
 WELCOME_OSF4M = {
