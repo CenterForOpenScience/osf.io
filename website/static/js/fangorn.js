@@ -1348,7 +1348,7 @@ function gotoFileEvent (item, toUrl) {
     }
 
     if (COMMAND_KEYS.indexOf(tb.pressedKey) !== -1) {
-        window.open(fileurl, item.data.materialized);
+        window.open(fileurl, '_blank');
     } else {
         window.open(fileurl, '_self');
     }
