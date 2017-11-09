@@ -386,7 +386,7 @@ class NodeSettings(BaseStorageAddon, BaseNodeSettings):
     complete = True
     has_auth = True
 
-    root_node = models.ForeignKey(OsfStorageFolder, null=True, blank=True)
+    root_node = models.ForeignKey(OsfStorageFolder, null=True, blank=True, on_delete=models.CASCADE)
 
     @property
     def folder_name(self):

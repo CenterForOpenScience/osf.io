@@ -125,7 +125,7 @@ class BaseModel(models.Model):
     def refresh_from_db(self):
         super(BaseModel, self).refresh_from_db()
         # Django's refresh_from_db does not uncache GFKs
-        for field in self._meta.virtual_fields:
+        for field in self._meta.private_fields:
             if hasattr(field, 'cache_attr') and field.cache_attr in self.__dict__:
                 del self.__dict__[field.cache_attr]
 
@@ -167,7 +167,7 @@ class Guid(BaseModel):
     _id = LowercaseCharField(max_length=255, null=False, blank=False, default=generate_guid, db_index=True,
                            unique=True)
     referent = GenericForeignKey()
-    content_type = models.ForeignKey(ContentType, null=True, blank=True)
+    content_type = models.ForeignKey(ContentType, null=True, blank=True, on_delete=models.CASCADE)
     object_id = models.PositiveIntegerField(null=True, blank=True)
     created = NonNaiveDateTimeField(db_index=True, auto_now_add=True)
 

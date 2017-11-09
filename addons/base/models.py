@@ -84,7 +84,8 @@ class BaseAddonSettings(ObjectIDMixin, BaseModel):
 
 
 class BaseUserSettings(BaseAddonSettings):
-    owner = models.OneToOneField(OSFUser, blank=True, null=True, related_name='%(app_label)s_user_settings')
+    owner = models.OneToOneField(OSFUser, related_name='%(app_label)s_user_settings',
+                                 blank=True, null=True, on_delete=models.CASCADE)
 
     class Meta:
         abstract = True
@@ -347,7 +348,8 @@ class BaseOAuthUserSettings(BaseUserSettings):
 
 
 class BaseNodeSettings(BaseAddonSettings):
-    owner = models.OneToOneField(AbstractNode, null=True, blank=True, related_name='%(app_label)s_node_settings')
+    owner = models.OneToOneField(AbstractNode, related_name='%(app_label)s_node_settings',
+                                 null=True, blank=True, on_delete=models.CASCADE)
 
     class Meta:
         abstract = True
@@ -607,7 +609,8 @@ class BaseOAuthNodeSettings(BaseNodeSettings):
     # TODO: Validate this field to be sure it matches the provider's short_name
     # NOTE: Do not set this field directly. Use ``set_auth()``
     external_account = models.ForeignKey(ExternalAccount, null=True, blank=True,
-                                         related_name='%(app_label)s_node_settings')
+                                         related_name='%(app_label)s_node_settings',
+                                         on_delete=models.CASCADE)
 
     # NOTE: Do not set this field directly. Use ``set_auth()``
     # user_settings = fields.AbstractForeignField()

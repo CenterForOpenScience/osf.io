@@ -16,8 +16,8 @@ class Action(ObjectIDMixin, BaseModel):
 
     objects = IncludeManager()
 
-    target = models.ForeignKey('PreprintService', related_name='actions')
-    creator = models.ForeignKey('OSFUser', related_name='+')
+    target = models.ForeignKey('PreprintService', related_name='actions', on_delete=models.CASCADE)
+    creator = models.ForeignKey('OSFUser', related_name='+', on_delete=models.CASCADE)
 
     trigger = models.CharField(max_length=31, choices=Triggers.choices())
     from_state = models.CharField(max_length=31, choices=States.choices())

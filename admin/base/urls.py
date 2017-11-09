@@ -13,7 +13,7 @@ urlpatterns = [
         base_pattern,
         include([
             url(r'^$', views.home, name='home'),
-            url(r'^admin/', include(admin.site.urls)),
+            url(r'^admin/', admin.site.urls),
             url(r'^spam/', include('admin.spam.urls', namespace='spam')),
             url(r'^institutions/', include('admin.institutions.urls', namespace='institutions')),
             url(r'^preprint_providers/', include('admin.preprint_providers.urls', namespace='preprint_providers')),
