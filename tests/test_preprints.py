@@ -261,6 +261,9 @@ class TestPreprintProvider(OsfTestCase):
         assert ('branded', self.provider) == find_preprint_provider(self.preprint.node)
 
     def test_top_level_subjects(self):
+
+        assert self.provider.has_custom_subjects is False
+
         subj_a = SubjectFactory(provider=self.provider, text='A')
         subj_b = SubjectFactory(provider=self.provider, text='B')
         subj_aa = SubjectFactory(provider=self.provider, text='AA', parent=subj_a)
@@ -272,6 +275,7 @@ class TestPreprintProvider(OsfTestCase):
         some_other_provider = PreprintProviderFactory(name='asdfArxiv')
         subj_asdf = SubjectFactory(provider=some_other_provider)
 
+        assert self.provider.has_custom_subjects is True
         assert set(self.provider.top_level_subjects) == set([subj_a, subj_b])
 
     def test_all_subjects(self):
@@ -286,7 +290,7 @@ class TestPreprintProvider(OsfTestCase):
         some_other_provider = PreprintProviderFactory(name='asdfArxiv')
         subj_asdf = SubjectFactory(provider=some_other_provider)
 
-
+        assert self.provider.has_custom_subjects is True
         assert set(self.provider.all_subjects) == set([subj_a, subj_b, subj_aa, subj_ab, subj_ba, subj_bb, subj_aaa])
 
     def test_highlighted_subjects(self):
@@ -298,6 +302,7 @@ class TestPreprintProvider(OsfTestCase):
         subj_bb = SubjectFactory(provider=self.provider, text='BB', parent=subj_b)
         subj_aaa = SubjectFactory(provider=self.provider, text='AAA', parent=subj_aa)
 
+        assert self.provider.has_custom_subjects is True
         assert set(self.provider.highlighted_subjects) == set([subj_a, subj_b])
         subj_aaa.highlighted = True
         subj_aaa.save()
@@ -686,14 +691,14 @@ class TestPreprintSaveShareHook(OsfTestCase):
         self.preprint.save()
 
         assert mock_on_preprint_updated.call_count == 1
-        
+
         user = AuthUserFactory()
         node = self.preprint.node
         node.preprint_file = self.file
 
         node.add_contributor(contributor=user, auth=self.auth)
         assert mock_on_preprint_updated.call_count == 2
-        
+
         node.move_contributor(contributor=user, index=0, auth=self.auth)
         assert mock_on_preprint_updated.call_count == 3
 
@@ -701,7 +706,7 @@ class TestPreprintSaveShareHook(OsfTestCase):
                 {'id': user._id, 'permission': 'write', 'visible': False}]
         node.manage_contributors(data, auth=self.auth, save=True)
         assert mock_on_preprint_updated.call_count == 4
-        
+
         node.update_contributor(user, 'read', True, auth=self.auth, save=True)
         assert mock_on_preprint_updated.call_count == 5
 
@@ -754,4 +759,3 @@ class TestPreprintConfirmationEmails(OsfTestCase):
 
         self.preprint_branded.set_published(True, auth=Auth(self.user), save=True)
         assert_equals(send_mail.call_count, 2)
-
