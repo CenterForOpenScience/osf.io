@@ -147,7 +147,7 @@
                         %endif
                             <div class="col-xs-12">
                                 <span class="pull-right p-t-sm">
-                                    <a class="btn btn-info" href="${institution_login_url}">Sign in with your institution</a>
+                                    <a class="btn btn-default" href="${institution_login_url}">Sign in with your institution</a>
                                     <button type="submit" class="btn btn-success" data-bind="disable: submitted()">Create account</button>
                                 </span>
                             </div>
