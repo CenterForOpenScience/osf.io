@@ -815,6 +815,7 @@ class NodeContributorsCreateSerializer(NodeContributorsSerializer):
     users = RelationshipField(
         related_view='users:user-detail',
         related_view_kwargs={'user_id': '<user._id>'},
+        always_embed=True,
         required=False
     )
 
