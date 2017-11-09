@@ -980,7 +980,8 @@ class WaterbutlerLink(Link):
 
         if 'view_only' not in self.kwargs:
             view_only = request.query_params.get('view_only', False)
-            self.kwargs['view_only'] = view_only
+            if view_only:
+                self.kwargs['view_only'] = view_only
 
         url = website_utils.waterbutler_api_url_for(obj.node._id, obj.provider, obj.path, **self.kwargs)
         if not url:
