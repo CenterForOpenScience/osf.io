@@ -1,5 +1,6 @@
 import os
 import re
+import logging
 
 from citeproc import CitationStylesStyle, CitationStylesBibliography
 from citeproc import Citation, CitationItem
@@ -10,11 +11,14 @@ from osf.models import PreprintService
 from website.citations.utils import datetime_to_csl
 from website.settings import CITATION_STYLES_PATH, BASE_PATH, CUSTOM_CITATIONS
 
+logger =logger = logging.getLogger(__name__)
+
 
 def clean_up_common_errors(cit):
     cit = re.sub(r"\.+", '.', cit)
     cit = re.sub(r" +", ' ', cit)
     return cit
+
 
 def display_absolute_url(node):
     url = node.absolute_url
@@ -40,6 +44,7 @@ def preprint_csl(preprint, node):
         csl['DOI'] = doi
 
     return csl
+
 
 def render_citation(node, style='apa'):
     """Given a node, return a citation"""
@@ -74,4 +79,38 @@ def render_citation(node, style='apa'):
     elif cit.count(title) == 0:
         cit = clean_up_common_errors(cit)
 
+    if style == 'apa':
+        cit = apa_reformat(node, cit)
+    if style == 'chicago-author-date':
+        cit = chicago_reformat(node, cit)
+    if style == 'modern-language-association':
+        cit = mla_reformat(node, cit)
+    logger.info(node.contributors)
+    logger.info(style)
+    logger.info('--------------')
+    logger.info('cit')
+    logger.info(cit)
+    logger.info('--------------')
+
     return cit
+
+
+def apa_reformat(node, cit):
+    new_csl = cit.split('(')[1]
+    if len(node.contributors) == 1:
+        process_apa_name(node.contributors[0])
+    if len(node.contributors) >1 and len(node.contributors) < 8:
+        new_csl_name_list = [process_apa_name(x) for x in node.contributors]
+
+
+    return cit
+
+def mla_reformat(node, cit):
+    return cit
+
+def chicago_reformat(node, cit):
+    return cit
+
+
+def process_apa_name(user):
+    return user
