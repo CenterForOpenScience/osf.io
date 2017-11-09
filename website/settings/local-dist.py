@@ -100,4 +100,3 @@ USE_CDN_FOR_CLIENT_LIBS = False
 
 # support email
 OSF_SUPPORT_EMAIL = 'fake-support@osf.io'
-COS_SUPPORT_EMAIL = 'fake-support@cos.io'

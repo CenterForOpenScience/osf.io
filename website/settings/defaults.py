@@ -132,7 +132,6 @@ FROM_EMAIL = 'openscienceframework-noreply@osf.io'
 
 # support email
 OSF_SUPPORT_EMAIL = 'support@osf.io'
-COS_SUPPORT_EMAIL = 'support@cos.io'
 
 
 # Default settings for fake email address generation
