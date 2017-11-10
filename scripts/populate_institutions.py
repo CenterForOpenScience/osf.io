@@ -8,13 +8,12 @@ import urllib
 
 import django
 from django.db import transaction
-from modularodm import Q
 django.setup()
 
 from website import settings
 from website.app import init_app
-from osf.models import Institution, Node
-from website.search.search import update_institution, update_node
+from osf.models import Institution
+from website.search.search import update_institution
 
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO)
@@ -123,6 +122,18 @@ def main(env):
                 'delegation_protocol': '',
             },
             {
+                '_id': 'csic',
+                'name': 'Spanish National Research Council',
+                'description': 'Related resources are in the institutional intranet web site only.',
+                'banner_name': 'csic-banner.png',
+                'logo_name': 'csic-shield.png',
+                'login_url': SHIBBOLETH_SP_LOGIN.format(encode_uri_component('https://www.rediris.es/sir/csicidp')),
+                'logout_url': SHIBBOLETH_SP_LOGOUT.format(encode_uri_component('https://osf.io/goodbye')),
+                'domains': [],
+                'email_domains': [],
+                'delegation_protocol': 'saml-shib',
+            },
+            {
                 '_id': 'duke',
                 'name': 'Duke University',
                 'description': 'A research data service provided by <a href="https://library.duke.edu/data/data-management">Duke Libraries</a>.',
@@ -157,6 +168,18 @@ def main(env):
                 'domains': [],
                 'email_domains': ['esipfed.org'],
                 'delegation_protocol': '',
+            },
+            {
+                '_id': 'ferris',
+                'name': 'Ferris State University',
+                'description': 'In partnership with the <a href="https://www.ferris.edu/research/">Office of Research and Sponsored Programs</a>, the <a href="https://www.ferris.edu/HTMLS/administration/academicaffairs/index.htm">Provost and Vice President for Academic Affairs</a>, and the <a href="https://www.ferris.edu/library/">FLITE Library</a>. Do not use this service to store or transfer personally identifiable information (PII), personal health information (PHI), intellectual property (IP) or any other controlled unclassified information (CUI). All projects must abide by the <a href="https://www.ferris.edu/HTMLS/administration/academicaffairs/Forms_Policies/Documents/Policy_Letters/AA-Intellectual-Property-Rights.pdf">FSU Intellectual Property Rights and Electronic Distance Learning Materials</a> letter of agreement.',
+                'banner_name': 'ferris-banner.png',
+                'logo_name': 'ferris-shield.png',
+                'login_url': None,
+                'logout_url': SHIBBOLETH_SP_LOGOUT.format(encode_uri_component('https://osf.io/goodbye')),
+                'domains': [],
+                'email_domains': [],
+                'delegation_protocol': 'cas-pac4j',
             },
             {
                 '_id': 'fsu',
@@ -339,6 +362,18 @@ def main(env):
                 'delegation_protocol': 'saml-shib',
             },
             {
+                '_id': 'ugoe',
+                'name': 'University of Göttingen',
+                'description': 'In partnership with <a href="https://www.sub.uni-goettingen.de/">Göttingen State and University Library</a>, the <a href="http://www.eresearch.uni-goettingen.de/">Göttingen eResearch Alliance</a> and the <a href="https://www.gwdg.de/">Gesellschaft für wissenschaftliche Datenverarbeitung Göttingen</a>.',
+                'banner_name': 'ugoe-banner.png',
+                'logo_name': 'ugoe-shield.png',
+                'login_url': SHIBBOLETH_SP_LOGIN.format(encode_uri_component('https://shibboleth-idp.uni-goettingen.de/uni/shibboleth')),
+                'logout_url': SHIBBOLETH_SP_LOGOUT.format(encode_uri_component('https://osf.io/goodbye')),
+                'domains': ['osf.uni-goettingen.de'],
+                'email_domains': [],
+                'delegation_protocol': 'saml-shib',
+            },
+            {
                 '_id': 'usc',
                 'name': 'University of Southern California',
                 'description': 'Projects must abide by <a href="http://policy.usc.edu/info-security/">USC\'s Information Security Policy</a>. Data stored for human subject research repositories must abide by <a href="http://policy.usc.edu/biorepositories/">USC\'s Biorepository Policy</a>. The OSF may not be used for storage of Personal Health Information that is subject to <a href="http://policy.usc.edu/hipaa/">HIPPA regulations</a>.',
@@ -486,7 +521,7 @@ def main(env):
                 'logo_name': 'brown-shield.png',
                 'login_url': SHIBBOLETH_SP_LOGIN.format(encode_uri_component('https://sso.brown.edu/idp/shibboleth')),
                 'logout_url': SHIBBOLETH_SP_LOGOUT.format(encode_uri_component('https://test.osf.io/goodbye')),
-                'domains': ['test-osf.brown.edu'],
+                'domains': ['test-osf-brown.cos.io'],
                 'email_domains': [],
                 'delegation_protocol': 'saml-shib',
             },
@@ -498,7 +533,7 @@ def main(env):
                 'logo_name': 'bu-shield.png',
                 'login_url': SHIBBOLETH_SP_LOGIN.format(encode_uri_component('https://shib.bu.edu/idp/shibboleth')),
                 'logout_url': SHIBBOLETH_SP_LOGOUT.format(encode_uri_component('https://test.osf.io/goodbye')),
-                'domains': ['test-osf.bu.edu'],
+                'domains': ['test-osf-bu.cos.io'],
                 'email_domains': [],
                 'delegation_protocol': 'saml-shib',
             },
@@ -551,6 +586,18 @@ def main(env):
                 'delegation_protocol': '',
             },
             {
+                '_id': 'csic',
+                'name': 'Spanish National Research Council [Test]',
+                'description': 'Related resources are in the institutional intranet web site only.',
+                'banner_name': 'csic-banner.png',
+                'logo_name': 'csic-shield.png',
+                'login_url': SHIBBOLETH_SP_LOGIN.format(encode_uri_component('https://www.rediris.es/sir/csicidp')),
+                'logout_url': SHIBBOLETH_SP_LOGOUT.format(encode_uri_component('https://test.osf.io/goodbye')),
+                'domains': [],
+                'email_domains': [],
+                'delegation_protocol': 'saml-shib',
+            },
+            {
                 '_id': 'duke',
                 'name': 'Duke University [Test]',
                 'description': 'A research data service provided by <a href="https://library.duke.edu/data/data-management">Duke Libraries</a>.',
@@ -587,6 +634,18 @@ def main(env):
                 'delegation_protocol': '',
             },
             {
+                '_id': 'ferris',
+                'name': 'Ferris State University [Test]',
+                'description': 'In partnership with the <a href="https://www.ferris.edu/research/">Office of Research and Sponsored Programs</a>, the <a href="https://www.ferris.edu/HTMLS/administration/academicaffairs/index.htm">Provost and Vice President for Academic Affairs</a>, and the <a href="https://www.ferris.edu/library/">FLITE Library</a>. Do not use this service to store or transfer personally identifiable information (PII), personal health information (PHI), intellectual property (IP) or any other controlled unclassified information (CUI). All projects must abide by the <a href="https://www.ferris.edu/HTMLS/administration/academicaffairs/Forms_Policies/Documents/Policy_Letters/AA-Intellectual-Property-Rights.pdf">FSU Intellectual Property Rights and Electronic Distance Learning Materials</a> letter of agreement.',
+                'banner_name': 'ferris-banner.png',
+                'logo_name': 'ferris-shield.png',
+                'login_url': None,
+                'logout_url': SHIBBOLETH_SP_LOGOUT.format(encode_uri_component('https://osf.io/goodbye')),
+                'domains': [],
+                'email_domains': [],
+                'delegation_protocol': 'cas-pac4j',
+            },
+            {
                 '_id': 'fsu',
                 'name': 'Florida State University [Test]',
                 'description': 'This service is supported by the <a href="https://www.lib.fsu.edu/">FSU Libraries</a> for our research community. Do not use this service to store or transfer personally identifiable information (PII), personal health information (PHI), or any other controlled unclassified information (CUI). FSU\'s <a href="http://regulations.fsu.edu/sites/g/files/upcbnu486/files/policies/research/FSU%20Policy%207A-26.pdf">Research Data Management Policy</a> applies. For assistance please contact the FSU Libraries <a href="mailto:lib-datamgmt@fsu.edu">Research Data Management Program</a>.',
@@ -594,7 +653,7 @@ def main(env):
                 'logo_name': 'fsu-shield.png',
                 'login_url': SHIBBOLETH_SP_LOGIN.format(encode_uri_component('https://shib.its.fsu.edu/idp/shibboleth')),
                 'logout_url': SHIBBOLETH_SP_LOGOUT.format(encode_uri_component('https://test.osf.io/goodbye')),
-                'domains': ['test-osf.fsu.edu'],
+                'domains': ['test-osf-fsu.cos.io'],
                 'email_domains': [],
                 'delegation_protocol': 'saml-shib',
             },
@@ -606,7 +665,7 @@ def main(env):
                 'logo_name': 'jhu-shield.png',
                 'login_url': SHIBBOLETH_SP_LOGIN.format(encode_uri_component('urn:mace:incommon:johnshopkins.edu')),
                 'logout_url': SHIBBOLETH_SP_LOGOUT.format(encode_uri_component('https://test.osf.io/goodbye')),
-                'domains': ['test-osf.data.jhu.edu'],
+                'domains': ['test-osf-jhu.cos.io'],
                 'email_domains': [],
                 'delegation_protocol': 'saml-shib',
             },
@@ -618,7 +677,7 @@ def main(env):
                 'logo_name': 'jmu-shield.png',
                 'login_url': SHIBBOLETH_SP_LOGIN.format(encode_uri_component('urn:mace:incommon:jmu.edu')),
                 'logout_url': SHIBBOLETH_SP_LOGOUT.format(encode_uri_component('https://test.osf.io/goodbye')),
-                'domains': ['test-osf.jmu.edu'],
+                'domains': ['test-osf-jmu.cos.io'],
                 'email_domains': [],
                 'delegation_protocol': 'saml-shib',
             },
@@ -702,7 +761,7 @@ def main(env):
                 'logo_name': 'uc-shield.png',
                 'login_url': SHIBBOLETH_SP_LOGIN.format(encode_uri_component('https://login.uc.edu/idp/shibboleth')),
                 'logout_url': SHIBBOLETH_SP_LOGOUT.format(encode_uri_component('https://test.osf.io/goodbye')),
-                'domains': ['test-osf.uc.edu'],
+                'domains': ['test-osf-uc.cos.io'],
                 'email_domains': [],
                 'delegation_protocol': 'saml-shib',
             },
@@ -714,7 +773,7 @@ def main(env):
                 'logo_name': 'ucla-shield.png',
                 'login_url': SHIBBOLETH_SP_LOGIN.format(encode_uri_component('urn:mace:incommon:ucla.edu')),
                 'logout_url': SHIBBOLETH_SP_LOGOUT.format(encode_uri_component('https://test.osf.io/goodbye')),
-                'domains': ['test-osf.ucla.edu'],
+                'domains': ['test-osf-ucla.cos.io'],
                 'email_domains': [],
                 'delegation_protocol': 'saml-shib',
             },
@@ -750,7 +809,7 @@ def main(env):
                 'logo_name': 'uct-shield.png',
                 'login_url': SHIBBOLETH_SP_LOGIN.format(encode_uri_component('http://sso.uct.ac.za/adfs/services/trust')),
                 'logout_url': SHIBBOLETH_SP_LOGOUT.format(encode_uri_component('https://test.osf.io/goodbye')),
-                'domains': ['test-osf.uct.ac.za'],
+                'domains': ['test-osf-uct.cos.io'],
                 'email_domains': [],
                 'delegation_protocol': 'saml-shib',
             },
@@ -763,6 +822,18 @@ def main(env):
                 'login_url': SHIBBOLETH_SP_LOGIN.format(encode_uri_component('https://identity.ugent.be/simplesaml/saml2/idp/metadata.php')),
                 'logout_url': SHIBBOLETH_SP_LOGOUT.format(encode_uri_component('https://test.osf.io/goodbye')),
                 'domains': ['test-osf-ugent.cos.io'],
+                'email_domains': [],
+                'delegation_protocol': 'saml-shib',
+            },
+            {
+                '_id': 'ugoe',
+                'name': 'University of Göttingen [Test]',
+                'description': 'In partnership with <a href="https://www.sub.uni-goettingen.de/">Göttingen State and University Library</a>, the <a href="http://www.eresearch.uni-goettingen.de/">Göttingen eResearch Alliance</a> and the <a href="https://www.gwdg.de/">Gesellschaft für wissenschaftliche Datenverarbeitung Göttingen</a>.',
+                'banner_name': 'ugoe-banner.png',
+                'logo_name': 'ugoe-shield.png',
+                'login_url': SHIBBOLETH_SP_LOGIN.format(encode_uri_component('https://shibboleth-idp.uni-goettingen.de/uni/shibboleth')),
+                'logout_url': SHIBBOLETH_SP_LOGOUT.format(encode_uri_component('https://test.osf.io/goodbye')),
+                'domains': ['test-osf-ugoe.cos.io'],
                 'email_domains': [],
                 'delegation_protocol': 'saml-shib',
             },

@@ -87,4 +87,4 @@ class MetaSchemaDetail(JSONAPIBaseView, generics.RetrieveAPIView):
     # overrides RetrieveAPIView
     def get_object(self):
         schema_id = self.kwargs['metaschema_id']
-        return get_object_or_error(MetaSchema, schema_id)
+        return get_object_or_error(MetaSchema, schema_id, self.request)

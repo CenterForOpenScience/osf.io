@@ -4,7 +4,6 @@ import httplib as http
 
 import celery
 from celery.utils.log import get_task_logger
-from modularodm import Q
 
 from framework.celery_tasks import app as celery_app
 from framework.celery_tasks.utils import logged
@@ -60,9 +59,7 @@ class ArchivedFileNotFound(Exception):
     def __init__(self, registration, missing_files, *args, **kwargs):
         super(ArchivedFileNotFound, self).__init__(*args, **kwargs)
 
-        self.draft_registration = DraftRegistration.find_one(
-            Q('registered_node', 'eq', registration)
-        )
+        self.draft_registration = DraftRegistration.objects.get(registered_node=registration)
         self.missing_files = missing_files
 
 

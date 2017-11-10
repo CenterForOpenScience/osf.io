@@ -137,6 +137,10 @@ class Sitemap(object):
         self.errors += 1
         logger.info('Error on {}, {}:'.format(obj, obj_id))
         logger.exception(error)
+
+        if self.errors <= 10:
+            sentry.log_message('Sitemap Error: {}'.format(error))
+
         if self.errors == 1000:
             sentry.log_message('ERROR: generate_sitemap stopped execution after reaching 1000 errors. See logs for details.')
             raise Exception('Too many errors generating sitemap.')
@@ -171,7 +175,7 @@ class Sitemap(object):
         # AbstractNode urls (Nodes and Registrations, no Collections)
         objs = (AbstractNode.objects
             .filter(is_public=True, is_deleted=False, retraction_id__isnull=True)
-            .exclude(type="osf.collection")
+            .exclude(type__in=["osf.collection", "osf.quickfilesnode"])
             .values('guids___id', 'date_modified'))
         progress.start(objs.count(), 'NODE: ')
         for obj in objs:

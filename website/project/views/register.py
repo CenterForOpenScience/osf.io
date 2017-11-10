@@ -3,8 +3,6 @@ import httplib as http
 import itertools
 
 from flask import request
-from modularodm import Q
-from modularodm.exceptions import NoResultsFound
 
 from framework import status
 from framework.exceptions import HTTPError
@@ -120,15 +118,11 @@ def node_registration_retraction_post(auth, node, **kwargs):
 def node_register_template_page(auth, node, metaschema_id, **kwargs):
     if node.is_registration and bool(node.registered_schema):
         try:
-            meta_schema = MetaSchema.find_one(
-                Q('_id', 'eq', metaschema_id)
-            )
-        except NoResultsFound:
+            meta_schema = MetaSchema.objects.get(_id=metaschema_id)
+        except MetaSchema.DoesNotExist:
             # backwards compatability for old urls, lookup by name
             try:
-                meta_schema = MetaSchema.find(
-                    Q('name', 'eq', _id_to_name(metaschema_id))
-                ).order_by('-schema_version').first()
+                meta_schema = MetaSchema.objects.filter(name=_id_to_name(metaschema_id)).order_by('-schema_version').first()
             except IndexError:
                 raise HTTPError(http.NOT_FOUND, data={
                     'message_short': 'Invalid schema name',
@@ -253,11 +247,8 @@ def get_referent_by_identifier(category, value):
     if found.
     """
     try:
-        identifier = Identifier.find_one(
-            Q('category', 'eq', category) &
-            Q('value', 'eq', value)
-        )
-    except NoResultsFound:
+        identifier = Identifier.objects.get(category=category, value=value)
+    except Identifier.DoesNotExist:
         raise HTTPError(http.NOT_FOUND)
     if identifier.referent.url:
         return redirect(identifier.referent.url)

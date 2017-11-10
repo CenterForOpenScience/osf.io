@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-from modularodm import Q
+from django.db.models import Q
 from rest_framework.exceptions import PermissionDenied, NotFound
 from rest_framework.status import is_server_error
 import requests
@@ -22,13 +22,16 @@ def get_file_object(node, path, provider, request):
                 model = OsfStorageFolder
             else:
                 model = OsfStorageFile
-            obj = get_object_or_error(model, Q('node', 'eq', node.pk) & Q('_id', 'eq', path.strip('/')))
+            obj = get_object_or_error(model, Q(node=node.pk, _id=path.strip('/')), request)
         return obj
 
     if not node.get_addon(provider) or not node.get_addon(provider).configured:
         raise NotFound('The {} provider is not configured for this project.'.format(provider))
 
-    url = waterbutler_api_url_for(node._id, provider, path, _internal=True, meta=True)
+    view_only = request.query_params.get('view_only', default=None)
+    url = waterbutler_api_url_for(node._id, provider, path, _internal=True,
+                                  meta=True, view_only=view_only)
+
     waterbutler_request = requests.get(
         url,
         cookies=request.COOKIES,

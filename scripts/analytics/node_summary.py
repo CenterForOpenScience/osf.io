@@ -1,7 +1,6 @@
 from itertools import chain
 import pytz
 import logging
-from modularodm import Q
 from dateutil.parser import parse
 from datetime import datetime, timedelta
 from django.utils import timezone
@@ -22,14 +21,14 @@ class NodeSummary(SummaryAnalytics):
 
     def get_events(self, date):
         super(NodeSummary, self).get_events(date)
-        from osf.models import AbstractNode, Node, Registration
+        from osf.models import Node, Registration
 
         # Convert to a datetime at midnight for queries and the timestamp
         timestamp_datetime = datetime(date.year, date.month, date.day).replace(tzinfo=pytz.UTC)
         query_datetime = timestamp_datetime + timedelta(1)
 
         node_query = {'is_deleted': False, 'date_created__lte': query_datetime}
-        project_query = dict(chain(node_query.iteritems(), {'parent_nodes__isnull': True}.iteritems()))
+        project_query = node_query
 
         public_query = {'is_public': True}
         private_query = {'is_public': False}
@@ -46,27 +45,31 @@ class NodeSummary(SummaryAnalytics):
             'keen': {
                 'timestamp': timestamp_datetime.isoformat()
             },
+            # Nodes - the number of projects and components
             'nodes': {
-                'total': AbstractNode.objects.filter(**node_query).count(),
-                'public': AbstractNode.objects.filter(**node_public_query).count(),
-                'private': AbstractNode.objects.filter(**node_private_query).count()
+                'total': Node.objects.filter(**node_query).count(),
+                'public': Node.objects.filter(**node_public_query).count(),
+                'private': Node.objects.filter(**node_private_query).count()
             },
+            # Projects - the number of top-level only projects
             'projects': {
-                'total': Node.objects.filter(**project_query).count(),
-                'public': Node.objects.filter(**project_public_query).count(),
-                'private': Node.objects.filter(**project_private_query).count(),
+                'total': Node.objects.filter(**project_query).get_roots().count(),
+                'public': Node.objects.filter(**project_public_query).get_roots().count(),
+                'private': Node.objects.filter(**project_private_query).get_roots().count(),
             },
+            # Registered Nodes - the number of registered projects and components
             'registered_nodes': {
                 'total': Registration.objects.filter(**node_query).count(),
                 'public': Registration.objects.filter(**node_public_query).count(),
                 'embargoed': Registration.objects.filter(**node_private_query).count(),
                 'withdrawn': Registration.objects.filter(**node_retracted_query).count(),
             },
+            # Registered Projects - the number of registered top level projects
             'registered_projects': {
-                'total': Registration.objects.filter(**project_query).count(),
-                'public': Registration.objects.filter(**project_public_query).count(),
-                'embargoed': Registration.objects.filter(**project_private_query).count(),
-                'withdrawn': Registration.objects.filter(**project_retracted_query).count(),
+                'total': Registration.objects.filter(**project_query).get_roots().count(),
+                'public': Registration.objects.filter(**project_public_query).get_roots().count(),
+                'embargoed': Registration.objects.filter(**project_private_query).get_roots().count(),
+                'withdrawn': Registration.objects.filter(**project_retracted_query).get_roots().count(),
             }
         }
 

@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
-from django.db import models
 from django.contrib.postgres import fields
-
-from modularodm import Q
+from django.db import models
+from django.db.models.signals import post_save
+from django.dispatch import receiver
 
 from osf.models.base import BaseModel, ObjectIDMixin
 from osf.models.licenses import NodeLicense
@@ -10,14 +10,20 @@ from osf.models.subject import Subject
 from osf.utils.datetime_aware_jsonfield import DateTimeAwareJSONField
 from osf.utils.fields import EncryptedTextField
 
+from reviews import permissions as reviews_permissions
+from reviews.models import ReviewProviderMixin
+
+from website import settings
 from website.util import api_v2_url
 
 
-class PreprintProvider(ObjectIDMixin, BaseModel):
+class PreprintProvider(ObjectIDMixin, ReviewProviderMixin, BaseModel):
 
     PUSH_SHARE_TYPE_CHOICES = (('Preprint', 'Preprint'),
                                ('Thesis', 'Thesis'),)
     PUSH_SHARE_TYPE_HELP = 'This SHARE type will be used when pushing publications to SHARE'
+
+    REVIEWABLE_RELATION_NAME = 'preprint_services'
 
     name = models.CharField(null=False, max_length=128)  # max length on prod: 22
     description = models.TextField(default='', blank=True)
@@ -55,8 +61,8 @@ class PreprintProvider(ObjectIDMixin, BaseModel):
     default_license = models.ForeignKey(NodeLicense, blank=True, related_name='default_license', null=True)
 
     class Meta:
-        # custom permissions for use in the OSF Admin App
-        permissions = (
+        permissions = tuple(reviews_permissions.PERMISSIONS.items()) + (
+            # custom permissions for use in the OSF Admin App
             ('view_preprintprovider', 'Can view preprint provider details'),
         )
 
@@ -89,6 +95,10 @@ class PreprintProvider(ObjectIDMixin, BaseModel):
             # TODO: Delet this when all PreprintProviders have a mapping
             return rules_to_subjects(self.subjects_acceptable)
 
+    @property
+    def landing_url(self):
+        return self.domain if self.domain else '{}preprints/{}'.format(settings.DOMAIN, self.name.lower())
+
     def get_absolute_url(self):
         return '{}preprint_providers/{}'.format(self.absolute_api_v2_url, self._id)
 
@@ -103,12 +113,19 @@ def rules_to_subjects(rules):
         return Subject.objects.filter(provider___id='osf')
     q = []
     for rule in rules:
+        parent_from_rule = Subject.load(rule[0][-1])
         if rule[1]:
-            q.append(Q('parent', 'eq', Subject.load(rule[0][-1])))
+            q.append(models.Q(parent=parent_from_rule))
             if len(rule[0]) == 1:
-                potential_parents = Subject.find(Q('parent', 'eq', Subject.load(rule[0][-1])))
+                potential_parents = Subject.objects.filter(parent=parent_from_rule)
                 for parent in potential_parents:
-                    q.append(Q('parent', 'eq', parent))
+                    q.append(models.Q(parent=parent))
         for sub in rule[0]:
-            q.append(Q('_id', 'eq', sub))
-    return Subject.find(reduce(lambda x, y: x | y, q)) if len(q) > 1 else (Subject.find(q[0]) if len(q) else Subject.find())
+            q.append(models.Q(_id=sub))
+    return Subject.objects.filter(reduce(lambda x, y: x | y, q)) if len(q) > 1 else (Subject.objects.filter(q[0]) if len(q) else Subject.objects.all())
+
+
+@receiver(post_save, sender=PreprintProvider)
+def create_provider_auth_groups(sender, instance, created, **kwargs):
+    if created:
+        reviews_permissions.GroupHelper(instance).update_provider_auth_groups()

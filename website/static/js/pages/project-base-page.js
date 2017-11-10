@@ -3,7 +3,6 @@ var $ = require('jquery');
 
 var pointers = require('js/pointers');
 var AccountClaimer = require('js/accountClaimer');
-var $osf = require('js/osfHelpers');
 
 // NodeActions is needed for rendering recent logs in nodelists (e.g. regsitrations and forks
 // pages
@@ -20,7 +19,7 @@ if (!window.contextVars.currentUser.isContributor) {
 }
 
 // Used for clearing backward/forward cache issues
-$(window).unload(function(){
+$(window).on('unload', function(){
     return 'Unload';
 });
 

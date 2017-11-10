@@ -8,7 +8,6 @@ var ko = require('knockout');
 var moment = require('moment');
 var Raven = require('raven-js');
 var linkifyHtml = require('linkifyjs/html');
-var koHelpers = require('./koHelpers');
 require('jquery-autosize');
 
 var osfHelpers = require('js/osfHelpers');

@@ -2,8 +2,9 @@ import logging
 import datetime
 import urlparse
 
-from django.utils import timezone
+from django.core.exceptions import ValidationError
 from django.db import models
+from django.utils import timezone
 
 from framework.auth import Auth
 from framework.exceptions import PermissionsError
@@ -18,7 +19,6 @@ from osf.models import (
     EmbargoTerminationApproval,
 )
 
-from osf.exceptions import ValidationValueError
 from osf.models.base import BaseModel, ObjectIDMixin
 from osf.models.node import AbstractNode
 from osf.models.nodelog import NodeLog
@@ -209,14 +209,14 @@ class Registration(AbstractNode):
         :param end_date: Date when the registration should be made public
         :raises: NodeStateError if Node is not a registration
         :raises: PermissionsError if user is not an admin for the Node
-        :raises: ValidationValueError if end_date is not within time constraints
+        :raises: ValidationError if end_date is not within time constraints
         """
         if not self.has_permission(user, 'admin'):
             raise PermissionsError('Only admins may embargo a registration')
         if not self._is_embargo_date_valid(end_date):
             if (end_date - timezone.now()) >= settings.EMBARGO_END_DATE_MIN:
-                raise ValidationValueError('Registrations can only be embargoed for up to four years.')
-            raise ValidationValueError('Embargo end date must be at least three days in the future.')
+                raise ValidationError('Registrations can only be embargoed for up to four years.')
+            raise ValidationError('Embargo end date must be at least three days in the future.')
 
         embargo = self._initiate_embargo(user, end_date,
                                          for_existing_registration=for_existing_registration,
@@ -325,6 +325,15 @@ class Registration(AbstractNode):
         if save:
             self.save()
         return retraction
+
+    def copy_unclaimed_records(self):
+        """Copies unclaimed_records to unregistered contributors from the registered_from node"""
+        registered_from_id = self.registered_from._id
+        for contributor in self.contributors.filter(is_registered=False):
+            record = contributor.unclaimed_records.get(registered_from_id)
+            if record:
+                contributor.unclaimed_records[self._id] = record
+                contributor.save()
 
     def delete_registration_tree(self, save=False):
         logger.debug('Marking registration {} as deleted'.format(self._id))

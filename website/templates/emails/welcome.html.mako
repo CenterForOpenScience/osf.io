@@ -40,6 +40,7 @@ Learn more about the OSF by reading the <a href="http://help.osf.io/">Guides</a>
 Sincerely,<br>
 <br>
 The Center for Open Science Team<br>
+
   </td>
 </tr>
 </%def>

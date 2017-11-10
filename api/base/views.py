@@ -1,3 +1,6 @@
+from collections import defaultdict
+
+from bulk_update.helper import bulk_update
 from django.conf import settings as django_settings
 from django.db import transaction
 from django.http import JsonResponse
@@ -23,12 +26,13 @@ from api.base.serializers import (
 )
 from api.base.throttling import RootAnonThrottle, UserRateThrottle
 from api.base.utils import is_bulk_request, get_user_auth
+from api.nodes.utils import get_file_object
 from api.nodes.permissions import ContributorOrPublic
 from api.nodes.permissions import ContributorOrPublicForRelationshipPointers
 from api.nodes.permissions import ReadOnlyIfRegistration
 from api.users.serializers import UserSerializer
 from framework.auth.oauth_scopes import CoreScopes
-from osf.models import Contributor, MaintenanceState
+from osf.models import Contributor, MaintenanceState, BaseFileNode
 
 
 class JSONAPIBaseView(generics.GenericAPIView):
@@ -139,9 +143,9 @@ class JSONAPIBaseView(generics.GenericAPIView):
         if self.kwargs.get('is_embedded'):
             embeds = []
         else:
-            embeds = self.request.query_params.getlist('embed')
+            embeds = self.request.query_params.getlist('embed') or self.request.query_params.getlist('embed[]')
 
-        fields_check = self.serializer_class._declared_fields.copy()
+        fields_check = self.get_serializer_class()._declared_fields.copy()
         if 'fields[{}]'.format(self.serializer_class.Meta.type_) in self.request.query_params:
             # Check only requested and mandatory fields
             sparse_fields = self.request.query_params['fields[{}]'.format(self.serializer_class.Meta.type_)]
@@ -871,3 +875,73 @@ class BaseLinkedList(JSONAPIBaseView, generics.ListAPIView):
         auth = get_user_auth(self.request)
 
         return self.get_node().linked_nodes.filter(is_deleted=False).exclude(type='osf.collection').can_view(user=auth.user, private_link=auth.private_link).order_by('-date_modified')
+
+
+class WaterButlerMixin(object):
+
+    path_lookup_url_kwarg = 'path'
+    provider_lookup_url_kwarg = 'provider'
+
+    def bulk_get_file_nodes_from_wb_resp(self, files_list):
+        """Takes a list of file data from wb response, touches/updates metadata for each, and returns list of file objects.
+        This function mirrors all the actions of get_file_node_from_wb_resp except the create and updates are done in bulk.
+        The bulk_update and bulk_create do not call the base class update and create so the actions of those functions are
+        done here where needed
+        """
+        node = self.get_node(check_object_permissions=False)
+
+        objs_to_create = defaultdict(lambda: [])
+        file_objs = []
+
+        for item in files_list:
+            attrs = item['attributes']
+            base_class = BaseFileNode.resolve_class(
+                attrs['provider'],
+                BaseFileNode.FOLDER if attrs['kind'] == 'folder'
+                else BaseFileNode.FILE
+            )
+
+            # mirrors BaseFileNode get_or_create
+            try:
+                file_obj = base_class.objects.get(node=node, _path='/' + attrs['path'].lstrip('/'))
+            except base_class.DoesNotExist:
+                # create method on BaseFileNode appends provider, bulk_create bypasses this step so it is added here
+                file_obj = base_class(node=node, _path='/' + attrs['path'].lstrip('/'), provider=base_class._provider)
+                objs_to_create[base_class].append(file_obj)
+            else:
+                file_objs.append(file_obj)
+
+            file_obj.update(None, attrs, user=self.request.user, save=False)
+
+        bulk_update(file_objs)
+
+        for base_class in objs_to_create:
+            base_class.objects.bulk_create(objs_to_create[base_class])
+            file_objs += objs_to_create[base_class]
+
+        return file_objs
+
+    def get_file_node_from_wb_resp(self, item):
+        """Takes file data from wb response, touches/updates metadata for it, and returns file object"""
+        attrs = item['attributes']
+        file_node = BaseFileNode.resolve_class(
+            attrs['provider'],
+            BaseFileNode.FOLDER if attrs['kind'] == 'folder'
+            else BaseFileNode.FILE
+        ).get_or_create(self.get_node(check_object_permissions=False), attrs['path'])
+
+        file_node.update(None, attrs, user=self.request.user)
+        return file_node
+
+    def fetch_from_waterbutler(self):
+        node = self.get_node(check_object_permissions=False)
+        path = self.kwargs[self.path_lookup_url_kwarg]
+        provider = self.kwargs[self.provider_lookup_url_kwarg]
+        return self.get_file_object(node, path, provider)
+
+    def get_file_object(self, node, path, provider, check_object_permissions=True):
+        obj = get_file_object(node=node, path=path, provider=provider, request=self.request)
+        if provider == 'osfstorage':
+            if check_object_permissions:
+                self.check_object_permissions(self.request, obj)
+        return obj
