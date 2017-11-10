@@ -172,6 +172,7 @@ COPY ./addons/zotero/static/ ./addons/zotero/static/
 COPY ./addons/swift/static/ ./addons/swift/static/
 COPY ./addons/azureblobstorage/static/ ./addons/azureblobstorage/static/
 COPY ./addons/weko/static/ ./addons/weko/static/
+COPY ./addons/jupyterhub/static/ ./addons/jupyterhub/static/
 RUN mkdir -p ./website/static/built/ \
     && invoke build_js_config_files \
     && yarn run webpack-prod
