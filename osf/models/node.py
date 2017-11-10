@@ -460,6 +460,17 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
             return self.preprints.get_queryset()[0].reviews_state
 
     @property
+    def preprint_word(self):
+        return self.preprints.get_queryset()[0].provider.preprint_word
+
+    @property
+    def preprint_provider(self):
+        return {
+            'name': self.preprints.get_queryset()[0].provider.name,
+            'workflow': self.preprints.get_queryset()[0].provider.reviews_workflow
+        }
+
+    @property
     def is_preprint_orphan(self):
         """For v1 compat"""
         if (not self.is_preprint) and self._is_preprint_orphan:
