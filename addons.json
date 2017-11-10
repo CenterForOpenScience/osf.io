@@ -19,7 +19,8 @@
         "bitbucket",
         "swift",
         "azureblobstorage",
-        "weko"
+        "weko",
+        "jupyterhub"
     ],
     "addons_default": [
         "osfstorage"
@@ -41,7 +42,8 @@
         "bitbucket": "partial",
         "swift": "partial",
         "azureblobstorage": "partial",
-        "weko": "partial"
+        "weko": "partial",
+        "jupyterhub": "partial"
     },
     "addons_commentable": [
         "osfstorage",
@@ -86,7 +88,8 @@
         "onedrive": "Microsoft OneDrive is a file storage add-on. Connect your Microsoft OneDrive account to an OSF project to interact with files hosted on Microsoft OneDrive via the OSF.",
         "swift": "Swift is a file storage add-on. Connect your Swift account to an OSF project to interact with files hosted on Swift via the OSF.",
         "azureblobstorage": "Azure Blob Storage is a file storage add-on. Connect your Azure Storage account to an OSF project to interact with files hosted on Azure Blob Storage (Block Blob) via the OSF.",
-        "weko": "WEKO is an application server to share, archive data."
+        "weko": "WEKO is an application server to share, archive data.",
+        "jupyterhub": "Jupyter is a web-based interactive computational environment. Files on an OSF project can be imported to/exported from Jupyter"
     },
     "addons_url": {
         "box": "http://www.box.com",
@@ -104,6 +107,7 @@
         "onedrive": "https://onedrive.live.com",
         "swift": "https://wiki.openstack.org/wiki/Swift",
         "azureblobstorage": "https://azure.microsoft.com/",
-        "weko": "https://weko.at.nii.ac.jp/"
+        "weko": "https://weko.at.nii.ac.jp/",
+        "jupyterhub": "https://jupyterhub.readthedocs.io/"
     }
 }

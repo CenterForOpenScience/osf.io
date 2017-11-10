@@ -3085,7 +3085,8 @@ Fangorn.Components = {
     input : FGInput,
     toolbar : FGToolbar,
     dropdown : FGDropdown,
-    toolbarModes : toolbarModes
+    toolbarModes : toolbarModes,
+    defaultItemButtons : FGItemButtons
 };
 
 Fangorn.ButtonEvents = {

@@ -114,7 +114,8 @@ INSTALLED_APPS = (
     'addons.zotero',
     'addons.swift',
     'addons.azureblobstorage',
-    'addons.weko'
+    'addons.weko',
+    'addons.jupyterhub'
 )
 
 # local development using https
