@@ -161,8 +161,6 @@ NO_LOGIN_OSF4M_WAIT_TIME = timedelta(weeks=6)
 NEW_PUBLIC_PROJECT_WAIT_TIME = timedelta(hours=24)
 WELCOME_OSF4M_WAIT_TIME_GRACE = timedelta(days=12)
 
-MAX_PREREG_REMINDER_EMAILS = 3
-
 # TODO: Override in local.py
 MAILGUN_API_KEY = None
 

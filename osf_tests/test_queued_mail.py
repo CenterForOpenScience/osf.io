@@ -154,6 +154,12 @@ class TestQueuedMail:
         assert mail.send_mail() is False
 
     @mock.patch('osf.models.queued_mail.send_mail')
+    def test_remind_prereg_presend(self, mock_mail, user):
+        prereg = DraftRegistrationFactory(registration_schema=MetaSchema.objects.get(name='Prereg Challenge'))
+        mail = self.queue_mail(mail=PREREG_REMINDER, user=user, draft_id=prereg._id)
+        assert mail.send_mail()
+
+    @mock.patch('osf.models.queued_mail.send_mail')
     def test_remind_prereg_presend_with_approval(self, mock_mail, user):
         prereg = DraftRegistrationFactory(registration_schema=MetaSchema.objects.get(name='Prereg Challenge'))
 
@@ -184,16 +190,3 @@ class TestQueuedMail:
         mail = self.queue_mail(mail=PREREG_REMINDER, user=user, draft_id=prereg._id)
         assert not mail.send_mail()
 
-    @mock.patch('osf.models.queued_mail.send_mail')
-    def test_remind_prereg_presend(self, mock_mail, user):
-        prereg = DraftRegistrationFactory(registration_schema=MetaSchema.objects.get(name='Prereg Challenge'))
-        mail = self.queue_mail(mail=PREREG_REMINDER, user=user, draft_id=prereg._id)
-        assert mail.send_mail()
-
-    @mock.patch('osf.models.queued_mail.send_mail')
-    def test_remind_prereg_presend_max(self, mock_mail, user):
-        for i in range(settings.MAX_PREREG_REMINDER_EMAILS +1):
-            prereg = DraftRegistrationFactory(registration_schema=MetaSchema.objects.get(name='Prereg Challenge'))
-            mail = self.queue_mail(mail=PREREG_REMINDER, user=user, draft_id=prereg._id)
-            mail.send_mail()
-        assert len(mail.find_sent_of_same_type_and_user()) == 3
