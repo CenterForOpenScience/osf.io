@@ -48,7 +48,7 @@
             <li class="navbar-donate-button"><a data-bind="click: trackClick.bind($data, 'Donate')" href="https://cos.io/donate">Donate</a></li>
             % if user_name and display_name:
             <li class="dropdown">
-            <a class="dropdown-toggle nav-user-dropdown btn-link" data-toggle="dropdown" role="button" aria-expanded="false" aria-label="Toggle auth dropdown">
+            <a class="dropdown-toggle btn-link" data-toggle="dropdown" role="button" aria-expanded="false" aria-label="Toggle auth dropdown">
                 <span class="osf-gravatar">
                     <img src="${user_gravatar}" alt="User gravatar">
                 </span> ${display_name}

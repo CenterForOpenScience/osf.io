@@ -628,13 +628,6 @@ button.close {
     display: inline-block
 }
 
-/* Navigation -- general style should be in style guide
--------------------------------------------------- */
-#navbarScope a.nav-user-dropdown {
-    padding-top: 11px;
-    padding-bottom: 11px;
-}
-
 /* Override insane add tag font
 -------------------------------------------------- */
 .tagsinput input {
