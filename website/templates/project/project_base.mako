@@ -136,6 +136,7 @@
        parent_exists = parent_node['exists']
        parent_title = ''
        parent_registration_url = ''
+       parent_url = ''
        root_id = node['root_id']
        if parent_exists:
            parent_title = "Private {0}".format(parent_node['category'])
@@ -143,6 +144,7 @@
        if parent_node['can_view'] or parent_node['is_contributor']:
            parent_title = parent_node['title']
            parent_registration_url = parent_node['registrations_url']
+           parent_url = parent_node['absolute_url']
     %>
 
     // Mako variables accessible globally
@@ -180,9 +182,10 @@
             category: ${node['category_short'] | sjson, n },
             rootId: ${ root_id | sjson, n },
             parentTitle: ${ parent_title | sjson, n },
+            parentUrl: ${ parent_url | sjson, n },
             parentRegisterUrl: ${parent_registration_url | sjson, n },
             parentExists: ${ parent_exists | sjson, n},
-            childExists: ${ node['children'] | sjson, n},
+            childExists: ${ node['child_exists'] | sjson, n},
             registrationMetaSchemas: ${ node['registered_schemas'] | sjson, n },
             registrationMetaData: ${ node['registered_meta'] | sjson, n },
             contributors: ${ node['contributors'] | sjson, n }

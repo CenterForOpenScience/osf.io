@@ -84,6 +84,14 @@ class Institution(DirtyFieldsMixin, Loggable, base.ObjectIDMixin, base.BaseModel
         return self.absolute_api_v2_url + 'relationships/nodes/'
 
     @property
+    def registrations_url(self):
+        return self.absolute_api_v2_url + 'registrations/'
+
+    @property
+    def registrations_relationship_url(self):
+        return self.absolute_api_v2_url + 'relationships/registrations/'
+
+    @property
     def logo_path(self):
         if self.logo_name:
             return '/static/img/institutions/shields/{}'.format(self.logo_name)

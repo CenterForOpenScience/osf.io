@@ -1,3 +1,6 @@
+from collections import defaultdict
+
+from bulk_update.helper import bulk_update
 from django.conf import settings as django_settings
 from django.db import transaction
 from django.http import JsonResponse
@@ -140,9 +143,9 @@ class JSONAPIBaseView(generics.GenericAPIView):
         if self.kwargs.get('is_embedded'):
             embeds = []
         else:
-            embeds = self.request.query_params.getlist('embed')
+            embeds = self.request.query_params.getlist('embed') or self.request.query_params.getlist('embed[]')
 
-        fields_check = self.serializer_class._declared_fields.copy()
+        fields_check = self.get_serializer_class()._declared_fields.copy()
         if 'fields[{}]'.format(self.serializer_class.Meta.type_) in self.request.query_params:
             # Check only requested and mandatory fields
             sparse_fields = self.request.query_params['fields[{}]'.format(self.serializer_class.Meta.type_)]
@@ -879,7 +882,47 @@ class WaterButlerMixin(object):
     path_lookup_url_kwarg = 'path'
     provider_lookup_url_kwarg = 'provider'
 
-    def get_file_item(self, item):
+    def bulk_get_file_nodes_from_wb_resp(self, files_list):
+        """Takes a list of file data from wb response, touches/updates metadata for each, and returns list of file objects.
+        This function mirrors all the actions of get_file_node_from_wb_resp except the create and updates are done in bulk.
+        The bulk_update and bulk_create do not call the base class update and create so the actions of those functions are
+        done here where needed
+        """
+        node = self.get_node(check_object_permissions=False)
+
+        objs_to_create = defaultdict(lambda: [])
+        file_objs = []
+
+        for item in files_list:
+            attrs = item['attributes']
+            base_class = BaseFileNode.resolve_class(
+                attrs['provider'],
+                BaseFileNode.FOLDER if attrs['kind'] == 'folder'
+                else BaseFileNode.FILE
+            )
+
+            # mirrors BaseFileNode get_or_create
+            try:
+                file_obj = base_class.objects.get(node=node, _path='/' + attrs['path'].lstrip('/'))
+            except base_class.DoesNotExist:
+                # create method on BaseFileNode appends provider, bulk_create bypasses this step so it is added here
+                file_obj = base_class(node=node, _path='/' + attrs['path'].lstrip('/'), provider=base_class._provider)
+                objs_to_create[base_class].append(file_obj)
+            else:
+                file_objs.append(file_obj)
+
+            file_obj.update(None, attrs, user=self.request.user, save=False)
+
+        bulk_update(file_objs)
+
+        for base_class in objs_to_create:
+            base_class.objects.bulk_create(objs_to_create[base_class])
+            file_objs += objs_to_create[base_class]
+
+        return file_objs
+
+    def get_file_node_from_wb_resp(self, item):
+        """Takes file data from wb response, touches/updates metadata for it, and returns file object"""
         attrs = item['attributes']
         file_node = BaseFileNode.resolve_class(
             attrs['provider'],
@@ -888,9 +931,6 @@ class WaterButlerMixin(object):
         ).get_or_create(self.get_node(check_object_permissions=False), attrs['path'])
 
         file_node.update(None, attrs, user=self.request.user)
-
-        self.check_object_permissions(self.request, file_node)
-
         return file_node
 
     def fetch_from_waterbutler(self):
