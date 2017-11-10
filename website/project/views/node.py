@@ -16,6 +16,7 @@ from framework.auth.decorators import must_be_logged_in, collect_auth
 from framework.exceptions import HTTPError
 from osf.models.nodelog import NodeLog
 
+from reviews import workflow
 from website import language
 
 from website.util import paths
@@ -737,6 +738,7 @@ def _view_project(node, auth, primary=False,
             'is_preprint': node.is_preprint,
             'has_moderated_preprint': node.has_moderated_preprint,
             'preprint_state': node.preprint_state,
+            'preprint_workflow_all_states': workflow.States,
             'preprint_word': node.preprint_word,
             'preprint_provider': node.preprint_provider,
             'is_preprint_orphan': node.is_preprint_orphan,

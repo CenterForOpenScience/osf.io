@@ -280,7 +280,7 @@
                 This project represents ${'an ' if node['preprint_state'] == 'accepted' else 'a '}
                 ${node['preprint_state']} ${node['preprint_word']} submitted to ${node['preprint_provider']['name']}
                 <% icon_tooltip = ''%>
-                % if node['preprint_state'] == 'pending':
+                % if node['preprint_state'] == node['preprint_workflow_all_states'].PENDING.value:
                     % if node['preprint_provider']['workflow'] == 'post-moderation':
                         <% icon_tooltip = 'This {preprint_word} is publicly available and searchable but is subject to' \
                         ' removal by a moderator.'.format(preprint_word=node['preprint_word'])%>
@@ -288,7 +288,7 @@
                         <% icon_tooltip = 'This {preprint_word} is not publicly available or searchable until approved ' \
                         'by a moderator.'.format(preprint_word=node['preprint_word'])%>
                     % endif
-                % elif node['preprint_state'] == 'accepted':
+                % elif node['preprint_state'] == node['preprint_workflow_all_states'].ACCEPTED.value:
                     <% icon_tooltip = 'This {preprint_word} is publicly available and searchable.'.format(preprint_word=node['preprint_word'])%>
                 % else:
                     <$ icon_tooltip = 'This {preprint_word} is not publicly available or searchable.'.format(preprint_word=node['preprint_word'])%>

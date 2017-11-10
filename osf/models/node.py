@@ -465,9 +465,10 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
 
     @property
     def preprint_provider(self):
+        preprint_provider = self.preprints.get_queryset()[0].provider
         return {
-            'name': self.preprints.get_queryset()[0].provider.name,
-            'workflow': self.preprints.get_queryset()[0].provider.reviews_workflow
+            'name': preprint_provider.name,
+            'workflow': preprint_provider.reviews_workflow
         }
 
     @property
