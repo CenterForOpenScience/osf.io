@@ -196,4 +196,4 @@ class TestQueuedMail:
             prereg = DraftRegistrationFactory(registration_schema=MetaSchema.objects.get(name='Prereg Challenge'))
             mail = self.queue_mail(mail=PREREG_REMINDER, user=user, draft_id=prereg._id)
             mail.send_mail()
-        assert len(mail.find_sent_of_same_type_and_user()) == 2
+        assert len(mail.find_sent_of_same_type_and_user()) == 3
