@@ -441,22 +441,22 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         if not self.preprint_file_id or not self.is_public:
             return False
         if self.preprint_file.node_id == self.id:
-            return self.has_published_preprint or self.has_pending_rejected_preprint
+            return self.has_preprint_non_initial_state
         else:
             self._is_preprint_orphan = True
             return False
 
     @property
-    def has_pending_rejected_preprint(self):
-        return self.preprints.filter(Q(reviews_state='pending') | Q(reviews_state='rejected')).exists()
+    def has_preprint_non_initial_state(self):
+        return self.preprints.filter(~Q(reviews_state='initial')).exists()
 
     @property
-    def has_preprint_moderated(self):
+    def has_moderated_preprint(self):
         return self.preprints.filter(provider__reviews_workflow__isnull=False).exists()
 
     @property
     def preprint_state(self):
-        if self.has_preprint_moderated:
+        if self.has_moderated_preprint:
             return self.preprints.get_queryset()[0].reviews_state
 
     @property
