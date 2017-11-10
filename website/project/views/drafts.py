@@ -337,7 +337,8 @@ def delete_draft_registration(auth, node, draft, *args, **kwargs):
                 'message_long': 'This draft has already been registered and cannot be deleted.'
             }
         )
-    DraftRegistration.remove_one(draft)
+    draft.deleted = timezone.now()
+    draft.save(update_fields=['deleted'])
     return None, http.NO_CONTENT
 
 def get_metaschemas(*args, **kwargs):

@@ -2,6 +2,7 @@ import re
 
 from django.apps import apps
 from django.db.models import Q
+from django.utils import timezone
 from rest_framework import generics, permissions as drf_permissions
 from rest_framework.exceptions import PermissionDenied, ValidationError, NotFound, MethodNotAllowed, NotAuthenticated
 from rest_framework.response import Response
@@ -1016,7 +1017,8 @@ class NodeDraftRegistrationDetail(JSONAPIBaseView, generics.RetrieveUpdateDestro
         return self.get_draft()
 
     def perform_destroy(self, draft):
-        DraftRegistration.remove_one(draft)
+        draft.deleted = timezone.now()
+        draft.save(update_fields=['deleted'])
 
 
 class NodeRegistrationsList(JSONAPIBaseView, generics.ListCreateAPIView, NodeMixin, DraftMixin):
