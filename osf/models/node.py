@@ -441,10 +441,23 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         if not self.preprint_file_id or not self.is_public:
             return False
         if self.preprint_file.node_id == self.id:
-            return self.has_published_preprint
+            return self.has_preprint_non_initial_state
         else:
             self._is_preprint_orphan = True
             return False
+
+    @property
+    def has_preprint_non_initial_state(self):
+        return self.preprints.filter(~Q(reviews_state='initial')).exists()
+
+    @property
+    def has_moderated_preprint(self):
+        return self.preprints.filter(provider__reviews_workflow__isnull=False).exists()
+
+    @property
+    def preprint_state(self):
+        if self.has_moderated_preprint:
+            return self.preprints.get_queryset()[0].reviews_state
 
     @property
     def is_preprint_orphan(self):
@@ -1333,6 +1346,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         # remove unclaimed record if necessary
         if self._primary_key in contributor.unclaimed_records:
             del contributor.unclaimed_records[self._primary_key]
+            contributor.save()
 
         # If user is the only visible contributor, return False
         if not self.contributor_set.exclude(user=contributor).filter(visible=True).exists():
@@ -1655,9 +1669,15 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         self.clone_logs(registered)
 
         registered.is_public = False
+        # Copy unclaimed records to unregistered users for parent
+        registered.copy_unclaimed_records()
+
+        # TODO: Do we need to recurse? .register already recurses
         for node in registered.get_descendants_recursive():
             node.is_public = False
             node.save()
+            # Copy unclaimed records to unregistered users for children
+            node.copy_unclaimed_records()
 
         if parent:
             node_relation = NodeRelation.objects.get(parent=parent.registered_from, child=original)

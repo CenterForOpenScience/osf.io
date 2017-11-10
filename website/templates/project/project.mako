@@ -276,7 +276,11 @@
 <div class="row">
     <div class="col-xs-12">
         <div class="pp-notice m-b-md p-md clearfix">
-            This project represents a preprint. <a href="http://help.osf.io/m/preprints">Learn more</a> about how to work with preprint files.
+            This project represents a preprint.
+            % if node['has_moderated_preprint']:
+                The preprint is currently in ${node['preprint_state']} state.
+            % endif
+            <a href="http://help.osf.io/m/preprints">Learn more</a> about how to work with preprint files.
             <a href="${node['preprint_url']}" class="btn btn-default btn-sm m-r-xs pull-right">View preprint</a>
             % if user['is_admin']:
                 <a href="${node['preprint_url']}edit" class="btn btn-default btn-sm m-r-xs pull-right">Edit preprint</a>

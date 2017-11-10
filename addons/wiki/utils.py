@@ -3,6 +3,7 @@ import os
 import urllib
 import uuid
 
+import ssl
 from pymongo import MongoClient
 import requests
 
@@ -101,7 +102,7 @@ def migrate_uuid(node, wname):
 
 def share_db():
     """Generate db client for sharejs db"""
-    client = MongoClient(wiki_settings.SHAREJS_DB_URL)
+    client = MongoClient(wiki_settings.SHAREJS_DB_URL, ssl_cert_reqs=ssl.CERT_NONE)
     return client[wiki_settings.SHAREJS_DB_NAME]
 
 

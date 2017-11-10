@@ -15,6 +15,7 @@ from framework.utils import iso8601format
 from framework.auth.decorators import must_be_logged_in, collect_auth
 from framework.exceptions import HTTPError
 from osf.models.nodelog import NodeLog
+from osf.models.node import Node
 
 from website import language
 
@@ -700,6 +701,7 @@ def _view_project(node, auth, primary=False,
             'date_modified': iso8601format(node.logs.latest().date) if node.logs.exists() else '',
             'tags': list(node.tags.filter(system=False).values_list('name', flat=True)),
             'children': node.nodes_active.exists(),
+            'child_exists': Node.objects.get_children(node, active=True).exists(),
             'is_registration': is_registration,
             'is_pending_registration': node.is_pending_registration if is_registration else False,
             'is_retracted': node.is_retracted if is_registration else False,
@@ -735,6 +737,8 @@ def _view_project(node, auth, primary=False,
             'institutions': get_affiliated_institutions(node) if node else [],
             'has_draft_registrations': node.has_active_draft_registrations,
             'is_preprint': node.is_preprint,
+            'has_moderated_preprint': node.has_moderated_preprint,
+            'preprint_state': node.preprint_state,
             'is_preprint_orphan': node.is_preprint_orphan,
             'has_published_preprint': node.preprints.filter(is_published=True).exists() if node else False,
             'preprint_file_id': node.preprint_file._id if node.preprint_file else None,

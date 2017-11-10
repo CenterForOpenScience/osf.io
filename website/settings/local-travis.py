@@ -23,13 +23,13 @@ ENABLE_INSTITUTIONS = True
 PREPRINT_PROVIDER_DOMAINS = {
     'enabled': False,
     'prefix': 'http://local.',
-    'suffix': ':4200/'
+    'suffix': ':4201/'
 }
 USE_EXTERNAL_EMBER = True
 EXTERNAL_EMBER_APPS = {
     'preprints': {
         'url': '/preprints/',
-        'server': 'http://localhost:4200',
+        'server': 'http://localhost:4201',
         'path': os.environ.get('HOME') + '/preprints/'
     }
 }
