@@ -83,7 +83,7 @@ class NodeSettings(BaseStorageAddon, BaseOAuthNodeSettings):
     dataset_doi = models.TextField(blank=True, null=True)
     _dataset_id = models.TextField(blank=True, null=True)
     dataset = models.TextField(blank=True, null=True)
-    user_settings = models.ForeignKey(UserSettings, null=True, blank=True)
+    user_settings = models.ForeignKey(UserSettings, null=True, blank=True, on_delete=models.CASCADE)
 
     @property
     def folder_name(self):
