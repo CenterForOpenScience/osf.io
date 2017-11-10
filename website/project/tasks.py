@@ -115,7 +115,7 @@ def format_registration(node):
     registration_graph = GraphNode('registration', **{
         'title': node.title,
         'description': node.description or '',
-        'is_deleted': not node.is_public or is_qa_node,
+        'is_deleted': not node.is_public or node.is_deleted or is_qa_node,
         'date_published': node.registered_date.isoformat() if node.registered_date else None,
         'registration_type': node.registered_schema.first().name if node.registered_schema else None,
         'withdrawn': node.is_retracted,
