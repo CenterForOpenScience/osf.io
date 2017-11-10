@@ -293,10 +293,11 @@
                 % else:
                     <$ icon_tooltip = 'This {preprint_word} is not publicly available or searchable.'.format(preprint_word=node['preprint_word'])%>
                 % endif
-                <i class="fa fa-info-circle" aria-hidden="true" title="${icon_tooltip}"></i>.
+                <i class="fa fa-question-circle text-muted" aria-hidden="true" title="${icon_tooltip}"></i>.
             % else:
-                This project represents a preprint. <a href="http://help.osf.io/m/preprints">Learn more</a> about how to work with preprint files.
+                This project represents a ${node['preprint_word']}.
             % endif
+            <a href="http://help.osf.io/m/preprints">Learn more</a> about how to work with ${node['preprint_word']} files.
             <a href="${node['preprint_url']}" class="btn btn-default btn-sm m-r-xs pull-right">View preprint</a>
             % if user['is_admin']:
                 <a href="${node['preprint_url']}edit" class="btn btn-default btn-sm m-r-xs pull-right">Edit preprint</a>
