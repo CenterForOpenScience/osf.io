@@ -10,7 +10,7 @@ from addons.osfstorage import settings as osfstorage_settings
 from api.base.settings.defaults import API_BASE
 from api_tests import utils as api_utils
 from framework.auth.core import Auth
-from osf.models import NodeLog, Session
+from osf.models import NodeLog, Session, QuickFilesNode
 from osf_tests.factories import (
     AuthUserFactory,
     CommentFactory,
@@ -463,30 +463,18 @@ class TestFileView:
         assert node._id in split_href
         assert node.id not in split_href
 
-    def test_files_view_count(self, app, user, node):
-        file1 = api_utils.create_test_file(node, user, create_guid=False)
-        file1.save()
-        file1_url = '/{}files/{}/'.format(API_BASE, file1._id)
-        res = app.get(file1_url, auth=user.auth)
-        file1.versions.last().reload()
-        assert res.status_code == 200
-        assert res.json.keys() == ['data']
-        attributes = res.json['data']['attributes']
-        assert attributes['path'] == file1.path
-        assert attributes['kind'] == file1.kind
-        assert attributes['name'] == file1.name
-        assert attributes['materialized_path'] == file1.materialized_path
-        assert attributes['last_touched'] == None
-        assert attributes['provider'] == file1.provider
-        assert attributes['size'] == file1.versions.last().size
-        assert attributes['current_version'] == len(file1.history)
-        assert attributes['date_modified'] == _dt_to_iso8601(file1.versions.last().date_created.replace(tzinfo=pytz.utc))
-        assert attributes['date_created'] == _dt_to_iso8601(file1.versions.first().date_created.replace(tzinfo=pytz.utc))
-        assert attributes['extra']['hashes']['md5'] == None
-        assert attributes['extra']['hashes']['sha256'] == None
-        assert attributes['extra']['downloads'] == 0
-        assert attributes['extra']['views'] == 0
-        assert attributes['tags'] == []
+    def test_embed_user_on_quickfiles_detail(self, app, user):
+        quickfiles = QuickFilesNode.objects.get(creator=user)
+        osfstorage = quickfiles.get_addon('osfstorage')
+        root = osfstorage.get_root()
+        test_file = root.append_file('speedyfile.txt')
+
+        url = '/{}files/{}/?embed=user'.format(API_BASE, test_file._id)
+        res = app.get(url, auth=user.auth)
+
+        assert res.json['data'].get('embeds', None)
+        assert res.json['data']['embeds'].get('user')
+        assert res.json['data']['embeds']['user']['data']['id'] == user._id
 
 
 @pytest.mark.django_db

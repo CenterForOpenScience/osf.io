@@ -72,11 +72,8 @@
                             <li><a href="${node['url']}contributors/">Contributors</a></li>
                         % endif
 
-                        % if user['has_read_permissions'] and not node['is_registration'] or (node['is_registration'] and 'admin' in user['permissions']):
-                            <li class="pull-right"><a href="${node['url']}settings/">Settings</a></li>
-                        % endif
                         % if node['is_public'] or user['is_contributor']:
-                            <li class="pull-right"><a href="${node['url']}addons/">Add-ons</a></li>
+                            <li><a href="${node['url']}addons/">Add-ons</a></li>
                         % endif
                     % endif
                     % if (user['can_comment'] or node['has_comments']) and not node['anonymous']:

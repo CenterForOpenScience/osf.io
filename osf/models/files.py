@@ -327,16 +327,6 @@ class BaseFileNode(TypedModel, CommentableMixin, OptionalGuidMixin, Taggable, Ob
 
         return count or 0
 
-    def get_view_count(self, version=None):
-
-        parts = ['view', self.node._id, self._id]
-        if version is not None:
-            parts.append(version)
-        page = ':'.join([format(part) for part in parts])
-        _, count = get_basic_counters(page)
-
-        return count or 0
-
     def copy_under(self, destination_parent, name=None):
         return utils.copy_files(self, destination_parent.node, destination_parent, name=name)
 
@@ -429,7 +419,7 @@ class File(models.Model):
     def kind(self):
         return 'file'
 
-    def update(self, revision, data, user=None):
+    def update(self, revision, data, user=None, save=True):
         """Using revision and data update all data pretaining to self
         :param str or None revision: The revision that data points to
         :param dict data: Metadata recieved from waterbutler
@@ -466,7 +456,8 @@ class File(models.Model):
         # Finally update last touched
         self.last_touched = timezone.now()
 
-        self.save()
+        if save:
+            self.save()
         return version
 
     def serialize(self):

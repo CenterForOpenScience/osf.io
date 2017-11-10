@@ -165,13 +165,6 @@ class TestUpdateCounters(UpdateCountersTestCase):
         count = analytics.get_basic_counters(page)
         assert_equal(count, (3, 5))
 
-    def test_set_basic_counters(self):
-        page = 'node:' + str(self.node._id)
-        PageCounter.set_basic_counters(page=page, count=3)
-
-        count = analytics.get_basic_counters(page)
-        assert_equal(count, (0, 3))
-
     @unittest.skip('Reverted the fix for #2281. Unskip this once we use GUIDs for keys in the download counts collection')
     def test_update_counters_different_files(self):
         # Regression test for https://github.com/CenterForOpenScience/osf.io/issues/2281
