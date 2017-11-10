@@ -743,3 +743,9 @@ div.ball-scale-blue>div {
 #componentQuickActions a {
     color: #333;
 }
+
+/* counter */
+.counter-comment {
+  margin-top: -20px;
+  margin-right: 5px;
+}

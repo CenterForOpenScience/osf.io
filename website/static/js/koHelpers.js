@@ -477,13 +477,7 @@ ko.bindingHandlers.editableHTML = {
         var $element = $(element);
         var options = valueAccessor();
         var initialValue = options.observable();
-        // NOTE: Maybe we should leave this up to onUpdate? Rethink.
-        var charLimit = $element.attr('maxlength');
-        var inputTextLength = $element[0].innerText.length || 0;
-        // + 1 to account for the <br> that is added to the end of the contenteditable content
-        // <br> is necessary for the return key to function properly
-        var underOrEqualMaxLength = inputTextLength <= parseInt(charLimit) + 1 || charLimit == undefined;  // jshint ignore: line
-        options.onUpdate.call(viewModel, element, underOrEqualMaxLength, charLimit);
+        options.onUpdate.call(viewModel, element);
         if (initialValue === '') {
             $(element).html(initialValue);
         }
