@@ -491,7 +491,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         if self.is_preprint:
             try:
                 # if multiple preprints per project are supported on the front end this needs to change.
-                return self.preprints.get_queryset()[0].url
+                return self.preprints.filter(is_published=True)[0].url
             except IndexError:
                 pass
 
