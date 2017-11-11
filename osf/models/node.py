@@ -461,15 +461,17 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
 
     @property
     def preprint_word(self):
-        return self.preprints.get_queryset()[0].provider.preprint_word
+        if self.is_preprint:
+            return self.preprints.get_queryset()[0].provider.preprint_word
 
     @property
     def preprint_provider(self):
-        preprint_provider = self.preprints.get_queryset()[0].provider
-        return {
-            'name': preprint_provider.name,
-            'workflow': preprint_provider.reviews_workflow
-        }
+        if self.is_preprint:
+            preprint_provider = self.preprints.get_queryset()[0].provider
+            return {
+                'name': preprint_provider.name,
+                'workflow': preprint_provider.reviews_workflow
+            }
 
     @property
     def is_preprint_orphan(self):
@@ -489,7 +491,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         if self.is_preprint:
             try:
                 # if multiple preprints per project are supported on the front end this needs to change.
-                return self.preprints.filter(is_published=True)[0].url
+                return self.preprints.get_queryset()[0].url
             except IndexError:
                 pass
 
