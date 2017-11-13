@@ -105,7 +105,7 @@ class TestExternalAccount(OsfTestCase):
         self.user.save()
 
         # If the external account isn't attached, this test has no meaning
-        assert_equal(ExternalAccount.find().count(), 1)
+        assert_equal(ExternalAccount.objects.all().count(), 1)
         assert_in(
             external_account,
             self.user.external_accounts.all(),
@@ -133,7 +133,7 @@ class TestExternalAccount(OsfTestCase):
         )
 
         # External account is still in the database
-        assert_equal(ExternalAccount.find().count(), 1)
+        assert_equal(ExternalAccount.objects.all().count(), 1)
 
     def test_disconnect_with_multiple_connected(self):
         # Disconnect an account connected to multiple users from one user
@@ -170,7 +170,7 @@ class TestExternalAccount(OsfTestCase):
         )
 
         # External account is still in the database
-        assert_equal(ExternalAccount.find().count(), 1)
+        assert_equal(ExternalAccount.objects.all().count(), 1)
 
         other_user.reload()
 
@@ -511,7 +511,7 @@ class TestExternalProviderOAuth2(OsfTestCase):
         )
 
         assert_equal(
-            ExternalAccount.find().count(),
+            ExternalAccount.objects.all().count(),
             1
         )
 

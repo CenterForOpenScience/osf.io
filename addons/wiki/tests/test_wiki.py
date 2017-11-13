@@ -170,13 +170,13 @@ class TestWikiViews(OsfTestCase):
         # note: forward slashes not allowed in page_name
         page_name = fake.catch_phrase().replace('/', ' ')
 
-        old_wiki_page_count = NodeWikiPage.find().count()
+        old_wiki_page_count = NodeWikiPage.objects.all().count()
         url = self.project.web_url_for('project_wiki_edit_post', wname=page_name)
         # User submits to edit form with no content
         res = self.app.post(url, {'content': ''}, auth=self.user.auth).follow()
         assert_equal(res.status_code, 200)
 
-        new_wiki_page_count = NodeWikiPage.find().count()
+        new_wiki_page_count = NodeWikiPage.objects.all().count()
         # A new wiki page was created in the db
         assert_equal(new_wiki_page_count, old_wiki_page_count + 1)
 
@@ -190,13 +190,13 @@ class TestWikiViews(OsfTestCase):
         page_name = fake.catch_phrase().replace('/', ' ')
         page_content = fake.bs()
 
-        old_wiki_page_count = NodeWikiPage.find().count()
+        old_wiki_page_count = NodeWikiPage.objects.all().count()
         url = self.project.web_url_for('project_wiki_edit_post', wname=page_name)
         # User submits to edit form with no content
         res = self.app.post(url, {'content': page_content}, auth=self.user.auth).follow()
         assert_equal(res.status_code, 200)
 
-        new_wiki_page_count = NodeWikiPage.find().count()
+        new_wiki_page_count = NodeWikiPage.objects.all().count()
         # A new wiki page was created in the db
         assert_equal(new_wiki_page_count, old_wiki_page_count + 1)
 
