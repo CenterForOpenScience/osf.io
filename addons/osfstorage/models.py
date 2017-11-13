@@ -27,7 +27,7 @@ class OsfStorageFolderManager(BaseFileNodeManager):
     def get_root(self, target):
         # Get the root folder that the target file belongs to
         content_type = ContentType.objects.get_for_model(target)
-        return self.get(object_id=target.id, content_type=content_type, is_root=True)
+        return self.get(target_object_id=target.id, target_content_type=content_type, is_root=True)
 
 
 class OsfStorageFileNode(BaseFileNode):
@@ -73,7 +73,7 @@ class OsfStorageFileNode(BaseFileNode):
 
     @classmethod
     def get(cls, _id, target):
-        return cls.objects.get(_id=_id, object_id=target.id, content_type=ContentType.objects.get_for_model(target))
+        return cls.objects.get(_id=_id, target_object_id=target.id, target_content_type=ContentType.objects.get_for_model(target))
 
     @classmethod
     def get_or_create(cls, target, path):

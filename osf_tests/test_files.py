@@ -52,9 +52,9 @@ def test_active_manager_does_not_return_trashed_file_nodes(project, create_test_
     deleted_file.delete(user=project.creator, save=True)
     content_type_for_query = ContentType.objects.get_for_model(project)
     # root folder + file + deleted_file = 3 BaseFileNodes
-    assert BaseFileNode.objects.filter(object_id=project.id, content_type=content_type_for_query).count() == 3
+    assert BaseFileNode.objects.filter(target_object_id=project.id, target_content_type=content_type_for_query).count() == 3
     # root folder + file = 2 BaseFileNodes
-    assert BaseFileNode.active.filter(object_id=project.id, content_type=content_type_for_query).count() == 2
+    assert BaseFileNode.active.filter(target_object_id=project.id, target_content_type=content_type_for_query).count() == 2
 
 def test_folder_update_calls_folder_update_method(project, create_test_file):
     file = create_test_file(target=project)
