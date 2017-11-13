@@ -84,9 +84,10 @@
                         <div data-bind="template: {if: editing, afterRender: autosizeText.bind($data)}">
                             <div class="form-group" style="padding-top: 10px">
                                 <div class="form-control atwho-input comment-box" placeholder="Edit comment" data-bind="editableHTML: {observable: content, onUpdate: handleEditableUpdate}, attr: {maxlength: $root.MAXLENGTH}" contenteditable="true"></div>
-                                <span data-bind="text: counter, css: counterColor" class="pull-right label counter-comment"></span>
+                                <span data-bind="visible: editNotEmpty, text: counter, css: counterColor" class="pull-right label counter-comment"></span>
                             </div>
                             <div class="clearfix">
+                                <span class="text-danger" data-bind="text: errorMessage"></span>
                                 <div class="form-inline pull-right">
                                     <a class="btn btn-default btn-sm" data-bind="click: cancelEdit">Cancel</a>
                                     <a class="btn btn-success btn-sm" data-bind="click: submitEdit, visible: validateEdit()">Save</a>
@@ -97,8 +98,6 @@
                     </div>
 
                     <div>
-
-                        <span class="text-danger" data-bind="text: errorMessage"></span>
 
                         <span>&nbsp;</span>
 
@@ -166,6 +165,7 @@
                         <span data-bind="visible: replyNotEmpty, text: counter, css: counterColor" class="pull-right label counter-comment"></span>
                     </div>
                     <div class="clearfix">
+                        <span class="text-danger" data-bind="text: errorMessage"></span>
                         <div class="pull-right">
                             <a class="btn btn-default btn-sm" data-bind="click: cancelReply, css: {disabled: submittingReply}"> Cancel</a>
                             <a class="btn btn-success btn-sm" data-bind="click: submitReply, visible: validateReply(), css: {disabled: submittingReply}, text: commentButtonText"></a>
