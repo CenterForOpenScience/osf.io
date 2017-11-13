@@ -6,7 +6,7 @@ from django.db.models import F
 
 from website.app import setup_django
 setup_django()
-from osf.models import AbstractNode
+from osf.models import QuickFilesNode
 from scripts import utils as script_utils
 
 
@@ -18,7 +18,7 @@ def main():
         # If we're not running in dry mode log everything to a file
         script_utils.add_file_logger(logger, __file__)
     with transaction.atomic():
-        qs = AbstractNode.objects.filter(type='osf.quickfilesnode').exclude(_contributors=F('creator'))
+        qs = QuickFilesNode.objects.exclude(_contributors=F('creator'))
         logger.info('Found {} quickfiles nodes with mismatched creator and _contributors'.format(qs.count()))
 
         for node in qs:
