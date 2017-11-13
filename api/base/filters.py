@@ -15,7 +15,6 @@ from dateutil import parser as date_parser
 from django.core.exceptions import ValidationError
 from django.db.models import QuerySet as DjangoQuerySet
 from django.db.models import Q
-from modularodm.query import queryset as modularodm_queryset
 from rest_framework import serializers as ser
 from rest_framework.filters import OrderingFilter
 from osf.models import Subject, PreprintProvider
@@ -46,7 +45,7 @@ def sort_multiple(fields):
         return 0
     return sort_fn
 
-class ODMOrderingFilter(OrderingFilter):
+class OSFOrderingFilter(OrderingFilter):
     """Adaptation of rest_framework.filters.OrderingFilter to work with modular-odm."""
     # override
     def filter_queryset(self, request, queryset, view):
@@ -58,9 +57,9 @@ class ODMOrderingFilter(OrderingFilter):
                 order_fields = tuple([field.lstrip('-') for field in ordering])
                 distinct_fields = queryset.query.distinct_fields
                 queryset.query.distinct_fields = tuple(set(distinct_fields + order_fields))
-            return super(ODMOrderingFilter, self).filter_queryset(request, queryset, view)
+            return super(OSFOrderingFilter, self).filter_queryset(request, queryset, view)
         if ordering:
-            if not isinstance(queryset, modularodm_queryset.BaseQuerySet) and isinstance(ordering, (list, tuple)):
+            if isinstance(ordering, (list, tuple)):
                 sorted_list = sorted(queryset, cmp=sort_multiple(ordering))
                 return sorted_list
             return queryset.sort(*ordering)

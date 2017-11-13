@@ -484,8 +484,7 @@ class TestNodeMODMCompat:
         node_1 = ProjectFactory(is_public=False)
         node_2 = ProjectFactory(is_public=True)
 
-        results = Node.find()
-        assert len(results) == 2
+        assert Node.objects.all().count() == 2
 
         private = Node.objects.filter(is_public=False)
         assert node_1 in private
@@ -512,10 +511,10 @@ class TestNodeMODMCompat:
     def test_remove_one(self):
         node = ProjectFactory()
         node2 = ProjectFactory()
-        assert len(Node.find()) == 2  # sanity check
+        assert Node.objects.all().count() == 2  # sanity check
         Node.remove_one(node)
-        assert len(Node.find()) == 1
-        assert node2 in Node.find()
+        assert Node.objects.all().count() == 1
+        assert node2 in Node.objects.all()
 
     def test_querying_on_guid_id(self):
         node = NodeFactory()
@@ -2013,7 +2012,7 @@ class TestPrivateLinks:
     def test_create_from_node(self):
         proj = ProjectFactory()
         user = proj.creator
-        schema = MetaSchema.find()[0]
+        schema = MetaSchema.objects.first()
         data = {'some': 'data'}
         draft = DraftRegistration.create_from_node(
             proj,

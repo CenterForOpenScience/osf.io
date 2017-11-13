@@ -2,7 +2,6 @@ import logging
 import random
 
 import bson
-import modularodm.exceptions
 from django.contrib.contenttypes.fields import (GenericForeignKey,
                                                 GenericRelation)
 from django.contrib.contenttypes.models import ContentType
@@ -15,7 +14,6 @@ from django.dispatch import receiver
 from include import IncludeQuerySet
 from osf.utils.caching import cached_property
 from osf.exceptions import ValidationError
-from osf.modm_compat import to_django_query
 from osf.utils.fields import LowercaseCharField, NonNaiveDateTimeField
 
 ALPHABET = '23456789abcdefghjkmnpqrstuvwxyz'
@@ -44,10 +42,6 @@ def generate_object_id():
 
 
 class BaseModel(models.Model):
-    """Base model that acts makes subclasses mostly compatible with the
-    modular-odm ``StoredObject`` interface.
-    """
-
     migration_page_size = 50000
 
     objects = models.QuerySet.as_manager()
@@ -85,26 +79,8 @@ class BaseModel(models.Model):
             return None
 
     @classmethod
-    def find_one(cls, query, select_for_update=False):
-        try:
-            if select_for_update:
-                return cls.objects.filter(to_django_query(query, model_cls=cls)).select_for_update().get()
-            return cls.objects.get(to_django_query(query, model_cls=cls))
-        except cls.DoesNotExist:
-            raise modularodm.exceptions.NoResultsFound()
-        except cls.MultipleObjectsReturned as e:
-            raise modularodm.exceptions.MultipleResultsFound(*e.args)
-
-    @classmethod
-    def find(cls, query=None):
-        if not query:
-            return cls.objects.all()
-        else:
-            return cls.objects.filter(to_django_query(query, model_cls=cls))
-
-    @classmethod
     def remove(cls, query=None):
-        return cls.find(query).delete()
+        return cls.objects.filter(query).delete() if query else cls.objects.all().delete()
 
     @classmethod
     def remove_one(cls, obj):
