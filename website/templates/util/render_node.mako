@@ -100,12 +100,8 @@
         % else:
             <div>Anonymous Contributors</div>
         % endif
-        % if not summary['anonymous']:
-            % if summary['nlogs'] > 1:
-                <span class="text-muted">${summary['nlogs']} contributions</span>
-            % else:
-                <span class="text-muted">${summary['nlogs']} contribution</span>
-            % endif
+        % if summary['description']:
+            <span class="text-muted">${summary['description']}</span>
         % endif
         % if not summary['archiving']:
             <div class="body hide" id="body-${summary['id']}" style="overflow:hidden;">

@@ -8,7 +8,7 @@ from bs4 import BeautifulSoup
 from flask import request
 from django.apps import apps
 from django.core.exceptions import ValidationError
-from django.db.models import Count, Q
+from django.db.models import Q
 
 from framework import status
 from framework.utils import iso8601format
@@ -795,12 +795,12 @@ def _view_project(node, auth, primary=False,
     if embed_registrations:
         data['node']['registrations'] = [
             serialize_node_summary(node=each, auth=auth, show_path=False)
-            for each in node.registrations_all.order_by('-registered_date').exclude(is_deleted=True).annotate(nlogs=Count('logs'))
+            for each in node.registrations_all.order_by('-registered_date').exclude(is_deleted=True)
         ]
     if embed_forks:
         data['node']['forks'] = [
             serialize_node_summary(node=each, auth=auth, show_path=False)
-            for each in node.forks.exclude(type='osf.registration').exclude(is_deleted=True).order_by('-forked_date').annotate(nlogs=Count('logs'))
+            for each in node.forks.exclude(type='osf.registration').exclude(is_deleted=True).order_by('-forked_date')
         ]
     return data
 
