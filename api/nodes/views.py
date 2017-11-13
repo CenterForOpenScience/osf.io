@@ -1932,7 +1932,7 @@ class NodeFilesList(JSONAPIBaseView, generics.ListAPIView, WaterButlerMixin, Lis
             # We should not have gotten a file here
             raise NotFound
 
-        sub_qs = type(files_list).objects.filter(_children=OuterRef('pk'), pk=files_list.pk)
+        sub_qs = Folder.objects.filter(_children=OuterRef('pk'), pk=files_list.pk)
         return files_list.children.annotate(folder=Exists(sub_qs)).filter(folder=True).prefetch_related('node__guids', 'versions', 'tags', 'guids')
 
     # overrides ListAPIView
