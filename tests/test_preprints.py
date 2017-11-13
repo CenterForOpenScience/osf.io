@@ -261,9 +261,6 @@ class TestPreprintProvider(OsfTestCase):
         assert ('branded', self.provider) == find_preprint_provider(self.preprint.node)
 
     def test_top_level_subjects(self):
-
-        assert self.provider.has_custom_subjects is False
-
         subj_a = SubjectFactory(provider=self.provider, text='A')
         subj_b = SubjectFactory(provider=self.provider, text='B')
         subj_aa = SubjectFactory(provider=self.provider, text='AA', parent=subj_a)
@@ -275,7 +272,6 @@ class TestPreprintProvider(OsfTestCase):
         some_other_provider = PreprintProviderFactory(name='asdfArxiv')
         subj_asdf = SubjectFactory(provider=some_other_provider)
 
-        assert self.provider.has_custom_subjects is True
         assert set(self.provider.top_level_subjects) == set([subj_a, subj_b])
 
     def test_all_subjects(self):
@@ -290,7 +286,6 @@ class TestPreprintProvider(OsfTestCase):
         some_other_provider = PreprintProviderFactory(name='asdfArxiv')
         subj_asdf = SubjectFactory(provider=some_other_provider)
 
-        assert self.provider.has_custom_subjects is True
         assert set(self.provider.all_subjects) == set([subj_a, subj_b, subj_aa, subj_ab, subj_ba, subj_bb, subj_aaa])
 
     def test_highlighted_subjects(self):
@@ -302,10 +297,11 @@ class TestPreprintProvider(OsfTestCase):
         subj_bb = SubjectFactory(provider=self.provider, text='BB', parent=subj_b)
         subj_aaa = SubjectFactory(provider=self.provider, text='AAA', parent=subj_aa)
 
-        assert self.provider.has_custom_subjects is True
+        assert self.provider.has_highlighted_subjects is False
         assert set(self.provider.highlighted_subjects) == set([subj_a, subj_b])
         subj_aaa.highlighted = True
         subj_aaa.save()
+        assert self.provider.has_highlighted_subjects is True
         assert set(self.provider.highlighted_subjects) == set([subj_aaa])
 
 class TestPreprintIdentifiers(OsfTestCase):
