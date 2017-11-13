@@ -153,15 +153,12 @@ def waterbutler_url_for(request_type, provider, path, node_id, token, obj_args=N
     url.args.update(query)
     return url.url
 
-def check_model_cls(model_cls):
-    assert model_cls is Node or model_cls is Registration
-
 def default_node_list_queryset(model_cls):
-    check_model_cls(model_cls)
+    assert model_cls in {Node, Registration}
     return model_cls.objects.filter(is_deleted=False)
 
 def default_node_permission_queryset(user, model_cls):
-    check_model_cls(model_cls)
+    assert model_cls in {Node, Registration}
     if user.is_anonymous:
         return model_cls.objects.filter(is_public=True)
     sub_qs = Contributor.objects.filter(node=OuterRef('pk'), user__id=user.id, read=True)
