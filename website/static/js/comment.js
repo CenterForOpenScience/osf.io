@@ -215,10 +215,11 @@ BaseComment.prototype.handleEditableUpdate = function(element) {
     var $element = $(element);
     var charLimit = $element.attr('maxlength');
     var inputTextLength = $element[0].innerText.length || 0;
+    var showLength = inputTextLength === 1 ? 1 : inputTextLength - 1;
     // + 1 to account for the <br> that is added to the end of the contenteditable content
     // <br> is necessary for the return key to function properly
     var underOrEqualMaxLength = inputTextLength <= parseInt(charLimit) + 1 || charLimit == undefined;  // jshint ignore: line
-    self.currentCount(inputTextLength);
+    self.currentCount(showLength);
     self.underMaxLength(underOrEqualMaxLength);
     self.errorMessage(underOrEqualMaxLength ? '' : 'Exceeds character limit. Please reduce to ' + charLimit + ' characters or less.');
 };

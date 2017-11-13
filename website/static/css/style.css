@@ -746,6 +746,10 @@ div.ball-scale-blue>div {
 
 /* counter */
 .counter-comment {
-  margin-top: -20px;
-  margin-right: 5px;
+    margin-top: -20px;
+    margin-right: 5px;
+}
+/* Prevents comment from overlapping with counter*/
+.comment-box {
+    padding-bottom: 25px;
 }

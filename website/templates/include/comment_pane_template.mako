@@ -23,11 +23,12 @@
             <div data-bind="if: canComment" style="margin-top: 20px">
                 <form class="form">
                     <div class="form-group">
-                        <div class="form-control atwho-input" placeholder="Add a comment" data-bind="editableHTML: {observable: replyContent, onUpdate: handleEditableUpdate}, attr: {maxlength: $root.MAXLENGTH}" contenteditable="true"></div>
-                        <span data-bind="visible: replyNotEmpty, text: counter, css: counterColor" class="pull-right label counter-comment"></span>
+                        <div class="form-control atwho-input comment-box" placeholder="Add a comment" data-bind="editableHTML: {observable: replyContent, onUpdate: handleEditableUpdate}, attr: {maxlength: $root.MAXLENGTH}" contenteditable="true"></div>
+                        <div data-bind="visible: replyNotEmpty, text: counter, css: counterColor" class="pull-right label counter-comment"></div>
                     </div>
                     <div data-bind="if: replyNotEmpty" class="form-group">
                         <div class="clearfix">
+                            <span class="text-danger" data-bind="text: errorMessage"></span>
                             <div class="pull-right">
                                 <a class="btn btn-default btn-sm" data-bind="click: cancelReply, css: {disabled: submittingReply}">Cancel</a>
                                 <a class="btn btn-success btn-sm" data-bind="click: submitReply, visible: validateReply(), css: {disabled: submittingReply}, text: commentButtonText"></a>
@@ -35,7 +36,6 @@
                             </div>
                         </div>
                     </div>
-                    <div class="text-danger" data-bind="text: errorMessage"></div>
                 </form>
             </div>
             <div data-bind="template: {name: 'commentTemplate', foreach: comments}"></div>

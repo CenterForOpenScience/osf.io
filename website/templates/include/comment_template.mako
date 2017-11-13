@@ -83,7 +83,7 @@
                         -->
                         <div data-bind="template: {if: editing, afterRender: autosizeText.bind($data)}">
                             <div class="form-group" style="padding-top: 10px">
-                                <div class="form-control atwho-input" placeholder="Edit comment" data-bind="editableHTML: {observable: content, onUpdate: handleEditableUpdate}, attr: {maxlength: $root.MAXLENGTH}" contenteditable="true"></div>
+                                <div class="form-control atwho-input comment-box" placeholder="Edit comment" data-bind="editableHTML: {observable: content, onUpdate: handleEditableUpdate}, attr: {maxlength: $root.MAXLENGTH}" contenteditable="true"></div>
                                 <span data-bind="text: counter, css: counterColor" class="pull-right label counter-comment"></span>
                             </div>
                             <div class="clearfix">
@@ -162,7 +162,7 @@
 
                 <div data-bind="template: {afterRender: autosizeText.bind($data)}">
                     <div class="form-group" style="padding-top: 10px">
-                        <div class="form-control atwho-input" placeholder="Add a comment" data-bind="editableHTML: {observable: replyContent, onUpdate: handleEditableUpdate}, attr: {maxlength: $root.MAXLENGTH}" contenteditable="true"></div>
+                        <div class="form-control atwho-input comment-box" placeholder="Add a comment" data-bind="editableHTML: {observable: replyContent, onUpdate: handleEditableUpdate}, attr: {maxlength: $root.MAXLENGTH}" contenteditable="true"></div>
                         <span data-bind="visible: replyNotEmpty, text: counter, css: counterColor" class="pull-right label counter-comment"></span>
                     </div>
                     <div class="clearfix">
