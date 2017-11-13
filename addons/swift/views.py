@@ -101,6 +101,9 @@ def swift_add_user_account(auth, **kwargs):
                                            tenant_name,
                                            access_key).lower()
         )
+        if provider.account.oauth_key != secret_key:
+            provider.account.oauth_key = secret_key
+            provider.account.save()
     assert provider.account is not None
 
     if not auth.user.external_accounts.filter(id=provider.account.id).exists():
