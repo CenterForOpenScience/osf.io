@@ -7,6 +7,7 @@ from rest_framework.exceptions import PermissionDenied, ValidationError, NotFoun
 from rest_framework.response import Response
 from rest_framework.status import HTTP_204_NO_CONTENT
 
+from addons.osfstorage.models import OsfStorageFolder
 from api.addons.serializers import NodeAddonFolderSerializer
 from api.addons.views import AddonSettingsMixin
 from api.base import generic_bulk_views as bulk_views
@@ -1932,7 +1933,7 @@ class NodeFilesList(JSONAPIBaseView, generics.ListAPIView, WaterButlerMixin, Lis
             # We should not have gotten a file here
             raise NotFound
 
-        sub_qs = Folder.objects.filter(_children=OuterRef('pk'), pk=files_list.pk)
+        sub_qs = OsfStorageFolder.objects.filter(_children=OuterRef('pk'), pk=files_list.pk)
         return files_list.children.annotate(folder=Exists(sub_qs)).filter(folder=True).prefetch_related('node__guids', 'versions', 'tags', 'guids')
 
     # overrides ListAPIView
