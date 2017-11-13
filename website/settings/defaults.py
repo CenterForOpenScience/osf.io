@@ -98,6 +98,13 @@ SEARCH_ENGINE = 'elastic'  # Can be 'elastic', or None
 ELASTIC_URI = 'localhost:9200'
 ELASTIC_TIMEOUT = 10
 ELASTIC_INDEX = 'website'
+ELASIC_KWARGS = {
+    # 'use_ssl': False,
+    # 'verify_certs': True,
+    # 'ca_certs': None,
+    # 'client_cert': None,
+    # 'client_key': None
+}
 
 # Sessions
 COOKIE_NAME = 'osf'

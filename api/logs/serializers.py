@@ -7,6 +7,8 @@ from api.base.serializers import (
     LinksField,
     is_anonymized,
     DateByVersion,
+    HideIfNotNodePointerLog,
+    HideIfNotRegistrationPointerLog,
 )
 
 from osf.models import OSFUser, AbstractNode, PreprintService
@@ -200,10 +202,20 @@ class NodeLogSerializer(JSONAPISerializer):
     )
 
     # This would be a node_link, except that data isn't stored in the node log params
-    linked_node = RelationshipField(
-        related_view='nodes:node-detail',
-        related_view_kwargs={'node_id': '<params.pointer.id>'}
+    linked_node = HideIfNotNodePointerLog(
+        RelationshipField(
+            related_view='nodes:node-detail',
+            related_view_kwargs={'node_id': '<params.pointer.id>'}
+        )
     )
+
+    linked_registration = HideIfNotRegistrationPointerLog(
+        RelationshipField(
+            related_view='registrations:registration-detail',
+            related_view_kwargs={'node_id': '<params.pointer.id>'}
+        )
+    )
+
     template_node = RelationshipField(
         related_view='nodes:node-detail',
         related_view_kwargs={'node_id': '<params.template_node.id>'}

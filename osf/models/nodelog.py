@@ -173,23 +173,5 @@ class NodeLog(ObjectIDMixin, BaseModel):
     def absolute_url(self):
         return self.absolute_api_v2_url
 
-    def clone_node_log(self, node_id):
-        """
-        When a node is forked or registered, all logs on the node need to be
-        cloned for the fork or registration.
-
-        :param node_id:
-        :return: cloned log
-        """
-        AbstractNode = apps.get_model('osf.AbstractNode')
-        original_log = self.load(self._id)
-        node = AbstractNode.load(node_id)
-        log_clone = original_log.clone()
-        log_clone.node = node
-        log_clone.original_node = original_log.original_node
-        log_clone.user = original_log.user
-        log_clone.save()
-        return log_clone
-
     def _natural_key(self):
         return self._id

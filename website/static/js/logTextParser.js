@@ -300,8 +300,12 @@ var LogPieces = {
     pointer: {
         view: function (ctrl, logObject) {
             var linked_node = logObject.embeds.linked_node;
-            if (paramIsReturned(linked_node, logObject) && !linked_node.errors) {
+            if (linked_node && paramIsReturned(linked_node, logObject) && !linked_node.errors) {
                 return m('a', {href: $osf.toRelativeUrl(linked_node.data.links.html, window)}, linked_node.data.attributes.title);
+            }
+            var linked_registration = logObject.embeds.linked_registration;
+            if (linked_registration && paramIsReturned(linked_registration, logObject) && !linked_registration.errors) {
+                return m('a', {href: $osf.toRelativeUrl(linked_registration.data.links.html, window)}, linked_registration.data.attributes.title);
             }
             return m('span', 'a project');
         }
@@ -310,10 +314,18 @@ var LogPieces = {
     pointer_category: {
         view: function (ctrl, logObject) {
             var linked_node = logObject.embeds.linked_node;
-            if (paramIsReturned(linked_node, logObject) && !linked_node.errors) {
-                var category = linked_node.data.attributes.category;
+            var category = '';
+            if (linked_node && paramIsReturned(linked_node, logObject) && !linked_node.errors) {
+                category = linked_node.data.attributes.category;
                 if (category !== '') {
                     return m('span', linked_node.data.attributes.category);
+                }
+            }
+            var linked_registration = logObject.embeds.linked_registration;
+            if (linked_registration && paramIsReturned(linked_registration, logObject) && !linked_registration.errors) {
+                category = linked_registration.data.attributes.category;
+                if (category !== '') {
+                    return m('span', linked_registration.data.attributes.category);
                 }
             }
             return m('span', '');
