@@ -475,8 +475,8 @@ def addon_delete_file_node(self, target, user, event_type, payload):
         if path.endswith('/'):
             folder_children = BaseFileNode.resolve_class(provider, BaseFileNode.ANY).objects.filter(
                 provider=provider,
-                object_id=target.id,
-                content_type=content_type,
+                target_object_id=target.id,
+                target_content_type=content_type,
                 _materialized_path__startswith=materialized_path
             )
             for item in folder_children:
@@ -487,8 +487,8 @@ def addon_delete_file_node(self, target, user, event_type, payload):
         else:
             try:
                 file_node = BaseFileNode.resolve_class(provider, BaseFileNode.FILE).objects.get(
-                    object_id=target.id,
-                    content_type=content_type,
+                    target_object_id=target.id,
+                    target_content_type=content_type,
                     _materialized_path=materialized_path
                 )
             except BaseFileNode.DoesNotExist:

@@ -28,7 +28,7 @@ def get_file_object(target, path, provider, request):
             else:
                 model = OsfStorageFile
             content_type = ContentType.objects.get_for_model(target)
-            obj = get_object_or_error(model, Q(object_id=target.pk, content_type=content_type, _id=path.strip('/')), request)
+            obj = get_object_or_error(model, Q(target_object_id=target.pk, target_content_type=content_type, _id=path.strip('/')), request)
         return obj
 
     if isinstance(target, AbstractNode) and not target.get_addon(provider) or not target.get_addon(provider).configured:

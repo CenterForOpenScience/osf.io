@@ -192,9 +192,9 @@ class BaseFileNode(TypedModel, CommentableMixin, OptionalGuidMixin, Taggable, Ob
     def get_or_create(cls, target, path):
         content_type = ContentType.objects.get_for_model(target)
         try:
-            obj = cls.objects.get(object_id=target.id, content_type=content_type, _path='/' + path.lstrip('/'))
+            obj = cls.objects.get(target_object_id=target.id, target_content_type=content_type, _path='/' + path.lstrip('/'))
         except cls.DoesNotExist:
-            obj = cls(object_id=target.id, content_type=content_type, _path='/' + path.lstrip('/'))
+            obj = cls(target_object_id=target.id, target_content_type=content_type, _path='/' + path.lstrip('/'))
         return obj
 
     @classmethod
@@ -204,7 +204,7 @@ class BaseFileNode(TypedModel, CommentableMixin, OptionalGuidMixin, Taggable, Ob
         materialized_path = '/' + materialized_path.lstrip('/')
         if materialized_path.endswith('/'):
             # it's a folder
-            folder_children = cls.objects.filter(provider=provider, object_id=target.id, content_type=content_type, _materialized_path__startswith=materialized_path)
+            folder_children = cls.objects.filter(provider=provider, target_object_id=target.id, target_content_type=content_type, _materialized_path__startswith=materialized_path)
             for item in folder_children:
                 if item.kind == 'file':
                     guid = item.get_guid()
@@ -214,7 +214,7 @@ class BaseFileNode(TypedModel, CommentableMixin, OptionalGuidMixin, Taggable, Ob
             # it's a file
             try:
                 file_obj = cls.objects.get(
-                    object_id=target.id, content_type=content_type, _materialized_path=materialized_path
+                    target_object_id=target.id, target_content_type=content_type, _materialized_path=materialized_path
                 )
             except cls.DoesNotExist:
                 return guids
@@ -573,8 +573,8 @@ class Folder(models.Model):
             self.save()
         child, created = self._resolve_class(kind).objects.get_or_create(
             name=name,
-            object_id=self.target.id,
-            content_type=ContentType.objects.get_for_model(self.target),
+            target_object_id=self.target.id,
+            target_content_type=ContentType.objects.get_for_model(self.target),
             parent=self,
         )
         if not created:
