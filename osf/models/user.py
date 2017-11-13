@@ -564,6 +564,11 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
 
         :param user: A User object to be merged.
         """
+
+        # Attempt to prevent self merges which end up removing self as a contributor from all projects
+        if self == user:
+            raise ValueError('Cannot merge a user into itself')
+
         # Fail if the other user has conflicts.
         if not user.can_be_merged:
             raise MergeConflictError('Users cannot be merged')
