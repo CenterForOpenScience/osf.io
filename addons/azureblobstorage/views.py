@@ -101,6 +101,9 @@ def azureblobstorage_add_user_account(auth, **kwargs):
             provider=SHORT_NAME,
             provider_id=user_info['id']
         )
+        if account.oauth_secret != secret_key:
+            account.oauth_secret = secret_key
+            account.save()
     assert account is not None
 
     if not auth.user.external_accounts.filter(id=account.id).exists():
