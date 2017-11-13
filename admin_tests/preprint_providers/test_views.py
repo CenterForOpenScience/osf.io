@@ -255,27 +255,6 @@ class TestPreprintProviderExportImport(AdminTestCase):
         nt.assert_equal(new_provider.subjects.all()[0].text, self.subject.text)
         nt.assert_equal(new_provider.licenses_acceptable.all()[0].license_id, 'NONE')
 
-    def test_export_to_import_new_provider_with_models_out_of_sync(self):
-        update_taxonomies('test_bepress_taxonomy.json')
-
-        res = self.view.get(self.request)
-        content_dict = json.loads(res.content)
-
-        content_dict['fields']['_id'] = 'new_id'
-        content_dict['fields']['new_field'] = 'this is a new field, not in the model'
-        del content_dict['fields']['description']  # this is a old field, removed from the model JSON
-
-        data = StringIO(unicode(json.dumps(content_dict), 'utf-8'))
-        self.import_request.FILES['file'] = InMemoryUploadedFile(data, None, 'data', 'application/json', 500, None, {})
-
-        res = self.import_view.post(self.import_request)
-
-        provider_id = ''.join([i for i in res.url if i.isdigit()])
-        new_provider = PreprintProvider.objects.get(id=provider_id)
-
-        nt.assert_equal(res.status_code, 302)
-        nt.assert_equal(new_provider._id, 'new_id')
-
     def test_update_provider_existing_subjects(self):
         # If there are existing subjects for a provider, imported subjects are ignored
         self.import_view.kwargs = {'preprint_provider_id': self.preprint_provider.id}
