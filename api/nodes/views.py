@@ -911,7 +911,8 @@ class NodeDraftRegistrationsList(JSONAPIBaseView, generics.ListCreateAPIView, No
         return DraftRegistration.objects.filter(
             Q(registered_node=None) |
             Q(registered_node__is_deleted=True),
-            branched_from=node
+            branched_from=node,
+            deleted__isnull=True
         )
 
     # overrides ListBulkCreateJSONAPIView

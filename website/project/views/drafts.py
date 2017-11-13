@@ -43,6 +43,8 @@ def must_be_branched_from_node(func):
     def wrapper(*args, **kwargs):
         node = kwargs['node']
         draft = kwargs['draft']
+        if draft.deleted:
+            raise HTTPError(http.GONE)
         if not draft.branched_from._id == node._id:
             raise HTTPError(
                 http.BAD_REQUEST,

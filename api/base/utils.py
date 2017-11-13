@@ -118,7 +118,7 @@ def get_object_or_error(model_cls, query_or_pk, request, display_name=None):
     # disabled.
     if model_cls is OSFUser and obj.is_disabled:
         raise UserGone(user=obj)
-    elif model_cls is not OSFUser and not getattr(obj, 'is_active', True) or getattr(obj, 'is_deleted', False):
+    elif model_cls is not OSFUser and not getattr(obj, 'is_active', True) or getattr(obj, 'is_deleted', False) or getattr(obj, 'deleted', False):
         if display_name is None:
             raise Gone
         else:

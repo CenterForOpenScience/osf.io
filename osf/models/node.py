@@ -627,6 +627,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         DraftRegistration = apps.get_model('osf.DraftRegistration')
         return DraftRegistration.objects.filter(
             models.Q(branched_from=self) &
+            models.Q(deleted__isnull=True) &
             (models.Q(registered_node=None) | models.Q(registered_node__is_deleted=True))
         )
 
