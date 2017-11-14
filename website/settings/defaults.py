@@ -98,6 +98,13 @@ SEARCH_ENGINE = 'elastic'  # Can be 'elastic', or None
 ELASTIC_URI = 'localhost:9200'
 ELASTIC_TIMEOUT = 10
 ELASTIC_INDEX = 'website'
+ELASTIC_KWARGS = {
+    # 'use_ssl': False,
+    # 'verify_certs': True,
+    # 'ca_certs': None,
+    # 'client_cert': None,
+    # 'client_key': None
+}
 
 # Sessions
 COOKIE_NAME = 'osf'
@@ -380,6 +387,7 @@ HIGH_PRI_MODULES = {
     'scripts.approve_embargo_terminations',
     'scripts.approve_registrations',
     'scripts.embargo_registrations',
+    'scripts.premigrate_created_modified',
     'scripts.refresh_addon_tokens',
     'scripts.retract_registrations',
     'website.archiver.tasks',
@@ -390,7 +398,7 @@ try:
 except ImportError:
     pass
 else:
-    CELERY_QUEUES = (
+    CELERY_TASK_QUEUES = (
         Queue(LOW_QUEUE, Exchange(LOW_QUEUE), routing_key=LOW_QUEUE,
               consumer_arguments={'x-priority': -1}),
         Queue(DEFAULT_QUEUE, Exchange(DEFAULT_QUEUE), routing_key=DEFAULT_QUEUE,
@@ -401,10 +409,10 @@ else:
               consumer_arguments={'x-priority': 10}),
     )
 
-    CELERY_DEFAULT_EXCHANGE_TYPE = 'direct'
-    CELERY_ROUTES = ('framework.celery_tasks.routers.CeleryRouter', )
-    CELERY_IGNORE_RESULT = True
-    CELERY_STORE_ERRORS_EVEN_IF_IGNORED = True
+    CELERY_TASK_DEFAULT_EXCHANGE_TYPE = 'direct'
+    CELERY_TASK_ROUTES = ('framework.celery_tasks.routers.CeleryRouter', )
+    CELERY_TASK_IGNORE_RESULT = True
+    CELERY_TASK_STORE_ERRORS_EVEN_IF_IGNORED = True
 
 # Default RabbitMQ broker
 RABBITMQ_USERNAME = os.environ.get('RABBITMQ_USERNAME', 'guest')
@@ -413,11 +421,11 @@ RABBITMQ_HOST = os.environ.get('RABBITMQ_HOST', 'localhost')
 RABBITMQ_PORT = os.environ.get('RABBITMQ_PORT', '5672')
 RABBITMQ_VHOST = os.environ.get('RABBITMQ_VHOST', '/')
 
-BROKER_URL = os.environ.get('BROKER_URL', 'amqp://{}:{}@{}:{}/{}'.format(RABBITMQ_USERNAME, RABBITMQ_PASSWORD, RABBITMQ_HOST, RABBITMQ_PORT, RABBITMQ_VHOST))
-BROKER_USE_SSL = False
+CELERY_BROKER_URL = os.environ.get('CELERY_BROKER_URL', 'amqp://{}:{}@{}:{}/{}'.format(RABBITMQ_USERNAME, RABBITMQ_PASSWORD, RABBITMQ_HOST, RABBITMQ_PORT, RABBITMQ_VHOST))
+CELERY_BROKER_USE_SSL = False
 
 # Default RabbitMQ backend
-CELERY_RESULT_BACKEND = os.environ.get('CELERY_RESULT_BACKEND', BROKER_URL)
+CELERY_RESULT_BACKEND = os.environ.get('CELERY_RESULT_BACKEND', CELERY_BROKER_URL)
 
 # Modules to import when celery launches
 CELERY_IMPORTS = (
@@ -441,6 +449,7 @@ CELERY_IMPORTS = (
     'scripts.analytics.run_keen_snapshots',
     'scripts.analytics.run_keen_events',
     'scripts.generate_sitemap',
+    'scripts.premigrate_created_modified',
 )
 
 # Modules that need metrics and release requirements
@@ -461,7 +470,7 @@ except ImportError:
     pass
 else:
     #  Setting up a scheduler, essentially replaces an independent cron job
-    CELERYBEAT_SCHEDULE = {
+    CELERY_BEAT_SCHEDULE = {
         '5-minute-emails': {
             'task': 'website.notifications.tasks.send_users_email',
             'schedule': crontab(minute='*/5'),
@@ -542,7 +551,7 @@ else:
     }
 
     # Tasks that need metrics and release requirements
-    # CELERYBEAT_SCHEDULE.update({
+    # CELERY_BEAT_SCHEDULE.update({
     #     'usage_audit': {
     #         'task': 'scripts.osfstorage.usage_audit',
     #         'schedule': crontab(minute=0, hour=0),  # Daily 12 a.m

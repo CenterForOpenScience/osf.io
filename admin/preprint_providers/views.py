@@ -13,7 +13,7 @@ from django.shortcuts import redirect
 
 from admin.base import settings
 from admin.base.forms import ImportFileForm
-from admin.preprint_providers.forms import PreprintProviderForm
+from admin.preprint_providers.forms import PreprintProviderForm, PreprintProviderCustomTaxonomyForm
 from osf.models import PreprintProvider, Subject, NodeLicense
 from osf.models.preprint_provider import rules_to_subjects
 
@@ -96,16 +96,25 @@ class PreprintProviderDisplay(PermissionRequiredMixin, DetailView):
 
         subject_html = '<ul class="three-cols">'
         for parent in preprint_provider.top_level_subjects:
-            subject_html += '<li>{}</li>'.format(parent.text)
+            mapped_text = ''
+            if parent.bepress_subject and parent.text != parent.bepress_subject.text:
+                mapped_text = ' (mapped from {})'.format(parent.bepress_subject.text)
+            subject_html = subject_html + '<li>{}'.format(parent.text) + mapped_text + '</li>'
             child_html = '<ul>'
             for child in parent.children.all():
                 grandchild_html = ''
                 if child.id in subject_ids:
-                    child_html += '<li>{}</li>'.format(child.text)
+                    child_mapped_text = ''
+                    if child.bepress_subject and child.text != child.bepress_subject.text:
+                        child_mapped_text = ' (mapped from {})'.format(child.bepress_subject.text)
+                    child_html = child_html + '<li>{}'.format(child.text) + child_mapped_text + '</li>'
                     grandchild_html = '<ul>'
                     for grandchild in child.children.all():
                         if grandchild.id in subject_ids:
-                            grandchild_html += '<li>{}</li>'.format(grandchild.text)
+                            grandchild_mapped_text = ''
+                            if grandchild.bepress_subject and grandchild.text != grandchild.bepress_subject.text:
+                                grandchild_mapped_text = ' (mapped from {})'.format(grandchild.bepress_subject.text)
+                            grandchild_html = grandchild_html + '<li>{}'.format(grandchild.text) + grandchild_mapped_text + '</li>'
                     grandchild_html += '</ul>'
                 child_html += grandchild_html
 
@@ -123,6 +132,7 @@ class PreprintProviderDisplay(PermissionRequiredMixin, DetailView):
         fields['subjects_chosen'] = ', '.join(str(i) for i in subject_ids)
         kwargs['show_taxonomies'] = False if preprint_provider.subjects.exists() else True
         kwargs['form'] = PreprintProviderForm(initial=fields)
+        kwargs['taxonomy_form'] = PreprintProviderCustomTaxonomyForm()
         kwargs['import_form'] = ImportFileForm()
         kwargs['tinymce_apikey'] = settings.TINYMCE_APIKEY
         return kwargs
@@ -158,6 +168,41 @@ class PreprintProviderChangeForm(PermissionRequiredMixin, UpdateView):
     def get_success_url(self, *args, **kwargs):
         return reverse_lazy('preprint_providers:detail', kwargs={'preprint_provider_id': self.kwargs.get('preprint_provider_id')})
 
+
+class ProcessCustomTaxonomy(PermissionRequiredMixin, View):
+
+    permission_required = 'osf.change_preprintprovider'
+    raise_exception = True
+
+    def post(self, request, *args, **kwargs):
+        # Import here to avoid test DB access errors when importing preprint provider views
+        from osf.management.commands.populate_custom_taxonomies import validate_input, migrate
+
+        provider_form = PreprintProviderCustomTaxonomyForm(request.POST)
+        if provider_form.is_valid():
+            provider = PreprintProvider.objects.get(id=provider_form.cleaned_data['provider_id'])
+            try:
+                taxonomy_json = json.loads(provider_form.cleaned_data['custom_taxonomy_json'])
+                if request.is_ajax():
+                    # An ajax request is for validation only, so run that validation!
+                    try:
+                        response_data = validate_input(custom_provider=provider, data=taxonomy_json)
+                    except (RuntimeError, AssertionError) as script_feedback:
+                        response_data = {'message': script_feedback.message, 'feedback_type': 'error'}
+                    if not response_data:
+                        response_data = {'message': 'Custom taxonomy validated!', 'feedback_type': 'success'}
+                else:
+                    # Actually do the migration of the custom taxonomies
+                    migrate(provider=provider._id, data=taxonomy_json)
+                    return redirect('preprint_providers:detail', preprint_provider_id=provider.id)
+
+            except ValueError as error:
+                response_data = {
+                    'message': 'There is an error with the submitted JSON. Here are some details: ' + error.message,
+                    'feedback_type': 'error'
+                }
+            # Return a JsonResponse with the JSON error or the validation error if it's not doing an actual migration
+            return JsonResponse(response_data)
 
 class ExportPreprintProvider(PermissionRequiredMixin, View):
     permission_required = 'osf.change_preprintprovider'

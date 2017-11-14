@@ -12,9 +12,7 @@ from api.base.parsers import (JSONAPIRelationshipParser,
                               JSONAPIRelationshipParserForRegularJSON)
 from api.base.serializers import AddonAccountSerializer
 from api.base.utils import (default_node_list_queryset,
-                            default_node_permission_queryset,
-                            default_registration_list_queryset,
-                            default_registration_permission_queryset,
+                            default_node_list_permission_queryset,
                             get_object_or_error,
                             get_user_auth)
 from api.base.views import JSONAPIBaseView, WaterButlerMixin
@@ -41,6 +39,8 @@ from osf.models import (Contributor,
                         QuickFilesNode,
                         AbstractNode,
                         PreprintService,
+                        Node,
+                        Registration,
                         OSFUser,
                         PreprintProvider,
                         Action,)
@@ -538,10 +538,9 @@ class UserNodes(JSONAPIBaseView, generics.ListAPIView, UserMixin, NodesFilterMix
     # overrides NodesFilterMixin
     def get_default_queryset(self):
         user = self.get_user()
-        qs = default_node_list_queryset().filter(contributor__user__id=user.id)
         if user != self.request.user:
-            return qs & default_node_permission_queryset(self.request.user)
-        return qs
+            return default_node_list_permission_queryset(user=self.request.user, model_cls=Node).filter(contributor__user__id=user.id)
+        return default_node_list_queryset(model_cls=Node).filter(contributor__user__id=user.id)
 
     # overrides ListAPIView
     def get_queryset(self):
@@ -550,7 +549,6 @@ class UserNodes(JSONAPIBaseView, generics.ListAPIView, UserMixin, NodesFilterMix
             .select_related('node_license')
             .order_by('-date_modified', )
             .include('contributor__user__guids', 'root__guids', limit_includes=10)
-            .distinct('id', 'date_modified')
         )
 
 
@@ -614,7 +612,7 @@ class UserPreprints(JSONAPIBaseView, generics.ListAPIView, UserMixin, PreprintFi
         return self.preprints_queryset(default_qs, auth_user, allow_contribs=False)
 
     def get_queryset(self):
-        return self.get_queryset_from_request().distinct('id', 'date_created')
+        return self.get_queryset_from_request()
 
 
 class UserInstitutions(JSONAPIBaseView, generics.ListAPIView, UserMixin):
@@ -741,12 +739,12 @@ class UserRegistrations(JSONAPIBaseView, generics.ListAPIView, UserMixin, NodesF
     def get_default_queryset(self):
         user = self.get_user()
         current_user = self.request.user
-        qs = default_registration_list_queryset() & default_registration_permission_queryset(current_user)
+        qs = default_node_list_permission_queryset(user=current_user, model_cls=Registration)
         return qs.filter(contributor__user__id=user.id)
 
     # overrides ListAPIView
     def get_queryset(self):
-        return self.get_queryset_from_request().select_related('node_license').include('contributor__user__guids', 'root__guids', limit_includes=10).distinct('id', 'date_modified')
+        return self.get_queryset_from_request().select_related('node_license').include('contributor__user__guids', 'root__guids', limit_includes=10)
 
 
 class UserInstitutionsRelationship(JSONAPIBaseView, generics.RetrieveDestroyAPIView, UserMixin):

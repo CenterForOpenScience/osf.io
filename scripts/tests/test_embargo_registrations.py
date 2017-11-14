@@ -6,8 +6,7 @@ from django.utils import timezone
 from nose.tools import *  # noqa
 
 from tests.base import OsfTestCase
-from tests.factories import RegistrationFactory
-from tests.factories import UserFactory
+from osf_tests.factories import RegistrationFactory, UserFactory
 
 from scripts.embargo_registrations import main
 

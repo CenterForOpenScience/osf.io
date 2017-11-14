@@ -359,3 +359,62 @@ class TestGetSubjectDescendants(AdminTestCase):
             content_dict['all_descendants'],
             [self.child_1.id, self.child_2.id, self.grandchild_1.id]
         )
+
+
+class TestProcessCustomTaxonomy(AdminTestCase):
+    def setUp(self):
+
+        self.user = AuthUserFactory()
+
+        self.subject1 = SubjectFactory()
+        self.subject2 = SubjectFactory()
+        self.subject3 = SubjectFactory()
+
+        self.subject1_1 = SubjectFactory(parent=self.subject1)
+        self.subject2_1 = SubjectFactory(parent=self.subject2)
+        self.subject3_1 = SubjectFactory(parent=self.subject3)
+
+        self.subject1_1_1 = SubjectFactory(parent=self.subject1_1)
+
+        self.preprint_provider = PreprintProviderFactory()
+        self.request = RequestFactory().get('/fake_path')
+        self.view = views.ProcessCustomTaxonomy()
+        self.view = setup_user_view(self.view, self.request, user=self.user)
+
+    def test_process_taxonomy_changes_subjects(self):
+        custom_taxonomy = {
+            'include': [self.subject1.text, self.subject3_1.text],
+            'exclude': [self.subject1_1.text],
+            'custom': {
+                'Changed Subject Name': {'parent': self.subject2.text, 'bepress': self.subject2_1.text},
+                self.subject2.text: {'parent': '', 'bepress': self.subject2.text}
+            }
+        }
+        self.request.POST = {
+            'custom_taxonomy_json': json.dumps(custom_taxonomy),
+            'provider_id': self.preprint_provider.id
+        }
+
+        self.view.post(self.request)
+
+        actual_preprint_provider_subjects = self.preprint_provider.subjects.all().values_list('text', flat=True)
+        expected_subjects = [self.subject1.text, self.subject2.text, self.subject3_1.text, 'Changed Subject Name']
+
+        nt.assert_items_equal(actual_preprint_provider_subjects, expected_subjects)
+        assert self.preprint_provider.subjects.get(text='Changed Subject Name').parent.text == self.subject2.text
+
+    def test_process_taxonomy_invalid_returns_feedback(self):
+        custom_taxonomy = {
+            'include': [],
+            'exclude': [],
+            'custom': {
+                'Changed Subject Name': {'parent': self.subject2.text, 'bepress': self.subject2_1.text},
+            }
+        }
+        self.request.POST = {
+            'custom_taxonomy_json': json.dumps(custom_taxonomy),
+            'provider_id': self.preprint_provider.id
+        }
+
+        with nt.assert_raises(AssertionError):
+            self.view.post(self.request)

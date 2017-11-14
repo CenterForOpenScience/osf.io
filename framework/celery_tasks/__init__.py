@@ -17,7 +17,7 @@ if settings.SENTRY_DSN:
     client = Client(settings.SENTRY_DSN, release=settings.VERSION, tags={'App': 'celery'})
     register_signal(client)
 
-if settings.BROKER_USE_SSL:
+if settings.CELERY_BROKER_USE_SSL:
     app.setup_security()
 
 @app.task

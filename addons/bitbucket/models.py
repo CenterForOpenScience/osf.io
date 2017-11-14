@@ -108,7 +108,7 @@ class NodeSettings(BaseStorageAddon, BaseOAuthNodeSettings):
     user = models.TextField(blank=True, null=True)
     repo = models.TextField(blank=True, null=True)
     hook_id = models.TextField(blank=True, null=True)
-    user_settings = models.ForeignKey(UserSettings, null=True, blank=True)
+    user_settings = models.ForeignKey(UserSettings, null=True, blank=True, on_delete=models.CASCADE)
 
     _api = None
 
