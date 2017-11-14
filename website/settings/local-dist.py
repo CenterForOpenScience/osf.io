@@ -78,12 +78,12 @@ OSF_SERVER_CERT = None
 
 ##### Celery #####
 ## Default RabbitMQ broker
-BROKER_URL = 'amqp://'
+CELERY_BROKER_URL = 'amqp://'
 
 # Celery with SSL
 # import ssl
 #
-# BROKER_USE_SSL = {
+# CELERY_BROKER_USE_SSL = {
 #     'keyfile': '/etc/ssl/private/worker.key',
 #     'certfile': '/etc/ssl/certs/worker.pem',
 #     'ca_certs': '/etc/ssl/certs/ca-chain.cert.pem',
