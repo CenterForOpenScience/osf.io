@@ -448,7 +448,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
 
     @property
     def has_submitted_preprint(self):
-        return self.preprints.filter(~Q(reviews_state='initial')).exists()
+        return self.preprints.exclude(reviews_state='initial').exists()
 
     @property
     def is_preprint_orphan(self):
