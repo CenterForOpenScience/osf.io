@@ -1231,6 +1231,10 @@ class TestMergingUsers:
 
         assert project.get_permissions(master) == ['read', 'write', 'admin']
 
+    def test_merge_user_into_self_fails(self, master):
+        with pytest.raises(ValueError):
+            master.merge_user(master)
+
 
 class TestDisablingUsers(OsfTestCase):
     def setUp(self):

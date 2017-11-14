@@ -67,12 +67,21 @@ function batchNodesDelete(nodes) {
             data: nodesBatch
         }),
         success: function(){
-            bootbox.alert({
-            message: 'Project has been successfully deleted.',
-                callback: function(confirmed) {
-                    window.location.href = '/dashboard/';
-                }
-            });
+            if (window.contextVars.node.nodeType === 'project')
+                bootbox.alert({
+                    message: 'Project has been successfully deleted.',
+                    callback: function(confirmed) {
+                        window.location.href = '/dashboard/';
+                    }
+                });
+
+            if (window.contextVars.node.nodeType === 'component')
+                bootbox.alert({
+                    message: 'Component has been successfully deleted.',
+                    callback: function(confirmed) {
+                        window.location = window.contextVars.node.parentUrl;
+                    }
+                });
         }
     });
 }
@@ -84,6 +93,8 @@ function batchNodesDelete(nodes) {
  */
 var NodesDeleteViewModel = function(node) {
     var self = this;
+    self.nodeType = window.contextVars.node.nodeType;
+    self.parentUrl = window.contextVars.node.parentUrl;
     self.SELECT = 'select';
     self.CONFIRM = 'confirm';
 
@@ -117,21 +128,50 @@ var NodesDeleteViewModel = function(node) {
     self.page = ko.observable(self.SELECT);
 
     self.pageTitle = ko.computed(function() {
-        return {
-            select: 'Delete Project',
-            confirm: 'Delete Project and Components'
-        }[self.page()];
+        if (self.nodeType === 'project'){
+            return {
+                select: 'Delete Project',
+                confirm: 'Delete Project and Components'
+            }[self.page()];
+        }
+
+        if (self.nodeType === 'component'){
+            return {
+                select: 'Delete Component',
+                confirm: 'Delete Components'
+            }[self.page()];
+        }
+
     });
 
     self.message = ko.computed(function() {
         if (self.page() === self.CONFIRM) {
-            return 'The following project and components will be deleted';
+            if (self.nodeType === 'project')
+                return 'The following project and components will be deleted';
+
+            if (self.nodeType === 'component')
+                return 'The following components will be deleted';
         }
 
-        return {
-            select: 'It looks like your project has components within it. To delete this project, you must also delete all child components',
-            confirm: 'The following project and components will be deleted.'
-        }[self.page()];
+        if (self.nodeType === 'project')
+            return {
+                select: 'It looks like your project has components within it. To delete this project, you must also delete all child components',
+                confirm: 'The following project and components will be deleted.'
+            }[self.page()];
+
+        if (self.nodeType === 'component')
+            return {
+                select: 'It looks like your componet has components within it. To delete this component, you must also delete all child components',
+                confirm: 'The following components will be deleted.'
+            }[self.page()];
+    });
+
+    self.warning = ko.computed(function() {
+        if (self.nodeType === 'project')
+            return 'Please note that deleting your project will erase all your project data and this process is IRREVERSIBLE.';
+
+        if (self.nodeType === 'component')
+            return 'Please note that deleting your component will erase all your component data and this process is IRREVERSIBLE.';
     });
 };
 

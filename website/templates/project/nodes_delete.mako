@@ -57,9 +57,7 @@
                                         </div>
                                     </div>
                                 </div>
-                                <p>
-                                    Please note that deleting your project will erase all your project data and this process is IRREVERSIBLE.
-                                </p>
+                                <p data-bind="text:warning">
                                 <p>
                                     Type the following to continue: <strong data-bind="text: confirmationString"></strong>
                                 </p>
