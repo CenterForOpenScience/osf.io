@@ -1585,14 +1585,18 @@ function _loadTopLevelChildren() {
 var NO_AUTO_EXPAND_PROJECTS = ['ezcuj', 'ecmz4', 'w4wvg', 'sn64d'];
 function expandStateLoad(item) {
     var tb = this,
+        icon = $('.tb-row[data-id="' + item.id + '"]').find('.tb-toggle-icon'),
+        toggleIcon = tbOptions.resolveToggle(item),
+        addonList = [],
         i;
+
     if (item.children.length > 0 && item.depth === 1) {
         // NOTE: On the RPP and a few select projects *only*: Load the top-level project's OSF Storage
         // but do NOT lazy-load children in order to save hundreds of requests.
         // TODO: We might want to do this for every project, but that's TBD.
         // /sloria
         if (window.contextVars && window.contextVars.node && NO_AUTO_EXPAND_PROJECTS.indexOf(window.contextVars.node.id) > -1) {
-            var osfsItems = item.children.filter(function(child) { return child.isAddonRoot && child.provider === 'osfstorage'; });
+            var osfsItems = item.children.filter(function(child) { return child.data.isAddonRoot && child.data.provider === 'osfstorage'; });
             if (osfsItems.length) {
                 var osfsItem = osfsItems[0];
                 tb.updateFolder(null, osfsItem);
@@ -1603,6 +1607,7 @@ function expandStateLoad(item) {
             }
         }
     }
+
     if (item.children.length > 0 && item.depth === 2) {
         for (i = 0; i < item.children.length; i++) {
             if (item.children[i].data.isAddonRoot || item.children[i].data.addonFullName === 'OSF Storage' ) {
@@ -1610,7 +1615,33 @@ function expandStateLoad(item) {
             }
         }
     }
-        $('.fangorn-toolbar-icon').tooltip();
+
+    if (item.depth > 2 && !item.data.isAddonRoot && !item.data.type && item.children.length === 0 && item.open) {
+        // Displays loading indicator until request below completes
+        // Copied from toggleFolder() in Treebeard
+        if (icon.get(0)) {
+            m.render(icon.get(0), tbOptions.resolveRefreshIcon());
+        }
+        $osf.ajaxJSON(
+            'GET',
+            '/api/v1/project/' + item.data.nodeID + '/files/grid/'
+        ).done(function(response) {
+            var data = response.data[0].children;
+            tb.updateFolder(data, item);
+            tb.redraw();
+        }).fail(function(xhr) {
+            item.notify.update('Unable to retrieve components.', 'danger', undefined, 3000);
+            item.open = false;
+            Raven.captureMessage('Unable to retrieve components for node ' + item.data.nodeID, {
+                extra: {
+                    xhr: xhr
+                }
+            });
+        });
+    }
+
+    $('.fangorn-toolbar-icon').tooltip();
+
 }
 
 /**
