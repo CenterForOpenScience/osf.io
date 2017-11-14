@@ -387,6 +387,7 @@ HIGH_PRI_MODULES = {
     'scripts.approve_embargo_terminations',
     'scripts.approve_registrations',
     'scripts.embargo_registrations',
+    'scripts.premigrate_created_modified',
     'scripts.refresh_addon_tokens',
     'scripts.retract_registrations',
     'website.archiver.tasks',
@@ -448,6 +449,7 @@ CELERY_IMPORTS = (
     'scripts.analytics.run_keen_snapshots',
     'scripts.analytics.run_keen_events',
     'scripts.generate_sitemap',
+    'scripts.premigrate_created_modified',
 )
 
 # Modules that need metrics and release requirements
