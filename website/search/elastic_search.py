@@ -77,7 +77,7 @@ def client():
                 settings.ELASTIC_URI,
                 request_timeout=settings.ELASTIC_TIMEOUT,
                 retry_on_timeout=True,
-                **settings.ELASIC_KWARGS
+                **settings.ELASTIC_KWARGS
             )
             logging.getLogger('elasticsearch').setLevel(logging.WARN)
             logging.getLogger('elasticsearch.trace').setLevel(logging.WARN)
