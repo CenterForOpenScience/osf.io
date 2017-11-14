@@ -184,7 +184,7 @@ class NodeFileCollector(object):
         return node_name
 
     def _serialize_node(self, node, parent=None, children=[]):
-        is_pointer = parent and node.linked_node
+        is_pointer = parent and node.is_linked_node
         can_view = node.can_view(auth=self.auth)
         can_edit = node.has_write_perm if hasattr(node, 'has_write_perm') else node.can_edit(auth=self.auth)
 
@@ -214,16 +214,15 @@ class NodeFileCollector(object):
     def _get_nodes(self, node):
         AbstractNode = apps.get_model('osf.AbstractNode')
         Contributor = apps.get_model('osf.Contributor')
-        NodeRelation = apps.get_model('osf.NodeRelation')
 
         data = []
         if node.can_view(auth=self.auth):
             serialized_addons = self._collect_addons(node)
-            linked_node_sqs = NodeRelation.objects.filter(parent=node, is_node_link=True)
+            linked_node_sqs = node.node_relations.filter(is_node_link=True)
             has_write_perm_sqs = Contributor.objects.filter(node=OuterRef('pk'), write=True, user=self.auth.user)
             children = (AbstractNode.objects
                         .filter(is_deleted=False, _parents__parent=node)
-                        .annotate(linked_node=Exists(linked_node_sqs))
+                        .annotate(is_linked_node=Exists(linked_node_sqs))
                         .annotate(has_write_perm=Exists(has_write_perm_sqs))
                         )
             serialized_children = [self._serialize_node(child, parent=node) for child in children]

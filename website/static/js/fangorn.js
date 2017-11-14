@@ -1622,23 +1622,27 @@ function expandStateLoad(item) {
         }
     }
 
-    if (item.depth > 2 && !item.data.isAddonRoot && item.children.length === 0 && item.open) {
+    if (item.depth > 2 && !item.data.isAddonRoot && !item.data.type && item.children.length === 0 && item.open) {
+        // Displays loading indicator until request below completes
+        // Copied from toggleFolder() in Treebeard
         if (icon.get(0)) {
             m.render(icon.get(0), tbOptions.resolveRefreshIcon());
         }
         $osf.ajaxJSON(
             'GET',
             '/api/v1/project/' + item.data.nodeID + '/files/grid/'
-        ).done(function(xhr) {
-            var data = xhr.data[0].children;
+        ).done(function(response) {
+            var data = response.data[0].children;
             tb.updateFolder(data, item);
             tb.redraw();
-            if (icon.get(0)) {
-                m.render(icon.get(0), tbOptions.resolveToggle(item));
-            }
         }).fail(function(xhr) {
             item.notify.update('Unable to retrieve components.', 'danger', undefined, 3000);
             item.open = false;
+            Raven.captureMessage('Unable to retrieve components for node ' + item.data.nodeID, {
+                extra: {
+                    xhr: xhr
+                }
+            });
         });
     }
 
