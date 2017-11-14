@@ -31,6 +31,7 @@ var sparseNodeFields = String([
     'contributors',
     'current_user_permissions',
     'date_modified',
+    'description',
     'parent',
     'public',
     'tags',
