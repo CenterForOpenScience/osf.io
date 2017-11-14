@@ -109,12 +109,12 @@ var PublicNode = {
                     m('span.component-overflow.f-w-lg', {style: 'line-height: 1.5;'}, [
                         m('span.project-statuses-lg'),
                         m('span', {class: ctrl.icon, style: 'padding-right: 5px;'}, ''),
-                        m('a', {'href': ctrl.node.links.html}, ctrl.node.attributes.title)
+                        m('a', {'href': ctrl.node.links.html}, $osf.decodeText(ctrl.node.attributes.title))
                     ])
                 ]),
                 ctrl.nodeType === 'components' ? m('div', {style: 'padding-bottom: 10px;'}, [
-                    ctrl.parent ? ctrl.parent.title + ' / ': m('em', '-- private project -- / '),
-                    m('b', ctrl.node.attributes.title)
+                    ctrl.parent ? $osf.decodeText(ctrl.parent.title) + ' / ': m('em', '-- private project -- / '),
+                    m('b', $osf.decodeText(ctrl.node.attributes.title))
                 ]) : '',
                 m('div.project-authors', {}, _formatContributors(ctrl.node)),
             ])
