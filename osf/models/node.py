@@ -1609,11 +1609,9 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
 
         :param schema: Schema object
         :param auth: All the auth information including user, API key.
-        :param template: Template name
         :param data: Form data
         :param parent Node: parent registration of registration to be created
         """
-        # TODO(lyndsysimon): "template" param is not necessary - use schema.name?
         # NOTE: Admins can register child nodes even if they don't have write access them
         if not self.can_edit(auth=auth) and not self.is_admin_parent(user=auth.user):
             raise PermissionsError(
@@ -1658,13 +1656,6 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         registered.is_public = False
         # Copy unclaimed records to unregistered users for parent
         registered.copy_unclaimed_records()
-
-        # TODO: Do we need to recurse? .register already recurses
-        for node in registered.get_descendants_recursive():
-            node.is_public = False
-            node.save()
-            # Copy unclaimed records to unregistered users for children
-            node.copy_unclaimed_records()
 
         if parent:
             node_relation = NodeRelation.objects.get(parent=parent.registered_from, child=original)
