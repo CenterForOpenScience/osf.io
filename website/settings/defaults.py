@@ -98,6 +98,13 @@ SEARCH_ENGINE = 'elastic'  # Can be 'elastic', or None
 ELASTIC_URI = 'localhost:9200'
 ELASTIC_TIMEOUT = 10
 ELASTIC_INDEX = 'website'
+ELASIC_KWARGS = {
+    # 'use_ssl': False,
+    # 'verify_certs': True,
+    # 'ca_certs': None,
+    # 'client_cert': None,
+    # 'client_key': None
+}
 
 # Sessions
 COOKIE_NAME = 'osf'
@@ -414,6 +421,7 @@ RABBITMQ_PORT = os.environ.get('RABBITMQ_PORT', '5672')
 RABBITMQ_VHOST = os.environ.get('RABBITMQ_VHOST', '/')
 
 BROKER_URL = os.environ.get('BROKER_URL', 'amqp://{}:{}@{}:{}/{}'.format(RABBITMQ_USERNAME, RABBITMQ_PASSWORD, RABBITMQ_HOST, RABBITMQ_PORT, RABBITMQ_VHOST))
+BROKER_USE_SSL = False
 
 # Default RabbitMQ backend
 CELERY_RESULT_BACKEND = os.environ.get('CELERY_RESULT_BACKEND', BROKER_URL)

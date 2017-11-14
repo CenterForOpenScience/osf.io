@@ -1333,6 +1333,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         # remove unclaimed record if necessary
         if self._primary_key in contributor.unclaimed_records:
             del contributor.unclaimed_records[self._primary_key]
+            contributor.save()
 
         # If user is the only visible contributor, return False
         if not self.contributor_set.exclude(user=contributor).filter(visible=True).exists():
@@ -1655,9 +1656,15 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         self.clone_logs(registered)
 
         registered.is_public = False
+        # Copy unclaimed records to unregistered users for parent
+        registered.copy_unclaimed_records()
+
+        # TODO: Do we need to recurse? .register already recurses
         for node in registered.get_descendants_recursive():
             node.is_public = False
             node.save()
+            # Copy unclaimed records to unregistered users for children
+            node.copy_unclaimed_records()
 
         if parent:
             node_relation = NodeRelation.objects.get(parent=parent.registered_from, child=original)
