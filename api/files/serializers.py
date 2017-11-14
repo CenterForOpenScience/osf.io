@@ -136,7 +136,6 @@ class BaseFileSerializer(JSONAPISerializer):
     filterable_fields = frozenset([
         'id',
         'name',
-        'node',
         'kind',
         'path',
         'materialized_path',
