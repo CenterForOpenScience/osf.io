@@ -441,37 +441,37 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         if not self.preprint_file_id or not self.is_public:
             return False
         if self.preprint_file.node_id == self.id:
-            return self.has_preprint_non_initial_state
+            return self.has_submitted_preprint
         else:
             self._is_preprint_orphan = True
             return False
 
     @property
-    def has_preprint_non_initial_state(self):
+    def has_submitted_preprint(self):
         return self.preprints.filter(~Q(reviews_state='initial')).exists()
 
-    @property
-    def has_moderated_preprint(self):
-        return self.preprints.filter(provider__reviews_workflow__isnull=False).exists()
+    # @property
+    # def has_moderated_preprint(self):
+    #     return self.preprints.filter(provider__reviews_workflow__isnull=False).exists()
 
-    @property
-    def preprint_state(self):
-        if self.has_moderated_preprint:
-            return self.preprints.get_queryset()[0].reviews_state
-
-    @property
-    def preprint_word(self):
-        if self.is_preprint:
-            return self.preprints.get_queryset()[0].provider.preprint_word
-
-    @property
-    def preprint_provider(self):
-        if self.is_preprint:
-            preprint_provider = self.preprints.get_queryset()[0].provider
-            return {
-                'name': preprint_provider.name,
-                'workflow': preprint_provider.reviews_workflow
-            }
+    # @property
+    # def preprint_state(self):
+    #     if self.has_moderated_preprint:
+    #         return self.preprints.get_queryset()[0].reviews_state
+    #
+    # @property
+    # def preprint_word(self):
+    #     if self.is_preprint:
+    #         return self.preprints.get_queryset()[0].provider.preprint_word
+    #
+    # @property
+    # def preprint_provider(self):
+    #     if self.is_preprint:
+    #         preprint_provider = self.preprints.get_queryset()[0].provider
+    #         return {
+    #             'name': preprint_provider.name,
+    #             'workflow': preprint_provider.reviews_workflow
+    #         }
 
     @property
     def is_preprint_orphan(self):

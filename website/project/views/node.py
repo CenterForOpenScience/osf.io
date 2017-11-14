@@ -735,10 +735,14 @@ def _view_project(node, auth, primary=False,
             'institutions': get_affiliated_institutions(node) if node else [],
             'has_draft_registrations': node.has_active_draft_registrations,
             'is_preprint': node.is_preprint,
-            'has_moderated_preprint': node.has_moderated_preprint,
-            'preprint_state': node.preprint_state,
-            'preprint_word': node.preprint_word,
-            'preprint_provider': node.preprint_provider,
+            'has_moderated_preprint': node.preprints.filter(provider__reviews_workflow__isnull=False).exists(),
+            'preprint_state': node.preprints.get_queryset()[0].reviews_state
+            if node.preprints.filter(provider__reviews_workflow__isnull=False).exists() else '',
+            'preprint_word': node.preprints.get_queryset()[0].provider.preprint_word if node.is_preprint else '',
+            'preprint_provider': {
+                'name': node.preprints.get_queryset()[0].provider.name,
+                'workflow': node.preprints.get_queryset()[0].provider.reviews_workflow
+            } if node.is_preprint else {},
             'is_preprint_orphan': node.is_preprint_orphan,
             'has_published_preprint': node.preprints.filter(is_published=True).exists() if node else False,
             'preprint_file_id': node.preprint_file._id if node.preprint_file else None,

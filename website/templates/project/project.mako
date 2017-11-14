@@ -293,7 +293,7 @@
                 % else:
                     <% icon_tooltip = 'This {preprint_word} is not publicly available or searchable.'.format(preprint_word=node['preprint_word'])%>
                 % endif
-                <i class="fa fa-question-circle text-muted" aria-hidden="true" title="${icon_tooltip}"></i>.
+                <i class="fa fa-question-circle text-muted" data-toggle="tooltip" data-placement="bottom" title="${icon_tooltip}"></i>.
             % else:
                 This project represents a ${node['preprint_word']}.
             % endif
