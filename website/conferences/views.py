@@ -4,7 +4,7 @@ import httplib
 import logging
 
 from django.db import transaction
-from bulk_update.helper import bulk_update
+from django_bulk_update.helper import bulk_update
 
 from addons.osfstorage.models import OsfStorageFile
 from framework.auth import get_or_create_user
