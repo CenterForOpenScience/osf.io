@@ -1,10 +1,9 @@
 from guardian.shortcuts import get_objects_for_user
+from django.db.models import Q
 
 from rest_framework import generics
 from rest_framework import permissions as drf_permissions
 from rest_framework.exceptions import NotAuthenticated
-
-from django.db.models import Q
 
 from framework.auth.oauth_scopes import CoreScopes
 
@@ -270,7 +269,7 @@ class PreprintProviderPreprintList(JSONAPIBaseView, generics.ListAPIView, Prepri
 
     # overrides ListAPIView
     def get_queryset(self):
-        return self.get_queryset_from_request().distinct('id', 'date_created')
+        return self.get_queryset_from_request()
 
     # overrides APIView
     def get_renderer_context(self):
