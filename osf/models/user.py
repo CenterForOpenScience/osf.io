@@ -663,7 +663,7 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
         # - projects where the user was a contributor
         for node in user.contributed:
             # Skip bookmark collection node
-            if node.is_bookmark_collection:
+            if node.is_bookmark_collection or node.is_quickfiles:
                 continue
             # if both accounts are contributor of the same project
             if node.is_contributor(self) and node.is_contributor(user):
