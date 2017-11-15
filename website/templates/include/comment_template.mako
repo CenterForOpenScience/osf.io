@@ -87,10 +87,9 @@
                                 <span data-bind="visible: editNotEmpty, text: counter, css: counterColor" class="pull-right label counter-comment"></span>
                             </div>
                             <div class="clearfix">
-                                <span class="text-danger" data-bind="text: errorMessage"></span>
                                 <div class="form-inline pull-right">
                                     <a class="btn btn-default btn-sm" data-bind="click: cancelEdit">Cancel</a>
-                                    <a class="btn btn-success btn-sm" data-bind="click: submitEdit, visible: validateEdit()">Save</a>
+                                    <a class="btn btn-success btn-sm" data-bind="click: submitEdit, tooltip: {title: errorMessage(), placement: 'bottom', disabled: !validateEdit()}, css: {disabled: !validateEdit()}">Save</a>
                                     <span data-bind="text: editErrorMessage" class="text-danger"></span>
                                 </div>
                             </div>
@@ -165,10 +164,9 @@
                         <span data-bind="visible: replyNotEmpty, text: counter, css: counterColor" class="pull-right label counter-comment"></span>
                     </div>
                     <div class="clearfix">
-                        <span class="text-danger" data-bind="text: errorMessage"></span>
                         <div class="pull-right">
                             <a class="btn btn-default btn-sm" data-bind="click: cancelReply, css: {disabled: submittingReply}"> Cancel</a>
-                            <a class="btn btn-success btn-sm" data-bind="click: submitReply, visible: validateReply(), css: {disabled: submittingReply}, text: commentButtonText"></a>
+                            <a class="btn btn-success btn-sm" data-bind="click: submitReply, tooltip: {title: errorMessage(), placement: 'bottom', disabled: !validateReply()}, css: {disabled: !validateReply() || submittingReply()}, text: commentButtonText"></a>
                             <span data-bind="text: replyErrorMessage" class="text-danger"></span>
                         </div>
                     </div>

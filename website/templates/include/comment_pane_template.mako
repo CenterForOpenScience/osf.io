@@ -28,10 +28,9 @@
                     </div>
                     <div data-bind="if: replyNotEmpty" class="form-group">
                         <div class="clearfix">
-                            <span class="text-danger" data-bind="text: errorMessage"></span>
                             <div class="pull-right">
                                 <a class="btn btn-default btn-sm" data-bind="click: cancelReply, css: {disabled: submittingReply}">Cancel</a>
-                                <a class="btn btn-success btn-sm" data-bind="click: submitReply, visible: validateReply(), css: {disabled: submittingReply}, text: commentButtonText"></a>
+                                <a class="btn btn-success btn-sm" data-bind="click: submitReply, tooltip: {title: errorMessage(), placement: 'bottom', disabled: !validateReply()}, css: {disabled: !validateReply() || submittingReply()}, text: commentButtonText"></a>
                                 <span data-bind="text: replyErrorMessage" class="text-danger"></span>
                             </div>
                         </div>

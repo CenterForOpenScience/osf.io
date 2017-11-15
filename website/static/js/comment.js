@@ -64,6 +64,7 @@ var getContributorList = function(url, contributors, ret) {
 
 // Maximum length for comments, in characters
 var MAXLENGTH = 1000;
+var WARNLENGTH = 5;
 
 var ABUSE_CATEGORIES = {
     spam: 'Spam or advertising',
@@ -195,15 +196,17 @@ var BaseComment = function() {
     });
 
     self.counterColor = ko.pureComputed(function(){
-        return self.currentCount() > MAXLENGTH - 5 ? 'alert-danger' : 'label-default';
+        return self.currentCount() >  MAXLENGTH - WARNLENGTH ? 'alert-danger' : 'label-default';
     });
 
     self.replyNotEmpty = ko.pureComputed(function() {
         return notEmpty(self.replyContent());
     });
+
     self.commentButtonText = ko.computed(function() {
         return self.submittingReply() ? 'Commenting' : 'Comment';
     });
+
     self.validateReply = ko.pureComputed(function() {
         return self.replyNotEmpty() && self.underMaxLength();
     });

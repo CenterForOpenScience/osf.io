@@ -264,6 +264,8 @@ var tooltip = function(el, valueAccessor) {
             $(el).addClass('ensure-bs-tooltips');
             $(el).on('click', function() {return false;});
         }
+    } else {
+        $(el).tooltip('destroy');
     }
 };
 // Run Bootstrap tooltip JS automagically
