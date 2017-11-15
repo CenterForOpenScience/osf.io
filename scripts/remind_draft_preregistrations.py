@@ -38,9 +38,11 @@ def find_neglected_prereg_within_reminder_limit():
 
     queue_data = QueuedMail.objects.filter(
         email_type=PREREG_REMINDER_TYPE,
-    ).values('data')
+        send_at__gte=timezone.now() - settings.PREREG_AGE_LIMIT,
+        data__draft_id__isnull=False
+    ).values_list('data', flat=True)
 
-    already_queued = [entry['data'].get('draft_id') for entry in queue_data if entry['data'].get('draft_id')]
+    already_queued = [entry['draft_id'] for entry in queue_data]
 
     return DraftRegistration.objects.filter(
         approval__isnull=True,

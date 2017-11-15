@@ -22,6 +22,10 @@ def user():
 @pytest.mark.django_db
 class TestQueuedMail:
 
+    @pytest.fixture()
+    def prereg(self, user):
+        return DraftRegistrationFactory(registration_schema=MetaSchema.objects.get(name='Prereg Challenge'))
+
     def queue_mail(self, mail, user, send_at=None, **kwargs):
         mail = queue_mail(
             to_addr=user.username if user else user.username,
@@ -154,15 +158,17 @@ class TestQueuedMail:
         assert mail.send_mail() is False
 
     @mock.patch('osf.models.queued_mail.send_mail')
-    def test_remind_prereg_presend(self, mock_mail, user):
-        prereg = DraftRegistrationFactory(registration_schema=MetaSchema.objects.get(name='Prereg Challenge'))
+    def test_remind_prereg_presend(self, mock_mail, user, prereg):
         mail = self.queue_mail(mail=PREREG_REMINDER, user=user, draft_id=prereg._id)
         assert mail.send_mail()
 
-    @mock.patch('osf.models.queued_mail.send_mail')
-    def test_remind_prereg_presend_with_approval(self, mock_mail, user):
-        prereg = DraftRegistrationFactory(registration_schema=MetaSchema.objects.get(name='Prereg Challenge'))
+        # test don't send if already sent
+        mail = self.queue_mail(mail=PREREG_REMINDER, user=user, draft_id=prereg._id)
+        assert not mail.send_mail()
 
+
+    @mock.patch('osf.models.queued_mail.send_mail')
+    def test_remind_prereg_presend_with_approval(self, mock_mail, user, prereg):
         approval = DraftRegistrationApproval(
             meta={
                 'registration_choice': 'immediate'
@@ -176,17 +182,9 @@ class TestQueuedMail:
         assert not mail.send_mail()
 
     @mock.patch('osf.models.queued_mail.send_mail')
-    def test_remind_prereg_presend_deleted_draft(self, mock_mail, user):
-        prereg = DraftRegistrationFactory(registration_schema=MetaSchema.objects.get(name='Prereg Challenge'))
+    def test_remind_prereg_presend_deleted_draft(self, mock_mail, user, prereg):
         mail = self.queue_mail(mail=PREREG_REMINDER, user=user, draft_id=prereg._id)
         prereg.delete()
         assert not mail.send_mail()
 
-    @mock.patch('osf.models.queued_mail.send_mail')
-    def test_remind_prereg_presend_already_sent(self, mock_mail, user):
-        prereg = DraftRegistrationFactory(registration_schema=MetaSchema.objects.get(name='Prereg Challenge'))
-        mail = self.queue_mail(mail=PREREG_REMINDER, user=user, draft_id=prereg._id)
-        mail.send_mail()
-        mail = self.queue_mail(mail=PREREG_REMINDER, user=user, draft_id=prereg._id)
-        assert not mail.send_mail()
 
