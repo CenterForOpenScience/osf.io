@@ -224,7 +224,7 @@ def sharejs(ctx, host=None, port=None, db_url=None, cors_allow_origin=None):
 
 
 @task(aliases=['celery'])
-def celery_worker(ctx, level='debug', hostname=None, beat=False, queues=None):
+def celery_worker(ctx, level='debug', hostname=None, beat=False, queues=None, concurrency=None, max_tasks_per_child=None):
     """Run the Celery process."""
     os.environ['DJANGO_SETTINGS_MODULE'] = 'api.base.settings'
     cmd = 'celery worker -A framework.celery_tasks -Ofair -l {0}'.format(level)
@@ -235,6 +235,10 @@ def celery_worker(ctx, level='debug', hostname=None, beat=False, queues=None):
         cmd = cmd + ' --beat'
     if queues:
         cmd = cmd + ' --queues={}'.format(queues)
+    if concurrency:
+        cmd = cmd + ' --concurrency={}'.format(concurrency)
+    if max_tasks_per_child:
+        cmd = cmd + ' --maxtasksperchild={}'.format(max_tasks_per_child)
     ctx.run(bin_prefix(cmd), pty=True)
 
 
@@ -326,7 +330,8 @@ def mailserver(ctx, port=1025):
 def jshint(ctx):
     """Run JSHint syntax check"""
     js_folder = os.path.join(HERE, 'website', 'static', 'js')
-    cmd = 'jshint {}'.format(js_folder)
+    jshint_bin = os.path.join(HERE, 'node_modules', '.bin', 'jshint')
+    cmd = '{} {}'.format(jshint_bin, js_folder)
     ctx.run(cmd, echo=True)
 
 
@@ -436,6 +441,7 @@ API_TESTS3 = [
     'api_tests/comments',
     'api_tests/files',
     'api_tests/guids',
+    'api_tests/reviews',
     'api_tests/search',
     'api_tests/taxonomies',
     'api_tests/test',
@@ -528,14 +534,13 @@ def test(ctx, all=False, syntax=False):
         test_addons(ctx)
         # TODO: Enable admin tests
         test_admin(ctx)
-        karma(ctx, single=True, browsers='PhantomJS')
+        karma(ctx)
 
 
 @task
 def test_js(ctx):
     jshint(ctx)
-    karma(ctx, single=True, browsers='PhantomJS')
-
+    karma(ctx)
 
 @task
 def test_travis_osf(ctx, numprocesses=None):
@@ -559,9 +564,10 @@ def test_travis_else(ctx, numprocesses=None):
 
 
 @task
-def test_travis_api1(ctx, numprocesses=None):
+def test_travis_api1_and_js(ctx, numprocesses=None):
     flake(ctx)
     jshint(ctx)
+    karma(ctx)
     test_api1(ctx, numprocesses=numprocesses)
 
 
@@ -591,19 +597,9 @@ def test_travis_varnish(ctx):
 
 
 @task
-def karma(ctx, single=False, sauce=False, browsers=None):
-    """Run JS tests with Karma. Requires PhantomJS to be installed."""
-    karma_bin = os.path.join(
-        HERE, 'node_modules', 'karma', 'bin', 'karma'
-    )
-    cmd = '{} start'.format(karma_bin)
-    if single:
-        cmd += ' --single-run'
-    # Use browsers if specified on the command-line, otherwise default
-    # what's specified in karma.conf.js
-    if browsers:
-        cmd += ' --browsers {}'.format(browsers)
-    ctx.run(cmd, echo=True)
+def karma(ctx):
+    """Run JS tests with Karma. Requires Chrome to be installed."""
+    ctx.run('yarn test', echo=True)
 
 
 @task
@@ -691,52 +687,17 @@ def copy_settings(ctx, addons=False):
         copy_addon_settings(ctx)
 
 
-@task
-def packages(ctx):
-    brew_commands = [
-        'update',
-        'upgrade',
-        'install libxml2',
-        'install libxslt',
-        'install elasticsearch@1.7',
-        'install rabbitmq',
-        'install node',
-        'tap tokutek/tokumx',
-        'install chrisseto/homebrew-tokumx/tokumx-bin',
-    ]
-    if platform.system() == 'Darwin':
-        print('Running brew commands')
-        for item in brew_commands:
-            command = 'brew {cmd}'.format(cmd=item)
-            ctx.run(command)
-    elif platform.system() == 'Linux':
-        # TODO: Write a script similar to brew bundle for Ubuntu
-        # e.g., run('sudo apt-get install [list of packages]')
-        pass
-
-
 @task(aliases=['bower'])
 def bower_install(ctx):
     print('Installing bower-managed packages')
-    bower_bin = os.path.join(HERE, 'node_modules', 'bower', 'bin', 'bower')
+    bower_bin = os.path.join(HERE, 'node_modules', '.bin', 'bower')
     ctx.run('{} prune --allow-root'.format(bower_bin), echo=True)
     ctx.run('{} install --allow-root'.format(bower_bin), echo=True)
 
 
 @task
-def setup(ctx):
-    """Creates local settings, and installs requirements"""
-    copy_settings(ctx, addons=True)
-    packages(ctx)
-    requirements(ctx, addons=True, dev=True)
-    # Build nodeCategories.json before building assets
-    build_js_config_files(ctx)
-    assets(ctx, dev=True, watch=False)
-
-@task
 def docker_init(ctx):
     """Initial docker setup"""
-    import platform
     print('You will be asked for your sudo password to continue...')
     if platform.system() == 'Darwin':  # Mac OSX
         ctx.run('sudo ifconfig lo0 alias 192.168.168.167')
@@ -924,15 +885,12 @@ def webpack(ctx, clean=False, watch=False, dev=False, colors=False):
     """Build static assets with webpack."""
     if clean:
         clean_assets(ctx)
-    webpack_bin = os.path.join(HERE, 'node_modules', 'webpack', 'bin', 'webpack.js')
-    args = [webpack_bin]
+    args = ['yarn run webpack-{}'.format('dev' if dev else 'prod')]
     args += ['--progress']
     if watch:
         args += ['--watch']
     if colors:
         args += ['--colors']
-    config_file = 'webpack.dev.config.js' if dev else 'webpack.prod.config.js'
-    args += ['--config {0}'.format(config_file)]
     command = ' '.join(args)
     ctx.run(command, echo=True)
 
@@ -949,10 +907,10 @@ def build_js_config_files(ctx):
 @task()
 def assets(ctx, dev=False, watch=False, colors=False):
     """Install and build static assets."""
-    npm = 'npm install'
+    command = 'yarn install --frozen-lockfile'
     if not dev:
-        npm += ' --production'
-    ctx.run(npm, echo=True)
+        command += ' --production'
+    ctx.run(command, echo=True)
     bower_install(ctx)
     build_js_config_files(ctx)
     # Always set clean=False to prevent possible mistakes
@@ -991,11 +949,16 @@ def usage(ctx):
 ### Maintenance Tasks ###
 
 @task
-def set_maintenance(ctx, start=None, end=None):
+def set_maintenance(ctx, message='', level=1, start=None, end=None):
     from website.app import setup_django
     setup_django()
     from website.maintenance import set_maintenance
-    """Set the time period for the maintenance notice to be displayed.
+    """Creates a maintenance notice.
+
+    Message is required.
+    Level defaults to 1. Valid levels are 1 (info), 2 (warning), and 3 (danger).
+
+    Set the time period for the maintenance notice to be displayed.
     If no start or end values are displayed, default to starting now
     and ending 24 hours from now. If no timezone info is passed along,
     everything will be converted to UTC.
@@ -1004,12 +967,11 @@ def set_maintenance(ctx, start=None, end=None):
     will be changed to be 24 hours before the end time.
 
     Examples:
-        invoke set_maintenance
-        invoke set_maintenance --start 2016-03-16T15:41:00-04:00
-        invoke set_maintenance --end 2016-03-16T15:41:00-04:00
+        invoke set_maintenance --message 'OSF down for scheduled maintenance.' --start 2016-03-16T15:41:00-04:00
+        invoke set_maintenance --message 'Apocalypse' --level 3 --end 2016-03-16T15:41:00-04:00
     """
-    state = set_maintenance(start, end)
-    print('Maintenance notice up for {} to {}.'.format(state['start'], state['end']))
+    state = set_maintenance(message, level, start, end)
+    print('Maintenance notice up {} to {}.'.format(state['start'], state['end']))
 
 
 @task

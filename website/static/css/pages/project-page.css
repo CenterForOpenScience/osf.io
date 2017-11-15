@@ -185,3 +185,7 @@ div.arrow-up {
     margin-top: -14px;
 }
 
+/* Override some treebeard styles */
+#nodesPrivacy #tb-tbody {
+    max-height: 300px;
+}

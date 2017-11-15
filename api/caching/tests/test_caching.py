@@ -10,8 +10,8 @@ import requests
 from django.conf import settings as django_settings
 from requests.auth import HTTPBasicAuth
 
-from osf.models import OSFUser as User
-from tests.factories import create_fake_project
+from osf.models import OSFUser
+from scripts.create_fakes import create_fake_project
 from tests.base import DbTestCase
 
 
@@ -26,7 +26,7 @@ class TestVarnish(DbTestCase):
     def setUpClass(cls):
         super(TestVarnish, cls).setUpClass()
         username = uuid.uuid4()
-        cls.user = User.create_confirmed(
+        cls.user = OSFUser.create_confirmed(
             username='{}@mail.com'.format(str(username)),
             password='password',
             fullname='Mocha Test User')

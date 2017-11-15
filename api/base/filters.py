@@ -4,6 +4,7 @@ import operator
 import re
 
 import pytz
+from guardian.shortcuts import get_objects_for_user
 from api.base import utils
 from api.base.exceptions import (InvalidFilterComparisonType,
                                  InvalidFilterError, InvalidFilterFieldError,
@@ -13,12 +14,12 @@ from api.base.serializers import RelationshipField, ShowIfVersion, TargetField
 from dateutil import parser as date_parser
 from django.core.exceptions import ValidationError
 from django.db.models import QuerySet as DjangoQuerySet
-from django.db.models import Q
-from modularodm import Q as MQ
-from modularodm.query import queryset as modularodm_queryset
+from django.db.models import Q, Exists, OuterRef
 from rest_framework import serializers as ser
 from rest_framework.filters import OrderingFilter
-from osf.models import Subject
+from osf.models import Subject, PreprintProvider, Node
+from osf.models.base import GuidMixin
+from reviews.workflow import States
 
 
 def lowercase(lower):
@@ -44,17 +45,21 @@ def sort_multiple(fields):
         return 0
     return sort_fn
 
-class ODMOrderingFilter(OrderingFilter):
+class OSFOrderingFilter(OrderingFilter):
     """Adaptation of rest_framework.filters.OrderingFilter to work with modular-odm."""
     # override
     def filter_queryset(self, request, queryset, view):
+        ordering = self.get_ordering(request, queryset, view)
         if isinstance(queryset, DjangoQuerySet):
             if queryset.ordered:
                 return queryset
-            return super(ODMOrderingFilter, self).filter_queryset(request, queryset, view)
-        ordering = self.get_ordering(request, queryset, view)
+            elif ordering and getattr(queryset.query, 'distinct_fields', None):
+                order_fields = tuple([field.lstrip('-') for field in ordering])
+                distinct_fields = queryset.query.distinct_fields
+                queryset.query.distinct_fields = tuple(set(distinct_fields + order_fields))
+            return super(OSFOrderingFilter, self).filter_queryset(request, queryset, view)
         if ordering:
-            if not isinstance(queryset, modularodm_queryset.BaseQuerySet) and isinstance(ordering, (list, tuple)):
+            if isinstance(ordering, (list, tuple)):
                 sorted_list = sorted(queryset, cmp=sort_multiple(ordering))
                 return sorted_list
             return queryset.sort(*ordering)
@@ -310,196 +315,6 @@ class FilterMixin(object):
                 )
 
 
-class ODMFilterMixin(FilterMixin):
-    """View mixin that adds a get_query_from_request method which converts query params
-    of the form `filter[field_name]=value` into an ODM Query object.
-
-    Subclasses must define `get_default_odm_query()`.
-
-    Serializers that want to restrict which fields are used for filtering need to have a variable called
-    filterable_fields which is a frozenset of strings representing the field names as they appear in the serialization.
-    """
-
-    # TODO Handle simple and complex non-standard fields
-    field_comparison_operators = {
-        ser.CharField: 'icontains',
-        ser.ListField: 'contains',
-    }
-
-    def __init__(self, *args, **kwargs):
-        super(FilterMixin, self).__init__(*args, **kwargs)
-        if not self.serializer_class:
-            raise NotImplementedError()
-
-    def get_default_odm_query(self):
-        """Return the default MODM query for the result set.
-
-        NOTE: If the client provides additional filters in query params, the filters
-        will intersected with this query.
-        """
-        raise NotImplementedError('Must define get_default_odm_query')
-
-    def get_query_from_request(self):
-        if self.request.parser_context['kwargs'].get('is_embedded'):
-            param_query = None
-        else:
-            param_query = self.query_params_to_odm_query(self.request.query_params)
-        default_query = self.get_default_odm_query()
-
-        if param_query and default_query:
-            query = param_query & default_query
-        elif param_query:
-            query = param_query
-        else:
-            query = default_query
-
-        return query
-
-    def _operation_to_query(self, operation):
-        return MQ(operation['source_field_name'], operation['op'], operation['value'])
-
-    def query_params_to_odm_query(self, query_params):
-        """Convert query params to a modularodm Query object."""
-        filters = self.parse_query_params(query_params)
-        if filters:
-            query_parts = []
-            for key, field_names in filters.iteritems():
-                sub_query_parts = []
-                for field_name, data in field_names.iteritems():
-                    # Query based on the DB field, not the name of the serializer parameter
-                    if self.should_convert_special_params_to_odm_query(field_name):
-                        sub_query = self.convert_special_params_to_odm_query(field_name, query_params, key, data)
-                    elif isinstance(data, list):
-                        sub_query = functools.reduce(operator.and_, [
-                            self._operation_to_query(item)
-                            for item in data
-                        ])
-                    else:
-                        sub_query = self._operation_to_query(data)
-
-                    sub_query_parts.append(sub_query)
-
-                try:
-                    sub_query = functools.reduce(operator.or_, sub_query_parts)
-                    query_parts.append(sub_query)
-                except TypeError:
-                    continue
-
-            try:
-                query = functools.reduce(operator.and_, query_parts)
-            except TypeError:
-                query = None
-        else:
-            query = None
-
-        return query
-
-    def should_convert_special_params_to_odm_query(self, field_name):
-        """ This should be overridden in subclasses for custom filtering behavior
-        """
-        return False
-
-    def convert_special_params_to_odm_query(self, field_name, query_params, key, data):
-        """ This should be overridden in subclasses for custom filtering behavior
-        """
-        pass
-
-class DjangoFilterMixin(FilterMixin):
-    """View mixin that adds a get_query_from_request method which converts query params
-    of the form `filter[field_name]=value` into a Django Query object.
-
-    Subclasses must define `get_default_django_query()`.
-
-    Serializers that want to restrict which fields are used for filtering need to have a variable called
-    filterable_fields which is a frozenset of strings representing the field names as they appear in the serialization.
-    """
-
-    # TODO Handle simple and complex non-standard fields
-    field_comparison_operators = {
-        ser.CharField: 'icontains',
-        ser.ListField: 'contains',
-    }
-
-    def __init__(self, *args, **kwargs):
-        super(FilterMixin, self).__init__(*args, **kwargs)
-        if not self.serializer_class:
-            raise NotImplementedError()
-
-    def get_default_django_query(self):
-        """Return the default Django query for the result set.
-
-        NOTE: If the client provides additional filters in query params, the filters
-        will intersected with this query.
-        """
-        raise NotImplementedError('Must define get_default_django_query')
-
-    def get_query_from_request(self):
-        if self.request.parser_context['kwargs'].get('is_embedded'):
-            param_query = None
-        else:
-            param_query = self.query_params_to_django_query(self.request.query_params)
-        default_query = self.get_default_django_query()
-
-        if param_query and default_query:
-            query = param_query & default_query
-        elif param_query:
-            query = param_query
-        else:
-            query = default_query
-
-        return query
-
-    def _operation_to_query(self, operation):
-        if operation['op'] in ['lt', 'lte', 'gt', 'gte', 'in', 'iexact', 'exact']:
-            operation['source_field_name'] = '{}__{}'.format(operation['source_field_name'], operation['op'])
-        return Q(**{operation['source_field_name']: operation['value']})
-
-    def query_params_to_django_query(self, query_params):
-        """Convert query params to a Django Query object."""
-        filters = self.parse_query_params(query_params)
-        if filters:
-            query_parts = []
-            for key, field_names in filters.iteritems():
-                sub_query_parts = []
-                for field_name, data in field_names.iteritems():
-                    # Query based on the DB field, not the name of the serializer parameter
-                    if self.should_convert_special_params_to_django_query(field_name):
-                        sub_query = self.convert_special_params_to_django_query(field_name, query_params, key, data)
-                    elif isinstance(data, list):
-                        sub_query = functools.reduce(operator.and_, [
-                            self._operation_to_query(item)
-                            for item in data
-                        ])
-                    else:
-                        sub_query = self._operation_to_query(data)
-
-                    sub_query_parts.append(sub_query)
-
-                try:
-                    sub_query = functools.reduce(operator.or_, sub_query_parts)
-                    query_parts.append(sub_query)
-                except TypeError:
-                    continue
-
-            try:
-                query = functools.reduce(operator.and_, query_parts)
-            except TypeError:
-                query = None
-        else:
-            query = None
-
-        return query
-
-    def should_convert_special_params_to_django_query(self, field_name):
-        """ This should be overridden in subclasses for custom filtering behavior
-        """
-        return False
-
-    def convert_special_params_to_django_query(self, field_name, query_params, key, data):
-        """ This should be overridden in subclasses for custom filtering behavior
-        """
-        pass
-
 class ListFilterMixin(FilterMixin):
     """View mixin that adds a get_queryset_from_request method which uses query params
     of the form `filter[field_name]=value` to filter a list of objects.
@@ -537,33 +352,41 @@ class ListFilterMixin(FilterMixin):
         """filters default queryset based on query parameters"""
         filters = self.parse_query_params(query_params)
         queryset = default_queryset
+        query_parts = []
 
         if filters:
             for key, field_names in filters.iteritems():
+                sub_query_parts = []
                 for field_name, data in field_names.iteritems():
                     operations = data if isinstance(data, list) else [data]
-                    for operation in operations:
-                        if isinstance(queryset, list):
+                    if isinstance(queryset, list):
+                        for operation in operations:
                             queryset = self.get_filtered_queryset(field_name, operation, queryset)
-                        else:
-                            queryset = self.filter_by_field(queryset, field_name, operation)
+                    else:
+                        sub_query_parts.append(
+                            functools.reduce(operator.and_, [
+                                self.build_query_from_field(field_name, operation)
+                                for operation in operations
+                            ])
+                        )
+                if not isinstance(queryset, list):
+                    sub_query = functools.reduce(operator.or_, sub_query_parts)
+                    query_parts.append(sub_query)
+
+            if not isinstance(queryset, list):
+                query = functools.reduce(operator.and_, query_parts)
+                queryset = queryset.filter(query)
+
         return queryset
 
-    def filter_by_field(self, queryset, field_name, operation):
-        """Override-able method that filters `queryset`, given an `operation`, which is a dict of the form:
-
-            {
-                'source_field_name': <Name of the field>,
-                'op': <Operation, e.g. 'gt', 'lt', 'eq'>,
-                'value': <Input value>
-            }
-        """
+    def build_query_from_field(self, field_name, operation):
         query_field_name = operation['source_field_name']
         if operation['op'] == 'ne':
-            return queryset.exclude(**{query_field_name: operation['value']})
+            return ~Q(**{query_field_name: operation['value']})
         elif operation['op'] != 'eq':
             query_field_name = '{}__{}'.format(query_field_name, operation['op'])
-        return queryset.filter(**{query_field_name: operation['value']})
+            return Q(**{query_field_name: operation['value']})
+        return Q(**{query_field_name: operation['value']})
 
     def postprocess_query_param(self, key, field_name, operation):
         # tag queries will usually be on Tag.name,
@@ -592,7 +415,11 @@ class ListFilterMixin(FilterMixin):
         if field_name == 'permission':
             operation['op'] = 'exact'
         if field_name == 'id':
-            operation['source_field_name'] = 'guids___id'
+            operation['source_field_name'] = (
+                'guids___id'
+                if issubclass(self.model_class, GuidMixin)
+                else self.model_class.primary_identifier_name
+            )
             operation['op'] = 'in'
 
     def get_filtered_queryset(self, field_name, params, default_queryset):
@@ -648,10 +475,10 @@ class ListFilterMixin(FilterMixin):
         return getattr(serializer, serializer_method_name)
 
 
-class PreprintFilterMixin(DjangoFilterMixin):
-    """View mixin that uses DjangoFilterMixin, adding postprocessing for preprint querying
+class PreprintFilterMixin(ListFilterMixin):
+    """View mixin that uses ListFilterMixin, adding postprocessing for preprint querying
 
-       Subclasses must define `get_default_django_query()`.
+       Subclasses must define `get_default_queryset()`.
 
     """
     def postprocess_query_param(self, key, field_name, operation):
@@ -668,3 +495,20 @@ class PreprintFilterMixin(DjangoFilterMixin):
             except Subject.DoesNotExist:
                 operation['source_field_name'] = 'subjects__text'
                 operation['op'] = 'iexact'
+
+    def preprints_queryset(self, base_queryset, auth_user, allow_contribs=True):
+        sub_qs = Node.objects.filter(preprints=OuterRef('pk'), is_deleted=False)
+        no_user_query = Q(is_published=True, node__is_public=True)
+
+        if auth_user:
+            admin_user_query = Q(node__contributor__user_id=auth_user.id, node__contributor__admin=True)
+            reviews_user_query = Q(node__is_public=True, provider__in=get_objects_for_user(auth_user, 'view_submissions', PreprintProvider))
+            if allow_contribs:
+                contrib_user_query = ~Q(reviews_state=States.INITIAL.value) & Q(node__contributor__user_id=auth_user.id, node__contributor__read=True)
+                query = (no_user_query | contrib_user_query | admin_user_query | reviews_user_query)
+            else:
+                query = (no_user_query | admin_user_query | reviews_user_query)
+        else:
+            query = no_user_query
+
+        return base_queryset.annotate(default=Exists(sub_qs)).filter(Q(default=True) & query)

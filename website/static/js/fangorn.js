@@ -375,7 +375,7 @@ function inheritFromParent(item, parent, fields) {
         item.data[field] = item.data[field] || parent.data[field];
     });
 
-    if(item.data.provider === 'github'){
+    if(item.data.provider === 'github' || item.data.provider === 'bitbucket'){
         item.data.branch = parent.data.branch;
     }
 }
@@ -544,7 +544,7 @@ function doItemOp(operation, to, from, rename, conflict) {
     }
 
     var options = {};
-    if(from.data.provider === 'github'){
+    if(from.data.provider === 'github' || from.data.provider === 'bitbucket'){
         options.branch = from.data.branch;
         moveSpec.branch = from.data.branch;
     }
@@ -556,9 +556,7 @@ function doItemOp(operation, to, from, rename, conflict) {
         type: 'POST',
         beforeSend: $osf.setXHRAuthorization,
         url: waterbutler.buildTreeBeardFileOp(from, options),
-        headers: {
-            'Content-Type': 'Application/json'
-        },
+        contentType: 'application/json',
         data: JSON.stringify(moveSpec)
     }).done(function(resp, _, xhr) {
         if (to.data.provider === from.provider) {
@@ -1378,12 +1376,6 @@ function _fangornTitleColumnHelper(tb, item, col, nameTitle, toUrl, classNameOpt
             attrs = {
                 className: classNameOption,
                 onclick: function(event) {
-                    // Prevent gotoFileEvent from getting
-                    // called more than once after user has clicked once
-                    if (item.loading) {
-                        return false;
-                    }
-                    item.loading = true;
                     event.stopImmediatePropagation();
                     gotoFileEvent.call(tb, item, toUrl);
                 }
@@ -1590,23 +1582,32 @@ function _loadTopLevelChildren() {
  * @this Treebeard.controller
  * @private
  */
-var NO_AUTO_EXPAND_PROJECTS = ['ezcuj', 'ecmz4'];
+var NO_AUTO_EXPAND_PROJECTS = ['ezcuj', 'ecmz4', 'w4wvg', 'sn64d'];
 function expandStateLoad(item) {
     var tb = this,
+        icon = $('.tb-row[data-id="' + item.id + '"]').find('.tb-toggle-icon'),
+        toggleIcon = tbOptions.resolveToggle(item),
+        addonList = [],
         i;
+
     if (item.children.length > 0 && item.depth === 1) {
-        // NOTE: On the RPP *only*: Load the top-level project's OSF Storage
+        // NOTE: On the RPP and a few select projects *only*: Load the top-level project's OSF Storage
         // but do NOT lazy-load children in order to save hundreds of requests.
         // TODO: We might want to do this for every project, but that's TBD.
         // /sloria
         if (window.contextVars && window.contextVars.node && NO_AUTO_EXPAND_PROJECTS.indexOf(window.contextVars.node.id) > -1) {
-            tb.updateFolder(null, item.children[0]);
+            var osfsItems = item.children.filter(function(child) { return child.data.isAddonRoot && child.data.provider === 'osfstorage'; });
+            if (osfsItems.length) {
+                var osfsItem = osfsItems[0];
+                tb.updateFolder(null, osfsItem);
+            }
         } else {
             for (i = 0; i < item.children.length; i++) {
                 tb.updateFolder(null, item.children[i]);
             }
         }
     }
+
     if (item.children.length > 0 && item.depth === 2) {
         for (i = 0; i < item.children.length; i++) {
             if (item.children[i].data.isAddonRoot || item.children[i].data.addonFullName === 'OSF Storage' ) {
@@ -1614,7 +1615,33 @@ function expandStateLoad(item) {
             }
         }
     }
-        $('.fangorn-toolbar-icon').tooltip();
+
+    if (item.depth > 2 && !item.data.isAddonRoot && !item.data.type && item.children.length === 0 && item.open) {
+        // Displays loading indicator until request below completes
+        // Copied from toggleFolder() in Treebeard
+        if (icon.get(0)) {
+            m.render(icon.get(0), tbOptions.resolveRefreshIcon());
+        }
+        $osf.ajaxJSON(
+            'GET',
+            '/api/v1/project/' + item.data.nodeID + '/files/grid/'
+        ).done(function(response) {
+            var data = response.data[0].children;
+            tb.updateFolder(data, item);
+            tb.redraw();
+        }).fail(function(xhr) {
+            item.notify.update('Unable to retrieve components.', 'danger', undefined, 3000);
+            item.open = false;
+            Raven.captureMessage('Unable to retrieve components for node ' + item.data.nodeID, {
+                extra: {
+                    xhr: xhr
+                }
+            });
+        });
+    }
+
+    $('.fangorn-toolbar-icon').tooltip();
+
 }
 
 /**
@@ -2519,7 +2546,8 @@ function allowedToMove(folder, item, mustBeIntra) {
     return (
         item.data.permissions.edit &&
         (!mustBeIntra || (item.data.provider === folder.data.provider && item.data.nodeId === folder.data.nodeId)) &&
-            !(item.data.provider === 'figshare' && item.data.extra && item.data.extra.status === 'public')
+        !(item.data.provider === 'figshare' && item.data.extra && item.data.extra.status === 'public') &&
+        (item.data.provider !== 'bitbucket')
     );
 }
 
@@ -2676,10 +2704,12 @@ tbOptions = {
         up : 'i.fa.fa-chevron-up',
         down : 'i.fa.fa-chevron-down'
     },
+    ondataload: function() {
+        _loadTopLevelChildren.call(this);
+    },
     onload : function () {
         var tb = this;
         tb.options.onload = null;  // Make sure we don't get called again
-        _loadTopLevelChildren.call(tb);
         tb.uploadStates = [];
         tb.pendingFileOps = [];
         tb.select('#tb-tbody, .tb-tbody-inner').on('click', function(event){

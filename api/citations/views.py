@@ -1,5 +1,5 @@
 from api.base import permissions as base_permissions
-from api.base.filters import ODMFilterMixin
+from api.base.filters import ListFilterMixin
 from api.base.pagination import NoMaxPageSizePagination
 from api.base.utils import get_object_or_error
 from api.base.views import JSONAPIBaseView
@@ -10,7 +10,7 @@ from rest_framework import generics
 from osf.models.citation import CitationStyle
 
 
-class CitationStyleList(JSONAPIBaseView, generics.ListAPIView, ODMFilterMixin):
+class CitationStyleList(JSONAPIBaseView, generics.ListAPIView, ListFilterMixin):
     '''List of standard citation styles available for rendering citations. *Read-only*
 
     ##Note
@@ -40,12 +40,14 @@ class CitationStyleList(JSONAPIBaseView, generics.ListAPIView, ODMFilterMixin):
     view_category = 'citations'
     view_name = 'citation-list'
 
+    ordering = ('-date_modified',)
+
     # overrides ListAPIView
-    def get_default_odm_query(self):
-        return
+    def get_default_queryset(self):
+        return CitationStyle.objects.all()
 
     def get_queryset(self):
-        return CitationStyle.find(self.get_query_from_request())
+        return self.get_queryset_from_request()
 
 class CitationStyleDetail(JSONAPIBaseView, generics.RetrieveAPIView):
     '''Detail for a citation style *Read-only*
@@ -75,6 +77,6 @@ class CitationStyleDetail(JSONAPIBaseView, generics.RetrieveAPIView):
     view_name = 'citation-detail'
 
     def get_object(self):
-        cit = get_object_or_error(CitationStyle, self.kwargs['citation_id'])
+        cit = get_object_or_error(CitationStyle, self.kwargs['citation_id'], self.request)
         self.check_object_permissions(self.request, cit)
         return cit

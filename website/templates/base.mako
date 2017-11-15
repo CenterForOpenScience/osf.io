@@ -35,7 +35,7 @@
     % endif
 
     <!-- Facebook display -->
-    <meta name="og:image" content="https://cos.io/static/img/cos_center_logo_small.png"/>
+    <meta name="og:image" content="https://osf.io/static/img/circle_logo.png"/>
     <meta name="og:title" content="${self.title()}"/>
     <meta name="og:ttl" content="3"/>
     <meta name="og:description" content="${self.og_description()}"/>
@@ -46,7 +46,7 @@
     ${self.javascript()}
 
     <link href='//fonts.googleapis.com/css?family=Carrois+Gothic|Inika|Patua+One' rel='stylesheet' type='text/css'>
-    <link href='https://fonts.googleapis.com/css?family=Open+Sans:400,600,300,700' rel='stylesheet' type='text/css'>
+    <link href='https://fonts.googleapis.com/css?family=Open+Sans:400,600,300' rel='stylesheet' type='text/css'>
 
 </head>
 <body data-spy="scroll" data-target=".scrollspy">
@@ -253,12 +253,16 @@
         <div class="container ${self.container_class()}">
             ## Maintenance alert
             % if maintenance:
-                <div id="maintenance" class="scripted alert alert-info alert-dismissible" role="alert">
+                <div id="maintenance" class="scripted alert alert-dismissible" role="alert">
                 <button type="button" class="close" data-dismiss="alert" aria-label="Close">
                     <span aria-hidden="true">&times;</span></button>
-                <strong>Notice:</strong> The site will undergo maintenance between
-                <span id="maintenanceTime"></span>.
-                Thank you for your patience.
+                <strong>Notice:</strong>
+                % if maintenance['message']:
+                    ${maintenance['message']}
+                % else:
+                    The site will undergo maintenance between <span id="maintenanceTime"></span>.
+                    Thank you for your patience.
+                % endif
             </div>
             % endif
             ## End Maintenance alert
@@ -284,25 +288,19 @@
       <script src="//cdnjs.cloudflare.com/ajax/libs/es5-shim/4.0.3/es5-sham.min.js"></script>
     <![endif]-->
 
-    ## TODO: Install bootstrap with npm and build it into vendor.js when
-    ## https://github.com/webpack/webpack/issues/2023 is resolved
-    <link rel="stylesheet" href="/static/vendor/bower_components/bootstrap/dist/css/bootstrap.min.css">
-
     <script src="https://cdnjs.cloudflare.com/ajax/libs/es6-shim/0.35.0/es6-shim.min.js"></script>
+
     % if settings.USE_CDN_FOR_CLIENT_LIBS:
-        <script src="//ajax.googleapis.com/ajax/libs/jquery/1.11.2/jquery.min.js"></script>
-        <script>window.jQuery || document.write('<script src="/static/vendor/bower_components/jquery/dist/jquery.min.js">\x3C/script>')</script>
-        <script src="//ajax.googleapis.com/ajax/libs/jqueryui/1.10.3/jquery-ui.min.js"></script>
-        <script>window.jQuery.ui || document.write('<script src="/static/vendor/bower_components/jquery-ui/ui/minified/jquery-ui.min.js">\x3C/script>')</script>
+        <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
+        <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+        <script>window.jQuery || document.write('<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.2.1/jquery.min.js">\x3C/script>')</script>
+        <script src="https://ajax.googleapis.com/ajax/libs/jqueryui/1.12.1/jquery-ui.min.js"></script>
+        <script>window.jQuery.ui || document.write('<script src="https://cdnjs.cloudflare.com/ajax/libs/jqueryui/1.12.1/jquery-ui.min.js">\x3C/script>')</script>
     % else:
+        <link rel="stylesheet" href="/static/vendor/bower_components/bootstrap/dist/css/bootstrap.min.css">
         <script src="/static/vendor/bower_components/jquery/dist/jquery.min.js"></script>
-        <script src="/static/vendor/bower_components/jquery-ui/ui/minified/jquery-ui.min.js"></script>
+        <script src="/static/vendor/bower_components/jquery-ui/jquery-ui.min.js"></script>
     % endif
-    <!-- JQuery 3 for IE Patching -->
-    <script type="text/javascript" src="/static/vendor/jquery-compat-git/jquery-compat-git.js"></script>
-    <script type="text/javascript">
-        var $3 = jQuery.noConflict(true);
-    </script>
     ## NOTE: We load vendor bundle  at the top of the page because contains
     ## the webpack runtime and a number of necessary stylesheets which should be loaded before the user sees
     ## content.

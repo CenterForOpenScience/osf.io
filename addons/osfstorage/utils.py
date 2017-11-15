@@ -6,8 +6,7 @@ import httplib
 import logging
 import functools
 
-from modularodm.exceptions import ValidationValueError
-
+from osf.exceptions import ValidationValueError
 from framework.exceptions import HTTPError
 from framework.analytics import update_counter
 
@@ -31,6 +30,7 @@ def update_analytics(node, file_id, version_idx):
     node_info = {
         'contributors': contributors
     }
+
     update_counter('download:{0}:{1}'.format(node._id, file_id), node_info=node_info)
     update_counter('download:{0}:{1}:{2}'.format(node._id, file_id, version_idx), node_info=node_info)
 

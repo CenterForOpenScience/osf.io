@@ -1,23 +1,23 @@
 import bleach
 
-from django.forms import ModelForm, CheckboxSelectMultiple, MultipleChoiceField, HiddenInput, CharField
+from django import forms
 
 from osf.models import PreprintProvider, Subject
 from admin.base.utils import get_subject_rules, get_toplevel_subjects, get_nodelicense_choices
 
 
-class PreprintProviderForm(ModelForm):
-    toplevel_subjects = MultipleChoiceField(widget=CheckboxSelectMultiple(), required=False)
-    subjects_chosen = CharField(widget=HiddenInput(), required=False)
+class PreprintProviderForm(forms.ModelForm):
+    toplevel_subjects = forms.MultipleChoiceField(widget=forms.CheckboxSelectMultiple(), required=False)
+    subjects_chosen = forms.CharField(widget=forms.HiddenInput(), required=False)
 
     class Meta:
         model = PreprintProvider
 
-        exclude = ['modm_model_path', 'modm_query']
+        exclude = ['primary_identifier_name']
 
         widgets = {
-            'licenses_acceptable': CheckboxSelectMultiple(),
-            'subjects_acceptable': HiddenInput(),
+            'licenses_acceptable': forms.CheckboxSelectMultiple(),
+            'subjects_acceptable': forms.HiddenInput(),
         }
 
     def __init__(self, *args, **kwargs):
@@ -59,3 +59,21 @@ class PreprintProviderForm(ModelForm):
             styles=['text-align', 'vertical-align'],
             strip=True
         )
+
+
+class PreprintProviderCustomTaxonomyForm(forms.Form):
+    custom_taxonomy_json = forms.CharField(widget=forms.Textarea, initial='{"include": [], "exclude": [], "custom": {}}', required=False)
+    provider_id = forms.IntegerField(widget=forms.HiddenInput())
+    include = forms.ChoiceField(choices=[], required=False)
+    exclude = forms.ChoiceField(choices=[], required=False)
+    custom_name = forms.CharField(required=False)
+    custom_parent = forms.CharField(required=False)
+    bepress = forms.ChoiceField(choices=[], required=False)
+
+    def __init__(self, *args, **kwargs):
+        super(PreprintProviderCustomTaxonomyForm, self).__init__(*args, **kwargs)
+        subject_choices = [(x, x) for x in Subject.objects.all().values_list('text', flat=True)]
+        for name, field in self.fields.iteritems():
+            if hasattr(field, 'choices'):
+                if field.choices == []:
+                    field.choices = subject_choices

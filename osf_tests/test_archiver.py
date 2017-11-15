@@ -12,9 +12,8 @@ import celery
 import httpretty
 import mock  # noqa
 from django.utils import timezone
+from django.db import IntegrityError
 from mock import call
-from modularodm import Q
-from modularodm.exceptions import KeyExistsException
 import pytest
 from nose.tools import *  # flake8: noqa
 
@@ -47,14 +46,12 @@ from osf.models import MetaSchema
 from addons.base.models import BaseStorageAddon
 
 from osf_tests import factories
-from tests.factories import MockOAuthAddonNodeSettings
 from tests.base import OsfTestCase, fake
 from tests import utils as test_utils
 from tests.utils import unique as _unique
 
 SILENT_LOGGERS = (
     'framework.celery_tasks.utils',
-    'framework.celery_tasks.signals',
     'website.app',
     'website.archiver.tasks',
 )
@@ -150,10 +147,13 @@ FILE_TREE = {
     ],
 }
 
-class MockAddon(MockOAuthAddonNodeSettings):
+class MockAddon(object):
 
     complete = True
     config = mock.MagicMock()
+
+    def __init__(self, **kwargs):
+        self._id = fake.md5()
 
     def _get_file_tree(self, user, version):
         return FILE_TREE
@@ -281,16 +281,13 @@ def generate_schema_from_data(data):
     )
     try:
         schema.save()
-    except KeyExistsException:
+    except IntegrityError:
 
         # Unfortunately, we don't have db isolation between test cases for some
         # reason. Update the doc currently in the db rather than saving a new
         # one.
 
-        schema = MetaSchema.find_one(
-            Q('name', 'eq', _schema['name']) &
-            Q('schema_version', 'eq', _schema['version'])
-        )
+        schema = MetaSchema.objects.get(name=_schema['name'], schema_version=_schema['version'])
         schema.schema = _schema
         schema.save()
 
@@ -355,7 +352,7 @@ class ArchiverTestCase(OsfTestCase):
         self.user = factories.UserFactory()
         self.auth = Auth(user=self.user)
         self.src = factories.NodeFactory(creator=self.user)
-        self.dst = factories.RegistrationFactory(user=self.user, project=self.src, send_signals=False)
+        self.dst = factories.RegistrationFactory(user=self.user, project=self.src, send_signals=False, archive=True)
         archiver_utils.before_archive(self.dst, self.user)
         self.archive_job = self.dst.archive_job
 
@@ -1064,6 +1061,22 @@ class TestArchiverListeners(ArchiverTestCase):
         for node in [reg, rchild, rchild2]:
             assert_false(node.archive_job.archive_tree_finished())
 
+    def test_archive_tree_finished_false_for_partial_archive(self):
+        proj = factories.NodeFactory()
+        child = factories.NodeFactory(parent=proj, title='child')
+        sibling = factories.NodeFactory(parent=proj, title='sibling')
+
+        reg = factories.RegistrationFactory(project=proj)
+        rchild = reg._nodes.filter(title='child').get()
+        rsibling = reg._nodes.filter(title='sibling').get()
+        for node in [reg, rchild, rsibling]:
+            node.archive_job._set_target('osfstorage')
+        for node in [reg, rchild]:
+            node.archive_job.update_target('osfstorage', ARCHIVER_SUCCESS)
+        rsibling.archive_job.update_target('osfstorage', ARCHIVER_INITIATED)
+        rsibling.save()
+        assert_false(reg.archive_job.archive_tree_finished())
+
     @mock.patch('website.mails.send_mail')
     @mock.patch('website.archiver.tasks.archive_success.delay')
     def test_archive_callback_on_tree_sends_only_one_email(self, mock_send_success, mock_arhive_success):
@@ -1175,7 +1188,7 @@ class TestArchiverBehavior(OsfTestCase):
     @mock.patch('website.mails.send_mail')
     def test_archiving_nodes_not_added_to_search_on_archive_failure(self, mock_send, mock_delete_index_node):
         proj = factories.ProjectFactory()
-        reg = factories.RegistrationFactory(project=proj)
+        reg = factories.RegistrationFactory(project=proj, archive=True)
         reg.save()
         with nested(
                 mock.patch('osf.models.archive.ArchiveJob.archive_tree_finished', mock.Mock(return_value=True)),

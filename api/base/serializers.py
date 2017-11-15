@@ -1,5 +1,6 @@
 import collections
 import re
+from urlparse import urlparse
 
 import furl
 from django.core.urlresolvers import resolve, reverse, NoReverseMatch
@@ -10,6 +11,7 @@ from rest_framework import exceptions, permissions
 from rest_framework import serializers as ser
 from rest_framework.fields import SkipField
 from rest_framework.fields import get_attribute as get_nested_attributes
+from rest_framework.mixins import RetrieveModelMixin
 
 from api.base import utils
 from api.base.exceptions import InvalidQueryStringError
@@ -20,7 +22,7 @@ from api.base.exceptions import RelationshipPostMakesNoChanges
 from api.base.settings import BULK_SETTINGS
 from api.base.utils import absolute_reverse, extend_querystring_params, get_user_auth, extend_querystring_if_key_exists
 from framework.auth import core as auth_core
-from osf.models import AbstractNode as Node
+from osf.models import AbstractNode, MaintenanceState
 from website import settings
 from website import util as website_utils
 from website.util.sanitize import strip_html
@@ -63,146 +65,175 @@ def is_anonymized(request):
     return request._is_anonymized
 
 
-class ShowIfVersion(ser.Field):
+class ConditionalField(ser.Field):
+    """
+    Skips the inner field based on `should_show` or `should_hide`; override whichever makes the logic more readable.
+    If you'd prefer to return `None` rather skipping the field, override `should_be_none` as well.
+    """
+
+    def __init__(self, field, **kwargs):
+        super(ConditionalField, self).__init__(**kwargs)
+        self.field = field
+        self.source = self.field.source
+        self.required = self.field.required
+        self.read_only = self.field.read_only
+
+    def should_show(self, instance):
+        return not self.should_hide(instance)
+
+    def should_hide(self, instance):
+        raise NotImplementedError()
+
+    def should_be_none(self, instance):
+        return False
+
+    def get_attribute(self, instance):
+        if not self.should_show(instance):
+            if self.should_be_none(instance):
+                return None
+            raise SkipField
+        return self.field.get_attribute(instance)
+
+    def bind(self, field_name, parent):
+        super(ConditionalField, self).bind(field_name, parent)
+        self.field.bind(field_name, self)
+
+    def to_representation(self, value):
+        if getattr(self.field.root, 'child', None):
+            self.field.parent = self.field.root.child
+        else:
+            self.field.parent = self.field.root
+        return self.field.to_representation(value)
+
+    def to_esi_representation(self, value, envelope='data'):
+        if getattr(self.field.root, 'child', None):
+            self.field.parent = self.field.root.child
+        else:
+            self.field.parent = self.field.root
+        return self.field.to_esi_representation(value, envelope)
+
+    def to_internal_value(self, data):
+        return self.field.to_internal_value(data)
+
+
+class ShowIfVersion(ConditionalField):
     """
     Skips the field if the specified request version is not after a feature's earliest supported version,
     or not before the feature's latest supported version.
     """
 
     def __init__(self, field, min_version, max_version, **kwargs):
-        super(ShowIfVersion, self).__init__(**kwargs)
-        self.field = field
-        self.required = field.required
-        self.read_only = field.read_only
+        super(ShowIfVersion, self).__init__(field, **kwargs)
         self.min_version = min_version
         self.max_version = max_version
         self.help_text = 'This field is deprecated as of version {}'.format(self.max_version) or kwargs.get('help_text')
 
-    def get_attribute(self, instance):
+    def should_hide(self, instance):
         request = self.context.get('request')
-        if request and utils.is_deprecated(request.version, self.min_version, self.max_version):
-            raise SkipField
-        return self.field.get_attribute(instance)
-
-    def bind(self, field_name, parent):
-        super(ShowIfVersion, self).bind(field_name, parent)
-        self.field.bind(field_name, self)
-
-    def to_representation(self, value):
-        if getattr(self.field.root, 'child', None):
-            self.field.parent = self.field.root.child
-        else:
-            self.field.parent = self.field.root
-        return self.field.to_representation(value)
-
-    def to_esi_representation(self, value, envelope='data'):
-        if getattr(self.field.root, 'child', None):
-            self.field.parent = self.field.root.child
-        else:
-            self.field.parent = self.field.root
-        return self.field.to_esi_representation(value, envelope)
-
-    def to_internal_value(self, data):
-        return self.field.to_internal_value(data)
+        return request and utils.is_deprecated(request.version, self.min_version, self.max_version)
 
 
-class HideIfRegistration(ser.Field):
+class ShowIfCurrentUser(ConditionalField):
+
+    def should_show(self, instance):
+        request = self.context.get('request')
+        return request and request.user == instance
+
+
+class HideIfRegistration(ConditionalField):
     """
     If node is a registration, this field will return None.
     """
 
-    def __init__(self, field, **kwargs):
-        super(HideIfRegistration, self).__init__(**kwargs)
-        self.field = field
-        self.source = field.source
-        self.required = field.required
-        self.read_only = field.read_only
+    def should_hide(self, instance):
+        return instance.is_registration
 
-    def get_attribute(self, instance):
-        if instance.is_registration:
-            if isinstance(self.field, RelationshipField):
-                raise SkipField
-            else:
-                return None
-        return self.field.get_attribute(instance)
-
-    def bind(self, field_name, parent):
-        super(HideIfRegistration, self).bind(field_name, parent)
-        self.field.bind(field_name, self)
-
-    def to_internal_value(self, data):
-        return self.field.to_internal_value(data)
-
-    def to_representation(self, value):
-        if getattr(self.field.root, 'child', None):
-            self.field.parent = self.field.root.child
-        else:
-            self.field.parent = self.field.root
-        return self.field.to_representation(value)
-
-    def to_esi_representation(self, value, envelope='data'):
-        if getattr(self.field.root, 'child', None):
-            self.field.parent = self.field.root.child
-        else:
-            self.field.parent = self.field.root
-        return self.field.to_esi_representation(value, envelope)
+    def should_be_none(self, instance):
+        return not isinstance(self.field, RelationshipField)
 
 
-class HideIfDisabled(ser.Field):
+class HideIfDisabled(ConditionalField):
     """
     If the user is disabled, returns None for attribute fields, or skips
     if a RelationshipField.
     """
 
-    def __init__(self, field, **kwargs):
-        super(HideIfDisabled, self).__init__(**kwargs)
-        self.field = field
-        self.source = field.source
-        self.required = field.required
-        self.read_only = field.read_only
+    def should_hide(self, instance):
+        return instance.is_disabled
 
-    def get_attribute(self, instance):
-        if instance.is_disabled:
-            if isinstance(self.field, RelationshipField):
-                raise SkipField
-            else:
-                return None
-        return self.field.get_attribute(instance)
-
-    def bind(self, field_name, parent):
-        super(HideIfDisabled, self).bind(field_name, parent)
-        self.field.bind(field_name, self)
-
-    def to_internal_value(self, data):
-        return self.field.to_internal_value(data)
-
-    def to_representation(self, value):
-        if getattr(self.field.root, 'child', None):
-            self.field.parent = self.field.root.child
-        else:
-            self.field.parent = self.field.root
-        return self.field.to_representation(value)
-
-    def to_esi_representation(self, value, envelope='data'):
-        if getattr(self.field.root, 'child', None):
-            self.field.parent = self.field.root.child
-        else:
-            self.field.parent = self.field.root
-        return self.field.to_esi_representation(value, envelope)
+    def should_be_none(self, instance):
+        return not isinstance(self.field, RelationshipField)
 
 
-class HideIfWithdrawal(HideIfRegistration):
+class HideIfWithdrawal(ConditionalField):
     """
     If registration is withdrawn, this field will return None.
     """
 
-    def get_attribute(self, instance):
-        if instance.is_retracted:
-            if isinstance(self.field, RelationshipField):
-                raise SkipField
-            else:
-                return None
-        return self.field.get_attribute(instance)
+    def should_hide(self, instance):
+        return instance.is_retracted
+
+    def should_be_none(self, instance):
+        return not isinstance(self.field, RelationshipField)
+
+
+class HideIfNotNodePointerLog(ConditionalField):
+    """
+    This field will not be shown if the log is not a pointer log for a node
+    """
+    def should_hide(self, instance):
+        pointer_param = instance.params.get('pointer', False)
+        if pointer_param:
+            node = AbstractNode.load(pointer_param['id'])
+            if node:
+                return node.type != 'osf.node'
+        return True
+
+
+class HideIfNotRegistrationPointerLog(ConditionalField):
+    """
+    This field will not be shown if the log is not a pointer log for a registration
+    """
+
+    def should_hide(self, instance):
+        pointer_param = instance.params.get('pointer', False)
+        if pointer_param:
+            node = AbstractNode.load(pointer_param['id'])
+            if node:
+                return node.type != 'osf.registration'
+        return True
+
+
+class HideIfProviderCommentsAnonymous(ConditionalField):
+    """
+    If the action's provider has anonymous comments and the user does not have `view_actions`
+    permission on the provider, hide the field.
+    """
+
+    def should_hide(self, instance):
+        request = self.context.get('request')
+        auth = utils.get_user_auth(request)
+        if auth.logged_in:
+            provider = instance.target.provider
+            if provider.reviews_comments_anonymous is False or auth.user.has_perm('view_actions', provider):
+                return False
+        return True
+
+
+class HideIfProviderCommentsPrivate(ConditionalField):
+    """
+    If the action's provider has private comments and the user does not have `view_actions`
+    permission on the provider, hide the field.
+    """
+
+    def should_hide(self, instance):
+        request = self.context.get('request')
+        auth = utils.get_user_auth(request)
+        if auth.logged_in:
+            provider = instance.target.provider
+            if provider.reviews_comments_private is False or auth.user.has_perm('view_actions', provider):
+                return False
+        return True
 
 
 class AllowMissing(ser.Field):
@@ -440,7 +471,7 @@ class RelationshipField(ser.HyperlinkedIdentityField):
     json_api_link = True  # serializes to a links object
 
     def __init__(self, related_view=None, related_view_kwargs=None, self_view=None, self_view_kwargs=None,
-                 self_meta=None, related_meta=None, always_embed=False, filter=None, filter_key=None, **kwargs):
+                 self_meta=None, related_meta=None, always_embed=False, filter=None, filter_key=None, required=False, **kwargs):
         related_view = related_view
         self_view = self_view
         related_kwargs = related_view_kwargs
@@ -476,6 +507,11 @@ class RelationshipField(ser.HyperlinkedIdentityField):
         # Allow a RelationshipField to be modified if explicitly set so
         if kwargs.get('read_only') is not None:
             self.read_only = kwargs['read_only']
+
+        # Allow a RelationshipField to be required
+        if required:
+            assert not self.read_only, 'May not set both `read_only` and `required`'
+            self.required = required
 
     def resolve(self, resource, field_name, request):
         """
@@ -623,7 +659,9 @@ class RelationshipField(ser.HyperlinkedIdentityField):
                         else:
                             url = None
 
-                    url = extend_querystring_if_key_exists(url, self.context['request'], 'view_only')
+                    if url:
+                        url = extend_querystring_if_key_exists(url, self.context['request'],
+                                                               'view_only')
                     urls[view_name] = url
 
         if not urls['self'] and not urls['related']:
@@ -713,11 +751,28 @@ class RelationshipField(ser.HyperlinkedIdentityField):
             raise SkipField
 
         related_url = url['related']
+        related_path = urlparse(related_url).path
         related_meta = self.get_meta_information(self.related_meta, value)
         self_url = url['self']
         self_meta = self.get_meta_information(self.self_meta, value)
-        return format_relationship_links(related_url, self_url, related_meta, self_meta)
-
+        relationship = format_relationship_links(related_url, self_url, related_meta, self_meta)
+        if related_url and (len(related_path.split('/')) & 1) == 1:
+            resolved_url = resolve(related_path)
+            related_class = resolved_url.func.view_class
+            if issubclass(related_class, RetrieveModelMixin):
+                related_type = resolved_url.namespace
+                try:
+                    # TODO: change kwargs to preprint_provider_id and registration_id
+                    if related_type == 'preprint_providers':
+                        related_id = resolved_url.kwargs['provider_id']
+                    elif related_type == 'registrations':
+                        related_id = resolved_url.kwargs['node_id']
+                    else:
+                        related_id = resolved_url.kwargs[related_type[:-1] + '_id']
+                except KeyError:
+                    return relationship
+                relationship['data'] = {'id': related_id, 'type': related_type}
+        return relationship
 
 class FileCommentRelationshipField(RelationshipField):
     def get_url(self, obj, view_name, request, format):
@@ -1390,7 +1445,7 @@ class LinkedNodesRelationshipSerializer(BaseAPISerializer):
 
         nodes_to_add = []
         for node_id in diff['add']:
-            node = Node.load(node_id)
+            node = AbstractNode.load(node_id)
             if not node:
                 raise exceptions.NotFound(detail='Node with id "{}" was not found'.format(node_id))
             nodes_to_add.append(node)
@@ -1455,7 +1510,7 @@ class LinkedRegistrationsRelationshipSerializer(BaseAPISerializer):
 
         nodes_to_add = []
         for node_id in diff['add']:
-            node = Node.load(node_id)
+            node = AbstractNode.load(node_id)
             if not node:
                 raise exceptions.NotFound(detail='Node with id "{}" was not found'.format(node_id))
             nodes_to_add.append(node)
@@ -1496,3 +1551,10 @@ class LinkedRegistrationsRelationshipSerializer(BaseAPISerializer):
             collection.add_pointer(node, auth)
 
         return self.make_instance_obj(collection)
+
+
+class MaintenanceStateSerializer(ser.ModelSerializer):
+
+    class Meta:
+        model = MaintenanceState
+        fields = ('level', 'message', 'start', 'end')

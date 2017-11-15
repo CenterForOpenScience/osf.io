@@ -3,11 +3,8 @@ import logging
 import re
 
 from django.apps import apps
+from django.core.exceptions import ValidationError
 
-from modularodm import Q
-from modularodm.exceptions import ValidationValueError
-
-from website import settings
 from website.util import sanitize
 
 logger = logging.getLogger(__name__)
@@ -29,9 +26,9 @@ def validate_contributor(guid, contributors):
     OSFUser = apps.get_model('osf.OSFUser')
     user = OSFUser.load(guid)
     if not user or not user.is_claimed:
-        raise ValidationValueError('User does not exist or is not active.')
+        raise ValidationError('User does not exist or is not active.')
     elif user not in contributors:
-        raise ValidationValueError('Mentioned user is not a contributor.')
+        raise ValidationError('Mentioned user is not a contributor.')
     return True
 
 def get_valid_mentioned_users_guids(comment, contributors):
@@ -44,7 +41,7 @@ def get_valid_mentioned_users_guids(comment, contributors):
     new_mentions = set(re.findall(r"\[[@|\+].*?\]\(htt[ps]{1,2}:\/\/[a-z\d:.]+?\/([a-z\d]{5})\/\)", comment.content))
     new_mentions = [
         m for m in new_mentions if
-        m not in comment.ever_mentioned and
+        m not in comment.ever_mentioned.values_list('guids___id', flat=True) and
         validate_contributor(m, contributors)
     ]
     return new_mentions
@@ -61,39 +58,21 @@ def get_pointer_parent(pointer):
     return parent_refs[0]
 
 
-def validate_category(value):
-    """Validator for Node#category. Makes sure that the value is one of the
-    categories defined in NODE_CATEGORY_MAP.
-    """
-    if value not in settings.NODE_CATEGORY_MAP.keys():
-        raise ValidationValueError('Invalid value for category.')
-    return True
-
-
 def validate_title(value):
     """Validator for Node#title. Makes sure that the value exists and is not
     above 200 characters.
     """
     if value is None or not value.strip():
-        raise ValidationValueError('Title cannot be blank.')
+        raise ValidationError('Title cannot be blank.')
 
     value = sanitize.strip_html(value)
 
     if value is None or not value.strip():
-        raise ValidationValueError('Invalid title.')
+        raise ValidationError('Invalid title.')
 
     if len(value) > 200:
-        raise ValidationValueError('Title cannot exceed 200 characters.')
+        raise ValidationError('Title cannot exceed 200 characters.')
 
-    return True
-
-
-def validate_user(value):
-    OSFUser = apps.get_model('osf.OSFUser')
-    if value != {}:
-        user_id = value.iterkeys().next()
-        if OSFUser.find(Q('_id', 'eq', user_id)).count() != 1:
-            raise ValidationValueError('User does not exist.')
     return True
 
 
@@ -102,9 +81,3 @@ class NodeUpdateError(Exception):
         super(NodeUpdateError, self).__init__(reason, *args, **kwargs)
         self.key = key
         self.reason = reason
-
-
-def validate_doi(value):
-    if value and not re.match(r'\b(10\.\d{4,}(?:\.\d+)*/\S+(?:(?!["&\'<>])\S))\b', value):
-        raise ValidationValueError('"{}" is not a valid DOI'.format(value))
-    return True

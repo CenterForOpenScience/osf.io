@@ -1,4 +1,3 @@
-from modularodm import Q
 from rest_framework import generics, permissions as drf_permissions
 from rest_framework.exceptions import ValidationError, NotFound, PermissionDenied
 
@@ -6,7 +5,7 @@ from framework.auth.oauth_scopes import CoreScopes
 
 from api.base import generic_bulk_views as bulk_views
 from api.base import permissions as base_permissions
-from api.base.filters import ODMFilterMixin
+from api.base.filters import ListFilterMixin
 from api.base.views import JSONAPIBaseView
 from api.base.views import BaseLinkedList
 from api.base.views import LinkedNodesRelationship
@@ -44,6 +43,7 @@ class CollectionMixin(object):
         node = get_object_or_error(
             Collection,
             self.kwargs[self.node_lookup_url_kwarg],
+            self.request,
             display_name='collection'
         )
         # Nodes that are folders/collections are treated as a separate resource, so if the client
@@ -56,7 +56,7 @@ class CollectionMixin(object):
         return node
 
 
-class CollectionList(JSONAPIBaseView, bulk_views.BulkUpdateJSONAPIView, bulk_views.BulkDestroyJSONAPIView, bulk_views.ListBulkCreateJSONAPIView, ODMFilterMixin):
+class CollectionList(JSONAPIBaseView, bulk_views.BulkUpdateJSONAPIView, bulk_views.BulkDestroyJSONAPIView, bulk_views.ListBulkCreateJSONAPIView, ListFilterMixin):
     """Organizer Collections organize projects and components. *Writeable*.
 
     Paginated list of Project Organizer Collections ordered by their `date_modified`.
@@ -132,34 +132,25 @@ class CollectionList(JSONAPIBaseView, bulk_views.BulkUpdateJSONAPIView, bulk_vie
 
     ordering = ('-date_modified', )  # default ordering
 
-    # overrides ODMFilterMixin
-    def get_default_odm_query(self):
-        base_query = (
-            Q('is_deleted', 'ne', True)
-        )
+    def get_default_queryset(self):
         user = self.request.user
         if not user.is_anonymous:
-            permission_query = Q('creator', 'eq', user)
-        else:
-            permission_query = Q('is_public', 'eq', True)
-        query = base_query & permission_query
-        return query
+            return Collection.objects.filter(creator=user, is_deleted=False)
+        return Collection.objects.filter(is_public=True, is_deleted=False)
 
     # overrides ListBulkCreateJSONAPIView, BulkUpdateJSONAPIView
     def get_queryset(self):
         # For bulk requests, queryset is formed from request body.
         if is_bulk_request(self.request):
-            query = Q('_id', 'in', [coll['id'] for coll in self.request.data])
-
             auth = get_user_auth(self.request)
-            collections = Collection.find(query)
+            collection_ids = [coll['id'] for coll in self.request.data]
+            collections = Collection.objects.filter(guids___id__in=collection_ids)
             for collection in collections:
                 if not collection.can_edit(auth):
                     raise PermissionDenied
             return collections
         else:
-            query = self.get_query_from_request()
-            return Collection.find(query)
+            return self.get_queryset_from_request()
 
     # overrides ListBulkCreateJSONAPIView, BulkUpdateJSONAPIView, BulkDestroyJSONAPIView
     def get_serializer_class(self):
@@ -349,6 +340,8 @@ class LinkedNodesList(BaseLinkedList, CollectionMixin):
     view_category = 'collections'
     view_name = 'linked-nodes'
 
+    ordering = ('-date_modified',)
+
     def get_queryset(self):
         return super(LinkedNodesList, self).get_queryset().exclude(type='osf.registration')
 
@@ -430,6 +423,8 @@ class LinkedRegistrationsList(BaseLinkedList, CollectionMixin):
     view_category = 'collections'
     view_name = 'linked-registrations'
 
+    ordering = ('-date_modified',)
+
     def get_queryset(self):
         return super(LinkedRegistrationsList, self).get_queryset().filter(type='osf.registration')
 
@@ -509,6 +504,8 @@ class NodeLinksList(JSONAPIBaseView, bulk_views.BulkDestroyJSONAPIView, bulk_vie
     view_name = 'node-pointers'
     model_class = NodeRelation
 
+    ordering = ('-date_modified',)
+
     def get_queryset(self):
         return self.get_node().node_relations.select_related('child').filter(child__is_deleted=False).exclude(child__type='osf.collection')
 
@@ -586,6 +583,7 @@ class NodeLinksDetail(JSONAPIBaseView, generics.RetrieveDestroyAPIView, Collecti
         node_link = get_object_or_error(
             NodeRelation,
             self.kwargs[node_link_lookup_url_kwarg],
+            self.request,
             'node link'
         )
         # May raise a permission denied

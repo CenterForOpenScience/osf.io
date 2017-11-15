@@ -38,7 +38,7 @@ class NodeSettings(BaseStorageAddon, BaseOAuthNodeSettings):
     folder_id = models.TextField(blank=True, null=True)
     folder_name = models.TextField(blank=True, null=True)
     encrypt_uploads = models.BooleanField(default=ENCRYPT_UPLOADS_DEFAULT)
-    user_settings = models.ForeignKey(UserSettings, null=True, blank=True)
+    user_settings = models.ForeignKey(UserSettings, null=True, blank=True, on_delete=models.CASCADE)
 
     @property
     def folder_path(self):

@@ -2,8 +2,9 @@ import logging
 import datetime
 import urlparse
 
-from django.utils import timezone
+from django.core.exceptions import ValidationError
 from django.db import models
+from django.utils import timezone
 
 from framework.auth import Auth
 from framework.exceptions import PermissionsError
@@ -18,7 +19,6 @@ from osf.models import (
     EmbargoTerminationApproval,
 )
 
-from osf.exceptions import ValidationValueError
 from osf.models.base import BaseModel, ObjectIDMixin
 from osf.models.node import AbstractNode
 from osf.models.nodelog import NodeLog
@@ -39,9 +39,9 @@ class Registration(AbstractNode):
 
     registered_meta = DateTimeAwareJSONField(default=dict, blank=True)
     # TODO Add back in once dependencies are resolved
-    registration_approval = models.ForeignKey(RegistrationApproval, null=True, blank=True)
-    retraction = models.ForeignKey(Retraction, null=True, blank=True)
-    embargo = models.ForeignKey(Embargo, null=True, blank=True)
+    registration_approval = models.ForeignKey(RegistrationApproval, null=True, blank=True, on_delete=models.CASCADE)
+    retraction = models.ForeignKey(Retraction, null=True, blank=True, on_delete=models.CASCADE)
+    embargo = models.ForeignKey(Embargo, null=True, blank=True, on_delete=models.CASCADE)
 
     registered_from = models.ForeignKey('self',
                                         related_name='registrations',
@@ -209,14 +209,14 @@ class Registration(AbstractNode):
         :param end_date: Date when the registration should be made public
         :raises: NodeStateError if Node is not a registration
         :raises: PermissionsError if user is not an admin for the Node
-        :raises: ValidationValueError if end_date is not within time constraints
+        :raises: ValidationError if end_date is not within time constraints
         """
         if not self.has_permission(user, 'admin'):
             raise PermissionsError('Only admins may embargo a registration')
         if not self._is_embargo_date_valid(end_date):
             if (end_date - timezone.now()) >= settings.EMBARGO_END_DATE_MIN:
-                raise ValidationValueError('Registrations can only be embargoed for up to four years.')
-            raise ValidationValueError('Embargo end date must be at least three days in the future.')
+                raise ValidationError('Registrations can only be embargoed for up to four years.')
+            raise ValidationError('Embargo end date must be at least three days in the future.')
 
         embargo = self._initiate_embargo(user, end_date,
                                          for_existing_registration=for_existing_registration,
@@ -326,6 +326,15 @@ class Registration(AbstractNode):
             self.save()
         return retraction
 
+    def copy_unclaimed_records(self):
+        """Copies unclaimed_records to unregistered contributors from the registered_from node"""
+        registered_from_id = self.registered_from._id
+        for contributor in self.contributors.filter(is_registered=False):
+            record = contributor.unclaimed_records.get(registered_from_id)
+            if record:
+                contributor.unclaimed_records[self._id] = record
+                contributor.save()
+
     def delete_registration_tree(self, save=False):
         logger.debug('Marking registration {} as deleted'.format(self._id))
         self.is_deleted = True
@@ -358,8 +367,9 @@ class DraftRegistrationLog(ObjectIDMixin, BaseModel):
     """
     date = NonNaiveDateTimeField(default=timezone.now)
     action = models.CharField(max_length=255)
-    draft = models.ForeignKey('DraftRegistration', related_name='logs', null=True, blank=True)
-    user = models.ForeignKey('OSFUser', null=True)
+    draft = models.ForeignKey('DraftRegistration', related_name='logs',
+                              null=True, blank=True, on_delete=models.CASCADE)
+    user = models.ForeignKey('OSFUser', null=True, on_delete=models.CASCADE)
 
     SUBMITTED = 'submitted'
     REGISTERED = 'registered'
@@ -378,9 +388,10 @@ class DraftRegistration(ObjectIDMixin, BaseModel):
     datetime_initiated = NonNaiveDateTimeField(auto_now_add=True)
     datetime_updated = NonNaiveDateTimeField(auto_now=True)
     # Original Node a draft registration is associated with
-    branched_from = models.ForeignKey('Node', null=True, related_name='registered_draft')
+    branched_from = models.ForeignKey('Node', related_name='registered_draft',
+                                      null=True, on_delete=models.CASCADE)
 
-    initiator = models.ForeignKey('OSFUser', null=True)
+    initiator = models.ForeignKey('OSFUser', null=True, on_delete=models.CASCADE)
 
     # Dictionary field mapping question id to a question's comments and answer
     # {
@@ -397,11 +408,11 @@ class DraftRegistration(ObjectIDMixin, BaseModel):
     #   }
     # }
     registration_metadata = DateTimeAwareJSONField(default=dict, blank=True)
-    registration_schema = models.ForeignKey('MetaSchema', null=True)
+    registration_schema = models.ForeignKey('MetaSchema', null=True, on_delete=models.CASCADE)
     registered_node = models.ForeignKey('Registration', null=True, blank=True,
-                                        related_name='draft_registration')
+                                        related_name='draft_registration', on_delete=models.CASCADE)
 
-    approval = models.ForeignKey('DraftRegistrationApproval', null=True, blank=True)
+    approval = models.ForeignKey('DraftRegistrationApproval', null=True, blank=True, on_delete=models.CASCADE)
 
     # Dictionary field mapping extra fields defined in the MetaSchema.schema to their
     # values. Defaults should be provided in the schema (e.g. 'paymentSent': false),

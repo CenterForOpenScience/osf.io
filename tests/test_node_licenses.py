@@ -3,12 +3,12 @@
 import __builtin__ as builtins
 import json
 import unittest
-
 import mock
-from framework.auth import Auth
-from modularodm import Q
-from modularodm.exceptions import NoResultsFound, ValidationError
+
+from django.core.exceptions import ValidationError
 from nose.tools import *  # flake8: noqa (PEP8 asserts)
+
+from framework.auth import Auth
 from osf_tests.factories import (AuthUserFactory, NodeLicenseRecordFactory,
                                  ProjectFactory)
 from tests.base import OsfTestCase
@@ -40,9 +40,7 @@ class TestNodeLicenses(OsfTestCase):
         self.user = AuthUserFactory()
         self.node = ProjectFactory(creator=self.user)
         self.LICENSE_NAME = 'MIT License'
-        self.node_license = NodeLicense.find_one(
-            Q('name', 'eq', self.LICENSE_NAME)
-        )
+        self.node_license = NodeLicense.objects.get(name=self.LICENSE_NAME)
         self.YEAR = '2105'
         self.COPYRIGHT_HOLDERS = ['Foo', 'Bar']
         self.node.node_license = NodeLicenseRecordFactory(
@@ -87,42 +85,32 @@ class TestNodeLicenses(OsfTestCase):
         assert_equal(ensure_licenses(), (0, 16))
 
     def test_ensure_licenses_no_licenses(self):
-        before_count = NodeLicense.find().count()
+        before_count = NodeLicense.objects.all().count()
         NodeLicense.remove()
-        assert_false(NodeLicense.find().count())
+        assert_false(NodeLicense.objects.all().count())
 
         ensure_licenses()
-        assert_equal(before_count, NodeLicense.find().count())
+        assert_equal(before_count, NodeLicense.objects.all().count())
 
     def test_ensure_licenses_some_missing(self):
-        NodeLicense.remove_one(
-            NodeLicense.find_one(Q('license_id', 'eq', 'LGPL3'))
-        )
-        with assert_raises(NoResultsFound):
-            NodeLicense.find_one(
-                Q('license_id', 'eq', 'LGPL3')
-            )
+        NodeLicense.objects.get(license_id='LGPL3').delete()
+        with assert_raises(NodeLicense.DoesNotExist):
+            NodeLicense.objects.get(license_id='LGPL3')
         ensure_licenses()
-        found = NodeLicense.find_one(
-            Q('license_id', 'eq', 'LGPL3')
-        )
+        found = NodeLicense.objects.get(license_id='LGPL3')
         assert_is_not_none(found)
 
     def test_ensure_licenses_updates_existing(self):
         with mock.patch.object(builtins, 'open', mock.mock_open(read_data=LICENSE_TEXT)):
             ensure_licenses()
-        MIT = NodeLicense.find_one(
-            Q('license_id', 'eq', 'MIT')
-        )
+        MIT = NodeLicense.objects.get(license_id='MIT')
         assert_equal(MIT.name, CHANGED_NAME)
         assert_equal(MIT.text, CHANGED_TEXT)
         assert_equal(MIT.properties, CHANGED_PROPERTIES)
 
     @assert_logs(NodeLog.CHANGED_LICENSE, 'node')
     def test_Node_set_node_license(self):
-        GPL3 = NodeLicense.find_one(
-            Q('license_id', 'eq', 'GPL3')
-        )
+        GPL3 = NodeLicense.objects.get(license_id='GPL3')
         NEW_YEAR = '2014'
         COPYLEFT_HOLDERS = ['Richard Stallman']
         self.node.set_node_license(

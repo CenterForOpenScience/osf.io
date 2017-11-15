@@ -4,13 +4,16 @@ var $osf = require('js/osfHelpers');
 
 function FileViewTreebeard(data) {
 
-    // Set item.branch to show the branch of the rendered GitHub file instead of the default branch
+    // Set item.branch to show the branch of the rendered GitHub / Bitbucket file instead of the default branch
     var addonRootFolders = data.data[0].children;
 
-    if (window.contextVars.file.provider === 'github') {
+    if (window.contextVars.file.provider === 'github' || window.contextVars.file.provider === 'bitbucket') {
         for (var i = 0; i < addonRootFolders.length; i++) {
             var item = addonRootFolders[i];
-            if (item.provider === 'github' && item.isAddonRoot && window.contextVars.file.extra.branch) {
+            if (
+                (item.provider === 'github' || item.provider === 'bitbucket') &&
+                    item.isAddonRoot && window.contextVars.file.extra.branch
+            ) {
                 item.branch = window.contextVars.file.extra.branch;
             }
         }
@@ -41,6 +44,7 @@ function FileViewTreebeard(data) {
         },
         ondataload: function () {
             var tb = this;
+            Fangorn.DefaultOptions.ondataload.call(tb);
             var path = '';
             tb.fangornFolderIndex = 0;
             tb.fangornFolderArray = [''];
@@ -56,14 +60,6 @@ function FileViewTreebeard(data) {
                 title: 'Name',
                 width: '100%'
             }];
-        },
-        ontogglefolder : function (tree) {
-            Fangorn.DefaultOptions.ontogglefolder.call(this, tree);
-            var containerHeight = this.select('#tb-tbody').height();
-            if (!this.options.naturalScrollLimit){
-                this.options.showTotal = Math.floor(containerHeight / this.options.rowHeight) + 1;
-            }
-            this.redraw();
         },
         lazyLoadOnLoad: function(tree, event) {
             var tb = this;

@@ -1,0 +1,10 @@
+{
+    "bitbucket_file_added" : "A user added a file to a Bitbucket repo in a project",
+    "bitbucket_file_removed" : "A user removed a file in a Bitbucket repo in a project",
+    "bitbucket_file_updated" : "A user updated a file in a Bitbucket repo in a project",
+    "bitbucket_folder_created" : "A user created a folder in a Bitbucket repo in a project",
+    "bitbucket_node_authorized" : "A user authorized the Bitbucket addon for a project",
+    "bitbucket_node_deauthorized" : "A user deauthorized the Bitbucket addon for a project",
+    "bitbucket_node_deauthorized_no_user" : "Bitbucket addon for a project deauthorized",
+    "bitbucket_repo_linked" : "A user linked a Bitbucket repo in a project"
+}

@@ -64,7 +64,31 @@ var getOneDayTimeframe = function(daysBack, monthsBack) {
     };
 };
 
+/**
+ * Configure a time frame for a day x days ago (end) and y days prior to x (start)
+ *
+ * @method getVariableDayTimeframe
+ * @param {Integer} endDaysBack - the number of days back to set as the end day
+ * @param {Integer} totalDays - the number of days back to reach the start day
+ * @return {Object} the keen-formatted timeframe
+ */
+var getVariableDayTimeframe = function(endDaysBack, totalDays) {
+    var start = null;
+    var end = null;
+    var date = new Date();
 
+    date.setUTCDate(date.getDate() - endDaysBack);
+    date.setUTCHours(0, 0, 0, 0, 0);
+
+    end = date.toISOString();
+
+    date.setDate(date.getDate() - totalDays);
+    start = date.toISOString();
+    return {
+        "start": start,
+        "end": end
+    };
+};
 
 /**
  * Configure a Title for a chart dealing with the past month or day
@@ -322,6 +346,14 @@ var monthlyActiveUsersQuery = new keenAnalysis.Query("count_unique", {
     timezone: "UTC"
 });
 
+// Previous 30 Days Active Users
+var thirtyDaysActiveUsersQuery = new keenAnalysis.Query("count_unique", {
+    eventCollection: "pageviews",
+    targetProperty: "user.id",
+    timeframe: "previous_30_days",
+    timezone: "UTC"
+});
+
 var dailyActiveUsersQuery = new keenAnalysis.Query("count_unique", {
     event_collection: "pageviews",
     target_property: "user.id",
@@ -334,6 +366,48 @@ var totalProjectsQuery = new keenAnalysis.Query("sum", {
     targetProperty: "projects.total",
     timezone: "UTC",
     timeframe: "previous_1_days",
+});
+
+// 7 Days back Active Users
+var weekBackThirtyDaysActiveUsersQuery = new keenAnalysis.Query("count_unique", {
+    eventCollection: "pageviews",
+    targetProperty: "user.id",
+    timeframe: getVariableDayTimeframe(7, 30),
+});
+
+// 7 Days back Active Users
+var weekBackDailyActiveUsersQuery = new keenAnalysis.Query("count_unique", {
+    eventCollection: "pageviews",
+    targetProperty: "user.id",
+    timeframe: getVariableDayTimeframe(7, 1),
+});
+
+// 28 Days back Active Users
+var monthBackThirtyDaysActiveUsersQuery = new keenAnalysis.Query("count_unique", {
+    eventCollection: "pageviews",
+    targetProperty: "user.id",
+    timeframe: getVariableDayTimeframe(28, 30),
+});
+
+// 28 Days back Active Users
+var monthBackDailyActiveUsersQuery = new keenAnalysis.Query("count_unique", {
+    eventCollection: "pageviews",
+    targetProperty: "user.id",
+    timeframe: getVariableDayTimeframe(28, 1),
+});
+
+// 364 Days back Active Users
+var yearBackThirtyDaysActiveUsersQuery = new keenAnalysis.Query("count_unique", {
+    eventCollection: "pageviews",
+    targetProperty: "user.id",
+    timeframe: getVariableDayTimeframe(364, 30),
+});
+
+// 364 Days back Active Users
+var yearBackDailyActiveUsersQuery = new keenAnalysis.Query("count_unique", {
+    eventCollection: "pageviews",
+    targetProperty: "user.id",
+    timeframe: getVariableDayTimeframe(364, 1),
 });
 
 // <+><+><+><+><+><+
@@ -808,7 +882,13 @@ var ActiveUserMetrics = function() {
 var HealthyUserMetrics = function() {
 
     // stickiness ratio - DAU/MAU
-    renderCalculationBetweenTwoQueries(dailyActiveUsersQuery, monthlyActiveUsersQuery, "#stickiness-ratio", null, "percentage");
+    renderCalculationBetweenTwoQueries(dailyActiveUsersQuery, thirtyDaysActiveUsersQuery, "#stickiness-ratio-1-day-ago", null, "percentage");
+     // stickiness ratio - DAU/MAU for 1 week ago
+    renderCalculationBetweenTwoQueries(weekBackDailyActiveUsersQuery, weekBackThirtyDaysActiveUsersQuery , "#stickiness-ratio-1-week-ago", null, "percentage");
+    // stickiness ratio - DAU/MAU for 4 weeks ago
+    renderCalculationBetweenTwoQueries(monthBackDailyActiveUsersQuery, monthBackThirtyDaysActiveUsersQuery , "#stickiness-ratio-4-weeks-ago", null, "percentage");
+    // stickiness ratio - DAU/MAU for 52 weeks ago
+    renderCalculationBetweenTwoQueries(yearBackDailyActiveUsersQuery, yearBackThirtyDaysActiveUsersQuery , "#stickiness-ratio-52-weeks-ago", null, "percentage");
 };
 
 
@@ -941,6 +1021,25 @@ var AddonMetrics = function() {
 };
 
 
+// <+><+><+><><>+
+//   preprints   |
+// ><+><+><+<+><+
+
+var PreprintMetrics = function() {
+    var preprint_created = new keenAnalysis.Query("sum", {
+        eventCollection: "preprint_summary",
+        targetProperty: "provider.total",
+        groupBy: ["provider.name"],
+        interval: "daily",
+        timeframe: "previous_30_days",
+        timezone: "UTC"
+    });
+
+    renderKeenMetric("#preprints-added", "line", preprint_created, defaultHeight);
+};
+
+
+
 module.exports = {
     UserGainMetrics: UserGainMetrics,
     NodeLogsPerUser: NodeLogsPerUser,
@@ -948,5 +1047,8 @@ module.exports = {
     ActiveUserMetrics: ActiveUserMetrics,
     HealthyUserMetrics:HealthyUserMetrics,
     RawNumberMetrics: RawNumberMetrics,
-    AddonMetrics: AddonMetrics
+    AddonMetrics: AddonMetrics,
+    PreprintMetrics: PreprintMetrics,
+    KeenRenderMetrics: renderKeenMetric
+
 };

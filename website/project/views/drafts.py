@@ -5,14 +5,13 @@ import itertools
 from operator import itemgetter
 
 from dateutil.parser import parse as parse_date
+from django.core.exceptions import ValidationError
+from django.db.models import Q
 from django.utils import timezone
 from flask import request, redirect
 import pytz
 
-from modularodm import Q
-from modularodm.exceptions import ValidationValueError
-
-from framework.mongo.utils import get_or_http_error, autoload
+from framework.database import get_or_http_error, autoload
 from framework.exceptions import HTTPError
 from framework.status import push_status_message
 
@@ -28,7 +27,7 @@ from website.project.decorators import (
 from website import language, settings
 from website.prereg import utils as prereg_utils
 from website.project import utils as project_utils
-from website.project.metadata.schemas import METASCHEMA_ORDERING
+from website.project.metadata.schemas import LATEST_SCHEMA_VERSION, METASCHEMA_ORDERING
 from website.project.metadata.utils import serialize_meta_schema, serialize_draft_registration
 from website.project.utils import serialize_node
 from website.util import rapply
@@ -198,7 +197,7 @@ def register_draft_registration(auth, node, draft, *args, **kwargs):
         embargo_end_date = parse_date(data['embargoEndDate'], ignoretz=True).replace(tzinfo=pytz.utc)
         try:
             register.embargo_registration(auth.user, embargo_end_date)
-        except ValidationValueError as err:
+        except ValidationError as err:
             raise HTTPError(http.BAD_REQUEST, data=dict(message_long=err.message))
     else:
         try:
@@ -272,10 +271,7 @@ def new_draft_registration(auth, node, *args, **kwargs):
 
     schema_version = data.get('schema_version', 2)
 
-    meta_schema = get_schema_or_fail(
-        Q('name', 'eq', schema_name) &
-        Q('schema_version', 'eq', int(schema_version))
-    )
+    meta_schema = get_schema_or_fail(Q(name=schema_name, schema_version=int(schema_version)))
     draft = DraftRegistration.create_from_node(
         node,
         user=auth.user,
@@ -316,10 +312,7 @@ def update_draft_registration(auth, node, draft, *args, **kwargs):
     schema_name = data.get('schema_name')
     schema_version = data.get('schema_version', 1)
     if schema_name:
-        meta_schema = get_schema_or_fail(
-            Q('name', 'eq', schema_name) &
-            Q('schema_version', 'eq', schema_version)
-        )
+        meta_schema = get_schema_or_fail(Q(name=schema_name, schema_version=schema_version))
         existing_schema = draft.registration_schema
         if (existing_schema.name, existing_schema.schema_version) != (meta_schema.name, meta_schema.schema_version):
             draft.registration_schema = meta_schema
@@ -357,23 +350,12 @@ def get_metaschemas(*args, **kwargs):
     count = request.args.get('count', 100)
     include = request.args.get('include', 'latest')
 
-    meta_schemas = []
+    meta_schemas = MetaSchema.objects.filter(active=True)
     if include == 'latest':
-        schema_names = list(MetaSchema.objects.all().values_list('name', flat=True).distinct())
-        for name in schema_names:
-            meta_schema_set = MetaSchema.find(
-                Q('name', 'eq', name) &
-                Q('schema_version', 'eq', 2)
-            )
-            meta_schemas = meta_schemas + [s for s in meta_schema_set]
-    else:
-        meta_schemas = MetaSchema.find()
-    meta_schemas = [
-        schema
-        for schema in meta_schemas
-        if schema.active
-    ]
-    meta_schemas.sort(key=lambda a: METASCHEMA_ORDERING.index(a.name))
+        meta_schemas.filter(schema_version=LATEST_SCHEMA_VERSION)
+
+    meta_schemas = sorted(meta_schemas, key=lambda x: METASCHEMA_ORDERING.index(x.name))
+
     return {
         'meta_schemas': [
             serialize_meta_schema(ms) for ms in meta_schemas[:count]

@@ -2,11 +2,30 @@ import os
 import json
 import logging
 
+from contextlib import contextmanager
+
 from website import settings
 from osf.models import NodeLicense, MetaSchema
 from website.project.metadata.schemas import OSF_META_SCHEMAS
 
 logger = logging.getLogger(__file__)
+
+
+@contextmanager
+def disable_auto_now_fields(model):
+    """
+    Context manager to disable updates of all auto_now fields for a given model.
+
+    """
+    for field in model._meta.get_fields():
+        if hasattr(field, 'auto_now') and field.auto_now:
+            field.auto_now = False
+    try:
+        yield
+    finally:
+        for field in model._meta.get_fields():
+            if hasattr(field, 'auto_now') and not field.auto_now:
+                field.auto_now = True
 
 
 def ensure_licenses(*args, **kwargs):
@@ -21,7 +40,7 @@ def ensure_licenses(*args, **kwargs):
     with open(
             os.path.join(
                 settings.APP_PATH,
-                'node_modules', 'list-of-licenses', 'dist', 'list-of-licenses.json'
+                'node_modules', '@centerforopenscience', 'list-of-licenses', 'dist', 'list-of-licenses.json'
             )
     ) as fp:
         licenses = json.loads(fp.read())

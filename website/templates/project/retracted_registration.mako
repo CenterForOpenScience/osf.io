@@ -1,3 +1,4 @@
+<%namespace name="contributor_list" file="../util/contributor_list.mako" />
 <div id="projectScope">
     <header class="subhead" id="overview">
 
@@ -14,11 +15,7 @@
                     <ol>Anonymous Contributors</ol>
                 % else:
                     <ol>
-                        <div mod-meta='{
-                            "tpl": "util/render_contributors.mako",
-                            "uri": "${ node["api_url"] }get_contributors/",
-                            "replace": true
-                        }'></div>
+                        ${contributor_list.render_contributors_full(contributors=node['contributors'])}
                     </ol>
                 % endif
                 % if node['is_fork']:

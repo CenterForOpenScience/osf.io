@@ -3,7 +3,7 @@ import abc
 from nose.tools import *  # noqa (PEP8 asserts)
 
 from framework.auth import Auth
-from tests.factories import AuthUserFactory, ProjectFactory
+from osf_tests.factories import AuthUserFactory, ProjectFactory
 
 class AddonNodeLoggerTestSuiteMixinBase(object):
 

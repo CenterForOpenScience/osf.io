@@ -256,53 +256,51 @@ class TestRubeus(OsfTestCase):
         public_project = ProjectFactory(is_public=True)
         collector = rubeus.NodeFileCollector(node=public_project, auth=another_auth)
         node_name =  sanitize.unescape_entities(public_project.title)
-        assert_equal(collector._get_node_name(public_project), node_name)
+        assert_equal(collector._serialize_node(public_project)['name'], node_name)
 
         # Private  (Can't View)
         registration_private = RegistrationFactory(creator=user)
         registration_private.is_public = False
         registration_private.save()
         collector = rubeus.NodeFileCollector(node=registration_private, auth=another_auth)
-        assert_equal(collector._get_node_name(registration_private), u'Private Registration')
+        assert_equal(collector._serialize_node(registration_private)['name'], u'Private Registration')
 
         content = ProjectFactory(creator=user)
-        node = ProjectFactory(creator=user)
+        node = ProjectFactory(creator=user, is_public=True)
 
         forked_private = node.fork_node(auth=auth)
         forked_private.is_public = False
         forked_private.save()
         collector = rubeus.NodeFileCollector(node=forked_private, auth=another_auth)
-        assert_equal(collector._get_node_name(forked_private), u'Private Fork')
+        assert_equal(collector._serialize_node(forked_private)['name'], u'Private Fork')
 
-        pointer_private = node.add_pointer(content, auth=auth)
-        pointer_private.is_public = False
-        pointer_private.save()
-        collector = rubeus.NodeFileCollector(node=pointer_private, auth=another_auth)
-        assert_equal(collector._get_node_name(pointer_private), u'Private Link')
+        node.add_pointer(content, auth=auth)
+        collector = rubeus.NodeFileCollector(node=node, auth=another_auth)
+        assert_equal(collector._get_nodes(node)['children'][1]['name'], u'Private Link')
 
         private_project = ProjectFactory(is_public=False)
         collector = rubeus.NodeFileCollector(node=private_project, auth=another_auth)
-        assert_equal(collector._get_node_name(private_project), u'Private Component')
+        assert_equal(collector._serialize_node(private_project)['name'], u'Private Component')
 
         private_node = NodeFactory(is_public=False)
         collector = rubeus.NodeFileCollector(node=private_node, auth=another_auth)
-        assert_equal(collector._get_node_name(private_node), u'Private Component')
+        assert_equal(collector._serialize_node(private_node)['name'], u'Private Component')
 
-    def test_collect_components_deleted(self):
+    def test_get_nodes_deleted_component(self):
         node = NodeFactory(creator=self.project.creator, parent=self.project)
         node.is_deleted = True
         collector = rubeus.NodeFileCollector(
             self.project, Auth(user=UserFactory())
         )
-        nodes = collector._collect_components(self.project, visited=[])
-        assert_equal(len(nodes), 0)
+        nodes = collector._get_nodes(self.project)
+        assert_equal(len(nodes['children']), 0)
 
     def test_serialized_pointer_has_flag_indicating_its_a_pointer(self):
         project = ProjectFactory(creator=self.consolidated_auth.user)
         pointed_project = ProjectFactory(is_public=True)
         project.add_pointer(pointed_project, auth=self.consolidated_auth)
         serializer = rubeus.NodeFileCollector(node=project, auth=self.consolidated_auth)
-        ret = serializer._serialize_node(project)
+        ret = serializer._get_nodes(project)
         child = ret['children'][1]  # first child is OSFStorage, second child is pointer
         assert_true(child['isPointer'])
 
@@ -367,7 +365,7 @@ class TestSerializingNodeWithAddon(OsfTestCase):
         assert_equal(ret, sorted_files)
 
     def test_serialize_node(self):
-        ret = self.serializer._serialize_node(self.project)
+        ret = self.serializer._get_nodes(self.project)
         assert_equal(
             len(ret['children']),
             len(self.project.get_addons.return_value) + len(list(self.project.nodes))

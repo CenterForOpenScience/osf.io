@@ -32,19 +32,11 @@
 </%def>
 
 <%def name="javascript_bottom()">
-
+<% from website import settings %>
 <script src="/static/vendor/citeproc-js/xmldom.js"></script>
 <script src="/static/vendor/citeproc-js/citeproc.js"></script>
 
 <script>
-
-    ## TODO: Move this logic into badges add-on
-    % if 'badges' in addons_enabled and badges and badges['can_award']:
-    ## TODO: port to commonjs
-    ## $script(['/static/addons/badges/badge-awarder.js'], function() {
-    ##     attachDropDown('${'{}badges/json/'.format(user_api_url)}');
-    ## });
-    % endif
 
     var nodeId = ${ node['id'] |sjson, n };
     var userApiUrl = ${ user_api_url | sjson, n };
@@ -54,6 +46,7 @@
        parent_exists = parent_node['exists']
        parent_title = ''
        parent_registration_url = ''
+       parent_url = ''
        root_id = node['root_id']
        if parent_exists:
            parent_title = "Private {0}".format(parent_node['category'])
@@ -61,6 +54,7 @@
        if parent_node['can_view'] or parent_node['is_contributor']:
            parent_title = parent_node['title']
            parent_registration_url = parent_node['registrations_url']
+           parent_url = parent_node['absolute_url']
     %>
 
     // Mako variables accessible globally
@@ -98,15 +92,15 @@
             category: ${node['category_short'] | sjson, n },
             rootId: ${ root_id | sjson, n },
             parentTitle: ${ parent_title | sjson, n },
+            parentUrl: ${ parent_url | sjson, n },
             parentRegisterUrl: ${parent_registration_url | sjson, n },
             parentExists: ${ parent_exists | sjson, n},
-            childExists: ${ node['children'] | sjson, n},
+            childExists: ${ node['child_exists'] | sjson, n},
             registrationMetaSchemas: ${ node['registered_schemas'] | sjson, n },
             registrationMetaData: ${ node['registered_meta'] | sjson, n },
             contributors: ${ node['contributors'] | sjson, n }
         }
     });
-
 </script>
 <script type="text/x-mathjax-config">
     MathJax.Hub.Config({
@@ -115,10 +109,14 @@
         skipStartupTypeset: true
     });
 </script>
-<script type="text/javascript"
-    src="/static/vendor/bower_components/MathJax/unpacked/MathJax.js?config=TeX-AMS-MML_HTMLorMML">
-</script>
 
+<script type="text/javascript"
+% if settings.USE_CDN_FOR_CLIENT_LIBS:
+    src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.2/MathJax.js?config=TeX-AMS-MML_HTMLorMML"
+% else:
+    src="/static/vendor/bower_components/MathJax/unpacked/MathJax.js?config=TeX-AMS-MML_HTMLorMML"
+% endif
+></script>
 
 <script src=${"/static/public/js/project-base-page.js" | webpack_asset}> </script>
 </%def>

@@ -177,7 +177,7 @@ CONFIRM_EMAIL_ERPC = Mail(
 )
 CONFIRM_EMAIL_PREPRINTS = lambda name, provider: Mail(
     'confirm_preprints_{}'.format(name),
-    subject='Open Science Framework Account Verification, {} Preprints Service'.format(provider)
+    subject='Open Science Framework Account Verification, {}'.format(provider)
 )
 CONFIRM_EMAIL_REGISTRIES_OSF = Mail(
     'confirm_registries_osf',
@@ -197,7 +197,7 @@ INVITE_DEFAULT = Mail(
 )
 INVITE_PREPRINT = lambda template, provider: Mail(
     'invite_preprints_{}'.format(template),
-    subject='You have been added as a contributor to {} {} preprint.'.format(get_english_article(provider), provider)
+    subject='You have been added as a contributor to {} {} {}.'.format(get_english_article(provider.name), provider.name, provider.preprint_word)
 )
 CONTRIBUTOR_ADDED_DEFAULT = Mail(
     'contributor_added_default',
@@ -205,7 +205,22 @@ CONTRIBUTOR_ADDED_DEFAULT = Mail(
 )
 CONTRIBUTOR_ADDED_PREPRINT = lambda template, provider: Mail(
     'contributor_added_preprints_{}'.format(template),
-    subject='You have been added as a contributor to {} {} preprint.'.format(get_english_article(provider), provider)
+    subject='You have been added as a contributor to {} {} {}.'.format(get_english_article(provider.name), provider.name, provider.preprint_word)
+)
+CONTRIBUTOR_ADDED_PREPRINT_NODE_FROM_OSF = Mail(
+    'contributor_added_preprint_node_from_osf',
+    subject='You have been added as a contributor to an OSF project.'
+)
+PREPRINT_CONFIRMATION_DEFAULT = Mail(
+    'preprint_confirmation_default',
+    subject="You've shared a preprint on OSF preprints"
+)
+PREPRINT_CONFIRMATION_BRANDED = lambda provider: Mail(
+    'preprint_confirmation_branded',
+    subject="You've shared {} {} on {}".format(
+        get_english_article(provider.preprint_word),
+        provider.preprint_word, provider.name
+    )
 )
 FORWARD_INVITE = Mail('forward_invite', subject='Please forward to ${fullname}')
 FORWARD_INVITE_REGISTERED = Mail('forward_invite_registered', subject='Please forward to ${fullname}')
@@ -358,3 +373,18 @@ PREREG_CHALLENGE_ACCEPTED = Mail(
 )
 
 EMPTY = Mail('empty', subject='${subject}')
+
+SHARE_ERROR_DESK = Mail(
+    'send_data_share_error_desk',
+    subject='Share Error'
+)
+
+SHARE_PREPRINT_ERROR_DESK = Mail(
+    'send_data_share_preprint_error_desk',
+    subject='Share Error'
+)
+
+REVIEWS_SUBMISSION_CONFIRMATION = Mail(
+    'reviews_submission_confirmation',
+    subject='Confirmation of your submission to ${provider_name}'
+)

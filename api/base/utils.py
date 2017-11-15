@@ -4,7 +4,7 @@ import urlparse
 
 import furl
 from django.core.exceptions import ObjectDoesNotExist
-from modularodm import Q
+from django.db.models import OuterRef, Exists, Q
 from rest_framework.exceptions import NotFound
 from rest_framework.reverse import reverse
 
@@ -13,9 +13,9 @@ from api.base.exceptions import Gone, UserGone
 from framework.auth import Auth
 from framework.auth.cas import CasResponse
 from framework.auth.oauth_scopes import ComposedScopes, normalize_scopes
-from osf.models import OSFUser as User
+from osf.models import OSFUser, Contributor, Node, Registration
 from osf.models.base import GuidMixin
-from osf.modm_compat import to_django_query
+from osf.utils.requests import check_select_for_update
 from website import settings as website_settings
 from website import util as website_util  # noqa
 
@@ -75,8 +75,9 @@ def absolute_reverse(view_name, query_kwargs=None, args=None, kwargs=None):
     return url
 
 
-def get_object_or_error(model_cls, query_or_pk, display_name=None):
+def get_object_or_error(model_cls, query_or_pk, request, display_name=None):
     obj = query = None
+    select_for_update = check_select_for_update(request)
     if isinstance(query_or_pk, basestring):
         # they passed a 5-char guid as a string
         if issubclass(model_cls, GuidMixin):
@@ -88,14 +89,13 @@ def get_object_or_error(model_cls, query_or_pk, display_name=None):
                 query = {model_cls.primary_identifier_name: query_or_pk}
             else:
                 # fall back to modmcompatiblity's load method since we don't know their PIN
-                obj = model_cls.load(query_or_pk)
+                obj = model_cls.load(query_or_pk, select_for_update=select_for_update)
     else:
         # they passed a query
-        if hasattr(model_cls, 'primary_identifier_name'):
-            query = to_django_query(query_or_pk, model_cls=model_cls)
-        else:
-            # fall back to modmcompatibility's find_one
-            obj = model_cls.find_one(query_or_pk)
+        try:
+            obj = model_cls.objects.filter(query_or_pk).select_for_update().get() if select_for_update else model_cls.objects.get(query_or_pk)
+        except model_cls.DoesNotExist:
+            raise NotFound
 
     if not obj:
         if not query:
@@ -104,9 +104,9 @@ def get_object_or_error(model_cls, query_or_pk, display_name=None):
         try:
             # TODO This could be added onto with eager on the queryset and the embedded fields of the api
             if isinstance(query, dict):
-                obj = model_cls.objects.get(**query)
+                obj = model_cls.objects.get(**query) if not select_for_update else model_cls.objects.filter(**query).select_for_update().get()
             else:
-                obj = model_cls.objects.get(query)
+                obj = model_cls.objects.get(query) if not select_for_update else model_cls.objects.filter(query).select_for_update().get()
         except ObjectDoesNotExist:
             raise NotFound
 
@@ -114,9 +114,9 @@ def get_object_or_error(model_cls, query_or_pk, display_name=None):
     # The User model is an exception because we still want to allow
     # users who are unconfirmed or unregistered, but not users who have been
     # disabled.
-    if model_cls is User and obj.is_disabled:
+    if model_cls is OSFUser and obj.is_disabled:
         raise UserGone(user=obj)
-    elif model_cls is not User and not getattr(obj, 'is_active', True) or getattr(obj, 'is_deleted', False):
+    elif model_cls is not OSFUser and not getattr(obj, 'is_active', True) or getattr(obj, 'is_deleted', False):
         if display_name is None:
             raise Gone
         else:
@@ -151,20 +151,22 @@ def waterbutler_url_for(request_type, provider, path, node_id, token, obj_args=N
     url.args.update(query)
     return url.url
 
-def default_node_list_query():
-    return (
-        Q('is_deleted', 'ne', True) &
-        Q('type', 'eq', 'osf.node')
-    )
+def default_node_list_queryset(model_cls):
+    assert model_cls in {Node, Registration}
+    return model_cls.objects.filter(is_deleted=False)
 
+def default_node_permission_queryset(user, model_cls):
+    assert model_cls in {Node, Registration}
+    if user.is_anonymous:
+        return model_cls.objects.filter(is_public=True)
+    sub_qs = Contributor.objects.filter(node=OuterRef('pk'), user__id=user.id, read=True)
+    return model_cls.objects.annotate(contrib=Exists(sub_qs)).filter(Q(contrib=True) | Q(is_public=True))
 
-def default_node_permission_query(user):
-    permission_query = Q('is_public', 'eq', True)
-    if not user.is_anonymous:
-        permission_query = (permission_query | Q('contributors', 'eq', user.pk))
-
-    return permission_query
-
+def default_node_list_permission_queryset(user, model_cls):
+    # **DO NOT** change the order of the querysets below.
+    # If get_roots() is called on default_node_list_qs & default_node_permission_qs,
+    # Django's alaising will break and the resulting QS will be empty and you will be sad.
+    return default_node_permission_queryset(user, model_cls) & default_node_list_queryset(model_cls)
 
 def extend_querystring_params(url, params):
     scheme, netloc, path, query, _ = urlparse.urlsplit(url)
@@ -172,7 +174,6 @@ def extend_querystring_params(url, params):
     orig_params.update(params)
     query = urllib.urlencode(orig_params, True)
     return urlparse.urlunsplit([scheme, netloc, path, query, ''])
-
 
 def extend_querystring_if_key_exists(url, request, key):
     if key in request.query_params.keys():

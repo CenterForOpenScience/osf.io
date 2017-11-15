@@ -5,14 +5,13 @@ import unittest
 
 import pytest
 import pytz
-from django.core.exceptions import ObjectDoesNotExist
 from django.utils import timezone
 from nose.tools import *  # noqa
 
 from addons.osfstorage.models import OsfStorageFile, OsfStorageFileNode, OsfStorageFolder
 from osf.exceptions import ValidationError
 from osf.models import Contributor
-from tests.factories import ProjectFactory
+from osf_tests.factories import ProjectFactory
 
 from addons.osfstorage.tests import factories
 from addons.osfstorage.tests.utils import StorageTestCase
@@ -206,14 +205,14 @@ class TestOsfstorageFileNode(StorageTestCase):
             kid = parent.append_file(str(x))
             kid.save()
             kids.append(kid)
-        count = OsfStorageFileNode.find().count()
-        tcount = models.TrashedFileNode.find().count()
+        count = OsfStorageFileNode.objects.count()
+        tcount = models.TrashedFileNode.objects.count()
 
         parent.delete()
 
         assert_is(OsfStorageFileNode.load(parent._id), None)
-        assert_equals(count - 11, OsfStorageFileNode.find().count())
-        assert_equals(tcount + 11, models.TrashedFileNode.find().count())
+        assert_equals(count - 11, OsfStorageFileNode.objects.count())
+        assert_equals(tcount + 11, models.TrashedFileNode.objects.count())
 
         for kid in kids:
             assert_is(
@@ -601,7 +600,8 @@ class TestOsfStorageFileVersion(StorageTestCase):
         assert_false(version2.is_duplicate(version1))
 
     def test_validate_location(self):
-        version = factories.FileVersionFactory.build(location={'invalid': True})
+        creator = factories.AuthUserFactory()
+        version = factories.FileVersionFactory.build(creator=creator, location={'invalid': True})
         with assert_raises(ValidationError):
             version.save()
         version.location = {

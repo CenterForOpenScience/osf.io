@@ -203,8 +203,8 @@
             file_tags: ${file_tags if file_tags else False| sjson, n},
             guid: ${file_guid | sjson, n},
             id: ${file_id | sjson, n},
-            checkoutUser: ${checkout_user | sjson, n},
-            isPreregCheckout: ${pre_reg_checkout | sjson, n},
+            checkoutUser: ${checkout_user if checkout_user else None | sjson, n},
+            isPreregCheckout: ${pre_reg_checkout if pre_reg_checkout else False | sjson, n},
           urls: {
         %if error is None:
               render: ${ urls['render'] | sjson, n },

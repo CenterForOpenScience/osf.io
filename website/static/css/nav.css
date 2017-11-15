@@ -4,3 +4,7 @@
   line-height: 1.7;
   background-color: #5cb85c;
   border-color: #4cae4c;  }
+
+.navbar-donate-button a{
+  color: #9cd59c !important;
+}

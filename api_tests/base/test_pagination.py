@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 from nose.tools import *  # flake8: noqa
 
-from tests import factories
+from osf_tests import factories
 from tests.base import ApiTestCase
 
 from api.base import settings

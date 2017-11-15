@@ -1,8 +1,6 @@
+from django.shortcuts import get_object_or_404
 from rest_framework import generics, permissions as drf_permissions
 from rest_framework.exceptions import NotFound, ValidationError, PermissionDenied
-
-from modularodm import Q
-from modularodm.exceptions import NoResultsFound
 
 from api.base.exceptions import Gone
 from api.base import permissions as base_permissions
@@ -22,7 +20,7 @@ from api.comments.serializers import (
 from framework.auth.core import Auth
 from framework.auth.oauth_scopes import CoreScopes
 from framework.exceptions import PermissionsError
-from osf.models import AbstractNode as Node, Comment, BaseFileNode
+from osf.models import AbstractNode, Comment, BaseFileNode
 from addons.wiki.models import NodeWikiPage
 
 
@@ -36,10 +34,7 @@ class CommentMixin(object):
 
     def get_comment(self, check_permissions=True):
         pk = self.kwargs[self.comment_lookup_url_kwarg]
-        try:
-            comment = Comment.find_one(Q('guids___id', 'eq', pk) & Q('root_target', 'ne', None))
-        except NoResultsFound:
-            raise NotFound
+        comment = get_object_or_404(Comment, guids___id=pk, root_target__isnull=False)
 
         # Deleted root targets still appear as tuples in the database and are included in
         # the above query, requiring an additional check
@@ -170,7 +165,7 @@ class CommentDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView, Comm
         comment = self.get_comment()
         comment_node = None
 
-        if isinstance(comment.target.referent, Node):
+        if isinstance(comment.target.referent, AbstractNode):
             comment_node = comment.target.referent
         elif isinstance(comment.target.referent, (NodeWikiPage,
                                                   BaseFileNode)):
@@ -258,6 +253,8 @@ class CommentReportsList(JSONAPIBaseView, generics.ListCreateAPIView, CommentMix
 
     view_category = 'comments'
     view_name = 'comment-reports'
+
+    ordering = ('-date_modified',)
 
     def get_queryset(self):
         user_id = self.request.user._id

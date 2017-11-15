@@ -4,8 +4,7 @@ import re
 from nameparser.parser import HumanName
 import requests
 
-from modularodm.exceptions import ValidationError
-from modularodm import Q
+from django.core.exceptions import ValidationError
 
 from website import settings
 
@@ -89,8 +88,9 @@ def privacy_info_handle(info, anonymous, name=False):
 
 def ensure_external_identity_uniqueness(provider, identity, user=None):
     from osf.models import OSFUser
-
-    users_with_identity = OSFUser.find(Q('external_identity.{}.{}'.format(provider, identity), 'ne', None))
+    users_with_identity = OSFUser.objects.filter(
+        **{'external_identity__{}__{}__isnull'.format(provider, identity): False}
+    )
     for existing_user in users_with_identity:
         if user and user._id == existing_user._id:
             continue

@@ -25,6 +25,38 @@ if (!window.fileBrowserCounter) {
     window.fileBrowserCounter = 0;
 }
 
+var sparseNodeFields = String([
+    'category',
+    'children',
+    'contributors',
+    'current_user_permissions',
+    'date_modified',
+    'parent',
+    'public',
+    'tags',
+    'title'
+]);
+
+var sparseRegistrationFields = String([
+    sparseNodeFields,
+    'registration',
+    'pending_registration_approval',
+    'withdrawn'
+]);
+
+var sparseUserFields = String([
+    'family_name',
+    'full_name',
+    'given_name',
+    'middle_names'
+]);
+
+var sparseContributorFields = String([
+    'bibliographic',
+    'unregistered_contributor',
+    'users'
+]);
+
 //Backport of Set
 if (!window.Set) {
   window.Set = function Set(initial) {
@@ -52,33 +84,51 @@ if (!window.Set) {
 
 
 function NodeFetcher(type, link, handleOrphans, regType, regLink) {
-  this.type = type || 'nodes';
-  this.regType = regType || null;
-  this.regLink = regLink || null;
-  this.loaded = 0;
-  this._failed = 0;
-  this.total = 0;
-  this._flat = [];
-  this._orphans = [];
-  this._cache = {};
-  this._promise = null;
-  this._started = false;
-  this._continue = true;
-  this._handleOrphans = handleOrphans === undefined ? true : handleOrphans;
-  this._callbacks = {
-    done: [this._onFinish.bind(this)],
-    page: [],
-    children: [],
-    fetch : []
-  };
-  this.nextLink = link ?
-    link + '&version=2.2' :
-    $osf.apiV2Url('users/me/' + this.type + '/', { query: {'related_counts' : 'children', 'embed' : 'contributors', 'version': '2.2'}});
+    this.type = type || 'nodes';
+    this.regType = regType || null;
+    this.regLink = regLink || null;
+    this.loaded = 0;
+    this._failed = 0;
+    this.total = 0;
+    this._flat = [];
+    this._orphans = [];
+    this._cache = {};
+    this._promise = null;
+    this._started = false;
+    this._continue = true;
+    // hack to force a re-sort and cleanup when the fetcher is done
+    this.forceRedraw = false;
+    this._handleOrphans = handleOrphans === undefined ? true : handleOrphans;
+    this._callbacks = {
+        done: [this._onFinish.bind(this)],
+        page: [],
+        children: [],
+        fetch : []
+    };
+
+    var params = {'related_counts' : 'children', 'embed' : 'contributors', 'version': '2.2', 'fields[users]' : sparseUserFields, 'fields[contributors]' : sparseContributorFields};
+
+    if (this.type === 'nodes') {
+        params['fields[nodes]'] = sparseNodeFields;
+    }
+
+    if (this.type === 'registrations') {
+        params['fields[registrations]'] = sparseRegistrationFields;
+    }
+
+    // TODO Use sparse fields on preprints, users/contributors already added
+    if (this.type === 'preprints') {
+        link = link ? link : $osf.apiV2Url('users/me/nodes/', { query : { 'filter[preprint]': true, 'related_counts' : 'children', 'embed' : ['contributors', 'preprints'], 'fields[users]' : sparseUserFields, 'fields[contributors]' : sparseContributorFields}});
+    }
+
+    this.nextLink = link ?
+        link + '&version=2.2' :
+        $osf.apiV2Url('users/me/' + this.type + '/', { query: params});
 }
 
 NodeFetcher.prototype = {
   isFinished: function() {
-    return this.loaded >= this.total && this._promise === null && this._orphans.length === 0;
+    return this.loaded >= this.total && this._promise === null && this._orphans.length === 0 && !this.nextLink;
   },
   isEmpty: function() {
     return this.loaded === 0 && this.isFinished();
@@ -108,6 +158,7 @@ NodeFetcher.prototype = {
   add: function(item) {
     if (!this._started ||this._flat.indexOf(item) !== - 1) return;
 
+    this.forceRedraw = true;
     this.total++;
     this.loaded++;
 
@@ -127,6 +178,11 @@ NodeFetcher.prototype = {
   },
   remove: function(item) {
     item = item.id || item;
+
+    this.forceRedraw = true;
+    this.total--;
+    this.loaded--;
+
     if (!this._cache[item]) return;
     delete this._cache[item];
     for(var i = 0; i < this._flat.length; i++)
@@ -153,7 +209,9 @@ NodeFetcher.prototype = {
   },
   fetch: function(id) {
     // TODO This method is currently untested
-    var url =  $osf.apiV2Url(this.type + '/' + id + '/', {query: {related_counts: 'children', embed: 'contributors', version: '2.2'}});
+    // this.type can be 'registrations' when it needs to be 'nodes' based on when this is called
+    // TODO assess sparse field usage (some already implemented)
+    var url =  $osf.apiV2Url(this.type + '/' + id + '/', {query: {related_counts: 'children', embed: 'contributors', version: '2.2', 'fields[users]' : sparseUserFields, 'fields[contributors]' : sparseContributorFields}});
     return m.request({method: 'GET', url: url, config: mHelpers.apiV2Config({withCredentials: window.contextVars.isOnRootDomain}), background: true})
       .then((function(result) {
         this.add(result.data);
@@ -173,8 +231,11 @@ NodeFetcher.prototype = {
     this.nextLink = results.links.next;
     this.loaded += results.data.length;
     for(var i = 0; i < results.data.length; i++) {
-      if (this.type === 'registrations' && (results.data[i].attributes.withdrawn === true || results.data[i].attributes.pending_registration_approval === true))
+      if (this.type === 'registrations' && (results.data[i].attributes.withdrawn === true || results.data[i].attributes.pending_registration_approval === true)){
+          this.total--;
+          this.loaded--;
           continue; // Exclude retracted and pending registrations
+      }
       else if (results.data[i].relationships.parent && this._handleOrphans)
           this._orphans.push(results.data[i]);
       else
@@ -236,6 +297,7 @@ NodeFetcher.prototype = {
     $osf.growl('We\'re having some trouble contacting our servers. Try reloading the page.', 'Something went wrong!', 'danger', 5000);
   },
   _onFinish: function() {
+    this.forceRedraw = true;
     this._flat = this._orphans.concat(this._flat).sort(function(a,b) {
       a = new Date(a.attributes.date_modified);
       b = new Date(b.attributes.date_modified);
@@ -359,7 +421,7 @@ var MyProjects = {
         self.systemCollections = options.systemCollections || [
             new LinkObject('collection', { nodeType : 'projects'}, 'All my projects'),
             new LinkObject('collection', { nodeType : 'registrations'}, 'All my registrations'),
-            new LinkObject('collection', { nodeType : 'preprints', link: $osf.apiV2Url('users/me/nodes/', { query : { 'filter[preprint]': true, 'related_counts' : 'children', 'embed' : ['contributors', 'preprints']}})}, 'All my preprints')
+            new LinkObject('collection', { nodeType : 'preprints'}, 'All my preprints')
         ];
 
         self.fetchers = {};
@@ -442,7 +504,8 @@ var MyProjects = {
                 var id = item.data.id;
                 if(!item.data.attributes.retracted){
                     var urlPrefix = item.data.attributes.registration ? 'registrations' : 'nodes';
-                    var url = $osf.apiV2Url(urlPrefix + '/' + id + '/logs/', { query : { 'page[size]' : 6, 'embed' : ['original_node', 'user', 'linked_node', 'template_node'], 'profile_image_size': PROFILE_IMAGE_SIZE}});
+                    // TODO assess sparse field usage (some already implemented)
+                    var url = $osf.apiV2Url(urlPrefix + '/' + id + '/logs/', { query : { 'page[size]' : 6, 'embed' : ['original_node', 'user', 'linked_node', 'linked_registration', 'template_node'], 'profile_image_size': PROFILE_IMAGE_SIZE, 'fields[users]' : sparseUserFields}});
                     var promise = self.getLogs(url);
                     return promise;
                 }
@@ -616,7 +679,7 @@ var MyProjects = {
             }
             self.updateFolder()(null, self.treeData());
             // Manually select first item without triggering a click
-            if(self.multiselected()().length === 0 && self.treeData().children[0]){
+            if (self.treeData().children[0] && ((self.multiselected()().length === 0 && self.currentView().fetcher.isFinished()) || self.currentView().fetcher.forceRedraw === true)) {
               self.updateTbMultiselect([self.treeData().children[0]]);
             }
             m.redraw(true);
@@ -826,10 +889,10 @@ var MyProjects = {
                 result.data.forEach(function(node){
                     var count = node.relationships.linked_registrations.links.related.meta.count + node.relationships.linked_nodes.links.related.meta.count;
                     self.collections().push(new LinkObject('collection', {nodeType : 'collection', node : node, count : m.prop(count), loaded: 1 }, $osf.decodeText(node.attributes.title)));
-
-                    var regLink = $osf.apiV2Url('collections/' + node.id + '/linked_registrations/', { query : { 'related_counts' : 'children', 'embed' : 'contributors', 'version': '2.2' }});
-                    var link = $osf.apiV2Url('collections/' + node.id + '/linked_nodes/', { query : { 'related_counts' : 'children', 'embed' : 'contributors' }});
-                    self.fetchers[self.collections()[self.collections().length-1].id] = new NodeFetcher('nodes', link, false, 'registraions', regLink);
+                    // TODO assess whether more sparse fields can be used
+                    var regLink = $osf.apiV2Url('collections/' + node.id + '/linked_registrations/', { query : { 'related_counts' : 'children', 'embed' : 'contributors', 'version': '2.2', 'fields[registrations]' : sparseRegistrationFields}});
+                    var link = $osf.apiV2Url('collections/' + node.id + '/linked_nodes/', { query : { 'related_counts' : 'children', 'embed' : 'contributors', 'fields[nodes]' : sparseNodeFields }});
+                    self.fetchers[self.collections()[self.collections().length-1].id] = new NodeFetcher('nodes', link, false, 'registrations', regLink);
                     self.fetchers[self.collections()[self.collections().length-1].id].on(['page'], self.onPageLoad);
                 });
                 if(result.links.next){
@@ -884,6 +947,26 @@ var MyProjects = {
           }
         };
 
+        self.onLoadReset = function() {
+            var current = self.currentView().fetcher;
+            if (current.isFinished() && current.forceRedraw && !current.isEmpty()) {
+
+                // If data loads before treebeard force redrawing
+                self.loadValue(100);
+                self.generateFiltersList();
+                self.updateList();
+
+                // Hack to force redraws when things get out of sync due to race condition
+                // If the believed number of rows is different from the actual number, force another redraw
+                if (!(self.currentView().totalRows === 0 && current._flat.length !== 0)) {
+                    current.forceRedraw = false;
+                }
+                // TB/Mithril interaction requires the redraw to be called a bit later
+                // TODO Figure out why
+                setTimeout(m.redraw.bind(this, true), 250);
+            }
+        };
+
         self.init = function _init_fileBrowser() {
             self.loadCategories().then(function(){
                 self.fetchers[self.systemCollections[0].id].on(['page', 'done'], self.onPageLoad);
@@ -893,6 +976,7 @@ var MyProjects = {
                 }
             });
             if (!self.viewOnly){
+                // TODO use sparse fields
                 var collectionsUrl = $osf.apiV2Url('collections/', { query : {'related_counts' : 'linked_registrations,linked_nodes', 'page[size]' : self.collectionsPageSize(), 'sort' : 'date_created', 'embed' : 'linked_nodes'}});
                 self.loadCollections(collectionsUrl);
             }
@@ -945,18 +1029,12 @@ var MyProjects = {
                 multiselected : ctrl.multiselected,
                 highlightMultiselect : ctrl.highlightMultiselect,
                 _onload: function(tb) {
-                  if (!ctrl.currentView().fetcher.isFinished()) return;
-                  // If data loads before treebeard force redrawing
-                  ctrl.loadValue(100);
-                  ctrl.generateFiltersList();
-                  ctrl.updateList();
-                  // TB/Mithril interaction requires the redraw to be called a bit later
-                  // TODO Figure out why
-                  setTimeout(m.redraw.bind(this, true), 250);
+                    ctrl.onLoadReset();
                 }
             },
             ctrl.projectOrganizerOptions
         );
+        ctrl.onLoadReset();
         return [
             !ctrl.institutionId ? m('.dashboard-header', m('.row', [
                 m('.col-xs-8', m('h3', [
@@ -1841,7 +1919,8 @@ var Information = {
                     m('.tab-content', [
                         m('[role="tabpanel"].tab-pane.active#tab-information',[
                             m('p.db-info-meta.text-muted', [
-                                item.attributes.preprint ? m('.fangorn-preprint.p-xs.m-b-xs', 'This project is a Preprint') : '',
+                                item.embeds.preprints ? m('.fangorn-preprint.p-xs.m-b-xs', 'This project is a Preprint') : '',  // TODO: update once preprint node divorce is finished
+                                item.embeds.preprints && item.embeds.preprints.data[0].attributes.reviews_state && item.embeds.preprints.data[0].attributes.reviews_state !== 'initial' ? m('.text-capitalize', 'Status: ' + item.embeds.preprints.data[0].attributes.reviews_state) : '',  // is a preprint, has a state, provider uses moderation
                                 m('', 'Visibility : ' + (item.attributes.public ? 'Public' : 'Private')),
                                 m('.text-capitalize', 'Category: ' + category),
                                 m('.text-capitalize', 'Permission: ' + permission),
@@ -1908,7 +1987,7 @@ var ActivityLogs = {
                 }
                 return m('.db-activity-item', [
                 m('', [ m('.db-log-avatar.m-r-xs', image),
-                    m.component(LogText, item)]),
+                    m.component(LogText.LogText, item)]),
                 m('.text-right', m('span.text-muted.m-r-xs', item.attributes.formattableDate.local))]);
 
             }) : '',

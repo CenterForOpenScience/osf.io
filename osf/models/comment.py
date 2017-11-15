@@ -1,6 +1,5 @@
 
 import pytz
-from django.contrib.postgres.fields import ArrayField
 from django.db import models
 from django.db.models import Q
 from django.utils import timezone
@@ -25,9 +24,9 @@ class Comment(GuidMixin, SpamMixin, CommentableMixin, BaseModel):
     FILES = 'files'
     WIKI = 'wiki'
 
-    user = models.ForeignKey('OSFUser', null=True)
+    user = models.ForeignKey('OSFUser', null=True, on_delete=models.CASCADE)
     # the node that the comment belongs to
-    node = models.ForeignKey('AbstractNode', null=True)
+    node = models.ForeignKey('AbstractNode', null=True, on_delete=models.CASCADE)
 
     # The file or project overview page that the comment is for
     root_target = models.ForeignKey(Guid, on_delete=models.SET_NULL,
@@ -51,8 +50,7 @@ class Comment(GuidMixin, SpamMixin, CommentableMixin, BaseModel):
     )
 
     # The mentioned users
-    # TODO This should be made into an M2M STAT
-    ever_mentioned = ArrayField(models.CharField(max_length=10, blank=True), default=list, blank=True)
+    ever_mentioned = models.ManyToManyField(blank=True, related_name='mentioned_in', to='OSFUser')
 
     @property
     def url(self):
@@ -160,10 +158,13 @@ class Comment(GuidMixin, SpamMixin, CommentableMixin, BaseModel):
 
         new_mentions = []
         if comment.content:
+            if not comment.id:
+                # must have id before accessing M2M
+                comment.save()
             new_mentions = get_valid_mentioned_users_guids(comment, comment.node.contributors)
             if new_mentions:
                 project_signals.mention_added.send(comment, new_mentions=new_mentions, auth=auth)
-                comment.ever_mentioned.extend(new_mentions)
+                comment.ever_mentioned.add(*comment.node.contributors.filter(guids___id__in=new_mentions))
 
         comment.save()
 
@@ -197,7 +198,7 @@ class Comment(GuidMixin, SpamMixin, CommentableMixin, BaseModel):
         if save:
             if new_mentions:
                 project_signals.mention_added.send(self, new_mentions=new_mentions, auth=auth)
-                self.ever_mentioned.extend(new_mentions)
+                self.ever_mentioned.add(*self.node.contributors.filter(guids___id__in=new_mentions))
             self.save()
             self.node.add_log(
                 NodeLog.COMMENT_UPDATED,

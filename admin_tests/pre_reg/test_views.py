@@ -1,3 +1,5 @@
+import datetime
+
 import mock
 from nose import tools as nt
 from django.test import RequestFactory
@@ -38,16 +40,16 @@ class TestDraftListView(AdminTestCase):
     def setUp(self):
         super(TestDraftListView, self).setUp()
         self.user = AuthUserFactory()
-        schema = utils.draft_reg_util()
+        self.schema = utils.draft_reg_util()
         self.dr1 = DraftRegistrationFactory(
             initiator=self.user,
-            registration_schema=schema,
+            registration_schema=self.schema,
             registration_metadata=utils.SCHEMA_DATA
         )
         self.dr1.submit_for_review(self.user, {}, save=True)
         self.dr2 = DraftRegistrationFactory(
             initiator=self.user,
-            registration_schema=schema,
+            registration_schema=self.schema,
             registration_metadata=utils.SCHEMA_DATA
         )
         self.dr2.submit_for_review(self.user, {}, save=True)
@@ -61,6 +63,29 @@ class TestDraftListView(AdminTestCase):
         res = list(self.view.get_queryset())
         nt.assert_equal(len(res), 2)
         nt.assert_is_instance(res[0], DraftRegistration)
+
+    def test_queryset_returns_in_order_date_submitted(self):
+        created_first_submitted_second = DraftRegistrationFactory(
+            initiator=self.user,
+            registration_schema=self.schema,
+            registration_metadata=utils.SCHEMA_DATA
+        )
+
+        created_second_submitted_first = DraftRegistrationFactory(
+            initiator=self.user,
+            registration_schema=self.schema,
+            registration_metadata=utils.SCHEMA_DATA
+        )
+
+        nt.assert_greater(created_second_submitted_first.datetime_initiated, created_first_submitted_second.datetime_initiated)
+
+        created_second_submitted_first.submit_for_review(self.user, {}, save=True)
+        created_first_submitted_second.submit_for_review(self.user, {}, save=True)
+        created_second_submitted_first.datetime_updated = created_first_submitted_second.datetime_updated + datetime.timedelta(1)
+
+        assert created_second_submitted_first.datetime_updated > created_first_submitted_second.datetime_updated
+        res = list(self.view.get_queryset())
+        nt.assert_true(res[0] == created_first_submitted_second)
 
     def test_get_context_data(self):
         self.view.object_list = self.view.get_queryset()

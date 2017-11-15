@@ -1,4 +1,5 @@
 from django.db import models
+from include import IncludeManager
 
 from osf.utils.fields import NonNaiveDateTimeField
 from website.util.permissions import (
@@ -9,13 +10,15 @@ from website.util.permissions import (
 
 
 class AbstractBaseContributor(models.Model):
+    objects = IncludeManager()
+
     primary_identifier_name = 'user__guids___id'
 
     read = models.BooleanField(default=False)
     write = models.BooleanField(default=False)
     admin = models.BooleanField(default=False)
     visible = models.BooleanField(default=False)
-    user = models.ForeignKey('OSFUser')
+    user = models.ForeignKey('OSFUser', on_delete=models.CASCADE)
 
     def __repr__(self):
         return ('<{self.__class__.__name__}(user={self.user}, '
@@ -39,7 +42,7 @@ class AbstractBaseContributor(models.Model):
         return 'read'
 
 class Contributor(AbstractBaseContributor):
-    node = models.ForeignKey('AbstractNode')
+    node = models.ForeignKey('AbstractNode', on_delete=models.CASCADE)
 
     @property
     def _id(self):
@@ -52,14 +55,14 @@ class Contributor(AbstractBaseContributor):
         order_with_respect_to = 'node'
 
 class InstitutionalContributor(AbstractBaseContributor):
-    institution = models.ForeignKey('Institution')
+    institution = models.ForeignKey('Institution', on_delete=models.CASCADE)
 
     class Meta:
         unique_together = ('user', 'institution')
 
 class RecentlyAddedContributor(models.Model):
-    user = models.ForeignKey('OSFUser')  # the user who added the contributor
-    contributor = models.ForeignKey('OSFUser', related_name='recently_added_by')  # the added contributor
+    user = models.ForeignKey('OSFUser', on_delete=models.CASCADE)  # the user who added the contributor
+    contributor = models.ForeignKey('OSFUser', related_name='recently_added_by', on_delete=models.CASCADE)  # the added contributor
     date_added = NonNaiveDateTimeField(auto_now=True)
 
     class Meta:

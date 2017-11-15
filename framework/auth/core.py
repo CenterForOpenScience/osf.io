@@ -5,14 +5,14 @@ import datetime as dt
 import logging
 
 from django.utils import timezone
-from django.db.models import Q as DQ
+from django.db.models import Q
 from django.db.models import Subquery
-from framework.mongo.validators import string_required
+from django.core.validators import URLValidator
+from flask import request
 from framework.sessions import session
-from modularodm import Q
 
-from modularodm.exceptions import QueryException, ValidationError, ValidationValueError
-from modularodm.validators import URLValidator
+from osf.exceptions import ValidationValueError, ValidationError
+from osf.utils.requests import check_select_for_update
 from website import security, settings
 
 name_formatters = {
@@ -45,24 +45,6 @@ def generate_verification_key(verification_type=None):
         'token': token,
         'expires': expires,
     }
-
-
-def validate_history_item(item):
-    string_required(item.get('institution'))
-    startMonth = item.get('startMonth')
-    startYear = item.get('startYear')
-    endMonth = item.get('endMonth')
-    endYear = item.get('endYear')
-
-    validate_year(startYear)
-    validate_year(endYear)
-
-    if startYear and endYear:
-        if endYear < startYear:
-            raise ValidationValueError('End date must be later than start date.')
-        elif endYear == startYear:
-            if endMonth and startMonth and endMonth < startMonth:
-                raise ValidationValueError('End date must be later than start date.')
 
 
 def validate_year(item):
@@ -99,7 +81,7 @@ def _get_current_user():
     from osf.models import OSFUser
     current_user_id = get_current_user_id()
     if current_user_id:
-        return OSFUser.load(current_user_id)
+        return OSFUser.load(current_user_id, select_for_update=check_select_for_update(request))
     else:
         return None
 
@@ -133,7 +115,7 @@ def get_user(email=None, password=None, token=None, external_id_provider=None, e
 
     if email:
         email = email.strip().lower()
-        qs = qs.filter(DQ(DQ(username=email) | DQ(id=Subquery(Email.objects.filter(address=email).values('user_id')))))
+        qs = qs.filter(Q(Q(username=email) | Q(id=Subquery(Email.objects.filter(address=email).values('user_id')))))
 
     if password:
         password = password.strip()
@@ -180,17 +162,15 @@ class Auth(object):
     def private_link(self):
         if not self.private_key:
             return None
+        # Avoid circular import
+        from osf.models import PrivateLink
         try:
-            # Avoid circular import
-            from osf.models import PrivateLink
-            private_link = PrivateLink.find_one(
-                Q('key', 'eq', self.private_key)
-            )
+            private_link = PrivateLink.objects.get(key=self.private_key)
 
             if private_link.is_deleted:
                 return None
 
-        except QueryException:
+        except PrivateLink.DoesNotExist:
             return None
 
         return private_link

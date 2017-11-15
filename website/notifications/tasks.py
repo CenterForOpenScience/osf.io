@@ -7,8 +7,7 @@ from django.db import connection
 
 from framework.celery_tasks import app as celery_app
 from framework.sentry import log_exception
-from modularodm import Q
-from osf.models import OSFUser as User
+from osf.models import OSFUser
 from osf.models import NotificationDigest
 from website import mails
 from website.notifications.utils import NotificationsDict
@@ -23,7 +22,7 @@ def send_users_email(send_type):
     """
     grouped_emails = get_users_emails(send_type)
     for group in grouped_emails:
-        user = User.load(group['user_id'])
+        user = OSFUser.load(group['user_id'])
         if not user:
             log_exception()
             continue
@@ -105,5 +104,5 @@ def remove_notifications(email_notification_ids=None):
     :param email_notification_ids:
     :return:
     """
-    for email_id in email_notification_ids:
-        NotificationDigest.remove(Q('_id', 'eq', email_id))
+    if email_notification_ids:
+        NotificationDigest.objects.filter(_id__in=email_notification_ids).delete()

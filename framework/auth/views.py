@@ -4,13 +4,9 @@ import httplib as http
 import urllib
 
 import markupsafe
+from django.core.exceptions import ValidationError
 from django.utils import timezone
 from flask import request
-
-from modularodm import Q
-from modularodm.exceptions import NoResultsFound
-from modularodm.exceptions import ValidationError
-from modularodm.exceptions import ValidationValueError
 
 from framework import forms, sentry, status
 from framework import auth as framework_auth
@@ -27,12 +23,14 @@ from framework.exceptions import HTTPError
 from framework.flask import redirect  # VOL-aware redirect
 from framework.sessions.utils import remove_sessions_for_user, remove_session
 from framework.sessions import get_session
-from osf.models import OSFUser as User
+from osf.models import OSFUser
 from website import settings, mails, language
 from website.util import web_url_for
 from website.util.time import throttle_period_expired
 from website.util.sanitize import strip_html
+from osf.exceptions import ValidationValueError
 from osf.models.preprint_provider import PreprintProvider
+from osf.utils.requests import check_select_for_update
 
 @block_bing_preview
 @collect_auth
@@ -53,7 +51,7 @@ def reset_password_get(auth, uid=None, token=None):
         return auth_logout(redirect_url=request.url)
 
     # Check if request bears a valid pair of `uid` and `token`
-    user_obj = User.load(uid)
+    user_obj = OSFUser.load(uid)
     if not (user_obj and user_obj.verify_password_token(token=token)):
         error_data = {
             'message_short': 'Invalid Request.',
@@ -85,7 +83,7 @@ def reset_password_post(uid=None, token=None):
     form = ResetPasswordForm(request.form)
 
     # Check if request bears a valid pair of `uid` and `token`
-    user_obj = User.load(uid)
+    user_obj = OSFUser.load(uid)
     if not (user_obj and user_obj.verify_password_token(token=token)):
         error_data = {
             'message_short': 'Invalid Request.',
@@ -165,34 +163,25 @@ def forgot_password_post():
                 status_message = 'You have recently requested to change your password. Please wait a few minutes ' \
                                  'before trying again.'
                 kind = 'error'
-            else:
-                # TODO [OSF-6673]: Use the feature in [OSF-6998] for user to resend claim email.
-                # if the user account is not claimed yet
-                if (user_obj.is_invited and
-                        user_obj.unclaimed_records and
-                        not user_obj.date_last_login and
-                        not user_obj.is_claimed and
-                        not user_obj.is_registered):
-                    status_message = 'You cannot reset password on this account. Please contact OSF Support.'
-                    kind = 'error'
-                else:
-                    # new random verification key (v2)
-                    user_obj.verification_key_v2 = generate_verification_key(verification_type='password')
-                    user_obj.email_last_sent = timezone.now()
-                    user_obj.save()
-                    reset_link = furl.urljoin(
-                        settings.DOMAIN,
-                        web_url_for(
-                            'reset_password_get',
-                            uid=user_obj._id,
-                            token=user_obj.verification_key_v2['token']
-                        )
+            # TODO [OSF-6673]: Use the feature in [OSF-6998] for user to resend claim email.
+            elif user_obj.is_active:
+                # new random verification key (v2)
+                user_obj.verification_key_v2 = generate_verification_key(verification_type='password')
+                user_obj.email_last_sent = timezone.now()
+                user_obj.save()
+                reset_link = furl.urljoin(
+                    settings.DOMAIN,
+                    web_url_for(
+                        'reset_password_get',
+                        uid=user_obj._id,
+                        token=user_obj.verification_key_v2['token']
                     )
-                    mails.send_mail(
-                        to_addr=email,
-                        mail=mails.FORGOT_PASSWORD,
-                        reset_link=reset_link
-                    )
+                )
+                mails.send_mail(
+                    to_addr=email,
+                    mail=mails.FORGOT_PASSWORD,
+                    reset_link=reset_link
+                )
 
         status.push_status_message(status_message, kind=kind, trust=False)
 
@@ -464,8 +453,8 @@ def auth_email_logout(token, user):
             'message_long': 'The private link you used is expired.'
         })
     try:
-        user_merge = User.find_one(Q('emails__address', 'eq', unconfirmed_email))
-    except NoResultsFound:
+        user_merge = OSFUser.objects.get(emails__address=unconfirmed_email)
+    except OSFUser.DoesNotExist:
         user_merge = False
     if user_merge:
         remove_sessions_for_user(user_merge)
@@ -493,7 +482,7 @@ def external_login_confirm_email_get(auth, uid, token):
     :param token: the verification token
     """
 
-    user = User.load(uid)
+    user = OSFUser.load(uid)
     if not user:
         raise HTTPError(http.BAD_REQUEST)
 
@@ -583,13 +572,18 @@ def confirm_email_get(token, auth=None, **kwargs):
     HTTP Method: GET
     """
 
-    user = User.load(kwargs['uid'])
     is_merge = 'confirm_merge' in request.args
+
+    try:
+        if not is_merge or not check_select_for_update():
+            user = OSFUser.objects.get(guids___id=kwargs['uid'])
+        else:
+            user = OSFUser.objects.filter(guids___id=kwargs['uid']).select_for_update().get()
+    except OSFUser.DoesNotExist:
+        raise HTTPError(http.NOT_FOUND)
+
     is_initial_confirmation = not user.date_confirmed
     log_out = request.args.get('logout', None)
-
-    if user is None:
-        raise HTTPError(http.NOT_FOUND)
 
     # if the user is merging or adding an email (they already are an osf user)
     if log_out:
@@ -727,8 +721,8 @@ def send_confirm_email(user, email, renew=False, external_id_provider=None, exte
     )
 
     try:
-        merge_target = User.find_one(Q('emails__address', 'eq', email))
-    except NoResultsFound:
+        merge_target = OSFUser.objects.get(emails__address=email)
+    except OSFUser.DoesNotExist:
         merge_target = None
 
     campaign = campaigns.campaign_for_user(user)
@@ -996,7 +990,7 @@ def external_login_email_post():
         else:
             # 1. create unconfirmed user with pending status
             external_identity[external_id_provider][external_id] = 'CREATE'
-            user = User.create_unconfirmed(
+            user = OSFUser.create_unconfirmed(
                 username=clean_email,
                 password=None,
                 fullname=fullname,

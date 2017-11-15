@@ -7,10 +7,8 @@ var faker = require('faker');
 
 var $ = require('jquery');
 var $osf = require('js/osfHelpers');
-var Clipboard = require('clipboard');
 var CitationsNodeConfigVM = require('js/citationsNodeConfig')._CitationsNodeConfigViewModel;
 var testUtils = require('./folderPickerTestUtils.js');
-var FolderPicker = require('js/folderpicker');
 
 var makeAccountList = function() {
     var accounts = [];

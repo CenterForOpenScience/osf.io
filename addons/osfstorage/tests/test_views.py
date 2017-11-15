@@ -8,25 +8,27 @@ import pytest
 from nose.tools import *  # noqa
 from dateutil.parser import parse as parse_datetime
 
-from addons.osfstorage.models import OsfStorageFileNode
+from addons.osfstorage.models import OsfStorageFileNode, OsfStorageFolder
 from framework.auth.core import Auth
 from addons.osfstorage.tests.utils import (
     StorageTestCase, Delta, AssertDeltas,
     recursively_create_file,
 )
 from addons.osfstorage.tests import factories
+from addons.osfstorage.tests.utils import make_payload
 
 from framework.auth import signing
 from website.util import rubeus
 
-from osf.models import Tag
+from osf.models import Tag, QuickFilesNode
 from osf.models import files as models
 from addons.osfstorage.apps import osf_storage_root
 from addons.osfstorage import utils
 from addons.base.views import make_auth
 from addons.osfstorage import settings as storage_settings
+from api_tests.utils import create_test_file
 
-from tests.factories import ProjectFactory
+from osf_tests.factories import ProjectFactory
 
 def create_record_with_version(path, node_settings, **kwargs):
     version = factories.FileVersionFactory(**kwargs)
@@ -162,26 +164,9 @@ class TestUploadFileHook(HookTestCase):
         )
 
     def make_payload(self, **kwargs):
-        payload = {
-            'user': self.user._id,
-            'name': self.name,
-            'hashes': {'base64': '=='},
-            'worker': {
-                'uname': 'testmachine'
-            },
-            'settings': {
-                'provider': 'filesystem',
-                storage_settings.WATERBUTLER_RESOURCE: 'blah',
-            },
-            'metadata': {
-                'size': 123,
-                'name': 'file',
-                'provider': 'filesystem',
-                'modified': 'Mon, 16 Feb 2015 18:45:34 GMT'
-            },
-        }
-        payload.update(kwargs)
-        return payload
+        user = kwargs.pop('user', self.user)
+        name = kwargs.pop('name', self.name)
+        return make_payload(user=user, name=name, **kwargs)
 
     def test_upload_create(self):
         name = 'slightly-mad'
@@ -479,7 +464,7 @@ class TestGetRevisions(StorageTestCase):
                 version,
                 index=self.record.versions.count() - 1 - idx
             )
-            for idx, version in enumerate(reversed(self.record.versions.all()))
+            for idx, version in enumerate(self.record.versions.all())
         ]
 
         assert_equal(len(res.json['revisions']), 15)
@@ -861,6 +846,85 @@ class TestMoveHook(HookTestCase):
         )
         assert_equal(res.status_code, 200)
 
+    def test_can_move_file_out_of_quickfiles_node(self):
+        quickfiles_node = QuickFilesNode.objects.get_for_user(self.user)
+        create_test_file(quickfiles_node, self.user, filename='slippery.mp3')
+        quickfiles_folder = OsfStorageFolder.objects.get(node=quickfiles_node)
+        dest_folder = OsfStorageFolder.objects.get(node=self.project)
+
+        res = self.send_hook(
+            'osfstorage_move_hook',
+            {'nid': quickfiles_node._id},
+            payload={
+                'source': quickfiles_folder._id,
+                'node': quickfiles_node._id,
+                'user': self.user._id,
+                'destination': {
+                    'parent': dest_folder._id,
+                    'node': self.project._id,
+                    'name': dest_folder.name,
+                }
+            },
+            method='post_json',
+        )
+        assert_equal(res.status_code, 200)
+
+    def test_can_rename_file_in_quickfiles_node(self):
+        quickfiles_node = QuickFilesNode.objects.get_for_user(self.user)
+        quickfiles_file = create_test_file(quickfiles_node, self.user, filename='road_dogg.mp3')
+        quickfiles_folder = OsfStorageFolder.objects.get(node=quickfiles_node)
+        dest_folder = OsfStorageFolder.objects.get(node=self.project)
+        new_name = 'JesseJames.mp3'
+
+        res = self.send_hook(
+            'osfstorage_move_hook',
+            {'nid': quickfiles_node._id},
+            payload={
+                'action': 'rename',
+                'source': quickfiles_file._id,
+                'node': quickfiles_node._id,
+                'user': self.user._id,
+                'name': quickfiles_file.name,
+                'destination': {
+                    'parent': quickfiles_folder._id,
+                    'node': quickfiles_node._id,
+                    'name': new_name,
+                }
+            },
+            method='post_json',
+            expect_errors=True,
+        )
+        quickfiles_file.reload()
+
+        assert_equal(res.status_code, 200)
+        assert_equal(quickfiles_file.name, new_name)
+
+
+@pytest.mark.django_db
+class TestCopyHook(HookTestCase):
+    def test_can_copy_file_out_of_quickfiles_node(self):
+        quickfiles_node = QuickFilesNode.objects.get_for_user(self.user)
+        create_test_file(quickfiles_node, self.user, filename='dont_copy_meeeeeeeee.mp3')
+        quickfiles_folder = OsfStorageFolder.objects.get(node=quickfiles_node)
+        dest_folder = OsfStorageFolder.objects.get(node=self.project)
+
+        res = self.send_hook(
+            'osfstorage_copy_hook',
+            {'nid': quickfiles_node._id},
+            payload={
+                'source': quickfiles_folder._id,
+                'node': quickfiles_node._id,
+                'user': self.user._id,
+                'destination': {
+                    'parent': dest_folder._id,
+                    'node': self.project._id,
+                    'name': dest_folder.name,
+                }
+            },
+            method='post_json',
+        )
+        assert_equal(res.status_code, 201)
+
 
 @pytest.mark.django_db
 class TestFileTags(StorageTestCase):
@@ -958,3 +1022,26 @@ class TestFileTags(StorageTestCase):
 
         assert_equal(res.status_code, 400)
         mock_log.assert_not_called()
+
+
+@pytest.mark.django_db
+class TestFileViews(StorageTestCase):
+
+    def test_file_views(self):
+        file = create_test_file(node=self.node, user=self.user)
+        url = self.node.web_url_for('addon_view_or_download_file', path=file._id, provider=file.provider)
+        # Test valid url file 200 on redirect
+        redirect = self.app.get(url, auth=self.user.auth)
+        assert redirect.status_code == 302
+        res = redirect.follow(auth=self.user.auth)
+        assert res.status_code == 200
+
+        # Test invalid node but valid deep_url redirects (moved log urls)
+        project_two = ProjectFactory(creator=self.user)
+        url = project_two.web_url_for('addon_view_or_download_file', path=file._id, provider=file.provider)
+        redirect = self.app.get(url, auth=self.user.auth)
+        assert redirect.status_code == 302
+        redirect_two = redirect.follow(auth=self.user.auth)
+        assert redirect_two.status_code == 302
+        res = redirect_two.follow(auth=self.user.auth)
+        assert res.status_code == 200

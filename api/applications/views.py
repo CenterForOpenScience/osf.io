@@ -1,19 +1,19 @@
 """
 Views related to OAuth2 platform applications. Intended for OSF internal use only
 """
+from django.db.models import Q
 from rest_framework.exceptions import APIException
 from rest_framework import generics
 from rest_framework import permissions as drf_permissions
 
 from api.base.renderers import JSONAPIRenderer, JSONRendererWithESISupport
-from modularodm import Q
 
 from framework.auth import cas
 from framework.auth.oauth_scopes import CoreScopes
 
 from osf.models import ApiOAuth2Application
 
-from api.base.filters import ODMFilterMixin
+from api.base.filters import ListFilterMixin
 from api.base.utils import get_object_or_error
 from api.base.views import JSONAPIBaseView
 from api.base import permissions as base_permissions
@@ -25,16 +25,12 @@ class ApplicationMixin(object):
     current URL. By default, fetches the current application based on the client_id kwarg.
     """
     def get_app(self):
-        app = get_object_or_error(ApiOAuth2Application,
-                                  Q('client_id', 'eq', self.kwargs['client_id']) &
-                                  Q('is_active', 'eq', True)
-                                  )
-
+        app = get_object_or_error(ApiOAuth2Application, Q(client_id=self.kwargs['client_id'], is_active=True), self.request)
         self.check_object_permissions(self.request, app)
         return app
 
 
-class ApplicationList(JSONAPIBaseView, generics.ListCreateAPIView, ODMFilterMixin):
+class ApplicationList(JSONAPIBaseView, generics.ListCreateAPIView, ListFilterMixin):
     """
     Get a list of API applications (eg OAuth2) that the user has registered
     """
@@ -51,20 +47,16 @@ class ApplicationList(JSONAPIBaseView, generics.ListCreateAPIView, ODMFilterMixi
     view_category = 'applications'
     view_name = 'application-list'
 
-    # TODO: When we switch to Swagger this should be removed in lieu of a better
-    # solution for hiding this api endpoint
     renderer_classes = [JSONRendererWithESISupport, JSONAPIRenderer, ]  # Hide from web-browsable API tool
 
-    def get_default_odm_query(self):
-        return (
-            Q('owner', 'eq', self.request.user) &
-            Q('is_active', 'eq', True)
-        )
+    ordering = ('-date_created',)
+
+    def get_default_queryset(self):
+        return ApiOAuth2Application.objects.filter(owner=self.request.user, is_active=True)
 
     # overrides ListAPIView
     def get_queryset(self):
-        query = self.get_query_from_request()
-        return ApiOAuth2Application.find(query)
+        return self.get_queryset_from_request()
 
     def perform_create(self, serializer):
         """Add user to the created object"""
@@ -91,8 +83,6 @@ class ApplicationDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView, 
     view_category = 'applications'
     view_name = 'application-detail'
 
-    # TODO: When we switch to Swagger this should be removed in lieu of a better
-    # solution for hiding this api endpoint
     renderer_classes = [JSONRendererWithESISupport, JSONAPIRenderer, ]  # Hide from web-browsable API tool
 
     def get_object(self):
@@ -131,8 +121,6 @@ class ApplicationReset(JSONAPIBaseView, generics.CreateAPIView, ApplicationMixin
 
     serializer_class = ApiOAuth2ApplicationResetSerializer
 
-    # TODO: When we switch to Swagger this should be removed in lieu of a better
-    # solution for hiding this api endpoint
     renderer_classes = [JSONRendererWithESISupport, JSONAPIRenderer, ]  # Hide from web-browsable API tool
 
     view_category = 'applications'

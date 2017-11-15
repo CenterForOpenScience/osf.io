@@ -9,7 +9,6 @@ require('js/osfToggleHeight');
 var m = require('mithril');
 var Fangorn = require('js/fangorn').Fangorn;
 var Raven = require('raven-js');
-var lodashGet  = require('lodash.get');
 require('truncate');
 
 var $osf = require('js/osfHelpers');
@@ -23,7 +22,6 @@ var mathrender = require('js/mathrender');
 var md = require('js/markdown').full;
 var oldMd = require('js/markdown').old;
 var AddProject = require('js/addProjectPlugin');
-var mHelpers = require('js/mithrilHelpers');
 var SocialShare = require('js/components/socialshare');
 
 var ctx = window.contextVars;
@@ -40,8 +38,7 @@ $('body').on('nodeLoad', function(event, data) {
     }
     // Initialize CitationWidget if user isn't viewing through an anonymized VOL
     if (!data.node.anonymous && !data.node.is_retracted) {
-        var citations = data.node.alternative_citations;
-        new CitationList('#citationList', citations, data.user);
+        new CitationList('#citationList');
         new CitationWidget('#citationStyleInput', '#citationText');
     }
     // Initialize nodeControl
@@ -59,7 +56,6 @@ if ($comments.length) {
         rootId: window.contextVars.node.id,
         fileId: null,
         canComment: window.contextVars.currentUser.canComment,
-        hasChildren: window.contextVars.node.hasChildren,
         currentUser: window.contextVars.currentUser,
         pageTitle: window.contextVars.node.title,
         inputSelector: '.atwho-input'
@@ -123,8 +119,6 @@ $(document).ready(function () {
     });
 
     if (!ctx.node.isRetracted) {
-        m.startComputation();
-
         if (ctx.node.institutions.length && !ctx.node.anonymous) {
             m.mount(document.getElementById('instLogo'), m.component(institutionLogos, {institutions: window.contextVars.node.institutions}));
         }
@@ -134,9 +128,9 @@ $(document).ready(function () {
         m.mount(document.getElementById('logFeed'), m.component(LogFeed.LogFeed, {node: node}));
 
         // Treebeard Files view
-        $.ajax({
-            url:  nodeApiUrl + 'files/grid/'
-        }).done(function (data) {
+        var urlFilesGrid = nodeApiUrl + 'files/grid/';
+        var promise = m.request({ method: 'GET', config: $osf.setXHRAuthorization, url: urlFilesGrid});
+        promise.then(function (data) {
             var fangornOpts = {
                 divID: 'treeGrid',
                 filesData: data.data,
@@ -212,8 +206,12 @@ $(document).ready(function () {
             if (newComponentElem) {
                 m.mount(newComponentElem, AddComponentButton);
             }
-            m.endComputation();
-        });
+            return promise;
+        }, function(xhr, textStatus, error) {
+            Raven.captureMessage('Error retrieving filebrowser', {extra: {url: urlFilesGrid, textStatus: textStatus, error: error}});
+        }
+
+      );
 
     }
 
@@ -231,7 +229,7 @@ $(document).ready(function () {
             var url = nodeApiUrl + 'tags/';
             var data = {tag: tag};
             var request = $osf.postJSON(url, data);
-            request.success(function() {
+            request.done(function() {
                 window.contextVars.node.tags.push(tag);
             });
             request.fail(function(xhr, textStatus, error) {
@@ -249,7 +247,7 @@ $(document).ready(function () {
                 return false;
             }
             var request = $osf.ajaxJSON('DELETE', url, {'data': {'tag': tag}});
-            request.success(function() {
+            request.done(function() {
                 window.contextVars.node.tags.splice(window.contextVars.node.tags.indexOf(tag), 1);
             });
             request.fail(function(xhr, textStatus, error) {

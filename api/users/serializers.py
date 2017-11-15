@@ -1,16 +1,36 @@
+from guardian.models import GroupObjectPermission
+
 from rest_framework import serializers as ser
 
-from modularodm.exceptions import ValidationValueError
-
 from api.base.exceptions import InvalidModelValueError
-from api.base.serializers import JSONAPIRelationshipSerializer, HideIfDisabled, BaseAPISerializer
-from osf.models import OSFUser as User
-
 from api.base.serializers import (
-    JSONAPISerializer, LinksField, RelationshipField, DevOnly, IDField, TypeField, ListDictField,
-    DateByVersion,
+    BaseAPISerializer, JSONAPISerializer, JSONAPIRelationshipSerializer,
+    DateByVersion, DevOnly, HideIfDisabled, IDField,
+    Link, LinksField, ListDictField, TypeField, RelationshipField,
+    WaterbutlerLink, ShowIfCurrentUser
 )
 from api.base.utils import absolute_reverse, get_user_auth
+from api.files.serializers import QuickFilesSerializer
+from osf.exceptions import ValidationValueError, ValidationError
+from osf.models import OSFUser, QuickFilesNode
+from website import util as website_utils
+
+
+class QuickFilesRelationshipField(RelationshipField):
+
+    def to_representation(self, value):
+        relationship_links = super(QuickFilesRelationshipField, self).to_representation(value)
+        quickfiles_guid = value.created.filter(type=QuickFilesNode._typedmodels_type).values_list('guids___id', flat=True).get()
+        upload_url = website_utils.waterbutler_api_url_for(quickfiles_guid, 'osfstorage')
+        relationship_links['links']['upload'] = {
+            'href': upload_url,
+            'meta': {}
+        }
+        relationship_links['links']['download'] = {
+            'href': '{}?zip='.format(upload_url),
+            'meta': {}
+        }
+        return relationship_links
 
 
 class UserSerializer(JSONAPISerializer):
@@ -34,6 +54,7 @@ class UserSerializer(JSONAPISerializer):
     timezone = HideIfDisabled(ser.CharField(required=False, help_text="User's timezone, e.g. 'Etc/UTC"))
     locale = HideIfDisabled(ser.CharField(required=False, help_text="User's locale, e.g.  'en_US'"))
     social = ListDictField(required=False)
+    can_view_reviews = ShowIfCurrentUser(ser.SerializerMethodField(help_text='Whether the current user has the `view_submissions` permission to ANY reviews provider.'))
 
     links = HideIfDisabled(LinksField(
         {
@@ -48,6 +69,11 @@ class UserSerializer(JSONAPISerializer):
         related_meta={'projects_in_common': 'get_projects_in_common'},
     ))
 
+    quickfiles = HideIfDisabled(QuickFilesRelationshipField(
+        related_view='users:user-quickfiles',
+        related_view_kwargs={'user_id': '<_id>'},
+    ))
+
     registrations = DevOnly(HideIfDisabled(RelationshipField(
         related_view='users:user-registrations',
         related_view_kwargs={'user_id': '<_id>'},
@@ -58,6 +84,11 @@ class UserSerializer(JSONAPISerializer):
         related_view_kwargs={'user_id': '<_id>'},
         self_view='users:user-institutions-relationship',
         self_view_kwargs={'user_id': '<_id>'},
+    ))
+
+    actions = ShowIfCurrentUser(RelationshipField(
+        related_view='users:user-action-list',
+        related_view_kwargs={'user_id': '<_id>'},
     ))
 
     class Meta:
@@ -80,12 +111,16 @@ class UserSerializer(JSONAPISerializer):
             'version': self.context['request'].parser_context['kwargs']['version']
         })
 
+    def get_can_view_reviews(self, obj):
+        group_qs = GroupObjectPermission.objects.filter(group__user=obj, permission__codename='view_submissions')
+        return group_qs.exists() or obj.userobjectpermission_set.filter(permission__codename='view_submissions')
+
     def profile_image_url(self, user):
         size = self.context['request'].query_params.get('profile_image_size')
         return user.profile_image_url(size=size)
 
     def update(self, instance, validated_data):
-        assert isinstance(instance, User), 'instance must be a User'
+        assert isinstance(instance, OSFUser), 'instance must be a User'
         for attr, value in validated_data.items():
             if 'social' == attr:
                 for key, val in value.items():
@@ -104,8 +139,10 @@ class UserSerializer(JSONAPISerializer):
             instance.save()
         except ValidationValueError as e:
             raise InvalidModelValueError(detail=e.message)
-        return instance
+        except ValidationError as e:
+            raise InvalidModelValueError(e)
 
+        return instance
 
 class UserAddonSettingsSerializer(JSONAPISerializer):
     """
@@ -154,6 +191,15 @@ class UserDetailSerializer(UserSerializer):
     Overrides UserSerializer to make id required.
     """
     id = IDField(source='_id', required=True)
+
+
+class UserQuickFilesSerializer(QuickFilesSerializer):
+    links = LinksField({
+        'info': Link('files:file-detail', kwargs={'file_id': '<_id>'}),
+        'upload': WaterbutlerLink(),
+        'delete': WaterbutlerLink(),
+        'download': WaterbutlerLink(must_be_file=True),
+    })
 
 
 class ReadEmailUserDetailSerializer(UserDetailSerializer):

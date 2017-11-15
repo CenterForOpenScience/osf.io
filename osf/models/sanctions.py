@@ -1,5 +1,6 @@
 import pytz
 import functools
+import httplib as http
 
 from dateutil.parser import parse as parse_date
 from django.apps import apps
@@ -11,7 +12,7 @@ from osf.utils.fields import NonNaiveDateTimeField
 from website.prereg import utils as prereg_utils
 
 from framework.auth import Auth
-from framework.exceptions import PermissionsError
+from framework.exceptions import HTTPError, PermissionsError
 from website import settings as osf_settings
 from website import tokens, mails
 from website.exceptions import (
@@ -23,7 +24,6 @@ from website.project import tasks as project_tasks
 
 from osf.models import MetaSchema
 from osf.models.base import BaseModel, ObjectIDMixin
-from osf.modm_compat import Q
 from osf.utils.datetime_aware_jsonfield import DateTimeAwareJSONField
 
 VIEW_PROJECT_URL_TEMPLATE = osf_settings.DOMAIN + '{node_id}/'
@@ -388,7 +388,7 @@ class Embargo(PreregCallbackMixin, EmailApprovableSanction):
     APPROVE_URL_TEMPLATE = osf_settings.DOMAIN + 'project/{node_id}/?token={token}'
     REJECT_URL_TEMPLATE = osf_settings.DOMAIN + 'project/{node_id}/?token={token}'
 
-    initiated_by = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, blank=True)
+    initiated_by = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.CASCADE)
     for_existing_registration = models.BooleanField(default=False)
 
     @property
@@ -490,6 +490,18 @@ class Embargo(PreregCallbackMixin, EmailApprovableSanction):
             })
         return context
 
+    def reject(self, user, token):
+        reg = self._get_registration()
+        if reg.is_public:
+            raise HTTPError(
+                http.BAD_REQUEST,
+                data={
+                    'message_short': 'Registrations cannot be modified',
+                    'message_long': 'This project has already been registered and cannot be deleted',
+                }
+            )
+        super(Embargo, self).reject(user, token)
+
     def _on_reject(self, user):
         NodeLog = apps.get_model('osf.NodeLog')
 
@@ -558,7 +570,7 @@ class Retraction(EmailApprovableSanction):
     APPROVE_URL_TEMPLATE = osf_settings.DOMAIN + 'project/{node_id}/?token={token}'
     REJECT_URL_TEMPLATE = osf_settings.DOMAIN + 'project/{node_id}/?token={token}'
 
-    initiated_by = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, blank=True)
+    initiated_by = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.CASCADE)
     justification = models.CharField(max_length=2048, null=True, blank=True)
     date_retracted = NonNaiveDateTimeField(null=True, blank=True)
 
@@ -584,10 +596,13 @@ class Retraction(EmailApprovableSanction):
         rejection_token = user_approval_state.get('rejection_token')
         if rejection_token:
             Registration = apps.get_model('osf.Registration')
+            node_id = user_approval_state.get('node_id', None)
+            registration = Registration.objects.select_related(
+                'registered_from'
+            ).get(
+                guids___id=node_id
+            ) if node_id else self.registrations.first()
 
-            root_registration = Registration.find_one(Q('retraction', 'eq', self))
-            node_id = user_approval_state.get('node_id', root_registration._id)
-            registration = Registration.load(node_id)
             return {
                 'node_id': registration.registered_from._id,
                 'token': rejection_token,
@@ -597,18 +612,14 @@ class Retraction(EmailApprovableSanction):
         urls = urls or self.stashed_urls.get(user._id, {})
         registration_link = urls.get('view', self._view_url(user._id, node))
         if is_authorizer:
-            Registration = apps.get_model('osf.Registration')
-
             approval_link = urls.get('approve', '')
             disapproval_link = urls.get('reject', '')
             approval_time_span = osf_settings.RETRACTION_PENDING_TIME.days * 24
 
-            registration = Registration.find_one(Q('retraction', 'eq', self))
-
             return {
                 'is_initiator': self.initiated_by == user,
                 'initiated_by': self.initiated_by.fullname,
-                'project_name': registration.title,
+                'project_name': self.registrations.filter().values_list('title', flat=True).get(),
                 'registration_link': registration_link,
                 'approval_link': approval_link,
                 'disapproval_link': disapproval_link,
@@ -624,7 +635,7 @@ class Retraction(EmailApprovableSanction):
         Registration = apps.get_model('osf.Registration')
         NodeLog = apps.get_model('osf.NodeLog')
 
-        parent_registration = Registration.find_one(Q('retraction', 'eq', self))
+        parent_registration = Registration.objects.get(retraction=self)
         parent_registration.registered_from.add_log(
             action=NodeLog.RETRACTION_CANCELLED,
             params={
@@ -643,7 +654,7 @@ class Retraction(EmailApprovableSanction):
         self.date_retracted = timezone.now()
         self.save()
 
-        parent_registration = Registration.find_one(Q('retraction', 'eq', self))
+        parent_registration = Registration.objects.get(retraction=self)
         parent_registration.registered_from.add_log(
             action=NodeLog.RETRACTION_APPROVED,
             params={
@@ -673,10 +684,9 @@ class Retraction(EmailApprovableSanction):
         for node in parent_registration.node_and_primary_descendants():
             node.set_privacy('public', auth=None, save=True, log=False)
             node.update_search()
-        if osf_settings.SHARE_URL and osf_settings.SHARE_API_TOKEN:
-            # force a save before sending data to share or retraction will not be updated
-            self.save()
-            project_tasks.on_registration_updated(parent_registration)
+        # force a save before sending data to share or retraction will not be updated
+        self.save()
+        project_tasks.update_node_share(parent_registration)
 
     def approve_retraction(self, user, token):
         self.approve(user, token)
@@ -696,7 +706,7 @@ class RegistrationApproval(PreregCallbackMixin, EmailApprovableSanction):
     APPROVE_URL_TEMPLATE = osf_settings.DOMAIN + 'project/{node_id}/?token={token}'
     REJECT_URL_TEMPLATE = osf_settings.DOMAIN + 'project/{node_id}/?token={token}'
 
-    initiated_by = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, blank=True)
+    initiated_by = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.CASCADE)
 
     def _get_registration(self):
         return self.registrations.first()
@@ -865,9 +875,7 @@ class DraftRegistrationApproval(Sanction):
     def _on_complete(self, user):
         DraftRegistration = apps.get_model('osf.DraftRegistration')
 
-        draft = DraftRegistration.find_one(
-            Q('approval', 'eq', self)
-        )
+        draft = DraftRegistration.objects.get(approval=self)
 
         initiator = draft.initiator.merged_by or draft.initiator
         auth = Auth(initiator)
@@ -899,9 +907,7 @@ class DraftRegistrationApproval(Sanction):
         self.meta = {}
         self.save()
 
-        draft = DraftRegistration.find_one(
-            Q('approval', 'eq', self)
-        )
+        draft = DraftRegistration.objects.get(approval=self)
         initiator = draft.initiator.merged_by or draft.initiator
         self._send_rejection_email(initiator, draft)
 
@@ -917,8 +923,8 @@ class EmbargoTerminationApproval(EmailApprovableSanction):
     APPROVE_URL_TEMPLATE = osf_settings.DOMAIN + 'project/{node_id}/?token={token}'
     REJECT_URL_TEMPLATE = osf_settings.DOMAIN + 'project/{node_id}/?token={token}'
 
-    embargoed_registration = models.ForeignKey('Registration', null=True, blank=True)
-    initiated_by = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, blank=True)
+    embargoed_registration = models.ForeignKey('Registration', null=True, blank=True, on_delete=models.CASCADE)
+    initiated_by = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.CASCADE)
 
     def _get_registration(self):
         return self.embargoed_registration

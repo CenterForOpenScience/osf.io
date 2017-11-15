@@ -4,10 +4,18 @@ from django.utils import timezone
 from nose.tools import *  # noqa
 
 from framework.auth.core import Auth
-from osf_tests.factories import AuthUserFactory, ProjectFactory, UserFactory, NodeFactory, fake, UnregUserFactory
+from osf_tests.factories import (
+    fake,
+    fake_email,
+    AuthUserFactory,
+    NodeFactory,
+    ProjectFactory,
+    UnregUserFactory,
+    UserFactory,
+)
 from scripts import parse_citation_styles
 from tests.base import OsfTestCase
-from osf.models import OSFUser as User, AbstractNode as Node
+from osf.models import OSFUser
 from website.citations.utils import datetime_to_csl
 from website.util import api_url_for
 
@@ -31,8 +39,8 @@ class CitationsNodeTestCase(OsfTestCase):
 
     def tearDown(self):
         super(CitationsNodeTestCase, self).tearDown()
-        Node.remove()
-        User.remove()
+        OSFUser.remove()
+        OSFUser.remove()
 
     def test_csl_single_author(self):
         # Nodes with one contributor generate valid CSL-data
@@ -98,8 +106,8 @@ class CitationsUserTestCase(OsfTestCase):
 
     def test_registered_user_csl(self):
         # Tests the csl name for a registered user
-        user = User.create_confirmed(
-            username=fake.email(), password='foobar', fullname=fake.name()
+        user = OSFUser.create_confirmed(
+            username=fake_email(), password='foobar', fullname=fake.name()
         )
         if user.is_registered:
             assert bool(
@@ -117,7 +125,7 @@ class CitationsUserTestCase(OsfTestCase):
         user = UnregUserFactory()
         user.add_unclaimed_record(node=project,
             given_name=user.fullname, referrer=referrer,
-            email=fake.email())
+            email=fake_email())
         user.save()
         name = user.unclaimed_records[project._primary_key]['name'].split(' ')
         family_name = name[-1]

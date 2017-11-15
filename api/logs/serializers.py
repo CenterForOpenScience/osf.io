@@ -7,9 +7,11 @@ from api.base.serializers import (
     LinksField,
     is_anonymized,
     DateByVersion,
+    HideIfNotNodePointerLog,
+    HideIfNotRegistrationPointerLog,
 )
 
-from osf.models import OSFUser, AbstractNode as Node, PreprintService
+from osf.models import OSFUser, AbstractNode, PreprintService
 from website.util import permissions as osf_permissions
 
 
@@ -34,7 +36,7 @@ class NodeLogFileParamsSerializer(RestrictedDictSerializer):
     def get_node_title(self, obj):
         user = self.context['request'].user
         node_title = obj['node']['title']
-        node = Node.load(obj['node']['_id'])
+        node = AbstractNode.load(obj['node']['_id'])
         if not user.is_authenticated:
             if node.is_public:
                 return node_title
@@ -54,6 +56,8 @@ class NodeLogParamsSerializer(RestrictedDictSerializer):
     forward_url = ser.CharField(read_only=True)
     github_user = ser.CharField(read_only=True, source='github.user')
     github_repo = ser.CharField(read_only=True, source='github.repo')
+    bitbucket_user = ser.CharField(read_only=True, source='bitbucket.user')
+    bitbucket_repo = ser.CharField(read_only=True, source='bitbucket.repo')
     file = ser.DictField(read_only=True)
     filename = ser.CharField(read_only=True)
     kind = ser.CharField(read_only=True)
@@ -68,7 +72,7 @@ class NodeLogParamsSerializer(RestrictedDictSerializer):
     params_node = ser.SerializerMethodField(read_only=True)
     params_project = ser.SerializerMethodField(read_only=True)
     path = ser.CharField(read_only=True)
-    pointer = ser.DictField(read_only=True)
+    pointer = ser.SerializerMethodField(read_only=True)
     preprint = ser.CharField(read_only=True)
     preprint_provider = ser.SerializerMethodField(read_only=True)
     previous_institution = NodeLogInstitutionSerializer(read_only=True)
@@ -99,15 +103,26 @@ class NodeLogParamsSerializer(RestrictedDictSerializer):
     def get_params_node(self, obj):
         node_id = obj.get('node', None)
         if node_id:
-            node = Node.objects.filter(guids___id=node_id).values('title').get()
+            node = AbstractNode.objects.filter(guids___id=node_id).values('title').get()
             return {'id': node_id, 'title': node['title']}
         return None
 
     def get_params_project(self, obj):
         project_id = obj.get('project', None)
         if project_id:
-            node = Node.objects.filter(guids___id=project_id).values('title').get()
+            node = AbstractNode.objects.filter(guids___id=project_id).values('title').get()
             return {'id': project_id, 'title': node['title']}
+        return None
+
+    def get_pointer(self, obj):
+        user = self.context['request'].user
+        pointer = obj.get('pointer', None)
+        if pointer:
+            pointer_node = AbstractNode.objects.get(guids___id=pointer['id'])
+            if not pointer_node.is_deleted:
+                if pointer_node.is_public or (user.is_authenticated and pointer_node.has_permission(user, osf_permissions.READ)):
+                    pointer['title'] = pointer_node.title
+                    return pointer
         return None
 
     def get_contributors(self, obj):
@@ -121,14 +136,20 @@ class NodeLogParamsSerializer(RestrictedDictSerializer):
         params_node = obj.get('node', None)
 
         if contributor_ids:
-            for contrib_id in contributor_ids:
-                user = OSFUser.load(contrib_id)
+            users = (
+                OSFUser.objects.filter(guids___id__in=contributor_ids)
+                .only('fullname', 'given_name',
+                      'middle_names', 'family_name',
+                      'unclaimed_records', 'is_active')
+                .order_by('fullname')
+            )
+            for user in users:
                 unregistered_name = None
                 if user.unclaimed_records.get(params_node):
                     unregistered_name = user.unclaimed_records[params_node].get('name', None)
 
                 contributor_info.append({
-                    'id': contrib_id,
+                    'id': user._id,
                     'full_name': user.fullname,
                     'given_name': user.given_name,
                     'middle_names': user.middle_names,
@@ -181,10 +202,20 @@ class NodeLogSerializer(JSONAPISerializer):
     )
 
     # This would be a node_link, except that data isn't stored in the node log params
-    linked_node = RelationshipField(
-        related_view='nodes:node-detail',
-        related_view_kwargs={'node_id': '<params.pointer.id>'}
+    linked_node = HideIfNotNodePointerLog(
+        RelationshipField(
+            related_view='nodes:node-detail',
+            related_view_kwargs={'node_id': '<params.pointer.id>'}
+        )
     )
+
+    linked_registration = HideIfNotRegistrationPointerLog(
+        RelationshipField(
+            related_view='registrations:registration-detail',
+            related_view_kwargs={'node_id': '<params.pointer.id>'}
+        )
+    )
+
     template_node = RelationshipField(
         related_view='nodes:node-detail',
         related_view_kwargs={'node_id': '<params.template_node.id>'}

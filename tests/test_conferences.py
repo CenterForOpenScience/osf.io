@@ -7,15 +7,14 @@ import hmac
 import hashlib
 from StringIO import StringIO
 
+from django.core.exceptions import ValidationError
 from django.db import IntegrityError
 import furl
-from modularodm import Q
-from modularodm.exceptions import ValidationError
 
 from framework.auth import get_or_create_user
 from framework.auth.core import Auth
 
-from osf.models import OSFUser as User, AbstractNode as Node
+from osf.models import OSFUser, AbstractNode
 from website import settings
 from website.conferences import views
 from website.conferences import utils, message
@@ -48,6 +47,18 @@ def create_fake_conference_nodes(n, endpoint):
         nodes.append(node)
     return nodes
 
+def create_fake_conference_nodes_bad_data(n, bad_n, endpoint):
+    nodes = []
+    for i in range(n):
+        node = ProjectFactory(is_public=True)
+        node.add_tag(endpoint, Auth(node.creator))
+        # inject bad data
+        if i < bad_n:
+            # Delete only contributor
+            node.contributor_set.filter(user=node.contributors.first()).delete()
+        node.save()
+        nodes.append(node)
+    return nodes
 
 class TestConferenceUtils(OsfTestCase):
 
@@ -77,48 +88,6 @@ class TestConferenceUtils(OsfTestCase):
         assert_equal(fetched.fullname, fullname)
         assert_equal(fetched.username, username)
         assert_true('is_spam' in fetched.system_tags)
-
-    def test_get_or_create_node_exists(self):
-        node = ProjectFactory()
-        fetched, created = utils.get_or_create_node(node.title, node.creator)
-        assert_false(created)
-        assert_equal(node._id, fetched._id)
-
-    def test_get_or_create_node_title_not_exists(self):
-        title = 'Night at the Opera'
-        creator = UserFactory()
-        node = ProjectFactory(creator=creator)
-        fetched, created = utils.get_or_create_node(title, creator)
-        assert_true(created)
-        assert_not_equal(node._id, fetched._id)
-
-    def test_get_or_create_node_title_exists_deleted(self):
-        title = 'Night at the Opera'
-        creator = UserFactory()
-        node = ProjectFactory(title=title)
-        node.is_deleted = True
-        node.save()
-        fetched, created = utils.get_or_create_node(title, creator)
-        assert_true(created)
-        assert_not_equal(node._id, fetched._id)
-
-    def test_get_or_create_node_title_exists_not_deleted(self):
-        title = 'Night at the Opera'
-        creator = UserFactory()
-        node = ProjectFactory(title=title, creator=creator)
-        node.is_deleted = False
-        node.save()
-        fetched, created = utils.get_or_create_node(title, creator)
-        assert_false(created)
-        assert_equal(node._id, fetched._id)
-
-    def test_get_or_create_node_user_not_exists(self):
-        title = 'Night at the Opera'
-        creator = UserFactory()
-        node = ProjectFactory(title=title)
-        fetched, created = utils.get_or_create_node(title, creator)
-        assert_true(created)
-        assert_not_equal(node._id, fetched._id)
 
     def test_get_or_create_user_with_blacklisted_domain(self):
         fullname = 'Kanye West'
@@ -452,7 +421,7 @@ class TestConferenceEmailViews(OsfTestCase):
         assert_equal(res.request.path, '/meetings/')
 
     def test_conference_submissions(self):
-        Node.remove()
+        AbstractNode.remove()
         conference1 = ConferenceFactory()
         conference2 = ConferenceFactory()
         # Create conference nodes
@@ -491,6 +460,26 @@ class TestConferenceEmailViews(OsfTestCase):
         res = self.app.get(url)
         assert_equal(res.status_code, 200)
         assert_equal(len(res.json), n_conference_nodes)
+
+    # Regression for OSF-8864 to confirm bad project data does not make whole conference break
+    def test_conference_bad_data(self):
+        conference = ConferenceFactory()
+
+        # Create conference nodes
+        n_conference_nodes = 3
+        n_conference_nodes_bad = 1
+        create_fake_conference_nodes_bad_data(
+            n_conference_nodes,
+            n_conference_nodes_bad,
+            conference.endpoint,
+        )
+        # Create a non-conference node
+        ProjectFactory()
+
+        url = api_url_for('conference_data', meeting=conference.endpoint)
+        res = self.app.get(url)
+        assert_equal(res.status_code, 200)
+        assert_equal(len(res.json), n_conference_nodes - n_conference_nodes_bad)
 
     def test_conference_data_url_upper(self):
         conference = ConferenceFactory()
@@ -589,9 +578,9 @@ class TestConferenceIntegration(ContextTestCase):
             ],
         )
         assert_true(mock_upload.called)
-        users = User.find(Q('username', 'eq', username))
+        users = OSFUser.objects.filter(username=username)
         assert_equal(users.count(), 1)
-        nodes = Node.find(Q('title', 'eq', title))
+        nodes = AbstractNode.objects.filter(title=title)
         assert_equal(nodes.count(), 1)
         node = nodes[0]
         assert_equal(node.get_wiki_page('home').content, body)
@@ -678,9 +667,9 @@ class TestConferenceIntegration(ContextTestCase):
             ],
         )
         assert_true(mock_upload.called)
-        users = User.find(Q('username', 'eq', username))
+        users = OSFUser.objects.filter(username=username)
         assert_equal(users.count(), 1)
-        nodes = Node.find(Q('title', 'eq', title))
+        nodes = AbstractNode.objects.filter(title=title)
         assert_equal(nodes.count(), 1)
         node = nodes[0]
         assert_equal(node.get_wiki_page('home').content, body)

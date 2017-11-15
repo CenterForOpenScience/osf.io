@@ -1,24 +1,12 @@
 import datetime
-from framework.transactions.context import TokuTransaction
-from framework.auth.core import User
-from framework.mongo import database
+from django.utils import timezone
+from osf.models import AbstractNode
 from tests.base import OsfTestCase
-from tests.factories import UserFactory, RegistrationFactory, ProjectFactory, WithdrawnRegistrationFactory
+from osf_tests.factories import UserFactory, RegistrationFactory, ProjectFactory, WithdrawnRegistrationFactory
 from nose.tools import *  # PEP8 asserts
-from website.project.model import Node
 
 from scripts.analytics.node_summary import NodeSummary
 
-
-def modify_node_dates_in_mongo(new_date):
-    with TokuTransaction():
-        for node in database.node.find():
-            database['node'].find_and_modify(
-                {'_id': node['_id']},
-                {'$set': {
-                    'date_created': new_date
-                }}
-            )
 
 class TestNodeCount(OsfTestCase):
 
@@ -39,10 +27,10 @@ class TestNodeCount(OsfTestCase):
         registration_of_component.is_public = True
         registration_of_component.save()
 
-        self.embargoed_registration = RegistrationFactory(project=self.public_project, creator=self.user)
+        self.embargoed_registration = RegistrationFactory(project=self.public_project, creator=self.public_project.creator)
         self.embargoed_registration.embargo_registration(
-            self.user,
-            datetime.datetime.utcnow() + datetime.timedelta(days=10)
+            self.embargoed_registration.creator,
+            timezone.now() + datetime.timedelta(days=10)
         )
         self.embargoed_registration.save()
 
@@ -56,21 +44,19 @@ class TestNodeCount(OsfTestCase):
         self.deleted_node = ProjectFactory(is_deleted=True)
         self.deleted_node2 = ProjectFactory(is_deleted=True)
 
-        self.date = datetime.datetime.utcnow() - datetime.timedelta(1)
+        self.date = timezone.now() - datetime.timedelta(1)
 
-        modify_node_dates_in_mongo(self.date - datetime.timedelta(0.1))
+        for node in AbstractNode.objects.all():
+            node.date_created = self.date - datetime.timedelta(0.1)
+            node.save()
+        # modify_node_dates_in_mongo(self.date - datetime.timedelta(0.1))
 
         self.results = NodeSummary().get_events(self.date.date())[0]
-
-    def tearDown(self):
-        super(TestNodeCount, self).tearDown()
-        Node.remove()
-        User.remove()
 
     def test_get_node_count(self):
         nodes = self.results['nodes']
 
-        assert_equal(nodes['total'], 8)  # 3 Projects, 5 Registrations
+        assert_equal(nodes['total'], 3)  # 2 Projects, 1 component
         assert_equal(nodes['public'], 1)  # 1 Project
         assert_equal(nodes['private'], 2)  # 1 Project, 1 Component
 

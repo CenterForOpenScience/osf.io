@@ -7,7 +7,11 @@ python:
 
 sudo: false
 
+addons:
+  chrome: stable
+
 cache:
+  yarn: true
   directories:
     - $HOME/.cache
     - node_modules
@@ -17,17 +21,17 @@ env:
   global:
     - PROJECT_DIR="$PWD"
     - WHEELHOUSE="$HOME/.cache/wheelhouse"
-    - LIBXML2_DEB="libxml2_2.7.8.dfsg-5.1ubuntu4.17_amd64.deb"
+    - LIBXML2_DEB="libxml2-dbg_2.9.1+dfsg1-3ubuntu4.9_amd64.deb"
     - POSTGRES_DEB="postgresql-9.6_9.6.3-1.pgdg12.4+1_amd64.deb"
     - ELASTICSEARCH_ARCHIVE="elasticsearch-1.5.0.tar.gz"
     - LIBJEMALLOC_DEB="libjemalloc1_3.5.1-2_amd64.deb"
     - LIBPCRE_DEB="libpcre3_8.31-2ubuntu2.3_amd64.deb"
-    - VARNISH_DEB="varnish_4.1.0-1~trusty_amd64.deb"
+    # - VARNISH_DEB="varnish_4.1.0-1~trusty_amd64.deb"
     - OSF_DB_PORT="54321"
   matrix:
     - TEST_BUILD="osf"
     - TEST_BUILD="else"
-    - TEST_BUILD="api1"
+    - TEST_BUILD="api1_and_js"
     - TEST_BUILD="api2"
     - TEST_BUILD="api3"
     # - TEST_BUILD="varnish"
@@ -38,6 +42,7 @@ before_install:
       mkdir -p $HOME/.cache/downloads
       mkdir -p $HOME/.cache/pip
       mkdir -p $HOME/.cache/wheelhouse
+      rm -rf node_modules  ## TODO remove this later
     # postgres
     - |
       cd $HOME/.cache/downloads
@@ -76,35 +81,42 @@ before_install:
       mkdir -p /tmp/elasticsearch
       tar xzf $ELASTICSEARCH_ARCHIVE -C /tmp/elasticsearch --strip-components=1
     - /tmp/elasticsearch/bin/elasticsearch > /dev/null & export ELASTICSEARCH_PID=$!
+    # Wait for elasticsearch to come online
+    - |-
+      while true; do
+          sleep 5
+          curl -sf http://localhost:9200/_cluster/health?wait_for_status=yellow
+          if [ $? -eq 0 ]; then
+              break
+          fi
+      done
+
     # varnish
-    - |
-      cd $HOME/.cache/downloads
-
-      if [ ! -f "$LIBJEMALLOC_DEB" ]; then
-        curl -SLO http://mirrors.kernel.org/ubuntu/pool/universe/j/jemalloc/$LIBJEMALLOC_DEB
-      fi
-
-      if [ ! -f "$LIBPCRE_DEB" ]; then
-        curl -SLO http://security.ubuntu.com/ubuntu/pool/main/p/pcre3/$LIBPCRE_DEB
-      fi
-
-      if [ ! -f "$VARNISH_DEB" ]; then
-        curl -SLO https://repo.varnish-cache.org/ubuntu/pool/varnish-4.1/v/varnish/$VARNISH_DEB
-      fi
-
-      dpkg -x $LIBJEMALLOC_DEB /tmp/libjemalloc
-      dpkg -x $LIBPCRE_DEB /tmp/libpcre
-      dpkg -x $VARNISH_DEB /tmp/varnish
-    - |
-      if [ "$TEST_BUILD" = "varnish" ]; then
-        export ENABLE_VARNISH=True
-        export LD_LIBRARY_PATH=/tmp/libpcre/lib/x86_64-linux-gnu:/tmp/libjemalloc/usr/lib/x86_64-linux-gnu:/tmp/varnish/usr/lib/varnish
-        /tmp/varnish/usr/sbin/varnishd -n /tmp -p feature=+esi_disable_xml_check -p vmod_dir=/tmp/varnish/usr/lib/varnish/vmods -F -f $PROJECT_DIR/tests/test_files/varnish.vcl -a *:8080 > /dev/null & export VARNISH_PID=$!
-      fi
+    # - |
+    #   cd $HOME/.cache/downloads
+    #
+    #   if [ ! -f "$LIBJEMALLOC_DEB" ]; then
+    #     curl -SLO http://mirrors.kernel.org/ubuntu/pool/universe/j/jemalloc/$LIBJEMALLOC_DEB
+    #   fi
+    #
+    #   if [ ! -f "$LIBPCRE_DEB" ]; then
+    #     curl -SLO http://security.ubuntu.com/ubuntu/pool/main/p/pcre3/$LIBPCRE_DEB
+    #   fi
+    #
+    #   if [ ! -f "$VARNISH_DEB" ]; then
+    #     curl -SLO https://repo.varnish-cache.org/ubuntu/pool/varnish-4.1/v/varnish/$VARNISH_DEB
+    #   fi
+    #
+    #   dpkg -x $LIBJEMALLOC_DEB /tmp/libjemalloc
+    #   dpkg -x $LIBPCRE_DEB /tmp/libpcre
+    #   dpkg -x $VARNISH_DEB /tmp/varnish
+    # - |
+    #   if [ "$TEST_BUILD" = "varnish" ]; then
+    #     export ENABLE_VARNISH=True
+    #     export LD_LIBRARY_PATH=/tmp/libpcre/lib/x86_64-linux-gnu:/tmp/libjemalloc/usr/lib/x86_64-linux-gnu:/tmp/varnish/usr/lib/varnish
+    #     /tmp/varnish/usr/sbin/varnishd -n /tmp -p feature=+esi_disable_xml_check -p vmod_dir=/tmp/varnish/usr/lib/varnish/vmods -F -f $PROJECT_DIR/tests/test_files/varnish.vcl -a *:8080 > /dev/null & export VARNISH_PID=$!
+    #   fi
 install:
-    - nvm install 0.12.4
-    - nvm use 0.12.4
-    - npm install -g npm@2.10.1
     - cd $PROJECT_DIR
     - cp website/settings/local-travis.py website/settings/local.py
     - cp api/base/settings/local-travis.py api/base/settings/local.py
@@ -113,8 +125,13 @@ install:
     - travis_retry pip install --upgrade pip
     - travis_retry pip install invoke==0.13.0
     - travis_retry pip install flake8==2.4.0 --force-reinstall --upgrade
-    - travis_retry npm install jshint
     - travis_retry invoke wheelhouse --dev --addons
+
+    - nvm install 8.6.0
+    - nvm use 8.6.0
+    - curl -o- -L https://yarnpkg.com/install.sh | bash
+    - export PATH=$HOME/.yarn/bin:$PATH
+
     - travis_retry invoke travis_addon_settings
     - travis_retry invoke requirements --dev --addons
     # Hack to fix package conflict between uritemplate and uritemplate.py (dependency of github3.py)
@@ -135,13 +152,10 @@ before_cache:
   - rm -f $HOME/.cache/wheelhouse/httpretty-*.whl
   - rm -f $HOME/.cache/wheelhouse/mendeley-*.whl
   - rm -f $HOME/.cache/wheelhouse/feedparser-*.whl
-  # exclude npm from github repo's
-  - rm -Rf node_modules/dropzone
-  - rm -Rf node_modules/treebeard
   # kill any running processes
   - kill -9 $POSTGRES_PID
   - kill -9 $ELASTICSEARCH_PID
-  - kill -9 $VARNISH_PID
+  # - kill -9 $VARNISH_PID
 
 branches:
   except:

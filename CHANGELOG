@@ -2,6 +2,102 @@
 Changelog
 *********
 
+0.124.0 (2017-11-13)
+====================
+
+- Critical bug fixes
+
+0.123.0 (2017-10-26)
+====================
+
+- Preprint moderation backend.
+
+0.122.0 (2017-10-16)
+====================
+- Probabilistic test failures due to uniqueness constraint on usernames
+- View-only link returns 403 for add-on files
+- Test failure test_get_preprint_count
+- Templating nodes that are linked to each other hit max recursion
+- Add MarXiv logo for sign up page
+- Add EarthArXiv logo for sign up page
+- Audit and fixing of wrapping across site
+- Make the sitemap raise first 10 issues to sentry then log the rest
+- Remove "Preprints" from Thesis Commons Register page
+- Remove unused scripts
+
+0.121.0 (2017-10-01)
+====================
+
+- Preprint title, description, and other fields may be edited through the preprints detail endpoint.
+- Remove AlternativeCitation code.
+- Remove usages of modularodm in favor of the Django ORM.
+- Use SELECT FOR UPDATE queries for requests that do DB writes.
+- Quick Files models and API.
+- Upgrade to jQuery 3.
+
+0.120.0 (2017-08-23)
+====================
+- User Profile: ampersand (&) is not decoded (&amp;) when editing/viewing employment/education
+- [Production] No indication when user add/remove affiliations from project takes 15-20 seconds
+- OSF Storage: Moving files between components breaks links in logs
+- Contributor can attempt to reorder components on a registration
+- Forking a project with a long name fails
+- Prereg form - unable to add contributors if some questions are unanswered
+- Forking a link via project overview page fails
+- Non-bibliographic preprint contributor removed from preprint, still on SHARE search
+- My Projects: Collections containing Registrations are slow to load and incorrectly show "this collection is empty" message
+- Institutions pages: registrations missing contrib names
+- BasicAuthProviderMixin downcases profile_url and urls should be treated as case-sensitive.
+- Pressing enter submits add component even if button is inaccessible
+- Unregistered users added to OSF projects -- new names should overwrite old names
+- Fix cors for custom domains
+- API 502s when refreshing github metadata (was: TypeError: Can't compare datetime.datetime to NoneType)
+- Registrations Settings Page is throwing 404 errors - Prod and Staging
+- Cannot access retracted registrations
+- Update support email addresses from cos.io to osf.io on the support page
+- Fix JS tests and run them on Travis
+- Embargoed registration red alert has wrong language & grammar
+- Sorting OSF Meetings instances in Admin app
+- Send objects from Thesis Commons to SHARE with type=Thesis
+- Add View-only links to Node Settings Page
+- Retry when failing to send data to SHARE
+- Track Number of Preprints by Provider in Admin App
+- Clarify user project invitation if there is a preprint associated
+- Modify Prereg Challenge Landing page
+- Test Optimization: Api tokens, addons, taxonomies, test
+- Add tests for sitemap generation
+- Remove mod-meta usage on the OSF
+- Pytest Conversion api_tests/users
+- Don't render all contributors for contributor-related logs
+- API: Add title and contributor fields to preprints
+
+0.119.0 (2017-08-10)
+====================
+
+- Add Bitbucket addon.
+- Prevent UnorderedObjectListWarning in API
+- Prevent invalid social fields from being passed to user endpoints.
+- Admin: Fix importing preprint providers on production
+- Remove "Watch project" code
+- Make ever_mentioned a ManyToMany field
+- Remove unused mongo code in framework.mongo
+- Reduce number of queries made by triggered mails script
+- Add a context manager to prevent auto_now fields from from getting updated during migrations
+- Remove model name aliasing in imports
+- Remove dead badges code
+- Add view OSF Subjects Permissions
+- Upgrade to Node.js 8
+- Checkouts and is_preprint checks need optimizing
+- Expand functionality of maintenance notice to allow custom message and severity level
+- Test optimizations
+- Add preprint_word field to preprint provider endpoints
+- Add event tracking to navbar
+
+0.118.0 (2017-08-03)
+====================
+
+- Support for custom taxonomies.
+
 0.117.0 (2017-07-13)
 ====================
 - Profile: long Personal Website URLs run over in cause problems in display #5270

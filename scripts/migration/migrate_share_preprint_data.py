@@ -1,7 +1,8 @@
+# TODO: Consider rewriting as management command
 import logging
 import sys
+import time
 
-from framework.mongo import database
 from scripts import utils as script_utils
 from website.app import setup_django
 from django.apps import apps
@@ -30,7 +31,9 @@ def migrate(dry=True):
         logger.info('{}/{} - {}'.format(count, target_count, preprint_id))
         try:
             if not dry:
-                on_preprint_updated(preprint_id)
+                on_preprint_updated(preprint_id, update_share=True)
+                # Sleep in order to be nice to EZID
+                time.sleep(1)
         except Exception as e:
             # TODO: This reliably fails for certain nodes with
             # IncompleteRead(0 bytes read)
@@ -50,5 +53,5 @@ def main():
     setup_django()
     migrate(dry=dry_run)
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     main()

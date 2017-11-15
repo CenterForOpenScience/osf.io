@@ -2,7 +2,6 @@
 from __future__ import unicode_literals
 import mock
 from django.utils import timezone
-from modularodm import Q
 from nose.tools import *  # noqa
 
 from addons.osfstorage.models import OsfStorageFile, OsfStorageFolder, OsfStorageFileNode
@@ -11,7 +10,7 @@ from osf.models import File
 from osf.models import Folder
 from osf.models.files import BaseFileNode
 from tests.base import OsfTestCase
-from tests.factories import AuthUserFactory, ProjectFactory
+from osf_tests.factories import AuthUserFactory, ProjectFactory
 from website.files import exceptions
 from osf import models
 
@@ -172,7 +171,7 @@ class TestFileNodeObj(FilesTestCase):
         )
         item.save()
 
-        found = TestFile.find_one(Q('_path', 'eq', 'afile'))
+        found = TestFile.objects.get(_path='afile')
         assert_true(isinstance(found, TestFile))
         assert_equal(found.materialized_path, '/long/path/to/name')
 

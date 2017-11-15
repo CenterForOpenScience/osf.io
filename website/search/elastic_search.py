@@ -15,15 +15,16 @@ import six
 
 from django.apps import apps
 from django.core.paginator import Paginator
+from django.db.models import Q
 from elasticsearch import (ConnectionError, Elasticsearch, NotFoundError,
                            RequestError, TransportError, helpers)
 from framework.celery_tasks import app as celery_app
-from framework.mongo.utils import paginated
-from modularodm import Q
-from osf.models import AbstractNode as Node
-from osf.models import OSFUser as User
+from framework.database import paginated
+from osf.models import AbstractNode
+from osf.models import OSFUser
 from osf.models import BaseFileNode
 from osf.models import Institution
+from osf.models import QuickFilesNode
 from website import settings
 from website.filters import gravatar
 from osf.models.licenses import serialize_node_license_record
@@ -48,13 +49,13 @@ ALIASES = {
 }
 
 DOC_TYPE_TO_MODEL = {
-    'component': Node,
-    'project': Node,
-    'registration': Node,
-    'user': User,
+    'component': AbstractNode,
+    'project': AbstractNode,
+    'registration': AbstractNode,
+    'user': OSFUser,
     'file': BaseFileNode,
     'institution': Institution,
-    'preprint': Node,
+    'preprint': AbstractNode,
 }
 
 # Prevent tokenizing and stop word removal.
@@ -75,7 +76,8 @@ def client():
             CLIENT = Elasticsearch(
                 settings.ELASTIC_URI,
                 request_timeout=settings.ELASTIC_TIMEOUT,
-                retry_on_timeout=True
+                retry_on_timeout=True,
+                **settings.ELASTIC_KWARGS
             )
             logging.getLogger('elasticsearch').setLevel(logging.WARN)
             logging.getLogger('elasticsearch.trace').setLevel(logging.WARN)
@@ -279,7 +281,7 @@ def format_result(result, parent_id=None):
 
 
 def load_parent(parent_id):
-    parent = Node.load(parent_id)
+    parent = AbstractNode.load(parent_id)
     if parent is None:
         return None
     parent_info = {}
@@ -384,10 +386,10 @@ def serialize_node(node, category):
 def update_node(node, index=None, bulk=False, async=False):
     from addons.osfstorage.models import OsfStorageFile
     index = index or INDEX
-    for file_ in paginated(OsfStorageFile, Q('node', 'eq', node)):
+    for file_ in paginated(OsfStorageFile, Q(node=node)):
         update_file(file_, index=index)
 
-    if node.is_deleted or not node.is_public or node.archiving or (node.is_spammy and settings.SPAM_FLAGGED_REMOVE_FROM_SEARCH):
+    if node.is_deleted or not node.is_public or node.archiving or (node.is_spammy and settings.SPAM_FLAGGED_REMOVE_FROM_SEARCH) or node.is_quickfiles:
         delete_doc(node._id, node, index=index)
     else:
         category = get_doctype_from_node(node)
@@ -450,6 +452,17 @@ def update_user(user, index=None):
     if not user.is_active:
         try:
             client().delete(index=index, doc_type='user', id=user._id, refresh=True, ignore=[404])
+            # update files in their quickfiles node if the user has been marked as spam
+            if 'spam_confirmed' in user.system_tags:
+                quickfiles = QuickFilesNode.objects.get_for_user(user)
+                for quickfile_id in quickfiles.files.values_list('_id', flat=True):
+                    client().delete(
+                        index=index,
+                        doc_type='file',
+                        id=quickfile_id,
+                        refresh=True,
+                        ignore=[404]
+                    )
         except NotFoundError:
             pass
         return
@@ -673,7 +686,7 @@ def search_contributor(query, page=0, size=10, exclude=None, current_user=None):
     users = []
     for doc in docs:
         # TODO: use utils.serialize_user
-        user = User.load(doc['id'])
+        user = OSFUser.load(doc['id'])
 
         if current_user and current_user._id == user._id:
             n_projects_in_common = -1

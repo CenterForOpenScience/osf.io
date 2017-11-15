@@ -49,7 +49,7 @@ var SharePopover =  {
         var fileLink = window.location.href;
 
         var mfrHost = renderLink.substring(0, renderLink.indexOf('render'));
-        return m('button#sharebutton.disabled.btn.btn-sm.btn-primary.file-share', {onclick: function popOverShow() {
+        return m('button#sharebutton.disabled.btn.btn-sm.btn-default.file-share', {onclick: function popOverShow() {
                 var pop = document.getElementById('popOver');
                 //This is bad, should only happen for Firefox, thanks @chrisseto
                 if (!pop){
@@ -136,6 +136,8 @@ var FileViewPage = {
                     '. It needs to be checked in before any changes can be made.'
                 ])));
             }
+        } else if (self.file.provider === 'bitbucket') {
+            self.canEdit = function() { return false; };  // Bitbucket is read-only
         } else {
             self.canEdit = function() {
                 return self.context.currentUser.canEdit;
@@ -157,9 +159,21 @@ var FileViewPage = {
                 url: fileWebViewUrl,
                 beforeSend: $osf.setXHRAuthorization
             }).done(function(response) {
-                window.contextVars.file.urls.external = response.data.extra.webView;
+                window.contextVars.file.urls.external = response.data.attributes.extra.webView;
             });
-            self.file.urls.revisions = waterbutler.buildRevisionsUrl(self.file.path, self.file.provider, self.node.id, {sha: $osf.urlParams().branch});
+
+            if (self.file.provider === 'github') {
+                self.file.urls.revisions = waterbutler.buildRevisionsUrl(
+                    self.file.path, self.file.provider, self.node.id,
+                    {sha: $osf.urlParams().branch}
+                );
+            }
+            else if (self.file.provider === 'bitbucket') {
+                self.file.urls.revisions = waterbutler.buildRevisionsUrl(
+                    self.file.path, self.file.provider, self.node.id,
+                    {branch: $osf.urlParams().branch}
+                );
+            }
             self.file.urls.content = waterbutler.buildDownloadUrl(self.file.path, self.file.provider, self.node.id, {direct: true, mode: 'render', branch: $osf.urlParams().branch});
         }
 
@@ -487,33 +501,34 @@ var FileViewPage = {
         var height = $('iframe').attr('height') ? $('iframe').attr('height') : '0px';
 
         m.render(document.getElementById('toggleBar'), m('.btn-toolbar.m-t-md', [
+            ctrl.context.currentUser.canEdit && (ctrl.file.provider !== 'bitbucket') && (!ctrl.canEdit()) && (ctrl.context.currentUser.isAdmin) ? m('.btn-group.m-l-xs.m-t-xs', [
+                ctrl.isLatestVersion ? m('.btn.btn-sm.btn-default', {onclick: $(document).trigger.bind($(document), 'fileviewpage:force_checkin')}, 'Force check in') : null
+            ]) : '',
+            ctrl.canEdit() && (!ctrl.file.checkoutUser) && (ctrl.file.provider === 'osfstorage') ? m('.btn-group.m-l-xs.m-t-xs', [
+                ctrl.isLatestVersion ? m('.btn.btn-sm.btn-default', {onclick: $(document).trigger.bind($(document), 'fileviewpage:checkout')}, 'Check out') : null
+            ]) : '',
+            (ctrl.canEdit() && (ctrl.file.checkoutUser === ctrl.context.currentUser.id) ) ? m('.btn-group.m-l-xs.m-t-xs', [
+                ctrl.isLatestVersion ? m('.btn.btn-sm.btn-warning', {onclick: $(document).trigger.bind($(document), 'fileviewpage:checkin')}, 'Check in') : null
+            ]) : '',
             // Special case whether or not to show the delete button for published Dataverse files
             // Special case to not show delete if file is preprint primary file
             // Special case to not show delete for public figshare files
+            // Special case to not show force check-in for read-only providers
             (
                 ctrl.canEdit() &&
                 (ctrl.node.preprintFileId !== ctrl.file.id) &&
                     !(ctrl.file.provider === 'figshare' && ctrl.file.extra.status === 'public') &&
                 (ctrl.file.provider !== 'osfstorage' || !ctrl.file.checkoutUser) &&
-                ($(document).context.URL.indexOf('version=latest-published') < 0)
+                (document.URL.indexOf('version=latest-published') < 0)
             ) ? m('.btn-group.m-l-xs.m-t-xs', [
-                        ctrl.isLatestVersion ? m('button.btn.btn-sm.btn-danger.file-delete', {onclick: $(document).trigger.bind($(document), 'fileviewpage:delete') }, 'Delete') : null
-            ]) : '',
-            ctrl.context.currentUser.canEdit && (!ctrl.canEdit()) && (ctrl.context.currentUser.isAdmin) ? m('.btn-group.m-l-xs.m-t-xs', [
-                ctrl.isLatestVersion ? m('.btn.btn-sm.btn-danger', {onclick: $(document).trigger.bind($(document), 'fileviewpage:force_checkin')}, 'Force check in') : null
-            ]) : '',
-            ctrl.canEdit() && (!ctrl.file.checkoutUser) && (ctrl.file.provider === 'osfstorage') ? m('.btn-group.m-l-xs.m-t-xs', [
-                ctrl.isLatestVersion ? m('.btn.btn-sm.btn-warning', {onclick: $(document).trigger.bind($(document), 'fileviewpage:checkout')}, 'Check out') : null
-            ]) : '',
-            (ctrl.canEdit() && (ctrl.file.checkoutUser === ctrl.context.currentUser.id) ) ? m('.btn-group.m-l-xs.m-t-xs', [
-                ctrl.isLatestVersion ? m('.btn.btn-sm.btn-warning', {onclick: $(document).trigger.bind($(document), 'fileviewpage:checkin')}, 'Check in') : null
-            ]) : '',
-            window.contextVars.node.isPublic? m('.btn-group.m-t-xs', [
-                m.component(SharePopover, {link: link, height: height})
+                ctrl.isLatestVersion ? m('button.btn.btn-sm.btn-default.file-delete', {onclick: $(document).trigger.bind($(document), 'fileviewpage:delete') }, 'Delete') : null
             ]) : '',
             m('.btn-group.m-t-xs', [
                 ctrl.isLatestVersion ? m('a.btn.btn-sm.btn-primary.file-download', {href: 'download'}, 'Download') : null
             ]),
+            window.contextVars.node.isPublic? m('.btn-group.m-t-xs', [
+                m.component(SharePopover, {link: link, height: height})
+            ]) : '',
             m('.btn-group.btn-group-sm.m-t-xs', [
                ctrl.editor ? m( '.btn.btn-default.disabled', 'Toggle view: ') : null
             ].concat(

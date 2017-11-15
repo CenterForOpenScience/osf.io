@@ -2,7 +2,6 @@ from __future__ import unicode_literals
 
 import json
 import csv
-from modularodm import Q
 
 from django.views.generic import ListView, DetailView, FormView, UpdateView
 from django.views.defaults import permission_denied, bad_request
@@ -19,7 +18,6 @@ from osf.models.admin_log_entry import (
 )
 from admin.pre_reg import serializers
 from admin.pre_reg.forms import DraftRegistrationForm
-from admin.pre_reg.utils import sort_drafts, SORT_BY
 from framework.exceptions import PermissionsError
 from website.exceptions import NodeStateError
 from osf.models.files import BaseFileNode
@@ -29,28 +27,30 @@ from website.prereg.utils import get_prereg_schema
 from website.project.metadata.schemas import from_json
 
 
+SORT_BY = {
+    'initiator': 'initiator__fullname',
+    'n_initiator': '-initiator__fullname',
+    'title': 'branched_from__title',
+    'n_title': '-branched_from__title',
+    'date': 'approval__initiation_date',
+    'n_date': '-approval__initiation_date',
+    'state': 'approval__state',
+    'n_state': '-approval__state',
+}
+
+
 class DraftListView(PermissionRequiredMixin, ListView):
     template_name = 'pre_reg/draft_list.html'
-    ordering = '-date'
+    ordering = '-approval__initiation_date'
     context_object_name = 'draft'
     permission_required = 'osf.view_prereg'
     raise_exception = True
 
     def get_queryset(self):
-        query = (
-            Q('registration_schema', 'eq', get_prereg_schema()) &
-            Q('approval', 'ne', None)
-        )
-        ordering = self.get_ordering()
-        if 'initiator' in ordering:
-            return DraftRegistration.find(query).sort(ordering)
-        if ordering == SORT_BY['title']:
-            return DraftRegistration.find(query).sort(
-                'registration_metadata.q1.value')
-        if ordering == SORT_BY['n_title']:
-            return DraftRegistration.find(query).sort(
-                '-registration_metadata.q1.value')
-        return sort_drafts(DraftRegistration.find(query), ordering)
+        return DraftRegistration.objects.filter(
+            registration_schema=get_prereg_schema(),
+            approval__isnull=False
+        ).order_by(self.get_ordering())
 
     def get_context_data(self, **kwargs):
         query_set = kwargs.pop('object_list', self.object_list)

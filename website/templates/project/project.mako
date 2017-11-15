@@ -1,6 +1,7 @@
 <%inherit file="project/project_base.mako"/>
 <%namespace name="render_nodes" file="util/render_nodes.mako" />
 <%namespace name="contributor_list" file="util/contributor_list.mako" />
+<%namespace name="render_addon_widget" file="util/render_addon_widget.mako" />
 <%include file="project/nodes_privacy.mako"/>
 
 <%
@@ -115,13 +116,6 @@
 
                     </div>
                     <!-- /ko -->
-                    % if 'badges' in addons_enabled and badges and badges['can_award']:
-                        <div class="btn-group">
-                            <button class="btn btn-primary" id="awardBadge" style="border-bottom-right-radius: 4px;border-top-right-radius: 4px;">
-                                <i class="fa fa-plus"></i> Award
-                            </button>
-                        </div>
-                    % endif
                     % if node["is_public"]:
                         <div class="btn-group" id="shareButtonsPopover"></div>
                     % endif
@@ -308,10 +302,7 @@
     <div class="col-sm-6 osf-dash-col">
 
         %if user['show_wiki_widget']:
-            <div id="addonWikiWidget" class="" mod-meta='{
-              "tpl": "../../addons/wiki/templates/wiki_widget.mako",
-            "uri": "${node['api_url']}wiki/widget/"
-        }'></div>
+            ${ render_addon_widget.render_addon_widget('wiki', addons_widget_data['wiki']) }
         %endif
 
         <!-- Files -->
@@ -348,10 +339,7 @@
             % for addon in addons_enabled:
                 % if addons[addon]['has_widget']:
                     %if addon != 'wiki': ## We already show the wiki widget at the top
-                    <div class="addon-widget-container" mod-meta='{
-                            "tpl": "../../addons/${addon}/templates/${addon}_widget.mako",
-                            "uri": "${node['api_url']}${addon}/widget/"
-                        }'></div>
+                        ${ render_addon_widget.render_addon_widget(addon, addons_widget_data[addon]) }
                     %endif
                 % endif
             % endfor
@@ -383,40 +371,7 @@
                             <span data-bind="text: mla"></span>
                         <div class="f-w-xl m-t-md">Chicago</div>
                             <span data-bind="text: chicago"></span>
-                        <div data-bind="validationOptions: {insertMessages: false, messagesOnModified: false}, foreach: citations">
-                            <!-- ko if: view() === 'view' -->
-                                <div class="f-w-xl m-t-md"><span data-bind="text: name"></span>
-                                    % if 'admin' in user['permissions'] and not node['is_registration']:
-                                        <!-- ko ifnot: $parent.editing() -->
-                                            <button class="btn btn-default btn-sm" data-bind="click: function() {edit($parent)}"><i class="fa fa-edit"></i> Edit</button>
-                                            <button class="btn btn-danger btn-sm" data-bind="click: function() {removeSelf($parent)}"><i class="fa fa-trash-o"></i> Remove</button>
-                                        <!-- /ko -->
-                                    % endif
-                                </div>
-                                <span data-bind="text: text"></span>
-                            <!-- /ko -->
-                            <!-- ko if: view() === 'edit' -->
-                                <div class="f-w-xl m-t-md">Citation name</div>
-                                <input data-bind="if: name !== undefined, value: name" placeholder="Required" class="form-control"/>
-                                <div class="f-w-xl m-t-sm">Citation</div>
-                                <textarea data-bind="if: text !== undefined, value: text" placeholder="Required" class="form-control" rows="4"></textarea>
-                                <div data-bind="visible: showMessages, css: 'text-danger'">
-                                    <p class="m-t-sm" data-bind="validationMessage: name"></p>
-                                    <p class="m-t-sm" data-bind="validationMessage: text"></p>
-                                </div>
-                                <div class="m-t-md">
-                                    <button class="btn btn-default" data-bind="click: function() {cancel($parent)}">Cancel</button>
-                                    <button class="btn btn-success" data-bind="click: function() {save($parent)}">Save</button>
-                                </div>
-                            <!-- /ko -->
-                        </div>
                     </div>
-                    ## Disable custom citations for now
-                    ## % if 'admin' in user['permissions'] and not node['is_registration']:
-                    ##     <!-- ko ifnot: editing() -->
-                    ##     <button data-bind="ifnot: editing(), click: addAlternative" class="btn btn-default btn-sm m-t-md"><i class="fa fa-plus"></i> Add Citation</button>
-                    ##     <!-- /ko -->
-                    ## % endif
                 </div>
                 <p><strong>Get more citations</strong></p>
                 <div id="citationStylePanel" class="citation-picker">
@@ -523,7 +478,6 @@ ${parent.javascript_bottom()}
         },
         node: {
             id: ${node['id'] | sjson, n},
-            hasChildren: ${ node['has_children'] | sjson, n },
             isRegistration: ${ node['is_registration'] | sjson, n },
             tags: ${ node['tags'] | sjson, n },
             institutions: ${node['institutions'] | sjson, n},

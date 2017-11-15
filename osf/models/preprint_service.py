@@ -7,7 +7,7 @@ from django.utils import timezone
 from django.utils.functional import cached_property
 from django.contrib.contenttypes.fields import GenericRelation
 
-from framework.celery_tasks.handlers import enqueue_task
+from framework.postcommit_tasks.handlers import enqueue_postcommit_task
 from framework.exceptions import PermissionsError
 from osf.models import NodeLog, Subject
 from osf.models.validators import validate_subject_hierarchy
@@ -16,12 +16,15 @@ from website.preprints.tasks import on_preprint_updated, get_and_set_preprint_id
 from website.project.licenses import set_license
 from website.util import api_v2_url
 from website.util.permissions import ADMIN
-from website import settings
+from website import settings, mails
+
+from reviews.models.mixins import ReviewableMixin
+from reviews.workflow import States
 
 from osf.models.base import BaseModel, GuidMixin
 from osf.models.identifiers import IdentifierMixin, Identifier
 
-class PreprintService(DirtyFieldsMixin, GuidMixin, IdentifierMixin, BaseModel):
+class PreprintService(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin, BaseModel):
     date_created = NonNaiveDateTimeField(auto_now_add=True)
     date_modified = NonNaiveDateTimeField(auto_now=True)
     provider = models.ForeignKey('osf.PreprintProvider',
@@ -33,6 +36,7 @@ class PreprintService(DirtyFieldsMixin, GuidMixin, IdentifierMixin, BaseModel):
                              null=True, blank=True, db_index=True)
     is_published = models.BooleanField(default=False, db_index=True)
     date_published = NonNaiveDateTimeField(null=True, blank=True)
+    original_publication_date = NonNaiveDateTimeField(null=True, blank=True)
     license = models.ForeignKey('osf.NodeLicenseRecord',
                                 on_delete=models.SET_NULL, null=True, blank=True)
 
@@ -47,7 +51,11 @@ class PreprintService(DirtyFieldsMixin, GuidMixin, IdentifierMixin, BaseModel):
         )
 
     def __unicode__(self):
-        return '{} preprint (guid={}) of {}'.format('published' if self.is_published else 'unpublished', self._id, self.node.__unicode__())
+        return '{} preprint (guid={}) of {}'.format('published' if self.is_published else 'unpublished', self._id, self.node.__unicode__() if self.node else None)
+
+    @property
+    def verified_publishable(self):
+        return self.is_published and self.node.is_preprint and not self.node.is_deleted
 
     @property
     def primary_file(self):
@@ -84,7 +92,7 @@ class PreprintService(DirtyFieldsMixin, GuidMixin, IdentifierMixin, BaseModel):
 
     @property
     def url(self):
-        if self.provider.domain_redirect_enabled or self.provider._id == 'osf':
+        if (self.provider.domain_redirect_enabled and self.provider.domain) or self.provider._id == 'osf':
             return '/{}/'.format(self._id)
 
         return '/preprints/{}/{}/'.format(self.provider._id, self._id)
@@ -176,6 +184,10 @@ class PreprintService(DirtyFieldsMixin, GuidMixin, IdentifierMixin, BaseModel):
             self.date_published = timezone.now()
             self.node._has_abandoned_preprint = False
 
+            # In case this provider is ever set up to use a reviews workflow, put this preprint in a sensible state
+            self.reviews_state = States.ACCEPTED.value
+            self.date_last_transitioned = self.date_published
+
             self.node.add_log(
                 action=NodeLog.PREPRINT_INITIATED,
                 params={
@@ -193,7 +205,9 @@ class PreprintService(DirtyFieldsMixin, GuidMixin, IdentifierMixin, BaseModel):
                 )
 
             # This should be called after all fields for EZID metadta have been set
-            enqueue_task(get_and_set_preprint_identifiers.s(self._id))
+            enqueue_postcommit_task(get_and_set_preprint_identifiers, (), {'preprint': self}, celery=True)
+
+            self._send_preprint_confirmation(auth)
 
         if save:
             self.node.save()
@@ -230,5 +244,20 @@ class PreprintService(DirtyFieldsMixin, GuidMixin, IdentifierMixin, BaseModel):
         ret = super(PreprintService, self).save(*args, **kwargs)
 
         if (not first_save and 'is_published' in saved_fields) or self.is_published:
-            enqueue_task(on_preprint_updated.s(self._id, old_subjects))
+            enqueue_postcommit_task(on_preprint_updated, (self._id,), {'old_subjects': old_subjects}, celery=True)
         return ret
+
+    def _send_preprint_confirmation(self, auth):
+        # Send creator confirmation email
+        if self.provider._id == 'osf':
+            email_template = getattr(mails, 'PREPRINT_CONFIRMATION_DEFAULT')
+        else:
+            email_template = getattr(mails, 'PREPRINT_CONFIRMATION_BRANDED')(self.provider)
+
+        mails.send_mail(
+            auth.user.username,
+            email_template,
+            user=auth.user,
+            node=self.node,
+            preprint=self
+        )

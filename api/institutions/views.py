@@ -1,19 +1,16 @@
-from django.apps import apps
 from rest_framework import generics
 from rest_framework import permissions as drf_permissions
 from rest_framework import exceptions
 from rest_framework import status
 from rest_framework.response import Response
 
-from modularodm import Q
-
 from framework.auth.oauth_scopes import CoreScopes
 
-from osf.models import OSFUser as User, Node, Institution
+from osf.models import OSFUser, Node, Institution, Registration
 from website.util import permissions as osf_permissions
 
 from api.base import permissions as base_permissions
-from api.base.filters import ODMFilterMixin
+from api.base.filters import ListFilterMixin
 from api.base.views import JSONAPIBaseView
 from api.base.serializers import JSONAPISerializer
 from api.base.utils import get_object_or_error, get_user_auth
@@ -26,12 +23,11 @@ from api.base.exceptions import RelationshipPostMakesNoChanges
 from api.nodes.serializers import NodeSerializer
 from api.nodes.filters import NodesFilterMixin
 from api.users.serializers import UserSerializer
+from api.registrations.serializers import RegistrationSerializer
 
 from api.institutions.authentication import InstitutionAuthentication
-from api.institutions.serializers import InstitutionSerializer, InstitutionNodesRelationshipSerializer
+from api.institutions.serializers import InstitutionSerializer, InstitutionNodesRelationshipSerializer, InstitutionRegistrationsRelationshipSerializer
 from api.institutions.permissions import UserIsAffiliated
-
-from osf.models import Registration
 
 class InstitutionMixin(object):
     """Mixin with convenience method get_institution
@@ -43,12 +39,13 @@ class InstitutionMixin(object):
         inst = get_object_or_error(
             Institution,
             self.kwargs[self.institution_lookup_url_kwarg],
+            self.request,
             display_name='institution'
         )
         return inst
 
 
-class InstitutionList(JSONAPIBaseView, generics.ListAPIView, ODMFilterMixin):
+class InstitutionList(JSONAPIBaseView, generics.ListAPIView, ListFilterMixin):
     """
     Paginated list of verified Institutions affiliated with COS
 
@@ -81,12 +78,12 @@ class InstitutionList(JSONAPIBaseView, generics.ListAPIView, ODMFilterMixin):
 
     ordering = ('name', )
 
-    def get_default_odm_query(self):
-        return Q('_id', 'ne', None) & Q('is_deleted', 'ne', True)
+    def get_default_queryset(self):
+        return Institution.objects.filter(_id__isnull=False, is_deleted=False)
 
     # overrides ListAPIView
     def get_queryset(self):
-        return Institution.find(self.get_query_from_request())
+        return self.get_queryset_from_request()
 
 
 class InstitutionDetail(JSONAPIBaseView, generics.RetrieveAPIView, InstitutionMixin):
@@ -159,21 +156,17 @@ class InstitutionNodeList(JSONAPIBaseView, generics.ListAPIView, InstitutionMixi
 
     # overrides NodesFilterMixin
     def get_default_queryset(self):
-        return Node.find((
-            Q('is_deleted', 'ne', True) &
-            Q('is_public', 'eq', True)
-        ))
+        institution = self.get_institution()
+        return institution.nodes.filter(is_public=True, is_deleted=False, type='osf.node')
 
     # overrides RetrieveAPIView
     def get_queryset(self):
-        inst = self.get_institution()
-        qs = self.get_queryset_from_request()
         if self.request.version < '2.2':
-            return qs.filter(affiliated_institutions__id=inst.id).get_roots()
-        return qs.filter(affiliated_institutions__id=inst.id)
+            return self.get_queryset_from_request().get_roots()
+        return self.get_queryset_from_request()
 
 
-class InstitutionUserList(JSONAPIBaseView, ODMFilterMixin, generics.ListAPIView, InstitutionMixin):
+class InstitutionUserList(JSONAPIBaseView, ListFilterMixin, generics.ListAPIView, InstitutionMixin):
     """Users that have been authenticated with the institution.
     """
     permission_classes = (
@@ -183,22 +176,21 @@ class InstitutionUserList(JSONAPIBaseView, ODMFilterMixin, generics.ListAPIView,
 
     required_read_scopes = [CoreScopes.INSTITUTION_READ, CoreScopes.USERS_READ]
     required_write_scopes = [CoreScopes.NULL]
-    model_class = User
+    model_class = OSFUser
 
     serializer_class = UserSerializer
     view_category = 'institutions'
     view_name = 'institution-users'
 
-    # overrides ODMFilterMixin
-    def get_default_odm_query(self):
-        inst = self.get_institution()
-        query = Q('affiliated_institutions', 'eq', inst)
-        return query
+    ordering = ('-id',)
+
+    def get_default_queryset(self):
+        institution = self.get_institution()
+        return institution.osfuser_set.all()
 
     # overrides RetrieveAPIView
     def get_queryset(self):
-        query = self.get_query_from_request()
-        return User.find(query)
+        return self.get_queryset_from_request()
 
 
 class InstitutionAuth(JSONAPIBaseView, generics.CreateAPIView):
@@ -222,24 +214,101 @@ class InstitutionAuth(JSONAPIBaseView, generics.CreateAPIView):
 class InstitutionRegistrationList(InstitutionNodeList):
     """Registrations have selected an institution as their primary institution.
     """
-
+    serializer_class = RegistrationSerializer
     view_name = 'institution-registrations'
-
-    base_node_query = (
-        Q('is_deleted', 'ne', True) &
-        Q('is_public', 'eq', True)
-    )
 
     ordering = ('-date_modified', )
 
     def get_default_queryset(self):
-        return Registration.find(self.base_node_query)
+        institution = self.get_institution()
+        return institution.nodes.filter(is_deleted=False, is_public=True, type='osf.registration', retraction__isnull=True)
 
     def get_queryset(self):
+        return self.get_queryset_from_request()
+
+class InstitutionRegistrationsRelationship(JSONAPIBaseView, generics.RetrieveDestroyAPIView, generics.CreateAPIView, InstitutionMixin):
+    """ Relationship Endpoint for Institution -> Registrations Relationship
+
+    Used to set, remove, update and retrieve the affiliated_institution of registrations with this institution
+
+    ##Actions
+
+    ###Create
+
+        Method:        POST
+        URL:           /links/self
+        Query Params:  <none>
+        Body (JSON):   {
+                         "data": [{
+                           "type": "registrations",   # required
+                           "id": <registration_id>   # required
+                         }]
+                       }
+        Success:       201
+
+    This requires write permissions on the registrations requested and for the user making the request to
+    have the institution affiliated in their account.
+
+    ###Destroy
+
+        Method:        DELETE
+        URL:           /links/self
+        Query Params:  <none>
+        Body (JSON):   {
+                         "data": [{
+                           "type": "registrations",   # required
+                           "id": <registration_id>   # required
+                         }]
+                       }
+        Success:       204
+
+    This requires write permissions in the registrations requested.
+    """
+    permission_classes = (
+        drf_permissions.IsAuthenticatedOrReadOnly,
+        base_permissions.TokenHasScope,
+        UserIsAffiliated
+    )
+    required_read_scopes = [CoreScopes.NODE_REGISTRATIONS_READ, CoreScopes.INSTITUTION_READ]
+    required_write_scopes = [CoreScopes.NODE_REGISTRATIONS_WRITE]
+    serializer_class = InstitutionRegistrationsRelationshipSerializer
+    parser_classes = (JSONAPIRelationshipParser, JSONAPIRelationshipParserForRegularJSON, )
+
+    view_category = 'institutions'
+    view_name = 'institution-relationships-registrations'
+
+    def get_object(self):
         inst = self.get_institution()
-        qs = self.get_queryset_from_request()
-        nodes = qs.filter(affiliated_institutions__id=inst.id)
-        return [node for node in nodes if not node.is_retracted]
+        auth = get_user_auth(self.request)
+        registrations = inst.nodes.filter(is_deleted=False, type='osf.registration').can_view(user=auth.user, private_link=auth.private_link)
+        ret = {
+            'data': registrations,
+            'self': inst
+        }
+        self.check_object_permissions(self.request, ret)
+        return ret
+
+    def perform_destroy(self, instance):
+        data = self.request.data['data']
+        user = self.request.user
+        ids = [datum['id'] for datum in data]
+        registrations = []
+        for id_ in ids:
+            registration = Registration.load(id_)
+            if not registration.has_permission(user, osf_permissions.WRITE):
+                raise exceptions.PermissionDenied(detail='Write permission on registration {} required'.format(id_))
+            registrations.append(registration)
+
+        for registration in registrations:
+            registration.remove_affiliated_institution(inst=instance['self'], user=user)
+            registration.save()
+
+    def create(self, *args, **kwargs):
+        try:
+            ret = super(InstitutionRegistrationsRelationship, self).create(*args, **kwargs)
+        except RelationshipPostMakesNoChanges:
+            return Response(status=status.HTTP_204_NO_CONTENT)
+        return ret
 
 class InstitutionNodesRelationship(JSONAPIBaseView, generics.RetrieveDestroyAPIView, generics.CreateAPIView, InstitutionMixin):
     """ Relationship Endpoint for Institution -> Nodes Relationship
@@ -284,8 +353,8 @@ class InstitutionNodesRelationship(JSONAPIBaseView, generics.RetrieveDestroyAPIV
         base_permissions.TokenHasScope,
         UserIsAffiliated
     )
-    required_read_scopes = [CoreScopes.NULL]
-    required_write_scopes = [CoreScopes.NULL]
+    required_read_scopes = [CoreScopes.NODE_BASE_READ, CoreScopes.INSTITUTION_READ]
+    required_write_scopes = [CoreScopes.NODE_BASE_WRITE]
     serializer_class = InstitutionNodesRelationshipSerializer
     parser_classes = (JSONAPIRelationshipParser, JSONAPIRelationshipParserForRegularJSON, )
 
@@ -293,10 +362,9 @@ class InstitutionNodesRelationship(JSONAPIBaseView, generics.RetrieveDestroyAPIV
     view_name = 'institution-relationships-nodes'
 
     def get_object(self):
-        ConcreteNode = apps.get_model('osf.Node')
         inst = self.get_institution()
         auth = get_user_auth(self.request)
-        nodes = ConcreteNode.find_by_institutions(inst, Q('is_deleted', 'ne', True)).can_view(user=auth.user, private_link=auth.private_link)
+        nodes = inst.nodes.filter(is_deleted=False, type='osf.node').can_view(user=auth.user, private_link=auth.private_link)
         ret = {
             'data': nodes,
             'self': inst

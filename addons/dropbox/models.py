@@ -2,6 +2,8 @@ import httplib as http
 import logging
 import os
 
+from oauthlib.common import generate_token
+
 from addons.base.models import (BaseOAuthNodeSettings, BaseOAuthUserSettings,
                                 BaseStorageAddon)
 from django.db import models
@@ -53,7 +55,7 @@ class Provider(ExternalProvider):
             session.data['oauth_states'] = {}
         if self.short_name not in session.data['oauth_states']:
             session.data['oauth_states'][self.short_name] = {
-                'state': None
+                'state': generate_token()
             }
         return DropboxOAuth2Flow(
             self.client_id,
@@ -68,7 +70,9 @@ class Provider(ExternalProvider):
 
     @property
     def auth_url(self):
-        return self.oauth_flow.start('force_reapprove=true')
+        ret = self.oauth_flow.start('force_reapprove=true')
+        session.save()
+        return ret
 
     # Overrides ExternalProvider
     def auth_callback(self, user):
@@ -122,7 +126,7 @@ class NodeSettings(BaseStorageAddon, BaseOAuthNodeSettings):
     serializer = DropboxSerializer
 
     folder = models.TextField(null=True, blank=True)
-    user_settings = models.ForeignKey(UserSettings, null=True, blank=True)
+    user_settings = models.ForeignKey(UserSettings, null=True, blank=True, on_delete=models.CASCADE)
 
     _api = None
 
