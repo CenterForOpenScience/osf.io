@@ -262,8 +262,8 @@ class TestPreprintUpdate:
         assert preprint.node.title == new_title
         assert mock_preprint_updated.called
 
-    @mock.patch('website.preprints.tasks.on_preprint_updated.s')
-    def test_update_tags(self, mock_preprint_updated, app, user, preprint, url):
+    @mock.patch('website.preprints.tasks.update_ezid_metadata_on_change')
+    def test_update_tags(self, mock_update_ezid, app, user, preprint, url):
         new_tags = ['hey', 'sup']
 
         for tag in new_tags:
@@ -281,10 +281,10 @@ class TestPreprintUpdate:
         preprint.node.reload()
 
         assert sorted(list(preprint.node.tags.all().values_list('name', flat=True))) == new_tags
-        assert mock_preprint_updated.called
+        assert mock_update_ezid.called
 
-    @mock.patch('website.preprints.tasks.on_preprint_updated.s')
-    def test_update_contributors(self, mock_preprint_updated, app, user, preprint, url):
+    @mock.patch('website.preprints.tasks.update_ezid_metadata_on_change')
+    def test_update_contributors(self, mock_update_ezid, app, user, preprint, url):
         new_user = AuthUserFactory()
         contributor_payload = {
             "data": {
@@ -311,7 +311,7 @@ class TestPreprintUpdate:
 
         assert res.status_code == 201
         assert new_user in preprint.node.contributors
-        assert mock_preprint_updated.called
+        assert mock_update_ezid.called
 
     def test_cannot_set_primary_file(self, app, user, preprint, url):
 
@@ -396,6 +396,7 @@ class TestPreprintUpdate:
         res = app.patch_json_api(url, payload, auth=user.auth)
         unpublished.reload()
         assert unpublished.is_published
+        assert mock_get_identifiers.called
 
     @mock.patch('website.preprints.tasks.get_and_set_preprint_identifiers.si')
     def test_update_published_makes_node_public(self, mock_get_identifiers, app, user):
