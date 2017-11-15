@@ -6,6 +6,7 @@ from django.db.models import Q
 import mock
 import pytest
 import pytz
+import random, string
 from framework.celery_tasks import handlers
 from framework.exceptions import PermissionsError
 from framework.sessions import set_session
@@ -3438,6 +3439,49 @@ class TestOnNodeUpdate:
         assert payload['is_deleted'] is True
 
         registration.remove_tag(settings.DO_NOT_INDEX_LIST['tags'][0], auth=Auth(user), save=True)
+        on_node_updated(registration._id, user._id, False, {'is_public'})
+        kwargs = requests.post.call_args[1]
+        graph = kwargs['json']['data']['attributes']['data']['@graph']
+        payload = (item for item in graph if 'is_deleted' in item.keys()).next()
+        assert payload['is_deleted'] is False
+
+    @mock.patch('website.project.tasks.settings.SHARE_URL', 'https://share.osf.io')
+    @mock.patch('website.project.tasks.settings.SHARE_API_TOKEN', 'Token')
+    @mock.patch('website.project.tasks.requests')
+    def test_update_share_correctly_for_projects_with_qa_titles(self, requests, node, user, request_context):
+        node.title = settings.DO_NOT_INDEX_LIST['titles'][0].join(random.choice(string.ascii_lowercase) for i in range(5))
+        node.save()
+        on_node_updated(node._id, user._id, False, {'is_public'})
+        kwargs = requests.post.call_args[1]
+        graph = kwargs['json']['data']['attributes']['data']['@graph']
+        payload = (item for item in graph if 'is_deleted' in item.keys()).next()
+        assert payload['is_deleted'] is True
+
+        node.title = 'Not a qa title'
+        node.save()
+        assert node.title not in settings.DO_NOT_INDEX_LIST['titles']
+        on_node_updated(node._id, user._id, False, {'is_public'})
+        kwargs = requests.post.call_args[1]
+        graph = kwargs['json']['data']['attributes']['data']['@graph']
+        payload = (item for item in graph if 'is_deleted' in item.keys()).next()
+        assert payload['is_deleted'] is False
+
+    @mock.patch('website.project.tasks.settings.SHARE_URL', 'https://share.osf.io')
+    @mock.patch('website.project.tasks.settings.SHARE_API_TOKEN', 'Token')
+    @mock.patch('website.project.tasks.requests')
+    @mock.patch('osf.models.registrations.Registration.archiving', mock.PropertyMock(return_value=False))
+    def test_update_share_correctly_for_registrations_with_qa_titles(self, requests, registration, user, request_context):
+        registration.title = settings.DO_NOT_INDEX_LIST['titles'][0].join(random.choice(string.ascii_lowercase) for i in range(5))
+        registration.save()
+        on_node_updated(registration._id, user._id, False, {'is_public'})
+        kwargs = requests.post.call_args[1]
+        graph = kwargs['json']['data']['attributes']['data']['@graph']
+        payload = (item for item in graph if 'is_deleted' in item.keys()).next()
+        assert payload['is_deleted'] is True
+
+        registration.title = 'Not a qa title'
+        registration.save()
+        assert registration.title not in settings.DO_NOT_INDEX_LIST['titles']
         on_node_updated(registration._id, user._id, False, {'is_public'})
         kwargs = requests.post.call_args[1]
         graph = kwargs['json']['data']['attributes']['data']['@graph']
