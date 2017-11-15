@@ -464,6 +464,14 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         return self.preprints.filter(is_published=True).exists()
 
     @property
+    def linked_preprint(self):
+        return self.preprints.get_queryset()[0]
+
+    @property
+    def has_moderated_preprint(self):
+        return self.preprints.filter(provider__reviews_workflow__isnull=False).exists()
+
+    @property
     def preprint_url(self):
         if self.is_preprint:
             try:
@@ -471,7 +479,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
                 if self.has_published_preprint:
                     return self.preprints.filter(is_published=True)[0].url
                 else:
-                    return self.preprints.get_queryset()[0].url
+                    return self.linked_preprint.url
             except IndexError:
                 pass
 
