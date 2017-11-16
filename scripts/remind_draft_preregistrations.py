@@ -31,6 +31,7 @@ def main(dry_run=True):
                     user=prereg.initiator,
                     fullname=prereg.initiator.fullname,
                     prereg_url=prereg.absolute_url,
+                    project_name=prereg.branched_from.title,
                     draft_id=prereg._id,
                 )
 
