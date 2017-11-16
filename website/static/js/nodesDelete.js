@@ -45,7 +45,7 @@ function getNodesOriginal(nodeTree, nodesOriginal) {
  * Deletes all nodes in changed state
  * uses API v2 bulk requests
  */
-function batchNodesDelete(nodes) {
+function batchNodesDelete(nodes, nodeType) {
     var nodesV2Url = window.contextVars.apiV2Prefix + 'nodes/';
     var nodesBatch = $.map(nodes, function (node) {
         return {
@@ -66,8 +66,8 @@ function batchNodesDelete(nodes) {
         data: JSON.stringify({
             data: nodesBatch
         }),
-        success: function(){
-            if (window.contextVars.node.nodeType === 'project')
+        success: function(response){
+            if (nodeType === 'project')
                 bootbox.alert({
                     message: 'Project has been successfully deleted.',
                     callback: function(confirmed) {
@@ -75,11 +75,11 @@ function batchNodesDelete(nodes) {
                     }
                 });
 
-            if (window.contextVars.node.nodeType === 'component')
+            if (nodeType === 'component')
                 bootbox.alert({
                     message: 'Component has been successfully deleted.',
                     callback: function(confirmed) {
-                        window.location = window.contextVars.node.parentUrl;
+                        window.location = window.contextVars.node.parentUrl || window.contextVars.node.urls.web;
                     }
                 });
         }
@@ -91,15 +91,14 @@ function batchNodesDelete(nodes) {
  *
  * @type {NodesDeleteViewModel}
  */
-var NodesDeleteViewModel = function(node) {
+var NodesDeleteViewModel = function(nodeType, nodeApiUrl) {
     var self = this;
-    self.nodeType = window.contextVars.node.nodeType;
-    self.parentUrl = window.contextVars.node.parentUrl;
+
     self.SELECT = 'select';
     self.CONFIRM = 'confirm';
-
+    self.nodeType = nodeType;
     self.confirmationString = '';
-    self.treebeardUrl = window.contextVars.node.urls.api  + 'tree/';
+    self.treebeardUrl = nodeApiUrl + 'tree/';
     self.nodesOriginal = {};
     self.nodesDeleted = ko.observable();
     self.nodesChanged = ko.observableArray([]);
@@ -248,7 +247,7 @@ NodesDeleteViewModel.prototype.confirmChanges =  function() {
     if ($('#bbConfirmTextDelete').val() === this.confirmationString) {
         if (nodesChanged.length <= 100) {
             $osf.block('Deleting Project');
-            batchNodesDelete(nodesChanged.reverse()).then(function () {
+            batchNodesDelete(nodesChanged.reverse(), self.nodeType).then(function () {
                 self.page(self.WARNING);
             }).fail(function (xhr) {
                 $osf.unblock();
@@ -280,12 +279,12 @@ NodesDeleteViewModel.prototype.back = function() {
     this.page(this.SELECT);
 };
 
-function NodesDelete(selector, node) {
+function NodesDelete(selector, nodeType, nodeApiUrl) {
     var self = this;
 
     self.selector = selector;
     self.$element = $(self.selector);
-    self.viewModel = new NodesDeleteViewModel(node);
+    self.viewModel = new NodesDeleteViewModel(nodeType, nodeApiUrl);
     self.viewModel.fetchNodeTree().done(function(response) {
         new NodesDeleteTreebeard('nodesDeleteTreebeard', response, self.viewModel.nodesState, self.viewModel.nodesOriginal);
     });
@@ -293,6 +292,7 @@ function NodesDelete(selector, node) {
 }
 
 NodesDelete.prototype.init = function() {
+    ko.cleanNode($('#nodesDelete')[0]);
     osfHelpers.applyBindings(this.viewModel, this.selector);
 };
 
@@ -300,4 +300,3 @@ module.exports = {
     _NodesDeleteViewModel: NodesDeleteViewModel,
     NodesDelete: NodesDelete
 };
-

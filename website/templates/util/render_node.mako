@@ -67,7 +67,11 @@
                             <li><a tabindex="-1" href="${domain}${summary['id']}/settings/">Settings</a></li>
                             % if summary['is_admin']:
                             <li>
-                                <a tabindex="-1" onclick="ComponentActions.deleteNode(${summary['childExists'] | sjson, n}, '${summary['node_type']}', ${summary['isPreprint'] | sjson, n},'${summary['api_url']}')" type="button">
+                                <a tabindex="-1"
+                                  % if summary['childExists']:
+                                      data-toggle="modal" data-target="#nodesDelete"
+                                  % endif
+                                  onclick="ComponentActions.deleteNode(${summary['childExists'] | sjson, n}, '${summary['node_type']}', ${summary['isPreprint'] | sjson, n},'${summary['api_url']}')" type="button">
                                     Delete
                                 </a>
                             </li>

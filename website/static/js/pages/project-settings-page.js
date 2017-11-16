@@ -84,7 +84,7 @@ $(document).ready(function() {
     }
 
     if(ctx.node.childExists){
-        new NodesDelete.NodesDelete('#nodesDelete', ctx.node);
+        new NodesDelete.NodesDelete('#nodesDelete', ctx.node.nodeType, ctx.node.urls.api);
     }else{
         $('#deleteNode').on('click', function() {
             ProjectSettings.getConfirmationCode(ctx.node.nodeType, ctx.node.isPreprint);

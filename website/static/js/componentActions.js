@@ -2,20 +2,15 @@
 
 var $ = require('jquery');
 var $osf = require('js/osfHelpers');
+var NodesDelete = require('js/nodesDelete.js');
+var ko = require('knockout');
 
 var ComponentActions = {};
 
 ComponentActions.deleteNode = function(childExists, nodeType, isPreprint, nodeApiUrl) {
-
     if(childExists){
-        $osf.growl(
-            'Error',
-            'Any child components must be deleted prior to deleting this component.',
-            'danger',
-            30000
-        );
+        new NodesDelete.NodesDelete('#nodesDelete', nodeType, nodeApiUrl);
     } else {
-
         var preprint_message = '<p class="danger">This ' + nodeType + ' contains a preprint. Deleting this ' +
         nodeType + ' will also delete your preprint. This action is irreversible.</p>';
 
