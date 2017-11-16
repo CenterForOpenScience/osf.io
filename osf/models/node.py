@@ -1849,9 +1849,9 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
 
         for node_relation in original.node_relations.filter(child__is_deleted=False):
             node_contained = node_relation.child
-            # Register child nodes
+            # fork child nodes
             if not node_relation.is_node_link:
-                fork_child = node_contained.fork_node(  # noqa
+                fork_child = node_contained.fork_node(
                     auth=auth,
                     title='',
                     parent=forked,
@@ -1953,7 +1953,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         except (AttributeError, KeyError):
             attributes = dict()
 
-        # Non-contributors can't fork private nodes
+        # Non-contributors can't template private nodes
         if not (self.is_public or self.has_permission(auth.user, 'read')):
             raise PermissionsError('{0!r} does not have permission to template node {1!r}'.format(auth.user, self._id))
 
