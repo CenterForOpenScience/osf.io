@@ -1849,7 +1849,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
 
         for node_relation in original.node_relations.filter(child__is_deleted=False):
             node_contained = node_relation.child
-            # fork child nodes
+            # Fork child nodes
             if not node_relation.is_node_link:
                 fork_child = node_contained.fork_node(
                     auth=auth,
