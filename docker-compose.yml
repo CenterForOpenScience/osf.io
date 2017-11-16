@@ -369,9 +369,6 @@ services:
       - web
     env_file:
       - .docker-compose.sharejs.env
-    volumes:
-      - ./addons/wiki/package.json:/code/package.json
-      - ./addons/wiki/shareServer.js:/code/shareServer.js
     stdin_open: true
 
 #  beat:

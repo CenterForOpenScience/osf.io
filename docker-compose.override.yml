@@ -116,7 +116,6 @@ services:
 ##        yarn --frozen-lockfile &&
 ##        yarn start --host 0.0.0.0 --port 4203 --live-reload-port 41956
 
-
 #  # Use this for ember-osf linked development (with docker-sync):
 #  emberosf:
 #    build: ../ember-osf
@@ -147,6 +146,17 @@ services:
 #      - ./ssl/celery-server.key.pem:/etc/ssl/server_key.pem:ro
 #      - ./ssl/ca-chain.cert.pem:/etc/ssl/ca_certificate.pem:ro
 
+#  sharejs:
+#    volumes:
+#      - sharejs-sync:/code:nocopy
+#
+#    command:
+#      - /bin/sh
+#      - -c 
+#      - |-
+#        npm install
+#        gosu node npm start
+
 volumes:
   osf-sync:
     external: true
@@ -167,4 +177,7 @@ volumes:
 #    external: true
 
 #  reviews-sync:
+#    external: true
+
+#  sharejs-sync:
 #    external: true
