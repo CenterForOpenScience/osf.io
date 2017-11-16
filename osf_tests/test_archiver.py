@@ -287,10 +287,7 @@ def generate_schema_from_data(data):
         # reason. Update the doc currently in the db rather than saving a new
         # one.
 
-        schema = MetaSchema.find_one(
-            Q('name', 'eq', _schema['name']) &
-            Q('schema_version', 'eq', _schema['version'])
-        )
+        schema = MetaSchema.objects.get(name=_schema['name'], schema_version=_schema['version'])
         schema.schema = _schema
         schema.save()
 
@@ -1063,6 +1060,22 @@ class TestArchiverListeners(ArchiverTestCase):
         rchild2.save()
         for node in [reg, rchild, rchild2]:
             assert_false(node.archive_job.archive_tree_finished())
+
+    def test_archive_tree_finished_false_for_partial_archive(self):
+        proj = factories.NodeFactory()
+        child = factories.NodeFactory(parent=proj, title='child')
+        sibling = factories.NodeFactory(parent=proj, title='sibling')
+
+        reg = factories.RegistrationFactory(project=proj)
+        rchild = reg._nodes.filter(title='child').get()
+        rsibling = reg._nodes.filter(title='sibling').get()
+        for node in [reg, rchild, rsibling]:
+            node.archive_job._set_target('osfstorage')
+        for node in [reg, rchild]:
+            node.archive_job.update_target('osfstorage', ARCHIVER_SUCCESS)
+        rsibling.archive_job.update_target('osfstorage', ARCHIVER_INITIATED)
+        rsibling.save()
+        assert_false(reg.archive_job.archive_tree_finished())
 
     @mock.patch('website.mails.send_mail')
     @mock.patch('website.archiver.tasks.archive_success.delay')

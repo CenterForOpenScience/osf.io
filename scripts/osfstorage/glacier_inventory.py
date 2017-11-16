@@ -5,7 +5,6 @@ with `glacier_audit.py`.
 """
 
 import logging
-import datetime
 
 from boto.glacier.layer2 import Layer2
 from django.utils import timezone

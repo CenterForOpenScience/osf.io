@@ -93,10 +93,6 @@ table.table.table-plain th, table.table.table-plain td {
     margin-right: .5em;
 }
 
-#social td:first-child {
-    word-break: break-all;
-}
-
 .fa.toggle-icon {
     position: absolute;
     right: 0;

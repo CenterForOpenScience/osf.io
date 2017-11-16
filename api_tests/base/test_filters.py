@@ -354,7 +354,7 @@ class TestListFilterMixin(ApiTestCase):
         assert_equal(parsed_field ['op'], 'eq')
 
 
-class TestODMOrderingFilter(ApiTestCase):
+class TestOSFOrderingFilter(ApiTestCase):
     class query:
         title = ' '
         def __init__(self, title):

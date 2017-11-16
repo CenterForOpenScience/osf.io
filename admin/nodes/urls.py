@@ -1,6 +1,7 @@
 from django.conf.urls import url
 from admin.nodes import views
 
+app_name = 'admin'
 
 urlpatterns = [
     url(r'^$', views.NodeFormView.as_view(),

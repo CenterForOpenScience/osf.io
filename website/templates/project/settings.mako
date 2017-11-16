@@ -1,4 +1,5 @@
 <%inherit file="project/project_base.mako"/>
+<%include file="project/nodes_delete.mako"/>
 <%def name="title()">${node['title']} Settings</%def>
 
 <div class="page-header visible-xs">
@@ -32,10 +33,6 @@
                             <li><a href="#configureCommentingAnchor">Commenting</a></li>
                         % endif
 
-                        % if enable_institutions:
-                            <li><a href="#configureInstitutionAnchor">Project Affiliation / Branding</a></li>
-                        % endif
-
                         <li><a href="#configureNotificationsAnchor">Email Notifications</a></li>
 
                         <li><a href="#redirectLink">Redirect Link</a></li>
@@ -48,6 +45,10 @@
                             <li><a href="#withdrawRegistrationAnchor">Withdraw Public Registration</a></li>
                         % endif
 
+                    % endif
+
+                    % if enable_institutions:
+                        <li><a href="#configureInstitutionAnchor">Project Affiliation / Branding</a></li>
                     % endif
 
                 </ul>
@@ -96,12 +97,7 @@
                         </div>
                     % if 'admin' in user['permissions']:
                         <hr />
-                            <div class="help-block">
-                                A project cannot be deleted if it has any components within it.
-                                To delete a parent project, you must first delete all child components
-                                by visiting their settings pages.
-                            </div>
-                            <button id="deleteNode" class="btn btn-danger btn-delete-node">Delete ${node['node_type']}</button>
+                            <button id="deleteNode" class="btn btn-danger btn-delete-node" data-toggle="modal" data-target="#nodesDelete">Delete ${node['node_type']}</button>
                     % endif
                     </div>
                 </div>
@@ -223,7 +219,7 @@
                     %if wiki:
                         <form id="selectWikiForm">
                             <div>
-                                <label>
+                                <label class="break-word">
                                     <input
                                             type="checkbox"
                                             name="${wiki.short_name}"
@@ -313,75 +309,6 @@
                 %endif
             % endif  ## End Configure Commenting
 
-        % if not node['is_registration']:
-                % if enable_institutions:
-                    <div class="panel panel-default scripted" id="institutionSettings">
-                    <span id="configureInstitutionAnchor" class="anchor"></span>
-                    <div class="panel-heading clearfix">
-                        <h3 class="panel-title">Project Affiliation / Branding</h3>
-                    </div>
-                    <div class="panel-body">
-                        <div class="help-block">
-                            % if 'write' not in user['permissions']:
-                                <p class="text-muted">Contributors with read-only permissions to this project cannot add or remove institutional affiliations.</p>
-                            % endif:
-                            <!-- ko if: affiliatedInstitutions().length == 0 -->
-                            Projects can be affiliated with institutions that have created OSF for Institutions accounts.
-                            This allows:
-                            <ul>
-                               <li>institutional logos to be displayed on public projects</li>
-                               <li>public projects to be discoverable on specific institutional landing pages</li>
-                               <li>single sign-on to the OSF with institutional credentials</li>
-                               <li><a href="http://help.osf.io/m/os4i">FAQ</a></li>
-                            </ul>
-                            <!-- /ko -->
-                        </div>
-                        <!-- ko if: affiliatedInstitutions().length > 0 -->
-                        <label>Affiliated Institutions: </label>
-                        <!-- /ko -->
-                        <table class="table">
-                            <tbody>
-                                <!-- ko foreach: {data: affiliatedInstitutions, as: 'item'} -->
-                                <tr>
-                                    <td><img class="img-circle" width="50px" height="50px" data-bind="attr: {src: item.logo_path}"></td>
-                                    <td><span data-bind="text: item.name"></span></td>
-                                    <td>
-                                        % if 'admin' in user['permissions']:
-                                            <button data-bind="disable: $parent.loading(), click: $parent.clearInst" class="pull-right btn btn-danger">Remove</button>
-                                        % elif 'write' in user['permissions']:
-                                            <!-- ko if: $parent.userInstitutionsIds.indexOf(item.id) !== -1 -->
-                                               <button data-bind="disable: $parent.loading(), click: $parent.clearInst" class="pull-right btn btn-danger">Remove</button>
-                                            <!-- /ko -->
-                                        % endif
-                                    </td>
-                                </tr>
-                                <!-- /ko -->
-                            </tbody>
-                        </table>
-                            </br>
-                        <!-- ko if: availableInstitutions().length > 0 -->
-                        <label>Available Institutions: </label>
-                        <table class="table">
-                            <tbody>
-                                <!-- ko foreach: {data: availableInstitutions, as: 'item'} -->
-                                <tr>
-                                    <td><img class="img-circle" width="50px" height="50px" data-bind="attr: {src: item.logo_path}"></td>
-                                    <td><span data-bind="text: item.name"></span></td>
-                                    % if 'write' in user['permissions']:
-                                        <td><button
-                                                data-bind="disable: $parent.loading(),
-                                                click: $parent.submitInst"
-                                                class="pull-right btn btn-success">Add</button></td>
-                                    % endif
-                                </tr>
-                                <!-- /ko -->
-                            </tbody>
-                        </table>
-                        <!-- /ko -->
-                    </div>
-                </div>
-                % endif
-        % endif
         % if user['has_read_permissions']:  ## Begin Configure Email Notifications
 
             % if not node['is_registration']:
@@ -530,6 +457,74 @@
             % endif
 
         % endif  ## End Retract Registration
+
+        % if enable_institutions:
+             <div class="panel panel-default scripted" id="institutionSettings">
+                 <span id="configureInstitutionAnchor" class="anchor"></span>
+                 <div class="panel-heading clearfix">
+                     <h3 class="panel-title">Project Affiliation / Branding</h3>
+                 </div>
+                 <div class="panel-body">
+                     <div class="help-block">
+                         % if 'write' not in user['permissions']:
+                             <p class="text-muted">Contributors with read-only permissions to this project cannot add or remove institutional affiliations.</p>
+                         % endif:
+                         <!-- ko if: affiliatedInstitutions().length == 0 -->
+                         Projects can be affiliated with institutions that have created OSF for Institutions accounts.
+                         This allows:
+                         <ul>
+                            <li>institutional logos to be displayed on public projects</li>
+                            <li>public projects to be discoverable on specific institutional landing pages</li>
+                            <li>single sign-on to the OSF with institutional credentials</li>
+                            <li><a href="http://help.osf.io/m/os4i">FAQ</a></li>
+                         </ul>
+                         <!-- /ko -->
+                     </div>
+                     <!-- ko if: affiliatedInstitutions().length > 0 -->
+                     <label>Affiliated Institutions: </label>
+                     <!-- /ko -->
+                     <table class="table">
+                         <tbody>
+                             <!-- ko foreach: {data: affiliatedInstitutions, as: 'item'} -->
+                             <tr>
+                                 <td><img class="img-circle" width="50px" height="50px" data-bind="attr: {src: item.logo_path}"></td>
+                                 <td><span data-bind="text: item.name"></span></td>
+                                 <td>
+                                     % if 'admin' in user['permissions']:
+                                         <button data-bind="disable: $parent.loading(), click: $parent.clearInst" class="pull-right btn btn-danger">Remove</button>
+                                     % elif 'write' in user['permissions']:
+                                         <!-- ko if: $parent.userInstitutionsIds.indexOf(item.id) !== -1 -->
+                                            <button data-bind="disable: $parent.loading(), click: $parent.clearInst" class="pull-right btn btn-danger">Remove</button>
+                                         <!-- /ko -->
+                                     % endif
+                                 </td>
+                             </tr>
+                             <!-- /ko -->
+                         </tbody>
+                     </table>
+                         </br>
+                     <!-- ko if: availableInstitutions().length > 0 -->
+                     <label>Available Institutions: </label>
+                     <table class="table">
+                         <tbody>
+                             <!-- ko foreach: {data: availableInstitutions, as: 'item'} -->
+                             <tr>
+                                 <td><img class="img-circle" width="50px" height="50px" data-bind="attr: {src: item.logo_path}"></td>
+                                 <td><span data-bind="text: item.name"></span></td>
+                                 % if 'write' in user['permissions']:
+                                     <td><button
+                                             data-bind="disable: $parent.loading(),
+                                             click: $parent.submitInst"
+                                             class="pull-right btn btn-success">Add</button></td>
+                                 % endif
+                             </tr>
+                             <!-- /ko -->
+                         </tbody>
+                     </table>
+                     <!-- /ko -->
+                 </div>
+            </div>
+        % endif
 
     </div>
     <!-- End right column -->

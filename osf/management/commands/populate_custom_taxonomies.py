@@ -12,7 +12,7 @@ from website.preprints.tasks import on_preprint_updated
 
 logger = logging.getLogger(__name__)
 
-BEPRESS_PROVIDER = PreprintProvider.objects.filter(_id='osf').first()
+BEPRESS_PROVIDER = None
 
 def validate_input(custom_provider, data, copy=False, add_missing=False):
     logger.info('Validating data')
@@ -151,6 +151,10 @@ def map_preprints_to_custom_subjects(custom_provider, merge_dict, dry_run=False)
         logger.info('Successfully migrated preprint {}.\n\tOld hierarchy:{}\n\tNew hierarchy:{}'.format(preprint.id, old_hier, new_hier))
 
 def migrate(provider=None, share_title=None, data=None, dry_run=False, copy=False, add_missing=False):
+    # This function may be run outside of this command (e.g. in the admin app) so we
+    # need to make sure that BEPRESS_PROVIDER is set
+    global BEPRESS_PROVIDER
+    BEPRESS_PROVIDER = PreprintProvider.objects.filter(_id='osf').first()
     custom_provider = PreprintProvider.objects.filter(_id=provider).first()
     assert custom_provider, 'Unable to find specified provider: {}'.format(provider)
     assert custom_provider.id != BEPRESS_PROVIDER.id, 'Cannot add custom mapping to BePress provider'
@@ -211,6 +215,8 @@ class Command(BaseCommand):
         )
 
     def handle(self, *args, **options):
+        global BEPRESS_PROVIDER
+        BEPRESS_PROVIDER = PreprintProvider.objects.filter(_id='osf').first()
         dry_run = options.get('dry_run')
         provider = options['provider']
         data = json.loads(options['data'] or '{}')

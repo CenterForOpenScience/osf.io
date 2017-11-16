@@ -16,12 +16,15 @@ from website.preprints.tasks import on_preprint_updated, get_and_set_preprint_id
 from website.project.licenses import set_license
 from website.util import api_v2_url
 from website.util.permissions import ADMIN
-from website import settings
+from website import settings, mails
+
+from reviews.models.mixins import ReviewableMixin
+from reviews.workflow import States
 
 from osf.models.base import BaseModel, GuidMixin
 from osf.models.identifiers import IdentifierMixin, Identifier
 
-class PreprintService(DirtyFieldsMixin, GuidMixin, IdentifierMixin, BaseModel):
+class PreprintService(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin, BaseModel):
     date_created = NonNaiveDateTimeField(auto_now_add=True)
     date_modified = NonNaiveDateTimeField(auto_now=True)
     provider = models.ForeignKey('osf.PreprintProvider',
@@ -33,6 +36,7 @@ class PreprintService(DirtyFieldsMixin, GuidMixin, IdentifierMixin, BaseModel):
                              null=True, blank=True, db_index=True)
     is_published = models.BooleanField(default=False, db_index=True)
     date_published = NonNaiveDateTimeField(null=True, blank=True)
+    original_publication_date = NonNaiveDateTimeField(null=True, blank=True)
     license = models.ForeignKey('osf.NodeLicenseRecord',
                                 on_delete=models.SET_NULL, null=True, blank=True)
 
@@ -47,7 +51,11 @@ class PreprintService(DirtyFieldsMixin, GuidMixin, IdentifierMixin, BaseModel):
         )
 
     def __unicode__(self):
-        return '{} preprint (guid={}) of {}'.format('published' if self.is_published else 'unpublished', self._id, self.node.__unicode__())
+        return '{} preprint (guid={}) of {}'.format('published' if self.is_published else 'unpublished', self._id, self.node.__unicode__() if self.node else None)
+
+    @property
+    def verified_publishable(self):
+        return self.is_published and self.node.is_preprint and not self.node.is_deleted
 
     @property
     def primary_file(self):
@@ -176,6 +184,10 @@ class PreprintService(DirtyFieldsMixin, GuidMixin, IdentifierMixin, BaseModel):
             self.date_published = timezone.now()
             self.node._has_abandoned_preprint = False
 
+            # In case this provider is ever set up to use a reviews workflow, put this preprint in a sensible state
+            self.reviews_state = States.ACCEPTED.value
+            self.date_last_transitioned = self.date_published
+
             self.node.add_log(
                 action=NodeLog.PREPRINT_INITIATED,
                 params={
@@ -194,6 +206,8 @@ class PreprintService(DirtyFieldsMixin, GuidMixin, IdentifierMixin, BaseModel):
 
             # This should be called after all fields for EZID metadta have been set
             enqueue_postcommit_task(get_and_set_preprint_identifiers, (), {'preprint': self}, celery=True)
+
+            self._send_preprint_confirmation(auth)
 
         if save:
             self.node.save()
@@ -232,3 +246,18 @@ class PreprintService(DirtyFieldsMixin, GuidMixin, IdentifierMixin, BaseModel):
         if (not first_save and 'is_published' in saved_fields) or self.is_published:
             enqueue_postcommit_task(on_preprint_updated, (self._id,), {'old_subjects': old_subjects}, celery=True)
         return ret
+
+    def _send_preprint_confirmation(self, auth):
+        # Send creator confirmation email
+        if self.provider._id == 'osf':
+            email_template = getattr(mails, 'PREPRINT_CONFIRMATION_DEFAULT')
+        else:
+            email_template = getattr(mails, 'PREPRINT_CONFIRMATION_BRANDED')(self.provider)
+
+        mails.send_mail(
+            auth.user.username,
+            email_template,
+            user=auth.user,
+            node=self.node,
+            preprint=self
+        )
