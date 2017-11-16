@@ -56,6 +56,7 @@ from website.mails import mails
 from website.project import signals as project_signals
 from website.project import tasks as node_tasks
 from website.project.model import NodeUpdateError
+from website.preprints.tasks import update_ezid_metadata_on_change
 
 from website.util import (api_url_for, api_v2_url, get_headers_from_request,
                           sanitize, web_url_for)
@@ -1505,6 +1506,11 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
                 message = addon.after_set_privacy(self, permissions)
                 if message:
                     status.push_status_message(message, kind='info', trust=False)
+
+        # Update existing identifiers
+        if self.get_identifier('doi'):
+            doi_status = 'unavailable' if permissions == 'private' else 'public'
+            enqueue_task(update_ezid_metadata_on_change.s(self, status=doi_status))
 
         if log:
             action = NodeLog.MADE_PUBLIC if permissions == 'public' else NodeLog.MADE_PRIVATE
