@@ -1125,34 +1125,34 @@ class TestContributorProperties:
 
     def test_admin_contributors(self, user):
         project = ProjectFactory(creator=user)
-        assert list(project.admin_contributors) == []
+        assert list(project.admin_contributors) == [user]
         child1 = ProjectFactory(parent=project)
         child2 = ProjectFactory(parent=child1)
-        assert list(child1.admin_contributors) == [project.creator]
+        assert list(child1.admin_contributors) == sorted([project.creator, child1.creator], key=lambda user: user.family_name)
         assert (
             list(child2.admin_contributors) ==
-            sorted([project.creator, child1.creator], key=lambda user: user.family_name)
+            sorted([project.creator, child1.creator, child2.creator], key=lambda user: user.family_name)
         )
         admin = UserFactory()
         project.add_contributor(admin, auth=Auth(project.creator), permissions=['read', 'write', 'admin'])
         project.set_permissions(project.creator, ['read', 'write'])
         project.save()
-        assert list(child1.admin_contributors) == [admin]
-        assert list(child2.admin_contributors) == sorted([child1.creator, admin], key=lambda user: user.family_name)
+        assert list(child1.admin_contributors) == sorted([child1.creator, admin], key=lambda user: user.family_name)
+        assert list(child2.admin_contributors) == sorted([child2.creator, child1.creator, admin], key=lambda user: user.family_name)
 
     def test_admin_contributor_ids(self, user):
         project = ProjectFactory(creator=user)
-        assert project.admin_contributor_ids == set()
+        assert project.admin_contributor_ids == {user._id}
         child1 = ProjectFactory(parent=project)
         child2 = ProjectFactory(parent=child1)
-        assert child1.admin_contributor_ids == {project.creator._id}
-        assert child2.admin_contributor_ids == {project.creator._id, child1.creator._id}
+        assert child1.admin_contributor_ids == {project.creator._id, child1.creator._id}
+        assert child2.admin_contributor_ids == {project.creator._id, child1.creator._id, child2.creator._id}
         admin = UserFactory()
         project.add_contributor(admin, auth=Auth(project.creator), permissions=['read', 'write', 'admin'])
         project.set_permissions(project.creator, ['read', 'write'])
         project.save()
-        assert child1.admin_contributor_ids == {admin._id}
-        assert child2.admin_contributor_ids == {child1.creator._id, admin._id}
+        assert child1.admin_contributor_ids == {child1.creator._id, admin._id}
+        assert child2.admin_contributor_ids == {child2.creator._id, child1.creator._id, admin._id}
 
 
 class TestContributorAddedSignal:
