@@ -218,13 +218,13 @@ public_scopes = {
     'osf.users.profile_read': scope(parts_=frozenset(ComposedScopes.USERS_READ),
                                 description='Read your profile data',
                                 is_public=True),
+    'osf.users.email_read': scope(parts_=frozenset(ComposedScopes.USER_EMAIL_READ),
+                                        description='Read your primary email address.',
+                                        is_public=True),
 }
 
 if settings.DEV_MODE:
     public_scopes.update({
-        'osf.users.email_read': scope(parts_=frozenset(ComposedScopes.USER_EMAIL_READ),
-                                          description='Read your primary email address.',
-                                          is_public=True),
         'osf.users.profile_write': scope(parts_=frozenset(ComposedScopes.USERS_WRITE),
                                      description='Read and edit your profile data',
                                      is_public=True),

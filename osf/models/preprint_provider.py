@@ -58,7 +58,8 @@ class PreprintProvider(ObjectIDMixin, ReviewProviderMixin, BaseModel):
 
     subjects_acceptable = DateTimeAwareJSONField(blank=True, default=list)
     licenses_acceptable = models.ManyToManyField(NodeLicense, blank=True, related_name='licenses_acceptable')
-    default_license = models.ForeignKey(NodeLicense, blank=True, related_name='default_license', null=True)
+    default_license = models.ForeignKey(NodeLicense, related_name='default_license',
+                                        null=True, blank=True, on_delete=models.CASCADE)
 
     class Meta:
         permissions = tuple(reviews_permissions.PERMISSIONS.items()) + (

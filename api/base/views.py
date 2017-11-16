@@ -1,6 +1,6 @@
 from collections import defaultdict
 
-from bulk_update.helper import bulk_update
+from django_bulk_update.helper import bulk_update
 from django.conf import settings as django_settings
 from django.db import transaction
 from django.http import JsonResponse

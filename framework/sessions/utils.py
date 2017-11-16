@@ -1,5 +1,4 @@
 # -*- coding: utf-8 -*-
-from modularodm import Q
 
 
 def remove_sessions_for_user(user):
@@ -11,7 +10,8 @@ def remove_sessions_for_user(user):
     """
     from osf.models import Session
 
-    Session.remove(Q('data.auth_user_id', 'eq', user._id))
+    if user._id:
+        Session.objects.filter(data__auth_user_id=user._id).delete()
 
 
 def remove_session(session):

@@ -120,11 +120,6 @@
                                         </div>
                                     </p>
                                 </div>
-                                <div data-bind="if: parentPagination">
-                                    <ul class="pagination pagination-sm" data-bind="foreach: paginators">
-                                        <li data-bind="css: style"><a href="#" data-bind="click: handler, text: text"></a></li>
-                                    </ul>
-                                </div>
                                 <div data-bind="if: showLoading">
                                     <p class="text-muted">Searching contributors...</p>
                                 </div>
@@ -216,7 +211,6 @@
                         </div>
 
                     </div>
-
                 </div>
                 <!-- Component selection page -->
                 <div data-bind="visible:page()=='which'">

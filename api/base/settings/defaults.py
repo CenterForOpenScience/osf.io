@@ -84,6 +84,7 @@ INSTALLED_APPS = (
     'django.contrib.admin',
 
     # 3rd party
+    'django_celery_beat',
     'rest_framework',
     'corsheaders',
     'raven.contrib.django.raven_compat',
@@ -156,7 +157,7 @@ REST_FRAMEWORK = {
         '2.5',
         '2.6',
     ),
-    'DEFAULT_FILTER_BACKENDS': ('api.base.filters.ODMOrderingFilter',),
+    'DEFAULT_FILTER_BACKENDS': ('api.base.filters.OSFOrderingFilter',),
     'DEFAULT_PAGINATION_CLASS': 'api.base.pagination.JSONAPIPagination',
     'ORDERING_PARAM': 'sort',
     'DEFAULT_AUTHENTICATION_CLASSES': (
@@ -271,3 +272,5 @@ SELECT_FOR_UPDATE_ENABLED = True
 
 # Disable anonymous user permissions in django-guardian
 ANONYMOUS_USER_NAME = None
+
+CELERY_BEAT_SCHEDULER = 'django_celery_beat.schedulers:DatabaseScheduler'
