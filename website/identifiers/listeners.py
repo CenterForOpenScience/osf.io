@@ -8,3 +8,6 @@ def update_status_on_delete(node):
 
     for preprint in node.preprints.all():
         enqueue_task(update_ezid_metadata_on_change.s(preprint, status='unavailable'))
+
+    if node.get_identifier('doi'):
+        enqueue_task(update_ezid_metadata_on_change.s(node, status='unavailable'))
