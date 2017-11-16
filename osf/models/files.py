@@ -81,7 +81,7 @@ class BaseFileNode(TypedModel, CommentableMixin, OptionalGuidMixin, Taggable, Ob
 
     # The User that has this file "checked out"
     # Should only be used for OsfStorage
-    checkout = models.ForeignKey('osf.OSFUser', blank=True, null=True)
+    checkout = models.ForeignKey('osf.OSFUser', blank=True, null=True, on_delete=models.CASCADE)
     # The last time the touch method was called on this FileNode
     last_touched = NonNaiveDateTimeField(null=True, blank=True)
     # A list of dictionaries sorted by the 'modified' key
@@ -91,9 +91,9 @@ class BaseFileNode(TypedModel, CommentableMixin, OptionalGuidMixin, Taggable, Ob
     # A concrete version of a FileNode, must have an identifier
     versions = models.ManyToManyField('FileVersion')
 
-    node = models.ForeignKey('osf.AbstractNode', blank=True, null=True, related_name='files')
-    parent = models.ForeignKey('self', blank=True, null=True, default=None, related_name='_children')
-    copied_from = models.ForeignKey('self', blank=True, null=True, default=None, related_name='copy_of')
+    node = models.ForeignKey('osf.AbstractNode', blank=True, null=True, related_name='files', on_delete=models.CASCADE)
+    parent = models.ForeignKey('self', blank=True, null=True, default=None, related_name='_children', on_delete=models.CASCADE)
+    copied_from = models.ForeignKey('self', blank=True, null=True, default=None, related_name='copy_of', on_delete=models.CASCADE)
 
     provider = models.CharField(max_length=25, blank=False, null=False, db_index=True)
 
@@ -103,7 +103,7 @@ class BaseFileNode(TypedModel, CommentableMixin, OptionalGuidMixin, Taggable, Ob
 
     is_deleted = False
     deleted_on = NonNaiveDateTimeField(blank=True, null=True)
-    deleted_by = models.ForeignKey('osf.OSFUser', related_name='files_deleted_by', null=True, blank=True)
+    deleted_by = models.ForeignKey('osf.OSFUser', related_name='files_deleted_by', null=True, blank=True, on_delete=models.CASCADE)
 
     objects = BaseFileNodeManager()
     active = ActiveFileNodeManager()
@@ -419,7 +419,7 @@ class File(models.Model):
     def kind(self):
         return 'file'
 
-    def update(self, revision, data, user=None):
+    def update(self, revision, data, user=None, save=True):
         """Using revision and data update all data pretaining to self
         :param str or None revision: The revision that data points to
         :param dict data: Metadata recieved from waterbutler
@@ -456,7 +456,8 @@ class File(models.Model):
         # Finally update last touched
         self.last_touched = timezone.now()
 
-        self.save()
+        if save:
+            self.save()
         return version
 
     def serialize(self):
@@ -616,7 +617,7 @@ class FileVersion(ObjectIDMixin, BaseModel):
     about where the file is located, hashes and datetimes
     """
 
-    creator = models.ForeignKey('OSFUser', null=True, blank=True)
+    creator = models.ForeignKey('OSFUser', null=True, blank=True, on_delete=models.CASCADE)
 
     identifier = models.CharField(max_length=100, blank=False, null=False)  # max length on staging was 51
 

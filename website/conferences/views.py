@@ -4,12 +4,13 @@ import httplib
 import logging
 
 from django.db import transaction
-from bulk_update.helper import bulk_update
+from django_bulk_update.helper import bulk_update
 
 from addons.osfstorage.models import OsfStorageFile
 from framework.auth import get_or_create_user
 from framework.exceptions import HTTPError
 from framework.flask import redirect
+from framework import sentry
 from framework.transactions.handlers import no_auto_transaction
 from osf.models import AbstractNode, Node, Conference, Tag
 from website import settings
@@ -187,11 +188,14 @@ def conference_data(meeting):
         raise HTTPError(httplib.NOT_FOUND)
 
     nodes = AbstractNode.objects.filter(tags__id__in=Tag.objects.filter(name__iexact=meeting, system=False).values_list('id', flat=True), is_public=True, is_deleted=False)
-
-    return [
-        _render_conference_node(each, idx, conf)
-        for idx, each in enumerate(nodes)
-    ]
+    ret = []
+    for idx, each in enumerate(nodes):
+        # To handle OSF-8864 where projects with no users caused meetings to be unable to resolve
+        try:
+            ret.append(_render_conference_node(each, idx, conf))
+        except IndexError:
+            sentry.log_exception()
+    return ret
 
 
 def redirect_to_meetings(**kwargs):
@@ -258,7 +262,7 @@ def conference_submissions(**kwargs):
 
 def conference_view(**kwargs):
     meetings = []
-    for conf in Conference.find():
+    for conf in Conference.objects.all():
         if conf.num_submissions < settings.CONFERENCE_MIN_COUNT:
             continue
         if (hasattr(conf, 'is_meeting') and (conf.is_meeting is False)):

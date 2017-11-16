@@ -8,16 +8,17 @@ from api_tests import utils as test_utils
 from framework.auth.core import Auth
 from osf.models import PreprintService, NodeLicense
 from osf_tests.factories import (
-    PreprintFactory, 
-    AuthUserFactory, 
-    ProjectFactory, 
-    SubjectFactory, 
+    PreprintFactory,
+    AuthUserFactory,
+    ProjectFactory,
+    SubjectFactory,
     PreprintProviderFactory,
 )
 from rest_framework import exceptions
 from tests.base import fake, capture_signals
 from website.project.signals import contributor_added
 from website.identifiers.utils import build_ezid_metadata
+from reviews.workflow import States
 
 
 def build_preprint_update_payload(node_id, attributes=None, relationships=None):
@@ -68,6 +69,11 @@ class TestPreprintDetail:
 
     #   test contributors in preprint data
         assert data['relationships'].get('contributors', None)
+        assert data['relationships']['contributors'].get('data', None) == None
+
+    #   test node type and id in preprint data
+        assert data['relationships']['node']['data'].get('id', None) == preprint.node._id
+        assert data['relationships']['node']['data'].get('type', None) == 'nodes'
 
     #   test_preprint_node_deleted_detail_failure
         deleted_node = ProjectFactory(creator=user, is_deleted=True)
@@ -256,8 +262,29 @@ class TestPreprintUpdate:
         assert preprint.node.title == new_title
         assert mock_preprint_updated.called
 
-    @mock.patch('website.preprints.tasks.on_preprint_updated.s')
-    def test_update_contributors(self, mock_preprint_updated, app, user, preprint, url):
+    @mock.patch('website.preprints.tasks.update_ezid_metadata_on_change')
+    def test_update_tags(self, mock_update_ezid, app, user, preprint, url):
+        new_tags = ['hey', 'sup']
+
+        for tag in new_tags:
+            assert tag not in preprint.node.tags.all().values_list('name', flat=True)
+
+        update_tags_payload = build_preprint_update_payload(
+            preprint._id,
+            attributes={
+                'tags': new_tags
+            }
+        )
+        res = app.patch_json_api(url, update_tags_payload, auth=user.auth)
+
+        assert res.status_code == 200
+        preprint.node.reload()
+
+        assert sorted(list(preprint.node.tags.all().values_list('name', flat=True))) == new_tags
+        assert mock_update_ezid.called
+
+    @mock.patch('website.preprints.tasks.update_ezid_metadata_on_change')
+    def test_update_contributors(self, mock_update_ezid, app, user, preprint, url):
         new_user = AuthUserFactory()
         contributor_payload = {
             "data": {
@@ -284,7 +311,7 @@ class TestPreprintUpdate:
 
         assert res.status_code == 201
         assert new_user in preprint.node.contributors
-        assert mock_preprint_updated.called
+        assert mock_update_ezid.called
 
     def test_cannot_set_primary_file(self, app, user, preprint, url):
 
@@ -369,6 +396,7 @@ class TestPreprintUpdate:
         res = app.patch_json_api(url, payload, auth=user.auth)
         unpublished.reload()
         assert unpublished.is_published
+        assert mock_get_identifiers.called
 
     @mock.patch('website.preprints.tasks.get_and_set_preprint_identifiers.si')
     def test_update_published_makes_node_public(self, mock_get_identifiers, app, user):
@@ -519,6 +547,11 @@ class TestPreprintUpdateLicense:
         res = make_request(url, data, auth=admin_contrib.auth)
         assert res.status_code == 200
         preprint.reload()
+
+        res_data = res.json['data']
+        pp_license_id = preprint.license.node_license._id
+        assert res_data['relationships']['license']['data'].get('id', None) == pp_license_id
+        assert res_data['relationships']['license']['data'].get('type', None) == 'licenses'
 
         assert preprint.license.node_license == cc0_license
         assert preprint.license.year == None
@@ -795,7 +828,7 @@ class TestPreprintUpdateLicense:
 
 
 @pytest.mark.django_db
-class TestPreprintIsPublishedDetail:
+class TestPreprintDetailPermissions:
 
     @pytest.fixture()
     def admin(self):
@@ -816,6 +849,12 @@ class TestPreprintIsPublishedDetail:
         return public_project
 
     @pytest.fixture()
+    def private_project(self, admin, write_contrib):
+        public_project = ProjectFactory(creator=admin, is_public=False)
+        public_project.add_contributor(write_contrib, permissions=['read', 'write'], save=True)
+        return public_project
+
+    @pytest.fixture()
     def subject(self):
         return SubjectFactory()
 
@@ -829,26 +868,224 @@ class TestPreprintIsPublishedDetail:
 
     @pytest.fixture()
     def unpublished_preprint(self, admin, provider, subject, public_project):
-        return PreprintFactory(creator=admin, filename='toe_socks_and_sunrises.pdf', provider=provider, subjects=[[subject._id]], project=public_project, is_published=False)
+        return PreprintFactory(creator=admin, filename='toe_socks_and_sunrises.pdf', provider=provider, subjects=[[subject._id]], project=public_project, is_published=False, reviews_state='initial')
 
     @pytest.fixture()
-    def url(self, unpublished_preprint):
+    def private_preprint(self, admin, provider, subject, private_project):
+        return PreprintFactory(creator=admin, filename='toe_socks_and_sunrises.pdf', provider=provider, subjects=[[subject._id]], project=private_project, is_published=False, reviews_state='accepted')
+
+    @pytest.fixture()
+    def abandoned_private_preprint(self, admin, provider, subject, private_project):
+        return PreprintFactory(creator=admin, filename='toe_socks_and_sunrises.pdf', provider=provider, subjects=[[subject._id]], project=private_project, is_published=False, reviews_state='initial')
+
+    @pytest.fixture()
+    def abandoned_public_preprint(self, admin, provider, subject, public_project):
+        return PreprintFactory(creator=admin, filename='toe_socks_and_sunrises.pdf', provider=provider, subjects=[[subject._id]], project=public_project, is_published=False, reviews_state='initial')
+
+    @pytest.fixture()
+    def abandoned_private_url(self, abandoned_private_preprint):
+        return '/{}preprints/{}/'.format(API_BASE, abandoned_private_preprint._id)
+
+    @pytest.fixture()
+    def abandoned_public_url(self, abandoned_public_preprint):
+        return '/{}preprints/{}/'.format(API_BASE, abandoned_public_preprint._id)
+
+    @pytest.fixture()
+    def unpublished_url(self, unpublished_preprint):
         return '/{}preprints/{}/'.format(API_BASE, unpublished_preprint._id)
 
-    def test_preprint_is_published_detail(self, app, admin, write_contrib, non_contrib, unpublished_preprint, url):
+    @pytest.fixture()
+    def private_url(self, private_preprint):
+        return '/{}preprints/{}/'.format(API_BASE, private_preprint._id)
+
+    def test_preprint_is_published_detail(self, app, admin, write_contrib, non_contrib, unpublished_preprint, unpublished_url):
 
     #   test_unpublished_visible_to_admins
-        res = app.get(url, auth=admin.auth)
+        res = app.get(unpublished_url, auth=admin.auth)
         assert res.json['data']['id'] == unpublished_preprint._id
 
     #   test_unpublished_invisible_to_write_contribs
-        res = app.get(url, auth=write_contrib.auth, expect_errors=True)
+        res = app.get(unpublished_url, auth=write_contrib.auth, expect_errors=True)
         assert res.status_code == 403
 
     #   test_unpublished_invisible_to_non_contribs
-        res = app.get(url, auth=non_contrib.auth, expect_errors=True)
+        res = app.get(unpublished_url, auth=non_contrib.auth, expect_errors=True)
         assert res.status_code == 403
 
     #   test_unpublished_invisible_to_public
-        res = app.get(url, expect_errors=True)
+        res = app.get(unpublished_url, expect_errors=True)
+        assert res.status_code == 401
+
+    def test_preprint_is_public_detail(self, app, admin, write_contrib, non_contrib, private_preprint, private_url):
+
+    #   test_private_visible_to_admins
+        res = app.get(private_url, auth=admin.auth)
+        assert res.json['data']['id'] == private_preprint._id
+
+    #   test_private_visible_to_write_contribs
+        res = app.get(private_url, auth=write_contrib.auth)
+        assert res.status_code == 200
+
+    #   test_private_invisible_to_non_contribs
+        res = app.get(private_url, auth=non_contrib.auth, expect_errors=True)
+        assert res.status_code == 403
+
+    #   test_private_invisible_to_public
+        res = app.get(private_url, expect_errors=True)
+        assert res.status_code == 401
+
+    def test_preprint_is_abandoned_detail(self, app, admin, write_contrib, non_contrib, abandoned_private_preprint, abandoned_public_preprint, abandoned_private_url, abandoned_public_url):
+
+    #   test_abandoned_private_visible_to_admins
+        res = app.get(abandoned_private_url, auth=admin.auth)
+        assert res.json['data']['id'] == abandoned_private_preprint._id
+
+    #   test_abandoned_private_invisible_to_write_contribs
+        res = app.get(abandoned_private_url, auth=write_contrib.auth, expect_errors=True)
+        assert res.status_code == 403
+
+    #   test_abandoned_private_invisible_to_non_contribs
+        res = app.get(abandoned_private_url, auth=non_contrib.auth, expect_errors=True)
+        assert res.status_code == 403
+
+    #   test_abandoned_private_invisible_to_public
+        res = app.get(abandoned_private_url, expect_errors=True)
+        assert res.status_code == 401
+
+    #   test_abandoned_public_visible_to_admins
+        res = app.get(abandoned_public_url, auth=admin.auth)
+        assert res.json['data']['id'] == abandoned_public_preprint._id
+
+    #   test_abandoned_public_invisible_to_write_contribs
+        res = app.get(abandoned_public_url, auth=write_contrib.auth, expect_errors=True)
+        assert res.status_code == 403
+
+    #   test_abandoned_public_invisible_to_non_contribs
+        res = app.get(abandoned_public_url, auth=non_contrib.auth, expect_errors=True)
+        assert res.status_code == 403
+
+    #   test_abandoned_public_invisible_to_public
+        res = app.get(abandoned_public_url, expect_errors=True)
+        assert res.status_code == 401
+
+
+@pytest.mark.django_db
+class TestReviewsPreprintDetailPermissions:
+
+    @pytest.fixture()
+    def admin(self):
+        return AuthUserFactory()
+
+    @pytest.fixture()
+    def write_contrib(self):
+        return AuthUserFactory()
+
+    @pytest.fixture()
+    def non_contrib(self):
+        return AuthUserFactory()
+
+    @pytest.fixture()
+    def public_project(self, admin, write_contrib):
+        public_project = ProjectFactory(creator=admin, is_public=True)
+        public_project.add_contributor(write_contrib, permissions=['read', 'write'], save=True)
+        return public_project
+
+    @pytest.fixture()
+    def private_project(self, admin, write_contrib):
+        public_project = ProjectFactory(creator=admin, is_public=False)
+        public_project.add_contributor(write_contrib, permissions=['read', 'write'], save=True)
+        return public_project
+
+    @pytest.fixture()
+    def subject(self):
+        return SubjectFactory()
+
+    @pytest.fixture()
+    def reviews_provider(self):
+        return PreprintProviderFactory(reviews_workflow='pre-moderation')
+
+    @pytest.fixture()
+    def file_one_public_project(self, admin, public_project):
+        return test_utils.create_test_file(public_project, admin, 'toe_socks_and_sunrises.pdf')
+
+    @pytest.fixture()
+    def file_one_private_project(self, admin, private_project):
+        return test_utils.create_test_file(private_project, admin, 'toe_socks_and_sunsets.pdf')
+
+    @pytest.fixture()
+    def unpublished_reviews_preprint(self, admin, reviews_provider, subject, public_project):
+        return PreprintFactory(creator=admin, filename='toe_socks_and_sunrises.pdf', provider=reviews_provider, subjects=[[subject._id]], project=public_project, is_published=False, reviews_state=States.PENDING.value)
+
+    @pytest.fixture()
+    def unpublished_reviews_initial_preprint(self, admin, reviews_provider, subject, public_project):
+        return PreprintFactory(creator=admin, filename='toe_socks_and_sunrises.pdf', provider=reviews_provider, subjects=[[subject._id]], project=public_project, is_published=False, reviews_state=States.INITIAL.value)
+
+    @pytest.fixture()
+    def private_reviews_preprint(self, admin, reviews_provider, subject, private_project):
+        return PreprintFactory(creator=admin, filename='toe_socks_and_sunsets.pdf', provider=reviews_provider, subjects=[[subject._id]], project=private_project, is_published=False, reviews_state=States.PENDING.value)
+
+    @pytest.fixture()
+    def unpublished_url(self, unpublished_reviews_preprint):
+        return '/{}preprints/{}/'.format(API_BASE, unpublished_reviews_preprint._id)
+
+    @pytest.fixture()
+    def unpublished_initial_url(self, unpublished_reviews_initial_preprint):
+        return '/{}preprints/{}/'.format(API_BASE, unpublished_reviews_initial_preprint._id)
+
+    @pytest.fixture()
+    def private_url(self, private_reviews_preprint):
+        return '/{}preprints/{}/'.format(API_BASE, private_reviews_preprint._id)
+
+    def test_reviews_preprint_is_published_detail(self, app, admin, write_contrib, non_contrib, unpublished_reviews_preprint, unpublished_url):
+
+    #   test_unpublished_visible_to_admins
+        res = app.get(unpublished_url, auth=admin.auth)
+        assert res.json['data']['id'] == unpublished_reviews_preprint._id
+
+    #   test_unpublished_visible_to_write_contribs
+        res = app.get(unpublished_url, auth=write_contrib.auth, expect_errors=True)
+        assert res.status_code == 200
+
+    #   test_unpublished_invisible_to_non_contribs
+        res = app.get(unpublished_url, auth=non_contrib.auth, expect_errors=True)
+        assert res.status_code == 403
+
+    #   test_unpublished_invisible_to_public
+        res = app.get(unpublished_url, expect_errors=True)
+        assert res.status_code == 401
+
+    def test_reviews_preprint_initial_detail(self, app, admin, write_contrib, non_contrib, unpublished_reviews_initial_preprint, unpublished_initial_url):
+
+    #   test_unpublished_visible_to_admins
+        res = app.get(unpublished_initial_url, auth=admin.auth)
+        assert res.json['data']['id'] == unpublished_reviews_initial_preprint._id
+
+    #   test_unpublished_invisible_to_write_contribs
+        res = app.get(unpublished_initial_url, auth=write_contrib.auth, expect_errors=True)
+        assert res.status_code == 403
+
+    #   test_unpublished_invisible_to_non_contribs
+        res = app.get(unpublished_initial_url, auth=non_contrib.auth, expect_errors=True)
+        assert res.status_code == 403
+
+    #   test_unpublished_invisible_to_public
+        res = app.get(unpublished_initial_url, expect_errors=True)
+        assert res.status_code == 401
+
+    def test_reviews_preprint_is_public_detail(self, app, admin, write_contrib, non_contrib, private_reviews_preprint, private_url):
+
+    #   test_private_visible_to_admins
+        res = app.get(private_url, auth=admin.auth)
+        assert res.json['data']['id'] == private_reviews_preprint._id
+
+    #   test_private_visible_to_write_contribs
+        res = app.get(private_url, auth=write_contrib.auth, expect_errors=True)
+        assert res.status_code == 200
+
+    #   test_private_invisible_to_non_contribs
+        res = app.get(private_url, auth=non_contrib.auth, expect_errors=True)
+        assert res.status_code == 403
+
+    #   test_private_invisible_to_public
+        res = app.get(private_url, expect_errors=True)
         assert res.status_code == 401

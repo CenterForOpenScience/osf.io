@@ -7,10 +7,12 @@ from dateutil.parser import parse as parse_date
 
 from api.base.settings.defaults import API_BASE
 from framework.auth.core import Auth
-from osf.models import NodeLog
+from osf.models import NodeLog, Registration, Sanction
 from osf_tests.factories import (
-    ProjectFactory,
     AuthUserFactory,
+    ProjectFactory,
+    RegistrationFactory,
+    EmbargoFactory,
 )
 from tests.base import assert_datetime_equal
 from website.util import disconnected_from_listeners
@@ -31,7 +33,7 @@ class TestNodeLogList:
         return AuthUserFactory()
 
     @pytest.fixture()
-    def creator(self):
+    def non_contrib(self):
         return AuthUserFactory()
 
     @pytest.fixture()
@@ -43,8 +45,16 @@ class TestNodeLogList:
         return ProjectFactory()
 
     @pytest.fixture()
-    def pointer(self):
-        return ProjectFactory()
+    def pointer(self, user):
+        return ProjectFactory(creator=user)
+
+    @pytest.fixture()
+    def pointer_registration(self, user):
+        return RegistrationFactory(creator=user, is_public=True)
+
+    @pytest.fixture()
+    def pointer_embargo(self, user):
+        return RegistrationFactory(creator=user, embargo=EmbargoFactory(user=user), is_public=False)
 
     @pytest.fixture()
     def private_project(self, user):
@@ -141,13 +151,129 @@ class TestNodeLogList:
         assert len(res.json['data']) == public_project.logs.count()
         assert res.json['data'][API_LATEST]['attributes']['action'] == 'addon_removed'
 
-    def test_add_pointer(self, app, user_auth, public_project, pointer, public_url):
+    def test_pointers(self, app, user, user_auth, contrib, public_project, pointer, public_url):
         public_project.add_pointer(pointer, auth=user_auth, save=True)
         assert public_project.logs.latest().action == 'pointer_created'
-        res = app.get(public_url, auth=user_auth)
+        res = app.get(public_url, auth=user.auth)
         assert res.status_code == 200
         assert len(res.json['data']) == public_project.logs.count()
         assert res.json['data'][API_LATEST]['attributes']['action'] == 'pointer_created'
+
+        # Confirm pointer contains correct data for creator
+        assert res.json['data'][API_LATEST]['attributes']['params']['pointer']['id'] == pointer._id
+        
+        res = app.get(public_url)
+        assert res.status_code == 200
+        assert res.json['data'][API_LATEST]['attributes']['params']['pointer'] is None
+
+        res = app.get(public_url, auth=contrib.auth)
+        assert res.status_code == 200
+        assert res.json['data'][API_LATEST]['attributes']['params']['pointer'] is None
+
+        # Make pointer public and check data
+        pointer.is_public = True
+        pointer.save()
+
+        res = app.get(public_url, auth=user.auth)
+        assert res.status_code == 200
+        assert res.json['data'][API_LATEST]['attributes']['params']['pointer']['id'] == pointer._id
+        
+        res = app.get(public_url)
+        assert res.status_code == 200
+        assert res.json['data'][API_LATEST]['attributes']['params']['pointer']['id'] == pointer._id
+
+        res = app.get(public_url, auth=contrib.auth)
+        assert res.status_code == 200
+        assert res.json['data'][API_LATEST]['attributes']['params']['pointer']['id'] == pointer._id
+
+        # Delete pointer and make sure no data shown
+        pointer.remove_node(Auth(user))
+        pointer.save()
+
+        res = app.get(public_url, auth=user.auth)
+        assert res.status_code == 200
+        assert res.json['data'][API_LATEST]['attributes']['params']['pointer'] is None
+        
+        res = app.get(public_url)
+        assert res.status_code == 200
+        assert res.json['data'][API_LATEST]['attributes']['params']['pointer'] is None
+
+        res = app.get(public_url, auth=contrib.auth)
+        assert res.status_code == 200
+        assert res.json['data'][API_LATEST]['attributes']['params']['pointer'] is None
+
+    def test_registration_pointers(self, app, user, user_auth, non_contrib, public_project, pointer_registration, public_url):
+        public_project.add_pointer(pointer_registration, auth=user_auth, save=True)
+        assert public_project.logs.latest().action == 'pointer_created'
+        res = app.get(public_url, auth=user.auth)
+        assert res.status_code == 200
+        assert len(res.json['data']) == public_project.logs.count()
+        assert res.json['data'][API_LATEST]['attributes']['action'] == 'pointer_created'
+        assert res.json['data'][API_LATEST]['relationships']['linked_registration']['data']['id'] == pointer_registration._id
+
+        # Confirm pointer contains correct data for various users
+        assert res.json['data'][API_LATEST]['attributes']['params']['pointer']['id'] == pointer_registration._id
+
+        res = app.get(public_url, auth=non_contrib.auth)
+        assert res.status_code == 200
+        assert res.json['data'][API_LATEST]['attributes']['params']['pointer']['id'] == pointer_registration._id
+        
+        res = app.get(public_url)
+        assert res.status_code == 200
+        assert res.json['data'][API_LATEST]['attributes']['params']['pointer']['id'] == pointer_registration._id
+
+        # Delete pointer and make sure no data shown
+        pointer_registration.remove_node(Auth(user))
+        pointer_registration.save()
+
+        res = app.get(public_url, auth=user.auth)
+        assert res.status_code == 200
+        assert res.json['data'][API_LATEST]['attributes']['params']['pointer'] is None
+        
+        res = app.get(public_url)
+        assert res.status_code == 200
+        assert res.json['data'][API_LATEST]['attributes']['params']['pointer'] is None
+
+        res = app.get(public_url, auth=non_contrib.auth)
+        assert res.status_code == 200
+        assert res.json['data'][API_LATEST]['attributes']['params']['pointer'] is None
+
+    def test_embargo_pointers(self, app, user, user_auth, non_contrib, public_project, pointer_embargo, public_url):
+        public_project.add_pointer(pointer_embargo, auth=user_auth, save=True)
+        assert public_project.logs.latest().action == 'pointer_created'
+        res = app.get(public_url, auth=user.auth)
+        assert res.status_code == 200
+        assert len(res.json['data']) == public_project.logs.count()
+        assert res.json['data'][API_LATEST]['attributes']['action'] == 'pointer_created'
+        assert res.json['data'][API_LATEST]['relationships']['linked_registration']['data']['id'] == pointer_embargo._id
+
+        # Confirm pointer contains correct data for various users
+        assert res.json['data'][API_LATEST]['attributes']['params']['pointer']['id'] == pointer_embargo._id
+
+        res = app.get(public_url, auth=non_contrib.auth)
+        assert res.status_code == 200
+        assert res.json['data'][API_LATEST]['attributes']['params']['pointer'] is None
+        
+        res = app.get(public_url)
+        assert res.status_code == 200
+        assert res.json['data'][API_LATEST]['attributes']['params']['pointer'] is None
+
+        # Delete pointer and make sure no data shown
+        pointer_embargo.remove_node(Auth(user))
+        pointer_embargo.save()
+
+        res = app.get(public_url, auth=user.auth)
+        assert res.status_code == 200
+        assert res.json['data'][API_LATEST]['attributes']['params']['pointer'] is None
+        
+        res = app.get(public_url)
+        assert res.status_code == 200
+        assert res.json['data'][API_LATEST]['attributes']['params']['pointer'] is None
+
+        res = app.get(public_url, auth=non_contrib.auth)
+        assert res.status_code == 200
+        assert res.json['data'][API_LATEST]['attributes']['params']['pointer'] is None
+
 
 @pytest.mark.django_db
 class TestNodeLogFiltering(TestNodeLogList):

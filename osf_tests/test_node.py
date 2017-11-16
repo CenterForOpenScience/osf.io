@@ -1,8 +1,6 @@
 import datetime
 
 from django.utils import timezone
-from django.core.exceptions import ValidationError
-from django.db.models import Q
 import mock
 import pytest
 import pytz
@@ -35,7 +33,7 @@ from osf.models.node import AbstractNodeQuerySet
 from osf.models.spam import SpamStatus
 from addons.wiki.models import NodeWikiPage
 from osf.exceptions import ValidationError, ValidationValueError
-from osf.utils.auth import Auth
+from framework.auth.core import Auth
 
 from osf_tests.factories import (
     AuthUserFactory,
@@ -47,6 +45,7 @@ from osf_tests.factories import (
     UnregUserFactory,
     RegistrationFactory,
     DraftRegistrationFactory,
+    PreprintFactory,
     NodeLicenseRecordFactory,
     PrivateLinkFactory,
     CollectionFactory,
@@ -484,8 +483,7 @@ class TestNodeMODMCompat:
         node_1 = ProjectFactory(is_public=False)
         node_2 = ProjectFactory(is_public=True)
 
-        results = Node.find()
-        assert len(results) == 2
+        assert Node.objects.all().count() == 2
 
         private = Node.objects.filter(is_public=False)
         assert node_1 in private
@@ -512,10 +510,10 @@ class TestNodeMODMCompat:
     def test_remove_one(self):
         node = ProjectFactory()
         node2 = ProjectFactory()
-        assert len(Node.find()) == 2  # sanity check
+        assert Node.objects.all().count() == 2  # sanity check
         Node.remove_one(node)
-        assert len(Node.find()) == 1
-        assert node2 in Node.find()
+        assert Node.objects.all().count() == 1
+        assert node2 in Node.objects.all()
 
     def test_querying_on_guid_id(self):
         node = NodeFactory()
@@ -848,6 +846,7 @@ class TestContributorMethods:
             contributor=new_user
         )
         node.save()
+        new_user.refresh_from_db()
         assert node._primary_key not in new_user.unclaimed_records
 
     def test_is_contributor(self, node):
@@ -1949,7 +1948,7 @@ class TestPrivateLinks:
         link.save()
         assert link in node.private_links.all()
 
-    @mock.patch('osf.utils.auth.Auth.private_link')
+    @mock.patch('framework.auth.core.Auth.private_link')
     def test_has_anonymous_link(self, mock_property, node):
         mock_property.return_value(mock.MagicMock())
         mock_property.anonymous = True
@@ -1963,7 +1962,7 @@ class TestPrivateLinks:
 
         assert has_anonymous_link(node, auth2) is True
 
-    @mock.patch('osf.utils.auth.Auth.private_link')
+    @mock.patch('framework.auth.core.Auth.private_link')
     def test_has_no_anonymous_link(self, mock_property, node):
         mock_property.return_value(mock.MagicMock())
         mock_property.anonymous = False
@@ -2012,7 +2011,7 @@ class TestPrivateLinks:
     def test_create_from_node(self):
         proj = ProjectFactory()
         user = proj.creator
-        schema = MetaSchema.find()[0]
+        schema = MetaSchema.objects.first()
         data = {'some': 'data'}
         draft = DraftRegistration.create_from_node(
             proj,
@@ -3535,18 +3534,39 @@ class TestTemplateNode:
             return str(language.TEMPLATED_FROM_PREFIX + x.title)
         return str(x.title)
 
-    def test_complex_template(self, auth, project, pointee, component, subproject):
+    def test_complex_template_without_pointee(self, auth, user):
+        """Create a templated node from a node with children"""
+
+        # create templated node
+        project1 = ProjectFactory(creator=user)
+        subproject1 = ProjectFactory(creator=user, parent=project1)
+
+        new = project1.use_as_template(auth=auth)
+
+        assert new.title == self._default_title(project1)
+        assert len(list(new.nodes)) == len(list(project1.nodes))
+        # check that all children were copied
+        assert (
+            [x.title for x in new.nodes] ==
+            [x.title for x in project1.nodes if x not in project1.linked_nodes]
+        )
+        # ensure all child nodes were actually copied, instead of moved
+        assert {x._primary_key for x in new.nodes}.isdisjoint(
+            {x._primary_key for x in project1.nodes}
+        )
+
+    def test_complex_template_with_pointee(self, auth, project, pointee, component, subproject):
         """Create a templated node from a node with children"""
 
         # create templated node
         new = project.use_as_template(auth=auth)
 
         assert new.title == self._default_title(project)
-        assert len(list(new.nodes)) == len(list(project.nodes))
+        assert len(list(new.nodes)) == len(list(project.nodes)) - 1
         # check that all children were copied
         assert (
             [x.title for x in new.nodes] ==
-            [x.title for x in project.nodes]
+            [x.title for x in project.nodes if x not in project.linked_nodes]
         )
         # ensure all child nodes were actually copied, instead of moved
         assert {x._primary_key for x in new.nodes}.isdisjoint(
@@ -3567,8 +3587,9 @@ class TestTemplateNode:
             auth=auth,
             changes=changes
         )
+        old_nodes = [x for x in project.nodes if x not in project.linked_nodes]
 
-        for old_node, new_node in zip(project.nodes, new.nodes):
+        for old_node, new_node in zip(old_nodes, new.nodes):
             if isinstance(old_node, Node):
                 assert (
                     changes[old_node._primary_key]['title'] ==
@@ -3643,7 +3664,7 @@ class TestTemplateNode:
         # check that all children were copied
         assert (
             set(x.template_node._id for x in new.nodes) ==
-            set(x._id for x in visible_nodes)
+            set(x._id for x in visible_nodes if x not in project.linked_nodes)
         )
         # ensure all child nodes were actually copied, instead of moved
         assert bool({x._primary_key for x in new.nodes}.isdisjoint(
@@ -3959,3 +3980,12 @@ class TestAdminImplicitRead(object):
 
         assert lvl1component in qs
         assert project not in qs
+
+
+class TestPreprintProperties:
+
+    def test_preprint_url_does_not_return_unpublished_preprint_url(self):
+        node = ProjectFactory(is_public=True)
+        published = PreprintFactory(project=node, is_published=True, filename='file1.txt')
+        PreprintFactory(project=node, is_published=False, filename='file2.txt')
+        assert node.preprint_url == published.url

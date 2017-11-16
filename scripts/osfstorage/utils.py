@@ -6,14 +6,6 @@ import glob
 import subprocess
 
 
-def ensure_osf_files(settings):
-    """Ensure `osffiles` is enabled for access to legacy models.
-    """
-    settings.COPY_GIT_REPOS = True
-    if 'osffiles' not in settings.ADDONS_REQUESTED:
-        settings.ADDONS_REQUESTED.append('osffiles')
-
-
 def create_parity_files(file_path, redundancy=5):
     """
     :raise: `ParchiveError` if creation of parity files fails

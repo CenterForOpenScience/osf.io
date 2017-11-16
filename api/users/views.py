@@ -1,6 +1,10 @@
 from django.apps import apps
 
+from guardian.shortcuts import get_objects_for_user
+
 from api.addons.views import AddonSettingsMixin
+from api.actions.views import get_actions_queryset
+from api.actions.serializers import ActionSerializer
 from api.base import permissions as base_permissions
 from api.base.exceptions import Conflict, UserGone
 from api.base.filters import ListFilterMixin, PreprintFilterMixin
@@ -8,9 +12,7 @@ from api.base.parsers import (JSONAPIRelationshipParser,
                               JSONAPIRelationshipParserForRegularJSON)
 from api.base.serializers import AddonAccountSerializer
 from api.base.utils import (default_node_list_queryset,
-                            default_node_permission_queryset,
-                            default_registration_list_queryset,
-                            default_registration_permission_queryset,
+                            default_node_list_permission_queryset,
                             get_object_or_error,
                             get_user_auth)
 from api.base.views import JSONAPIBaseView, WaterButlerMixin
@@ -29,11 +31,19 @@ from api.users.serializers import (UserAddonSettingsSerializer,
                                    ReadEmailUserDetailSerializer,)
 from django.contrib.auth.models import AnonymousUser
 from framework.auth.oauth_scopes import CoreScopes, normalize_scopes
-from django.db.models import Q
 from rest_framework import permissions as drf_permissions
 from rest_framework import generics
 from rest_framework.exceptions import NotAuthenticated, NotFound
-from osf.models import Contributor, ExternalAccount, QuickFilesNode, AbstractNode, PreprintService, OSFUser
+from osf.models import (Contributor,
+                        ExternalAccount,
+                        QuickFilesNode,
+                        AbstractNode,
+                        PreprintService,
+                        Node,
+                        Registration,
+                        OSFUser,
+                        PreprintProvider,
+                        Action,)
 
 
 class UserMixin(object):
@@ -528,10 +538,9 @@ class UserNodes(JSONAPIBaseView, generics.ListAPIView, UserMixin, NodesFilterMix
     # overrides NodesFilterMixin
     def get_default_queryset(self):
         user = self.get_user()
-        qs = default_node_list_queryset().filter(contributor__user__id=user.id)
         if user != self.request.user:
-            return qs & default_node_permission_queryset(self.request.user)
-        return qs
+            return default_node_list_permission_queryset(user=self.request.user, model_cls=Node).filter(contributor__user__id=user.id)
+        return default_node_list_queryset(model_cls=Node).filter(contributor__user__id=user.id)
 
     # overrides ListAPIView
     def get_queryset(self):
@@ -540,7 +549,6 @@ class UserNodes(JSONAPIBaseView, generics.ListAPIView, UserMixin, NodesFilterMix
             .select_related('node_license')
             .order_by('-date_modified', )
             .include('contributor__user__guids', 'root__guids', limit_includes=10)
-            .distinct('id', 'date_modified')
         )
 
 
@@ -600,19 +608,11 @@ class UserPreprints(JSONAPIBaseView, generics.ListAPIView, UserMixin, PreprintFi
         target_user = self.get_user(check_permissions=False)
 
         # Permissions on the list objects are handled by the query
-        default_qs = PreprintService.objects.filter(
-            node__isnull=False,
-            node__is_deleted=False,
-            node___contributors__guids___id=target_user._id
-        )
-        no_user_query = Q(is_published=True, node__is_public=True)
-        if auth_user:
-            admin_user_query = Q(node__contributor__user_id=auth_user.id, node__contributor__admin=True)
-            return default_qs.filter(no_user_query | admin_user_query)
-        return default_qs.filter(no_user_query)
+        default_qs = PreprintService.objects.filter(node___contributors__guids___id=target_user._id)
+        return self.preprints_queryset(default_qs, auth_user, allow_contribs=False)
 
     def get_queryset(self):
-        return self.get_queryset_from_request().distinct('id', 'date_created')
+        return self.get_queryset_from_request()
 
 
 class UserInstitutions(JSONAPIBaseView, generics.ListAPIView, UserMixin):
@@ -739,12 +739,12 @@ class UserRegistrations(JSONAPIBaseView, generics.ListAPIView, UserMixin, NodesF
     def get_default_queryset(self):
         user = self.get_user()
         current_user = self.request.user
-        qs = default_registration_list_queryset() & default_registration_permission_queryset(current_user)
+        qs = default_node_list_permission_queryset(user=current_user, model_cls=Registration)
         return qs.filter(contributor__user__id=user.id)
 
     # overrides ListAPIView
     def get_queryset(self):
-        return self.get_queryset_from_request().select_related('node_license').include('contributor__user__guids', 'root__guids', limit_includes=10).distinct('id', 'date_modified')
+        return self.get_queryset_from_request().select_related('node_license').include('contributor__user__guids', 'root__guids', limit_includes=10)
 
 
 class UserInstitutionsRelationship(JSONAPIBaseView, generics.RetrieveDestroyAPIView, UserMixin):
@@ -786,3 +786,68 @@ class UserInstitutionsRelationship(JSONAPIBaseView, generics.RetrieveDestroyAPIV
             if val['id'] in current_institutions:
                 user.remove_institution(val['id'])
         user.save()
+
+
+class UserActionList(JSONAPIBaseView, generics.ListAPIView, ListFilterMixin, UserMixin):
+    """List of actions viewable by this user *Read-only*
+
+    Actions represent state changes and/or comments on a reviewable object (e.g. a preprint)
+
+    ##Action Attributes
+
+        name                            type                                description
+        ====================================================================================
+        date_created                    iso8601 timestamp                   timestamp that the action was created
+        date_modified                   iso8601 timestamp                   timestamp that the action was last modified
+        from_state                      string                              state of the reviewable before this action was created
+        to_state                        string                              state of the reviewable after this action was created
+        comment                         string                              comment explaining the state change
+        trigger                         string                              name of the trigger for this action
+
+    ##Relationships
+
+    ###Target
+    Link to the object (e.g. preprint) this action acts on
+
+    ###Provider
+    Link to detail for the target object's provider
+
+    ###Creator
+    Link to the user that created this action
+
+    ##Links
+    - `self` -- Detail page for the current action
+
+    ##Query Params
+
+    + `page=<Int>` -- page number of results to view, default 1
+
+    + `filter[<fieldname>]=<Str>` -- fields and values to filter the search results on.
+
+    Actions may be filtered by their `id`, `from_state`, `to_state`, `date_created`, `date_modified`, `creator`, `provider`, `target`
+    """
+    # Permissions handled in get_default_django_query
+    permission_classes = (
+        drf_permissions.IsAuthenticated,
+        base_permissions.TokenHasScope,
+        CurrentUser,
+    )
+
+    required_read_scopes = [CoreScopes.ACTIONS_READ]
+    required_write_scopes = [CoreScopes.NULL]
+
+    serializer_class = ActionSerializer
+    model_class = Action
+
+    ordering = ('-date_created',)
+    view_category = 'users'
+    view_name = 'user-action-list'
+
+    # overrides ListFilterMixin
+    def get_default_queryset(self):
+        provider_queryset = get_objects_for_user(self.get_user(), 'view_actions', PreprintProvider)
+        return get_actions_queryset().filter(target__node__is_public=True, target__provider__in=provider_queryset)
+
+    # overrides ListAPIView
+    def get_queryset(self):
+        return self.get_queryset_from_request()
