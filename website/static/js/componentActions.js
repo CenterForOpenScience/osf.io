@@ -3,7 +3,6 @@
 var $ = require('jquery');
 var $osf = require('js/osfHelpers');
 var NodesDelete = require('js/nodesDelete.js');
-var ko = require('knockout');
 
 var ComponentActions = {};
 
