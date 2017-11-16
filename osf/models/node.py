@@ -1800,7 +1800,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         return False
 
     # TODO: Optimize me (e.g. use bulk create)
-    def fork_node(self, auth, title=None):
+    def fork_node(self, auth, title=None, parent=None):
         """Recursively fork a node.
 
         :param Auth auth: Consolidated authorization
@@ -1842,23 +1842,20 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         forked.save()
 
         forked.tags.add(*self.all_tags.values_list('pk', flat=True))
+
+        if parent:
+            node_relation = NodeRelation.objects.get(parent=parent.forked_from, child=original)
+            NodeRelation.objects.get_or_create(_order=node_relation._order, parent=parent, child=forked)
+
         for node_relation in original.node_relations.filter(child__is_deleted=False):
             node_contained = node_relation.child
-            # Fork child nodes
+            # Register child nodes
             if not node_relation.is_node_link:
-                try:  # Catch the potential PermissionsError above
-                    forked_node = node_contained.fork_node(auth=auth, title='')
-                except PermissionsError:
-                    pass  # If this exception is thrown omit the node from the result set
-                    forked_node = None
-                if forked_node is not None:
-                    NodeRelation.objects.get_or_create(
-                        is_node_link=False,
-                        parent=forked,
-                        child=forked_node
-                    )
-                    forked_node.root = None
-                    forked_node.save()  # Recompute root on save()
+                fork_child = node_contained.fork_node(  # noqa
+                    auth=auth,
+                    title='',
+                    parent=forked,
+                )
             else:
                 # Copy linked nodes
                 NodeRelation.objects.get_or_create(
