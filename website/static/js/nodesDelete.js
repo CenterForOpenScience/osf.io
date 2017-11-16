@@ -292,7 +292,6 @@ function NodesDelete(selector, nodeType, nodeApiUrl) {
 }
 
 NodesDelete.prototype.init = function() {
-    ko.cleanNode($('#nodesDelete')[0]);
     osfHelpers.applyBindings(this.viewModel, this.selector);
 };
 
