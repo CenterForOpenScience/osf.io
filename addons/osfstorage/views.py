@@ -142,7 +142,7 @@ def osfstorage_move_hook(source, destination, name=None, **kwargs):
 
 @must_be_signed
 @decorators.autoload_filenode(default_root=True)
-def osfstorage_get_lineage(file_node, node_addon, **kwargs):
+def osfstorage_get_lineage(file_node, **kwargs):
     lineage = []
 
     while file_node:
@@ -372,7 +372,7 @@ def osfstorage_delete(file_node, payload, **kwargs):
 
 @must_be_signed
 @decorators.autoload_filenode(must_be='file')
-def osfstorage_download(file_node, payload, node_addon, **kwargs):
+def osfstorage_download(file_node, payload, **kwargs):
     # Set user ID in session data for checking if user is contributor
     # to project.
     user_id = payload.get('user')
@@ -392,7 +392,7 @@ def osfstorage_download(file_node, payload, node_addon, **kwargs):
     version = file_node.get_version(version_id, required=True)
     # TODO: Update analytics in MFR callback when it is implemented
     if request.args.get('mode') not in ('render', ):
-        utils.update_analytics(node_addon.owner, file_node._id, int(version.identifier) - 1)
+        utils.update_analytics(OSFUser.load(user_id), file_node._id, int(version.identifier) - 1)
     return {
         'data': {
             'name': file_node.name,
