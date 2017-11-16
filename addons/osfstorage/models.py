@@ -18,6 +18,7 @@ from osf.utils.auth import Auth
 from osf.utils import permissions
 from website.files import exceptions
 from website.files import utils as files_utils
+from website.util import api_url_for, web_url_for
 from website import settings as website_settings
 from addons.osfstorage.settings import DEFAULT_REGION_ID
 
@@ -522,8 +523,9 @@ class NodeSettings(BaseNodeSettings, BaseStorageAddon):
         return dict(Region.objects.get(id=self.region_id).waterbutler_settings, **{
             'nid': self.owner._id,
             'rootId': self.root_node._id,
-            'baseUrl': self.owner.api_url_for(
+            'baseUrl': api_url_for(
                 'osfstorage_get_metadata',
+                guid=self.owner._id,
                 _absolute=True,
                 _internal=True
             ),
@@ -543,6 +545,7 @@ class NodeSettings(BaseNodeSettings, BaseStorageAddon):
         if (metadata['kind'] != 'folder'):
             url = self.owner.web_url_for(
                 'addon_view_or_download_file',
+                guid=self.owner._id,
                 path=metadata['path'],
                 provider='osfstorage'
             )
