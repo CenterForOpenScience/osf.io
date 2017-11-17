@@ -878,7 +878,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
             ).values_list('user__guids___id', flat=True)
 
         contributor_ids = set(self.contributors.values_list('guids___id', flat=True))
-        admin_ids = set()
+        admin_ids = set(get_admin_contributor_ids(self))
         for parent in self.parents:
             admins = get_admin_contributor_ids(parent)
             admin_ids.update(set(admins).difference(contributor_ids))
