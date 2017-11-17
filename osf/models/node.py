@@ -5,10 +5,12 @@ import re
 import urlparse
 import warnings
 
+import bson
 from django.db.models import Q
 from dirtyfields import DirtyFieldsMixin
 from django.apps import apps
 from django.contrib.contenttypes.fields import GenericRelation
+from django.core.paginator import Paginator
 from django.core.exceptions import ValidationError
 from django.core.urlresolvers import reverse
 from django.db import models, transaction, connection
@@ -41,7 +43,7 @@ from osf.models.spam import SpamMixin
 from osf.models.tag import Tag
 from osf.models.user import OSFUser
 from osf.models.validators import validate_doi, validate_title
-from osf.utils.auth import Auth, get_user
+from framework.auth.core import Auth, get_user
 from osf.utils.datetime_aware_jsonfield import DateTimeAwareJSONField
 from osf.utils.fields import NonNaiveDateTimeField
 from osf.utils.requests import DummyRequest, get_request_and_user_id
@@ -54,6 +56,7 @@ from website.mails import mails
 from website.project import signals as project_signals
 from website.project import tasks as node_tasks
 from website.project.model import NodeUpdateError
+from website.preprints.tasks import update_ezid_metadata_on_change
 
 from website.util import (api_url_for, api_v2_url, get_headers_from_request,
                           sanitize, web_url_for)
@@ -462,7 +465,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         if self.is_preprint:
             try:
                 # if multiple preprints per project are supported on the front end this needs to change.
-                return self.preprints.get_queryset()[0].url
+                return self.preprints.filter(is_published=True)[0].url
             except IndexError:
                 pass
 
@@ -875,7 +878,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
             ).values_list('user__guids___id', flat=True)
 
         contributor_ids = set(self.contributors.values_list('guids___id', flat=True))
-        admin_ids = set()
+        admin_ids = set(get_admin_contributor_ids(self))
         for parent in self.parents:
             admins = get_admin_contributor_ids(parent)
             admin_ids.update(set(admins).difference(contributor_ids))
@@ -1331,6 +1334,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         # remove unclaimed record if necessary
         if self._primary_key in contributor.unclaimed_records:
             del contributor.unclaimed_records[self._primary_key]
+            contributor.save()
 
         # If user is the only visible contributor, return False
         if not self.contributor_set.exclude(user=contributor).filter(visible=True).exists():
@@ -1503,6 +1507,11 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
                 if message:
                     status.push_status_message(message, kind='info', trust=False)
 
+        # Update existing identifiers
+        if self.get_identifier('doi'):
+            doi_status = 'unavailable' if permissions == 'private' else 'public'
+            enqueue_task(update_ezid_metadata_on_change.s(self, status=doi_status))
+
         if log:
             action = NodeLog.MADE_PUBLIC if permissions == 'public' else NodeLog.MADE_PRIVATE
             self.add_log(
@@ -1606,11 +1615,9 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
 
         :param schema: Schema object
         :param auth: All the auth information including user, API key.
-        :param template: Template name
         :param data: Form data
         :param parent Node: parent registration of registration to be created
         """
-        # TODO(lyndsysimon): "template" param is not necessary - use schema.name?
         # NOTE: Admins can register child nodes even if they don't have write access them
         if not self.can_edit(auth=auth) and not self.is_admin_parent(user=auth.user):
             raise PermissionsError(
@@ -1650,14 +1657,11 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         registered.affiliated_institutions.add(*self.affiliated_institutions.values_list('pk', flat=True))
 
         # Clone each log from the original node for this registration.
-        logs = original.logs.all()
-        for log in logs:
-            log.clone_node_log(registered._id)
+        self.clone_logs(registered)
 
         registered.is_public = False
-        for node in registered.get_descendants_recursive():
-            node.is_public = False
-            node.save()
+        # Copy unclaimed records to unregistered users for parent
+        registered.copy_unclaimed_records()
 
         if parent:
             node_relation = NodeRelation.objects.get(parent=parent.registered_from, child=original)
@@ -1901,9 +1905,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         )
 
         # Clone each log from the original node for this fork.
-        for log in original.logs.all():
-            log.clone_node_log(forked._id)
-
+        self.clone_logs(forked)
         forked.refresh_from_db()
 
         # After fork callback
@@ -1911,6 +1913,30 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
             addon.after_fork(original, forked, user)
 
         return forked
+
+    def clone_logs(self, node, page_size=100):
+        paginator = Paginator(self.logs.order_by('pk').all(), page_size)
+        for page_num in paginator.page_range:
+            page = paginator.page(page_num)
+            # Instantiate NodeLogs "manually"
+            # because BaseModel#clone() is too slow for large projects
+            logs_to_create = [
+                NodeLog(
+                    _id=bson.ObjectId(),
+                    action=log.action,
+                    date=log.date,
+                    params=log.params,
+                    should_hide=log.should_hide,
+                    foreign_user=log.foreign_user,
+                    # Set foreign keys, not their objects
+                    # to speed things up
+                    node_id=node.pk,
+                    user_id=log.user_id,
+                    original_node_id=log.original_node_id
+                )
+                for log in page
+            ]
+            NodeLog.objects.bulk_create(logs_to_create)
 
     def use_as_template(self, auth, changes=None, top_level=True):
         """Create a new project, using an existing project as a template.

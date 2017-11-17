@@ -2,6 +2,16 @@
 Changelog
 *********
 
+0.124.0 (2017-11-13)
+====================
+
+- Critical bug fixes
+
+0.123.0 (2017-10-26)
+====================
+
+- Preprint moderation backend.
+
 0.122.0 (2017-10-16)
 ====================
 - Probabilistic test failures due to uniqueness constraint on usernames

@@ -1,5 +1,6 @@
 import pytz
 import functools
+import httplib as http
 
 from dateutil.parser import parse as parse_date
 from django.apps import apps
@@ -11,7 +12,7 @@ from osf.utils.fields import NonNaiveDateTimeField
 from website.prereg import utils as prereg_utils
 
 from framework.auth import Auth
-from framework.exceptions import PermissionsError
+from framework.exceptions import HTTPError, PermissionsError
 from website import settings as osf_settings
 from website import tokens, mails
 from website.exceptions import (
@@ -387,7 +388,7 @@ class Embargo(PreregCallbackMixin, EmailApprovableSanction):
     APPROVE_URL_TEMPLATE = osf_settings.DOMAIN + 'project/{node_id}/?token={token}'
     REJECT_URL_TEMPLATE = osf_settings.DOMAIN + 'project/{node_id}/?token={token}'
 
-    initiated_by = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, blank=True)
+    initiated_by = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.CASCADE)
     for_existing_registration = models.BooleanField(default=False)
 
     @property
@@ -489,6 +490,18 @@ class Embargo(PreregCallbackMixin, EmailApprovableSanction):
             })
         return context
 
+    def reject(self, user, token):
+        reg = self._get_registration()
+        if reg.is_public:
+            raise HTTPError(
+                http.BAD_REQUEST,
+                data={
+                    'message_short': 'Registrations cannot be modified',
+                    'message_long': 'This project has already been registered and cannot be deleted',
+                }
+            )
+        super(Embargo, self).reject(user, token)
+
     def _on_reject(self, user):
         NodeLog = apps.get_model('osf.NodeLog')
 
@@ -557,7 +570,7 @@ class Retraction(EmailApprovableSanction):
     APPROVE_URL_TEMPLATE = osf_settings.DOMAIN + 'project/{node_id}/?token={token}'
     REJECT_URL_TEMPLATE = osf_settings.DOMAIN + 'project/{node_id}/?token={token}'
 
-    initiated_by = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, blank=True)
+    initiated_by = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.CASCADE)
     justification = models.CharField(max_length=2048, null=True, blank=True)
     date_retracted = NonNaiveDateTimeField(null=True, blank=True)
 
@@ -693,7 +706,7 @@ class RegistrationApproval(PreregCallbackMixin, EmailApprovableSanction):
     APPROVE_URL_TEMPLATE = osf_settings.DOMAIN + 'project/{node_id}/?token={token}'
     REJECT_URL_TEMPLATE = osf_settings.DOMAIN + 'project/{node_id}/?token={token}'
 
-    initiated_by = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, blank=True)
+    initiated_by = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.CASCADE)
 
     def _get_registration(self):
         return self.registrations.first()
@@ -910,8 +923,8 @@ class EmbargoTerminationApproval(EmailApprovableSanction):
     APPROVE_URL_TEMPLATE = osf_settings.DOMAIN + 'project/{node_id}/?token={token}'
     REJECT_URL_TEMPLATE = osf_settings.DOMAIN + 'project/{node_id}/?token={token}'
 
-    embargoed_registration = models.ForeignKey('Registration', null=True, blank=True)
-    initiated_by = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, blank=True)
+    embargoed_registration = models.ForeignKey('Registration', null=True, blank=True, on_delete=models.CASCADE)
+    initiated_by = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.CASCADE)
 
     def _get_registration(self):
         return self.embargoed_registration

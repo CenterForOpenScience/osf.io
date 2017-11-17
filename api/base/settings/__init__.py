@@ -29,10 +29,7 @@ def load_origins_whitelist():
     global ORIGINS_WHITELIST
     from osf.models import Institution, PreprintProvider
 
-    institution_origins = tuple(domain.lower() for domain in itertools.chain(*[
-        institution.domains
-        for institution in Institution.find()
-    ]))
+    institution_origins = tuple(domain.lower() for domain in itertools.chain(*Institution.objects.values_list('domains', flat=True)))
 
     preprintprovider_origins = tuple(preprintprovider.domain.lower() for preprintprovider in PreprintProvider.objects.exclude(domain=''))
 

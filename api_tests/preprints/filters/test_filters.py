@@ -55,13 +55,17 @@ class PreprintsListFilteringMixin(object):
 
     @pytest.fixture()
     def preprint_one(self, user, project_one, provider_one, subject_one):
-        return PreprintFactory(creator=user, project=project_one, provider=provider_one, subjects=[[subject_one._id]])
+        preprint_one = PreprintFactory(creator=user, project=project_one, provider=provider_one, subjects=[[subject_one._id]])
+        preprint_one.original_publication_date = '2013-12-25 10:09:08.070605+00:00'
+        preprint_one.save()
+        return preprint_one
 
     @pytest.fixture()
     def preprint_two(self, user, project_two, provider_two, subject_two):
         preprint_two = PreprintFactory(creator=user, project=project_two, filename='howto_reason.txt', provider=provider_two, subjects=[[subject_two._id]])
         preprint_two.date_created = '2013-12-11 10:09:08.070605+00:00'
         preprint_two.date_published = '2013-12-11 10:09:08.070605+00:00'
+        preprint_two.original_publication_date = '2013-12-11 10:09:08.070605+00:00'
         preprint_two.save()
         return preprint_two
 
@@ -70,6 +74,7 @@ class PreprintsListFilteringMixin(object):
         preprint_three = PreprintFactory(creator=user, project=project_three, filename='darn_reason.txt', provider=provider_three, subjects=[[subject_one._id], [subject_two._id]])
         preprint_three.date_created = '2013-12-11 10:09:08.070605+00:00'
         preprint_three.date_published = '2013-12-11 10:09:08.070605+00:00'
+        preprint_three.original_publication_date = '2013-12-11 10:09:08.070605+00:00'
         preprint_three.is_published = False
         preprint_three.save()
         return preprint_three
@@ -94,6 +99,10 @@ class PreprintsListFilteringMixin(object):
     @pytest.fixture()
     def date_published_url(self, url):
         return '{}filter[date_published]='.format(url)
+
+    @pytest.fixture()
+    def original_publication_date_url(self, url):
+        return '{}filter[original_publication_date]='.format(url)
 
     @pytest.fixture()
     def is_published_url(self, url):
@@ -176,6 +185,24 @@ class PreprintsListFilteringMixin(object):
     def test_date_published_filter_equals_returns_multiple(self, app, user, preprint_two, preprint_three, date_published_url):
         expected = set([preprint_two._id, preprint_three._id])
         res = app.get('{}{}'.format(date_published_url, preprint_two.date_published), auth=user.auth)
+        actual = set([preprint['id'] for preprint in res.json['data']])
+        assert expected == actual
+
+    def test_original_publication_date_filter_equals_returns_none(self, app, user, original_publication_date_url):
+        expected = []
+        res = app.get('{}{}'.format(original_publication_date_url, '2015-11-15 10:09:08.070605+00:00'), auth=user.auth)
+        actual = [preprint['id'] for preprint in res.json['data']]
+        assert expected == actual
+
+    def test_original_publication_date_filter_equals_returns_one(self, app, user, preprint_one, original_publication_date_url):
+        expected = [preprint_one._id]
+        res = app.get('{}{}'.format(original_publication_date_url, preprint_one.original_publication_date), auth=user.auth)
+        actual = [preprint['id'] for preprint in res.json['data']]
+        assert expected == actual
+
+    def test_original_publication_date_filter_equals_returns_multiple(self, app, user, preprint_two, preprint_three, original_publication_date_url):
+        expected = set([preprint_two._id, preprint_three._id])
+        res = app.get('{}{}'.format(original_publication_date_url, preprint_two.original_publication_date), auth=user.auth)
         actual = set([preprint['id'] for preprint in res.json['data']])
         assert expected == actual
 
