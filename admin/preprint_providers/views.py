@@ -329,7 +329,7 @@ class ShareSourcePreprintProvider(PermissionRequiredMixin, View):
     def get(self, request, *args, **kwargs):
         preprint_provider = PreprintProvider.objects.get(id=self.kwargs['preprint_provider_id'])
 
-        resp_json = self.share_post(preprint_provider) 
+        resp_json = self.share_post(preprint_provider)
         for data in resp_json['included']:
             if data['type'] == 'ShareUser':
                 preprint_provider.access_token = data['attributes']['token']

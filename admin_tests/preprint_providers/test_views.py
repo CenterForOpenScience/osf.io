@@ -441,12 +441,12 @@ class TestShareSourcePreprintProvider(AdminTestCase):
         share_resp.return_value = {
             'included': [{
                 'attributes': {
-                'token': token,
+                    'token': token,
                 },
                 'type': 'ShareUser',
             }, {
                 'attributes': {
-                'label': label
+                    'label': label
                 },
                 'type': 'SourceConfig',
             }]
