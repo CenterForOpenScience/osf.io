@@ -470,7 +470,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
 
     @property
     def has_moderated_preprint(self):
-        return self.preprints.filter(provider__reviews_workflow__isnull=False).exists()
+        return self.linked_preprint.provider.reviews_workflow
 
     @property
     def preprint_url(self):
