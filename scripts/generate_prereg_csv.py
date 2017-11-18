@@ -23,15 +23,15 @@ logger = logging.getLogger(__name__)
 HERE = os.path.dirname(os.path.abspath(__file__))
 
 def generate_prereg_csv():
-    queryset = map(serializers.serialize_draft_registration,
+    drafts = map(serializers.serialize_draft_registration,
                    utils.get_submitted_preregistrations())
 
-    keys = queryset[0].keys()
+    keys = drafts[0].keys()
     keys.remove('registration_schema')
     output = io.BytesIO()
     writer = csv.DictWriter(output, fieldnames=keys)
     writer.writeheader()
-    for draft in queryset:
+    for draft in drafts:
         draft.pop('registration_schema')
         draft.update({'initiator': draft['initiator']['username']})
         writer.writerow(
