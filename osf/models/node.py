@@ -462,7 +462,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
 
     @property
     def has_published_preprint(self):
-        return self.preprints.filter(is_published=True).exists()
+        return self.preprints.filter(is_published=True)
 
     @property
     def preprint_url(self):
@@ -470,17 +470,13 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
             return self.linked_preprint.url
 
     @property
-    def has_moderated_preprint(self):
-        if self.is_preprint:
-            return self.linked_preprint.provider.reviews_workflow
-
-    @property
     def linked_preprint(self):
         if self.is_preprint:
             try:
                 # if multiple preprints per project are supported on the front end this needs to change.
-                if self.has_published_preprint:
-                    return self.preprints.filter(is_published=True)[0]
+                published_preprint_exist = self.has_published_preprint
+                if published_preprint_exist:
+                    return published_preprint_exist[0]
                 else:
                     return self.preprints.get_queryset()[0]
             except IndexError:
