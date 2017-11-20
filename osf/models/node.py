@@ -466,8 +466,9 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
 
     @property
     def preprint_url(self):
-        if self.linked_preprint:
-            return self.linked_preprint.url
+        node_linked_preprint = self.linked_preprint
+        if node_linked_preprint:
+            return node_linked_preprint.url
 
     @property
     def linked_preprint(self):
