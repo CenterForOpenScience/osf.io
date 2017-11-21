@@ -462,10 +462,10 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
 
     @property
     def has_published_preprint(self):
-        return self.has_published_queryset.exists()
+        return self.published_preprints_queryset.exists()
 
     @property
-    def has_published_queryset(self):
+    def published_preprints_queryset(self):
         return self.preprints.filter(is_published=True)
 
     @property
@@ -479,9 +479,9 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         if self.is_preprint:
             try:
                 # if multiple preprints per project are supported on the front end this needs to change.
-                published_preprint_queryset = self.has_published_queryset
-                if published_preprint_queryset:
-                    return published_preprint_queryset[0]
+                published_preprint = self.published_preprints_queryset.first()
+                if published_preprint:
+                    return published_preprint
                 else:
                     return self.preprints.get_queryset()[0]
             except IndexError:
