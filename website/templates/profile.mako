@@ -141,7 +141,7 @@
     <div class="col-sm-6">
         <div class="panel panel-default">
             <div class="panel-heading clearfix">
-                <h3 class="panel-title">Quick Files</h3>
+                <h3 class="panel-title">Quick files</h3>
             </div>
             <div class="panel-body clearfix" id="quickFiles">
               <div class="ball-pulse ball-scale-blue text-center">

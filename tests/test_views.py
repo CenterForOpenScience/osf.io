@@ -1401,7 +1401,7 @@ class TestUserProfile(OsfTestCase):
         url = web_url_for('profile_view_id', uid=self.user._id)
         res = self.app.get(url, auth=self.user.auth)
 
-        assert_in('Quick Files', res.body)
+        assert_in('Quick files', res.body)
 
     def test_user_with_no_quickfiles(self):
         assert(not QuickFilesNode.objects.first().files.filter(type='osf.osfstoragefile').exists())
@@ -1409,7 +1409,7 @@ class TestUserProfile(OsfTestCase):
         url = web_url_for('profile_view_id', uid=self.user._primary_key)
         res = self.app.get(url, auth=self.user.auth)
 
-        assert_not_in('Quick Files', res.body)
+        assert_not_in('Quick files', res.body)
 
 
 class TestUserProfileApplicationsPage(OsfTestCase):
