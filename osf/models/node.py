@@ -1677,7 +1677,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
             node_contained = node_relation.child
             # Register child nodes
             if not node_relation.is_node_link:
-                registered_child = node_contained.register_node(  # noqa
+                node_contained.register_node(  # noqa
                     schema=schema,
                     auth=auth,
                     data=data,
@@ -1851,7 +1851,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
             node_contained = node_relation.child
             # Fork child nodes
             if not node_relation.is_node_link:
-                fork_child = node_contained.fork_node(
+                node_contained.fork_node(
                     auth=auth,
                     title='',
                     parent=forked,
