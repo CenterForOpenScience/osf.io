@@ -182,8 +182,8 @@ class NodeSettings(BaseOAuthNodeSettings, BaseStorageAddon):
         except exceptions.InvalidAuthError:
             raise HTTPError(403)
 
-        oneDriveClient = OneDriveClient(access_token)
-        items = oneDriveClient.folders(folder_id)
+        client = OneDriveClient(access_token)
+        items = client.folders(folder_id)
         return [
             {
                 'addon': 'onedrive',

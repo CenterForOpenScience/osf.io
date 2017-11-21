@@ -4,14 +4,7 @@
  */
 
 var m = require('mithril');
-var $ = require('jquery');
-var URI = require('URIjs');
 var Fangorn = require('js/fangorn').Fangorn;
-var waterbutler = require('js/waterbutler');
-var $osf = require('js/osfHelpers');
-
-// Cross browser key codes for the Command key
-var commandKeys = [224, 17, 91, 93];
 
 // Define Fangorn Button Actions
 var _onedriveItemButtons = {
