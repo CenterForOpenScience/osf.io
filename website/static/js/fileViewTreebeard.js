@@ -7,11 +7,11 @@ function FileViewTreebeard(data) {
     // Set item.branch to show the branch of the rendered GitHub / Bitbucket file instead of the default branch
     var addonRootFolders = data.data[0].children;
 
-    if (window.contextVars.file.provider === 'github' || window.contextVars.file.provider === 'bitbucket') {
+    if (window.contextVars.file.provider === 'github' || window.contextVars.file.provider === 'bitbucket' || window.contextVars.file.provider === 'gitlab') {
         for (var i = 0; i < addonRootFolders.length; i++) {
             var item = addonRootFolders[i];
             if (
-                (item.provider === 'github' || item.provider === 'bitbucket') &&
+                (item.provider === 'github' || item.provider === 'bitbucket' || item.provider === 'gitlab') &&
                     item.isAddonRoot && window.contextVars.file.extra.branch
             ) {
                 item.branch = window.contextVars.file.extra.branch;

@@ -103,6 +103,7 @@ COPY ./addons/dropbox/requirements.txt ./addons/dropbox/
 #COPY ./addons/figshare/requirements.txt ./addons/figshare/
 #COPY ./addons/forward/requirements.txt ./addons/forward/
 COPY ./addons/github/requirements.txt ./addons/github/
+COPY ./addons/gitlab/requirements.txt ./addons/gitlab/
 #COPY ./addons/googledrive/requirements.txt ./addons/googledrive/
 COPY ./addons/mendeley/requirements.txt ./addons/mendeley/
 #COPY ./addons/osfstorage/requirements.txt ./addons/osfstorage/
@@ -152,6 +153,7 @@ COPY ./addons/dropbox/static/ ./addons/dropbox/static/
 COPY ./addons/figshare/static/ ./addons/figshare/static/
 COPY ./addons/forward/static/ ./addons/forward/static/
 COPY ./addons/github/static/ ./addons/github/static/
+COPY ./addons/gitlab/static/ ./addons/gitlab/static/
 COPY ./addons/googledrive/static/ ./addons/googledrive/static/
 COPY ./addons/mendeley/static/ ./addons/mendeley/static/
 COPY ./addons/osfstorage/static/ ./addons/osfstorage/static/
