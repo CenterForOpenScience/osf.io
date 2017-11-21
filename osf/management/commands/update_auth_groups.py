@@ -6,8 +6,8 @@ import logging
 from django.core.management.base import BaseCommand
 from django.db import transaction
 
-from api.preprint_providers.permissions import GroupHelper
-from osf.models.mixins import ReviewProviderMixin
+from reviews.models import ReviewProviderMixin
+from reviews.permissions import GroupHelper
 
 logger = logging.getLogger(__name__)
 

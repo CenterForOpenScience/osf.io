@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+import functools
 import time
 
 import datetime
@@ -14,6 +15,7 @@ from django.utils import timezone
 from django.db.utils import IntegrityError
 from faker import Factory
 
+from reviews import workflow
 from website import settings
 from website.notifications.constants import NOTIFICATION_TYPES
 from website.util import permissions
@@ -25,7 +27,6 @@ from framework.auth.core import Auth
 from osf import models
 from osf.models.sanctions import Sanction
 from osf.utils.names import impute_names_model
-from osf.utils.workflows import DefaultStates, DefaultTriggers
 from addons.osfstorage.models import OsfStorageFile
 
 fake = Factory.create()
@@ -582,7 +583,7 @@ class PreprintFactory(DjangoModelFactory):
         subjects = kwargs.pop('subjects', None) or [[SubjectFactory()._id]]
         instance.node.preprint_article_doi = doi
 
-        instance.machine_state = kwargs.pop('machine_state', 'initial')
+        instance.reviews_state = kwargs.pop('reviews_state', 'initial')
 
         user = kwargs.pop('creator', None) or instance.node.creator
         if not instance.node.is_contributor(user):
@@ -802,14 +803,14 @@ class ArchiveJobFactory(DjangoModelFactory):
         model = models.ArchiveJob
 
 
-class ReviewActionFactory(DjangoModelFactory):
+class ActionFactory(DjangoModelFactory):
     class Meta:
-        model = models.ReviewAction
+        model = models.Action
 
-    trigger = FuzzyChoice(choices=DefaultTriggers.values())
+    trigger = FuzzyChoice(choices=workflow.Triggers.values())
     comment = factory.Faker('text')
-    from_state = FuzzyChoice(choices=DefaultStates.values())
-    to_state = FuzzyChoice(choices=DefaultStates.values())
+    from_state = FuzzyChoice(choices=workflow.States.values())
+    to_state = FuzzyChoice(choices=workflow.States.values())
 
     target = factory.SubFactory(PreprintFactory)
     creator = factory.SubFactory(AuthUserFactory)

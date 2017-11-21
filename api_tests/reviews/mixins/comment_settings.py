@@ -1,17 +1,20 @@
-import pytest
+from datetime import timedelta
 
-from api.preprint_providers.permissions import GroupHelper
+import pytest
+from furl import furl
+
 from osf_tests.factories import (
-    ReviewActionFactory,
+    ActionFactory,
     AuthUserFactory,
     PreprintFactory,
     PreprintProviderFactory,
 )
+from reviews.permissions import GroupHelper
 from website.util import permissions as osf_permissions
 
 
 @pytest.mark.django_db
-class ReviewActionCommentSettingsMixin(object):
+class ActionCommentSettingsMixin(object):
 
     @pytest.fixture()
     def url(self):
@@ -27,7 +30,7 @@ class ReviewActionCommentSettingsMixin(object):
 
     @pytest.fixture()
     def actions(self, preprint):
-        return [ReviewActionFactory(target=preprint) for _ in range(5)]
+        return [ActionFactory(target=preprint) for _ in range(5)]
 
     @pytest.fixture()
     def provider_admin(self, provider):
