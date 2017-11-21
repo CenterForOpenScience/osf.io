@@ -6,9 +6,9 @@ from django.conf import settings
 from django.core.management.sql import emit_post_migrate_signal
 from django.db import migrations, models
 import django.db.models.deletion
+from api.preprint_providers.permissions import GroupHelper
 import osf.models.base
 import osf.utils.fields
-from reviews.permissions import GroupHelper
 
 
 def create_provider_auth_groups(apps, schema_editor):

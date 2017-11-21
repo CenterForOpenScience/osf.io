@@ -1,18 +1,17 @@
 import pytest
 
 from api.base.settings.defaults import API_BASE
+from api.preprint_providers.permissions import GroupHelper
 from osf_tests.factories import (
-    PreprintFactory,
     AuthUserFactory,
 )
-from reviews.permissions import GroupHelper
 from website.util import permissions as osf_permissions
 
-from api_tests.reviews.mixins.filter_mixins import ActionFilterMixin
-from api_tests.reviews.mixins.comment_settings import ActionCommentSettingsMixin
+from api_tests.reviews.mixins.filter_mixins import ReviewActionFilterMixin
+from api_tests.reviews.mixins.comment_settings import ReviewActionCommentSettingsMixin
 
 
-class TestPreprintActionFilters(ActionFilterMixin):
+class TestPreprintActionFilters(ReviewActionFilterMixin):
 
     @pytest.fixture()
     def preprint(self, all_actions):
@@ -44,7 +43,7 @@ class TestPreprintActionFilters(ActionFilterMixin):
         assert res.status_code == 403
 
 
-class TestActionSettings(ActionCommentSettingsMixin):
+class TestReviewActionSettings(ReviewActionCommentSettingsMixin):
     @pytest.fixture()
     def url(self, preprint):
         return '/{}preprints/{}/actions/'.format(API_BASE, preprint._id)

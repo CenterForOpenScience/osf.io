@@ -15,6 +15,7 @@ from website.notifications import emails
 from website.notifications import utils
 from website import mails, settings
 from website.project.signals import contributor_removed, node_deleted
+from website.reviews import listeners
 from website.util import api_url_for
 from website.util import web_url_for
 
@@ -22,7 +23,6 @@ from osf_tests import factories
 from tests.base import capture_signals
 from tests.base import OsfTestCase, NotificationTestCase
 
-from reviews.models import mixins
 
 
 class TestNotificationsModels(OsfTestCase):
@@ -1816,7 +1816,7 @@ class TestNotificationsReviews(OsfTestCase):
             'provider_contact_email': 'contact@osf.io',
             'provider_support_email': 'support@osf.io',
         }
-        self.action = factories.ActionFactory()
+        self.action = factories.ReviewActionFactory()
         factories.NotificationSubscriptionFactory(
             _id=self.user._id + '_' + 'global_comments',
             user=self.user,
@@ -1842,10 +1842,10 @@ class TestNotificationsReviews(OsfTestCase):
 
     @mock.patch('website.mails.mails.send_mail')
     def test_reviews_submit_notification(self, mock_send_email):
-        mixins.reviews_submit_notification(self, context=self.context_info, recipients=[self.sender, self.user])
+        listeners.reviews_submit_notification(self, context=self.context_info, recipients=[self.sender, self.user])
         assert_true(mock_send_email.called)
 
     @mock.patch('website.notifications.emails.notify_global_event')
     def test_reviews_notification(self, mock_notify):
-        mixins.reviews_notification(self, creator=self.sender, context=self.context_info, action=self.action, template='test.html.mako')
+        listeners.reviews_notification(self, creator=self.sender, context=self.context_info, action=self.action, template='test.html.mako')
         assert_true(mock_notify.called)

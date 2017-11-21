@@ -2,28 +2,25 @@ import pytest
 import mock
 
 from api.base.settings.defaults import API_BASE
-
+from api.preprint_providers.permissions import GroupHelper
 from osf_tests.factories import (
     PreprintFactory,
     AuthUserFactory,
     PreprintProviderFactory,
 )
-
 from website.util import permissions as osf_permissions
 
-from reviews.permissions import GroupHelper
-
-from api_tests.reviews.mixins.filter_mixins import ActionFilterMixin
+from api_tests.reviews.mixins.filter_mixins import ReviewActionFilterMixin
 
 
-class TestActionFilters(ActionFilterMixin):
+class TestReviewActionFilters(ReviewActionFilterMixin):
     @pytest.fixture()
     def url(self):
-        return '/{}users/me/actions/'.format(API_BASE)
+        return '/{}actions/reviews/'.format(API_BASE)
 
     @pytest.fixture()
     def expected_actions(self, all_actions, allowed_providers):
-        actions = super(TestActionFilters, self).expected_actions(all_actions, allowed_providers)
+        actions = super(TestReviewActionFilters, self).expected_actions(all_actions, allowed_providers)
         node = actions[0].target.node
         node.is_public = False
         node.save()
@@ -39,7 +36,7 @@ class TestActionFilters(ActionFilterMixin):
 
 
 @pytest.mark.django_db
-class TestActionCreate(object):
+class TestReviewActionCreate(object):
     def create_payload(self, reviewable_id=None, **attrs):
         payload = {
             'data': {
@@ -58,8 +55,8 @@ class TestActionCreate(object):
         return payload
 
     @pytest.fixture()
-    def url(self):
-        return '/{}actions/'.format(API_BASE)
+    def url(self, preprint):
+        return '/{}preprints/{}/actions/'.format(API_BASE, preprint._id)
 
     @pytest.fixture()
     def provider(self):
@@ -83,7 +80,7 @@ class TestActionCreate(object):
 
     @mock.patch('website.preprints.tasks.get_and_set_preprint_identifiers.si')
     def test_create_permissions(self, mock_ezid, app, url, preprint, node_admin, moderator):
-        assert preprint.reviews_state == 'initial'
+        assert preprint.machine_state == 'initial'
 
         submit_payload = self.create_payload(preprint._id, trigger='submit')
 
@@ -100,7 +97,7 @@ class TestActionCreate(object):
         res = app.post_json_api(url, submit_payload, auth=node_admin.auth)
         assert res.status_code == 201
         preprint.refresh_from_db()
-        assert preprint.reviews_state == 'pending'
+        assert preprint.machine_state == 'pending'
         assert not preprint.is_published
 
         accept_payload = self.create_payload(preprint._id, trigger='accept', comment='This is good.')
@@ -125,14 +122,14 @@ class TestActionCreate(object):
 
         # Still unchanged after all those tries
         preprint.refresh_from_db()
-        assert preprint.reviews_state == 'pending'
+        assert preprint.machine_state == 'pending'
         assert not preprint.is_published
 
         # Moderator can accept
         res = app.post_json_api(url, accept_payload, auth=moderator.auth)
         assert res.status_code == 201
         preprint.refresh_from_db()
-        assert preprint.reviews_state == 'accepted'
+        assert preprint.machine_state == 'accepted'
         assert preprint.is_published
 
         # Check if "get_and_set_preprint_identifiers" is called once.
@@ -170,7 +167,7 @@ class TestActionCreate(object):
             provider.reviews_workflow = workflow
             provider.save()
             for state, trigger in transitions:
-                preprint.reviews_state = state
+                preprint.machine_state = state
                 preprint.save()
                 bad_payload = self.create_payload(preprint._id, trigger=trigger)
                 res = app.post_json_api(url, bad_payload, auth=moderator.auth, expect_errors=True)
@@ -216,7 +213,7 @@ class TestActionCreate(object):
             provider.reviews_workflow = workflow
             provider.save()
             for from_state, trigger, to_state in transitions:
-                preprint.reviews_state = from_state
+                preprint.machine_state = from_state
                 preprint.is_published = False
                 preprint.date_published = None
                 preprint.date_last_transitioned = None
@@ -229,7 +226,7 @@ class TestActionCreate(object):
                 assert action.trigger == trigger
 
                 preprint.refresh_from_db()
-                assert preprint.reviews_state == to_state
+                assert preprint.machine_state == to_state
                 if preprint.in_public_reviews_state:
                     assert preprint.is_published
                     assert preprint.date_published == action.date_created
