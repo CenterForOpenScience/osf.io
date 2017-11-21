@@ -28,7 +28,6 @@
         "github": "partial",
         "gitlab": "partial",
         "owncloud": "partial",
-        "gitlab": "partial",
         "s3": "partial",
         "wiki": "full",
         "bitbucket": "partial"
