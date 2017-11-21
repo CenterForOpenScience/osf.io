@@ -1,11 +1,13 @@
 import pytest
 
-from api.preprint_providers.permissions import GroupHelper
+from framework.auth.core import Auth
 from osf_tests.factories import (
     PreprintFactory,
     AuthUserFactory,
     SubjectFactory,
+    PreprintProviderFactory
 )
+from reviews.permissions import GroupHelper
 
 
 @pytest.mark.django_db

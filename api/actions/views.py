@@ -2,22 +2,26 @@
 from __future__ import unicode_literals
 
 from django.shortcuts import get_object_or_404
-from guardian.shortcuts import get_objects_for_user
 from rest_framework import generics
 from rest_framework import permissions
-from rest_framework.exceptions import NotFound
 
-from api.actions.permissions import ReviewActionPermission
-from api.actions.serializers import ReviewActionSerializer
-from api.base.filters import ListFilterMixin
+from framework.auth.oauth_scopes import CoreScopes
+from osf.models import Action
+from reviews import permissions as reviews_permissions
+
+from api.actions.serializers import ActionSerializer
+from api.base.exceptions import Conflict
+from api.base.parsers import (
+    JSONAPIMultipleRelationshipsParser,
+    JSONAPIMultipleRelationshipsParserForRegularJSON,
+)
+from api.base.utils import absolute_reverse
 from api.base.views import JSONAPIBaseView
 from api.base import permissions as base_permissions
-from framework.auth.oauth_scopes import CoreScopes
-from osf.models import PreprintProvider, ReviewAction
 
 
-def get_review_actions_queryset():
-    return ReviewAction.objects.include(
+def get_actions_queryset():
+    return Action.objects.include(
         'creator',
         'creator__guids',
         'target',
@@ -29,7 +33,7 @@ def get_review_actions_queryset():
 class ActionDetail(JSONAPIBaseView, generics.RetrieveAPIView):
     """Action Detail
 
-    Actions represent state changes and/or comments on any actionable object (e.g. preprints, noderequests)
+    Actions represent state changes and/or comments on a reviewable object (e.g. a preprint)
 
     ##Action Attributes
 
@@ -59,30 +63,29 @@ class ActionDetail(JSONAPIBaseView, generics.RetrieveAPIView):
     permission_classes = (
         permissions.IsAuthenticatedOrReadOnly,
         base_permissions.TokenHasScope,
-        ReviewActionPermission,
+        reviews_permissions.ActionPermission,
     )
 
     required_read_scopes = [CoreScopes.ACTIONS_READ]
     required_write_scopes = [CoreScopes.ACTIONS_WRITE]
 
-    serializer_class = ReviewActionSerializer
+    serializer_class = ActionSerializer
     view_category = 'actions'
     view_name = 'action-detail'
 
     def get_object(self):
-        action = None
-        if ReviewAction.objects.filter(_id=self.kwargs['action_id']):
-            action = get_object_or_404(get_review_actions_queryset(), _id=self.kwargs['action_id'])
-        if not action:
-            raise NotFound('Unable to find specified Action')
+        action = get_object_or_404(get_actions_queryset(), _id=self.kwargs['action_id'])
         self.check_object_permissions(self.request, action)
         return action
 
 
-class ReviewActionList(JSONAPIBaseView, generics.ListAPIView, ListFilterMixin):
-    """List of review actions viewable by this user *Read-only*
+class CreateAction(JSONAPIBaseView, generics.ListCreateAPIView):
+    """Create Actions *Write-only*
 
-    Actions represent state changes and/or comments on a reviewable object (e.g. a preprint)
+    Use this endpoint to create a new Action and thereby trigger a state change on a preprint.
+
+    GETting from this endpoint will always return an empty list.
+    Use `/user/me/actions/` or `/preprints/<guid>/actions/` to read lists of actions.
 
     ##Action Attributes
 
@@ -116,28 +119,66 @@ class ReviewActionList(JSONAPIBaseView, generics.ListAPIView, ListFilterMixin):
     + `filter[<fieldname>]=<Str>` -- fields and values to filter the search results on.
 
     Actions may be filtered by their `id`, `from_state`, `to_state`, `date_created`, `date_modified`, `creator`, `provider`, `target`
+
+    ###Creating New Actions
+
+    Create a new Action by POSTing to `/actions/`, including the target preprint and the action trigger.
+
+    Valid triggers are: `submit`, `accept`, `reject`, and `edit_comment`
+
+        Method:        POST
+        URL:           /actions/
+        Query Params:  <none>
+        Body (JSON):   {
+                        "data": {
+                            "attributes": {
+                                "trigger": {trigger},           # required
+                                "comment": {comment},
+                            },
+                            "relationships": {
+                                "target": {                     # required
+                                    "data": {
+                                        "type": "preprints",
+                                        "id": {preprint_id}
+                                    }
+                                },
+                            }
+                        }
+                    }
+        Success:       201 CREATED + action representation
     """
-    # Permissions handled in get_default_django_query
     permission_classes = (
-        permissions.IsAuthenticated,
+        permissions.IsAuthenticatedOrReadOnly,
         base_permissions.TokenHasScope,
+        reviews_permissions.ActionPermission,
     )
 
-    required_read_scopes = [CoreScopes.ACTIONS_READ]
-    required_write_scopes = [CoreScopes.NULL]
+    required_read_scopes = [CoreScopes.NULL]
+    required_write_scopes = [CoreScopes.ACTIONS_WRITE]
 
-    serializer_class = ReviewActionSerializer
-    model_class = ReviewAction
+    parser_classes = (JSONAPIMultipleRelationshipsParser, JSONAPIMultipleRelationshipsParserForRegularJSON,)
 
-    ordering = ('-date_created',)
+    serializer_class = ActionSerializer
+
     view_category = 'actions'
-    view_name = 'review-action-list'
+    view_name = 'create-action'
 
-    # overrides ListFilterMixin
-    def get_default_queryset(self):
-        provider_queryset = get_objects_for_user(self.request.user, 'view_actions', PreprintProvider)
-        return get_review_actions_queryset().filter(target__node__is_public=True, target__provider__in=provider_queryset)
+    # overrides ListCreateAPIView
+    def perform_create(self, serializer):
+        target = serializer.validated_data['target']
+        self.check_object_permissions(self.request, target)
 
-    # overrides ListAPIView
+        if not target.provider.is_reviewed:
+            raise Conflict('{} is an unmoderated provider. If you are an admin, set up moderation by setting `reviews_workflow` at {}'.format(
+                target.provider.name,
+                absolute_reverse('preprint_providers:preprint_provider-detail', kwargs={
+                    'provider_id': target.provider._id,
+                    'version': self.request.parser_context['kwargs']['version']
+                })
+            ))
+
+        serializer.save(user=self.request.user)
+
+    # overrides ListCreateAPIView
     def get_queryset(self):
-        return self.get_queryset_from_request()
+        return Action.objects.none()
