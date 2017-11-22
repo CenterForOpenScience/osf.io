@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 from django.contrib.postgres import fields
+from api.taxonomies.utils import optimize_subject_query
 from django.db import models
 from django.db.models.signals import post_save
 from django.dispatch import receiver
@@ -84,11 +85,11 @@ class PreprintProvider(ObjectIDMixin, ReviewProviderMixin, BaseModel):
     @property
     def top_level_subjects(self):
         if self.subjects.exists():
-            return self.subjects.filter(parent__isnull=True)
+            return optimize_subject_query(self.subjects.filter(parent__isnull=True))
         else:
             # TODO: Delet this when all PreprintProviders have a mapping
             if len(self.subjects_acceptable) == 0:
-                return Subject.objects.filter(parent__isnull=True, provider___id='osf')
+                return optimize_subject_query(Subject.objects.filter(parent__isnull=True, provider___id='osf'))
             tops = set([sub[0][0] for sub in self.subjects_acceptable])
             return [Subject.load(sub) for sub in tops]
 

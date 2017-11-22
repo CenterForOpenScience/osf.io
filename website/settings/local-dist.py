@@ -56,9 +56,6 @@ EXTERNAL_EMBER_APPS = {
 SEARCH_ENGINE = 'elastic'
 ELASTIC_TIMEOUT = 10
 
-# Comment out to use celery in development
-USE_CELERY = False
-
 # Email
 USE_EMAIL = False
 MAIL_SERVER = 'localhost:1025'  # For local testing
@@ -76,22 +73,30 @@ SESSION_COOKIE_SECURE = SECURE_MODE
 OSF_SERVER_KEY = None
 OSF_SERVER_CERT = None
 
-##### Celery #####
-## Default RabbitMQ broker
-CELERY_BROKER_URL = 'amqp://'
+# Comment out to use celery in development
+USE_CELERY = False
 
-# Celery with SSL
-# import ssl
-#
-# CELERY_BROKER_USE_SSL = {
-#     'keyfile': '/etc/ssl/private/worker.key',
-#     'certfile': '/etc/ssl/certs/worker.pem',
-#     'ca_certs': '/etc/ssl/certs/ca-chain.cert.pem',
-#     'cert_reqs': ssl.CERT_REQUIRED,
-# }
+class CeleryConfig(defaults.CeleryConfig):
+    """
+    Celery configuration
+    """
+    ##### Celery #####
+    ## Default RabbitMQ broker
+    # broker_url = 'amqp://'
 
-# Default RabbitMQ backend
-CELERY_RESULT_BACKEND = 'amqp://'
+    # Celery with SSL
+    # import ssl
+    #
+    # broker_use_ssl = {
+    #     'keyfile': '/etc/ssl/private/worker.key',
+    #     'certfile': '/etc/ssl/certs/worker.pem',
+    #     'ca_certs': '/etc/ssl/certs/ca-chain.cert.pem',
+    #     'cert_reqs': ssl.CERT_REQUIRED,
+    # }
+
+    # Default RabbitMQ backend
+    # result_backend = 'amqp://'
+
 
 USE_CDN_FOR_CLIENT_LIBS = False
 

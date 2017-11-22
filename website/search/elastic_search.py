@@ -112,6 +112,8 @@ def requires_search(func):
             except NotFoundError as e:
                 raise exceptions.IndexNotFoundError(e.error)
             except RequestError as e:
+                if e.error == 'search_phase_execution_exception':
+                    raise exceptions.MalformedQueryError('Failed to parse query')
                 if 'ParseException' in e.error:  # ES 1.5
                     raise exceptions.MalformedQueryError(e.error)
                 if type(e.error) == dict:  # ES 2.0
