@@ -228,7 +228,7 @@ def conference_results(meeting):
     :param str meeting: Endpoint name for a conference.
     """
     try:
-        conf = Conference.objects.get(endpoint=meeting)
+        conf = Conference.objects.get(endpoint__iexact=meeting)
     except Conference.DoesNotExist:
         raise HTTPError(httplib.NOT_FOUND)
 
