@@ -3,7 +3,6 @@
 <%namespace name="contributor_list" file="util/contributor_list.mako" />
 <%namespace name="render_addon_widget" file="util/render_addon_widget.mako" />
 <%include file="project/nodes_privacy.mako"/>
-<%include file="project/nodes_delete.mako"/>
 
 <%
     is_project = node['node_type'] == 'project'

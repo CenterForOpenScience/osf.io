@@ -84,8 +84,11 @@ $(document).ready(function() {
     }
 
     if(ctx.node.childExists){
-        new NodesDelete.NodesDelete('#nodesDelete', ctx.node.nodeType, ctx.node.urls.api);
-    }else{
+        var selector = '#bulkDeleteNode';
+        if ($(selector).length){
+            new NodesDelete.DeleteManager(selector);
+        }
+    } else {
         $('#deleteNode').on('click', function() {
             ProjectSettings.getConfirmationCode(ctx.node.nodeType, ctx.node.isPreprint);
         });

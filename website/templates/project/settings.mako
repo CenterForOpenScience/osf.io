@@ -1,5 +1,4 @@
 <%inherit file="project/project_base.mako"/>
-<%include file="project/nodes_delete.mako"/>
 <%def name="title()">${node['title']} Settings</%def>
 
 <div class="page-header visible-xs">
@@ -97,7 +96,18 @@
                         </div>
                     % if 'admin' in user['permissions']:
                         <hr />
-                            <button id="deleteNode" class="btn btn-danger btn-delete-node" data-toggle="modal" data-target="#nodesDelete">Delete ${node['node_type']}</button>
+                            <span data-bind="stopBinding: true">
+                                <span id="bulkDeleteNode">
+
+                                    <button id="deleteNode"
+                                    % if node['child_exists']:
+                                        data-toggle="modal" data-target="#nodesDelete"
+                                    % endif
+                                    data-bind="click: $root.delete.bind($root, ${node['child_exists'] | sjson, n}, '${node['node_type']}', ${node['is_preprint'] | sjson, n}, '${node['api_url']}')"
+                                    class="btn btn-danger btn-delete-node">Delete ${node['node_type']}</button>
+                                    <%include file="project/nodes_delete.mako"/>
+                                </span>
+                            </span>
                     % endif
                     </div>
                 </div>
@@ -577,7 +587,7 @@
     % if not node['is_registration']:
         <script type="text/javascript" src=${"/static/public/js/forward/node-cfg.js" | webpack_asset}></script>
     % endif
-    
+
     % for js_asset in addon_js:
         <script src="${js_asset | webpack_asset}"></script>
     % endfor

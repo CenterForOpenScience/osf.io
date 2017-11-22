@@ -1,6 +1,7 @@
 <div id="nodesDelete" class="modal fade">
     <div class="modal-dialog modal-md">
         <div style="display: none;" data-bind="visible: true">
+            <!-- ko with: modal -->
             <div class="modal-content">
                 <div class="modal-header">
                     <button type="button" class="close" data-dismiss="modal" data-bind="click: clear" aria-label="Close"><span aria-hidden="true">&times;</span></button>
@@ -84,6 +85,7 @@
                     </span>
                 </div><!-- end modal-footer -->
             </div><!-- end modal-content -->
+            <!-- /ko -->
         </div>
 
     </div><!-- end modal-dialog -->

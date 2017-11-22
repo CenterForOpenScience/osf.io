@@ -1,5 +1,5 @@
 /**
- * Controller for deleting a node and it childs (if they exists)
+ * Controller for deleting a node and its children (if they exists)
  */
 'use strict';
 
@@ -7,7 +7,6 @@ var $ = require('jquery');
 var ko = require('knockout');
 var Raven = require('raven-js');
 var $osf = require('./osfHelpers');
-var osfHelpers = require('js/osfHelpers');
 var m = require('mithril');
 var bootbox = require('bootbox');
 var NodesDeleteTreebeard = require('js/nodesDeleteTreebeard');
@@ -39,6 +38,39 @@ function getNodesOriginal(nodeTree, nodesOriginal) {
     });
     nodesOriginal[nodeTree.node.id].isRoot = true;
     return nodesOriginal;
+}
+
+function deleteNode(nodeType, isPreprint, nodeApiUrl){
+
+    var preprint_message = '<p class="danger">This ' + nodeType + ' contains a preprint. Deleting this ' +
+    nodeType + ' will also delete your preprint. This action is irreversible.</p>';
+
+    // It's possible that the XHR request for contributors has not finished before getting to this
+    // point; only construct the HTML for the list of contributors if the contribs list is populated
+    var message = '<p>It will no longer be available to other contributors on the project.' +
+    (isPreprint ? preprint_message : '');
+
+    $osf.confirmDangerousAction({
+        title: 'Are you sure you want to delete this ' + nodeType + '?',
+        message: message,
+        callback: function () {
+            var request = $.ajax({
+                type: 'DELETE',
+                dataType: 'json',
+                url: nodeApiUrl
+            });
+            request.done(function(response) {
+                // Redirect to either the parent project or the dashboard
+                window.location.href = response.url;
+            });
+            request.fail($osf.handleJSONError);
+        },
+        buttons: {
+            success: {
+                label: 'Delete'
+            }
+        }
+    });
 }
 
 /**
@@ -279,23 +311,41 @@ NodesDeleteViewModel.prototype.back = function() {
     this.page(this.SELECT);
 };
 
-function NodesDelete(selector, nodeType, nodeApiUrl) {
+function NodesDelete(nodeType, nodeApiUrl) {
     var self = this;
 
-    self.selector = selector;
+    self.selector = '#nodesDelete';
     self.$element = $(self.selector);
     self.viewModel = new NodesDeleteViewModel(nodeType, nodeApiUrl);
     self.viewModel.fetchNodeTree().done(function(response) {
         new NodesDeleteTreebeard('nodesDeleteTreebeard', response, self.viewModel.nodesState, self.viewModel.nodesOriginal);
     });
-    self.init();
+    return self.viewModel;
 }
 
-NodesDelete.prototype.init = function() {
-    osfHelpers.applyBindings(this.viewModel, this.selector);
+var NodesDeleteManager = function(){
+    var self = this;
+
+    self.modal = ko.observable();
+    self.delete = function (childExists, nodeType, isPreprint, nodeApiUrl) {
+        if (childExists) {
+            return self.modal(new NodesDelete(nodeType, nodeApiUrl));
+        } else {
+            return deleteNode(nodeType, isPreprint, nodeApiUrl);
+        }
+    };
+};
+
+var DeleteManager = function(selector){
+    var self = this;
+
+    self.selector = selector;
+    self.$element = $(self.selector)[0];
+    self.viewModel = new NodesDeleteManager();
+    $osf.applyBindings(self.viewModel, self.selector);
 };
 
 module.exports = {
     _NodesDeleteViewModel: NodesDeleteViewModel,
-    NodesDelete: NodesDelete
+    DeleteManager: DeleteManager
 };
