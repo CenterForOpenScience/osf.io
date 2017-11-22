@@ -46,9 +46,10 @@
                     </div>
                 </div>
                 <div id="grid">
-                    <div class="spinner-loading-wrapper">
-                        <div class="logo-spin logo-lg"></div>
-                        <p class="m-t-sm fg-load-message"> Loading wiki pages...  </p>
+                    <div class="ball-pulse ball-scale-blue text-center spinner-loading-wrapper">
+                      <div></div>
+                      <div></div>
+                      <div></div>
                     </div>
                 </div>
                 <div class="hidden text-danger" id="wikiErrorMessage" style="padding: 15px"></div>
@@ -259,10 +260,11 @@
 <div class="modal fade" id="renameModal">
     <div class="modal-dialog">
         <div class="modal-content">
-            <div class="spinner-loading-wrapper">
-                <div class="logo-spin logo-xl"></div>
-                 <p class="m-t-sm fg-load-message"> Renaming wiki...  </p>
-            </div>
+          <div class="ball-pulse ball-scale-blue text-center spinner-loading-wrapper">
+            <div></div>
+            <div></div>
+            <div></div>
+          </div>
         </div>
     </div>
 </div>

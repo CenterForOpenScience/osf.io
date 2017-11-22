@@ -107,23 +107,6 @@
                 <span class="text-muted">${summary['nlogs']} contribution</span>
             % endif
         % endif
-        % if not summary['archiving']:
-            <div class="body hide" id="body-${summary['id']}" style="overflow:hidden;">
-            <hr />
-            % if summary['is_retracted']:
-                <h4>Recent activity information has been withdrawn.</h4>
-            % else:
-                <!-- Recent Activity (Logs) -->
-                Recent Activity
-                <div id="logFeed-${summary['primary_id'] if not summary['primary'] else summary['id']}">
-                    <div class="spinner-loading-wrapper">
-                        <div class="logo-spin logo-lg"></div>
-                         <p class="m-t-sm fg-load-message"> Loading logs...  </p>
-                    </div>
-                </div>
-            % endif
-        </div>
-        % endif
     </li>
 
 % else:

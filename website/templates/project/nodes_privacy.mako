@@ -36,9 +36,10 @@
                         </div>
                         <div class="osf-treebeard">
                             <div id="nodesPrivacyTreebeard">
-                                <div class="spinner-loading-wrapper">
-                                    <div class="logo-spin logo-md"></div>
-                                    <p class="m-t-sm fg-load-message"> Loading projects and components...  </p>
+                                <div class="ball-pulse ball-scale-blue text-center spinner-loading-wrapper">
+                                  <div></div>
+                                  <div></div>
+                                  <div></div>
                                 </div>
                             </div>
                             <div class="help-block" style="padding-left: 15px">

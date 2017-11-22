@@ -102,15 +102,6 @@
                             </p>
                             <div id="meetings-grid"></div>
                         </div>
-                        <div role="tabpanel" class="tab-pane" id="submissions">
-
-                            <div id="submissions-grid">
-                                <div id="allMeetingsLoader" class="spinner-loading-wrapper">
-                                    <div class="logo-spin logo-lg"></div>
-                                    <p class="m-t-sm fg-load-message"> Loading submissions...</p>
-                                </div>
-                            </div>
-                        </div>
                     </div>
                 </div>
 
