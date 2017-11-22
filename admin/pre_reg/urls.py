@@ -3,6 +3,8 @@ from django.contrib.auth.decorators import login_required as login
 
 from admin.pre_reg import views
 
+app_name = 'admin'
+
 urlpatterns = [
     url(r'^$', views.DraftListView.as_view(), name='prereg'),
     url(r'^download/$', views.DraftDownloadListView.as_view(), name='download'),

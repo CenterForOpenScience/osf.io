@@ -2,6 +2,8 @@ from django.conf.urls import url
 
 from api.institutions import views
 
+app_name = 'osf'
+
 urlpatterns = [
     url(r'^$', views.InstitutionList.as_view(), name=views.InstitutionList.view_name),
     url(r'^auth/$', views.InstitutionAuth.as_view(), name=views.InstitutionAuth.view_name),

@@ -3,7 +3,7 @@
 from __future__ import unicode_literals
 from urllib2 import quote, unquote
 
-from bulk_update.helper import bulk_update
+from django_bulk_update.helper import bulk_update
 from django.db import migrations
 
 

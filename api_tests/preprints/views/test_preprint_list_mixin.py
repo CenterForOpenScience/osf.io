@@ -270,3 +270,5 @@ class PreprintIsValidListMixin:
         # admin
         res = app.get(url, auth=user_admin_contrib.auth)
         assert len(res.json['data']) == 0
+
+        assert mock_preprint_updated.called
