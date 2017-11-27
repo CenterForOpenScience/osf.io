@@ -878,7 +878,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
             ).values_list('user__guids___id', flat=True)
 
         contributor_ids = set(self.contributors.values_list('guids___id', flat=True))
-        admin_ids = set()
+        admin_ids = set(get_admin_contributor_ids(self))
         for parent in self.parents:
             admins = get_admin_contributor_ids(parent)
             admin_ids.update(set(admins).difference(contributor_ids))
@@ -1510,7 +1510,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         # Update existing identifiers
         if self.get_identifier('doi'):
             doi_status = 'unavailable' if permissions == 'private' else 'public'
-            enqueue_task(update_ezid_metadata_on_change.s(self, status=doi_status))
+            enqueue_task(update_ezid_metadata_on_change.s(self._id, status=doi_status))
 
         if log:
             action = NodeLog.MADE_PUBLIC if permissions == 'public' else NodeLog.MADE_PRIVATE
