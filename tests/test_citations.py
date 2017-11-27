@@ -138,6 +138,21 @@ class CitationsUserTestCase(OsfTestCase):
             }
         )
 
+    def test_disabled_user_csl(self):
+        # Tests the csl name for a disabled user
+        user = UserFactory()
+        project = NodeFactory(creator=user)
+        user.disable_account()
+        user.is_registered = False
+        user.save()
+        assert bool(
+            user.csl_name() ==
+            {
+                'given': user.csl_given_name,
+                'family': user.family_name,
+            }
+        )
+
 
 class CitationsViewsTestCase(OsfTestCase):
 
