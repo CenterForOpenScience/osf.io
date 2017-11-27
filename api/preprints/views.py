@@ -204,7 +204,6 @@ class PreprintDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView, Pre
         doi                             string                              bare DOI for the manuscript, as entered by the user
         preprint_doi_created            iso8601 timestamp                   timestamp that the preprint doi was created
 
-
     ##Relationships
 
     ###Node
