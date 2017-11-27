@@ -23,6 +23,10 @@
         "fullName": "GitHub",
         "externalView": true
     },
+    "gitlab": {
+        "fullName": "GitLab",
+        "externalView": true
+    },
     "googledrive": {
         "fullName": "Google Drive",
         "externalView": true
@@ -38,5 +42,9 @@
     "s3": {
         "fullName": "Amazon S3",
         "externalView": false
+    },
+    "onedrive": {
+        "fullName": "OneDrive",
+        "externalView": true
     }
 }
