@@ -43,6 +43,7 @@ class PreprintService(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMi
     subjects = models.ManyToManyField(blank=True, to='osf.Subject', related_name='preprint_services')
 
     identifiers = GenericRelation(Identifier, related_query_name='preprintservices')
+    preprint_doi_created = NonNaiveDateTimeField(default=None, null=True, blank=True)
 
     class Meta:
         unique_together = ('node', 'provider')
