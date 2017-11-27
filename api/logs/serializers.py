@@ -58,6 +58,8 @@ class NodeLogParamsSerializer(RestrictedDictSerializer):
     github_repo = ser.CharField(read_only=True, source='github.repo')
     bitbucket_user = ser.CharField(read_only=True, source='bitbucket.user')
     bitbucket_repo = ser.CharField(read_only=True, source='bitbucket.repo')
+    gitlab_user = ser.CharField(read_only=True, source='gitlab.user')
+    gitlab_repo = ser.CharField(read_only=True, source='gitlab.repo')
     file = ser.DictField(read_only=True)
     filename = ser.CharField(read_only=True)
     kind = ser.CharField(read_only=True)

@@ -186,7 +186,7 @@ class ReviewsMachine(Machine):
                 raise ValueError('Preprint must have at least one subject to be published.')
             self.reviewable.date_published = now
             self.reviewable.is_published = True
-            enqueue_postcommit_task(get_and_set_preprint_identifiers, (), {'preprint': self.reviewable}, celery=True)
+            enqueue_postcommit_task(get_and_set_preprint_identifiers, (), {'preprint_id': self.reviewable._id}, celery=True)
         elif not should_publish and self.reviewable.is_published:
             self.reviewable.is_published = False
         self.reviewable.save()

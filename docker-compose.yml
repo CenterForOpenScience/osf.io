@@ -146,10 +146,11 @@ services:
 
   unoconv:
     image: centerforopenscience/unoconv
-    command: /bin/bash -c "
-      /opt/libreoffice4.4/program/python -u /usr/bin/unoconv --listener --server=0.0.0.0 --port=2002 -vvv &&
-      chmod -R 777 /tmp/mfrlocalcache
-      "
+    command: 
+      - /bin/bash
+      - -c
+      - /opt/libreoffice4.4/program/python -u /usr/bin/unoconv --listener --server=0.0.0.0 --port=2002 -vvv &&
+        chmod -R 777 /tmp/mfrlocalcache
     restart: unless-stopped
     ports:
       - 2002:2002
