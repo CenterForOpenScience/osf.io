@@ -383,6 +383,7 @@ class CeleryConfig:
         'scripts.populate_popular_projects_and_registrations',
         'website.search.elastic_search',
         'scripts.generate_sitemap',
+        'scripts.generate_prereg_csv',
     }
 
     med_pri_modules = {
@@ -553,7 +554,7 @@ class CeleryConfig:
             'generate_sitemap': {
                 'task': 'scripts.generate_sitemap',
                 'schedule': crontab(minute=0, hour=0),  # Daily 12:00 a.m.
-            }
+            },
         }
 
         # Tasks that need metrics and release requirements
