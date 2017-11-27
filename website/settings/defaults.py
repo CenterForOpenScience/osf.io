@@ -383,6 +383,7 @@ class CeleryConfig:
         'scripts.populate_popular_projects_and_registrations',
         'website.search.elastic_search',
         'scripts.generate_sitemap',
+        'scripts.generate_prereg_csv',
     }
 
     med_pri_modules = {
@@ -458,6 +459,7 @@ class CeleryConfig:
         'scripts.premigrate_created_modified',
     )
 
+<<<<<<< HEAD
     # Modules that need metrics and release requirements
     # imports += (
     #     'scripts.osfstorage.glacier_inventory',
@@ -554,6 +556,150 @@ class CeleryConfig:
                 'task': 'scripts.generate_sitemap',
                 'schedule': crontab(minute=0, hour=0),  # Daily 12:00 a.m.
             }
+=======
+    CELERY_DEFAULT_EXCHANGE_TYPE = 'direct'
+    CELERY_ROUTES = ('framework.celery_tasks.routers.CeleryRouter', )
+    CELERY_IGNORE_RESULT = True
+    CELERY_STORE_ERRORS_EVEN_IF_IGNORED = True
+
+# Default RabbitMQ broker
+RABBITMQ_USERNAME = os.environ.get('RABBITMQ_USERNAME', 'guest')
+RABBITMQ_PASSWORD = os.environ.get('RABBITMQ_PASSWORD', 'guest')
+RABBITMQ_HOST = os.environ.get('RABBITMQ_HOST', 'localhost')
+RABBITMQ_PORT = os.environ.get('RABBITMQ_PORT', '5672')
+RABBITMQ_VHOST = os.environ.get('RABBITMQ_VHOST', '/')
+
+BROKER_URL = os.environ.get('BROKER_URL', 'amqp://{}:{}@{}:{}/{}'.format(RABBITMQ_USERNAME, RABBITMQ_PASSWORD, RABBITMQ_HOST, RABBITMQ_PORT, RABBITMQ_VHOST))
+BROKER_USE_SSL = False
+
+# Default RabbitMQ backend
+CELERY_RESULT_BACKEND = os.environ.get('CELERY_RESULT_BACKEND', BROKER_URL)
+
+# Modules to import when celery launches
+CELERY_IMPORTS = (
+    'framework.celery_tasks',
+    'framework.email.tasks',
+    'website.mailchimp_utils',
+    'website.notifications.tasks',
+    'website.archiver.tasks',
+    'website.search.search',
+    'website.project.tasks',
+    'scripts.populate_new_and_noteworthy_projects',
+    'scripts.populate_popular_projects_and_registrations',
+    'scripts.refresh_addon_tokens',
+    'scripts.retract_registrations',
+    'scripts.embargo_registrations',
+    'scripts.approve_registrations',
+    'scripts.approve_embargo_terminations',
+    'scripts.triggered_mails',
+    'scripts.send_queued_mails',
+    'scripts.analytics.run_keen_summaries',
+    'scripts.analytics.run_keen_snapshots',
+    'scripts.analytics.run_keen_events',
+    'scripts.generate_sitemap',
+    'scripts.generate_prereg_csv'
+)
+
+# Modules that need metrics and release requirements
+# CELERY_IMPORTS += (
+#     'scripts.osfstorage.glacier_inventory',
+#     'scripts.osfstorage.glacier_audit',
+#     'scripts.osfstorage.usage_audit',
+#     'scripts.stuck_registration_audit',
+#     'scripts.osfstorage.files_audit',
+#     'scripts.analytics.tasks',
+#     'scripts.analytics.upload',
+# )
+
+# celery.schedule will not be installed when running invoke requirements the first time.
+try:
+    from celery.schedules import crontab
+except ImportError:
+    pass
+else:
+    #  Setting up a scheduler, essentially replaces an independent cron job
+    CELERYBEAT_SCHEDULE = {
+        '5-minute-emails': {
+            'task': 'website.notifications.tasks.send_users_email',
+            'schedule': crontab(minute='*/5'),
+            'args': ('email_transactional',),
+        },
+        'daily-emails': {
+            'task': 'website.notifications.tasks.send_users_email',
+            'schedule': crontab(minute=0, hour=0),
+            'args': ('email_digest',),
+        },
+        'refresh_addons': {
+            'task': 'scripts.refresh_addon_tokens',
+            'schedule': crontab(minute=0, hour=2),  # Daily 2:00 a.m
+            'kwargs': {'dry_run': False, 'addons': {
+                'box': 60,          # https://docs.box.com/docs/oauth-20#section-6-using-the-access-and-refresh-tokens
+                'googledrive': 14,  # https://developers.google.com/identity/protocols/OAuth2#expiration
+                'mendeley': 14      # http://dev.mendeley.com/reference/topics/authorization_overview.html
+            }},
+        },
+        'retract_registrations': {
+            'task': 'scripts.retract_registrations',
+            'schedule': crontab(minute=0, hour=0),  # Daily 12 a.m
+            'kwargs': {'dry_run': False},
+        },
+        'embargo_registrations': {
+            'task': 'scripts.embargo_registrations',
+            'schedule': crontab(minute=0, hour=0),  # Daily 12 a.m
+            'kwargs': {'dry_run': False},
+        },
+        'approve_registrations': {
+            'task': 'scripts.approve_registrations',
+            'schedule': crontab(minute=0, hour=0),  # Daily 12 a.m
+            'kwargs': {'dry_run': False},
+        },
+        'approve_embargo_terminations': {
+            'task': 'scripts.approve_embargo_terminations',
+            'schedule': crontab(minute=0, hour=0),  # Daily 12 a.m
+            'kwargs': {'dry_run': False},
+        },
+        'triggered_mails': {
+            'task': 'scripts.triggered_mails',
+            'schedule': crontab(minute=0, hour=0),  # Daily 12 a.m
+            'kwargs': {'dry_run': False},
+        },
+        'send_queued_mails': {
+            'task': 'scripts.send_queued_mails',
+            'schedule': crontab(minute=0, hour=12),  # Daily 12 p.m.
+            'kwargs': {'dry_run': False},
+        },
+        'new-and-noteworthy': {
+            'task': 'scripts.populate_new_and_noteworthy_projects',
+            'schedule': crontab(minute=0, hour=2, day_of_week=6),  # Saturday 2:00 a.m.
+            'kwargs': {'dry_run': False}
+        },
+        'update_popular_nodes': {
+            'task': 'scripts.populate_popular_projects_and_registrations',
+            'schedule': crontab(minute=0, hour=2),  # Daily 2:00 a.m.
+            'kwargs': {'dry_run': False}
+        },
+        'run_keen_summaries': {
+            'task': 'scripts.analytics.run_keen_summaries',
+            'schedule': crontab(minute=00, hour=1),  # Daily 1:00 a.m.
+            'kwargs': {'yesterday': True}
+        },
+        'run_keen_snapshots': {
+            'task': 'scripts.analytics.run_keen_snapshots',
+            'schedule': crontab(minute=0, hour=3),  # Daily 3:00 a.m.
+        },
+        'run_keen_events': {
+            'task': 'scripts.analytics.run_keen_events',
+            'schedule': crontab(minute=0, hour=4),  # Daily 4:00 a.m.
+            'kwargs': {'yesterday': True}
+        },
+        'generate_sitemap': {
+            'task': 'scripts.generate_sitemap',
+            'schedule': crontab(minute=0, hour=0),  # Daily 12:00 a.m.
+        },
+        'generate_prereg_csv': {
+            'task': 'scripts.generate_prereg_csv',
+            'schedule': crontab(minute=0, hour=15, day_of_week=0),  # Sunday 3:00 a.m.
+>>>>>>> hotfix/0.124.13
         }
 
         # Tasks that need metrics and release requirements
