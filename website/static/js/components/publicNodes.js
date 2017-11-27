@@ -6,7 +6,7 @@ var iconmap = require('js/iconmap');
 var lodashFind = require('lodash.find');
 var mHelpers = require('js/mithrilHelpers');
 var Raven = require('raven-js');
-var profilePagination = require('js/components/profilePagination.js');
+var withPagination = require('js/components/pagination.js').withPagination;
 
 
 var PROJECTS_PAGE_SIZE = 5;
@@ -33,6 +33,7 @@ var _buildUrl = function(page, user, nodeType) {
         query.embed.push('parent');
     }
 
+    var urlToReturn = $osf.apiV2Url('users/' + user +  '/nodes/', { query: query});
     return $osf.apiV2Url('users/' + user +  '/nodes/', { query: query});
 };
 
@@ -133,37 +134,13 @@ var PublicNodes = {
         self.publicProjects = m.prop([]);
         self.requestPending = m.prop(false);
 
-        self.failed = false;
-        self.paginators = m.prop([]);
-        self.nextPage = m.prop('');
-        self.prevPage = m.prop('');
-        self.totalPages = m.prop(0);
-        self.currentPage = m.prop(0);
-        self.pageToGet = m.prop(0);
-
-        self.getProjects = function _getProjects (url) {
-
+        self.getNextItems = function _getProjects (url) {
             if(self.requestPending()) {
                 return;
             }
 
             self.publicProjects([]);
             self.requestPending(true);
-
-            function _processResults (result){
-
-                self.publicProjects(result.data);
-                self.nextPage(result.links.next);
-                self.prevPage(result.links.prev);
-
-                var params = $osf.urlParams(url);
-                var page = params.page || 1;
-
-                self.currentPage(parseInt(page));
-                self.totalPages(Math.ceil(result.meta.total / result.meta.per_page));
-
-                m.redraw();
-            }
 
             var promise = m.request({
                 method : 'GET',
@@ -175,7 +152,9 @@ var PublicNodes = {
             promise.then(
                 function(result) {
                     self.requestPending(false);
-                    _processResults(result);
+                    self.publicProjects(result.data);
+                    options.updatePagination(result, url);
+                    m.redraw();
                     return promise;
                 }, function(xhr, textStatus, error) {
                     self.failed = true;
@@ -189,7 +168,7 @@ var PublicNodes = {
         self.getCurrentProjects = function _getCurrentProjects (page){
             if(!self.requestPending()) {
                 var url = _buildUrl(page, self.user, self.nodeType);
-                return self.getProjects(url);
+                return self.getNextItems(url);
             }
         };
 
@@ -197,8 +176,6 @@ var PublicNodes = {
     },
 
     view : function (ctrl) {
-
-        profilePagination.ProfilePagination(ctrl, _buildUrl);
 
         return m('ul.list-group m-md', [
             // Error message if the request fails
@@ -224,21 +201,15 @@ var PublicNodes = {
                             '.'
                         ])
                     ])
-                : m('div.help-block', {}, 'This user has no public ' + ctrl.nodeType + '.'),
+                : m('div.help-block', {}, 'This user has no public ' + ctrl.nodeType + '.')
 
-                // Pagination
-                m('.db-activity-nav.text-center', {style: 'margin-top: 5px; margin-bottom: -10px;'}, [
-                    ctrl.paginators() ? ctrl.paginators().map(function(page) {
-                        return page.url() ? m('.btn.btn-sm.btn-link', { onclick : function() {
-                            ctrl.getProjects(page.url());
-                        }}, page.text) : m('.btn.btn-sm.btn-link.disabled', {style: 'color: black'}, page.text);
-                    }) : ''
-                ])
             ]
         ]);
 
     }
 };
+
+PublicNodes = withPagination(PublicNodes, _buildUrl);
 
 module.exports = {
     PublicNodes: PublicNodes

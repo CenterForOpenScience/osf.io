@@ -7,10 +7,10 @@ var lodashFind = require('lodash.find');
 var mHelpers = require('js/mithrilHelpers');
 var Raven = require('raven-js');
 
-var profilePagination = require('js/components/profilePagination.js');
-
+var withPagination = require('js/components/pagination').withPagination;
 
 var QUICKFILES_PAGE_SIZE = 10;
+
 
 var _buildUrl = function(page, user) {
 
@@ -65,35 +65,12 @@ var QuickFiles = {
         self.quickFiles = m.prop([]);
         self.requestPending = m.prop(false);
 
-        self.failed = false;
-        self.paginators = m.prop([]);
-        self.nextPage = m.prop('');
-        self.prevPage = m.prop('');
-        self.totalPages = m.prop(0);
-        self.currentPage = m.prop(0);
-        self.pageToGet = m.prop(0);
-
-        self.getQuickFiles = function _getQuickFiles(url) {
+        self.getNextItems = function _getQuickFiles(url) {
             if (self.requestPending()) {
                 return;
             }
             self.quickFiles([]);
             self.requestPending(true);
-
-            function _processResults(result) {
-
-                self.quickFiles(result.data);
-                self.nextPage(result.links.next);
-                self.prevPage(result.links.prev);
-
-                var params = $osf.urlParams(url);
-                var page = params.page || 1;
-
-                self.currentPage(parseInt(page));
-                self.totalPages(Math.ceil(result.meta.total / result.meta.per_page));
-
-                m.redraw();
-            }
 
             var promise = m.request({
                 method: 'GET',
@@ -105,7 +82,9 @@ var QuickFiles = {
             promise.then(
                 function (result) {
                     self.requestPending(false);
-                    _processResults(result);
+                    self.quickFiles(result.data);
+                    options.updatePagination(result, url);
+                    m.redraw();
                     return promise;
                 }, function (xhr, textStatus, error) {
                     self.failed = true;
@@ -125,7 +104,7 @@ var QuickFiles = {
         self.getCurrentQuickFiles = function _getCurrentQuickFiles(page) {
             if (!self.requestPending()) {
                 var url = _buildUrl(page, self.user);
-                return self.getQuickFiles(url);
+                return self.getNextItems(url);
             }
         };
         self.getCurrentQuickFiles();
@@ -133,15 +112,13 @@ var QuickFiles = {
 
     view: function (ctrl) {
 
-        profilePagination.ProfilePagination(ctrl, _buildUrl);
-
         return m('ul.list-group m-md', [
             // Error message if the request fails
             ctrl.failed ? m('p', [
-                'Unable to retrieve quickfiles at this time. Please refresh the page or contact ',
-                m('a', {'href': 'mailto:support@osf.io'}, 'support@osf.io'),
-                ' if the problem persists.'
-            ]) :
+                    'Unable to retrieve quickfiles at this time. Please refresh the page or contact ',
+                    m('a', {'href': 'mailto:support@osf.io'}, 'support@osf.io'),
+                    ' if the problem persists.'
+                ]) :
 
             // Show laoding icon while there is a pending request
             ctrl.requestPending() ?  m('.ball-pulse.ball-scale-blue.text-center', [m(''), m(''), m('')]) :
@@ -152,20 +129,13 @@ var QuickFiles = {
                     return m.component(QuickFile, {file: file});
                 }) : ctrl.isProfile ?
                     m('div.help-block', {}, 'You have no public quickfiles')
-                : m('div.help-block', {}, 'This user has no public quickfiles.'),
-
-                // Pagination
-                m('.db-activity-nav.text-center', {style: 'margin-top: 5px; margin-bottom: -10px;'}, [
-                    ctrl.paginators() ? ctrl.paginators().map(function(page) {
-                        return page.url() ? m('.btn.btn-sm.btn-link', { onclick : function() {
-                            ctrl.getQuickFiles(page.url());
-                        }}, page.text) : m('.btn.btn-sm.btn-link.disabled', {style: 'color: black'}, page.text);
-                    }) : ''
-                ])
+                : m('div.help-block', {}, 'This user has no public quickfiles.')
             ]
         ]);
     }
 };
+
+QuickFiles = withPagination(QuickFiles, _buildUrl);
 
 module.exports = {
     QuickFiles: QuickFiles
