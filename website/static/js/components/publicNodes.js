@@ -37,6 +37,39 @@ var _buildUrl = function(page, user, nodeType) {
     return $osf.apiV2Url('users/' + user +  '/nodes/', { query: query});
 };
 
+var _getNextItems = function(ctrl, url, updatePagination) {
+    if(ctrl.requestPending()) {
+        return;
+    }
+
+    ctrl.publicProjects([]);
+    ctrl.requestPending(true);
+
+    var promise = m.request({
+        method : 'GET',
+        url : url,
+        background : true,
+        config: mHelpers.apiV2Config({withCredentials: window.contextVars.isOnRootDomain})
+    });
+
+    promise.then(
+        function(result) {
+            ctrl.requestPending(false);
+            ctrl.publicProjects(result.data);
+            updatePagination(result, url);
+            m.redraw();
+            return promise;
+        }, function(xhr, textStatus, error) {
+            ctrl.failed = true;
+            ctrl.requestPending(false);
+            m.redraw();
+            Raven.captureMessage('Error retrieving projects', {extra: {url: url, textStatus: textStatus, error: error}});
+        }
+    );
+};
+
+
+
 function _formatContributors(item) {
 
     var contributorList = item.embeds.contributors.data;
@@ -134,41 +167,10 @@ var PublicNodes = {
         self.publicProjects = m.prop([]);
         self.requestPending = m.prop(false);
 
-        self.getNextItems = function _getProjects (url) {
-            if(self.requestPending()) {
-                return;
-            }
-
-            self.publicProjects([]);
-            self.requestPending(true);
-
-            var promise = m.request({
-                method : 'GET',
-                url : url,
-                background : true,
-                config: mHelpers.apiV2Config({withCredentials: window.contextVars.isOnRootDomain})
-            });
-
-            promise.then(
-                function(result) {
-                    self.requestPending(false);
-                    self.publicProjects(result.data);
-                    options.updatePagination(result, url);
-                    m.redraw();
-                    return promise;
-                }, function(xhr, textStatus, error) {
-                    self.failed = true;
-                    self.requestPending(false);
-                    m.redraw();
-                    Raven.captureMessage('Error retrieving projects', {extra: {url: url, textStatus: textStatus, error: error}});
-                }
-            );
-        };
-
         self.getCurrentProjects = function _getCurrentProjects (page){
             if(!self.requestPending()) {
                 var url = _buildUrl(page, self.user, self.nodeType);
-                return self.getNextItems(url);
+                return _getNextItems(self, url, options.updatePagination);
             }
         };
 
@@ -210,7 +212,8 @@ var PublicNodes = {
 };
 
 var PaginationWrapper = withPagination({
-    buildUrl: _buildUrl
+    buildUrl: _buildUrl,
+    getNextItems: _getNextItems
 });
 
 PublicNodes = new PaginationWrapper(PublicNodes);

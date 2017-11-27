@@ -15,9 +15,8 @@ var WithPagination = function(options) {
     return function PaginationWrapper(component) {
         /**
          * Wrapper around another controller to add pagination functionality.
-         * Assumes that the wrapped controller has a function getNextItems which
-         * takes care of making the appropriate request and calling this wrapper's
-         * updatePagination function.
+         * options should include a buildUrl function to control how to create a new
+         * URL for pagination, and a getNextItems function to handle requests
          */
         return {
             controller: function (ctrlOptions) {
@@ -40,6 +39,8 @@ var WithPagination = function(options) {
                     self.totalPages(Math.ceil(result.meta.total / result.meta.per_page));
                 };
 
+                self.updatePagination = ctrlOptions.updatePagination;
+                self.getNextItems = options.getNextItems;
                 self.buildUrl = options.buildUrl;
                 self.user = ctrlOptions.user._id;
                 self.nodeType = ctrlOptions.nodeType;
@@ -174,7 +175,7 @@ var WithPagination = function(options) {
                     ctrl.paginators() ? ctrl.paginators().map(function (page) {
                         return page.url() ? m('.btn.btn-sm.btn-link', {
                             onclick: function () {
-                                ctrl.innerCtrl.getNextItems(page.url());
+                                ctrl.getNextItems(ctrl.innerCtrl, page.url(), ctrl.updatePagination);
                             }
                         }, page.text) : m('.btn.btn-sm.btn-link.disabled', {style: 'color: black'}, page.text);
                     }) : ''

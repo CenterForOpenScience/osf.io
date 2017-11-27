@@ -24,6 +24,44 @@ var _buildUrl = function(page, user) {
 };
 
 
+var _getNextItems = function(ctrl, url, updatePagination) {
+    if(ctrl.requestPending()) {
+        return;
+    }
+
+    ctrl.quickFiles([]);
+    ctrl.requestPending(true);
+
+    var promise = m.request({
+        method : 'GET',
+        url : url,
+        background : true,
+        config: mHelpers.apiV2Config({withCredentials: window.contextVars.isOnRootDomain})
+    });
+
+    promise.then(
+        function(result) {
+            ctrl.requestPending(false);
+            ctrl.quickFiles(result.data);
+            updatePagination(result, url);
+            m.redraw();
+            return promise;
+        }, function(xhr, textStatus, error) {
+            ctrl.failed = true;
+            ctrl.requestPending(false);
+            m.redraw();
+            Raven.captureMessage('Error retrieving quickfiles', {
+                extra: {
+                    url: url,
+                    textStatus: textStatus,
+                    error: error
+                }
+            });
+        }
+    );
+};
+
+
 var QuickFile = {
 
     controller: function(options) {
@@ -65,46 +103,10 @@ var QuickFiles = {
         self.quickFiles = m.prop([]);
         self.requestPending = m.prop(false);
 
-        self.getNextItems = function _getQuickFiles(url) {
-            if (self.requestPending()) {
-                return;
-            }
-            self.quickFiles([]);
-            self.requestPending(true);
-
-            var promise = m.request({
-                method: 'GET',
-                url: url,
-                background: true,
-                config: mHelpers.apiV2Config({withCredentials: window.contextVars.isOnRootDomain})
-            });
-
-            promise.then(
-                function (result) {
-                    self.requestPending(false);
-                    self.quickFiles(result.data);
-                    options.updatePagination(result, url);
-                    m.redraw();
-                    return promise;
-                }, function (xhr, textStatus, error) {
-                    self.failed = true;
-                    self.requestPending(false);
-                    m.redraw();
-                    Raven.captureMessage('Error retrieving quickfiles', {
-                        extra: {
-                            url: url,
-                            textStatus: textStatus,
-                            error: error
-                        }
-                    });
-                }
-            );
-        };
-
         self.getCurrentQuickFiles = function _getCurrentQuickFiles(page) {
             if (!self.requestPending()) {
                 var url = _buildUrl(page, self.user);
-                return self.getNextItems(url);
+                return _getNextItems(self, url, options.updatePagination);
             }
         };
         self.getCurrentQuickFiles();
@@ -136,7 +138,8 @@ var QuickFiles = {
 };
 
 var PaginationWrapper = withPagination({
-    buildUrl: _buildUrl
+    buildUrl: _buildUrl,
+    getNextItems: _getNextItems
 });
 
 QuickFiles = new PaginationWrapper(QuickFiles);
