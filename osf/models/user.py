@@ -471,7 +471,8 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
         return utils.generate_csl_given_name(self.given_name, self.middle_names, self.suffix)
 
     def csl_name(self, node_id=None):
-        if self.is_registered:
+        # disabled users are set to is_registered = False but have a fullname
+        if self.is_registered or self.is_disabled:
             name = self.fullname
         else:
             name = self.get_unclaimed_record(node_id)['name']
