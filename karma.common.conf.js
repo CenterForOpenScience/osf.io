@@ -4,9 +4,6 @@
 
 var webpack = require('webpack');
 var webpackCommon = require('./webpack.common.config.js');
-var staticPath = function(dir) {
-    return path.join(root, dir);
-};
 
 // A subset of the app webpack config
 var webpackTestConfig = {
@@ -25,7 +22,7 @@ var webpackTestConfig = {
         }),
     ],
     resolve: webpackCommon.resolve,
-    externals: {'jquery': 'jQuery', 'jquery-ui': 'jQuery.ui', 'raven-js': 'Raven'},
+    externals: {'jquery': 'jQuery', 'jquery-ui': 'jQuery.ui'},
     module: {
         rules: webpackCommon.module.rules.concat([
             // Assume test files are ES6
@@ -36,7 +33,6 @@ var webpackTestConfig = {
        fs: 'empty'
     }
 };
-webpackTestConfig.resolve.alias['Raven'] = staticPath('vendor/raven-js/dist/raven.js')
 
 module.exports = {
     frameworks: ['mocha', 'sinon'],
