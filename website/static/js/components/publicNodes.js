@@ -209,7 +209,12 @@ var PublicNodes = {
     }
 };
 
-PublicNodes = withPagination(PublicNodes, _buildUrl);
+var PaginationWrapper = withPagination({
+    buildUrl: _buildUrl
+});
+
+PublicNodes = new PaginationWrapper(PublicNodes);
+
 
 module.exports = {
     PublicNodes: PublicNodes

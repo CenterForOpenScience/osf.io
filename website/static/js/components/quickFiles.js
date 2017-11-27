@@ -135,7 +135,12 @@ var QuickFiles = {
     }
 };
 
-QuickFiles = withPagination(QuickFiles, _buildUrl);
+var PaginationWrapper = withPagination({
+    buildUrl: _buildUrl
+});
+
+QuickFiles = new PaginationWrapper(QuickFiles);
+
 
 module.exports = {
     QuickFiles: QuickFiles
