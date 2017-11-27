@@ -251,30 +251,6 @@ def gitlab_root_folder(*args, **kwargs):
 # Repos #
 #########
 
-@must_have_addon(SHORT_NAME, 'user')
-@must_have_addon(SHORT_NAME, 'node')
-@must_be_addon_authorizer(SHORT_NAME)
-@must_have_permission('write')
-def gitlab_create_repo(**kwargs):
-    repo_name = request.json.get('name')
-    user = request.json.get('user')
-
-    if not repo_name:
-        raise HTTPError(http.BAD_REQUEST)
-
-    node_settings = kwargs['node_addon']
-    connection = GitLabClient(external_account=node_settings.external_account)
-
-    try:
-        repo = connection.create_repo(repo_name, auto_init=True)
-    except GitLabError:
-        raise HTTPError(http.BAD_REQUEST)
-
-    return {
-        'user': user,
-        'repo': repo,
-    }
-
 def add_hook_log(node, gitlab, action, path, date, committer, include_urls=False,
                  sha=None, save=False):
     """Add log event for commit from webhook payload.

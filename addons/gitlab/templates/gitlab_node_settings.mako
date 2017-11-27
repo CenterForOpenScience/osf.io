@@ -63,7 +63,6 @@
                     <button class="btn btn-success addon-settings-submit">
                         Save
                     </button>
-                    <a id="gitlabCreateRepo" class="btn btn-success pull-right">Create Repo</a>
                 </div>
             </div>
             % elif gitlab_repo_full_name:
