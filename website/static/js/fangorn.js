@@ -375,7 +375,7 @@ function inheritFromParent(item, parent, fields) {
         item.data[field] = item.data[field] || parent.data[field];
     });
 
-    if(item.data.provider === 'github' || item.data.provider === 'bitbucket'){
+    if(item.data.provider === 'github' || item.data.provider === 'bitbucket' || item.data.provider === 'gitlab'){
         item.data.branch = parent.data.branch;
     }
 }
@@ -544,7 +544,7 @@ function doItemOp(operation, to, from, rename, conflict) {
     }
 
     var options = {};
-    if(from.data.provider === 'github' || from.data.provider === 'bitbucket'){
+    if(from.data.provider === 'github' || from.data.provider === 'bitbucket' || from.data.provider === 'gitlab'){
         options.branch = from.data.branch;
         moveSpec.branch = from.data.branch;
     }
@@ -1029,7 +1029,7 @@ function _createFolder(event, dismissCallback, helpText) {
     var path = parent.data.path || '/';
     var options = {name: val, kind: 'folder'};
 
-    if (parent.data.provider === 'github') {
+    if ((parent.data.provider === 'github') || (parent.data.provider === 'gitlab')) {
         extra.branch = parent.data.branch;
         options.branch = parent.data.branch;
     }
@@ -1038,7 +1038,7 @@ function _createFolder(event, dismissCallback, helpText) {
         method: 'PUT',
         background: true,
         config: $osf.setXHRAuthorization,
-        url: waterbutler.buildCreateFolderUrl(path, parent.data.provider, parent.data.nodeId, options)
+        url: waterbutler.buildCreateFolderUrl(path, parent.data.provider, parent.data.nodeId, options, extra)
     }).then(function(item) {
         item = tb.options.lazyLoadPreprocess.call(this, item).data;
         inheritFromParent({data: item}, parent, ['branch']);
@@ -2100,7 +2100,16 @@ var FGToolbar = {
         }
         // multiple selection icons
         // Special cased to not show 'delete multiple' for github or published dataverses
-        if(items.length > 1 && ctrl.tb.multiselected()[0].data.provider !== 'github' && ctrl.tb.options.placement !== 'fileview' && !(ctrl.tb.multiselected()[0].data.provider === 'dataverse' && ctrl.tb.multiselected()[0].parent().data.version === 'latest-published') ) {
+        if(
+            (items.length > 1) &&
+            (ctrl.tb.multiselected()[0].data.provider !== 'github') &&
+            (ctrl.tb.multiselected()[0].data.provider !== 'onedrive') &&
+            (ctrl.tb.options.placement !== 'fileview') &&
+            !(
+                (ctrl.tb.multiselected()[0].data.provider === 'dataverse') &&
+                (ctrl.tb.multiselected()[0].parent().data.version === 'latest-published')
+            )
+        ) {
             if (showDeleteMultiple(items)) {
                 var preprintPath = getPreprintPath(window.contextVars.node.preprintFileId);
                 if (preprintPath && multiselectContainsPreprint(items, preprintPath)) {
@@ -2547,7 +2556,7 @@ function allowedToMove(folder, item, mustBeIntra) {
         item.data.permissions.edit &&
         (!mustBeIntra || (item.data.provider === folder.data.provider && item.data.nodeId === folder.data.nodeId)) &&
         !(item.data.provider === 'figshare' && item.data.extra && item.data.extra.status === 'public') &&
-        (item.data.provider !== 'bitbucket')
+        (item.data.provider !== 'bitbucket') && (item.data.provider !== 'gitlab') && (item.data.provider !== 'onedrive')
     );
 }
 

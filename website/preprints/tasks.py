@@ -28,7 +28,7 @@ def on_preprint_updated(preprint_id, update_share=True, share_type=None, old_sub
     if preprint.node:
         status = 'public' if preprint.verified_publishable else 'unavailable'
         try:
-            update_ezid_metadata_on_change(preprint, status=status)
+            update_ezid_metadata_on_change(preprint._id, status=status)
         except HTTPError as err:
             sentry.log_exception()
             sentry.log_message(err.args[0])
@@ -178,7 +178,9 @@ def format_preprint(preprint, share_type, old_subjects=None):
 
 
 @celery_app.task(ignore_results=True)
-def get_and_set_preprint_identifiers(preprint):
+def get_and_set_preprint_identifiers(preprint_id):
+    PreprintService = apps.get_model('osf.PreprintService')
+    preprint = PreprintService.load(preprint_id)
     ezid_response = request_identifiers_from_ezid(preprint)
     if ezid_response is None:
         return
@@ -187,7 +189,9 @@ def get_and_set_preprint_identifiers(preprint):
 
 
 @celery_app.task(ignore_results=True)
-def update_ezid_metadata_on_change(target_object, status):
+def update_ezid_metadata_on_change(target_guid, status):
+    Guid = apps.get_model('osf.Guid')
+    target_object = Guid.load(target_guid).referent
     if (settings.EZID_USERNAME and settings.EZID_PASSWORD) and target_object.get_identifier('doi'):
         client = get_ezid_client()
 
