@@ -51,7 +51,7 @@ class PreprintService(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMi
         )
 
     def __unicode__(self):
-        return '{} preprint (guid={}) of {}'.format('published' if self.is_published else 'unpublished', self._id, self.node.__unicode__())
+        return '{} preprint (guid={}) of {}'.format('published' if self.is_published else 'unpublished', self._id, self.node.__unicode__() if self.node else None)
 
     @property
     def verified_publishable(self):
@@ -205,7 +205,7 @@ class PreprintService(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMi
                 )
 
             # This should be called after all fields for EZID metadta have been set
-            enqueue_postcommit_task(get_and_set_preprint_identifiers, (), {'preprint': self}, celery=True)
+            enqueue_postcommit_task(get_and_set_preprint_identifiers, (), {'preprint_id': self._id}, celery=True)
 
             self._send_preprint_confirmation(auth)
 

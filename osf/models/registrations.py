@@ -39,9 +39,9 @@ class Registration(AbstractNode):
 
     registered_meta = DateTimeAwareJSONField(default=dict, blank=True)
     # TODO Add back in once dependencies are resolved
-    registration_approval = models.ForeignKey(RegistrationApproval, null=True, blank=True)
-    retraction = models.ForeignKey(Retraction, null=True, blank=True)
-    embargo = models.ForeignKey(Embargo, null=True, blank=True)
+    registration_approval = models.ForeignKey(RegistrationApproval, null=True, blank=True, on_delete=models.CASCADE)
+    retraction = models.ForeignKey(Retraction, null=True, blank=True, on_delete=models.CASCADE)
+    embargo = models.ForeignKey(Embargo, null=True, blank=True, on_delete=models.CASCADE)
 
     registered_from = models.ForeignKey('self',
                                         related_name='registrations',
@@ -367,8 +367,9 @@ class DraftRegistrationLog(ObjectIDMixin, BaseModel):
     """
     date = NonNaiveDateTimeField(default=timezone.now)
     action = models.CharField(max_length=255)
-    draft = models.ForeignKey('DraftRegistration', related_name='logs', null=True, blank=True)
-    user = models.ForeignKey('OSFUser', null=True)
+    draft = models.ForeignKey('DraftRegistration', related_name='logs',
+                              null=True, blank=True, on_delete=models.CASCADE)
+    user = models.ForeignKey('OSFUser', null=True, on_delete=models.CASCADE)
 
     SUBMITTED = 'submitted'
     REGISTERED = 'registered'
@@ -389,8 +390,10 @@ class DraftRegistration(ObjectIDMixin, BaseModel):
     deleted = NonNaiveDateTimeField(null=True, blank=True)
 
     # Original Node a draft registration is associated with
-    branched_from = models.ForeignKey('Node', null=True, related_name='registered_draft')
-    initiator = models.ForeignKey('OSFUser', null=True)
+    branched_from = models.ForeignKey('Node', related_name='registered_draft',
+                                      null=True, on_delete=models.CASCADE)
+
+    initiator = models.ForeignKey('OSFUser', null=True, on_delete=models.CASCADE)
 
     # Dictionary field mapping question id to a question's comments and answer
     # {
@@ -407,11 +410,11 @@ class DraftRegistration(ObjectIDMixin, BaseModel):
     #   }
     # }
     registration_metadata = DateTimeAwareJSONField(default=dict, blank=True)
-    registration_schema = models.ForeignKey('MetaSchema', null=True)
+    registration_schema = models.ForeignKey('MetaSchema', null=True, on_delete=models.CASCADE)
     registered_node = models.ForeignKey('Registration', null=True, blank=True,
-                                        related_name='draft_registration')
+                                        related_name='draft_registration', on_delete=models.CASCADE)
 
-    approval = models.ForeignKey('DraftRegistrationApproval', null=True, blank=True)
+    approval = models.ForeignKey('DraftRegistrationApproval', null=True, blank=True, on_delete=models.CASCADE)
 
     # Dictionary field mapping extra fields defined in the MetaSchema.schema to their
     # values. Defaults should be provided in the schema (e.g. 'paymentSent': false),

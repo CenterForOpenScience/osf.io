@@ -9,7 +9,7 @@ from psycopg2._psycopg import AsIs
 from addons.base.models import BaseNodeSettings, BaseStorageAddon
 from osf.exceptions import InvalidTagError, NodeStateError, TagNotFoundError
 from osf.models import File, FileVersion, Folder, TrashedFileNode, BaseFileNode
-from osf.utils.auth import Auth
+from framework.auth.core import Auth
 from website.files import exceptions
 from website.files import utils as files_utils
 from website.util import permissions
@@ -386,7 +386,7 @@ class NodeSettings(BaseStorageAddon, BaseNodeSettings):
     complete = True
     has_auth = True
 
-    root_node = models.ForeignKey(OsfStorageFolder, null=True, blank=True)
+    root_node = models.ForeignKey(OsfStorageFolder, null=True, blank=True, on_delete=models.CASCADE)
 
     @property
     def folder_name(self):

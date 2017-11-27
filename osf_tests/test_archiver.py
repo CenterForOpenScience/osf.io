@@ -287,10 +287,7 @@ def generate_schema_from_data(data):
         # reason. Update the doc currently in the db rather than saving a new
         # one.
 
-        schema = MetaSchema.find_one(
-            Q('name', 'eq', _schema['name']) &
-            Q('schema_version', 'eq', _schema['version'])
-        )
+        schema = MetaSchema.objects.get(name=_schema['name'], schema_version=_schema['version'])
         schema.schema = _schema
         schema.save()
 

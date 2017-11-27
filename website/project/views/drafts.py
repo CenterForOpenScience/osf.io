@@ -353,9 +353,9 @@ def get_metaschemas(*args, **kwargs):
     count = request.args.get('count', 100)
     include = request.args.get('include', 'latest')
 
-    meta_schemas = MetaSchema.objects.filter(active=True).distinct()
+    meta_schemas = MetaSchema.objects.filter(active=True)
     if include == 'latest':
-        meta_schemas.filter(schema_version=LATEST_SCHEMA_VERSION).distinct()
+        meta_schemas.filter(schema_version=LATEST_SCHEMA_VERSION)
 
     meta_schemas = sorted(meta_schemas, key=lambda x: METASCHEMA_ORDERING.index(x.name))
 
