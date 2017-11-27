@@ -12,7 +12,6 @@ from framework.exceptions import HTTPError
 from addons.base import generic_views
 from addons.gitlab.api import GitLabClient
 from addons.gitlab.apps import gitlab_hgrid_data
-from addons.gitlab.exceptions import GitLabError
 from addons.gitlab.settings import DEFAULT_HOSTS
 from addons.gitlab.serializer import GitLabSerializer
 from addons.gitlab.utils import verify_hook_signature, MESSAGES
