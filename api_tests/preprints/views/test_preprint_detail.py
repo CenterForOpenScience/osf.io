@@ -108,7 +108,7 @@ class TestPreprintDetail:
         assert res.json['data']['id'] == unpublished_preprint._id
         assert res.json['data']['attributes']['is_published'] is False
         assert 'preprint_doi' not in res.json['data']['links'].keys()
-        assert res.json['data']['attributes']['preprint_doi_on_datacite'] is False
+        assert res.json['data']['attributes']['preprint_doi_created'] is None
 
     def test_published_preprint_doi_link_returned_before_datacite_request(self, app, user, unpublished_preprint, unpublished_url):
         unpublished_preprint.is_published = True
@@ -119,16 +119,17 @@ class TestPreprintDetail:
         assert 'preprint_doi' in res.json['data']['links'].keys()
         expected_doi = EZID_FORMAT.format(namespace=DOI_NAMESPACE, guid=unpublished_preprint._id).replace('doi:', '').upper()
         assert res.json['data']['links']['preprint_doi'] == 'https://dx.doi.org/{}'.format(expected_doi)
-        assert res.json['data']['attributes']['preprint_doi_on_datacite'] is False
+        assert res.json['data']['attributes']['preprint_doi_created'] is None
 
     def test_published_preprint_doi_link_returned_after_datacite_request(self, app, user, preprint, url):
+        expected_doi = EZID_FORMAT.format(namespace=DOI_NAMESPACE, guid=preprint._id).replace('doi:', '')
+        preprint.set_identifier_values(doi=expected_doi, ark='testark')
         res = app.get(url, auth=user.auth)
         assert res.json['data']['id'] == preprint._id
         assert res.json['data']['attributes']['is_published'] is True
         assert 'preprint_doi' in res.json['data']['links'].keys()
-        expected_doi = EZID_FORMAT.format(namespace=DOI_NAMESPACE, guid=preprint._id).replace('doi:', '')
         assert res.json['data']['links']['preprint_doi'] == 'https://dx.doi.org/{}'.format(expected_doi)
-        assert res.json['data']['attributes']['preprint_doi_on_datacite'] is True
+        assert res.json['data']['attributes']['preprint_doi_created'] is not None
 
 
 @pytest.mark.django_db
