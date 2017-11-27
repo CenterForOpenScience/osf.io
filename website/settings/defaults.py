@@ -370,6 +370,7 @@ LOW_PRI_MODULES = {
     'scripts.populate_popular_projects_and_registrations',
     'website.search.elastic_search',
     'scripts.generate_sitemap',
+    'scripts.generate_prereg_csv',
 }
 
 MED_PRI_MODULES = {
@@ -448,6 +449,7 @@ CELERY_IMPORTS = (
     'scripts.analytics.run_keen_snapshots',
     'scripts.analytics.run_keen_events',
     'scripts.generate_sitemap',
+    'scripts.generate_prereg_csv'
 )
 
 # Modules that need metrics and release requirements
@@ -545,6 +547,10 @@ else:
         'generate_sitemap': {
             'task': 'scripts.generate_sitemap',
             'schedule': crontab(minute=0, hour=0),  # Daily 12:00 a.m.
+        },
+        'generate_prereg_csv': {
+            'task': 'scripts.generate_prereg_csv',
+            'schedule': crontab(minute=0, hour=15, day_of_week=0),  # Sunday 3:00 a.m.
         }
     }
 
