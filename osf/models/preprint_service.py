@@ -234,6 +234,7 @@ class PreprintService(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMi
     def set_identifier_values(self, doi, ark, save=False):
         self.set_identifier_value('doi', doi)
         self.set_identifier_value('ark', ark)
+        self.preprint_doi_created = timezone.now()
 
         if save:
             self.save()
