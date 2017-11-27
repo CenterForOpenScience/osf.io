@@ -33,7 +33,7 @@ var webpackTestConfig = {
        fs: 'empty'
     }
 };
-
+webpackTestConfig.resolve.descriptionFiles = ["package.json", "bower.json"],
 module.exports = {
     frameworks: ['mocha', 'sinon'],
     files: [
