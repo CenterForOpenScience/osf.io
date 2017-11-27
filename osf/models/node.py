@@ -27,6 +27,7 @@ from framework import status
 from framework.celery_tasks.handlers import enqueue_task
 from framework.exceptions import PermissionsError
 from framework.sentry import log_exception
+from reviews.workflow import States
 from addons.wiki.utils import to_mongo_key
 from osf.exceptions import ValidationValueError
 from osf.models.contributor import (Contributor, RecentlyAddedContributor,
@@ -442,10 +443,14 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         if not self.preprint_file_id or not self.is_public:
             return False
         if self.preprint_file.node_id == self.id:
-            return self.has_published_preprint
+            return self.has_submitted_preprint
         else:
             self._is_preprint_orphan = True
             return False
+
+    @property
+    def has_submitted_preprint(self):
+        return self.preprints.exclude(reviews_state=States.INITIAL.value).exists()
 
     @property
     def is_preprint_orphan(self):
@@ -458,14 +463,28 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
 
     @property
     def has_published_preprint(self):
-        return self.preprints.filter(is_published=True).exists()
+        return self.published_preprints_queryset.exists()
+
+    @property
+    def published_preprints_queryset(self):
+        return self.preprints.filter(is_published=True)
 
     @property
     def preprint_url(self):
+        node_linked_preprint = self.linked_preprint
+        if node_linked_preprint:
+            return node_linked_preprint.url
+
+    @property
+    def linked_preprint(self):
         if self.is_preprint:
             try:
                 # if multiple preprints per project are supported on the front end this needs to change.
-                return self.preprints.filter(is_published=True)[0].url
+                published_preprint = self.published_preprints_queryset.first()
+                if published_preprint:
+                    return published_preprint
+                else:
+                    return self.preprints.get_queryset()[0]
             except IndexError:
                 pass
 

@@ -663,6 +663,7 @@ def _view_project(node, auth, primary=False,
     addons = list(node.get_addons())
     widgets, configs, js, css = _render_addons(addons)
     redirect_url = node.url + '?view_only=None'
+    node_linked_preprint = node.linked_preprint
 
     disapproval_link = ''
     if (node.is_pending_registration and node.has_permission(user, ADMIN)):
@@ -737,6 +738,13 @@ def _view_project(node, auth, primary=False,
             'institutions': get_affiliated_institutions(node) if node else [],
             'has_draft_registrations': node.has_active_draft_registrations,
             'is_preprint': node.is_preprint,
+            'has_moderated_preprint': node_linked_preprint.provider.reviews_workflow if node_linked_preprint else '',
+            'preprint_state': node_linked_preprint.reviews_state if node_linked_preprint else '',
+            'preprint_word': node_linked_preprint.provider.preprint_word if node_linked_preprint else '',
+            'preprint_provider': {
+                'name': node_linked_preprint.provider.name,
+                'workflow': node_linked_preprint.provider.reviews_workflow
+            } if node_linked_preprint else {},
             'is_preprint_orphan': node.is_preprint_orphan,
             'has_published_preprint': node.preprints.filter(is_published=True).exists() if node else False,
             'preprint_file_id': node.preprint_file._id if node.preprint_file else None,
