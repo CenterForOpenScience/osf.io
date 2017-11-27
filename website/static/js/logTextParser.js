@@ -574,6 +574,17 @@ var LogPieces = {
         }
     },
 
+    onedrive_folder: {
+        view: function(ctrl, logObject) {
+            var folder = logObject.attributes.params.folder;
+
+            if(paramIsReturned(folder, logObject)){
+                return m('span', folder === '/' ? '/ (Full OneDrive)' : folder);
+            }
+            return m('span', '');
+        }
+    },
+
     citation: {
         view: function(ctrl, logObject) {
             return returnTextParams('citation_name', '', logObject);
@@ -717,7 +728,18 @@ var LogPieces = {
             }
             return m('span', 'a');
         }
-    }
+    },
+
+    gitlab_repo: {
+        view: function(ctrl, logObject){
+            var gitlab_user = logObject.attributes.params.gitlab_user;
+            var gitlab_repo = logObject.attributes.params.gitlab_repo;
+            if (paramIsReturned(gitlab_repo, logObject) && paramIsReturned(gitlab_user, logObject)) {
+                return m('span', gitlab_user + '/' + gitlab_repo);
+            }
+            return m('span', '');
+        }
+    },
 };
 
 module.exports = {
