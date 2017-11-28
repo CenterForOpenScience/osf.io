@@ -76,8 +76,8 @@ var QuickFile = {
         return m('div', [
             m('li.project list-group-item list-group-item-node cite-container', [
                 m('h4.list-group-item-heading', [
-                    m('span.component-overflow.f-w-lg', {style: 'line-height: 1.5; width: 100%'}, [
-                        m('span.project-statuses-lg', {style: 'width: 50%; float:left'}, [
+                    m('span.component-overflow.f-w-lg', {style: {lineHeight: 1.5, width: '100%'}}, [
+                        m('span.project-statuses-lg', {style: {width: '50%', float:'left'}}, [
                             m('span', {class: ctrl.icon, style: 'padding-right: 5px;'}, ''),
                             m('a', {'href': viewUrl,
                                 onclick : function () {
@@ -85,7 +85,7 @@ var QuickFile = {
                                 }
                             }, ctrl.file.attributes.name),
                         ]),
-                        m('div', {style: 'width: 50%; float:right; font-size:small; line-height:2;'}, 'downloads: ' + ctrl.file.attributes.extra.downloads)
+                        m('div', {style: {width: '50%', float: 'right', fontSize: 'small', marginTop: '2%'}}, 'downloads: ' + ctrl.file.attributes.extra.downloads)
                     ])
                 ])
             ])
