@@ -89,6 +89,7 @@ INSTALLED_APPS = (
     'django_nose',
     'password_reset',
     'guardian',
+    'nplusone.ext.django',
 
     # OSF
     'osf',
@@ -154,6 +155,7 @@ MIDDLEWARE_CLASSES = (
     # process_request to be skipped, e.g. when a trailing slash is omitted
     'api.base.middleware.DjangoGlobalMiddleware',
     'api.base.middleware.CeleryTaskMiddleware',
+    'nplusone.ext.django.NPlusOneMiddleware',
 
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
