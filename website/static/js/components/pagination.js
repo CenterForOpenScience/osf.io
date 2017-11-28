@@ -11,7 +11,7 @@ var MAX_PAGES_ON_PAGINATOR = 7;
 var MAX_PAGES_ON_PAGINATOR_SIDE = 5;
 
 
-var WithPagination = function(options) {
+var withPagination = function(options) {
     return function PaginationWrapper(component) {
         /**
          * Wrapper around another controller to add pagination functionality.
@@ -187,5 +187,5 @@ var WithPagination = function(options) {
 };
 
 module.exports = {
-    withPagination: WithPagination
+    withPagination: withPagination
 };
