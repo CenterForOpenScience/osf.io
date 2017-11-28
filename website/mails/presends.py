@@ -47,7 +47,7 @@ def prereg_reminder(email):
     draft = DraftRegistration.load(draft_id)
     reminders_sent = QueuedMail.objects.filter(data__draft_id=draft_id).exclude(sent_at=None).exists()
 
-    return draft and not reminders_sent and not draft.approval
+    return draft and not draft.deleted and not reminders_sent and not draft.approval
 
 def welcome_osf4m(email):
     """ presend has two functions. First is to make sure that the user has not

@@ -46,6 +46,7 @@ def find_neglected_prereg_within_reminder_limit():
     already_queued = [entry['draft_id'] for entry in queue_data]
 
     return DraftRegistration.objects.filter(
+        deleted__isnull=True,
         approval__isnull=True,
         registration_schema=MetaSchema.objects.get(name='Prereg Challenge'),
         datetime_initiated__lte=timezone.now()-settings.PREREG_WAIT_TIME,

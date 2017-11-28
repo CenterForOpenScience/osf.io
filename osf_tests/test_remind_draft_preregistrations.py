@@ -76,7 +76,8 @@ class TestPreregReminder:
         assert QueuedMail.objects.filter(email_type=PREREG_REMINDER_TYPE).count() == 0
 
     def test_dont_trigger_prereg_reminder_deleted_draft(self, draft):
-        draft.delete()
+        draft.deleted = timezone.now()
+        draft.save()
         main(dry_run=False)
 
         assert QueuedMail.objects.filter(email_type=PREREG_REMINDER_TYPE).count() == 0

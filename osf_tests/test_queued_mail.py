@@ -184,7 +184,8 @@ class TestQueuedMail:
     @mock.patch('osf.models.queued_mail.send_mail')
     def test_remind_prereg_presend_deleted_draft(self, mock_mail, user, prereg):
         mail = self.queue_mail(mail=PREREG_REMINDER, user=user, draft_id=prereg._id)
-        prereg.delete()
+        prereg.deleted = timezone.now()
+        prereg.save()
         assert not mail.send_mail()
 
 
