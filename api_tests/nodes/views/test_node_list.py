@@ -120,7 +120,7 @@ class TestNodeList:
             assert project_json['embeds']['root']['data']['id'] == project.root._id
 
     def test_node_list_sorting(self, app, url):
-        res = app.get('{}?sort=-date_created'.format(url))
+        res = app.get('{}?sort=-created'.format(url))
         assert res.status_code == 200
 
         res = app.get('{}?sort=title'.format(url))
@@ -390,10 +390,10 @@ class TestNodeFiltering:
         project_public_four = ProjectFactory(is_public=True, title='test', creator=user_one, description='test')
 
         for project in [project_public_one, project_public_two, project_public_three, project_private_one, project_private_two]:
-            project.date_created = '2016-10-25 00:00:00.000000+00:00'
+            project.created = '2016-10-25 00:00:00.000000+00:00'
             project.save()
 
-        project_public_four.date_created = '2016-10-28 00:00:00.000000+00:00'
+        project_public_four.created = '2016-10-28 00:00:00.000000+00:00'
         project_public_four.save()
 
         expected = [project_public_one._id, project_public_two._id, project_public_three._id]

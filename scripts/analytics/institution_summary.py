@@ -34,7 +34,7 @@ class InstitutionSummary(SummaryAnalytics):
         for institution in institutions:
             node_query = (
                 Q(is_deleted=False) &
-                Q(date_created__lt=query_datetime)
+                Q(created__lt=query_datetime)
             )
 
             project_query = node_query

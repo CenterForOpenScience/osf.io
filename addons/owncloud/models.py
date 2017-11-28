@@ -56,7 +56,7 @@ class UserSettings(BaseOAuthUserSettings):
         return ret
 
 
-class NodeSettings(BaseStorageAddon, BaseOAuthNodeSettings):
+class NodeSettings(BaseOAuthNodeSettings, BaseStorageAddon):
     oauth_provider = OwnCloudProvider
     serializer = OwnCloudSerializer
 

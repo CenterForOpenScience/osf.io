@@ -72,8 +72,8 @@ class PreprintSerializer(JSONAPISerializer):
 
     id = IDField(source='_id', read_only=True)
     subjects = ser.SerializerMethodField()
-    date_created = DateByVersion(read_only=True)
-    date_modified = DateByVersion(read_only=True)
+    date_created = DateByVersion(source='created', read_only=True)
+    date_modified = DateByVersion(source='modified', read_only=True)
     date_published = DateByVersion(read_only=True)
     original_publication_date = DateByVersion(required=False)
     doi = ser.CharField(source='article_doi', required=False, allow_null=True)

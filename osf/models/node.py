@@ -288,11 +288,9 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
 
     creator = models.ForeignKey(OSFUser,
                                 db_index=True,
-                                related_name='created',
+                                related_name='nodes_created',
                                 on_delete=models.SET_NULL,
                                 null=True, blank=True)
-    date_created = NonNaiveDateTimeField(auto_now_add=True)
-    date_modified = NonNaiveDateTimeField(db_index=True, auto_now=True)
     deleted_date = NonNaiveDateTimeField(null=True, blank=True)
     description = models.TextField(blank=True, default='')
     file_guid_to_share_uuids = DateTimeAwareJSONField(default=dict, blank=True)
@@ -2016,8 +2014,8 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         if len(new.title) > 200:
             new.title = new.title[:200]
 
-        # Slight hack - date_created is a read-only field.
-        new.date_created = timezone.now()
+        # Slight hack - created is a read-only field.
+        new.created = timezone.now()
 
         new.save(suppress_log=True)
 
@@ -2036,7 +2034,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
                 },
             },
             auth=auth,
-            log_date=new.date_created,
+            log_date=new.created,
             save=False,
         )
         new.save()
@@ -2065,7 +2063,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         returns a list of [(node, [children]), ...]
         """
         ret = []
-        for node in self._nodes.order_by('date_created').all():
+        for node in self._nodes.order_by('created').all():
             if condition(auth, node):
                 # base case
                 ret.append((node, []))
@@ -2981,7 +2979,7 @@ def add_project_created_log(sender, instance, created, **kwargs):
             log_action,
             params=log_params,
             auth=Auth(user=instance.creator),
-            log_date=instance.date_created,
+            log_date=instance.created,
             save=True,
         )
 

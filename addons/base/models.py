@@ -542,7 +542,7 @@ class GenericRootNode(object):
     name = ''
 
 
-class BaseStorageAddon(BaseModel):
+class BaseStorageAddon(object):
     """
     Mixin class for traversing file trees of addons with files
     """

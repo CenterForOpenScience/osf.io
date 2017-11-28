@@ -542,9 +542,8 @@ def update_node(auth, node, **kwargs):
     updated_fields_dict = {
         key: getattr(node, key) if key != 'tags' else [str(tag) for tag in node.tags]
         for key in updated_field_names
-        if key != 'logs' and key != 'date_modified'
+        if key != 'logs' and key != 'modified' and key != 'last_logged'
     }
-    node.save()
     return {'updated_fields': updated_fields_dict}
 
 @must_be_valid_project
@@ -698,8 +697,8 @@ def _view_project(node, auth, primary=False,
             'in_dashboard': in_bookmark_collection,
             'is_public': node.is_public,
             'is_archiving': node.archiving,
-            'date_created': iso8601format(node.date_created),
-            'date_modified': iso8601format(node.logs.latest().date) if node.logs.exists() else '',
+            'date_created': iso8601format(node.created),
+            'date_modified': iso8601format(node.last_logged) if node.last_logged else '',
             'tags': list(node.tags.filter(system=False).values_list('name', flat=True)),
             'children': node.nodes_active.exists(),
             'child_exists': Node.objects.get_children(node, active=True).exists(),
@@ -1077,8 +1076,8 @@ def _serialize_node_search(node):
         data['title'] += ' (registration)'
         data['dateRegistered'] = node.registered_date.isoformat()
     else:
-        data['dateCreated'] = node.date_created.isoformat()
-        data['dateModified'] = node.date_modified.isoformat()
+        data['dateCreated'] = node.created.isoformat()
+        data['dateModified'] = node.modified.isoformat()
 
     first_author = node.visible_contributors[0]
     data['firstAuthor'] = first_author.family_name or first_author.given_name or first_author.fullname
