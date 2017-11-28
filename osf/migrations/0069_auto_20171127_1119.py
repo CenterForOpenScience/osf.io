@@ -9,7 +9,7 @@ logger = logging.getLogger(__name__)
 
 def add_preprint_doi_created(apps, schema_editor):
     """
-    Data migration that makes preprint_doi_created equal to date_published for existing published preprints.
+    Sets preprint_doi_created equal to date_published for existing published preprints.
     """
     null_preprint_doi_created = PreprintService.objects.filter(preprint_doi_created__isnull=True, date_published__isnull=False)
     preprints_count = null_preprint_doi_created.count()
