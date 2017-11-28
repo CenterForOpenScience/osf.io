@@ -29,16 +29,8 @@ def reverse_func(apps, schema_editor):
     """
     Reverses data migration. Sets preprint_doi_created field back to null.
     """
-    preprint_doi_created_not_null = PreprintService.objects.filter(preprint_doi_created__isnull=False)
-    preprints_count = preprint_doi_created_not_null.count()
-    current_preprint = 0
     logger.info('Reversing preprint_doi_created migration.')
-
-    for preprint in preprint_doi_created_not_null:
-        current_preprint += 1
-        preprint.preprint_doi_created = None
-        preprint.save()
-        logger.info('Preprint ID {}, {}/{} preprint_doi_created field set to None.'.format(preprint._id, current_preprint, preprints_count))
+    PreprintService.objects.filter(preprint_doi_created__isnull=False).update(preprint_doi_created=None)
 
 class Migration(migrations.Migration):
 
