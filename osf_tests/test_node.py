@@ -607,7 +607,7 @@ class TestProject:
         assert node.category == 'project'
         assert bool(node._id)
         # assert_almost_equal(
-        #     node.date_created, timezone.now(),
+        #     node.created, timezone.now(),
         #     delta=datetime.timedelta(seconds=5),
         # )
         assert node.is_public is False
@@ -671,8 +671,8 @@ class TestLogging:
         # date is tzaware
         assert last_log.date.tzinfo == pytz.utc
 
-        # updates node.date_modified
-        assert_datetime_equal(node.date_modified, last_log.date)
+        # updates node.modified
+        assert_datetime_equal(node.modified, last_log.date)
 
 
 class TestTagging:
@@ -779,7 +779,7 @@ class TestNodeCreation:
         assert first_log.action == NodeLog.PROJECT_CREATED
         params = first_log.params
         assert params['node'] == node._id
-        assert_datetime_equal(first_log.date, node.date_created)
+        assert_datetime_equal(first_log.date, node.created)
 
 # Copied from tests/test_models.py
 class TestContributorMethods:
@@ -2615,8 +2615,8 @@ class TestForkNode:
         assert fork._id in [n._id for n in original.forks.all()]
         # Note: Must cast ForeignList to list for comparison
         assert list(fork.contributors.all()) == [fork_user]
-        assert (fork_date - fork.date_created) < datetime.timedelta(seconds=30)
-        assert fork.forked_date != original.date_created
+        assert (fork_date - fork.created) < datetime.timedelta(seconds=30)
+        assert fork.forked_date != original.created
 
         # Test that pointers were copied correctly
         assert(
@@ -3474,7 +3474,7 @@ class TestTemplateNode:
         )
 
         assert new.title == self._default_title(project)
-        assert new.date_created != project.date_created
+        assert new.created != project.created
         self._verify_log(new)
 
     def test_simple_template_title_changed(self, project, auth):
@@ -3492,7 +3492,7 @@ class TestTemplateNode:
         )
 
         assert new.title == changed_title
-        assert new.date_created != project.date_created
+        assert new.created != project.created
         self._verify_log(new)
 
     def test_use_as_template_adds_default_addons(self, project, auth):

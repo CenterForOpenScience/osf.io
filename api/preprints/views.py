@@ -61,7 +61,7 @@ class PreprintMixin(NodeMixin):
 class PreprintList(JSONAPIBaseView, generics.ListCreateAPIView, PreprintFilterMixin):
     """Preprints that represent a special kind of preprint node. *Writeable*.
 
-    Paginated list of preprints ordered by their `date_created`.  Each resource contains a representation of the
+    Paginated list of preprints ordered by their `created`.  Each resource contains a representation of the
     preprint.
 
     ##Preprint Attributes
@@ -162,8 +162,8 @@ class PreprintList(JSONAPIBaseView, generics.ListCreateAPIView, PreprintFilterMi
 
     serializer_class = PreprintSerializer
 
-    ordering = ('-date_created')
-    ordering_fields = ('date_created', 'date_last_transitioned')
+    ordering = ('-created')
+    ordering_fields = ('created', 'date_last_transitioned')
     view_category = 'preprints'
     view_name = 'preprint-list'
 
@@ -457,7 +457,7 @@ class PreprintActionList(JSONAPIBaseView, generics.ListAPIView, ListFilterMixin,
     serializer_class = ActionSerializer
     model_class = Action
 
-    ordering = ('-date_created',)
+    ordering = ('-created',)
     view_category = 'preprints'
     view_name = 'preprint-action-list'
 

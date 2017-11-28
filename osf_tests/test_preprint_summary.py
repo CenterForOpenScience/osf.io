@@ -45,10 +45,10 @@ class TestPreprintCount:
         resp._content = '{"hits" : {"total" : 1}}'
         requests.post.return_value = resp
 
-        field = PreprintService._meta.get_field('date_created')
+        field = PreprintService._meta.get_field('created')
         field.auto_now_add = False  # We have to fudge the time because Keen doesn't allow same day queries.
 
-        preprint.date_created = date['preprint_date_created']
+        preprint.created = date['preprint_date_created']
         preprint.save()
 
         field.auto_now_add = True

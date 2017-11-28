@@ -20,7 +20,7 @@ class QuickFilesRelationshipField(RelationshipField):
 
     def to_representation(self, value):
         relationship_links = super(QuickFilesRelationshipField, self).to_representation(value)
-        quickfiles_guid = value.created.filter(type=QuickFilesNode._typedmodels_type).values_list('guids___id', flat=True).get()
+        quickfiles_guid = value.nodes_created.filter(type=QuickFilesNode._typedmodels_type).values_list('guids___id', flat=True).get()
         upload_url = website_utils.waterbutler_api_url_for(quickfiles_guid, 'osfstorage')
         relationship_links['links']['upload'] = {
             'href': upload_url,

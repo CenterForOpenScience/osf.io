@@ -127,8 +127,8 @@ class TestFileView:
         assert attributes['provider'] == file.provider
         assert attributes['size'] == file.versions.first().size
         assert attributes['current_version'] == len(file.history)
-        assert attributes['date_modified'] == _dt_to_iso8601(file.versions.first().date_created.replace(tzinfo=pytz.utc))
-        assert attributes['date_created'] == _dt_to_iso8601(file.versions.last().date_created.replace(tzinfo=pytz.utc))
+        assert attributes['date_modified'] == _dt_to_iso8601(file.versions.first().created.replace(tzinfo=pytz.utc))
+        assert attributes['date_created'] == _dt_to_iso8601(file.versions.last().created.replace(tzinfo=pytz.utc))
         assert attributes['extra']['hashes']['md5'] is None
         assert attributes['extra']['hashes']['sha256'] is None
         assert attributes['tags'] == []
@@ -153,7 +153,7 @@ class TestFileView:
     def test_file_has_correct_unread_comments_count(self, app, user, file, node):
         contributor = AuthUserFactory()
         node.add_contributor(contributor, auth=Auth(user), save=True)
-        comment = CommentFactory(node=node, target=file.get_guid(create=True), user=contributor, page='files')
+        CommentFactory(node=node, target=file.get_guid(create=True), user=contributor, page='files')
         res = app.get('/{}files/{}/?related_counts=True'.format(API_BASE, file._id), auth=user.auth)
         assert res.status_code == 200
         unread_comments = res.json['data']['relationships']['comments']['links']['related']['meta']['unread']

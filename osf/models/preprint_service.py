@@ -25,8 +25,6 @@ from osf.models.base import BaseModel, GuidMixin
 from osf.models.identifiers import IdentifierMixin, Identifier
 
 class PreprintService(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin, BaseModel):
-    date_created = NonNaiveDateTimeField(auto_now_add=True)
-    date_modified = NonNaiveDateTimeField(auto_now=True)
     provider = models.ForeignKey('osf.PreprintProvider',
                                  on_delete=models.SET_NULL,
                                  related_name='preprint_services',
