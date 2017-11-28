@@ -306,7 +306,7 @@ def resolve_guid(guid, suffix=None):
 
         if isinstance(referent, BaseFileNode) and referent.is_file and referent.node.is_quickfiles:
             if referent.is_deleted:
-                raise HTTPError(http.NOT_FOUND)
+                raise HTTPError(http.GONE)
             if PROXY_EMBER_APPS:
                 resp = requests.get(EXTERNAL_EMBER_APPS['ember_osf_web']['server'], stream=True)
                 return Response(stream_with_context(resp.iter_content()), resp.status_code)
