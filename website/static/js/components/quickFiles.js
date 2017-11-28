@@ -97,6 +97,7 @@ var QuickFiles = {
 
     controller: function (options) {
         var self = this;
+        self.failed = false;
         self.user = options.user._id;
         self.isProfile = options.user.is_profile;
 

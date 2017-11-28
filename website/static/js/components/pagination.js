@@ -22,7 +22,6 @@ var withPagination = function(options) {
             controller: function (ctrlOptions) {
                 var self = this;
 
-                self.failed = false;
                 self.paginators = m.prop([]);
                 self.nextPage = m.prop('');
                 self.prevPage = m.prop('');
