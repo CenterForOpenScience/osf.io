@@ -69,7 +69,7 @@
             </div>
             <div class="col-sm-4">
                 <h5 class="m-t-md f-w-xl"> Are you experiencing downtime with our services? </h5>
-                <p> Check out our <a href="https://status.cos.io"> status page</a> for updates on how our services are operating.</p>
+                <p> Check out our<a href="https://status.cos.io"> status page</a> for updates on how our services are operating.</p>
             </div>
             <div class="col-sm-4">
                 <h5 class="m-t-md f-w-xl"> Are you looking for statistics consultations?</h5>
