@@ -1828,11 +1828,12 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         return False
 
     # TODO: Optimize me (e.g. use bulk create)
-    def fork_node(self, auth, title=None):
+    def fork_node(self, auth, title=None, parent=None):
         """Recursively fork a node.
 
         :param Auth auth: Consolidated authorization
         :param str title: Optional text to prepend to forked title
+        :param Node parent: Sets parent, should only be non-null when recursing
         :return: Forked node
         """
         Registration = apps.get_model('osf.Registration')
@@ -1869,13 +1870,17 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         # Need to save here in order to access m2m fields
         forked.save()
 
+        if parent:
+            node_relation = NodeRelation.objects.get(parent=parent.forked_from, child=original)
+            NodeRelation.objects.get_or_create(_order=node_relation._order, parent=parent, child=forked)
+
         forked.tags.add(*self.all_tags.values_list('pk', flat=True))
         for node_relation in original.node_relations.filter(child__is_deleted=False):
             node_contained = node_relation.child
             # Fork child nodes
             if not node_relation.is_node_link:
                 try:  # Catch the potential PermissionsError above
-                    forked_node = node_contained.fork_node(auth=auth, title='')
+                    forked_node = node_contained.fork_node(auth=auth, title='', parent=forked)
                 except PermissionsError:
                     pass  # If this exception is thrown omit the node from the result set
                     forked_node = None
@@ -1966,13 +1971,15 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
             ]
             NodeLog.objects.bulk_create(logs_to_create)
 
-    def use_as_template(self, auth, changes=None, top_level=True):
+    def use_as_template(self, auth, changes=None, top_level=True, parent=None):
         """Create a new project, using an existing project as a template.
 
         :param auth: The user to be assigned as creator
         :param changes: A dictionary of changes, keyed by node id, which
                         override the attributes of the template project or its
                         children.
+        :param Bool top_level: indicates existence of parent TODO: deprecate
+        :param Node parent: parent template. Should only be passed in during recursion
         :return: The `Node` instance created.
         """
         changes = changes or dict()
@@ -2048,13 +2055,18 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
             save=False,
         )
         new.save()
+
+        if parent:
+            node_relation = NodeRelation.objects.get(parent=parent.template_node, child=self)
+            NodeRelation.objects.get_or_create(_order=node_relation._order, parent=parent, child=new)
+
         # deal with the children of the node, if any
         for node_relation in self.node_relations.select_related('child').filter(child__is_deleted=False):
             node_contained = node_relation.child
             # template child nodes
             if not node_relation.is_node_link:
                 try:  # Catch the potential PermissionsError above
-                    templated_child = node_contained.use_as_template(auth, changes, top_level=False)
+                    templated_child = node_contained.use_as_template(auth, changes, top_level=False, parent=new)
                 except PermissionsError:
                     pass
                 else:
@@ -2062,6 +2074,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
                         parent=new, child=templated_child,
                         is_node_link=False
                     )
+                    templated_child.root = None
                     templated_child.save()  # Recompute root on save()
 
         return new
