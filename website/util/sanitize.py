@@ -13,9 +13,11 @@ def strip_html(unclean, tags=[]):
     :return: stripped string
     :rtype: str
     """
+    if unclean is None:
+        return u''
     # We make this noop for non-string, non-collection inputs so this function can be used with higher-order
     # functions, such as rapply (recursively applies a function to collections)
-    if not isinstance(unclean, basestring) and not is_iterable(unclean) and unclean is not None:
+    if not isinstance(unclean, basestring) and not is_iterable(unclean):
         return unclean
     return bleach.clean(unclean, strip=True, tags=tags, attributes=[], styles=[])
 
