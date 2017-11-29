@@ -203,7 +203,7 @@ class TestPreprintUpdate:
         assert not preprint.subjects.filter(_id=subject._id).exists()
         update_subjects_payload = build_preprint_update_payload(preprint._id, attributes={'subjects': [[subject._id]]})
 
-        res = app.patch_json_api(url, update_subjects_payload, auth=user.auth)
+        res = app.post_json_api(url, update_subjects_payload, auth=user.auth)
         assert res.status_code == 200
 
         preprint.reload()
@@ -232,7 +232,7 @@ class TestPreprintUpdate:
         assert preprint.primary_file != new_file
         update_file_payload = build_preprint_update_payload(preprint._id, relationships=relationships)
 
-        res = app.patch_json_api(url, update_file_payload, auth=user.auth)
+        res = app.post_json_api(url, update_file_payload, auth=user.auth)
         assert res.status_code == 200
 
         preprint.node.reload()
@@ -268,7 +268,7 @@ class TestPreprintUpdate:
         assert preprint.article_doi != new_doi
         update_subjects_payload = build_preprint_update_payload(preprint._id, attributes={'doi': new_doi})
 
-        res = app.patch_json_api(url, update_subjects_payload, auth=user.auth)
+        res = app.post_json_api(url, update_subjects_payload, auth=user.auth)
         assert res.status_code == 200
 
         preprint.node.reload()
@@ -290,7 +290,7 @@ class TestPreprintUpdate:
                 'description': new_description
             }
         )
-        res = app.patch_json_api(url, update_title_description_payload, auth=user.auth)
+        res = app.post_json_api(url, update_title_description_payload, auth=user.auth)
 
         assert res.status_code == 200
         preprint.node.reload()
@@ -312,7 +312,7 @@ class TestPreprintUpdate:
                 'tags': new_tags
             }
         )
-        res = app.patch_json_api(url, update_tags_payload, auth=user.auth)
+        res = app.post_json_api(url, update_tags_payload, auth=user.auth)
 
         assert res.status_code == 200
         preprint.node.reload()
@@ -430,7 +430,7 @@ class TestPreprintUpdate:
         unpublished = PreprintFactory(creator=user, is_published=False)
         url = '/{}preprints/{}/'.format(API_BASE, unpublished._id)
         payload = build_preprint_update_payload(unpublished._id, attributes={'is_published': True})
-        res = app.patch_json_api(url, payload, auth=user.auth)
+        res = app.post_json_api(url, payload, auth=user.auth)
         unpublished.reload()
         assert unpublished.is_published
         assert mock_get_identifiers.called
@@ -441,7 +441,7 @@ class TestPreprintUpdate:
         assert not unpublished.node.is_public
         url = '/{}preprints/{}/'.format(API_BASE, unpublished._id)
         payload = build_preprint_update_payload(unpublished._id, attributes={'is_published': True})
-        app.patch_json_api(url, payload, auth=user.auth)
+        app.post_json_api(url, payload, auth=user.auth)
         unpublished.node.reload()
 
         assert unpublished.node.is_public
@@ -555,7 +555,7 @@ class TestPreprintUpdateLicense:
     @pytest.fixture()
     def make_request(self, app):
         def request(url, data, auth=None, expect_errors=False):
-            return app.patch_json_api(url, data, auth=auth, expect_errors=expect_errors)
+            return app.post_json_api(url, data, auth=auth, expect_errors=expect_errors)
         return request
 
     def test_admin_update_license_with_invalid_id(self, admin_contrib, preprint, url, make_payload, make_request):

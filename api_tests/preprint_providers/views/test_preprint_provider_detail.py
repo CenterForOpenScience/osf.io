@@ -91,7 +91,7 @@ class TestPreprintProviderUpdate:
         )
 
         # Unauthorized user can't set up moderation
-        res = app.patch_json_api(url, payload, expect_errors=True)
+        res = app.post_json_api(url, payload, expect_errors=True)
         assert res.status_code == 401
 
         # Random user can't set up moderation
