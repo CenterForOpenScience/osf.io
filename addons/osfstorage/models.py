@@ -11,6 +11,7 @@ from addons.base.models import BaseNodeSettings, BaseStorageAddon
 from osf.exceptions import InvalidTagError, NodeStateError, TagNotFoundError
 from framework.auth.core import Auth
 from osf.models.node import Node
+from osf.models.mixins import Loggable
 from osf.models.files import File, FileVersion, Folder, TrashedFileNode, BaseFileNode, BaseFileNodeManager
 from osf.utils.auth import Auth
 from osf.utils import permissions
@@ -149,7 +150,7 @@ class OsfStorageFileNode(BaseFileNode):
 
     @property
     def is_preprint_primary(self):
-        return getattr(self.target, 'preprint_file', None) == self and not getattr(self.target, '_has_abandoned_preprint')
+        return getattr(self.target, 'preprint_file', None) == self and not getattr(self.target, '_has_abandoned_preprint', None)
 
     def delete(self, user=None, parent=None, **kwargs):
         self._path = self.path
@@ -194,7 +195,7 @@ class OsfStorageFileNode(BaseFileNode):
 
         if self.is_checked_out and action == NodeLog.CHECKED_IN or not self.is_checked_out and action == NodeLog.CHECKED_OUT:
             self.checkout = checkout
-            if isinstance(self.target, Node):
+            if isinstance(self.target, Loggable):
                 self.target.add_log(
                     action=action,
                     params={
@@ -310,7 +311,7 @@ class OsfStorageFile(OsfStorageFileNode, File):
             return None
 
     def add_tag_log(self, action, tag, auth):
-        if isinstance(self.target, Node):
+        if isinstance(self.target, Loggable):
             node = self.target
             node.add_log(
                 action=action,
