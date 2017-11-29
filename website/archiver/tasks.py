@@ -175,7 +175,7 @@ def make_waterbutler_payload(dst_id, rename):
 
 @celery_app.task(base=ArchiverTask, ignore_result=False)
 @logged('archive_addon')
-def archive_addon(addon_short_name, job_pk, stat_result):
+def archive_addon(addon_short_name, job_pk):
     """Archive the contents of an addon by making a copy request to the
     WaterBulter API
 
@@ -243,8 +243,7 @@ def archive_node(stat_results, job_pk):
             else:
                 archive_addon.delay(
                     addon_short_name=result.target_name,
-                    job_pk=job_pk,
-                    stat_result=result,
+                    job_pk=job_pk
                 )
         project_signals.archive_callback.send(dst)
 
