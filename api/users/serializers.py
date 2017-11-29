@@ -86,7 +86,6 @@ class UserSerializer(JSONAPISerializer):
         self_view_kwargs={'user_id': '<_id>'},
     ))
 
-
     preprints = HideIfDisabled(RelationshipField(
         related_view='users:user-preprints',
         related_view_kwargs={'user_id': '<_id>'},
