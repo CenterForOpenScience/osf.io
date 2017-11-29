@@ -244,9 +244,14 @@ class TestPreprintUpdate:
         assert log.params.get('preprint') == preprint._id
 
     def test_update_preprints_with_no_type(self, app, user, preprint, url):
-        update_file_payload = build_preprint_update_payload(preprint._id, content_type='')
+        payload = {
+            'data': {
+                'id': preprint._id,
+                'type': None,
+            }
+        }
 
-        res = app.patch_json_api(url, update_file_payload, auth=user.auth)
+        res = app.patch_json_api(url, payload, auth=user.auth)
         assert res.status_code == 400
 
     def test_update_preprints_with_wrong_type(self, app, user, preprint, url):

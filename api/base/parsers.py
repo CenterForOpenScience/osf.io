@@ -75,14 +75,6 @@ class JSONAPIParser(JSONParser):
             if object_type is None:
                 raise JSONAPIException(source={'pointer': '/data/type'}, detail=NO_TYPE_ERROR)
 
-        if parser_context['request'].version > 2.6:
-            if request_method == 'PATCH':
-                if object_id is None:
-                    raise JSONAPIException(source={'pointer': '/data/id'}, detail=NO_ID_ERROR)
-
-                if object_type is None:
-                    raise JSONAPIException(source={'pointer': '/data/type'}, detail=NO_TYPE_ERROR)
-
         attributes = resource_object.get('attributes')
         parsed = {'id': object_id, 'type': object_type}
 
