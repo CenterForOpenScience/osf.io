@@ -1851,11 +1851,14 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
             node_contained = node_relation.child
             # Fork child nodes
             if not node_relation.is_node_link:
-                node_contained.fork_node(
-                    auth=auth,
-                    title='',
-                    parent=forked,
-                )
+                try:  # Catch the potential PermissionsError above
+                    node_contained.fork_node(
+                        auth=auth,
+                        title='',
+                        parent=forked,
+                    )
+                except PermissionsError:
+                    pass  # If this exception is thrown omit the node from the result set
             else:
                 # Copy linked nodes
                 NodeRelation.objects.get_or_create(
