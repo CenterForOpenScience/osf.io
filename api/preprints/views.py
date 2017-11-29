@@ -349,6 +349,7 @@ class PreprintCitationStyleDetail(JSONAPIBaseView, generics.RetrieveAPIView, Pre
 
         raise PermissionDenied if auth.user else NotAuthenticated
 
+
 class PreprintIdentifierList(IdentifierList, PreprintMixin):
     """List of identifiers for a specified preprint. *Read-only*.
 
