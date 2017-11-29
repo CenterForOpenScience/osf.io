@@ -351,6 +351,7 @@ AddContributorViewModel = oop.extend(Paginator, {
         // All manually added contributors are visible
         data.visible = true;
         this.selection.push(data);
+        self.query('');
         // Hack: Hide and refresh tooltips
         $('.tooltip').hide();
         $('.contrib-button').tooltip();
