@@ -233,7 +233,7 @@ class TestPreprintUpdate:
         assert preprint.primary_file != new_file
         update_file_payload = build_preprint_update_payload(preprint._id, relationships=relationships)
 
-        res = app.post_json_api(url, update_file_payload, auth=user.auth)
+        res = app.patch_json_api(url, update_file_payload, auth=user.auth)
         assert res.status_code == 200
 
         preprint.node.reload()
