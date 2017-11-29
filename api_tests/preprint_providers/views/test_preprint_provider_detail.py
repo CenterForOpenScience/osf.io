@@ -53,10 +53,11 @@ class TestPreprintProviderExists:
 @pytest.mark.django_db
 class TestPreprintProviderUpdate:
 
-    def settings_payload(self, provider_id, **kwargs):
+    def settings_payload(self, provider_id, content_type='PreprintProvider', **kwargs):
         payload = {
             'data': {
                 'id': provider_id,
+                'type': content_type,
                 'attributes': kwargs
             }
         }
@@ -85,7 +86,6 @@ class TestPreprintProviderUpdate:
     def test_update_reviews_settings(self, app, preprint_provider, url, admin, moderator):
         payload = self.settings_payload(
             preprint_provider.id,
-            type='POST',
             reviews_workflow='pre-moderation',
             reviews_comments_private=False,
             reviews_comments_anonymous=False
