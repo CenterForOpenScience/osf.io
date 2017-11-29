@@ -374,6 +374,7 @@ AddContributorViewModel = oop.extend(Paginator, {
                 self.add(result);
             }
         });
+        self.query('');
     },
     removeAll: function () {
         var self = this;
