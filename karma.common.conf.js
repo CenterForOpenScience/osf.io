@@ -32,6 +32,9 @@ var webpackTestConfig = {
             // Assume test files are ES6
             {test: /\.test\.js$/, loader: 'babel-loader'},
         ])
+    },
+        node: {
+       fs: 'empty'
     }
 };
 

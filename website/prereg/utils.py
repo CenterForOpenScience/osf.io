@@ -11,6 +11,7 @@ def drafts_for_user(user, campaign):
         registration_schema=PREREG_CHALLENGE_METASCHEMA,
         approval=None,
         registered_node=None,
+        deleted__isnull=True,
         branched_from__in=Node.objects.filter(
             is_deleted=False,
             contributor__admin=True,

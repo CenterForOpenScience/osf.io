@@ -28,13 +28,14 @@ class FigshareFile(FigshareFileNode, File):
     def touch(self, bearer, revision=None, **kwargs):
         return super(FigshareFile, self).touch(bearer, revision=None, **kwargs)
 
-    def update(self, revision, data, user=None):
+    def update(self, revision, data, save=True, user=None):
         """Figshare does not support versioning.
         Always pass revision as None to avoid conflict.
         """
         self.name = data['name']
         self.materialized_path = data['materialized']
-        self.save()
+        if save:
+            self.save()
 
         version = FileVersion(identifier=None)
         version.update_metadata(data, save=False)
@@ -84,21 +85,21 @@ class FigshareProvider(ExternalProvider):
         }
 
 
-class UserSettings(BaseStorageAddon, BaseOAuthUserSettings):
+class UserSettings(BaseOAuthUserSettings):
     """Stores user-specific figshare information
     """
     oauth_provider = FigshareProvider
     serializer = FigshareSerializer
 
 
-class NodeSettings(BaseStorageAddon, BaseOAuthNodeSettings):
+class NodeSettings(BaseOAuthNodeSettings, BaseStorageAddon):
     oauth_provider = FigshareProvider
     serializer = FigshareSerializer
 
     folder_id = models.TextField(blank=True, null=True)
     folder_name = models.TextField(blank=True, null=True)
     folder_path = models.TextField(blank=True, null=True)
-    user_settings = models.ForeignKey(UserSettings, null=True, blank=True)
+    user_settings = models.ForeignKey(UserSettings, null=True, blank=True, on_delete=models.CASCADE)
 
     _api = None
 

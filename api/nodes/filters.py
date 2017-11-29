@@ -64,6 +64,7 @@ class NodesFilterMixin(ListFilterMixin):
                 Q(_is_preprint_orphan=True) |
                 Q(_has_abandoned_preprint=True)
             )
+
             return ~not_preprint_query if utils.is_truthy(operation['value']) else not_preprint_query
 
         return super(NodesFilterMixin, self).build_query_from_field(field_name, operation)

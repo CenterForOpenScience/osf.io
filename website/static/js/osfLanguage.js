@@ -65,15 +65,21 @@ module.exports = {
                 'This will revoke access to figshare for all projects you have ' +
                 'associated with this account.',
         },
-        // TODO
         github: {
             confirmDeauth: 'Are you sure you want to disconnect the GitHub account? ' +
                 'This will revoke access to GitHub for all projects you have ' +
                 'associated with this account.',
+            userSettingsError: 'Could not retrieve settings. Please refresh the page or ' +
+                'contact ' + SUPPORT_LINK + ' if the problem persists.',
         },
         bitbucket: {
             confirmDeauth: 'Are you sure you want to disconnect the Bitbucket account? ' +
                 'This will revoke access to Bitbucket for all projects you have ' +
+                'associated with this account.',
+        },
+        gitlab: {
+            confirmDeauth: 'Are you sure you want to disconnect the GitLab account? ' +
+                'This will revoke access to GitLab for all projects you have ' +
                 'associated with this account.',
         },
         s3:{
@@ -87,6 +93,13 @@ module.exports = {
                 'This will revoke access to Google Drive for all projects you have ' +
                 'associated with this account.',
             deauthError: 'Could not disconnect the Google Drive account at this time',
+        },
+        onedrive: {
+            // Shown on clicking "Delete Access Token" for onedrive
+            confirmDeauth: 'Are you sure you want to disconnect the Microsoft OneDrive account? ' +
+                'This will revoke access to Microsoft OneDrive for all projects you have ' +
+                'associated with this account.',
+            deauthError: 'Could not disconnect the Microsoft OneDrive account at this time',
         },
         owncloud: {
             authError: 'Invalid ownCloud server',

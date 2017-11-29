@@ -159,4 +159,58 @@ $(document).ready(function() {
             }
         });
     });
+
+    $( ".taxonomy-action-button" ).click(function() {
+        var taxonomyTextField=$("#id_custom_taxonomy_json");
+        var content = JSON.parse(taxonomyTextField.val());
+        var value = $("#" + $(this).attr("value")).val();
+        var subjects = content[$(this).attr("id")];
+        if (subjects.indexOf(value) == -1) {
+            subjects.push(value);
+        }
+        taxonomyTextField.val(JSON.stringify(content, undefined, 4));
+    });
+
+    $( "#id-add-custom" ).click(function() {
+        var taxonomyTextField=$("#id_custom_taxonomy_json");
+        var name = $("#id_custom_name").val();
+        var parent = $("#id_custom_parent").val();
+        var bepress = $("#id_bepress").val();
+        var content = JSON.parse(taxonomyTextField.val());
+        if (content["custom"][name] === undefined) {
+            content["custom"][name] = {
+                "parent": parent,
+                "bepress": bepress
+            };
+        }
+
+        taxonomyTextField.val(JSON.stringify(content, undefined, 4));
+    });
+
+    $("#id-validate-custom").on("click", function(event) {
+       checkTaxonomy();
+    });
+
+
+    function checkTaxonomy() {
+        var taxonomyForm = $("#taxonomy-form").serializeArray();
+        $.ajax({
+            url: window.templateVars.processCustomTaxonomyUrl,
+            type: "POST",
+            data: taxonomyForm,
+            success: function(json) {
+                var alert_class_div = (json["feedback_type"] == "success") ? "<div class='alert alert-info'>" : "<div class='alert alert-danger'>";
+                $("#taxonomy-field-info").html(alert_class_div + json["message"]+ "</div>");
+            }
+        });
+    };
+
+    $("#show-custom-taxonomy-form").click(function() {
+        $("#custom-taxonomy-form").toggle();
+    });
+
+    $("#id_include").select2();
+    $("#id_exclude").select2();
+    $("#id_bepress").select2();
+
 });

@@ -26,9 +26,9 @@ def on_preprint_updated(preprint_id, update_share=True, share_type=None, old_sub
     if old_subjects is None:
         old_subjects = []
     if preprint.node:
-        status = 'public' if preprint.node.is_public else 'unavailable'
+        status = 'public' if preprint.verified_publishable else 'unavailable'
         try:
-            update_ezid_metadata_on_change(preprint, status=status)
+            update_ezid_metadata_on_change(preprint._id, status=status)
         except HTTPError as err:
             sentry.log_exception()
             sentry.log_message(err.args[0])
@@ -113,11 +113,8 @@ def format_preprint(preprint, share_type, old_subjects=None):
         'title': preprint.node.title,
         'description': preprint.node.description or '',
         'is_deleted': (
-            not preprint.is_published or
-            not preprint.node.is_public or
-            preprint.node.is_preprint_orphan or
-            preprint.node.tags.filter(name='qatest').exists() or
-            preprint.node.is_deleted
+            not preprint.verified_publishable or
+            preprint.node.tags.filter(name='qatest').exists()
         ),
         # Note: Changing any preprint attribute that is pulled from the node, like title, will NOT bump
         # the preprint's date modified but will bump the node's date_modified.
@@ -125,7 +122,7 @@ def format_preprint(preprint, share_type, old_subjects=None):
         # If we send a date_updated that is <= the one we previously sent, SHARE will ignore any changes
         # because it looks like a race condition that arose from preprints being resent to SHARE on
         # every step of preprint creation.
-        'date_updated': max(preprint.date_modified, preprint.node.date_modified).isoformat(),
+        'date_updated': max(preprint.modified, preprint.node.modified).isoformat(),
         'date_published': preprint.date_published.isoformat() if preprint.date_published else None
     })
 
@@ -181,14 +178,20 @@ def format_preprint(preprint, share_type, old_subjects=None):
 
 
 @celery_app.task(ignore_results=True)
-def get_and_set_preprint_identifiers(preprint):
+def get_and_set_preprint_identifiers(preprint_id):
+    PreprintService = apps.get_model('osf.PreprintService')
+    preprint = PreprintService.load(preprint_id)
     ezid_response = request_identifiers_from_ezid(preprint)
+    if ezid_response is None:
+        return
     id_dict = parse_identifiers(ezid_response)
-    preprint.set_identifier_values(doi=id_dict['doi'], ark=id_dict['ark'])
+    preprint.set_identifier_values(doi=id_dict['doi'], ark=id_dict['ark'], save=True)
 
 
 @celery_app.task(ignore_results=True)
-def update_ezid_metadata_on_change(target_object, status):
+def update_ezid_metadata_on_change(target_guid, status):
+    Guid = apps.get_model('osf.Guid')
+    target_object = Guid.load(target_guid).referent
     if (settings.EZID_USERNAME and settings.EZID_PASSWORD) and target_object.get_identifier('doi'):
         client = get_ezid_client()
 
