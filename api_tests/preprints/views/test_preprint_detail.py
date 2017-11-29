@@ -22,11 +22,11 @@ from website.settings import EZID_FORMAT, DOI_NAMESPACE
 from reviews.workflow import States
 
 
-def build_preprint_update_payload(node_id, attributes=None, relationships=None, type='POST'):
+def build_preprint_update_payload(node_id, attributes=None, relationships=None, content_type='preprints'):
     payload = {
         'data': {
             'id': node_id,
-            'type': type,
+            'type': content_type,
             'attributes': attributes,
             'relationships': relationships
         }
@@ -286,7 +286,6 @@ class TestPreprintUpdate:
         assert preprint.node.title != new_title
         update_title_description_payload = build_preprint_update_payload(
             preprint._id,
-            type='POST',
             attributes={
                 'title': new_title,
                 'description': new_description
@@ -310,7 +309,6 @@ class TestPreprintUpdate:
 
         update_tags_payload = build_preprint_update_payload(
             preprint._id,
-            type='POST',
             attributes={
                 'tags': new_tags
             }
@@ -510,7 +508,7 @@ class TestPreprintUpdateLicense:
 
     @pytest.fixture()
     def make_payload(self):
-        def payload(node_id, license_id=None, license_year=None, copyright_holders=None, type='POST'):
+        def payload(node_id, license_id=None, license_year=None, copyright_holders=None, content_type='preprints'):
             attributes = {}
 
             if license_year and copyright_holders:
@@ -537,7 +535,7 @@ class TestPreprintUpdateLicense:
                 'data': {
                     'id': node_id,
                     'attributes': attributes,
-                    'type': type,
+                    'type': content_type,
                     'relationships': {
                         'license': {
                             'data': {
@@ -550,7 +548,7 @@ class TestPreprintUpdateLicense:
             } if license_id else {
                 'data': {
                     'id': node_id,
-                    'type': type,
+                    'type': content_type,
                     'attributes': attributes
                 }
             }
@@ -566,7 +564,6 @@ class TestPreprintUpdateLicense:
     def test_admin_update_license_with_invalid_id(self, admin_contrib, preprint, url, make_payload, make_request):
         data = make_payload(
             node_id=preprint._id,
-            type='POST',
             license_id='thisisafakelicenseid'
         )
 
@@ -582,7 +579,6 @@ class TestPreprintUpdateLicense:
     def test_admin_can_update_license(self, admin_contrib, preprint, cc0_license, url, make_payload, make_request):
         data = make_payload(
             node_id=preprint._id,
-            type='POST',
             license_id=cc0_license._id
         )
 
@@ -671,7 +667,6 @@ class TestPreprintUpdateLicense:
     #   test_update_preprint_with_invalid_license_for_provider
         data = make_payload(
             node_id=preprint._id,
-            type='POST',
             license_id=mit_license._id
         )
 
@@ -804,7 +799,6 @@ class TestPreprintUpdateLicense:
 
         data = make_payload(
             node_id=preprint._id,
-            type='POST',
             license_id=cc0_license._id,
             license_year='2015',
             copyright_holders=['Rheisen', 'Princess Tyler']

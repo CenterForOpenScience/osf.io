@@ -53,7 +53,7 @@ class TestPreprintProviderExists:
 @pytest.mark.django_db
 class TestPreprintProviderUpdate:
 
-    def settings_payload(self, provider_id, content_type='PreprintProvider', **kwargs):
+    def settings_payload(self, provider_id, content_type='preprintproviders', **kwargs):
         payload = {
             'data': {
                 'id': provider_id,
