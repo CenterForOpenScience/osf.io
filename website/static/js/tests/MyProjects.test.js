@@ -5,10 +5,7 @@
 'use strict';
 var assert = require('chai').assert;
 
-var $ = require('jquery');
-var $osf = require('js/osfHelpers');
 var fb = require('js/myProjects.js');
-var m = require('mithril');
 
 var LinkObject = fb.LinkObject;
 

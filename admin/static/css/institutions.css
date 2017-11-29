@@ -1,0 +1,62 @@
+.institution-logo {
+    max-width: 75px;
+}
+
+.institution-banner {
+    max-width: 300px;
+}
+
+
+p input {
+    padding: 5px 5px 5px 5px;
+    margin-left: 10px;
+    width: 80%;
+}
+
+p select {
+    padding: 5px 5px 5px 5px;
+    margin-left: 10px;
+    width: 80%;
+}
+
+p textarea {
+    padding: 5px 5px 5px 5px;
+    margin-left: 10px;
+    width: 80%;
+}
+
+form p label {
+    width: 100px;
+}
+
+.form-button {
+    height: 35px;
+    width: 100px;
+}
+
+.subject-icon {
+    cursor:pointer;
+}
+
+.three-cols {
+    -webkit-column-count: 3; /* Chrome, Safari, Opera */
+    -moz-column-count: 3; /* Firefox */
+    column-count: 3;
+}
+
+.json-import {
+    padding-top: 50px;
+}
+
+.firstlevel_subjects {
+    width: 120%;
+}
+
+
+.select2-container.select2-container--default {
+    width: 75% !important;
+}
+
+#id_custom_taxonomy_json {
+    width: 100%;
+}

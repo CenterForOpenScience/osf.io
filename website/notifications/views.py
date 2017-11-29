@@ -6,11 +6,10 @@ from framework import sentry
 from framework.auth.decorators import must_be_logged_in
 from framework.exceptions import HTTPError
 
+from osf.models import AbstractNode, NotificationSubscription
 from website.notifications import utils
 from website.notifications.constants import NOTIFICATION_TYPES
-from website.notifications.model import NotificationSubscription
 from website.project.decorators import must_be_valid_project
-from website.project.model import Node
 
 
 @must_be_logged_in
@@ -48,7 +47,7 @@ def configure_subscription(auth):
             message_long='Must provide an event and notification type for subscription.')
         )
 
-    node = Node.load(target_id)
+    node = AbstractNode.load(target_id)
     if 'file_updated' in event and path is not None and provider is not None:
         wb_path = path.lstrip('/')
         event = wb_path + '_file_updated'

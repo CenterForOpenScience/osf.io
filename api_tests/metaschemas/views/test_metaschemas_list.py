@@ -1,42 +1,33 @@
-from nose.tools import *  # flake8: noqa
-
-from website.project.metadata.schemas import ACTIVE_META_SCHEMAS
-from website.project.model import ensure_schemas
+import pytest
 
 from api.base.settings.defaults import API_BASE
-
-from tests.base import ApiTestCase
+from osf.models.metaschema import MetaSchema
 from osf_tests.factories import (
-    AuthUserFactory
+    AuthUserFactory,
 )
+from website.project.metadata.schemas import LATEST_SCHEMA_VERSION
 
+@pytest.mark.django_db
+class TestMetaSchemaList:
 
-class TestMetaSchemaList(ApiTestCase):
-    def setUp(self):
-        super(TestMetaSchemaList, self).setUp()
-        self.user = AuthUserFactory()
-        ensure_schemas()
-        self.url = '/{}metaschemas/'.format(API_BASE)
+    def test_metaschemas_list_crud(self, app):
 
-    def test_pass_authenticated_user_can_view_schemas(self):
-        res = self.app.get(self.url, auth=self.user.auth)
-        assert_equal(res.status_code, 200)
+        user = AuthUserFactory()
+        url = '/{}metaschemas/'.format(API_BASE)
 
-    def test_cannot_update_metaschemas(self):
-        res = self.app.put_json_api(self.url, auth=self.user.auth, expect_errors=True)
-        assert_equal(res.status_code, 405)
+        #test_pass_authenticated_user_can_view_schemas
+        res = app.get(url, auth=user.auth)
+        assert res.status_code == 200
+        assert (len(res.json['data']) == MetaSchema.objects.filter(active=True, schema_version=LATEST_SCHEMA_VERSION).count())
 
-    def test_cannot_post_metaschemas(self):
-        res = self.app.post_json_api(self.url, auth=self.user.auth, expect_errors=True)
-        assert_equal(res.status_code, 405)
+        #test_cannot_update_metaschemas
+        res = app.put_json_api(url, auth=user.auth, expect_errors=True)
+        assert res.status_code == 405
 
-    def test_schemas_are_active(self):
-        res = self.app.get(self.url, auth=self.user.auth)
-        assert_equal(res.status_code, 200)
-        for schema in res.json['data']:
-            assert_in(schema['attributes']['name'], ACTIVE_META_SCHEMAS)
-            assert_equal(schema['attributes']['schema_version'], 2)
+        #test_cannot_post_metaschemas
+        res = app.post_json_api(url, auth=user.auth, expect_errors=True)
+        assert res.status_code == 405
 
-    def test_pass_unauthenticated_user_can_view_schemas(self):
-        res = self.app.get(self.url)
-        assert_equal(res.status_code, 200)
+        #test_pass_unauthenticated_user_can_view_schemas
+        res = app.get(url)
+        assert res.status_code == 200

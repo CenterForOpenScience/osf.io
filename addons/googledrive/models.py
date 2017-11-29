@@ -2,7 +2,6 @@
 """Persistence layer for the google drive addon.
 """
 import os
-import urllib
 
 from addons.base.models import (BaseOAuthNodeSettings, BaseOAuthUserSettings,
                                 BaseStorageAddon)
@@ -75,14 +74,14 @@ class UserSettings(BaseOAuthUserSettings):
     serializer = GoogleDriveSerializer
 
 
-class NodeSettings(BaseStorageAddon, BaseOAuthNodeSettings):
+class NodeSettings(BaseOAuthNodeSettings, BaseStorageAddon):
     oauth_provider = GoogleDriveProvider
     provider_name = 'googledrive'
 
     folder_id = models.TextField(null=True, blank=True)
     folder_path = models.TextField(null=True, blank=True)
     serializer = GoogleDriveSerializer
-    user_settings = models.ForeignKey(UserSettings, null=True, blank=True)
+    user_settings = models.ForeignKey(UserSettings, null=True, blank=True, on_delete=models.CASCADE)
 
     _api = None
 
@@ -107,9 +106,7 @@ class NodeSettings(BaseStorageAddon, BaseOAuthNodeSettings):
             return None
 
         if self.folder_path != '/':
-            # `urllib` does not properly handle unicode.
-            # encode input to `str`, decode output back to `unicode`
-            return urllib.unquote(os.path.split(self.folder_path)[1].encode('utf-8')).decode('utf-8')
+            return os.path.split(self.folder_path)[1]
         else:
             return '/ (Full Google Drive)'
 

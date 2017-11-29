@@ -4,17 +4,17 @@ embargo end dates have been passed.
 """
 
 import logging
-import datetime
 
+import django
 from django.utils import timezone
 from django.db import transaction
-from modularodm import Q
+django.setup()
 
 from framework.celery_tasks import app as celery_app
 
 from website.app import init_app
-from website import models, settings
-from website.project.model import NodeLog
+from website import settings
+from osf.models import Embargo, Registration, NodeLog
 
 from scripts import utils as scripts_utils
 
@@ -24,12 +24,12 @@ logging.basicConfig(level=logging.INFO)
 
 
 def main(dry_run=True):
-    pending_embargoes = models.Embargo.find(Q('state', 'eq', models.Embargo.UNAPPROVED))
+    pending_embargoes = Embargo.objects.filter(state=Embargo.UNAPPROVED)
     for embargo in pending_embargoes:
         if should_be_embargoed(embargo):
             if dry_run:
                 logger.warn('Dry run mode')
-            parent_registration = models.Node.find_one(Q('embargo', 'eq', embargo))
+            parent_registration = Registration.objects.get(embargo=embargo)
             logger.warn(
                 'Embargo {0} approved. Activating embargo for registration {1}'
                 .format(embargo._id, parent_registration._id)
@@ -43,7 +43,7 @@ def main(dry_run=True):
 
                 with transaction.atomic():
                     try:
-                        embargo.state = models.Embargo.APPROVED
+                        embargo.state = Embargo.APPROVED
                         parent_registration.registered_from.add_log(
                             action=NodeLog.EMBARGO_APPROVED,
                             params={
@@ -60,12 +60,12 @@ def main(dry_run=True):
                             'registration {}. Continuing...'.format(parent_registration))
                         logger.exception(err)
 
-    active_embargoes = models.Embargo.find(Q('state', 'eq', models.Embargo.APPROVED))
+    active_embargoes = Embargo.objects.filter(state=Embargo.APPROVED)
     for embargo in active_embargoes:
         if embargo.end_date < timezone.now():
             if dry_run:
                 logger.warn('Dry run mode')
-            parent_registration = models.Node.find_one(Q('embargo', 'eq', embargo))
+            parent_registration = Registration.objects.get(embargo=embargo)
             logger.warn(
                 'Embargo {0} complete. Making registration {1} public'
                 .format(embargo._id, parent_registration._id)
@@ -79,7 +79,7 @@ def main(dry_run=True):
 
                 with transaction.atomic():
                     try:
-                        embargo.state = models.Embargo.COMPLETED
+                        embargo.state = Embargo.COMPLETED
                         # Need to save here for node.is_embargoed to return the correct
                         # value in Node#set_privacy
                         embargo.save()

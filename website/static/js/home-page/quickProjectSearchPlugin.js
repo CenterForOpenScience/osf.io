@@ -479,7 +479,7 @@ var QuickSearchProject = {
         }
 
         function headerTemplate ( ){
-            return [ m('h2.col-xs-9', 'Dashboard'), m('m-b-lg.col-xs-3', m('.pull-right', m.component(AddProject, {
+            return [ m('h2.col-xs-9', 'Dashboard'), m('.m-b-lg.col-xs-3', m('.pull-right', m.component(AddProject, {
                 buttonTemplate : m('button.btn.btn-success.btn-success-high-contrast.m-t-md.f-w-xl[data-toggle="modal"][data-target="#addProjectFromHome"]', {onclick: function(){
                                 $osf.trackClick('quickSearch', 'add-project', 'open-add-project-modal');
                 }}, 'Create new project'),
@@ -493,46 +493,23 @@ var QuickSearchProject = {
             })))];
         }
 
-        function preregBanner() {
-            return m ('.prereg.banner',
-                m('.row',
-                    [
-                        m('.col-md-9.m-v-sm',
-                            m('div.conference-centering',
-                                m('p', 'Improve your next study. Enter the Prereg Challenge and you could win $1,000.')
-                            )
-                        ),
-                        m('.col-md-3.text-center.m-v-sm',
-                            m('div',  m('a.btn.btn-success.btn-success-high-contrast.f-w-xl', { type:'button',  href:'/prereg/', onclick: function() {
-                                $osf.trackClick('prereg', 'navigate', 'navigate-to-begin-prereg');
-                            }}, 'Start Prereg Challenge'))
-                        )
-                    ]
-                )
-            );
-        }
-
         if (ctrl.eligibleNodes().length === 0 && ctrl.filter() == null) {
-            return m('.row',
-                m('.col-xs-12',[
-                    preregBanner(),
-                    headerTemplate(),
+            return m('',
+                [
+                    m('.row', headerTemplate()),
                     m('.row.quick-project',
                         m('.col-sm-12.text-center', [
                             m('p','You have no projects yet. Create a project with the button on the top right.'),
                             m('p', 'This feature allows you to search and quickly access your projects.'),
-                            m('img', { src : '/static/img/quicksearch-min.png', alt : 'Preview of a full quick projects screen'})
+                            m('img.img-responsive.center-block', { src : '/static/img/quicksearch-min.png', alt : 'Preview of a full quick projects screen'})
                         ])
                     )
-                ])
+                ]
             );
         }
         else {
             return m('.row',
-                m('.col-xs-12', [
-                    preregBanner(),
-                    headerTemplate()
-                ]),
+                m('.col-xs-12', headerTemplate()),
                 m('.col-xs-12',[
                     m('.row.quick-project', m('.col-xs-12',
                     m('.m-b-sm.text-center', [

@@ -2,10 +2,12 @@ import pytz
 from django.apps import apps
 from django.db import models
 from django.core.exceptions import ObjectDoesNotExist
+from django.utils import timezone
 from framework.analytics import increment_user_activity_counters
 from osf.models.node_relation import NodeRelation
 from osf.models.nodelog import NodeLog
 from osf.models.tag import Tag
+from osf.utils.fields import NonNaiveDateTimeField
 from website.exceptions import NodeStateError
 from website import settings
 
@@ -51,7 +53,8 @@ class Versioned(models.Model):
 
 
 class Loggable(models.Model):
-    # TODO: This should be in the NodeLog model
+
+    last_logged = NonNaiveDateTimeField(db_index=True, null=True, blank=True, default=timezone.now)
 
     def add_log(self, action, params, auth, foreign_user=None, log_date=None, save=True, request=None):
         AbstractNode = apps.get_model('osf.AbstractNode')
@@ -73,9 +76,9 @@ class Loggable(models.Model):
         log.save()
 
         if self.logs.count() == 1:
-            self.date_modified = log.date.replace(tzinfo=pytz.utc)
+            self.last_logged = log.date.replace(tzinfo=pytz.utc)
         else:
-            self.date_modified = self.logs.first().date
+            self.last_logged = self.logs.first().date
 
         if save:
             self.save()
@@ -399,18 +402,10 @@ class NodeLinkMixin(models.Model):
         except NodeRelation.DoesNotExist:
             raise ValueError('Node link {0} not in list'.format(node_relation._id))
 
-        # Fork into current node and replace pointer with forked component
+        # Fork node to which current nodelink points
         forked = node.fork_node(auth)
         if forked is None:
             raise ValueError('Could not fork node')
-
-        relation = NodeRelation.objects.get(
-            parent=self,
-            child=node,
-            is_node_link=True
-        )
-        relation.child = forked
-        relation.save()
 
         if hasattr(self, 'add_log'):
             # Add log

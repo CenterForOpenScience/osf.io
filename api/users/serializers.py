@@ -1,17 +1,37 @@
+from guardian.models import GroupObjectPermission
+
 from rest_framework import serializers as ser
 
-from modularodm.exceptions import ValidationValueError
-
 from api.base.exceptions import InvalidModelValueError
-from api.base.serializers import AllowMissing, JSONAPIRelationshipSerializer, HideIfDisabled, \
-    PrefetchRelationshipsSerializer
-from website.models import User
-
 from api.base.serializers import (
-    JSONAPISerializer, LinksField, RelationshipField, DevOnly, IDField, TypeField,
-    DateByVersion,
+    BaseAPISerializer, JSONAPISerializer, JSONAPIRelationshipSerializer,
+    DateByVersion, DevOnly, HideIfDisabled, IDField,
+    Link, LinksField, ListDictField, TypeField, RelationshipField,
+    WaterbutlerLink, ShowIfCurrentUser
 )
 from api.base.utils import absolute_reverse, get_user_auth
+from api.files.serializers import QuickFilesSerializer
+from osf.exceptions import ValidationValueError, ValidationError
+from osf.models import OSFUser, QuickFilesNode
+from website import util as website_utils
+
+
+class QuickFilesRelationshipField(RelationshipField):
+
+    def to_representation(self, value):
+        relationship_links = super(QuickFilesRelationshipField, self).to_representation(value)
+        quickfiles_guid = value.nodes_created.filter(type=QuickFilesNode._typedmodels_type).values_list('guids___id', flat=True).get()
+        upload_url = website_utils.waterbutler_api_url_for(quickfiles_guid, 'osfstorage')
+        relationship_links['links']['upload'] = {
+            'href': upload_url,
+            'meta': {}
+        }
+        relationship_links['links']['download'] = {
+            'href': '{}?zip='.format(upload_url),
+            'meta': {}
+        }
+        return relationship_links
+
 
 class UserSerializer(JSONAPISerializer):
     filterable_fields = frozenset([
@@ -31,36 +51,10 @@ class UserSerializer(JSONAPISerializer):
     suffix = HideIfDisabled(ser.CharField(required=False, allow_blank=True, help_text='For bibliographic citations'))
     date_registered = HideIfDisabled(DateByVersion(read_only=True))
     active = HideIfDisabled(ser.BooleanField(read_only=True, source='is_active'))
-
-    # Social Fields are broken out to get around DRF complex object bug and to make API updating more user friendly.
-    github = DevOnly(HideIfDisabled(AllowMissing(ser.CharField(required=False, source='social.github',
-                                                          allow_blank=True, help_text='GitHub Handle'), required=False, source='social.github')))
-    scholar = DevOnly(HideIfDisabled(AllowMissing(ser.CharField(required=False, source='social.scholar',
-                                                           allow_blank=True, help_text='Google Scholar Account'), required=False, source='social.scholar')))
-    personal_website = DevOnly(HideIfDisabled(AllowMissing(ser.URLField(required=False, source='social.personal',
-                                                                   allow_blank=True, help_text='Personal Website'), required=False, source='social.personal')))
-    twitter = DevOnly(HideIfDisabled(AllowMissing(ser.CharField(required=False, source='social.twitter',
-                                                           allow_blank=True, help_text='Twitter Handle'), required=False, source='social.twitter')))
-    linkedin = DevOnly(HideIfDisabled(AllowMissing(ser.CharField(required=False, source='social.linkedIn',
-                                                            allow_blank=True, help_text='LinkedIn Account'), required=False, source='social.linkedIn')))
-    impactstory = DevOnly(HideIfDisabled(AllowMissing(ser.CharField(required=False, source='social.impactStory',
-                                                               allow_blank=True, help_text='ImpactStory Account'), required=False, source='social.impactStory')))
-    orcid = DevOnly(HideIfDisabled(AllowMissing(ser.CharField(required=False, source='social.orcid',
-                                                         allow_blank=True, help_text='ORCID'), required=False, source='social.orcid')))
-    researcherid = DevOnly(HideIfDisabled(AllowMissing(ser.CharField(required=False, source='social.researcherId',
-                                                      allow_blank=True, help_text='ResearcherId Account'), required=False, source='social.researcherId')))
-    researchgate = DevOnly(HideIfDisabled(AllowMissing(ser.CharField(required=False, source='social.researchGate',
-                                                      allow_blank=True, help_text='ResearchGate Account'), required=False, source='social.researchGate')))
-    academia_institution = DevOnly(HideIfDisabled(AllowMissing(ser.CharField(required=False, source='social.academiaInstitution',
-                                                      allow_blank=True, help_text='AcademiaInstitution Field'), required=False, source='social.academiaInstitution')))
-    academia_profile_id = DevOnly(HideIfDisabled(AllowMissing(ser.CharField(required=False, source='social.academiaProfileID',
-                                                      allow_blank=True, help_text='AcademiaProfileID Field'), required=False, source='social.academiaProfileID')))
-    baiduscholar = DevOnly(HideIfDisabled(AllowMissing(ser.CharField(required=False, source='social.baiduScholar',
-                                                           allow_blank=True, help_text='Baidu Scholar Account'), required=False, source='social.baiduScholar')))
-    ssrn = DevOnly(HideIfDisabled(AllowMissing(ser.CharField(required=False, source='social.ssrn',
-                                                           allow_blank=True, help_text='SSRN Account'), required=False, source='social.ssrn')))
     timezone = HideIfDisabled(ser.CharField(required=False, help_text="User's timezone, e.g. 'Etc/UTC"))
     locale = HideIfDisabled(ser.CharField(required=False, help_text="User's locale, e.g.  'en_US'"))
+    social = ListDictField(required=False)
+    can_view_reviews = ShowIfCurrentUser(ser.SerializerMethodField(help_text='Whether the current user has the `view_submissions` permission to ANY reviews provider.'))
 
     links = HideIfDisabled(LinksField(
         {
@@ -75,6 +69,11 @@ class UserSerializer(JSONAPISerializer):
         related_meta={'projects_in_common': 'get_projects_in_common'},
     ))
 
+    quickfiles = HideIfDisabled(QuickFilesRelationshipField(
+        related_view='users:user-quickfiles',
+        related_view_kwargs={'user_id': '<_id>'},
+    ))
+
     registrations = DevOnly(HideIfDisabled(RelationshipField(
         related_view='users:user-registrations',
         related_view_kwargs={'user_id': '<_id>'},
@@ -85,6 +84,11 @@ class UserSerializer(JSONAPISerializer):
         related_view_kwargs={'user_id': '<_id>'},
         self_view='users:user-institutions-relationship',
         self_view_kwargs={'user_id': '<_id>'},
+    ))
+
+    actions = ShowIfCurrentUser(RelationshipField(
+        related_view='users:user-action-list',
+        related_view_kwargs={'user_id': '<_id>'},
     ))
 
     class Meta:
@@ -107,24 +111,38 @@ class UserSerializer(JSONAPISerializer):
             'version': self.context['request'].parser_context['kwargs']['version']
         })
 
+    def get_can_view_reviews(self, obj):
+        group_qs = GroupObjectPermission.objects.filter(group__user=obj, permission__codename='view_submissions')
+        return group_qs.exists() or obj.userobjectpermission_set.filter(permission__codename='view_submissions')
+
     def profile_image_url(self, user):
         size = self.context['request'].query_params.get('profile_image_size')
         return user.profile_image_url(size=size)
 
     def update(self, instance, validated_data):
-        assert isinstance(instance, User), 'instance must be a User'
+        assert isinstance(instance, OSFUser), 'instance must be a User'
         for attr, value in validated_data.items():
             if 'social' == attr:
                 for key, val in value.items():
-                    instance.social[key] = val
+                    # currently only profileWebsites are a list, the rest of the social key only has one value
+                    if key == 'profileWebsites':
+                        instance.social[key] = val
+                    else:
+                        if len(val) > 1:
+                            raise InvalidModelValueError(
+                                detail='{} only accept a list of one single value'. format(key)
+                            )
+                        instance.social[key] = val[0]
             else:
                 setattr(instance, attr, value)
         try:
             instance.save()
         except ValidationValueError as e:
             raise InvalidModelValueError(detail=e.message)
-        return instance
+        except ValidationError as e:
+            raise InvalidModelValueError(e)
 
+        return instance
 
 class UserAddonSettingsSerializer(JSONAPISerializer):
     """
@@ -175,6 +193,20 @@ class UserDetailSerializer(UserSerializer):
     id = IDField(source='_id', required=True)
 
 
+class UserQuickFilesSerializer(QuickFilesSerializer):
+    links = LinksField({
+        'info': Link('files:file-detail', kwargs={'file_id': '<_id>'}),
+        'upload': WaterbutlerLink(),
+        'delete': WaterbutlerLink(),
+        'download': WaterbutlerLink(must_be_file=True),
+    })
+
+
+class ReadEmailUserDetailSerializer(UserDetailSerializer):
+
+    email = ser.CharField(source='username', read_only=True)
+
+
 class RelatedInstitution(JSONAPIRelationshipSerializer):
     id = ser.CharField(required=False, allow_null=True, source='_id')
     class Meta:
@@ -184,7 +216,7 @@ class RelatedInstitution(JSONAPIRelationshipSerializer):
         return obj.absolute_api_v2_url
 
 
-class UserInstitutionsRelationshipSerializer(PrefetchRelationshipsSerializer):
+class UserInstitutionsRelationshipSerializer(BaseAPISerializer):
 
     data = ser.ListField(child=RelatedInstitution())
     links = LinksField({'self': 'get_self_url',

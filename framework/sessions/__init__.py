@@ -4,9 +4,9 @@ import httplib as http
 import urllib
 import urlparse
 
+from django.apps import apps
 from django.utils import timezone
 from django.db.models import Q
-from django.apps import apps
 import bson.objectid
 import itsdangerous
 from flask import request
@@ -15,7 +15,6 @@ from weakref import WeakKeyDictionary
 from werkzeug.local import LocalProxy
 
 from framework.flask import redirect
-from framework.sessions.model import Session
 from framework.sessions.utils import remove_session
 from website import settings
 
@@ -77,6 +76,7 @@ def prepare_private_key():
 
 
 def get_session():
+    Session = apps.get_model('osf.Session')
     user_session = sessions.get(request._get_current_object())
     if not user_session:
         user_session = Session()
@@ -89,6 +89,7 @@ def set_session(session):
 
 
 def create_session(response, data=None):
+    Session = apps.get_model('osf.Session')
     current_session = get_session()
     if current_session:
         current_session.data.update(data or {})
@@ -117,6 +118,7 @@ def before_request():
     from framework.auth.core import get_user
     from framework.auth import cas
     from website.util import time as util_time
+    Session = apps.get_model('osf.Session')
 
     # Central Authentication Server Ticket Validation and Authentication
     ticket = request.args.get('ticket')
@@ -145,8 +147,10 @@ def before_request():
                     user_session.data['auth_error_code'] = http.UNAUTHORIZED
                     return
             user_session.data['auth_user_username'] = user.username
-            user_session.data['auth_user_id'] = user._primary_key
             user_session.data['auth_user_fullname'] = user.fullname
+            if user_session.data.get('auth_user_id', None) != user._primary_key:
+                user_session.data['auth_user_id'] = user._primary_key
+                user_session.save()
         else:
             # Invalid key: Not found in database
             user_session.data['auth_error_code'] = http.UNAUTHORIZED
@@ -159,13 +163,13 @@ def before_request():
             user_session = Session.load(session_id) or Session(_id=session_id)
         except itsdangerous.BadData:
             return
-        if not util_time.throttle_period_expired(user_session.date_created, settings.OSF_SESSION_TIMEOUT):
+        if not util_time.throttle_period_expired(user_session.created, settings.OSF_SESSION_TIMEOUT):
             # Update date last login when making non-api requests
             if user_session.data.get('auth_user_id') and 'api' not in request.url:
                 OSFUser = apps.get_model('osf.OSFUser')
                 (
                     OSFUser.objects
-                    .filter(guids___id=user_session.data['auth_user_id'])
+                    .filter(guids___id__isnull=False, guids___id=user_session.data['auth_user_id'])
                     # Throttle updates
                     .filter(Q(date_last_login__isnull=True) | Q(date_last_login__lt=timezone.now() - dt.timedelta(seconds=settings.DATE_LAST_LOGIN_THROTTLE)))
                 ).update(date_last_login=timezone.now())
@@ -175,8 +179,6 @@ def before_request():
 
 
 def after_request(response):
-    if session.data.get('auth_user_id'):
-        session.save()
     # Disallow embedding in frames
     response.headers['X-Frame-Options'] = 'SAMEORIGIN'
     return response

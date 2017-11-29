@@ -7,7 +7,6 @@ require('css/add-contributors.css');
 
 var $ = require('jquery');
 var ko = require('knockout');
-var bootbox = require('bootbox');  // TODO: Why is this required? Is it? See [#OSF-6100]
 var Raven = require('raven-js');
 var lodashGet = require('lodash.get');
 
@@ -51,6 +50,7 @@ AddContributorViewModel = oop.extend(Paginator, {
         //state of current nodes
         self.childrenToChange = ko.observableArray();
         self.nodesState = ko.observable();
+        self.canSubmit = ko.observable(true);
         //nodesState is passed to nodesSelectTreebeard which can update it and key off needed action.
         self.nodesState.subscribe(function (newValue) {
             //The subscribe causes treebeard changes to change which nodes will be affected
@@ -109,10 +109,6 @@ AddContributorViewModel = oop.extend(Paginator, {
 
         self.foundResults = ko.pureComputed(function () {
             return self.query() && self.results().length && !self.parentImport();
-        });
-
-        self.parentPagination = ko.pureComputed(function () {
-            return self.doneSearching() && self.parentImport();
         });
 
         self.noResults = ko.pureComputed(function () {
@@ -275,6 +271,12 @@ AddContributorViewModel = oop.extend(Paginator, {
                 var contributors = result.contributors.map(function (user) {
                     var added = (self.contributors().indexOf(user.id) !== -1);
                     var updatedUser = $.extend({}, user, {added: added});
+
+                    var user_permission = self.permissionList.find(function (permission) {
+                        return permission.value === user.permission;
+                    });
+                    updatedUser.permission = ko.observable(user_permission);
+
                     return updatedUser;
                 });
                 var pageToShow = [];
@@ -289,10 +291,7 @@ AddContributorViewModel = oop.extend(Paginator, {
                     }
                 }
                 self.doneSearching(true);
-                self.results(pageToShow);
-                self.currentPage(self.pageToGet());
-                self.numberOfPages(Math.ceil(contributors.length/5));
-                self.addNewPaginators(true);
+                self.selection(contributors);
             }
         );
     },
@@ -337,6 +336,8 @@ AddContributorViewModel = oop.extend(Paginator, {
     postInvite: function () {
         var self = this;
         self.inviteError('');
+        self.canSubmit(false);
+
         var validated = self.validateInviteForm();
         if (typeof validated === 'string') {
             self.inviteError(validated);
@@ -482,11 +483,14 @@ AddContributorViewModel = oop.extend(Paginator, {
         self.results([]);
         self.page('whom');
         self.add(result.contributor);
+        self.canSubmit(true);
     },
     onInviteError: function (xhr) {
+        var self = this;
         var response = JSON.parse(xhr.responseText);
         // Update error message
-        this.inviteError(response.message);
+        self.inviteError(response.message);
+        self.canSubmit(true);
     },
     hasChildren: function() {
         var self = this;

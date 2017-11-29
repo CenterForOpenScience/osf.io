@@ -1,11 +1,4 @@
-import logging
 import uuid
-import urlparse
-
-from website import settings
-
-
-logger = logging.getLogger(__name__)
 
 
 class GraphNode(object):
@@ -48,11 +41,14 @@ def format_user(user):
         'additional_name': user.middle_names,
     })
 
-    person.attrs['identifiers'] = [GraphNode('agentidentifier', agent=person, uri='mailto:{}'.format(uri)) for uri in user.emails]
+    person.attrs['identifiers'] = [GraphNode('agentidentifier', agent=person, uri='mailto:{}'.format(uri)) for uri in user.emails.values_list('address', flat=True)]
+    person.attrs['identifiers'].append(GraphNode('agentidentifier', agent=person, uri=user.absolute_url))
+
+    if user.external_identity.get('ORCID') and user.external_identity['ORCID'].values()[0] == 'VERIFIED':
+        person.attrs['identifiers'].append(GraphNode('agentidentifier', agent=person, uri=list(user.external_identity['ORCID'].keys())[0]))
 
     if user.is_registered:
         person.attrs['identifiers'].append(GraphNode('agentidentifier', agent=person, uri=user.profile_image_url()))
-        person.attrs['identifiers'].append(GraphNode('agentidentifier', agent=person, uri=urlparse.urljoin(settings.DOMAIN, user.profile_url)))
 
     person.attrs['related_agents'] = [GraphNode('isaffiliatedwith', subject=person, related=GraphNode('institution', name=institution.name)) for institution in user.affiliated_institutions.all()]
 
@@ -67,3 +63,20 @@ def format_contributor(preprint, user, bibliographic, index):
         creative_work=preprint,
         cited_as=user.fullname,
     )
+
+def format_subject(subject, context=None):
+    if context is None:
+        context = {}
+    if subject is None:
+        return None
+    if subject.id in context:
+        return context[subject.id]
+    context[subject.id] = GraphNode(
+        'subject',
+        name=subject.text,
+        is_deleted=False,
+        uri=subject.absolute_api_v2_url,
+    )
+    context[subject.id].attrs['parent'] = format_subject(subject.parent, context)
+    context[subject.id].attrs['central_synonym'] = format_subject(subject.bepress_subject, context)
+    return context[subject.id]

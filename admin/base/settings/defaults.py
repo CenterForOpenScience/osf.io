@@ -88,9 +88,11 @@ INSTALLED_APPS = (
     'webpack_loader',
     'django_nose',
     'password_reset',
+    'guardian',
 
     # OSF
     'osf',
+    'reviews',
 
     # Addons
     'addons.osfstorage',
@@ -107,17 +109,21 @@ INSTALLED_APPS = (
     'admin.users',
     'admin.desk',
     'admin.meetings',
+    'admin.institutions',
+    'admin.preprint_providers',
 
 )
 
 MIGRATION_MODULES = {
     'osf': None,
+    'reviews': None,
     'addons_osfstorage': None,
     'addons_wiki': None,
     'addons_twofactor': None,
 }
 
 USE_TZ = True
+TIME_ZONE = 'UTC'
 
 # local development using https
 if osf_settings.SECURE_MODE and osf_settings.DEBUG_MODE:
@@ -188,13 +194,10 @@ LOGIN_URL = 'account/login/'
 LOGIN_REDIRECT_URL = ADMIN_BASE
 
 STATIC_ROOT = os.path.join(os.path.dirname(BASE_DIR), 'static_root')
-STATICFILES_DIRS = (
-    os.path.join(BASE_DIR, 'static'),
-)
-
 
 STATICFILES_DIRS = (
     os.path.join(BASE_DIR, 'static'),
+    os.path.join(BASE_DIR, '../website/static'),
 )
 
 LANGUAGE_CODE = 'en-us'
@@ -232,3 +235,16 @@ ENTRY_POINTS = {'osf4m': 'osf4m', 'prereg_challenge_campaign': 'prereg',
 # Set in local.py
 DESK_KEY = ''
 DESK_KEY_SECRET = ''
+
+TINYMCE_APIKEY = ''
+
+if DEBUG:
+    INSTALLED_APPS += ('debug_toolbar', )
+    MIDDLEWARE_CLASSES += ('debug_toolbar.middleware.DebugToolbarMiddleware', )
+    DEBUG_TOOLBAR_CONFIG = {
+        'SHOW_TOOLBAR_CALLBACK': lambda(_): True,
+        'DISABLE_PANELS': {
+            'debug_toolbar.panels.templates.TemplatesPanel',
+            'debug_toolbar.panels.redirects.RedirectsPanel'
+        }
+    }

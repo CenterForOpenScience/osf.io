@@ -15,18 +15,19 @@ import six
 
 from django.apps import apps
 from django.core.paginator import Paginator
+from django.db.models import Q
 from elasticsearch import (ConnectionError, Elasticsearch, NotFoundError,
                            RequestError, TransportError, helpers)
 from framework.celery_tasks import app as celery_app
-from framework.mongo.utils import paginated
-from modularodm import Q
-from osf.models import AbstractNode as Node
-from osf.models import OSFUser as User
-from osf.models import FileNode
+from framework.database import paginated
+from osf.models import AbstractNode
+from osf.models import OSFUser
+from osf.models import BaseFileNode
 from osf.models import Institution
+from osf.models import QuickFilesNode
 from website import settings
 from website.filters import gravatar
-from website.project.licenses import serialize_node_license_record
+from osf.models.licenses import serialize_node_license_record
 from website.search import exceptions
 from website.search.util import build_query, clean_splitters
 from website.util import sanitize
@@ -41,18 +42,20 @@ ALIASES = {
     'component': 'Components',
     'registration': 'Registrations',
     'user': 'Users',
-    'total': 'Total',
+    'total': 'All OSF Results',
     'file': 'Files',
     'institution': 'Institutions',
+    'preprint': 'Preprints',
 }
 
 DOC_TYPE_TO_MODEL = {
-    'component': Node,
-    'project': Node,
-    'registration': Node,
-    'user': User,
-    'file': FileNode,
-    'institution': Institution
+    'component': AbstractNode,
+    'project': AbstractNode,
+    'registration': AbstractNode,
+    'user': OSFUser,
+    'file': BaseFileNode,
+    'institution': Institution,
+    'preprint': AbstractNode,
 }
 
 # Prevent tokenizing and stop word removal.
@@ -73,7 +76,8 @@ def client():
             CLIENT = Elasticsearch(
                 settings.ELASTIC_URI,
                 request_timeout=settings.ELASTIC_TIMEOUT,
-                retry_on_timeout=True
+                retry_on_timeout=True,
+                **settings.ELASTIC_KWARGS
             )
             logging.getLogger('elasticsearch').setLevel(logging.WARN)
             logging.getLogger('elasticsearch.trace').setLevel(logging.WARN)
@@ -108,6 +112,8 @@ def requires_search(func):
             except NotFoundError as e:
                 raise exceptions.IndexNotFoundError(e.error)
             except RequestError as e:
+                if e.error == 'search_phase_execution_exception':
+                    raise exceptions.MalformedQueryError('Failed to parse query')
                 if 'ParseException' in e.error:  # ES 1.5
                     raise exceptions.MalformedQueryError(e.error)
                 if type(e.error) == dict:  # ES 2.0
@@ -238,7 +244,7 @@ def format_results(results):
             parent_info = load_parent(result.get('parent_id'))
             result['parent_url'] = parent_info.get('url') if parent_info else None
             result['parent_title'] = parent_info.get('title') if parent_info else None
-        elif result.get('category') in {'project', 'component', 'registration'}:
+        elif result.get('category') in {'project', 'component', 'registration', 'preprint'}:
             result = format_result(result, result.get('parent_id'))
         elif not result.get('category'):
             continue
@@ -270,13 +276,14 @@ def format_result(result, parent_id=None):
         'n_wikis': len(result['wikis']),
         'license': result.get('license'),
         'affiliated_institutions': result.get('affiliated_institutions'),
+        'preprint_url': result.get('preprint_url'),
     }
 
     return formatted_result
 
 
 def load_parent(parent_id):
-    parent = Node.load(parent_id)
+    parent = AbstractNode.load(parent_id)
     if parent is None:
         return None
     parent_info = {}
@@ -298,6 +305,8 @@ COMPONENT_CATEGORIES = set(settings.NODE_CATEGORY_MAP.keys())
 def get_doctype_from_node(node):
     if node.is_registration:
         return 'registration'
+    elif node.is_preprint:
+        return 'preprint'
     elif node.parent_node is None:
         # ElasticSearch categorizes top-level projects differently than children
         return 'project'
@@ -361,11 +370,12 @@ def serialize_node(node, category):
         'registered_date': node.registered_date,
         'wikis': {},
         'parent_id': parent_id,
-        'date_created': node.date_created,
+        'date_created': node.created,
         'license': serialize_node_license_record(node.license),
         'affiliated_institutions': list(node.affiliated_institutions.values_list('name', flat=True)),
         'boost': int(not node.is_registration) + 1,  # This is for making registered projects less relevant
         'extra_search_terms': clean_splitters(node.title),
+        'preprint_url': node.preprint_url,
     }
     if not node.is_retracted:
         for wiki in NodeWikiPage.objects.filter(guids___id__in=node.wiki_pages_current.values()):
@@ -378,10 +388,10 @@ def serialize_node(node, category):
 def update_node(node, index=None, bulk=False, async=False):
     from addons.osfstorage.models import OsfStorageFile
     index = index or INDEX
-    for file_ in paginated(OsfStorageFile, Q('node', 'eq', node)):
+    for file_ in paginated(OsfStorageFile, Q(node=node)):
         update_file(file_, index=index)
 
-    if node.is_deleted or not node.is_public or node.archiving or (node.is_spammy and settings.SPAM_FLAGGED_REMOVE_FROM_SEARCH):
+    if node.is_deleted or not node.is_public or node.archiving or (node.is_spammy and settings.SPAM_FLAGGED_REMOVE_FROM_SEARCH) or node.is_quickfiles:
         delete_doc(node._id, node, index=index)
     else:
         category = get_doctype_from_node(node)
@@ -395,7 +405,7 @@ def bulk_update_nodes(serialize, nodes, index=None):
     """Updates the list of input projects
 
     :param function Node-> dict serialize:
-    :param Node[] nodes: Projects, components or registrations
+    :param Node[] nodes: Projects, components, registrations, or preprints
     :param str index: Index of the nodes
     :return:
     """
@@ -444,6 +454,17 @@ def update_user(user, index=None):
     if not user.is_active:
         try:
             client().delete(index=index, doc_type='user', id=user._id, refresh=True, ignore=[404])
+            # update files in their quickfiles node if the user has been marked as spam
+            if 'spam_confirmed' in user.system_tags:
+                quickfiles = QuickFilesNode.objects.get_for_user(user)
+                for quickfile_id in quickfiles.files.values_list('_id', flat=True):
+                    client().delete(
+                        index=index,
+                        doc_type='file',
+                        id=quickfile_id,
+                        refresh=True,
+                        ignore=[404]
+                    )
         except NotFoundError:
             pass
         return
@@ -565,11 +586,11 @@ def delete_index(index):
 @requires_search
 def create_index(index=None):
     '''Creates index with some specified mappings to begin with,
-    all of which are applied to all projects, components, and registrations.
+    all of which are applied to all projects, components, preprints, and registrations.
     '''
     index = index or INDEX
-    document_types = ['project', 'component', 'registration', 'user', 'file', 'institution']
-    project_like_types = ['project', 'component', 'registration']
+    document_types = ['project', 'component', 'registration', 'user', 'file', 'institution', 'preprint']
+    project_like_types = ['project', 'component', 'registration', 'preprint']
     analyzed_fields = ['title', 'description']
 
     client().indices.create(index, ignore=[400])  # HTTP 400 if index already exists
@@ -581,6 +602,9 @@ def create_index(index=None):
                     'properties': {
                         'id': NOT_ANALYZED_PROPERTY,
                         'name': NOT_ANALYZED_PROPERTY,
+                        # Elasticsearch automatically infers mappings from content-type. `year` needs to
+                        # be explicitly mapped as a string to allow date ranges, which break on the inferred type
+                        'year': {'type': 'string'},
                     }
                 }
             }
@@ -615,7 +639,13 @@ def create_index(index=None):
 @requires_search
 def delete_doc(elastic_document_id, node, index=None, category=None):
     index = index or INDEX
-    category = category or 'registration' if node.is_registration else node.project_or_component
+    if not category:
+        if node.is_registration:
+            category = 'registration'
+        elif node.is_preprint:
+            category = 'preprint'
+        else:
+            category = node.project_or_component
     client().delete(index=index, doc_type=category, id=elastic_document_id, refresh=True, ignore=[404])
 
 
@@ -658,7 +688,7 @@ def search_contributor(query, page=0, size=10, exclude=None, current_user=None):
     users = []
     for doc in docs:
         # TODO: use utils.serialize_user
-        user = User.load(doc['id'])
+        user = OSFUser.load(doc['id'])
 
         if current_user and current_user._id == user._id:
             n_projects_in_common = -1

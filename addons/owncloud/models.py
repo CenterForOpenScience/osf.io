@@ -11,7 +11,7 @@ from addons.base import exceptions
 from addons.owncloud import settings
 from addons.owncloud.serializer import OwnCloudSerializer
 from addons.owncloud.settings import DEFAULT_HOSTS, USE_SSL
-from website.oauth.models import BasicAuthProviderMixin
+from osf.models.external import BasicAuthProviderMixin
 from website.util import api_v2_url
 logger = logging.getLogger(__name__)
 
@@ -56,12 +56,12 @@ class UserSettings(BaseOAuthUserSettings):
         return ret
 
 
-class NodeSettings(BaseStorageAddon, BaseOAuthNodeSettings):
+class NodeSettings(BaseOAuthNodeSettings, BaseStorageAddon):
     oauth_provider = OwnCloudProvider
     serializer = OwnCloudSerializer
 
     folder_id = models.TextField(blank=True, null=True)
-    user_settings = models.ForeignKey(UserSettings, null=True, blank=True)
+    user_settings = models.ForeignKey(UserSettings, null=True, blank=True, on_delete=models.CASCADE)
 
     _api = None
 

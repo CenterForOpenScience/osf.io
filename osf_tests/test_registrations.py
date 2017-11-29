@@ -6,10 +6,8 @@ from django.utils import timezone
 from framework.auth.core import Auth
 from osf.models import Node, Registration, Sanction, MetaSchema, NodeLog
 from addons.wiki.models import NodeWikiPage
-from osf.modm_compat import Q
 
 from website import settings
-from website.project.model import ensure_schemas
 from website.util.permissions import READ, WRITE, ADMIN
 
 from . import factories
@@ -18,11 +16,6 @@ from .factories import get_default_metaschema
 from addons.wiki.tests.factories import NodeWikiFactory
 
 pytestmark = pytest.mark.django_db
-
-
-@pytest.fixture(autouse=True)
-def _ensure_schemas(patched_models):
-    return ensure_schemas()
 
 
 @pytest.fixture()
@@ -129,7 +122,7 @@ class TestRegisterNode:
         # Registered node has all logs except for registration approval initiated
         assert project.logs.count() - 1 == registration.logs.count()
         assert project.logs.first().action == 'registration_initiated'
-        project_second_log = project.logs.limit(2)[1]
+        project_second_log = project.logs.all()[:2][1]
         assert registration.logs.first().action == project_second_log.action
 
     def test_tags(self, registration, project):
@@ -305,6 +298,48 @@ class TestRegisterNode:
         assert registration.is_public
 
 
+class TestRegisterNodeContributors:
+
+    @pytest.fixture()
+    def project_two(self, user, auth):
+        return factories.ProjectFactory(creator=user)
+    
+    @pytest.fixture()
+    def component(self, user, auth, project_two):
+        return factories.NodeFactory(
+            creator=user,
+            parent=project_two,
+        )
+
+    @pytest.fixture()
+    def contributor_unregistered(self, user, auth, project_two):
+        ret = project_two.add_unregistered_contributor(fullname='Johnny Git Gud', email='ford.prefect@hitchhikers.com', auth=auth)
+        project_two.save()
+        return ret
+
+    @pytest.fixture()
+    def contributor_unregistered_no_email(self, user, auth, project_two, component):
+        ret = component.add_unregistered_contributor(fullname='Johnny B. Bard', email='', auth=auth)
+        component.save()
+        return ret
+
+    @pytest.fixture()
+    def registration(self, project_two, component, contributor_unregistered, contributor_unregistered_no_email):
+        with mock_archive(project_two, autoapprove=True) as registration:
+            return registration
+
+    def test_unregistered_contributors_unclaimed_records_get_copied(self, user, project, component, registration, contributor_unregistered, contributor_unregistered_no_email):
+        contributor_unregistered.refresh_from_db()
+        contributor_unregistered_no_email.refresh_from_db()
+        assert registration.contributors.filter(id=contributor_unregistered.id).exists()
+        assert registration._id in contributor_unregistered.unclaimed_records
+
+        # component
+        component_registration = registration.nodes[0]
+        assert component_registration.contributors.filter(id=contributor_unregistered_no_email.id).exists()
+        assert component_registration._id in contributor_unregistered_no_email.unclaimed_records
+
+
 # copied from tests/test_registrations
 class TestNodeSanctionStates:
 
@@ -314,22 +349,22 @@ class TestNodeSanctionStates:
 
     def test_sanction_embargo_termination_first(self):
         embargo_termination_approval = factories.EmbargoTerminationApprovalFactory()
-        registration = Registration.find_one(Q('embargo_termination_approval', 'eq', embargo_termination_approval))
+        registration = Registration.objects.get(embargo_termination_approval=embargo_termination_approval)
         assert registration.sanction == embargo_termination_approval
 
     def test_sanction_retraction(self):
         retraction = factories.RetractionFactory()
-        registration = Registration.find_one(Q('retraction', 'eq', retraction))
+        registration = Registration.objects.get(retraction=retraction)
         assert registration.sanction == retraction
 
     def test_sanction_embargo(self):
         embargo = factories.EmbargoFactory()
-        registration = Registration.find_one(Q('embargo', 'eq', embargo))
+        registration = Registration.objects.get(embargo=embargo)
         assert registration.sanction == embargo
 
     def test_sanction_registration_approval(self):
         registration_approval = factories.RegistrationApprovalFactory()
-        registration = Registration.find_one(Q('registration_approval', 'eq', registration_approval))
+        registration = Registration.objects.get(registration_approval=registration_approval)
         assert registration.sanction == registration_approval
 
     def test_sanction_searches_parents(self):
@@ -344,7 +379,7 @@ class TestNodeSanctionStates:
 
     def test_is_pending_registration(self):
         registration_approval = factories.RegistrationApprovalFactory()
-        registration = Registration.find_one(Q('registration_approval', 'eq', registration_approval))
+        registration = Registration.objects.get(registration_approval=registration_approval)
         assert registration_approval.is_pending_approval
         assert registration.is_pending_registration
 
@@ -359,7 +394,7 @@ class TestNodeSanctionStates:
 
     def test_is_registration_approved(self):
         registration_approval = factories.RegistrationApprovalFactory(state=Sanction.APPROVED, approve=True)
-        registration = Registration.find_one(Q('registration_approval', 'eq', registration_approval))
+        registration = Registration.objects.get(registration_approval=registration_approval)
         assert registration.is_registration_approved
 
     def test_is_registration_approved_searches_parents(self):
@@ -375,10 +410,10 @@ class TestNodeSanctionStates:
 
     def test_is_retracted(self):
         retraction = factories.RetractionFactory(state=Sanction.APPROVED, approve=True)
-        registration = Registration.find_one(Q('retraction', 'eq', retraction))
+        registration = Registration.objects.get(retraction=retraction)
         assert registration.is_retracted
 
-    @mock.patch('website.project.tasks.on_registration_updated')
+    @mock.patch('website.project.tasks.send_share_node_data')
     @mock.patch('osf.models.node.AbstractNode.update_search')
     def test_is_retracted_searches_parents(self, mock_registration_updated, mock_update_search):
         user = factories.UserFactory()
@@ -391,7 +426,7 @@ class TestNodeSanctionStates:
 
     def test_is_pending_retraction(self):
         retraction = factories.RetractionFactory()
-        registration = Registration.find_one(Q('retraction', 'eq', retraction))
+        registration = Registration.objects.get(retraction=retraction)
         assert retraction.is_pending_approval is True
         assert registration.is_pending_retraction is True
 
@@ -407,7 +442,7 @@ class TestNodeSanctionStates:
 
     def test_embargo_end_date(self):
         embargo = factories.EmbargoFactory()
-        registration = Registration.find_one(Q('embargo', 'eq', embargo))
+        registration = Registration.objects.get(embargo=embargo)
         assert registration.embargo_end_date == embargo.embargo_end_date
 
     def test_embargo_end_date_searches_parents(self):
@@ -421,7 +456,7 @@ class TestNodeSanctionStates:
 
     def test_is_pending_embargo(self):
         embargo = factories.EmbargoFactory()
-        registration = Registration.find_one(Q('embargo', 'eq', embargo))
+        registration = Registration.objects.get(embargo=embargo)
         assert embargo.is_pending_approval
         assert registration.is_pending_embargo
 
@@ -436,7 +471,7 @@ class TestNodeSanctionStates:
 
     def test_is_embargoed(self):
         embargo = factories.EmbargoFactory()
-        registration = Registration.find_one(Q('embargo', 'eq', embargo))
+        registration = Registration.objects.get(embargo=embargo)
         registration.embargo.state = Sanction.APPROVED
         registration.embargo.save()
         assert registration.is_embargoed
@@ -470,9 +505,7 @@ class TestDraftRegistrations:
         assert draft.initiator == node.creator
 
         # Pick an arbitrary v2 schema
-        schema = MetaSchema.find(
-            Q('schema_version', 'eq', 2)
-        )[0]
+        schema = MetaSchema.objects.filter(schema_version=2).first()
         data = {'some': 'data'}
         draft = factories.DraftRegistrationFactory(registration_schema=schema, registration_metadata=data)
         assert draft.registration_schema == schema

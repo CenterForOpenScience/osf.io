@@ -375,7 +375,7 @@ function inheritFromParent(item, parent, fields) {
         item.data[field] = item.data[field] || parent.data[field];
     });
 
-    if(item.data.provider === 'github'){
+    if(item.data.provider === 'github' || item.data.provider === 'bitbucket' || item.data.provider === 'gitlab'){
         item.data.branch = parent.data.branch;
     }
 }
@@ -405,7 +405,7 @@ function _fangornResolveToggle(item) {
     }
     if (item.data.provider === 'osfstorage' && item.kind === 'file') {
         if (item.data.extra && item.data.extra.checkout) {
-            if (item.data.extra.checkout === window.contextVars.currentUser.id){
+            if (item.data.extra.checkout._id === window.contextVars.currentUser.id){
                 return checkedByUser;
             }
             return checkedByOther;
@@ -435,8 +435,17 @@ function checkConflicts(tb, item, folder, cb) {
     for(var i = 0; i < folder.children.length; i++) {
         var child = folder.children[i];
         if (child.data.name === item.data.name && child.id !== item.id) {
-            messageArray.push(m('p', 'An item named "' + child.data.name + '" already exists in this location.'));
-            
+           messageArray.push([
+                m('p', 'An item named "' + child.data.name + '" already exists in this location.'),
+                m('h5.replace-file',
+                    '"Keep Both" will retain both files (and their version histories) in this location.'),
+                m('h5.replace-file',
+                    '"Replace" will overwrite the existing file in this location. ' +
+                    'You will lose previous versions of the overwritten file. ' +
+                    'You will keep previous versions of the moved file.'),
+                m('h5.replace-file', '"Cancel" will cancel the move.')
+            ]);
+
             tb.modal.update(
                 m('', messageArray), [
                     m('span.btn.btn-default', {onclick: function() {tb.modal.dismiss();}}, 'Cancel'), //jshint ignore:line
@@ -457,7 +466,17 @@ function checkConflictsRename(tb, item, name, cb) {
     for(var i = 0; i < parent.children.length; i++) {
         var child = parent.children[i];
         if (child.data.name === name && child.id !== item.id) {
-            messageArray.push(m('p', 'An item named "' + child.data.name + '" already exists in this location.'));
+            messageArray.push([
+                m('p', 'An item named "' + child.data.name + '" already exists in this location.'),
+                m('h5.replace-file',
+                    '"Keep Both" will retain both files (and their version histories) in this location.'),
+                m('h5.replace-file',
+                    '"Replace" will overwrite the existing file in this location. ' +
+                    'You will lose previous versions of the overwritten file. ' +
+                    'You will keep previous versions of the moved file.'),
+                m('h5.replace-file', '"Cancel" will cancel the move.')
+            ]);
+
 
             if (window.contextVars.node.preprintFileId === child.data.path.replace('/', '')) {
                 messageArray = messageArray.concat([
@@ -525,7 +544,7 @@ function doItemOp(operation, to, from, rename, conflict) {
     }
 
     var options = {};
-    if(from.data.provider === 'github'){
+    if(from.data.provider === 'github' || from.data.provider === 'bitbucket' || from.data.provider === 'gitlab'){
         options.branch = from.data.branch;
         moveSpec.branch = from.data.branch;
     }
@@ -537,9 +556,7 @@ function doItemOp(operation, to, from, rename, conflict) {
         type: 'POST',
         beforeSend: $osf.setXHRAuthorization,
         url: waterbutler.buildTreeBeardFileOp(from, options),
-        headers: {
-            'Content-Type': 'Application/json'
-        },
+        contentType: 'application/json',
         data: JSON.stringify(moveSpec)
     }).done(function(resp, _, xhr) {
         if (to.data.provider === from.provider) {
@@ -554,7 +571,8 @@ function doItemOp(operation, to, from, rename, conflict) {
             var mithrilButtons = m('div', [
                 m('span.tb-modal-btn', { 'class' : 'text-default', onclick : function() { tb.modal.dismiss(); }}, 'Close')
             ]);
-            tb.modal.update(mithrilContent, mithrilButtons);
+            var header =  m('h3.modal-title.break-word', 'Operation Information');
+            tb.modal.update(mithrilContent, mithrilButtons, header);
             return;
         }
         from.data = tb.options.lazyLoadPreprocess.call(this, resp).data;
@@ -619,6 +637,9 @@ function doItemOp(operation, to, from, rename, conflict) {
         orderFolder.call(tb, from.parent());
     }).always(function(){
         from.inProgress = false;
+        if (SYNC_UPLOAD_ADDONS.indexOf(to.data.provider) !== -1){
+            doSyncMove(tb, to.data.provider);
+        }
     });
 }
 
@@ -887,25 +908,28 @@ var DEFAULT_ERROR_MESSAGE = 'Could not upload file. The file may be invalid ' +
     'or the file folder has been deleted.';
 function _fangornDropzoneError(treebeard, file, message, xhr) {
     var tb = treebeard;
-    // File may either be a webkit Entry or a file object, depending on the browser
-    // On Chrome we can check if a directory is being uploaded
     var msgText;
-    var isChrome = !!window.chrome && !!window.chrome.webstore;
-    // Unpatched Dropzone silently does nothing when folders are uploaded on Windows IE and Firefox
+
+    // Unpatched Dropzone silently does nothing when folders are uploaded on Windows IE
     // Patched Dropzone.prototype.drop to emit error with file = 'None' to catch the error
     if (file === 'None'){
         $osf.growl('Error', 'Cannot upload folders.');
         return;
     }
-    if (isChrome && file.isDirectory) {
-        msgText = 'Cannot upload folders.';
-    } else if(!isChrome && file.treebeardParent.kind === 'folder') {
+
+    if (file.isDirectory) {
         msgText = 'Cannot upload folders.';
     } else if (xhr && xhr.status === 507) {
         msgText = 'Cannot upload file due to insufficient storage.';
     } else if (xhr && xhr.status === 0) {
-        msgText = 'Unable to reach the provider, please try again later. If the ' +
-            'problem persists, please contact support@osf.io.';
+        // There is no way for Safari to know if it was a folder at present
+         msgText = '';
+         if ($osf.isSafari()) {
+             msgText += 'Could not upload file. Possible reasons: <br>';
+             msgText += '1. Cannot upload folders. <br>2. ';
+         }
+         msgText += 'Unable to reach the provider, please try again later. ';
+         msgText += 'If the problem persists, please contact support@osf.io.';
     } else {
         //Osfstorage and most providers store message in {Object}message.{string}message,
         //but some, like Dataverse, have it in {string} message.
@@ -915,9 +939,8 @@ function _fangornDropzoneError(treebeard, file, message, xhr) {
             msgText = DEFAULT_ERROR_MESSAGE;
         }
     }
-    if (!isChrome) {
+    if (typeof file.isDirectory === 'undefined') {
         var parent = file.treebeardParent || treebeardParent.dropzoneItemCache; // jshint ignore:line
-        // Parent may be undefined, e.g. in Chrome, where file is an entry object
         var item;
         var child;
         var destroyItem = false;
@@ -1005,8 +1028,8 @@ function _createFolder(event, dismissCallback, helpText) {
     var extra = {};
     var path = parent.data.path || '/';
     var options = {name: val, kind: 'folder'};
-    
-    if (parent.data.provider === 'github') {
+
+    if ((parent.data.provider === 'github') || (parent.data.provider === 'gitlab')) {
         extra.branch = parent.data.branch;
         options.branch = parent.data.branch;
     }
@@ -1015,7 +1038,7 @@ function _createFolder(event, dismissCallback, helpText) {
         method: 'PUT',
         background: true,
         config: $osf.setXHRAuthorization,
-        url: waterbutler.buildCreateFolderUrl(path, parent.data.provider, parent.data.nodeId, options)
+        url: waterbutler.buildCreateFolderUrl(path, parent.data.provider, parent.data.nodeId, options, extra)
     }).then(function(item) {
         item = tb.options.lazyLoadPreprocess.call(this, item).data;
         inheritFromParent({data: item}, parent, ['branch']);
@@ -1281,7 +1304,7 @@ function orderFolder(tree) {
     if(typeof this.isSorted !== 'undefined' && typeof this.isSorted[0] !== 'undefined'){
         sortColumn = Object.keys(this.isSorted)[0]; // default to whatever column is first
         for (var column in this.isSorted){
-            sortColumn = this.isSorted[column].asc || this.isSorted[column].desc ? column : sortColumn; 
+            sortColumn = this.isSorted[column].asc || this.isSorted[column].desc ? column : sortColumn;
         }
         sortDirection = this.isSorted[sortColumn].desc ? 'desc' : 'asc'; // default to ascending
     }else{
@@ -1344,7 +1367,7 @@ function _fangornTitleColumnHelper(tb, item, col, nameTitle, toUrl, classNameOpt
         tb.options.links = true;
     }
     // as opposed to undefined, avoids unnecessary setting of this value
-    if (item.data.isAddonRoot && item.connected === false) { 
+    if (item.data.isAddonRoot && item.connected === false) {
         return _connectCheckTemplate.call(this, item);
     }
     if (item.kind === 'file' && item.data.permissions.view) {
@@ -1389,16 +1412,11 @@ function _fangornVersionColumn(item, col) {
  */
 function _fangornModifiedColumn(item, col) {
     var tb = this;
-    // Kludge for Dropbox date format
-    // TODO [OSF-6461]: remove kludge when we either move to DropBox v2 API or implememnt
-    // normalized dates in WaterButler
-    var myFormats = ['ddd, DD MMM YYYY HH:mm:ss ZZ', 'YYYY-MM-DD hh:mm A'];
     if (item.data.isAddonRoot && item.connected === false) { // as opposed to undefined, avoids unnecessary setting of this value
         return _connectCheckTemplate.call(this, item);
     }
-    if (item.kind === 'file' && item.data.permissions.view && item.data.modified) {
-        // "new Date" required for non-ISO date formats
-        item.data.modified = new moment(item.data.modified, myFormats, 'en').format('YYYY-MM-DD hh:mm A');
+    if (item.kind === 'file' && item.data.permissions.view && item.data.modified_utc) {
+        item.data.modified = new moment(moment.utc(item.data.modified_utc,'YYYY-MM-DD hh:mm A', 'en').toDate()).format('YYYY-MM-DD hh:mm A');
         return m(
             'span',
             item.data.modified
@@ -1564,23 +1582,32 @@ function _loadTopLevelChildren() {
  * @this Treebeard.controller
  * @private
  */
-var NO_AUTO_EXPAND_PROJECTS = ['ezcuj', 'ecmz4'];
+var NO_AUTO_EXPAND_PROJECTS = ['ezcuj', 'ecmz4', 'w4wvg', 'sn64d'];
 function expandStateLoad(item) {
     var tb = this,
+        icon = $('.tb-row[data-id="' + item.id + '"]').find('.tb-toggle-icon'),
+        toggleIcon = tbOptions.resolveToggle(item),
+        addonList = [],
         i;
+
     if (item.children.length > 0 && item.depth === 1) {
-        // NOTE: On the RPP *only*: Load the top-level project's OSF Storage
+        // NOTE: On the RPP and a few select projects *only*: Load the top-level project's OSF Storage
         // but do NOT lazy-load children in order to save hundreds of requests.
         // TODO: We might want to do this for every project, but that's TBD.
         // /sloria
         if (window.contextVars && window.contextVars.node && NO_AUTO_EXPAND_PROJECTS.indexOf(window.contextVars.node.id) > -1) {
-            tb.updateFolder(null, item.children[0]);
+            var osfsItems = item.children.filter(function(child) { return child.data.isAddonRoot && child.data.provider === 'osfstorage'; });
+            if (osfsItems.length) {
+                var osfsItem = osfsItems[0];
+                tb.updateFolder(null, osfsItem);
+            }
         } else {
             for (i = 0; i < item.children.length; i++) {
                 tb.updateFolder(null, item.children[i]);
             }
         }
     }
+
     if (item.children.length > 0 && item.depth === 2) {
         for (i = 0; i < item.children.length; i++) {
             if (item.children[i].data.isAddonRoot || item.children[i].data.addonFullName === 'OSF Storage' ) {
@@ -1588,7 +1615,33 @@ function expandStateLoad(item) {
             }
         }
     }
-        $('.fangorn-toolbar-icon').tooltip();
+
+    if (item.depth > 2 && !item.data.isAddonRoot && !item.data.type && item.children.length === 0 && item.open) {
+        // Displays loading indicator until request below completes
+        // Copied from toggleFolder() in Treebeard
+        if (icon.get(0)) {
+            m.render(icon.get(0), tbOptions.resolveRefreshIcon());
+        }
+        $osf.ajaxJSON(
+            'GET',
+            '/api/v1/project/' + item.data.nodeID + '/files/grid/'
+        ).done(function(response) {
+            var data = response.data[0].children;
+            tb.updateFolder(data, item);
+            tb.redraw();
+        }).fail(function(xhr) {
+            item.notify.update('Unable to retrieve components.', 'danger', undefined, 3000);
+            item.open = false;
+            Raven.captureMessage('Unable to retrieve components for node ' + item.data.nodeID, {
+                extra: {
+                    xhr: xhr
+                }
+            });
+        });
+    }
+
+    $('.fangorn-toolbar-icon').tooltip();
+
 }
 
 /**
@@ -1778,7 +1831,7 @@ var FGItemButtons = {
                         rowButtons.push(
                             m.component(FGButton, {
                                 icon: 'fa fa-trash',
-                                tooltip: 'This folder contains a Preprint. You cannot delete Preprints, but you can upload a new version.',                                        
+                                tooltip: 'This folder contains a Preprint. You cannot delete Preprints, but you can upload a new version.',
                                 className: 'tb-disabled'
                             }, 'Delete Folder'));
                         reapplyTooltips();
@@ -1818,7 +1871,7 @@ var FGItemButtons = {
                                 rowButtons.push(
                                     m.component(FGButton, {
                                         icon: 'fa fa-trash',
-                                        tooltip: 'This file is a Preprint. You cannot delete Preprints, but you can upload a new version.',                                        
+                                        tooltip: 'This file is a Preprint. You cannot delete Preprints, but you can upload a new version.',
                                         className: 'tb-disabled'
                                     }, 'Delete'));
                                 // Tooltips don't seem to auto reapply, this forces them.
@@ -1848,7 +1901,7 @@ var FGItemButtons = {
                                     icon: 'fa fa-sign-out',
                                     className : 'text-warning'
                                 }, 'Check out file'));
-                        } else if (item.data.extra.checkout === window.contextVars.currentUser.id) {
+                        } else if (item.data.extra.checkout && item.data.extra.checkout._id === window.contextVars.currentUser.id) {
                             rowButtons.push(
                                 m.component(FGButton, {
                                     onclick: function(event) {
@@ -2047,17 +2100,26 @@ var FGToolbar = {
         }
         // multiple selection icons
         // Special cased to not show 'delete multiple' for github or published dataverses
-        if(items.length > 1 && ctrl.tb.multiselected()[0].data.provider !== 'github' && ctrl.tb.options.placement !== 'fileview' && !(ctrl.tb.multiselected()[0].data.provider === 'dataverse' && ctrl.tb.multiselected()[0].parent().data.version === 'latest-published') ) {
+        if(
+            (items.length > 1) &&
+            (ctrl.tb.multiselected()[0].data.provider !== 'github') &&
+            (ctrl.tb.multiselected()[0].data.provider !== 'onedrive') &&
+            (ctrl.tb.options.placement !== 'fileview') &&
+            !(
+                (ctrl.tb.multiselected()[0].data.provider === 'dataverse') &&
+                (ctrl.tb.multiselected()[0].parent().data.version === 'latest-published')
+            )
+        ) {
             if (showDeleteMultiple(items)) {
                 var preprintPath = getPreprintPath(window.contextVars.node.preprintFileId);
                 if (preprintPath && multiselectContainsPreprint(items, preprintPath)) {
                     generalButtons.push(
                         m.component(FGButton, {
                             icon: 'fa fa-trash',
-                            tooltip: 'One of these items is a Preprint or contains a Preprint. You cannot delete Preprints, but you can upload a new version.',                                        
+                            tooltip: 'One of these items is a Preprint or contains a Preprint. You cannot delete Preprints, but you can upload a new version.',
                             className: 'tb-disabled'
                         }, 'Delete Multiple')
-                    );                    
+                    );
                 } else {
                     generalButtons.push(
                         m.component(FGButton, {
@@ -2202,7 +2264,7 @@ function openParentFolders (item) {
         scrollToItem = true;
         // recursively open parents of the selected item but do not lazyload;
         openParentFolders.call(tb, row);
-    }    
+    }
     dismissToolbar.call(tb);
     filterRows.call(tb, tb.multiselected());
 
@@ -2244,7 +2306,7 @@ var copyMode = null;
  */
 function _fangornDragStart(event, ui) {
     // Sync up the toolbar in case item was drag-clicked and not released
-    m.redraw(); 
+    m.redraw();
     var itemID = $(event.target).attr('data-id'),
         item = this.find(itemID);
     if (this.multiselected().length < 2) {
@@ -2371,9 +2433,26 @@ function _dropLogic(event, items, folder) {
         return tb.updateFolder(null, folder, _dropLogic.bind(tb, event, items, folder));
     }
 
-    $.each(items, function(index, item) {
-        checkConflicts(tb, item, folder, doItemOp.bind(tb, copyMode === 'move' ? OPERATIONS.MOVE : OPERATIONS.COPY, folder, item, undefined));
-    });
+    if (SYNC_UPLOAD_ADDONS.indexOf(folder.data.provider) !== -1) {
+        tb.syncFileMoveCache = tb.syncFileMoveCache || {};
+        tb.syncFileMoveCache[folder.data.provider] = tb.syncFileMoveCache[folder.data.provider] || [];
+        $.each(items, function(index, item) {
+            tb.syncFileMoveCache[folder.data.provider].push({'item' : item, 'folder' : folder});
+        });
+        doSyncMove(tb, folder.data.provider);
+    }else{
+        $.each(items, function(index, item) {
+            checkConflicts(tb, item, folder, doItemOp.bind(tb, copyMode === 'move' ? OPERATIONS.MOVE : OPERATIONS.COPY, folder, item, undefined));
+        });
+    }
+}
+
+function doSyncMove(tb, provider){
+    var cache = tb.syncFileMoveCache[provider];
+    if (cache.length > 0){
+        var itemData = cache.pop();
+        checkConflicts(tb, itemData.item, itemData.folder, doItemOp.bind(tb, copyMode === 'move' ? OPERATIONS.MOVE : OPERATIONS.COPY, itemData.folder, itemData.item, undefined));
+    }
 }
 
 /**
@@ -2440,8 +2519,8 @@ function isInvalidDropFolder(folder) {
         // must have a provider
         !folder.data.provider ||
         folder.data.status ||
-        // cannot add to dataverse
-        folder.data.provider === 'dataverse'
+        // cannot add to published dataverse
+        (folder.data.provider === 'dataverse' && folder.data.dataverseIsPublished)
     ) {
         return true;
     }
@@ -2458,8 +2537,10 @@ function isInvalidDropItem(folder, item, cannotBeFolder, mustBeIntra) {
         item.id === folder.id ||
         // no dropping on direct parent
         item.parentID === folder.id ||
-        // no moving items from dataverse
-        item.data.provider === 'dataverse' ||
+        // no moving published items from dataverse
+        (item.data.provider === 'dataverse' && item.data.extra.hasPublishedVersion) ||
+        // no moving folders into dataverse
+        (folder.data.provider === 'dataverse' && item.data.kind === 'folder') ||
         // no dropping if waiting on waterbutler ajax
         item.inProgress ||
         (cannotBeFolder && item.data.kind === 'folder') ||
@@ -2474,7 +2555,8 @@ function allowedToMove(folder, item, mustBeIntra) {
     return (
         item.data.permissions.edit &&
         (!mustBeIntra || (item.data.provider === folder.data.provider && item.data.nodeId === folder.data.nodeId)) &&
-            !(item.data.provider === 'figshare' && item.data.extra && item.data.extra.status === 'public')
+        !(item.data.provider === 'figshare' && item.data.extra && item.data.extra.status === 'public') &&
+        (item.data.provider !== 'bitbucket') && (item.data.provider !== 'gitlab') && (item.data.provider !== 'onedrive')
     );
 }
 
@@ -2496,7 +2578,7 @@ function showDeleteMultiple(items) {
         if (typeof each.permissions !== 'undefined' && each.permissions.edit && !each.isAddonRoot && !each.nodeType) {
             return true;
         }
-    }    
+    }
     return false;
 }
 
@@ -2524,7 +2606,7 @@ function getPreprintPath(preprintFileId) {
 function getCopyMode(folder, items) {
     var tb = this;
     // Prevents side effects from rare instance where folders not fully populated
-    if (typeof folder.data === 'undefined') {
+    if (typeof folder === 'undefined' || typeof folder.data === 'undefined') {
         return 'forbidden';
     }
 
@@ -2557,7 +2639,7 @@ function getCopyMode(folder, items) {
                 mustBeIntra = true;
             }
         }
-        
+
         if (canMove) {
             mustBeIntra = mustBeIntra || item.data.provider === 'github' || preprintPath === item.data.path;
             canMove = allowedToMove(folder, item, mustBeIntra);
@@ -2631,10 +2713,12 @@ tbOptions = {
         up : 'i.fa.fa-chevron-up',
         down : 'i.fa.fa-chevron-down'
     },
+    ondataload: function() {
+        _loadTopLevelChildren.call(this);
+    },
     onload : function () {
         var tb = this;
         tb.options.onload = null;  // Make sure we don't get called again
-        _loadTopLevelChildren.call(tb);
         tb.uploadStates = [];
         tb.pendingFileOps = [];
         tb.select('#tb-tbody, .tb-tbody-inner').on('click', function(event){

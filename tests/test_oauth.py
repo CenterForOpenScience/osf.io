@@ -13,12 +13,7 @@ from oauthlib.oauth2 import OAuth2Error
 from framework.auth import authenticate
 from framework.exceptions import PermissionsError, HTTPError
 from framework.sessions import session
-from website.oauth.models import (
-    ExternalAccount,
-    ExternalProvider,
-    OAUTH1,
-    OAUTH2,
-)
+from osf.models.external import ExternalAccount, ExternalProvider, OAUTH1, OAUTH2
 from website.util import api_url_for, web_url_for
 
 from tests.base import OsfTestCase
@@ -110,7 +105,7 @@ class TestExternalAccount(OsfTestCase):
         self.user.save()
 
         # If the external account isn't attached, this test has no meaning
-        assert_equal(ExternalAccount.find().count(), 1)
+        assert_equal(ExternalAccount.objects.all().count(), 1)
         assert_in(
             external_account,
             self.user.external_accounts.all(),
@@ -138,7 +133,7 @@ class TestExternalAccount(OsfTestCase):
         )
 
         # External account is still in the database
-        assert_equal(ExternalAccount.find().count(), 1)
+        assert_equal(ExternalAccount.objects.all().count(), 1)
 
     def test_disconnect_with_multiple_connected(self):
         # Disconnect an account connected to multiple users from one user
@@ -175,7 +170,7 @@ class TestExternalAccount(OsfTestCase):
         )
 
         # External account is still in the database
-        assert_equal(ExternalAccount.find().count(), 1)
+        assert_equal(ExternalAccount.objects.all().count(), 1)
 
         other_user.reload()
 
@@ -285,9 +280,9 @@ class TestExternalProviderOAuth1(OsfTestCase):
         httpretty.register_uri(
             httpretty.POST,
             'http://mock1a.com/callback',
-             body='oauth_token=perm_token'
-                  '&oauth_token_secret=perm_secret'
-                  '&oauth_callback_confirmed=true',
+            body='oauth_token=perm_token'
+                 '&oauth_token_secret=perm_secret'
+                 '&oauth_callback_confirmed=true',
         )
 
         user = UserFactory()
@@ -516,7 +511,7 @@ class TestExternalProviderOAuth2(OsfTestCase):
         )
 
         assert_equal(
-            ExternalAccount.find().count(),
+            ExternalAccount.objects.all().count(),
             1
         )
 
@@ -535,7 +530,7 @@ class TestExternalProviderOAuth2(OsfTestCase):
         httpretty.register_uri(
             httpretty.POST,
             self.provider.auto_refresh_url,
-             body=json.dumps({
+            body=json.dumps({
                 'access_token': 'refreshed_access_token',
                 'expires_in': 3600,
                 'refresh_token': 'refreshed_refresh_token'
@@ -567,7 +562,7 @@ class TestExternalProviderOAuth2(OsfTestCase):
         httpretty.register_uri(
             httpretty.POST,
             self.provider.auto_refresh_url,
-             body=json.dumps({
+            body=json.dumps({
                 'access_token': 'refreshed_access_token',
                 'expires_in': 3600,
                 'refresh_token': 'refreshed_refresh_token'
@@ -601,7 +596,7 @@ class TestExternalProviderOAuth2(OsfTestCase):
         httpretty.register_uri(
             httpretty.POST,
             self.provider.auto_refresh_url,
-             body=json.dumps({
+            body=json.dumps({
                 'err_msg': 'Should not be hit'
             }),
             status=500
@@ -636,7 +631,7 @@ class TestExternalProviderOAuth2(OsfTestCase):
         httpretty.register_uri(
             httpretty.POST,
             self.provider.auto_refresh_url,
-             body=json.dumps({
+            body=json.dumps({
                 'err_msg': 'Should not be hit'
             }),
             status=500
@@ -664,7 +659,7 @@ class TestExternalProviderOAuth2(OsfTestCase):
         httpretty.register_uri(
             httpretty.POST,
             self.provider.auto_refresh_url,
-             body=json.dumps({
+            body=json.dumps({
                 'err_msg': 'Should not be hit'
             }),
             status=500
@@ -684,12 +679,11 @@ class TestExternalProviderOAuth2(OsfTestCase):
             expires_at=datetime.utcfromtimestamp(time.time() + 200).replace(tzinfo=pytz.utc)
         )
 
-
         # mock a successful call to the provider to refresh tokens
         httpretty.register_uri(
             httpretty.POST,
             self.provider.auto_refresh_url,
-             body=json.dumps({
+            body=json.dumps({
                 'err_msg': 'Should not be hit'
             }),
             status=500
@@ -714,7 +708,7 @@ class TestExternalProviderOAuth2(OsfTestCase):
         httpretty.register_uri(
             httpretty.POST,
             self.provider.auto_refresh_url,
-             body=json.dumps({
+            body=json.dumps({
                 'err': 'Should not be hit'
             }),
             status=500
@@ -739,11 +733,11 @@ class TestExternalProviderOAuth2(OsfTestCase):
         httpretty.register_uri(
             httpretty.POST,
             self.provider.auto_refresh_url,
-             body=json.dumps({
+            body=json.dumps({
                 'error': 'invalid_grant',
             }),
             status=401
         )
 
         with assert_raises(OAuth2Error):
-            ret = self.provider.refresh_oauth_key(force=True)
+            self.provider.refresh_oauth_key(force=True)

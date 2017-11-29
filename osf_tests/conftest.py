@@ -6,7 +6,7 @@ from faker import Factory
 from framework.django.handlers import handlers as django_handlers
 from framework.flask import rm_handlers
 from website import settings
-from website.app import init_app, patch_models
+from website.app import init_app
 from website.project.signals import contributor_added
 from website.project.views.contributor import notify_added_contributor
 
@@ -17,7 +17,6 @@ SILENT_LOGGERS = [
     'factory.containers',
     'framework.analytics',
     'framework.auth.core',
-    'framework.celery_tasks.signals',
     'website.app',
     'website.archiver.tasks',
     'website.mails',
@@ -31,11 +30,6 @@ SILENT_LOGGERS = [
 ]
 for logger_name in SILENT_LOGGERS:
     logging.getLogger(logger_name).setLevel(logging.CRITICAL)
-
-
-@pytest.fixture(autouse=True, scope='session')
-def patched_models():
-    patch_models(settings)
 
 
 # NOTE: autouse so that ADDONS_REQUESTED gets set on website.settings

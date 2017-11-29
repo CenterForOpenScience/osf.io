@@ -9,7 +9,6 @@ var History = require('exports?History!history');
 var siteLicenses = require('js/licenses');
 var licenses = siteLicenses.list;
 var DEFAULT_LICENSE = siteLicenses.DEFAULT_LICENSE;
-var OTHER_LICENSE = siteLicenses.OTHER_LICENSE;  // TODO: Why is this required? Is it? See [#OSF-6100]
 
 var $osf = require('js/osfHelpers');
 
@@ -66,7 +65,7 @@ var User = function(result){
     self.url = result.url;
     self.user = result.user;
 
-    $.ajax('/api/v1'+ result.url).success(function(data){
+    $.ajax('/api/v1'+ result.url).done(function(data){
         if (typeof data.profile !== 'undefined') {
             self.gravatarUrl(data.profile.gravatar_url);
         }
@@ -156,7 +155,7 @@ var ViewModel = function(params) {
         if(self.shareCategory()){
             return self.categories().concat(self.shareCategory());
         }
-        return self.categories().concat(new Category('SHARE', 0, 'SHARE'));
+        return self.categories();
     });
 
     self.totalCount = ko.pureComputed(function() {
@@ -282,8 +281,16 @@ var ViewModel = function(params) {
         self.searchStarted(false);
         self.currentPage(1);
         self.category(alias);
+        var win = null;
         if (alias.name === 'SHARE') {
-            var win = window.open(window.contextVars.shareUrl + 'discover?' + $.param({q: self.query()}), '_blank');
+            win = window.open(window.contextVars.shareUrl + 'discover?' + $.param({q: self.query()}), '_blank');
+            win.opener = null;
+            win.focus();
+        } else if (alias.name === 'preprint') {
+            win = window.open(
+                window.location.origin + '/preprints/discover?' + $.param(
+                    {q: self.query(), provider: 'OSF'}
+                ), '_blank');
             win.opener = null;
             win.focus();
         } else {
@@ -341,6 +348,8 @@ var ViewModel = function(params) {
 
     self.search = function(noPush, validate) {
 
+        self.searching(true);
+
         // Check for NOTs and ANDs put spaces before the ones that don't have spaces
         var query = self.query().replace(/\s?NOT tags:/g, ' NOT tags:');
         query = query.replace(/\s?AND tags:/g, ' AND tags:');
@@ -361,7 +370,7 @@ var ViewModel = function(params) {
             }
         };
 
-        $osf.postJSON(url, jsonData).success(function(data) {
+        $osf.postJSON(url, jsonData).done(function(data) {
 
             //Clear out our variables
             self.tags([]);
@@ -385,9 +394,12 @@ var ViewModel = function(params) {
             var nullLicenseCount = data.aggs.total || 0;
             if ((data.aggs || {}).licenses)  {
                 $.each(data.aggs.licenses, function(key, value) {
-                    licenseCounts.filter(function(l) {
+                    var licenseCount = licenseCounts.filter(function(l) {
                         return eqInsensitive(l.id, key);
-                    })[0].count(value);
+                    })[0];
+                    if (licenseCount) {
+                        licenseCount.count(value);
+                    }
                     nullLicenseCount -= value;
                 });
             }
@@ -395,22 +407,23 @@ var ViewModel = function(params) {
             self.licenses(licenseCounts);
 
             data.results.forEach(function(result){
-                if(result.category === 'user'){
+                if (result.category === 'user') {
                     if ($.inArray(result.url, self.urlLists()) === -1) {
                         self.results.push(new User(result));
                         self.urlLists.push(result.url);
                     }
                 }
                 else {
-                    if(typeof result.url !== 'undefined'){
+                    if (typeof result.url !== 'undefined') {
                         result.wikiUrl = result.url+'wiki/';
                         result.filesUrl = result.url+'files/';
                     }
-
                     self.results.push(result);
                 }
-                if(result.category === 'registration'){
+                if (result.category === 'registration') {
                     result.dateRegistered = new $osf.FormattableDate(result.date_registered);
+                } else if (result.category === 'preprint') {
+                    result.preprintUrl = result.preprint_url;
                 }
             });
 
@@ -458,9 +471,13 @@ var ViewModel = function(params) {
                 self.pushState();
             }
 
-            $osf.postJSON(window.contextVars.shareUrl + 'api/v2/search/creativeworks/_count', shareQuery).success(function(data) {
-                self.shareCategory(new Category('SHARE', data.count, 'SHARE'));
+            $osf.postJSON(window.contextVars.shareUrl + 'api/v2/search/creativeworks/_count', shareQuery).done(function(data) {
+                if(data.count > 0) {
+                    self.shareCategory(new Category('SHARE', data.count, 'SHARE'));
+                }
             });
+
+            self.searching(false);
 
         }).fail(function(response){
             self.totalResults(0);
@@ -469,6 +486,7 @@ var ViewModel = function(params) {
             self.tags([]);
             self.categories([]);
             self.searchStarted(false);
+            self.searching(false);
             $osf.handleJSONError(response);
         });
 

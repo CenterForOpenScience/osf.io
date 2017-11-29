@@ -14,7 +14,7 @@ from api.nodes.serializers import NodeSerializer, JSONAPISerializer
 from api.registrations.serializers import RegistrationSerializer
 from api.view_only_links.serializers import ViewOnlyLinkDetailSerializer, ViewOnlyLinkNodesSerializer
 
-from website.models import PrivateLink
+from osf.models import PrivateLink
 
 
 class ViewOnlyLinkDetail(JSONAPIBaseView, generics.RetrieveAPIView):
@@ -96,6 +96,8 @@ class ViewOnlyLinkNodes(JSONAPIBaseView, generics.ListAPIView):
 
     view_category = 'view-only-links'
     view_name = 'view-only-link-nodes'
+
+    ordering = ('-modified',)
 
     def get_serializer_class(self):
         if 'link_id' in self.kwargs:

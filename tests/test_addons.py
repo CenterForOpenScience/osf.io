@@ -3,6 +3,7 @@
 import datetime
 import httplib as http
 import time
+import functools
 
 import furl
 import itsdangerous
@@ -13,8 +14,6 @@ from django.utils import timezone
 from framework.auth import cas, signing
 from framework.auth.core import Auth
 from framework.exceptions import HTTPError
-from framework.sessions.model import Session
-from modularodm import Q
 from nose.tools import *  # noqa
 from osf_tests import factories
 from tests.base import OsfTestCase, get_default_metaschema
@@ -25,13 +24,14 @@ from addons.base import views
 from addons.github.exceptions import ApiError
 from addons.github.models import GithubFolder, GithubFile, GithubFileNode
 from addons.github.tests.factories import GitHubAccountFactory
+from osf.models import Session, MetaSchema
 from osf.models import files as file_models
-from osf.models.files import StoredFileNode, TrashedFileNode
+from osf.models.files import BaseFileNode, TrashedFileNode
 from website.project import new_private_link
-from website.project.model import MetaSchema, ensure_schemas
 from website.project.views.node import _view_project as serialize_node
 from website.util import api_url_for, rubeus
-
+from dateutil.parser import parse as parse_date
+from framework import sentry
 
 class SetEnvironMiddleware(object):
 
@@ -363,14 +363,10 @@ class TestCheckPreregAuth(OsfTestCase):
     def setUp(self):
         super(TestCheckPreregAuth, self).setUp()
 
-        ensure_schemas()
         self.prereg_challenge_admin_user = AuthUserFactory()
         self.prereg_challenge_admin_user.add_system_tag(settings.PREREG_ADMIN_TAG)
         self.prereg_challenge_admin_user.save()
-        prereg_schema = MetaSchema.find_one(
-            Q('name', 'eq', 'Prereg Challenge') &
-            Q('schema_version', 'eq', 2)
-        )
+        prereg_schema = MetaSchema.objects.get(name='Prereg Challenge', schema_version=2)
 
         self.user = AuthUserFactory()
         self.node = factories.ProjectFactory(creator=self.user)
@@ -553,6 +549,20 @@ class TestAddonFileViews(OsfTestCase):
         self.user_addon.oauth_grants[self.project._id] = {self.oauth._id: []}
         self.user_addon.save()
 
+    def set_sentry(status):
+        def wrapper(func):
+            @functools.wraps(func)
+            def wrapped(*args, **kwargs):
+                enabled, sentry.enabled = sentry.enabled, status
+                func(*args, **kwargs)
+                sentry.enabled = enabled
+
+            return wrapped
+
+        return wrapper
+
+    with_sentry = set_sentry(True)
+
     def get_test_file(self):
         version = file_models.FileVersion(identifier='1')
         version.save()
@@ -713,7 +723,7 @@ class TestAddonFileViews(OsfTestCase):
 
             self.app.get(url + '?version=invalid', auth=self.user.auth, expect_errors=True)
 
-            assert_is_not_none(StoredFileNode.load(file_node._id))
+            assert_is_not_none(BaseFileNode.load(file_node._id))
             assert_is_none(TrashedFileNode.load(file_node._id))
 
     def test_unauthorized_addons_raise(self):
@@ -748,21 +758,23 @@ class TestAddonFileViews(OsfTestCase):
 
         assert_equals(resp.status_code, 400)
 
-    def test_head_returns_url(self):
+    def test_head_returns_url_and_redriect(self):
         file_node = self.get_test_file()
         guid = file_node.get_guid(create=True)
 
         resp = self.app.head('/{}/'.format(guid._id), auth=self.user.auth)
         location = furl.furl(resp.location)
+        assert_equals(resp.status_code, 302)
         assert_urls_equal(location.url, file_node.generate_waterbutler_url(direct=None, version=''))
 
-    def test_head_returns_url_with_version(self):
+    def test_head_returns_url_with_version_and_redirect(self):
         file_node = self.get_test_file()
         guid = file_node.get_guid(create=True)
 
         resp = self.app.head('/{}/?revision=1&foo=bar'.format(guid._id), auth=self.user.auth)
         location = furl.furl(resp.location)
         # Note: version is added but us but all other url params are added as well
+        assert_equals(resp.status_code, 302)
         assert_urls_equal(location.url, file_node.generate_waterbutler_url(direct=None, revision=1, version='', foo='bar'))
 
     def test_nonexistent_addons_raise(self):
@@ -888,6 +900,35 @@ class TestAddonFileViews(OsfTestCase):
         assert_equal(len(file_node.history), 1)
         assert_equal(file_node.history[0], file_data)
 
+    @mock.patch('website.archiver.tasks.archive')
+    def test_missing_modified_date_in_file_history(self, mock_archive):
+        file_node = self.get_test_file()
+        file_node.history.append({'modified': None})
+        file_data = {
+            'name': 'Test File Update',
+            'materialized': file_node.materialized_path,
+            'modified': None
+        }
+        file_node.update(revision=None, data=file_data)
+        assert_equal(len(file_node.history), 2)
+        assert_equal(file_node.history[1], file_data)
+
+    @with_sentry
+    @mock.patch('framework.sentry.sentry.captureMessage')
+    def test_update_logs_to_sentry_when_called_with_disordered_metadata(self, mock_capture):
+        file_node = self.get_test_file()
+        file_node.history.append({'modified': parse_date(
+                '2017-08-22T13:54:32.100900',
+                ignoretz=True,
+                default=timezone.now()  # Just incase nothing can be parsed
+            )})
+        data = {
+            'name': 'a name',
+            'materialized': 'materialized',
+            'modified': '2016-08-22T13:54:32.100900'
+        }
+        file_node.update(revision=None, user=None, data=data)
+        mock_capture.assert_called_with(unicode('update() receives metatdata older than the newest entry in file history.'), extra={'session': {}})
 
 class TestLegacyViews(OsfTestCase):
 

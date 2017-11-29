@@ -1,21 +1,17 @@
 # -*- coding: utf-8 -*-
 from __future__ import unicode_literals
 import mock
-import pytest
 from django.utils import timezone
-from modularodm import Q
 from nose.tools import *  # noqa
 
 from addons.osfstorage.models import OsfStorageFile, OsfStorageFolder, OsfStorageFileNode
 from addons.s3.models import S3File
 from osf.models import File
-from osf.models import FileNode
 from osf.models import Folder
 from osf.models.files import BaseFileNode
 from tests.base import OsfTestCase
-from tests.factories import AuthUserFactory, ProjectFactory
+from osf_tests.factories import AuthUserFactory, ProjectFactory
 from website.files import exceptions
-from website.files import utils
 from osf import models
 
 
@@ -135,6 +131,14 @@ class TestFileNodeObj(FilesTestCase):
         assert_equals(TestFolder().kind, 'folder')
 
     def test_find(self):
+        original_testfile_count = TestFile.objects.count()
+        original_testfolder_count = TestFolder.objects.count()
+        original_testfilenode_count = TestFileNode.objects.count()
+        original_osfstoragefilenode_count = OsfStorageFileNode.objects.count()
+        original_osfstoragefile_count= OsfStorageFile.objects.count()
+        original_osfstoragefolder_count = OsfStorageFolder.objects.count()
+        original_basefilenode_count = BaseFileNode.objects.count()
+
         TestFile.objects.create(
             _path='afile',
             name='name',
@@ -149,23 +153,13 @@ class TestFileNodeObj(FilesTestCase):
             materialized_path='/long/path/to/name2/',
         )
 
-        import logging
-        logger = logging.getLogger(__name__)
-
-        # Temporary debugging on Travis
-        logger.info('TESTFILES!!!')
-        logger.info([repr(x) for x in TestFile.objects.all()])
-        logger.info('OSFSTORAGEFILES!!!')
-        logger.info([repr(x) for x in OsfStorageFileNode.objects.all()])
-        logger.info('BASEFILES!!!')
-        logger.info([repr(x) for x in BaseFileNode.objects.all()])
-        assert_equal(TestFile.objects.count(), 1)
-        assert_equal(TestFolder.objects.count(), 1)
-        assert_equal(TestFileNode.objects.count(), 2)
-        assert_equal(OsfStorageFileNode.objects.count(), 2)
-        assert_equal(OsfStorageFile.objects.count(), 0)
-        assert_equal(OsfStorageFolder.objects.count(), 2)
-        assert_equal(BaseFileNode.objects.count(), 4)  # roots of things
+        assert_equal(TestFile.objects.count(), original_testfile_count + 1)
+        assert_equal(TestFolder.objects.count(), original_testfolder_count + 1)
+        assert_equal(TestFileNode.objects.count(), original_testfilenode_count + 2)
+        assert_equal(OsfStorageFileNode.objects.count(), original_osfstoragefilenode_count)
+        assert_equal(OsfStorageFile.objects.count(), original_osfstoragefile_count)
+        assert_equal(OsfStorageFolder.objects.count(), original_osfstoragefolder_count)
+        assert_equal(BaseFileNode.objects.count(), original_osfstoragefilenode_count + original_testfilenode_count + 2)  # roots of things
 
     def test_find_one(self):
         item = TestFile(
@@ -177,7 +171,7 @@ class TestFileNodeObj(FilesTestCase):
         )
         item.save()
 
-        found = TestFile.find_one(Q('_path', 'eq', 'afile'))
+        found = TestFile.objects.get(_path='afile')
         assert_true(isinstance(found, TestFile))
         assert_equal(found.materialized_path, '/long/path/to/name')
 
@@ -191,9 +185,9 @@ class TestFileNodeObj(FilesTestCase):
         )
         item.save()
 
-        assert_is(models.FileNode.load('notanid'), None)
+        assert_is(models.BaseFileNode.load('notanid'), None)
         assert_true(isinstance(TestFolder.load(item._id), TestFolder))
-        assert_true(isinstance(models.FileNode.load(item._id), TestFolder))
+        assert_true(isinstance(models.BaseFileNode.load(item._id), TestFolder))
 
     def test_parent(self):
         parent = TestFolder(
@@ -423,8 +417,8 @@ class TestFileNodeObj(FilesTestCase):
         round1 = build_tree(parent=branch, atleastone=True)
         round2 = build_tree(parent=parent, atleastone=True)
 
-        stay_deleted = [branch.to_storage()] + [child.to_storage() for child in round1]
-        get_restored = [parent.to_storage()] + [child.to_storage() for child in round2]
+        stay_deleted = [branch.to_storage(include_auto_now=False)] + [child.to_storage(include_auto_now=False) for child in round1]
+        get_restored = [parent.to_storage(include_auto_now=False)] + [child.to_storage(include_auto_now=False) for child in round2]
 
         branch.delete()
 
@@ -446,7 +440,7 @@ class TestFileNodeObj(FilesTestCase):
 
         for data in get_restored:
             assert_is(models.TrashedFileNode.load(data['_id']), None)
-            assert TestFileNode.load(data['_id']).to_storage() == data
+            assert TestFileNode.load(data['_id']).to_storage(include_auto_now=False) == data
 
     def test_metadata_url(self):
         pass
@@ -534,7 +528,7 @@ class TestFileObj(FilesTestCase):
         v1.refresh_from_db()
         assert_equal(v1.size, 1337)
 
-    @mock.patch('website.files.models.base.requests.get')
+    @mock.patch('osf.models.files.requests.get')
     def test_touch(self, mock_requests):
         file = TestFile(
             _path='/afile',
@@ -563,7 +557,7 @@ class TestFileObj(FilesTestCase):
         assert_equals(v.size, 0xDEADBEEF)
         assert_equals(file.versions.count(), 0)
 
-    @mock.patch('website.files.models.base.requests.get')
+    @mock.patch('osf.models.files.requests.get')
     def test_touch_caching(self, mock_requests):
         file = TestFile(
             _path='/afile',
@@ -590,7 +584,7 @@ class TestFileObj(FilesTestCase):
         assert_equals(file.versions.count(), 1)
         assert_equals(file.touch(None, revision='foo'), v)
 
-    @mock.patch('website.files.models.base.requests.get')
+    @mock.patch('osf.models.files.requests.get')
     def test_touch_auth(self, mock_requests):
         file = TestFile(
             _path='/afile',

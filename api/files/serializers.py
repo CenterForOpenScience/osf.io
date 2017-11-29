@@ -1,15 +1,14 @@
 from datetime import datetime
+from collections import OrderedDict
 
 from django.core.urlresolvers import resolve, reverse
-from modularodm import Q
 import furl
 import pytz
 
-from framework.auth.core import Auth, User
-from osf.models import FileNode
+from framework.auth.core import Auth
+from osf.models import BaseFileNode, OSFUser, Comment
 from rest_framework import serializers as ser
 from website import settings
-from website.project.model import Comment
 from website.util import api_v2_url
 
 from api.base.serializers import (
@@ -48,11 +47,11 @@ class CheckoutField(ser.HyperlinkedRelatedField):
 
         super(CheckoutField, self).__init__('users:user-detail', **kwargs)
 
-    def resolve(self, resource, request):
+    def resolve(self, resource, field_name, request):
         """
         Resolves the view when embedding.
         """
-        embed_value = resource.stored_object.checkout._id
+        embed_value = resource.checkout._id
         return resolve(
             reverse(
                 self.view_name,
@@ -63,8 +62,30 @@ class CheckoutField(ser.HyperlinkedRelatedField):
             )
         )
 
+    def get_choices(self, cutoff=None):
+        """Most of this was copied and pasted from rest_framework's RelatedField -- we needed to pass the
+        correct value of a user's pk as a choice, while avoiding our custom implementation of `to_representation`
+        which returns a dict for JSON API purposes.
+        """
+        queryset = self.get_queryset()
+        if queryset is None:
+            # Ensure that field.choices returns something sensible
+            # even when accessed with a read-only field.
+            return {}
+
+        if cutoff is not None:
+            queryset = queryset[:cutoff]
+
+        return OrderedDict([
+            (
+                item.pk,
+                self.display_value(item)
+            )
+            for item in queryset
+        ])
+
     def get_queryset(self):
-        return User.find(Q('_id', 'eq', self.context['request'].user._id))
+        return OSFUser.objects.filter(guids___id=self.context['request'].user._id)
 
     def get_url(self, obj, view_name, request, format):
         if obj is None:
@@ -109,7 +130,7 @@ class FileTagField(ser.Field):
         return data
 
 
-class FileSerializer(JSONAPISerializer):
+class BaseFileSerializer(JSONAPISerializer):
     filterable_fields = frozenset([
         'id',
         'name',
@@ -141,7 +162,7 @@ class FileSerializer(JSONAPISerializer):
     extra = ser.SerializerMethodField(read_only=True, help_text='Additional metadata about this file')
     tags = JSONAPIListField(child=FileTagField(), required=False)
     current_user_can_comment = ser.SerializerMethodField(help_text='Whether the current user is allowed to post comments')
-    current_version = ser.SerializerMethodField(help_text='Latest file version')
+    current_version = ser.IntegerField(help_text='Latest file version', read_only=True, source='current_version_number')
     delete_allowed = ser.BooleanField(read_only=True, required=False)
 
     files = NodeFileHyperLinkField(
@@ -159,10 +180,7 @@ class FileSerializer(JSONAPISerializer):
                                             related_meta={'unread': 'get_unread_comments_count'},
                                             filter={'target': 'get_file_guid'}
                                             )
-    node = RelationshipField(related_view='nodes:node-detail',
-                             related_view_kwargs={'node_id': '<node._id>'},
-                             help_text='The project that this file belongs to'
-                             )
+
     links = LinksField({
         'info': Link('files:file-detail', kwargs={'file_id': '<_id>'}),
         'move': WaterbutlerLink(),
@@ -175,14 +193,9 @@ class FileSerializer(JSONAPISerializer):
     class Meta:
         type_ = 'files'
 
-    def get_current_version(self, obj):
-        if obj.history:
-            return len(obj.history)
-        return 1
-
     def get_size(self, obj):
         if obj.versions.exists():
-            self.size = obj.versions.last().size
+            self.size = obj.versions.first().size
             return self.size
         return None
 
@@ -190,10 +203,10 @@ class FileSerializer(JSONAPISerializer):
         mod_dt = None
         if obj.provider == 'osfstorage' and obj.versions.exists():
             # Each time an osfstorage file is added or uploaded, a new version object is created with its
-            # date_created equal to the time of the update.  The date_modified is the modified date
+            # date_created equal to the time of the update.  The external_modified is the modified date
             # from the backend the file is stored on.  This field refers to the modified date on osfstorage,
-            # so prefer to use the date_created of the latest version.
-            mod_dt = obj.versions.last().date_created
+            # so prefer to use the created of the latest version.
+            mod_dt = obj.versions.first().created
         elif obj.provider != 'osfstorage' and obj.history:
             mod_dt = obj.history[-1].get('modified', None)
 
@@ -205,7 +218,7 @@ class FileSerializer(JSONAPISerializer):
     def get_date_created(self, obj):
         creat_dt = None
         if obj.provider == 'osfstorage' and obj.versions.exists():
-            creat_dt = obj.versions.first().date_created
+            creat_dt = obj.versions.last().created
         elif obj.provider != 'osfstorage' and obj.history:
             # Non-osfstorage files don't store a created date, so instead get the modified date of the
             # earliest entry in the file history.
@@ -219,7 +232,7 @@ class FileSerializer(JSONAPISerializer):
     def get_extra(self, obj):
         metadata = {}
         if obj.provider == 'osfstorage' and obj.versions.exists():
-            metadata = obj.versions.last().metadata
+            metadata = obj.versions.first().metadata
         elif obj.provider != 'osfstorage' and obj.history:
             metadata = obj.history[-1].get('extra', {})
 
@@ -234,12 +247,12 @@ class FileSerializer(JSONAPISerializer):
 
     def get_current_user_can_comment(self, obj):
         user = self.context['request'].user
-        auth = Auth(user if not user.is_anonymous() else None)
+        auth = Auth(user if not user.is_anonymous else None)
         return obj.node.can_comment(auth)
 
     def get_unread_comments_count(self, obj):
         user = self.context['request'].user
-        if user.is_anonymous():
+        if user.is_anonymous:
             return 0
         return Comment.find_n_unread(user=user, node=obj.node, page='files', root_id=obj.get_guid()._id)
 
@@ -251,7 +264,7 @@ class FileSerializer(JSONAPISerializer):
         return None
 
     def update(self, instance, validated_data):
-        assert isinstance(instance, FileNode), 'Instance must be a FileNode'
+        assert isinstance(instance, BaseFileNode), 'Instance must be a BaseFileNode'
         if instance.provider != 'osfstorage' and 'tags' in validated_data:
             raise Conflict('File service provider {} does not support tags on the OSF.'.format(instance.provider))
         auth = get_user_auth(self.context['request'])
@@ -276,7 +289,7 @@ class FileSerializer(JSONAPISerializer):
         return instance
 
     def is_valid(self, **kwargs):
-        return super(FileSerializer, self).is_valid(clean_html=False, **kwargs)
+        return super(BaseFileSerializer, self).is_valid(clean_html=False, **kwargs)
 
     def get_file_guid(self, obj):
         if obj:
@@ -287,6 +300,13 @@ class FileSerializer(JSONAPISerializer):
 
     def get_absolute_url(self, obj):
         return api_v2_url('files/{}/'.format(obj._id))
+
+
+class FileSerializer(BaseFileSerializer):
+    node = RelationshipField(related_view='nodes:node-detail',
+                             related_view_kwargs={'node_id': '<node._id>'},
+                             help_text='The project that this file belongs to'
+                             )
 
 
 class OsfStorageFileSerializer(FileSerializer):
@@ -314,6 +334,17 @@ class FileDetailSerializer(FileSerializer):
     id = IDField(source='_id', required=True)
 
 
+class QuickFilesSerializer(BaseFileSerializer):
+    user = RelationshipField(related_view='users:user-detail',
+                             related_view_kwargs={'user_id': '<node.creator._id>'},
+                             help_text='The user who uploaded this file'
+                             )
+
+
+class QuickFilesDetailSerializer(QuickFilesSerializer):
+    id = IDField(source='_id', required=True)
+
+
 class FileVersionSerializer(JSONAPISerializer):
     filterable_fields = frozenset([
         'id',
@@ -324,6 +355,7 @@ class FileVersionSerializer(JSONAPISerializer):
     id = ser.CharField(read_only=True, source='identifier')
     size = ser.IntegerField(read_only=True, help_text='The size of this file at this version')
     content_type = ser.CharField(read_only=True, help_text='The mime type of this file at this verison')
+    date_created = DateByVersion(source='created', read_only=True, help_text='The date that this version was created')
     links = LinksField({
         'self': 'self_url',
         'html': 'absolute_url'

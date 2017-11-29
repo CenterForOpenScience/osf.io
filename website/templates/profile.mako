@@ -95,49 +95,6 @@
     </div>
 
 </div>
-
-## TODO: Review and un-comment
-## TODO: Render badges w/ Knockout
-## TODO: Add profile hooks to add-on core
-##<hr />
-##
-##<div class="row">
-##%if badges:
-##    <div class="col-sm-6">
-##        <h3>Badges endorsed by this user</h3>
-##        <div class="badge-list" style="overflow-y:auto; height:250px; padding-top:10px;">
-##            %for badge in badges:
-##                <div class="media">
-##                    <img src="${badge.image}"  width="64px" height="64px" class="open-badge badge-popover media-object pull-left"/>
-##                    <div class="media-body">
-##                        <h4 class="media-heading">${badge.name}<small> ${badge.description}</small></h4>
-##                        ${badge.criteria_list}
-##                    </div>
-##                </div>
-##            %endfor
-##        </div>
-##    </div>
-##    <div class="col-sm-6">
-##%else:
-##    <div class="col-sm-12">
-##%endif
-##        <h3>"Sash"</h3>
-##        <div class="profile-badge-list">
-##            %for assertion in reversed(assertions):
-##            <div>
-##                <img src="${assertion.badge.image}" width="64px" height="64px" class="open-badge badge-popover" badge-url="/badge/assertion/json/${assertion._id}/" data-content="${assertion.badge.description_short}" data-toggle="popover" data-title="<a href=&quot;/${assertion.badge._id}/&quot;>${assertion.badge.name}</a>
-##                %if not assertion.badge.is_system_badge:
-##                    - <a href=&quot;${assertion.badge.creator.owner.profile_url}&quot;>${assertion.badge.creator.owner.fullname}</a>"/>
-##                %else:
-##                    "/>
-##                %endif
-##                <br/>
-##                <span class="badge">${assertion.amount}<span>
-##            </div>
-##            %endfor
-##        </div>
-##    </div>
-##</div>
 <hr />
 <div class="row">
     <div class="col-sm-6">
@@ -145,11 +102,12 @@
             <div class="panel-heading clearfix">
               <h3 class="panel-title" >Public projects</h3>
             </div>
-            <div class="panel-body">
-              ${ render_nodes.render_nodes(nodes=public_projects,
-                                           sortable=False, user=user,
-                                           pluralized_node_type='projects',
-                                           show_path=False, include_js=False) }
+            <div class="panel-body clearfix" id="publicProjects">
+                <div class="ball-pulse ball-scale-blue text-center">
+                  <div></div>
+                  <div></div>
+                  <div></div>
+                </div>
             </div>
         </div>
     </div>
@@ -158,8 +116,12 @@
             <div class="panel-heading clearfix">
                 <h3 class="panel-title">Public components</h3>
             </div>
-            <div class="panel-body">
-              ${ render_nodes.render_nodes(nodes=public_components, sortable=False, user=user, pluralized_node_type='components', show_path=True, include_js=True) }
+            <div class="panel-body clearfix" id="publicComponents">
+              <div class="ball-pulse ball-scale-blue text-center">
+                <div></div>
+                <div></div>
+                <div></div>
+              </div>
             </div>
         </div>
     </div>
@@ -183,7 +145,8 @@
       window.contextVars = $.extend(true, {}, window.contextVars, {
           socialUrls: socialUrls,
           jobsUrls: jobsUrls,
-          schoolsUrls: schoolsUrls
+          schoolsUrls: schoolsUrls,
+          user: ${ user | sjson, n },
       });
   })();
 </script>

@@ -30,8 +30,7 @@
                         </div>
                     {% else %}
                         <span class="col-md-2">
-                        <form method="post">
-                              action="{% url 'nodes:restore' guid=node.id %}">
+                        <form method="post" action="{% url 'nodes:restore' guid=serialized_preprint.node.id %}">
                             {% csrf_token %}
                             <input class="btn btn-success" type="submit"
                                    value="Restore Preprint Node" />
@@ -39,6 +38,19 @@
                     </span>
                 {% endif %}
                 {% endif %}
+            <span class="col-md-2">
+                <a href="{% url 'preprints:reindex-share-preprint' guid=serialized_preprint.id %}"
+                   data-toggle="modal" data-target="#confirmReindexSharePreprint"
+                   class="btn btn-default">
+                    SHARE Reindex
+                </a>
+            </span>
+            <div class="modal" id="confirmReindexSharePreprint">
+                <div class="modal-dialog">
+                    <div class="modal-content"></div>
+                    {# Data from above link #}
+                </div>
+            </div>
             </div>
         </div>
         <div class="row">
@@ -101,7 +113,7 @@
                         <td>Subjects</td>
                         <td>
                             <ul>
-                                {%  for subject in subjects %}
+                                {%  for subject in serialized_preprint.subjects %}
                                 <li>{{ subject.text }}</li>
                                 {%  endfor %}
                             </ul>

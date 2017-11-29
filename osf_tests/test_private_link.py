@@ -1,9 +1,11 @@
 import pytest
 
-from website.project.model import ensure_schemas
+from django.core.exceptions import ValidationError
 
-from .factories import PrivateLinkFactory, NodeFactory
-from osf.models import MetaSchema, DraftRegistration
+from website.project import new_private_link
+
+from .factories import PrivateLinkFactory, NodeFactory, AuthUserFactory
+from osf.models import MetaSchema, DraftRegistration, NodeLog, QuickFilesNode
 
 @pytest.mark.django_db
 def test_factory():
@@ -46,10 +48,9 @@ class TestPrivateLink:
         assert link.node_scale(node) == -40
 
     def test_create_from_node(self):
-        ensure_schemas()
         proj = NodeFactory()
         user = proj.creator
-        schema = MetaSchema.find()[0]
+        schema = MetaSchema.objects.first()
         data = {'some': 'data'}
         draft = DraftRegistration.create_from_node(
             proj,
@@ -62,6 +63,13 @@ class TestPrivateLink:
         assert data == draft.registration_metadata
         assert proj == draft.branched_from
 
+    def test_cannot_be_added_for_quickfiles(self):
+        link = PrivateLinkFactory()
+        user = AuthUserFactory()
+        quickfiles = QuickFilesNode.objects.get(creator=user)
+
+        with pytest.raises(ValidationError):
+            link.nodes.add(quickfiles)
 
 @pytest.mark.django_db
 class TestNodeProperties:
@@ -92,3 +100,43 @@ class TestNodeProperties:
         deleted.nodes.add(node)
         assert link.key not in node.private_link_keys_deleted
         assert deleted.key in node.private_link_keys_deleted
+
+
+@pytest.mark.django_db
+class TestPrivateLinkNodeLogs:
+
+    def test_create_private_link_log(self):
+        node = NodeFactory()
+        new_private_link(
+            name='wooo',
+            user=node.creator,
+            nodes=[node],
+            anonymous=False
+        )
+        last_log = node.logs.latest()
+
+        assert last_log.action == NodeLog.VIEW_ONLY_LINK_ADDED
+        assert last_log.params == {
+            'node': node._id,
+            'project': node.parent_node._id,
+            'anonymous_link': False,
+            'user': node.creator._id
+        }
+
+    def test_create_anonymous_private_link_log(self):
+        node = NodeFactory()
+        new_private_link(
+            name='wooo',
+            user=node.creator,
+            nodes=[node],
+            anonymous=True
+        )
+        last_log = node.logs.latest()
+
+        assert last_log.action == NodeLog.VIEW_ONLY_LINK_ADDED
+        assert last_log.params == {
+            'node': node._id,
+            'project': node.parent_node._id,
+            'anonymous_link': True,
+            'user': node.creator._id
+        }

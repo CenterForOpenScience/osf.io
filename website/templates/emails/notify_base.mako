@@ -60,9 +60,11 @@
                     <tbody>
                         <tr>
                             <td style="border-collapse: collapse;">
-                                <p class="text-smaller text-center" style="text-align: center;font-size: 12px;">Copyright &copy; 2016 Center For Open Science, All rights reserved.
-                                ${self.footer()}
+                                <p class="text-smaller text-center" style="text-align: center;font-size: 12px;">Copyright &copy; 2017 Center For Open Science, All rights reserved. |
+                                    <a href="https://github.com/CenterForOpenScience/centerforopenscience.org/blob/master/PRIVACY_POLICY.md">Privacy Policy</a>
                                 </p>
+                                <p class="text-smaller text-center" style="text-align: center;font-size: 12px;">210 Ridge McIntire Road, Suite 500, Charlottesville, VA 22903-5083</p>
+                                <p class="text-smaller text-center" style="text-align: center;font-size: 12px;">${self.footer()}</p>
                             </td>
                         </tr>
                     </tbody>

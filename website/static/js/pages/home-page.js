@@ -12,7 +12,9 @@ var QuickSearchProject = require('js/home-page/quickProjectSearchPlugin');
 var NewAndNoteworthy = require('js/home-page/newAndNoteworthyPlugin');
 var MeetingsAndConferences = require('js/home-page/meetingsAndConferencesPlugin');
 var Preprints = require('js/home-page/preprintsPlugin');
-var Prereg = require('js/home-page/preregPlugin');
+//var Prereg = require('js/home-page/preregPlugin');
+var PreregBanner = require('js/home-page/preregBannerPlugin');
+var DonateBanner = require('js/home-page/donateBannerPlugin');
 var InstitutionsPanel = require('js/home-page/institutionsPanelPlugin');
 var ensureUserTimezone = require('js/ensureUserTimezone');
 
@@ -31,6 +33,18 @@ $(document).ready(function(){
                 return {logoPath: inst.logo_path, id: inst.id, name: inst.name};
             });
             return [
+                m(DonateBanner.background, m('.container',
+                    [
+                        m(columnSizeClass, m.component(DonateBanner.Banner, {}))
+                    ]
+                )),
+                m('.prereg-banner', m('.container',
+                    [
+                        m('.row', [
+                            m(columnSizeClass,  m.component(PreregBanner, {}))
+                        ])
+                    ]
+                )),
                 m('.quickSearch', m('.container.p-t-lg',
                     [
                         m('.row.m-t-lg', [
@@ -60,6 +74,15 @@ $(document).ready(function(){
 
                     ]
                 )),
+                /*
+                m('.prereg', m('.container',
+                    [
+                        m('.row', [
+                            m(columnSizeClass,  m.component(Prereg, {}))
+                        ])
+                    ]
+                )),
+                */
                 m('.meetings', m('.container',
                     [
                         m('.row', [
@@ -80,7 +103,6 @@ $(document).ready(function(){
         }
     };
     m.mount(document.getElementById('osfHome'), m.component(osfHome, {}));
-    $('#osfNavDashboard').addClass('active');
 
 
     // If logged in...

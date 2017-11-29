@@ -8,7 +8,6 @@ from osf.utils.datetime_aware_jsonfield import DateTimeAwareJSONField
 from osf.utils.fields import NonNaiveDateTimeField
 
 from website import settings
-from website.project.model import User
 from website.util import akismet
 from website.util.akismet import AkismetClientError
 
@@ -24,8 +23,9 @@ def _get_client():
 
 
 def _validate_reports(value, *args, **kwargs):
+    from osf.models import OSFUser
     for key, val in value.iteritems():
-        if not User.load(key):
+        if not OSFUser.load(key):
             raise ValidationValueError('Keys must be user IDs')
         if not isinstance(val, dict):
             raise ValidationTypeError('Values must be dictionaries')
@@ -184,7 +184,7 @@ class SpamMixin(models.Model):
         """Must return is_spam"""
         pass
 
-    def do_check_spam(self, author, author_email, content, request_headers):
+    def do_check_spam(self, author, author_email, content, request_headers, update=True):
         if self.spam_status == SpamStatus.HAM:
             return False
         if self.is_spammy:
@@ -206,15 +206,16 @@ class SpamMixin(models.Model):
         except AkismetClientError:
             logger.exception('Error performing SPAM check')
             return False
-        self.spam_pro_tip = pro_tip
-        self.spam_data['headers'] = {
-            'Remote-Addr': remote_addr,
-            'User-Agent': user_agent,
-            'Referer': referer,
-        }
-        self.spam_data['content'] = content
-        self.spam_data['author'] = author
-        self.spam_data['author_email'] = author_email
-        if is_spam:
-            self.flag_spam()
+        if update:
+            self.spam_pro_tip = pro_tip
+            self.spam_data['headers'] = {
+                'Remote-Addr': remote_addr,
+                'User-Agent': user_agent,
+                'Referer': referer,
+            }
+            self.spam_data['content'] = content
+            self.spam_data['author'] = author
+            self.spam_data['author_email'] = author_email
+            if is_spam:
+                self.flag_spam()
         return is_spam

@@ -13,6 +13,10 @@ var lodashGet = require('lodash.get');
 
 var ravenMessagesCache = []; // Cache messages to avoid sending multiple times in one page view
 var nodeCategories = require('json!built/nodeCategories.json');
+
+//Used when calling getContributorList to limit the number of contributors shown in a single log when many are mentioned
+var numContributorsShown = 3;
+
 /**
  * Utility function to not repeat logging errors to Sentry
  * @param message {String} Custom message for error
@@ -91,6 +95,48 @@ var returnTextParams = function (param, text, logObject, view_url) {
         return view_url ? m('a', {href: $osf.toRelativeUrl(view_url, window)}, source) : m('span', source);
     }
     return m('span', text);
+};
+
+/**
+ * Returns a list of contributors to show in log as well as the trailing punctuation/text after each contributor.
+ * If a contributor has a OSF profile, contributor is returned as a mithril link to user.
+ * @param contributors {string} The list of contributors (OSF users or unregistered)
+ * @param maxShown {int} the number of contributors shown before saying "and # others"
+ * Note: if there is only 1 over maxShown, all contributors are shown
+ * @returns {array}
+ */
+var getContributorList = function (contributors, maxShown){
+       var contribList = [];
+       var justOneMore = numContributorsShown === contributors.length -1;
+       for(var i = 0; i < contributors.length; i++){
+           var item = contributors[i];
+           var comma = ' ';
+           if(i !== contributors.length -1 && ((i !== maxShown -1) || justOneMore)){
+               comma = ', ';
+           }
+           if(i === contributors.length -2 || ((i === maxShown -1) && !justOneMore) && (i !== contributors.length -1)) {
+               if (contributors.length === 2)
+                   comma = ' and ';
+               else
+                   comma = ', and ';
+           }
+
+           if (i === maxShown && !justOneMore){
+               contribList.push([((contributors.length - i).toString() + ' others'), ' ']);
+               return contribList;
+           }
+
+           if (item.active) {
+               contribList.push([ m('a', {href: '/' + item.id + '/'}, item.full_name), comma]);
+           }
+           else {
+               if (item.unregistered_name) {
+                   contribList.push([item.unregistered_name, comma]);
+               } else {
+                   contribList.push([item.full_name, comma]);
+               }
+       }}
+       return contribList;
 };
 
 var LogText = {
@@ -220,25 +266,7 @@ var LogPieces = {
         view: function (ctrl, logObject) {
             var contributors = logObject.attributes.params.contributors;
             if(paramIsReturned(contributors, logObject)) {
-                return m('span', contributors.map(function(item, index, arr){
-                    var comma = ' ';
-                    if(index !== arr.length - 1){
-                        comma = ', ';
-                    }
-                    if(index === arr.length-2){
-                        comma = ' and ';
-                    }
-
-                    if (item.active) {
-                        return [ m('a', {href: '/' + item.id + '/'}, item.full_name), comma];
-                    }
-                    else {
-                        if (item.unregistered_name) {
-                            return [item.unregistered_name, comma];
-                        }
-                        return [item.full_name, comma];
-                    }
-                }));
+                return m('span', getContributorList(contributors, numContributorsShown));
             }
             return m('span', 'some users');
         }
@@ -272,36 +300,35 @@ var LogPieces = {
     pointer: {
         view: function (ctrl, logObject) {
             var linked_node = logObject.embeds.linked_node;
-            if(paramIsReturned(linked_node, logObject)){
+            if (linked_node && paramIsReturned(linked_node, logObject) && !linked_node.errors) {
                 return m('a', {href: $osf.toRelativeUrl(linked_node.data.links.html, window)}, linked_node.data.attributes.title);
             }
-            // Applicable when pointer has been deleted
-            var pointer_info = logObject.attributes.params.pointer;
-            if (paramIsReturned(pointer_info, logObject)) {
-                return m('span', pointer_info.title);
+            var linked_registration = logObject.embeds.linked_registration;
+            if (linked_registration && paramIsReturned(linked_registration, logObject) && !linked_registration.errors) {
+                return m('a', {href: $osf.toRelativeUrl(linked_registration.data.links.html, window)}, linked_registration.data.attributes.title);
             }
-            return m('span','a project');
+            return m('span', 'a project');
         }
     },
     // Pointer category
     pointer_category: {
         view: function (ctrl, logObject) {
             var linked_node = logObject.embeds.linked_node;
-            if(paramIsReturned(linked_node, logObject)){
-                var category = linked_node.data.attributes.category;
+            var category = '';
+            if (linked_node && paramIsReturned(linked_node, logObject) && !linked_node.errors) {
+                category = linked_node.data.attributes.category;
                 if (category !== '') {
                     return m('span', linked_node.data.attributes.category);
                 }
             }
-
-            var linkedNodeParams = logObject.attributes.params.pointer;
-            if (paramIsReturned(linkedNodeParams, logObject)) {
-                if (linkedNodeParams.category !== '') {
-                     return m('span', linkedNodeParams.category);
+            var linked_registration = logObject.embeds.linked_registration;
+            if (linked_registration && paramIsReturned(linked_registration, logObject) && !linked_registration.errors) {
+                category = linked_registration.data.attributes.category;
+                if (category !== '') {
+                    return m('span', linked_registration.data.attributes.category);
                 }
-
             }
-            return m('span','project');
+            return m('span', '');
         }
     },
     // Node that acted as template to create a new node involved
@@ -446,7 +473,7 @@ var LogPieces = {
                     'github_file_added', 'github_file_updated', 'box_file_added', 'box_file_updated', 'dropbox_file_added', 'dropbox_file_updated',
                     's3_file_added', 's3_file_updated', 'figshare_file_added', 'checked_in', 'checked_out'];
                     if (acceptableLinkedItems.indexOf(action) !== -1 && logObject.attributes.params.urls) {
-                         return logObject.attributes.params.urls.view;
+                       return logObject.attributes.params.urls.view;
                     }
                 }
                 return null;
@@ -495,6 +522,17 @@ var LogPieces = {
         }
     },
 
+    bitbucket_repo: {
+        view: function(ctrl, logObject) {
+            var bitbucketUser = logObject.attributes.params.bitbucket_user;
+            var bitbucketRepo = logObject.attributes.params.bitbucket_repo;
+            if (paramIsReturned(bitbucketRepo, logObject) && paramIsReturned(bitbucketUser, logObject)){
+                return m('span', bitbucketUser + '/' + bitbucketRepo);
+            }
+            return m('span', '');
+        }
+    },
+
     folder_name: {
         view: function(ctrl, logObject) {
             return returnTextParams('folder_name', 'a folder', logObject);
@@ -536,6 +574,17 @@ var LogPieces = {
         }
     },
 
+    onedrive_folder: {
+        view: function(ctrl, logObject) {
+            var folder = logObject.attributes.params.folder;
+
+            if(paramIsReturned(folder, logObject)){
+                return m('span', folder === '/' ? '/ (Full OneDrive)' : folder);
+            }
+            return m('span', '');
+        }
+    },
+
     citation: {
         view: function(ctrl, logObject) {
             return returnTextParams('citation_name', '', logObject);
@@ -572,7 +621,7 @@ var LogPieces = {
             var url = ctrl.returnLinkForPath(logObject);
             var path = logObject.attributes.params.path;
             if(paramIsReturned(path, logObject)){
-                path = stripBackslash(decodeURIComponent(path));
+                path = stripBackslash(path);
                 if (url) {
                      return m('a', {href: $osf.toRelativeUrl(url, window)}, path);
                 }
@@ -598,7 +647,7 @@ var LogPieces = {
         view: function(ctrl, logObject){
             var folder = logObject.attributes.params.folder;
             if(paramIsReturned(folder, logObject)){
-                return m('span', folder === '/' ? '(Full Google Drive)' : decodeURIComponent(folder));
+                return m('span', folder === '/' ? '(Full Google Drive)' : folder);
             }
             return m('span', '');
         }
@@ -671,6 +720,29 @@ var LogPieces = {
             return m('span', '');
         }
     },
+
+    anonymous_link: {
+        view: function(ctrl, logObject) {
+            if (logObject.attributes.params.anonymous_link) {
+                return m('span', 'an anonymous');
+            }
+            return m('span', 'a');
+        }
+    },
+
+    gitlab_repo: {
+        view: function(ctrl, logObject){
+            var gitlab_user = logObject.attributes.params.gitlab_user;
+            var gitlab_repo = logObject.attributes.params.gitlab_repo;
+            if (paramIsReturned(gitlab_repo, logObject) && paramIsReturned(gitlab_user, logObject)) {
+                return m('span', gitlab_user + '/' + gitlab_repo);
+            }
+            return m('span', '');
+        }
+    },
 };
 
-module.exports = LogText;
+module.exports = {
+    LogText:LogText,
+    getContributorList: getContributorList
+};

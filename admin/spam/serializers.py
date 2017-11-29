@@ -1,5 +1,5 @@
 from website.settings import DOMAIN as OSF_DOMAIN
-from website.project.model import User
+from osf.models import OSFUser
 from furl import furl
 
 
@@ -13,14 +13,14 @@ def serialize_comment(comment):
 
     return {
         'id': comment._id,
-        'author': User.load(comment.user._id),
+        'author': OSFUser.load(comment.user._id),
         'author_id': comment.user._id,
         'author_path': author_abs_url.url,
-        'date_created': comment.date_created,
-        'date_modified': comment.date_modified,
+        'date_created': comment.created,
+        'date_modified': comment.modified,
         'content': comment.content,
         'has_children': bool(getattr(comment, 'commented', [])),
-        'modified': comment.modified,
+        'modified': comment.edited,
         'is_deleted': comment.is_deleted,
         'spam_status': comment.spam_status,
         'reports': reports,
@@ -31,7 +31,7 @@ def serialize_comment(comment):
 
 def serialize_report(user, report):
     return {
-        'reporter': User.load(user),
+        'reporter': OSFUser.load(user),
         'category': report.get('category', None),
         'reason': report.get('text', None),
     }

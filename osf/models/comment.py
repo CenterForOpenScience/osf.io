@@ -1,6 +1,5 @@
 
 import pytz
-from django.contrib.postgres.fields import ArrayField
 from django.db import models
 from django.db.models import Q
 from django.utils import timezone
@@ -12,7 +11,6 @@ from osf.models.spam import SpamMixin
 from osf.models import validators
 
 from framework.exceptions import PermissionsError
-from osf.utils.fields import NonNaiveDateTimeField
 from website import settings
 from website.util import api_v2_url
 from website.project import signals as project_signals
@@ -25,9 +23,9 @@ class Comment(GuidMixin, SpamMixin, CommentableMixin, BaseModel):
     FILES = 'files'
     WIKI = 'wiki'
 
-    user = models.ForeignKey('OSFUser', null=True)
+    user = models.ForeignKey('OSFUser', null=True, on_delete=models.CASCADE)
     # the node that the comment belongs to
-    node = models.ForeignKey('AbstractNode', null=True)
+    node = models.ForeignKey('AbstractNode', null=True, on_delete=models.CASCADE)
 
     # The file or project overview page that the comment is for
     root_target = models.ForeignKey(Guid, on_delete=models.SET_NULL,
@@ -39,9 +37,7 @@ class Comment(GuidMixin, SpamMixin, CommentableMixin, BaseModel):
                                     related_name='child_comments',
                                     null=True, blank=True)
 
-    date_created = NonNaiveDateTimeField(auto_now_add=True)
-    date_modified = NonNaiveDateTimeField(auto_now=True)
-    modified = models.BooleanField(default=False)
+    edited = models.BooleanField(default=False)
     is_deleted = models.BooleanField(default=False)
     # The type of root_target: node/files
     page = models.CharField(max_length=255, blank=True)
@@ -51,8 +47,7 @@ class Comment(GuidMixin, SpamMixin, CommentableMixin, BaseModel):
     )
 
     # The mentioned users
-    # TODO This should be made into an M2M STAT
-    ever_mentioned = ArrayField(models.CharField(max_length=10, blank=True), default=list, blank=True)
+    ever_mentioned = models.ManyToManyField(blank=True, related_name='mentioned_in', to='OSFUser')
 
     @property
     def url(self):
@@ -92,8 +87,8 @@ class Comment(GuidMixin, SpamMixin, CommentableMixin, BaseModel):
         if not auth and not self.node.is_public:
             raise PermissionsError
 
-        if self.is_deleted and ((not auth or auth.user.is_anonymous()) or
-                                (auth and not auth.user.is_anonymous() and self.user._id != auth.user._id)):
+        if self.is_deleted and ((not auth or auth.user.is_anonymous) or
+                                (auth and not auth.user.is_anonymous and self.user._id != auth.user._id)):
             return None
 
         return self.content
@@ -129,7 +124,7 @@ class Comment(GuidMixin, SpamMixin, CommentableMixin, BaseModel):
 
             return cls.objects.filter(
                 Q(node=node) & ~Q(user=user) & Q(is_deleted=False) &
-                (Q(date_created__gt=view_timestamp) | Q(date_modified__gt=view_timestamp)) &
+                (Q(created__gt=view_timestamp) | Q(modified__gt=view_timestamp)) &
                 Q(root_target=root_target)
             ).count()
 
@@ -158,11 +153,15 @@ class Comment(GuidMixin, SpamMixin, CommentableMixin, BaseModel):
 
         log_dict.update(comment.root_target.referent.get_extra_log_params(comment))
 
+        new_mentions = []
         if comment.content:
+            if not comment.id:
+                # must have id before accessing M2M
+                comment.save()
             new_mentions = get_valid_mentioned_users_guids(comment, comment.node.contributors)
             if new_mentions:
                 project_signals.mention_added.send(comment, new_mentions=new_mentions, auth=auth)
-                comment.ever_mentioned.extend(new_mentions)
+                comment.ever_mentioned.add(*comment.node.contributors.filter(guids___id__in=new_mentions))
 
         comment.save()
 
@@ -174,7 +173,7 @@ class Comment(GuidMixin, SpamMixin, CommentableMixin, BaseModel):
         )
 
         comment.node.save()
-        project_signals.comment_added.send(comment, auth=auth)
+        project_signals.comment_added.send(comment, auth=auth, new_mentions=new_mentions)
 
         return comment
 
@@ -189,14 +188,14 @@ class Comment(GuidMixin, SpamMixin, CommentableMixin, BaseModel):
         }
         log_dict.update(self.root_target.referent.get_extra_log_params(self))
         self.content = content
-        self.modified = True
-        self.date_modified = timezone.now()
+        self.edited = True
+        self.modified = timezone.now()
         new_mentions = get_valid_mentioned_users_guids(self, self.node.contributors)
 
         if save:
             if new_mentions:
                 project_signals.mention_added.send(self, new_mentions=new_mentions, auth=auth)
-                self.ever_mentioned.extend(new_mentions)
+                self.ever_mentioned.add(*self.node.contributors.filter(guids___id__in=new_mentions))
             self.save()
             self.node.add_log(
                 NodeLog.COMMENT_UPDATED,
@@ -217,7 +216,7 @@ class Comment(GuidMixin, SpamMixin, CommentableMixin, BaseModel):
         }
         self.is_deleted = True
         log_dict.update(self.root_target.referent.get_extra_log_params(self))
-        self.date_modified = timezone.now()
+        self.modified = timezone.now()
         if save:
             self.save()
             self.node.add_log(
@@ -239,7 +238,7 @@ class Comment(GuidMixin, SpamMixin, CommentableMixin, BaseModel):
             'comment': self._id,
         }
         log_dict.update(self.root_target.referent.get_extra_log_params(self))
-        self.date_modified = timezone.now()
+        self.modified = timezone.now()
         if save:
             self.save()
             self.node.add_log(

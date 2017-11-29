@@ -7,7 +7,7 @@
 
 <%def name="title()">${file_name | h}</%def>
 
-% if (user['can_comment'] or node['has_comments']) and allow_comments:
+% if (user['can_comment'] or node['has_comments']) and allow_comments and not node['anonymous']:
     <%include file="include/comment_pane_template.mako"/>
 % endif
 
@@ -28,12 +28,15 @@
 </div>
 <hr>
 
-%if file_id == node['preprint_file_id'] and node['is_public']:
+%if file_id == node['preprint_file_id'] and node['is_preprint']:
 <div class="row">
     <div class="col-xs-12">
         <div class="preprint-notice m-b-md p-md clearfix">
             This is the primary file for a preprint. <a href="http://help.osf.io/m/preprints">Learn more</a> about how to work with preprint files.
             <a href="${node['preprint_url']}" class="btn btn-default btn-sm m-r-xs pull-right">View preprint</a>
+            % if user['is_admin']:
+                <a href="${node['preprint_url']}edit" class="btn btn-default btn-sm m-r-xs pull-right">Edit preprint</a>
+            % endif
         </div>
     </div>
 </div>
@@ -200,6 +203,8 @@
             file_tags: ${file_tags if file_tags else False| sjson, n},
             guid: ${file_guid | sjson, n},
             id: ${file_id | sjson, n},
+            checkoutUser: ${checkout_user if checkout_user else None | sjson, n},
+            isPreregCheckout: ${pre_reg_checkout if pre_reg_checkout else False | sjson, n},
           urls: {
         %if error is None:
               render: ${ urls['render'] | sjson, n },

@@ -137,7 +137,7 @@
                     <!-- ko if: expandable() -->
                         <div class="panel panel-default">
                             <div class="panel-heading card-heading" data-bind="click: toggle(), attr: {id: 'schoolHeading' + $index(), href: '#schoolCard' + $index()}" role="button" data-toggle="collapse" aria-controls="card" aria-expanded="false">
-                                <div class="header-content">
+                                <div class="header-content break-word">
                                     <h5 class="institution" data-bind="text: institution"></h5>
                                     <span data-bind="if: startYear()" class="subheading">
                                         <span data-bind="text: startMonth"></span> <span data-bind="text: startYear"></span> - <span data-bind="text: endView"></span>

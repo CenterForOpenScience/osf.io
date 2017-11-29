@@ -6,8 +6,7 @@ import datetime
 
 from django.utils import timezone
 
-from osf.modm_compat import Q
-from osf.models import DraftRegistrationApproval, MetaSchema
+from osf.models import DraftRegistrationApproval, MetaSchema, NodeLog
 from osf_tests import factories
 from osf_tests.utils import mock_archive
 
@@ -15,8 +14,6 @@ from framework.auth import Auth
 
 from website import settings
 from website.exceptions import NodeStateError
-from website.project.model import NodeLog
-from website.project.model import ensure_schemas
 
 
 @pytest.mark.django_db
@@ -81,13 +78,9 @@ class TestDraftRegistrationApprovals:
 
     @mock.patch('framework.celery_tasks.handlers.enqueue_task')
     def test_on_complete_immediate_creates_registration_for_draft_initiator(self, mock_enquque):
-        ensure_schemas()
         user = factories.UserFactory()
         project = factories.ProjectFactory(creator=user)
-        registration_schema = MetaSchema.find_one(
-            Q('name', 'eq', 'Prereg Challenge') &
-            Q('schema_version', 'eq', 2)
-        )
+        registration_schema = MetaSchema.objects.get(name='Prereg Challenge', schema_version=2)
         draft = factories.DraftRegistrationFactory(
             branched_from=project,
             registration_schema=registration_schema,
@@ -108,6 +101,35 @@ class TestDraftRegistrationApprovals:
         assert registered_node.is_pending_registration
         assert registered_node.registered_user == draft.initiator
 
+    # Regression test for https://openscience.atlassian.net/browse/OSF-8280
+    @mock.patch('framework.celery_tasks.handlers.enqueue_task')
+    def test_approval_after_initiator_is_merged_into_another_user(self, mock_enqueue):
+        approver = factories.UserFactory()
+        approver.add_system_tag(settings.PREREG_ADMIN_TAG)
+
+        mergee = factories.UserFactory(fullname='Manny Mergee')
+        merger = factories.UserFactory(fullname='Merve Merger')
+        project = factories.ProjectFactory(creator=mergee)
+        registration_schema = MetaSchema.objects.get(name='Prereg Challenge', schema_version=2)
+        draft = factories.DraftRegistrationFactory(
+            branched_from=project,
+            registration_schema=registration_schema,
+        )
+        merger.merge_user(mergee)
+        approval = DraftRegistrationApproval(
+            meta={
+                'registration_choice': 'immediate'
+            }
+        )
+        approval.save()
+        draft.approval = approval
+        draft.save()
+        approval.approve(approver)
+
+        draft.reload()
+        registered_node = draft.registered_node
+        assert registered_node.registered_user == merger
+
     @mock.patch('framework.celery_tasks.handlers.enqueue_task')
     def test_on_complete_embargo_creates_registration_for_draft_initiator(self, mock_enquque):
         user = factories.UserFactory()
@@ -120,11 +142,7 @@ class TestDraftRegistrationApprovals:
         )
         approval.save()
         project = factories.ProjectFactory(creator=user)
-        ensure_schemas()
-        registration_schema = MetaSchema.find_one(
-            Q('name', 'eq', 'Prereg Challenge') &
-            Q('schema_version', 'eq', 2)
-        )
+        registration_schema = MetaSchema.objects.get(name='Prereg Challenge', schema_version=2)
         draft = factories.DraftRegistrationFactory(
             branched_from=project,
             registration_schema=registration_schema,
@@ -163,11 +181,7 @@ class TestDraftRegistrationApprovals:
         )
         approval.save()
         project = factories.ProjectFactory(creator=user)
-        ensure_schemas()
-        registration_schema = MetaSchema.find_one(
-            Q('name', 'eq', 'Prereg Challenge') &
-            Q('schema_version', 'eq', 2)
-        )
+        registration_schema = MetaSchema.objects.get(name='Prereg Challenge', schema_version=2)
         draft = factories.DraftRegistrationFactory(
             branched_from=project,
             registration_schema=registration_schema,

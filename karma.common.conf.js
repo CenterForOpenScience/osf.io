@@ -32,6 +32,9 @@ var webpackTestConfig = {
             // Assume test files are ES6
             {test: /\.test\.js$/, loader: 'babel-loader'},
         ])
+    },
+        node: {
+       fs: 'empty'
     }
 };
 
@@ -40,7 +43,7 @@ module.exports = {
     files: [
         // Mimics loading jquery and jquery-ui with script tags
         'website/static/vendor/bower_components/jquery/dist/jquery.js',
-        'website/static/vendor/bower_components/jquery-ui/ui/jquery-ui.js',
+        'website/static/vendor/bower_components/jquery-ui/jquery-ui.js',
         'website/static/vendor/bower_components/bootstrap/dist/js/bootstrap.js',
         // Only need to target one file, which will load all files in tests/ that
         // match *.test.js, including addons tests

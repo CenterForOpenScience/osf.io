@@ -68,7 +68,7 @@ class GitHubProvider(ExternalProvider):
         }
 
 
-class UserSettings(BaseStorageAddon, BaseOAuthUserSettings):
+class UserSettings(BaseOAuthUserSettings):
     """Stores user-specific github information
     """
     oauth_provider = GitHubProvider
@@ -95,7 +95,7 @@ class UserSettings(BaseStorageAddon, BaseOAuthUserSettings):
         return None
 
 
-class NodeSettings(BaseStorageAddon, BaseOAuthNodeSettings):
+class NodeSettings(BaseOAuthNodeSettings, BaseStorageAddon):
     oauth_provider = GitHubProvider
     serializer = GitHubSerializer
 
@@ -104,7 +104,7 @@ class NodeSettings(BaseStorageAddon, BaseOAuthNodeSettings):
     hook_id = models.TextField(blank=True, null=True)
     hook_secret = models.TextField(blank=True, null=True)
     registration_data = DateTimeAwareJSONField(default=dict, blank=True, null=True)
-    user_settings = models.ForeignKey(UserSettings, null=True, blank=True)
+    user_settings = models.ForeignKey(UserSettings, null=True, blank=True, on_delete=models.CASCADE)
 
     @property
     def folder_id(self):
@@ -180,7 +180,10 @@ class NodeSettings(BaseStorageAddon, BaseOAuthNodeSettings):
     @property
     def is_private(self):
         connection = GitHubClient(external_account=self.external_account)
-        return connection.repo(user=self.user, repo=self.repo).private
+        try:
+            return connection.repo(user=self.user, repo=self.repo).private
+        except GitHubError:
+            return
 
     # TODO: Delete me and replace with serialize_settings / Knockout
     def to_json(self, user):
@@ -190,7 +193,7 @@ class NodeSettings(BaseStorageAddon, BaseOAuthNodeSettings):
             'user_has_auth': user_settings and user_settings.has_auth,
             'is_registration': self.owner.is_registration,
         })
-        if self.user_settings and self.user_settings.has_auth:
+        if self.has_auth:
             valid_credentials = False
             owner = self.user_settings.owner
             connection = GitHubClient(external_account=self.external_account)

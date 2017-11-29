@@ -1,10 +1,7 @@
 'use strict';
 var $ = require('jquery');
-var ko = require('knockout'); // TODO: Why is this required? Is it? See [#OSF-6100]
-var bootbox = require('bootbox'); // TODO: Why is this required? Is it? See [#OSF-6100]
 var $osf = require('js/osfHelpers');
 
-var language = require('js/osfLanguage').registrations;  // TODO: Why is this required? Is it? See [#OSF-6100]
 var registrationUtils = require('js/registrationUtils');
 
 var ctx = window.contextVars;

@@ -5,6 +5,8 @@ import json
 import datetime as dt
 import urlparse
 
+from django.db import connection, transaction
+from django.test.utils import CaptureQueriesContext
 from django.utils import timezone
 import mock
 import itsdangerous
@@ -23,26 +25,26 @@ from website.project.signals import contributor_added
 from website.project.views.contributor import notify_added_contributor
 from website.views import find_bookmark_collection
 
-from osf.models import AbstractNode, OSFUser as User, Tag, Contributor, Session
-from osf.utils.auth import Auth
+from osf.models import AbstractNode, OSFUser, Tag, Contributor, Session
+from framework.auth.core import Auth
 from osf.utils.names import impute_names_model
 from osf.exceptions import ValidationError
-from osf.modm_compat import Q
 
 from .utils import capture_signals
 from .factories import (
     fake,
+    fake_email,
     AuthUserFactory,
     CollectionFactory,
     ExternalAccountFactory,
-    ProjectFactory,
-    NodeFactory,
     InstitutionFactory,
+    NodeFactory,
+    ProjectFactory,
     SessionFactory,
     TagFactory,
-    UserFactory,
+    UnconfirmedUserFactory,
     UnregUserFactory,
-    UnconfirmedUserFactory
+    UserFactory,
 )
 from tests.base import OsfTestCase
 
@@ -66,8 +68,8 @@ def auth(user):
 class TestOSFUser:
 
     def test_create(self):
-        name, email = fake.name(), fake.email()
-        user = User.create(
+        name, email = fake.name(), fake_email()
+        user = OSFUser.create(
             username=email, password='foobar', fullname=name
         )
         user.save()
@@ -76,30 +78,30 @@ class TestOSFUser:
         assert user.given_name == impute_names_model(name)['given_name']
 
     def test_create_unconfirmed(self):
-        name, email = fake.name(), fake.email()
-        user = User.create_unconfirmed(
+        name, email = fake.name(), fake_email()
+        user = OSFUser.create_unconfirmed(
             username=email, password='foobar', fullname=name
         )
         assert user.is_registered is False
         assert len(user.email_verifications.keys()) == 1
-        assert len(user.emails) == 0, 'primary email has not been added to emails list'
+        assert user.emails.count() == 0, 'primary email has not been added to emails list'
 
     def test_create_unconfirmed_with_campaign(self):
-        name, email = fake.name(), fake.email()
-        user = User.create_unconfirmed(
+        name, email = fake.name(), fake_email()
+        user = OSFUser.create_unconfirmed(
             username=email, password='foobar', fullname=name,
             campaign='institution'
         )
         assert 'institution_campaign' in user.system_tags
 
     def test_create_unconfirmed_from_external_service(self):
-        name, email = fake.name(), fake.email()
+        name, email = fake.name(), fake_email()
         external_identity = {
             'ORCID': {
                 fake.ean(): 'CREATE'
             }
         }
-        user = User.create_unconfirmed(
+        user = OSFUser.create_unconfirmed(
             username=email,
             password=str(fake.password()),
             fullname=name,
@@ -109,11 +111,11 @@ class TestOSFUser:
         assert user.is_registered is False
         assert len(user.email_verifications.keys()) == 1
         assert user.email_verifications.popitem()[1]['external_identity'] == external_identity
-        assert len(user.emails) == 0, 'primary email has not been added to emails list'
+        assert user.emails.count() == 0, 'primary email has not been added to emails list'
 
     def test_create_confirmed(self):
-        name, email = fake.name(), fake.email()
-        user = User.create_confirmed(
+        name, email = fake.name(), fake_email()
+        user = OSFUser.create_confirmed(
             username=email, password='foobar', fullname=name
         )
         user.save()
@@ -123,7 +125,7 @@ class TestOSFUser:
 
     def test_update_guessed_names(self):
         name = fake.name()
-        u = User(fullname=name)
+        u = OSFUser(fullname=name)
         u.update_guessed_names()
 
         parsed = impute_names_model(name)
@@ -134,8 +136,8 @@ class TestOSFUser:
         assert u.suffix == parsed['suffix']
 
     def test_create_unregistered(self):
-        name, email = fake.name(), fake.email()
-        u = User.create_unregistered(email=email,
+        name, email = fake.name(), fake_email()
+        u = OSFUser.create_unregistered(email=email,
                                      fullname=name)
         # TODO: Remove post-migration
         u.date_registered = timezone.now()
@@ -144,13 +146,13 @@ class TestOSFUser:
         assert u.is_registered is False
         assert u.is_claimed is False
         assert u.is_invited is True
-        assert email not in u.emails
+        assert not u.emails.filter(address=email).exists()
         parsed = impute_names_model(name)
         assert u.given_name == parsed['given_name']
 
     @mock.patch('osf.models.user.OSFUser.update_search')
     def test_search_not_updated_for_unreg_users(self, update_search):
-        u = User.create_unregistered(fullname=fake.name(), email=fake.email())
+        u = OSFUser.create_unregistered(fullname=fake.name(), email=fake_email())
         # TODO: Remove post-migration
         u.date_registered = timezone.now()
         u.save()
@@ -163,7 +165,7 @@ class TestOSFUser:
 
     def test_create_unregistered_raises_error_if_already_in_db(self):
         u = UnregUserFactory()
-        dupe = User.create_unregistered(fullname=fake.name(), email=u.username)
+        dupe = OSFUser.create_unregistered(fullname=fake.name(), email=u.username)
         with pytest.raises(ValidationError):
             dupe.save()
 
@@ -173,7 +175,7 @@ class TestOSFUser:
         assert dupe.is_active is False
 
     def test_non_registered_user_is_not_active(self):
-        u = User(username=fake.email(),
+        u = OSFUser(username=fake_email(),
                  fullname='Freddie Mercury',
                  is_registered=False)
         u.set_password('killerqueen')
@@ -181,8 +183,8 @@ class TestOSFUser:
         assert u.is_active is False
 
     def test_user_with_no_password_is_invalid(self):
-        u = User(
-            username=fake.email(),
+        u = OSFUser(
+            username=fake_email(),
             fullname='Freddie Mercury',
             is_registered=True,
         )
@@ -211,19 +213,19 @@ class TestOSFUser:
         assert project.is_contributor(user2) is False
 
     def test_cant_create_user_without_username(self):
-        u = User()  # No username given
+        u = OSFUser()  # No username given
         with pytest.raises(ValidationError):
             u.save()
 
     def test_date_registered_upon_saving(self):
-        u = User(username=fake.email(), fullname='Foo bar')
+        u = OSFUser(username=fake_email(), fullname='Foo bar')
         u.set_unusable_password()
         u.save()
         assert bool(u.date_registered) is True
         assert u.date_registered.tzinfo == pytz.utc
 
     def test_cant_create_user_without_full_name(self):
-        u = User(username=fake.email())
+        u = OSFUser(username=fake_email())
         with pytest.raises(ValidationError):
             u.save()
 
@@ -279,7 +281,7 @@ class TestOSFUser:
     def test_get_confirmation_token_if_email_verification_doesnt_have_expiration(self):
         u = UserFactory()
 
-        email = fake.email()
+        email = fake_email()
         u.add_unconfirmed_email(email)
         # manually remove 'expiration' key
         token = u.get_confirmation_token(email)
@@ -333,7 +335,7 @@ class TestOSFUser:
         u.save()
         assert bool(confirmed) is True
         assert len(u.email_verifications.keys()) == 0
-        assert u.username in u.emails
+        assert u.emails.filter(address=u.username).exists()
         assert bool(u.is_registered) is True
         assert bool(u.is_claimed) is True
 
@@ -342,7 +344,36 @@ class TestOSFUser:
         user.confirm_email(token)
 
         assert 'foo@bar.com' not in user.unconfirmed_emails
-        assert 'foo@bar.com' in user.emails
+        assert user.emails.filter(address='foo@bar.com').exists()
+
+    def test_confirm_email_merge_select_for_update(self, user):
+        mergee = UserFactory(username='foo@bar.com')
+        token = user.add_unconfirmed_email('foo@bar.com')
+
+        with transaction.atomic(), CaptureQueriesContext(connection) as ctx:
+            user.confirm_email(token, merge=True)
+
+        mergee.reload()
+        assert mergee.is_merged
+        assert mergee.merged_by == user
+
+        for_update_sql = connection.ops.for_update_sql()
+        assert any(for_update_sql in query['sql'] for query in ctx.captured_queries)
+
+    @mock.patch('osf.utils.requests.settings.SELECT_FOR_UPDATE_ENABLED', False)
+    def test_confirm_email_merge_select_for_update_disabled(self, user):
+        mergee = UserFactory(username='foo@bar.com')
+        token = user.add_unconfirmed_email('foo@bar.com')
+
+        with transaction.atomic(), CaptureQueriesContext(connection) as ctx:
+            user.confirm_email(token, merge=True)
+
+        mergee.reload()
+        assert mergee.is_merged
+        assert mergee.merged_by == user
+
+        for_update_sql = connection.ops.for_update_sql()
+        assert not any(for_update_sql in query['sql'] for query in ctx.captured_queries)
 
     def test_confirm_email_comparison_is_case_insensitive(self):
         u = UnconfirmedUserFactory.build(
@@ -376,7 +407,7 @@ class TestOSFUser:
 
     def test_verify_confirmation_token_when_token_has_no_expiration(self):
         # A user verification token may not have an expiration
-        email = fake.email()
+        email = fake_email()
         u = UserFactory.build()
         u.add_unconfirmed_email(email)
         token = u.get_confirmation_token(email)
@@ -492,6 +523,33 @@ class TestOSFUser:
         u.reload()
         assert u.display_full_name(node=project) == name
 
+    def test_repeat_add_same_unreg_user_with_diff_name(self):
+        unreg_user = UnregUserFactory()
+        project = NodeFactory()
+        old_name = unreg_user.fullname
+        project.add_unregistered_contributor(
+            fullname=old_name, email=unreg_user.username,
+            auth=Auth(project.creator)
+        )
+        project.save()
+        unreg_user.reload()
+        name_list = [contrib.fullname for contrib in project.contributors]
+        assert unreg_user.fullname in name_list
+        project.remove_contributor(contributor=unreg_user, auth=Auth(project.creator))
+        project.save()
+        project.reload()
+        assert unreg_user not in project.contributors
+        new_name = fake.name()
+        project.add_unregistered_contributor(
+            fullname=new_name, email=unreg_user.username,
+            auth=Auth(project.creator)
+        )
+        project.save()
+        unreg_user.reload()
+        project.reload()
+        unregistered_name = unreg_user.unclaimed_records[project._id].get('name', None)
+        assert new_name == unregistered_name
+
     def test_username_is_automatically_lowercased(self):
         user = UserFactory(username='nEoNiCon@bet.com')
         assert user.username == 'neonicon@bet.com'
@@ -568,12 +626,12 @@ class TestCookieMethods:
         super_secret_key = 'children need maps'
         signer = itsdangerous.Signer(super_secret_key)
         assert(
-            Session.find(Q('data.auth_user_id', 'eq', user._id)).count() == 0
+            Session.objects.filter(data__auth_user_id=user._id).count() == 0
         )
 
         cookie = user.get_or_create_cookie(super_secret_key)
 
-        session = Session.find(Q('data.auth_user_id', 'eq', user._id))[0]
+        session = Session.objects.filter(data__auth_user_id=user._id).first()
 
         assert session._id == signer.unsign(cookie)
         assert session.data['auth_user_id'] == user._id
@@ -583,27 +641,27 @@ class TestCookieMethods:
     def test_get_user_by_cookie(self):
         user = UserFactory()
         cookie = user.get_or_create_cookie()
-        assert user == User.from_cookie(cookie)
+        assert user == OSFUser.from_cookie(cookie)
 
     def test_get_user_by_cookie_returns_none(self):
-        assert User.from_cookie('') is None
+        assert OSFUser.from_cookie('') is None
 
     def test_get_user_by_cookie_bad_cookie(self):
-        assert User.from_cookie('foobar') is None
+        assert OSFUser.from_cookie('foobar') is None
 
     def test_get_user_by_cookie_no_user_id(self):
         user = UserFactory()
         cookie = user.get_or_create_cookie()
-        session = Session.find_one(Q('data.auth_user_id', 'eq', user._id))
+        session = Session.objects.get(data__auth_user_id=user._id)
         del session.data['auth_user_id']
         session.save()
-        assert User.from_cookie(cookie) is None
+        assert OSFUser.from_cookie(cookie) is None
 
     def test_get_user_by_cookie_no_session(self):
         user = UserFactory()
         cookie = user.get_or_create_cookie()
         Session.objects.all().delete()
-        assert User.from_cookie(cookie) is None
+        assert OSFUser.from_cookie(cookie) is None
 
 
 class TestChangePassword:
@@ -719,6 +777,15 @@ class TestIsActive:
         user.save()
         assert user.is_active is False
 
+    def test_user_with_unusable_password_but_verified_orcid_is_active(self, make_user):
+        user = make_user()
+        user.set_unusable_password()
+        user.save()
+        assert user.is_active is False
+        user.external_identity = {'ORCID': {'fake-orcid': 'VERIFIED'}}
+        user.save()
+        assert user.is_active is True
+
     def test_is_active_is_false_if_not_confirmed(self, make_user):
         user = make_user(date_confirmed=None)
         user.save()
@@ -738,6 +805,7 @@ class TestIsActive:
 
     def test_is_active_is_false_if_disabled(self, make_user):
         user = make_user(date_disabled=timezone.now())
+        user.save()
         assert user.is_active is False
 
 
@@ -777,7 +845,7 @@ class TestUnregisteredUser:
 
     @pytest.fixture()
     def email(self):
-        return fake.email()
+        return fake_email()
 
     @pytest.fixture()
     def unreg_user(self, referrer, project, email):
@@ -842,7 +910,7 @@ class TestUnregisteredUser:
         user = UnregUserFactory()
         assert user.is_registered is False  # sanity check
         assert user.is_claimed is False
-        email = fake.email()
+        email = fake_email()
         user.register(username=email, password='killerqueen')
         user.save()
         assert user.is_claimed is True
@@ -855,9 +923,9 @@ class TestUnregisteredUser:
     def test_registering_with_a_different_email_adds_to_emails_list(self, mock_search, mock_search_nodes):
         user = UnregUserFactory()
         assert user.has_usable_password() is False  # sanity check
-        email = fake.email()
+        email = fake_email()
         user.register(username=email, password='killerqueen')
-        assert email in user.emails
+        assert user.emails.filter(address=email).exists()
 
     def test_verify_claim_token(self, unreg_user, project):
         valid = unreg_user.get_unclaimed_record(project._primary_key)['token']
@@ -970,16 +1038,50 @@ class TestTagging:
 
 class TestCitationProperties:
 
-    def test_user_csl(self, user):
-        # Convert a User instance to csl's name-variable schema
+    @pytest.fixture()
+    def referrer(self):
+        return UserFactory()
+
+    @pytest.fixture()
+    def email(self):
+        return fake_email()
+
+    @pytest.fixture()
+    def unreg_user(self, referrer, project, email):
+        user = UnregUserFactory()
+        user.add_unclaimed_record(node=project,
+            given_name=user.fullname, referrer=referrer,
+            email=email)
+        user.save()
+        return user
+
+    @pytest.fixture()
+    def project(self, referrer):
+        return NodeFactory(creator=referrer)
+
+    def test_registered_user_csl(self, user):
+        # Tests the csl name for a registered user
+        if user.is_registered:
+            assert bool(
+                user.csl_name() ==
+                {
+                    'given': user.csl_given_name,
+                    'family': user.family_name,
+                }
+            )
+
+    def test_unregistered_user_csl(self, unreg_user, project):
+        # Tests the csl name for an unregistered user
+        name = unreg_user.unclaimed_records[project._primary_key]['name'].split(' ')
+        family_name = name[-1]
+        given_name = ' '.join(name[:-1])
         assert bool(
-            user.csl_name ==
+            unreg_user.csl_name(project._id) ==
             {
-                'given': user.given_name,
-                'family': user.family_name,
+                'given': given_name,
+                'family': family_name,
             }
         )
-
 
 # copied from tests/test_models.py
 class TestMergingUsers:
@@ -1013,6 +1115,17 @@ class TestMergingUsers:
         merge_dupe()
         assert dashnode not in master.contributed
 
+    # Note the files are merged, but the actual node stays with the dupe user
+    def test_quickfiles_node_arent_merged(self, dupe, master, merge_dupe):
+        assert master.nodes.filter(type='osf.quickfilesnode').count() == 1
+        assert dupe.nodes.filter(type='osf.quickfilesnode').count() == 1
+
+        merge_dupe()
+        master.refresh_from_db()
+        dupe.refresh_from_db()
+        assert master.nodes.filter(type='osf.quickfilesnode').count() == 1
+        assert dupe.nodes.filter(type='osf.quickfilesnode').count() == 1
+
     def test_dupe_is_merged(self, dupe, master, merge_dupe):
         merge_dupe()
         assert dupe.is_merged
@@ -1020,7 +1133,7 @@ class TestMergingUsers:
 
     def test_dupe_email_is_appended(self, master, merge_dupe):
         merge_dupe()
-        assert 'joseph123@hotmail.com' in master.emails
+        assert master.emails.filter(address='joseph123@hotmail.com').exists()
 
     @mock.patch('website.mailchimp_utils.get_mailchimp_api')
     def test_send_user_merged_signal(self, mock_get_mailchimp_api, dupe, merge_dupe):
@@ -1128,6 +1241,10 @@ class TestMergingUsers:
 
         assert project.get_permissions(master) == ['read', 'write', 'admin']
 
+    def test_merge_user_into_self_fails(self, master):
+        with pytest.raises(ValueError):
+            master.merge_user(master)
+
 
 class TestDisablingUsers(OsfTestCase):
     def setUp(self):
@@ -1173,8 +1290,8 @@ class TestDisablingUsers(OsfTestCase):
 
     @mock.patch('website.mailchimp_utils.get_mailchimp_api')
     def test_disable_account_and_remove_sessions(self, mock_mail):
-        session1 = SessionFactory(user=self.user, date_created=(timezone.now() - dt.timedelta(seconds=settings.OSF_SESSION_TIMEOUT)))
-        session2 = SessionFactory(user=self.user, date_created=(timezone.now() - dt.timedelta(seconds=settings.OSF_SESSION_TIMEOUT)))
+        session1 = SessionFactory(user=self.user, created=(timezone.now() - dt.timedelta(seconds=settings.OSF_SESSION_TIMEOUT)))
+        session2 = SessionFactory(user=self.user, created=(timezone.now() - dt.timedelta(seconds=settings.OSF_SESSION_TIMEOUT)))
 
         self.user.mailchimp_mailing_lists[settings.MAILCHIMP_GENERAL_LIST] = True
         self.user.save()
@@ -1198,17 +1315,11 @@ class TestUser(OsfTestCase):
         super(TestUser, self).setUp()
         self.user = AuthUserFactory()
 
-    def tearDown(self):
-        AbstractNode.remove()
-        User.remove()
-        Session.remove()
-        super(TestUser, self).tearDown()
-
     # Regression test for https://github.com/CenterForOpenScience/osf.io/issues/2454
     def test_add_unconfirmed_email_when_email_verifications_is_empty(self):
         self.user.email_verifications = []
         self.user.save()
-        email = fake.email()
+        email = fake_email()
         self.user.add_unconfirmed_email(email)
         self.user.save()
         assert email in self.user.unconfirmed_emails
@@ -1253,7 +1364,7 @@ class TestUser(OsfTestCase):
         self.user.confirm_email(token)
 
         assert 'foo@bar.com' not in self.user.unconfirmed_emails
-        assert 'foo@bar.com' in self.user.emails
+        assert self.user.emails.filter(address='foo@bar.com').exists()
 
     def test_confirm_email_comparison_is_case_insensitive(self):
         u = UnconfirmedUserFactory.build(
@@ -1292,7 +1403,7 @@ class TestUser(OsfTestCase):
             self.user.get_unconfirmed_email_for_token(token1)
 
     def test_contributed_property(self):
-        projects_contributed_to = AbstractNode.find(Q('contributors', 'eq', self.user))
+        projects_contributed_to = self.user.nodes.all()
         assert list(self.user.contributed.all()) == list(projects_contributed_to)
 
     def test_contributor_to_property(self):
@@ -1335,8 +1446,8 @@ class TestUser(OsfTestCase):
     def test_created_property(self):
         # make sure there's at least one project
         ProjectFactory(creator=self.user)
-        projects_created_by_user = AbstractNode.find(Q('creator', 'eq', self.user))
-        assert list(self.user.created.all()) == list(projects_created_by_user)
+        projects_created_by_user = AbstractNode.objects.filter(creator=self.user)
+        assert list(self.user.nodes_created.all()) == list(projects_created_by_user)
 
 
 # Copied from tests/models/test_user.py
@@ -1369,7 +1480,7 @@ class TestUserMerging(OsfTestCase):
     @mock.patch('website.mailchimp_utils.get_mailchimp_api')
     def test_merge(self, mock_get_mailchimp_api):
         def is_mrm_field(value):
-            return 'ManyRelatedManager' in str(value.__class__)
+            return 'RelatedManager' in str(value.__class__)
 
         other_user = UserFactory()
         other_user.save()
@@ -1442,7 +1553,6 @@ class TestUserMerging(OsfTestCase):
             'merged_by',
             'middle_names',
             'password',
-            'recently_added',
             'schools',
             'social',
             'suffix',
@@ -1469,14 +1579,15 @@ class TestUserMerging(OsfTestCase):
             'notifications_configured': {
                 '123ab': True, 'abc12': True,
             },
-            'emails': [
-                self.user.username,
-                other_user.username,
-            ],
-            'external_accounts': [
+            'emails': set([
+                other_user.emails.first().id,
+                self.user.emails.first().id,
+            ]),
+            'external_accounts': set([
                 self.user.external_accounts.first().id,
                 other_user.external_accounts.first().id,
-            ],
+            ]),
+            'recently_added': set(),
             'mailchimp_mailing_lists': {
                 'user': True,
                 'other': True,
@@ -1499,12 +1610,13 @@ class TestUserMerging(OsfTestCase):
         expected.update(calculated_fields)
         for key in default_to_master_user_fields:
             if is_mrm_field(getattr(self.user, key)):
-                expected[key] = list(getattr(self.user, key).all().values_list('id', flat=True))
+                expected[key] = set(list(getattr(self.user, key).all().values_list('id', flat=True)))
             else:
                 expected[key] = getattr(self.user, key)
 
         # ensure all fields of the user object have an explicit expectation
-        assert set(expected.keys()).issubset(set(self.user._meta.get_all_field_names()))
+        all_field_names = {each.name for each in self.user._meta.get_fields()}
+        assert set(expected.keys()).issubset(all_field_names)
 
         # mock mailchimp
         mock_client = mock.MagicMock()
@@ -1521,7 +1633,7 @@ class TestUserMerging(OsfTestCase):
         # check each field/value pair
         for k, v in expected.iteritems():
             if is_mrm_field(getattr(self.user, k)):
-                assert list(getattr(self.user, k).all().values_list('id', flat=True)) == v, '{} doesn\'t match expectations'.format(k)
+                assert set(list(getattr(self.user, k).all().values_list('id', flat=True))) == v, '{} doesn\'t match expectations'.format(k)
             else:
                 assert getattr(self.user, k) == v, '{} doesn\'t match expectation'.format(k)
 
@@ -1531,7 +1643,7 @@ class TestUserMerging(OsfTestCase):
         # check fields set on merged user
         assert other_user.merged_by == self.user
 
-        assert Session.find(Q('data.auth_user_id', 'eq', other_user._id)).count() == 0
+        assert not Session.objects.filter(data__auth_user_id=other_user._id).exists()
 
     def test_merge_unconfirmed(self):
         self._add_unconfirmed_user()
@@ -1711,7 +1823,9 @@ class TestUserValidation(OsfTestCase):
         self.user.social = {
             'foo': 'bar',
         }
-        self.user.save()
+        with pytest.raises(ValidationError) as exc_info:
+            self.user.save()
+        assert isinstance(exc_info.value.args[0], dict)
         assert self.user.social_links == {}
 
     def test_validate_jobs_valid(self):

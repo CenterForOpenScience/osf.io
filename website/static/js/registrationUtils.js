@@ -9,6 +9,9 @@ var ko = require('knockout');
 var Raven = require('raven-js');
 var bootbox = require('bootbox');
 var moment = require('moment');
+var lodashHas = require('lodash.has');
+var lodashSet = require('lodash.set');
+var lodashIncludes = require('lodash.includes');
 var History = require('exports?History!history');
 
 require('js/koHelpers');
@@ -36,6 +39,9 @@ var VALIDATOR_LOOKUP = {};
 $.each(VALIDATORS, function(key, value) {
     VALIDATOR_LOOKUP[value.message] = value;
 });
+
+// Extensions that lose data bind if re-created.
+var CACHED_EXTENSIONS = ['osf-author-import'];
 
 /**
  * @class Comment
@@ -1005,7 +1011,15 @@ RegistrationEditor.prototype.context = function(data, $root, preview) {
     });
 
     if (this.extensions[data.type]) {
-        return new this.extensions[data.type](data, $root.pk, preview);
+        // osf-author-import loses binding when re-created. Hence, this kludge.
+        if (lodashIncludes(CACHED_EXTENSIONS, data.type)) {
+            if (!lodashHas(this, ['extCache', data.type, data.id])) {
+                lodashSet(this, ['extCache', data.type, data.id], new this.extensions[data.type](data, $root.pk, preview));
+            }
+            return this.extCache[data.type][data.id];
+        } else {
+            return new this.extensions[data.type](data, $root.pk, preview);
+        }
     }
     return data;
 };
@@ -1375,7 +1389,7 @@ RegistrationManager.prototype.init = function() {
                         self.selectedSchema(preregSchema);
                         $('#newDraftRegistrationForm').submit();
                     });
-                }).always($osf.unblock);   
+                }).always($osf.unblock);
             }
         }
     }

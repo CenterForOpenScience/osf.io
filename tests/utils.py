@@ -1,7 +1,7 @@
 import contextlib
+import datetime
 import functools
 import mock
-import datetime
 
 from django.http import HttpRequest
 from django.utils import timezone
@@ -10,12 +10,10 @@ from nose.tools import assert_equal, assert_not_equal
 
 from framework.auth import Auth
 from framework.celery_tasks.handlers import celery_teardown_request
-
+from osf.models import Sanction
+from tests.base import get_default_metaschema
 from website.archiver import ARCHIVER_SUCCESS
 from website.archiver import listeners as archiver_listeners
-from website.project.sanctions import Sanction
-
-from tests.base import get_default_metaschema
 
 def requires_module(module):
     def decorator(fn):
@@ -71,6 +69,31 @@ def assert_not_logs(log_action, node_key, index=-1):
             node.save()
         return wrapper
     return outer_wrapper
+
+def assert_items_equal(item_one, item_two):
+    item_one.sort()
+    item_two.sort()
+    assert item_one == item_two
+
+@contextlib.contextmanager
+def assert_latest_log(log_action, node_key, index=0):
+    node = node_key
+    last_log = node.logs.latest()
+    node.reload()
+    yield
+    new_log = node.logs.order_by('-date')[index]
+    assert last_log._id != new_log._id
+    assert new_log.action == log_action
+
+@contextlib.contextmanager
+def assert_latest_log_not(log_action, node_key, index=0):
+    node = node_key
+    last_log = node.logs.latest()
+    node.reload()
+    yield
+    new_log = node.logs.order_by('-date')[index]
+    assert new_log.action != log_action
+    assert last_log._id == new_log._id
 
 @contextlib.contextmanager
 def mock_archive(project, schema=None, auth=None, data=None, parent=None,

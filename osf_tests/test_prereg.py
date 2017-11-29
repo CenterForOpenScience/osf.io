@@ -1,10 +1,8 @@
 from nose.tools import *  # noqa
 
-from modularodm import Q
-
+from osf.models import MetaSchema
 from website.prereg import prereg_landing_page as landing_page
 from website.prereg.utils import drafts_for_user, get_prereg_schema
-from website.project.model import ensure_schemas, MetaSchema
 
 from tests.base import OsfTestCase
 from osf_tests import factories
@@ -13,8 +11,19 @@ from osf_tests import factories
 class TestPreregLandingPage(OsfTestCase):
     def setUp(self):
         super(TestPreregLandingPage, self).setUp()
-        ensure_schemas()
         self.user = factories.UserFactory()
+
+    def test_not_logged_in(self):
+        assert_equal(
+            landing_page(),
+            {
+                'has_projects': False,
+                'has_draft_registrations': False,
+                'campaign_long': 'Prereg Challenge',
+                'campaign_short': 'prereg',
+                'is_logged_in': False,
+            }
+        )
 
     def test_no_projects(self):
         assert_equal(
@@ -24,6 +33,7 @@ class TestPreregLandingPage(OsfTestCase):
                 'has_draft_registrations': False,
                 'campaign_long': 'Prereg Challenge',
                 'campaign_short': 'prereg',
+                'is_logged_in': True,
             }
         )
 
@@ -37,13 +47,12 @@ class TestPreregLandingPage(OsfTestCase):
                 'has_draft_registrations': False,
                 'campaign_long': 'Prereg Challenge',
                 'campaign_short': 'prereg',
+                'is_logged_in': True,
             }
         )
 
     def test_has_project_and_draft_registration(self):
-        prereg_schema = MetaSchema.find_one(
-            Q('name', 'eq', 'Prereg Challenge')
-        )
+        prereg_schema = MetaSchema.objects.get(name='Prereg Challenge')
         factories.DraftRegistrationFactory(
             initiator=self.user,
             registration_schema=prereg_schema
@@ -56,14 +65,12 @@ class TestPreregLandingPage(OsfTestCase):
                 'has_draft_registrations': True,
                 'campaign_long': 'Prereg Challenge',
                 'campaign_short': 'prereg',
+                'is_logged_in': True,
             }
         )
 
     def test_drafts_for_user_omits_registered(self):
-        prereg_schema = MetaSchema.find_one(
-            Q('name', 'eq', 'Prereg Challenge') &
-            Q('schema_version', 'eq', 2)
-        )
+        prereg_schema = MetaSchema.objects.get(name='Prereg Challenge', schema_version=2)
 
         d1 = factories.DraftRegistrationFactory(
             initiator=self.user,
@@ -89,17 +96,11 @@ class TestPreregUtils(OsfTestCase):
 
     def setUp(self):
         super(TestPreregUtils, self).setUp()
-        ensure_schemas()
 
     def test_get_prereg_schema_returns_prereg_metaschema(self):
         schema = get_prereg_schema()
         assert_is_instance(schema, MetaSchema)
         assert_equal(schema.name, 'Prereg Challenge')
-
-    def test_get_prereg_schema_can_return_erpc_metaschema(self):
-        schema = get_prereg_schema('erpc')
-        assert_is_instance(schema, MetaSchema)
-        assert_equal(schema.name, 'Election Research Preacceptance Competition')
 
     def test_get_prereg_schema_raises_error_for_invalid_campaign(self):
         with assert_raises(ValueError):

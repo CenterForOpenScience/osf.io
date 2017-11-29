@@ -6,22 +6,27 @@ from django.views.generic import ListView, DeleteView
 from django.shortcuts import redirect
 from django.views.defaults import page_not_found
 from django.contrib.auth.mixins import PermissionRequiredMixin
-from modularodm import Q
 
-from website.models import NodeLog
+from website import search
+from osf.models import NodeLog
 from osf.models.user import OSFUser
 from osf.models.node import Node
 from osf.models.registrations import Registration
+from osf.models import SpamStatus
 from admin.base.views import GuidFormView, GuidView
 from osf.models.admin_log_entry import (
     update_admin_log,
     NODE_REMOVED,
     NODE_RESTORED,
     CONTRIBUTOR_REMOVED,
-    CONFIRM_SPAM, CONFIRM_HAM)
+    CONFIRM_SPAM,
+    CONFIRM_HAM,
+    REINDEX_SHARE,
+    REINDEX_ELASTIC,
+)
 from admin.nodes.templatetags.node_extras import reverse_node
 from admin.nodes.serializers import serialize_node, serialize_simple_user_and_node_permissions
-from website.project.spam.model import SpamStatus
+from website.project.tasks import update_node_share
 from website.project.views.register import osf_admin_change_status_identifier
 
 
@@ -205,7 +210,7 @@ class RegistrationListView(PermissionRequiredMixin, ListView):
     template_name = 'nodes/registration_list.html'
     paginate_by = 10
     paginate_orphans = 1
-    ordering = 'date_created'
+    ordering = 'created'
     context_object_name = '-node'
     permission_required = 'osf.view_registration'
     raise_exception = True
@@ -229,16 +234,13 @@ class NodeSpamList(PermissionRequiredMixin, ListView):
 
     paginate_by = 25
     paginate_orphans = 1
-    ordering = 'date_created'
+    ordering = 'created'
     context_object_name = '-node'
     permission_required = 'osf.view_spam'
     raise_exception = True
 
     def get_queryset(self):
-        query = (
-            Q('spam_status', 'eq', self.SPAM_STATE)
-        )
-        return Node.find(query).sort(self.ordering)
+        return Node.objects.filter(spam_status=self.SPAM_STATE).order_by(self.ordering)
 
     def get_context_data(self, **kwargs):
         query_set = kwargs.pop('object_list', self.object_list)
@@ -316,5 +318,45 @@ class NodeConfirmHamView(PermissionRequiredMixin, NodeDeleteBase):
             object_repr='Node',
             message='Confirmed HAM: {}'.format(node._id),
             action_flag=CONFIRM_HAM
+        )
+        return redirect(reverse_node(self.kwargs.get('guid')))
+
+class NodeReindexShare(PermissionRequiredMixin, NodeDeleteBase):
+    template_name = 'nodes/reindex_node_share.html'
+    permission_required = 'osf.mark_spam'
+    raise_exception = True
+
+    def get_object(self, queryset=None):
+        return Node.load(self.kwargs.get('guid')) or Registration.load(self.kwargs.get('guid'))
+
+    def delete(self, request, *args, **kwargs):
+        node = self.get_object()
+        update_node_share(node)
+        update_admin_log(
+            user_id=self.request.user.id,
+            object_id=node._id,
+            object_repr='Node',
+            message='Node Reindexed (SHARE): {}'.format(node._id),
+            action_flag=REINDEX_SHARE
+        )
+        return redirect(reverse_node(self.kwargs.get('guid')))
+
+class NodeReindexElastic(PermissionRequiredMixin, NodeDeleteBase):
+    template_name = 'nodes/reindex_node_elastic.html'
+    permission_required = 'osf.mark_spam'
+    raise_exception = True
+
+    def get_object(self, queryset=None):
+        return Node.load(self.kwargs.get('guid')) or Registration.load(self.kwargs.get('guid'))
+
+    def delete(self, request, *args, **kwargs):
+        node = self.get_object()
+        search.search.update_node(node, bulk=False, async=False)
+        update_admin_log(
+            user_id=self.request.user.id,
+            object_id=node._id,
+            object_repr='Node',
+            message='Node Reindexed (Elastic): {}'.format(node._id),
+            action_flag=REINDEX_ELASTIC
         )
         return redirect(reverse_node(self.kwargs.get('guid')))

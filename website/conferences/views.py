@@ -4,22 +4,20 @@ import httplib
 import logging
 
 from django.db import transaction
-from bulk_update.helper import bulk_update
-from modularodm import Q
-from modularodm.exceptions import ModularOdmException
+from django_bulk_update.helper import bulk_update
 
+from addons.osfstorage.models import OsfStorageFile
 from framework.auth import get_or_create_user
 from framework.exceptions import HTTPError
 from framework.flask import redirect
+from framework import sentry
 from framework.transactions.handlers import no_auto_transaction
+from osf.models import AbstractNode, Node, Conference, Tag
 from website import settings
 from website.conferences import utils, signals
 from website.conferences.message import ConferenceMessage, ConferenceError
-from website.conferences.model import Conference
-from website.files.models import OsfStorageFile
 from website.mails import CONFERENCE_SUBMITTED, CONFERENCE_INACTIVE, CONFERENCE_FAILED
 from website.mails import send_mail
-from website.models import Node, Tag
 from website.util import web_url_for
 
 logger = logging.getLogger(__name__)
@@ -94,7 +92,15 @@ def add_poster_by_email(conference, message):
         else:
             set_password_url = None
 
-        node, node_created = utils.get_or_create_node(message.subject, user)
+        node, node_created = Node.objects.get_or_create(
+            title__iexact=message.subject,
+            is_deleted=False,
+            _contributors__guids___id=user._id,
+            defaults={
+                'title': message.subject,
+                'creator': user
+            }
+        )
         if node_created:
             nodes_created.append(node)
             node.add_system_tag('osf4m')
@@ -164,11 +170,11 @@ def _render_conference_node(node, idx, conf):
         'title': node.title,
         'nodeUrl': node.url,
         'author': author.family_name if author.family_name else author.fullname,
-        'authorUrl': node.creator.url,
-        'category': conf.field_names['submission1'] if conf.field_names['submission1'] in node.system_tags else conf.field_names['submission2'],
+        'authorUrl': author.url,
+        'category': conf.field_names['submission1'] if conf.field_names['submission1'] in tags else conf.field_names['submission2'],
         'download': download_count,
         'downloadUrl': download_url,
-        'dateCreated': node.date_created.isoformat(),
+        'dateCreated': node.created.isoformat(),
         'confName': conf.name,
         'confUrl': web_url_for('conference_results', meeting=conf.endpoint),
         'tags': ' '.join(tags)
@@ -177,16 +183,18 @@ def _render_conference_node(node, idx, conf):
 
 def conference_data(meeting):
     try:
-        conf = Conference.find_one(Q('endpoint', 'iexact', meeting))
-    except ModularOdmException:
+        conf = Conference.objects.get(endpoint__iexact=meeting)
+    except Conference.DoesNotExist:
         raise HTTPError(httplib.NOT_FOUND)
 
-    nodes = Node.objects.filter(tags__id__in=Tag.objects.filter(name__iexact=meeting, system=False).values_list('id', flat=True), is_public=True, is_deleted=False)
-
-    ret = [
-        _render_conference_node(each, idx, conf)
-        for idx, each in enumerate(nodes)
-    ]
+    nodes = AbstractNode.objects.filter(tags__id__in=Tag.objects.filter(name__iexact=meeting, system=False).values_list('id', flat=True), is_public=True, is_deleted=False)
+    ret = []
+    for idx, each in enumerate(nodes):
+        # To handle OSF-8864 where projects with no users caused meetings to be unable to resolve
+        try:
+            ret.append(_render_conference_node(each, idx, conf))
+        except IndexError:
+            sentry.log_exception()
     return ret
 
 
@@ -220,8 +228,8 @@ def conference_results(meeting):
     :param str meeting: Endpoint name for a conference.
     """
     try:
-        conf = Conference.find_one(Q('endpoint', 'iexact', meeting))
-    except ModularOdmException:
+        conf = Conference.objects.get(endpoint__iexact=meeting)
+    except Conference.DoesNotExist:
         raise HTTPError(httplib.NOT_FOUND)
 
     data = conference_data(meeting)
@@ -240,29 +248,21 @@ def conference_submissions(**kwargs):
     The total number of submissions for each meeting is calculated and cached
     in the Conference.num_submissions field.
     """
-    conferences = Conference.find(Q('is_meeting', 'ne', False))
+    conferences = Conference.objects.filter(is_meeting=True)
     #  TODO: Revisit this loop, there has to be a way to optimize it
     for conf in conferences:
         # For efficiency, we filter by tag first, then node
         # instead of doing a single Node query
-        projects = set()
-
-        tags = Tag.find(Q('system', 'eq', False) & Q('name', 'iexact', conf.endpoint.lower())).values_list('pk', flat=True)
-        nodes = Node.find(
-            Q('tags', 'in', tags) &
-            Q('is_public', 'eq', True) &
-            Q('is_deleted', 'ne', True)
-        ).include('guids')
-        projects.update(list(nodes))
-        num_submissions = len(projects)
+        tags = Tag.objects.filter(system=False, name__iexact=conf.endpoint).values_list('pk', flat=True)
+        nodes = AbstractNode.objects.filter(tags__in=tags, is_public=True, is_deleted=False)
         # Cache the number of submissions
-        conf.num_submissions = num_submissions
+        conf.num_submissions = nodes.count()
     bulk_update(conferences, update_fields=['num_submissions'])
     return {'success': True}
 
 def conference_view(**kwargs):
     meetings = []
-    for conf in Conference.find():
+    for conf in Conference.objects.all():
         if conf.num_submissions < settings.CONFERENCE_MIN_COUNT:
             continue
         if (hasattr(conf, 'is_meeting') and (conf.is_meeting is False)):

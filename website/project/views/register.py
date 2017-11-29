@@ -3,8 +3,6 @@ import httplib as http
 import itertools
 
 from flask import request
-from modularodm import Q
-from modularodm.exceptions import NoResultsFound
 
 from framework import status
 from framework.exceptions import HTTPError
@@ -21,11 +19,10 @@ from website.project.decorators import (
     must_have_permission,
     must_not_be_registration, must_be_registration,
 )
-from website.identifiers.model import Identifier
-from website.identifiers.metadata import datacite_metadata_for_node
+from website.identifiers.utils import get_or_create_identifiers, build_ezid_metadata
+from osf.models import Identifier, MetaSchema, NodeLog
 from website.project.utils import serialize_node
 from website.util.permissions import ADMIN
-from website.models import MetaSchema, NodeLog
 from website import language
 from website.project import signals as project_signals
 from website.project.metadata.schemas import _id_to_name
@@ -121,15 +118,11 @@ def node_registration_retraction_post(auth, node, **kwargs):
 def node_register_template_page(auth, node, metaschema_id, **kwargs):
     if node.is_registration and bool(node.registered_schema):
         try:
-            meta_schema = MetaSchema.find_one(
-                Q('_id', 'eq', metaschema_id)
-            )
-        except NoResultsFound:
+            meta_schema = MetaSchema.objects.get(_id=metaschema_id)
+        except MetaSchema.DoesNotExist:
             # backwards compatability for old urls, lookup by name
             try:
-                meta_schema = MetaSchema.find(
-                    Q('name', 'eq', _id_to_name(metaschema_id))
-                ).sort('-schema_version')[0]
+                meta_schema = MetaSchema.objects.filter(name=_id_to_name(metaschema_id)).order_by('-schema_version').first()
             except IndexError:
                 raise HTTPError(http.NOT_FOUND, data={
                     'message_short': 'Invalid schema name',
@@ -214,62 +207,12 @@ def project_before_register(auth, node, **kwargs):
         'errors': error_messages
     }
 
-def _build_ezid_metadata(node):
-    """Build metadata for submission to EZID using the DataCite profile. See
-    http://ezid.cdlib.org/doc/apidoc.html for details.
-    """
-    doi = settings.EZID_FORMAT.format(namespace=settings.DOI_NAMESPACE, guid=node._id)
-    metadata = {
-        '_target': node.absolute_url,
-        'datacite': datacite_metadata_for_node(node=node, doi=doi)
-    }
-    return doi, metadata
-
-
-def _get_or_create_identifiers(node):
-    """
-    Note: ARKs include a leading slash. This is stripped here to avoid multiple
-    consecutive slashes in internal URLs (e.g. /ids/ark/<ark>/). Frontend code
-    that build ARK URLs is responsible for adding the leading slash.
-    """
-    doi, metadata = _build_ezid_metadata(node)
-    client = EzidClient(settings.EZID_USERNAME, settings.EZID_PASSWORD)
-    try:
-        resp = client.create_identifier(doi, metadata)
-        return dict(
-            [each.strip('/') for each in pair.strip().split(':')]
-            for pair in resp['success'].split('|')
-        )
-    except HTTPError as error:
-        if 'identifier already exists' not in error.message.lower():
-            raise
-        resp = client.get_identifier(doi)
-        doi = resp['success']
-        suffix = doi.strip(settings.DOI_NAMESPACE)
-        return {
-            'doi': doi.replace('doi:', ''),
-            'ark': '{0}{1}'.format(settings.ARK_NAMESPACE.replace('ark:', ''), suffix),
-        }
-
 
 def osf_admin_change_status_identifier(node, status):
     if node.get_identifier_value('doi') and node.get_identifier_value('ark'):
-        doi, metadata = _build_ezid_metadata(node)
+        doi, metadata = build_ezid_metadata(node)
         client = EzidClient(settings.EZID_USERNAME, settings.EZID_PASSWORD)
         client.change_status_identifier(status, doi, metadata)
-
-
-@must_be_valid_project
-@must_be_contributor_or_public
-def node_identifiers_get(node, **kwargs):
-    """Retrieve identifiers for a node. Node must be a public registration.
-    """
-    if not node.is_public:
-        raise HTTPError(http.BAD_REQUEST)
-    return {
-        'doi': node.get_identifier_value('doi'),
-        'ark': node.get_identifier_value('ark'),
-    }
 
 
 @must_be_valid_project
@@ -282,7 +225,7 @@ def node_identifiers_post(auth, node, **kwargs):
     if node.get_identifier('doi') or node.get_identifier('ark'):
         raise HTTPError(http.BAD_REQUEST)
     try:
-        identifiers = _get_or_create_identifiers(node)
+        identifiers = get_or_create_identifiers(node)
     except HTTPError:
         raise HTTPError(http.BAD_REQUEST)
     for category, value in identifiers.iteritems():
@@ -304,11 +247,8 @@ def get_referent_by_identifier(category, value):
     if found.
     """
     try:
-        identifier = Identifier.find_one(
-            Q('category', 'eq', category) &
-            Q('value', 'eq', value)
-        )
-    except NoResultsFound:
+        identifier = Identifier.objects.get(category=category, value=value)
+    except Identifier.DoesNotExist:
         raise HTTPError(http.NOT_FOUND)
     if identifier.referent.url:
         return redirect(identifier.referent.url)

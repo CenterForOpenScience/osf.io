@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 import functools
+import time
 
 import datetime
 import mock
@@ -13,31 +14,29 @@ from factory.django import DjangoModelFactory
 from django.utils import timezone
 from django.db.utils import IntegrityError
 from faker import Factory
-from modularodm.exceptions import NoResultsFound
 
+from reviews import workflow
+from website import settings
 from website.notifications.constants import NOTIFICATION_TYPES
 from website.util import permissions
-from website.project.licenses import ensure_licenses
-from website.project.model import ensure_schemas
 from website.archiver import ARCHIVER_SUCCESS
+from website.identifiers.utils import parse_identifiers
+from website.settings import FAKE_EMAIL_NAME, FAKE_EMAIL_DOMAIN
 from framework.auth.core import Auth
 
 from osf import models
 from osf.models.sanctions import Sanction
 from osf.utils.names import impute_names_model
-from osf.modm_compat import Q
 from addons.osfstorage.models import OsfStorageFile
 
 fake = Factory.create()
-ensure_licenses = functools.partial(ensure_licenses, warn=False)
+
+# If tests are run on really old processors without high precision this might fail. Unlikely to occur.
+fake_email = lambda: '{}+{}@{}'.format(FAKE_EMAIL_NAME, int(time.clock() * 1000000), FAKE_EMAIL_DOMAIN)
 
 def get_default_metaschema():
     """This needs to be a method so it gets called after the test database is set up"""
-    try:
-        return models.MetaSchema.find()[0]
-    except IndexError:
-        ensure_schemas()
-        return models.MetaSchema.find()[0]
+    return models.MetaSchema.objects.first()
 
 def FakeList(provider, n, *args, **kwargs):
     func = getattr(fake, provider)
@@ -47,7 +46,7 @@ class UserFactory(DjangoModelFactory):
     # TODO: Change this to only generate long names and see what breaks
     fullname = factory.Sequence(lambda n: 'Freddie Mercury{0}'.format(n))
 
-    username = factory.Faker('email')
+    username = factory.LazyFunction(fake_email)
     password = factory.PostGenerationMethodCall('set_password',
                                                 'queenfan86')
     is_registered = True
@@ -59,6 +58,30 @@ class UserFactory(DjangoModelFactory):
     class Meta:
         model = models.OSFUser
 
+    @classmethod
+    def _build(cls, target_class, *args, **kwargs):
+        emails = kwargs.pop('emails', [])
+        instance = super(DjangoModelFactory, cls)._build(target_class, *args, **kwargs)
+        if emails:
+            # Save for M2M population
+            instance.set_unusable_password()
+            instance.save()
+        for email in emails:
+            instance.emails.create(address=email)
+        return instance
+
+    @classmethod
+    def _create(cls, target_class, *args, **kwargs):
+        emails = kwargs.pop('emails', [])
+        instance = super(DjangoModelFactory, cls)._create(target_class, *args, **kwargs)
+        if emails and not instance.pk:
+            # Save for M2M population
+            instance.set_unusable_password()
+            instance.save()
+        for email in emails:
+            instance.emails.create(address=email)
+        return instance
+
     @factory.post_generation
     def set_names(self, create, extracted):
         parsed = impute_names_model(self.fullname)
@@ -69,8 +92,15 @@ class UserFactory(DjangoModelFactory):
 
     @factory.post_generation
     def set_emails(self, create, extracted):
-        if self.username not in self.emails:
-            self.emails.append(str(self.username))
+        if not self.emails.filter(address=self.username).exists():
+            if not self.id:
+                if create:
+                    # Perform implicit save to populate M2M
+                    self.save()
+                else:
+                    # This might lead to strange behavior
+                    return
+            self.emails.create(address=str(self.username).lower())
 
 class AuthUserFactory(UserFactory):
     """A user that automatically has an api key, for quick authentication.
@@ -90,7 +120,7 @@ class AuthFactory(factory.base.Factory):
     user = factory.SubFactory(UserFactory)
 
 class UnregUserFactory(DjangoModelFactory):
-    email = factory.Faker('email')
+    email = factory.LazyFunction(fake_email)
     fullname = factory.Sequence(lambda n: 'Freddie Mercury{0}'.format(n))
     date_registered = factory.Faker('date_time', tzinfo=pytz.utc)
 
@@ -120,7 +150,7 @@ class UnconfirmedUserFactory(DjangoModelFactory):
     """
     class Meta:
         model = models.OSFUser
-    username = factory.Faker('email')
+    username = factory.LazyFunction(fake_email)
     fullname = factory.Sequence(lambda n: 'Freddie Mercury{0}'.format(n))
     password = 'lolomglgt'
 
@@ -147,7 +177,7 @@ class UnconfirmedUserFactory(DjangoModelFactory):
 class BaseNodeFactory(DjangoModelFactory):
     title = factory.Faker('catch_phrase')
     description = factory.Faker('sentence')
-    date_created = factory.LazyFunction(timezone.now)
+    created = factory.LazyFunction(timezone.now)
     creator = factory.SubFactory(AuthUserFactory)
 
     class Meta:
@@ -204,6 +234,7 @@ class InstitutionFactory(DjangoModelFactory):
     class Meta:
         model = models.Institution
 
+
 class NodeLicenseRecordFactory(DjangoModelFactory):
     year = factory.Faker('year')
     copyright_holders = FakeList('name', n=3)
@@ -213,17 +244,9 @@ class NodeLicenseRecordFactory(DjangoModelFactory):
 
     @classmethod
     def _create(cls, *args, **kwargs):
-        try:
-            models.NodeLicense.find_one(
-                Q('name', 'eq', 'No license')
-            )
-        except NoResultsFound:
-            ensure_licenses()
         kwargs['node_license'] = kwargs.get(
             'node_license',
-            models.NodeLicense.find_one(
-                Q('name', 'eq', 'No license')
-            )
+            models.NodeLicense.objects.get(name='No license')
         )
         return super(NodeLicenseRecordFactory, cls)._create(*args, **kwargs)
 
@@ -232,6 +255,7 @@ class NodeLogFactory(DjangoModelFactory):
     class Meta:
         model = models.NodeLog
     action = 'file_added'
+    params = {'path': '/'}
     user = SubFactory(UserFactory)
 
 class PrivateLinkFactory(DjangoModelFactory):
@@ -314,15 +338,11 @@ class RegistrationFactory(BaseNodeFactory):
             add_approval_step(reg)
         if not archive:
             with patch.object(reg.archive_job, 'archive_tree_finished', Mock(return_value=True)):
-                reg.archive_job.status = ARCHIVER_SUCCESS
-                reg.archive_job.save()
+                archive_job = reg.archive_job
+                archive_job.status = ARCHIVER_SUCCESS
+                archive_job.done = True
                 reg.sanction.state = Sanction.APPROVED
                 reg.sanction.save()
-        # models.ArchiveJob(
-        #     src_node=project,
-        #     dst_node=reg,
-        #     initiator=user,
-        # )
         if is_public:
             reg.is_public = True
         reg.save()
@@ -418,10 +438,7 @@ class DraftRegistrationFactory(DjangoModelFactory):
                 project_params['creator'] = initiator
             branched_from = ProjectFactory(**project_params)
         initiator = branched_from.creator
-        try:
-            registration_schema = registration_schema or models.MetaSchema.find()[0]
-        except IndexError:
-            ensure_schemas()
+        registration_schema = registration_schema or models.MetaSchema.objects.first()
         registration_metadata = registration_metadata or {}
         draft = models.DraftRegistration.create_from_node(
             branched_from,
@@ -484,13 +501,17 @@ class SubjectFactory(DjangoModelFactory):
         model = models.Subject
 
     @classmethod
-    def _create(cls, target_class, parents=None, *args, **kwargs):
+    def _create(cls, target_class, parent=None, provider=None, bepress_subject=None, *args, **kwargs):
+        provider = provider or models.PreprintProvider.objects.first() or PreprintProviderFactory(_id='osf')
+        if provider._id != 'osf' and not bepress_subject:
+            osf = models.PreprintProvider.load('osf') or PreprintProviderFactory(_id='osf')
+            bepress_subject = SubjectFactory(provider=osf)
         try:
-            ret = super(SubjectFactory, cls)._create(target_class, *args, **kwargs)
+            ret = super(SubjectFactory, cls)._create(target_class, parent=parent, provider=provider, bepress_subject=bepress_subject, *args, **kwargs)
         except IntegrityError:
             ret = models.Subject.objects.get(text=kwargs['text'])
-        if parents:
-            ret.parents.add(*parents)
+            if parent:
+                ret.parent = parent
         return ret
 
 
@@ -498,73 +519,119 @@ class PreprintProviderFactory(DjangoModelFactory):
     name = factory.Faker('company')
     description = factory.Faker('bs')
     external_url = factory.Faker('url')
-    logo_name = factory.Faker('file_name', category='image')
-    banner_name = factory.Faker('file_name', category='image')
 
     class Meta:
         model = models.PreprintProvider
 
+    @classmethod
+    def _build(cls, target_class, *args, **kwargs):
+        instance = super(PreprintProviderFactory, cls)._build(target_class, *args, **kwargs)
+        if not instance.share_title:
+            instance.share_title = instance._id
+        return instance
+
+    @classmethod
+    def _create(cls, target_class, *args, **kwargs):
+        instance = super(PreprintProviderFactory, cls)._create(target_class, *args, **kwargs)
+        if not instance.share_title:
+            instance.share_title = instance._id
+            instance.save()
+        return instance
+
+
+def sync_set_identifiers(preprint):
+    ezid_return_value ={
+        'response': {
+            'success': '{doi}osf.io/{guid} | {ark}osf.io/{guid}'.format(
+                doi=settings.DOI_NAMESPACE, ark=settings.ARK_NAMESPACE, guid=preprint._id
+            )
+        },
+        'already_exists': False
+    }
+    id_dict = parse_identifiers(ezid_return_value)
+    preprint.set_identifier_values(doi=id_dict['doi'], ark=id_dict['ark'])
+
 
 class PreprintFactory(DjangoModelFactory):
-    doi = factory.Sequence(lambda n: '10.123/{}'.format(n))
-    provider = factory.SubFactory(PreprintProviderFactory)
-    external_url = 'http://hello.org'
-
     class Meta:
         model = models.PreprintService
 
+    doi = factory.Sequence(lambda n: '10.123/{}'.format(n))
+    provider = factory.SubFactory(PreprintProviderFactory)
+
     @classmethod
-    def _build(cls, target_class, project=None, filename='preprint_file.txt', provider=None,
-                doi=None, external_url=None, is_published=True, subjects=None, finish=True, *args, **kwargs):
-        user = None
-        if project:
-            user = project.creator
-        user = kwargs.get('user') or kwargs.get('creator') or user or UserFactory()
-        kwargs['creator'] = user
-        # Original project to be converted to a preprint
-        project = project or ProjectFactory(*args, **kwargs)
-        project.save()
-        if not project.is_contributor(user):
-            project.add_contributor(
+    def _build(cls, target_class, *args, **kwargs):
+        creator = kwargs.pop('creator', None) or UserFactory()
+        project = kwargs.pop('project', None) or ProjectFactory(creator=creator)
+        provider = kwargs.pop('provider', None) or PreprintProviderFactory()
+        instance = target_class(node=project, provider=provider)
+
+        return instance
+
+    @classmethod
+    def _create(cls, target_class, *args, **kwargs):
+        update_task_patcher = mock.patch('website.preprints.tasks.on_preprint_updated.si')
+        update_task_patcher.start()
+
+        finish = kwargs.pop('finish', True)
+        is_published = kwargs.pop('is_published', True)
+        instance = cls._build(target_class, *args, **kwargs)
+
+        doi = kwargs.pop('doi', None)
+        license_details = kwargs.pop('license_details', None)
+        filename = kwargs.pop('filename', None) or 'preprint_file.txt'
+        subjects = kwargs.pop('subjects', None) or [[SubjectFactory()._id]]
+        instance.node.preprint_article_doi = doi
+
+        instance.reviews_state = kwargs.pop('reviews_state', 'initial')
+
+        user = kwargs.pop('creator', None) or instance.node.creator
+        if not instance.node.is_contributor(user):
+            instance.node.add_contributor(
                 contributor=user,
                 permissions=permissions.CREATOR_PERMISSIONS,
                 log=False,
                 save=True
             )
 
-        file = OsfStorageFile.create(
-            node=project,
+        preprint_file = OsfStorageFile.create(
+            node=instance.node,
             path='/{}'.format(filename),
             name=filename,
             materialized_path='/{}'.format(filename))
-        file.save()
+        preprint_file.save()
 
-        preprint = target_class(node=project, provider=provider)
+        from addons.osfstorage import settings as osfstorage_settings
 
-        auth = Auth(project.creator)
+        preprint_file.create_version(user, {
+            'object': '06d80e',
+            'service': 'cloud',
+            osfstorage_settings.WATERBUTLER_RESOURCE: 'osf',
+        }, {
+            'size': 1337,
+            'contentType': 'img/png'
+        }).save()
 
         if finish:
-            preprint.set_primary_file(file, auth=auth)
-            subjects = subjects or [[SubjectFactory()._id]]
-            preprint.set_subjects(subjects, auth=auth)
-            preprint.set_published(is_published, auth=auth)
+            auth = Auth(user)
 
-        if not preprint.is_published:
-            project._has_abandoned_preprint = True
+            instance.set_primary_file(preprint_file, auth=auth, save=True)
+            instance.set_subjects(subjects, auth=auth)
+            if license_details:
+                instance.set_preprint_license(license_details, auth=auth)
 
-        project.preprint_article_doi = doi
-        project.save()
-        return preprint
+            create_task_patcher = mock.patch('website.preprints.tasks.get_and_set_preprint_identifiers.si')
+            mock_create_identifier = create_task_patcher.start()
+            if is_published:
+                mock_create_identifier.side_effect = sync_set_identifiers(instance)
 
-    @classmethod
-    def _create(cls, target_class, project=None, filename='preprint_file.txt', provider=None,
-                doi=None, external_url=None, is_published=True, subjects=None, finish=True, *args, **kwargs):
-        instance = cls._build(
-            target_class=target_class,
-            project=project, filename=filename, provider=provider,
-            doi=doi, external_url=external_url, is_published=is_published, subjects=subjects,
-            finish=finish, *args, **kwargs
-        )
+            instance.set_published(is_published, auth=auth)
+            create_task_patcher.stop()
+
+        if not instance.is_published:
+            instance.node._has_abandoned_preprint = True
+
+        instance.node.save()
         instance.save()
         return instance
 
@@ -597,22 +664,6 @@ class ApiOAuth2ApplicationFactory(DjangoModelFactory):
 
     home_url = 'ftp://ftp.ncbi.nlm.nimh.gov/'
     callback_url = 'http://example.uk'
-
-
-class AlternativeCitationFactory(DjangoModelFactory):
-    class Meta:
-        model = models.AlternativeCitation
-
-    @classmethod
-    def _create(cls, target_class, *args, **kwargs):
-        name = kwargs.get('name')
-        text = kwargs.get('text')
-        instance = target_class(
-            name=name,
-            text=text
-        )
-        instance.save()
-        return instance
 
 
 class ForkFactory(DjangoModelFactory):
@@ -750,3 +801,18 @@ class SessionFactory(DjangoModelFactory):
 class ArchiveJobFactory(DjangoModelFactory):
     class Meta:
         model = models.ArchiveJob
+
+
+class ActionFactory(DjangoModelFactory):
+    class Meta:
+        model = models.Action
+
+    trigger = FuzzyChoice(choices=workflow.Triggers.values())
+    comment = factory.Faker('text')
+    from_state = FuzzyChoice(choices=workflow.States.values())
+    to_state = FuzzyChoice(choices=workflow.States.values())
+
+    target = factory.SubFactory(PreprintFactory)
+    creator = factory.SubFactory(AuthUserFactory)
+
+    is_deleted = False

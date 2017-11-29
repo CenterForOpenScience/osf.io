@@ -5,15 +5,11 @@ import httplib as http  # TODO: Inconsistent usage of aliased import
 from dateutil.parser import parse as parse_date
 
 from django.utils import timezone
+from django.core.exceptions import ValidationError
 from flask import request
-import markupsafe
 import mailchimp
-from modularodm.exceptions import ValidationError, NoResultsFound, MultipleResultsFound
-from modularodm import Q
-from osf.models import Node, NodeRelation
 
 from framework import sentry
-from framework.auth import Auth
 from framework.auth import utils as auth_utils
 from framework.auth.decorators import collect_auth
 from framework.auth.decorators import must_be_logged_in
@@ -25,81 +21,18 @@ from framework.exceptions import HTTPError, PermissionsError
 from framework.flask import redirect  # VOL-aware redirect
 from framework.status import push_status_message
 
+from osf.models import ApiOAuth2Application, ApiOAuth2PersonalToken, OSFUser
 from website import mails
 from website import mailchimp_utils
 from website import settings
-from website.project.utils import PROJECT_QUERY
-from website.models import ApiOAuth2Application, ApiOAuth2PersonalToken, User
 from website.oauth.utils import get_available_scopes
 from website.profile import utils as profile_utils
 from website.util.time import throttle_period_expired
 from website.util import api_v2_url, web_url_for, paths
 from website.util.sanitize import escape_html
-from website.util.sanitize import strip_html
-from website.views import serialize_node_summary
 from addons.base import utils as addon_utils
 
 logger = logging.getLogger(__name__)
-
-
-def get_public_projects(uid=None, user=None):
-    user = user or User.load(uid)
-    # In future redesign, should be limited for users with many projects / components
-    node_ids = (
-        Node.find_for_user(user, PROJECT_QUERY)
-        .filter(is_public=True)
-        .get_roots()
-        .values_list('id', flat=True)
-    )
-    nodes = (
-        Node.objects.filter(id__in=set(node_ids))
-        # Defer some fields that we don't use for rendering node lists
-        .defer('child_node_subscriptions', 'date_created', 'deleted_date', 'description', 'file_guid_to_share_uuids')
-        .include('guids', 'contributor__user__guids', '_parents__parent__guids')
-        .order_by('-date_modified')
-
-    )
-    return [
-        serialize_node_summary(node=node, auth=Auth(user), show_path=False)
-        for node in nodes
-    ]
-
-
-def get_public_components(uid=None, user=None):
-    user = user or User.load(uid)
-
-    rel_child_ids = (
-        NodeRelation.objects.filter(
-            child__is_public=True,
-            child__type='osf.node',  # nodes only (not collections or registration)
-            child___contributors=user,  # user is a contributor
-            is_node_link=False  # exclude childs by node linkage
-        )
-        .exclude(parent__type='osf.collection')
-        .exclude(child__is_deleted=True)
-        .values_list('child_id', flat=True)
-    )
-
-    nodes = (Node.objects.filter(id__in=rel_child_ids)
-    .include('contributor__user__guids', 'guids', '_parents__parent__guids')
-    # Defer some fields that we don't use for rendering node lists
-    .defer('child_node_subscriptions', 'date_created', 'deleted_date', 'description',
-           'file_guid_to_share_uuids')
-        .order_by('-date_modified'))
-
-    return [
-        serialize_node_summary(node=node, auth=Auth(user), show_path=True)
-        for node in nodes
-    ]
-
-@must_be_logged_in
-def current_user_gravatar(size=None, **kwargs):
-    user_id = kwargs['auth'].user._id
-    return get_gravatar(user_id, size=size)
-
-
-def get_gravatar(uid, size=None):
-    return {'gravatar_url': profile_utils.get_gravatar(User.load(uid), size=size)}
 
 
 def date_or_none(date):
@@ -175,7 +108,7 @@ def update_user(auth):
 
         available_emails = [
             each.strip().lower() for each in
-            user.emails + user.unconfirmed_emails
+            list(user.emails.values_list('address', flat=True)) + user.unconfirmed_emails
         ]
         # removals
         removed_emails = [
@@ -188,7 +121,7 @@ def update_user(auth):
             raise HTTPError(httplib.FORBIDDEN)
 
         for address in removed_emails:
-            if address in user.emails:
+            if user.emails.filter(address=address):
                 try:
                     user.remove_email(address)
                 except PermissionsError as e:
@@ -231,12 +164,12 @@ def update_user(auth):
 
         if primary_email:
             primary_email_address = primary_email['address'].strip().lower()
-            if primary_email_address not in [each.strip().lower() for each in user.emails]:
+            if primary_email_address not in [each.strip().lower() for each in user.emails.values_list('address', flat=True)]:
                 raise HTTPError(httplib.FORBIDDEN)
             username = primary_email_address
 
         # make sure the new username has already been confirmed
-        if username and username in user.emails and username != user.username:
+        if username and username != user.username and user.emails.filter(address=username).exists():
             mails.send_mail(user.username,
                             mails.PRIMARY_EMAIL_CHANGED,
                             user=user,
@@ -273,20 +206,14 @@ def update_user(auth):
     return _profile_view(user, is_profile=True)
 
 
-def _profile_view(profile, is_profile=False, embed_nodes=False):
+def _profile_view(profile, is_profile=False, include_node_counts=False):
     if profile and profile.is_disabled:
         raise HTTPError(http.GONE)
-    # NOTE: While badges, are unused, 'assertions' and 'badges' can be
-    # empty lists.
-    badge_assertions = []
-    badges = []
 
     if profile:
-        profile_user_data = profile_utils.serialize_user(profile, full=True, is_profile=is_profile, include_node_counts=embed_nodes)
+        profile_user_data = profile_utils.serialize_user(profile, full=True, is_profile=is_profile, include_node_counts=include_node_counts)
         ret = {
             'profile': profile_user_data,
-            'assertions': badge_assertions,
-            'badges': badges,
             'user': {
                 '_id': profile._id,
                 'is_profile': is_profile,
@@ -294,62 +221,34 @@ def _profile_view(profile, is_profile=False, embed_nodes=False):
                 'permissions': [],  # necessary for rendering nodes
             },
         }
-        if embed_nodes:
-            ret.update({
-                'public_projects': get_public_projects(user=profile),
-                'public_components': get_public_components(user=profile),
-            })
         return ret
     raise HTTPError(http.NOT_FOUND)
 
 @must_be_logged_in
 def profile_view_json(auth):
-    # Do NOT embed nodes, they aren't necessary
-    return _profile_view(auth.user, True, embed_nodes=False)
+    return _profile_view(auth.user, True)
 
 
 @collect_auth
 @must_be_confirmed
 def profile_view_id_json(uid, auth):
-    user = User.load(uid)
+    user = OSFUser.load(uid)
     is_profile = auth and auth.user == user
     # Do NOT embed nodes, they aren't necessary
-    return _profile_view(user, is_profile, embed_nodes=False)
+    return _profile_view(user, is_profile)
 
 @must_be_logged_in
 def profile_view(auth):
     # Embed node data, so profile node lists can be rendered
-    return _profile_view(auth.user, True, embed_nodes=True)
+    return _profile_view(auth.user, True, include_node_counts=True)
 
 @collect_auth
 @must_be_confirmed
 def profile_view_id(uid, auth):
-    user = User.load(uid)
+    user = OSFUser.load(uid)
     is_profile = auth and auth.user == user
     # Embed node data, so profile node lists can be rendered
-    return _profile_view(user, is_profile, embed_nodes=True)
-
-
-@must_be_logged_in
-def edit_profile(**kwargs):
-    # NOTE: This method is deprecated. Use update_user instead.
-    # TODO: Remove this view
-    user = kwargs['auth'].user
-
-    form = request.form
-
-    ret = {'response': 'success'}
-    if form.get('name') == 'fullname' and form.get('value', '').strip():
-        user.fullname = strip_html(form['value']).strip()
-        user.save()
-        ret['name'] = user.fullname
-    return ret
-
-
-def get_profile_summary(user_id, formatter='long'):
-
-    user = User.load(user_id)
-    return user.get_summary(formatter)
+    return _profile_view(user, is_profile, include_node_counts=True)
 
 
 @must_be_logged_in
@@ -441,9 +340,8 @@ def oauth_application_detail(auth, **kwargs):
 
     # The client ID must be an active and existing record, and the logged-in user must have permission to view it.
     try:
-        #
-        record = ApiOAuth2Application.find_one(Q('client_id', 'eq', client_id))
-    except NoResultsFound:
+        record = ApiOAuth2Application.objects.get(client_id=client_id)
+    except ApiOAuth2Application.DoesNotExist:
         raise HTTPError(http.NOT_FOUND)
     except ValueError:  # Invalid client ID -- ApiOAuth2Application will not exist
         raise HTTPError(http.NOT_FOUND)
@@ -479,8 +377,8 @@ def personal_access_token_detail(auth, **kwargs):
 
     # The ID must be an active and existing record, and the logged-in user must have permission to view it.
     try:
-        record = ApiOAuth2PersonalToken.find_one(Q('_id', 'eq', _id))
-    except NoResultsFound:
+        record = ApiOAuth2PersonalToken.objects.get(_id=_id)
+    except ApiOAuth2PersonalToken.DoesNotExist:
         raise HTTPError(http.NOT_FOUND)
     if record.owner != auth.user:
         raise HTTPError(http.FORBIDDEN)
@@ -599,8 +497,8 @@ def sync_data_from_mailchimp(**kwargs):
         username = r.values['data[email]']
 
         try:
-            user = User.find_one(Q('username', 'eq', username))
-        except NoResultsFound:
+            user = OSFUser.objects.get(username=username)
+        except OSFUser.DoesNotExist:
             sentry.log_exception()
             sentry.log_message('A user with this username does not exist.')
             raise HTTPError(404, data=dict(message_short='User not found',
@@ -643,7 +541,7 @@ def serialize_names(**kwargs):
 
 
 def get_target_user(auth, uid=None):
-    target = User.load(uid) if uid else auth.user
+    target = OSFUser.load(uid) if uid else auth.user
     if target is None:
         raise HTTPError(http.NOT_FOUND)
     return target
@@ -866,33 +764,3 @@ def request_deactivation(auth):
     user.requested_deactivation = True
     user.save()
     return {'message': 'Sent account deactivation request'}
-
-
-def redirect_to_twitter(twitter_handle):
-    """Redirect GET requests for /@TwitterHandle/ to respective the OSF user
-    account if it associated with an active account
-
-    :param uid: uid for requested User
-    :return: Redirect to User's Twitter account page
-    """
-    try:
-        user = User.find_one(Q('social.twitter', 'iexact', twitter_handle))
-    except NoResultsFound:
-        raise HTTPError(http.NOT_FOUND, data={
-            'message_short': 'User Not Found',
-            'message_long': 'There is no active user associated with the Twitter handle: {0}.'.format(twitter_handle)
-        })
-    except MultipleResultsFound:
-        users = User.find(Q('social.twitter', 'iexact', twitter_handle))
-        message_long = 'There are multiple OSF accounts associated with the ' \
-                       'Twitter handle: <strong>{0}</strong>. <br /> Please ' \
-                       'select from the accounts below. <br /><ul>'.format(markupsafe.escape(twitter_handle))
-        for user in users:
-            message_long += '<li><a href="{0}">{1}</a></li>'.format(user.url, markupsafe.escape(user.fullname))
-        message_long += '</ul>'
-        raise HTTPError(http.MULTIPLE_CHOICES, data={
-            'message_short': 'Multiple Users Found',
-            'message_long': message_long
-        })
-
-    return redirect(user.url)

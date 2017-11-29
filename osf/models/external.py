@@ -5,18 +5,17 @@ import httplib as http
 import logging
 
 from django.contrib.postgres.fields import ArrayField
-from django.core.exceptions import ValidationError
 from django.db import models
 from django.utils import timezone
 from flask import request
-from oauthlib.oauth2 import MissingTokenError
+from oauthlib.oauth2 import (AccessDeniedError, InvalidGrantError,
+    TokenExpiredError, MissingTokenError)
 from requests.exceptions import HTTPError as RequestsHTTPError
 from requests_oauthlib import OAuth1Session, OAuth2Session
 
 from framework.exceptions import HTTPError, PermissionsError
 from framework.sessions import session
 from osf.models import base
-from osf.modm_compat import Q
 from osf.utils.fields import EncryptedTextField, NonNaiveDateTimeField
 from website.oauth.utils import PROVIDER_LOOKUP
 from website.security import random_string
@@ -183,6 +182,7 @@ class ExternalProvider(object):
 
             url = oauth.authorization_url(self.auth_url_base)
 
+        session.save()
         return url
 
     @abc.abstractproperty
@@ -273,21 +273,11 @@ class ExternalProvider(object):
         return self._set_external_account(user, info)
 
     def _set_external_account(self, user, info):
-        try:
-            # create a new ``ExternalAccount`` ...
-            self.account = ExternalAccount(
-                provider=self.short_name,
-                provider_id=info['provider_id'],
-                provider_name=self.name,
-            )
-            self.account.save()
-        except ValidationError:
-            # ... or get the old one
-            self.account = ExternalAccount.find_one(
-                Q('provider', 'eq', self.short_name) &
-                Q('provider_id', 'eq', info['provider_id'])
-            )
-            assert self.account is not None
+
+        self.account, created = ExternalAccount.objects.get_or_create(
+            provider=self.short_name,
+            provider_id=info['provider_id'],
+        )
 
         # ensure that provider_name is correct
         self.account.provider_name = self.name
@@ -312,6 +302,10 @@ class ExternalProvider(object):
         if not user.external_accounts.filter(id=self.account.id).exists():
             user.external_accounts.add(self.account)
             user.save()
+
+        if self.short_name in session.data.get('oauth_states', {}):
+            del session.data['oauth_states'][self.short_name]
+            session.save()
 
         return True
 
@@ -421,10 +415,17 @@ class ExternalProvider(object):
             'client_secret': self.client_secret
         })
 
-        token = client.refresh_token(
-            self.auto_refresh_url,
-            **extra
-        )
+        try:
+            token = client.refresh_token(
+                self.auto_refresh_url,
+                **extra
+            )
+        except (AccessDeniedError, InvalidGrantError, TokenExpiredError):
+            if not force:
+                return False
+            else:
+                raise
+
         self.account.oauth_key = token[resp_auth_token_key]
         self.account.refresh_token = token[resp_refresh_token_key]
         self.account.expires_at = resp_expiry_fn(token)
@@ -452,3 +453,41 @@ class ExternalProvider(object):
         if self.expiry_time and self.account.expires_at:
             return (timezone.now() - self.account.expires_at).total_seconds() > self.expiry_time
         return False
+
+class BasicAuthProviderMixin(object):
+    """
+        Providers utilizing BasicAuth can utilize this class to implement the
+        storage providers framework by subclassing this mixin. This provides
+        a translation between the oauth parameters and the BasicAuth parameters.
+
+        The password here is kept decrypted by default.
+    """
+
+    def __init__(self, account=None, host=None, username=None, password=None):
+        super(BasicAuthProviderMixin, self).__init__()
+        if account:
+            self.account = account
+        elif not account and host and password and username:
+            self.account = ExternalAccount(
+                display_name=username,
+                oauth_key=password,
+                oauth_secret=host,
+                provider_id='{}:{}'.format(host, username),
+                profile_url=host,
+                provider=self.short_name,
+                provider_name=self.name
+            )
+        else:
+            self.account = None
+
+    @property
+    def host(self):
+        return self.account.profile_url
+
+    @property
+    def username(self):
+        return self.account.display_name
+
+    @property
+    def password(self):
+        return self.account.oauth_key

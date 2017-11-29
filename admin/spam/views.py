@@ -6,7 +6,7 @@ from django.http import Http404
 
 from osf.models.comment import Comment
 from osf.models.user import OSFUser
-from website.project.spam.model import SpamStatus
+from osf.models import SpamStatus
 
 from osf.models.admin_log_entry import (
     update_admin_log,

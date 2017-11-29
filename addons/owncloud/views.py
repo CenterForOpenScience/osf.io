@@ -9,7 +9,7 @@ from flask import request
 from framework.auth.decorators import must_be_logged_in
 
 from addons.base import generic_views
-from website.oauth.models import ExternalAccount
+from osf.models import ExternalAccount
 from website.project.decorators import (
     must_have_addon)
 
@@ -78,6 +78,9 @@ def owncloud_add_user_account(auth, **kwargs):
             provider=provider.short_name,
             provider_id='{}:{}'.format(host.url, username).lower()
         )
+        if provider.account.oauth_key != password:
+            provider.account.oauth_key = password
+            provider.account.save()
 
     user = auth.user
     if not user.external_accounts.filter(id=provider.account.id).exists():

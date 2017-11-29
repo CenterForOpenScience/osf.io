@@ -4,15 +4,14 @@
 import mock
 
 from tests.base import OsfTestCase
-from tests.factories import UserFactory
+from osf_tests.factories import UserFactory
 from nose.tools import assert_false
 
 import functools
 
 from framework import sentry
-from framework.sessions import Session, set_session
-
-from website import settings
+from framework.sessions import set_session
+from osf.models import Session
 
 
 def set_sentry(status):
@@ -28,8 +27,6 @@ def set_sentry(status):
 
 with_sentry = set_sentry(True)
 without_sentry = set_sentry(False)
-
-
 
 @with_sentry
 @mock.patch('framework.sentry.sentry.captureException')

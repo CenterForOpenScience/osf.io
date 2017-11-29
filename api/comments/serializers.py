@@ -1,13 +1,10 @@
 import bleach
 
 from rest_framework import serializers as ser
-from modularodm import Q
 from osf.exceptions import ValidationError as ModelValidationError
 from framework.auth.core import Auth
 from framework.exceptions import PermissionsError
-from framework.guid.model import Guid
-from website.files.models import StoredFileNode
-from website.project.model import Comment
+from osf.models import Guid, Comment, BaseFileNode, SpamStatus
 from rest_framework.exceptions import ValidationError, PermissionDenied
 from api.base.exceptions import InvalidModelValueError, Conflict
 from api.base.utils import absolute_reverse
@@ -16,8 +13,8 @@ from api.base.serializers import (JSONAPISerializer,
                                   TargetField,
                                   RelationshipField,
                                   IDField, TypeField, LinksField,
-                                  AuthorizedCharField, DateByVersion,)
-from website.project.spam.model import SpamStatus
+                                  AnonymizedRegexField,
+                                  DateByVersion)
 
 
 class CommentReport(object):
@@ -39,16 +36,16 @@ class CommentSerializer(JSONAPISerializer):
 
     id = IDField(source='_id', read_only=True)
     type = TypeField()
-    content = AuthorizedCharField(source='get_content', required=True)
+    content = AnonymizedRegexField(source='get_content', regex='\[@[^\]]*\]\([^\) ]*\)', replace='@A User', required=True)
     page = ser.CharField(read_only=True)
 
     target = TargetField(link_type='related', meta={'type': 'get_target_type'})
     user = RelationshipField(related_view='users:user-detail', related_view_kwargs={'user_id': '<user._id>'})
     reports = RelationshipField(related_view='comments:comment-reports', related_view_kwargs={'comment_id': '<_id>'})
 
-    date_created = DateByVersion(read_only=True)
-    date_modified = DateByVersion(read_only=True)
-    modified = ser.BooleanField(read_only=True, default=False)
+    date_created = DateByVersion(source='created', read_only=True)
+    date_modified = DateByVersion(source='modified', read_only=True)
+    modified = ser.BooleanField(source='edited', read_only=True, default=False)
     deleted = ser.BooleanField(read_only=True, source='is_deleted', default=False)
     is_abuse = ser.SerializerMethodField(help_text='If the comment has been reported or confirmed.')
     is_ham = ser.SerializerMethodField(help_text='Comment has been confirmed as ham.')
@@ -69,7 +66,7 @@ class CommentSerializer(JSONAPISerializer):
 
     def get_has_report(self, obj):
         user = self.context['request'].user
-        if user.is_anonymous():
+        if user.is_anonymous:
             return False
         return user._id in obj.reports and not obj.reports[user._id].get('retracted', True)
 
@@ -80,12 +77,12 @@ class CommentSerializer(JSONAPISerializer):
 
     def get_can_edit(self, obj):
         user = self.context['request'].user
-        if user.is_anonymous():
+        if user.is_anonymous:
             return False
         return obj.user._id == user._id and obj.node.can_comment(Auth(user))
 
     def get_has_children(self, obj):
-        return Comment.find(Q('target', 'eq', Guid.load(obj._id))).count() > 0
+        return Comment.objects.filter(target___id=obj._id).exists()
 
     def get_absolute_url(self, obj):
         return absolute_reverse('comments:comment-detail', kwargs={
@@ -162,7 +159,7 @@ class CommentCreateSerializer(CommentSerializer):
             raise ValueError('Invalid comment target.')
         elif not target.referent.belongs_to_node(node_id):
             raise ValueError('Cannot post to comment target on another node.')
-        elif isinstance(target.referent, StoredFileNode) and target.referent.provider not in osf_settings.ADDONS_COMMENTABLE:
+        elif isinstance(target.referent, BaseFileNode) and target.referent.provider not in osf_settings.ADDONS_COMMENTABLE:
                 raise ValueError('Comments are not supported for this file provider.')
         return target
 

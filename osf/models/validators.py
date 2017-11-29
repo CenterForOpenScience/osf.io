@@ -81,16 +81,61 @@ def validate_profile_websites(profile_websites):
             # Reraise with a better message
             raise ValidationError('Invalid personal URL.')
 
-
 def validate_social(value):
     validate_profile_websites(value.get('profileWebsites'))
-
+    from osf.models import OSFUser
+    for soc_key in value.keys():
+        if soc_key not in OSFUser.SOCIAL_FIELDS:
+            raise ValidationError('{} is not a valid key for social.'.format(soc_key))
 
 def validate_email(value):
     with reraise_django_validation_errors():
         django_validate_email(value)
     if value.split('@')[1].lower() in settings.BLACKLISTED_DOMAINS:
         raise ValidationError('Invalid Email')
+
+def validate_subject_highlighted_count(provider, is_highlighted_addition):
+    if is_highlighted_addition and provider.subjects.filter(highlighted=True).count() >= 10:
+        raise DjangoValidationError('Too many highlighted subjects for PreprintProvider {}'.format(provider._id))
+
+def validate_subject_hierarchy_length(parent):
+    from osf.models import Subject
+    parent = Subject.objects.get(id=parent)
+    if parent and len(parent.hierarchy) >= 3:
+        raise DjangoValidationError('Invalid hierarchy')
+
+def validate_subject_provider_mapping(provider, mapping):
+    if not mapping and provider._id != 'osf':
+        raise DjangoValidationError('Invalid PreprintProvider / Subject alias mapping.')
+
+def validate_subject_hierarchy(subject_hierarchy):
+    from osf.models import Subject
+    validated_hierarchy, raw_hierarchy = [], set(subject_hierarchy)
+    for subject_id in subject_hierarchy:
+        subject = Subject.load(subject_id)
+        if not subject:
+            raise ValidationValueError('Subject with id <{}> could not be found.'.format(subject_id))
+
+        if subject.parent:
+            continue
+
+        raw_hierarchy.remove(subject_id)
+        validated_hierarchy.append(subject._id)
+
+        while raw_hierarchy:
+            if not set(subject.children.values_list('_id', flat=True)) & raw_hierarchy:
+                raise ValidationValueError('Invalid subject hierarchy: {}'.format(subject_hierarchy))
+            else:
+                for child in subject.children.filter(_id__in=raw_hierarchy):
+                    subject = child
+                    validated_hierarchy.append(child._id)
+                    raw_hierarchy.remove(child._id)
+                    break
+        if set(validated_hierarchy) == set(subject_hierarchy):
+            return
+        else:
+            raise ValidationValueError('Invalid subject hierarchy: {}'.format(subject_hierarchy))
+    raise ValidationValueError('Unable to find root subject in {}'.format(subject_hierarchy))
 
 
 @deconstructible

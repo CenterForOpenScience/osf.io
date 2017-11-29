@@ -72,6 +72,32 @@
                 </div>
             </div>
             {% endif %}
+            <span class="col-md-2">
+                <a href="{% url 'nodes:reindex-share-node' guid=node.id %}"
+                   data-toggle="modal" data-target="#confirmReindexShareNode"
+                   class="btn btn-default">
+                    SHARE Reindex
+                </a>
+            </span>
+            <div class="modal" id="confirmReindexShareNode">
+                <div class="modal-dialog">
+                    <div class="modal-content"></div>
+                    {# Data from above link #}
+                </div>
+            </div>
+            <span class="col-md-2">
+                <a href="{% url 'nodes:reindex-elastic-node' guid=node.id %}"
+                   data-toggle="modal" data-target="#confirmReindexElasticNode"
+                   class="btn btn-default">
+                    Elastic Reindex
+                </a>
+            </span>
+            <div class="modal" id="confirmReindexElasticNode">
+                <div class="modal-dialog">
+                    <div class="modal-content"></div>
+                    {# Data from above link #}
+                </div>
+            </div>
         </div>
         <div class="row">
             {% if node.is_registration %}
@@ -232,7 +258,28 @@
                 <td>Registration</td>
                 <td>
                     {% if not node.is_registration %}
-                        {{ node.is_registration }}
+                        <table class="table table-bordered table-hover">
+                                <thead>
+                                <tr>
+                                    <td>Registration</td>
+                                    <td>Date Created</td>
+                                    <td>Pending</td>
+                                    <td>Withdrawn</td>
+                                    <td>Embargo</td>
+                                </tr>
+                                </thead>
+                                <tbody>
+                                {% for registration in node.registrations %}
+                                <tr>
+                                    <td><a href="{{ registration.id | reverse_node }}">{{ registration.id }}</a></td>
+                                    <td>{{ registration.date_created | date }}</td>
+                                    <td>{{ registration.pending_registration }}</td>
+                                    <td>{{ registration.withdrawn }}</td>
+                                    <td>{{ registration.embargo }}</td>
+                                </tr>
+                        {% endfor %}
+                                </tbody>
+                            </table>
                     {% else %}
                         <table class="table table-bordered table-hover">
                         <thead>
@@ -247,6 +294,10 @@
                                 <td>{{ node.date_created | date }}</td>
                             </tr>
                             <tr>
+                                <td>Datetime Registered</td>
+                                <td>{{ node.registered_date | date:"F j, Y P" }}</td>
+                            </tr>
+                            <tr>
                                 <td>Pending</td>
                                 <td>{{ node.pending_registration }}</td>
                             </tr>
@@ -257,6 +308,10 @@
                             <tr>
                                 <td>Embargo</td>
                                 <td>{{ node.embargo }}</td>
+                            </tr>
+                            <tr>
+                                <td>Registered From</td>
+                                <td><a href="{% url 'nodes:node' node.registered_from %}">{{ node.registered_from }}</a></td>
                             </tr>
                         </tbody>
                         </table>

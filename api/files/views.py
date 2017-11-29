@@ -6,9 +6,9 @@ from framework.auth.oauth_scopes import CoreScopes
 
 from osf.models import (
     Guid,
-    FileNode,
+    BaseFileNode,
     FileVersion,
-    StoredFileNode
+    QuickFilesNode
 )
 
 from api.base.exceptions import Gone
@@ -22,7 +22,7 @@ from api.nodes.permissions import ReadOnlyIfRegistration
 from api.files.permissions import IsPreprintFile
 from api.files.permissions import CheckedOutOrAdmin
 from api.files.serializers import FileSerializer
-from api.files.serializers import FileDetailSerializer
+from api.files.serializers import FileDetailSerializer, QuickFilesDetailSerializer
 from api.files.serializers import FileVersionSerializer
 
 
@@ -36,17 +36,18 @@ class FileMixin(object):
 
     def get_file(self, check_permissions=True):
         try:
-            obj = utils.get_object_or_error(FileNode, self.kwargs[self.file_lookup_url_kwarg])
+            obj = utils.get_object_or_error(BaseFileNode, self.kwargs[self.file_lookup_url_kwarg], self.request)
         except (NotFound, Gone):
-            obj = utils.get_object_or_error(Guid, self.kwargs[self.file_lookup_url_kwarg]).referent
-            if not isinstance(obj, StoredFileNode):
+            obj = utils.get_object_or_error(Guid, self.kwargs[self.file_lookup_url_kwarg], self.request).referent
+            if obj.is_deleted:
+                raise Gone(detail='The requested file is no longer available.')
+            if not isinstance(obj, BaseFileNode):
                 raise NotFound
-            obj = obj.wrapped()
 
         if check_permissions:
             # May raise a permission denied
             self.check_object_permissions(self.request, obj)
-        return obj.wrapped()
+        return obj
 
 
 class FileDetail(JSONAPIBaseView, generics.RetrieveUpdateAPIView, FileMixin):
@@ -326,19 +327,23 @@ class FileDetail(JSONAPIBaseView, generics.RetrieveUpdateAPIView, FileMixin):
     view_category = 'files'
     view_name = 'file-detail'
 
+    def get_serializer_class(self):
+        if isinstance(self.get_node(), QuickFilesNode):
+            return QuickFilesDetailSerializer
+        return FileDetailSerializer
+
     def get_node(self):
         return self.get_file().node
 
     # overrides RetrieveAPIView
     def get_object(self):
         user = utils.get_user_auth(self.request).user
-
-        if (self.request.GET.get('create_guid', False) and
-                self.get_node().has_permission(user, 'admin') and
-                utils.has_admin_scope(self.request)):
-            self.get_file(check_permissions=True).get_guid(create=True)
-
-        return self.get_file()
+        file = self.get_file()
+        if self.request.GET.get('create_guid', False):
+            # allows quickfiles to be given guids when another user wants a permanent link to it
+            if (self.get_node().has_permission(user, 'admin') and utils.has_admin_scope(self.request)) or file.node.is_quickfiles:
+                file.get_guid(create=True)
+        return file
 
 class FileVersionsList(JSONAPIBaseView, generics.ListAPIView, FileMixin):
     """List of versions for the requested file. *Read-only*.
@@ -361,10 +366,11 @@ class FileVersionsList(JSONAPIBaseView, generics.ListAPIView, FileMixin):
 
     For an OSF FileVersion entity the API `type` is "file_versions".
 
-        name          type     description
-        =================================================================================
-        size          integer  size of file in bytes
-        content_type  string   MIME content-type for the file. May be null if unavailable.
+        name          type       description
+        ====================================================================================
+        size          integer    size of file in bytes
+        date_created  timestamp  date that the version was created
+        content_type  string     MIME content-type for the file. May be null if unavailable.
 
     ##Links
 
@@ -398,6 +404,8 @@ class FileVersionsList(JSONAPIBaseView, generics.ListAPIView, FileMixin):
     view_category = 'files'
     view_name = 'file-versions'
 
+    ordering = ('-modified',)
+
     def get_queryset(self):
         return self.get_file().versions.all()
 
@@ -420,10 +428,11 @@ class FileVersionDetail(JSONAPIBaseView, generics.RetrieveAPIView, FileMixin):
 
     For an OSF FileVersion entity the API `type` is "file_versions".
 
-        name          type     description
-        =================================================================================
-        size          integer  size of file in bytes
-        content_type  string   MIME content-type for the file. May be null if unavailable.
+        name          type       description
+        ====================================================================================
+        size          integer    size of file in bytes
+        date_created  timestamp  date that the version was created
+        content_type  string     MIME content-type for the file. May be null if unavailable.
 
     ##Relationships
 
@@ -466,4 +475,4 @@ class FileVersionDetail(JSONAPIBaseView, generics.RetrieveAPIView, FileMixin):
         # May raise a permission denied
         # Kinda hacky but versions have no reference to node or file
         self.check_object_permissions(self.request, file)
-        return utils.get_object_or_error(FileVersion, getattr(maybe_version, '_id', ''))
+        return utils.get_object_or_error(FileVersion, getattr(maybe_version, '_id', ''), self.request)

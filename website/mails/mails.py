@@ -74,7 +74,7 @@ def render_message(tpl_name, **context):
 
 
 def send_mail(to_addr, mail, mimetype='plain', from_addr=None, mailer=None,
-            username=None, password=None, callback=None, **context):
+            username=None, password=None, callback=None, attachment_name=None, attachment_content=None, **context):
     """Send an email from the OSF.
     Example: ::
 
@@ -112,12 +112,17 @@ def send_mail(to_addr, mail, mimetype='plain', from_addr=None, mailer=None,
         username=username,
         password=password,
         categories=mail.categories,
+        attachment_name=attachment_name,
+        attachment_content=attachment_content,
     )
 
+    logger.debug('Preparing to send...')
     if settings.USE_EMAIL:
         if settings.USE_CELERY:
+            logger.debug('Sending via celery...')
             return mailer.apply_async(kwargs=kwargs, link=callback)
         else:
+            logger.debug('Sending without celery')
             ret = mailer(**kwargs)
             if callback:
                 callback()
@@ -172,7 +177,11 @@ CONFIRM_EMAIL_ERPC = Mail(
 )
 CONFIRM_EMAIL_PREPRINTS = lambda name, provider: Mail(
     'confirm_preprints_{}'.format(name),
-    subject='Open Science Framework Account Verification, {} Preprints Service'.format(provider)
+    subject='Open Science Framework Account Verification, {}'.format(provider)
+)
+CONFIRM_EMAIL_REGISTRIES_OSF = Mail(
+    'confirm_registries_osf',
+    subject='Open Science Framework Account Verification, OSF Registries'
 )
 
 # Merge account, add or remove email confirmation emails.
@@ -188,7 +197,7 @@ INVITE_DEFAULT = Mail(
 )
 INVITE_PREPRINT = lambda template, provider: Mail(
     'invite_preprints_{}'.format(template),
-    subject='You have been added as a contributor to {} {} preprint.'.format(get_english_article(provider), provider)
+    subject='You have been added as a contributor to {} {} {}.'.format(get_english_article(provider.name), provider.name, provider.preprint_word)
 )
 CONTRIBUTOR_ADDED_DEFAULT = Mail(
     'contributor_added_default',
@@ -196,7 +205,22 @@ CONTRIBUTOR_ADDED_DEFAULT = Mail(
 )
 CONTRIBUTOR_ADDED_PREPRINT = lambda template, provider: Mail(
     'contributor_added_preprints_{}'.format(template),
-    subject='You have been added as a contributor to {} {} preprint.'.format(get_english_article(provider), provider)
+    subject='You have been added as a contributor to {} {} {}.'.format(get_english_article(provider.name), provider.name, provider.preprint_word)
+)
+CONTRIBUTOR_ADDED_PREPRINT_NODE_FROM_OSF = Mail(
+    'contributor_added_preprint_node_from_osf',
+    subject='You have been added as a contributor to an OSF project.'
+)
+PREPRINT_CONFIRMATION_DEFAULT = Mail(
+    'preprint_confirmation_default',
+    subject="You've shared a preprint on OSF preprints"
+)
+PREPRINT_CONFIRMATION_BRANDED = lambda provider: Mail(
+    'preprint_confirmation_branded',
+    subject="You've shared {} {} on {}".format(
+        get_english_article(provider.preprint_word),
+        provider.preprint_word, provider.name
+    )
 )
 FORWARD_INVITE = Mail('forward_invite', subject='Please forward to ${fullname}')
 FORWARD_INVITE_REGISTERED = Mail('forward_invite_registered', subject='Please forward to ${fullname}')
@@ -280,7 +304,6 @@ FILE_OPERATION_FAILED = Mail(
 
 UNESCAPE = '<% from website.util.sanitize import unescape_entities %> ${unescape_entities(src.title)}'
 PROBLEM_REGISTERING = 'Problem registering ' + UNESCAPE
-PROBLEM_REGISTERING_STUCK = PROBLEM_REGISTERING + '- Stuck Registration'
 
 ARCHIVE_SIZE_EXCEEDED_DESK = Mail(
     'archive_size_exceeded_desk',
@@ -316,7 +339,7 @@ ARCHIVE_UNCAUGHT_ERROR_DESK = Mail(
 
 ARCHIVE_REGISTRATION_STUCK_DESK = Mail(
     'archive_registration_stuck_desk',
-    subject=PROBLEM_REGISTERING_STUCK
+    subject='[auto] Stuck registrations audit'
 )
 
 ARCHIVE_UNCAUGHT_ERROR_USER = Mail(
@@ -349,4 +372,24 @@ PREREG_CHALLENGE_ACCEPTED = Mail(
     subject='Your research plan has been registered and accepted for the Preregistration Challenge'
 )
 
+PREREG_CSV = Mail(
+    'prereg_csv',
+    subject='[auto] Updated Prereg CSV'
+)
+
 EMPTY = Mail('empty', subject='${subject}')
+
+SHARE_ERROR_DESK = Mail(
+    'send_data_share_error_desk',
+    subject='Share Error'
+)
+
+SHARE_PREPRINT_ERROR_DESK = Mail(
+    'send_data_share_preprint_error_desk',
+    subject='Share Error'
+)
+
+REVIEWS_SUBMISSION_CONFIRMATION = Mail(
+    'reviews_submission_confirmation',
+    subject='Confirmation of your submission to ${provider_name}'
+)

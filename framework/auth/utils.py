@@ -4,8 +4,7 @@ import re
 from nameparser.parser import HumanName
 import requests
 
-from modularodm.exceptions import ValidationError
-from modularodm import Q
+from django.core.exceptions import ValidationError
 
 from website import settings
 
@@ -88,9 +87,10 @@ def privacy_info_handle(info, anonymous, name=False):
 
 
 def ensure_external_identity_uniqueness(provider, identity, user=None):
-    from framework.auth.core import User  # avoid circular import
-
-    users_with_identity = User.find(Q('external_identity.{}.{}'.format(provider, identity), 'ne', None))
+    from osf.models import OSFUser
+    users_with_identity = OSFUser.objects.filter(
+        **{'external_identity__{}__{}__isnull'.format(provider, identity): False}
+    )
     for existing_user in users_with_identity:
         if user and user._id == existing_user._id:
             continue
@@ -126,3 +126,13 @@ def validate_recaptcha(response, remote_ip=None):
         payload.update({'remoteip': remote_ip})
     resp = requests.post(settings.RECAPTCHA_VERIFY_URL, data=payload)
     return resp.status_code == httplib.OK and resp.json().get('success')
+
+
+def generate_csl_given_name(given_name, middle_names='', suffix=''):
+    parts = [given_name]
+    if middle_names:
+        parts.extend(each[0] for each in re.split(r'\s+', middle_names))
+    given = ' '.join(parts)
+    if suffix:
+        given = '%s, %s' % (given, suffix)
+    return given

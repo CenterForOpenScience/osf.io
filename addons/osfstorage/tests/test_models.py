@@ -5,14 +5,13 @@ import unittest
 
 import pytest
 import pytz
-from django.core.exceptions import ObjectDoesNotExist
 from django.utils import timezone
 from nose.tools import *  # noqa
 
 from addons.osfstorage.models import OsfStorageFile, OsfStorageFileNode, OsfStorageFolder
 from osf.exceptions import ValidationError
 from osf.models import Contributor
-from tests.factories import ProjectFactory
+from osf_tests.factories import ProjectFactory
 
 from addons.osfstorage.tests import factories
 from addons.osfstorage.tests.utils import StorageTestCase
@@ -92,13 +91,13 @@ class TestOsfstorageFileNode(StorageTestCase):
         assert_equals(file.serialize(), {
             u'id': file._id,
             u'path': file.path,
-            u'created': None,
+            u'created': version.created.isoformat(),
             u'name': u'MOAR PYLONS',
             u'kind': u'file',
             u'version': 1,
             u'downloads': 0,
             u'size': 1234L,
-            u'modified': None,
+            u'modified': version.created.isoformat(),
             u'contentType': u'text/plain',
             u'checkout': None,
             u'md5': None,
@@ -113,13 +112,15 @@ class TestOsfstorageFileNode(StorageTestCase):
         assert_equals(file.serialize(), {
             u'id': file._id,
             u'path': file.path,
-            u'created': date.isoformat(),
+            u'created': version.created.isoformat(),
             u'name': u'MOAR PYLONS',
             u'kind': u'file',
             u'version': 1,
             u'downloads': 0,
             u'size': 1234L,
-            u'modified': date.isoformat(),
+            # modified date is the creation date of latest version
+            # see https://github.com/CenterForOpenScience/osf.io/pull/7155
+            u'modified': version.created.isoformat(),
             u'contentType': u'text/plain',
             u'checkout': None,
             u'md5': None,
@@ -204,14 +205,14 @@ class TestOsfstorageFileNode(StorageTestCase):
             kid = parent.append_file(str(x))
             kid.save()
             kids.append(kid)
-        count = OsfStorageFileNode.find().count()
-        tcount = models.TrashedFileNode.find().count()
+        count = OsfStorageFileNode.objects.count()
+        tcount = models.TrashedFileNode.objects.count()
 
         parent.delete()
 
         assert_is(OsfStorageFileNode.load(parent._id), None)
-        assert_equals(count - 11, OsfStorageFileNode.find().count())
-        assert_equals(tcount + 11, models.TrashedFileNode.find().count())
+        assert_equals(count - 11, OsfStorageFileNode.objects.count())
+        assert_equals(tcount + 11, models.TrashedFileNode.objects.count())
 
         for kid in kids:
             assert_is(
@@ -221,7 +222,7 @@ class TestOsfstorageFileNode(StorageTestCase):
 
     def test_delete_file(self):
         child = self.node_settings.get_root().append_file('Test')
-        field_names = [f.name for f in child._meta.get_fields() if not f.is_relation and f.name not in ['id', 'guid_string', 'content_type_pk']]
+        field_names = [f.name for f in child._meta.get_fields() if not f.is_relation and f.name not in ['id', 'content_type_pk']]
         child_data = {f: getattr(child, f) for f in field_names}
         child.delete()
 
@@ -233,7 +234,7 @@ class TestOsfstorageFileNode(StorageTestCase):
         child_storage['materialized_path'] = child.materialized_path
         assert_equal(trashed.path, '/' + child._id)
         trashed_field_names = [f.name for f in child._meta.get_fields() if not f.is_relation and
-                               f.name not in ['id', 'guid_string', '_materialized_path', 'content_type_pk', '_path', 'deleted_on', 'deleted_by', 'type']]
+                               f.name not in ['id', '_materialized_path', 'content_type_pk', '_path', 'deleted_on', 'deleted_by', 'type', 'modified']]
         for f, value in child_data.iteritems():
             if f in trashed_field_names:
                 assert_equal(getattr(trashed, f), value)
@@ -563,7 +564,7 @@ class TestOsfStorageFileVersion(StorageTestCase):
         version = factories.FileVersionFactory(
             size=1024,
             content_type='application/json',
-            date_modified=timezone.now(),
+            modified=timezone.now(),
         )
         retrieved = models.FileVersion.load(version._id)
         assert_true(retrieved.creator)
@@ -572,7 +573,7 @@ class TestOsfStorageFileVersion(StorageTestCase):
         # sometimes identifiers are strings, so this always has to be a string, sql is funny about that.
         assert_equal(retrieved.identifier, u"0")
         assert_true(retrieved.content_type)
-        assert_true(retrieved.date_modified)
+        assert_true(retrieved.modified)
 
     def test_is_duplicate_true(self):
         version1 = factories.FileVersionFactory()
@@ -599,7 +600,8 @@ class TestOsfStorageFileVersion(StorageTestCase):
         assert_false(version2.is_duplicate(version1))
 
     def test_validate_location(self):
-        version = factories.FileVersionFactory.build(location={'invalid': True})
+        creator = factories.AuthUserFactory()
+        version = factories.FileVersionFactory.build(creator=creator, location={'invalid': True})
         with assert_raises(ValidationError):
             version.save()
         version.location = {

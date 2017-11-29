@@ -1,14 +1,14 @@
 """
 Tasks for making even transactional emails consolidated.
 """
+import itertools
+
 from django.db import connection
-from osf.models import (
-    OSFUser as User,
-    NotificationDigest,
-)
+
 from framework.celery_tasks import app as celery_app
 from framework.sentry import log_exception
-from modularodm import Q
+from osf.models import OSFUser
+from osf.models import NotificationDigest
 from website import mails
 from website.notifications.utils import NotificationsDict
 
@@ -21,10 +21,8 @@ def send_users_email(send_type):
     :return:
     """
     grouped_emails = get_users_emails(send_type)
-    if not grouped_emails:
-        return
     for group in grouped_emails:
-        user = User.load(group['user_id'])
+        user = OSFUser.load(group['user_id'])
         if not user:
             log_exception()
             continue
@@ -38,29 +36,30 @@ def send_users_email(send_type):
                 mail=mails.DIGEST,
                 name=user.fullname,
                 message=sorted_messages,
-                callback=remove_notifications(email_notification_ids=notification_ids)
             )
+            remove_notifications(email_notification_ids=notification_ids)
 
 
 def get_users_emails(send_type):
     """Get all emails that need to be sent.
 
     :param send_type: from NOTIFICATION_TYPES
-    :return: [{
-                'user_id': 'se8ea',
-                'info': [{
-                    'message': {
-                        'message': 'Freddie commented on your project Open Science',
-                        'timestamp': datetime object
-                    },
-                    'node_lineage': ['parent._id', 'node._id'],
-                    '_id': NotificationDigest._id
-                }, ...
-                }]
-              },
-              {
-                'user_id': ...
-              }]
+    :return: Iterable of dicts of the form:
+        {
+            'user_id': 'se8ea',
+            'info': [{
+                'message': {
+                    'message': 'Freddie commented on your project Open Science',
+                    'timestamp': datetime object
+                },
+                'node_lineage': ['parent._id', 'node._id'],
+                '_id': NotificationDigest._id
+            }, ...
+            }]
+            {
+            'user_id': ...
+            }
+        }
     """
 
     sql = """
@@ -84,21 +83,17 @@ def get_users_emails(send_type):
 
     with connection.cursor() as cursor:
         cursor.execute(sql, [send_type, ])
-        rows = list(sum(cursor.fetchall(), ()))
-        if len(rows) > 0:
-            return rows
-        else:
-            return []
+        return itertools.chain.from_iterable(cursor.fetchall())
 
 
-def group_by_node(notifications):
+def group_by_node(notifications, limit=15):
     """Take list of notifications and group by node.
 
     :param notifications: List of stored email notifications
     :return:
     """
     emails = NotificationsDict()
-    for notification in notifications:
+    for notification in notifications[:15]:
         emails.add_message(notification['node_lineage'], notification['message'])
     return emails
 
@@ -109,5 +104,5 @@ def remove_notifications(email_notification_ids=None):
     :param email_notification_ids:
     :return:
     """
-    for email_id in email_notification_ids:
-        NotificationDigest.remove(Q('_id', 'eq', email_id))
+    if email_notification_ids:
+        NotificationDigest.objects.filter(_id__in=email_notification_ids).delete()

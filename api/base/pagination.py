@@ -14,8 +14,7 @@ from api.base.serializers import is_anonymized
 from api.base.settings import MAX_PAGE_SIZE
 from api.base.utils import absolute_reverse
 
-from framework.guid.model import Guid
-from website.project.model import Node, Comment
+from osf.models import AbstractNode, Comment, Guid
 from website.search.elastic_search import DOC_TYPE_TO_MODEL
 
 
@@ -181,9 +180,9 @@ class CommentPagination(JSONAPIPagination):
         if self.request.query_params.get('related_counts', False):
             target_id = self.request.query_params.get('filter[target]', None)
             node_id = kwargs.get('node_id', None)
-            node = Node.load(node_id)
+            node = AbstractNode.load(node_id)
             user = self.request.user
-            if target_id and not user.is_anonymous() and node.is_contributor(user):
+            if target_id and not user.is_anonymous and node.is_contributor(user):
                 root_target = Guid.load(target_id)
                 if root_target:
                     page = getattr(root_target.referent, 'root_target_page', None)
@@ -207,7 +206,7 @@ class NodeContributorPagination(JSONAPIPagination):
         response_dict = response.data
         kwargs = self.request.parser_context['kwargs'].copy()
         node_id = kwargs.get('node_id', None)
-        node = Node.load(node_id)
+        node = AbstractNode.load(node_id)
         total_bibliographic = node.visible_contributors.count()
         if self.request.version < '2.1':
             response_dict['links']['meta']['total_bibliographic'] = total_bibliographic

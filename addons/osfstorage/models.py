@@ -4,14 +4,12 @@ import logging
 
 from django.apps import apps
 from django.db import models, connection
-from modularodm import Q
 from psycopg2._psycopg import AsIs
 
 from addons.base.models import BaseNodeSettings, BaseStorageAddon
 from osf.exceptions import InvalidTagError, NodeStateError, TagNotFoundError
-from osf.models import (File, FileVersion, Folder, Guid,
-                        TrashedFileNode, BaseFileNode)
-from osf.utils.auth import Auth
+from osf.models import File, FileVersion, Folder, TrashedFileNode, BaseFileNode
+from framework.auth.core import Auth
 from website.files import exceptions
 from website.files import utils as files_utils
 from website.util import permissions
@@ -64,7 +62,7 @@ class OsfStorageFileNode(BaseFileNode):
 
     @classmethod
     def get(cls, _id, node):
-        return cls.find_one(Q('_id', 'eq', _id) & Q('node', 'eq', node))
+        return cls.objects.get(_id=_id, node=node)
 
     @classmethod
     def get_or_create(cls, node, path):
@@ -104,10 +102,7 @@ class OsfStorageFileNode(BaseFileNode):
             for item in children:
                 guids.extend(cls.get_file_guids(item.path, provider, node=node))
         else:
-            try:
-                guid = Guid.find(Q('referent', 'eq', file_obj))[0]
-            except IndexError:
-                guid = None
+            guid = file_obj.get_guid()
             if guid:
                 guids.append(guid._id)
 
@@ -128,17 +123,31 @@ class OsfStorageFileNode(BaseFileNode):
     def is_checked_out(self):
         return self.checkout is not None
 
-    def delete(self, user=None, parent=None, **kwargs):
-        if self.node.preprint_file and self.node.preprint_file.pk == self.pk:
-            self.node._is_preprint_orphan = True
-            self.node.save()
+    # overrides BaseFileNode
+    @property
+    def current_version_number(self):
+        return self.versions.count() or 1
+
+    def _check_delete_allowed(self):
+        if self.is_preprint_primary:
+            raise exceptions.FileNodeIsPrimaryFile()
         if self.is_checked_out:
             raise exceptions.FileNodeCheckedOutError()
+        return True
+
+    @property
+    def is_preprint_primary(self):
+        return self.node.preprint_file == self and not self.node._has_abandoned_preprint
+
+    def delete(self, user=None, parent=None, **kwargs):
         self._path = self.path
         self._materialized_path = self.materialized_path
-        return super(OsfStorageFileNode, self).delete(user=user, parent=parent, **kwargs)
+        return super(OsfStorageFileNode, self).delete(user=user, parent=parent) if self._check_delete_allowed() else None
 
     def move_under(self, destination_parent, name=None):
+        if self.is_preprint_primary:
+            if self.node != destination_parent.node or self.provider != destination_parent.provider:
+                raise exceptions.FileNodeIsPrimaryFile()
         if self.is_checked_out:
             raise exceptions.FileNodeCheckedOutError()
         return super(OsfStorageFileNode, self).move_under(destination_parent, name)
@@ -203,10 +212,7 @@ class OsfStorageFile(OsfStorageFileNode, File):
 
     @property
     def history(self):
-        metadata = []
-        for meta in self.versions.values_list('metadata', flat=True):
-            metadata.append(meta)
-        return metadata
+        return list(self.versions.values_list('metadata', flat=True))
 
     @history.setter
     def history(self, value):
@@ -218,10 +224,13 @@ class OsfStorageFile(OsfStorageFileNode, File):
             ret['fullPath'] = self.materialized_path
 
         version = self.get_version(version)
+        earliest_version = self.versions.order_by('created').first()
         ret.update({
             'version': self.versions.count(),
             'md5': version.metadata.get('md5') if version else None,
             'sha256': version.metadata.get('sha256') if version else None,
+            'modified': version.created.isoformat() if version else None,
+            'created': earliest_version.created.isoformat() if version else None,
         })
         return ret
 
@@ -246,12 +255,12 @@ class OsfStorageFile(OsfStorageFileNode, File):
     def get_version(self, version=None, required=False):
         if version is None:
             if self.versions.exists():
-                return self.versions.last()
+                return self.versions.first()
             return None
 
         try:
-            return self.versions.all()[int(version) - 1]
-        except (IndexError, ValueError):
+            return self.versions.get(identifier=version)
+        except FileVersion.DoesNotExist:
             if required:
                 raise exceptions.VersionNotFoundError(version)
             return None
@@ -325,18 +334,43 @@ class OsfStorageFolder(OsfStorageFileNode, Folder):
 
     @property
     def is_checked_out(self):
-        try:
-            if self.checkout:
+        sql = """
+            WITH RECURSIVE is_checked_out_cte(id, parent_id, checkout_id) AS (
+              SELECT
+                T.id,
+                T.parent_id,
+                T.checkout_id
+              FROM %s AS T
+              WHERE T.id = %s
+              UNION ALL
+              SELECT
+                T.id,
+                T.parent_id,
+                T.checkout_id
+              FROM is_checked_out_cte AS R
+                JOIN %s AS T ON T.parent_id = R.id
+            )
+            SELECT N.checkout_id
+            FROM is_checked_out_cte as N
+            WHERE N.checkout_id IS NOT NULL
+            LIMIT 1;
+        """
+
+        with connection.cursor() as cursor:
+            cursor.execute(sql, [AsIs(self._meta.db_table), self.pk, AsIs(self._meta.db_table)])
+            row = cursor.fetchone()
+
+            if row and row[0]:
                 return True
-        except AttributeError:
-            return False
-        # TODO this should be one query
-        for child in self.children.all():
-            try:
-                if child.is_checked_out:
+
+        return False
+
+    @property
+    def is_preprint_primary(self):
+        if self.node.preprint_file:
+            for child in self.children.filter(node__preprint_file=self.node.preprint_file).select_related('node'):
+                if child.is_preprint_primary:
                     return True
-            except AttributeError:
-                pass
         return False
 
     def serialize(self, include_full=False, version=None):
@@ -347,12 +381,12 @@ class OsfStorageFolder(OsfStorageFileNode, Folder):
         return ret
 
 
-class NodeSettings(BaseStorageAddon, BaseNodeSettings):
+class NodeSettings(BaseNodeSettings, BaseStorageAddon):
     # Required overrides
     complete = True
     has_auth = True
 
-    root_node = models.ForeignKey(OsfStorageFolder, null=True, blank=True)
+    root_node = models.ForeignKey(OsfStorageFolder, null=True, blank=True, on_delete=models.CASCADE)
 
     @property
     def folder_name(self):

@@ -9,7 +9,6 @@ require('js/osfToggleHeight');
 var m = require('mithril');
 var Fangorn = require('js/fangorn').Fangorn;
 var Raven = require('raven-js');
-var lodashGet  = require('lodash.get');
 require('truncate');
 
 var $osf = require('js/osfHelpers');
@@ -23,7 +22,6 @@ var mathrender = require('js/mathrender');
 var md = require('js/markdown').full;
 var oldMd = require('js/markdown').old;
 var AddProject = require('js/addProjectPlugin');
-var mHelpers = require('js/mithrilHelpers');
 var SocialShare = require('js/components/socialshare');
 
 var ctx = window.contextVars;
@@ -40,8 +38,7 @@ $('body').on('nodeLoad', function(event, data) {
     }
     // Initialize CitationWidget if user isn't viewing through an anonymized VOL
     if (!data.node.anonymous && !data.node.is_retracted) {
-        var citations = data.node.alternative_citations;
-        new CitationList('#citationList', citations, data.user);
+        new CitationList('#citationList');
         new CitationWidget('#citationStyleInput', '#citationText');
     }
     // Initialize nodeControl
@@ -59,7 +56,6 @@ if ($comments.length) {
         rootId: window.contextVars.node.id,
         fileId: null,
         canComment: window.contextVars.currentUser.canComment,
-        hasChildren: window.contextVars.node.hasChildren,
         currentUser: window.contextVars.currentUser,
         pageTitle: window.contextVars.node.title,
         inputSelector: '.atwho-input'
@@ -121,24 +117,20 @@ $(document).ready(function () {
         contributors: window.contextVars.node.contributors,
         currentUserCanEdit: window.contextVars.currentUser.canEdit
     });
-    var newComponentElem = document.getElementById('newComponent');
-    if (newComponentElem) {
-        m.mount(newComponentElem, AddComponentButton);
-    }
-
-    if (ctx.node.institutions.length && !ctx.node.anonymous && !ctx.node.isRetracted) {
-        m.mount(document.getElementById('instLogo'), m.component(institutionLogos, {institutions: window.contextVars.node.institutions}));
-    }
-    $('#contributorsList').osfToggleHeight();
 
     if (!ctx.node.isRetracted) {
+        if (ctx.node.institutions.length && !ctx.node.anonymous) {
+            m.mount(document.getElementById('instLogo'), m.component(institutionLogos, {institutions: window.contextVars.node.institutions}));
+        }
+        $('#contributorsList').osfToggleHeight();
+
         // Recent Activity widget
         m.mount(document.getElementById('logFeed'), m.component(LogFeed.LogFeed, {node: node}));
 
         // Treebeard Files view
-        $.ajax({
-            url:  nodeApiUrl + 'files/grid/'
-        }).done(function (data) {
+        var urlFilesGrid = nodeApiUrl + 'files/grid/';
+        var promise = m.request({ method: 'GET', config: $osf.setXHRAuthorization, url: urlFilesGrid});
+        promise.then(function (data) {
             var fangornOpts = {
                 divID: 'treeGrid',
                 filesData: data.data,
@@ -201,7 +193,26 @@ $(document).ready(function () {
                 }
             };
             var filebrowser = new Fangorn(fangornOpts);
-        });
+            var newComponentElem = document.getElementById('newComponent');
+            if (window.contextVars.node.isPublic) {
+                m.mount(
+                    document.getElementById('shareButtonsPopover'),
+                    m.component(
+                        SocialShare.ShareButtonsPopover,
+                        {title: window.contextVars.node.title, url: window.location.href}
+                    )
+                );
+            }
+            if (newComponentElem) {
+                m.mount(newComponentElem, AddComponentButton);
+            }
+            return promise;
+        }, function(xhr, textStatus, error) {
+            Raven.captureMessage('Error retrieving filebrowser', {extra: {url: urlFilesGrid, textStatus: textStatus, error: error}});
+        }
+
+      );
+
     }
 
     // Tooltips
@@ -212,10 +223,15 @@ $(document).ready(function () {
         width: '100%',
         interactive: window.contextVars.currentUser.canEdit,
         maxChars: 128,
+        defaultText: 'add a tag to enhance discoverability',
         onAddTag: function(tag) {
+            $('#node-tags_tag').attr('data-default', 'add a tag');
             var url = nodeApiUrl + 'tags/';
             var data = {tag: tag};
             var request = $osf.postJSON(url, data);
+            request.done(function() {
+                window.contextVars.node.tags.push(tag);
+            });
             request.fail(function(xhr, textStatus, error) {
                 Raven.captureMessage('Failed to add tag', {
                     extra: {
@@ -231,6 +247,9 @@ $(document).ready(function () {
                 return false;
             }
             var request = $osf.ajaxJSON('DELETE', url, {'data': {'tag': tag}});
+            request.done(function() {
+                window.contextVars.node.tags.splice(window.contextVars.node.tags.indexOf(tag), 1);
+            });
             request.fail(function(xhr, textStatus, error) {
                 // Suppress "tag not found" errors, as the end result is what the user wanted (tag is gone)- eg could be because two people were working at same time
                 if (xhr.status !== 409) {
@@ -244,6 +263,11 @@ $(document).ready(function () {
             });
         }
     });
+
+    // allows inital default message to fit on empty tag
+    if(!$('.tag').length){
+        $('#node-tags_tag').css('width', '250px');
+    }
 
     $('#addPointer').on('shown.bs.modal', function(){
         if(!$osf.isIE()){
@@ -265,7 +289,7 @@ $(document).ready(function () {
             url: ctx.urls.wikiContent
         });
         request.done(function(resp) {
-            var rawText = resp.wiki_content || '*No wiki content*';
+            var rawText = resp.wiki_content || '*Add important information, links, or images here to describe your project.*';
             var renderedText = ctx.renderedBeforeUpdate ? oldMd.render(rawText) : md.render(rawText);
             var truncatedText = $.truncate(renderedText, {length: 400});
             markdownElement.html(truncatedText);
@@ -280,11 +304,5 @@ $(document).ready(function () {
         $('span.tag span').each(function(idx, elm) {
             $(elm).text($(elm).text().replace(/\s*$/, ''));
         });
-    }
-
-    if (window.contextVars.node.isPublic && !window.contextVars.node.isRetracted) {
-        m.mount(document.getElementById('shareButtonsPopover'),
-                m.component(SocialShare.ShareButtonsPopover,
-                    {title: window.contextVars.node.title, url: window.location.href}));
     }
 });

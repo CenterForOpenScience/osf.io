@@ -1,17 +1,20 @@
 from rest_framework import generics, permissions as drf_permissions
+from rest_framework.exceptions import NotFound
+from django.core.exceptions import ObjectDoesNotExist
 
 from api.base.views import JSONAPIBaseView
-from api.base.utils import get_object_or_error
-from api.base.filters import ODMFilterMixin
+from api.base.filters import ListFilterMixin
 from api.base.pagination import NoMaxPageSizePagination
 from api.base import permissions as base_permissions
+from api.base.versioning import DeprecatedEndpointMixin
 from api.taxonomies.serializers import TaxonomySerializer
-from website.project.taxonomies import Subject
+from api.taxonomies.utils import optimize_subject_query
+from osf.models import Subject
 from framework.auth.oauth_scopes import CoreScopes
 
 
-class TaxonomyList(JSONAPIBaseView, generics.ListAPIView, ODMFilterMixin):
-    '''[PLOS taxonomy of subjects](http://journals.plos.org/plosone/browse/) in flattened form. *Read-only*
+class TaxonomyList(DeprecatedEndpointMixin, JSONAPIBaseView, generics.ListAPIView, ListFilterMixin):
+    '''[BePress taxonomy subject](https://www.bepress.com/wp-content/uploads/2016/12/Digital-Commons-Disciplines-taxonomy-2017-01.pdf) instance. *Read-only*
 
     ##Note
     **This API endpoint is under active development, and is subject to change in the future**
@@ -34,11 +37,7 @@ class TaxonomyList(JSONAPIBaseView, generics.ListAPIView, ODMFilterMixin):
 
     Subjects may be filtered by their 'text', 'parents', and 'id' fields.
 
-    **Note:** Subjects are unique (e.g. there exists only one object in this list with `text='Biology and life sciences'`),
-    but as per the structure of the PLOS taxonomy, subjects can exist in separate paths down the taxonomy and as such
-    can have multiple parent subjects.
-
-    Only the top three levels of the PLOS taxonomy are included.
+    **Note:** Subjects are unique per provider (e.g. there exists at most one object per provider with any given `text`.
     '''
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
@@ -51,24 +50,35 @@ class TaxonomyList(JSONAPIBaseView, generics.ListAPIView, ODMFilterMixin):
     pagination_class = NoMaxPageSizePagination
     view_category = 'taxonomies'
     view_name = 'taxonomy-list'
+    max_version = '2.5'
 
-    # overrides ListAPIView
-    def get_default_odm_query(self):
-        return
+    ordering = ('-id',)
+
+    def get_default_queryset(self):
+        return optimize_subject_query(Subject.objects.all())
 
     def get_queryset(self):
-        return Subject.find(self.get_query_from_request())
+        return self.get_queryset_from_request()
 
     # overrides FilterMixin
     def postprocess_query_param(self, key, field_name, operation):
-        # Queries on 'parents' should be by object_id
+        # TODO: Queries on 'parents' should be deprecated
         if field_name == 'parents':
             if operation['value'] not in (list(), tuple()):
-                operation['source_field_name'] = 'parents___id'
+                operation['source_field_name'] = 'parent___id'
+            else:
+                if len(operation['value']) > 1:
+                    operation['source_field_name'] = 'parent___id__in'
+                elif len(operation['value']) == 1:
+                    operation['source_field_name'] == 'parent___id'
+                    operation['value'] = operation['value'][0]
+                else:
+                    operation['source_field_name'] = 'parent__isnull'
+                    operation['value'] = True
 
 
 class TaxonomyDetail(JSONAPIBaseView, generics.RetrieveAPIView):
-    '''[PLOS taxonomy subject](http://journals.plos.org/plosone/browse/) instance. *Read-only*
+    '''[BePress taxonomy subject](https://www.bepress.com/wp-content/uploads/2016/12/Digital-Commons-Disciplines-taxonomy-2017-01.pdf) instance. *Read-only*
 
     ##Note
     **This API endpoint is under active development, and is subject to change in the future**
@@ -77,11 +87,7 @@ class TaxonomyDetail(JSONAPIBaseView, generics.RetrieveAPIView):
 
     See TaxonomyList
 
-    **Note:** Subjects are unique (e.g. there exists only one object in this list with `text='Biology and life sciences'`),
-    but as per the structure of the PLOS taxonomy, subjects can exist in separate paths down the taxonomy and as such
-    can have multiple parent subjects.
-
-    Only the top three levels of the PLOS taxonomy are included.
+    **Note:** Subjects are unique per provider (e.g. there exists at most one object per provider with any given `text`.
     '''
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
@@ -95,4 +101,7 @@ class TaxonomyDetail(JSONAPIBaseView, generics.RetrieveAPIView):
     view_name = 'taxonomy-detail'
 
     def get_object(self):
-        return get_object_or_error(Subject, self.kwargs['taxonomy_id'])
+        try:
+            return optimize_subject_query(Subject.objects).get(_id=self.kwargs['taxonomy_id'])
+        except ObjectDoesNotExist:
+            raise NotFound

@@ -4,12 +4,15 @@ import httplib as http
 import logging
 import math
 import os
+import requests
 import urllib
 
 from django.apps import apps
-from flask import request, send_from_directory
+from django.db.models import Count
+from flask import request, send_from_directory, Response, stream_with_context
 
 from framework import sentry
+from framework.auth import Auth
 from framework.auth.decorators import must_be_logged_in
 from framework.auth.forms import SignInForm, ForgotPasswordForm
 from framework.exceptions import HTTPError
@@ -17,15 +20,16 @@ from framework.flask import redirect  # VOL-aware redirect
 from framework.forms import utils as form_utils
 from framework.routing import proxy_url
 from framework.auth.core import get_current_user_id
+from website import settings
 from website.institutions.views import serialize_institution
 
-from website.models import Guid
-from website.models import Institution, PreprintService
-from website.settings import EXTERNAL_EMBER_APPS
+from osf.models import BaseFileNode, Guid, Institution, PreprintService, AbstractNode, Node
+from website.settings import EXTERNAL_EMBER_APPS, PROXY_EMBER_APPS, INSTITUTION_DISPLAY_NODE_THRESHOLD
 from website.project.model import has_anonymous_link
+from website.util import permissions
 
 logger = logging.getLogger(__name__)
-
+preprints_dir = os.path.abspath(os.path.join(os.getcwd(), EXTERNAL_EMBER_APPS['preprints']['path']))
 
 def serialize_contributors_for_summary(node, max_count=3):
     # # TODO: Use .filter(visible=True) when chaining is fixed in django-include
@@ -58,23 +62,27 @@ def serialize_contributors_for_summary(node, max_count=3):
 
 
 def serialize_node_summary(node, auth, primary=True, show_path=False):
+    is_registration = node.is_registration
     summary = {
         'id': node._id,
         'primary': primary,
         'is_registration': node.is_registration,
         'is_fork': node.is_fork,
-        'is_pending_registration': node.is_pending_registration,
-        'is_retracted': node.is_retracted,
-        'is_pending_retraction': node.is_pending_retraction,
-        'embargo_end_date': node.embargo_end_date.strftime('%A, %b. %d, %Y') if node.embargo_end_date else False,
-        'is_pending_embargo': node.is_pending_embargo,
-        'is_embargoed': node.is_embargoed,
-        'archiving': node.archiving,
+        'is_pending_registration': node.is_pending_registration if is_registration else False,
+        'is_retracted': node.is_retracted if is_registration else False,
+        'is_pending_retraction': node.is_pending_retraction if is_registration else False,
+        'embargo_end_date': node.embargo_end_date.strftime('%A, %b. %d, %Y') if is_registration and node.embargo_end_date else False,
+        'is_pending_embargo': node.is_pending_embargo if is_registration else False,
+        'is_embargoed': node.is_embargoed if is_registration else False,
+        'archiving': node.archiving if is_registration else False,
     }
-    contributor_data = serialize_contributors_for_summary(node)
 
     parent_node = node.parent_node
+    user = auth.user
     if node.can_view(auth):
+        # Re-query node with contributor guids included to prevent N contributor queries
+        node = AbstractNode.objects.filter(pk=node.pk).include('contributor__user__guids').get()
+        contributor_data = serialize_contributors_for_summary(node)
         summary.update({
             'can_view': True,
             'can_edit': node.can_edit(auth),
@@ -84,9 +92,14 @@ def serialize_node_summary(node, auth, primary=True, show_path=False):
             'api_url': node.api_url,
             'title': node.title,
             'category': node.category,
+            'isPreprint': bool(node.preprint_file_id),
+            'childExists': Node.objects.get_children(node, active=True).exists(),
+            'is_admin': node.has_permission(user, permissions.ADMIN),
+            'is_contributor': node.is_contributor(user),
+            'logged_in': auth.logged_in,
             'node_type': node.project_or_component,
             'is_fork': node.is_fork,
-            'is_registration': node.is_registration,
+            'is_registration': is_registration,
             'anonymous': has_anonymous_link(node, auth),
             'registered_date': node.registered_date.strftime('%Y-%m-%d %H:%M UTC')
             if node.is_registration
@@ -129,7 +142,17 @@ def index():
 
     user_id = get_current_user_id()
     if user_id:  # Logged in: return either landing page or user home page
-        all_institutions = Institution.objects.filter(is_deleted=False).order_by('name').only('_id', 'name', 'logo_name')
+        all_institutions = (
+            Institution.objects.filter(
+                is_deleted=False,
+                nodes__is_public=True,
+                nodes__is_deleted=False,
+                nodes__type='osf.node'
+            )
+            .annotate(Count('nodes'))
+            .filter(nodes__count__gte=INSTITUTION_DISPLAY_NODE_THRESHOLD)
+            .order_by('name').only('_id', 'name', 'logo_name')
+        )
         dashboard_institutions = [
             {'id': inst._id, 'name': inst.name, 'logo_path': inst.logo_path_rounded_corners}
             for inst in all_institutions
@@ -205,6 +228,10 @@ def _build_guid_url(base, suffix=None):
     return u'/{0}/'.format(url)
 
 
+def resolve_guid_download(guid, suffix=None, provider=None):
+    return resolve_guid(guid, suffix='download')
+
+
 def resolve_guid(guid, suffix=None):
     """Load GUID by primary key, look up the corresponding view function in the
     routing table, and return the return value of the view function without
@@ -223,7 +250,6 @@ def resolve_guid(guid, suffix=None):
         else:
             raise e
     if guid_object:
-
         # verify that the object implements a GuidStoredObject-like interface. If a model
         #   was once GuidStoredObject-like but that relationship has changed, it's
         #   possible to have referents that are instances of classes that don't
@@ -231,7 +257,7 @@ def resolve_guid(guid, suffix=None):
         #   expected.
         if not hasattr(guid_object.referent, 'deep_url'):
             sentry.log_message(
-                'Guid `{}` resolved to an object with no deep_url'.format(guid)
+                'Guid resolved to an object with no deep_url', dict(guid=guid)
             )
             raise HTTPError(http.NOT_FOUND)
         referent = guid_object.referent
@@ -240,11 +266,44 @@ def resolve_guid(guid, suffix=None):
             raise HTTPError(http.NOT_FOUND)
         if not referent.deep_url:
             raise HTTPError(http.NOT_FOUND)
+
+        # Handle file `/download` shortcut with supported types.
+        if suffix and suffix.rstrip('/').lower() == 'download':
+            file_referent = None
+            if isinstance(referent, PreprintService) and referent.primary_file:
+                if not referent.is_published:
+                    # TODO: Ideally, permissions wouldn't be checked here.
+                    # This is necessary to prevent a logical inconsistency with
+                    # the routing scheme - if a preprint is not published, only
+                    # admins should be able to know it exists.
+                    auth = Auth.from_kwargs(request.args.to_dict(), {})
+                    if not referent.node.has_permission(auth.user, permissions.ADMIN):
+                        raise HTTPError(http.NOT_FOUND)
+                file_referent = referent.primary_file
+            elif isinstance(referent, BaseFileNode) and referent.is_file:
+                file_referent = referent
+
+            if file_referent:
+                # Extend `request.args` adding `action=download`.
+                request.args = request.args.copy()
+                request.args.update({'action': 'download'})
+                # Do not include the `download` suffix in the url rebuild.
+                url = _build_guid_url(urllib.unquote(file_referent.deep_url))
+                return proxy_url(url)
+
+        # Handle Ember Applications
         if isinstance(referent, PreprintService):
-            return send_from_directory(
-                os.path.abspath(os.path.join(os.getcwd(), EXTERNAL_EMBER_APPS['preprints']['path'])),
-                'index.html'
-            )
+            if referent.provider.domain_redirect_enabled:
+                # This route should always be intercepted by nginx for the branded domain,
+                # w/ the exception of `<guid>/download` handled above.
+                return redirect(referent.absolute_url, http.MOVED_PERMANENTLY)
+
+            if PROXY_EMBER_APPS:
+                resp = requests.get(EXTERNAL_EMBER_APPS['preprints']['server'], stream=True)
+                return Response(stream_with_context(resp.iter_content()), resp.status_code)
+
+            return send_from_directory(preprints_dir, 'index.html')
+
         url = _build_guid_url(urllib.unquote(referent.deep_url), suffix)
         return proxy_url(url)
 
@@ -268,6 +327,8 @@ def redirect_about(**kwargs):
 def redirect_help(**kwargs):
     return redirect('/faq/')
 
+def redirect_faq(**kwargs):
+    return redirect('http://help.osf.io/m/faqs/')
 
 # redirect osf.io/howosfworks to osf.io/getting-started/
 def redirect_howosfworks(**kwargs):
@@ -287,3 +348,13 @@ def redirect_to_home():
 def redirect_to_cos_news(**kwargs):
     # Redirect to COS News page
     return redirect('https://cos.io/news/')
+
+
+# Return error for legacy SHARE v1 search route
+def legacy_share_v1_search(**kwargs):
+    return HTTPError(
+        http.BAD_REQUEST,
+        data=dict(
+            message_long='Please use v2 of the SHARE search API available at {}api/v2/share/search/creativeworks/_search.'.format(settings.SHARE_URL)
+        )
+    )

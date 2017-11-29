@@ -9,7 +9,7 @@ from osf.models import (
     DraftRegistration,
     Institution,
     NodeRelation,
-    OSFUser as User,
+    OSFUser,
     PreprintService,
     PrivateLink,
 )
@@ -22,11 +22,12 @@ from api.base.utils import get_user_auth, is_deprecated
 class ContributorOrPublic(permissions.BasePermission):
 
     def has_object_permission(self, request, view, obj):
+        from api.nodes.views import NodeProvider
         if isinstance(obj, BaseAddonSettings):
             obj = obj.owner
-        if isinstance(obj, PreprintService):
+        if isinstance(obj, (NodeProvider, PreprintService)):
             obj = obj.node
-        assert isinstance(obj, (AbstractNode, NodeRelation)), 'obj must be an Node, NodeRelation, PreprintService, or AddonSettings; got {}'.format(obj)
+        assert isinstance(obj, (AbstractNode, NodeRelation)), 'obj must be an Node, NodeProvider, NodeRelation, PreprintService, or AddonSettings; got {}'.format(obj)
         auth = get_user_auth(request)
         if request.method in permissions.SAFE_METHODS:
             return obj.is_public or obj.can_view(auth)
@@ -64,7 +65,7 @@ class IsAdminOrReviewer(permissions.BasePermission):
 class AdminOrPublic(permissions.BasePermission):
 
     def has_object_permission(self, request, view, obj):
-        assert isinstance(obj, (AbstractNode, User, Institution, BaseAddonSettings, DraftRegistration, PrivateLink)), 'obj must be an Node, User, Institution, Draft Registration, PrivateLink, or AddonSettings; got {}'.format(obj)
+        assert isinstance(obj, (AbstractNode, OSFUser, Institution, BaseAddonSettings, DraftRegistration, PrivateLink)), 'obj must be an Node, User, Institution, Draft Registration, PrivateLink, or AddonSettings; got {}'.format(obj)
         auth = get_user_auth(request)
         if request.method in permissions.SAFE_METHODS:
             return obj.is_public or obj.can_view(auth)
@@ -86,11 +87,11 @@ class ContributorDetailPermissions(permissions.BasePermission):
     """Permissions for contributor detail page."""
 
     def has_object_permission(self, request, view, obj):
-        assert isinstance(obj, (AbstractNode, User, Contributor)), 'obj must be User, Contributor, or Node, got {}'.format(obj)
+        assert isinstance(obj, (AbstractNode, OSFUser, Contributor)), 'obj must be User, Contributor, or Node, got {}'.format(obj)
         auth = get_user_auth(request)
         context = request.parser_context['kwargs']
         node = AbstractNode.load(context[view.node_lookup_url_kwarg])
-        user = User.load(context['user_id'])
+        user = OSFUser.load(context['user_id'])
         if request.method in permissions.SAFE_METHODS:
             return node.is_public or node.can_view(auth)
         elif request.method == 'DELETE':

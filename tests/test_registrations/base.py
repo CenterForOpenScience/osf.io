@@ -1,13 +1,11 @@
 import datetime as dt
 
 from django.utils import timezone
-from modularodm import Q
 
 from framework.auth import Auth
 
 from website.util import permissions
-from website.models import MetaSchema
-from website.project.model import ensure_schemas
+from osf.models import MetaSchema
 
 from tests.base import OsfTestCase
 from osf_tests.factories import AuthUserFactory, ProjectFactory, DraftRegistrationFactory
@@ -28,12 +26,8 @@ class RegistrationsTestBase(OsfTestCase):
         )
         self.non_contrib = AuthUserFactory()
 
-        MetaSchema.remove()
-        ensure_schemas()
-        self.meta_schema = MetaSchema.find_one(
-            Q('name', 'eq', 'Open-Ended Registration') &
-            Q('schema_version', 'eq', 2)
-        )
+        self.meta_schema = MetaSchema.objects.get(name='Open-Ended Registration', schema_version=2)
+
         self.draft = DraftRegistrationFactory(
             initiator=self.user,
             branched_from=self.node,

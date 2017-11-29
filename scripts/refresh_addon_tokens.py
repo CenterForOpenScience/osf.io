@@ -6,9 +6,10 @@ import math
 import time
 from django.utils import timezone
 
-from modularodm import Q
+import django
 from oauthlib.oauth2 import OAuth2Error
 from dateutil.relativedelta import relativedelta
+django.setup()
 
 from framework.celery_tasks import app as celery_app
 
@@ -18,7 +19,7 @@ from website.app import init_app
 from addons.box.models import Provider as Box
 from addons.googledrive.models import GoogleDriveProvider
 from addons.mendeley.models import Mendeley
-from website.oauth.models import ExternalAccount
+from osf.models import ExternalAccount
 
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO)
@@ -35,10 +36,10 @@ def look_up_provider(addon_short_name):
 def get_targets(delta, addon_short_name):
     # NOTE: expires_at is the  access_token's expiration date,
     # NOT the refresh token's
-    return ExternalAccount.find(
-        Q('expires_at', 'lt', timezone.now() - delta) &
-        Q('date_last_refreshed', 'lt', timezone.now() - delta) &
-        Q('provider', 'eq', addon_short_name)
+    return ExternalAccount.objects.filter(
+        expires_at__lt=timezone.now() - delta,
+        date_last_refreshed__lt=timezone.now() - delta,
+        provider=addon_short_name
     )
 
 def main(delta, Provider, rate_limit, dry_run):

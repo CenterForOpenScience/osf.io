@@ -224,10 +224,10 @@ def sharejs(ctx, host=None, port=None, db_url=None, cors_allow_origin=None):
 
 
 @task(aliases=['celery'])
-def celery_worker(ctx, level='debug', hostname=None, beat=False, queues=None):
+def celery_worker(ctx, level='debug', hostname=None, beat=False, queues=None, concurrency=None, max_tasks_per_child=None):
     """Run the Celery process."""
     os.environ['DJANGO_SETTINGS_MODULE'] = 'api.base.settings'
-    cmd = 'celery worker -A framework.celery_tasks -l {0}'.format(level)
+    cmd = 'celery worker -A framework.celery_tasks -Ofair -l {0}'.format(level)
     if hostname:
         cmd = cmd + ' --hostname={}'.format(hostname)
     # beat sets up a cron like scheduler, refer to website/settings
@@ -235,6 +235,10 @@ def celery_worker(ctx, level='debug', hostname=None, beat=False, queues=None):
         cmd = cmd + ' --beat'
     if queues:
         cmd = cmd + ' --queues={}'.format(queues)
+    if concurrency:
+        cmd = cmd + ' --concurrency={}'.format(concurrency)
+    if max_tasks_per_child:
+        cmd = cmd + ' --maxtasksperchild={}'.format(max_tasks_per_child)
     ctx.run(bin_prefix(cmd), pty=True)
 
 
@@ -326,7 +330,8 @@ def mailserver(ctx, port=1025):
 def jshint(ctx):
     """Run JSHint syntax check"""
     js_folder = os.path.join(HERE, 'website', 'static', 'js')
-    cmd = 'jshint {}'.format(js_folder)
+    jshint_bin = os.path.join(HERE, 'node_modules', '.bin', 'jshint')
+    cmd = '{} {}'.format(jshint_bin, js_folder)
     ctx.run(cmd, echo=True)
 
 
@@ -406,43 +411,8 @@ def test_module(ctx, module=None, numprocesses=None, params=None):
     retcode = pytest.main(args)
     sys.exit(retcode)
 
-# TODO: Add to this list when more modules are ported for djangosf compat
 OSF_TESTS = [
     'osf_tests',
-    'addons',
-    # 'tests/test_views.py',
-    # 'tests/test_addons.py',
-    # 'tests/test_alternative_citations.py',
-    # 'tests/test_auth.py',
-    # 'tests/test_auth_basic_auth.py',
-    # 'tests/test_auth_forms.py',
-    # 'tests/test_campaigns.py',
-    # 'tests/test_cas_authentication.py',
-    # 'tests/test_citations.py',
-    # 'tests/test_conferences.py',
-    # 'tests/test_contributors_views.py',
-    # 'tests/test_events.py',
-    # 'tests/test_identifiers.py',
-    # 'tests/test_mailchimp.py',
-    # 'tests/test_metadata.py',
-    # 'tests/test_node_licenses.py',
-    # 'tests/test_notifications.py',
-    # 'tests/test_oauth.py',
-    # 'tests/test_permissions.py',
-    # 'tests/test_preprints.py',
-    # 'tests/test_rubeus.py',
-    # 'tests/test_sanitize.py',
-    # 'tests/test_security.py',
-    # 'tests/test_serializers.py',
-    # 'tests/test_spam_mixin.py',
-    # 'tests/test_subjects.py',
-    # 'tests/test_tokens.py',
-    # 'tests/test_webtests.py',
-    # 'tests/test_utils.py',
-    # 'tests/test_registrations/test_retractions.py',
-    # 'tests/test_registrations/test_embargoes.py',
-    # 'tests/test_registrations/test_registration_approvals.py',
-    # 'tests/test_registrations/test_views.py',
 ]
 
 ELSE_TESTS = [
@@ -471,6 +441,7 @@ API_TESTS3 = [
     'api_tests/comments',
     'api_tests/files',
     'api_tests/guids',
+    'api_tests/reviews',
     'api_tests/search',
     'api_tests/taxonomies',
     'api_tests/test',
@@ -479,52 +450,58 @@ API_TESTS3 = [
     'api_tests/wikis',
 ]
 ADDON_TESTS = [
-    'addons/',
+    'addons',
+]
+ADMIN_TESTS = [
+    'admin_tests',
 ]
 
 
 @task
 def test_osf(ctx, numprocesses=None):
     """Run the OSF test suite."""
-    test_module(ctx, module=OSF_TESTS, numprocesses=numprocesses)
+    print('Testing modules "{}"'.format(OSF_TESTS + ADDON_TESTS))
+    test_module(ctx, module=OSF_TESTS + ADDON_TESTS, numprocesses=numprocesses)
 
 @task
 def test_else(ctx, numprocesses=None):
     """Run the old test suite."""
-    # TODO (@cwisecarver, @mfraezz, @sloria): Fix ignored tests
-    test_module(ctx, module=ELSE_TESTS, numprocesses=numprocesses, params=['--ignore=tests/ignore'])
+    print('Testing modules "{}"'.format(ELSE_TESTS))
+    test_module(ctx, module=ELSE_TESTS, numprocesses=numprocesses)
 
 @task
 def test_api1(ctx, numprocesses=None):
     """Run the API test suite."""
-    test_module(ctx, module=API_TESTS1, numprocesses=numprocesses)
+    print('Testing modules "{}"'.format(API_TESTS1 + ADMIN_TESTS))
+    test_module(ctx, module=API_TESTS1 + ADMIN_TESTS, numprocesses=numprocesses)
 
 
 @task
 def test_api2(ctx, numprocesses=None):
     """Run the API test suite."""
+    print('Testing modules "{}"'.format(API_TESTS2))
     test_module(ctx, module=API_TESTS2, numprocesses=numprocesses)
 
 
 @task
 def test_api3(ctx, numprocesses=None):
     """Run the API test suite."""
+    print('Testing modules "{}"'.format(API_TESTS3))
     test_module(ctx, module=API_TESTS3, numprocesses=numprocesses)
 
 
 @task
-def test_admin(ctx):
+def test_admin(ctx, numprocesses=None):
     """Run the Admin test suite."""
-    # test_module(ctx, module="admin_tests/")
-    module = 'admin_tests/'
-    module_fmt = ' '.join(module) if isinstance(module, list) else module
-    admin_tasks.manage(ctx, 'test {}'.format(module_fmt))
+    print('Testing module "admin_tests"')
+    test_module(ctx, module=ADMIN_TESTS, numprocesses=numprocesses)
 
 
 @task
 def test_addons(ctx, numprocesses=None):
     """Run all the tests in the addons directory.
     """
+    print('Testing modules "{}"'.format(ADDON_TESTS))
     test_module(ctx, module=ADDON_TESTS, numprocesses=numprocesses)
 
 
@@ -557,14 +534,13 @@ def test(ctx, all=False, syntax=False):
         test_addons(ctx)
         # TODO: Enable admin tests
         test_admin(ctx)
-        karma(ctx, single=True, browsers='PhantomJS')
+        karma(ctx)
 
 
 @task
 def test_js(ctx):
     jshint(ctx)
-    karma(ctx, single=True, browsers='PhantomJS')
-
+    karma(ctx)
 
 @task
 def test_travis_osf(ctx, numprocesses=None):
@@ -585,14 +561,13 @@ def test_travis_else(ctx, numprocesses=None):
     flake(ctx)
     jshint(ctx)
     test_else(ctx, numprocesses=numprocesses)
-    test_addons(ctx, numprocesses=numprocesses)
-    test_admin(ctx, numprocesses=numprocesses)
 
 
 @task
-def test_travis_api1(ctx, numprocesses=None):
+def test_travis_api1_and_js(ctx, numprocesses=None):
     flake(ctx)
     jshint(ctx)
+    karma(ctx)
     test_api1(ctx, numprocesses=numprocesses)
 
 
@@ -622,19 +597,9 @@ def test_travis_varnish(ctx):
 
 
 @task
-def karma(ctx, single=False, sauce=False, browsers=None):
-    """Run JS tests with Karma. Requires PhantomJS to be installed."""
-    karma_bin = os.path.join(
-        HERE, 'node_modules', 'karma', 'bin', 'karma'
-    )
-    cmd = '{} start'.format(karma_bin)
-    if single:
-        cmd += ' --single-run'
-    # Use browsers if specified on the command-line, otherwise default
-    # what's specified in karma.conf.js
-    if browsers:
-        cmd += ' --browsers {}'.format(browsers)
-    ctx.run(cmd, echo=True)
+def karma(ctx):
+    """Run JS tests with Karma. Requires Chrome to be installed."""
+    ctx.run('yarn test', echo=True)
 
 
 @task
@@ -722,52 +687,17 @@ def copy_settings(ctx, addons=False):
         copy_addon_settings(ctx)
 
 
-@task
-def packages(ctx):
-    brew_commands = [
-        'update',
-        'upgrade',
-        'install libxml2',
-        'install libxslt',
-        'install elasticsearch@1.7',
-        'install rabbitmq',
-        'install node',
-        'tap tokutek/tokumx',
-        'install chrisseto/homebrew-tokumx/tokumx-bin',
-    ]
-    if platform.system() == 'Darwin':
-        print('Running brew commands')
-        for item in brew_commands:
-            command = 'brew {cmd}'.format(cmd=item)
-            ctx.run(command)
-    elif platform.system() == 'Linux':
-        # TODO: Write a script similar to brew bundle for Ubuntu
-        # e.g., run('sudo apt-get install [list of packages]')
-        pass
-
-
 @task(aliases=['bower'])
 def bower_install(ctx):
     print('Installing bower-managed packages')
-    bower_bin = os.path.join(HERE, 'node_modules', 'bower', 'bin', 'bower')
+    bower_bin = os.path.join(HERE, 'node_modules', '.bin', 'bower')
     ctx.run('{} prune --allow-root'.format(bower_bin), echo=True)
     ctx.run('{} install --allow-root'.format(bower_bin), echo=True)
 
 
 @task
-def setup(ctx):
-    """Creates local settings, and installs requirements"""
-    copy_settings(ctx, addons=True)
-    packages(ctx)
-    requirements(ctx, addons=True, dev=True)
-    # Build nodeCategories.json before building assets
-    build_js_config_files(ctx)
-    assets(ctx, dev=True, watch=False)
-
-@task
 def docker_init(ctx):
     """Initial docker setup"""
-    import platform
     print('You will be asked for your sudo password to continue...')
     if platform.system() == 'Darwin':  # Mac OSX
         ctx.run('sudo ifconfig lo0 alias 192.168.168.167')
@@ -955,15 +885,12 @@ def webpack(ctx, clean=False, watch=False, dev=False, colors=False):
     """Build static assets with webpack."""
     if clean:
         clean_assets(ctx)
-    webpack_bin = os.path.join(HERE, 'node_modules', 'webpack', 'bin', 'webpack.js')
-    args = [webpack_bin]
+    args = ['yarn run webpack-{}'.format('dev' if dev else 'prod')]
     args += ['--progress']
     if watch:
         args += ['--watch']
     if colors:
         args += ['--colors']
-    config_file = 'webpack.dev.config.js' if dev else 'webpack.prod.config.js'
-    args += ['--config {0}'.format(config_file)]
     command = ' '.join(args)
     ctx.run(command, echo=True)
 
@@ -980,10 +907,10 @@ def build_js_config_files(ctx):
 @task()
 def assets(ctx, dev=False, watch=False, colors=False):
     """Install and build static assets."""
-    npm = 'npm install'
+    command = 'yarn install --frozen-lockfile'
     if not dev:
-        npm += ' --production'
-    ctx.run(npm, echo=True)
+        command += ' --production'
+    ctx.run(command, echo=True)
     bower_install(ctx)
     build_js_config_files(ctx)
     # Always set clean=False to prevent possible mistakes
@@ -1022,28 +949,33 @@ def usage(ctx):
 ### Maintenance Tasks ###
 
 @task
-def set_maintenance(ctx, start=None, end=None):
-    from website.maintenance import set_maintenance, get_maintenance
-    """Set the time period for the maintenance notice to be displayed.
-    If no start or end values are displayed, default to starting now
-    and ending 24 hours from now. If no timezone info is passed along,
-    everything will be converted to UTC.
+def set_maintenance(ctx, message='', level=1, start=None, end=None):
+    from website.app import setup_django
+    setup_django()
+    from website.maintenance import set_maintenance
+    """Display maintenance notice across OSF applications (incl. preprints, registries, etc.)
 
-    If a given end time results in a start that is after the end, start
-    will be changed to be 24 hours before the end time.
+    start - Start time for the maintenance period
+    end - End time for the mainteance period
+        NOTE: If no start or end values are provided, default to starting now
+        and ending 24 hours from now.
+    message - Message to display. If omitted, will be:
+        "The site will undergo maintenance between <localized start time> and <localized end time>. Thank you
+        for your patience."
+    level - Severity level. Modifies the color of the displayed notice. Must be one of 1 (info), 2 (warning), 3 (danger).
 
     Examples:
-        invoke set_maintenance_state
-        invoke set_maintenance_state --start 2016-03-16T15:41:00-04:00
-        invoke set_maintenance_state --end 2016-03-16T15:41:00-04:00
+        invoke set_maintenance --start 2016-03-16T15:41:00-04:00 --end 2016-03-16T15:42:00-04:00
+        invoke set_maintenance --message 'The OSF is experiencing issues connecting to a 3rd party service' --level 2 --start 2016-03-16T15:41:00-04:00 --end 2016-03-16T15:42:00-04:00
     """
-    set_maintenance(start, end)
-    state = get_maintenance()
-    print('Maintenance notice up for {} to {}.'.format(state['start'], state['end']))
+    state = set_maintenance(message, level, start, end)
+    print('Maintenance notice up {} to {}.'.format(state['start'], state['end']))
 
 
 @task
 def unset_maintenance(ctx):
+    from website.app import setup_django
+    setup_django()
     from website.maintenance import unset_maintenance
     print('Taking down maintenance notice...')
     unset_maintenance()

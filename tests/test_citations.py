@@ -1,18 +1,22 @@
 # -*- coding: utf-8 -*-
-
-import datetime
-
 import pytest
 from django.utils import timezone
-from flask import redirect
 from nose.tools import *  # noqa
 
 from framework.auth.core import Auth
-from osf_tests.factories import AuthUserFactory, ProjectFactory, UserFactory
+from osf_tests.factories import (
+    fake,
+    fake_email,
+    AuthUserFactory,
+    NodeFactory,
+    ProjectFactory,
+    UnregUserFactory,
+    UserFactory,
+)
 from scripts import parse_citation_styles
 from tests.base import OsfTestCase
+from osf.models import OSFUser
 from website.citations.utils import datetime_to_csl
-from website.models import Node, User
 from website.util import api_url_for
 
 pytestmark = pytest.mark.django_db
@@ -35,8 +39,8 @@ class CitationsNodeTestCase(OsfTestCase):
 
     def tearDown(self):
         super(CitationsNodeTestCase, self).tearDown()
-        Node.remove()
-        User.remove()
+        OSFUser.remove()
+        OSFUser.remove()
 
     def test_csl_single_author(self):
         # Nodes with one contributor generate valid CSL-data
@@ -93,28 +97,60 @@ class CitationsNodeTestCase(OsfTestCase):
         node.save()
         assert_equal(len(node.csl['author']), 2)
         expected_authors = [
-            contrib.csl_name for contrib in [node.creator, visible]
+            contrib.csl_name(node._id) for contrib in [node.creator, visible]
         ]
 
         assert_equal(node.csl['author'], expected_authors)
 
 class CitationsUserTestCase(OsfTestCase):
-    def setUp(self):
-        super(CitationsUserTestCase, self).setUp()
-        self.user = UserFactory()
 
-    def tearDown(self):
-        super(CitationsUserTestCase, self).tearDown()
-        User.remove()
+    def test_registered_user_csl(self):
+        # Tests the csl name for a registered user
+        user = OSFUser.create_confirmed(
+            username=fake_email(), password='foobar', fullname=fake.name()
+        )
+        if user.is_registered:
+            assert bool(
+                user.csl_name() ==
+                {
+                    'given': user.csl_given_name,
+                    'family': user.family_name,
+                }
+            )
 
-    def test_user_csl(self):
-        # Convert a User instance to csl's name-variable schema
-        assert_equal(
-            self.user.csl_name,
+    def test_unregistered_user_csl(self):
+        # Tests the csl name for an unregistered user
+        referrer = UserFactory()
+        project = NodeFactory(creator=referrer)
+        user = UnregUserFactory()
+        user.add_unclaimed_record(node=project,
+            given_name=user.fullname, referrer=referrer,
+            email=fake_email())
+        user.save()
+        name = user.unclaimed_records[project._primary_key]['name'].split(' ')
+        family_name = name[-1]
+        given_name = ' '.join(name[:-1])
+        assert bool(
+            user.csl_name(project._id) ==
             {
-                'given': self.user.given_name,
-                'family': self.user.family_name,
-            },
+                'given': given_name,
+                'family': family_name,
+            }
+        )
+
+    def test_disabled_user_csl(self):
+        # Tests the csl name for a disabled user
+        user = UserFactory()
+        project = NodeFactory(creator=user)
+        user.disable_account()
+        user.is_registered = False
+        user.save()
+        assert bool(
+            user.csl_name() ==
+            {
+                'given': user.csl_given_name,
+                'family': user.family_name,
+            }
         )
 
 

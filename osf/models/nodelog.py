@@ -1,3 +1,5 @@
+from include import IncludeManager
+
 from django.apps import apps
 from django.db import models
 from django.utils import timezone
@@ -14,6 +16,8 @@ class NodeLog(ObjectIDMixin, BaseModel):
         'user': 'user__guids___id',
         'original_node': 'original_node__guids___id'
     }
+
+    objects = IncludeManager()
 
     DATE_FORMAT = '%m/%d/%Y %H:%M UTC'
 
@@ -112,6 +116,9 @@ class NodeLog(ObjectIDMixin, BaseModel):
     PREPRINT_FILE_UPDATED = 'preprint_file_updated'
     PREPRINT_LICENSE_UPDATED = 'preprint_license_updated'
 
+    VIEW_ONLY_LINK_ADDED = 'view_only_link_added'
+    VIEW_ONLY_LINK_REMOVED = 'view_only_link_removed'
+
     actions = ([CHECKED_IN, CHECKED_OUT, FILE_TAG_REMOVED, FILE_TAG_ADDED, CREATED_FROM, PROJECT_CREATED,
                 PROJECT_REGISTERED, PROJECT_DELETED, NODE_CREATED, NODE_FORKED, NODE_REMOVED,
                 NODE_LINK_CREATED, NODE_LINK_FORKED, NODE_LINK_REMOVED, WIKI_UPDATED,
@@ -128,7 +135,8 @@ class NodeLog(ObjectIDMixin, BaseModel):
                 REGISTRATION_APPROVAL_INITIATED, REGISTRATION_APPROVAL_APPROVED,
                 PREREG_REGISTRATION_INITIATED,
                 CITATION_ADDED, CITATION_EDITED, CITATION_REMOVED,
-                AFFILIATED_INSTITUTION_ADDED, AFFILIATED_INSTITUTION_REMOVED, PREPRINT_INITIATED, PREPRINT_FILE_UPDATED, PREPRINT_LICENSE_UPDATED] + list(sum([
+                AFFILIATED_INSTITUTION_ADDED, AFFILIATED_INSTITUTION_REMOVED, PREPRINT_INITIATED,
+                PREPRINT_FILE_UPDATED, PREPRINT_LICENSE_UPDATED, VIEW_ONLY_LINK_ADDED, VIEW_ONLY_LINK_REMOVED] + list(sum([
                     config.actions for config in apps.get_app_configs() if config.name.startswith('addons.')
                 ], tuple())))
     action_choices = [(action, action.upper()) for action in actions]
@@ -137,11 +145,13 @@ class NodeLog(ObjectIDMixin, BaseModel):
     action = models.CharField(max_length=255, db_index=True)  # , choices=action_choices)
     params = DateTimeAwareJSONField(default=dict)
     should_hide = models.BooleanField(default=False)
-    user = models.ForeignKey('OSFUser', related_name='logs', db_index=True, null=True, blank=True)
+    user = models.ForeignKey('OSFUser', related_name='logs', db_index=True,
+                             null=True, blank=True, on_delete=models.CASCADE)
     foreign_user = models.CharField(max_length=255, null=True, blank=True)
     node = models.ForeignKey('AbstractNode', related_name='logs',
-                             db_index=True, null=True, blank=True)
-    original_node = models.ForeignKey('AbstractNode', db_index=True, null=True, blank=True)
+                             db_index=True, null=True, blank=True, on_delete=models.CASCADE)
+    original_node = models.ForeignKey('AbstractNode', db_index=True,
+                                      null=True, blank=True, on_delete=models.CASCADE)
 
     def __unicode__(self):
         return ('({self.action!r}, user={self.user!r},, node={self.node!r}, params={self.params!r}) '
@@ -162,24 +172,6 @@ class NodeLog(ObjectIDMixin, BaseModel):
     @property
     def absolute_url(self):
         return self.absolute_api_v2_url
-
-    def clone_node_log(self, node_id):
-        """
-        When a node is forked or registered, all logs on the node need to be
-        cloned for the fork or registration.
-
-        :param node_id:
-        :return: cloned log
-        """
-        AbstractNode = apps.get_model('osf.AbstractNode')
-        original_log = self.load(self._id)
-        node = AbstractNode.load(node_id)
-        log_clone = original_log.clone()
-        log_clone.node = node
-        log_clone.original_node = original_log.original_node
-        log_clone.user = original_log.user
-        log_clone.save()
-        return log_clone
 
     def _natural_key(self):
         return self._id

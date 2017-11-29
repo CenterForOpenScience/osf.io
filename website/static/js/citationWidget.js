@@ -23,7 +23,6 @@ var formatSelection = function(state) {
 };
 
 // Public API
-
 function CitationWidget(inputSelector, displaySelector) {
     this.$input = $(inputSelector || '#citationStyleInput');
     this.$citationElement = $(displaySelector || '#citationText');
@@ -56,7 +55,8 @@ CitationWidget.prototype.init = function() {
             cache: true
         }
     }).on('select2-selecting', function(event) {
-        var styleUrl = '/static/vendor/bower_components/styles/' + event.val + '.csl';
+        var custom = ctx.customCitations[event.val];
+        var styleUrl = custom ? '/static/' + custom + '.csl' : '/static/vendor/bower_components/styles/' + event.val + '.csl';
         var styleRequest = $.get(styleUrl);
         var citationRequest = $.get(ctx.node.urls.api + 'citation/');
         $.when(styleRequest, citationRequest).done(function(style, data) {
@@ -82,7 +82,6 @@ CitationWidget.prototype.init = function() {
     }).on('select2-removed', function(e) {
         self.$citationElement.slideUp().text();
     });
-
 };
 
 module.exports = CitationWidget;

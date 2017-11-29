@@ -1,14 +1,13 @@
 'use strict';
 
 var $ = require('jquery');
-var bootbox = require('bootbox');  // TODO: Why is this required? Is it? See [#OSF-6100]
 var Raven = require('raven-js');
 var ko = require('knockout');
-var $3 = window.$3;
 var $osf = require('js/osfHelpers');
 var oop = require('js/oop');
 var ChangeMessageMixin = require('js/changeMessage');
 var language = require('js/osfLanguage').projectSettings;
+var NodesDelete = require('js/nodesDelete').NodesDelete;
 
 var ProjectSettings = oop.extend(
     ChangeMessageMixin,
@@ -29,7 +28,7 @@ var ProjectSettings = oop.extend(
             self.categoryOptions = params.categoryOptions;
             self.categoryPlaceholder = params.category;
             self.selectedCategory = ko.observable(params.category);
-            
+
             if (!params.updateUrl) {
                 throw new Error(language.instantiationErrorMessage);
             }
@@ -70,7 +69,7 @@ var ProjectSettings = oop.extend(
                 return;
             }
             var requestPayload = JSON.stringify(self.serialize());
-            var request = $3.ajax({
+            var request = $.ajax({
                     url: self.updateUrl,
                     type: 'PATCH',
                     dataType: 'json',
@@ -79,7 +78,7 @@ var ProjectSettings = oop.extend(
                     xhrFields: {withCredentials: true},
                     processData: false,
                     data: requestPayload
-                });            
+                });
             request.done(function(response) {
                 self.categoryPlaceholder = response.data.attributes.category;
                 self.titlePlaceholder = response.data.attributes.title;

@@ -9,7 +9,6 @@ Should be run after `glacier_inventory.py`.
 import gc
 import logging
 
-from modularodm import Q
 from boto.glacier.layer2 import Layer2
 from dateutil.parser import parse as parse_date
 from dateutil.relativedelta import relativedelta
@@ -17,7 +16,7 @@ from dateutil.relativedelta import relativedelta
 from framework.celery_tasks import app as celery_app
 
 from website.app import init_app
-from website.files import models
+from osf.models import FileVersion
 
 from scripts import utils as scripts_utils
 from scripts.osfstorage import settings as storage_settings
@@ -66,11 +65,8 @@ def get_job(vault, job_id=None):
 
 
 def get_targets(date):
-    return models.FileVersion.find(
-        Q('date_created', 'lt', date - DELTA_DATE) &
-        Q('status', 'ne', 'cached') &
-        Q('metadata.archive', 'exists', True) &
-        Q('location', 'ne', None)
+    return FileVersion.objects.filter(
+        created__lt=date - DELTA_DATE, metadata__has_key='archive', location__isnull=False
     ).iterator()
 
 

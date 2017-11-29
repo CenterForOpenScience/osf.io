@@ -8,7 +8,6 @@ var ko = require('knockout');
 var moment = require('moment');
 var Raven = require('raven-js');
 var linkifyHtml = require('linkifyjs/html');
-var koHelpers = require('./koHelpers');
 require('jquery-autosize');
 
 var osfHelpers = require('js/osfHelpers');
@@ -150,7 +149,7 @@ var convertMentionMarkdownToHtml = function(commentContent) {
 
             content = content.replace(
                 match[0],
-                '<span class="atwho-inserted" contenteditable="false" data-atwho-guid="' +
+                '<span class="atwho-inserted" contenteditable="true" data-atwho-guid="' +
                     guid + '" data-atwho-at-query="' + atwho + '">' +
                     atwho + mention + '</span>'
             );
@@ -408,14 +407,7 @@ var CommentModel = function(data, $parent, $root) {
         return !self.isDeleted() && self.isAbuse();
     });
 
-    if (window.contextVars.node.anonymous) {
-        self.author = {
-            'id': null,
-            'urls': {'profile': ''},
-            'fullname': 'A User',
-            'gravatarUrl': ''
-        };
-    } else if ('embeds' in data && 'user' in data.embeds && 'data' in data.embeds.user) {
+    if ('embeds' in data && 'user' in data.embeds && 'data' in data.embeds.user) {
         var userData = data.embeds.user.data;
         self.author = {
             'id': userData.id,
@@ -820,7 +812,8 @@ var onOpen = function(page, rootId, nodeApiUrl, currentUserId) {
 function initAtMention(nodeId, selectorOrElem) {
     var url = osfHelpers.apiV2Url('nodes/' + nodeId + '/contributors/', {
         query: {
-            'page[size]': 50
+            'page[size]': 50,
+            'fields[users]': 'given_name,full_name,active',
         }
     });
     return getContributorList(url)
@@ -837,7 +830,6 @@ function initAtMention(nodeId, selectorOrElem) {
  *      rootId: Node._id,
  *      fileId: StoredFileNode._id,
  *      canComment: User.canComment,
- *      hasChildren: Node.hasChildren,
  *      currentUser: window.contextVars.currentUser,
  *      pageTitle: Node.title
  * }

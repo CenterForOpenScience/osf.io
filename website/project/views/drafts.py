@@ -5,16 +5,17 @@ import itertools
 from operator import itemgetter
 
 from dateutil.parser import parse as parse_date
+from django.core.exceptions import ValidationError
+from django.db.models import Q
 from django.utils import timezone
 from flask import request, redirect
 import pytz
 
-from modularodm import Q
-from modularodm.exceptions import ValidationValueError
-
-from framework.mongo.utils import get_or_http_error, autoload
+from framework.database import get_or_http_error, autoload
 from framework.exceptions import HTTPError
 from framework.status import push_status_message
+
+from osf.models import NodeLog, MetaSchema, DraftRegistration, Sanction
 
 from website.exceptions import NodeStateError
 from website.util.permissions import ADMIN
@@ -24,11 +25,9 @@ from website.project.decorators import (
     http_error_if_disk_saving_mode
 )
 from website import language, settings
-from website.models import NodeLog
 from website.prereg import utils as prereg_utils
 from website.project import utils as project_utils
-from osf.models import MetaSchema, DraftRegistration, Sanction
-from website.project.metadata.schemas import ACTIVE_META_SCHEMAS
+from website.project.metadata.schemas import LATEST_SCHEMA_VERSION, METASCHEMA_ORDERING
 from website.project.metadata.utils import serialize_meta_schema, serialize_draft_registration
 from website.project.utils import serialize_node
 from website.util import rapply
@@ -44,6 +43,8 @@ def must_be_branched_from_node(func):
     def wrapper(*args, **kwargs):
         node = kwargs['node']
         draft = kwargs['draft']
+        if draft.deleted:
+            raise HTTPError(http.GONE)
         if not draft.branched_from._id == node._id:
             raise HTTPError(
                 http.BAD_REQUEST,
@@ -198,7 +199,7 @@ def register_draft_registration(auth, node, draft, *args, **kwargs):
         embargo_end_date = parse_date(data['embargoEndDate'], ignoretz=True).replace(tzinfo=pytz.utc)
         try:
             register.embargo_registration(auth.user, embargo_end_date)
-        except ValidationValueError as err:
+        except ValidationError as err:
             raise HTTPError(http.BAD_REQUEST, data=dict(message_long=err.message))
     else:
         try:
@@ -272,10 +273,7 @@ def new_draft_registration(auth, node, *args, **kwargs):
 
     schema_version = data.get('schema_version', 2)
 
-    meta_schema = get_schema_or_fail(
-        Q('name', 'eq', schema_name) &
-        Q('schema_version', 'eq', int(schema_version))
-    )
+    meta_schema = get_schema_or_fail(Q(name=schema_name, schema_version=int(schema_version)))
     draft = DraftRegistration.create_from_node(
         node,
         user=auth.user,
@@ -316,10 +314,7 @@ def update_draft_registration(auth, node, draft, *args, **kwargs):
     schema_name = data.get('schema_name')
     schema_version = data.get('schema_version', 1)
     if schema_name:
-        meta_schema = get_schema_or_fail(
-            Q('name', 'eq', schema_name) &
-            Q('schema_version', 'eq', schema_version)
-        )
+        meta_schema = get_schema_or_fail(Q(name=schema_name, schema_version=schema_version))
         existing_schema = draft.registration_schema
         if (existing_schema.name, existing_schema.schema_version) != (meta_schema.name, meta_schema.schema_version):
             draft.registration_schema = meta_schema
@@ -344,7 +339,8 @@ def delete_draft_registration(auth, node, draft, *args, **kwargs):
                 'message_long': 'This draft has already been registered and cannot be deleted.'
             }
         )
-    DraftRegistration.remove_one(draft)
+    draft.deleted = timezone.now()
+    draft.save(update_fields=['deleted'])
     return None, http.NO_CONTENT
 
 def get_metaschemas(*args, **kwargs):
@@ -357,23 +353,12 @@ def get_metaschemas(*args, **kwargs):
     count = request.args.get('count', 100)
     include = request.args.get('include', 'latest')
 
-    meta_schemas = []
+    meta_schemas = MetaSchema.objects.filter(active=True)
     if include == 'latest':
-        schema_names = list(MetaSchema.objects.all().values_list('name', flat=True).distinct())
-        for name in schema_names:
-            meta_schema_set = MetaSchema.find(
-                Q('name', 'eq', name) &
-                Q('schema_version', 'eq', 2)
-            )
-            meta_schemas = meta_schemas + [s for s in meta_schema_set]
-    else:
-        meta_schemas = MetaSchema.find()
-    meta_schemas = [
-        schema
-        for schema in meta_schemas
-        if schema.name in ACTIVE_META_SCHEMAS
-    ]
-    meta_schemas.sort(key=lambda a: ACTIVE_META_SCHEMAS.index(a.name))
+        meta_schemas.filter(schema_version=LATEST_SCHEMA_VERSION)
+
+    meta_schemas = sorted(meta_schemas, key=lambda x: METASCHEMA_ORDERING.index(x.name))
+
     return {
         'meta_schemas': [
             serialize_meta_schema(ms) for ms in meta_schemas[:count]

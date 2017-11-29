@@ -7,6 +7,7 @@
     'v2/'
 '''
 import os
+from urlparse import urlparse
 import warnings
 import itertools
 
@@ -24,10 +25,12 @@ if not DEV_MODE and os.environ.get('DJANGO_SETTINGS_MODULE') == 'api.base.settin
     for setting in ('JWE_SECRET', 'JWT_SECRET', 'BYPASS_THROTTLE_TOKEN'):
         assert getattr(local, setting, None) and getattr(local, setting, None) != getattr(defaults, setting, None), '{} must be specified in local.py when DEV_MODE is False'.format(setting)
 
-def load_institutions():
-    global INSTITUTION_ORIGINS_WHITELIST
-    from osf import models
-    INSTITUTION_ORIGINS_WHITELIST = tuple(domain.lower() for domain in itertools.chain(*[
-        institution.domains
-        for institution in models.Institution.find()
-    ]))
+def load_origins_whitelist():
+    global ORIGINS_WHITELIST
+    from osf.models import Institution, PreprintProvider
+
+    institution_origins = tuple(domain.lower() for domain in itertools.chain(*Institution.objects.values_list('domains', flat=True)))
+
+    preprintprovider_origins = tuple(preprintprovider.domain.lower() for preprintprovider in PreprintProvider.objects.exclude(domain=''))
+
+    ORIGINS_WHITELIST = tuple(urlparse(url).geturl().lower().split('{}://'.format(urlparse(url).scheme))[-1] for url in institution_origins + preprintprovider_origins)

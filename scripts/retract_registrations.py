@@ -2,16 +2,17 @@
 
 import logging
 
+import django
 from django.db import transaction
 from django.utils import timezone
-from modularodm import Q
+django.setup()
 
 from framework.auth import Auth
 from framework.celery_tasks import app as celery_app
 
 from website.app import init_app
-from website import models, settings
-from website.project.model import NodeLog
+from website import settings
+from osf.models import NodeLog, Retraction
 
 from scripts import utils as scripts_utils
 
@@ -21,15 +22,15 @@ logging.basicConfig(level=logging.INFO)
 
 
 def main(dry_run=True):
-    pending_retractions = models.Retraction.find(Q('state', 'eq', models.Retraction.UNAPPROVED))
+    pending_retractions = Retraction.objects.filter(state=Retraction.UNAPPROVED)
     for retraction in pending_retractions:
         if should_be_retracted(retraction):
             if dry_run:
                 logger.warn('Dry run mode')
             try:
-                parent_registration = models.Node.find_one(Q('retraction', 'eq', retraction))
+                parent_registration = retraction.registrations.get()
             except Exception as err:
-                logger.error('Could not find registration associated with retraction {}'.format(retraction))
+                logger.exception('Could not find registration associated with retraction {}'.format(retraction))
                 logger.error('Skipping...'.format(retraction))
                 continue
 
@@ -39,7 +40,7 @@ def main(dry_run=True):
             )
             if not dry_run:
                 with transaction.atomic():
-                    retraction.state = models.Retraction.APPROVED
+                    retraction.state = Retraction.APPROVED
                     try:
                         parent_registration.registered_from.add_log(
                             action=NodeLog.RETRACTION_APPROVED,
@@ -72,4 +73,3 @@ def run_main(dry_run=True):
     if not dry_run:
         scripts_utils.add_file_logger(logger, __file__)
     main(dry_run=dry_run)
-

@@ -76,5 +76,7 @@
     "affiliated_institution_removed": "${user} removed ${institution} affiliation from ${node}",
     "preprint_initiated": "${user} made ${node} a ${preprint} on ${preprint_provider} Preprints",
     "preprint_file_updated": "${user} updated the primary file of this ${preprint} on ${preprint_provider} Preprints",
-    "preprint_license_updated": "${user} updated the license of this ${preprint} on ${preprint_provider} Preprints ${license}"
+    "preprint_license_updated": "${user} updated the license of this ${preprint} on ${preprint_provider} Preprints ${license}",
+    "view_only_link_added": "${user} created ${anonymous_link} view-only link to ${node}",
+    "view_only_link_removed": "${user} removed ${anonymous_link} view-only link to ${node}"
 }

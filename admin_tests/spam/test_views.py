@@ -5,12 +5,12 @@ from django.utils import timezone
 from nose import tools as nt
 from datetime import timedelta
 
-from website.project.model import Comment
+from osf.models import Comment, SpamStatus
 
 from osf.models.admin_log_entry import AdminLogEntry
 from admin.spam.forms import ConfirmForm
 from tests.base import AdminTestCase
-from tests.factories import AuthUserFactory, ProjectFactory
+from osf_tests.factories import AuthUserFactory, ProjectFactory
 from osf_tests.factories import CommentFactory, UserFactory
 from admin_tests.utilities import setup_view, setup_form_view
 
@@ -20,7 +20,6 @@ from admin.spam.views import (
     SpamDetail,
     EmailView,
 )
-from website.project.spam.model import SpamStatus
 
 
 class TestSpamListView(AdminTestCase):

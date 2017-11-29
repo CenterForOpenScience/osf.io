@@ -1,15 +1,18 @@
 from __future__ import unicode_literals
 
-from django.views.generic import UpdateView
+from django.views.generic import UpdateView, DeleteView
 from django.core.urlresolvers import reverse_lazy
 from django.contrib.auth.mixins import PermissionRequiredMixin
+from django.shortcuts import redirect
 
+from osf.models.preprint_service import PreprintService
+from osf.models.admin_log_entry import update_admin_log, REINDEX_SHARE
+from website.preprints.tasks import update_preprint_share
 
-from website.preprints.model import PreprintService
 from framework.exceptions import PermissionsError
 from admin.base.views import GuidFormView, GuidView
 from admin.nodes.templatetags.node_extras import reverse_preprint
-from admin.preprints.serializers import serialize_preprint, serialize_subjects
+from admin.preprints.serializers import serialize_preprint
 from admin.preprints.forms import ChangeProviderForm
 
 
@@ -20,7 +23,7 @@ class PreprintFormView(PermissionRequiredMixin, GuidFormView):
     """
     template_name = 'preprints/search.html'
     object_type = 'preprint'
-    permission_required = 'osf.view_node'
+    permission_required = 'osf.view_preprintservice'
     raise_exception = True
 
     @property
@@ -55,5 +58,32 @@ class PreprintView(PermissionRequiredMixin, UpdateView, GuidView):
         # TODO - we shouldn't need this serialized_preprint value -- https://openscience.atlassian.net/browse/OSF-7743
         kwargs['serialized_preprint'] = serialize_preprint(preprint)
         kwargs['change_provider_form'] = ChangeProviderForm(instance=preprint)
-        kwargs['subjects'] = serialize_subjects(preprint.subjects)
         return super(PreprintView, self).get_context_data(**kwargs)
+
+
+class PreprintReindexShare(PermissionRequiredMixin, DeleteView):
+    template_name = 'preprints/reindex_preprint_share.html'
+    context_object_name = 'preprintservice'
+    object = None
+    permission_required = 'osf.view_preprintservice'
+    raise_exception = True
+
+    def get_context_data(self, **kwargs):
+        context = {}
+        context.setdefault('guid', kwargs.get('object')._id)
+        return super(PreprintReindexShare, self).get_context_data(**context)
+
+    def get_object(self, queryset=None):
+        return PreprintService.load(self.kwargs.get('guid'))
+
+    def delete(self, request, *args, **kwargs):
+        preprint = self.get_object()
+        update_preprint_share(preprint)
+        update_admin_log(
+            user_id=self.request.user.id,
+            object_id=preprint._id,
+            object_repr='Preprint',
+            message='Preprint Reindexed (SHARE): {}'.format(preprint._id),
+            action_flag=REINDEX_SHARE
+        )
+        return redirect(reverse_preprint(self.kwargs.get('guid')))

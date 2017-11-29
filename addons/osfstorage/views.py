@@ -7,7 +7,6 @@ from django.core.exceptions import ValidationError
 from django.db import IntegrityError
 from django.db import connection
 from django.db import transaction
-from modularodm import Q
 
 from flask import request
 
@@ -17,13 +16,12 @@ from framework.exceptions import HTTPError
 from framework.auth.decorators import must_be_signed
 
 from osf.exceptions import InvalidTagError, TagNotFoundError
-from osf.models import OSFUser
+from osf.models import FileVersion, OSFUser
 from website.project.decorators import (
     must_not_be_registration, must_have_addon, must_have_permission
 )
 from website.project.model import has_anonymous_link
 
-from website.files import models
 from website.files import exceptions
 from addons.osfstorage import utils
 from addons.osfstorage import decorators
@@ -51,7 +49,7 @@ def osfstorage_update_metadata(node_addon, payload, **kwargs):
     except KeyError:
         raise HTTPError(httplib.BAD_REQUEST)
 
-    version = models.FileVersion.load(version_id)
+    version = FileVersion.load(version_id)
 
     if version is None:
         raise HTTPError(httplib.NOT_FOUND)
@@ -71,7 +69,7 @@ def osfstorage_get_revisions(file_node, node_addon, payload, **kwargs):
     version_count = file_node.versions.count()
     # Don't worry. The only % at the end of the LIKE clause, the index is still used
     counts = dict(PageCounter.objects.filter(_id__startswith=counter_prefix).values_list('_id', 'total'))
-    qs = FileVersion.includable_objects.filter(basefilenode__id=file_node.id).include('creator__guids').order_by('-date_created')
+    qs = FileVersion.includable_objects.filter(basefilenode__id=file_node.id).include('creator__guids').order_by('-created')
 
     for i, version in enumerate(qs):
         version._download_count = counts.get('{}{}'.format(counter_prefix, version_count - i - 1), 0)
@@ -107,9 +105,6 @@ def osfstorage_move_hook(source, destination, name=None, **kwargs):
 @must_be_signed
 @decorators.autoload_filenode(default_root=True)
 def osfstorage_get_lineage(file_node, node_addon, **kwargs):
-    #TODO Profile
-    list(models.OsfStorageFolder.find(Q('node', 'eq', node_addon.owner)))
-
     lineage = []
 
     while file_node:
@@ -135,6 +130,7 @@ def osfstorage_get_metadata(file_node, **kwargs):
 def osfstorage_get_children(file_node, **kwargs):
     from django.contrib.contenttypes.models import ContentType
     with connection.cursor() as cursor:
+        # Read the documentation on FileVersion's fields before reading this code
         cursor.execute('''
             SELECT json_agg(CASE
                 WHEN F.type = 'osf.osfstoragefile' THEN
@@ -147,8 +143,8 @@ def osfstorage_get_children(file_node, **kwargs):
                         , 'downloads',  COALESCE(DOWNLOAD_COUNT, 0)
                         , 'version', (SELECT COUNT(*) FROM osf_basefilenode_versions WHERE osf_basefilenode_versions.basefilenode_id = F.id)
                         , 'contentType', LATEST_VERSION.content_type
-                        , 'modified', LATEST_VERSION.date_modified
-                        , 'created', EARLIEST_VERSION.date_modified
+                        , 'modified', LATEST_VERSION.created
+                        , 'created', EARLIEST_VERSION.created
                         , 'checkout', CHECKOUT_GUID
                         , 'md5', LATEST_VERSION.metadata ->> 'md5'
                         , 'sha256', LATEST_VERSION.metadata ->> 'sha256'
@@ -167,14 +163,14 @@ def osfstorage_get_children(file_node, **kwargs):
                 SELECT * FROM osf_fileversion
                 JOIN osf_basefilenode_versions ON osf_fileversion.id = osf_basefilenode_versions.fileversion_id
                 WHERE osf_basefilenode_versions.basefilenode_id = F.id
-                ORDER BY date_created DESC
+                ORDER BY created DESC
                 LIMIT 1
             ) LATEST_VERSION ON TRUE
             LEFT JOIN LATERAL (
                 SELECT * FROM osf_fileversion
                 JOIN osf_basefilenode_versions ON osf_fileversion.id = osf_basefilenode_versions.fileversion_id
                 WHERE osf_basefilenode_versions.basefilenode_id = F.id
-                ORDER BY date_created ASC
+                ORDER BY created ASC
                 LIMIT 1
             ) EARLIEST_VERSION ON TRUE
             LEFT JOIN LATERAL (
@@ -207,6 +203,9 @@ def osfstorage_create_child(file_node, payload, node_addon, **kwargs):
     if not (name or user) or '/' in name:
         raise HTTPError(httplib.BAD_REQUEST)
 
+    if file_node.node.is_quickfiles and is_folder:
+        raise HTTPError(httplib.BAD_REQUEST, data={'message_long': 'You may not create a folder for QuickFiles'})
+
     try:
         # Create a save point so that we can rollback and unlock
         # the parent record
@@ -220,7 +219,7 @@ def osfstorage_create_child(file_node, payload, node_addon, **kwargs):
 
     if not created and is_folder:
         raise HTTPError(httplib.CONFLICT, data={
-            'message': 'Cannot create folder "{name}" because a file or folder already exists at path "{path}"'.format(
+            'message_long': 'Cannot create folder "{name}" because a file or folder already exists at path "{path}"'.format(
                 name=file_node.name,
                 path=file_node.materialized_path,
             )
@@ -295,6 +294,7 @@ def osfstorage_download(file_node, payload, node_addon, **kwargs):
     if user_id:
         current_session = get_session()
         current_session.data['auth_user_id'] = user_id
+        current_session.save()
 
     if not request.args.get('version'):
         version_id = None

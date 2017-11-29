@@ -1,25 +1,21 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 """Generate a sitemap for osf.io"""
+import boto3
 import datetime
 import gzip
-import math
 import os
 import shutil
-import sys
-import urllib
 import urlparse
 import xml
 
 import django
 django.setup()
-from django.db import transaction
 import logging
 
 from framework import sentry
 from framework.celery_tasks import app as celery_app
-from osf.models import OSFUser, AbstractNode, Registration
-from osf.models.preprint_service import PreprintService
+from osf.models import OSFUser, AbstractNode, PreprintService, PreprintProvider
 from scripts import utils as script_utils
 from website import settings
 from website.app import init_app
@@ -27,26 +23,6 @@ from website.app import init_app
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO)
 
-class Progress(object):
-    def __init__(self, bar_len=50):
-        self.bar_len = bar_len
-    
-    def start(self, total, prefix):
-        self.total = total
-        self.count = 0
-        self.prefix = prefix
-    
-    def increment(self, inc=1):
-        self.count += inc
-        filled_len = int(round(self.bar_len * self.count / float(self.total)))
-        percents = round(100.0 * self.count / float(self.total), 1)
-        bar = '=' * filled_len + '-' * (self.bar_len - filled_len)
-        sys.stdout.flush()
-        sys.stdout.write('{}[{}] {}{} ... {}\r'.format(self.prefix, bar, percents, '%', str(self.total)))
-
-    def stop(self):
-        # To preserve line, there is probably a better way to do this
-        print('')
 
 class Sitemap(object):
     def __init__(self):
@@ -57,6 +33,16 @@ class Sitemap(object):
         if not os.path.exists(self.sitemap_dir):
             print('Creating sitemap directory at `{}`'.format(self.sitemap_dir))
             os.makedirs(self.sitemap_dir)
+        if settings.SITEMAP_TO_S3:
+            assert settings.SITEMAP_AWS_BUCKET, 'SITEMAP_AWS_BUCKET must be set for sitemap files to be sent to S3'
+            assert settings.AWS_ACCESS_KEY_ID, 'AWS_ACCESS_KEY_ID must be set for sitemap files to be sent to S3'
+            assert settings.AWS_SECRET_ACCESS_KEY, 'AWS_SECRET_ACCESS_KEY must be set for sitemap files to be sent to S3'
+            self.s3 = boto3.resource(
+                's3',
+                aws_access_key_id=settings.AWS_ACCESS_KEY_ID,
+                aws_secret_access_key=settings.AWS_SECRET_ACCESS_KEY,
+                region_name='us-east-1'
+            )
 
     def new_doc(self):
         """Creates new sitemap document and resets the url_count."""
@@ -87,16 +73,33 @@ class Sitemap(object):
 
     def write_doc(self):
         """Writes and gzips each sitemap xml file"""
-        path = os.path.join(self.sitemap_dir, 'sitemap_{}.xml'.format(str(self.sitemap_count)))
-        print('Writing and gzipping `{}`: url_count = {}'.format(path, str(self.url_count)))
+        file_name = 'sitemap_{}.xml'.format(str(self.sitemap_count))
+        file_path = os.path.join(self.sitemap_dir, file_name)
+        zip_file_name = file_name + '.gz'
+        zip_file_path = file_path + '.gz'
+        print('Writing and gzipping `{}`: url_count = {}'.format(file_path, str(self.url_count)))
 
         xml_str = self.doc.toprettyxml(indent="  ", encoding='utf-8')
-        with open(path, 'w') as f:
+        with open(file_path, 'wb') as f:
             f.write(xml_str)
+
         # Write zipped file
-        with open(path, 'rb') as f_in, gzip.open(path + '.gz', 'wb') as f_out:
+        with open(file_path, 'rb') as f_in, gzip.open(zip_file_path, 'wb') as f_out:
             shutil.copyfileobj(f_in, f_out)
+        if settings.SITEMAP_TO_S3:
+            self.ship_to_s3(file_name, file_path)
+            self.ship_to_s3(zip_file_name, zip_file_path)
         self.sitemap_count += 1
+
+    def ship_to_s3(self, name, path):
+        data = open(path, 'rb')
+        try:
+            self.s3.Bucket(settings.SITEMAP_AWS_BUCKET).put_object(Key='sitemaps/{}'.format(name), Body=data)
+        except Exception as e:
+            logger.info('Error sending data to s3 via boto3')
+            logger.exception(e)
+            sentry.log_message('ERROR: Sitemaps could not be uploaded to s3, see `generate_sitemap` logs')
+        data.close()
 
     def write_sitemap_index(self):
         """Writes the index file for all of the sitemap files"""
@@ -108,10 +111,10 @@ class Sitemap(object):
         for f in range(self.sitemap_count):
             sitemap = doc.createElement('sitemap')
             sitemap_index.appendChild(sitemap)
-            
+
             loc = doc.createElement('loc')
             sitemap.appendChild(loc)
-            loc_text = self.doc.createTextNode(urlparse.urljoin(settings.DOMAIN, 'sitemaps/sitemap_{}.xml.gz'.format(str(f))))
+            loc_text = self.doc.createTextNode(urlparse.urljoin(settings.DOMAIN, 'sitemaps/sitemap_{}.xml'.format(str(f))))
             loc.appendChild(loc_text)
 
             datemod = doc.createElement('lastmod')
@@ -120,9 +123,13 @@ class Sitemap(object):
             datemod.appendChild(datemod_text)
 
         print('Writing `sitemap_index.xml`')
+        file_name = 'sitemap_index.xml'
+        file_path = os.path.join(self.sitemap_dir, file_name)
         xml_str = doc.toprettyxml(indent="  ", encoding='utf-8')
-        with open(os.path.join(self.sitemap_dir, 'sitemap_index.xml'), 'w') as f:
+        with open(file_path, 'wb') as f:
             f.write(xml_str)
+        if settings.SITEMAP_TO_S3:
+            self.ship_to_s3(file_name, file_path)
 
     def log_errors(self, obj, obj_id, error):
         if not self.errors:
@@ -130,6 +137,10 @@ class Sitemap(object):
         self.errors += 1
         logger.info('Error on {}, {}:'.format(obj, obj_id))
         logger.exception(error)
+
+        if self.errors <= 10:
+            sentry.log_message('Sitemap Error: {}'.format(error))
+
         if self.errors == 1000:
             sentry.log_message('ERROR: generate_sitemap stopped execution after reaching 1000 errors. See logs for details.')
             raise Exception('Too many errors generating sitemap.')
@@ -138,7 +149,7 @@ class Sitemap(object):
         print('Generating Sitemap')
 
         # Progress bar
-        progress = Progress()
+        progress = script_utils.Progress()
 
         # Static urls
         progress.start(len(settings.SITEMAP_STATIC_URLS), 'STAT: ')
@@ -149,52 +160,65 @@ class Sitemap(object):
         progress.stop()
 
         # User urls
-        objs = OSFUser.objects.filter(is_active=True)
+        objs = OSFUser.objects.filter(is_active=True).values_list('guids___id', flat=True)
         progress.start(objs.count(), 'USER: ')
-        for obj in objs.iterator():
+        for obj in objs:
             try:
                 config = settings.SITEMAP_USER_CONFIG
-                config['loc'] = urlparse.urljoin(settings.DOMAIN, obj.url)
+                config['loc'] = urlparse.urljoin(settings.DOMAIN, '/{}/'.format(obj))
                 self.add_url(config)
             except Exception as e:
-                self.log_errors(obj, obj._id, e)
+                self.log_errors('USER', obj, e)
             progress.increment()
         progress.stop()
 
-        # AbstractNode urls (Nodes and Registrations, no colelctions)
-        objs = AbstractNode.objects.filter(is_public=True, is_deleted=False, retraction_id__isnull=True).exclude(type="osf.collection") 
+        # AbstractNode urls (Nodes and Registrations, no Collections)
+        objs = (AbstractNode.objects
+            .filter(is_public=True, is_deleted=False, retraction_id__isnull=True)
+            .exclude(type__in=["osf.collection", "osf.quickfilesnode"])
+            .values('guids___id', 'modified'))
         progress.start(objs.count(), 'NODE: ')
-        for obj in objs.iterator():
+        for obj in objs:
             try:
                 config = settings.SITEMAP_NODE_CONFIG
-                config['loc'] = urlparse.urljoin(settings.DOMAIN, obj.url)
-                config['lastmod'] = obj.date_modified.strftime('%Y-%m-%d')
+                config['loc'] = urlparse.urljoin(settings.DOMAIN, '/{}/'.format(obj['guids___id']))
+                config['lastmod'] = obj['modified'].strftime('%Y-%m-%d')
                 self.add_url(config)
             except Exception as e:
-                self.log_errors(obj, obj._id, e)
+                self.log_errors('NODE', obj['guids___id'], e)
             progress.increment()
         progress.stop()
 
         # Preprint urls
-        objs = PreprintService.objects.filter(node__isnull=False, node__is_deleted=False, node__is_public=True, is_published=True)
+        objs = (PreprintService.objects
+                    .filter(node__isnull=False, node__is_deleted=False, node__is_public=True, is_published=True)
+                    .select_related('node', 'provider', 'node__preprint_file'))
         progress.start(objs.count() * 2, 'PREP: ')
-        for obj in objs.iterator():
+        osf = PreprintProvider.objects.get(_id='osf')
+        for obj in objs:
             try:
-                preprint_date = obj.date_modified.strftime('%Y-%m-%d')
+                preprint_date = obj.modified.strftime('%Y-%m-%d')
                 config = settings.SITEMAP_PREPRINT_CONFIG
-                config['loc'] = urlparse.urljoin(settings.DOMAIN, obj.url)
+                preprint_url = obj.url
+                provider = obj.provider
+                domain = provider.domain if (provider.domain_redirect_enabled and provider.domain) else settings.DOMAIN
+                if provider == osf:
+                    preprint_url = '/preprints/{}/'.format(obj._id)
+                config['loc'] = urlparse.urljoin(domain, preprint_url)
                 config['lastmod'] = preprint_date
                 self.add_url(config)
 
                 # Preprint file urls
                 try:
                     file_config = settings.SITEMAP_PREPRINT_FILE_CONFIG
-                    file_config['loc'] = urlparse.urljoin(settings.DOMAIN, 
-                        os.path.join('project', 
-                            obj.primary_file.node._id, # Parent node id
+                    file_config['loc'] = urlparse.urljoin(
+                        settings.DOMAIN,
+                        os.path.join(
+                            'project',
+                            obj.node._id,   # Parent node id
                             'files',
                             'osfstorage',
-                            obj.primary_file._id, # Preprint file deep_url
+                            obj.primary_file._id,  # Preprint file deep_url
                             '?action=download'
                         )
                     )
@@ -215,7 +239,7 @@ class Sitemap(object):
         # TODO: once the sitemap is validated add a ping to google with sitemap index file location
         # TODO: server side cursor query wrapper might be useful as the index gets larger.
         # Sitemap indexable limit check
-        if self.sitemap_count > settings.SITEMAP_INDEX_MAX * .90: # 10% of urls remaining
+        if self.sitemap_count > settings.SITEMAP_INDEX_MAX * .90:  # 10% of urls remaining
             sentry.log_message('WARNING: Max sitemaps nearly reached.')
         print('Total url_count = {}'.format((self.sitemap_count - 1) * settings.SITEMAP_URL_MAX + self.url_count))
         print('Total sitemap_count = {}'.format(str(self.sitemap_count)))

@@ -4,7 +4,6 @@ import mock
 from django.utils import timezone
 from nose.tools import *  # noqa
 from tests.base import fake, OsfTestCase
-from website.project.spam.model import SpamStatus
 from osf_tests.factories import (
     EmbargoFactory, NodeFactory, ProjectFactory,
     RegistrationFactory, UserFactory, UnconfirmedUserFactory
@@ -21,7 +20,7 @@ from osf.models.sanctions import (
     RegistrationApproval,
 )
 from framework.auth import Auth
-from osf.models import Contributor
+from osf.models import Contributor, SpamStatus
 
 
 DUMMY_TOKEN = tokens.encode({
@@ -39,11 +38,11 @@ class RegistrationApprovalModelTestCase(OsfTestCase):
         self.valid_embargo_end_date = timezone.now() + datetime.timedelta(days=3)
 
     def test__require_approval_saves_approval(self):
-        initial_count = RegistrationApproval.find().count()
+        initial_count = RegistrationApproval.objects.all().count()
         self.registration._initiate_approval(
             self.user
         )
-        assert_equal(RegistrationApproval.find().count(), initial_count + 1)
+        assert_equal(RegistrationApproval.objects.all().count(), initial_count + 1)
 
     def test__initiate_approval_does_not_create_tokens_for_unregistered_admin(self):
         unconfirmed_user = UnconfirmedUserFactory()

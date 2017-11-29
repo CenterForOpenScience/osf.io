@@ -36,6 +36,7 @@ from __future__ import print_function, absolute_import
 
 import ast
 import sys
+import mock
 import argparse
 import logging
 
@@ -43,13 +44,10 @@ import django
 import pytz
 from faker import Factory
 from faker.providers import BaseProvider
-from modularodm.exceptions import NoResultsFound
-from modularodm.query.querydialect import DefaultQueryDialect as Q
 django.setup()
 
 from framework.auth import Auth
-from framework.auth import utils
-from osf_tests.factories import UserFactory, ProjectFactory, NodeFactory, RegistrationFactory, PreprintFactory, PreprintProviderFactory
+from osf_tests.factories import UserFactory, ProjectFactory, NodeFactory, RegistrationFactory, PreprintFactory, PreprintProviderFactory, fake_email
 from osf import models
 from website.app import init_app
 
@@ -269,7 +267,7 @@ fake.add_provider(Sciencer)
 
 
 def create_fake_user():
-    email = fake.email()
+    email = fake_email()
     name = fake.name()
     user = UserFactory(username=email, fullname=name,
                        is_registered=True, is_claimed=True,
@@ -308,12 +306,14 @@ def create_fake_project(creator, n_users, privacy, n_components, name, n_tags, p
         provider = None
         if preprint_provider:
             try:
-                provider = models.PreprintProvider.find_one(Q('_id', 'eq', provider))
-            except NoResultsFound:
+                provider = models.PreprintProvider.objects.get(_id=provider)
+            except models.PreprintProvider.DoesNotExist:
                 pass
         if not provider:
             provider = PreprintProviderFactory(name=fake.science_word())
         privacy = 'public'
+        mock_change_identifier = mock.patch('website.identifiers.client.EzidClient.change_status_identifier')
+        mock_change_identifier.start()
         project = PreprintFactory(title=project_title, description=fake.science_paragraph(), creator=creator, provider=provider)
         node = project.node
     elif is_registration:
@@ -370,7 +370,7 @@ def render_generations_from_node_structure_list(parent, creator, node_structure_
 
 def main():
     args = parse_args()
-    creator = models.OSFUser.find(Q('username', 'eq', args.user))[0]
+    creator = models.OSFUser.objects.get(username=args.user)
     for i in range(args.n_projects):
         name = args.name + str(i) if args.name else ''
         create_fake_project(creator, args.n_users, args.privacy, args.n_components, name, args.n_tags,

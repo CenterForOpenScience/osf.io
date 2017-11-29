@@ -16,7 +16,7 @@ from api.institutions.serializers import InstitutionSerializer
 
 from framework.auth.oauth_scopes import CoreScopes
 
-from osf.models import Institution, FileNode, AbstractNode as Node, OSFUser as User
+from osf.models import Institution, BaseFileNode, AbstractNode, OSFUser
 from website.search import search
 from website.search.exceptions import MalformedQueryError
 from website.search.util import build_query
@@ -193,7 +193,7 @@ class SearchComponents(BaseSearchView):
 
     """
 
-    model_class = Node
+    model_class = AbstractNode
     serializer_class = NodeSerializer
 
     doc_type = 'component'
@@ -306,7 +306,7 @@ class SearchFiles(BaseSearchView):
 
     """
 
-    model_class = FileNode
+    model_class = BaseFileNode
     serializer_class = FileSerializer
 
     doc_type = 'file'
@@ -422,7 +422,7 @@ class SearchProjects(BaseSearchView):
 
     """
 
-    model_class = Node
+    model_class = AbstractNode
     serializer_class = NodeSerializer
 
     doc_type = 'project'
@@ -442,7 +442,7 @@ class SearchRegistrations(BaseSearchView):
 
     Registrations are read-only snapshots of a project. This view is a list of all current registrations for which a user
     has access.  A withdrawn registration will display a limited subset of information, namely, title, description,
-    date_created, registration, withdrawn, date_registered, withdrawal_justification, and registration supplement. All
+    created, registration, withdrawn, date_registered, withdrawal_justification, and registration supplement. All
     other fields will be displayed as null. Additionally, the only relationships permitted to be accessed for a withdrawn
     registration are the contributors - other relationships will return a 403.
 
@@ -511,7 +511,7 @@ class SearchRegistrations(BaseSearchView):
 
     """
 
-    model_class = Node
+    model_class = AbstractNode
     serializer_class = RegistrationSerializer
 
     doc_type = 'registration'
@@ -575,7 +575,7 @@ class SearchUsers(BaseSearchView):
 
     """
 
-    model_class = User
+    model_class = OSFUser
     serializer_class = UserSerializer
 
     doc_type = 'user'

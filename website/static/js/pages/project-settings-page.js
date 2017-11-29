@@ -6,6 +6,7 @@ var Raven = require('raven-js');
 var ko = require('knockout');
 
 var ProjectSettings = require('js/projectSettings.js');
+var NodesDelete = require('js/nodesDelete.js');
 var InstitutionProjectSettings = require('js/institutionProjectSettings.js');
 
 var $osf = require('js/osfHelpers');
@@ -82,13 +83,13 @@ $(document).ready(function() {
         ko.applyBindings(projectSettingsVM, $('#projectSettings')[0]);
     }
 
-    $('#deleteNode').on('click', function() {
-        if(ctx.node.childExists){
-            $osf.growl('Error', 'Any child components must be deleted prior to deleting this project.','danger', 30000);
-        }else{
+    if(ctx.node.childExists){
+        new NodesDelete.NodesDelete('#nodesDelete', ctx.node);
+    }else{
+        $('#deleteNode').on('click', function() {
             ProjectSettings.getConfirmationCode(ctx.node.nodeType, ctx.node.isPreprint);
-        }
-    });
+        });
+    }
 
     // TODO: Knockout-ify me
     $('#commentSettings').on('submit', function() {
@@ -141,7 +142,7 @@ $(document).ready(function() {
         var unchecked = checkedOnLoad.filter('#selectAddonsForm input:not(:checked)');
         var checked = uncheckedOnLoad.filter('#selectAddonsForm input:checked');
         var msgElm = $(this).find('.addon-settings-message');
-        
+
         var submit = function() {
             var request = $osf.postJSON(ctx.node.urls.api + 'settings/addons/', formData);
             return request;

@@ -4,11 +4,8 @@ import httplib as http
 from django.utils import timezone
 from nose.tools import *  # noqa (PEP8 asserts)
 
-from modularodm.exceptions import KeyExistsException
-
 from framework.auth import campaigns, views as auth_views, cas
 from website.util import web_url_for
-from website.project.model import ensure_schemas
 from osf_tests import factories
 from tests.base import OsfTestCase
 from tests.utils import mock_auth
@@ -28,10 +25,7 @@ def set_preprint_providers():
         provider = factories.PreprintProviderFactory()
         provider._id = key
         provider.name = value
-        try:
-            provider.save()
-        except KeyExistsException:
-            continue
+        provider.save()
 
 
 # tests for campaign initialization and update
@@ -48,6 +42,7 @@ class TestCampaignInitialization(OsfTestCase):
             'socarxiv-preprints',
             'engrxiv-preprints',
             'psyarxiv-preprints',
+            'osf-registries',
         ]
         self.refresh = timezone.now()
         campaigns.CAMPAIGNS = None  # force campaign refresh now that preprint providers are populated
@@ -176,7 +171,7 @@ class TestCampaignsAuthViews(OsfTestCase):
             },
             'erpc': {
                 'title_register': 'Election Research Preacceptance Competition',
-                'title_landing': 'Welcome to the Election Research Preacceptance Competition!'
+                'title_landing': 'The Election Research Preacceptance Competition is Now Closed'
             },
         }
         for key, value in self.campaigns.items():
@@ -210,17 +205,14 @@ class TestCampaignsAuthViews(OsfTestCase):
             assert_in(value['url_register'], resp.headers['Location'])
 
     def test_campaign_landing_logged_in(self):
-        ensure_schemas()
         for key, value in self.campaigns.items():
             resp = self.app.get(value['url_landing'], auth=self.user.auth)
             assert_equal(resp.status_code, http.OK)
-            assert_in(value['title_landing'], resp)
 
     def test_auth_prereg_landing_page_logged_out(self):
         for key, value in self.campaigns.items():
             resp = self.app.get(value['url_landing'])
-            assert_equal(resp.status_code, http.FOUND)
-            assert_in(cas.get_login_url(value['url_landing']), resp.headers['Location'])
+            assert_equal(resp.status_code, http.OK)
 
 
 # tests for registration through campaigns
