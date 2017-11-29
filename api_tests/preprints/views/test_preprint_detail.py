@@ -243,6 +243,18 @@ class TestPreprintUpdate:
         assert log.action == 'preprint_file_updated'
         assert log.params.get('preprint') == preprint._id
 
+    def test_update_preprints_with_no_type(self, app, user, preprint, url):
+        update_file_payload = build_preprint_update_payload(preprint._id, content_type='')
+
+        res = app.patch_json_api(url, update_file_payload, auth=user.auth)
+        assert res.status_code == 400
+
+    def test_update_preprints_with_wrong_type(self, app, user, preprint, url):
+        update_file_payload = build_preprint_update_payload(preprint._id, content_type='Nonsense')
+
+        res = app.patch_json_api(url, update_file_payload, auth=user.auth)
+        assert res.status_code == 409
+
     def test_new_primary_not_in_node(self, app, user, preprint, url):
         project = ProjectFactory()
         file_for_project = test_utils.create_test_file(project, user, filename='six_pack_novak.pdf')
