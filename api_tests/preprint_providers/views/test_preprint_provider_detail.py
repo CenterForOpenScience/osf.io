@@ -85,13 +85,14 @@ class TestPreprintProviderUpdate:
     def test_update_reviews_settings(self, app, preprint_provider, url, admin, moderator):
         payload = self.settings_payload(
             preprint_provider.id,
+            type='POST',
             reviews_workflow='pre-moderation',
             reviews_comments_private=False,
             reviews_comments_anonymous=False
         )
 
         # Unauthorized user can't set up moderation
-        res = app.post_json_api(url, payload, expect_errors=True)
+        res = app.patch_json_api(url, payload, expect_errors=True)
         assert res.status_code == 401
 
         # Random user can't set up moderation
