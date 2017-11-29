@@ -238,11 +238,11 @@ def archive_node(stat_results, job_pk):
             job.status = ARCHIVER_SUCCESS
             job.save()
         for result in stat_result.targets:
-            if not result.num_files:
-                job.update_target(result.target_name, ARCHIVER_SUCCESS)
+            if not result['num_files']:
+                job.update_target(result['target_name'], ARCHIVER_SUCCESS)
             else:
                 archive_addon.delay(
-                    addon_short_name=result.target_name,
+                    addon_short_name=result['target_name'],
                     job_pk=job_pk
                 )
         project_signals.archive_callback.send(dst)
