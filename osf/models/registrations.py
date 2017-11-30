@@ -387,6 +387,8 @@ class DraftRegistration(ObjectIDMixin, BaseModel):
 
     datetime_initiated = NonNaiveDateTimeField(auto_now_add=True)
     datetime_updated = NonNaiveDateTimeField(auto_now=True)
+    deleted = NonNaiveDateTimeField(null=True, blank=True)
+
     # Original Node a draft registration is associated with
     branched_from = models.ForeignKey('Node', related_name='registered_draft',
                                       null=True, on_delete=models.CASCADE)

@@ -68,7 +68,7 @@ class GitLabClient(object):
         if branch:
             return self.gitlab.getbranch(repo_id, branch)
 
-        return self.gitlab.getbranches(repo_id)
+        return self.gitlab.getbranches(repo_id) or []
 
     def starball(self, user, repo, repo_id, ref='master'):
         """Get link for archive download.

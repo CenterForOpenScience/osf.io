@@ -17,6 +17,7 @@ from api.nodes.serializers import (
 )
 from framework.exceptions import PermissionsError
 from website.util import permissions
+from website import settings
 from website.exceptions import NodeStateError
 from website.project import signals as project_signals
 from osf.models import BaseFileNode, PreprintService, PreprintProvider, Node, NodeLicense
@@ -71,8 +72,8 @@ class PreprintSerializer(JSONAPISerializer):
 
     id = IDField(source='_id', read_only=True)
     subjects = ser.SerializerMethodField()
-    date_created = DateByVersion(read_only=True)
-    date_modified = DateByVersion(read_only=True)
+    date_created = DateByVersion(source='created', read_only=True)
+    date_modified = DateByVersion(source='modified', read_only=True)
     date_published = DateByVersion(read_only=True)
     original_publication_date = DateByVersion(required=False)
     doi = ser.CharField(source='article_doi', required=False, allow_null=True)
@@ -83,6 +84,7 @@ class PreprintSerializer(JSONAPISerializer):
     description = ser.CharField(required=False, allow_blank=True, allow_null=True, source='node.description')
     tags = JSONAPIListField(child=NodeTagField(), required=False, source='node.tags')
     node_is_public = ser.BooleanField(read_only=True, source='node__is_public')
+    preprint_doi_created = DateByVersion(read_only=True)
 
     contributors = RelationshipField(
         related_view='nodes:node-contributors',
@@ -167,7 +169,11 @@ class PreprintSerializer(JSONAPISerializer):
 
     def get_preprint_doi_url(self, obj):
         doi_identifier = obj.get_identifier('doi')
-        return 'https://dx.doi.org/{}'.format(doi_identifier.value) if doi_identifier else None
+        if doi_identifier:
+            return 'https://dx.doi.org/{}'.format(doi_identifier.value)
+        else:
+            built_identifier = settings.EZID_FORMAT.format(namespace=settings.DOI_NAMESPACE, guid=obj._id).replace('doi:', '').upper()
+            return 'https://dx.doi.org/{}'.format(built_identifier) if built_identifier and obj.is_published else None
 
     def run_validation(self, *args, **kwargs):
         # Overrides construtor for validated_data to allow writes to a SerializerMethodField

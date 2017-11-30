@@ -9,7 +9,6 @@ from reviews.workflow import Triggers
 from reviews.workflow import States
 
 from osf.models.base import BaseModel, ObjectIDMixin
-from osf.utils.fields import NonNaiveDateTimeField
 
 
 class Action(ObjectIDMixin, BaseModel):
@@ -26,5 +25,3 @@ class Action(ObjectIDMixin, BaseModel):
     comment = models.TextField(blank=True)
 
     is_deleted = models.BooleanField(default=False)
-    date_created = NonNaiveDateTimeField(auto_now_add=True)
-    date_modified = NonNaiveDateTimeField(auto_now=True)

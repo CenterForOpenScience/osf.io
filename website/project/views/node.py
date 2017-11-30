@@ -542,9 +542,8 @@ def update_node(auth, node, **kwargs):
     updated_fields_dict = {
         key: getattr(node, key) if key != 'tags' else [str(tag) for tag in node.tags]
         for key in updated_field_names
-        if key != 'logs' and key != 'date_modified'
+        if key != 'logs' and key != 'modified' and key != 'last_logged'
     }
-    node.save()
     return {'updated_fields': updated_fields_dict}
 
 @must_be_valid_project
@@ -663,6 +662,7 @@ def _view_project(node, auth, primary=False,
     addons = list(node.get_addons())
     widgets, configs, js, css = _render_addons(addons)
     redirect_url = node.url + '?view_only=None'
+    node_linked_preprint = node.linked_preprint
 
     disapproval_link = ''
     if (node.is_pending_registration and node.has_permission(user, ADMIN)):
@@ -697,8 +697,8 @@ def _view_project(node, auth, primary=False,
             'in_dashboard': in_bookmark_collection,
             'is_public': node.is_public,
             'is_archiving': node.archiving,
-            'date_created': iso8601format(node.date_created),
-            'date_modified': iso8601format(node.logs.latest().date) if node.logs.exists() else '',
+            'date_created': iso8601format(node.created),
+            'date_modified': iso8601format(node.last_logged) if node.last_logged else '',
             'tags': list(node.tags.filter(system=False).values_list('name', flat=True)),
             'children': node.nodes_active.exists(),
             'child_exists': Node.objects.get_children(node, active=True).exists(),
@@ -737,6 +737,13 @@ def _view_project(node, auth, primary=False,
             'institutions': get_affiliated_institutions(node) if node else [],
             'has_draft_registrations': node.has_active_draft_registrations,
             'is_preprint': node.is_preprint,
+            'has_moderated_preprint': node_linked_preprint.provider.reviews_workflow if node_linked_preprint else '',
+            'preprint_state': node_linked_preprint.reviews_state if node_linked_preprint else '',
+            'preprint_word': node_linked_preprint.provider.preprint_word if node_linked_preprint else '',
+            'preprint_provider': {
+                'name': node_linked_preprint.provider.name,
+                'workflow': node_linked_preprint.provider.reviews_workflow
+            } if node_linked_preprint else {},
             'is_preprint_orphan': node.is_preprint_orphan,
             'has_published_preprint': node.preprints.filter(is_published=True).exists() if node else False,
             'preprint_file_id': node.preprint_file._id if node.preprint_file else None,
@@ -1069,8 +1076,8 @@ def _serialize_node_search(node):
         data['title'] += ' (registration)'
         data['dateRegistered'] = node.registered_date.isoformat()
     else:
-        data['dateCreated'] = node.date_created.isoformat()
-        data['dateModified'] = node.date_modified.isoformat()
+        data['dateCreated'] = node.created.isoformat()
+        data['dateModified'] = node.modified.isoformat()
 
     first_author = node.visible_contributors[0]
     data['firstAuthor'] = first_author.family_name or first_author.given_name or first_author.fullname

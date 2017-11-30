@@ -85,14 +85,14 @@ class FigshareProvider(ExternalProvider):
         }
 
 
-class UserSettings(BaseStorageAddon, BaseOAuthUserSettings):
+class UserSettings(BaseOAuthUserSettings):
     """Stores user-specific figshare information
     """
     oauth_provider = FigshareProvider
     serializer = FigshareSerializer
 
 
-class NodeSettings(BaseStorageAddon, BaseOAuthNodeSettings):
+class NodeSettings(BaseOAuthNodeSettings, BaseStorageAddon):
     oauth_provider = FigshareProvider
     serializer = FigshareSerializer
 

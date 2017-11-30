@@ -254,7 +254,7 @@ class CommentReportsList(JSONAPIBaseView, generics.ListCreateAPIView, CommentMix
     view_category = 'comments'
     view_name = 'comment-reports'
 
-    ordering = ('-date_modified',)
+    ordering = ('-modified',)
 
     def get_queryset(self):
         user_id = self.request.user._id

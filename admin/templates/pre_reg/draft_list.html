@@ -9,14 +9,6 @@
 
 {% block content %}
     <h2>List of Preregistration Drafts</h2>
-    {% if perms.osf.view_prereg %}
-    <div>
-        {# Add types here #}
-        <a href="{% url 'pre_reg:download' %}" class="btn btn-primary">
-            Download all
-        </a>
-    </div>
-    {%  endif %}
     {% include "util/pagination.html" with items=page status=status pagin=p order=order %}
     <table class="table table-striped table-hover table-responsive">
     <thead>

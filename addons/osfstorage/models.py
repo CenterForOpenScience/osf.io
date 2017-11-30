@@ -224,13 +224,13 @@ class OsfStorageFile(OsfStorageFileNode, File):
             ret['fullPath'] = self.materialized_path
 
         version = self.get_version(version)
-        earliest_version = self.versions.order_by('date_created').first()
+        earliest_version = self.versions.order_by('created').first()
         ret.update({
             'version': self.versions.count(),
             'md5': version.metadata.get('md5') if version else None,
             'sha256': version.metadata.get('sha256') if version else None,
-            'modified': version.date_created.isoformat() if version else None,
-            'created': earliest_version.date_created.isoformat() if version else None,
+            'modified': version.created.isoformat() if version else None,
+            'created': earliest_version.created.isoformat() if version else None,
         })
         return ret
 
@@ -381,7 +381,7 @@ class OsfStorageFolder(OsfStorageFileNode, Folder):
         return ret
 
 
-class NodeSettings(BaseStorageAddon, BaseNodeSettings):
+class NodeSettings(BaseNodeSettings, BaseStorageAddon):
     # Required overrides
     complete = True
     has_auth = True

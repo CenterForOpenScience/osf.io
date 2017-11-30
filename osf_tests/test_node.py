@@ -322,6 +322,19 @@ class TestParentNode:
         registration_grandchild = NodeFactory(parent=registration_child)
         assert registration_grandchild.parent_node._id == registration_child._id
 
+    def test_recursive_registrations_have_correct_root(self, project, auth):
+        child = NodeFactory(parent=project)
+        grandchild = NodeFactory(parent=child)
+
+        with disconnected_from_listeners(after_create_registration):
+            reg_root = project.register_node(get_default_metaschema(), auth, '', None)
+        reg_child = reg_root._nodes.first()
+        reg_grandchild = reg_child._nodes.first()
+
+        assert reg_root.root == reg_root
+        assert reg_child.root == reg_root
+        assert reg_grandchild.root == reg_root
+
     def test_fork_has_no_parent(self, project, auth):
         fork = project.fork_node(auth=auth)
         assert fork.parent_node is None
@@ -337,6 +350,18 @@ class TestParentNode:
         fork_grandchild = NodeFactory(parent=fork_child)
         assert fork_grandchild.parent_node._id == fork_child._id
 
+    def test_recursive_forks_have_correct_root(self, project, auth):
+        child = NodeFactory(parent=project)
+        grandchild = NodeFactory(parent=child)
+
+        fork_root = project.fork_node(auth=auth)
+        fork_child = fork_root._nodes.first()
+        fork_grandchild = fork_child._nodes.first()
+
+        assert fork_root.root == fork_root
+        assert fork_child.root == fork_root
+        assert fork_grandchild.root == fork_root
+
     def test_template_has_no_parent(self, template):
         assert template.parent_node is None
 
@@ -348,6 +373,18 @@ class TestParentNode:
         template_child = NodeFactory(parent=template)
         new_project_grandchild = NodeFactory(parent=template_child)
         assert new_project_grandchild.parent_node._id == template_child._id
+
+    def test_recursive_templates_have_correct_root(self, project, auth):
+        child = NodeFactory(parent=project)
+        grandchild = NodeFactory(parent=child)
+
+        template_root = project.use_as_template(auth=auth)
+        template_child = template_root._nodes.first()
+        template_grandchild = template_child._nodes.first()
+
+        assert template_root.root == template_root
+        assert template_child.root == template_root
+        assert template_grandchild.root == template_root
 
     def test_template_project_does_not_copy_deleted_components(self, project, child, deleted_child, template):
         """Regression test for https://openscience.atlassian.net/browse/OSF-5942. """
@@ -607,7 +644,7 @@ class TestProject:
         assert node.category == 'project'
         assert bool(node._id)
         # assert_almost_equal(
-        #     node.date_created, timezone.now(),
+        #     node.created, timezone.now(),
         #     delta=datetime.timedelta(seconds=5),
         # )
         assert node.is_public is False
@@ -671,8 +708,8 @@ class TestLogging:
         # date is tzaware
         assert last_log.date.tzinfo == pytz.utc
 
-        # updates node.date_modified
-        assert_datetime_equal(node.date_modified, last_log.date)
+        # updates node.modified
+        assert_datetime_equal(node.modified, last_log.date)
 
 
 class TestTagging:
@@ -779,7 +816,7 @@ class TestNodeCreation:
         assert first_log.action == NodeLog.PROJECT_CREATED
         params = first_log.params
         assert params['node'] == node._id
-        assert_datetime_equal(first_log.date, node.date_created)
+        assert_datetime_equal(first_log.date, node.created)
 
 # Copied from tests/test_models.py
 class TestContributorMethods:
@@ -2615,8 +2652,8 @@ class TestForkNode:
         assert fork._id in [n._id for n in original.forks.all()]
         # Note: Must cast ForeignList to list for comparison
         assert list(fork.contributors.all()) == [fork_user]
-        assert (fork_date - fork.date_created) < datetime.timedelta(seconds=30)
-        assert fork.forked_date != original.date_created
+        assert (fork_date - fork.created) < datetime.timedelta(seconds=30)
+        assert fork.forked_date != original.created
 
         # Test that pointers were copied correctly
         assert(
@@ -3474,7 +3511,7 @@ class TestTemplateNode:
         )
 
         assert new.title == self._default_title(project)
-        assert new.date_created != project.date_created
+        assert new.created != project.created
         self._verify_log(new)
 
     def test_simple_template_title_changed(self, project, auth):
@@ -3492,7 +3529,7 @@ class TestTemplateNode:
         )
 
         assert new.title == changed_title
-        assert new.date_created != project.date_created
+        assert new.created != project.created
         self._verify_log(new)
 
     def test_use_as_template_adds_default_addons(self, project, auth):

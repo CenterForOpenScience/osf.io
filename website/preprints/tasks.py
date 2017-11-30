@@ -122,7 +122,7 @@ def format_preprint(preprint, share_type, old_subjects=None):
         # If we send a date_updated that is <= the one we previously sent, SHARE will ignore any changes
         # because it looks like a race condition that arose from preprints being resent to SHARE on
         # every step of preprint creation.
-        'date_updated': max(preprint.date_modified, preprint.node.date_modified).isoformat(),
+        'date_updated': max(preprint.modified, preprint.node.modified).isoformat(),
         'date_published': preprint.date_published.isoformat() if preprint.date_published else None
     })
 
@@ -185,7 +185,7 @@ def get_and_set_preprint_identifiers(preprint_id):
     if ezid_response is None:
         return
     id_dict = parse_identifiers(ezid_response)
-    preprint.set_identifier_values(doi=id_dict['doi'], ark=id_dict['ark'])
+    preprint.set_identifier_values(doi=id_dict['doi'], ark=id_dict['ark'], save=True)
 
 
 @celery_app.task(ignore_results=True)

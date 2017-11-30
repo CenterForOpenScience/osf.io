@@ -271,6 +271,15 @@ class TestDraftRegistrationViews(RegistrationsTestBase):
         assert_equal(res.status_code, http.OK)
         assert_equal(res.json['pk'], self.draft._id)
 
+    def test_get_draft_registration_deleted(self):
+        self.draft.deleted = timezone.now()
+        self.draft.save()
+        self.draft.reload()
+
+        url = self.draft_api_url('get_draft_registration')
+        res = self.app.get(url, auth=self.user.auth, expect_errors=True)
+        assert_equal(res.status_code, http.GONE)
+
     def test_get_draft_registration_invalid(self):
         url = self.node.api_url_for('get_draft_registration', draft_id='13123123')
         res = self.app.get(url, auth=self.user.auth, expect_errors=True)
@@ -401,20 +410,20 @@ class TestDraftRegistrationViews(RegistrationsTestBase):
         assert_equal(res.status_code, http.FORBIDDEN)
 
     def test_delete_draft_registration(self):
-        assert_equal(1, DraftRegistration.objects.all().count())
+        assert_equal(1, DraftRegistration.objects.filter(deleted__isnull=True).count())
         url = self.node.api_url_for('delete_draft_registration', draft_id=self.draft._id)
 
         res = self.app.delete(url, auth=self.user.auth)
         assert_equal(res.status_code, http.NO_CONTENT)
-        assert_equal(0, DraftRegistration.objects.all().count())
+        assert_equal(0, DraftRegistration.objects.filter(deleted__isnull=True).count())
 
     def test_delete_draft_registration_non_admin(self):
-        assert_equal(1, DraftRegistration.objects.all().count())
+        assert_equal(1, DraftRegistration.objects.filter(deleted__isnull=True).count())
         url = self.node.api_url_for('delete_draft_registration', draft_id=self.draft._id)
 
         res = self.app.delete(url, auth=self.non_admin.auth, expect_errors=True)
         assert_equal(res.status_code, http.FORBIDDEN)
-        assert_equal(1, DraftRegistration.objects.all().count())
+        assert_equal(1, DraftRegistration.objects.filter(deleted__isnull=True).count())
 
     @mock.patch('website.archiver.tasks.archive')
     def test_delete_draft_registration_registered(self, mock_register_draft):
@@ -430,21 +439,21 @@ class TestDraftRegistrationViews(RegistrationsTestBase):
         self.draft.registered_node.is_deleted = True
         self.draft.registered_node.save()
 
-        assert_equal(1, DraftRegistration.objects.all().count())
+        assert_equal(1, DraftRegistration.objects.filter(deleted__isnull=True).count())
         url = self.node.api_url_for('delete_draft_registration', draft_id=self.draft._id)
 
         res = self.app.delete(url, auth=self.user.auth)
         assert_equal(res.status_code, http.NO_CONTENT)
-        assert_equal(0, DraftRegistration.objects.all().count())
+        assert_equal(0, DraftRegistration.objects.filter(deleted__isnull=True).count())
 
     def test_only_admin_can_delete_registration(self):
         non_admin = AuthUserFactory()
-        assert_equal(1, DraftRegistration.objects.all().count())
+        assert_equal(1, DraftRegistration.objects.filter(deleted__isnull=True).count())
         url = self.node.api_url_for('delete_draft_registration', draft_id=self.draft._id)
 
         res = self.app.delete(url, auth=non_admin.auth, expect_errors=True)
         assert_equal(res.status_code, http.FORBIDDEN)
-        assert_equal(1, DraftRegistration.objects.all().count())
+        assert_equal(1, DraftRegistration.objects.filter(deleted__isnull=True).count())
 
     def test_get_metaschemas(self):
         url = api_url_for('get_metaschemas')

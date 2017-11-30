@@ -140,7 +140,7 @@ class CreateInstitution(PermissionRequiredMixin, CreateView):
 class InstitutionNodeList(PermissionRequiredMixin, ListView):
     template_name = 'institutions/node_list.html'
     paginate_by = 25
-    ordering = 'date_modified'
+    ordering = 'modified'
     permission_required = 'osf.view_node'
     raise_exception = True
     model = Node
