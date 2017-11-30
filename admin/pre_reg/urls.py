@@ -7,7 +7,6 @@ app_name = 'admin'
 
 urlpatterns = [
     url(r'^$', views.DraftListView.as_view(), name='prereg'),
-    url(r'^download/$', views.DraftDownloadListView.as_view(), name='download'),
     url(
         r'^drafts/(?P<draft_pk>[0-9a-z]+)/$',
         views.DraftDetailView.as_view(),

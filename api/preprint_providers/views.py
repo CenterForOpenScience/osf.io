@@ -19,6 +19,7 @@ from api.base.pagination import MaxSizePagination
 from api.base.utils import get_object_or_error, get_user_auth, is_truthy
 from api.licenses.views import LicenseList
 from api.taxonomies.serializers import TaxonomySerializer
+from api.taxonomies.utils import optimize_subject_query
 from api.preprint_providers.serializers import PreprintProviderSerializer
 from api.preprints.serializers import PreprintSerializer
 
@@ -248,7 +249,7 @@ class PreprintProviderPreprintList(JSONAPIBaseView, generics.ListAPIView, Prepri
         PreprintPublishedOrAdmin,
     )
 
-    ordering = ('-date_created')
+    ordering = ('-created')
 
     serializer_class = PreprintSerializer
     model_class = AbstractNode
@@ -322,14 +323,14 @@ class PreprintProviderTaxonomies(JSONAPIBaseView, generics.ListAPIView):
             if parent == 'null':
                 return provider.top_level_subjects
             if provider.subjects.exists():
-                return provider.subjects.filter(parent___id=parent)
+                return optimize_subject_query(provider.subjects.filter(parent___id=parent))
             else:
                 # TODO: Delet this when all PreprintProviders have a mapping
                 #  Calculate this here to only have to do it once.
                 allowed_parents = [id_ for sublist in provider.subjects_acceptable for id_ in sublist[0]]
                 allows_children = [subs[0][-1] for subs in provider.subjects_acceptable if subs[1]]
-                return [sub for sub in Subject.objects.filter(parent___id=parent) if provider.subjects_acceptable == [] or self.is_valid_subject(allows_children=allows_children, allowed_parents=allowed_parents, sub=sub)]
-        return provider.all_subjects
+                return [sub for sub in optimize_subject_query(Subject.objects.filter(parent___id=parent)) if provider.subjects_acceptable == [] or self.is_valid_subject(allows_children=allows_children, allowed_parents=allowed_parents, sub=sub)]
+        return optimize_subject_query(provider.all_subjects)
 
 
 class PreprintProviderHighlightedSubjectList(JSONAPIBaseView, generics.ListAPIView):
@@ -348,7 +349,7 @@ class PreprintProviderHighlightedSubjectList(JSONAPIBaseView, generics.ListAPIVi
 
     def get_queryset(self):
         provider = get_object_or_error(PreprintProvider, self.kwargs['provider_id'], self.request, display_name='PreprintProvider')
-        return Subject.objects.filter(id__in=[s.id for s in provider.highlighted_subjects]).order_by('text')
+        return optimize_subject_query(Subject.objects.filter(id__in=[s.id for s in provider.highlighted_subjects]).order_by('text'))
 
 
 class PreprintProviderLicenseList(LicenseList):

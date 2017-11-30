@@ -148,7 +148,7 @@ class FilterMixin(object):
     def _parse_date_param(self, field, source_field_name, op, value):
         """
         Allow for ambiguous date filters. This supports operations like finding Nodes created on a given day
-        even though Node.date_created is a specific datetime.
+        even though Node.created is a specific datetime.
 
         :return list<dict>: list of one (specific datetime) or more (date range) parsed query params
         """

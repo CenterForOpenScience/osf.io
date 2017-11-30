@@ -1115,6 +1115,17 @@ class TestMergingUsers:
         merge_dupe()
         assert dashnode not in master.contributed
 
+    # Note the files are merged, but the actual node stays with the dupe user
+    def test_quickfiles_node_arent_merged(self, dupe, master, merge_dupe):
+        assert master.nodes.filter(type='osf.quickfilesnode').count() == 1
+        assert dupe.nodes.filter(type='osf.quickfilesnode').count() == 1
+
+        merge_dupe()
+        master.refresh_from_db()
+        dupe.refresh_from_db()
+        assert master.nodes.filter(type='osf.quickfilesnode').count() == 1
+        assert dupe.nodes.filter(type='osf.quickfilesnode').count() == 1
+
     def test_dupe_is_merged(self, dupe, master, merge_dupe):
         merge_dupe()
         assert dupe.is_merged
@@ -1279,8 +1290,8 @@ class TestDisablingUsers(OsfTestCase):
 
     @mock.patch('website.mailchimp_utils.get_mailchimp_api')
     def test_disable_account_and_remove_sessions(self, mock_mail):
-        session1 = SessionFactory(user=self.user, date_created=(timezone.now() - dt.timedelta(seconds=settings.OSF_SESSION_TIMEOUT)))
-        session2 = SessionFactory(user=self.user, date_created=(timezone.now() - dt.timedelta(seconds=settings.OSF_SESSION_TIMEOUT)))
+        session1 = SessionFactory(user=self.user, created=(timezone.now() - dt.timedelta(seconds=settings.OSF_SESSION_TIMEOUT)))
+        session2 = SessionFactory(user=self.user, created=(timezone.now() - dt.timedelta(seconds=settings.OSF_SESSION_TIMEOUT)))
 
         self.user.mailchimp_mailing_lists[settings.MAILCHIMP_GENERAL_LIST] = True
         self.user.save()
@@ -1436,7 +1447,7 @@ class TestUser(OsfTestCase):
         # make sure there's at least one project
         ProjectFactory(creator=self.user)
         projects_created_by_user = AbstractNode.objects.filter(creator=self.user)
-        assert list(self.user.created.all()) == list(projects_created_by_user)
+        assert list(self.user.nodes_created.all()) == list(projects_created_by_user)
 
 
 # Copied from tests/models/test_user.py

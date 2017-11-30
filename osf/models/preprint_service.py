@@ -25,8 +25,6 @@ from osf.models.base import BaseModel, GuidMixin
 from osf.models.identifiers import IdentifierMixin, Identifier
 
 class PreprintService(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin, BaseModel):
-    date_created = NonNaiveDateTimeField(auto_now_add=True)
-    date_modified = NonNaiveDateTimeField(auto_now=True)
     provider = models.ForeignKey('osf.PreprintProvider',
                                  on_delete=models.SET_NULL,
                                  related_name='preprint_services',
@@ -43,6 +41,7 @@ class PreprintService(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMi
     subjects = models.ManyToManyField(blank=True, to='osf.Subject', related_name='preprint_services')
 
     identifiers = GenericRelation(Identifier, related_query_name='preprintservices')
+    preprint_doi_created = NonNaiveDateTimeField(default=None, null=True, blank=True)
 
     class Meta:
         unique_together = ('node', 'provider')
@@ -205,7 +204,7 @@ class PreprintService(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMi
                 )
 
             # This should be called after all fields for EZID metadta have been set
-            enqueue_postcommit_task(get_and_set_preprint_identifiers, (), {'preprint': self}, celery=True)
+            enqueue_postcommit_task(get_and_set_preprint_identifiers, (), {'preprint_id': self._id}, celery=True)
 
             self._send_preprint_confirmation(auth)
 
@@ -233,6 +232,7 @@ class PreprintService(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMi
     def set_identifier_values(self, doi, ark, save=False):
         self.set_identifier_value('doi', doi)
         self.set_identifier_value('ark', ark)
+        self.preprint_doi_created = timezone.now()
 
         if save:
             self.save()
