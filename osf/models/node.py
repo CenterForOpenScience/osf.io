@@ -2052,17 +2052,12 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
             # template child nodes
             if not node_relation.is_node_link:
                 try:  # Catch the potential PermissionsError above
-                    templated_child = node_contained.use_as_template(auth, changes, top_level=False, parent=new)
+                    node_contained.use_as_template(auth, changes, top_level=False, parent=new)
                 except PermissionsError:
                     pass
-                else:
-                    NodeRelation.objects.get_or_create(
-                        parent=new, child=templated_child,
-                        is_node_link=False
-                    )
-                    templated_child.root = None
-                    templated_child.save()  # Recompute root on save()
 
+        new.root = None
+        new.save()  # Recompute root on save()
         return new
 
     def next_descendants(self, auth, condition=lambda auth, node: True):
