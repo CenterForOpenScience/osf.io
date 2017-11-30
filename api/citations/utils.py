@@ -129,7 +129,7 @@ def apa_reformat(node, cit):
         name_list = [apa_name(process_name(node, x)) for x in contributors_list]
         if len(contributors_list) in range(1, 8):
             new_apa = '& '.join(name_list)
-        if len(contributors_list) > 8:
+        if len(contributors_list) > 7:
             new_apa = ' '.join(name_list)
     cit = new_apa + '(' + new_csl
     return cit
@@ -148,15 +148,44 @@ def apa_name(name):
     return apa_name
 
 def mla_reformat(node, cit):
+    new_csl = cit.split('(')[1]
+    new_apa = ''
+    contributors_list = [x for x in node.contributors if node.get_visible(x)]
+    if len(contributors_list) == 1:
+        name = process_name(node, contributors_list[0])
+        new_apa = mla_name(name)
+    else:
+        name_list = [apa_name(process_name(node, x)) for x in contributors_list]
+        if len(contributors_list) in range(1, 5):
+            new_apa = '& '.join(name_list)
+        if len(contributors_list) > 4:
+            new_apa = ' '.join(name_list)
+    cit = new_apa + '(' + new_csl
     return cit
 
 def chicago_reformat(node, cit):
     return cit
 
 
-def process_apa_name(user):
-    return user
-
-
-
-
+def mla_name(name, inital=False):
+    if inital:
+        mla_name = ''
+        if name['family_name']:
+            mla_name += name['family_name'] + ', '
+        if name['given_name']:
+            mla_name += name['given_name']
+            if name['middle_names']:
+                mla_name += ' ' + name['middle_names'][0] + '.'
+            mla_name += ', '
+        if name['suffix']:
+            mla_name += name['suffix'] + ' '
+    else:
+        mla_name = ''
+        if name['given_name']:
+            mla_name += name['given_name']
+            if name['middle_names']:
+                mla_name += ' ' + name['middle_names'][0]
+            mla_name += ', '
+        if name['suffix']:
+            mla_name += name['suffix'] + ' '
+            
