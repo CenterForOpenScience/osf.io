@@ -32,6 +32,20 @@ var bannerOptions = [
             src:'/static/img/front-page/giving_tuesday_week02_mobile.png',
             alt:'Happy Giving Tuesday! Please make a gift to support the OSF tools you use and love.'
         },
+    }, {
+        startDate: new Date(2017, 10, 29),
+        endDate: new Date(2017, 11, 6),
+        license: '© Nestlé',
+        imageLg: {
+            src:'/static/img/front-page/week03_dec2017.svg',
+            alt:'The Center for Open Science created the OSF and a suite of free products to advance the work of the ' +
+            'research community. If you value these tools, please make a gift to support COS’s efforts to improve and ' +
+            'scale these services. DONATE NOW!'
+        },
+        imageSm: {
+            src:'/static/img/front-page/week03_dec2017_mobile.svg',
+            alt:'Support COS’s efforts to improve free products and advance the work of the research community.'
+        },
     },
 ];
 

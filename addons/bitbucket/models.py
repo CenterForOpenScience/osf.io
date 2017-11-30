@@ -80,7 +80,7 @@ class BitbucketProvider(ExternalProvider):
         return self.account.oauth_key
 
 
-class UserSettings(BaseStorageAddon, BaseOAuthUserSettings):
+class UserSettings(BaseOAuthUserSettings):
     """Stores user-specific bitbucket information
 
     Quirks::
@@ -101,7 +101,7 @@ class UserSettings(BaseStorageAddon, BaseOAuthUserSettings):
         return None
 
 
-class NodeSettings(BaseStorageAddon, BaseOAuthNodeSettings):
+class NodeSettings(BaseOAuthNodeSettings, BaseStorageAddon):
     oauth_provider = BitbucketProvider
     serializer = BitbucketSerializer
 

@@ -49,7 +49,7 @@ class ApplicationList(JSONAPIBaseView, generics.ListCreateAPIView, ListFilterMix
 
     renderer_classes = [JSONRendererWithESISupport, JSONAPIRenderer, ]  # Hide from web-browsable API tool
 
-    ordering = ('-date_created',)
+    ordering = ('-created',)
 
     def get_default_queryset(self):
         return ApiOAuth2Application.objects.filter(owner=self.request.user, is_active=True)

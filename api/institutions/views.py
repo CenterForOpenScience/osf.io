@@ -152,7 +152,7 @@ class InstitutionNodeList(JSONAPIBaseView, generics.ListAPIView, InstitutionMixi
     view_category = 'institutions'
     view_name = 'institution-nodes'
 
-    ordering = ('-date_modified', )
+    ordering = ('-modified', )
 
     # overrides NodesFilterMixin
     def get_default_queryset(self):
@@ -217,7 +217,7 @@ class InstitutionRegistrationList(InstitutionNodeList):
     serializer_class = RegistrationSerializer
     view_name = 'institution-registrations'
 
-    ordering = ('-date_modified', )
+    ordering = ('-modified', )
 
     def get_default_queryset(self):
         institution = self.get_institution()

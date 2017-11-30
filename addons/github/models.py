@@ -68,7 +68,7 @@ class GitHubProvider(ExternalProvider):
         }
 
 
-class UserSettings(BaseStorageAddon, BaseOAuthUserSettings):
+class UserSettings(BaseOAuthUserSettings):
     """Stores user-specific github information
     """
     oauth_provider = GitHubProvider
@@ -95,7 +95,7 @@ class UserSettings(BaseStorageAddon, BaseOAuthUserSettings):
         return None
 
 
-class NodeSettings(BaseStorageAddon, BaseOAuthNodeSettings):
+class NodeSettings(BaseOAuthNodeSettings, BaseStorageAddon):
     oauth_provider = GitHubProvider
     serializer = GitHubSerializer
 

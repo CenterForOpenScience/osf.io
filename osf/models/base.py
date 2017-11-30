@@ -11,7 +11,9 @@ from django.db import models
 from django.db.models import ForeignKey
 from django.db.models.signals import post_save
 from django.dispatch import receiver
+from django_extensions.db.models import TimeStampedModel
 from include import IncludeQuerySet
+
 from osf.utils.caching import cached_property
 from osf.exceptions import ValidationError
 from osf.utils.fields import LowercaseCharField, NonNaiveDateTimeField
@@ -41,7 +43,7 @@ def generate_object_id():
     return str(bson.ObjectId())
 
 
-class BaseModel(models.Model):
+class BaseModel(TimeStampedModel):
     migration_page_size = 50000
 
     objects = models.QuerySet.as_manager()
@@ -52,8 +54,8 @@ class BaseModel(models.Model):
     def __unicode__(self):
         return '{}'.format(self.id)
 
-    def to_storage(self):
-        local_django_fields = set([x.name for x in self._meta.concrete_fields])
+    def to_storage(self, include_auto_now=True):
+        local_django_fields = set([x.name for x in self._meta.concrete_fields if include_auto_now or not getattr(x, 'auto_now', False)])
         return {name: self.serializable_value(name) for name in local_django_fields}
 
     @classmethod

@@ -383,6 +383,7 @@ class CeleryConfig:
         'scripts.populate_popular_projects_and_registrations',
         'website.search.elastic_search',
         'scripts.generate_sitemap',
+        'scripts.generate_prereg_csv',
     }
 
     med_pri_modules = {
@@ -404,6 +405,7 @@ class CeleryConfig:
         'scripts.refresh_addon_tokens',
         'scripts.retract_registrations',
         'website.archiver.tasks',
+        'scripts.add_missing_identifiers_to_preprints'
     }
 
     try:
@@ -506,6 +508,11 @@ class CeleryConfig:
                 'schedule': crontab(minute=0, hour=0),  # Daily 12 a.m
                 'kwargs': {'dry_run': False},
             },
+            'add_missing_identifiers_to_preprints': {
+                'task': 'scripts.add_missing_identifiers_to_preprints',
+                'schedule': crontab(minute=0, hour=0),  # Daily 12 a.m
+                'kwargs': {'dry_run': False},
+            },
             'approve_registrations': {
                 'task': 'scripts.approve_registrations',
                 'schedule': crontab(minute=0, hour=0),  # Daily 12 a.m
@@ -553,7 +560,7 @@ class CeleryConfig:
             'generate_sitemap': {
                 'task': 'scripts.generate_sitemap',
                 'schedule': crontab(minute=0, hour=0),  # Daily 12:00 a.m.
-            }
+            },
         }
 
         # Tasks that need metrics and release requirements

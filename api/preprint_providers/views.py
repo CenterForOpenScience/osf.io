@@ -249,7 +249,7 @@ class PreprintProviderPreprintList(JSONAPIBaseView, generics.ListAPIView, Prepri
         PreprintPublishedOrAdmin,
     )
 
-    ordering = ('-date_created')
+    ordering = ('-created')
 
     serializer_class = PreprintSerializer
     model_class = AbstractNode
