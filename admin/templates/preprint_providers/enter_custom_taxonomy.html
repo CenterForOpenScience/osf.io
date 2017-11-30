@@ -22,6 +22,17 @@
 
             <div>
                 <div class="fieldWrapper">
+                    {{ taxonomy_form.add_missing.errors }}
+                    <div class="row">
+                        <div class="col-md-2">
+                            {{ taxonomy_form.add_missing.label_tag }}
+                        </div>
+                        <div class="col-md-10">
+                            {{ taxonomy_form.add_missing }}
+                        </div>
+                    </div>
+                </div>
+                <div class="fieldWrapper">
                     {{ taxonomy_form.include.errors }}
                     <div class="row">
                         <div class="col-md-2">
@@ -72,6 +83,29 @@
                     </div>
                 </div>
             </div>
+
+            <div>
+                <div><b>Merge:</b></div>
+                <div class="panel panel-default">
+                    <div class="panel-body">
+                        {{ taxonomy_form.merge_from.errors }}
+                        <p>
+                            {{ taxonomy_form.merge_from.label_tag }}
+                            {{ taxonomy_form.merge_from }}
+                        </p>
+                        {{ taxonomy_form.merge_into.errors }}
+                        <p>
+                            {{ taxonomy_form.merge_into.label_tag }}
+                            {{ taxonomy_form.merge_into }}
+                        </p>
+                        <div class="pull-right">
+                            <button type="button" id="id-add-merge">Add</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+
             <div>
                 <div class="fieldWrapper">
                     {{ taxonomy_form.custom_taxonomy_json.errors }}
@@ -109,6 +143,7 @@
             <div class="modal-body">
                 <div>
                     <ul>
+                        <li><b>add missing</b>: Choose "add missing" to automatically include subjects that are already in use on this preprint provider.
                         <li><b>include</b>: These subjects, and their children will be included in the custom taxonomy.
                             If a second level subject is included, that second level will become the top of the subject tree, and its parent will not be in the taxonomy.</li>
                         <li><b>exclude</b>: These subjects, and their children will *not* be included in the custom taxonomy. Useful to include a top level subject, but then specify
@@ -121,6 +156,14 @@
                                     bepress subject. See JSON below for an example.
                                 </li>
                                 <li>bepress: the existing subject that you would like to repalce with the subject listed in the custom name field.</li>
+                            </ul>
+                        </li>
+                        <li><b>merge</b>: The existing Bepress subjects you would like to "merge" together..
+                            <ul>
+                                <li>merge from: The subject to merge from</li>
+                                <li>merge into: The subject you would like the original subject to become, or merge into.
+                                *Note*: The subject you select for merge into must be included explicitly, and cannot just be implicitly via selecting "Add missing"
+                                </li>
                             </ul>
                         </li>
                     </ul>
@@ -159,6 +202,10 @@
             "parent": "",
             "bepress": "Engineering"
         }
+    },
+    merge: {
+        "Dance": "Arts and Humanities",
+        "Hydrology": "Climate"
     }
 }
                 </pre>
