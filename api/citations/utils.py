@@ -47,6 +47,34 @@ def preprint_csl(preprint, node):
     return csl
 
 
+def process_name(node, user):
+    if user.is_registered or user.is_disabled:
+        name = user.fullname
+    else:
+        name = user.get_unclaimed_record(node._id)['name']
+
+    if user.family_name and user.given_name:
+        """If the user has a family and given name, use those"""
+        return {
+            'family_name': user.family_name,
+            'suffix': user.suffix,
+            'given_name': user.csl_given_name,
+            'middle_names': user.middle_names,
+        }
+    else:
+        """ If the user doesn't autofill his family and given name """
+        parsed = utils.impute_names(name)
+        given_name = parsed['given']
+        middle_names = parsed['middle']
+        family_name = parsed['family']
+        suffix = parsed['suffix']
+        return {
+            'family_name': family_name,
+            'suffix': suffix,
+            'given_name': given_name,
+            'middle_names': middle_names
+        }
+
 def render_citation(node, style='apa'):
     """Given a node, return a citation"""
     csl = None
@@ -92,13 +120,32 @@ def render_citation(node, style='apa'):
 
 def apa_reformat(node, cit):
     new_csl = cit.split('(')[1]
-    if len(node.contributors) == 1:
-        process(node.contributors[0])
-    if len(node.contributors) >1 and len(node.contributors) < 8:
-        new_csl_name_list = [process_apa_name(x) for x in node.contributors]
-
-
+    new_apa = ''
+    contributors_list = [x for x in node.contributors if node.get_visible(x)]
+    if len(contributors_list) == 1:
+        name = process_name(node, contributors_list[0])
+        new_apa = apa_name(name)
+    else:
+        name_list = [apa_name(process_name(node, x)) for x in contributors_list]
+        if len(contributors_list) in range(1, 8):
+            new_apa = '& '.join(name_list)
+        if len(contributors_list) > 8:
+            new_apa = ' '.join(name_list)
+    cit = new_apa + '(' + new_csl
     return cit
+
+def apa_name(name):
+    apa_name = ''
+    if name['family_name']:
+        apa_name += name['family_name'] + ', '
+    if name['given_name']:
+        apa_name += name['given_name'][0] + '.'
+        if name['middle_names']:
+            apa_name += ' ' + name['middle_names'][0] + '.'
+        apa_name += ', '
+    if name['suffix']:
+        apa_name += name['suffix'] + ' '
+    return apa_name
 
 def mla_reformat(node, cit):
     return cit
@@ -111,30 +158,5 @@ def process_apa_name(user):
     return user
 
 
-def process_name(node, user):
-    if user.is_registered or user.is_disabled:
-        name = user.fullname
-    else:
-        name = user.get_unclaimed_record(node._id)['name']
 
-    if user.family_name and user.given_name:
-        """If the user has a family and given name, use those"""
-        return {
-            'family_name': user.family_name,
-            'suffix': user.suffix,
-            'given': user.csl_given_name,
-            'middle_names': user.middle_names,
-        }
-    else:
-        """ If the user doesn't autofill his family and given name """
-        parsed = utils.impute_names(name)
-        given_name = parsed['given']
-        middle_names = parsed['middle']
-        family_name = parsed['family']
-        suffix = parsed['suffix']
-        return {
-            'family_name': family_name,
-            'suffix': suffix,
-            'given_name': given_name,
-            'middle_names': middle_names
-        }
+
