@@ -10,6 +10,7 @@ from citeproc.source.json import CiteProcJSON
 from osf.models import PreprintService
 from website.citations.utils import datetime_to_csl
 from website.settings import CITATION_STYLES_PATH, BASE_PATH, CUSTOM_CITATIONS
+from framework.auth import utils
 
 logger =logger = logging.getLogger(__name__)
 
@@ -85,12 +86,6 @@ def render_citation(node, style='apa'):
         cit = chicago_reformat(node, cit)
     if style == 'modern-language-association':
         cit = mla_reformat(node, cit)
-    logger.info(node.contributors)
-    logger.info(style)
-    logger.info('--------------')
-    logger.info('cit')
-    logger.info(cit)
-    logger.info('--------------')
 
     return cit
 
@@ -98,7 +93,7 @@ def render_citation(node, style='apa'):
 def apa_reformat(node, cit):
     new_csl = cit.split('(')[1]
     if len(node.contributors) == 1:
-        process_apa_name(node.contributors[0])
+        process(node.contributors[0])
     if len(node.contributors) >1 and len(node.contributors) < 8:
         new_csl_name_list = [process_apa_name(x) for x in node.contributors]
 
@@ -114,3 +109,32 @@ def chicago_reformat(node, cit):
 
 def process_apa_name(user):
     return user
+
+
+def process_name(node, user):
+    if user.is_registered or user.is_disabled:
+        name = user.fullname
+    else:
+        name = user.get_unclaimed_record(node._id)['name']
+
+    if user.family_name and user.given_name:
+        """If the user has a family and given name, use those"""
+        return {
+            'family_name': user.family_name,
+            'suffix': user.suffix,
+            'given': user.csl_given_name,
+            'middle_names': user.middle_names,
+        }
+    else:
+        """ If the user doesn't autofill his family and given name """
+        parsed = utils.impute_names(name)
+        given_name = parsed['given']
+        middle_names = parsed['middle']
+        family_name = parsed['family']
+        suffix = parsed['suffix']
+        return {
+            'family_name': family_name,
+            'suffix': suffix,
+            'given_name': given_name,
+            'middle_names': middle_names
+        }
