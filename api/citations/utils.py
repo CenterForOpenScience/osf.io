@@ -149,18 +149,21 @@ def apa_name(name):
 
 def mla_reformat(node, cit):
     new_csl = cit.split('(')[1]
-    new_apa = ''
+    new_mla = ''
     contributors_list = [x for x in node.contributors if node.get_visible(x)]
     if len(contributors_list) == 1:
         name = process_name(node, contributors_list[0])
-        new_apa = mla_name(name)
+        new_mla = mla_name(name, inital=True)
     else:
-        name_list = [apa_name(process_name(node, x)) for x in contributors_list]
+        name_list = [process_name(node, x) for x in contributors_list]
         if len(contributors_list) in range(1, 5):
-            new_apa = '& '.join(name_list)
+            first_one = mla_name(name_list[0], inital=True)
+            rest_ones = [mla_name(x) for x in name_list[1:]]
+            rest_part = ', and '.join(rest_ones)
+            new_mla = first_one + ', and ' + rest_part
         if len(contributors_list) > 4:
-            new_apa = ' '.join(name_list)
-    cit = new_apa + '(' + new_csl
+            new_mla = ' '.join(name_list)
+    cit = new_mla + '(' + new_csl
     return cit
 
 def chicago_reformat(node, cit):
@@ -188,4 +191,6 @@ def mla_name(name, inital=False):
             mla_name += ', '
         if name['suffix']:
             mla_name += name['suffix'] + ' '
-            
+        if name['family_name']:
+            mla_name += name['family_name']
+    return mla_name
