@@ -1860,10 +1860,6 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         # Need to save here in order to access m2m fields
         forked.save()
 
-        if parent:
-            node_relation = NodeRelation.objects.get(parent=parent.forked_from, child=original)
-            NodeRelation.objects.get_or_create(_order=node_relation._order, parent=parent, child=forked)
-
         forked.tags.add(*self.all_tags.values_list('pk', flat=True))
 
         if parent:
