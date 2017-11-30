@@ -14,12 +14,18 @@ def strip_html(unclean, tags=[]):
     :rtype: str
     """
     if unclean is None:
-        return u''
+        return unicode('')
+    elif isinstance(unclean, dict):
+        return unicode({str(bleach.clean(k, strip=True, tags=[], attributes=[], styles=[])): str(bleach.clean(v, strip=True, tags=[], attributes=[], styles=[])) for k, v in unclean.items()})
+    elif isinstance(unclean, list):
+        return unicode([str(bleach.clean(elem, strip=True, tags=[], attributes=[], styles=[])) for elem in unclean])
     # We make this noop for non-string, non-collection inputs so this function can be used with higher-order
     # functions, such as rapply (recursively applies a function to collections)
-    if not isinstance(unclean, basestring) and not is_iterable(unclean):
+    # If it's not a string and not an iterable (string, list, dict, return unclean)
+    elif not isinstance(unclean, basestring) and not is_iterable(unclean):
         return unclean
-    return bleach.clean(unclean, strip=True, tags=tags, attributes=[], styles=[])
+    else:
+        return bleach.clean(unclean, strip=True, tags=tags, attributes=[], styles=[])
 
 
 # TODO: Not used anywhere except unit tests? Review for deletion
