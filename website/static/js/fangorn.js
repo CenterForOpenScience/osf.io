@@ -2519,6 +2519,9 @@ function isInvalidDropFolder(folder) {
         // must have a provider
         !folder.data.provider ||
         folder.data.status ||
+        // The following are read-only providers
+        folder.data.provider === 'onedrive' ||
+        folder.data.provider === 'gitlab' ||
         // cannot add to published dataverse
         (folder.data.provider === 'dataverse' && folder.data.dataverseIsPublished)
     ) {
