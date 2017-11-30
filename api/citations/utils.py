@@ -1,6 +1,5 @@
 import os
 import re
-import logging
 
 from citeproc import CitationStylesStyle, CitationStylesBibliography
 from citeproc import Citation, CitationItem
@@ -11,8 +10,6 @@ from osf.models import PreprintService
 from website.citations.utils import datetime_to_csl
 from website.settings import CITATION_STYLES_PATH, BASE_PATH, CUSTOM_CITATIONS
 from framework.auth import utils
-
-logger =logger = logging.getLogger(__name__)
 
 
 def clean_up_common_errors(cit):
@@ -58,7 +55,7 @@ def process_name(node, user):
         return {
             'family_name': user.family_name,
             'suffix': user.suffix,
-            'given_name': user.csl_given_name,
+            'given_name': user.given_name,
             'middle_names': user.middle_names,
         }
     else:
@@ -109,10 +106,6 @@ def render_citation(node, style='apa'):
     elif cit.count(title) == 0:
         cit = clean_up_common_errors(cit)
 
-    logger.info('-----------')
-    logger.info(cit)
-    logger.info('-----------')
-
     if style == 'apa':
         cit = apa_reformat(node, cit)
     if style == 'chicago-author-date':
@@ -134,13 +127,13 @@ def apa_reformat(node, cit):
     # handle more than one contributor  but less than 8 contributors
     elif len(contributors_list) in range(1, 8):
         name_list = [apa_name(process_name(node, x)) for x in contributors_list[:-1]]
-        new_apa = ', '.join(name_list)
+        new_apa = ' '.join(name_list)
         last_one = apa_name(process_name(node, contributors_list[-1]))
-        new_apa += '& ' + last_one
+        new_apa += ' & ' + last_one
     # handle 8 or more contributors
     else:
         name_list = [apa_name(process_name(node, x)) for x in contributors_list[:6]]
-        new_apa = ''.join(name_list) + '... ' + apa_name(process_name(node, contributors_list[6]))
+        new_apa = ' '.join(name_list) + '... ' + apa_name(process_name(node, contributors_list[6]))
 
     cit = new_apa.rstrip(', ') + ' '
     for x in new_csl[1:]:
@@ -151,28 +144,24 @@ def apa_reformat(node, cit):
 def apa_name(name):
     apa = ''
     if name['family_name']:
-        apa += name['family_name'] + ', '
+        apa += name['family_name'] + ','
     if name['given_name']:
-        apa += name['given_name'][0] + '.'
+        apa += ' ' + name['given_name'][0] + '.'
         if name['middle_names']:
             apa += ' ' + name['middle_names'][0] + '.'
-        apa += ', '
+        apa += ','
     if name['suffix']:
-        apa += name['suffix']
+        apa += ' ' + name['suffix'] + ','
     return apa
 
 
 def mla_reformat(node, cit):
-    new_csl = cit.split("'")
-    logger.info('--------------')
-    logger.info(new_csl)
-    logger.info('---------------')
     contributors_list = [x for x in node.contributors if node.get_visible(x)]
 
     # handle only one contributor
     if len(contributors_list) == 1:
         name = process_name(node, contributors_list[0])
-        new_mla = mla_name(name, initial=True) + ' '
+        new_mla = mla_name(name, initial=True).rstrip(' ')
     # handle more than one contributor  but less than 5 contributors
     elif len(contributors_list) in range(1, 5):
         first_one = mla_name(process_name(node, contributors_list[0]), initial=True)
@@ -186,10 +175,9 @@ def mla_reformat(node, cit):
     # handle 5 or more contributors
     else:
         name = process_name(node, contributors_list[0])
-        new_mla = mla_name(name, initial=True) + 'et al. '
+        new_mla = mla_name(name, initial=True) + ' et al. '
     cit = new_mla
-    for x in new_csl[1:]:
-        cit += "'" + x
+    cit += u' \u201c' + node.title.title() + u'.\u201d Open' + cit.split('Open')[-1]
     return cit
 
 
@@ -214,9 +202,9 @@ def chicago_reformat(node, cit):
     # handle 8 or more contributors
     else:
         new_chi = mla_name(process_name(node, contributors_list[0]), initial=True)
-        name_list = [apa_name(process_name(node, x)) for x in contributors_list[1:7]]
-        rest = ', '.join(name_list) + 'et al. '
-        new_chi += rest
+        name_list = [mla_name(process_name(node, x)) for x in contributors_list[1:7]]
+        rest = ', '.join(name_list) + ' et al. '
+        new_chi += ', ' + rest
 
     cit = new_chi
     for x in new_csl[1:]:
@@ -228,23 +216,23 @@ def mla_name(name, initial=False):
     if initial:
         mla = ''
         if name['family_name']:
-            mla += name['family_name'] + ', '
+            mla += name['family_name'] + ','
         if name['given_name']:
-            mla += name['given_name']
-            # if name['middle_names']:
-            #     mla += ' ' + name['middle_names'][0] + '.'
-            # mla += ', '
-        # if name['suffix']:
-        #     mla += name['suffix'] + ' '
+            mla += ' ' + name['given_name']
+            if name['middle_names']:
+                mla += ' ' + name['middle_names'][0] + '.'
+            mla += ','
+        if name['suffix']:
+            mla += ' ' + name['suffix']
     else:
         mla = ''
         if name['given_name']:
             mla += name['given_name']
-            # if name['middle_names']:
-            #     mla += ' ' + name['middle_names'][0]
-            mla += ', '
-        # if name['suffix']:
-        #     mla += name['suffix'] + ' '
+            if name['middle_names']:
+                mla += ' ' + name['middle_names'][0]
+            mla += ','
+        if name['suffix']:
+            mla += ' ' + name['suffix']
         if name['family_name']:
-            mla += name['family_name']
+            mla += ' ' + name['family_name']
     return mla
