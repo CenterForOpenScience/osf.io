@@ -198,10 +198,9 @@ class ProcessCustomTaxonomy(PermissionRequiredMixin, View):
                     # Actually do the migration of the custom taxonomies
                     migrate(provider=provider._id, data=taxonomy_json, add_missing=provider_form.cleaned_data['add_missing'])
                     return redirect('preprint_providers:detail', preprint_provider_id=provider.id)
-
-            except ValueError as error:
+            except (ValueError, RuntimeError) as error:
                 response_data = {
-                    'message': 'There is an error with the submitted JSON. Here are some details: ' + error.message,
+                    'message': 'There is an error with the submitted JSON or the provider. Here are some details: ' + error.message,
                     'feedback_type': 'error'
                 }
         else:

@@ -57,6 +57,8 @@ def validate_input(custom_provider, data, copy=False, add_missing=False):
     missing_subjects = Subject.objects.filter(id__in=set([hier[-1].id for ps in PreprintService.objects.filter(provider=custom_provider) for hier in ps.subject_hierarchy])).exclude(id__in=included_subjects.values_list('id', flat=True))
     if not add_missing:
         assert not missing_subjects.exists(), 'Incomplete mapping -- following subjects in use but not included:\n{}'.format(list(missing_subjects.values_list('text', flat=True)))
+    assert custom_provider.share_title not in [None, '', 'bepress'], 'share title not set; please set the share title on this provider before creating a custom taxonomy.'
+
     logger.info('Successfully validated mapping completeness')
     return list(missing_subjects) if add_missing else None
 
