@@ -909,7 +909,8 @@ def _get_readable_descendants(auth, node, permission=None):
 def serialize_child_tree(child_list, user, nested):
     serialized_children = []
     for child in child_list:
-        if child.has_read_perm or child.has_permission_on_children(user, READ):
+        can_read = child.is_public or child.has_read_perm
+        if can_read or child.has_permission_on_children(user, READ):
             contributors = [{
                 'id': contributor.user._id,
                 'is_admin': contributor.admin,
@@ -920,8 +921,8 @@ def serialize_child_tree(child_list, user, nested):
             serialized_children.append({
                 'node': {
                     'id': child._id,
-                    'url': child.url if child.has_read_perm else '',
-                    'title': child.title if child.has_read_perm else 'Private Project',
+                    'url': child.url if can_read else '',
+                    'title': child.title if can_read else 'Private Project',
                     'is_public': child.is_public,
                     'contributors': contributors,
                     'is_admin': child.has_admin_perm,
@@ -931,7 +932,7 @@ def serialize_child_tree(child_list, user, nested):
                 'nodeType': 'project' if not child.parentnode_id else 'component',
                 'category': child.category,
                 'permissions': {
-                    'view': child.has_read_perm,
+                    'view': can_read,
                     'is_admin': child.has_admin_perm
                 }
             })
