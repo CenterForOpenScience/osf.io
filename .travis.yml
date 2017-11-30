@@ -7,8 +7,9 @@ python:
 
 sudo: false
 
-addons:
-  chrome: stable
+# TODO: uncomment when https://github.com/travis-ci/travis-ci/issues/8836 is resolved
+# addons:
+#   chrome: stable
 
 cache:
   yarn: true
