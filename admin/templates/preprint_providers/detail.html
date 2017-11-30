@@ -47,10 +47,12 @@
                 </table>
             </div>
         </div>
-        <div class="row" id="form-view" style="display:none;">
+        <div id="form-view" style="display:none;">
             {% include 'preprint_providers/update_preprint_provider_form.html' %}
+            {% if show_taxonomies %}
+            {% include 'preprint_providers/enter_custom_taxonomy.html' %}
+            {% endif %}
         </div>
-    </div>
 
 {% endblock content %}
 {% block bottom_js %}
@@ -60,6 +62,7 @@
             'getSubjectsUrl': '{% url 'preprint_providers:get_subjects' %}',
             'getDescendantsUrl': '{% url 'preprint_providers:get_descendants' %}',
             'rulesToSubjectsUrl': '{% url 'preprint_providers:rules_to_subjects' %}',
+            'processCustomTaxonomyUrl': "{% url 'preprint_providers:process_custom_taxonomy' %}",
             'originalSubjects': {{ subject_ids | escapejs }}
         };
     </script>

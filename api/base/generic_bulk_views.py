@@ -1,8 +1,8 @@
-from modularodm import Q
 from rest_framework import status
 from rest_framework.response import Response
 from rest_framework_bulk import generics as bulk_generics
 from rest_framework.exceptions import PermissionDenied, ValidationError
+from django.db.models import Q
 
 from api.base.settings import BULK_SETTINGS
 from api.base.exceptions import Conflict, JSONAPIException, Gone
@@ -79,7 +79,7 @@ class BulkDestroyJSONAPIView(bulk_generics.BulkDestroyAPIView):
 
         requested_ids = [data['id'] for data in request_data]
         column_name = 'guids___id' if issubclass(model_cls, GuidMixin) else '_id'
-        resource_object_list = model_cls.find(Q(column_name, 'in', requested_ids))
+        resource_object_list = model_cls.objects.filter(Q(**{'{}__in'.format(column_name): requested_ids}))
 
         for resource in resource_object_list:
             if getattr(resource, 'is_deleted', None):

@@ -1,7 +1,8 @@
 """
 Utility functions and classes
 """
-from osf.models import Subject, NodeLicense
+from osf.models import Subject, NodeLicense, DraftRegistration
+from website.prereg.utils import get_prereg_schema
 
 from django.core.urlresolvers import reverse
 from django.utils.http import urlencode
@@ -93,3 +94,9 @@ def get_nodelicense_choices():
 
 def get_toplevel_subjects():
     return Subject.objects.filter(parent__isnull=True, provider___id='osf').values_list('id', 'text')
+
+def get_submitted_preregistrations(order='-approval__initiation_date'):
+    return DraftRegistration.objects.filter(
+        registration_schema=get_prereg_schema(),
+        approval__isnull=False
+    ).order_by(order).select_related('initiator', 'registration_schema', 'approval')

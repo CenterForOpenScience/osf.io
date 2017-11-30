@@ -7,6 +7,8 @@ from api.base.serializers import (
     LinksField,
     is_anonymized,
     DateByVersion,
+    HideIfNotNodePointerLog,
+    HideIfNotRegistrationPointerLog,
 )
 
 from osf.models import OSFUser, AbstractNode, PreprintService
@@ -56,6 +58,8 @@ class NodeLogParamsSerializer(RestrictedDictSerializer):
     github_repo = ser.CharField(read_only=True, source='github.repo')
     bitbucket_user = ser.CharField(read_only=True, source='bitbucket.user')
     bitbucket_repo = ser.CharField(read_only=True, source='bitbucket.repo')
+    gitlab_user = ser.CharField(read_only=True, source='gitlab.user')
+    gitlab_repo = ser.CharField(read_only=True, source='gitlab.repo')
     file = ser.DictField(read_only=True)
     filename = ser.CharField(read_only=True)
     kind = ser.CharField(read_only=True)
@@ -200,10 +204,20 @@ class NodeLogSerializer(JSONAPISerializer):
     )
 
     # This would be a node_link, except that data isn't stored in the node log params
-    linked_node = RelationshipField(
-        related_view='nodes:node-detail',
-        related_view_kwargs={'node_id': '<params.pointer.id>'}
+    linked_node = HideIfNotNodePointerLog(
+        RelationshipField(
+            related_view='nodes:node-detail',
+            related_view_kwargs={'node_id': '<params.pointer.id>'}
+        )
     )
+
+    linked_registration = HideIfNotRegistrationPointerLog(
+        RelationshipField(
+            related_view='registrations:registration-detail',
+            related_view_kwargs={'node_id': '<params.pointer.id>'}
+        )
+    )
+
     template_node = RelationshipField(
         related_view='nodes:node-detail',
         related_view_kwargs={'node_id': '<params.template_node.id>'}

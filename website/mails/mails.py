@@ -372,6 +372,11 @@ PREREG_CHALLENGE_ACCEPTED = Mail(
     subject='Your research plan has been registered and accepted for the Preregistration Challenge'
 )
 
+PREREG_CSV = Mail(
+    'prereg_csv',
+    subject='[auto] Updated Prereg CSV'
+)
+
 EMPTY = Mail('empty', subject='${subject}')
 
 SHARE_ERROR_DESK = Mail(

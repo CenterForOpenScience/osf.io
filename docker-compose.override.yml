@@ -68,9 +68,11 @@ services:
 ##      - cd /ember-osf &&
 ##        yarn link &&
 ##        cd /code &&
-##        yarn link @centerforopenscience/ember-osf &&
-##        ./node_modules/.bin/bower install --allow-root --config.interactive=false &&
+##        (rm -r node_modules || true) &&
 ##        yarn --frozen-lockfile &&
+##        yarn link @centerforopenscience/ember-osf &&
+##        (rm -r bower_components || true) &&
+##        ./node_modules/.bin/bower install --allow-root --config.interactive=false &&
 ##        yarn start --host 0.0.0.0 --port 4201 --live-reload-port 41954
 
 #  registries:
@@ -88,9 +90,11 @@ services:
 ##      - cd /ember-osf &&
 ##        yarn link &&
 ##        cd /code &&
-##        yarn link @centerforopenscience/ember-osf &&
-##        ./node_modules/.bin/bower install --allow-root --config.interactive=false &&
+##        (rm -r node_modules || true) &&
 ##        yarn --frozen-lockfile &&
+##        yarn link @centerforopenscience/ember-osf &&
+##        (rm -r bower_components || true) &&
+##        ./node_modules/.bin/bower install --allow-root --config.interactive=false &&
 ##        yarn start --host 0.0.0.0 --port 4202 --live-reload-port 41955
 
 #  reviews:
@@ -112,15 +116,16 @@ services:
 ##        yarn --frozen-lockfile &&
 ##        yarn start --host 0.0.0.0 --port 4203 --live-reload-port 41956
 
-
 #  # Use this for ember-osf linked development (with docker-sync):
 #  emberosf:
 #    build: ../ember-osf
 #    command:
 #      - /bin/bash
-#      - -c 
-#      - yarn --frozen-lockfile --ignore-engines &&
-#       ./node_modules/.bin/bower install --allow-root --config.interactive=false
+#      - -c
+#      - (rm -r node_modules || true) &&
+#        yarn --frozen-lockfile --ignore-engines &&
+#        (rm -r bower_components || true) &&
+#        ./node_modules/.bin/bower install --allow-root --config.interactive=false
 #    volumes:
 #      - emberosf-sync:/code:nocopy
 
@@ -140,6 +145,17 @@ services:
 #      - ./ssl/celery-server.cert.pem:/etc/ssl/server_certificate.pem:ro
 #      - ./ssl/celery-server.key.pem:/etc/ssl/server_key.pem:ro
 #      - ./ssl/ca-chain.cert.pem:/etc/ssl/ca_certificate.pem:ro
+
+#  sharejs:
+#    volumes:
+#      - sharejs-sync:/code:nocopy
+#
+#    command:
+#      - /bin/sh
+#      - -c 
+#      - |-
+#        npm install
+#        gosu node npm start
 
 volumes:
   osf-sync:
@@ -161,4 +177,7 @@ volumes:
 #    external: true
 
 #  reviews-sync:
+#    external: true
+
+#  sharejs-sync:
 #    external: true
