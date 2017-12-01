@@ -1,5 +1,6 @@
 """Tests related to embargoes of registrations"""
 import datetime
+from datetime import timedelta
 import httplib as http
 import json
 
@@ -28,6 +29,7 @@ from osf.models import AbstractNode
 from osf.models.sanctions import PreregCallbackMixin, Embargo
 from website.util import permissions
 from osf.models import Registration, Contributor, OSFUser, SpamStatus
+from website import settings
 
 DUMMY_TOKEN = tokens.encode({
     'dummy': 'token'
@@ -1107,3 +1109,95 @@ class RegistrationEmbargoViewsTestCase(OsfTestCase):
         assert_equal(http.UNAUTHORIZED, res.status_code)
         assert_true(self.registration.is_pending_embargo)
         assert_equal(self.registration.embargo.state, Embargo.UNAPPROVED)
+
+class TestEmbargoIdentifiersAndUnauthView(OsfTestCase):
+
+    def setUp(self):
+        super(TestEmbargoIdentifiersAndUnauthView, self).setUp()
+
+        settings.EZID_USERNAME='apitest'
+        settings.EZID_PASSWORD='apitest'
+
+        self.user = AuthUserFactory()
+        self.contrib_rw = AuthUserFactory()
+        self.non_contrib = AuthUserFactory()
+        self.project = ProjectFactory(creator=self.user, is_public=False)
+        self.project.add_contributor(self.contrib_rw, permissions=['read', 'write'], save=True)
+        self.child_project = NodeFactory(
+            creator=self.user,
+            parent=self.project,
+            title='Total Solar Eclipse 2017, Aug. 21',
+            is_public=False
+        )
+        self.registration_embargo = RegistrationFactory(creator=self.user, project=self.project, is_public=False)
+        self.registration_embargo.embargo_registration(
+            self.user,
+            timezone.now() + timedelta(days=10)
+        )
+        self.registration_embargo.save()
+        self.url = self.registration_embargo.api_url_for('node_identifiers_post')
+        self.url_view_project = self.registration_embargo.web_url_for('view_project')
+
+    def test_cannot_create_doi_for_pending_embargo_nodes_or_without_admin_permissions(self):
+        #Before embargo approval
+        #test_non_contrib_gets_forbidden_msg_embargoes_pending_approval
+        res = self.app.post(self.url, auth=self.user.auth, expect_errors=True)
+        res_non_contrib_view_project = self.app.get(self.url_view_project, auth=self.non_contrib.auth, expect_errors=True)
+
+        assert_true(self.registration_embargo.is_pending_embargo)
+        assert_equal(res.status_code, 400)
+        assert_equal(res_non_contrib_view_project.status_code, 403)
+        assert_in('Forbidden', res_non_contrib_view_project.body)
+
+        #Approve Embargo
+        approval_token = self.registration_embargo.embargo.approval_state[self.user._id]['approval_token']
+        self.registration_embargo.embargo.approve_embargo(self.user, approval_token)
+        self.registration_embargo.save()
+
+        #After embargo approval
+        #test_root_registration_embargo_approved
+        assert_false(self.registration_embargo.is_pending_embargo)
+
+        #test_only_admin_contrib_can_create_dois
+        res_contrib_rw = self.app.post(self.url, auth=self.contrib_rw.auth, expect_errors=True)
+        res_non_contrib = self.app.post(self.url, auth=self.non_contrib.auth, expect_errors=True)
+
+        assert_equal(res_contrib_rw.status_code, 403)
+        assert_equal(res_non_contrib.status_code, 403)
+
+        #test_non_contrib_sees_useful_msg_visiting_root_registration
+        res_non_contrib_view_project = self.app.get(self.url_view_project, auth=self.non_contrib.auth, expect_errors=True)
+
+        assert_equal(res_non_contrib_view_project.status_code, 403)
+        assert_in('Resource under embargo', res_non_contrib_view_project.body)
+
+        #test_can_create_dois_for_root_registrations
+        res = self.app.post(self.url, auth=self.user.auth)
+
+        assert_equal(res.status_code, 201)
+        assert_true(res.json['ark'])
+        assert_true(res.json['doi'])
+
+    def test_embargo_and_dois_for_child_registrations(self):
+        approval_token = self.registration_embargo.embargo.approval_state[self.user._id]['approval_token']
+        self.registration_embargo.embargo.approve_embargo(self.user, approval_token)
+        self.registration_embargo.save()
+
+        #test_child_reg_embargos_also_get_approved
+        child_registration_embargo = self.registration_embargo.get_descendants_recursive().next()
+        assert_true(child_registration_embargo)
+        assert_false(child_registration_embargo.is_pending_embargo)
+
+        #test_non_contrib_sees_useful_msg_visiting_child_registration
+        res = self.app.get(
+            child_registration_embargo.web_url_for('view_project'),
+            auth=self.non_contrib.auth,
+            expect_errors=True)
+        assert_equal(res.status_code, 403)
+        assert_in('Resource under embargo', res.body)
+
+        #test_can_create_dois_for_child_registrations
+        res = self.app.post(child_registration_embargo.api_url_for('node_identifiers_post'), auth=self.user.auth)
+        assert_equal(res.status_code, 201)
+        assert_true(res.json['ark'])
+        assert_true(res.json['doi'])

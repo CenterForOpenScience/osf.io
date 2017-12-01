@@ -220,7 +220,8 @@ def osf_admin_change_status_identifier(node, status):
 def node_identifiers_post(auth, node, **kwargs):
     """Create identifier pair for a node. Node must be a public registration.
     """
-    if not node.is_public or node.is_retracted:
+    can_id_embargoed = node.is_registration and (node.root.embargo and not node.root.is_pending_embargo)
+    if (not node.is_public and not can_id_embargoed) or node.is_retracted:
         raise HTTPError(http.BAD_REQUEST)
     if node.get_identifier('doi') or node.get_identifier('ark'):
         raise HTTPError(http.BAD_REQUEST)

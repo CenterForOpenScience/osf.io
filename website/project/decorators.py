@@ -174,13 +174,18 @@ def check_can_access(node, user, key=None, api_node=None):
     if user is None:
         return False
     if not node.can_view(Auth(user=user)) and api_node != node:
+        error_data = {
+            'message_long': ('User has restricted access to this page. '
+            'If this should not have occurred and the issue persists, please report it to '
+            '<a href="mailto:support@osf.io">support@osf.io</a>.')
+        }
         if key in node.private_link_keys_deleted:
             status.push_status_message('The view-only links you used are expired.', trust=False)
-        raise HTTPError(http.FORBIDDEN, data={'message_long': ('User has restricted access to this page. '
-            'If this should not have occurred and the issue persists, please report it to '
-            '<a href="mailto:support@osf.io">support@osf.io</a>.')})
+        elif node.root and (node.root.embargo and not node.root.is_pending_embargo):
+            error_data['message_short'] = 'Resource under embargo'
+            error_data['message_long'] = 'This resource is currently under embargo, please check back when it opens {}.'.format(node.embargo_end_date.strftime('%A, %b. %d, %Y'))
+        raise HTTPError(http.FORBIDDEN, data=error_data)
     return True
-
 
 def check_key_expired(key, node, url):
     """check if key expired if is return url with args so it will push status message
