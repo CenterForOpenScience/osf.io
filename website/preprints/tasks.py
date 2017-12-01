@@ -50,7 +50,7 @@ def _update_preprint_share(preprint, old_subjects, share_type):
         resp.raise_for_status()
     except Exception:
         if resp.status_code >= 500:
-            _async_update_preprint_share.delay(preprint._id, old_subjects)
+            _async_update_preprint_share.delay(preprint._id, old_subjects, share_type)
         else:
             send_desk_share_preprint_error(preprint, resp, 0)
 
