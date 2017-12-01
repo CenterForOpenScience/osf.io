@@ -160,8 +160,8 @@ class NodeSerializer(JSONAPISerializer):
     title = ser.CharField(required=True)
     description = ser.CharField(required=False, allow_blank=True, allow_null=True)
     category = ser.ChoiceField(choices=category_choices, help_text='Choices: ' + category_choices_string)
-    date_created = DateByVersion(read_only=True)
-    date_modified = DateByVersion(read_only=True)
+    date_created = DateByVersion(source='created', read_only=True)
+    date_modified = DateByVersion(source='last_logged', read_only=True)
     registration = ser.BooleanField(read_only=True, source='is_registration')
     preprint = ser.BooleanField(read_only=True, source='is_preprint')
     fork = ser.BooleanField(read_only=True, source='is_fork')
@@ -815,6 +815,7 @@ class NodeContributorsCreateSerializer(NodeContributorsSerializer):
     users = RelationshipField(
         related_view='users:user-detail',
         related_view_kwargs={'user_id': '<user._id>'},
+        always_embed=True,
         required=False
     )
 
@@ -1187,7 +1188,7 @@ class NodeViewOnlyLinkSerializer(JSONAPISerializer):
 
     key = ser.CharField(read_only=True)
     id = IDField(source='_id', read_only=True)
-    date_created = DateByVersion(read_only=True)
+    date_created = DateByVersion(source='created', read_only=True)
     anonymous = ser.BooleanField(required=False, default=False)
     name = ser.CharField(required=False, default='Shared project link')
 

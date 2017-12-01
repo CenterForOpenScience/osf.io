@@ -1,3 +1,5 @@
+from guardian.models import GroupObjectPermission
+
 from rest_framework import serializers as ser
 
 from api.base.exceptions import InvalidModelValueError
@@ -5,7 +7,7 @@ from api.base.serializers import (
     BaseAPISerializer, JSONAPISerializer, JSONAPIRelationshipSerializer,
     DateByVersion, DevOnly, HideIfDisabled, IDField,
     Link, LinksField, ListDictField, TypeField, RelationshipField,
-    WaterbutlerLink
+    WaterbutlerLink, ShowIfCurrentUser
 )
 from api.base.utils import absolute_reverse, get_user_auth
 from api.files.serializers import QuickFilesSerializer
@@ -18,7 +20,7 @@ class QuickFilesRelationshipField(RelationshipField):
 
     def to_representation(self, value):
         relationship_links = super(QuickFilesRelationshipField, self).to_representation(value)
-        quickfiles_guid = value.created.filter(type=QuickFilesNode._typedmodels_type).values_list('guids___id', flat=True).get()
+        quickfiles_guid = value.nodes_created.filter(type=QuickFilesNode._typedmodels_type).values_list('guids___id', flat=True).get()
         upload_url = website_utils.waterbutler_api_url_for(quickfiles_guid, 'osfstorage')
         relationship_links['links']['upload'] = {
             'href': upload_url,
@@ -52,6 +54,7 @@ class UserSerializer(JSONAPISerializer):
     timezone = HideIfDisabled(ser.CharField(required=False, help_text="User's timezone, e.g. 'Etc/UTC"))
     locale = HideIfDisabled(ser.CharField(required=False, help_text="User's locale, e.g.  'en_US'"))
     social = ListDictField(required=False)
+    can_view_reviews = ShowIfCurrentUser(ser.SerializerMethodField(help_text='Whether the current user has the `view_submissions` permission to ANY reviews provider.'))
 
     links = HideIfDisabled(LinksField(
         {
@@ -83,6 +86,11 @@ class UserSerializer(JSONAPISerializer):
         self_view_kwargs={'user_id': '<_id>'},
     ))
 
+    actions = ShowIfCurrentUser(RelationshipField(
+        related_view='users:user-action-list',
+        related_view_kwargs={'user_id': '<_id>'},
+    ))
+
     class Meta:
         type_ = 'users'
 
@@ -102,6 +110,10 @@ class UserSerializer(JSONAPISerializer):
             'user_id': obj._id,
             'version': self.context['request'].parser_context['kwargs']['version']
         })
+
+    def get_can_view_reviews(self, obj):
+        group_qs = GroupObjectPermission.objects.filter(group__user=obj, permission__codename='view_submissions')
+        return group_qs.exists() or obj.userobjectpermission_set.filter(permission__codename='view_submissions')
 
     def profile_image_url(self, user):
         size = self.context['request'].query_params.get('profile_image_size')

@@ -6,7 +6,7 @@ from rest_framework.response import Response
 
 from framework.auth.oauth_scopes import CoreScopes
 
-from osf.models import OSFUser, Node, Institution
+from osf.models import OSFUser, Node, Institution, Registration
 from website.util import permissions as osf_permissions
 
 from api.base import permissions as base_permissions
@@ -26,7 +26,7 @@ from api.users.serializers import UserSerializer
 from api.registrations.serializers import RegistrationSerializer
 
 from api.institutions.authentication import InstitutionAuthentication
-from api.institutions.serializers import InstitutionSerializer, InstitutionNodesRelationshipSerializer
+from api.institutions.serializers import InstitutionSerializer, InstitutionNodesRelationshipSerializer, InstitutionRegistrationsRelationshipSerializer
 from api.institutions.permissions import UserIsAffiliated
 
 class InstitutionMixin(object):
@@ -152,7 +152,7 @@ class InstitutionNodeList(JSONAPIBaseView, generics.ListAPIView, InstitutionMixi
     view_category = 'institutions'
     view_name = 'institution-nodes'
 
-    ordering = ('-date_modified', )
+    ordering = ('-modified', )
 
     # overrides NodesFilterMixin
     def get_default_queryset(self):
@@ -217,7 +217,7 @@ class InstitutionRegistrationList(InstitutionNodeList):
     serializer_class = RegistrationSerializer
     view_name = 'institution-registrations'
 
-    ordering = ('-date_modified', )
+    ordering = ('-modified', )
 
     def get_default_queryset(self):
         institution = self.get_institution()
@@ -225,6 +225,90 @@ class InstitutionRegistrationList(InstitutionNodeList):
 
     def get_queryset(self):
         return self.get_queryset_from_request()
+
+class InstitutionRegistrationsRelationship(JSONAPIBaseView, generics.RetrieveDestroyAPIView, generics.CreateAPIView, InstitutionMixin):
+    """ Relationship Endpoint for Institution -> Registrations Relationship
+
+    Used to set, remove, update and retrieve the affiliated_institution of registrations with this institution
+
+    ##Actions
+
+    ###Create
+
+        Method:        POST
+        URL:           /links/self
+        Query Params:  <none>
+        Body (JSON):   {
+                         "data": [{
+                           "type": "registrations",   # required
+                           "id": <registration_id>   # required
+                         }]
+                       }
+        Success:       201
+
+    This requires write permissions on the registrations requested and for the user making the request to
+    have the institution affiliated in their account.
+
+    ###Destroy
+
+        Method:        DELETE
+        URL:           /links/self
+        Query Params:  <none>
+        Body (JSON):   {
+                         "data": [{
+                           "type": "registrations",   # required
+                           "id": <registration_id>   # required
+                         }]
+                       }
+        Success:       204
+
+    This requires write permissions in the registrations requested.
+    """
+    permission_classes = (
+        drf_permissions.IsAuthenticatedOrReadOnly,
+        base_permissions.TokenHasScope,
+        UserIsAffiliated
+    )
+    required_read_scopes = [CoreScopes.NODE_REGISTRATIONS_READ, CoreScopes.INSTITUTION_READ]
+    required_write_scopes = [CoreScopes.NODE_REGISTRATIONS_WRITE]
+    serializer_class = InstitutionRegistrationsRelationshipSerializer
+    parser_classes = (JSONAPIRelationshipParser, JSONAPIRelationshipParserForRegularJSON, )
+
+    view_category = 'institutions'
+    view_name = 'institution-relationships-registrations'
+
+    def get_object(self):
+        inst = self.get_institution()
+        auth = get_user_auth(self.request)
+        registrations = inst.nodes.filter(is_deleted=False, type='osf.registration').can_view(user=auth.user, private_link=auth.private_link)
+        ret = {
+            'data': registrations,
+            'self': inst
+        }
+        self.check_object_permissions(self.request, ret)
+        return ret
+
+    def perform_destroy(self, instance):
+        data = self.request.data['data']
+        user = self.request.user
+        ids = [datum['id'] for datum in data]
+        registrations = []
+        for id_ in ids:
+            registration = Registration.load(id_)
+            if not registration.has_permission(user, osf_permissions.WRITE):
+                raise exceptions.PermissionDenied(detail='Write permission on registration {} required'.format(id_))
+            registrations.append(registration)
+
+        for registration in registrations:
+            registration.remove_affiliated_institution(inst=instance['self'], user=user)
+            registration.save()
+
+    def create(self, *args, **kwargs):
+        try:
+            ret = super(InstitutionRegistrationsRelationship, self).create(*args, **kwargs)
+        except RelationshipPostMakesNoChanges:
+            return Response(status=status.HTTP_204_NO_CONTENT)
+        return ret
 
 class InstitutionNodesRelationship(JSONAPIBaseView, generics.RetrieveDestroyAPIView, generics.CreateAPIView, InstitutionMixin):
     """ Relationship Endpoint for Institution -> Nodes Relationship
@@ -269,8 +353,8 @@ class InstitutionNodesRelationship(JSONAPIBaseView, generics.RetrieveDestroyAPIV
         base_permissions.TokenHasScope,
         UserIsAffiliated
     )
-    required_read_scopes = [CoreScopes.NULL]
-    required_write_scopes = [CoreScopes.NULL]
+    required_read_scopes = [CoreScopes.NODE_BASE_READ, CoreScopes.INSTITUTION_READ]
+    required_write_scopes = [CoreScopes.NODE_BASE_WRITE]
     serializer_class = InstitutionNodesRelationshipSerializer
     parser_classes = (JSONAPIRelationshipParser, JSONAPIRelationshipParserForRegularJSON, )
 

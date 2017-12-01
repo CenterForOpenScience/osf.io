@@ -47,6 +47,18 @@ def create_fake_conference_nodes(n, endpoint):
         nodes.append(node)
     return nodes
 
+def create_fake_conference_nodes_bad_data(n, bad_n, endpoint):
+    nodes = []
+    for i in range(n):
+        node = ProjectFactory(is_public=True)
+        node.add_tag(endpoint, Auth(node.creator))
+        # inject bad data
+        if i < bad_n:
+            # Delete only contributor
+            node.contributor_set.filter(user=node.contributors.first()).delete()
+        node.save()
+        nodes.append(node)
+    return nodes
 
 class TestConferenceUtils(OsfTestCase):
 
@@ -449,6 +461,26 @@ class TestConferenceEmailViews(OsfTestCase):
         assert_equal(res.status_code, 200)
         assert_equal(len(res.json), n_conference_nodes)
 
+    # Regression for OSF-8864 to confirm bad project data does not make whole conference break
+    def test_conference_bad_data(self):
+        conference = ConferenceFactory()
+
+        # Create conference nodes
+        n_conference_nodes = 3
+        n_conference_nodes_bad = 1
+        create_fake_conference_nodes_bad_data(
+            n_conference_nodes,
+            n_conference_nodes_bad,
+            conference.endpoint,
+        )
+        # Create a non-conference node
+        ProjectFactory()
+
+        url = api_url_for('conference_data', meeting=conference.endpoint)
+        res = self.app.get(url)
+        assert_equal(res.status_code, 200)
+        assert_equal(len(res.json), n_conference_nodes - n_conference_nodes_bad)
+
     def test_conference_data_url_upper(self):
         conference = ConferenceFactory()
 
@@ -487,6 +519,12 @@ class TestConferenceEmailViews(OsfTestCase):
         conference = ConferenceFactory()
 
         url = web_url_for('conference_results', meeting=conference.endpoint)
+        res = self.app.get(url)
+        assert_equal(res.status_code, 200)
+
+    def test_confererence_results_endpoint_is_case_insensitive(self):
+        ConferenceFactory(endpoint='StudySwap')
+        url = web_url_for('conference_results', meeting='studyswap')
         res = self.app.get(url)
         assert_equal(res.status_code, 200)
 

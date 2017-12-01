@@ -9,7 +9,7 @@ from psycopg2._psycopg import AsIs
 from addons.base.models import BaseNodeSettings, BaseStorageAddon
 from osf.exceptions import InvalidTagError, NodeStateError, TagNotFoundError
 from osf.models import File, FileVersion, Folder, TrashedFileNode, BaseFileNode
-from osf.utils.auth import Auth
+from framework.auth.core import Auth
 from website.files import exceptions
 from website.files import utils as files_utils
 from website.util import permissions
@@ -144,19 +144,12 @@ class OsfStorageFileNode(BaseFileNode):
         self._materialized_path = self.materialized_path
         return super(OsfStorageFileNode, self).delete(user=user, parent=parent) if self._check_delete_allowed() else None
 
-    def copy_under(self, destination_parent, name=None):
-        if self.node.is_quickfiles:
-            raise exceptions.FileNodeIsQuickFilesNode()
-        return super(OsfStorageFileNode, self).copy_under(destination_parent, name)
-
     def move_under(self, destination_parent, name=None):
         if self.is_preprint_primary:
             if self.node != destination_parent.node or self.provider != destination_parent.provider:
                 raise exceptions.FileNodeIsPrimaryFile()
         if self.is_checked_out:
             raise exceptions.FileNodeCheckedOutError()
-        if self.node.is_quickfiles and self.node != destination_parent.node:
-            raise exceptions.FileNodeIsQuickFilesNode()
         return super(OsfStorageFileNode, self).move_under(destination_parent, name)
 
     def check_in_or_out(self, user, checkout, save=False):
@@ -231,13 +224,13 @@ class OsfStorageFile(OsfStorageFileNode, File):
             ret['fullPath'] = self.materialized_path
 
         version = self.get_version(version)
-        earliest_version = self.versions.order_by('date_created').first()
+        earliest_version = self.versions.order_by('created').first()
         ret.update({
             'version': self.versions.count(),
             'md5': version.metadata.get('md5') if version else None,
             'sha256': version.metadata.get('sha256') if version else None,
-            'modified': version.date_created.isoformat() if version else None,
-            'created': earliest_version.date_created.isoformat() if version else None,
+            'modified': version.created.isoformat() if version else None,
+            'created': earliest_version.created.isoformat() if version else None,
         })
         return ret
 
@@ -388,12 +381,12 @@ class OsfStorageFolder(OsfStorageFileNode, Folder):
         return ret
 
 
-class NodeSettings(BaseStorageAddon, BaseNodeSettings):
+class NodeSettings(BaseNodeSettings, BaseStorageAddon):
     # Required overrides
     complete = True
     has_auth = True
 
-    root_node = models.ForeignKey(OsfStorageFolder, null=True, blank=True)
+    root_node = models.ForeignKey(OsfStorageFolder, null=True, blank=True, on_delete=models.CASCADE)
 
     @property
     def folder_name(self):

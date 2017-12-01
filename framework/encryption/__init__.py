@@ -1,7 +1,5 @@
 import jwe
 
-from modularodm.fields import StringField
-
 from website import settings
 
 SENSITIVE_DATA_KEY = jwe.kdf(settings.SENSITIVE_DATA_SECRET.encode('utf-8'), settings.SENSITIVE_DATA_SALT.encode('utf-8'))
@@ -26,17 +24,3 @@ def decrypt(value):
         value = ensure_bytes(value)
         return jwe.decrypt(bytes(value), SENSITIVE_DATA_KEY)
     return None
-
-
-class EncryptedStringField(StringField):
-
-    def to_storage(self, value, translator=None):
-        if not settings.RUNNING_MIGRATION:
-            value = encrypt(value)
-        return super(EncryptedStringField, self).to_storage(value, translator=translator)
-
-    def from_storage(self, value, translator=None):
-        value = super(EncryptedStringField, self).from_storage(value, translator=translator)
-        if settings.RUNNING_MIGRATION:
-            return value
-        return decrypt(value)

@@ -300,36 +300,35 @@ var LogPieces = {
     pointer: {
         view: function (ctrl, logObject) {
             var linked_node = logObject.embeds.linked_node;
-            if(paramIsReturned(linked_node, logObject)){
+            if (linked_node && paramIsReturned(linked_node, logObject) && !linked_node.errors) {
                 return m('a', {href: $osf.toRelativeUrl(linked_node.data.links.html, window)}, linked_node.data.attributes.title);
             }
-            // Applicable when pointer has been deleted
-            var pointer_info = logObject.attributes.params.pointer;
-            if (paramIsReturned(pointer_info, logObject)) {
-                return m('span', pointer_info.title);
+            var linked_registration = logObject.embeds.linked_registration;
+            if (linked_registration && paramIsReturned(linked_registration, logObject) && !linked_registration.errors) {
+                return m('a', {href: $osf.toRelativeUrl(linked_registration.data.links.html, window)}, linked_registration.data.attributes.title);
             }
-            return m('span','a project');
+            return m('span', 'a project');
         }
     },
     // Pointer category
     pointer_category: {
         view: function (ctrl, logObject) {
             var linked_node = logObject.embeds.linked_node;
-            if(paramIsReturned(linked_node, logObject)){
-                var category = linked_node.data.attributes.category;
+            var category = '';
+            if (linked_node && paramIsReturned(linked_node, logObject) && !linked_node.errors) {
+                category = linked_node.data.attributes.category;
                 if (category !== '') {
                     return m('span', linked_node.data.attributes.category);
                 }
             }
-
-            var linkedNodeParams = logObject.attributes.params.pointer;
-            if (paramIsReturned(linkedNodeParams, logObject)) {
-                if (linkedNodeParams.category !== '') {
-                     return m('span', linkedNodeParams.category);
+            var linked_registration = logObject.embeds.linked_registration;
+            if (linked_registration && paramIsReturned(linked_registration, logObject) && !linked_registration.errors) {
+                category = linked_registration.data.attributes.category;
+                if (category !== '') {
+                    return m('span', linked_registration.data.attributes.category);
                 }
-
             }
-            return m('span','project');
+            return m('span', '');
         }
     },
     // Node that acted as template to create a new node involved
@@ -575,6 +574,17 @@ var LogPieces = {
         }
     },
 
+    onedrive_folder: {
+        view: function(ctrl, logObject) {
+            var folder = logObject.attributes.params.folder;
+
+            if(paramIsReturned(folder, logObject)){
+                return m('span', folder === '/' ? '/ (Full OneDrive)' : folder);
+            }
+            return m('span', '');
+        }
+    },
+
     citation: {
         view: function(ctrl, logObject) {
             return returnTextParams('citation_name', '', logObject);
@@ -718,7 +728,18 @@ var LogPieces = {
             }
             return m('span', 'a');
         }
-    }
+    },
+
+    gitlab_repo: {
+        view: function(ctrl, logObject){
+            var gitlab_user = logObject.attributes.params.gitlab_user;
+            var gitlab_repo = logObject.attributes.params.gitlab_repo;
+            if (paramIsReturned(gitlab_repo, logObject) && paramIsReturned(gitlab_user, logObject)) {
+                return m('span', gitlab_user + '/' + gitlab_repo);
+            }
+            return m('span', '');
+        }
+    },
 };
 
 module.exports = {

@@ -244,6 +244,13 @@ class TestNodeFilesList(ApiTestCase):
         self._prepare_mock_wb_response(provider='github', files=[{'name': 'NewFile'}])
         self.add_github()
         url = '/{}nodes/{}/files/github/'.format(API_BASE, self.project._id)
+
+        # test create
+        res = self.app.get(url, auth=self.user.auth)
+        assert_equal(res.json['data'][0]['attributes']['name'], 'NewFile')
+        assert_equal(res.json['data'][0]['attributes']['provider'], 'github')
+
+        # test get
         res = self.app.get(url, auth=self.user.auth)
         assert_equal(res.json['data'][0]['attributes']['name'], 'NewFile')
         assert_equal(res.json['data'][0]['attributes']['provider'], 'github')
@@ -255,6 +262,12 @@ class TestNodeFilesList(ApiTestCase):
         res = self.app.get(url, auth=self.user.auth, headers={
             'COOKIE': 'foo=bar;'  # Webtests doesnt support cookies?
         })
+        # test create
+        assert_equal(res.status_code, 200)
+        assert_equal(res.json['data']['attributes']['name'], 'NewFile')
+        assert_equal(res.json['data']['attributes']['provider'], 'github')
+
+        # test get
         assert_equal(res.status_code, 200)
         assert_equal(res.json['data']['attributes']['name'], 'NewFile')
         assert_equal(res.json['data']['attributes']['provider'], 'github')
@@ -385,6 +398,14 @@ class TestNodeFilesListFiltering(ApiTestCase):
     def test_node_files_are_filterable_by_name(self):
         url = '/{}nodes/{}/files/github/?filter[name]=xyz'.format(API_BASE, self.project._id)
         self.add_github()
+
+        # test create
+        res = self.app.get(url, auth=self.user.auth)
+        assert_equal(res.status_code, 200)
+        assert_equal(len(res.json['data']), 1)  # filters out 'abc'
+        assert_equal(res.json['data'][0]['attributes']['name'], 'xyz')
+
+        # test get
         res = self.app.get(url, auth=self.user.auth)
         assert_equal(res.status_code, 200)
         assert_equal(len(res.json['data']), 1)  # filters out 'abc'
@@ -393,6 +414,14 @@ class TestNodeFilesListFiltering(ApiTestCase):
     def test_node_files_filter_by_name_case_insensitive(self):
         url = '/{}nodes/{}/files/github/?filter[name]=XYZ'.format(API_BASE, self.project._id)
         self.add_github()
+
+        # test create
+        res = self.app.get(url, auth=self.user.auth)
+        assert_equal(res.status_code, 200)
+        assert_equal(len(res.json['data']), 1)  # filters out 'abc', but finds 'xyz'
+        assert_equal(res.json['data'][0]['attributes']['name'], 'xyz')
+
+        # test get
         res = self.app.get(url, auth=self.user.auth)
         assert_equal(res.status_code, 200)
         assert_equal(len(res.json['data']), 1)  # filters out 'abc', but finds 'xyz'
@@ -401,6 +430,14 @@ class TestNodeFilesListFiltering(ApiTestCase):
     def test_node_files_are_filterable_by_path(self):
         url = '/{}nodes/{}/files/github/?filter[path]=abc'.format(API_BASE, self.project._id)
         self.add_github()
+
+        # test create
+        res = self.app.get(url, auth=self.user.auth)
+        assert_equal(res.status_code, 200)
+        assert_equal(len(res.json['data']), 1)  # filters out 'xyz'
+        assert_equal(res.json['data'][0]['attributes']['name'], 'abc')
+
+        # test get
         res = self.app.get(url, auth=self.user.auth)
         assert_equal(res.status_code, 200)
         assert_equal(len(res.json['data']), 1)  # filters out 'xyz'
@@ -409,6 +446,14 @@ class TestNodeFilesListFiltering(ApiTestCase):
     def test_node_files_are_filterable_by_kind(self):
         url = '/{}nodes/{}/files/github/?filter[kind]=folder'.format(API_BASE, self.project._id)
         self.add_github()
+
+        # test create
+        res = self.app.get(url, auth=self.user.auth)
+        assert_equal(res.status_code, 200)
+        assert_equal(len(res.json['data']), 1)  # filters out 'xyz'
+        assert_equal(res.json['data'][0]['attributes']['name'], 'abc')
+
+        # test get
         res = self.app.get(url, auth=self.user.auth)
         assert_equal(res.status_code, 200)
         assert_equal(len(res.json['data']), 1)  # filters out 'xyz'
@@ -420,6 +465,12 @@ class TestNodeFilesListFiltering(ApiTestCase):
         url = '/{}nodes/{}/files/github/?filter[last_touched][gt]={}'.format(API_BASE,
                                                                              self.project._id,
                                                                              yesterday_stamp.isoformat())
+        # test create
+        res = self.app.get(url, auth=self.user.auth)
+        assert_equal(res.status_code, 200)
+        assert_equal(len(res.json['data']), 2)
+
+        # test get
         res = self.app.get(url, auth=self.user.auth)
         assert_equal(res.status_code, 200)
         assert_equal(len(res.json['data']), 2)
@@ -431,6 +482,13 @@ class TestNodeFilesListFiltering(ApiTestCase):
         url = '/{}nodes/{}/files/osfstorage/?filter[last_touched][gt]={}'.format(API_BASE,
                                                                                  self.project._id,
                                                                                  yesterday_stamp.isoformat())
+
+        # test create
+        res = self.app.get(url, auth=self.user.auth, expect_errors=True)
+        assert_equal(res.status_code, 400)
+        assert_equal(len(res.json['errors']), 1)
+
+        # test get
         res = self.app.get(url, auth=self.user.auth, expect_errors=True)
         assert_equal(res.status_code, 400)
         assert_equal(len(res.json['errors']), 1)

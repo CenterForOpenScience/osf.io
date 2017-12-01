@@ -65,6 +65,13 @@ class TestDraftRegistrationDetail(DraftRegistrationTestCase):
         res = app.get(url_draft_registrations, expect_errors=True)
         assert res.status_code == 401
 
+    def test_cannot_view_deleted_draft(self, app, user, url_draft_registrations):
+        res = app.delete_json_api(url_draft_registrations, auth=user.auth)
+        assert res.status_code == 204
+
+        res = app.get(url_draft_registrations, auth=user.auth, expect_errors=True)
+        assert res.status_code == 410
+
     def test_draft_must_be_branched_from_node_in_kwargs(self, app, user, project_other, draft_registration):
         url = '/{}nodes/{}/draft_registrations/{}/'.format(API_BASE, project_other._id, draft_registration._id)
         res = app.get(url, auth=user.auth, expect_errors=True)
