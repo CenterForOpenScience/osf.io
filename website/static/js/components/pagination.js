@@ -169,16 +169,17 @@ var withPagination = function(options) {
                     });
                 }
 
-                return m('.db-activity-nav.text-center', {style: 'margin-top: 5px; margin-bottom: -10px;'}, [
+                return m('span', [
                     component.view.call(this, ctrl.innerCtrl),
-                    ctrl.paginators() ? ctrl.paginators().map(function (page) {
-                        return page.url() ? m('.btn.btn-sm.btn-link', {
-                            onclick: function () {
-                                ctrl.getNextItems(ctrl.innerCtrl, page.url(), ctrl.updatePagination);
-                            }
-                        }, page.text) : m('.btn.btn-sm.btn-link.disabled', {style: 'color: black'}, page.text);
-                    }) : ''
-
+                    m('.db-activity-nav.text-center', {style: 'margin-top: 5px; margin-bottom: -10px;'}, [
+                        ctrl.paginators() ? ctrl.paginators().map(function (page) {
+                            return page.url() ? m('.btn.btn-sm.btn-link', {
+                                onclick: function () {
+                                    ctrl.getNextItems(ctrl.innerCtrl, page.url(), ctrl.updatePagination);
+                                }
+                            }, page.text) : m('.btn.btn-sm.btn-link.disabled', {style: 'color: black'}, page.text);
+                        }) : ''
+                    ])
                 ]);
             }
         };
