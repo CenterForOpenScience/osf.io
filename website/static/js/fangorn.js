@@ -48,6 +48,7 @@ var STATE_MAP = {
 };
 
 var SYNC_UPLOAD_ADDONS = ['github', 'dataverse'];
+var READ_ONLY_ADDONS = ['bitbucket', 'gitlab', 'onedrive'];
 
 
 var OPERATIONS = {
@@ -2520,7 +2521,9 @@ function isInvalidDropFolder(folder) {
         !folder.data.provider ||
         folder.data.status ||
         // cannot add to published dataverse
-        (folder.data.provider === 'dataverse' && folder.data.dataverseIsPublished)
+        (folder.data.provider === 'dataverse' && folder.data.dataverseIsPublished) ||
+        // no dropping into read-only providers
+        (READ_ONLY_ADDONS.indexOf(folder.data.provider) !== -1)
     ) {
         return true;
     }
@@ -2556,7 +2559,7 @@ function allowedToMove(folder, item, mustBeIntra) {
         item.data.permissions.edit &&
         (!mustBeIntra || (item.data.provider === folder.data.provider && item.data.nodeId === folder.data.nodeId)) &&
         !(item.data.provider === 'figshare' && item.data.extra && item.data.extra.status === 'public') &&
-        (item.data.provider !== 'bitbucket') && (item.data.provider !== 'gitlab') && (item.data.provider !== 'onedrive')
+        (READ_ONLY_ADDONS.indexOf(item.data.provider) === -1) && (READ_ONLY_ADDONS.indexOf(folder.data.provider) === -1)
     );
 }
 

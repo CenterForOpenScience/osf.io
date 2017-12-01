@@ -68,7 +68,8 @@ class PreprintProviderForm(forms.ModelForm):
 
 
 class PreprintProviderCustomTaxonomyForm(forms.Form):
-    custom_taxonomy_json = forms.CharField(widget=forms.Textarea, initial='{"include": [], "exclude": [], "custom": {}}', required=False)
+    add_missing = forms.BooleanField(required=False)
+    custom_taxonomy_json = forms.CharField(widget=forms.Textarea, initial='{"include": [], "exclude": [], "custom": {}, "merge": {}}', required=False)
     provider_id = forms.IntegerField(widget=forms.HiddenInput())
     include = forms.ChoiceField(choices=[], required=False)
     exclude = forms.ChoiceField(choices=[], required=False)
@@ -76,9 +77,12 @@ class PreprintProviderCustomTaxonomyForm(forms.Form):
     custom_parent = forms.CharField(required=False)
     bepress = forms.ChoiceField(choices=[], required=False)
 
+    merge_from = forms.ChoiceField(choices=[], required=False)
+    merge_into = forms.ChoiceField(choices=[], required=False)
+
     def __init__(self, *args, **kwargs):
         super(PreprintProviderCustomTaxonomyForm, self).__init__(*args, **kwargs)
-        subject_choices = [(x, x) for x in Subject.objects.all().values_list('text', flat=True)]
+        subject_choices = [(x, x) for x in Subject.objects.filter(bepress_subject__isnull=True).values_list('text', flat=True)]
         for name, field in self.fields.iteritems():
             if hasattr(field, 'choices'):
                 if field.choices == []:
