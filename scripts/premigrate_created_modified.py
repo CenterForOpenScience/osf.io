@@ -30,7 +30,7 @@ POPULATE_COLUMNS = [
     "SET statement_timeout = 10000; UPDATE osf_blacklistguid SET created='epoch', modified='epoch' WHERE id IN (SELECT id FROM osf_blacklistguid WHERE created IS NULL LIMIT 1000) RETURNING id;",
     "SET statement_timeout = 10000; UPDATE osf_fileversion SET created=date_created, modified='epoch' WHERE id IN (SELECT id FROM osf_fileversion WHERE created IS NULL LIMIT 1000) RETURNING id;",
     "SET statement_timeout = 10000; UPDATE osf_guid SET modified='epoch' WHERE id IN (SELECT id FROM osf_guid WHERE modified IS NULL LIMIT 1000) RETURNING id;",
-    "SET statement_timeout = 10000; UPDATE osf_nodelog SET created=TO_TIMESTAMP(('x' || SUBSTR(_id, 1, 8))::bit(32)::int)::timestamptz, modified='epoch' WHERE id IN (SELECT id FROM osf_nodelog WHERE created IS NULL LIMIT 1000) RETURNING id;",
+    "SET statement_timeout = 50000; UPDATE osf_nodelog SET created=TO_TIMESTAMP(('x' || SUBSTR(_id, 1, 8))::bit(32)::int)::timestamptz, modified='epoch' WHERE id IN (SELECT id FROM osf_nodelog WHERE created IS NULL LIMIT 1000) RETURNING id;",
     "SET statement_timeout = 10000; UPDATE osf_pagecounter SET created='epoch', modified='epoch' WHERE id IN (SELECT id FROM osf_pagecounter WHERE created IS NULL LIMIT 1000) RETURNING id;",
 ]
 
