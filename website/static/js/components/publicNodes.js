@@ -179,7 +179,9 @@ var PublicNodes = {
     },
 
     view : function (ctrl) {
-        
+
+        var OSF_SUPPORT_EMAIL = $osf.osfSupportEmail();
+
         return m('ul.list-group m-md', [
             // Error message if the request fails
             ctrl.failed ? m('p', [
