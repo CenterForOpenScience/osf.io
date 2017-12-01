@@ -24,5 +24,6 @@ module.exports = {
     info: 'fa fa-info-circle',
     smaller: 'iconmap-smaller',
     clickable: 'iconmap-clickable',
-    private : 'fa fa-lock'
+    private : 'fa fa-lock',
+    file: 'fa fa-file-o',
 };

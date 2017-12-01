@@ -6,9 +6,9 @@ var iconmap = require('js/iconmap');
 var lodashFind = require('lodash.find');
 var mHelpers = require('js/mithrilHelpers');
 var Raven = require('raven-js');
+var withPagination = require('js/components/pagination.js').withPagination;
 
-var MAX_PAGES_ON_PAGINATOR = 7;
-var MAX_PAGES_ON_PAGINATOR_SIDE = 5;
+
 var PROJECTS_PAGE_SIZE = 5;
 
 var _buildUrl = function(page, user, nodeType) {
@@ -33,8 +33,42 @@ var _buildUrl = function(page, user, nodeType) {
         query.embed.push('parent');
     }
 
+    var urlToReturn = $osf.apiV2Url('users/' + user +  '/nodes/', { query: query});
     return $osf.apiV2Url('users/' + user +  '/nodes/', { query: query});
 };
+
+var _getNextItems = function(ctrl, url, updatePagination) {
+    if(ctrl.requestPending()) {
+        return;
+    }
+
+    ctrl.publicProjects([]);
+    ctrl.requestPending(true);
+
+    var promise = m.request({
+        method : 'GET',
+        url : url,
+        background : true,
+        config: mHelpers.apiV2Config({withCredentials: window.contextVars.isOnRootDomain})
+    });
+
+    promise.then(
+        function(result) {
+            ctrl.requestPending(false);
+            ctrl.publicProjects(result.data);
+            updatePagination(result, url);
+            m.redraw();
+            return promise;
+        }, function(xhr, textStatus, error) {
+            ctrl.failed = true;
+            ctrl.requestPending(false);
+            m.redraw();
+            Raven.captureMessage('Error retrieving projects', {extra: {url: url, textStatus: textStatus, error: error}});
+        }
+    );
+};
+
+
 
 function _formatContributors(item) {
 
@@ -126,6 +160,7 @@ var PublicNodes = {
 
     controller: function(options) {
         var self = this;
+        self.failed = false;
         self.user = options.user._id;
         self.isProfile = options.user.is_profile;
         self.nodeType = options.nodeType;
@@ -133,63 +168,10 @@ var PublicNodes = {
         self.publicProjects = m.prop([]);
         self.requestPending = m.prop(false);
 
-        self.failed = false;
-        self.paginators = m.prop([]);
-        self.nextPage = m.prop('');
-        self.prevPage = m.prop('');
-        self.totalPages = m.prop(0);
-        self.currentPage = m.prop(0);
-        self.pageToGet = m.prop(0);
-
-        self.getProjects = function _getProjects (url) {
-
-            if(self.requestPending()) {
-                return;
-            }
-
-            self.publicProjects([]);
-            self.requestPending(true);
-
-            function _processResults (result){
-
-                self.publicProjects(result.data);
-                self.nextPage(result.links.next);
-                self.prevPage(result.links.prev);
-
-                var params = $osf.urlParams(url);
-                var page = params.page || 1;
-
-                self.currentPage(parseInt(page));
-                self.totalPages(Math.ceil(result.meta.total / result.meta.per_page));
-
-                m.redraw();
-            }
-
-            var promise = m.request({
-                method : 'GET',
-                url : url,
-                background : true,
-                config: mHelpers.apiV2Config({withCredentials: window.contextVars.isOnRootDomain})
-            });
-
-            promise.then(
-                function(result) {
-                    self.requestPending(false);
-                    _processResults(result);
-                    return promise;
-                }, function(xhr, textStatus, error) {
-                    self.failed = true;
-                    self.requestPending(false);
-                    m.redraw();
-                    Raven.captureMessage('Error retrieving projects', {extra: {url: url, textStatus: textStatus, error: error}});
-                }
-            );
-        };
-
         self.getCurrentProjects = function _getCurrentProjects (page){
             if(!self.requestPending()) {
                 var url = _buildUrl(page, self.user, self.nodeType);
-                return self.getProjects(url);
+                return _getNextItems(self, url, options.updatePagination);
             }
         };
 
@@ -197,117 +179,6 @@ var PublicNodes = {
     },
 
     view : function (ctrl) {
-
-        var i;
-        ctrl.paginators([]);
-        if (ctrl.totalPages() > 1) {
-            // previous page
-            ctrl.paginators().push({
-                url: function() { return ctrl.prevPage(); },
-                text: '<'
-            });
-            // first page
-            ctrl.paginators().push({
-                text: 1,
-                url: function() {
-                    ctrl.pageToGet(1);
-                    if(ctrl.pageToGet() !== ctrl.currentPage()) {
-                        return _buildUrl(ctrl.pageToGet(), ctrl.user, ctrl.nodeType);
-                    }
-                }
-            });
-            // no ellipses
-            if (ctrl.totalPages() <= MAX_PAGES_ON_PAGINATOR) {
-                for (i = 2; i < ctrl.totalPages(); i++) {
-                    ctrl.paginators().push({
-                        text: i,
-                        url: function() {
-                            ctrl.pageToGet(parseInt(this.text));
-                            if (ctrl.pageToGet() !== ctrl.currentPage()) {
-                                return _buildUrl(ctrl.pageToGet(), ctrl.user, ctrl.nodeType);
-                            }
-                        }
-                    });/* jshint ignore:line */
-                    // function defined inside loop
-                }
-            }
-            // one ellipse at the end
-            else if (ctrl.currentPage() < MAX_PAGES_ON_PAGINATOR_SIDE - 1) {
-                for (i = 2; i < MAX_PAGES_ON_PAGINATOR_SIDE; i++) {
-                    ctrl.paginators().push({
-                        text: i,
-                        url: function() {
-                            ctrl.pageToGet(parseInt(this.text));
-                            if (ctrl.pageToGet() !== ctrl.currentPage()) {
-                                return _buildUrl(ctrl.pageToGet(), ctrl.user, ctrl.nodeType);
-                            }
-                        }
-                    });/* jshint ignore:line */
-                    // function defined inside loop
-                }
-                ctrl.paginators().push({
-                    text: '...',
-                    url: function() { }
-                });
-            }
-            // one ellipse at the beginning
-            else if (ctrl.currentPage() > ctrl.totalPages() - MAX_PAGES_ON_PAGINATOR_SIDE + 2) {
-                ctrl.paginators().push({
-                    text: '...',
-                    url: function() { }
-                });
-                for (i = ctrl.totalPages() - MAX_PAGES_ON_PAGINATOR_SIDE + 2; i <= ctrl.totalPages() - 1; i++) {
-                    ctrl.paginators().push({
-                        text: i,
-                        url: function() {
-                            ctrl.pageToGet(parseInt(this.text));
-                            if (ctrl.pageToGet() !== ctrl.currentPage()) {
-                                return _buildUrl(ctrl.pageToGet(), ctrl.user, ctrl.nodeType);
-                            }
-                        }
-                    });/* jshint ignore:line */
-                    // function defined inside loop
-                }
-            }
-            // two ellipses
-            else {
-                ctrl.paginators().push({
-                    text: '...',
-                    url: function() { }
-                });
-                for (i = parseInt(ctrl.currentPage()) - 1; i <= parseInt(ctrl.currentPage()) + 1; i++) {
-                    ctrl.paginators().push({
-                        text: i,
-                        url: function() {
-                            ctrl.pageToGet(parseInt(this.text));
-                            if (ctrl.pageToGet() !== ctrl.currentPage()) {
-                                return _buildUrl(ctrl.pageToGet(), ctrl.user, ctrl.nodeType);
-                            }
-                        }
-                    });/* jshint ignore:line */
-                    // function defined inside loop
-                }
-                ctrl.paginators().push({
-                    text: '...',
-                    url: function() { }
-                });
-            }
-            // last page
-            ctrl.paginators().push({
-                text: ctrl.totalPages(),
-                url: function() {
-                    ctrl.pageToGet(ctrl.totalPages());
-                    if (ctrl.pageToGet() !== ctrl.currentPage()) {
-                        return _buildUrl(ctrl.pageToGet(), ctrl.user, ctrl.nodeType);
-                    }
-                }
-            });
-            // next page
-            ctrl.paginators().push({
-                url: function() { return ctrl.nextPage(); },
-                text: '>'
-            });
-        }
 
         return m('ul.list-group m-md', [
             // Error message if the request fails
@@ -333,21 +204,21 @@ var PublicNodes = {
                             '.'
                         ])
                     ])
-                : m('div.help-block', {}, 'This user has no public ' + ctrl.nodeType + '.'),
+                : m('div.help-block', {}, 'This user has no public ' + ctrl.nodeType + '.')
 
-                // Pagination
-                m('.db-activity-nav.text-center', {style: 'margin-top: 5px; margin-bottom: -10px;'}, [
-                    ctrl.paginators() ? ctrl.paginators().map(function(page) {
-                        return page.url() ? m('.btn.btn-sm.btn-link', { onclick : function() {
-                            ctrl.getProjects(page.url());
-                        }}, page.text) : m('.btn.btn-sm.btn-link.disabled', {style: 'color: black'}, page.text);
-                    }) : ''
-                ])
             ]
         ]);
 
     }
 };
+
+var PaginationWrapper = withPagination({
+    buildUrl: _buildUrl,
+    getNextItems: _getNextItems
+});
+
+PublicNodes = new PaginationWrapper(PublicNodes);
+
 
 module.exports = {
     PublicNodes: PublicNodes

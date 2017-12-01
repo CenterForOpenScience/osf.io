@@ -65,10 +65,11 @@ from tests.base import (
     assert_datetime_equal,
 )
 from tests.base import test_app as mock_app
+from api_tests.utils import create_test_file
 
 pytestmark = pytest.mark.django_db
 
-from osf.models import NodeRelation
+from osf.models import NodeRelation, QuickFilesNode
 from osf_tests.factories import (
     fake_email,
     ApiOAuth2ApplicationFactory,
@@ -1392,6 +1393,23 @@ class TestUserProfile(OsfTestCase):
         assert_equal(mock_client.lists.unsubscribe.call_count, 0)
         assert_equal(mock_client.lists.subscribe.call_count, 0)
         handlers.celery_teardown_request()
+
+    def test_user_with_quickfiles(self):
+        quickfiles_node = QuickFilesNode.objects.get_for_user(self.user)
+        create_test_file(quickfiles_node, self.user, filename='skrr_skrrrrrrr.pdf')
+
+        url = web_url_for('profile_view_id', uid=self.user._id)
+        res = self.app.get(url, auth=self.user.auth)
+
+        assert_in('Quick files', res.body)
+
+    def test_user_with_no_quickfiles(self):
+        assert(not QuickFilesNode.objects.first().files.filter(type='osf.osfstoragefile').exists())
+
+        url = web_url_for('profile_view_id', uid=self.user._primary_key)
+        res = self.app.get(url, auth=self.user.auth)
+
+        assert_not_in('Quick files', res.body)
 
 
 class TestUserProfileApplicationsPage(OsfTestCase):
