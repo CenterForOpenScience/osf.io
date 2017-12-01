@@ -479,7 +479,7 @@ var QuickSearchProject = {
         }
 
         function headerTemplate ( ){
-            return [ m('h2.col-xs-9', 'Dashboard'), m('m-b-lg.col-xs-3', m('.pull-right', m.component(AddProject, {
+            return [ m('h2.col-xs-9', 'Dashboard'), m('.m-b-lg.col-xs-3', m('.pull-right', m.component(AddProject, {
                 buttonTemplate : m('button.btn.btn-success.btn-success-high-contrast.m-t-md.f-w-xl[data-toggle="modal"][data-target="#addProjectFromHome"]', {onclick: function(){
                                 $osf.trackClick('quickSearch', 'add-project', 'open-add-project-modal');
                 }}, 'Create new project'),
@@ -494,17 +494,17 @@ var QuickSearchProject = {
         }
 
         if (ctrl.eligibleNodes().length === 0 && ctrl.filter() == null) {
-            return m('.row',
-                m('.col-xs-12',[
-                    headerTemplate(),
+            return m('',
+                [
+                    m('.row', headerTemplate()),
                     m('.row.quick-project',
                         m('.col-sm-12.text-center', [
                             m('p','You have no projects yet. Create a project with the button on the top right.'),
                             m('p', 'This feature allows you to search and quickly access your projects.'),
-                            m('img', { src : '/static/img/quicksearch-min.png', alt : 'Preview of a full quick projects screen'})
+                            m('img.img-responsive.center-block', { src : '/static/img/quicksearch-min.png', alt : 'Preview of a full quick projects screen'})
                         ])
                     )
-                ])
+                ]
             );
         }
         else {

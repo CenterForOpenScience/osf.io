@@ -77,7 +77,7 @@ def client():
                 settings.ELASTIC_URI,
                 request_timeout=settings.ELASTIC_TIMEOUT,
                 retry_on_timeout=True,
-                **settings.ELASIC_KWARGS
+                **settings.ELASTIC_KWARGS
             )
             logging.getLogger('elasticsearch').setLevel(logging.WARN)
             logging.getLogger('elasticsearch.trace').setLevel(logging.WARN)
@@ -112,6 +112,8 @@ def requires_search(func):
             except NotFoundError as e:
                 raise exceptions.IndexNotFoundError(e.error)
             except RequestError as e:
+                if e.error == 'search_phase_execution_exception':
+                    raise exceptions.MalformedQueryError('Failed to parse query')
                 if 'ParseException' in e.error:  # ES 1.5
                     raise exceptions.MalformedQueryError(e.error)
                 if type(e.error) == dict:  # ES 2.0
@@ -368,7 +370,7 @@ def serialize_node(node, category):
         'registered_date': node.registered_date,
         'wikis': {},
         'parent_id': parent_id,
-        'date_created': node.date_created,
+        'date_created': node.created,
         'license': serialize_node_license_record(node.license),
         'affiliated_institutions': list(node.affiliated_institutions.values_list('name', flat=True)),
         'boost': int(not node.is_registration) + 1,  # This is for making registered projects less relevant

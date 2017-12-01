@@ -43,6 +43,8 @@ def must_be_branched_from_node(func):
     def wrapper(*args, **kwargs):
         node = kwargs['node']
         draft = kwargs['draft']
+        if draft.deleted:
+            raise HTTPError(http.GONE)
         if not draft.branched_from._id == node._id:
             raise HTTPError(
                 http.BAD_REQUEST,
@@ -337,7 +339,8 @@ def delete_draft_registration(auth, node, draft, *args, **kwargs):
                 'message_long': 'This draft has already been registered and cannot be deleted.'
             }
         )
-    DraftRegistration.remove_one(draft)
+    draft.deleted = timezone.now()
+    draft.save(update_fields=['deleted'])
     return None, http.NO_CONTENT
 
 def get_metaschemas(*args, **kwargs):
@@ -350,9 +353,9 @@ def get_metaschemas(*args, **kwargs):
     count = request.args.get('count', 100)
     include = request.args.get('include', 'latest')
 
-    meta_schemas = MetaSchema.objects.filter(active=True).distinct()
+    meta_schemas = MetaSchema.objects.filter(active=True)
     if include == 'latest':
-        meta_schemas.filter(schema_version=LATEST_SCHEMA_VERSION).distinct()
+        meta_schemas.filter(schema_version=LATEST_SCHEMA_VERSION)
 
     meta_schemas = sorted(meta_schemas, key=lambda x: METASCHEMA_ORDERING.index(x.name))
 

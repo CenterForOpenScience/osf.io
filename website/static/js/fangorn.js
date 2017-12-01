@@ -48,6 +48,7 @@ var STATE_MAP = {
 };
 
 var SYNC_UPLOAD_ADDONS = ['github', 'dataverse'];
+var READ_ONLY_ADDONS = ['bitbucket', 'gitlab', 'onedrive'];
 
 
 var OPERATIONS = {
@@ -375,7 +376,7 @@ function inheritFromParent(item, parent, fields) {
         item.data[field] = item.data[field] || parent.data[field];
     });
 
-    if(item.data.provider === 'github' || item.data.provider === 'bitbucket'){
+    if(item.data.provider === 'github' || item.data.provider === 'bitbucket' || item.data.provider === 'gitlab'){
         item.data.branch = parent.data.branch;
     }
 }
@@ -544,7 +545,7 @@ function doItemOp(operation, to, from, rename, conflict) {
     }
 
     var options = {};
-    if(from.data.provider === 'github' || from.data.provider === 'bitbucket'){
+    if(from.data.provider === 'github' || from.data.provider === 'bitbucket' || from.data.provider === 'gitlab'){
         options.branch = from.data.branch;
         moveSpec.branch = from.data.branch;
     }
@@ -1027,7 +1028,7 @@ function _createFolder(event, dismissCallback, helpText) {
     var path = parent.data.path || '/';
     var options = {name: val, kind: 'folder'};
 
-    if (parent.data.provider === 'github') {
+    if ((parent.data.provider === 'github') || (parent.data.provider === 'gitlab')) {
         extra.branch = parent.data.branch;
         options.branch = parent.data.branch;
     }
@@ -1036,7 +1037,7 @@ function _createFolder(event, dismissCallback, helpText) {
         method: 'PUT',
         background: true,
         config: $osf.setXHRAuthorization,
-        url: waterbutler.buildCreateFolderUrl(path, parent.data.provider, parent.data.nodeId, options)
+        url: waterbutler.buildCreateFolderUrl(path, parent.data.provider, parent.data.nodeId, options, extra)
     }).then(function(item) {
         item = tb.options.lazyLoadPreprocess.call(this, item).data;
         inheritFromParent({data: item}, parent, ['branch']);
@@ -1374,12 +1375,6 @@ function _fangornTitleColumnHelper(tb, item, col, nameTitle, toUrl, classNameOpt
             attrs = {
                 className: classNameOption,
                 onclick: function(event) {
-                    // Prevent gotoFileEvent from getting
-                    // called more than once after user has clicked once
-                    if (item.loading) {
-                        return false;
-                    }
-                    item.loading = true;
                     event.stopImmediatePropagation();
                     gotoFileEvent.call(tb, item, toUrl);
                 }
@@ -1589,14 +1584,18 @@ function _loadTopLevelChildren() {
 var NO_AUTO_EXPAND_PROJECTS = ['ezcuj', 'ecmz4', 'w4wvg', 'sn64d'];
 function expandStateLoad(item) {
     var tb = this,
+        icon = $('.tb-row[data-id="' + item.id + '"]').find('.tb-toggle-icon'),
+        toggleIcon = tbOptions.resolveToggle(item),
+        addonList = [],
         i;
+
     if (item.children.length > 0 && item.depth === 1) {
         // NOTE: On the RPP and a few select projects *only*: Load the top-level project's OSF Storage
         // but do NOT lazy-load children in order to save hundreds of requests.
         // TODO: We might want to do this for every project, but that's TBD.
         // /sloria
         if (window.contextVars && window.contextVars.node && NO_AUTO_EXPAND_PROJECTS.indexOf(window.contextVars.node.id) > -1) {
-            var osfsItems = item.children.filter(function(child) { return child.isAddonRoot && child.provider === 'osfstorage'; });
+            var osfsItems = item.children.filter(function(child) { return child.data.isAddonRoot && child.data.provider === 'osfstorage'; });
             if (osfsItems.length) {
                 var osfsItem = osfsItems[0];
                 tb.updateFolder(null, osfsItem);
@@ -1607,6 +1606,7 @@ function expandStateLoad(item) {
             }
         }
     }
+
     if (item.children.length > 0 && item.depth === 2) {
         for (i = 0; i < item.children.length; i++) {
             if (item.children[i].data.isAddonRoot || item.children[i].data.addonFullName === 'OSF Storage' ) {
@@ -1614,7 +1614,33 @@ function expandStateLoad(item) {
             }
         }
     }
-        $('.fangorn-toolbar-icon').tooltip();
+
+    if (item.depth > 2 && !item.data.isAddonRoot && !item.data.type && item.children.length === 0 && item.open) {
+        // Displays loading indicator until request below completes
+        // Copied from toggleFolder() in Treebeard
+        if (icon.get(0)) {
+            m.render(icon.get(0), tbOptions.resolveRefreshIcon());
+        }
+        $osf.ajaxJSON(
+            'GET',
+            '/api/v1/project/' + item.data.nodeID + '/files/grid/'
+        ).done(function(response) {
+            var data = response.data[0].children;
+            tb.updateFolder(data, item);
+            tb.redraw();
+        }).fail(function(xhr) {
+            item.notify.update('Unable to retrieve components.', 'danger', undefined, 3000);
+            item.open = false;
+            Raven.captureMessage('Unable to retrieve components for node ' + item.data.nodeID, {
+                extra: {
+                    xhr: xhr
+                }
+            });
+        });
+    }
+
+    $('.fangorn-toolbar-icon').tooltip();
+
 }
 
 /**
@@ -2073,7 +2099,16 @@ var FGToolbar = {
         }
         // multiple selection icons
         // Special cased to not show 'delete multiple' for github or published dataverses
-        if(items.length > 1 && ctrl.tb.multiselected()[0].data.provider !== 'github' && ctrl.tb.options.placement !== 'fileview' && !(ctrl.tb.multiselected()[0].data.provider === 'dataverse' && ctrl.tb.multiselected()[0].parent().data.version === 'latest-published') ) {
+        if(
+            (items.length > 1) &&
+            (ctrl.tb.multiselected()[0].data.provider !== 'github') &&
+            (ctrl.tb.multiselected()[0].data.provider !== 'onedrive') &&
+            (ctrl.tb.options.placement !== 'fileview') &&
+            !(
+                (ctrl.tb.multiselected()[0].data.provider === 'dataverse') &&
+                (ctrl.tb.multiselected()[0].parent().data.version === 'latest-published')
+            )
+        ) {
             if (showDeleteMultiple(items)) {
                 var preprintPath = getPreprintPath(window.contextVars.node.preprintFileId);
                 if (preprintPath && multiselectContainsPreprint(items, preprintPath)) {
@@ -2484,7 +2519,9 @@ function isInvalidDropFolder(folder) {
         !folder.data.provider ||
         folder.data.status ||
         // cannot add to published dataverse
-        (folder.data.provider === 'dataverse' && folder.data.dataverseIsPublished)
+        (folder.data.provider === 'dataverse' && folder.data.dataverseIsPublished) ||
+        // no dropping into read-only providers
+        (READ_ONLY_ADDONS.indexOf(folder.data.provider) !== -1)
     ) {
         return true;
     }
@@ -2520,7 +2557,7 @@ function allowedToMove(folder, item, mustBeIntra) {
         item.data.permissions.edit &&
         (!mustBeIntra || (item.data.provider === folder.data.provider && item.data.nodeId === folder.data.nodeId)) &&
         !(item.data.provider === 'figshare' && item.data.extra && item.data.extra.status === 'public') &&
-        (item.data.provider !== 'bitbucket')
+        (READ_ONLY_ADDONS.indexOf(item.data.provider) === -1) && (READ_ONLY_ADDONS.indexOf(folder.data.provider) === -1)
     );
 }
 

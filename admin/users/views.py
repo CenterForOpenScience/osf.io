@@ -371,7 +371,7 @@ class UserWorkshopFormView(PermissionRequiredMixin, FormView):
     @staticmethod
     def get_user_nodes_since_workshop(user, workshop_date):
         query_date = workshop_date + timedelta(days=1)
-        return Node.objects.filter(creator=user, date_created__gt=query_date)
+        return Node.objects.filter(creator=user, created__gt=query_date)
 
     def parse(self, csv_file):
         """ Parse and add to csv file.

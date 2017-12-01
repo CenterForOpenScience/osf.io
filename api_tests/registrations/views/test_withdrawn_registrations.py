@@ -110,9 +110,9 @@ class TestWithdrawnRegistrations(NodeCRUDTestCase):
         expected_attributes = {
             'title': registration.title,
             'description': registration.description,
-            'date_created': registration.date_created.isoformat().replace('+00:00', 'Z'),
+            'date_created': registration.created.isoformat().replace('+00:00', 'Z'),
             'date_registered': registration.registered_date.isoformat().replace('+00:00', 'Z'),
-            'date_modified': registration.date_modified.isoformat().replace('+00:00', 'Z'),
+            'date_modified': registration.last_logged.isoformat().replace('+00:00', 'Z'),
             'date_withdrawn': registration.retraction.date_retracted.isoformat().replace('+00:00', 'Z'),
             'withdrawal_justification': registration.retraction.justification,
             'public': None,
