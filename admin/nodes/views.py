@@ -210,7 +210,7 @@ class RegistrationListView(PermissionRequiredMixin, ListView):
     template_name = 'nodes/registration_list.html'
     paginate_by = 10
     paginate_orphans = 1
-    ordering = 'date_created'
+    ordering = 'created'
     context_object_name = '-node'
     permission_required = 'osf.view_registration'
     raise_exception = True
@@ -234,7 +234,7 @@ class NodeSpamList(PermissionRequiredMixin, ListView):
 
     paginate_by = 25
     paginate_orphans = 1
-    ordering = 'date_created'
+    ordering = 'created'
     context_object_name = '-node'
     permission_required = 'osf.view_spam'
     raise_exception = True

@@ -953,22 +953,20 @@ def set_maintenance(ctx, message='', level=1, start=None, end=None):
     from website.app import setup_django
     setup_django()
     from website.maintenance import set_maintenance
-    """Creates a maintenance notice.
+    """Display maintenance notice across OSF applications (incl. preprints, registries, etc.)
 
-    Message is required.
-    Level defaults to 1. Valid levels are 1 (info), 2 (warning), and 3 (danger).
-
-    Set the time period for the maintenance notice to be displayed.
-    If no start or end values are displayed, default to starting now
-    and ending 24 hours from now. If no timezone info is passed along,
-    everything will be converted to UTC.
-
-    If a given end time results in a start that is after the end, start
-    will be changed to be 24 hours before the end time.
+    start - Start time for the maintenance period
+    end - End time for the mainteance period
+        NOTE: If no start or end values are provided, default to starting now
+        and ending 24 hours from now.
+    message - Message to display. If omitted, will be:
+        "The site will undergo maintenance between <localized start time> and <localized end time>. Thank you
+        for your patience."
+    level - Severity level. Modifies the color of the displayed notice. Must be one of 1 (info), 2 (warning), 3 (danger).
 
     Examples:
-        invoke set_maintenance --message 'OSF down for scheduled maintenance.' --start 2016-03-16T15:41:00-04:00
-        invoke set_maintenance --message 'Apocalypse' --level 3 --end 2016-03-16T15:41:00-04:00
+        invoke set_maintenance --start 2016-03-16T15:41:00-04:00 --end 2016-03-16T15:42:00-04:00
+        invoke set_maintenance --message 'The OSF is experiencing issues connecting to a 3rd party service' --level 2 --start 2016-03-16T15:41:00-04:00 --end 2016-03-16T15:42:00-04:00
     """
     state = set_maintenance(message, level, start, end)
     print('Maintenance notice up {} to {}.'.format(state['start'], state['end']))

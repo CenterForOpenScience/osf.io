@@ -1,13 +1,12 @@
 from __future__ import unicode_literals
 
 import json
-import csv
 
 from django.views.generic import ListView, DetailView, FormView, UpdateView
 from django.views.defaults import permission_denied, bad_request
 from django.contrib.auth.mixins import PermissionRequiredMixin
 from django.core.urlresolvers import reverse
-from django.http import JsonResponse, Http404, HttpResponse
+from django.http import JsonResponse, Http404
 from django.shortcuts import redirect
 
 from osf.models.admin_log_entry import (
@@ -16,6 +15,8 @@ from osf.models.admin_log_entry import (
     REJECT_PREREG,
     COMMENT_PREREG,
 )
+
+from admin.base import utils
 from admin.pre_reg import serializers
 from admin.pre_reg.forms import DraftRegistrationForm
 from framework.exceptions import PermissionsError
@@ -23,7 +24,6 @@ from website.exceptions import NodeStateError
 from osf.models.files import BaseFileNode
 from osf.models.node import Node
 from osf.models.registrations import DraftRegistration
-from website.prereg.utils import get_prereg_schema
 from website.project.metadata.schemas import from_json
 
 
@@ -47,10 +47,7 @@ class DraftListView(PermissionRequiredMixin, ListView):
     raise_exception = True
 
     def get_queryset(self):
-        return DraftRegistration.objects.filter(
-            registration_schema=get_prereg_schema(),
-            approval__isnull=False
-        ).order_by(self.get_ordering())
+        return utils.get_submitted_preregistrations(self.get_ordering())
 
     def get_context_data(self, **kwargs):
         query_set = kwargs.pop('object_list', self.object_list)
@@ -77,30 +74,6 @@ class DraftListView(PermissionRequiredMixin, ListView):
 
     def get_ordering(self):
         return self.request.GET.get('order_by', self.ordering)
-
-
-class DraftDownloadListView(DraftListView):
-    def get(self, request, *args, **kwargs):
-        try:
-            queryset = map(serializers.serialize_draft_registration,
-                           self.get_queryset())
-        except AttributeError:
-            raise Http404('A draft was malformed.')
-        response = HttpResponse(content_type='text/csv')
-        response['Content-Disposition'] = 'attachment; filename=prereg.csv;'
-        response['Cache-Control'] = 'no-cache'
-        keys = queryset[0].keys()
-        keys.remove('registration_schema')
-        writer = csv.DictWriter(response, fieldnames=keys)
-        writer.writeheader()
-        for draft in queryset:
-            draft.pop('registration_schema')
-            draft.update({'initiator': draft['initiator']['username']})
-            writer.writerow(
-                {k: v.encode('utf8') if isinstance(v, unicode) else v
-                 for k, v in draft.items()}
-            )
-        return response
 
 
 class DraftDetailView(PermissionRequiredMixin, DetailView):

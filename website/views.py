@@ -20,6 +20,7 @@ from framework.flask import redirect  # VOL-aware redirect
 from framework.forms import utils as form_utils
 from framework.routing import proxy_url
 from framework.auth.core import get_current_user_id
+from website import settings
 from website.institutions.views import serialize_institution
 
 from osf.models import BaseFileNode, Guid, Institution, PreprintService, AbstractNode, Node
@@ -346,3 +347,13 @@ def redirect_to_home():
 def redirect_to_cos_news(**kwargs):
     # Redirect to COS News page
     return redirect('https://cos.io/news/')
+
+
+# Return error for legacy SHARE v1 search route
+def legacy_share_v1_search(**kwargs):
+    return HTTPError(
+        http.BAD_REQUEST,
+        data=dict(
+            message_long='Please use v2 of the SHARE search API available at {}api/v2/share/search/creativeworks/_search.'.format(settings.SHARE_URL)
+        )
+    )

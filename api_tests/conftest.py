@@ -18,6 +18,8 @@ SILENT_LOGGERS = [
     'website.search.elastic_search',
     'website.search_migration.migrate',
     'website.util.paths',
+    'transitions.core',
+    'MARKDOWN',
 ]
 for logger_name in SILENT_LOGGERS:
     logging.getLogger(logger_name).setLevel(logging.CRITICAL)

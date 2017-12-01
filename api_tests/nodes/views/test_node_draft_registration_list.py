@@ -1,4 +1,5 @@
 import pytest
+from django.utils import timezone
 
 from api.base.settings.defaults import API_BASE
 from osf.models import MetaSchema
@@ -106,6 +107,14 @@ class TestDraftRegistrationList(DraftRegistrationTestCase):
     #   test_unauthenticated_user_cannot_view_draft_list
         res = app.get(url_draft_registrations, expect_errors=True)
         assert res.status_code == 401
+
+    def test_deleted_draft_registration_does_not_show_up_in_draft_list(self, app, user, draft_registration, url_draft_registrations):
+        draft_registration.deleted = timezone.now()
+        draft_registration.save()
+        res = app.get(url_draft_registrations, auth=user.auth)
+        assert res.status_code == 200
+        data = res.json['data']
+        assert len(data) == 0
 
     def test_draft_with_registered_node_does_not_show_up_in_draft_list(self, app, user, project_public, draft_registration, url_draft_registrations):
         reg = RegistrationFactory(project = project_public)

@@ -133,8 +133,8 @@ class TestSetPreprintFile(OsfTestCase):
         self.preprint.set_primary_file(self.file, auth=self.auth, save=True)
         assert_equal(self.project.preprint_file._id, self.file._id)
 
-        assert(self.preprint.date_created)
-        assert_not_equal(self.project.date_created, self.preprint.date_created)
+        assert(self.preprint.created)
+        assert_not_equal(self.project.created, self.preprint.created)
 
     def test_non_admin_update_file(self):
         self.preprint.set_primary_file(self.file, auth=self.auth, save=True)
@@ -375,7 +375,7 @@ class TestOnPreprintUpdatedTask(OsfTestCase):
         assert preprint['title'] == self.preprint.node.title
         assert preprint['description'] == self.preprint.node.description
         assert preprint['is_deleted'] == (not self.preprint.is_published or not self.preprint.node.is_public or self.preprint.node.is_preprint_orphan)
-        assert preprint['date_updated'] == self.preprint.date_modified.isoformat()
+        assert preprint['date_updated'] == self.preprint.modified.isoformat()
         assert preprint['date_published'] == self.preprint.date_published.isoformat()
 
         tags = [nodes.pop(k) for k, v in nodes.items() if v['@type'] == 'tag']
@@ -481,7 +481,7 @@ class TestOnPreprintUpdatedTask(OsfTestCase):
         res = format_preprint(self.preprint, self.preprint.provider.share_publish_type)
         nodes = dict(enumerate(res))
         preprint = nodes.pop(next(k for k, v in nodes.items() if v['@type'] == 'preprint'))
-        assert preprint['date_updated'] == self.preprint.node.date_modified.isoformat()
+        assert preprint['date_updated'] == self.preprint.node.modified.isoformat()
 
     def test_format_preprint_nones(self):
         self.preprint.node.tags = []
@@ -499,7 +499,7 @@ class TestOnPreprintUpdatedTask(OsfTestCase):
         assert preprint['title'] == self.preprint.node.title
         assert preprint['description'] == self.preprint.node.description
         assert preprint['is_deleted'] == (not self.preprint.is_published or not self.preprint.node.is_public or self.preprint.node.is_preprint_orphan)
-        assert preprint['date_updated'] == self.preprint.date_modified.isoformat()
+        assert preprint['date_updated'] == self.preprint.modified.isoformat()
         assert preprint.get('date_published') is None
 
         people = sorted([nodes.pop(k) for k, v in nodes.items() if v['@type'] == 'person'], key=lambda x: x['given_name'])
