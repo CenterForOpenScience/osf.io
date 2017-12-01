@@ -77,17 +77,14 @@ var QuickFile = {
             m('li.project list-group-item list-group-item-node cite-container', [
                 m('h4.list-group-item-heading', [
                     m('span.component-overflow.f-w-lg', {style: {lineHeight: 1.5, width: '100%'}}, [
-                        m('div.row',
-                            m('div.col-md-8.project-statuses-lg', [
-                                m('span', {class: ctrl.icon, style: 'padding-right: 5px;'}, ''),
-                                m('a', {'href': viewUrl,
-                                    onclick : function () {
-                                        $osf.trackClick('QuickFiles', 'view', 'view-quickfile-from-profile-page');
-                                    }
-                                }, ctrl.file.attributes.name),
-                            ]),
-                            m('div.col-md-4', {style: {fontSize: 'small', marginTop: '1%'}}, 'Downloads: ' + ctrl.file.attributes.extra.downloads)
-                        )
+                        m('span.col-md-8.project-statuses-lg', [
+                            m('span', {class: ctrl.icon, style: 'padding-right: 5px;'}, ''),
+                            m('a', {'href': viewUrl,
+                                onclick : function () {
+                                    $osf.trackClick('QuickFiles', 'view', 'view-quickfile-from-profile-page');
+                                }
+                            }, ctrl.file.attributes.name),
+                        ])
                     ])
                 ])
             ])
