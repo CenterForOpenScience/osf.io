@@ -1790,6 +1790,28 @@ class TestSendDigest(OsfTestCase):
         message = group_by_node(user_groups[last_user_index]['info'])
         assert_equal(kwargs['message'], message)
 
+    @mock.patch('website.mails.send_mail')
+    def test_send_users_email_ignores_disabled_users(self, mock_send_mail):
+        send_type = 'email_transactional'
+        d = factories.NotificationDigestFactory(
+            send_type=send_type,
+            event='comment_replies',
+            timestamp=timezone.now(),
+            message='Hello',
+            node_lineage=[factories.ProjectFactory()._id]
+        )
+        d.save()
+
+        user_groups = list(get_users_emails(send_type))
+        last_user_index = len(user_groups) - 1
+
+        user = OSFUser.load(user_groups[last_user_index]['user_id'])
+        user.is_disabled = True
+        user.save()
+
+        send_users_email(send_type)
+        assert_false(mock_send_mail.called)
+
     def test_remove_sent_digest_notifications(self):
         d = factories.NotificationDigestFactory(
             event='comment_replies',
