@@ -248,3 +248,6 @@ if DEBUG:
             'debug_toolbar.panels.redirects.RedirectsPanel'
         }
     }
+
+# If set to True, automated tests with extra queries will fail.
+NPLUSONE_RAISE = False

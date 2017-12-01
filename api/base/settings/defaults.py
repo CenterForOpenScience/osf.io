@@ -277,3 +277,6 @@ SELECT_FOR_UPDATE_ENABLED = True
 ANONYMOUS_USER_NAME = None
 
 CELERY_BEAT_SCHEDULER = 'django_celery_beat.schedulers:DatabaseScheduler'
+
+# If set to True, automated tests with extra queries will fail.
+NPLUSONE_RAISE = False
