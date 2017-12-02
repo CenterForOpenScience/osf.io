@@ -1,3 +1,9 @@
 .project-analytics .c3 svg { font: 12px sans-serif; }
 
+.equal-heighted-row {
+    display: flex;
+    display: -webkit-flex;
+    flex-wrap: wrap;
+}
+
 .no-analytics img { opacity: 0.5; }
