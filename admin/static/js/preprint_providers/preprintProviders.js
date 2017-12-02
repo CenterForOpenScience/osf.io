@@ -131,6 +131,19 @@ $(document).ready(function() {
         });
     };
 
+    if($('#id_domain_redirect_enabled').checked){
+        $('#id_domain').attr('required', "");
+    }
+
+    $('#id_domain_redirect_enabled').click(function() {
+        if(this.checked) {
+            $('#id_domain').attr('required', "");
+        }else {
+            $('#id_domain').removeAttr('required');
+
+        }
+    });
+
     $("#import-form").submit(function(event) {
         tinymceFields = ['description', 'advisory_board', 'footer_links'];
         checkedBooleanFields = ['domain_redirect_enabled', 'allow_submissions'];
