@@ -1,7 +1,7 @@
 var $ = require('jquery');
 var ko = require('knockout');
 var m = require('mithril');
-var bootbox = require('bootbox');  // TODO: Why is this required? Is it? See [#OSF-6100]
+var bootbox = require('bootbox');
 
 var FilesWidget = require('js/filesWidget');
 var Fangorn = require('js/fangorn').Fangorn;
@@ -166,7 +166,6 @@ ko.bindingHandlers.osfUploader = {
 
 var uploaderCount = 0;
 var Uploader = function(question, pk) {
-
     var self = this;
 
     self.draft_id = pk;
@@ -281,7 +280,7 @@ var Uploader = function(question, pk) {
 
     self.preview = function() {
         var value = question.value();
-        if (!value || value === NO_FILE || question.extra().length === 0) {
+        if (value === NO_FILE || question.extra().length === 0) {
             return 'no file selected';
         }
         else {

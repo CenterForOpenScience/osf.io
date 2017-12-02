@@ -1,14 +1,12 @@
 from __future__ import unicode_literals
 
 import json
-import csv
-from modularodm import Q
 
 from django.views.generic import ListView, DeleteView, DetailView, FormView, UpdateView
 from django.views.defaults import permission_denied, bad_request
 from django.contrib.auth.mixins import PermissionRequiredMixin
 from django.core.urlresolvers import reverse
-from django.http import JsonResponse, Http404, HttpResponse
+from django.http import JsonResponse, Http404
 from django.shortcuts import redirect
 
 from osf.models.admin_log_entry import (
@@ -18,11 +16,13 @@ from osf.models.admin_log_entry import (
     COMMENT_PREREG,
     CHECKOUT_CHECKUP,
 )
+
+from admin.base import utils
 from admin.pre_reg import serializers
 from admin.pre_reg.forms import DraftRegistrationForm
-from admin.pre_reg.utils import sort_drafts, SORT_BY
 from framework.exceptions import PermissionsError
 from website.exceptions import NodeStateError
+
 from osf.models import (
     BaseFileNode,
     DraftRegistration,
@@ -34,28 +34,27 @@ from website.prereg.utils import get_prereg_schema
 from website.project.metadata.schemas import from_json
 
 
+SORT_BY = {
+    'initiator': 'initiator__fullname',
+    'n_initiator': '-initiator__fullname',
+    'title': 'branched_from__title',
+    'n_title': '-branched_from__title',
+    'date': 'approval__initiation_date',
+    'n_date': '-approval__initiation_date',
+    'state': 'approval__state',
+    'n_state': '-approval__state',
+}
+
+
 class DraftListView(PermissionRequiredMixin, ListView):
     template_name = 'pre_reg/draft_list.html'
-    ordering = '-date'
+    ordering = '-approval__initiation_date'
     context_object_name = 'draft'
     permission_required = 'osf.view_prereg'
     raise_exception = True
 
     def get_queryset(self):
-        query = (
-            Q('registration_schema', 'eq', get_prereg_schema()) &
-            Q('approval', 'ne', None)
-        )
-        ordering = self.get_ordering()
-        if 'initiator' in ordering:
-            return DraftRegistration.find(query).sort(ordering)
-        if ordering == SORT_BY['title']:
-            return DraftRegistration.find(query).sort(
-                'registration_metadata.q1.value')
-        if ordering == SORT_BY['n_title']:
-            return DraftRegistration.find(query).sort(
-                '-registration_metadata.q1.value')
-        return sort_drafts(DraftRegistration.find(query), ordering)
+        return utils.get_submitted_preregistrations(self.get_ordering())
 
     def get_context_data(self, **kwargs):
         query_set = kwargs.pop('object_list', self.object_list)
@@ -83,29 +82,6 @@ class DraftListView(PermissionRequiredMixin, ListView):
     def get_ordering(self):
         return self.request.GET.get('order_by', self.ordering)
 
-
-class DraftDownloadListView(DraftListView):
-    def get(self, request, *args, **kwargs):
-        try:
-            queryset = map(serializers.serialize_draft_registration,
-                           self.get_queryset())
-        except AttributeError:
-            raise Http404('A draft was malformed.')
-        response = HttpResponse(content_type='text/csv')
-        response['Content-Disposition'] = 'attachment; filename=prereg.csv;'
-        response['Cache-Control'] = 'no-cache'
-        keys = queryset[0].keys()
-        keys.remove('registration_schema')
-        writer = csv.DictWriter(response, fieldnames=keys)
-        writer.writeheader()
-        for draft in queryset:
-            draft.pop('registration_schema')
-            draft.update({'initiator': draft['initiator']['username']})
-            writer.writerow(
-                {k: v.encode('utf8') if isinstance(v, unicode) else v
-                 for k, v in draft.items()}
-            )
-        return response
 
 class CheckoutCheckupView(PermissionRequiredMixin, DeleteView):
     """ View for button that checks status of all prereg drafts and removes checkouts that lingered beyond approval/rejection"""

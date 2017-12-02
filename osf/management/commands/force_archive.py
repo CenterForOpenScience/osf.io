@@ -212,7 +212,7 @@ def modify_file_tree_recursive(reg_id, tree, file_obj, deleted=None, cached=Fals
                 'deleted': None,
                 'object': file_obj,
                 'name': file_obj.name,
-                'version': int(file_obj.versions.latest('date_created').identifier) if file_obj.versions.exists() else None
+                'version': int(file_obj.versions.latest('created').identifier) if file_obj.versions.exists() else None
             })
             cached = True
             if move_under:
@@ -244,7 +244,7 @@ def modify_file_tree_recursive(reg_id, tree, file_obj, deleted=None, cached=Fals
                     'object': file_obj,
                     'name': file_obj.name,
                     'deleted': file_obj.is_deleted,
-                    'version': int(file_obj.versions.latest('date_created').identifier) if file_obj.versions.exists() else None
+                    'version': int(file_obj.versions.latest('created').identifier) if file_obj.versions.exists() else None
                 })
             noop = False
         if filenode.get('children'):
@@ -315,7 +315,7 @@ def build_file_tree(reg, node_settings):
             'object': file_obj,
             'name': file_obj.name,
             'deleted': file_obj.is_deleted,
-            'version': int(file_obj.versions.latest('date_created').identifier) if file_obj.versions.exists() else None
+            'version': int(file_obj.versions.latest('created').identifier) if file_obj.versions.exists() else None
         }
         if not file_obj.is_file:
             serialized['children'] = [_recurse(child, node) for child in node.files.filter(parent_id=file_obj.id)]

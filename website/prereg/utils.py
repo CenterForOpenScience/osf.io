@@ -1,6 +1,3 @@
-from modularodm import Q
-
-
 PREREG_CAMPAIGNS = {
     'prereg': 'Prereg Challenge',
 }
@@ -14,6 +11,7 @@ def drafts_for_user(user, campaign):
         registration_schema=PREREG_CHALLENGE_METASCHEMA,
         approval=None,
         registered_node=None,
+        deleted__isnull=True,
         branched_from__in=Node.objects.filter(
             is_deleted=False,
             contributor__admin=True,
@@ -26,7 +24,4 @@ def get_prereg_schema(campaign='prereg'):
         raise ValueError('campaign must be one of: {}'.format(', '.join(PREREG_CAMPAIGNS.keys())))
     schema_name = PREREG_CAMPAIGNS[campaign]
 
-    return MetaSchema.find_one(
-        Q('name', 'eq', schema_name) &
-        Q('schema_version', 'eq', 2)
-    )
+    return MetaSchema.objects.get(name=schema_name, schema_version=2)

@@ -5,8 +5,6 @@ import csv
 import logging
 from datetime import datetime
 
-from modularodm import Q
-
 from website.app import setup_django
 setup_django()
 
@@ -18,7 +16,7 @@ from website import settings
 from framework.auth import Auth
 from framework.celery_tasks import app as celery_app
 from osf.management.commands import force_archive as fa
-from osf.models import NodeLog, ArchiveJob, Registration
+from osf.models import ArchiveJob, Registration
 from website.archiver import ARCHIVER_INITIATED
 from website.settings import ARCHIVE_TIMEOUT_TIMEDELTA, ADDONS_REQUESTED
 
@@ -30,11 +28,7 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 
 def find_failed_registrations():
     expired_if_before = datetime.utcnow() - ARCHIVE_TIMEOUT_TIMEDELTA
-    jobs = ArchiveJob.find(
-        Q('sent', 'eq', False) &
-        Q('datetime_initiated', 'lt', expired_if_before) &
-        Q('status', 'eq', ARCHIVER_INITIATED)
-    )
+    jobs = ArchiveJob.objects.filter(sent=False, datetime_initiated__lt=expired_if_before, status=ARCHIVER_INITIATED).prefetch_related('dst_node')
     return sorted({
         node.root for node in [job.dst_node for job in jobs]
         if node and node.root
@@ -70,9 +64,9 @@ def analyze_failed_registration_nodes():
         # Any registrations succeeded after the stuck one?
         # Not sure why broken_registration.registered_from.registrations was always 0 locally...
         succeeded_registrations_after_failed = []
-        for other_reg in Registration.find(
-            Q('registered_from', 'eq', broken_registration.registered_from) &
-            Q('registered_date', 'gt', broken_registration.registered_date)
+        for other_reg in Registration.objects.filter(
+            registered_from=broken_registration.registered_from,
+            registered_date__gt=broken_registration.registered_date
         ):
             if other_reg.sanction:
                 if other_reg.sanction.is_approved:
