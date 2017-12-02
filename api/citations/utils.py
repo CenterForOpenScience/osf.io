@@ -107,11 +107,20 @@ def render_citation(node, style='apa'):
         cit = clean_up_common_errors(cit)
 
     if style == 'apa':
-        cit = apa_reformat(node, cit)
+        if isinstance(node, PreprintService):
+            cit = apa_reformat(node.node, cit)
+        else:
+            cit = apa_reformat(node, cit)
     if style == 'chicago-author-date':
-        cit = chicago_reformat(node, cit)
+        if isinstance(node, PreprintService):
+            cit = chicago_reformat(node.node, cit)
+        else:
+            cit = chicago_reformat(node, cit)
     if style == 'modern-language-association':
-        cit = mla_reformat(node, cit)
+        if isinstance(node, PreprintService):
+            cit = mla_reformat(node.node, cit)
+        else:
+            cit = mla_reformat(node, cit)
 
     return cit
 
