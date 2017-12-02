@@ -1004,6 +1004,12 @@ class WaterbutlerLink(Link):
             raise SkipField
         if self.must_be_file is True and obj.path.endswith('/'):
             raise SkipField
+
+        if 'view_only' not in self.kwargs:
+            view_only = request.query_params.get('view_only', False)
+            if view_only:
+                self.kwargs['view_only'] = view_only
+
         url = website_utils.waterbutler_api_url_for(obj.node._id, obj.provider, obj.path, **self.kwargs)
         if not url:
             raise SkipField
