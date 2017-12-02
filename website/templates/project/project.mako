@@ -10,8 +10,8 @@
 
 <div id="projectScope">
     <header class="subhead" id="overview">
-        <div class="row">
-            <div class="col-sm-5 col-md-7 cite-container">
+        <div class="row no-gutters">
+            <div class="col-lg-9 col-md-12 cite-container">
                 % if parent_node['exists']:
                     % if parent_node['can_view'] or parent_node['is_public'] or parent_node['is_contributor']:
                         <h2 class="node-parent-title">
@@ -32,7 +32,8 @@
                     <span id="nodeTitleEditable" class="overflow">${node['title']}</span>
                 </h2>
             </div>
-            <div class="col-sm-7 col-md-5">
+            <div class="clearfix visible-md-block"></div>
+            <div class="col-lg-3">
                 <div class="btn-toolbar node-control pull-right">
                     <div class="btn-group">
                     % if not node["is_public"]:
@@ -320,7 +321,7 @@
 
 <div class="row">
 
-    <div class="col-sm-6 osf-dash-col">
+    <div class="col-sm-12 col-md-6 osf-dash-col">
 
         %if user['show_wiki_widget']:
             ${ render_addon_widget.render_addon_widget('wiki', addons_widget_data['wiki']) }
@@ -371,7 +372,7 @@
 
     </div>
 
-    <div class="col-sm-6 osf-dash-col">
+    <div class="col-sm-12 col-md-6 osf-dash-col">
 
         <!-- Citations -->
         % if not node['anonymous']:

@@ -12,9 +12,9 @@
                         <span class="sr-only">Toggle navigation</span>
                         <span class="fa fa-bars fa-lg"></span>
                     </button>
-                    <a class="navbar-brand visible-xs" href="${node['url']}">
+                    <span class="navbar-brand visible-xs visible-sm">
                         ${'Project' if node['node_type'] == 'project' else 'Component'} Navigation
-                    </a>
+                    </span>
                 </div>
                 <div class="collapse navbar-collapse project-nav">
                     <ul class="nav navbar-nav">
@@ -78,7 +78,7 @@
                     % endif
                     % if (user['can_comment'] or node['has_comments']) and not node['anonymous']:
                         <li id="commentsLink">
-                            <a href="" class="visible-xs cp-handle" data-bind="click:removeCount" data-toggle="collapse" data-target="#projectSubnav .navbar-collapse">
+                            <a href="" class="hidden-lg cp-handle" data-bind="click:removeCount" data-toggle="collapse" data-target="#projectSubnav .navbar-collapse">
                                 Comments
                                 <span data-bind="if: unreadComments() !== 0">
                                     <span data-bind="text: displayCount" class="badge"></span>
