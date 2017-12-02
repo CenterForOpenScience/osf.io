@@ -258,7 +258,7 @@ class NodeSettings(BaseCitationsNodeSettings):
     provider_name = 'mendeley'
     oauth_provider = Mendeley
     serializer = MendeleySerializer
-    user_settings = models.ForeignKey(UserSettings, null=True, blank=True)
+    user_settings = models.ForeignKey(UserSettings, null=True, blank=True, on_delete=models.CASCADE)
 
     list_id = models.TextField(blank=True, null=True)
     _api = None

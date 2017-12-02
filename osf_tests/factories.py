@@ -15,6 +15,7 @@ from django.utils import timezone
 from django.db.utils import IntegrityError
 from faker import Factory
 
+from reviews import workflow
 from website import settings
 from website.notifications.constants import NOTIFICATION_TYPES
 from website.util import permissions
@@ -26,7 +27,6 @@ from framework.auth.core import Auth
 from osf import models
 from osf.models.sanctions import Sanction
 from osf.utils.names import impute_names_model
-from osf.modm_compat import Q
 from addons.osfstorage.models import OsfStorageFile
 
 fake = Factory.create()
@@ -177,7 +177,7 @@ class UnconfirmedUserFactory(DjangoModelFactory):
 class BaseNodeFactory(DjangoModelFactory):
     title = factory.Faker('catch_phrase')
     description = factory.Faker('sentence')
-    date_created = factory.LazyFunction(timezone.now)
+    created = factory.LazyFunction(timezone.now)
     creator = factory.SubFactory(AuthUserFactory)
 
     class Meta:
@@ -246,9 +246,7 @@ class NodeLicenseRecordFactory(DjangoModelFactory):
     def _create(cls, *args, **kwargs):
         kwargs['node_license'] = kwargs.get(
             'node_license',
-            models.NodeLicense.find_one(
-                Q('name', 'eq', 'No license')
-            )
+            models.NodeLicense.objects.get(name='No license')
         )
         return super(NodeLicenseRecordFactory, cls)._create(*args, **kwargs)
 
@@ -585,6 +583,8 @@ class PreprintFactory(DjangoModelFactory):
         subjects = kwargs.pop('subjects', None) or [[SubjectFactory()._id]]
         instance.node.preprint_article_doi = doi
 
+        instance.reviews_state = kwargs.pop('reviews_state', 'initial')
+
         user = kwargs.pop('creator', None) or instance.node.creator
         if not instance.node.is_contributor(user):
             instance.node.add_contributor(
@@ -801,3 +801,18 @@ class SessionFactory(DjangoModelFactory):
 class ArchiveJobFactory(DjangoModelFactory):
     class Meta:
         model = models.ArchiveJob
+
+
+class ActionFactory(DjangoModelFactory):
+    class Meta:
+        model = models.Action
+
+    trigger = FuzzyChoice(choices=workflow.Triggers.values())
+    comment = factory.Faker('text')
+    from_state = FuzzyChoice(choices=workflow.States.values())
+    to_state = FuzzyChoice(choices=workflow.States.values())
+
+    target = factory.SubFactory(PreprintFactory)
+    creator = factory.SubFactory(AuthUserFactory)
+
+    is_deleted = False

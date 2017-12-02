@@ -422,6 +422,11 @@ a {
     word-break: break-all;
 
 }
+
+.keep-all {
+    word-break: keep-all;
+}
+
 select {
     word-wrap: normal;
 }
@@ -628,13 +633,6 @@ button.close {
     display: inline-block
 }
 
-/* Navigation -- general style should be in style guide
--------------------------------------------------- */
-#navbarScope a.nav-user-dropdown {
-    padding-top: 12px;
-    padding-bottom: 11px;
-}
-
 /* Override insane add tag font
 -------------------------------------------------- */
 .tagsinput input {
@@ -759,4 +757,13 @@ div.ball-scale-blue>div {
 .category-list ul.dropdown-menu > li > a {
     line-height: 1.65;
     padding-left: 8px;
+/* Remove gutters between bootstrap cols */
+.row.no-gutters {
+  margin-right: 0;
+  margin-left: 0;
+}
+.row.no-gutters > [class^="col-"],
+.row.no-gutters > [class*=" col-"] {
+  padding-right: 0;
+  padding-left: 0;
 }

@@ -10,8 +10,8 @@
 
 <div id="projectScope">
     <header class="subhead" id="overview">
-        <div class="row">
-            <div class="col-sm-5 col-md-7 cite-container">
+        <div class="row no-gutters">
+            <div class="col-lg-9 col-md-12 cite-container">
                 % if parent_node['exists']:
                     % if parent_node['can_view'] or parent_node['is_public'] or parent_node['is_contributor']:
                         <h2 class="node-parent-title">
@@ -32,7 +32,8 @@
                     <span id="nodeTitleEditable" class="overflow">${node['title']}</span>
                 </h2>
             </div>
-            <div class="col-sm-7 col-md-5">
+            <div class="clearfix visible-md-block"></div>
+            <div class="col-lg-3">
                 <div class="btn-toolbar node-control pull-right">
                     <div class="btn-group">
                     % if not node["is_public"]:
@@ -89,7 +90,7 @@
                                     % if not disk_saving_mode:
                                     <li class="p-h-md">
                                         <span class="btn btn-primary btn-block m-v-sm" onclick="NodeActions.redirectForkPage();">
-                                            View Forks(${ node['fork_count']})
+                                            View Forks (${ node['fork_count']})
                                         </span>
                                     </li>
                                     %endif
@@ -276,7 +277,28 @@
 <div class="row">
     <div class="col-xs-12">
         <div class="pp-notice m-b-md p-md clearfix">
-            This project represents a preprint. <a href="http://help.osf.io/m/preprints">Learn more</a> about how to work with preprint files.
+            % if node['has_moderated_preprint']:
+                This project represents ${'an ' if node['preprint_state'] == 'accepted' else 'a '}
+                ${node['preprint_state']} ${node['preprint_word']} submitted to ${node['preprint_provider']['name']}
+                <% icon_tooltip = ''%>
+                % if node['preprint_state'] == 'pending':
+                    % if node['preprint_provider']['workflow'] == 'post-moderation':
+                        <% icon_tooltip = 'This {preprint_word} is publicly available and searchable but is subject to' \
+                        ' removal by a moderator.'.format(preprint_word=node['preprint_word'])%>
+                    % else:
+                        <% icon_tooltip = 'This {preprint_word} is not publicly available or searchable until approved ' \
+                        'by a moderator.'.format(preprint_word=node['preprint_word'])%>
+                    % endif
+                % elif node['preprint_state'] == 'accepted':
+                    <% icon_tooltip = 'This {preprint_word} is publicly available and searchable.'.format(preprint_word=node['preprint_word'])%>
+                % else:
+                    <% icon_tooltip = 'This {preprint_word} is not publicly available or searchable.'.format(preprint_word=node['preprint_word'])%>
+                % endif
+                <i class="fa fa-question-circle text-muted" data-toggle="tooltip" data-placement="bottom" title="${icon_tooltip}"></i>.
+            % else:
+                This project represents a ${node['preprint_word']}.
+            % endif
+            <a href="http://help.osf.io/m/preprints">Learn more</a> about how to work with ${node['preprint_word']} files.
             <a href="${node['preprint_url']}" class="btn btn-default btn-sm m-r-xs pull-right">View preprint</a>
             % if user['is_admin']:
                 <a href="${node['preprint_url']}edit" class="btn btn-default btn-sm m-r-xs pull-right">Edit preprint</a>
@@ -299,7 +321,7 @@
 
 <div class="row">
 
-    <div class="col-sm-6 osf-dash-col">
+    <div class="col-sm-12 col-md-6 osf-dash-col">
 
         %if user['show_wiki_widget']:
             ${ render_addon_widget.render_addon_widget('wiki', addons_widget_data['wiki']) }
@@ -350,7 +372,7 @@
 
     </div>
 
-    <div class="col-sm-6 osf-dash-col">
+    <div class="col-sm-12 col-md-6 osf-dash-col">
 
         <!-- Citations -->
         % if not node['anonymous']:
@@ -475,6 +497,7 @@ ${parent.javascript_bottom()}
         currentUser: {
             canComment: ${ user['can_comment'] | sjson, n },
             canEdit: ${ user['can_edit'] | sjson, n },
+            canEditTags: ${ user['can_edit_tags'] | sjson, n },
         },
         node: {
             id: ${node['id'] | sjson, n},

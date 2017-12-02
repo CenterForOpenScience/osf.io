@@ -3,6 +3,7 @@ import logging
 from email.mime.text import MIMEText
 
 from framework.celery_tasks import app
+from framework.sentry import sentry
 from website import settings
 import sendgrid
 
@@ -85,19 +86,24 @@ def _send_with_smtp(from_addr, to_addr, subject, message, mimetype='html', ttls=
     return True
 
 def _send_with_sendgrid(from_addr, to_addr, subject, message, mimetype='html', categories=None, attachment_name=None, attachment_content=None, client=None):
-    client = client or sendgrid.SendGridClient(settings.SENDGRID_API_KEY)
-    mail = sendgrid.Mail()
-    mail.set_from(from_addr)
-    mail.add_to(to_addr)
-    mail.set_subject(subject)
-    if mimetype == 'html':
-        mail.set_html(message)
-    else:
-        mail.set_text(message)
-    if categories:
-        mail.set_categories(categories)
-    if attachment_name and attachment_content:
-        mail.add_attachment_stream(attachment_name, attachment_content)
+    if (settings.SENDGRID_WHITELIST_MODE and to_addr in settings.SENDGRID_EMAIL_WHITELIST) or settings.SENDGRID_WHITELIST_MODE is False:
+        client = client or sendgrid.SendGridClient(settings.SENDGRID_API_KEY)
+        mail = sendgrid.Mail()
+        mail.set_from(from_addr)
+        mail.add_to(to_addr)
+        mail.set_subject(subject)
+        if mimetype == 'html':
+            mail.set_html(message)
+        else:
+            mail.set_text(message)
+        if categories:
+            mail.set_categories(categories)
+        if attachment_name and attachment_content:
+            mail.add_attachment_stream(attachment_name, attachment_content)
 
-    status, msg = client.send(mail)
-    return status < 400
+        status, msg = client.send(mail)
+        return status < 400
+    else:
+        sentry.log_message(
+            'SENDGRID_WHITELIST_MODE is True. Failed to send emails to non-whitelisted recipient {}.'.format(to_addr)
+        )
