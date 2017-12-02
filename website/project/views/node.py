@@ -631,10 +631,11 @@ def _render_addons(addons):
 def _should_show_wiki_widget(node, contributor):
     has_wiki = bool(node.get_addon('wiki'))
     wiki_page = node.get_wiki_page('home', None)
-    if not contributor or not contributor.write:
-        return has_wiki and wiki_page and wiki_page.html(node)
-    else:
+
+    if contributor and contributor.write and not node.is_registration:
         return has_wiki
+    else:
+        return has_wiki and wiki_page and wiki_page.html(node)
 
 
 def _view_project(node, auth, primary=False,
