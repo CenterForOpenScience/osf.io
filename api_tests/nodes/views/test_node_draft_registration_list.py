@@ -2,6 +2,7 @@ import pytest
 from django.utils import timezone
 
 from api.base.settings.defaults import API_BASE
+from django.contrib.auth.models import Permission
 from osf.models import MetaSchema
 from osf_tests.factories import (
     ProjectFactory,
@@ -12,7 +13,6 @@ from osf_tests.factories import (
 )
 from website.project.metadata.schemas import LATEST_SCHEMA_VERSION
 from website.project.metadata.utils import create_jsonschema_from_metaschema
-from website.settings import PREREG_ADMIN_TAG
 from website.util import permissions
 
 
@@ -380,7 +380,8 @@ class TestDraftRegistrationCreate(DraftRegistrationTestCase):
 
     def test_reviewer_cannot_create_draft_registration(self, app, user_read_contrib, project_public, payload, url_draft_registrations):
         user = AuthUserFactory()
-        user.add_system_tag(PREREG_ADMIN_TAG)
+        administer_permission = Permission.objects.get(codename='administer_prereg')
+        user.user_permissions.add(administer_permission)
         user.save()
 
         assert user_read_contrib in project_public.contributors.all()
