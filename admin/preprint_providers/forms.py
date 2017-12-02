@@ -35,7 +35,7 @@ class PreprintProviderForm(forms.ModelForm):
 
     def clean_advisory_board(self, *args, **kwargs):
         if not self.data.get('advisory_board'):
-            return unicode('')
+            return u''
         return bleach.clean(
             self.data.get('advisory_board'),
             tags=['a', 'b', 'br', 'div', 'em', 'h2', 'h3', 'li', 'p', 'strong', 'ul'],
@@ -46,7 +46,7 @@ class PreprintProviderForm(forms.ModelForm):
 
     def clean_description(self, *args, **kwargs):
         if not self.data.get('description'):
-            return unicode('')
+            return u''
         return bleach.clean(
             self.data.get('description'),
             tags=['a', 'br', 'em', 'p', 'span', 'strong'],
@@ -57,7 +57,7 @@ class PreprintProviderForm(forms.ModelForm):
 
     def clean_footer_links(self, *args, **kwargs):
         if not self.data.get('footer_links'):
-            return unicode('')
+            return u''
         return bleach.clean(
             self.data.get('footer_links'),
             tags=['a', 'br', 'div', 'em', 'p', 'span', 'strong'],

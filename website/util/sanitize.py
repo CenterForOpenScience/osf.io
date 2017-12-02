@@ -14,7 +14,7 @@ def strip_html(unclean, tags=[]):
     :rtype: str
     """
     if unclean is None:
-        return unicode('')
+        return u''
     elif isinstance(unclean, dict) or isinstance(unclean, list):
         return bleach.clean(str(unclean), strip=True, tags=[], attributes=[], styles=[])
     # We make this noop for non-string, non-collection inputs so this function can be used with higher-order
