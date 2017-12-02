@@ -100,6 +100,12 @@ $(document).ready(function() {
             });
         }
     });
+    $("#discard").click(function(e) {
+        e.preventDefault();
+        if (window.confirm('Are you sure want to discard all your changes?')) {
+            location.reload(true);
+        }
+    });
 
     $("#show-modify-form").click(function() {
 
