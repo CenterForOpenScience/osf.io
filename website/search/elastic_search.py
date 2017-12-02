@@ -269,7 +269,7 @@ def format_result(result, parent_id=None):
         'is_pending_retraction': result['is_pending_retraction'],
         'embargo_end_date': result['embargo_end_date'],
         'is_pending_embargo': result['is_pending_embargo'],
-        'description': result['description'],
+        'description': sanitize.unescape_entities(result['description']),
         'category': result.get('category'),
         'date_created': result.get('date_created'),
         'date_registered': result.get('registered_date'),
