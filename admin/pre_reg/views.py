@@ -30,7 +30,6 @@ from osf.models import (
     Node,
     OSFUser,
 )
-from website.prereg.utils import get_prereg_schema
 from website.project.metadata.schemas import from_json
 
 
