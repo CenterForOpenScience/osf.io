@@ -861,13 +861,13 @@ class DraftRegistrationApproval(Sanction):
             )
 
     def approve(self, user):
-        if osf_settings.PREREG_ADMIN_TAG not in user.system_tags:
+        if not user.has_perm('osf.administer_prereg'):
             raise PermissionsError('This user does not have permission to approve this draft.')
         self.state = Sanction.APPROVED
         self._on_complete(user)
 
     def reject(self, user):
-        if osf_settings.PREREG_ADMIN_TAG not in user.system_tags:
+        if not user.has_perm('osf.administer_prereg'):
             raise PermissionsError('This user does not have permission to approve this draft.')
         self.state = Sanction.REJECTED
         self._on_reject(user)

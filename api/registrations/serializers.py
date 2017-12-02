@@ -4,6 +4,7 @@ import json
 from django.core.exceptions import ValidationError
 from rest_framework import serializers as ser
 from rest_framework import exceptions
+from api.base.exceptions import Conflict
 
 from api.base.utils import absolute_reverse, get_user_auth
 from website.project.metadata.utils import is_prereg_admin_not_project_admin
@@ -32,7 +33,7 @@ class BaseRegistrationSerializer(NodeSerializer):
     fork = HideIfWithdrawal(ser.BooleanField(read_only=True, source='is_fork'))
     collection = HideIfWithdrawal(ser.BooleanField(read_only=True, source='is_collection'))
     node_license = HideIfWithdrawal(NodeLicenseSerializer(read_only=True))
-    tags = HideIfWithdrawal(JSONAPIListField(child=NodeTagField(), read_only=True))
+    tags = HideIfWithdrawal(JSONAPIListField(child=NodeTagField(), required=False))
     public = HideIfWithdrawal(ser.BooleanField(source='is_public', required=False,
                                                help_text='Nodes that are made public will give read-only access '
                                         'to everyone. Private nodes require explicit read '
@@ -276,17 +277,26 @@ class BaseRegistrationSerializer(NodeSerializer):
         return NodeSerializer.get_current_user_permissions(self, obj)
 
     def update(self, registration, validated_data):
-        is_public = validated_data.get('is_public', False)
-        if is_public:
-            auth = Auth(self.context['request'].user)
+        auth = Auth(self.context['request'].user)
+        # Update tags
+        if 'tags' in validated_data:
+            new_tags = validated_data.pop('tags', [])
             try:
-                registration.update(validated_data, auth=auth)
-            except NodeUpdateError as err:
-                raise exceptions.ValidationError(err.reason)
+                registration.update_tags(new_tags, auth=auth)
             except NodeStateError as err:
-                raise exceptions.ValidationError(err.message)
-        else:
-            raise exceptions.ValidationError('Registrations can only be turned from private to public.')
+                raise Conflict(err.message)
+
+        is_public = validated_data.get('is_public', None)
+        if is_public is not None:
+            if is_public:
+                try:
+                    registration.update(validated_data, auth=auth)
+                except NodeUpdateError as err:
+                    raise exceptions.ValidationError(err.reason)
+                except NodeStateError as err:
+                    raise exceptions.ValidationError(err.message)
+            else:
+                raise exceptions.ValidationError('Registrations can only be turned from private to public.')
         return registration
 
     class Meta:

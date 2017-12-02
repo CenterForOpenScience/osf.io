@@ -100,6 +100,12 @@ $(document).ready(function() {
             });
         }
     });
+    $("#discard").click(function(e) {
+        e.preventDefault();
+        if (window.confirm('Are you sure want to discard all your changes?')) {
+            location.reload(true);
+        }
+    });
 
     $("#show-modify-form").click(function() {
 
@@ -124,6 +130,19 @@ $(document).ready(function() {
             }
         });
     };
+
+    if($('#id_domain_redirect_enabled').checked){
+        $('#id_domain').attr('required', "");
+    }
+
+    $('#id_domain_redirect_enabled').click(function() {
+        if(this.checked) {
+            $('#id_domain').attr('required', "");
+        }else {
+            $('#id_domain').removeAttr('required');
+
+        }
+    });
 
     $("#import-form").submit(function(event) {
         tinymceFields = ['description', 'advisory_board', 'footer_links'];

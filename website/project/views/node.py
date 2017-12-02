@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+import os
 import logging
 import httplib as http
 import math
@@ -19,7 +20,6 @@ from osf.models.nodelog import NodeLog
 
 from website import language
 
-from website.util import paths
 from website.util import rubeus
 from website.exceptions import NodeStateError
 from website.project import new_node, new_private_link
@@ -260,41 +260,8 @@ def node_setting(auth, node, **kwargs):
     auth.user.save()
     ret = _view_project(node, auth, primary=True)
 
-    addons_enabled = []
-    addon_enabled_settings = []
-
-    addons = list(node.get_addons())
-    for addon in addons:
-        addons_enabled.append(addon.config.short_name)
-        if 'node' in addon.config.configs:
-            config = addon.to_json(auth.user)
-            # inject the MakoTemplateLookup into the template context
-            # TODO inject only short_name and render fully client side
-            config['template_lookup'] = addon.config.template_lookup
-            config['addon_icon_url'] = addon.config.icon_url
-            addon_enabled_settings.append(config)
-
-    addon_enabled_settings = sorted(addon_enabled_settings, key=lambda addon: addon['addon_full_name'].lower())
-
-    ret['addon_categories'] = settings.ADDON_CATEGORIES
-    ret['addons_available'] = sorted([
-        addon
-        for addon in settings.ADDONS_AVAILABLE
-        if 'node' in addon.owners
-        and addon.short_name not in settings.SYSTEM_ADDED_ADDONS['node'] and addon.short_name not in ['wiki', 'forward']
-    ], key=lambda addon: addon.full_name.lower())
-
-    for addon in settings.ADDONS_AVAILABLE:
-        if 'node' in addon.owners and addon.short_name not in settings.SYSTEM_ADDED_ADDONS['node'] and addon.short_name == 'wiki':
-            ret['wiki'] = addon
-            break
-
-    ret['addons_enabled'] = addons_enabled
-    ret['addon_enabled_settings'] = addon_enabled_settings
-    ret['addon_capabilities'] = settings.ADDON_CAPABILITIES
-    ret['addon_js'] = collect_node_config_js(addons)
-
     ret['include_wiki_settings'] = node.include_wiki_settings(auth.user)
+    ret['wiki_enabled'] = 'wiki' in node.get_addon_names()
 
     ret['comments'] = {
         'level': node.comment_level,
@@ -306,6 +273,42 @@ def node_setting(auth, node, **kwargs):
     })
 
     return ret
+
+@must_be_valid_project
+@must_be_logged_in
+@must_have_permission(READ)
+def node_addons(auth, node, **kwargs):
+
+    ret = _view_project(node, auth, primary=True)
+
+    addon_settings = []
+    addons_available = [addon for addon in settings.ADDONS_AVAILABLE
+                        if addon not in settings.SYSTEM_ADDED_ADDONS['node']
+                        and addon.short_name not in ('wiki', 'forward', 'twofactor')]
+
+    for addon in addons_available:
+        addon_config = apps.get_app_config('addons_{}'.format(addon.short_name))
+        config = addon_config.to_json()
+        config['template_lookup'] = addon_config.template_lookup
+        config['addon_icon_url'] = addon_config.icon_url
+        config['node_settings_template'] = os.path.basename(addon_config.node_settings_template)
+        config['addon_short_name'] = addon.short_name
+        config['addon_full_name'] = addon.full_name
+        config['categories'] = addon.categories
+        config['enabled'] = node.has_addon(addon.short_name)
+        config['default'] = addon.short_name in ['osfstorage']
+        addon_settings.append(config)
+
+    addon_settings = sorted(addon_settings, key=lambda addon: addon['full_name'].lower())
+
+    ret['addon_capabilities'] = settings.ADDON_CAPABILITIES
+    ret['addon_categories'] = set([item for addon in addon_settings for item in addon['categories']])
+    ret['addon_settings'] = addon_settings
+    ret['addon_js'] = collect_node_config_js([addon for addon in addon_settings if addon['enabled']])
+
+    return ret
+
+
 def collect_node_config_js(addons):
     """Collect webpack bundles for each of the addons' node-cfg.js modules. Return
     the URLs for each of the JS modules to be included on the node addons config page.
@@ -314,7 +317,7 @@ def collect_node_config_js(addons):
     """
     js_modules = []
     for addon in addons:
-        js_path = paths.resolve_addon_path(addon.config, 'node-cfg.js')
+        js_path = os.path.join('/', 'static', 'public', 'js', addon['short_name'], 'node-cfg.js')
         if js_path:
             js_modules.append(js_path)
     return js_modules
@@ -388,12 +391,11 @@ def view_project(auth, node, **kwargs):
         MAX_DISPLAY_LENGTH = 400
         rendered_before_update = False
         if wiki_page and wiki_page.html(node):
-            wiki_html = wiki_page.html(node)
+            wiki_html = BeautifulSoup(wiki_page.html(node))
             if len(wiki_html) > MAX_DISPLAY_LENGTH:
                 wiki_html = BeautifulSoup(wiki_html[:MAX_DISPLAY_LENGTH] + '...', 'html.parser')
                 more = True
-            else:
-                wiki_html = BeautifulSoup(wiki_html)
+
             rendered_before_update = wiki_page.rendered_before_update
         else:
             wiki_html = None
@@ -677,6 +679,8 @@ def _view_project(node, auth, primary=False,
             messages = addon.before_page_load(node, user) or []
             for message in messages:
                 status.push_status_message(message, kind='info', dismissible=False, trust=True)
+    NodeRelation = apps.get_model('osf.NodeRelation')
+
     is_registration = node.is_registration
     data = {
         'node': {
@@ -724,9 +728,10 @@ def _view_project(node, auth, primary=False,
             'forked_from_id': node.forked_from._primary_key if node.is_fork else '',
             'forked_from_display_absolute_url': node.forked_from.display_absolute_url if node.is_fork else '',
             'forked_date': iso8601format(node.forked_date) if node.is_fork else '',
-            'fork_count': node.forks.filter(is_deleted=False).count(),
+            'fork_count': node.forks.exclude(type='osf.registration').filter(is_deleted=False).count(),
             'private_links': [x.to_json() for x in node.private_links_active],
             'link': view_only_link,
+            'linked_nodes_count': NodeRelation.objects.filter(child=node, is_node_link=True).exclude(parent__type='osf.collection').count(),
             'anonymous': anonymous,
             'comment_level': node.comment_level,
             'has_comments': node.comment_set.exists(),
@@ -767,6 +772,7 @@ def _view_project(node, auth, primary=False,
             'is_admin': bool(contributor) and contributor.admin,
             'is_admin_parent': parent.is_admin_parent(user) if parent else False,
             'can_edit': bool(contributor) and contributor.write and not node.is_registration,
+            'can_edit_tags': bool(contributor) and contributor.write,
             'has_read_permissions': node.has_permission(user, READ),
             'permissions': get_contributor_permissions(contributor, as_list=True) if contributor else [],
             'id': user._id if user else None,
