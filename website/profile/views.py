@@ -766,3 +766,10 @@ def request_deactivation(auth):
     user.requested_deactivation = True
     user.save()
     return {'message': 'Sent account deactivation request'}
+
+@must_be_logged_in
+def cancel_request_deactivation(auth):
+    user = auth.user
+    user.requested_deactivation = False
+    user.save()
+    return {'message': 'You have canceled your deactivation request'}

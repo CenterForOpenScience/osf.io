@@ -847,6 +847,12 @@ def make_url_map(app):
             profile_views.request_deactivation,
             json_renderer,
         ),
+        Rule(
+            '/profile/cancel_request_deactivation/',
+            'post',
+            profile_views.cancel_request_deactivation,
+            json_renderer,
+        ),
 
         Rule(
             '/profile/logins/',
