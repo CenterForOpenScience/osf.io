@@ -356,6 +356,7 @@ class ListFilterMixin(FilterMixin):
 
         if filters:
             for key, field_names in filters.iteritems():
+
                 sub_query_parts = []
                 for field_name, data in field_names.iteritems():
                     operations = data if isinstance(data, list) else [data]
