@@ -220,6 +220,13 @@ var _githubItemButtons = {
                             icon: 'fa fa-trash',
                             className: 'text-danger'
                         }, 'Delete Folder'));
+                        buttons.push(
+                            m.component(Fangorn.Components.button, {
+                                onclick: function (event) { Fangorn.ButtonEvents._downloadZipEvent.call(tb, event, item); },
+                                icon: 'fa fa-download',
+                                className: 'text-primary'
+                            }, 'Download as zip')
+                        );
                     }
                 }
                 if (item.data.addonFullname) {
