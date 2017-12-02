@@ -391,12 +391,11 @@ def view_project(auth, node, **kwargs):
         MAX_DISPLAY_LENGTH = 400
         rendered_before_update = False
         if wiki_page and wiki_page.html(node):
-            wiki_html = wiki_page.html(node)
+            wiki_html = BeautifulSoup(wiki_page.html(node))
             if len(wiki_html) > MAX_DISPLAY_LENGTH:
                 wiki_html = BeautifulSoup(wiki_html[:MAX_DISPLAY_LENGTH] + '...', 'html.parser')
                 more = True
-            else:
-                wiki_html = BeautifulSoup(wiki_html)
+
             rendered_before_update = wiki_page.rendered_before_update
         else:
             wiki_html = None
