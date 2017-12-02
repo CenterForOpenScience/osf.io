@@ -7,6 +7,7 @@ from citeproc import formatter
 from citeproc.source.json import CiteProcJSON
 
 from osf.models import PreprintService
+from website.citations.utils import datetime_to_csl
 from website.settings import CITATION_STYLES_PATH, BASE_PATH, CUSTOM_CITATIONS
 
 
@@ -27,6 +28,9 @@ def preprint_csl(preprint, node):
     csl['id'] = preprint._id
     csl['publisher'] = preprint.provider.name
     csl['URL'] = display_absolute_url(preprint)
+
+    if preprint.original_publication_date:
+        csl['issued'] = datetime_to_csl(preprint.original_publication_date)
 
     if csl.get('DOI'):
         csl.pop('DOI')

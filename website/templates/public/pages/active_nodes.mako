@@ -29,7 +29,7 @@
             <section id='newNoteworthyProjects'>
                 <h3 class='anchor'>New and noteworthy projects</h3>
                 <div class='project-list'>
-                    ${node_list(new_and_noteworthy_projects, prefix='newest_public', metric='date_created')}
+                  ${node_list(new_and_noteworthy_projects, prefix='newest_public', metric='date_created')}
                 </div>
             </section>
             <section id='newPublicRegistrations' class="m-t-lg">
@@ -41,7 +41,7 @@
             <section id='popularPublicProjects' class="m-t-lg">
                 <h3 class='anchor'>Popular public projects</h3>
                 <div class='project-list'>
-                    ${node_list(popular_public_projects, prefix='most_viewed', metric='date_created')}
+                  ${node_list(popular_public_projects, prefix='most_viewed', metric='date_created')}
                 </div>
             </section>
             <section id='popularPublicRegistrations' class="m-t-lg">
@@ -58,6 +58,8 @@
             <%
                 #import locale
                 #locale.setlocale(locale.LC_ALL, 'en_US')
+                if not node.is_public:
+                    continue
                 if node.is_registration:
                     explicit_date = '{month} {dt.day} {dt.year}'.format(
                         dt=node.registered_date.date(),
@@ -65,8 +67,8 @@
                     )
                 else:
                     explicit_date = '{month} {dt.day} {dt.year}'.format(
-                    dt=node.date_created.date(),
-                    month=node.date_created.date().strftime('%B')
+                    dt=node.created.date(),
+                    month=node.created.date().strftime('%B')
                 )
 
             %>
@@ -78,9 +80,9 @@
                         </h4>
                     </div>
                     <div class="col-md-2">
-                        % if metric == 'date_created':
+                      % if metric == 'date_created':
                             <span class="project-meta pull-right" rel='tooltip' data-original-title='Created: ${explicit_date}'>
-                                ${node.date_created.date()}
+                              ${node.created.date()}
                             </span>
                         % elif metric == 'registered_date':
                             <span class="project-meta pull-right" rel='tooltip' data-original-title='Registered: ${explicit_date}'>

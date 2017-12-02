@@ -210,6 +210,9 @@ var Question = function(questionSchema, data) {
         value = self.data.value();
     } else {
         value = self.data.value || null;
+        if(value) {
+            value = $osf.decodeText(value);
+        }
     }
 
     if (self.type === 'choose' && self.format === 'multiselect') {
@@ -1389,7 +1392,7 @@ RegistrationManager.prototype.init = function() {
                         self.selectedSchema(preregSchema);
                         $('#newDraftRegistrationForm').submit();
                     });
-                }).always($osf.unblock);   
+                }).always($osf.unblock);
             }
         }
     }

@@ -100,10 +100,32 @@ class TestUserDetail:
 
         assert upload_url == waterbutler_upload
 
+    def test_preprint_relationship(self, app, user_one):
+        url = "/{}users/{}/".format(API_BASE, user_one._id)
+        preprint_url = "/{}users/{}/preprints/".format(API_BASE, user_one._id)
+        res = app.get(url, auth=user_one)
+        user_json = res.json['data']
+        href_url = user_json['relationships']['preprints']['links']['related']['href']
+        assert preprint_url in href_url
+
+    def test_registrations_relationship(self, app, user_one):
+        url = "/{}users/{}/".format(API_BASE, user_one._id)
+        registration_url = "/{}users/{}/registrations/".format(API_BASE, user_one._id)
+        res = app.get(url, auth=user_one)
+        user_json = res.json['data']
+        href_url = user_json['relationships']['registrations']['links']['related']['href']
+        assert registration_url in href_url
+
     def test_nodes_relationship_is_absent(self, app, user_one):
         url = "/{}users/{}/".format(API_BASE, user_one._id)
         res = app.get(url, auth=user_one)
         assert 'node' not in res.json['data']['relationships'].keys()
+
+    # Regression test for https://openscience.atlassian.net/browse/OSF-8966
+    def test_browsable_api_for_user_detail(self, app, user_one):
+        url = "/{}users/{}/?format=api".format(API_BASE, user_one._id)
+        res = app.get(url, auth=user_one.auth)
+        assert res.status_code == 200
 
 
 @pytest.mark.django_db

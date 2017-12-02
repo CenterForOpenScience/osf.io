@@ -20,7 +20,3 @@ class FileNodeCheckedOutError(FileException):
 
 class FileNodeIsPrimaryFile(FileException):
     pass
-
-
-class FileNodeIsQuickFilesNode(FileException):
-    pass

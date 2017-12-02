@@ -394,9 +394,12 @@ var ViewModel = function(params) {
             var nullLicenseCount = data.aggs.total || 0;
             if ((data.aggs || {}).licenses)  {
                 $.each(data.aggs.licenses, function(key, value) {
-                    licenseCounts.filter(function(l) {
+                    var licenseCount = licenseCounts.filter(function(l) {
                         return eqInsensitive(l.id, key);
-                    })[0].count(value);
+                    })[0];
+                    if (licenseCount) {
+                        licenseCount.count(value);
+                    }
                     nullLicenseCount -= value;
                 });
             }

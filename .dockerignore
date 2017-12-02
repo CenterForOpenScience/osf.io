@@ -6,3 +6,5 @@ node_modules
 **/bower_components
 *.pyc
 **/*.pyc
+docker*
+ssl/
