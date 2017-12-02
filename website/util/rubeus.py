@@ -185,7 +185,7 @@ class NodeFileCollector(object):
 
         return node_name
 
-    def _serialize_node(self, node, parent=None, grid_root=None, children=[]):
+    def _serialize_node(self, node, parent=None, grid_root=None, children=None):
         is_pointer = parent and node.is_linked_node
         can_view = node.can_view(auth=self.auth)
         can_edit = node.has_write_perm if hasattr(node, 'has_write_perm') else node.can_edit(auth=self.auth)
@@ -195,6 +195,9 @@ class NodeFileCollector(object):
         if parent and grid_root and parent == grid_root:
             children = self._get_nodes(node)['children']
 
+        if not children:
+            children = []
+            
         return {
             # TODO: Remove safe_unescape_html when mako html safe comes in
             'name': self._get_node_name(node, can_view, is_pointer),
