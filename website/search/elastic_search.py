@@ -717,6 +717,7 @@ def search_contributor(query, page=0, size=10, exclude=None, current_user=None):
                 'id': doc['id'],
                 'employment': current_employment,
                 'education': education,
+                'social': user.social_links,
                 'n_projects_in_common': n_projects_in_common,
                 'gravatar_url': gravatar(
                     user,
@@ -726,7 +727,6 @@ def search_contributor(query, page=0, size=10, exclude=None, current_user=None):
                 'profile_url': user.profile_url,
                 'registered': user.is_registered,
                 'active': user.is_active
-
             })
 
     return {
