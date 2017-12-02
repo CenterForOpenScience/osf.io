@@ -454,7 +454,7 @@ var QuickSearchProject = {
 
         function searchBar() {
             return m('div.m-v-sm.quick-search-input', [
-                m('input[type=search]', {'id': 'searchQuery', 'class': 'form-control', placeholder: 'Quick search your projects', onkeyup: function(search) {
+                m('input[type=search]', {'id': 'searchQuery', 'class': 'form-control', placeholder: 'Search your projects', onkeyup: function(search) {
                     ctrl.filter(search.target.value);
                     ctrl.quickSearch();
                 }, onchange: function() {
