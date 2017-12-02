@@ -2590,6 +2590,12 @@ class TestPointerMethods:
         fork = node.fork_node(auth=auth)
         assert not fork.nodes
 
+    def test_cannot_template_deleted_node(self, node, auth):
+        child = NodeFactory(parent=node, is_deleted=True)
+        child.save()
+        template = node.use_as_template(auth=auth, top_level=False)
+        assert not template.nodes
+
     def _fork_pointer(self, node, content, auth):
         pointer = node.add_pointer(content, auth=auth)
         forked = node.fork_pointer(pointer, auth=auth)
@@ -3668,6 +3674,16 @@ class TestTemplateNode:
         assert new.license.node_license._id == license.node_license._id
         self._verify_log(new)
 
+    def test_can_template_a_registration(self, user, auth):
+        registration = RegistrationFactory(creator=user)
+        new = registration.use_as_template(auth=auth)
+        assert new.is_registration is False
+
+    def test_cannot_template_deleted_registration(self, project, auth):
+        registration = RegistrationFactory(project=project, is_deleted=True)
+        new = registration.use_as_template(auth=auth)
+        assert not new.nodes
+        
     @pytest.fixture()
     def pointee(self, project, user, auth):
         pointee = ProjectFactory(creator=user)
