@@ -494,7 +494,6 @@ class TestFileView:
         assert attributes['provider'] == file_one.provider
         assert attributes['size'] == file_one.versions.last().size
         assert attributes['current_version'] == len(file_one.history)
-        assert attributes['date_modified'] == _dt_to_iso8601(file_one.versions.last().date_created.replace(tzinfo=pytz.utc))
         assert attributes['date_created'] == _dt_to_iso8601(file_one.versions.first().date_created.replace(tzinfo=pytz.utc))
         assert attributes['extra']['hashes']['md5'] is None
         assert attributes['extra']['hashes']['sha256'] is None
