@@ -160,6 +160,11 @@ class TestAddonLogs(OsfTestCase):
         self.user_addon.oauth_grants[self.node._id] = {self.oauth_settings._id: []}
         self.user_addon.save()
 
+    def configure_osf_addon(self):
+        self.project = ProjectFactory(creator=self.user)
+        self.node_addon = self.project.get_addon('osfstorage')
+        self.node_addon.save()
+
     def build_payload(self, metadata, **kwargs):
         options = dict(
             auth={'id': self.user._id},
@@ -288,6 +293,28 @@ class TestAddonLogs(OsfTestCase):
             self.node.logs.latest().action,
             'github_addon_file_renamed',
         )
+
+    def test_add_file_osfstorage_log(self):
+        self.configure_osf_addon()
+        path = 'pizza'
+        url = self.node.api_url_for('create_waterbutler_log')
+        payload = self.build_payload(metadata={'materialized': path, 'kind': 'file', 'path': path})
+        nlogs = self.node.logs.count()
+        self.app.put_json(url, payload, headers={'Content-Type': 'application/json'})
+        self.node.reload()
+        assert_equal(self.node.logs.count(), nlogs + 1)
+        assert('urls' in self.node.logs.filter(action='osf_storage_file_added')[0].params)
+
+    def test_add_folder_osfstorage_log(self):
+        self.configure_osf_addon()
+        path = 'pizza'
+        url = self.node.api_url_for('create_waterbutler_log')
+        payload = self.build_payload(metadata={'materialized': path, 'kind': 'folder', 'path': path})
+        nlogs = self.node.logs.count()
+        self.app.put_json(url, payload, headers={'Content-Type': 'application/json'})
+        self.node.reload()
+        assert_equal(self.node.logs.count(), nlogs + 1)
+        assert('urls' not in self.node.logs.filter(action='osf_storage_file_added')[0].params)
 
 
 class TestCheckAuth(OsfTestCase):
