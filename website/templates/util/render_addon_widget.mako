@@ -5,7 +5,7 @@
             <div class="panel-heading clearfix">
                 <h3 class="panel-title">${addon_data['full_name']}</h3>
                 <div class="pull-right">
-                    % if has_page:
+                    % if addon_data['has_page']:
                         <a href="${node['url']}${addon_data['short_name']}/">  <i class="fa fa-external-link"></i> </a>
                     % endif
                 </div>
@@ -23,7 +23,7 @@
                     </div>
 
                     <div id="more_link">
-                        % if more:
+                        % if addon_data['more']:
                             <a href="${node['url']}${addon_data['short_name']}/">Read More</a>
                         % endif
                     </div>

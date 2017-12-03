@@ -4,23 +4,11 @@ import mock
 import urlparse
 
 from addons.osfstorage.models import OsfStorageFile
-from osf.models import NodeLog, Subject
-
-from website import settings
-from website.identifiers.utils import get_doi_and_metadata_for_object
-from website.preprints.tasks import format_preprint
-from website.preprints.tasks import on_preprint_updated
-from website.project.views.contributor import find_preprint_provider
-from website.util import permissions
-from website.util.share import format_user
-
+from api_tests import utils as api_test_utils
 from framework.auth import Auth
 from framework.celery_tasks import handlers
 from framework.exceptions import PermissionsError
-
-from tests.utils import assert_logs
-from tests.base import OsfTestCase
-from api_tests import utils as api_test_utils
+from osf.models import NodeLog, Subject
 from osf_tests.factories import (
     AuthUserFactory,
     PreprintFactory,
@@ -29,7 +17,15 @@ from osf_tests.factories import (
     SubjectFactory,
     UserFactory,
 )
-
+from osf_tests.utils import MockShareResponse
+from tests.utils import assert_logs
+from tests.base import OsfTestCase
+from website import settings, mails
+from website.identifiers.utils import get_doi_and_metadata_for_object
+from website.preprints.tasks import format_preprint, update_preprint_share, on_preprint_updated
+from website.project.views.contributor import find_preprint_provider
+from website.util import permissions
+from website.util.share import format_user
 
 
 class TestPreprintFactory(OsfTestCase):
@@ -137,8 +133,8 @@ class TestSetPreprintFile(OsfTestCase):
         self.preprint.set_primary_file(self.file, auth=self.auth, save=True)
         assert_equal(self.project.preprint_file._id, self.file._id)
 
-        assert(self.preprint.date_created)
-        assert_not_equal(self.project.date_created, self.preprint.date_created)
+        assert(self.preprint.created)
+        assert_not_equal(self.project.created, self.preprint.created)
 
     def test_non_admin_update_file(self):
         self.preprint.set_primary_file(self.file, auth=self.auth, save=True)
@@ -290,7 +286,6 @@ class TestPreprintProvider(OsfTestCase):
         some_other_provider = PreprintProviderFactory(name='asdfArxiv')
         subj_asdf = SubjectFactory(provider=some_other_provider)
 
-
         assert set(self.provider.all_subjects) == set([subj_a, subj_b, subj_aa, subj_ab, subj_ba, subj_bb, subj_aaa])
 
     def test_highlighted_subjects(self):
@@ -302,9 +297,11 @@ class TestPreprintProvider(OsfTestCase):
         subj_bb = SubjectFactory(provider=self.provider, text='BB', parent=subj_b)
         subj_aaa = SubjectFactory(provider=self.provider, text='AAA', parent=subj_aa)
 
+        assert self.provider.has_highlighted_subjects is False
         assert set(self.provider.highlighted_subjects) == set([subj_a, subj_b])
         subj_aaa.highlighted = True
         subj_aaa.save()
+        assert self.provider.has_highlighted_subjects is True
         assert set(self.provider.highlighted_subjects) == set([subj_aaa])
 
 class TestPreprintIdentifiers(OsfTestCase):
@@ -379,7 +376,7 @@ class TestOnPreprintUpdatedTask(OsfTestCase):
         assert preprint['title'] == self.preprint.node.title
         assert preprint['description'] == self.preprint.node.description
         assert preprint['is_deleted'] == (not self.preprint.is_published or not self.preprint.node.is_public or self.preprint.node.is_preprint_orphan)
-        assert preprint['date_updated'] == self.preprint.date_modified.isoformat()
+        assert preprint['date_updated'] == self.preprint.modified.isoformat()
         assert preprint['date_published'] == self.preprint.date_published.isoformat()
 
         tags = [nodes.pop(k) for k, v in nodes.items() if v['@type'] == 'tag']
@@ -480,6 +477,13 @@ class TestOnPreprintUpdatedTask(OsfTestCase):
         assert thesis['title'] == self.thesis.node.title
         assert thesis['description'] == self.thesis.node.description
 
+    def test_format_preprint_date_modified_node_updated(self):
+        self.preprint.node.save()
+        res = format_preprint(self.preprint, self.preprint.provider.share_publish_type)
+        nodes = dict(enumerate(res))
+        preprint = nodes.pop(next(k for k, v in nodes.items() if v['@type'] == 'preprint'))
+        assert preprint['date_updated'] == self.preprint.node.modified.isoformat()
+
     def test_format_preprint_nones(self):
         self.preprint.node.tags = []
         self.preprint.date_published = None
@@ -496,7 +500,7 @@ class TestOnPreprintUpdatedTask(OsfTestCase):
         assert preprint['title'] == self.preprint.node.title
         assert preprint['description'] == self.preprint.node.description
         assert preprint['is_deleted'] == (not self.preprint.is_published or not self.preprint.node.is_public or self.preprint.node.is_preprint_orphan)
-        assert preprint['date_updated'] == self.preprint.date_modified.isoformat()
+        assert preprint['date_updated'] == self.preprint.modified.isoformat()
         assert preprint.get('date_published') is None
 
         people = sorted([nodes.pop(k) for k, v in nodes.items() if v['@type'] == 'person'], key=lambda x: x['given_name'])
@@ -668,10 +672,86 @@ class TestPreprintSaveShareHook(OsfTestCase):
         assert not mock_on_preprint_updated.called
 
     @mock.patch('website.preprints.tasks.requests')
-    @mock.patch('website.project.tasks.settings.SHARE_URL', 'ima_real_website')
+    @mock.patch('website.preprints.tasks.settings.SHARE_URL', 'ima_real_website')
     def test_send_to_share_is_true(self, mock_requests):
         self.preprint.provider.access_token = 'Snowmobiling'
         self.preprint.provider.save()
         on_preprint_updated(self.preprint._id)
 
         assert mock_requests.post.called
+
+    @mock.patch('website.preprints.tasks.on_preprint_updated.si')
+    def test_node_contributor_changes_updates_preprints_share(self, mock_on_preprint_updated):
+        # A user is added as a contributor
+        self.preprint.is_published = True
+        self.preprint.save()
+
+        assert mock_on_preprint_updated.call_count == 1
+
+        user = AuthUserFactory()
+        node = self.preprint.node
+        node.preprint_file = self.file
+
+        node.add_contributor(contributor=user, auth=self.auth)
+        assert mock_on_preprint_updated.call_count == 2
+
+        node.move_contributor(contributor=user, index=0, auth=self.auth)
+        assert mock_on_preprint_updated.call_count == 3
+
+        data = [{'id': self.admin._id, 'permission': 'admin', 'visible': True},
+                {'id': user._id, 'permission': 'write', 'visible': False}]
+        node.manage_contributors(data, auth=self.auth, save=True)
+        assert mock_on_preprint_updated.call_count == 4
+
+        node.update_contributor(user, 'read', True, auth=self.auth, save=True)
+        assert mock_on_preprint_updated.call_count == 5
+
+        node.remove_contributor(contributor=user, auth=self.auth)
+        assert mock_on_preprint_updated.call_count == 6
+
+    @mock.patch('website.preprints.tasks.settings.SHARE_URL', 'a_real_url')
+    @mock.patch('website.preprints.tasks._async_update_preprint_share.delay')
+    @mock.patch('website.preprints.tasks.requests')
+    def test_call_async_update_on_500_failure(self, requests, mock_async):
+        self.preprint.provider.access_token = 'Snowmobiling'
+        requests.post.return_value = MockShareResponse(501)
+        update_preprint_share(self.preprint)
+        assert mock_async.called
+
+    @mock.patch('website.preprints.tasks.settings.SHARE_URL', 'a_real_url')
+    @mock.patch('website.preprints.tasks.send_desk_share_preprint_error')
+    @mock.patch('website.preprints.tasks._async_update_preprint_share.delay')
+    @mock.patch('website.preprints.tasks.requests')
+    def test_no_call_async_update_on_400_failure(self, requests, mock_async, mock_mail):
+        self.preprint.provider.access_token = 'Snowmobiling'
+        requests.post.return_value = MockShareResponse(400)
+        update_preprint_share(self.preprint)
+        assert not mock_async.called
+        assert mock_mail.called
+
+class TestPreprintConfirmationEmails(OsfTestCase):
+    def setUp(self):
+        super(TestPreprintConfirmationEmails, self).setUp()
+        self.user = AuthUserFactory()
+        self.write_contrib = AuthUserFactory()
+        self.project = ProjectFactory(creator=self.user)
+        self.project.add_contributor(self.write_contrib, permissions=[permissions.WRITE])
+        self.preprint = PreprintFactory(project=self.project, provider=PreprintProviderFactory(_id='osf'), is_published=False)
+        self.preprint_branded = PreprintFactory(creator=self.user, is_published=False)
+
+    @mock.patch('website.mails.send_mail')
+    def test_creator_gets_email(self, send_mail):
+        self.preprint.set_published(True, auth=Auth(self.user), save=True)
+
+        send_mail.assert_called_with(
+            self.user.email,
+            mails.PREPRINT_CONFIRMATION_DEFAULT,
+            user=self.user,
+            node=self.preprint.node,
+            preprint=self.preprint
+        )
+
+        assert_equals(send_mail.call_count, 1)
+
+        self.preprint_branded.set_published(True, auth=Auth(self.user), save=True)
+        assert_equals(send_mail.call_count, 2)

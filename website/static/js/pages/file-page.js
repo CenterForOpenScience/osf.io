@@ -58,4 +58,52 @@ $(function() {
         });
     }
 
+    var titleEditable = function () {
+        var readOnlyProviders = ['bitbucket', 'figshare', 'dataverse'];
+        var ctx = window.contextVars;
+        if (readOnlyProviders.includes(ctx.file.provider) || ctx.file.checkoutUser || !ctx.currentUser.canEdit || ctx.node.isRegistration)
+            return false;
+        else
+            return true;
+    };
+
+    if(titleEditable()) {
+        $('#fileTitleEditable').editable({
+            type: 'text',
+            mode: 'inline',
+            send: 'always',
+            url: window.contextVars.file.urls.delete,
+            ajaxOptions: {
+                type: 'post',
+                contentType: 'application/json',
+                dataType: 'json',
+                beforeSend: $osf.setXHRAuthorization
+            },
+            validate: function(value) {
+                if($.trim(value) === ''){
+                    return 'The file title cannot be empty.';
+                } else if(value.length > 100){
+                    return 'The file title cannot be more than 100 characters.';
+                }
+            },
+            params: function(params) {
+                var payload = {
+                    action: 'rename',
+                    rename: params.value,
+                };
+                return JSON.stringify(payload);
+            },
+            success: function(response) {
+                window.location.reload();
+            },
+            error: function (response) {
+                var msg = response.responseJSON.message;
+                if (msg) {
+                    // This is done to override inherited css style and prevent error message lines from overlapping with each other
+                    $('.editable-error-block').css('line-height', '35px');
+                    return msg;
+                }
+            }
+        });
+    }
 });

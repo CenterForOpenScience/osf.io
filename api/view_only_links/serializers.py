@@ -15,7 +15,7 @@ from osf.models import AbstractNode
 class ViewOnlyLinkDetailSerializer(JSONAPISerializer):
     key = ser.CharField(read_only=True)
     id = IDField(source='_id', read_only=True)
-    date_created = DateByVersion(read_only=True)
+    date_created = DateByVersion(source='created', read_only=True)
     anonymous = ser.BooleanField(required=False)
     name = ser.CharField(required=False)
 

@@ -1,13 +1,15 @@
+from django.apps import apps
 import logging
 import urlparse
 
+import random
 import requests
 
 from framework.exceptions import HTTPError
 from framework.celery_tasks import app as celery_app
 from framework import sentry
 
-from website import settings
+from website import settings, mails
 from website.util.share import GraphNode, format_contributor, format_subject
 
 from website.identifiers.utils import request_identifiers_from_ezid, get_ezid_client, build_ezid_metadata, parse_identifiers
@@ -21,20 +23,47 @@ def on_preprint_updated(preprint_id, update_share=True, share_type=None, old_sub
     # transactions are implemented in View and Task application layers.
     from osf.models import PreprintService
     preprint = PreprintService.load(preprint_id)
-    share_type = share_type or preprint.provider.share_publish_type
     if old_subjects is None:
         old_subjects = []
     if preprint.node:
-        status = 'public' if preprint.node.is_public else 'unavailable'
+        status = 'public' if preprint.verified_publishable else 'unavailable'
         try:
-            update_ezid_metadata_on_change(preprint, status=status)
+            update_ezid_metadata_on_change(preprint._id, status=status)
         except HTTPError as err:
             sentry.log_exception()
             sentry.log_message(err.args[0])
+    if update_share:
+        update_preprint_share(preprint, old_subjects, share_type)
 
-    if settings.SHARE_URL and update_share:
+def update_preprint_share(preprint, old_subjects=None, share_type=None):
+    if settings.SHARE_URL:
         if not preprint.provider.access_token:
             raise ValueError('No access_token for {}. Unable to send {} to SHARE.'.format(preprint.provider, preprint))
+        share_type = share_type or preprint.provider.share_publish_type
+        _update_preprint_share(preprint, old_subjects, share_type)
+
+def _update_preprint_share(preprint, old_subjects, share_type):
+    # Any modifications to this function may need to change _async_update_preprint_share
+    data = serialize_share_preprint_data(preprint, share_type, old_subjects)
+    resp = send_share_preprint_data(preprint, data)
+    try:
+        resp.raise_for_status()
+    except Exception:
+        if resp.status_code >= 500:
+            _async_update_preprint_share.delay(preprint._id, old_subjects, share_type)
+        else:
+            send_desk_share_preprint_error(preprint, resp, 0)
+
+@celery_app.task(bind=True, max_retries=4, acks_late=True)
+def _async_update_preprint_share(self, preprint_id, old_subjects, share_type):
+    # Any modifications to this function may need to change _update_preprint_share
+    # Takes preprint_id to ensure async retries push fresh data
+    PreprintService = apps.get_model('osf.PreprintService')
+    preprint = PreprintService.load(preprint_id)
+
+    data = serialize_share_preprint_data(preprint, share_type, old_subjects)
+    resp = send_share_preprint_data(preprint, data)
+    try:
         resp = requests.post('{}api/v2/normalizeddata/'.format(settings.SHARE_URL), json={
             'data': {
                 'type': 'NormalizedData',
@@ -47,6 +76,33 @@ def on_preprint_updated(preprint_id, update_share=True, share_type=None, old_sub
         }, headers={'Authorization': 'Bearer {}'.format(preprint.provider.access_token), 'Content-Type': 'application/vnd.api+json'})
         logger.debug(resp.content)
         resp.raise_for_status()
+    except Exception as e:
+        if resp.status_code >= 500:
+            if self.request.retries == self.max_retries:
+                send_desk_share_preprint_error(preprint, resp, self.request.retries)
+            raise self.retry(
+                exc=e,
+                countdown=(random.random() + 1) * min(60 + settings.CELERY_RETRY_BACKOFF_BASE ** self.request.retries, 60 * 10)
+            )
+        else:
+            send_desk_share_preprint_error(preprint, resp, self.request.retries)
+
+def serialize_share_preprint_data(preprint, share_type, old_subjects):
+    return {
+        'data': {
+            'type': 'NormalizedData',
+            'attributes': {
+                'tasks': [],
+                'raw': None,
+                'data': {'@graph': format_preprint(preprint, share_type, old_subjects)}
+            }
+        }
+    }
+
+def send_share_preprint_data(preprint, data):
+    resp = requests.post('{}api/v2/normalizeddata/'.format(settings.SHARE_URL), json=data, headers={'Authorization': 'Bearer {}'.format(preprint.provider.access_token), 'Content-Type': 'application/vnd.api+json'})
+    logger.debug(resp.content)
+    return resp
 
 def format_preprint(preprint, share_type, old_subjects=None):
     if old_subjects is None:
@@ -57,13 +113,16 @@ def format_preprint(preprint, share_type, old_subjects=None):
         'title': preprint.node.title,
         'description': preprint.node.description or '',
         'is_deleted': (
-            not preprint.is_published or
-            not preprint.node.is_public or
-            preprint.node.is_preprint_orphan or
-            preprint.node.tags.filter(name='qatest').exists() or
-            preprint.node.is_deleted
+            not preprint.verified_publishable or
+            preprint.node.tags.filter(name='qatest').exists()
         ),
-        'date_updated': preprint.date_modified.isoformat(),
+        # Note: Changing any preprint attribute that is pulled from the node, like title, will NOT bump
+        # the preprint's date modified but will bump the node's date_modified.
+        # We have to send the latest date to SHARE to actually get the result to be updated.
+        # If we send a date_updated that is <= the one we previously sent, SHARE will ignore any changes
+        # because it looks like a race condition that arose from preprints being resent to SHARE on
+        # every step of preprint creation.
+        'date_updated': max(preprint.modified, preprint.node.modified).isoformat(),
         'date_published': preprint.date_published.isoformat() if preprint.date_published else None
     })
 
@@ -119,16 +178,31 @@ def format_preprint(preprint, share_type, old_subjects=None):
 
 
 @celery_app.task(ignore_results=True)
-def get_and_set_preprint_identifiers(preprint):
+def get_and_set_preprint_identifiers(preprint_id):
+    PreprintService = apps.get_model('osf.PreprintService')
+    preprint = PreprintService.load(preprint_id)
     ezid_response = request_identifiers_from_ezid(preprint)
+    if ezid_response is None:
+        return
     id_dict = parse_identifiers(ezid_response)
-    preprint.set_identifier_values(doi=id_dict['doi'], ark=id_dict['ark'])
+    preprint.set_identifier_values(doi=id_dict['doi'], ark=id_dict['ark'], save=True)
 
 
 @celery_app.task(ignore_results=True)
-def update_ezid_metadata_on_change(target_object, status):
+def update_ezid_metadata_on_change(target_guid, status):
+    Guid = apps.get_model('osf.Guid')
+    target_object = Guid.load(target_guid).referent
     if (settings.EZID_USERNAME and settings.EZID_PASSWORD) and target_object.get_identifier('doi'):
         client = get_ezid_client()
 
         doi, metadata = build_ezid_metadata(target_object)
         client.change_status_identifier(status, doi, metadata)
+
+def send_desk_share_preprint_error(preprint, resp, retries):
+    mails.send_mail(
+        to_addr=settings.SUPPORT_EMAIL,
+        mail=mails.SHARE_PREPRINT_ERROR_DESK,
+        preprint=preprint,
+        resp=resp,
+        retries=retries,
+    )

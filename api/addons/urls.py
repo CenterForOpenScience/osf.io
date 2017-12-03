@@ -2,6 +2,8 @@ from django.conf.urls import url
 
 from api.addons import views
 
+app_name = 'osf'
+
 urlpatterns = [
     # Examples:
     # url(r'^$', 'api.views.home', name='home'),

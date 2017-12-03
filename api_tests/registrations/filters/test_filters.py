@@ -3,7 +3,7 @@ from nose.tools import *  # flake8: noqa
 import pytest
 
 from osf.models import Node
-from osf.utils.auth import Auth
+from framework.auth.core import Auth
 from osf_tests.factories import (
     AuthUserFactory,
     NodeFactory,

@@ -3,7 +3,7 @@ from framework import auth
 
 from website import settings
 from website.filters import gravatar
-from osf.models import Node, Contributor
+from osf.models import Contributor
 from osf.models.contributor import get_contributor_permissions
 from website.util.permissions import reduce_permissions
 
@@ -91,7 +91,6 @@ def serialize_user(user, node=None, admin=False, full=False, is_profile=False, i
         else:
             merged_by = None
 
-        projects = Node.find_for_user(user, PROJECT_QUERY).get_roots()
         ret.update({
             'activity_points': user.get_activity_points(),
             'gravatar_url': gravatar(
@@ -102,6 +101,7 @@ def serialize_user(user, node=None, admin=False, full=False, is_profile=False, i
             'merged_by': merged_by,
         })
         if include_node_counts:
+            projects = user.nodes.filter(PROJECT_QUERY).get_roots()
             ret.update({
                 'number_projects': projects.count(),
                 'number_public_projects': projects.filter(is_public=True).count(),
@@ -124,7 +124,7 @@ def serialize_visible_contributors(node):
     ]
 
 
-def add_contributor_json(user, current_user=None):
+def add_contributor_json(user, current_user=None, node=None):
     """
     Generate a dictionary representation of a user, optionally including # projects shared with `current_user`
 
@@ -147,7 +147,7 @@ def add_contributor_json(user, current_user=None):
     if user.schools:
         education = user.schools[0]['institution']
 
-    return {
+    contributor_json = {
         'fullname': user.fullname,
         'email': user.email,
         'id': user._primary_key,
@@ -162,6 +162,13 @@ def add_contributor_json(user, current_user=None):
         ),
         'profile_url': user.profile_url
     }
+
+    if node:
+        contributor_info = user.contributor_set.get(node=node.parent_node)
+        contributor_json['permission'] = get_contributor_permissions(contributor_info, as_list=False)
+        contributor_json['visible'] = contributor_info.visible
+
+    return contributor_json
 
 
 def serialize_unregistered(fullname, email):

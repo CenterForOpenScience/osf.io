@@ -22,12 +22,20 @@ class TestSearchViews(OsfTestCase):
         for i in range(0, 12):
             factories.UserFactory(fullname='Freddie Mercury{}'.format(i))
 
+        self.user_one = factories.AuthUserFactory()
+        self.user_two = factories.AuthUserFactory()
+        self.project_private_user_one = factories.ProjectFactory(title='aaa', creator=self.user_one, is_public=False)
+        self.project_private_user_two = factories.ProjectFactory(title='aaa', creator=self.user_two, is_public=False)
+        self.project_public_user_one = factories.ProjectFactory(title='aaa', creator=self.user_one, is_public=True)
+        self.project_public_user_two = factories.ProjectFactory(title='aaa', creator=self.user_two, is_public=True)
+
     def tearDown(self):
         super(TestSearchViews, self).tearDown()
         import website.search.search as search
         search.delete_all()
 
-    def test_search_contributor(self):
+    def test_search_views(self):
+        #Test search contributor
         url = api_url_for('search_contributor')
         res = self.app.get(url, {'query': self.contrib.fullname})
         assert_equal(res.status_code, 200)
@@ -39,8 +47,7 @@ class TestSearchViews(OsfTestCase):
         assert_equal(brian['registered'], self.contrib.is_registered)
         assert_equal(brian['active'], self.contrib.is_active)
 
-    def test_search_pagination_default(self):
-        url = api_url_for('search_contributor')
+        #Test search pagination
         res = self.app.get(url, {'query': 'fr'})
         assert_equal(res.status_code, 200)
         result = res.json['users']
@@ -50,8 +57,7 @@ class TestSearchViews(OsfTestCase):
         assert_equal(pages, 3)
         assert_equal(page, 0)
 
-    def test_search_pagination_default_page_1(self):
-        url = api_url_for('search_contributor')
+        #Test default page 1
         res = self.app.get(url, {'query': 'fr', 'page': 1})
         assert_equal(res.status_code, 200)
         result = res.json['users']
@@ -59,17 +65,15 @@ class TestSearchViews(OsfTestCase):
         assert_equal(len(result), 5)
         assert_equal(page, 1)
 
-    def test_search_pagination_default_page_2(self):
-        url = api_url_for('search_contributor')
+        #Test default page 2
         res = self.app.get(url, {'query': 'fr', 'page': 2})
         assert_equal(res.status_code, 200)
         result = res.json['users']
         page = res.json['page']
-        assert_equal(len(result), 2)
+        assert_equal(len(result), 4)
         assert_equal(page, 2)
 
-    def test_search_pagination_smaller_pages(self):
-        url = api_url_for('search_contributor')
+        #Test smaller pages
         res = self.app.get(url, {'query': 'fr', 'size': 5})
         assert_equal(res.status_code, 200)
         result = res.json['users']
@@ -79,26 +83,55 @@ class TestSearchViews(OsfTestCase):
         assert_equal(page, 0)
         assert_equal(pages, 3)
 
-    def test_search_pagination_smaller_pages_page_2(self):
-        url = api_url_for('search_contributor')
+        #Test smaller pages page 2
         res = self.app.get(url, {'query': 'fr', 'page': 2, 'size': 5, })
         assert_equal(res.status_code, 200)
         result = res.json['users']
         pages = res.json['pages']
         page = res.json['page']
-        assert_equal(len(result), 2)
+        assert_equal(len(result), 4)
         assert_equal(page, 2)
         assert_equal(pages, 3)
 
-    def test_search_projects(self):
+        #Test search projects
         url = '/search/'
         res = self.app.get(url, {'q': self.project.title})
         assert_equal(res.status_code, 200)
 
-    def test_search_user(self):
+        #Test search node
+        res = self.app.post_json(
+          api_url_for('search_node'),
+          {'query': self.project.title},
+          auth=factories.AuthUserFactory().auth
+        )
+        assert_equal(res.status_code, 200)
 
+        #Test search node includePublic true
+        res = self.app.post_json(
+          api_url_for('search_node'),
+          {'query': 'a', 'includePublic': True},
+          auth=self.user_one.auth
+        )
+        node_ids = [node['id'] for node in res.json['nodes']]
+        assert_in(self.project_private_user_one._id, node_ids)
+        assert_in(self.project_public_user_one._id, node_ids)
+        assert_in(self.project_public_user_two._id, node_ids)
+        assert_not_in(self.project_private_user_two._id, node_ids)
+
+        #Test search node includePublic false
+        res = self.app.post_json(
+          api_url_for('search_node'),
+          {'query': 'a', 'includePublic': False},
+          auth=self.user_one.auth
+        )
+        node_ids = [node['id'] for node in res.json['nodes']]
+        assert_in(self.project_private_user_one._id, node_ids)
+        assert_in(self.project_public_user_one._id, node_ids)
+        assert_not_in(self.project_public_user_two._id, node_ids)
+        assert_not_in(self.project_private_user_two._id, node_ids)
+
+        #Test search user
         url = '/api/v1/search/user/'
-
         res = self.app.get(url, {'q': 'Umwali'})
         assert_equal(res.status_code, 200)
         assert_false(res.json['results'])
