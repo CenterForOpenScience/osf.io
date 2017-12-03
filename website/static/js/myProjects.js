@@ -31,6 +31,7 @@ var sparseNodeFields = String([
     'contributors',
     'current_user_permissions',
     'date_modified',
+    'description',
     'parent',
     'public',
     'tags',
@@ -505,7 +506,7 @@ var MyProjects = {
                 if(!item.data.attributes.retracted){
                     var urlPrefix = item.data.attributes.registration ? 'registrations' : 'nodes';
                     // TODO assess sparse field usage (some already implemented)
-                    var url = $osf.apiV2Url(urlPrefix + '/' + id + '/logs/', { query : { 'page[size]' : 6, 'embed' : ['original_node', 'user', 'linked_node', 'template_node'], 'profile_image_size': PROFILE_IMAGE_SIZE, 'fields[users]' : sparseUserFields}});
+                    var url = $osf.apiV2Url(urlPrefix + '/' + id + '/logs/', { query : { 'page[size]' : 6, 'embed' : ['original_node', 'user', 'linked_node', 'linked_registration', 'template_node'], 'profile_image_size': PROFILE_IMAGE_SIZE, 'fields[users]' : sparseUserFields}});
                     var promise = self.getLogs(url);
                     return promise;
                 }
@@ -1927,7 +1928,7 @@ var Information = {
                                 m('', 'Last Modified on: ' + (item.date ? item.date.local : ''))
                             ]),
                             m('p', [
-                                m('span', {style: 'white-space:pre-wrap'}, item.attributes.description)
+                                m('span', {style: 'white-space:pre-wrap'}, $osf.decodeText(item.attributes.description))
                             ]),
                             item.attributes.tags.length > 0 ?
                             m('p.m-t-md', [

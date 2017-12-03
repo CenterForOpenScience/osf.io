@@ -227,7 +227,7 @@ var FileRevisionsTable = {
         }
 
         revision.osfViewUrl = '?' + $.param(options);
-        revision.osfDownloadUrl = 'download?' + $.param(options);
+        revision.osfDownloadUrl = !index ? 'download' : 'download?' + $.param(options);
 
         return revision;
     }

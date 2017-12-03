@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 from django.contrib.postgres import fields
+from api.taxonomies.utils import optimize_subject_query
 from django.db import models
 from django.db.models.signals import post_save
 from django.dispatch import receiver
@@ -13,6 +14,7 @@ from osf.utils.fields import EncryptedTextField
 from reviews import permissions as reviews_permissions
 from reviews.models import ReviewProviderMixin
 
+from website import settings
 from website.util import api_v2_url
 
 
@@ -57,7 +59,8 @@ class PreprintProvider(ObjectIDMixin, ReviewProviderMixin, BaseModel):
 
     subjects_acceptable = DateTimeAwareJSONField(blank=True, default=list)
     licenses_acceptable = models.ManyToManyField(NodeLicense, blank=True, related_name='licenses_acceptable')
-    default_license = models.ForeignKey(NodeLicense, blank=True, related_name='default_license', null=True)
+    default_license = models.ForeignKey(NodeLicense, related_name='default_license',
+                                        null=True, blank=True, on_delete=models.CASCADE)
 
     class Meta:
         permissions = tuple(reviews_permissions.PERMISSIONS.items()) + (
@@ -69,8 +72,12 @@ class PreprintProvider(ObjectIDMixin, ReviewProviderMixin, BaseModel):
         return '{} with id {}'.format(self.name, self.id)
 
     @property
+    def has_highlighted_subjects(self):
+        return self.subjects.filter(highlighted=True).exists()
+
+    @property
     def highlighted_subjects(self):
-        if self.subjects.filter(highlighted=True).exists():
+        if self.has_highlighted_subjects:
             return self.subjects.filter(highlighted=True).order_by('text')[:10]
         else:
             return sorted(self.top_level_subjects, key=lambda s: s.text)[:10]
@@ -78,11 +85,11 @@ class PreprintProvider(ObjectIDMixin, ReviewProviderMixin, BaseModel):
     @property
     def top_level_subjects(self):
         if self.subjects.exists():
-            return self.subjects.filter(parent__isnull=True)
+            return optimize_subject_query(self.subjects.filter(parent__isnull=True))
         else:
             # TODO: Delet this when all PreprintProviders have a mapping
             if len(self.subjects_acceptable) == 0:
-                return Subject.objects.filter(parent__isnull=True, provider___id='osf')
+                return optimize_subject_query(Subject.objects.filter(parent__isnull=True, provider___id='osf'))
             tops = set([sub[0][0] for sub in self.subjects_acceptable])
             return [Subject.load(sub) for sub in tops]
 
@@ -93,6 +100,10 @@ class PreprintProvider(ObjectIDMixin, ReviewProviderMixin, BaseModel):
         else:
             # TODO: Delet this when all PreprintProviders have a mapping
             return rules_to_subjects(self.subjects_acceptable)
+
+    @property
+    def landing_url(self):
+        return self.domain if self.domain else '{}preprints/{}'.format(settings.DOMAIN, self.name.lower())
 
     def get_absolute_url(self):
         return '{}preprint_providers/{}'.format(self.absolute_api_v2_url, self._id)

@@ -4,6 +4,7 @@ from api.citations.utils import display_absolute_url
 from nose.tools import *  # flake8: noqa
 from osf_tests.factories import AuthUserFactory, PreprintFactory
 from tests.base import ApiTestCase
+from datetime import datetime
 
 
 class PreprintCitationsMixin(object):
@@ -49,9 +50,23 @@ class TestPreprintCitations(PreprintCitationsMixin, ApiTestCase):
 		assert_equal(res.json['data']['links']['self'], display_absolute_url(self.published_preprint))
 
 
-class TestPreprintCitationsStyle(PreprintCitationsMixin, ApiTestCase):
+class TestPreprintCitationContent(PreprintCitationsMixin, ApiTestCase):
 
 	def setUp(self):
-		super(TestPreprintCitationsStyle, self).setUp()
+		super(TestPreprintCitationContent, self).setUp()
 		self.published_preprint_url = '/{}preprints/{}/citation/apa/'.format(API_BASE, self.published_preprint._id)
 		self.unpublished_preprint_url = '/{}preprints/{}/citation/apa/'.format(API_BASE, self.unpublished_preprint._id)
+
+	def test_citation_contains_correct_date(self):
+		res = self.app.get(self.published_preprint_url)
+		assert_equal(res.status_code, 200)
+		expected_date = self.published_preprint.node.logs.latest().date.strftime('%Y, %B %-d')
+		assert_true(expected_date in res.json['data']['attributes']['citation'])
+
+		self.published_preprint.original_publication_date = datetime(2017, 12, 24)
+		self.published_preprint.save()
+
+		res = self.app.get(self.published_preprint_url)
+		assert_equal(res.status_code, 200)
+		expected_date = self.published_preprint.original_publication_date.strftime('%Y, %B %-d')
+		assert_true(expected_date in res.json['data']['attributes']['citation'])

@@ -287,10 +287,7 @@ def generate_schema_from_data(data):
         # reason. Update the doc currently in the db rather than saving a new
         # one.
 
-        schema = MetaSchema.find_one(
-            Q('name', 'eq', _schema['name']) &
-            Q('schema_version', 'eq', _schema['version'])
-        )
+        schema = MetaSchema.objects.get(name=_schema['name'], schema_version=_schema['version'])
         schema.schema = _schema
         schema.save()
 
@@ -447,8 +444,7 @@ class TestArchiverTasks(ArchiverTestCase):
             archive_node(results, self.archive_job._id)
         archive_osfstorage_signature = archive_addon.si(
             'osfstorage',
-            self.archive_job._id,
-            results
+            self.archive_job._id
         )
         assert(mock_group.called_with(archive_osfstorage_signature))
 
@@ -495,15 +491,13 @@ class TestArchiverTasks(ArchiverTestCase):
             archive_node(results, self.archive_job._id)
         archive_dropbox_signature = archive_addon.si(
             'dropbox',
-            self.archive_job._id,
-            results
+            self.archive_job._id
         )
         assert(mock_group.called_with(archive_dropbox_signature))
 
     @mock.patch('website.archiver.tasks.make_copy_request.delay')
     def test_archive_addon(self, mock_make_copy_request):
-        result = archiver_utils.aggregate_file_tree_metadata('osfstorage', FILE_TREE, self.user)
-        archive_addon('osfstorage', self.archive_job._id, result)
+        archive_addon('osfstorage', self.archive_job._id)
         assert_equal(self.archive_job.get_target('osfstorage').status, ARCHIVER_INITIATED)
         cookie = self.user.get_or_create_cookie()
         assert(mock_make_copy_request.called_with(

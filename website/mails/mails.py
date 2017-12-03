@@ -149,6 +149,17 @@ EXTERNAL_LOGIN_CONFIRM_EMAIL_CREATE = Mail(
     'external_confirm_create',
     subject='Open Science Framework Account Verification'
 )
+
+FORK_COMPLETED = Mail(
+    'fork_completed',
+    subject='Your Fork has Completed'
+)
+
+FORK_FAILED = Mail(
+    'fork_failed',
+    subject='Your Fork has Failed'
+)
+
 EXTERNAL_LOGIN_CONFIRM_EMAIL_LINK = Mail(
     'external_confirm_link',
     subject='Open Science Framework Account Verification'
@@ -210,6 +221,17 @@ CONTRIBUTOR_ADDED_PREPRINT = lambda template, provider: Mail(
 CONTRIBUTOR_ADDED_PREPRINT_NODE_FROM_OSF = Mail(
     'contributor_added_preprint_node_from_osf',
     subject='You have been added as a contributor to an OSF project.'
+)
+PREPRINT_CONFIRMATION_DEFAULT = Mail(
+    'preprint_confirmation_default',
+    subject="You've shared a preprint on OSF preprints"
+)
+PREPRINT_CONFIRMATION_BRANDED = lambda provider: Mail(
+    'preprint_confirmation_branded',
+    subject="You've shared {} {} on {}".format(
+        get_english_article(provider.preprint_word),
+        provider.preprint_word, provider.name
+    )
 )
 FORWARD_INVITE = Mail('forward_invite', subject='Please forward to ${fullname}')
 FORWARD_INVITE_REGISTERED = Mail('forward_invite_registered', subject='Please forward to ${fullname}')
@@ -359,6 +381,11 @@ PREREG_CHALLENGE_REJECTED = Mail(
 PREREG_CHALLENGE_ACCEPTED = Mail(
     'prereg_challenge_accepted',
     subject='Your research plan has been registered and accepted for the Preregistration Challenge'
+)
+
+PREREG_CSV = Mail(
+    'prereg_csv',
+    subject='[auto] Updated Prereg CSV'
 )
 
 EMPTY = Mail('empty', subject='${subject}')

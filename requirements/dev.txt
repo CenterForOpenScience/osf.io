@@ -18,6 +18,7 @@ HTTPretty==0.8.14
 # Syntax checking
 flake8==2.4.0
 flake8-quotes==0.3.0
+flake8-mutable==1.2.0
 
 # Avoid eating cpu with live reloading
 watchdog==0.8.3

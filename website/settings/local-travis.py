@@ -5,6 +5,7 @@ These settings override what's in website/settings/defaults.py
 NOTE: local.py will not be added to source control.
 '''
 import inspect
+import logging
 
 from . import defaults
 import os
@@ -23,13 +24,13 @@ ENABLE_INSTITUTIONS = True
 PREPRINT_PROVIDER_DOMAINS = {
     'enabled': False,
     'prefix': 'http://local.',
-    'suffix': ':4200/'
+    'suffix': ':4201/'
 }
 USE_EXTERNAL_EMBER = True
 EXTERNAL_EMBER_APPS = {
     'preprints': {
         'url': '/preprints/',
-        'server': 'http://localhost:4200',
+        'server': 'http://localhost:4201',
         'path': os.environ.get('HOME') + '/preprints/'
     }
 }
@@ -51,13 +52,16 @@ SESSION_COOKIE_SECURE = SECURE_MODE
 OSF_SERVER_KEY = None
 OSF_SERVER_CERT = None
 
-##### Celery #####
-## Default RabbitMQ broker
-BROKER_URL = 'amqp://'
+class CeleryConfig(defaults.CeleryConfig):
+    """
+    Celery configuration
+    """
+    ## Default RabbitMQ broker
+    broker_url = 'amqp://'
 
-# In-memory result backend
-CELERY_RESULT_BACKEND = 'cache'
-CELERY_CACHE_BACKEND = 'memory'
+    # In-memory result backend
+    result_backend = 'cache'
+    cache_backend = 'memory'
 
 USE_CDN_FOR_CLIENT_LIBS = False
 
@@ -90,3 +94,5 @@ POPULAR_LINKS_REGISTRATIONS = 'woooo'
 
 EZID_USERNAME = 'testfortravisnotreal'
 EZID_PASSWORD = 'testfortravisnotreal'
+
+logging.getLogger('celery.app.trace').setLevel(logging.FATAL)

@@ -14,11 +14,10 @@ from api.base.serializers import RelationshipField, ShowIfVersion, TargetField
 from dateutil import parser as date_parser
 from django.core.exceptions import ValidationError
 from django.db.models import QuerySet as DjangoQuerySet
-from django.db.models import Q
-from modularodm.query import queryset as modularodm_queryset
+from django.db.models import Q, Exists, OuterRef
 from rest_framework import serializers as ser
 from rest_framework.filters import OrderingFilter
-from osf.models import Subject, PreprintProvider
+from osf.models import Subject, PreprintProvider, Node
 from osf.models.base import GuidMixin
 from reviews.workflow import States
 
@@ -46,7 +45,7 @@ def sort_multiple(fields):
         return 0
     return sort_fn
 
-class ODMOrderingFilter(OrderingFilter):
+class OSFOrderingFilter(OrderingFilter):
     """Adaptation of rest_framework.filters.OrderingFilter to work with modular-odm."""
     # override
     def filter_queryset(self, request, queryset, view):
@@ -58,9 +57,9 @@ class ODMOrderingFilter(OrderingFilter):
                 order_fields = tuple([field.lstrip('-') for field in ordering])
                 distinct_fields = queryset.query.distinct_fields
                 queryset.query.distinct_fields = tuple(set(distinct_fields + order_fields))
-            return super(ODMOrderingFilter, self).filter_queryset(request, queryset, view)
+            return super(OSFOrderingFilter, self).filter_queryset(request, queryset, view)
         if ordering:
-            if not isinstance(queryset, modularodm_queryset.BaseQuerySet) and isinstance(ordering, (list, tuple)):
+            if isinstance(ordering, (list, tuple)):
                 sorted_list = sorted(queryset, cmp=sort_multiple(ordering))
                 return sorted_list
             return queryset.sort(*ordering)
@@ -149,7 +148,7 @@ class FilterMixin(object):
     def _parse_date_param(self, field, source_field_name, op, value):
         """
         Allow for ambiguous date filters. This supports operations like finding Nodes created on a given day
-        even though Node.date_created is a specific datetime.
+        even though Node.created is a specific datetime.
 
         :return list<dict>: list of one (specific datetime) or more (date range) parsed query params
         """
@@ -365,6 +364,7 @@ class ListFilterMixin(FilterMixin):
 
         if filters:
             for key, field_names in filters.iteritems():
+
                 sub_query_parts = []
                 for field_name, data in field_names.iteritems():
                     operations = data if isinstance(data, list) else [data]
@@ -506,7 +506,7 @@ class PreprintFilterMixin(ListFilterMixin):
                 operation['op'] = 'iexact'
 
     def preprints_queryset(self, base_queryset, auth_user, allow_contribs=True):
-        default_query = Q(node__isnull=False, node__is_deleted=False)
+        sub_qs = Node.objects.filter(preprints=OuterRef('pk'), is_deleted=False)
         no_user_query = Q(is_published=True, node__is_public=True)
 
         if auth_user:
@@ -514,10 +514,10 @@ class PreprintFilterMixin(ListFilterMixin):
             reviews_user_query = Q(node__is_public=True, provider__in=get_objects_for_user(auth_user, 'view_submissions', PreprintProvider))
             if allow_contribs:
                 contrib_user_query = ~Q(reviews_state=States.INITIAL.value) & Q(node__contributor__user_id=auth_user.id, node__contributor__read=True)
-                query = default_query & (no_user_query | contrib_user_query | admin_user_query | reviews_user_query)
+                query = (no_user_query | contrib_user_query | admin_user_query | reviews_user_query)
             else:
-                query = default_query & (no_user_query | admin_user_query | reviews_user_query)
+                query = (no_user_query | admin_user_query | reviews_user_query)
         else:
-            query = default_query & no_user_query
+            query = no_user_query
 
-        return base_queryset.filter(query)
+        return base_queryset.annotate(default=Exists(sub_qs)).filter(Q(default=True) & query)
