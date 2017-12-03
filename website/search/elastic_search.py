@@ -269,7 +269,7 @@ def format_result(result, parent_id=None):
         'is_pending_retraction': result['is_pending_retraction'],
         'embargo_end_date': result['embargo_end_date'],
         'is_pending_embargo': result['is_pending_embargo'],
-        'description': result['description'],
+        'description': sanitize.unescape_entities(result['description']),
         'category': result.get('category'),
         'date_created': result.get('date_created'),
         'date_registered': result.get('registered_date'),
@@ -370,7 +370,7 @@ def serialize_node(node, category):
         'registered_date': node.registered_date,
         'wikis': {},
         'parent_id': parent_id,
-        'date_created': node.date_created,
+        'date_created': node.created,
         'license': serialize_node_license_record(node.license),
         'affiliated_institutions': list(node.affiliated_institutions.values_list('name', flat=True)),
         'boost': int(not node.is_registration) + 1,  # This is for making registered projects less relevant
@@ -391,7 +391,8 @@ def update_node(node, index=None, bulk=False, async=False):
     for file_ in paginated(OsfStorageFile, Q(node=node)):
         update_file(file_, index=index)
 
-    if node.is_deleted or not node.is_public or node.archiving or (node.is_spammy and settings.SPAM_FLAGGED_REMOVE_FROM_SEARCH) or node.is_quickfiles:
+    is_qa_node = bool(set(settings.DO_NOT_INDEX_LIST['tags']).intersection(node.tags.all().values_list('name', flat=True))) or any(substring in node.title for substring in settings.DO_NOT_INDEX_LIST['titles'])
+    if node.is_deleted or not node.is_public or node.archiving or (node.is_spammy and settings.SPAM_FLAGGED_REMOVE_FROM_SEARCH) or node.is_quickfiles or is_qa_node:
         delete_doc(node._id, node, index=index)
     else:
         category = get_doctype_from_node(node)
@@ -510,7 +511,8 @@ def update_file(file_, index=None, delete=False):
     index = index or INDEX
 
     # TODO: Can remove 'not file_.name' if we remove all base file nodes with name=None
-    if not file_.name or not file_.node.is_public or delete or file_.node.is_deleted or file_.node.archiving:
+    file_node_is_qa = bool(set(settings.DO_NOT_INDEX_LIST['tags']).intersection(file_.node.tags.all().values_list('name', flat=True))) or any(substring in file_.node.title for substring in settings.DO_NOT_INDEX_LIST['titles'])
+    if not file_.name or not file_.node.is_public or delete or file_.node.is_deleted or file_.node.archiving or file_node_is_qa:
         client().delete(
             index=index,
             doc_type='file',
@@ -715,6 +717,7 @@ def search_contributor(query, page=0, size=10, exclude=None, current_user=None):
                 'id': doc['id'],
                 'employment': current_employment,
                 'education': education,
+                'social': user.social_links,
                 'n_projects_in_common': n_projects_in_common,
                 'gravatar_url': gravatar(
                     user,
@@ -724,7 +727,6 @@ def search_contributor(query, page=0, size=10, exclude=None, current_user=None):
                 'profile_url': user.profile_url,
                 'registered': user.is_registered,
                 'active': user.is_active
-
             })
 
     return {

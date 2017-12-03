@@ -161,10 +161,12 @@ class NodeFileCollector(object):
         self.can_edit = self.node.can_edit(auth) and not self.node.is_registration
 
     def to_hgrid(self):
-        """Return the Rubeus.JS representation of the node's file data, including
-        addons and components
         """
-        root = self._get_nodes(self.node)
+        Returns a representation of the node's file data, including
+        addons and components. For efficiency, only the children and
+        grandchildren of the node are serialized.
+        """
+        root = self._get_nodes(self.node, grid_root=self.node)
         return [root]
 
     def _get_node_name(self, node, can_view, is_pointer=False):
@@ -183,12 +185,14 @@ class NodeFileCollector(object):
 
         return node_name
 
-    def _serialize_node(self, node, parent=None, children=[]):
+    def _serialize_node(self, node, parent=None, grid_root=None, children=None):
         is_pointer = parent and node.is_linked_node
         can_view = node.can_view(auth=self.auth)
         can_edit = node.has_write_perm if hasattr(node, 'has_write_perm') else node.can_edit(auth=self.auth)
 
-        if parent and parent.root.title == parent.title:
+        # Determines if `node` is within two levels of `grid_root`
+        # Used to prevent complete serialization of deeply nested projects
+        if parent and grid_root and parent == grid_root:
             children = self._get_nodes(node)['children']
 
         return {
@@ -211,7 +215,7 @@ class NodeFileCollector(object):
             'nodeID': node._id,
         }
 
-    def _get_nodes(self, node):
+    def _get_nodes(self, node, grid_root=None):
         AbstractNode = apps.get_model('osf.AbstractNode')
         Contributor = apps.get_model('osf.Contributor')
 
@@ -225,7 +229,7 @@ class NodeFileCollector(object):
                         .annotate(is_linked_node=Exists(linked_node_sqs))
                         .annotate(has_write_perm=Exists(has_write_perm_sqs))
                         )
-            serialized_children = [self._serialize_node(child, parent=node) for child in children]
+            serialized_children = [self._serialize_node(child, parent=node, grid_root=grid_root) for child in children]
             data = serialized_addons + serialized_children
         return self._serialize_node(node, children=data)
 

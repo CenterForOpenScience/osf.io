@@ -74,7 +74,7 @@ class UserSettings(BaseOAuthUserSettings):
     serializer = GoogleDriveSerializer
 
 
-class NodeSettings(BaseStorageAddon, BaseOAuthNodeSettings):
+class NodeSettings(BaseOAuthNodeSettings, BaseStorageAddon):
     oauth_provider = GoogleDriveProvider
     provider_name = 'googledrive'
 

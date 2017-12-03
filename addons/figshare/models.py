@@ -81,18 +81,18 @@ class FigshareProvider(ExternalProvider):
 
         return {
             'provider_id': about['id'],
-            'display_name': '{} {}'.format(about['first_name'], about.get('last_name')),
+            'display_name': u'{} {}'.format(about['first_name'], about.get('last_name')),
         }
 
 
-class UserSettings(BaseStorageAddon, BaseOAuthUserSettings):
+class UserSettings(BaseOAuthUserSettings):
     """Stores user-specific figshare information
     """
     oauth_provider = FigshareProvider
     serializer = FigshareSerializer
 
 
-class NodeSettings(BaseStorageAddon, BaseOAuthNodeSettings):
+class NodeSettings(BaseOAuthNodeSettings, BaseStorageAddon):
     oauth_provider = FigshareProvider
     serializer = FigshareSerializer
 

@@ -103,17 +103,6 @@ api_routes = {
 
         Rule(
             [
-                '/project/<pid>/gitlab/repo/create/',
-                '/project/<pid>/node/<nid>/gitlab/repo/create/',
-
-            ],
-            'post',
-            views.gitlab_create_repo,
-            json_renderer,
-        ),
-
-        Rule(
-            [
                 '/project/<pid>/gitlab/hgrid/root/',
                 '/project/<pid>/node/<nid>/gitlab/hgrid/root/',
             ],

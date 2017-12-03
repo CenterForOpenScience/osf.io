@@ -99,6 +99,8 @@ def store_emails(recipient_ids, notification_type, event, user, node, timestamp,
         if recipient_id == user._id:
             continue
         recipient = OSFUser.load(recipient_id)
+        if recipient.is_disabled:
+            continue
         context['localized_timestamp'] = localize_timestamp(timestamp, recipient)
         context['recipient'] = recipient
         message = mails.render_message(template, **context)
@@ -152,13 +154,15 @@ def check_node(node, event):
         for notification_type in node_subscriptions:
             users = getattr(subscription, notification_type, [])
             if users:
-                for user in users.all():
+                for user in users.exclude(date_disabled__isnull=False):
                     if node.has_permission(user, 'read'):
                         node_subscriptions[notification_type].append(user._id)
     return node_subscriptions
 
 
 def get_user_subscriptions(user, event):
+    if user.is_disabled:
+        return {}
     user_subscription = NotificationSubscription.load(utils.to_subscription_key(user._id, event))
     if user_subscription:
         return {key: list(getattr(user_subscription, key).all().values_list('guids___id', flat=True)) for key in constants.NOTIFICATION_TYPES}

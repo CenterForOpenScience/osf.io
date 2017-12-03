@@ -36,44 +36,6 @@ var displayError = function(msg) {
         .fadeOut(100).fadeIn();
 };
 
-var createRepo = function() {
-
-    var $elm = $('#addonSettingsGitLab');
-    var $select = $elm.find('select');
-
-    bootbox.prompt({
-        title: 'Name your new repo',
-        placeholder: 'Repo name',
-        callback: function (repoName) {
-            // Return if cancelled
-            if (repoName === null) {
-                return;
-            }
-
-            if (repoName === '') {
-                displayError('Your repo must have a name');
-                return;
-            }
-
-            $osf.postJSON(
-                nodeApiUrl + 'gitlab/repo/create/',
-                {name: repoName, user: $("#gitlabUser").val()}
-            ).done(function (response) {
-                    $select.append('<option value="' + response.repo['id'] + '">' + $osf.htmlEscape(response.repo['path_with_namespace']) + '</option>');
-                    $select.val(response.repo['id']);
-                    updateHidden($select);
-                }).fail(function () {
-                    displayError('Could not create repository');
-                });
-        },
-        buttons:{
-            confirm:{
-                label: 'Save',
-                className:'btn-success'
-            }
-        }
-    });
-};
 
 var askImport = function() {
     $.get('/api/v1/settings/gitlab/accounts/'
@@ -134,10 +96,6 @@ $(document).ready(function() {
         if (el.val()) {
             updateHidden(el);
         }
-    });
-
-    $('#gitlabCreateRepo').on('click', function() {
-        createRepo();
     });
 
     $('#gitlabImportToken').on('click', function() {

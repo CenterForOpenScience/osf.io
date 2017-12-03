@@ -10,6 +10,7 @@ from admin.nodes.views import (
     NodeFlaggedSpamList,
     NodeKnownSpamList,
     NodeKnownHamList,
+    NodeConfirmHamView
 )
 from admin_tests.utilities import setup_log_view, setup_view
 
@@ -314,3 +315,29 @@ class TestNodeReindex(AdminTestCase):
         nt.assert_true(mock_update_search.called)
         nt.assert_true(mock_bulk_update_nodes.called)
         nt.assert_equal(AdminLogEntry.objects.count(), count + 1)
+
+class TestNodeConfirmHamView(AdminTestCase):
+    def setUp(self):
+        super(TestNodeConfirmHamView, self).setUp()
+
+        self.request = RequestFactory().post('/fake_path')
+        self.user = AuthUserFactory()
+
+        self.node = ProjectFactory(creator=self.user)
+        self.registration = RegistrationFactory(creator=self.user)
+
+    def test_confirm_node_as_ham(self):
+        view = NodeConfirmHamView()
+        view = setup_log_view(view, self.request, guid=self.node._id)
+        view.delete(self.request)
+
+        self.node.refresh_from_db()
+        nt.assert_true(self.node.spam_status == 4)
+
+    def test_confirm_registration_as_ham(self):
+        view = NodeConfirmHamView()
+        view = setup_log_view(view, self.request, guid=self.registration._id)
+        view.delete(self.request)
+
+        self.registration.refresh_from_db()
+        nt.assert_true(self.registration.spam_status == 4)

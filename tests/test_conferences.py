@@ -522,6 +522,12 @@ class TestConferenceEmailViews(OsfTestCase):
         res = self.app.get(url)
         assert_equal(res.status_code, 200)
 
+    def test_confererence_results_endpoint_is_case_insensitive(self):
+        ConferenceFactory(endpoint='StudySwap')
+        url = web_url_for('conference_results', meeting='studyswap')
+        res = self.app.get(url)
+        assert_equal(res.status_code, 200)
+
 
 class TestConferenceModel(OsfTestCase):
 

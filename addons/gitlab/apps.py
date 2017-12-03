@@ -40,7 +40,7 @@ def gitlab_hgrid_data(node_settings, auth, **kwargs):
         ref = ref_to_params(branch, sha)
         can_edit = check_permissions(node_settings, auth, connection, branch, sha, repo=repo)
     else:
-        ref = None
+        ref = ''
         can_edit = False
 
     permissions = {

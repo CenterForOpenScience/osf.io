@@ -29,6 +29,7 @@ PROVIDERS = {
     'dropbox': 'Dropbox',
     'figshare': 'figshare',
     'github': 'GitHub',
+    'gitlab': 'GitLab',
     'bitbucket': 'Bitbucket',
     'googledrive': 'Google Drive',
     'owncloud': 'ownCloud',

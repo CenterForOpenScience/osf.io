@@ -169,13 +169,13 @@ class ReviewsMachine(Machine):
         )
 
     def update_last_transitioned(self, ev):
-        now = self.action.date_created if self.action is not None else timezone.now()
+        now = self.action.created if self.action is not None else timezone.now()
         self.reviewable.date_last_transitioned = now
 
     def save_changes(self, ev):
         node = self.reviewable.node
         node._has_abandoned_preprint = False
-        now = self.action.date_created if self.action is not None else timezone.now()
+        now = self.action.created if self.action is not None else timezone.now()
         should_publish = self.reviewable.in_public_reviews_state
         if should_publish and not self.reviewable.is_published:
             if not (self.reviewable.node.preprint_file and self.reviewable.node.preprint_file.node == self.reviewable.node):
@@ -247,7 +247,7 @@ class ReviewsMachine(Machine):
 @reviews_signals.reviews_email.connect
 def reviews_notification(self, creator, template, context, action):
     recipients = list(action.target.node.contributors)
-    time_now = action.date_created if action is not None else timezone.now()
+    time_now = action.created if action is not None else timezone.now()
     node = action.target.node
     emails.notify_global_event(
         event='global_reviews',
