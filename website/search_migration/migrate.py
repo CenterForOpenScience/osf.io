@@ -5,9 +5,9 @@ from __future__ import absolute_import
 
 import logging
 
+from django.db.models import Q
 from django.utils import timezone
 from elasticsearch import helpers
-from modularodm.query.querydialect import DefaultQueryDialect as Q
 
 import website.search.search as search
 from framework.database import paginated
@@ -22,11 +22,11 @@ logger = logging.getLogger(__name__)
 
 def migrate_nodes(index, query=None):
     logger.info('Migrating nodes to index: {}'.format(index))
-    node_query = Q('is_public', 'eq', True) & Q('is_deleted', 'eq', False)
+    node_query = Q(is_public=True, is_deleted=False)
     if query:
         node_query = query & node_query
-    total = AbstractNode.find(node_query).count()
-    increment = 200
+    total = AbstractNode.objects.filter(node_query).count()
+    increment = 100
     total_pages = (total // increment) + 1
     pages = paginated(AbstractNode, query=node_query, increment=increment, each=False, include=['contributor__user__guids'])
 
@@ -51,7 +51,7 @@ def migrate_users(index):
     logger.info('Users iterated: {0}\nUsers migrated: {1}'.format(n_iter, n_migr))
 
 def migrate_institutions(index):
-    for inst in Institution.find(Q('is_deleted', 'ne', True)):
+    for inst in Institution.objects.filter(is_deleted=False):
         update_institution(inst, index)
 
 def migrate(delete, index=None, app=None):
@@ -76,7 +76,7 @@ def migrate(delete, index=None, app=None):
     set_up_alias(index, new_index)
 
     # migrate nodes modified since start
-    migrate_nodes(new_index, query=Q('date_modified', 'gte', start_time))
+    migrate_nodes(new_index, query=Q(modified__gte=start_time))
 
     if delete:
         delete_old(new_index)
@@ -94,7 +94,7 @@ def set_up_index(idx):
         helpers.reindex(es_client(), idx, index)
         logger.info('Deleting {} index'.format(idx))
         es_client().indices.delete(index=idx)
-        es_client().indices.put_alias(idx, index)
+        es_client().indices.put_alias(index=index, name=idx)
     else:
         # Increment version
         version = int(alias.keys()[0].split('_v')[1]) + 1
@@ -111,7 +111,7 @@ def set_up_alias(old_index, index):
         logger.info('Removing old aliases to {}'.format(old_index))
         es_client().indices.delete_alias(index=old_index, name='_all', ignore=404)
     logger.info('Creating new alias from {0} to {1}'.format(old_index, index))
-    es_client().indices.put_alias(old_index, index)
+    es_client().indices.put_alias(index=index, name=old_index)
 
 
 def delete_old(index):

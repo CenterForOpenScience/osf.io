@@ -31,6 +31,7 @@ var entry = {
     'project-dashboard': staticPath('js/pages/project-dashboard-page.js'),
     'project-base-page': staticPath('js/pages/project-base-page.js'),
     'project-settings-page': staticPath('js/pages/project-settings-page.js'),
+    'project-addons-page': staticPath('js/pages/project-addons-page.js'),
     'project-registrations-page': staticPath('js/pages/project-registrations-page.js'),
     'registration-retraction-page': staticPath('js/pages/registration-retraction-page.js'),
     'registration-edit-page': staticPath('js/pages/registration-edit-page.js'),
@@ -141,7 +142,7 @@ var resolve = {
         'clipboard': staticPath('vendor/bower_components/clipboard/dist/clipboard.js'),
         'history': nodePath('historyjs/scripts/bundled/html4+html5/jquery.history.js'),
         // Needed for knockout-sortable
-        'jquery.ui.sortable': staticPath('vendor/bower_components/jquery-ui/ui/jquery.ui.sortable.js'),
+        'jquery.ui.sortable': staticPath('vendor/bower_components/jquery-ui/ui/widgets/sortable.js'),
         'truncate': staticPath('vendor/bower_components/truncate/jquery.truncate.js'),
         // Needed for ace code editor in wiki
         'ace-noconflict': staticPath('vendor/bower_components/ace-builds/src-noconflict/ace.js'),
@@ -222,5 +223,8 @@ module.exports = {
             //Dirty hack because mime-type's json file is "special"
             {test: /db.json/, loader: 'json-loader'}
         ]
+    },
+    node: {
+       fs: 'empty'
     }
 };

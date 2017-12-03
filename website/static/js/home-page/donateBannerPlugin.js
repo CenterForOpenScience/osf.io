@@ -9,51 +9,44 @@ var currentDate = new Date();
 
 var bannerOptions = [
     {
-        startDate: new Date(2017, 7, 7),
-        endDate: new Date(2017, 7, 14),
-        beforeLink: 'The Center for Open Science (COS) created the OSF and a suite of of free products to advance the ' +
-            'work of the research community. If you value these tools, please make a gift to support COS’s efforts to ' +
-            'improve and scale these services. ',
-        linkText: 'Donate now!',
-        afterLink: '',
-        background:'.donate-banner.week-1'
+        startDate: new Date(2017, 10, 19),
+        endDate: new Date(2017, 10, 28),
+        imageLg: {
+            src:'/static/img/front-page/giving_tuesday_week01.png',
+            alt:'Things to look forward to: Thanksgiving Thursday, Black Friday, Cyber Monday, AND Giving Tuesday on ' +
+            'Tuesday, November 28th. Please make a gift to support the OSF tools you use and love.'
+        },
+        imageSm: {
+            src:'/static/img/front-page/giving_tuesday_week01_mobile.png',
+            alt:'Giving Tuesday is coming on Tuesday, November 28th. Please make a gift to support the OSF tools you ' +
+            'use and love.'
+        },
     }, {
-        startDate: new Date(2017, 7, 14),
-        endDate: new Date(2017, 7, 21),
-        beforeLink: 'Thousands of researchers use the OSF and its related services daily. If you value the OSF, ',
-        linkText: 'make a donation',
-        afterLink: ' to support the Center for Open Science and its ongoing efforts to improve and advance these ' +
-            'public goods.',
-        background:'.donate-banner.week-2'
-
+        startDate: new Date(2017, 10, 28),
+        endDate: new Date(2017, 10, 29),
+        imageLg: {
+            src:'/static/img/front-page/giving_tuesday_week02.png',
+            alt:'Happy Giving Tuesday! Please make a gift to support the OSF tools you use and love.'
+        },
+        imageSm: {
+            src:'/static/img/front-page/giving_tuesday_week02_mobile.png',
+            alt:'Happy Giving Tuesday! Please make a gift to support the OSF tools you use and love.'
+        },
     }, {
-        startDate: new Date(2017, 7, 21),
-        endDate: new Date(2017, 7, 28),
-        beforeLink: 'The Center for Open Science (COS) created the OSF and its related services as public goods. While' +
-            ' these services will always be free to use they are not free to build, improve and maintain. Please ',
-        linkText: 'support the OSF and COS with a donation today.',
-        afterLink: '',
-        background:'.donate-banner.week-3'
-
-    }, {
-        startDate: new Date(2017, 7, 28),
-        endDate: new Date(2017, 8, 4),
-        beforeLink: 'The Center for Open Science launched the OSF with the goal of creating a service where the entire' +
-            ' research cycle is supported and barriers to accessing data are removed. ',
-        linkText: 'Support COS’s efforts',
-        afterLink: ' to advance the work of researchers with a gift today!',
-        background:'.donate-banner.week-4'
-
-    }, {
-        startDate: new Date(2017, 8, 4),
-        endDate: new Date(2017, 8, 11),
-        beforeLink: 'At the Center for Open Science (COS), we envision a future in which ideas, processes and ' +
-            'outcomes of research are free and open to all. COS relies on contributions to build the free products you' +
-            ' use and love. Help make the vision a reality with a ',
-        linkText: 'gift today.',
-        afterLink: '',
-        background:'.donate-banner.week-5'
-    }
+        startDate: new Date(2017, 10, 29),
+        endDate: new Date(2017, 11, 6),
+        license: '© Nestlé',
+        imageLg: {
+            src:'/static/img/front-page/week03_dec2017.svg',
+            alt:'The Center for Open Science created the OSF and a suite of free products to advance the work of the ' +
+            'research community. If you value these tools, please make a gift to support COS’s efforts to improve and ' +
+            'scale these services. DONATE NOW!'
+        },
+        imageSm: {
+            src:'/static/img/front-page/week03_dec2017_mobile.svg',
+            alt:'Support COS’s efforts to improve free products and advance the work of the research community.'
+        },
+    },
 ];
 
 function pickBanner(bannerOptions, date) {
@@ -76,29 +69,25 @@ var Banner = {
         if (bannerPicked === -1) {
             return m('');
         }
-        return m('.p-v-sm',
-            m('.row',
+        var currentBanner = bannerOptions[bannerPicked];
+        return m('.row',
                 [
-                    m('.col-md-12.m-v-sm',
-                            m('div.conference-centering',
-                                m('p', bannerOptions[bannerPicked].beforeLink,
-                                    m('a.donate-text', { href:'https://cos.io/donate', onclick: function() {
-                                        $osf.trackClick('link', 'click', 'DonateBanner - Donate now');
-                                    }}, bannerOptions[bannerPicked].linkText), bannerOptions[bannerPicked].afterLink)
-                            )
-                    )
+                    m('a', {href: 'https://www.crowdrise.com/centerforopenscience', onclick: function() {
+                        $osf.trackClick('link', 'click', 'DonateBanner - Donate now');
+                    }},
+                        m('.col-sm-md-lg-12.hidden-xs',
+                            m('img.donate-banner.img-responsive', currentBanner.imageLg)
+                        ),
+                        m('.col-xs-12.hidden-sm.hidden-md.hidden-lg',
+                            m('img.donate-banner.img-responsive', currentBanner.imageSm)
+                        )
+                    ),
                 ]
-            )
         );
     }
 };
 
-
-var background = '.hidden';
-
-if (bannerPicked > -1) {
-    background = bannerOptions[bannerPicked].background;
-}
+var background = '.donate-banner-background';
 
 module.exports = {
     Banner: Banner,

@@ -8,8 +8,6 @@ from django.utils import timezone
 from django.db import DataError
 from nose.tools import *  # noqa
 
-from modularodm import Q
-
 from framework.auth import Auth
 from framework.exceptions import PermissionsError
 from tests.base import fake, OsfTestCase
@@ -44,9 +42,9 @@ class RegistrationRetractionModelsTestCase(OsfTestCase):
         assert_true(self.registration.is_public)
 
     def test_initiate_retraction_saves_retraction(self):
-        initial_count = Retraction.find().count()
+        initial_count = Retraction.objects.all().count()
         self.registration._initiate_retraction(self.user)
-        assert_equal(Retraction.find().count(), initial_count + 1)
+        assert_equal(Retraction.objects.all().count(), initial_count + 1)
 
     def test__initiate_retraction_does_not_create_tokens_for_unregistered_admin(self):
         unconfirmed_user = UnconfirmedUserFactory()
@@ -88,7 +86,7 @@ class RegistrationRetractionModelsTestCase(OsfTestCase):
         self.registration.retract_registration(self.user, self.valid_justification)
         self.registration.save()
         self.registration.reload()
-        assert_equal(Retraction.find(Q('initiated_by', 'eq', self.user)).count(), 1)
+        assert_equal(Retraction.objects.filter(initiated_by=self.user).count(), 1)
 
     # Node#retract_registration tests
     def test_pending_retract(self):
@@ -732,9 +730,9 @@ class ComponentRegistrationRetractionViewsTestCase(OsfTestCase):
             title='Subcomponent'
         )
         self.registration = RegistrationFactory(is_public=True, project=self.project)
-        self.component_registration = self.registration._nodes.order_by('date_created').first()
-        self.subproject_registration = list(self.registration._nodes.order_by('date_created'))[1]
-        self.subproject_component_registration = self.subproject_registration._nodes.order_by('date_created').first()
+        self.component_registration = self.registration._nodes.order_by('created').first()
+        self.subproject_registration = list(self.registration._nodes.order_by('created'))[1]
+        self.subproject_component_registration = self.subproject_registration._nodes.order_by('created').first()
 
     def test_POST_retraction_to_component_returns_HTTPError_BAD_REQUEST(self):
         res = self.app.post_json(

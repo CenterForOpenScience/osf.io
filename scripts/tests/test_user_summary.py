@@ -1,28 +1,17 @@
-from datetime import datetime, timedelta
+from datetime import timedelta
+from django.utils import timezone
 from nose.tools import *  # noqa
-from framework.mongo import database
-from framework.transactions.context import TokuTransaction
 
-from website.models import User
+from osf.models import OSFUser
 from tests.base import OsfTestCase
-from tests.factories import AuthUserFactory, NodeLogFactory
+from osf_tests.factories import AuthUserFactory, NodeLogFactory
 from scripts.analytics.user_summary import UserSummary, LOG_THRESHOLD
 
 
-def modify_user_dates_in_mongo(new_date):
-    with TokuTransaction():
-        for user in database.user.find():
-            database['user'].find_and_modify(
-                {'_id': user['_id']},
-                {'$set': {
-                    'date_registered': new_date
-                }}
-            )
-
 class TestUserCount(OsfTestCase):
     def setUp(self):
-        self.yesterday = datetime.today() - timedelta(1)
-        self.a_while_ago = datetime.today() - timedelta(2)
+        self.yesterday = timezone.now() - timedelta(1)
+        self.a_while_ago = timezone.now() - timedelta(2)
         super(TestUserCount, self).setUp()
         for i in range(0, 3):
             u = AuthUserFactory()
@@ -51,10 +40,7 @@ class TestUserCount(OsfTestCase):
         u.date_disabled = self.a_while_ago
         u.save()
 
-        modify_user_dates_in_mongo(self.yesterday)
-
-    def tearDown(self):
-        User.remove()
+        OSFUser.objects.all().update(date_registered=self.yesterday)
 
     def test_gets_users(self):
         data = UserSummary().get_events(self.yesterday.date())[0]
@@ -83,7 +69,8 @@ class TestUserCount(OsfTestCase):
         merged_user.save()
         user.reload()
         merged_user.reload()
-        modify_user_dates_in_mongo(self.yesterday)
+
+        OSFUser.objects.all().update(date_registered=self.yesterday)
 
         data = UserSummary().get_events(self.yesterday.date())[0]
         assert_equal(data['status']['merged'], 1)

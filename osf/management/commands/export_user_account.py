@@ -30,8 +30,8 @@ TMP_PATH = tempfile.mkdtemp()
 
 PREPRINT_EXPORT_FIELDS = [
     'is_published',
-    'date_created',
-    'date_modified',
+    'created',
+    'modified',
     'date_published'
 ]
 
@@ -42,8 +42,8 @@ NODE_EXPORT_FIELDS = [
     'is_public',
     'description',
     'forked_date',
-    'date_created',
-    'date_modified'
+    'created',
+    'modified'
 ]
 
 REGISTRATION_EXPORT_FIELDS = NODE_EXPORT_FIELDS + [
@@ -235,13 +235,11 @@ def export_account(user_id, only_private=False, only_admin=False, export_files=T
     projects_to_export = (user.nodes
         .filter(is_deleted=False, type='osf.node')
         .exclude(guids___id__in=preprint_projects_exported)
-        .include('guids')
         .get_roots()
     )
 
     registrations_to_export = (user.nodes
         .filter(is_deleted=False, type='osf.registration', retraction__isnull=True)
-        .include('guids')
         .get_roots()
     )
 

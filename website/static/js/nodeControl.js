@@ -110,9 +110,9 @@ var ProjectViewModel = function(data, options) {
             title: 'Edit Description',
             emptytext: 'Add a brief description to your ' + project_or_component_label,
             emptyclass: 'text-muted',
-            value: self.description(),
+            value: $osf.decodeText(self.description()),
             success: function(response, newValue) {
-                newValue = response.newValue; // Update display to reflect changes, eg by sanitizer
+                newValue = $osf.decodeText(response.newValue); // Update display to reflect changes, eg by sanitizer
                 self.description(newValue);
                 return {newValue: newValue};
             }

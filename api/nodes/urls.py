@@ -1,7 +1,8 @@
 from django.conf.urls import url
 
 from api.nodes import views
-from website import settings
+
+app_name = 'osf'
 
 urlpatterns = [
     # Examples:
@@ -41,11 +42,3 @@ urlpatterns = [
     url(r'^(?P<node_id>\w+)/view_only_links/(?P<link_id>\w+)/$', views.NodeViewOnlyLinkDetail.as_view(), name=views.NodeViewOnlyLinkDetail.view_name),
     url(r'^(?P<node_id>\w+)/wikis/$', views.NodeWikiList.as_view(), name=views.NodeWikiList.view_name),
 ]
-
-# Routes only active in local/staging environments
-if settings.DEV_MODE:
-    urlpatterns.extend([
-        # Custom citations
-        url(r'^(?P<node_id>\w+)/citations/$', views.NodeAlternativeCitationsList.as_view(), name=views.NodeAlternativeCitationsList.view_name),
-        url(r'^(?P<node_id>\w+)/citations/(?P<citation_id>\w+)/$', views.NodeAlternativeCitationDetail.as_view(), name=views.NodeAlternativeCitationDetail.view_name),
-    ])

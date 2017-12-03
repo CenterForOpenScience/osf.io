@@ -39,16 +39,8 @@
             <table id="content" width="600" border="0" cellpadding="25" cellspacing="0" align="center" style="margin: 30px auto 0 auto;background: white;box-shadow: 0 0 2px #ccc;">
               <tbody>
                 ${self.content()}
-                <tr style="border-collapse: collapse;" align="left">
-                    <br>
-                    Center for Open Science<br>
-                    210 Ridge McIntire Road<br>
-                    Suite 500<br>
-                    Charlottesville, VA 22903-5083<br>
-                </tr>
               </tbody>
             </table>
-
             % if context.get('can_change_preferences', True):
             <table width="600" border="0" cellpadding="25" cellspacing="0" align="center" style="margin: 30px auto 0 auto;background: white;box-shadow: 0 0 2px #ccc;">
                 <tbody>
@@ -68,10 +60,11 @@
                     <tbody>
                         <tr>
                             <td style="border-collapse: collapse;">
-                                <p class="text-smaller text-center" style="text-align: center;font-size: 12px;">Copyright &copy; 2016 Center For Open Science, All rights reserved. |
+                                <p class="text-smaller text-center" style="text-align: center;font-size: 12px;">Copyright &copy; 2017 Center For Open Science, All rights reserved. |
                                     <a href="https://github.com/CenterForOpenScience/centerforopenscience.org/blob/master/PRIVACY_POLICY.md">Privacy Policy</a>
-                                ${self.footer()}
                                 </p>
+                                <p class="text-smaller text-center" style="text-align: center;font-size: 12px;">210 Ridge McIntire Road, Suite 500, Charlottesville, VA 22903-5083</p>
+                                <p class="text-smaller text-center" style="text-align: center;font-size: 12px;">${self.footer()}</p>
                             </td>
                         </tr>
                     </tbody>

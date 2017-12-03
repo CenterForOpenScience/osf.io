@@ -7,7 +7,6 @@ from django.db import connection
 
 from framework.celery_tasks import app as celery_app
 from framework.sentry import log_exception
-from modularodm import Q
 from osf.models import OSFUser
 from osf.models import NotificationDigest
 from website import mails
@@ -31,13 +30,14 @@ def send_users_email(send_type):
         notification_ids = [message['_id'] for message in info]
         sorted_messages = group_by_node(info)
         if sorted_messages:
-            mails.send_mail(
-                to_addr=user.username,
-                mimetype='html',
-                mail=mails.DIGEST,
-                name=user.fullname,
-                message=sorted_messages,
-            )
+            if not user.is_disabled:
+                mails.send_mail(
+                    to_addr=user.username,
+                    mimetype='html',
+                    mail=mails.DIGEST,
+                    name=user.fullname,
+                    message=sorted_messages,
+                )
             remove_notifications(email_notification_ids=notification_ids)
 
 
@@ -105,5 +105,5 @@ def remove_notifications(email_notification_ids=None):
     :param email_notification_ids:
     :return:
     """
-    for email_id in email_notification_ids:
-        NotificationDigest.remove(Q('_id', 'eq', email_id))
+    if email_notification_ids:
+        NotificationDigest.objects.filter(_id__in=email_notification_ids).delete()

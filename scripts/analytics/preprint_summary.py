@@ -5,7 +5,6 @@ import requests
 from dateutil.parser import parse
 from datetime import datetime, timedelta
 
-from django.db.models import Q
 from website.app import init_app
 from scripts.analytics.base import SummaryAnalytics
 
@@ -23,7 +22,7 @@ class PreprintSummary(SummaryAnalytics):
 
     def get_events(self, date):
         super(PreprintSummary, self).get_events(date)
-        from osf.models import PreprintService, PreprintProvider
+        from osf.models import PreprintProvider
 
         # Convert to a datetime at midnight for queries and the timestamp
         timestamp_datetime = datetime(date.year, date.month, date.day).replace(tzinfo=pytz.UTC)
@@ -32,14 +31,18 @@ class PreprintSummary(SummaryAnalytics):
         elastic_query = {
             "query": {
                 "bool": {
-                    "must": {
-                        "match": {
-                            "type": "preprints"
+                    "must": [
+                        {
+                            "match": {
+                                "type": "preprint"
+                            }
                         },
-                        "match": {
-                            "sources": None
+                        {
+                            "match": {
+                                "sources": None
+                            }
                         }
-                    },
+                    ],
                     'filter': [
                         {
                             "range": {
@@ -56,7 +59,7 @@ class PreprintSummary(SummaryAnalytics):
         counts = []
         for preprint_provider in PreprintProvider.objects.all():
             name = preprint_provider.name if preprint_provider.name != 'Open Science Framework' else 'OSF'
-            elastic_query['query']['bool']['must']['match']['sources'] = name
+            elastic_query['query']['bool']['must'][1]['match']['sources'] = name
             resp = requests.post('https://share.osf.io/api/v2/search/creativeworks/_search', json=elastic_query).json()
             counts.append({
                 'keen': {
@@ -67,7 +70,6 @@ class PreprintSummary(SummaryAnalytics):
                     'total': resp['hits']['total'],
                 },
             })
-
 
         return counts
 

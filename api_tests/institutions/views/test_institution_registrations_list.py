@@ -4,8 +4,6 @@ from tests.base import ApiTestCase
 from osf_tests.factories import (
     AuthUserFactory,
     InstitutionFactory,
-    NodeFactory,
-    ProjectFactory,
     RegistrationFactory,
     WithdrawnRegistrationFactory
 )
@@ -78,6 +76,19 @@ class TestInstitutionRegistrationList(ApiTestCase):
         ids = [each['id'] for each in res.json['data']]
 
         assert_not_in(self.registration2._id, ids)
+
+    def test_total_biographic_contributor_in_institution_registration(self):
+        user3 = AuthUserFactory()
+        registration3 = RegistrationFactory(is_public=True, creator=self.user1)
+        registration3.affiliated_institutions.add(self.institution)
+        registration3.add_contributor(self.user2, auth=Auth(self.user1))
+        registration3.add_contributor(user3, auth=Auth(self.user1), visible=False)
+        registration3.save()
+        registration3_url = '/{0}registrations/{1}/?embed=contributors'.format(API_BASE, registration3._id)
+
+        res = self.app.get(registration3_url)
+        assert_true(res.json['data']['embeds']['contributors']['links']['meta']['total_bibliographic'])
+        assert_equal(res.json['data']['embeds']['contributors']['links']['meta']['total_bibliographic'], 2)
 
 
 class TestRegistrationListFiltering(RegistrationListFilteringMixin, ApiTestCase):
