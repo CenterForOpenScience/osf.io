@@ -757,6 +757,8 @@ div.ball-scale-blue>div {
 .category-list ul.dropdown-menu > li > a {
     line-height: 1.65;
     padding-left: 8px;
+}
+
 /* Remove gutters between bootstrap cols */
 .row.no-gutters {
   margin-right: 0;
