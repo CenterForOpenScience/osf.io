@@ -4,6 +4,7 @@ from addons.swift import utils
 
 from addons.swift.provider import SwiftProvider
 
+
 class SwiftSerializer(StorageAddonSerializer):
     addon_short_name = 'swift'
 
@@ -39,7 +40,10 @@ class SwiftSerializer(StorageAddonSerializer):
         if user_settings:
             for account in user_settings.external_accounts:
                 provider = SwiftProvider(account)
-                if utils.can_list(provider.auth_url, provider.username,
-                                  provider.password, provider.tenant_name):
+                if utils.can_list(provider.auth_version,
+                                  provider.auth_url, provider.username,
+                                  provider.user_domain_name,
+                                  provider.password, provider.tenant_name,
+                                  provider.project_domain_name):
                     return True
         return False

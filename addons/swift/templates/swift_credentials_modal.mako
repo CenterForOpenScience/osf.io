@@ -14,6 +14,10 @@
 
                         <div class="col-sm-6">
                             <div class="form-group">
+                                <label for="swiftAddon">Authentication(Keystone) Version</label>
+                                <select class="form-control" data-bind="value: authVersion, options: ['v2', 'v3']" id="auth_version" name="auth_version" ${'disabled' if disabled else ''} ></select>
+                            </div>
+                            <div class="form-group">
                                 <label for="swiftAddon">Authentication URL</label>
                                 <input class="form-control" data-bind="value: authUrl" id="auth_url" name="auth_url" ${'disabled' if disabled else ''} />
                             </div>
@@ -22,8 +26,16 @@
                                 <input class="form-control" data-bind="value: tenantName" id="tenant_name" name="tenant_name" ${'disabled' if disabled else ''} />
                             </div>
                             <div class="form-group">
+                                <label for="swiftAddon">Project Domain name</label>
+                                <input class="form-control" data-bind="value: projectDomainName, enable: authVersion() == 'v3'" id="project_domain_name" name="project_domain_name" ${'disabled' if disabled else ''} />
+                            </div>
+                            <div class="form-group">
                                 <label for="swiftAddon">Username</label>
                                 <input class="form-control" data-bind="value: accessKey" id="access_key" name="access_key" ${'disabled' if disabled else ''} />
+                            </div>
+                            <div class="form-group">
+                                <label for="swiftAddon">User Domain name</label>
+                                <input class="form-control" data-bind="value: userDomainName, enable: authVersion() == 'v3'" id="user_domain_name" name="user_domain_name" ${'disabled' if disabled else ''} />
                             </div>
                             <div class="form-group">
                                 <label for="swiftAddon">Password</label>
