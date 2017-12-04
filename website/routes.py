@@ -120,7 +120,8 @@ def get_globals():
         },
         'maintenance': maintenance.get_maintenance(),
         'recaptcha_site_key': settings.RECAPTCHA_SITE_KEY,
-        'custom_citations': settings.CUSTOM_CITATIONS
+        'custom_citations': settings.CUSTOM_CITATIONS,
+        'osf_support_email': settings.OSF_SUPPORT_EMAIL,
     }
 
 

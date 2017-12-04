@@ -180,11 +180,13 @@ var PublicNodes = {
 
     view : function (ctrl) {
 
+        var OSF_SUPPORT_EMAIL = $osf.osfSupportEmail();
+
         return m('ul.list-group m-md', [
             // Error message if the request fails
             ctrl.failed ? m('p', [
                 'Unable to retrieve public ' + ctrl.nodeType + ' at this time. Please refresh the page or contact ',
-                m('a', {'href': 'mailto:support@osf.io'}, 'support@osf.io'),
+                m('a', {'href': 'mailto:' + OSF_SUPPORT_EMAIL}, OSF_SUPPORT_EMAIL),
                 ' if the problem persists.'
             ]) :
 

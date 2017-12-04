@@ -129,7 +129,10 @@ USE_CDN_FOR_CLIENT_LIBS = True
 
 USE_EMAIL = True
 FROM_EMAIL = 'openscienceframework-noreply@osf.io'
-SUPPORT_EMAIL = 'support@osf.io'
+
+# support email
+OSF_SUPPORT_EMAIL = 'support@osf.io'
+
 
 # Default settings for fake email address generation
 FAKE_EMAIL_NAME = 'freddiemercury'
