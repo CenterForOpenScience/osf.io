@@ -105,6 +105,7 @@ from osf.models import NodeRelation, Guid
 from osf.models import BaseFileNode
 from osf.models.files import File, Folder
 from addons.wiki.models import NodeWikiPage
+from website import mails
 from website.exceptions import NodeStateError
 from website.util.permissions import ADMIN, PERMISSIONS
 
@@ -1525,7 +1526,8 @@ class NodeForksList(JSONAPIBaseView, generics.ListCreateAPIView, NodeMixin, Node
 
     Paginated list of the current node's forks ordered by their `forked_date`. Forks are copies of projects that you can
     change without affecting the original project.  When creating a fork, your fork will will only contain public components or those
-    for which you are a contributor.  Private components that you do not have access to will not be forked.
+    for which you are a contributor.  Private components that you do not have access to will not be forked. You will receive an email
+    when your fork completes.
 
     ##Node Fork Attributes
 
@@ -1616,7 +1618,15 @@ class NodeForksList(JSONAPIBaseView, generics.ListCreateAPIView, NodeMixin, Node
 
     # overrides ListCreateAPIView
     def perform_create(self, serializer):
-        serializer.save(node=self.get_node())
+        user = get_user_auth(self.request).user
+        node = self.get_node()
+        try:
+            fork = serializer.save(node=node)
+        except Exception as exc:
+            mails.send_mail(user.email, mails.FORK_FAILED, title=node.title, guid=node._id, mimetype='html')
+            raise exc
+        else:
+            mails.send_mail(user.email, mails.FORK_COMPLETED, title=fork.title, guid=fork._id, mimetype='html')
 
     # overrides ListCreateAPIView
     def get_parser_context(self, http_request):

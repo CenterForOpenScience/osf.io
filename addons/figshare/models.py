@@ -81,7 +81,7 @@ class FigshareProvider(ExternalProvider):
 
         return {
             'provider_id': about['id'],
-            'display_name': '{} {}'.format(about['first_name'], about.get('last_name')),
+            'display_name': u'{} {}'.format(about['first_name'], about.get('last_name')),
         }
 
 

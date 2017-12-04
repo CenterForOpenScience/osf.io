@@ -220,6 +220,13 @@ var _githubItemButtons = {
                             icon: 'fa fa-trash',
                             className: 'text-danger'
                         }, 'Delete Folder'));
+                        buttons.push(
+                            m.component(Fangorn.Components.button, {
+                                onclick: function (event) { Fangorn.ButtonEvents._downloadZipEvent.call(tb, event, item); },
+                                icon: 'fa fa-download',
+                                className: 'text-primary'
+                            }, 'Download as zip')
+                        );
                     }
                 }
                 if (item.data.addonFullname) {
@@ -300,6 +307,9 @@ var _githubItemButtons = {
 
 function changeBranch(item, ref){
     item.data.branch = ref;
+    var index = item.data.urls.repo.lastIndexOf('/tree/');
+    var branch_url = item.data.urls.repo.substring(0, index + 1);
+    item.data.urls.repo = branch_url + 'tree/' + ref;
     this.updateFolder(null, item);
 }
 

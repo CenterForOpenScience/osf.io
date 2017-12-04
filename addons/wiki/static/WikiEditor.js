@@ -148,6 +148,7 @@ function ViewModel(url, viewText) {
         });
         request.fail(function (xhr, textStatus, error) {
             $osf.growl('Error','The wiki content could not be loaded.');
+            self.status('disconnected');
             Raven.captureMessage('Could not GET wiki contents.', {
                 extra: {
                     url: url,
