@@ -1,7 +1,7 @@
 from rest_framework import permissions
 
 from api.base.utils import get_user_auth
-from osf.models import BaseFileNode, AbstractNode
+from osf.models import BaseFileNode
 
 class CheckedOutOrAdmin(permissions.BasePermission):
     def has_object_permission(self, request, view, obj):

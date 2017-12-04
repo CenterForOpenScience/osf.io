@@ -12,7 +12,6 @@ from osf.utils.fields import EncryptedJSONField
 from osf.utils.datetime_aware_jsonfield import DateTimeAwareJSONField
 from osf.exceptions import InvalidTagError, NodeStateError, TagNotFoundError
 from framework.auth.core import Auth
-from osf.models.node import Node
 from osf.models.mixins import Loggable
 from osf.models.files import File, FileVersion, Folder, TrashedFileNode, BaseFileNode, BaseFileNodeManager
 from osf.utils.auth import Auth
