@@ -1882,7 +1882,7 @@ $(function(){
     };
 
     commandProto.addLinkDef = function (chunk, linkDef) {
-        console.log({chunk, linkDef});
+
         var refNumber = 0; // The current reference number
         var defsToAdd = {}; //
         // Start with a clean slate by removing all previous link definitions.
@@ -1961,7 +1961,6 @@ $(function(){
     }
 
     commandProto.doLinkOrImage = function (chunk, postProcessing, isImage, link, multiple, num) {
-        console.log({chunk, postProcessing, isImage, link, multiple, num});
         chunk.trimWhitespace();
         chunk.findTags(/\s*!?\[/, /\][ ]?(?:\n[ ]*)?(\[.*?\])?/);
         var background;
