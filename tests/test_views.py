@@ -3396,6 +3396,20 @@ class TestAuthLoginAndRegisterLogic(OsfTestCase):
             data.get('next_url'),
             get_login_url(web_url_for('dashboard', _absolute=True), campaign='institution'))
 
+    def test_institution_login_next_url_with_auth(self):
+        # institution login: user with auth and next url
+        data = login_and_register_handler(self.auth, next_url=self.next_url, campaign='institution')
+        assert_equal(data.get('status_code'), http.FOUND)
+        assert_equal(data.get('next_url'), self.next_url)
+
+    def test_institution_login_next_url_without_auth(self):
+        # institution login: user without auth and next url
+        data = login_and_register_handler(self.no_auth, next_url=self.next_url ,campaign='institution')
+        assert_equal(data.get('status_code'), http.FOUND)
+        assert_equal(
+            data.get('next_url'),
+            get_login_url(self.next_url, campaign='institution'))
+
     def test_institution_regsiter_with_auth(self):
         # institution register: user with auth
         data = login_and_register_handler(self.auth, login=False, campaign='institution')
