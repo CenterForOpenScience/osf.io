@@ -88,9 +88,11 @@ INSTALLED_APPS = (
     'webpack_loader',
     'django_nose',
     'password_reset',
+    'guardian',
 
     # OSF
     'osf',
+    'reviews',
 
     # Addons
     'addons.osfstorage',
@@ -114,6 +116,7 @@ INSTALLED_APPS = (
 
 MIGRATION_MODULES = {
     'osf': None,
+    'reviews': None,
     'addons_osfstorage': None,
     'addons_wiki': None,
     'addons_twofactor': None,
@@ -239,5 +242,9 @@ if DEBUG:
     INSTALLED_APPS += ('debug_toolbar', )
     MIDDLEWARE_CLASSES += ('debug_toolbar.middleware.DebugToolbarMiddleware', )
     DEBUG_TOOLBAR_CONFIG = {
-        'SHOW_TOOLBAR_CALLBACK': lambda(_): True
+        'SHOW_TOOLBAR_CALLBACK': lambda(_): True,
+        'DISABLE_PANELS': {
+            'debug_toolbar.panels.templates.TemplatesPanel',
+            'debug_toolbar.panels.redirects.RedirectsPanel'
+        }
     }

@@ -16,6 +16,7 @@ urlpatterns = [
             [
                 url(r'^$', views.root, name='root'),
                 url(r'^status/', views.status_check, name='status_check'),
+                url(r'^actions/', include('api.actions.urls', namespace='actions')),
                 url(r'^addons/', include('api.addons.urls', namespace='addons')),
                 url(r'^applications/', include('api.applications.urls', namespace='applications')),
                 url(r'^citations/', include('api.citations.urls', namespace='citations')),

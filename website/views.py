@@ -20,9 +20,10 @@ from framework.flask import redirect  # VOL-aware redirect
 from framework.forms import utils as form_utils
 from framework.routing import proxy_url
 from framework.auth.core import get_current_user_id
+from website import settings
 from website.institutions.views import serialize_institution
 
-from osf.models import BaseFileNode, Guid, Institution, PreprintService, AbstractNode
+from osf.models import BaseFileNode, Guid, Institution, PreprintService, AbstractNode, Node
 from website.settings import EXTERNAL_EMBER_APPS, PROXY_EMBER_APPS, INSTITUTION_DISPLAY_NODE_THRESHOLD, DOMAIN
 from website.project.model import has_anonymous_link
 from website.util import permissions
@@ -92,7 +93,7 @@ def serialize_node_summary(node, auth, primary=True, show_path=False):
             'title': node.title,
             'category': node.category,
             'isPreprint': bool(node.preprint_file_id),
-            'childExists': node.nodes_active.exists(),
+            'childExists': Node.objects.get_children(node, active=True).exists(),
             'is_admin': node.has_permission(user, permissions.ADMIN),
             'is_contributor': node.is_contributor(user),
             'logged_in': auth.logged_in,
@@ -347,3 +348,13 @@ def redirect_to_home():
 def redirect_to_cos_news(**kwargs):
     # Redirect to COS News page
     return redirect('https://cos.io/news/')
+
+
+# Return error for legacy SHARE v1 search route
+def legacy_share_v1_search(**kwargs):
+    return HTTPError(
+        http.BAD_REQUEST,
+        data=dict(
+            message_long='Please use v2 of the SHARE search API available at {}api/v2/share/search/creativeworks/_search.'.format(settings.SHARE_URL)
+        )
+    )

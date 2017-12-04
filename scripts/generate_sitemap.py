@@ -137,6 +137,10 @@ class Sitemap(object):
         self.errors += 1
         logger.info('Error on {}, {}:'.format(obj, obj_id))
         logger.exception(error)
+
+        if self.errors <= 10:
+            sentry.log_message('Sitemap Error: {}'.format(error))
+
         if self.errors == 1000:
             sentry.log_message('ERROR: generate_sitemap stopped execution after reaching 1000 errors. See logs for details.')
             raise Exception('Too many errors generating sitemap.')
@@ -172,13 +176,13 @@ class Sitemap(object):
         objs = (AbstractNode.objects
             .filter(is_public=True, is_deleted=False, retraction_id__isnull=True)
             .exclude(type__in=["osf.collection", "osf.quickfilesnode"])
-            .values('guids___id', 'date_modified'))
+            .values('guids___id', 'modified'))
         progress.start(objs.count(), 'NODE: ')
         for obj in objs:
             try:
                 config = settings.SITEMAP_NODE_CONFIG
                 config['loc'] = urlparse.urljoin(settings.DOMAIN, '/{}/'.format(obj['guids___id']))
-                config['lastmod'] = obj['date_modified'].strftime('%Y-%m-%d')
+                config['lastmod'] = obj['modified'].strftime('%Y-%m-%d')
                 self.add_url(config)
             except Exception as e:
                 self.log_errors('NODE', obj['guids___id'], e)
@@ -193,7 +197,7 @@ class Sitemap(object):
         osf = PreprintProvider.objects.get(_id='osf')
         for obj in objs:
             try:
-                preprint_date = obj.date_modified.strftime('%Y-%m-%d')
+                preprint_date = obj.modified.strftime('%Y-%m-%d')
                 config = settings.SITEMAP_PREPRINT_CONFIG
                 preprint_url = obj.url
                 provider = obj.provider

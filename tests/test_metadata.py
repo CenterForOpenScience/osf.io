@@ -21,14 +21,14 @@ class TestMetaData(OsfTestCase):
         # Should be zero MetaSchema records to begin with
         MetaSchema.remove()
         assert_equal(
-            MetaSchema.find().count(),
+            MetaSchema.objects.all().count(),
             0
         )
 
         ensure_schemas()
 
         assert_equal(
-            MetaSchema.find().count(),
+            MetaSchema.objects.all().count(),
             len(OSF_META_SCHEMAS)
         )
 

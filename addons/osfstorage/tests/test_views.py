@@ -106,7 +106,6 @@ class TestGetMetadataHook(HookTestCase):
         assert_equal(res_date_created, expected_date_created)
         assert_equal(res_data, expected_data)
 
-
     def test_osf_storage_root(self):
         auth = Auth(self.project.creator)
         result = osf_storage_root(self.node_settings.config, self.node_settings, auth)
@@ -393,7 +392,7 @@ class TestUpdateMetadataHook(HookTestCase):
         )
 
     def test_callback(self):
-        self.version.date_modified = None
+        self.version.external_modified = None
         self.version.save()
         self.send_metadata_hook()
         self.version.reload()
@@ -404,7 +403,7 @@ class TestUpdateMetadataHook(HookTestCase):
 
         #Test attributes are populated
         assert_equal(self.version.size, 123)
-        assert_true(isinstance(self.version.date_modified, datetime.datetime))
+        assert_true(isinstance(self.version.external_modified, datetime.datetime))
 
     def test_archived(self):
         self.send_metadata_hook({
@@ -846,9 +845,9 @@ class TestMoveHook(HookTestCase):
         )
         assert_equal(res.status_code, 200)
 
-    def test_cannot_move_file_out_of_quickfiles_node(self):
+    def test_can_move_file_out_of_quickfiles_node(self):
         quickfiles_node = QuickFilesNode.objects.get_for_user(self.user)
-        quickfiles_file = create_test_file(quickfiles_node, self.user, filename='slippery.mp3')
+        create_test_file(quickfiles_node, self.user, filename='slippery.mp3')
         quickfiles_folder = OsfStorageFolder.objects.get(node=quickfiles_node)
         dest_folder = OsfStorageFolder.objects.get(node=self.project)
 
@@ -856,7 +855,7 @@ class TestMoveHook(HookTestCase):
             'osfstorage_move_hook',
             {'nid': quickfiles_node._id},
             payload={
-                'source': quickfiles_file._id,
+                'source': quickfiles_folder._id,
                 'node': quickfiles_node._id,
                 'user': self.user._id,
                 'destination': {
@@ -866,9 +865,8 @@ class TestMoveHook(HookTestCase):
                 }
             },
             method='post_json',
-            expect_errors=True,
         )
-        assert_equal(res.status_code, 400)
+        assert_equal(res.status_code, 200)
 
     def test_can_rename_file_in_quickfiles_node(self):
         quickfiles_node = QuickFilesNode.objects.get_for_user(self.user)
@@ -903,7 +901,7 @@ class TestMoveHook(HookTestCase):
 
 @pytest.mark.django_db
 class TestCopyHook(HookTestCase):
-    def test_cannot_copy_file_out_of_quickfiles_node(self):
+    def test_can_copy_file_out_of_quickfiles_node(self):
         quickfiles_node = QuickFilesNode.objects.get_for_user(self.user)
         create_test_file(quickfiles_node, self.user, filename='dont_copy_meeeeeeeee.mp3')
         quickfiles_folder = OsfStorageFolder.objects.get(node=quickfiles_node)
@@ -923,9 +921,8 @@ class TestCopyHook(HookTestCase):
                 }
             },
             method='post_json',
-            expect_errors=True,
         )
-        assert_equal(res.status_code, 400)
+        assert_equal(res.status_code, 201)
 
 
 @pytest.mark.django_db

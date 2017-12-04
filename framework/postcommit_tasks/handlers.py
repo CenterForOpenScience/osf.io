@@ -9,6 +9,7 @@ from collections import OrderedDict
 import os
 
 from celery import chain
+from celery.canvas import Signature
 from framework.celery_tasks import app
 from celery.local import PromiseProxy
 from gevent.pool import Pool
@@ -36,7 +37,9 @@ def postcommit_before_request():
 def postcommit_celery_task_wrapper(queue):
     # chain.apply calls the tasks synchronously without re-enqueuing each one
     # http://stackoverflow.com/questions/34177131/how-to-solve-python-celery-error-when-using-chain-encodeerrorruntimeerrormaxi?answertab=votes#tab-top
-    chain(*queue.values()).apply()
+    # celery serialized signatures into dictionaries, so we need to deserialize here
+    # https://sentry.cos.io/sentry/osf-iy/issues/289209/
+    chain([Signature.from_dict(task_dict) for task_dict in queue.values()]).apply()
 
 def postcommit_after_request(response, base_status_error_code=500):
     if response.status_code >= base_status_error_code:

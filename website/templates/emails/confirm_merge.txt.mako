@@ -7,3 +7,10 @@ Both ${user.username} and ${email} can be used to log into the account. However,
 This action is irreversible. To confirm this account merge, click this link: ${confirmation_url}.
 
 If you do not wish to merge these accounts, no action is required on your part. If you have any questions about this email, please direct them to support@osf.io.
+
+
+Center for Open Science
+
+210 Ridge McIntire Road, Suite 500, Charlottesville, VA 22903-5083
+
+Privacy Policy: https://github.com/CenterForOpenScience/cos.io/blob/master/PRIVACY_POLICY.md

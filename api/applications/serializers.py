@@ -67,7 +67,7 @@ class ApiOAuth2ApplicationSerializer(ApiOAuthApplicationBaseSerializer):
                           read_only=True,  # Don't let user register an application in someone else's name
                           source='owner._id')
 
-    date_created = DateByVersion(help_text='The date this application was generated (automatically filled in)',
+    date_created = DateByVersion(source='created', help_text='The date this application was generated (automatically filled in)',
                                      read_only=True)
 
     def create(self, validated_data):

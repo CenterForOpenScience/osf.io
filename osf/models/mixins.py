@@ -2,10 +2,12 @@ import pytz
 from django.apps import apps
 from django.db import models
 from django.core.exceptions import ObjectDoesNotExist
+from django.utils import timezone
 from framework.analytics import increment_user_activity_counters
 from osf.models.node_relation import NodeRelation
 from osf.models.nodelog import NodeLog
 from osf.models.tag import Tag
+from osf.utils.fields import NonNaiveDateTimeField
 from website.exceptions import NodeStateError
 from website import settings
 
@@ -51,7 +53,8 @@ class Versioned(models.Model):
 
 
 class Loggable(models.Model):
-    # TODO: This should be in the NodeLog model
+
+    last_logged = NonNaiveDateTimeField(db_index=True, null=True, blank=True, default=timezone.now)
 
     def add_log(self, action, params, auth, foreign_user=None, log_date=None, save=True, request=None):
         AbstractNode = apps.get_model('osf.AbstractNode')
@@ -73,9 +76,9 @@ class Loggable(models.Model):
         log.save()
 
         if self.logs.count() == 1:
-            self.date_modified = log.date.replace(tzinfo=pytz.utc)
+            self.last_logged = log.date.replace(tzinfo=pytz.utc)
         else:
-            self.date_modified = self.logs.first().date
+            self.last_logged = self.logs.first().date
 
         if save:
             self.save()
@@ -91,6 +94,13 @@ class Loggable(models.Model):
 class Taggable(models.Model):
 
     tags = models.ManyToManyField('Tag', related_name='%(class)s_tagged')
+
+    def update_tags(self, new_tags, auth=None, save=True, log=True, system=False):
+        old_tags = set(self.tags.values_list('name', flat=True))
+        for tag in (set(new_tags) - old_tags):
+            self.add_tag(tag, auth=auth, save=save, log=log, system=system)
+        for tag in (old_tags - set(new_tags)):
+            self.remove_tag(tag, auth, save=save)
 
     def add_tag(self, tag, auth=None, save=True, log=True, system=False):
         if not system and not auth:
@@ -110,6 +120,9 @@ class Taggable(models.Model):
                 self.save()
             self.on_tag_added(tag_instance)
         return tag_instance
+
+    def remove_tag(self, *args, **kwargs):
+        raise NotImplementedError('Removing tags requires that remove_tag is implemented')
 
     def add_system_tag(self, tag, save=True):
         if isinstance(tag, Tag) and not tag.system:
