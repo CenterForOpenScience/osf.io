@@ -6,8 +6,6 @@ import logging
 import sys
 
 from django.db import transaction
-from modularodm import Q
-from modularodm.exceptions import NoResultsFound
 from website.app import init_app
 from website.settings import PREPRINT_PROVIDER_DOMAINS, DOMAIN, PROTOCOL
 import django
@@ -39,8 +37,8 @@ def get_subject_id(name):
 
 def get_license(name):
     try:
-        license = NodeLicense.find_one(Q('name', 'eq', name))
-    except NoResultsFound:
+        license = NodeLicense.objects.get(name=name)
+    except NodeLicense.DoesNotExist:
         raise Exception('License: "{}" not found'.format(name))
     return license
 
@@ -91,6 +89,7 @@ def main(env):
         'osf': {
             '_id': 'osf',
             'name': 'Open Science Framework',
+            'share_publish_type': 'Preprint',
             'description': 'A scholarly commons to connect the entire research cycle',
             'domain': DOMAIN,
             'domain_redirect_enabled': False,  # Never change this
@@ -109,6 +108,7 @@ def main(env):
         'engrxiv': {
             '_id': 'engrxiv',
             'name': 'engrXiv',
+            'share_publish_type': 'Preprint',
             'description': 'The open archive of engineering.',
             'domain': format_domain_url('engrxiv.org'),
             'domain_redirect_enabled': False,
@@ -248,6 +248,7 @@ def main(env):
         'psyarxiv': {
             '_id': 'psyarxiv',
             'name': 'PsyArXiv',
+            'share_publish_type': 'Preprint',
             'description': 'A free preprint service for the psychological sciences.',
             'domain': format_domain_url('psyarxiv.com'),
             'domain_redirect_enabled': False,
@@ -333,6 +334,7 @@ def main(env):
         'socarxiv': {
             '_id': 'socarxiv',
             'name': 'SocArXiv',
+            'share_publish_type': 'Preprint',
             'description': 'Open archive of the social sciences',
             'domain': format_domain_url('socarxiv.org'),
             'domain_redirect_enabled': False,
@@ -378,6 +380,7 @@ def main(env):
         'scielo': {
             '_id': 'scielo',
             'name': 'SciELO',
+            'share_publish_type': 'Preprint',
             'description': 'Advancing Research Communication',
             'domain': format_domain_url('scielo.org'),
             'domain_redirect_enabled': False,
@@ -396,6 +399,7 @@ def main(env):
         'lawarxiv': {
             '_id': 'lawarxiv',
             'name': 'LawArXiv',
+            'share_publish_type': 'Preprint',
             'description': 'Legal Scholarship in the Open',
             'domain': '',  # No domain information yet
             'domain_redirect_enabled': False,
@@ -446,6 +450,7 @@ def main(env):
         'agrixiv': {
             '_id': 'agrixiv',
             'name': 'AgriXiv',
+            'share_publish_type': 'Preprint',
             'description': 'Preprints for Agriculture and Allied Sciences',
             'domain': format_domain_url('agrixiv.org'),
             'domain_redirect_enabled': False,
@@ -1069,6 +1074,7 @@ def main(env):
         'bitss': {
             '_id': 'bitss',
             'name': 'BITSS',
+            'share_publish_type': 'Preprint',
             'description': 'An interdisciplinary archive of articles focused on improving research transparency and reproducibility',
             'domain': '',  # Not using domain
             'domain_redirect_enabled': False,

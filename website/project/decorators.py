@@ -5,20 +5,17 @@ import httplib as http
 from furl import furl
 from flask import request
 
-from modularodm import Q
-from modularodm.exceptions import ModularOdmException
-
 from framework import status
 from framework.auth import Auth, cas
 from framework.flask import redirect  # VOL-aware redirect
 from framework.exceptions import HTTPError
 from framework.auth.decorators import collect_auth
-from framework.mongo.utils import get_or_http_error
+from framework.database import get_or_http_error
 
-from osf.models import AbstractNode as Node
+from osf.models import AbstractNode
 from website import settings
 
-_load_node_or_fail = lambda pk: get_or_http_error(Node, pk)
+_load_node_or_fail = lambda pk: get_or_http_error(AbstractNode, pk)
 
 
 def _kwargs_to_nodes(kwargs):
@@ -65,7 +62,7 @@ def must_not_be_rejected(func):
     @functools.wraps(func)
     def wrapped(*args, **kwargs):
 
-        node = get_or_http_error(Node, kwargs.get('nid', kwargs.get('pid')), allow_deleted=True)
+        node = get_or_http_error(AbstractNode, kwargs.get('nid', kwargs.get('pid')), allow_deleted=True)
         if node.sanction and node.sanction.is_rejected:
             raise HTTPError(http.GONE, data=dict(
                 message_long='This registration has been rejected'
@@ -75,7 +72,7 @@ def must_not_be_rejected(func):
 
     return wrapped
 
-def must_be_valid_project(func=None, retractions_valid=False):
+def must_be_valid_project(func=None, retractions_valid=False, quickfiles_valid=False):
     """ Ensures permissions to retractions are never implicitly granted. """
 
     # TODO: Check private link
@@ -86,7 +83,7 @@ def must_be_valid_project(func=None, retractions_valid=False):
 
             _inject_nodes(kwargs)
 
-            if getattr(kwargs['node'], 'is_collection', True):
+            if getattr(kwargs['node'], 'is_collection', True) or (getattr(kwargs['node'], 'is_quickfiles', True) and not quickfiles_valid):
                 raise HTTPError(
                     http.NOT_FOUND
                 )
@@ -223,13 +220,12 @@ def _must_be_contributor_factory(include_public, include_view_only_anon=True):
             #if not login user check if the key is valid or the other privilege
 
             kwargs['auth'].private_key = key
-            link_anon = None
             if not include_view_only_anon:
                 from osf.models import PrivateLink
                 try:
-                    link_anon = PrivateLink.find_one(Q('key', 'eq', key)).anonymous
-                except ModularOdmException:
-                    pass
+                    link_anon = PrivateLink.objects.filter(key=key).values_list('anonymous', flat=True).get()
+                except PrivateLink.DoesNotExist:
+                    link_anon = None
 
             if not node.is_public or not include_public:
                 if not include_view_only_anon and link_anon:

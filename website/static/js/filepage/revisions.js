@@ -1,6 +1,5 @@
 var m = require('mithril');
 var $ = require('jquery');
-var bootbox = require('bootbox');  // TODO: Why is this required? Is it?  See [#OSF-6100]
 var $osf = require('js/osfHelpers');
 var waterbutler = require('js/waterbutler');
 
@@ -129,11 +128,11 @@ var FileRevisionsTable = {
                   m('a', {href: parseInt(revision.displayVersion) === model.revisions.length ? self.baseUrl : revision.osfViewUrl}, revision.displayVersion)
                 ),
                 model.hasDate ? m('td', revision.displayDate) : false,
-                model.hasUser && !window.contextVars.node.anonymous ?
+                model.hasUser ? window.contextVars.node.anonymous ? m('td', 'Anonymous Contributor') :
                     m('td', revision.extra.user.url ?
                             m('a', {href: revision.extra.user.url}, revision.extra.user.name) :
                             revision.extra.user.name
-                    ) : m('td', 'Anonymous Contributor'),
+                    ) : false,
                 m('td', revision.extra.downloads > -1 ? m('.badge', revision.extra.downloads) : ''),
                 m('td',
                     m('a.btn.btn-primary.btn-sm.file-download', {
@@ -228,7 +227,7 @@ var FileRevisionsTable = {
         }
 
         revision.osfViewUrl = '?' + $.param(options);
-        revision.osfDownloadUrl = 'download?' + $.param(options);
+        revision.osfDownloadUrl = !index ? 'download' : 'download?' + $.param(options);
 
         return revision;
     }

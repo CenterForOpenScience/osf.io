@@ -11,7 +11,6 @@ SILENT_LOGGERS = [
     'factory.containers',
     'framework.analytics',
     'framework.auth.core',
-    'framework.celery_tasks.signals',
     'website.app',
     'website.archiver.tasks',
     'website.mails',
@@ -19,6 +18,8 @@ SILENT_LOGGERS = [
     'website.search.elastic_search',
     'website.search_migration.migrate',
     'website.util.paths',
+    'transitions.core',
+    'MARKDOWN',
 ]
 for logger_name in SILENT_LOGGERS:
     logging.getLogger(logger_name).setLevel(logging.CRITICAL)

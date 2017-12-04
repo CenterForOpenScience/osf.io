@@ -32,6 +32,7 @@
             <li role="presentation" id="healthy-user-tab"><a href="#healthy-user-metrics" role="tab" data-toggle="tab">Healthy User Metrics</a></li>
             <li role="presentation" id="raw-numbers-tab"><a href="#raw-numbers" role="tab" data-toggle="tab">Raw Numbers</a></li>
             <li role="presentation" id="addons-tab"><a href="#addons" role="tab" data-toggle="tab">Addons</a></li>
+            <li role="presentation" id="preprints-tab"><a href="#preprints" role="tab" data-toggle="tab">Preprints</a></li>
         </ul>
 
         <!-- Tab panes -->
@@ -576,10 +577,50 @@
                                 Stickiness Ratio
                             </div>
                             <div class="chart-stage">
-                                <div id="stickiness-ratio"></div>
+                                <div id="stickiness-ratio-1-day-ago"></div>
                             </div>
                             <div class="chart-notes">
-                                Of those that are active in the last month, how many are active daily? Daily Active Users / Monthly Active Users.
+                                Of those that are active in the last 30 days, how many are active daily? 
+                                Formula: Daily Active Users (yesterday) / Daily Active Users previous 30 days
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-sm-4">
+                        <div class="chart-wrapper">
+                            <div class="chart-title">
+                                Stickiness Ratio 1 week ago
+                            </div>
+                            <div class="chart-stage">
+                                <div id="stickiness-ratio-1-week-ago"></div>
+                            </div>
+                            <div class="chart-notes">
+                                Stickiness Ratio for the same day of the week 1 week ago.
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-sm-4">
+                        <div class="chart-wrapper">
+                            <div class="chart-title">
+                                Stickiness Ratio 4 weeks ago
+                            </div>
+                            <div class="chart-stage">
+                                <div id="stickiness-ratio-4-weeks-ago"></div>
+                            </div>
+                            <div class="chart-notes">
+                                Stickiness Ratio for the same day of the week 4 weeks ago.
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-sm-4">
+                        <div class="chart-wrapper">
+                            <div class="chart-title">
+                                Stickiness Ratio 52 weeks ago
+                            </div>
+                            <div class="chart-stage">
+                                <div id="stickiness-ratio-52-weeks-ago"></div>
+                            </div>
+                            <div class="chart-notes">
+                                Stickiness Ratio for the same day of the week 52 weeks ago.
                             </div>
                         </div>
                     </div>
@@ -919,13 +960,45 @@
                     <div class="col-sm-12">
                         <div class="chart-wrapper">
                             <div class="chart-title">
-                                Pevious 7 days of addon by name
+                                Previous 7 days of addon by name
                             </div>
                             <div class="chart-stage">
                                 <div id="previous-7-days-of-linked-addon-by-addon-name"></div>
                             </div>
                             <div class="chart-notes">
                                 The total number of all registered nodes - projects & components on the OSF.
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div role="tabpanel" class="tab-pane" id="preprints">
+                <div><h2>Preprints</h2></div>
+                <hr class="hr-menu">
+                <div class="row">
+                    <div class="col-sm-12">
+                        <div class="chart-wrapper">
+                            <div class="chart-title">
+                                Previous 30 days of preprints by provider
+                            </div>
+                            <div class="chart-stage">
+                                <div id="preprints-added"></div>
+                            </div>
+                            <div class="chart-notes">
+                                <div>
+                                    The total number of preprints grouped by preprint provider.
+                                </div>
+                                <span>
+                                    Start date range:
+                                    <input id="start-date" placeholder="yyyy-mm-dd" type="date">
+                                </span>
+                                <span>
+                                    End date range:
+                                    <input id="end-date" placeholder="yyyy-mm-dd" type="date">
+                                </span>
+                                <span>
+                                    <a class="btn btn-success" id="preprints-range">Enter new date range</a>
+                                </span>
                             </div>
                         </div>
                     </div>

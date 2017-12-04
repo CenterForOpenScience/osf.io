@@ -9,7 +9,6 @@ require('js/osfToggleHeight');
 var m = require('mithril');
 var Fangorn = require('js/fangorn').Fangorn;
 var Raven = require('raven-js');
-var lodashGet  = require('lodash.get');
 require('truncate');
 
 var $osf = require('js/osfHelpers');
@@ -23,7 +22,6 @@ var mathrender = require('js/mathrender');
 var md = require('js/markdown').full;
 var oldMd = require('js/markdown').old;
 var AddProject = require('js/addProjectPlugin');
-var mHelpers = require('js/mithrilHelpers');
 var SocialShare = require('js/components/socialshare');
 
 var ctx = window.contextVars;
@@ -40,8 +38,7 @@ $('body').on('nodeLoad', function(event, data) {
     }
     // Initialize CitationWidget if user isn't viewing through an anonymized VOL
     if (!data.node.anonymous && !data.node.is_retracted) {
-        var citations = data.node.alternative_citations;
-        new CitationList('#citationList', citations, data.user);
+        new CitationList('#citationList');
         new CitationWidget('#citationStyleInput', '#citationText');
     }
     // Initialize nodeControl
@@ -59,7 +56,6 @@ if ($comments.length) {
         rootId: window.contextVars.node.id,
         fileId: null,
         canComment: window.contextVars.currentUser.canComment,
-        hasChildren: window.contextVars.node.hasChildren,
         currentUser: window.contextVars.currentUser,
         pageTitle: window.contextVars.node.title,
         inputSelector: '.atwho-input'
@@ -121,24 +117,20 @@ $(document).ready(function () {
         contributors: window.contextVars.node.contributors,
         currentUserCanEdit: window.contextVars.currentUser.canEdit
     });
-    var newComponentElem = document.getElementById('newComponent');
-    if (newComponentElem) {
-        m.mount(newComponentElem, AddComponentButton);
-    }
-
-    if (ctx.node.institutions.length && !ctx.node.anonymous && !ctx.node.isRetracted) {
-        m.mount(document.getElementById('instLogo'), m.component(institutionLogos, {institutions: window.contextVars.node.institutions}));
-    }
-    $('#contributorsList').osfToggleHeight();
 
     if (!ctx.node.isRetracted) {
+        if (ctx.node.institutions.length && !ctx.node.anonymous) {
+            m.mount(document.getElementById('instLogo'), m.component(institutionLogos, {institutions: window.contextVars.node.institutions}));
+        }
+        $('#contributorsList').osfToggleHeight();
+
         // Recent Activity widget
         m.mount(document.getElementById('logFeed'), m.component(LogFeed.LogFeed, {node: node}));
 
         // Treebeard Files view
-        $.ajax({
-            url:  nodeApiUrl + 'files/grid/'
-        }).done(function (data) {
+        var urlFilesGrid = nodeApiUrl + 'files/grid/';
+        var promise = m.request({ method: 'GET', config: $osf.setXHRAuthorization, url: urlFilesGrid});
+        promise.then(function (data) {
             var fangornOpts = {
                 divID: 'treeGrid',
                 filesData: data.data,
@@ -201,45 +193,111 @@ $(document).ready(function () {
                 }
             };
             var filebrowser = new Fangorn(fangornOpts);
-        });
+            var newComponentElem = document.getElementById('newComponent');
+            if (window.contextVars.node.isPublic) {
+                m.mount(
+                    document.getElementById('shareButtonsPopover'),
+                    m.component(
+                        SocialShare.ShareButtonsPopover,
+                        {title: window.contextVars.node.title, url: window.location.href}
+                    )
+                );
+            }
+            if (newComponentElem) {
+                m.mount(newComponentElem, AddComponentButton);
+            }
+            return promise;
+        }, function(xhr, textStatus, error) {
+            Raven.captureMessage('Error retrieving filebrowser', {extra: {url: urlFilesGrid, textStatus: textStatus, error: error}});
+        }
+
+      );
+
     }
 
     // Tooltips
     $('[data-toggle="tooltip"]').tooltip({container: 'body'});
 
     // Tag input
+    var nodeType = window.contextVars.node.isRegistration ? 'registrations':'nodes';
+    var tagsApiUrl = $osf.apiV2Url(nodeType + '/' + window.contextVars.node.id + '/');
     $('#node-tags').tagsInput({
         width: '100%',
-        interactive: window.contextVars.currentUser.canEdit,
+        interactive: window.contextVars.currentUser.canEditTags,
         maxChars: 128,
         defaultText: 'add a tag to enhance discoverability',
         onAddTag: function(tag) {
             $('#node-tags_tag').attr('data-default', 'add a tag');
-            var url = nodeApiUrl + 'tags/';
-            var data = {tag: tag};
-            var request = $osf.postJSON(url, data);
+            var newTagsList = window.contextVars.node.tags;
+            newTagsList.push(tag);
+            var payload = {
+                data: {
+                    type: nodeType,
+                    id: window.contextVars.node.id,
+                    attributes: {
+                        tags: newTagsList
+                    }
+                }
+            };
+
+            var request = $osf.ajaxJSON(
+                'PATCH',
+                tagsApiUrl,
+                {
+                    data: payload,
+                    isCors: true
+                }
+            );
+
+            request.done(function() {
+                window.contextVars.node.tags.push(tag);
+            });
+
             request.fail(function(xhr, textStatus, error) {
                 Raven.captureMessage('Failed to add tag', {
                     extra: {
-                        tag: tag, url: url, textStatus: textStatus, error: error
+                        tag: tag, url: tagsApiUrl, textStatus: textStatus, error: error
                     }
                 });
             });
         },
         onRemoveTag: function(tag) {
-            var url = nodeApiUrl + 'tags/';
-            // Don't try to delete a blank tag (would result in a server error)
             if (!tag) {
                 return false;
             }
-            var request = $osf.ajaxJSON('DELETE', url, {'data': {'tag': tag}});
+            var newTagsList = window.contextVars.node.tags;
+            newTagsList.splice(newTagsList.indexOf(tag),1);
+
+            var payload = {
+                data: {
+                    type: nodeType,
+                    id: window.contextVars.node.id,
+                    attributes: {
+                        tags: newTagsList
+                    }
+                }
+            };
+
+            var request = $osf.ajaxJSON(
+                'PATCH',
+                tagsApiUrl,
+                {
+                    data: payload,
+                    isCors: true
+                }
+            );
+
+            request.done(function() {
+                window.contextVars.node.tags.splice(window.contextVars.node.tags.indexOf(tag), 1);
+            });
+
             request.fail(function(xhr, textStatus, error) {
                 // Suppress "tag not found" errors, as the end result is what the user wanted (tag is gone)- eg could be because two people were working at same time
                 if (xhr.status !== 409) {
                     $osf.growl('Error', 'Could not remove tag');
                     Raven.captureMessage('Failed to remove tag', {
                         extra: {
-                            tag: tag, url: url, textStatus: textStatus, error: error
+                            tag: tag, url: tagsApiUrl, textStatus: textStatus, error: error
                         }
                     });
                 }
@@ -287,11 +345,5 @@ $(document).ready(function () {
         $('span.tag span').each(function(idx, elm) {
             $(elm).text($(elm).text().replace(/\s*$/, ''));
         });
-    }
-
-    if (window.contextVars.node.isPublic && !window.contextVars.node.isRetracted) {
-        m.mount(document.getElementById('shareButtonsPopover'),
-                m.component(SocialShare.ShareButtonsPopover,
-                    {title: window.contextVars.node.title, url: window.location.href}));
     }
 });

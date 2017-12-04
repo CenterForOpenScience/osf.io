@@ -148,7 +148,6 @@ logs/*
 src/
 website/mfrtemp/
 docs/_build
-website/static/img/badges
 
 # Scripts
 scripts/guid_blacklist.txt
@@ -195,3 +194,4 @@ scripts/image_maniplation/test_rounded_corners.html
 docker-compose.override.yml
 .unison*
 .docker-sync/
+ssl/

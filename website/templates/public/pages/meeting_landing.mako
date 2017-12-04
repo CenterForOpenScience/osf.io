@@ -1,6 +1,12 @@
 <%inherit file="base.mako"/>
 
 <%def name="title()">Meetings</%def>
+
+<%def name="nav()">
+    <%namespace name="nav_helper" file="nav.mako" />
+    ${nav_helper.nav(service_name='MEETINGS', service_url='/meetings/', service_support_url='http://help.osf.io/m/meetings/')}
+</%def>
+
 <%def name="stylesheets()">
     ${parent.stylesheets()}
     <link rel="stylesheet" href="/static/css/pages/meeting-landing-page.css">
@@ -16,11 +22,12 @@
 </%def>
 
 <%def name="content()">
+    <div id="osfDonateBanner"></div>
     <div class="osf-meeting-header-img">
         <div class="osf-meeting-header">
             <div class="container ">
             <div class="text-center m-b-lg">
-                <h1>OSF for Meetings</h1>
+                <h1><img src="/static/img/meeting-page/osf-meeting.png" alt="Logo for OSF meeting" style="width: 40%"></h1>
                 <h3>A <strong>free poster and presentation sharing service</strong> for academic meetings and conferences</h3>
             </div>
                 <div class="network-img"> </div>

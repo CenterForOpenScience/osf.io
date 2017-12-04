@@ -3,7 +3,6 @@
 
 <%def name="stylesheets()">
    ${parent.stylesheets()}
-   <link rel="stylesheet" href='/static/css/pages/account-setting-page.css'>
    <link rel="stylesheet" href='/static/css/user-addon-settings.css'>
 </%def>
 

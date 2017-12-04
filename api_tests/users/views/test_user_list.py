@@ -1,496 +1,506 @@
 # -*- coding: utf-8 -*-
-from uuid import UUID
-
 import itsdangerous
 import mock
 import pytest
-from nose.tools import *  # flake8: noqa
 import unittest
 import urlparse
-
-from modularodm import Q
-
-from tests.base import ApiTestCase
-from osf_tests.factories import AuthUserFactory, UserFactory, ProjectFactory, Auth
+from uuid import UUID
 
 from api.base.settings.defaults import API_BASE
-
 from framework.auth.cas import CasResponse
-from osf.models import OSFUser as User, Session, ApiOAuth2PersonalToken
+from osf.models import OSFUser, Session, ApiOAuth2PersonalToken
+from osf_tests.factories import (
+    AuthUserFactory,
+    UserFactory,
+    ProjectFactory,
+    Auth,
+)
 from website import settings
 from website.util.permissions import CREATOR_PERMISSIONS
 
 
-class TestUsers(ApiTestCase):
+@pytest.mark.django_db
+class TestUsers:
 
-    def setUp(self):
-        super(TestUsers, self).setUp()
-        self.user_one = AuthUserFactory(fullname='Freddie Mercury I')
-        self.user_two = AuthUserFactory(fullname='Freddie Mercury II')
+    @pytest.fixture()
+    def user_one(self):
+        return AuthUserFactory(fullname='Freddie Mercury I')
 
-    def tearDown(self):
-        super(TestUsers, self).tearDown()
+    @pytest.fixture()
+    def user_two(self):
+        return AuthUserFactory(fullname='Freddie Mercury II')
 
-    def test_returns_200(self):
-        res = self.app.get('/{}users/'.format(API_BASE))
-        assert_equal(res.status_code, 200)
-        assert_equal(res.content_type, 'application/vnd.api+json')
+    def test_returns_200(self, app):
+        res = app.get('/{}users/'.format(API_BASE))
+        assert res.status_code == 200
+        assert res.content_type == 'application/vnd.api+json'
 
-    def test_find_user_in_users(self):
-        url = "/{}users/".format(API_BASE)
+    def test_find_user_in_users(self, app, user_one, user_two):
+        url = '/{}users/'.format(API_BASE)
 
-        res = self.app.get(url)
+        res = app.get(url)
         user_son = res.json['data']
 
         ids = [each['id'] for each in user_son]
-        assert_in(self.user_two._id, ids)
+        assert user_two._id in ids
 
-    def test_all_users_in_users(self):
-        url = "/{}users/".format(API_BASE)
+    def test_all_users_in_users(self, app, user_one, user_two):
+        url = '/{}users/'.format(API_BASE)
 
-        res = self.app.get(url)
+        res = app.get(url)
         user_son = res.json['data']
 
         ids = [each['id'] for each in user_son]
-        assert_in(self.user_one._id, ids)
-        assert_in(self.user_two._id, ids)
+        assert user_one._id in ids
+        assert user_two._id in ids
 
-    def test_merged_user_is_not_in_user_list_after_2point3(self):
-        self.user_two.merge_user(self.user_one)
-        res = self.app.get('/{}users/?version=2.3'.format(API_BASE))
+    def test_merged_user_is_not_in_user_list_after_2point3(self, app, user_one, user_two):
+        user_two.merge_user(user_one)
+        res = app.get('/{}users/?version=2.3'.format(API_BASE))
         user_son = res.json['data']
 
         ids = [each['id'] for each in user_son]
-        assert_equal(res.status_code, 200)
-        assert_in(self.user_two._id, ids)
-        assert_not_in(self.user_one._id, ids)
+        assert res.status_code == 200
+        assert user_two._id in ids
+        assert user_one._id not in ids
 
-    def test_merged_user_is_returned_before_2point3(self):
-        self.user_two.merge_user(self.user_one)
-        res = self.app.get('/{}users/'.format(API_BASE))
+    def test_merged_user_is_returned_before_2point3(self, app, user_one, user_two):
+        user_two.merge_user(user_one)
+        res = app.get('/{}users/'.format(API_BASE))
         user_son = res.json['data']
 
         ids = [each['id'] for each in user_son]
-        assert_equal(res.status_code, 200)
-        assert_in(self.user_two._id, ids)
-        assert_in(self.user_one._id, ids)
+        assert res.status_code == 200
+        assert user_two._id in ids
+        assert user_one._id in ids
 
-    def test_find_multiple_in_users(self):
-        url = "/{}users/?filter[full_name]=fred".format(API_BASE)
+    def test_find_multiple_in_users(self, app, user_one, user_two):
+        url = '/{}users/?filter[full_name]=fred'.format(API_BASE)
 
-        res = self.app.get(url)
+        res = app.get(url)
         user_json = res.json['data']
         ids = [each['id'] for each in user_json]
-        assert_in(self.user_one._id, ids)
-        assert_in(self.user_two._id, ids)
+        assert user_one._id in ids
+        assert user_two._id in ids
 
-    def test_find_single_user_in_users(self):
-        url = "/{}users/?filter[full_name]=my".format(API_BASE)
-        self.user_one.fullname = 'My Mom'
-        self.user_one.save()
-        res = self.app.get(url)
+    def test_find_single_user_in_users(self, app, user_one, user_two):
+        url = '/{}users/?filter[full_name]=my'.format(API_BASE)
+        user_one.fullname = 'My Mom'
+        user_one.save()
+        res = app.get(url)
         user_json = res.json['data']
         ids = [each['id'] for each in user_json]
-        assert_in(self.user_one._id, ids)
-        assert_not_in(self.user_two._id, ids)
+        assert user_one._id in ids
+        assert user_two._id not in ids
 
-    def test_find_no_user_in_users(self):
-        url = "/{}users/?filter[full_name]=NotMyMom".format(API_BASE)
-        res = self.app.get(url)
+    def test_find_no_user_in_users(self, app, user_one, user_two):
+        url = '/{}users/?filter[full_name]=NotMyMom'.format(API_BASE)
+        res = app.get(url)
         user_json = res.json['data']
         ids = [each['id'] for each in user_json]
-        assert_not_in(self.user_one._id, ids)
-        assert_not_in(self.user_two._id, ids)
+        assert user_one._id not in ids
+        assert user_two._id not in ids
 
-    def test_more_than_one_projects_in_common(self):
-        project1 = ProjectFactory(creator=self.user_one)
+    def test_more_than_one_projects_in_common(self, app, user_one, user_two):
+        project1 = ProjectFactory(creator=user_one)
         project1.add_contributor(
-            contributor=self.user_two,
+            contributor=user_two,
             permissions=CREATOR_PERMISSIONS,
-            auth=Auth(user=self.user_one)
+            auth=Auth(user=user_one)
         )
         project1.save()
-        project2 = ProjectFactory(creator=self.user_one)
+        project2 = ProjectFactory(creator=user_one)
         project2.add_contributor(
-            contributor=self.user_two,
+            contributor=user_two,
             permissions=CREATOR_PERMISSIONS,
-            auth=Auth(user=self.user_one)
+            auth=Auth(user=user_one)
         )
         project2.save()
-        url = "/{}users/?show_projects_in_common=true".format(API_BASE)
-        res = self.app.get(url, auth=self.user_two.auth)
+        url = '/{}users/?show_projects_in_common=true'.format(API_BASE)
+        res = app.get(url, auth=user_two.auth)
         user_json = res.json['data']
         for user in user_json:
-            if user['id'] == self.user_two._id:
+            if user['id'] == user_two._id:
                 meta = user['relationships']['nodes']['links']['related']['meta']
-                assert_in('projects_in_common', meta)
-                assert_equal(meta['projects_in_common'], 2)
+                assert 'projects_in_common' in meta
+                assert meta['projects_in_common'] == 2
 
-    def test_users_projects_in_common(self):
-        self.user_one.fullname = 'hello'
-        self.user_one.save()
-        url = "/{}users/?show_projects_in_common=true".format(API_BASE)
-        res = self.app.get(url, auth=self.user_two.auth)
+    def test_users_projects_in_common(self, app, user_one, user_two):
+        user_one.fullname = 'hello'
+        user_one.save()
+        url = '/{}users/?show_projects_in_common=true'.format(API_BASE)
+        res = app.get(url, auth=user_two.auth)
         user_json = res.json['data']
         for user in user_json:
             meta = user['relationships']['nodes']['links']['related']['meta']
-            assert_in('projects_in_common', meta)
-            assert_equal(meta['projects_in_common'], 0)
+            assert 'projects_in_common' in meta
+            assert meta['projects_in_common'] == 0
 
-    def test_users_projects_in_common_with_embed_and_right_query(self):
-        project = ProjectFactory(creator=self.user_one)
+    def test_users_projects_in_common_with_embed_and_right_query(self, app, user_one, user_two):
+        project = ProjectFactory(creator=user_one)
         project.add_contributor(
-            contributor=self.user_two,
+            contributor=user_two,
             permissions=CREATOR_PERMISSIONS,
-            auth=Auth(user=self.user_one)
+            auth=Auth(user=user_one)
         )
         project.save()
-        url = "/{}users/{}/nodes/?embed=contributors&show_projects_in_common=true".format(API_BASE, self.user_two._id)
-        res = self.app.get(url, auth=self.user_two.auth)
+        url = '/{}users/{}/nodes/?embed=contributors&show_projects_in_common=true'.format(API_BASE, user_two._id)
+        res = app.get(url, auth=user_two.auth)
         user_json = res.json['data'][0]['embeds']['contributors']['data']
         for user in user_json:
             meta = user['embeds']['users']['data']['relationships']['nodes']['links']['related']['meta']
-            assert_in('projects_in_common', meta)
-            assert_equal(meta['projects_in_common'], 1)
+            assert 'projects_in_common' in meta
+            assert meta['projects_in_common'] == 1
 
-    def test_users_projects_in_common_exclude_deleted_projects(self):
-        project_list=[]
-        for x in range(1,10):
-            project = ProjectFactory(creator=self.user_one)
+    def test_users_projects_in_common_exclude_deleted_projects(self, app, user_one, user_two):
+        project_list = []
+        for x in range(1, 10):
+            project = ProjectFactory(creator=user_one)
             project.add_contributor(
-                contributor=self.user_two,
+                contributor=user_two,
                 permissions=CREATOR_PERMISSIONS,
-                auth=Auth(user=self.user_one)
+                auth=Auth(user=user_one)
             )
             project.save()
             project_list.append(project)
-        for x in range(1,5):
+        for x in range(1, 5):
             project = project_list[x]
             project.reload()
-            project.remove_node(auth=Auth(user=self.user_one))
+            project.remove_node(auth=Auth(user=user_one))
             project.save()
-        url = "/{}users/{}/nodes/?embed=contributors&show_projects_in_common=true".format(API_BASE, self.user_two._id)
-        res = self.app.get(url, auth=self.user_two.auth)
+        url = '/{}users/{}/nodes/?embed=contributors&show_projects_in_common=true'.format(API_BASE, user_two._id)
+        res = app.get(url, auth=user_two.auth)
         user_json = res.json['data'][0]['embeds']['contributors']['data']
         for user in user_json:
             meta = user['embeds']['users']['data']['relationships']['nodes']['links']['related']['meta']
-            assert_in('projects_in_common', meta)
-            assert_equal(meta['projects_in_common'], 5)
+            assert 'projects_in_common' in meta
+            assert meta['projects_in_common'] == 5
 
-    def test_users_projects_in_common_with_embed_without_right_query(self):
-        project = ProjectFactory(creator=self.user_one)
+    def test_users_projects_in_common_with_embed_without_right_query(self, app, user_one, user_two):
+        project = ProjectFactory(creator=user_one)
         project.add_contributor(
-            contributor=self.user_two,
+            contributor=user_two,
             permissions=CREATOR_PERMISSIONS,
-            auth=Auth(user=self.user_one)
+            auth=Auth(user=user_one)
         )
         project.save()
-        url = "/{}users/{}/nodes/?embed=contributors".format(API_BASE, self.user_two._id)
-        res = self.app.get(url, auth=self.user_two.auth)
+        url = '/{}users/{}/nodes/?embed=contributors'.format(API_BASE, user_two._id)
+        res = app.get(url, auth=user_two.auth)
         user_json = res.json['data'][0]['embeds']['contributors']['data']
         for user in user_json:
             meta = user['embeds']['users']['data']['relationships']['nodes']['links']['related']['meta']
-            assert_not_in('projects_in_common', meta)
+            assert 'projects_in_common' not in meta
 
-    def test_users_no_projects_in_common_with_wrong_query(self):
-        self.user_one.fullname = 'hello'
-        self.user_one.save()
-        url = "/{}users/?filter[full_name]={}".format(API_BASE, self.user_one.fullname)
-        res = self.app.get(url, auth=self.user_two.auth)
+    def test_users_no_projects_in_common_with_wrong_query(self, app, user_one, user_two):
+        user_one.fullname = 'hello'
+        user_one.save()
+        url = '/{}users/?filter[full_name]={}'.format(API_BASE, user_one.fullname)
+        res = app.get(url, auth=user_two.auth)
         user_json = res.json['data']
         for user in user_json:
             meta = user['relationships']['nodes']['links']['related']['meta']
-            assert_not_in('projects_in_common', meta)
+            assert 'projects_in_common' not in meta
 
-    def test_users_no_projects_in_common_without_filter(self):
-        self.user_one.fullname = 'hello'
-        self.user_one.save()
-        url = "/{}users/".format(API_BASE)
-        res = self.app.get(url, auth=self.user_two.auth)
+    def test_users_no_projects_in_common_without_filter(self, app, user_one, user_two):
+        user_one.fullname = 'hello'
+        user_one.save()
+        url = '/{}users/'.format(API_BASE)
+        res = app.get(url, auth=user_two.auth)
         user_json = res.json['data']
         for user in user_json:
             meta = user['relationships']['nodes']['links']['related']['meta']
-            assert_not_in('projects_in_common', meta)
+            assert 'projects_in_common' not in meta
 
-    def test_users_list_takes_profile_image_size_param(self):
+    def test_users_list_takes_profile_image_size_param(self, app, user_one, user_two):
         size = 42
-        url = "/{}users/?profile_image_size={}".format(API_BASE, size)
-        res = self.app.get(url)
+        url = '/{}users/?profile_image_size={}'.format(API_BASE, size)
+        res = app.get(url)
         user_json = res.json['data']
         for user in user_json:
             profile_image_url = user['links']['profile_image']
             query_dict = urlparse.parse_qs(urlparse.urlparse(profile_image_url).query)
-            assert_equal(int(query_dict.get('s')[0]), size)
+            assert int(query_dict.get('s')[0]) == size
 
-    def test_users_list_filter_multiple_field(self):
-        self.john_doe = UserFactory(fullname='John Doe')
-        self.john_doe.given_name = 'John'
-        self.john_doe.family_name = 'Doe'
-        self.john_doe.save()
+    def test_users_list_filter_multiple_field(self, app, user_one, user_two):
+        john_doe = UserFactory(fullname='John Doe')
+        john_doe.given_name = 'John'
+        john_doe.family_name = 'Doe'
+        john_doe.save()
 
-        self.doe_jane = UserFactory(fullname='Doe Jane')
-        self.doe_jane.given_name = 'Doe'
-        self.doe_jane.family_name = 'Jane'
-        self.doe_jane.save()
+        doe_jane = UserFactory(fullname='Doe Jane')
+        doe_jane.given_name = 'Doe'
+        doe_jane.family_name = 'Jane'
+        doe_jane.save()
 
-        url = "/{}users/?filter[given_name,family_name]=Doe".format(API_BASE)
-        res = self.app.get(url)
+        url = '/{}users/?filter[given_name,family_name]=Doe'.format(API_BASE)
+        res = app.get(url)
         data = res.json['data']
-        assert_equal(len(data), 2)
+        assert len(data) == 2
 
-    def test_users_list_filter_multiple_fields_with_additional_filters(self):
-        self.john_doe = UserFactory(fullname='John Doe')
-        self.john_doe.given_name = 'John'
-        self.john_doe.family_name = 'Doe'
-        self.john_doe.save()
+    def test_users_list_filter_multiple_fields_with_additional_filters(self, app, user_one, user_two):
+        john_doe = UserFactory(fullname='John Doe')
+        john_doe.given_name = 'John'
+        john_doe.family_name = 'Doe'
+        john_doe.save()
 
-        self.doe_jane = UserFactory(fullname='Doe Jane')
-        self.doe_jane.given_name = 'Doe'
-        self.doe_jane.family_name = 'Jane'
-        self.doe_jane.save()
+        doe_jane = UserFactory(fullname='Doe Jane')
+        doe_jane.given_name = 'Doe'
+        doe_jane.family_name = 'Jane'
+        doe_jane.save()
 
-        url = "/{}users/?filter[given_name,family_name]=Doe&filter[id]={}".format(API_BASE, self.john_doe._id)
-        res = self.app.get(url)
+        url = '/{}users/?filter[given_name,family_name]=Doe&filter[id]={}'.format(API_BASE, john_doe._id)
+        res = app.get(url)
         data = res.json['data']
-        assert_equal(len(data), 1)
+        assert len(data) == 1
 
-    def test_users_list_filter_multiple_fields_with_bad_filter(self):
-        url = "/{}users/?filter[given_name,not_a_filter]=Doe".format(API_BASE)
-        res = self.app.get(url, expect_errors=True)
-        assert_equal(res.status_code, 400)
+    def test_users_list_filter_multiple_fields_with_bad_filter(self, app, user_one, user_two):
+        url = '/{}users/?filter[given_name,not_a_filter]=Doe'.format(API_BASE)
+        res = app.get(url, expect_errors=True)
+        assert res.status_code == 400
 
 
-class TestUsersCreate(ApiTestCase):
+@pytest.mark.django_db
+class TestUsersCreate:
 
-    def setUp(self):
-        super(TestUsersCreate, self).setUp()
-        self.user = AuthUserFactory()
-        self.unconfirmed_email = 'tester@fake.io'
-        self.base_url = '/{}users/'.format(API_BASE)
-        self.data = {
+    @pytest.fixture()
+    def user(self):
+        return AuthUserFactory()
+
+    @pytest.fixture()
+    def email_unconfirmed(self):
+        return 'tester@fake.io'
+
+    @pytest.fixture()
+    def url_base(self):
+        return '/{}users/'.format(API_BASE)
+
+    @pytest.fixture()
+    def data(self, email_unconfirmed):
+        return {
             'data': {
                 'type': 'users',
                 'attributes': {
-                    'username': self.unconfirmed_email,
+                    'username': email_unconfirmed,
                     'full_name': 'Test Account'
                 }
             }
         }
 
-    def tearDown(self):
+    def tearDown(self, app):
         super(TestUsersCreate, self).tearDown()
-        self.app.reset()  # clears cookies
-        User.remove()
+        app.reset()  # clears cookies
+        OSFUser.remove()
 
     @mock.patch('framework.auth.views.mails.send_mail')
-    def test_logged_in_user_with_basic_auth_cannot_create_other_user_or_send_mail(self, mock_mail):
-        assert_equal(User.find(Q('username', 'eq', self.unconfirmed_email)).count(), 0)
-        res = self.app.post_json_api(
-            '{}?send_email=true'.format(self.base_url),
-            self.data,
-            auth=self.user.auth,
+    def test_logged_in_user_with_basic_auth_cannot_create_other_user_or_send_mail(self, mock_mail, app, user, email_unconfirmed, data, url_base):
+        assert OSFUser.objects.filter(username=email_unconfirmed).count() == 0
+        res = app.post_json_api(
+            '{}?send_email=true'.format(url_base),
+            data,
+            auth=user.auth,
             expect_errors=True
         )
 
-        assert_equal(res.status_code, 403)
-        assert_equal(User.find(Q('username', 'eq', self.unconfirmed_email)).count(), 0)
-        assert_equal(mock_mail.call_count, 0)
+        assert res.status_code == 403
+        assert OSFUser.objects.filter(username=email_unconfirmed).count() == 0
+        assert mock_mail.call_count == 0
 
     @mock.patch('framework.auth.views.mails.send_mail')
-    def test_logged_out_user_cannot_create_other_user_or_send_mail(self, mock_mail):
-        assert_equal(User.find(Q('username', 'eq', self.unconfirmed_email)).count(), 0)
-        res = self.app.post_json_api(
-            '{}?send_email=true'.format(self.base_url),
-            self.data,
+    def test_logged_out_user_cannot_create_other_user_or_send_mail(self, mock_mail, app, email_unconfirmed, data, url_base):
+        assert OSFUser.objects.filter(username=email_unconfirmed).count() == 0
+        res = app.post_json_api(
+            '{}?send_email=true'.format(url_base),
+            data,
             expect_errors=True
         )
 
-        assert_equal(res.status_code, 401)
-        assert_equal(User.find(Q('username', 'eq', self.unconfirmed_email)).count(), 0)
-        assert_equal(mock_mail.call_count, 0)
+        assert res.status_code == 401
+        assert OSFUser.objects.filter(username=email_unconfirmed).count() == 0
+        assert mock_mail.call_count == 0
 
-    @pytest.mark.skip
+    @pytest.mark.skip  # failing locally post converision
     @mock.patch('framework.auth.views.mails.send_mail')
-    def test_cookied_requests_can_create_and_email(self, mock_mail):
-        session = Session(data={'auth_user_id': self.user._id})
+    def test_cookied_requests_can_create_and_email(self, mock_mail, app, user, email_unconfirmed, data, url_base):
+        session = Session(data={'auth_user_id': user._id})
         session.save()
         cookie = itsdangerous.Signer(settings.SECRET_KEY).sign(session._id)
-        self.app.set_cookie(settings.COOKIE_NAME, str(cookie))
+        app.set_cookie(settings.COOKIE_NAME, str(cookie))
 
-        assert_equal(User.find(Q('username', 'eq', self.unconfirmed_email)).count(), 0)
-        res = self.app.post_json_api(
-            '{}?send_email=true'.format(self.base_url),
-            self.data
+        assert OSFUser.objects.filter(username=email_unconfirmed).count() == 0
+        res = app.post_json_api(
+            '{}?send_email=true'.format(url_base),
+            data
         )
-        assert_equal(res.status_code, 201)
-        assert_equal(User.find(Q('username', 'eq', self.unconfirmed_email)).count(), 1)
-        assert_equal(mock_mail.call_count, 1)
+        assert res.status_code == 201
+        assert OSFUser.objects.filter(username=email_unconfirmed).count() == 1
+        assert mock_mail.call_count == 1
 
-    @pytest.mark.skip
+    @pytest.mark.skip  # failing locally post converision
     @mock.patch('framework.auth.views.mails.send_mail')
     @mock.patch('api.base.authentication.drf.OSFCASAuthentication.authenticate')
     @unittest.skipIf(not settings.DEV_MODE, 'DEV_MODE disabled, osf.users.create unavailable')  # TODO: Remove when available outside of DEV_MODE
-    def test_properly_scoped_token_can_create_and_send_email(self, mock_auth, mock_mail):
+    def test_properly_scoped_token_can_create_and_send_email(self, mock_auth, mock_mail, app, user, email_unconfirmed, data, url_base):
         token = ApiOAuth2PersonalToken(
-            owner=self.user,
+            owner=user,
             name='Authorized Token',
             scopes='osf.users.create'
         )
 
         mock_cas_resp = CasResponse(
             authenticated=True,
-            user=self.user._id,
+            user=user._id,
             attributes={
                 'accessToken': token.token_id,
                 'accessTokenScope': [s for s in token.scopes.split(' ')]
             }
         )
-        mock_auth.return_value = self.user, mock_cas_resp
+        mock_auth.return_value = user, mock_cas_resp
 
-        assert_equal(User.find(Q('username', 'eq', self.unconfirmed_email)).count(), 0)
-        res = self.app.post_json_api(
-            '{}?send_email=true'.format(self.base_url),
-            self.data,
+        assert OSFUser.objects.filter(username=email_unconfirmed).count() == 0
+        res = app.post_json_api(
+            '{}?send_email=true'.format(url_base),
+            data,
             headers={'Authorization': 'Bearer {}'.format(token.token_id)}
         )
 
-        assert_equal(res.status_code, 201)
-        assert_equal(res.json['data']['attributes']['username'], self.unconfirmed_email)
-        assert_equal(User.find(Q('username', 'eq', self.unconfirmed_email)).count(), 1)
-        assert_equal(mock_mail.call_count, 1)
+        assert res.status_code == 201
+        assert res.json['data']['attributes']['username'] == email_unconfirmed
+        assert OSFUser.objects.filter(username=email_unconfirmed).count() == 1
+        assert mock_mail.call_count == 1
 
-    @pytest.mark.skip
+    @pytest.mark.skip  # failing locally post converision
     @mock.patch('framework.auth.views.mails.send_mail')
     @mock.patch('api.base.authentication.drf.OSFCASAuthentication.authenticate')
     @unittest.skipIf(not settings.DEV_MODE, 'DEV_MODE disabled, osf.users.create unavailable')  # TODO: Remove when available outside of DEV_MODE
-    def test_properly_scoped_token_does_not_send_email_without_kwarg(self, mock_auth, mock_mail):
+    def test_properly_scoped_token_does_not_send_email_without_kwarg(self, mock_auth, mock_mail, app, user, email_unconfirmed, data, url_base):
         token = ApiOAuth2PersonalToken(
-            owner=self.user,
+            owner=user,
             name='Authorized Token',
             scopes='osf.users.create'
         )
 
         mock_cas_resp = CasResponse(
             authenticated=True,
-            user=self.user._id,
+            user=user._id,
             attributes={
                 'accessToken': token.token_id,
                 'accessTokenScope': [s for s in token.scopes.split(' ')]
             }
         )
-        mock_auth.return_value = self.user, mock_cas_resp
+        mock_auth.return_value = user, mock_cas_resp
 
-        assert_equal(User.find(Q('username', 'eq', self.unconfirmed_email)).count(), 0)
-        res = self.app.post_json_api(
-            self.base_url,
-            self.data,
+        assert OSFUser.objects.filter(username=email_unconfirmed).count() == 0
+
+        res = app.post_json_api(
+            url_base,
+            data,
             headers={'Authorization': 'Bearer {}'.format(token.token_id)}
         )
 
-        assert_equal(res.status_code, 201)
-        assert_equal(res.json['data']['attributes']['username'], self.unconfirmed_email)
-        assert_equal(User.find(Q('username', 'eq', self.unconfirmed_email)).count(), 1)
-        assert_equal(mock_mail.call_count, 0)
+        assert res.status_code == 201
+        assert res.json['data']['attributes']['username'] == email_unconfirmed
+        assert OSFUser.objects.filter(username=email_unconfirmed).count() == 1
+        assert mock_mail.call_count == 0
 
-    @pytest.mark.skip
+    @pytest.mark.skip  # failing locally post converision
     @mock.patch('framework.auth.views.mails.send_mail')
     @mock.patch('api.base.authentication.drf.OSFCASAuthentication.authenticate')
     @unittest.skipIf(not settings.DEV_MODE, 'DEV_MODE disabled, osf.users.create unavailable')  # TODO: Remove when available outside of DEV_MODE
-    def test_properly_scoped_token_can_create_without_username_but_not_send_email(self, mock_auth, mock_mail):
+    def test_properly_scoped_token_can_create_without_username_but_not_send_email(self, mock_auth, mock_mail, app, user, data, url_base):
         token = ApiOAuth2PersonalToken(
-            owner=self.user,
+            owner=user,
             name='Authorized Token',
             scopes='osf.users.create'
         )
 
         mock_cas_resp = CasResponse(
             authenticated=True,
-            user=self.user._id,
+            user=user._id,
             attributes={
                 'accessToken': token.token_id,
                 'accessTokenScope': [s for s in token.scopes.split(' ')]
             }
         )
-        mock_auth.return_value = self.user, mock_cas_resp
+        mock_auth.return_value = user, mock_cas_resp
 
-        self.data['data']['attributes'] = {'full_name': 'No Email'}
+        data['data']['attributes'] = {'full_name': 'No Email'}
 
-        assert_equal(User.find(Q('fullname', 'eq', 'No Email')).count(), 0)
-        res = self.app.post_json_api(
-            '{}?send_email=true'.format(self.base_url),
-            self.data,
+        assert OSFUser.objects.filter(fullname='No Email').count() == 0
+        res = app.post_json_api(
+            '{}?send_email=true'.format(url_base),
+            data,
             headers={'Authorization': 'Bearer {}'.format(token.token_id)}
         )
 
-        assert_equal(res.status_code, 201)
+        assert res.status_code == 201
         username = res.json['data']['attributes']['username']
         try:
-            no_failure = UUID(username)
+            UUID(username)
         except ValueError:
             raise AssertionError('Username is not a valid UUID')
-        assert_equal(User.find(Q('fullname', 'eq', 'No Email')).count(), 1)
-        assert_equal(mock_mail.call_count, 0)
+        assert OSFUser.objects.filter(fullname='No Email').count() == 1
+        assert mock_mail.call_count == 0
 
     @mock.patch('framework.auth.views.mails.send_mail')
     @mock.patch('api.base.authentication.drf.OSFCASAuthentication.authenticate')
-    def test_improperly_scoped_token_can_not_create_or_email(self, mock_auth, mock_mail):
+    def test_improperly_scoped_token_can_not_create_or_email(self, mock_auth, mock_mail, app, user, email_unconfirmed, data, url_base):
         token = ApiOAuth2PersonalToken(
-            owner=self.user,
+            owner=user,
             name='Unauthorized Token',
             scopes='osf.full_write'
         )
 
         mock_cas_resp = CasResponse(
             authenticated=True,
-            user=self.user._id,
+            user=user._id,
             attributes={
                 'accessToken': token.token_id,
                 'accessTokenScope': [s for s in token.scopes.split(' ')]
             }
         )
-        mock_auth.return_value = self.user, mock_cas_resp
+        mock_auth.return_value = user, mock_cas_resp
 
-        assert_equal(User.find(Q('username', 'eq', self.unconfirmed_email)).count(), 0)
-        res = self.app.post_json_api(
-            '{}?send_email=true'.format(self.base_url),
-            self.data,
+        assert OSFUser.objects.filter(username=email_unconfirmed).count() == 0
+        res = app.post_json_api(
+            '{}?send_email=true'.format(url_base),
+            data,
             headers={'Authorization': 'Bearer {}'.format(token.token_id)},
             expect_errors=True
         )
 
-        assert_equal(res.status_code, 403)
-        assert_equal(User.find(Q('username', 'eq', self.unconfirmed_email)).count(), 0)
-        assert_equal(mock_mail.call_count, 0)
+        assert res.status_code == 403
+        assert OSFUser.objects.filter(username=email_unconfirmed).count() == 0
+        assert mock_mail.call_count == 0
 
-    @pytest.mark.skip
+    @pytest.mark.skip  # failing locally post converision
     @mock.patch('framework.auth.views.mails.send_mail')
     @mock.patch('api.base.authentication.drf.OSFCASAuthentication.authenticate')
     @unittest.skipIf(not settings.DEV_MODE, 'DEV_MODE disabled, osf.admin unavailable')  # TODO: Remove when available outside of DEV_MODE
-    def test_admin_scoped_token_can_create_and_send_email(self, mock_auth, mock_mail):
+    def test_admin_scoped_token_can_create_and_send_email(self, mock_auth, mock_mail, app, user, email_unconfirmed, data, url_base):
         token = ApiOAuth2PersonalToken(
-            owner=self.user,
+            owner=user,
             name='Admin Token',
             scopes='osf.admin'
         )
 
         mock_cas_resp = CasResponse(
             authenticated=True,
-            user=self.user._id,
+            user=user._id,
             attributes={
                 'accessToken': token.token_id,
                 'accessTokenScope': [s for s in token.scopes.split(' ')]
             }
         )
-        mock_auth.return_value = self.user, mock_cas_resp
+        mock_auth.return_value = user, mock_cas_resp
 
-        assert_equal(User.find(Q('username', 'eq', self.unconfirmed_email)).count(), 0)
-        res = self.app.post_json_api(
-            '{}?send_email=true'.format(self.base_url),
-            self.data,
+        assert OSFUser.objects.filter(username=email_unconfirmed).count() == 0
+        res = app.post_json_api(
+            '{}?send_email=true'.format(url_base),
+            data,
             headers={'Authorization': 'Bearer {}'.format(token.token_id)}
         )
 
-        assert_equal(res.status_code, 201)
-        assert_equal(res.json['data']['attributes']['username'], self.unconfirmed_email)
-        assert_equal(User.find(Q('username', 'eq', self.unconfirmed_email)).count(), 1)
-        assert_equal(mock_mail.call_count, 1)
+        assert res.status_code == 201
+        assert res.json['data']['attributes']['username'] == email_unconfirmed
+        assert OSFUser.objects.filter(username=email_unconfirmed).count() == 1
+        assert mock_mail.call_count == 1

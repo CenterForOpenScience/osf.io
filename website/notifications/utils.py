@@ -1,10 +1,9 @@
 import collections
 
 from django.apps import apps
-from framework.postcommit_tasks.handlers import run_postcommit
-from modularodm.exceptions import NoResultsFound
+from django.db.models import Q
 
-from osf.modm_compat import Q
+from framework.postcommit_tasks.handlers import run_postcommit
 from website.notifications import constants
 from website.notifications.exceptions import InvalidSubscriptionError
 from website.project import signals
@@ -78,8 +77,9 @@ def remove_subscription(node):
 def remove_subscription_task(node_id):
     AbstractNode = apps.get_model('osf.AbstractNode')
     NotificationSubscription = apps.get_model('osf.NotificationSubscription')
+
     node = AbstractNode.load(node_id)
-    NotificationSubscription.remove(Q('node', 'eq', node))
+    NotificationSubscription.objects.filter(node=node).delete()
     parent = node.parent_node
 
     if parent and parent.child_node_subscriptions:
@@ -176,18 +176,17 @@ def get_configured_projects(user):
     """Filter all user subscriptions for ones that are on parent projects
      and return the node objects.
 
-    :param user: modular odm User object
+    :param user: OSFUser object
     :return: list of node objects for projects with no parent
     """
     configured_projects = set()
     user_subscriptions = get_all_user_subscriptions(user, extra=(
-        Q('node__type', 'ne', 'osf.collection') &
-        Q('node__is_deleted', 'eq', False)
+        ~Q(node__type='osf.collection') &
+        ~Q(node__type='osf.quickfilesnode') &
+        Q(node__is_deleted=False)
     ))
 
     for subscription in user_subscriptions:
-        if subscription is None:
-            continue
         # If the user has opted out of emails skip
         node = subscription.owner
 
@@ -216,34 +215,30 @@ def check_project_subscriptions_are_all_none(user, node):
 def get_all_user_subscriptions(user, extra=None):
     """ Get all Subscription objects that the user is subscribed to"""
     NotificationSubscription = apps.get_model('osf.NotificationSubscription')
-    for notification_type in constants.NOTIFICATION_TYPES:
-        query = Q(notification_type, 'eq', user.pk)
-        if extra:
-            query &= extra
-        queryset = NotificationSubscription.find(query)
-        for subscription in queryset:
-            yield subscription
+    queryset = NotificationSubscription.objects.filter(
+        Q(none=user.pk) |
+        Q(email_digest=user.pk) |
+        Q(email_transactional=user.pk)
+    ).distinct()
+    return queryset.filter(extra) if extra else queryset
 
 
 def get_all_node_subscriptions(user, node, user_subscriptions=None):
     """ Get all Subscription objects for a node that the user is subscribed to
 
-    :param user: modular odm User object
-    :param node: modular odm Node object
+    :param user: OSFUser object
+    :param node: Node object
     :param user_subscriptions: all Subscription objects that the user is subscribed to
     :return: list of Subscription objects for a node that the user is subscribed to
     """
     if not user_subscriptions:
         user_subscriptions = get_all_user_subscriptions(user)
-    # TODO: Filter in database rather than in Python
-    for subscription in user_subscriptions:
-        if subscription and subscription.owner == node:
-            yield subscription
+    return user_subscriptions.filter(user__isnull=True, node=node)
 
 
 def format_data(user, nodes):
     """ Format subscriptions data for project settings page
-    :param user: modular odm User object
+    :param user: OSFUser object
     :param nodes: list of parent project node objects
     :return: treebeard-formatted data
     """
@@ -266,8 +261,8 @@ def format_data(user, nodes):
 
         if can_read:
             node_sub_available = list(constants.NODE_SUBSCRIPTIONS_AVAILABLE.keys())
-            subscriptions = [subscription for subscription in get_all_node_subscriptions(user, node, user_subscriptions=user_subscriptions)
-                             if getattr(subscription, 'event_name') in node_sub_available]
+            subscriptions = get_all_node_subscriptions(user, node, user_subscriptions=user_subscriptions).filter(event_name__in=node_sub_available)
+
             for subscription in subscriptions:
                 index = node_sub_available.index(getattr(subscription, 'event_name'))
                 children_tree.append(serialize_event(user, subscription=subscription,
@@ -329,9 +324,9 @@ all_subs.update(constants.USER_SUBSCRIPTIONS_AVAILABLE)
 
 def serialize_event(user, subscription=None, node=None, event_description=None):
     """
-    :param user: modular odm User object
-    :param subscription: modular odm Subscription object, use if parsing particular subscription
-    :param node: modular odm Node object, use if node is known
+    :param user: OSFUser object
+    :param subscription: Subscription object, use if parsing particular subscription
+    :param node: Node object, use if node is known
     :param event_description: use if specific subscription is known
     :return: treebeard-formatted subscription event
     """
@@ -371,7 +366,7 @@ def get_parent_notification_type(node, event, user):
     type on the parent project for the same event.
     :param obj node: event owner (Node or User object)
     :param str event: notification event (e.g. 'comment_replies')
-    :param obj user: modular odm User object
+    :param obj user: OSFUser object
     :return: str notification type (e.g. 'email_transactional')
     """
     AbstractNode = apps.get_model('osf.AbstractNode')
@@ -381,8 +376,8 @@ def get_parent_notification_type(node, event, user):
         parent = node.parent_node
         key = to_subscription_key(parent._id, event)
         try:
-            subscription = NotificationSubscription.find_one(Q('_id', 'eq', key))
-        except NoResultsFound:
+            subscription = NotificationSubscription.objects.get(_id=key)
+        except NotificationSubscription.DoesNotExist:
             return get_parent_notification_type(parent, event, user)
 
         for notification_type in constants.NOTIFICATION_TYPES:
@@ -398,8 +393,8 @@ def get_global_notification_type(global_subscription, user):
     """
     Given a global subscription (e.g. NotificationSubscription object with event_type
     'global_file_updated'), find the user's notification type.
-    :param obj global_subscription: modular odm NotificationSubscription object
-    :param obj user: modular odm User object
+    :param obj global_subscription: NotificationSubscription object
+    :param obj user: OSFUser object
     :return: str notification type (e.g. 'email_transactional')
     """
     for notification_type in constants.NOTIFICATION_TYPES:

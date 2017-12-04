@@ -4,7 +4,6 @@ import httplib as http
 
 import celery
 from celery.utils.log import get_task_logger
-from modularodm import Q
 
 from framework.celery_tasks import app as celery_app
 from framework.celery_tasks.utils import logged
@@ -28,7 +27,7 @@ from website import settings
 from website.app import init_addons
 from osf.models import (
     ArchiveJob,
-    AbstractNode as Node,
+    AbstractNode,
     DraftRegistration,
 )
 
@@ -60,9 +59,7 @@ class ArchivedFileNotFound(Exception):
     def __init__(self, registration, missing_files, *args, **kwargs):
         super(ArchivedFileNotFound, self).__init__(*args, **kwargs)
 
-        self.draft_registration = DraftRegistration.find_one(
-            Q('registered_node', 'eq', registration)
-        )
+        self.draft_registration = DraftRegistration.objects.get(registered_node=registration)
         self.missing_files = missing_files
 
 
@@ -178,7 +175,7 @@ def make_waterbutler_payload(dst_id, rename):
 
 @celery_app.task(base=ArchiverTask, ignore_result=False)
 @logged('archive_addon')
-def archive_addon(addon_short_name, job_pk, stat_result):
+def archive_addon(addon_short_name, job_pk):
     """Archive the contents of an addon by making a copy request to the
     WaterBulter API
 
@@ -241,13 +238,12 @@ def archive_node(stat_results, job_pk):
             job.status = ARCHIVER_SUCCESS
             job.save()
         for result in stat_result.targets:
-            if not result.num_files:
-                job.update_target(result.target_name, ARCHIVER_SUCCESS)
+            if not result['num_files']:
+                job.update_target(result['target_name'], ARCHIVER_SUCCESS)
             else:
                 archive_addon.delay(
-                    addon_short_name=result.target_name,
-                    job_pk=job_pk,
-                    stat_result=result,
+                    addon_short_name=result['target_name'],
+                    job_pk=job_pk
                 )
         project_signals.archive_callback.send(dst)
 
@@ -301,7 +297,7 @@ def archive_success(dst_pk, job_pk):
     seemingly redundant calls.
     """
     create_app_context()
-    dst = Node.load(dst_pk)
+    dst = AbstractNode.load(dst_pk)
     # The filePicker extension addded with the Prereg Challenge registration schema
     # allows users to select files in OSFStorage as their response to some schema
     # questions. These files are references to files on the unregistered Node, and

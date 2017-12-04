@@ -2,6 +2,7 @@
 import datetime
 import mock
 import os
+import pytest
 import time
 import unittest
 from django.utils import timezone
@@ -11,8 +12,9 @@ from nose.tools import *  # noqa (PEP8 asserts)
 import blinker
 
 from tests.base import OsfTestCase, DbTestCase
-from osf_tests.factories import RegistrationFactory, UserFactory
+from osf_tests.factories import RegistrationFactory, UserFactory, fake_email
 
+from framework.auth.utils import generate_csl_given_name
 from framework.routing import Rule, json_renderer
 from framework.utils import secure_filename
 from website.routes import process_rules, OsfWebRenderer
@@ -325,6 +327,7 @@ class TestWebpackFilter(unittest.TestCase):
         with assert_raises(KeyError):
             paths.webpack_asset('bundle.js', self.asset_paths, debug=False)
 
+
 class TestWebsiteUtils(unittest.TestCase):
 
     def test_conjunct(self):
@@ -461,3 +464,55 @@ class TestSignalUtils(unittest.TestCase):
         with util.disconnected_from(self.signal_, self.listener):
             self.signal_.send()
         assert_false(self.mock_listener.called)
+
+
+class TestUserUtils(unittest.TestCase):
+
+    def test_generate_csl_given_name_with_given_middle_suffix(self):
+        given_name = 'Cause'
+        middle_names = 'Awesome'
+        suffix = 'Jr.'
+        csl_given_name = generate_csl_given_name(
+            given_name=given_name, middle_names=middle_names, suffix=suffix
+        )
+        assert_equal(csl_given_name, 'Cause A, Jr.')
+
+    def test_generate_csl_given_name_with_given_middle(self):
+        given_name = 'Cause'
+        middle_names = 'Awesome'
+        csl_given_name = generate_csl_given_name(
+            given_name=given_name, middle_names=middle_names
+        )
+        assert_equal(csl_given_name, 'Cause A')
+
+    def test_generate_csl_given_name_with_given_suffix(self):
+        given_name = 'Cause'
+        suffix = 'Jr.'
+        csl_given_name = generate_csl_given_name(
+            given_name=given_name, suffix=suffix
+        )
+        assert_equal(csl_given_name, 'Cause, Jr.')
+
+    def test_generate_csl_given_name_with_given(self):
+        given_name = 'Cause'
+        csl_given_name = generate_csl_given_name(given_name)
+        assert_equal(csl_given_name, 'Cause')
+
+
+@pytest.mark.django_db
+class TestUserFactoryConflict:
+
+    def test_build_create_user_time_conflict(self):
+        # Test that build and create user factories do not create conflicting usernames 
+        # because they occured quickly
+        user_email_one = fake_email()
+        user_email_two = fake_email()
+        assert user_email_one != user_email_two
+
+        user_one_build = UserFactory.build()
+        user_two_build = UserFactory.build()
+        assert user_one_build.username != user_two_build.username
+
+        user_one_create = UserFactory()
+        user_two_create = UserFactory()
+        assert user_one_create.username != user_two_create.username

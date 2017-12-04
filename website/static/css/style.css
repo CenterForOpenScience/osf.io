@@ -334,10 +334,6 @@ a {
     font-size: 20px;
 }
 
-.log-node-title-link {
-    font-weight: 700;
-}
-
 .footer h4 {
     font-weight: normal;
 }
@@ -426,6 +422,11 @@ a {
     word-break: break-all;
 
 }
+
+.keep-all {
+    word-break: keep-all;
+}
+
 select {
     word-wrap: normal;
 }
@@ -632,26 +633,6 @@ button.close {
     display: inline-block
 }
 
-/* Navigation -- general style should be in style guide
--------------------------------------------------- */
-#navbarScope a.nav-user-dropdown {
-    padding-top: 12px;
-    padding-bottom: 11px;
-}
-
-/* Anonymous-mode notification bar
--------------------------------------------------- */
-#anonymous-mode {
-    position: fixed;
-    bottom: 30px;
-    left: 0;
-    z-index: 8;
-    width: 100%;
-    text-align: center;
-    background-color: #f0ad4e;
-    padding: .5em;
-}
-
 /* Override insane add tag font
 -------------------------------------------------- */
 .tagsinput input {
@@ -735,3 +716,44 @@ div.ball-scale-blue>div {
     margin-bottom: 0;
 }
 
+/* To be added to osf-style: project overview -> componentQuickActions menu */
+#componentQuickActions ul.dropdown-menu > li > a:hover,
+#componentQuickActions ul.dropdown-menu > li > a:focus {
+    background-image: none;
+    background-color: #D9D9D9;
+}
+
+#componentQuickActions button {
+  padding: 4px 12px;
+  line-height: 0;
+}
+
+#componentQuickActions ul {
+    background-color: #EFEFEF;
+    min-width: 180px;
+}
+
+#componentQuickActions a {
+    color: #333;
+}
+
+/* Remove gutters between bootstrap cols */
+.row.no-gutters {
+  margin-right: 0;
+  margin-left: 0;
+}
+.row.no-gutters > [class^="col-"],
+.row.no-gutters > [class*=" col-"] {
+  padding-right: 0;
+  padding-left: 0;
+}
+
+/* counter */
+.counter-comment {
+    margin-top: -20px;
+    margin-right: 5px;
+}
+/* Prevents comment from overlapping with counter*/
+.comment-box {
+    padding-bottom: 25px;
+}

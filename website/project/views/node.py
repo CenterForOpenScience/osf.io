@@ -1,14 +1,16 @@
 # -*- coding: utf-8 -*-
+import os
 import logging
 import httplib as http
 import math
+from collections import defaultdict
 from itertools import islice
 
+from bs4 import BeautifulSoup
 from flask import request
-from modularodm import Q
-from modularodm.exceptions import ModularOdmException, ValidationError
 from django.apps import apps
-from django.db.models import Count
+from django.core.exceptions import ValidationError
+from django.db.models import Count, Q, OuterRef, Exists, Subquery
 
 from framework import status
 from framework.utils import iso8601format
@@ -18,7 +20,6 @@ from osf.models.nodelog import NodeLog
 
 from website import language
 
-from website.util import paths
 from website.util import rubeus
 from website.exceptions import NodeStateError
 from website.project import new_node, new_private_link
@@ -35,7 +36,8 @@ from website.util.rubeus import collect_addon_js
 from website.project.model import has_anonymous_link, NodeUpdateError, validate_title
 from website.project.forms import NewNodeForm
 from website.project.metadata.utils import serialize_meta_schemas
-from osf.models import AbstractNode as Node, PrivateLink, Comment
+from osf.models import AbstractNode, PrivateLink, Contributor, Node, NodeRelation
+from osf.models.contributor import get_contributor_permissions
 from osf.models.licenses import serialize_node_license_record
 from website import settings
 from website.views import find_bookmark_collection, validate_page_num
@@ -43,6 +45,7 @@ from website.views import serialize_node_summary
 from website.profile import utils
 from website.util.sanitize import strip_html
 from website.util import rapply
+from addons.forward.utils import serialize_settings, settings_complete
 
 
 r_strip_html = lambda collection: rapply(collection, strip_html)
@@ -107,7 +110,7 @@ def project_new_post(auth, **kwargs):
     new_project = {}
 
     if template:
-        original_node = Node.load(template)
+        original_node = AbstractNode.load(template)
         changes = {
             'title': title,
             'category': category,
@@ -257,40 +260,8 @@ def node_setting(auth, node, **kwargs):
     auth.user.save()
     ret = _view_project(node, auth, primary=True)
 
-    addons_enabled = []
-    addon_enabled_settings = []
-
-    for addon in node.get_addons():
-        addons_enabled.append(addon.config.short_name)
-        if 'node' in addon.config.configs:
-            config = addon.to_json(auth.user)
-            # inject the MakoTemplateLookup into the template context
-            # TODO inject only short_name and render fully client side
-            config['template_lookup'] = addon.config.template_lookup
-            config['addon_icon_url'] = addon.config.icon_url
-            addon_enabled_settings.append(config)
-
-    addon_enabled_settings = sorted(addon_enabled_settings, key=lambda addon: addon['addon_full_name'].lower())
-
-    ret['addon_categories'] = settings.ADDON_CATEGORIES
-    ret['addons_available'] = sorted([
-        addon
-        for addon in settings.ADDONS_AVAILABLE
-        if 'node' in addon.owners
-        and addon.short_name not in settings.SYSTEM_ADDED_ADDONS['node'] and addon.short_name != 'wiki'
-    ], key=lambda addon: addon.full_name.lower())
-
-    for addon in settings.ADDONS_AVAILABLE:
-        if 'node' in addon.owners and addon.short_name not in settings.SYSTEM_ADDED_ADDONS['node'] and addon.short_name == 'wiki':
-            ret['wiki'] = addon
-            break
-
-    ret['addons_enabled'] = addons_enabled
-    ret['addon_enabled_settings'] = addon_enabled_settings
-    ret['addon_capabilities'] = settings.ADDON_CAPABILITIES
-    ret['addon_js'] = collect_node_config_js(node.get_addons())
-
     ret['include_wiki_settings'] = node.include_wiki_settings(auth.user)
+    ret['wiki_enabled'] = 'wiki' in node.get_addon_names()
 
     ret['comments'] = {
         'level': node.comment_level,
@@ -302,6 +273,42 @@ def node_setting(auth, node, **kwargs):
     })
 
     return ret
+
+@must_be_valid_project
+@must_be_logged_in
+@must_have_permission(READ)
+def node_addons(auth, node, **kwargs):
+
+    ret = _view_project(node, auth, primary=True)
+
+    addon_settings = []
+    addons_available = [addon for addon in settings.ADDONS_AVAILABLE
+                        if addon not in settings.SYSTEM_ADDED_ADDONS['node']
+                        and addon.short_name not in ('wiki', 'forward', 'twofactor')]
+
+    for addon in addons_available:
+        addon_config = apps.get_app_config('addons_{}'.format(addon.short_name))
+        config = addon_config.to_json()
+        config['template_lookup'] = addon_config.template_lookup
+        config['addon_icon_url'] = addon_config.icon_url
+        config['node_settings_template'] = os.path.basename(addon_config.node_settings_template)
+        config['addon_short_name'] = addon.short_name
+        config['addon_full_name'] = addon.full_name
+        config['categories'] = addon.categories
+        config['enabled'] = node.has_addon(addon.short_name)
+        config['default'] = addon.short_name in ['osfstorage']
+        addon_settings.append(config)
+
+    addon_settings = sorted(addon_settings, key=lambda addon: addon['full_name'].lower())
+
+    ret['addon_capabilities'] = settings.ADDON_CAPABILITIES
+    ret['addon_categories'] = set([item for addon in addon_settings for item in addon['categories']])
+    ret['addon_settings'] = addon_settings
+    ret['addon_js'] = collect_node_config_js([addon for addon in addon_settings if addon['enabled']])
+
+    return ret
+
+
 def collect_node_config_js(addons):
     """Collect webpack bundles for each of the addons' node-cfg.js modules. Return
     the URLs for each of the JS modules to be included on the node addons config page.
@@ -310,7 +317,7 @@ def collect_node_config_js(addons):
     """
     js_modules = []
     for addon in addons:
-        js_path = paths.resolve_addon_path(addon.config, 'node-cfg.js')
+        js_path = os.path.join('/', 'static', 'public', 'js', addon['short_name'], 'node-cfg.js')
         if js_path:
             js_modules.append(js_path)
     return js_modules
@@ -366,6 +373,81 @@ def view_project(auth, node, **kwargs):
         config_entry='widget'
     ))
     ret.update(rubeus.collect_addon_assets(node))
+
+    addons_widget_data = {
+        'wiki': None,
+        'mendeley': None,
+        'zotero': None,
+        'forward': None,
+        'dataverse': None
+    }
+
+    if 'wiki' in ret['addons']:
+        wiki = node.get_addon('wiki')
+        wiki_page = node.get_wiki_page('home')
+
+        # Show "Read more" link if there are multiple pages or has > 400 characters
+        more = len(node.wiki_pages_current.keys()) >= 2
+        MAX_DISPLAY_LENGTH = 400
+        rendered_before_update = False
+        if wiki_page and wiki_page.html(node):
+            wiki_html = BeautifulSoup(wiki_page.html(node))
+            if len(wiki_html) > MAX_DISPLAY_LENGTH:
+                wiki_html = BeautifulSoup(wiki_html[:MAX_DISPLAY_LENGTH] + '...', 'html.parser')
+                more = True
+
+            rendered_before_update = wiki_page.rendered_before_update
+        else:
+            wiki_html = None
+
+        wiki_widget_data = {
+            'complete': True,
+            'wiki_content': unicode(wiki_html) if wiki_html else None,
+            'wiki_content_url': node.api_url_for('wiki_page_content', wname='home'),
+            'rendered_before_update': rendered_before_update,
+            'more': more,
+            'include': False,
+        }
+        wiki_widget_data.update(wiki.config.to_json())
+        addons_widget_data['wiki'] = wiki_widget_data
+
+    if 'dataverse' in ret['addons']:
+        node_addon = node.get_addon('dataverse')
+        widget_url = node.api_url_for('dataverse_get_widget_contents')
+
+        dataverse_widget_data = {
+            'complete': node_addon.complete,
+            'widget_url': widget_url,
+        }
+        dataverse_widget_data.update(node_addon.config.to_json())
+        addons_widget_data['dataverse'] = dataverse_widget_data
+
+    if 'forward' in ret['addons']:
+        node_addon = node.get_addon('forward')
+        forward_widget_data = serialize_settings(node_addon)
+        forward_widget_data['complete'] = settings_complete(node_addon)
+        forward_widget_data.update(node_addon.config.to_json())
+        addons_widget_data['forward'] = forward_widget_data
+
+    if 'zotero' in ret['addons']:
+        node_addon = node.get_addon('zotero')
+        zotero_widget_data = node_addon.config.to_json()
+        zotero_widget_data.update({
+            'complete': node_addon.complete,
+            'list_id': node_addon.list_id,
+        })
+        addons_widget_data['zotero'] = zotero_widget_data
+
+    if 'mendeley' in ret['addons']:
+        node_addon = node.get_addon('mendeley')
+        mendeley_widget_data = node_addon.config.to_json()
+        mendeley_widget_data.update({
+            'complete': node_addon.complete,
+            'list_id': node_addon.list_id,
+        })
+        addons_widget_data['mendeley'] = mendeley_widget_data
+
+    ret.update({'addons_widget_data': addons_widget_data})
     return ret
 
 # Reorder components
@@ -462,9 +544,8 @@ def update_node(auth, node, **kwargs):
     updated_fields_dict = {
         key: getattr(node, key) if key != 'tags' else [str(tag) for tag in node.tags]
         for key in updated_field_names
-        if key != 'logs' and key != 'date_modified'
+        if key != 'logs' and key != 'modified' and key != 'last_logged'
     }
-    node.save()
     return {'updated_fields': updated_fields_dict}
 
 @must_be_valid_project
@@ -508,37 +589,36 @@ def remove_private_link(*args, **kwargs):
     link_id = request.json['private_link_id']
 
     try:
-        link = PrivateLink.load(link_id)
-        link.is_deleted = True
-        link.save()
-
-        for node in link.nodes.all():
-            log_dict = {
-                'project': node.parent_id,
-                'node': node._id,
-                'user': kwargs.get('auth').user._id,
-                'anonymous_link': link.anonymous,
-            }
-
-            node.add_log(
-                NodeLog.VIEW_ONLY_LINK_REMOVED,
-                log_dict,
-                auth=kwargs.get('auth', None)
-            )
-
-    except ModularOdmException:
+        link = PrivateLink.objects.get(_id=link_id)
+    except PrivateLink.DoesNotExist:
         raise HTTPError(http.NOT_FOUND)
 
+    link.is_deleted = True
+    link.save()
+
+    for node in link.nodes.all():
+        log_dict = {
+            'project': node.parent_id,
+            'node': node._id,
+            'user': kwargs.get('auth').user._id,
+            'anonymous_link': link.anonymous,
+        }
+
+        node.add_log(
+            NodeLog.VIEW_ONLY_LINK_REMOVED,
+            log_dict,
+            auth=kwargs.get('auth', None)
+        )
 
 # TODO: Split into separate functions
-def _render_addon(node):
+def _render_addons(addons):
 
     widgets = {}
     configs = {}
     js = []
     css = []
 
-    for addon in node.get_addons():
+    for addon in addons:
         configs[addon.config.short_name] = addon.config.to_json()
         js.extend(addon.config.include_js.get('widget', []))
         css.extend(addon.config.include_css.get('widget', []))
@@ -549,14 +629,14 @@ def _render_addon(node):
     return widgets, configs, js, css
 
 
-def _should_show_wiki_widget(node, user):
-
+def _should_show_wiki_widget(node, contributor):
     has_wiki = bool(node.get_addon('wiki'))
     wiki_page = node.get_wiki_page('home', None)
-    if not node.has_permission(user, 'write'):
-        return has_wiki and wiki_page and wiki_page.html(node)
-    else:
+
+    if contributor and contributor.write and not node.is_registration:
         return has_wiki
+    else:
+        return has_wiki and wiki_page and wiki_page.html(node)
 
 
 def _view_project(node, auth, primary=False,
@@ -565,8 +645,12 @@ def _view_project(node, auth, primary=False,
     """Build a JSON object containing everything needed to render
     project.view.mako.
     """
-    node = Node.objects.filter(pk=node.pk).include('contributor__user__guids').get()
+    node = AbstractNode.objects.filter(pk=node.pk).include('contributor__user__guids').get()
     user = auth.user
+    try:
+        contributor = node.contributor_set.get(user=user)
+    except Contributor.DoesNotExist:
+        contributor = None
 
     parent = node.find_readable_antecedent(auth)
     if user:
@@ -578,8 +662,10 @@ def _view_project(node, auth, primary=False,
         bookmark_collection_id = ''
     view_only_link = auth.private_key or request.args.get('view_only', '').strip('/')
     anonymous = has_anonymous_link(node, auth)
-    widgets, configs, js, css = _render_addon(node)
+    addons = list(node.get_addons())
+    widgets, configs, js, css = _render_addons(addons)
     redirect_url = node.url + '?view_only=None'
+    node_linked_preprint = node.linked_preprint
 
     disapproval_link = ''
     if (node.is_pending_registration and node.has_permission(user, ADMIN)):
@@ -590,10 +676,13 @@ def _view_project(node, auth, primary=False,
 
     # Before page load callback; skip if not primary call
     if primary:
-        for addon in node.get_addons():
+        for addon in addons:
             messages = addon.before_page_load(node, user) or []
             for message in messages:
                 status.push_status_message(message, kind='info', dismissible=False, trust=True)
+    NodeRelation = apps.get_model('osf.NodeRelation')
+
+    is_registration = node.is_registration
     data = {
         'node': {
             'disapproval_link': disapproval_link,
@@ -613,51 +702,54 @@ def _view_project(node, auth, primary=False,
             'in_dashboard': in_bookmark_collection,
             'is_public': node.is_public,
             'is_archiving': node.archiving,
-            'date_created': iso8601format(node.date_created),
-            'date_modified': iso8601format(node.logs.latest().date) if node.logs.exists() else '',
+            'date_created': iso8601format(node.created),
+            'date_modified': iso8601format(node.last_logged) if node.last_logged else '',
             'tags': list(node.tags.filter(system=False).values_list('name', flat=True)),
-            'children': bool(node.nodes_active),
-            'is_registration': node.is_registration,
-            'is_pending_registration': node.is_pending_registration,
-            'is_retracted': node.is_retracted,
-            'is_pending_retraction': node.is_pending_retraction,
-            'retracted_justification': getattr(node.retraction, 'justification', None),
-            'date_retracted': iso8601format(getattr(node.retraction, 'date_retracted', None)),
-            'embargo_end_date': node.embargo_end_date.strftime('%A, %b. %d, %Y') if node.embargo_end_date else False,
-            'is_pending_embargo': node.is_pending_embargo,
-            'is_embargoed': node.is_embargoed,
-            'is_pending_embargo_termination': node.is_embargoed and (
+            'children': node.nodes_active.exists(),
+            'child_exists': Node.objects.get_children(node, active=True).exists(),
+            'is_registration': is_registration,
+            'is_pending_registration': node.is_pending_registration if is_registration else False,
+            'is_retracted': node.is_retracted if is_registration else False,
+            'is_pending_retraction': node.is_pending_retraction if is_registration else False,
+            'retracted_justification': getattr(node.retraction, 'justification', None) if is_registration else None,
+            'date_retracted': iso8601format(getattr(node.retraction, 'date_retracted', None)) if is_registration else '',
+            'embargo_end_date': node.embargo_end_date.strftime('%A, %b %d, %Y') if is_registration and node.embargo_end_date else '',
+            'is_pending_embargo': node.is_pending_embargo if is_registration else False,
+            'is_embargoed': node.is_embargoed if is_registration else False,
+            'is_pending_embargo_termination': is_registration and node.is_embargoed and (
                 node.embargo_termination_approval and
                 node.embargo_termination_approval.is_pending_approval
             ),
-            'registered_from_url': node.registered_from.url if node.is_registration else '',
-            'registered_date': iso8601format(node.registered_date) if node.is_registration else '',
+            'registered_from_url': node.registered_from.url if is_registration else '',
+            'registered_date': iso8601format(node.registered_date) if is_registration else '',
             'root_id': node.root._id if node.root else None,
             'registered_meta': node.registered_meta,
-            'registered_schemas': serialize_meta_schemas(list(node.registered_schema.all())),
-            'registration_count': node.registrations_all.count(),
+            'registered_schemas': serialize_meta_schemas(list(node.registered_schema.all())) if is_registration else False,
             'is_fork': node.is_fork,
             'forked_from_id': node.forked_from._primary_key if node.is_fork else '',
             'forked_from_display_absolute_url': node.forked_from.display_absolute_url if node.is_fork else '',
             'forked_date': iso8601format(node.forked_date) if node.is_fork else '',
-            'fork_count': node.forks.filter(is_deleted=False).count(),
-            'templated_count': node.templated_list.count(),
+            'fork_count': node.forks.exclude(type='osf.registration').filter(is_deleted=False).count(),
             'private_links': [x.to_json() for x in node.private_links_active],
             'link': view_only_link,
+            'linked_nodes_count': NodeRelation.objects.filter(child=node, is_node_link=True).exclude(parent__type='osf.collection').count(),
             'anonymous': anonymous,
-            'points': len(node.get_points(deleted=False, folders=False)),
             'comment_level': node.comment_level,
-            'has_comments': bool(Comment.find(Q('node', 'eq', node))),
-            'has_children': bool(Comment.find(Q('node', 'eq', node))),
+            'has_comments': node.comment_set.exists(),
             'identifiers': {
                 'doi': node.get_identifier_value('doi'),
                 'ark': node.get_identifier_value('ark'),
             },
             'institutions': get_affiliated_institutions(node) if node else [],
-            'alternative_citations': [citation.to_json() for citation in node.alternative_citations.all()],
             'has_draft_registrations': node.has_active_draft_registrations,
-            'contributors': list(node.contributors.values_list('guids___id', flat=True)),
             'is_preprint': node.is_preprint,
+            'has_moderated_preprint': node_linked_preprint.provider.reviews_workflow if node_linked_preprint else '',
+            'preprint_state': node_linked_preprint.reviews_state if node_linked_preprint else '',
+            'preprint_word': node_linked_preprint.provider.preprint_word if node_linked_preprint else '',
+            'preprint_provider': {
+                'name': node_linked_preprint.provider.name,
+                'workflow': node_linked_preprint.provider.reviews_workflow
+            } if node_linked_preprint else {},
             'is_preprint_orphan': node.is_preprint_orphan,
             'has_published_preprint': node.preprints.filter(is_published=True).exists() if node else False,
             'preprint_file_id': node.preprint_file._id if node.preprint_file else None,
@@ -674,27 +766,26 @@ def _view_project(node, auth, primary=False,
             'registrations_url': parent.web_url_for('node_registrations') if parent else '',
             'is_public': parent.is_public if parent else '',
             'is_contributor': parent.is_contributor(user) if parent else '',
-            'can_view': parent.can_view(auth) if parent else False
+            'can_view': parent.can_view(auth) if parent else False,
         },
         'user': {
-            'is_contributor': node.is_contributor(user),
-            'is_admin': node.has_permission(user, ADMIN),
+            'is_contributor': bool(contributor),
+            'is_admin': bool(contributor) and contributor.admin,
             'is_admin_parent': parent.is_admin_parent(user) if parent else False,
-            'can_edit': (node.can_edit(auth)
-                         and not node.is_registration),
+            'can_edit': bool(contributor) and contributor.write and not node.is_registration,
+            'can_edit_tags': bool(contributor) and contributor.write,
             'has_read_permissions': node.has_permission(user, READ),
-            'permissions': node.get_permissions(user) if user else [],
+            'permissions': get_contributor_permissions(contributor, as_list=True) if contributor else [],
             'id': user._id if user else None,
             'username': user.username if user else None,
             'fullname': user.fullname if user else '',
-            'can_comment': node.can_comment(auth),
-            'show_wiki_widget': _should_show_wiki_widget(node, user),
+            'can_comment': bool(contributor) or node.can_comment(auth),
+            'show_wiki_widget': _should_show_wiki_widget(node, contributor),
             'dashboard_id': bookmark_collection_id,
             'institutions': get_affiliated_institutions(user) if user else [],
         },
-        'badges': _get_badge(user),
         # TODO: Namespace with nested dicts
-        'addons_enabled': node.get_addon_names(),
+        'addons_enabled': [each.short_name for each in addons],
         'addons': configs,
         'addon_widgets': widgets,
         'addon_widget_js': js,
@@ -706,6 +797,8 @@ def _view_project(node, auth, primary=False,
     }
     if embed_contributors and not anonymous:
         data['node']['contributors'] = utils.serialize_visible_contributors(node)
+    else:
+        data['node']['contributors'] = list(node.contributors.values_list('guids___id', flat=True))
     if embed_descendants:
         descendants, all_readable = _get_readable_descendants(auth=auth, node=node)
         data['user']['can_sort'] = all_readable
@@ -735,33 +828,44 @@ def get_affiliated_institutions(obj):
         })
     return ret
 
-def _get_badge(user):
-    if user:
-        badger = user.get_addon('badges')
-        if badger:
-            return {
-                'can_award': badger.can_award,
-                'badges': badger.get_badges_json()
-            }
-    return {}
+def serialize_children(child_list, nested, indent=0):
+    """
+    Returns the serialized representation of a list of child nodes.
 
+    This is a helper function for _get_children and as such it does not
+    redundantly check permissions.
+    """
+    results = []
+    for child in child_list:
+        results.append({
+            'id': child._id,
+            'title': child.title,
+            'is_public': child.is_public,
+            'parent_id': child.parentnode_id,
+            'indent': indent
+        })
+        if child._id in nested.keys():
+            results.extend(serialize_children(nested.get(child._id), nested, indent + 1))
+    return results
 
-def _get_children(node, auth, indent=0):
+def _get_children(node, auth):
+    """
+    Returns the serialized representation of the given node and all of its children
+    for which the given user has ADMIN permission.
+    """
+    is_admin = Contributor.objects.filter(node=OuterRef('pk'), admin=True, user=auth.user)
+    parent_node_sqs = NodeRelation.objects.filter(child=OuterRef('pk'), is_node_link=False).values('parent__guids___id')
+    children = (Node.objects.get_children(node)
+                .filter(is_deleted=False)
+                .annotate(parentnode_id=Subquery(parent_node_sqs[:1]))
+                .annotate(has_admin_perm=Exists(is_admin))
+                .filter(has_admin_perm=True))
 
-    children = []
+    nested = defaultdict(list)
+    for child in children:
+        nested[child.parentnode_id].append(child)
 
-    for child in node.nodes_primary:
-        if not child.is_deleted and child.has_permission(auth.user, ADMIN):
-            children.append({
-                'id': child._primary_key,
-                'title': child.title,
-                'indent': indent,
-                'is_public': child.is_public,
-                'parent_id': child.parent_id,
-            })
-            children.extend(_get_children(child, auth, indent + 1))
-
-    return children
+    return serialize_children(nested[node._id], nested)
 
 
 @must_be_valid_project
@@ -819,73 +923,113 @@ def _get_readable_descendants(auth, node, permission=None):
                 descendants.append(descendant)
     return descendants, all_readable
 
-def node_child_tree(user, nodes):
-    """ Format data to test for node privacy settings for use in treebeard.
-    :param user: modular odm User object
-    :param nodes: list of parent project node objects
-    :return: treebeard-formatted data
+def serialize_child_tree(child_list, user, nested):
     """
-    items = []
+    Recursively serializes and returns a list of child nodes.
 
-    for node in nodes:
-        assert node, '{} is not a valid Node.'.format(node._id)
+    This is a helper function for node_child_tree and as such it does not
+    redundantly check permissions.
+    """
+    serialized_children = []
+    for child in child_list:
+        contributors = [{
+            'id': contributor.user._id,
+            'is_admin': contributor.admin,
+            'is_confirmed': contributor.user.is_confirmed,
+            'visible': contributor.visible
+        } for contributor in child.contributor_set.all()]
 
-        can_read = node.has_permission(user, READ)
-        can_read_children = node.has_permission_on_children(user, 'read')
-        if not can_read and not can_read_children:
-            continue
-
-        contributors = []
-        for contributor in node.contributors:
-            contributors.append({
-                'id': contributor._id,
-                'is_admin': node.has_permission(contributor, ADMIN),
-                'is_confirmed': contributor.is_confirmed
-            })
-
-        affiliated_institutions = [{
-            'id': affiliated_institution.pk,
-            'name': affiliated_institution.name
-        } for affiliated_institution in node.affiliated_institutions.all()]
-
-        children = node.get_nodes(**{'is_deleted': False, 'is_node_link': False})
-        children_tree = []
-        # List project/node if user has at least 'read' permissions (contributor or admin viewer) or if
-        # user is contributor on a component of the project/node
-        children_tree.extend(node_child_tree(user, children))
-
-        item = {
+        serialized_children.append({
             'node': {
-                'id': node._id,
-                'url': node.url if can_read else '',
-                'title': node.title if can_read else 'Private Project',
-                'is_public': node.is_public,
+                'id': child._id,
+                'url': child.url,
+                'title': child.title,
+                'is_public': child.is_public,
                 'contributors': contributors,
-                'visible_contributors': list(node.visible_contributor_ids),
-                'is_admin': node.has_permission(user, ADMIN),
-                'affiliated_institutions': affiliated_institutions
+                'is_admin': child.has_admin_perm,
             },
             'user_id': user._id,
-            'children': children_tree,
-            'kind': 'folder' if not node.parent_node or not node.parent_node.has_permission(user, 'read') else 'node',
-            'nodeType': node.project_or_component,
-            'category': node.category,
+            'children': serialize_child_tree(nested.get(child._id), user, nested) if child._id in nested.keys() else [],
+            'nodeType': 'project' if not child.parentnode_id else 'component',
+            'category': child.category,
             'permissions': {
-                'view': can_read,
-                'is_admin': node.has_permission(user, 'read')
+                'view': True,
+                'is_admin': child.has_admin_perm
             }
+        })
+
+    return sorted(serialized_children, key=lambda k: len(k['children']), reverse=True)
+
+def node_child_tree(user, node):
+    """
+    Returns the serialized representation (for treebeard) of a given node and its children.
+    The given user must have ADMIN access on the given node, and therefore the given user has
+    implicit read permisson on all of node's children (i.e. read permissions aren't checked here)
+
+    :param user: OSFUser object
+    :param node: parent project Node object
+    :return: treebeard-formatted data
+    """
+    serialized_nodes = []
+    is_contrib = node.is_contributor(user)
+
+    assert node, '{} is not a valid Node.'.format(node._id)
+
+    if not is_contrib:
+        return []
+
+    is_admin = node.has_permission(user, ADMIN)
+
+    if is_admin:
+        is_admin_sqs = Contributor.objects.filter(node=OuterRef('pk'), admin=True, user=user)
+        parent_node_sqs = NodeRelation.objects.filter(child=OuterRef('pk'), is_node_link=False).values('parent__guids___id')
+        children = (Node.objects.get_children(node)
+                    .filter(is_deleted=False)
+                    .annotate(parentnode_id=Subquery(parent_node_sqs[:1]))
+                    .annotate(has_admin_perm=Exists(is_admin_sqs))
+                    .include('contributor__user__guids')
+                    )
+    else:
+        children = []
+
+    nested = defaultdict(list)
+    for child in children:
+        nested[child.parentnode_id].append(child)
+
+    contributors = [{
+        'id': contributor.user._id,
+        'is_admin': node.has_permission(contributor.user, ADMIN),
+        'is_confirmed': contributor.user.is_confirmed,
+        'visible': contributor.visible
+    } for contributor in node.contributor_set.all().include('user__guids')]
+
+    serialized_nodes.append({
+        'node': {
+            'id': node._id,
+            'url': node.url,
+            'title': node.title,
+            'is_public': node.is_public,
+            'contributors': contributors,
+            'is_admin': is_admin
+        },
+        'user_id': user._id,
+        'children': serialize_child_tree(nested.get(node._id), user, nested) if node._id in nested.keys() else [],
+        'kind': 'folder' if not node.parent_node or not node.parent_node.has_permission(user, 'read') else 'node',
+        'nodeType': node.project_or_component,
+        'category': node.category,
+        'permissions': {
+            'view': True,
+            'is_admin': is_admin
         }
+    })
 
-        items.append(item)
-
-    return items
-
+    return serialized_nodes
 
 @must_be_logged_in
 @must_be_valid_project
 def get_node_tree(auth, **kwargs):
     node = kwargs.get('node') or kwargs['project']
-    tree = node_child_tree(auth.user, [node])
+    tree = node_child_tree(auth.user, node)
     return tree
 
 @must_be_valid_project
@@ -901,7 +1045,7 @@ def project_generate_private_link_post(auth, node, **kwargs):
     if node._id not in node_ids:
         node_ids.insert(0, node._id)
 
-    nodes = [Node.load(node_id) for node_id in node_ids]
+    nodes = [AbstractNode.load(node_id) for node_id in node_ids]
 
     try:
         new_link = new_private_link(
@@ -961,8 +1105,8 @@ def _serialize_node_search(node):
         data['title'] += ' (registration)'
         data['dateRegistered'] = node.registered_date.isoformat()
     else:
-        data['dateCreated'] = node.date_created.isoformat()
-        data['dateModified'] = node.date_modified.isoformat()
+        data['dateCreated'] = node.created.isoformat()
+        data['dateModified'] = node.modified.isoformat()
 
     first_author = node.visible_contributors[0]
     data['firstAuthor'] = first_author.family_name or first_author.given_name or first_author.fullname
@@ -976,7 +1120,7 @@ def search_node(auth, **kwargs):
 
     """
     # Get arguments
-    node = Node.load(request.json.get('nodeId'))
+    node = AbstractNode.load(request.json.get('nodeId'))
     include_public = request.json.get('includePublic')
     size = float(request.json.get('size', '5').strip())
     page = request.json.get('page', 0)
@@ -986,18 +1130,22 @@ def search_node(auth, **kwargs):
     if not query:
         return {'nodes': []}
 
-    # Build ODM query
-    title_query = Q('title', 'icontains', query)
-    not_deleted_query = Q('is_deleted', 'eq', False)
-    visibility_query = Q('contributors', 'eq', auth.user)
-    if include_public:
-        visibility_query = visibility_query | Q('is_public', 'eq', True)
-    odm_query = title_query & not_deleted_query & visibility_query
-
     # Exclude current node from query if provided
     nin = [node.id] + list(node._nodes.values_list('pk', flat=True)) if node else []
 
-    nodes = Node.find(odm_query).exclude(id__in=nin).exclude(type='osf.collection')
+    can_view_query = Q(_contributors=auth.user)
+    if include_public:
+        can_view_query = can_view_query | Q(is_public=True)
+
+    nodes = (AbstractNode.objects
+        .filter(
+            can_view_query,
+            title__icontains=query,
+            is_deleted=False)
+        .exclude(id__in=nin)
+        .exclude(type='osf.collection')
+        .exclude(type='osf.quickfilesnode'))
+
     count = nodes.count()
     pages = math.ceil(count / size)
     validate_page_num(page, pages)
@@ -1041,8 +1189,8 @@ def add_pointer(auth):
     if not (to_node_id and pointer_to_move):
         raise HTTPError(http.BAD_REQUEST)
 
-    pointer = Node.load(pointer_to_move)
-    to_node = Node.load(to_node_id)
+    pointer = AbstractNode.load(pointer_to_move)
+    to_node = AbstractNode.load(to_node_id)
     try:
         _add_pointers(to_node, [pointer], auth)
     except ValueError:
@@ -1061,7 +1209,7 @@ def add_pointers(auth, node, **kwargs):
         raise HTTPError(http.BAD_REQUEST)
 
     nodes = [
-        Node.load(node_id)
+        AbstractNode.load(node_id)
         for node_id in node_ids
     ]
 
@@ -1086,7 +1234,7 @@ def remove_pointer(auth, node, **kwargs):
     if pointer_id is None:
         raise HTTPError(http.BAD_REQUEST)
 
-    pointer = Node.load(pointer_id)
+    pointer = AbstractNode.load(pointer_id)
     if pointer is None:
         raise HTTPError(http.BAD_REQUEST)
 
@@ -1104,21 +1252,30 @@ def fork_pointer(auth, node, **kwargs):
     """Fork a pointer. Raises BAD_REQUEST if pointer not provided, not found,
     or not present in `nodes`.
 
+    :param Auth auth: Consolidated authorization
+    :param Node node: root from which pointer is child
+    :return: Fork of node to which nodelink(pointer) points
     """
     NodeRelation = apps.get_model('osf.NodeRelation')
 
-    pointer_id = request.json.get('pointerId')
-    pointer = NodeRelation.load(pointer_id)
+    linked_node_id = request.json.get('nodeId')
+    linked_node = AbstractNode.load(linked_node_id)
+    pointer = NodeRelation.objects.filter(child=linked_node, is_node_link=True, parent=node).first()
 
     if pointer is None:
         # TODO: Change this to 404?
         raise HTTPError(http.BAD_REQUEST)
 
     try:
-        node.fork_pointer(pointer, auth=auth, save=True)
+        fork = node.fork_pointer(pointer, auth=auth, save=True)
     except ValueError:
         raise HTTPError(http.BAD_REQUEST)
 
+    return {
+        'data': {
+            'node': serialize_node_summary(node=fork, auth=auth, show_path=False)
+        }
+    }, http.CREATED
 
 def abbrev_authors(node):
     lead_author = node.visible_contributors[0]

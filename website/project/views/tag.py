@@ -1,11 +1,10 @@
 import httplib as http
 
 from flask import request
-from modularodm import Q
-from modularodm.exceptions import ValidationError
+from django.core.exceptions import ValidationError
 
 from framework.auth.decorators import collect_auth
-from osf.models import AbstractNode as Node, Tag
+from osf.models import AbstractNode
 from website.exceptions import InvalidTagError, NodeStateError, TagNotFoundError
 from website.project.decorators import (
     must_be_valid_project, must_have_permission, must_not_be_registration
@@ -16,20 +15,14 @@ from website.project.decorators import (
 # nodes serialized, before re-enabling.
 @collect_auth
 def project_tag(tag, auth, **kwargs):
-    tag_obj = Tag.load(tag)
-    if tag_obj:
-        nodes = Node.find(Q('tags', 'eq', tag_obj._id))
-    else:
-        nodes = []
-
-    visible_nodes = [obj for obj in nodes if obj.can_view(auth)]
+    nodes = AbstractNode.objects.filter(tags___id=tag).can_view(auth.user).values('title', 'url')
     return {
         'nodes': [
             {
-                'title': node.title,
-                'url': node.url,
+                'title': node['title'],
+                'url': node['url'],
             }
-            for node in visible_nodes
+            for node in nodes
         ],
         'tag': tag,
     }

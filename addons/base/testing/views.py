@@ -7,7 +7,7 @@ import mock
 from framework.auth import Auth
 from framework.exceptions import HTTPError
 from nose.tools import *  # noqa (PEP8 asserts)
-from tests.factories import AuthUserFactory, ProjectFactory
+from osf_tests.factories import AuthUserFactory, ProjectFactory
 from addons.base.testing.base import OAuthAddonTestCaseMixin
 from website.util import api_url_for, permissions, web_url_for
 

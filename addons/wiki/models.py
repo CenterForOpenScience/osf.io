@@ -36,14 +36,6 @@ SHAREJS_DB_URL = 'mongodb://{}:{}/{}'.format(settings.DB_HOST, settings.DB_PORT,
 # TODO: Change to release date for wiki change
 WIKI_CHANGE_DATE = datetime.datetime.utcfromtimestamp(1423760098).replace(tzinfo=pytz.utc)
 
-# MongoDB forbids field names that begin with "$" or contain ".". These
-# utilities map to and from Mongo field names.
-
-mongo_map = {
-    '.': '__!dot!__',
-    '$': '__!dollar!__',
-}
-
 def validate_page_name(value):
     value = (value or '').strip()
 
@@ -55,17 +47,6 @@ def validate_page_name(value):
     if len(value) > 100:
         raise NameMaximumLengthError('Page name cannot be greater than 100 characters.')
     return True
-
-
-def to_mongo(item):
-    for key, value in mongo_map.items():
-        item = item.replace(key, value)
-    return item
-
-
-def to_mongo_key(item):
-    return to_mongo(item).strip().lower()
-
 
 def render_content(content, node):
     html_output = markdown.markdown(
@@ -101,12 +82,12 @@ class NodeWikiPage(GuidMixin, BaseModel):
     version = models.IntegerField(default=1)
     date = NonNaiveDateTimeField(auto_now_add=True)
     content = models.TextField(default='', blank=True)
-    user = models.ForeignKey('osf.OSFUser', null=True, blank=True)
-    node = models.ForeignKey('osf.AbstractNode', null=True, blank=True)
+    user = models.ForeignKey('osf.OSFUser', null=True, blank=True, on_delete=models.CASCADE)
+    node = models.ForeignKey('osf.AbstractNode', null=True, blank=True, on_delete=models.CASCADE)
 
     @property
     def is_current(self):
-        key = to_mongo_key(self.page_name)
+        key = wiki_utils.to_mongo_key(self.page_name)
         if key in self.node.wiki_pages_current:
             return self.node.wiki_pages_current[key] == self._id
         else:
@@ -137,7 +118,7 @@ class NodeWikiPage(GuidMixin, BaseModel):
 
     @property
     def is_deleted(self):
-        key = to_mongo_key(self.page_name)
+        key = wiki_utils.to_mongo_key(self.page_name)
         return key not in self.node.wiki_pages_current
 
     @property

@@ -1,10 +1,10 @@
 import pytz
 import json
 
-from modularodm.exceptions import ValidationValueError
-
+from django.core.exceptions import ValidationError
 from rest_framework import serializers as ser
 from rest_framework import exceptions
+from api.base.exceptions import Conflict
 
 from api.base.utils import absolute_reverse, get_user_auth
 from website.project.metadata.utils import is_prereg_admin_not_project_admin
@@ -18,6 +18,8 @@ from api.nodes.serializers import NodeContributorsSerializer, NodeTagField
 from api.base.serializers import (IDField, RelationshipField, LinksField, HideIfWithdrawal,
                                   FileCommentRelationshipField, NodeFileHyperLinkField, HideIfRegistration,
                                   JSONAPIListField, ShowIfVersion, DateByVersion,)
+from framework.auth.core import Auth
+from osf.exceptions import ValidationValueError
 
 
 class BaseRegistrationSerializer(NodeSerializer):
@@ -27,11 +29,11 @@ class BaseRegistrationSerializer(NodeSerializer):
     category_choices = NodeSerializer.category_choices
     category_choices_string = NodeSerializer.category_choices_string
     category = HideIfWithdrawal(ser.ChoiceField(read_only=True, choices=category_choices, help_text='Choices: ' + category_choices_string))
-    date_modified = DateByVersion(read_only=True)
+    date_modified = DateByVersion(source='last_logged', read_only=True)
     fork = HideIfWithdrawal(ser.BooleanField(read_only=True, source='is_fork'))
     collection = HideIfWithdrawal(ser.BooleanField(read_only=True, source='is_collection'))
     node_license = HideIfWithdrawal(NodeLicenseSerializer(read_only=True))
-    tags = HideIfWithdrawal(JSONAPIListField(child=NodeTagField(), read_only=True))
+    tags = HideIfWithdrawal(JSONAPIListField(child=NodeTagField(), required=False))
     public = HideIfWithdrawal(ser.BooleanField(source='is_public', required=False,
                                                help_text='Nodes that are made public will give read-only access '
                                         'to everyone. Private nodes require explicit read '
@@ -236,7 +238,7 @@ class BaseRegistrationSerializer(NodeSerializer):
             embargo_end_date = embargo_lifted.replace(tzinfo=pytz.utc)
             try:
                 registration.embargo_registration(auth.user, embargo_end_date)
-            except ValidationValueError as err:
+            except ValidationError as err:
                 raise exceptions.ValidationError(err.message)
         else:
             try:
@@ -275,19 +277,26 @@ class BaseRegistrationSerializer(NodeSerializer):
         return NodeSerializer.get_current_user_permissions(self, obj)
 
     def update(self, registration, validated_data):
-        is_public = validated_data.get('is_public', False)
-        if is_public:
+        auth = Auth(self.context['request'].user)
+        # Update tags
+        if 'tags' in validated_data:
+            new_tags = validated_data.pop('tags', [])
             try:
-                registration.update(validated_data)
-            except NodeUpdateError as err:
-                raise exceptions.ValidationError(err.reason)
+                registration.update_tags(new_tags, auth=auth)
             except NodeStateError as err:
-                raise exceptions.ValidationError(err.message)
-        else:
-            if 'admin' in self.get_current_user_permissions(registration):
-                raise exceptions.ValidationError('Registrations can only be turned from private to public.')
+                raise Conflict(err.message)
+
+        is_public = validated_data.get('is_public', None)
+        if is_public is not None:
+            if is_public:
+                try:
+                    registration.update(validated_data, auth=auth)
+                except NodeUpdateError as err:
+                    raise exceptions.ValidationError(err.reason)
+                except NodeStateError as err:
+                    raise exceptions.ValidationError(err.message)
             else:
-                raise exceptions.PermissionDenied('You do not have permission to perform this action.')
+                raise exceptions.ValidationError('Registrations can only be turned from private to public.')
         return registration
 
     class Meta:

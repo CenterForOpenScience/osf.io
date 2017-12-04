@@ -1,10 +1,7 @@
-from django.apps import apps
 from rest_framework import serializers as ser
 from rest_framework import exceptions
 
-from modularodm import Q
-
-from osf.models import AbstractNode as Node
+from osf.models import Node, Registration
 from website.util import permissions as osf_permissions
 
 from api.base.serializers import JSONAPISerializer, RelationshipField, LinksField, JSONAPIRelationshipSerializer, \
@@ -90,8 +87,50 @@ class InstitutionNodesRelationshipSerializer(BaseAPISerializer):
         if not changes_flag:
             raise RelationshipPostMakesNoChanges
 
-        ConcreteNode = apps.get_model('osf.Node')
         return {
-            'data': list(ConcreteNode.find_by_institutions(inst, Q('is_deleted', 'ne', True))),
+            'data': list(inst.nodes.filter(is_deleted=False, type='osf.node')),
+            'self': inst
+        }
+
+class RegistrationRelated(JSONAPIRelationshipSerializer):
+    id = ser.CharField(source='_id', required=False, allow_null=True)
+    class Meta:
+        type_ = 'registrations'
+
+class InstitutionRegistrationsRelationshipSerializer(BaseAPISerializer):
+    data = ser.ListField(child=RegistrationRelated())
+    links = LinksField({'self': 'get_self_url',
+                        'html': 'get_related_url'})
+
+    def get_self_url(self, obj):
+        return obj['self'].registrations_relationship_url
+
+    def get_related_url(self, obj):
+        return obj['self'].registrations_url
+
+    class Meta:
+        type_ = 'registrations'
+
+    def create(self, validated_data):
+        inst = self.context['view'].get_object()['self']
+        user = self.context['request'].user
+        registration_dicts = validated_data['data']
+
+        changes_flag = False
+        for registration_dict in registration_dicts:
+            registration = Registration.load(registration_dict['_id'])
+            if not registration:
+                raise exceptions.NotFound(detail='Registration with id "{}" was not found'.format(registration_dict['_id']))
+            if not registration.has_permission(user, osf_permissions.WRITE):
+                raise exceptions.PermissionDenied(detail='Write permission on registration {} required'.format(registration_dict['_id']))
+            if not registration.is_affiliated_with_institution(inst):
+                registration.add_affiliated_institution(inst, user, save=True)
+                changes_flag = True
+
+        if not changes_flag:
+            raise RelationshipPostMakesNoChanges
+
+        return {
+            'data': list(inst.nodes.filter(is_deleted=False, type='osf.registration')),
             'self': inst
         }

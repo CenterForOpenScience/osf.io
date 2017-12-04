@@ -1,11 +1,11 @@
 # -*- coding: utf-8 -*-
 '''Unit tests for models and their factories.'''
 import unittest
+
+from django.core.exceptions import ValidationError
 from nose.tools import *  # PEP8 asserts
 
 from framework.forms.utils import process_payload
-from modularodm.exceptions import ValidationError
-from modularodm import Q
 
 from osf.models import MetaSchema
 from osf.utils.migrations import ensure_schemas
@@ -21,14 +21,14 @@ class TestMetaData(OsfTestCase):
         # Should be zero MetaSchema records to begin with
         MetaSchema.remove()
         assert_equal(
-            MetaSchema.find().count(),
+            MetaSchema.objects.all().count(),
             0
         )
 
         ensure_schemas()
 
         assert_equal(
-            MetaSchema.find().count(),
+            MetaSchema.objects.all().count(),
             len(OSF_META_SCHEMAS)
         )
 
@@ -39,7 +39,7 @@ class TestMetaData(OsfTestCase):
     def test_metaschema_is_fine_with_same_name_but_different_version(self):
         MetaSchema(name='foo', schema={'foo': 42}, schema_version=1).save()
         MetaSchema(name='foo', schema={'foo': 42}, schema_version=2).save()
-        assert_equal(MetaSchema.find(Q('name', 'eq', 'foo')).count(), 2)
+        assert_equal(MetaSchema.objects.filter(name='foo').count(), 2)
 
     def test_process(self):
         processed = process_payload({'foo': 'bar&baz'})

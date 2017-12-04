@@ -5,11 +5,7 @@ var assert = require('chai').assert;
 var utils = require('tests/utils');
 var faker = require('faker');
 
-var $ = require('jquery');
-var $osf = require('js/osfHelpers');
-var ZeroClipboard = require('zeroclipboard');
 var AddonNodeConfigVM = require('js/addonNodeConfig')._AddonNodeConfigViewModel;
-var testUtils = require('./folderPickerTestUtils.js');
 
 var makeEmailList = function(n) {
     var ret = [];
@@ -29,7 +25,7 @@ describe('AddonNodeConfig', () => {
             decodeFolder: decodeFolderSpy
         };
         var vm = new AddonNodeConfigVM('Fake Addon', settingsUrl, '#fakeAddonScope', '#fakeAddonPicker', opts);
-        
+
         describe('#constructor', () => {
             it('applies overrides from the opts param if supplied', () => {
                 vm.treebeardOptions.onPickFolder();

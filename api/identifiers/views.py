@@ -1,11 +1,10 @@
-from modularodm import Q as MODMQ
 from rest_framework import generics, permissions as drf_permissions
 
 from framework.auth.oauth_scopes import CoreScopes
 
 from api.base import permissions as base_permissions
 from api.base.views import JSONAPIBaseView
-from api.base.filters import ODMFilterMixin
+from api.base.filters import ListFilterMixin
 from api.base.serializers import JSONAPISerializer
 
 from api.identifiers.serializers import NodeIdentifierSerializer, RegistrationIdentifierSerializer, PreprintIdentifierSerializer
@@ -18,7 +17,7 @@ from api.nodes.permissions import (
 from osf.models import Node, Registration, PreprintService, Identifier
 
 
-class IdentifierList(JSONAPIBaseView, generics.ListAPIView, ODMFilterMixin):
+class IdentifierList(JSONAPIBaseView, generics.ListAPIView, ListFilterMixin):
     """List of identifiers for a specified node. *Read-only*.
 
     ##Identifier Attributes
@@ -65,16 +64,18 @@ class IdentifierList(JSONAPIBaseView, generics.ListAPIView, ODMFilterMixin):
     view_category = 'identifiers'
     view_name = 'identifier-list'
 
+    ordering = ('-id',)
+
     def get_object(self, *args, **kwargs):
         raise NotImplementedError
 
+    def get_default_queryset(self):
+        obj = self.get_object()
+        return obj.identifiers.all()
+
     # overrides ListCreateAPIView
     def get_queryset(self):
-        return Identifier.find(self.get_query_from_request())
-
-    # overrides ODMFilterMixin
-    def get_default_odm_query(self):
-        return MODMQ('pk', 'in', self.get_object().identifiers.values_list('pk', flat=True))
+        return self.get_queryset_from_request()
 
 
 class IdentifierDetail(JSONAPIBaseView, generics.RetrieveAPIView):

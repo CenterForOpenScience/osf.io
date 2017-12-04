@@ -1,205 +1,245 @@
-# -*- coding: utf-8 -*-
 import mock
-from nose.tools import *  # flake8: noqa
+import pytest
 
-from api.base.settings.defaults import API_BASE
-
-from tests.base import ApiWikiTestCase, ApiTestCase
-from osf_tests.factories import AuthUserFactory, ProjectFactory, RegistrationFactory
 from addons.wiki.tests.factories import NodeWikiFactory
+from api.base.settings.defaults import API_BASE
+from osf_tests.factories import (
+    AuthUserFactory, 
+    ProjectFactory, 
+    RegistrationFactory,
+)
+from rest_framework import exceptions
 
 
-class TestNodeWikiList(ApiWikiTestCase):
+@pytest.fixture()
+def user():
+    return AuthUserFactory()
 
-    def _set_up_public_project_with_wiki_page(self):
-        self.public_project = ProjectFactory(is_public=True, creator=self.user)
-        self.public_wiki = self._add_project_wiki_page(self.public_project, self.user)
-        self.public_url = '/{}nodes/{}/wikis/'.format(API_BASE, self.public_project._id)
+@pytest.mark.django_db
+class TestNodeWikiList:
 
-    def _set_up_private_project_with_wiki_page(self):
-        self.private_project = ProjectFactory(creator=self.user)
-        self.private_wiki = self._add_project_wiki_page(self.private_project, self.user)
-        self.private_url = '/{}nodes/{}/wikis/'.format(API_BASE, self.private_project._id)
+    @pytest.fixture()
+    def add_project_wiki_page(self):
+        def add_page(node, user):
+            with mock.patch('osf.models.AbstractNode.update_search'):
+                return NodeWikiFactory(node=node, user=user)
+        return add_page
 
-    def _set_up_public_registration_with_wiki_page(self):
-        self._set_up_public_project_with_wiki_page()
-        self.public_registration = RegistrationFactory(project=self.public_project, user=self.user, is_public=True)
-        self.public_registration_wiki_id = self.public_registration.wiki_pages_versions['home'][0]
-        self.public_registration.wiki_pages_current = {'home': self.public_registration_wiki_id}
-        self.public_registration.save()
-        self.public_registration_url = '/{}registrations/{}/wikis/'.format(API_BASE, self.public_registration._id)
+    @pytest.fixture()
+    def non_contrib(self):
+        return AuthUserFactory()
 
-    def _set_up_registration_with_wiki_page(self):
-        self._set_up_private_project_with_wiki_page()
-        self.registration = RegistrationFactory(project=self.private_project, user=self.user)
-        self.registration_wiki_id = self.registration.wiki_pages_versions['home'][0]
-        self.registration.wiki_pages_current = {'home': self.registration_wiki_id}
-        self.registration.save()
-        self.registration_url = '/{}registrations/{}/wikis/'.format(API_BASE, self.registration._id)
+    @pytest.fixture()
+    def public_project(self, user):
+        return ProjectFactory(is_public=True, creator=user)
 
-    def test_return_public_node_wikis_logged_out_user(self):
-        self._set_up_public_project_with_wiki_page()
-        res = self.app.get(self.public_url)
-        assert_equal(res.status_code, 200)
+    @pytest.fixture()
+    def public_wiki(self, add_project_wiki_page, user, public_project):
+        return add_project_wiki_page(public_project, user)
+
+    @pytest.fixture()
+    def public_url(self, public_project, public_wiki):
+        return '/{}nodes/{}/wikis/'.format(API_BASE, public_project._id)
+
+    @pytest.fixture()
+    def private_project(self, user):
+        return ProjectFactory(creator=user)
+
+    @pytest.fixture()
+    def private_wiki(self, add_project_wiki_page, user, private_project):
+        return add_project_wiki_page(private_project, user)
+
+    @pytest.fixture()
+    def private_url(self, private_project, private_wiki):
+        return '/{}nodes/{}/wikis/'.format(API_BASE, private_project._id)
+
+    @pytest.fixture()
+    def public_registration(self, user, public_project, public_wiki):
+        public_registration = RegistrationFactory(project=public_project, user=user, is_public=True)
+        wiki_id = public_registration.wiki_pages_versions['home'][0]
+        public_registration.wiki_pages_current = {'home': wiki_id}
+        public_registration.save()
+        return public_registration
+
+    @pytest.fixture()
+    def public_registration_url(self, public_registration):
+        return '/{}registrations/{}/wikis/'.format(API_BASE, public_registration._id)
+
+    @pytest.fixture()
+    def private_registration(self, user, private_project, private_wiki):
+        private_registration = RegistrationFactory(project=private_project, user=user)
+        wiki_id = private_registration.wiki_pages_versions['home'][0]
+        private_registration.wiki_pages_current = {'home': wiki_id}
+        private_registration.save()
+        return private_registration
+
+    @pytest.fixture()
+    def private_registration_url(self, private_registration):
+        return '/{}registrations/{}/wikis/'.format(API_BASE, private_registration._id)
+
+    def test_return_wikis(self, app, user, non_contrib, private_registration, public_wiki, private_wiki, public_url, private_url, private_registration_url):
+
+    #   test_return_public_node_wikis_logged_out_user
+        res = app.get(public_url)
+        assert res.status_code == 200
         wiki_ids = [wiki['id'] for wiki in res.json['data']]
-        assert_in(self.public_wiki._id, wiki_ids)
+        assert public_wiki._id in wiki_ids
 
-    def test_return_public_node_wikis_logged_in_non_contributor(self):
-        self._set_up_public_project_with_wiki_page()
-        res = self.app.get(self.public_url, auth=self.non_contributor.auth)
-        assert_equal(res.status_code, 200)
+    #   test_return_public_node_wikis_logged_in_non_contributor
+        res = app.get(public_url, auth=non_contrib.auth)
+        assert res.status_code == 200
         wiki_ids = [wiki['id'] for wiki in res.json['data']]
-        assert_in(self.public_wiki._id, wiki_ids)
+        assert public_wiki._id in wiki_ids
 
-    def test_return_public_node_wikis_logged_in_contributor(self):
-        self._set_up_public_project_with_wiki_page()
-        res = self.app.get(self.public_url, auth=self.user.auth)
-        assert_equal(res.status_code, 200)
+    #   test_return_public_node_wikis_logged_in_contributor
+        res = app.get(public_url, auth=user.auth)
+        assert res.status_code == 200
         wiki_ids = [wiki['id'] for wiki in res.json['data']]
-        assert_in(self.public_wiki._id, wiki_ids)
+        assert public_wiki._id in wiki_ids
 
-    def test_return_private_node_wikis_logged_out_user(self):
-        self._set_up_private_project_with_wiki_page()
-        res = self.app.get(self.private_url, expect_errors=True)
-        assert_equal(res.status_code, 401)
-        assert_equal(res.json['errors'][0]['detail'], 'Authentication credentials were not provided.')
+    #   test_return_private_node_wikis_logged_out_user
+        res = app.get(private_url, expect_errors=True)
+        assert res.status_code == 401
+        assert res.json['errors'][0]['detail'] == exceptions.NotAuthenticated.default_detail
 
-    def test_return_private_node_wikis_logged_in_non_contributor(self):
-        self._set_up_private_project_with_wiki_page()
-        res = self.app.get(self.private_url, auth=self.non_contributor.auth, expect_errors=True)
-        assert_equal(res.status_code, 403)
-        assert_equal(res.json['errors'][0]['detail'], 'You do not have permission to perform this action.')
+    #   test_return_private_node_wikis_logged_in_non_contributor
+        res = app.get(private_url, auth=non_contrib.auth, expect_errors=True)
+        assert res.status_code == 403
+        assert res.json['errors'][0]['detail'] == exceptions.PermissionDenied.default_detail
 
-    def test_return_private_node_wikis_logged_in_contributor(self):
-        self._set_up_private_project_with_wiki_page()
-        res = self.app.get(self.private_url, auth=self.user.auth)
-        assert_equal(res.status_code, 200)
+    #   test_return_private_node_wikis_logged_in_contributor
+        res = app.get(private_url, auth=user.auth)
+        assert res.status_code == 200
         wiki_ids = [wiki['id'] for wiki in res.json['data']]
-        assert_in(self.private_wiki._id, wiki_ids)
+        assert private_wiki._id in wiki_ids
 
-    def test_return_registration_wikis_logged_out_user(self):
-        self._set_up_registration_with_wiki_page()
-        res = self.app.get(self.registration_url, expect_errors=True)
-        assert_equal(res.status_code, 401)
-        assert_equal(res.json['errors'][0]['detail'], 'Authentication credentials were not provided.')
+    #   test_return_registration_wikis_logged_out_user
+        res = app.get(private_registration_url, expect_errors=True)
+        assert res.status_code == 401
+        assert res.json['errors'][0]['detail'] == exceptions.NotAuthenticated.default_detail
 
-    def test_return_registration_wikis_logged_in_non_contributor(self):
-        self._set_up_registration_with_wiki_page()
-        res = self.app.get(self.registration_url, auth=self.non_contributor.auth, expect_errors=True)
-        assert_equal(res.status_code, 403)
-        assert_equal(res.json['errors'][0]['detail'], 'You do not have permission to perform this action.')
+    #   test_return_registration_wikis_logged_in_non_contributor
+        res = app.get(private_registration_url, auth=non_contrib.auth, expect_errors=True)
+        assert res.status_code == 403
+        assert res.json['errors'][0]['detail'] == exceptions.PermissionDenied.default_detail
 
-    def test_return_registration_wikis_logged_in_contributor(self):
-        self._set_up_registration_with_wiki_page()
-        res = self.app.get(self.registration_url, auth=self.user.auth)
-        assert_equal(res.status_code, 200)
+    #   test_return_registration_wikis_logged_in_contributor
+        res = app.get(private_registration_url, auth=user.auth)
+        assert res.status_code == 200
         wiki_ids = [wiki['id'] for wiki in res.json['data']]
-        assert_in(self.registration_wiki_id, wiki_ids)
+        assert private_registration.wiki_pages_versions['home'][0] in wiki_ids
 
-    def test_wikis_not_returned_for_withdrawn_registration(self):
-        self._set_up_registration_with_wiki_page()
-        self.registration.is_public = True
-        withdrawal = self.registration.retract_registration(user=self.user, save=True)
+    def test_wikis_not_returned_for_withdrawn_registration(self, app, user, private_registration, private_registration_url):
+        private_registration.is_public = True
+        withdrawal = private_registration.retract_registration(user=user, save=True)
         token = withdrawal.approval_state.values()[0]['approval_token']
         # TODO: Remove mocking when StoredFileNode is implemented
         with mock.patch('osf.models.AbstractNode.update_search'):
-            withdrawal.approve_retraction(self.user, token)
+            withdrawal.approve_retraction(user, token)
             withdrawal.save()
-        res = self.app.get(self.registration_url, auth=self.user.auth, expect_errors=True)
-        assert_equal(res.status_code, 403)
-        assert_equal(res.json['errors'][0]['detail'], 'You do not have permission to perform this action.')
+        res = app.get(private_registration_url, auth=user.auth, expect_errors=True)
+        assert res.status_code == 403
+        assert res.json['errors'][0]['detail'] == exceptions.PermissionDenied.default_detail
 
-    def test_public_node_wikis_relationship_links(self):
-        self._set_up_public_project_with_wiki_page()
-        res = self.app.get(self.public_url)
-        expected_nodes_relationship_url = '{}nodes/{}/'.format(API_BASE, self.public_project._id)
-        expected_comments_relationship_url = '{}nodes/{}/comments/'.format(API_BASE, self.public_project._id)
-        assert_in(expected_nodes_relationship_url, res.json['data'][0]['relationships']['node']['links']['related']['href'])
-        assert_in(expected_comments_relationship_url, res.json['data'][0]['relationships']['comments']['links']['related']['href'])
+    def test_relationship_links(self, app, user, public_project, private_project, public_registration, private_registration, public_url, private_url, public_registration_url, private_registration_url):
 
-    def test_private_node_wikis_relationship_links(self):
-        self._set_up_private_project_with_wiki_page()
-        res = self.app.get(self.private_url, auth=self.user.auth)
-        expected_nodes_relationship_url = '{}nodes/{}/'.format(API_BASE, self.private_project._id)
-        expected_comments_relationship_url = '{}nodes/{}/comments/'.format(API_BASE, self.private_project._id)
-        assert_in(expected_nodes_relationship_url, res.json['data'][0]['relationships']['node']['links']['related']['href'])
-        assert_in(expected_comments_relationship_url, res.json['data'][0]['relationships']['comments']['links']['related']['href'])
+    #   test_public_node_wikis_relationship_links
+        res = app.get(public_url)
+        expected_nodes_relationship_url = '{}nodes/{}/'.format(API_BASE, public_project._id)
+        expected_comments_relationship_url = '{}nodes/{}/comments/'.format(API_BASE, public_project._id)
+        assert expected_nodes_relationship_url in res.json['data'][0]['relationships']['node']['links']['related']['href']
+        assert expected_comments_relationship_url in res.json['data'][0]['relationships']['comments']['links']['related']['href']
 
-    def test_public_registration_wikis_relationship_links(self):
-        self._set_up_public_registration_with_wiki_page()
-        res = self.app.get(self.public_registration_url)
-        expected_nodes_relationship_url = '{}registrations/{}/'.format(API_BASE, self.public_registration._id)
-        expected_comments_relationship_url = '{}registrations/{}/comments/'.format(API_BASE, self.public_registration._id)
-        assert_in(expected_nodes_relationship_url, res.json['data'][0]['relationships']['node']['links']['related']['href'])
-        assert_in(expected_comments_relationship_url, res.json['data'][0]['relationships']['comments']['links']['related']['href'])
+    #   test_private_node_wikis_relationship_links
+        res = app.get(private_url, auth=user.auth)
+        expected_nodes_relationship_url = '{}nodes/{}/'.format(API_BASE, private_project._id)
+        expected_comments_relationship_url = '{}nodes/{}/comments/'.format(API_BASE, private_project._id)
+        assert expected_nodes_relationship_url in res.json['data'][0]['relationships']['node']['links']['related']['href']
+        assert expected_comments_relationship_url in res.json['data'][0]['relationships']['comments']['links']['related']['href']
 
-    def test_private_registration_wikis_relationship_links(self):
-        self._set_up_registration_with_wiki_page()
-        res = self.app.get(self.registration_url, auth=self.user.auth)
-        expected_nodes_relationship_url = '{}registrations/{}/'.format(API_BASE, self.registration._id)
-        expected_comments_relationship_url = '{}registrations/{}/comments/'.format(API_BASE, self.registration._id)
-        assert_in(expected_nodes_relationship_url, res.json['data'][0]['relationships']['node']['links']['related']['href'])
-        assert_in(expected_comments_relationship_url, res.json['data'][0]['relationships']['comments']['links']['related']['href'])
+    #   test_public_registration_wikis_relationship_links
+        res = app.get(public_registration_url)
+        expected_nodes_relationship_url = '{}registrations/{}/'.format(API_BASE, public_registration._id)
+        expected_comments_relationship_url = '{}registrations/{}/comments/'.format(API_BASE, public_registration._id)
+        assert expected_nodes_relationship_url in res.json['data'][0]['relationships']['node']['links']['related']['href']
+        assert expected_comments_relationship_url in res.json['data'][0]['relationships']['comments']['links']['related']['href']
 
-    def test_registration_wikis_not_returned_from_nodes_endpoint(self):
-        self._set_up_public_project_with_wiki_page()
-        self._set_up_public_registration_with_wiki_page()
-        res = self.app.get(self.public_url)
+    #   test_private_registration_wikis_relationship_links
+        res = app.get(private_registration_url, auth=user.auth)
+        expected_nodes_relationship_url = '{}registrations/{}/'.format(API_BASE, private_registration._id)
+        expected_comments_relationship_url = '{}registrations/{}/comments/'.format(API_BASE, private_registration._id)
+        assert expected_nodes_relationship_url in res.json['data'][0]['relationships']['node']['links']['related']['href']
+        assert expected_comments_relationship_url in res.json['data'][0]['relationships']['comments']['links']['related']['href']
+
+    def test_not_returned(self, app, public_project, public_registration, public_url, public_registration_url):
+
+    #   test_registration_wikis_not_returned_from_nodes_endpoint
+        res = app.get(public_url)
         node_relationships = [
             node_wiki['relationships']['node']['links']['related']['href']
             for node_wiki in res.json['data']
         ]
-        assert_equal(res.status_code, 200)
-        assert_equal(len(node_relationships), 1)
-        assert_in(self.public_project._id, node_relationships[0])
+        assert res.status_code == 200
+        assert len(node_relationships) == 1
+        assert public_project._id in node_relationships[0]
 
-    def test_node_wikis_not_returned_from_registrations_endpoint(self):
-        self._set_up_public_project_with_wiki_page()
-        self._set_up_public_registration_with_wiki_page()
-        res = self.app.get(self.public_registration_url)
+    #   test_node_wikis_not_returned_from_registrations_endpoint
+        res = app.get(public_registration_url)
         node_relationships = [
             node_wiki['relationships']['node']['links']['related']['href']
             for node_wiki in res.json['data']
             ]
-        assert_equal(res.status_code, 200)
-        assert_equal(len(node_relationships), 1)
-        assert_in(self.public_registration._id, node_relationships[0])
+        assert res.status_code == 200
+        assert len(node_relationships) == 1
+        assert public_registration._id in node_relationships[0]
 
 
-class TestFilterNodeWikiList(ApiTestCase):
+@pytest.mark.django_db
+class TestFilterNodeWikiList:
 
-    def setUp(self):
-        super(TestFilterNodeWikiList, self).setUp()
-        self.user = AuthUserFactory()
-        self.project = ProjectFactory(creator=self.user)
-        self.base_url = '/{}nodes/{}/wikis/'.format(API_BASE, self.project._id)
+    @pytest.fixture()
+    def private_project(self, user):
+        return ProjectFactory(creator=user)
+
+    @pytest.fixture()
+    def base_url(self, private_project):
+        return '/{}nodes/{}/wikis/'.format(API_BASE, private_project._id)
+
+    @pytest.fixture()
+    def wiki(self, user, private_project):
         # TODO: Remove mocking when StoredFileNode is implemented
         with mock.patch('osf.models.AbstractNode.update_search'):
-            self.wiki = NodeWikiFactory(node=self.project, user=self.user)
-        self.date = self.wiki.date.strftime('%Y-%m-%dT%H:%M:%S.%f')
+            return NodeWikiFactory(node=private_project, user=user)
 
-    def test_node_wikis_with_no_filter_returns_all(self):
-        res = self.app.get(self.base_url, auth=self.user.auth)
-        wiki_ids = [wiki['id'] for wiki in res.json['data']]
-        assert_in(self.wiki._id, wiki_ids)
+    @pytest.fixture()
+    def date(self, wiki):
+        return wiki.date.strftime('%Y-%m-%dT%H:%M:%S.%f')
 
-    def test_filter_wikis_by_page_name(self):
-        url = self.base_url + '?filter[name]=home'
-        res = self.app.get(url, auth=self.user.auth)
-        assert_equal(len(res.json['data']), 1)
-        assert_equal(res.json['data'][0]['attributes']['name'], 'home')
+    def test_filter_node_wiki_list(self, app, user, wiki, date, base_url):
 
-    def test_filter_wikis_modified_on_date(self):
-        url = self.base_url + '?filter[date_modified][eq]={}'.format(self.date)
-        res = self.app.get(url, auth=self.user.auth)
-        assert_equal(len(res.json['data']), 1)
+    #   test_node_wikis_with_no_filter_returns_all
+        res = app.get(base_url, auth=user.auth)
+        wiki_ids = [item['id'] for item in res.json['data']]
 
-    def test_filter_wikis_modified_before_date(self):
-        url = self.base_url + '?filter[date_modified][lt]={}'.format(self.date)
-        res = self.app.get(url, auth=self.user.auth)
-        assert_equal(len(res.json['data']), 0)
+        assert wiki._id in wiki_ids
 
-    def test_filter_wikis_modified_after_date(self):
-        url = self.base_url + '?filter[date_modified][gt]={}'.format(self.date)
-        res = self.app.get(url, auth=self.user.auth)
-        assert_equal(len(res.json['data']), 0)
+    #   test_filter_wikis_by_page_name
+        url = base_url + '?filter[name]=home'
+        res = app.get(url, auth=user.auth)
+        assert len(res.json['data']) == 1
+        assert res.json['data'][0]['attributes']['name'] == 'home'
+
+    #   test_filter_wikis_modified_on_date
+        url = base_url + '?filter[date_modified][eq]={}'.format(date)
+        res = app.get(url, auth=user.auth)
+        assert len(res.json['data']) == 1
+
+    #   test_filter_wikis_modified_before_date
+        url = base_url + '?filter[date_modified][lt]={}'.format(date)
+        res = app.get(url, auth=user.auth)
+        assert len(res.json['data']) == 0
+
+    #   test_filter_wikis_modified_after_date
+        url = base_url + '?filter[date_modified][gt]={}'.format(date)
+        res = app.get(url, auth=user.auth)
+        assert len(res.json['data']) == 0

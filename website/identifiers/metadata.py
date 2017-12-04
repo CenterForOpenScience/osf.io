@@ -65,7 +65,7 @@ def datacite_metadata_for_node(node, doi, pretty_print=False):
         title=node.title,
         creators=creators,
         publisher='Open Science Framework',
-        publication_year=getattr(node.registered_date or node.date_created, 'year'),
+        publication_year=getattr(node.registered_date or node.created, 'year'),
         pretty_print=pretty_print
     )
 
@@ -76,6 +76,7 @@ def format_creators(preprint):
         creator = CREATOR(E.creatorName(format_contributor(contributor)))
         creator.append(E.givenName(remove_control_characters(contributor.given_name)))
         creator.append(E.familyName(remove_control_characters(contributor.family_name)))
+        creator.append(E.nameIdentifier(contributor.absolute_url, nameIdentifierScheme='OSF', schemeURI=settings.DOMAIN))
 
         # contributor.external_identity = {'ORCID': {'1234-1234-1234-1234': 'VERIFIED'}}
         if contributor.external_identity.get('ORCID'):
@@ -104,6 +105,11 @@ def datacite_metadata_for_preprint(preprint, doi, pretty_print=False):
     :param preprint -- the preprint
     :param str doi
     """
+    # NOTE: If you change *ANYTHING* here be 100% certain that the
+    # changes you make are also made to the SHARE serialization code.
+    # If the data sent out is not EXCATLY the same all the data will get jumbled up in SHARE.
+    # And then search results will be wrong and broken. And it will be your fault. And you'll have caused many sleepless nights.
+    # Don't be that person.
     root = E.resource(
         E.resourceType('Preprint', resourceTypeGeneral='Text'),
         E.identifier(doi, identifierType='DOI'),
@@ -112,7 +118,7 @@ def datacite_metadata_for_preprint(preprint, doi, pretty_print=False):
         E.titles(E.title(remove_control_characters(preprint.node.title))),
         E.publisher(preprint.provider.name),
         E.publicationYear(str(getattr(preprint.date_published, 'year'))),
-        E.dates(E.date(preprint.date_modified.isoformat(), dateType='Updated')),
+        E.dates(E.date(preprint.modified.isoformat(), dateType='Updated')),
         E.alternateIdentifiers(E.alternateIdentifier(settings.DOMAIN + preprint._id, alternateIdentifierType='URL')),
         E.descriptions(E.description(remove_control_characters(preprint.node.description), descriptionType='Abstract')),
     )

@@ -93,10 +93,6 @@ table.table.table-plain th, table.table.table-plain td {
     margin-right: .5em;
 }
 
-#social td:first-child {
-    word-break: break-all;
-}
-
 .fa.toggle-icon {
     position: absolute;
     right: 0;
@@ -128,4 +124,15 @@ table.table.table-plain th, table.table.table-plain td {
 
 .no-bottom-border {
     border-bottom-width: 0;
+}
+
+/* Table
+-----------------------*/
+table.social-links {
+  table-layout: fixed;
+  width: 100%;
+}
+
+table.social-links a {
+  word-wrap: break-word;
 }

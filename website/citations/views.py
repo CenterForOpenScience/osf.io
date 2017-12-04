@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 from flask import request
-
-from modularodm import Q
+from django.db.models import Q
 
 from framework.auth.decorators import must_be_logged_in
 
@@ -13,18 +12,16 @@ from website.project.decorators import (
 )
 
 def list_citation_styles():
-    query = None
-
-    term = request.args.get('q')
-    if term:
-        query = (
-            Q('_id', 'icontains', term) |
-            Q('title', 'icontains', term) |
-            Q('short_title', 'icontains', term)
+    query = request.args.get('q')
+    citation_styles = CitationStyle.objects.all()
+    if query:
+        citation_styles = CitationStyle.objects.filter(
+            Q(_id__icontains=query) |
+            Q(title__icontains=query) |
+            Q(short_title__icontains=query)
         )
-
     return {
-        'styles': [style.to_json() for style in CitationStyle.find(query)],
+        'styles': [style.to_json() for style in citation_styles]
     }
 
 

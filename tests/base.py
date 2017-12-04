@@ -13,8 +13,8 @@ import httpretty
 import mock
 import pytest
 
-from django.test.utils import override_settings
 from django.test import TestCase as DjangoTestCase
+from django.test import override_settings
 from faker import Factory
 from framework.auth.core import Auth
 from framework.celery_tasks.handlers import celery_before_request
@@ -39,7 +39,7 @@ logger = logging.getLogger(__name__)
 
 def get_default_metaschema():
     """This needs to be a method so it gets called after the test database is set up"""
-    return MetaSchema.find()[0]
+    return MetaSchema.objects.first()
 
 try:
     test_app = init_app(routes=True, set_backends=False)
@@ -58,7 +58,6 @@ SILENT_LOGGERS = [
     'factory.containers',
     'framework.analytics',
     'framework.auth.core',
-    'framework.celery_tasks.signals',
     'website.app',
     'website.archiver.tasks',
     'website.mails',
@@ -69,6 +68,8 @@ SILENT_LOGGERS = [
     'requests_oauthlib.oauth2_session',
     'raven.base.Client',
     'raven.contrib.django.client.DjangoClient',
+    'transitions.core',
+    'MARKDOWN',
 ]
 for logger_name in SILENT_LOGGERS:
     logging.getLogger(logger_name).setLevel(logging.CRITICAL)

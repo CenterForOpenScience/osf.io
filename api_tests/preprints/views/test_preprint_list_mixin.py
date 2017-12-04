@@ -1,11 +1,7 @@
+import mock
 import pytest
 
-from nose.tools import *  # flake8: noqa
-import mock
-
 from api.base.settings.defaults import API_BASE
-from tests.json_api_test_app import JSONAPITestApp
-from website.util import permissions
 from api_tests import utils as test_utils
 from osf_tests.factories import (
     ProjectFactory,
@@ -13,144 +9,266 @@ from osf_tests.factories import (
     AuthUserFactory,
     SubjectFactory,
 )
-
-class PreprintIsPublishedListMixin(object):
-
-    def setUp(self):
-        super(PreprintIsPublishedListMixin, self).setUp()
-        assert self.admin, 'Subclasses of PreprintIsPublishedMixin must define self.admin'
-        assert self.provider_one, 'Subclasses of PreprintIsPublishedMixin must define self.provider_one'
-        assert self.provider_two, 'Subclasses of PreprintIsPublishedMixin must define self.provider_two'
-        assert self.published_project, 'Subclasses of PreprintIsPublishedMixin must define self.published_project'
-        assert self.public_project, 'Subclasses of PreprintIsPublishedMixin must define self.public_project'
-        assert self.url, 'Subclasses of PreprintIsPublishedMixin must define self.url'
-
-        self.write_contrib = AuthUserFactory()
-        self.non_contrib = AuthUserFactory()
-
-        self.public_project.add_contributor(self.write_contrib, permissions=permissions.DEFAULT_CONTRIBUTOR_PERMISSIONS, save=True)
-        self.subject = SubjectFactory()
-
-        self.file_one_public_project = test_utils.create_test_file(self.public_project, self.admin, 'mgla.pdf')
-        self.file_one_published_project = test_utils.create_test_file(self.published_project, self.admin, 'saor.pdf')
-
-        self.unpublished_preprint = PreprintFactory(creator=self.admin, filename='mgla.pdf', provider=self.provider_one, subjects=[[self.subject._id]], project=self.public_project, is_published=False)
-        self.published_preprint = PreprintFactory(creator=self.admin, filename='saor.pdf', provider=self.provider_two, subjects=[[self.subject._id]], project=self.published_project, is_published=True)
-
-    def test_unpublished_visible_to_admins(self):
-        res = self.app.get(self.url, auth=self.admin.auth)
-        assert len(res.json['data']) == 2
-        assert self.unpublished_preprint._id in [d['id'] for d in res.json['data']]
-
-    def test_unpublished_invisible_to_write_contribs(self):
-        res = self.app.get(self.url, auth=self.write_contrib.auth)
-        assert len(res.json['data']) == 1
-        assert self.unpublished_preprint._id not in [d['id'] for d in res.json['data']]
-
-    def test_unpublished_invisible_to_non_contribs(self):
-        res = self.app.get(self.url, auth=self.non_contrib.auth)
-        assert len(res.json['data']) == 1
-        assert self.unpublished_preprint._id not in [d['id'] for d in res.json['data']]
-
-    def test_unpublished_invisible_to_public(self):
-        res = self.app.get(self.url)
-        assert len(res.json['data']) == 1
-        assert self.unpublished_preprint._id not in [d['id'] for d in res.json['data']]
-
-    def test_filter_published_false_admin(self):
-        res = self.app.get('{}filter[is_published]=false'.format(self.url), auth=self.admin.auth)
-        assert len(res.json['data']) == 1
-        assert self.unpublished_preprint._id in [d['id'] for d in res.json['data']]
-
-    def test_filter_published_false_write_contrib(self):
-        res = self.app.get('{}filter[is_published]=false'.format(self.url), auth=self.write_contrib.auth)
-        assert len(res.json['data']) == 0
-
-    def test_filter_published_false_non_contrib(self):
-        res = self.app.get('{}filter[is_published]=false'.format(self.url), auth=self.non_contrib.auth)
-        assert len(res.json['data']) == 0
-
-    def test_filter_published_false_public(self):
-        res = self.app.get('{}filter[is_published]=false'.format(self.url))
-        assert len(res.json['data']) == 0
+from website.util import permissions
 
 @pytest.mark.django_db
-class PreprintIsValidListMixin(object):
-    def setUp(self):
-        assert self.admin, 'Subclasses of PreprintIsValidListMixin must define self.admin'
-        assert self.project, 'Subclasses of PreprintIsValidListMixin must define self.project'
-        assert self.provider, 'Subclasses of PreprintIsValidListMixin must define self.provider'
-        assert self.url, 'Subclasses of PreprintIsValidListMixin must define self.url'
-        self.app = JSONAPITestApp()
-        self.write_contrib = AuthUserFactory()
-        self.non_contrib = AuthUserFactory()
-        self.subject = SubjectFactory()
+class PreprintListMatchesPreprintDetailMixin:
 
-        self.project.add_contributor(self.write_contrib, permissions=permissions.DEFAULT_CONTRIBUTOR_PERMISSIONS, save=True)
-        test_utils.create_test_file(self.project, self.admin, 'saor.pdf')
-        self.preprint = PreprintFactory(creator=self.admin, filename='saor.pdf', provider=self.provider, subjects=[[self.subject._id]], project=self.project, is_published=True)
+    @pytest.fixture()
+    def user_write_contrib(self):
+        return AuthUserFactory()
 
-    def test_preprint_private_invisible_no_auth(self):
-        res = self.app.get(self.url)
+    @pytest.fixture()
+    def user_non_contrib(self):
+        return AuthUserFactory()
+
+    @pytest.fixture()
+    def user_admin_contrib(self):
+        raise NotImplementedError
+
+    @pytest.fixture()
+    def provider_one(self):
+        raise NotImplementedError
+
+    @pytest.fixture()
+    def provider_two(self):
+        raise NotImplementedError
+
+    @pytest.fixture()
+    def project_published(self):
+        raise NotImplementedError
+
+    @pytest.fixture()
+    def project_public(self):
+        raise NotImplementedError
+
+    @pytest.fixture()
+    def list_url(self):
+        raise NotImplementedError
+
+    @pytest.fixture()
+    def detail_url(self):
+        raise NotImplementedError
+
+    @pytest.fixture()
+    def subject(self):
+        return SubjectFactory()
+
+    @pytest.fixture()
+    def file_project_public(self, user_admin_contrib, project_public):
+        return test_utils.create_test_file(project_public, user_admin_contrib, 'mgla.pdf')
+
+    @pytest.fixture()
+    def file_project_published(self, user_admin_contrib, project_published):
+        return test_utils.create_test_file(project_published, user_admin_contrib, 'saor.pdf')
+
+    @pytest.fixture()
+    def preprint_unpublished(self, user_admin_contrib, provider_one, project_public, subject):
+        raise NotImplementedError
+
+    @pytest.fixture()
+    def preprint_published(self, user_admin_contrib, provider_two, project_published, subject):
+        return PreprintFactory(creator=user_admin_contrib, filename='saor.pdf', provider=provider_two, subjects=[[subject._id]], project=project_published, is_published=True)
+
+    def test_unpublished_invisible_to_non_contribs(self, app, user_non_contrib, preprint_unpublished, preprint_published, list_url, detail_url):
+        res = app.get(list_url, auth=user_non_contrib.auth)
         assert len(res.json['data']) == 1
-        self.project.is_public = False
-        self.project.save()
-        res = self.app.get(self.url)
+        assert preprint_unpublished._id not in [d['id'] for d in res.json['data']]
+
+        res = app.get(detail_url, auth=user_non_contrib.auth, expect_errors=True)
+        assert res.status_code == 403
+
+    def test_unpublished_invisible_to_public(self, app, preprint_unpublished, preprint_published, list_url, detail_url):
+        res = app.get(list_url)
+        assert len(res.json['data']) == 1
+        assert preprint_unpublished._id not in [d['id'] for d in res.json['data']]
+
+        res = app.get(detail_url, expect_errors=True)
+        assert res.status_code == 401
+
+
+@pytest.mark.django_db
+class PreprintIsPublishedListMixin:
+
+    @pytest.fixture()
+    def user_write_contrib(self):
+        return AuthUserFactory()
+
+    @pytest.fixture()
+    def user_non_contrib(self):
+        return AuthUserFactory()
+
+    @pytest.fixture()
+    def user_admin_contrib(self):
+        raise NotImplementedError
+
+    @pytest.fixture()
+    def provider_one(self):
+        raise NotImplementedError
+
+    @pytest.fixture()
+    def provider_two(self):
+        raise NotImplementedError
+
+    @pytest.fixture()
+    def project_published(self):
+        raise NotImplementedError
+
+    @pytest.fixture()
+    def project_public(self):
+        raise NotImplementedError
+
+    @pytest.fixture()
+    def url(self):
+        raise NotImplementedError
+
+    @pytest.fixture()
+    def subject(self):
+        return SubjectFactory()
+
+    @pytest.fixture()
+    def file_project_public(self, user_admin_contrib, project_public):
+        return test_utils.create_test_file(project_public, user_admin_contrib, 'mgla.pdf')
+
+    @pytest.fixture()
+    def file_project_published(self, user_admin_contrib, project_published):
+        return test_utils.create_test_file(project_published, user_admin_contrib, 'saor.pdf')
+
+    @pytest.fixture()
+    def preprint_unpublished(self, user_admin_contrib, provider_one, project_public, subject):
+        raise NotImplementedError
+
+    @pytest.fixture()
+    def preprint_published(self, user_admin_contrib, provider_two, project_published, subject):
+        return PreprintFactory(creator=user_admin_contrib, filename='saor.pdf', provider=provider_two, subjects=[[subject._id]], project=project_published, is_published=True)
+
+    def test_unpublished_invisible_to_non_contribs(self, app, user_non_contrib, preprint_unpublished, preprint_published, url):
+        res = app.get(url, auth=user_non_contrib.auth)
+        assert len(res.json['data']) == 1
+        assert preprint_unpublished._id not in [d['id'] for d in res.json['data']]
+
+    def test_unpublished_invisible_to_public(self, app, preprint_unpublished, preprint_published, url):
+        res = app.get(url)
+        assert len(res.json['data']) == 1
+        assert preprint_unpublished._id not in [d['id'] for d in res.json['data']]
+
+    def test_filter_published_false_non_contrib(self, app, user_non_contrib, url):
+        res = app.get('{}filter[is_published]=false'.format(url), auth=user_non_contrib.auth)
         assert len(res.json['data']) == 0
 
-    def test_preprint_private_invisible_non_contributor(self):
-        res = self.app.get(self.url, auth=self.non_contrib.auth)
-        assert len(res.json['data']) == 1
-        self.project.is_public = False
-        self.project.save()
-        res = self.app.get(self.url, auth=self.non_contrib.auth)
+    def test_filter_published_false_public(self, app, url):
+        res = app.get('{}filter[is_published]=false'.format(url))
         assert len(res.json['data']) == 0
 
-    def test_preprint_private_visible_write(self):
-        res = self.app.get(self.url, auth=self.write_contrib.auth)
+    def test_filter_published_false_admin(self, app, user_admin_contrib, preprint_unpublished, preprint_published, url):
+        res = app.get('{}filter[is_published]=false'.format(url), auth=user_admin_contrib.auth)
         assert len(res.json['data']) == 1
-        self.project.is_public = False
-        self.project.save()
-        res = self.app.get(self.url, auth=self.write_contrib.auth)
+        assert preprint_unpublished._id in [d['id'] for d in res.json['data']]
+
+
+@pytest.mark.django_db
+class PreprintIsValidListMixin:
+
+    @pytest.fixture()
+    def user_admin_contrib(self):
+        raise NotImplementedError
+
+    @pytest.fixture()
+    def project(self):
+        raise NotImplementedError
+
+    @pytest.fixture()
+    def provider(self):
+        raise NotImplementedError
+
+    @pytest.fixture()
+    def url(self):
+        raise NotImplementedError
+
+    @pytest.fixture()
+    def user_write_contrib(self):
+        return AuthUserFactory()
+
+    @pytest.fixture()
+    def user_non_contrib(self):
+        return AuthUserFactory()
+
+    @pytest.fixture()
+    def subject(self):
+        return SubjectFactory()
+
+    @pytest.fixture()
+    def file_project(self, user_admin_contrib, project):
+        return test_utils.create_test_file(project, user_admin_contrib, 'saor.pdf')
+
+    @pytest.fixture()
+    def preprint(self, user_admin_contrib, project, provider, subject):
+        return PreprintFactory(creator=user_admin_contrib, filename='saor.pdf', provider=provider, subjects=[[subject._id]], project=project, is_published=True)
+
+    def test_preprint_private_invisible_no_auth(self, app, project, preprint, url):
+        res = app.get(url)
+        assert len(res.json['data']) == 1
+        project.is_public = False
+        project.save()
+        res = app.get(url)
+        assert len(res.json['data']) == 0
+
+    def test_preprint_private_invisible_non_contributor(self, app, user_non_contrib, project, preprint, url):
+        res = app.get(url, auth=user_non_contrib.auth)
+        assert len(res.json['data']) == 1
+        project.is_public = False
+        project.save()
+        res = app.get(url, auth=user_non_contrib.auth)
+        assert len(res.json['data']) == 0
+
+    def test_preprint_private_visible_write(self, app, user_write_contrib, project, preprint, url):
+        res = app.get(url, auth=user_write_contrib.auth)
+        assert len(res.json['data']) == 1
+        project.is_public = False
+        project.save()
+        res = app.get(url, auth=user_write_contrib.auth)
         assert len(res.json['data']) == 1
 
-    def test_preprint_private_visible_owner(self):
-        res = self.app.get(self.url, auth=self.admin.auth)
+    def test_preprint_private_visible_owner(self, app, user_admin_contrib, project, preprint, url):
+        res = app.get(url, auth=user_admin_contrib.auth)
         assert len(res.json['data']) == 1
-        self.project.is_public = False
-        self.project.save()
-        res = self.app.get(self.url, auth=self.admin.auth)
+        project.is_public = False
+        project.save()
+        res = app.get(url, auth=user_admin_contrib.auth)
         assert len(res.json['data']) == 1
 
-    def test_preprint_node_deleted_invisible(self):
-        self.project.is_deleted = True
-        self.project.save()
+    def test_preprint_node_deleted_invisible(self, app, user_admin_contrib, user_write_contrib, user_non_contrib, project, preprint, url):
+        project.is_deleted = True
+        project.save()
         # unauth
-        res = self.app.get(self.url)
+        res = app.get(url)
         assert len(res.json['data']) == 0
         # non_contrib
-        res = self.app.get(self.url, auth=self.non_contrib.auth)
+        res = app.get(url, auth=user_non_contrib.auth)
         assert len(res.json['data']) == 0
         # write_contrib
-        res = self.app.get(self.url, auth=self.write_contrib.auth)
+        res = app.get(url, auth=user_write_contrib.auth)
         assert len(res.json['data']) == 0
         # admin
-        res = self.app.get(self.url, auth=self.admin.auth)
+        res = app.get(url, auth=user_admin_contrib.auth)
         assert len(res.json['data']) == 0
 
-    @mock.patch('website.preprints.tasks.on_preprint_updated.s')
-    def test_preprint_node_null_invisible(self, mock_preprint_updated):
-        self.preprint.node = None
-        self.preprint.save()
+    @mock.patch('website.preprints.tasks.on_preprint_updated.si')
+    def test_preprint_node_null_invisible(self, mock_preprint_updated, app, user_admin_contrib, user_write_contrib, user_non_contrib, preprint, url):
+        preprint.node = None
+        preprint.save()
+
         # unauth
-        res = self.app.get(self.url)
+        res = app.get(url)
         assert len(res.json['data']) == 0
         # non_contrib
-        res = self.app.get(self.url, auth=self.non_contrib.auth)
+        res = app.get(url, auth=user_non_contrib.auth)
         assert len(res.json['data']) == 0
         # write_contrib
-        res = self.app.get(self.url, auth=self.write_contrib.auth)
+        res = app.get(url, auth=user_write_contrib.auth)
         assert len(res.json['data']) == 0
         # admin
-        res = self.app.get(self.url, auth=self.admin.auth)
+        res = app.get(url, auth=user_admin_contrib.auth)
         assert len(res.json['data']) == 0
+
+        assert mock_preprint_updated.called

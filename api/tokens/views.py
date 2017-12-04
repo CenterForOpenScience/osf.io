@@ -1,17 +1,17 @@
 """
 Views related to personal access tokens. Intended for OSF internal use only
 """
-from rest_framework.exceptions import APIException
+from django.db.models import Q
+from rest_framework.exceptions import APIException, NotFound
 from rest_framework import generics
 from rest_framework import permissions as drf_permissions
 
 from api.base.renderers import JSONAPIRenderer, JSONRendererWithESISupport
-from modularodm import Q
 
 from framework.auth import cas
 from framework.auth.oauth_scopes import CoreScopes
 
-from api.base.filters import ODMFilterMixin
+from api.base.filters import ListFilterMixin
 from api.base.utils import get_object_or_error
 from api.base.views import JSONAPIBaseView
 from api.base import permissions as base_permissions
@@ -20,7 +20,7 @@ from api.tokens.serializers import ApiOAuth2PersonalTokenSerializer
 from osf.models import ApiOAuth2PersonalToken
 
 
-class TokenList(JSONAPIBaseView, generics.ListCreateAPIView, ODMFilterMixin):
+class TokenList(JSONAPIBaseView, generics.ListCreateAPIView, ListFilterMixin):
     """
     Get a list of personal access tokens that the user has registered
     """
@@ -37,22 +37,16 @@ class TokenList(JSONAPIBaseView, generics.ListCreateAPIView, ODMFilterMixin):
     view_category = 'tokens'
     view_name = 'token-list'
 
-    # TODO: When we switch to Swagger this should be removed in lieu of a better
-    # solution for hiding this api endpoint
     renderer_classes = [JSONRendererWithESISupport, JSONAPIRenderer, ]  # Hide from web-browsable API tool
 
-    def get_default_odm_query(self):
+    ordering = ('-id',)
 
-        owner = self.request.user
-        return (
-            Q('owner', 'eq', owner) &
-            Q('is_active', 'eq', True)
-        )
+    def get_default_queryset(self):
+        return ApiOAuth2PersonalToken.objects.filter(owner=self.request.user, is_active=True)
 
     # overrides ListAPIView
     def get_queryset(self):
-        query = self.get_query_from_request()
-        return ApiOAuth2PersonalToken.find(query)
+        return self.get_queryset_from_request()
 
     def perform_create(self, serializer):
         """Add user to the created object"""
@@ -79,16 +73,14 @@ class TokenDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView):
     view_category = 'tokens'
     view_name = 'token-detail'
 
-    # TODO: When we switch to Swagger this should be removed in lieu of a better
-    # solution for hiding this api endpoint
     renderer_classes = [JSONRendererWithESISupport, JSONAPIRenderer, ]  # Hide from web-browsable API tool
 
     # overrides RetrieveAPIView
     def get_object(self):
-        obj = get_object_or_error(ApiOAuth2PersonalToken,
-                                  Q('_id', 'eq', self.kwargs['_id']) &
-                                  Q('is_active', 'eq', True))
-
+        try:
+            obj = get_object_or_error(ApiOAuth2PersonalToken, Q(_id=self.kwargs['_id'], is_active=True), self.request)
+        except ApiOAuth2PersonalToken.DoesNotExist:
+            raise NotFound
         self.check_object_permissions(self.request, obj)
         return obj
 

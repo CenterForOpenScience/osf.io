@@ -6,9 +6,7 @@
 var $ = require('jquery');
 var bootbox = require('bootbox');
 var Raven = require('raven-js');
-var m = require('mithril');
 var ko = require('knockout');
-var LogFeed = require('js/components/logFeed.js');
 
 
 var $osf = require('js/osfHelpers');
@@ -43,10 +41,30 @@ NodeActions.beforeForkNode = function(url, done) {
     );
 };
 
+function afterForkGoto(url) {
+  bootbox.confirm({
+      message: '<h4 class="add-project-success text-success">Fork created successfully!</h4>',
+      callback: function(result) {
+          if(result) {
+              window.location = url;
+          }
+      },
+      buttons: {
+          confirm: {
+              label: 'Go to new fork',
+              className: 'btn-success'
+          },
+          cancel: {
+              label: 'Keep working here'
+          }
+      },
+      closeButton: false
+  });
+}
+
 NodeActions.forkNode = function() {
     NodeActions.beforeForkNode(ctx.node.urls.api + 'fork/before/', function() {
         // Block page
-        $osf.block();
         var payload = {
             data: {
                 type: 'nodes'
@@ -61,42 +79,12 @@ NodeActions.forkNode = function() {
                 isCors: true,
                 data: payload
             }
-        ).done(function(response) {
-            $osf.unblock();
-            bootbox.confirm({
-                message: '<h4 class="add-project-success text-success">Fork created successfully!</h4>',
-                callback: function(result) {
-                    if(result) {
-                        window.location = response.data.links.html;
-                    }
-                },
-                buttons: {
-                    confirm: {
-                        label: 'Go to new fork',
-                        className: 'btn-success'
-                    },
-                    cancel: {
-                        label: 'Keep working here'
-                    }
-                },
-                closeButton: false
-            });
-        }).fail(function(response) {
-            $osf.unblock();
-            if (response.status === 403) {
-                $osf.growl('Sorry:', 'you do not have permission to fork this project');
-            } else if (response.status === 504) {
-                $osf.growl('Sorry:', 'This is taking longer than normal. </br>' +
-                    'Please check back later to access your new fork and if still unavailable, contact support@cos.io');
-            } else {
-                $osf.growl('Error:', 'Forking failed');
-                Raven.captureMessage('Error occurred during forking');
-            }
-        });
+        );
+        $osf.growl('Fork status', 'Your fork is being forked you\'ll get an email when it\'s complete.', 'info');
     });
 };
 
-NodeActions.forkPointer = function(pointerId) {
+NodeActions.forkPointer = function(nodeId) {
     bootbox.confirm({
         title: 'Fork this project?',
         message: 'Are you sure you want to fork this project?',
@@ -108,9 +96,10 @@ NodeActions.forkPointer = function(pointerId) {
                 // Fork pointer
                 $osf.postJSON(
                     ctx.node.urls.api + 'pointer/fork/',
-                    {pointerId: pointerId}
-                ).done(function() {
-                    window.location.reload();
+                    {nodeId: nodeId}
+                ).done(function(response) {
+                    $osf.unblock();
+                    afterForkGoto(response.data.node.url);
                 }).fail(function() {
                     $osf.unblock();
                     $osf.growl('Error','Could not fork link.');
@@ -129,7 +118,7 @@ NodeActions.beforeTemplate = function(url, done) {
     $.ajax({
         url: url,
         contentType: 'application/json'
-    }).success(function(response) {
+    }).done(function(response) {
         bootbox.confirm({
             message: $osf.joinPrompts(response.prompts,
                 ('<h4>Are you sure you want to create a new project using this project as a template?</h4>' +
@@ -175,39 +164,6 @@ NodeActions.useAsTemplate = function() {
         });
     });
 };
-
-/*
-Hide/show recent logs for for a node on the project view page.
-*/
-NodeActions.openCloseNode = function(nodeId) {
-
-    var icon = $('#icon-' + nodeId);
-    var body = $('#body-' + nodeId);
-
-    body.toggleClass('hide');
-    var node = null;
-
-    if (document.getElementById('logFeed-' + nodeId).children[0].classList.item(0) === 'spinner-loading-wrapper') {
-        for (var i = 0; i < window.contextVars.nodes.length; ++i){
-            if (window.contextVars.nodes[i].id === nodeId) {
-                node = window.contextVars.nodes[i].node;
-            }
-        }
-    }
-
-    if (body.hasClass('hide')) {
-        icon.removeClass('fa fa-angle-up');
-        icon.addClass('fa fa-angle-down');
-    } else {
-        if (node && node.can_view && !node.archiving && !node.is_retracted) {
-            var nodeLogFeed = 'logFeed-' + node.primary_id;
-            m.mount(document.getElementById(nodeLogFeed), m.component(LogFeed.LogFeed, {node: node, limitLogs: true}));
-        }
-        icon.removeClass('fa fa-angle-down');
-        icon.addClass('fa fa-angle-up');
-    }
-};
-
 
 NodeActions.reorderChildren = function(idList, elm) {
     $osf.postJSON(

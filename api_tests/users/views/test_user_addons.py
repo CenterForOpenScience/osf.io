@@ -9,6 +9,7 @@ from api.base.settings.defaults import API_BASE
 from tests.base import ApiAddonTestCase
 from osf_tests.factories import AuthUserFactory
 
+from addons.bitbucket.tests.factories import BitbucketAccountFactory
 from addons.box.tests.factories import BoxAccountFactory
 from addons.dataverse.tests.factories import DataverseAccountFactory
 from addons.dropbox.tests.factories import DropboxAccountFactory
@@ -373,6 +374,11 @@ class TestUserWikiAddon(UserUnmanageableAddonTestSuiteMixin, ApiAddonTestCase):
 
 
 # OAUTH
+
+
+class TestUserBitbucketAddon(UserOAuthAddonTestSuiteMixin, ApiAddonTestCase):
+    short_name = 'bitbucket'
+    AccountFactory = BitbucketAccountFactory
 
 
 class TestUserBoxAddon(UserOAuthAddonTestSuiteMixin, ApiAddonTestCase):

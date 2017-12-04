@@ -1,3 +1,4 @@
+import mock
 from nose import tools as nt
 from django.test import RequestFactory
 from django.core.urlresolvers import reverse
@@ -7,7 +8,9 @@ from django.contrib.auth.models import Permission
 from tests.base import AdminTestCase
 from osf.models import PreprintService
 from osf_tests.factories import AuthUserFactory, PreprintFactory, PreprintProviderFactory
-from admin_tests.utilities import setup_view
+from osf.models.admin_log_entry import AdminLogEntry
+
+from admin_tests.utilities import setup_view, setup_log_view
 
 from admin.preprints import views
 from admin.preprints.forms import ChangeProviderForm
@@ -114,3 +117,26 @@ class TestPreprintFormView(AdminTestCase):
 
         response = self.view.as_view()(request)
         nt.assert_equal(response.status_code, 200)
+
+
+class TestPreprintReindex(AdminTestCase):
+    def setUp(self):
+        super(TestPreprintReindex, self).setUp()
+        self.request = RequestFactory().post('/fake_path')
+
+        self.user = AuthUserFactory()
+        self.preprint = PreprintFactory(creator=self.user)
+
+    @mock.patch('website.preprints.tasks.send_share_preprint_data')
+    @mock.patch('website.settings.SHARE_URL', 'ima_real_website')
+    def test_reindex_preprint_share(self, mock_reindex_preprint):
+        self.preprint.provider.access_token = 'totally real access token I bought from a guy wearing a trenchcoat in the summer'
+        self.preprint.provider.save()
+
+        count = AdminLogEntry.objects.count()
+        view = views.PreprintReindexShare()
+        view = setup_log_view(view, self.request, guid=self.preprint._id)
+        view.delete(self.request)
+
+        nt.assert_true(mock_reindex_preprint.called)
+        nt.assert_equal(AdminLogEntry.objects.count(), count + 1)

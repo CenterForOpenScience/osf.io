@@ -8,8 +8,6 @@ import pytz
 from dateutil import parser
 from django.utils import timezone
 
-from modularodm import Q
-
 from nose.tools import *  # flake8: noqa
 
 from rest_framework import serializers as ser
@@ -18,10 +16,7 @@ from unittest import TestCase
 
 from tests.base import ApiTestCase
 
-from api.base.filters import (
-    ListFilterMixin,
-    ODMFilterMixin,
-)
+from api.base.filters import ListFilterMixin
 import api.base.filters as filters
 from api.base.exceptions import (
     InvalidFilterError,
@@ -72,10 +67,6 @@ class FakeRecord(object):
         # bool_field in serializer corresponds to foobar in model
         self.foobar = foobar
 
-class FakeView(ODMFilterMixin):
-
-    serializer_class = FakeSerializer
-
 class FakeListView(ListFilterMixin):
 
     serializer_class = FakeSerializer
@@ -85,7 +76,7 @@ class TestFilterMixin(ApiTestCase):
 
     def setUp(self):
         super(TestFilterMixin, self).setUp()
-        self.view = FakeView()
+        self.view = FakeListView()
 
     def test_parse_query_params_default_operators(self):
         query_params = {
@@ -277,119 +268,6 @@ class TestFilterMixin(ApiTestCase):
         value = self.view.convert_value(value, field)
         assert_equal(value, [])
 
-    def test_multiple_filter_params(self):
-        query_params = {
-            'filter[string_field, second_string_field]': 'foobar'
-        }
-        fields = self.view.parse_query_params(query_params)
-        assert_equals(
-            fields['filter[string_field, second_string_field]'],
-            {
-                'string_field': {
-                    'source_field_name': 'string_field',
-                    'value': 'foobar',
-                    'op': 'icontains'
-                },
-                'second_string_field' : {
-                    'source_field_name': 'second_string_field',
-                    'value': 'foobar',
-                    'op': 'icontains'
-                }
-            }
-        )
-        query = self.view.query_params_to_odm_query(query_params)
-        assert_equals(
-            repr(query),
-            repr(functools.reduce(operator.or_, [
-                Q('second_string_field', 'icontains', 'foobar'),
-                Q('string_field', 'icontains', 'foobar')
-            ]))
-        )
-
-    def test_multiple_filter_params_with_additional_different_filter(self):
-        query_params = {
-            'filter[string_field, second_string_field]': 'foobar',
-            'filter[bool_field]': False
-        }
-        fields = self.view.parse_query_params(query_params)
-        assert_equals(
-            fields,
-            {
-                'filter[bool_field]': {
-                    'bool_field': {
-                        'source_field_name': 'foobar',
-                        'value': False,
-                        'op': 'eq'
-                    }
-                },
-                'filter[string_field, second_string_field]': {
-                    'second_string_field' : {
-                        'source_field_name': 'second_string_field',
-                        'value': 'foobar',
-                        'op': 'icontains'
-                    },
-                    'string_field': {
-                        'source_field_name': 'string_field',
-                        'value': 'foobar',
-                        'op': 'icontains'
-                    }
-                }
-            }
-        )
-        query = self.view.query_params_to_odm_query(query_params)
-        assert_equals(
-            repr(query),
-            repr(functools.reduce(operator.and_, [
-                Q('foobar', 'eq', False),
-                functools.reduce(operator.or_, [
-                    Q('second_string_field', 'icontains', 'foobar'),
-                    Q('string_field', 'icontains', 'foobar')
-                ])
-            ]))
-        )
-
-    def test_multiple_filter_params_with_additional_same_filter(self):
-        query_params = {
-            'filter[string_field, second_string_field]': 'foobar',
-            'filter[string_field]': 'baz'
-        }
-        fields = self.view.parse_query_params(query_params)
-        assert_equals(
-            fields,
-            {
-                'filter[string_field]': {
-                    'string_field': {
-                        'source_field_name': 'string_field',
-                        'value': 'baz',
-                        'op': 'icontains'
-                    }
-                },
-                'filter[string_field, second_string_field]': {
-                    'second_string_field' : {
-                        'source_field_name': 'second_string_field',
-                        'value': 'foobar',
-                        'op': 'icontains'
-                    },
-                    'string_field': {
-                        'source_field_name': 'string_field',
-                        'value': 'foobar',
-                        'op': 'icontains'
-                    }
-                }
-            }
-        )
-        query = self.view.query_params_to_odm_query(query_params)
-        assert_equals(
-            repr(query),
-            repr(functools.reduce(operator.and_, [
-                functools.reduce(operator.or_, [
-                    Q('second_string_field', 'icontains', 'foobar'),
-                    Q('string_field', 'icontains', 'foobar')
-                ]),
-                Q('string_field', 'icontains', 'baz')
-            ]))
-        )
-
     def test_multiple_filter_params_bad_filter(self):
         query_params = {
             'filter[string_field, not_a_field]': 'test'
@@ -403,19 +281,6 @@ class TestFilterMixin(ApiTestCase):
         }
         with assert_raises(InvalidFilterOperator):
             self.view.parse_query_params(query_params)
-
-    def test_simplified_date_filter(self):
-        query_params = {
-            'filter[date_field]': '2016-08-24'
-        }
-        query = self.view.query_params_to_odm_query(query_params)
-        assert_equals(
-            repr(query),
-            repr(functools.reduce(operator.and_, [
-                Q('date_field', 'gte', datetime.datetime(2016, 8, 24, tzinfo=pytz.utc)),
-                Q('date_field', 'lt', datetime.datetime(2016, 8, 25, tzinfo=pytz.utc)),
-            ]))
-        )
 
 
 class TestListFilterMixin(ApiTestCase):
@@ -489,7 +354,7 @@ class TestListFilterMixin(ApiTestCase):
         assert_equal(parsed_field ['op'], 'eq')
 
 
-class TestODMOrderingFilter(ApiTestCase):
+class TestOSFOrderingFilter(ApiTestCase):
     class query:
         title = ' '
         def __init__(self, title):
@@ -546,8 +411,8 @@ class TestQueryPatternRegex(TestCase):
 
     def setUp(self):
         super(TestQueryPatternRegex, self).setUp()
-        self.filter_regex = FakeView.QUERY_PATTERN
-        self.filter_fields = FakeView.FILTER_FIELDS
+        self.filter_regex = FakeListView.QUERY_PATTERN
+        self.filter_fields = FakeListView.FILTER_FIELDS
 
     def test_single_field_filter(self):
         filter_str = 'filter[name]'

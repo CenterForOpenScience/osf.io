@@ -17,7 +17,7 @@ def serialize_node(node):
         'parent': node.parent_id,
         'root': node.root._id,
         'is_registration': node.is_registration,
-        'date_created': node.date_created,
+        'date_created': node.created,
         'withdrawn': node.is_retracted,
         'embargo': embargo,
         'contributors': [serialize_simple_user_and_node_permissions(node, user) for user in node.contributors],
@@ -33,6 +33,9 @@ def serialize_node(node):
         'registrations': [serialize_node(registration) for registration in node.registrations.all()],
         'registered_from': node.registered_from._id if node.registered_from else None
     }
+
+def serialize_log(log):
+    return log, log.params.iteritems()
 
 
 def serialize_simple_user_and_node_permissions(node, user):
