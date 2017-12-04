@@ -9,12 +9,8 @@
 %endif
 
 <div id="treeGrid">
-	<div class="spinner-loading-wrapper">
-		<div class="logo-spin logo-lg"></div>
-		<p class="m-t-sm fg-load-message"> Loading files...  </p>
-	</div>
+    <div class="ball-scale ball-scale-blue text-center m-v-xl"><div></div></div>
 </div>
-
 
 <%def name="stylesheets()">
     ${parent.stylesheets()}

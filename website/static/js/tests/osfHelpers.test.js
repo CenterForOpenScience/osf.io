@@ -604,18 +604,18 @@ describe('osfHelpers', () => {
                 externalAbsoluteUrlHttpWithSearch: 'http://externaldomin.com/some/external/path/?q=random',
                 externalAbsoluteUrlHttpWithHash: 'http://externaldomin.com/some/external/path/#hashhash',
                 externalAbsoluteUrlHttpWithSearchAndHash: 'http://externaldomin.com/some/external/path/?q=random#hashhash',
-                externalAbsoluteUrlProtocol: 'protocol://externaldomin.com/some/external/path/?q=random#hashhash',
-                externalAbsoluteUrlProtocolWithSearch: 'protocol://externaldomin.com/some/external/path/?q=random#hashhash',
-                externalAbsoluteUrlProtocolWithHash: 'protocol://externaldomin.com/some/external/path/?q=random#hashhash',
-                externalAbsoluteUrlProtocolWithSearchAndHash: 'protocol://externaldomin.com/some/external/path/?q=random#hashhash',
+                externalAbsoluteUrlProtocol: 'https://externaldomin.com/some/external/path/?q=random#hashhash',
+                externalAbsoluteUrlProtocolWithSearch: 'https://externaldomin.com/some/external/path/?q=random#hashhash',
+                externalAbsoluteUrlProtocolWithHash: 'https://externaldomin.com/some/external/path/?q=random#hashhash',
+                externalAbsoluteUrlProtocolWithSearchAndHash: 'https://externaldomin.com/some/external/path/?q=random#hashhash',
                 internalAbsoluteUrlHttp: window.location.origin + '/mst3k/files/',
                 internalAbsoluteUrlHttpWithSearch: window.location.origin + '/mst3k/files/?q=random',
                 internalAbsoluteUrlHttpWithHash: window.location.origin + '/mst3k/files/#hashhash',
                 internalAbsoluteUrlHttpWithSearchAndHash: window.location.origin + '/mst3k/files/?q=random#hashhash',
-                internalAbsoluteUrlProtocol: 'protocol://osf.io/mst3k/files/',
-                internalAbsoluteUrlProtocolWithSearch: 'protocol://osf.io/mst3k/files/?q=random',
-                internalAbsoluteUrlProtocolWithHash: 'protocol://osf.io/mst3k/files/#hashhash',
-                internalAbsoluteUrlProtocolWithSearchAndHash: 'protocol://osf.io/mst3k/files/?q=random#hashhash',
+                internalAbsoluteUrlProtocol: 'https://osf.io/mst3k/files/',
+                internalAbsoluteUrlProtocolWithSearch: 'https://osf.io/mst3k/files/?q=random',
+                internalAbsoluteUrlProtocolWithHash: 'https://osf.io/mst3k/files/#hashhash',
+                internalAbsoluteUrlProtocolWithSearchAndHash: 'https://osf.io/mst3k/files/?q=random#hashhash',
                 internalRelativeUrl: '/mst3k/files/',
                 internalRelativeUrlWithSearch: '/mst3k/files/?q=random',
                 internalRelativeUrlWithHash: '/mst3k/files/#hashhash',
@@ -746,7 +746,7 @@ describe('osfHelpers', () => {
                 var customWindow = {
                     location:{
                         hostname: 'osf.io',
-                        protocol: 'protocol:'
+                        protocol: 'https:'
                     }
                 };
     

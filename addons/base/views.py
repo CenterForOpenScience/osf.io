@@ -195,7 +195,7 @@ def check_access(node, auth, action, cas_resp):
                 return True
             parent = parent.parent_node
 
-    # Users with the PREREG_ADMIN_TAG should be allowed to download files
+    # Users with the prereg admin permission should be allowed to download files
     # from prereg challenge draft registrations.
     try:
         prereg_schema = MetaSchema.objects.get(name='Prereg Challenge', schema_version=2)
@@ -207,7 +207,7 @@ def check_access(node, auth, action, cas_resp):
         if action == 'download' and \
                     auth.user is not None and \
                     prereg_draft_registration.count() > 0 and \
-                    settings.PREREG_ADMIN_TAG in auth.user.system_tags:
+                    auth.user.has_perm('osf.administer_prereg'):
             return True
     except MetaSchema.DoesNotExist:
         pass
@@ -250,7 +250,8 @@ def get_auth(auth, **kwargs):
             options={'require_exp': True},
             algorithm=settings.WATERBUTLER_JWT_ALGORITHM
         )['data']
-    except (jwt.InvalidTokenError, KeyError):
+    except (jwt.InvalidTokenError, KeyError) as err:
+        sentry.log_message(str(err))
         raise HTTPError(httplib.FORBIDDEN)
 
     if not auth.user:

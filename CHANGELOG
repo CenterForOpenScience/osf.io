@@ -2,6 +2,39 @@
 Changelog
 *********
 
+0.124.0 (2017-11-13)
+====================
+
+- Critical bug fixes
+
+0.123.0 (2017-10-26)
+====================
+
+- Preprint moderation backend.
+
+0.122.0 (2017-10-16)
+====================
+- Probabilistic test failures due to uniqueness constraint on usernames
+- View-only link returns 403 for add-on files
+- Test failure test_get_preprint_count
+- Templating nodes that are linked to each other hit max recursion
+- Add MarXiv logo for sign up page
+- Add EarthArXiv logo for sign up page
+- Audit and fixing of wrapping across site
+- Make the sitemap raise first 10 issues to sentry then log the rest
+- Remove "Preprints" from Thesis Commons Register page
+- Remove unused scripts
+
+0.121.0 (2017-10-01)
+====================
+
+- Preprint title, description, and other fields may be edited through the preprints detail endpoint.
+- Remove AlternativeCitation code.
+- Remove usages of modularodm in favor of the Django ORM.
+- Use SELECT FOR UPDATE queries for requests that do DB writes.
+- Quick Files models and API.
+- Upgrade to jQuery 3.
+
 0.120.0 (2017-08-23)
 ====================
 - User Profile: ampersand (&) is not decoded (&amp;) when editing/viewing employment/education

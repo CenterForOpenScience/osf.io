@@ -4,6 +4,10 @@ import mock
 import pytest
 from urlparse import urlparse
 
+from django.db import connection, transaction
+from django.test import TransactionTestCase
+from django.test.utils import CaptureQueriesContext
+
 from api.base.settings.defaults import API_BASE
 from framework.auth.core import Auth
 from osf.models import NodeLog
@@ -18,6 +22,7 @@ from osf_tests.factories import (
     NodeLicenseRecordFactory,
     PrivateLinkFactory,
     PreprintFactory,
+    IdentifierFactory,
 )
 from rest_framework import exceptions
 from tests.base import fake
@@ -823,6 +828,25 @@ class TestNodeUpdate(NodeCRUDTestCase):
         )
         assert res.status_code == 200
 
+    @mock.patch('website.preprints.tasks.update_ezid_metadata_on_change.s')
+    def test_set_node_private_updates_ezid(self, mock_update_ezid_metadata, app, user, project_public, url_public, make_node_payload):
+        IdentifierFactory(referent=project_public, category='doi')
+        res = app.patch_json_api(url_public, make_node_payload(project_public, {'public': False}), auth=user.auth)
+        assert res.status_code == 200
+        project_public.reload()
+        assert not project_public.is_public
+        mock_update_ezid_metadata.assert_called_with(project_public._id, status='unavailable')
+
+    @mock.patch('website.preprints.tasks.update_ezid_metadata_on_change')
+    def test_set_node_with_preprint_private_updates_ezid(self, mock_update_ezid_metadata, app, user, project_public, url_public, make_node_payload):
+        target_object = PreprintFactory(project=project_public)
+
+        res = app.patch_json_api(url_public, make_node_payload(project_public, {'public': False}), auth=user.auth)
+        assert res.status_code == 200
+        project_public.reload()
+        assert not project_public.is_public
+        mock_update_ezid_metadata.assert_called_with(target_object._id, status='unavailable')
+
 
 @pytest.mark.django_db
 class TestNodeDelete(NodeCRUDTestCase):
@@ -896,6 +920,14 @@ class TestNodeDelete(NodeCRUDTestCase):
     @mock.patch('website.preprints.tasks.update_ezid_metadata_on_change.s')
     def test_delete_node_with_preprint_calls_preprint_update_status(self, mock_update_ezid_metadata_on_change, app, user, project_public, url_public):
         PreprintFactory(project=project_public)
+        app.delete_json_api(url_public, auth=user.auth, expect_errors=True)
+        project_public.reload()
+
+        assert mock_update_ezid_metadata_on_change.called
+
+    @mock.patch('website.preprints.tasks.update_ezid_metadata_on_change.s')
+    def test_delete_node_with_identifier_calls_preprint_update_status(self, mock_update_ezid_metadata_on_change, app, user, project_public, url_public):
+        IdentifierFactory(referent=project_public, category='doi')
         app.delete_json_api(url_public, auth=user.auth, expect_errors=True)
         project_public.reload()
 

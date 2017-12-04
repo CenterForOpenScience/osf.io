@@ -53,9 +53,11 @@ class ArchiveJob(ObjectIDMixin, BaseModel):
     datetime_initiated = NonNaiveDateTimeField(default=timezone.now, verbose_name='initiated at')
 
     dst_node = models.ForeignKey('Registration', related_name='archive_jobs',
-                                 verbose_name='destination node', null=True, blank=True)
-    src_node = models.ForeignKey('Node', verbose_name='source node', null=True, blank=True)
-    initiator = models.ForeignKey('OSFUser', null=True)
+                                 verbose_name='destination node', null=True,
+                                 blank=True, on_delete=models.CASCADE)
+    src_node = models.ForeignKey('Node', verbose_name='source node', null=True,
+                                 blank=True, on_delete=models.CASCADE)
+    initiator = models.ForeignKey('OSFUser', null=True, on_delete=models.CASCADE)
 
     target_addons = models.ManyToManyField('ArchiveTarget')
 
@@ -100,15 +102,14 @@ class ArchiveJob(ObjectIDMixin, BaseModel):
         ]
 
     def archive_tree_finished(self):
-        if not self.pending:
-            return len(
-                [
-                    ret for ret in [
-                        child.archive_tree_finished()
-                        for child in self.children
-                    ] if ret]
-            ) if len(self.children) else True
-        return False
+        if self.pending:
+            return False
+        if not self.children:
+            return True
+        return all([
+            child.archive_tree_finished()
+            for child in self.children
+        ])
 
     def _fail_above(self):
         """Marks all ArchiveJob instances attached to Nodes above this as failed

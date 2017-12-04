@@ -89,7 +89,7 @@ function NodeSelectTreebeard(divID, data, nodesState) {
                 }
             ];
         },
-        onload : function () {
+        ondataload : function () {
             var tb = this;
             expandOnLoad.call(tb);
         },

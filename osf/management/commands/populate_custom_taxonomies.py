@@ -12,9 +12,15 @@ from website.preprints.tasks import on_preprint_updated
 
 logger = logging.getLogger(__name__)
 
-BEPRESS_PROVIDER = PreprintProvider.objects.filter(_id='osf').first()
+BEPRESS_PROVIDER = None
 
 def validate_input(custom_provider, data, copy=False, add_missing=False):
+
+    # This function may be run outside of this command (e.g. in the admin app) so we
+    # need to make sure that BEPRESS_PROVIDER is set
+    global BEPRESS_PROVIDER
+    BEPRESS_PROVIDER = PreprintProvider.objects.filter(_id='osf').first()
+
     logger.info('Validating data')
     includes = data.get('include', [])
     excludes = data.get('exclude', [])
@@ -50,7 +56,9 @@ def validate_input(custom_provider, data, copy=False, add_missing=False):
     included_subjects = included_subjects | Subject.objects.filter(text__in=merges.keys())
     missing_subjects = Subject.objects.filter(id__in=set([hier[-1].id for ps in PreprintService.objects.filter(provider=custom_provider) for hier in ps.subject_hierarchy])).exclude(id__in=included_subjects.values_list('id', flat=True))
     if not add_missing:
-        assert not missing_subjects.exists(), 'Incomplete mapping -- following subjects in use but not included:\n{}'.format(missing_subjects.all())
+        assert not missing_subjects.exists(), 'Incomplete mapping -- following subjects in use but not included:\n{}'.format(list(missing_subjects.values_list('text', flat=True)))
+    assert custom_provider.share_title not in [None, '', 'bepress'], 'share title not set; please set the share title on this provider before creating a custom taxonomy.'
+
     logger.info('Successfully validated mapping completeness')
     return list(missing_subjects) if add_missing else None
 
@@ -150,10 +158,21 @@ def map_preprints_to_custom_subjects(custom_provider, merge_dict, dry_run=False)
         new_hier = [s.object_hierarchy for s in preprint.subjects.exclude(children__in=preprint.subjects.all())]
         logger.info('Successfully migrated preprint {}.\n\tOld hierarchy:{}\n\tNew hierarchy:{}'.format(preprint.id, old_hier, new_hier))
 
-def migrate(provider=None, data=None, dry_run=False, copy=False, add_missing=False):
+def migrate(provider=None, share_title=None, data=None, dry_run=False, copy=False, add_missing=False):
+    # This function may be run outside of this command (e.g. in the admin app) so we
+    # need to make sure that BEPRESS_PROVIDER is set
+    global BEPRESS_PROVIDER
+    if not BEPRESS_PROVIDER:
+        BEPRESS_PROVIDER = PreprintProvider.objects.filter(_id='osf').first()
     custom_provider = PreprintProvider.objects.filter(_id=provider).first()
     assert custom_provider, 'Unable to find specified provider: {}'.format(provider)
     assert custom_provider.id != BEPRESS_PROVIDER.id, 'Cannot add custom mapping to BePress provider'
+    assert not custom_provider.subjects.exists(), 'Provider aldready has a custom taxonomy'
+    if custom_provider.share_title in [None, '', 'bepress']:
+        if not share_title:
+            raise RuntimeError('`--share-title` is required if not already set on the provider')
+        custom_provider.share_title = share_title
+        custom_provider.save()
     missing = validate_input(custom_provider, data, copy=copy, add_missing=add_missing)
     do_create_subjects(custom_provider, data['include'], data.get('exclude', []), copy=copy, add_missing=add_missing, missing=missing)
     do_custom_mapping(custom_provider, data.get('custom', {}))
@@ -182,7 +201,7 @@ class Command(BaseCommand):
             action='store',
             dest='provider',
             required=True,
-            help='_id of the PreprintProvider object, e.g. "osf"'
+            help='_id of the PreprintProvider object, e.g. "osf". Provider is expected to not already have a custom taxonomy.'
         )
         parser.add_argument(
             '--from-subjects-acceptable',
@@ -196,11 +215,21 @@ class Command(BaseCommand):
             dest='add_missing',
             help='Adds "used-but-not-included" subjects.'
         )
+        parser.add_argument(
+            '--share-title',
+            action='store',
+            type=str,
+            dest='share_title',
+            help='Sets <provider>.share_title. Ignored if already set on provider, required if not.'
+        )
 
     def handle(self, *args, **options):
+        global BEPRESS_PROVIDER
+        BEPRESS_PROVIDER = PreprintProvider.objects.filter(_id='osf').first()
         dry_run = options.get('dry_run')
         provider = options['provider']
         data = json.loads(options['data'] or '{}')
+        share_title = options.get('share_title')
         copy = options.get('from_subjects_acceptable')
         add_missing = options.get('add_missing')
         if copy:
@@ -208,6 +237,6 @@ class Command(BaseCommand):
         if not dry_run:
             script_utils.add_file_logger(logger, __file__)
         with transaction.atomic():
-            migrate(provider=provider, data=data, dry_run=dry_run, copy=copy, add_missing=add_missing)
+            migrate(provider=provider, share_title=share_title, data=data, dry_run=dry_run, copy=copy, add_missing=add_missing)
             if dry_run:
                 raise RuntimeError('Dry run, transaction rolled back.')

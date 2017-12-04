@@ -302,7 +302,7 @@ class UserMergeAccounts(PermissionRequiredMixin, FormView):
         user = self.get_object()
         guid_to_be_merged = form.cleaned_data['user_guid_to_be_merged']
 
-        user_to_be_merged = OSFUser.objects.get(_guids___id=guid_to_be_merged)
+        user_to_be_merged = OSFUser.objects.get(guids___id=guid_to_be_merged)
         user.merge_user(user_to_be_merged)
 
         return redirect(reverse_user(user._id))
@@ -398,7 +398,7 @@ class UserWorkshopFormView(PermissionRequiredMixin, FormView):
     @staticmethod
     def get_user_nodes_since_workshop(user, workshop_date):
         query_date = workshop_date + timedelta(days=1)
-        return Node.objects.filter(creator=user, date_created__gt=query_date)
+        return Node.objects.filter(creator=user, created__gt=query_date)
 
     def parse(self, csv_file):
         """ Parse and add to csv file.
@@ -440,7 +440,7 @@ class UserWorkshopFormView(PermissionRequiredMixin, FormView):
             else:
                 user = user_by_email
 
-            workshop_date = datetime.strptime(row[1], '%m/%d/%y')
+            workshop_date = pytz.utc.localize(datetime.strptime(row[1], '%m/%d/%y'))
             nodes = self.get_user_nodes_since_workshop(user, workshop_date)
             user_logs = self.get_user_logs_since_workshop(user, workshop_date)
             last_log_date = user_logs.latest().date.strftime('%m/%d/%y') if user_logs else ''

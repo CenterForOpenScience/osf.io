@@ -50,6 +50,7 @@ SECRET_KEY = osf_settings.SECRET_KEY
 
 AUTHENTICATION_BACKENDS = (
     'api.base.authentication.backends.ODMBackend',
+    'guardian.backends.ObjectPermissionBackend',
 )
 
 # SECURITY WARNING: don't run with debug turned on in production!
@@ -68,7 +69,8 @@ CSRF_COOKIE_SECURE = osf_settings.SECURE_MODE
 CSRF_COOKIE_HTTPONLY = osf_settings.SECURE_MODE
 
 ALLOWED_HOSTS = [
-    '.osf.io'
+    '.osf.io',
+    'localhost'
 ]
 
 
@@ -83,13 +85,16 @@ INSTALLED_APPS = (
     'django.contrib.admin',
 
     # 3rd party
+    'django_celery_beat',
     'rest_framework',
     'corsheaders',
     'raven.contrib.django.raven_compat',
     'django_extensions',
+    'guardian',
 
     # OSF
     'osf',
+    'reviews',
 
     # Addons
     'addons.osfstorage',
@@ -100,8 +105,10 @@ INSTALLED_APPS = (
     'addons.figshare',
     'addons.forward',
     'addons.github',
+    'addons.gitlab',
     'addons.googledrive',
     'addons.mendeley',
+    'addons.onedrive',
     'addons.owncloud',
     'addons.s3',
     'addons.twofactor',
@@ -152,7 +159,7 @@ REST_FRAMEWORK = {
         '2.5',
         '2.6',
     ),
-    'DEFAULT_FILTER_BACKENDS': ('api.base.filters.ODMOrderingFilter',),
+    'DEFAULT_FILTER_BACKENDS': ('api.base.filters.OSFOrderingFilter',),
     'DEFAULT_PAGINATION_CLASS': 'api.base.pagination.JSONAPIPagination',
     'ORDERING_PARAM': 'sort',
     'DEFAULT_AUTHENTICATION_CLASSES': (
@@ -253,8 +260,8 @@ ENABLE_ESI = osf_settings.ENABLE_ESI
 VARNISH_SERVERS = osf_settings.VARNISH_SERVERS
 ESI_MEDIA_TYPES = osf_settings.ESI_MEDIA_TYPES
 
-ADDONS_FOLDER_CONFIGURABLE = ['box', 'dropbox', 's3', 'googledrive', 'figshare', 'owncloud']
-ADDONS_OAUTH = ADDONS_FOLDER_CONFIGURABLE + ['dataverse', 'github', 'bitbucket', 'mendeley', 'zotero', 'forward']
+ADDONS_FOLDER_CONFIGURABLE = ['box', 'dropbox', 's3', 'googledrive', 'figshare', 'owncloud', 'onedrive']
+ADDONS_OAUTH = ADDONS_FOLDER_CONFIGURABLE + ['dataverse', 'github', 'bitbucket', 'gitlab', 'mendeley', 'zotero', 'forward']
 
 BYPASS_THROTTLE_TOKEN = 'test-token'
 
@@ -262,3 +269,10 @@ OSF_SHELL_USER_IMPORTS = None
 
 # Settings for use in the admin
 OSF_URL = 'https://osf.io'
+
+SELECT_FOR_UPDATE_ENABLED = True
+
+# Disable anonymous user permissions in django-guardian
+ANONYMOUS_USER_NAME = None
+
+CELERY_BEAT_SCHEDULER = 'django_celery_beat.schedulers:DatabaseScheduler'

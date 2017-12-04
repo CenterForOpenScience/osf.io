@@ -16,10 +16,13 @@
                class="btn btn-primary col-md-1">
                 <i class="fa fa-search"></i>
             </a>
+            <a href="{% url 'nodes:node-logs' node.id %}" class="btn btn-primary col-md-1 padded">
+                View Logs
+            </a>
             {%  if perms.osf.delete_node %}
                 {% if not node.is_registration %}
                     {% if not node.deleted %}
-                        <span class="col-md-2">
+                        <span class="col-md-1">
                         <a href="{% url 'nodes:remove' guid=node.id %}"
                            data-toggle="modal" data-target="#deleteModal"
                            class="btn btn-danger">
@@ -85,7 +88,7 @@
                     {# Data from above link #}
                 </div>
             </div>
-            <span class="col-md-2">
+            <span class="col-md-1">
                 <a href="{% url 'nodes:reindex-elastic-node' guid=node.id %}"
                    data-toggle="modal" data-target="#confirmReindexElasticNode"
                    class="btn btn-default">
@@ -104,6 +107,7 @@
                 <h3>Registration Details</h3>
             {% else %}
                 <h3>Node Details</h3>
+            </tr>
             {% endif %}
         </div>
         <div class="row">

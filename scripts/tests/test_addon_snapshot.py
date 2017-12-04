@@ -7,7 +7,7 @@ from osf_tests.factories import AuthUserFactory, ProjectFactory
 
 from scripts.analytics.addon_snapshot import AddonSnapshot
 
-from osf.models import Node, OSFUser
+from osf.models import OSFUser
 from website.settings import ADDONS_AVAILABLE
 from addons.github.tests.factories import GitHubAccountFactory
 from addons.googledrive.tests.factories import GoogleDriveAccountFactory

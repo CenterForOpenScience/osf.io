@@ -25,21 +25,34 @@ def non_contrib():
     return AuthUserFactory()
 
 @pytest.fixture()
+def disabled_contrib():
+    # disabled in the disable_user fixture so that they can be added as a contributor first
+    return AuthUserFactory()
+
+@pytest.fixture()
 def public_project(admin_contributor):
     return ProjectFactory(creator=admin_contributor, is_public=True)
 
 @pytest.fixture()
-def private_project(admin_contributor, write_contrib, read_contrib):
+def private_project(admin_contributor, write_contrib, read_contrib, disabled_contrib):
     private_project = ProjectFactory(creator=admin_contributor)
     private_project.add_contributor(write_contrib, permissions=['read','write'], auth=Auth(admin_contributor))
     private_project.add_contributor(read_contrib, permissions=['read'], auth=Auth(admin_contributor))
+    private_project.add_contributor(disabled_contrib, permissions=['read'], auth=Auth(admin_contributor))
     private_project.save()
     return private_project
+
+@pytest.fixture()
+def disable_user(disabled_contrib, private_project):
+    # pass private_project so that account is disabled after private_project is setup
+    disabled_contrib.disable_account()
+    disabled_contrib.is_registered = False
+    disabled_contrib.save()
 
 @pytest.mark.django_db
 class NodeCitationsMixin:
 
-    def test_node_citations(self, app, admin_contributor, write_contrib, read_contrib, non_contrib, private_url, public_url):
+    def test_node_citations(self, app, admin_contributor, write_contrib, read_contrib, non_contrib, disabled_contrib, private_url, public_url):
 
     #   test_admin_can_view_private_project_citations
         res = app.get(private_url, auth=admin_contributor.auth)

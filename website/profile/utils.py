@@ -124,7 +124,7 @@ def serialize_visible_contributors(node):
     ]
 
 
-def add_contributor_json(user, current_user=None):
+def add_contributor_json(user, current_user=None, node=None):
     """
     Generate a dictionary representation of a user, optionally including # projects shared with `current_user`
 
@@ -147,7 +147,7 @@ def add_contributor_json(user, current_user=None):
     if user.schools:
         education = user.schools[0]['institution']
 
-    return {
+    contributor_json = {
         'fullname': user.fullname,
         'email': user.email,
         'id': user._primary_key,
@@ -162,6 +162,13 @@ def add_contributor_json(user, current_user=None):
         ),
         'profile_url': user.profile_url
     }
+
+    if node:
+        contributor_info = user.contributor_set.get(node=node.parent_node)
+        contributor_json['permission'] = get_contributor_permissions(contributor_info, as_list=False)
+        contributor_json['visible'] = contributor_info.visible
+
+    return contributor_json
 
 
 def serialize_unregistered(fullname, email):

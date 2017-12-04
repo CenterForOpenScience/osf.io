@@ -160,8 +160,8 @@ class NodeSerializer(JSONAPISerializer):
     title = ser.CharField(required=True)
     description = ser.CharField(required=False, allow_blank=True, allow_null=True)
     category = ser.ChoiceField(choices=category_choices, help_text='Choices: ' + category_choices_string)
-    date_created = DateByVersion(read_only=True)
-    date_modified = DateByVersion(read_only=True)
+    date_created = DateByVersion(source='created', read_only=True)
+    date_modified = DateByVersion(source='last_logged', read_only=True)
     registration = ser.BooleanField(read_only=True, source='is_registration')
     preprint = ser.BooleanField(read_only=True, source='is_preprint')
     fork = ser.BooleanField(read_only=True, source='is_fork')
@@ -469,18 +469,11 @@ class NodeSerializer(JSONAPISerializer):
         """
         assert isinstance(node, AbstractNode), 'node must be a Node'
         auth = get_user_auth(self.context['request'])
-        old_tags = set(node.tags.values_list('name', flat=True))
-        if 'tags' in validated_data:
-            current_tags = set(validated_data.pop('tags', []))
-        elif self.partial:
-            current_tags = set(old_tags)
-        else:
-            current_tags = set()
 
-        for new_tag in (current_tags - old_tags):
-            node.add_tag(new_tag, auth=auth)
-        for deleted_tag in (old_tags - current_tags):
-            node.remove_tag(deleted_tag, auth=auth)
+        # Update tags
+        if 'tags' in validated_data:
+            new_tags = set(validated_data.pop('tags', []))
+            node.update_tags(new_tags, auth=auth)
 
         if validated_data:
 
@@ -815,6 +808,7 @@ class NodeContributorsCreateSerializer(NodeContributorsSerializer):
     users = RelationshipField(
         related_view='users:user-detail',
         related_view_kwargs={'user_id': '<user._id>'},
+        always_embed=True,
         required=False
     )
 
@@ -1119,7 +1113,7 @@ class DraftRegistrationSerializer(JSONAPISerializer):
         metadata = validated_data.pop('registration_metadata', None)
 
         schema_id = validated_data.pop('registration_schema').get('_id')
-        schema = get_object_or_error(MetaSchema, schema_id)
+        schema = get_object_or_error(MetaSchema, schema_id, self.context['request'])
         if schema.schema_version != LATEST_SCHEMA_VERSION or not schema.active:
             raise exceptions.ValidationError('Registration supplement must be an active schema.')
 
@@ -1187,7 +1181,7 @@ class NodeViewOnlyLinkSerializer(JSONAPISerializer):
 
     key = ser.CharField(read_only=True)
     id = IDField(source='_id', read_only=True)
-    date_created = DateByVersion(read_only=True)
+    date_created = DateByVersion(source='created', read_only=True)
     anonymous = ser.BooleanField(required=False, default=False)
     name = ser.CharField(required=False, default='Shared project link')
 
