@@ -17,7 +17,6 @@ from osf.models.admin_log_entry import (
     CHECKOUT_CHECKUP,
 )
 
-from admin.base import utils
 from admin.pre_reg import serializers
 from admin.pre_reg.forms import DraftRegistrationForm
 from framework.exceptions import PermissionsError
@@ -31,6 +30,7 @@ from osf.models import (
     OSFUser,
 )
 from website.project.metadata.schemas import from_json
+from website.prereg.utils import get_prereg_schema
 
 
 SORT_BY = {
@@ -53,7 +53,12 @@ class DraftListView(PermissionRequiredMixin, ListView):
     raise_exception = True
 
     def get_queryset(self):
-        return utils.get_submitted_preregistrations(self.get_ordering())
+        return DraftRegistration.objects.filter(
+            registration_schema=get_prereg_schema(),
+        ).exclude(
+            approval__isnull=True,
+            registered_node__isnull=True,
+        ).order_by(self.get_ordering())
 
     def get_context_data(self, **kwargs):
         query_set = kwargs.pop('object_list', self.object_list)

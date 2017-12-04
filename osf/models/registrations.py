@@ -494,7 +494,7 @@ class DraftRegistration(ObjectIDMixin, BaseModel):
     def is_approved(self):
         if self.requires_approval:
             if not self.approval:
-                return False
+                return bool(self.registered_node)
             else:
                 return self.approval.is_approved
         else:
