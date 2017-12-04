@@ -9,7 +9,7 @@ from framework.auth.decorators import must_be_logged_in
 
 from addons.base import generic_views
 from addons.swift import utils
-from addons.swift.provider import SwiftProvider
+from addons.swift.provider import SwiftProvider, to_auth_desc
 from addons.swift.serializer import SwiftSerializer
 from osf.models import ExternalAccount
 from website.project.decorators import (
@@ -62,19 +62,32 @@ def swift_folder_list(node_addon, **kwargs):
 def swift_add_user_account(auth, **kwargs):
     """Verifies new external account credentials and adds to user's list"""
     try:
+        auth_version = request.json['auth_version']
         auth_url = request.json['auth_url']
         access_key = request.json['access_key']
         secret_key = request.json['secret_key']
         tenant_name = request.json['tenant_name']
+        user_domain_name = request.json['user_domain_name']
+        project_domain_name = request.json['project_domain_name']
     except KeyError:
         raise HTTPError(httplib.BAD_REQUEST)
 
-    if not (auth_url and access_key and secret_key and tenant_name):
+    if not (auth_version and auth_url and access_key and secret_key and tenant_name):
         return {
             'message': 'All the fields above are required.'
         }, httplib.BAD_REQUEST
+    if auth_version == '3' and not user_domain_name:
+        return {
+            'message': 'The field `user_domain_name` is required when you choose identity V3.'
+        }, httplib.BAD_REQUEST
+    if auth_version == '3' and not project_domain_name:
+        return {
+            'message': 'The field `project_domain_name` is required when you choose identity V3.'
+        }, httplib.BAD_REQUEST
 
-    user_info = utils.get_user_info(auth_url, access_key, secret_key, tenant_name)
+    user_info = utils.get_user_info(auth_version, auth_url, access_key,
+                                    user_domain_name, secret_key, tenant_name,
+                                    project_domain_name)
     if not user_info:
         return {
             'message': ('Unable to access account.\n'
@@ -82,24 +95,30 @@ def swift_add_user_account(auth, **kwargs):
                 'and that they have permission to list containers.')
         }, httplib.BAD_REQUEST
 
-    if not utils.can_list(auth_url, access_key, secret_key, tenant_name):
+    if not utils.can_list(auth_version, auth_url, access_key, user_domain_name,
+                          secret_key, tenant_name, project_domain_name):
         return {
             'message': ('Unable to list containers.\n'
                 'Listing containers is required permission.')
         }, httplib.BAD_REQUEST
 
-    provider = SwiftProvider(account=None, auth_url=auth_url,
-                             tenant_name=tenant_name,
-                             username=access_key, password=secret_key)
+    provider = SwiftProvider(account=None, auth_version=auth_version,
+                             auth_url=auth_url, tenant_name=tenant_name,
+                             project_domain_name=project_domain_name,
+                             username=access_key,
+                             user_domain_name=user_domain_name,
+                             password=secret_key)
     try:
         provider.account.save()
     except ValidationError:
         # ... or get the old one
         provider.account = ExternalAccount.objects.get(
             provider=SHORT_NAME,
-            provider_id='{}\t{}:{}'.format(auth_url,
-                                           tenant_name,
-                                           access_key).lower()
+            provider_id='{}:{}'.format(to_auth_desc(auth_version, auth_url,
+                                                    user_domain_name,
+                                                    tenant_name,
+                                                    project_domain_name),
+                                       access_key).lower()
         )
         if provider.account.oauth_key != secret_key:
             provider.account.oauth_key = secret_key

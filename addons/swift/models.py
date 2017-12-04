@@ -60,8 +60,11 @@ class NodeSettings(BaseStorageAddon, BaseOAuthNodeSettings):
 
     def set_folder(self, folder_id, auth):
         provider = SwiftProvider(self.external_account)
-        if not container_exists(provider.auth_url, provider.username,
-                                provider.password, provider.tenant_name, folder_id):
+        if not container_exists(provider.auth_version,
+                                provider.auth_url, provider.username,
+                                provider.user_domain_name, provider.password,
+                                provider.tenant_name,
+                                provider.project_domain_name, folder_id):
             error_message = ('We are having trouble connecting to that container. '
                              'Try a different one.')
             raise exceptions.InvalidFolderError(error_message)
@@ -121,8 +124,11 @@ class NodeSettings(BaseStorageAddon, BaseOAuthNodeSettings):
             raise exceptions.AddonError('Cannot serialize credentials for Swift addon')
         provider = SwiftProvider(self.external_account)
         return {
+            'auth_version': provider.auth_version,
             'auth_url': provider.auth_url,
             'tenant_name': provider.tenant_name,
+            'user_domain_name': provider.user_domain_name,
+            'project_domain_name': provider.project_domain_name,
             'username': provider.username,
             'password': provider.password
         }

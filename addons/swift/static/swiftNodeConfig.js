@@ -20,10 +20,13 @@ var swiftFolderPickerViewModel = oop.extend(OauthAddonFolderPicker, {
         self.super.super.constructor.call(self, addonName, url, selector, folderPicker, tbOpts);
         self.super.construct.call(self, addonName, url, selector, folderPicker, opts, tbOpts);
         // Non-OAuth fields
+        self.authVersion = ko.observable('v2');
         self.authUrl = ko.observable('');
         self.accessKey = ko.observable('');
         self.secretKey = ko.observable('');
         self.tenantName = ko.observable('');
+        self.userDomainName = ko.observable('');
+        self.projectDomainName = ko.observable('');
         // Treebeard config
         self.treebeardOptions = $.extend(
             {},
@@ -53,6 +56,16 @@ var swiftFolderPickerViewModel = oop.extend(OauthAddonFolderPicker, {
 
     connectAccount: function() {
         var self = this;
+        var authVersion = null;
+        if (self.authVersion() == 'v2') {
+            authVersion = '2';
+        }else if (self.authVersion() == 'v3') {
+            authVersion = '3';
+        }else{
+            self.changeMessage('Please enter valid Identity version.', 'text-danger');
+            return;
+        }
+        // Selection should not be empty
         if(!self.authUrl() && !self.accessKey() && !self.secretKey() && !self.tenantName()){
             self.changeMessage('Please enter all an API authentication URL, tenant name, username and password.', 'text-danger');
             return;
@@ -67,6 +80,10 @@ var swiftFolderPickerViewModel = oop.extend(OauthAddonFolderPicker, {
             self.changeMessage('Please enter an API username.', 'text-danger');
             return;
         }
+        if(authVersion == '3' && !self.userDomainName()) {
+            self.changeMessage('Please enter a domain name for your username.', 'text-danger');
+            return;
+        }
 
         if (!self.secretKey() ){
             self.changeMessage('Please enter an API password.', 'text-danger');
@@ -77,15 +94,19 @@ var swiftFolderPickerViewModel = oop.extend(OauthAddonFolderPicker, {
             self.changeMessage('Please enter your tenant name.', 'text-danger');
             return;
         }
-
-        $osf.block();
-
+        if(authVersion == '3' && !self.projectDomainName()) {
+            self.changeMessage('Please enter a domain name for your project.', 'text-danger');
+            return;
+        }
         return $osf.postJSON(
             self.urls().create, {
+                auth_version: authVersion,
                 auth_url: self.authUrl(),
-                secret_key: self.secretKey(),
                 access_key: self.accessKey(),
-                tenant_name: self.tenantName()
+                secret_key: self.secretKey(),
+                tenant_name: self.tenantName(),
+                user_domain_name: self.userDomainName(),
+                project_domain_name: self.projectDomainName()
             }
         ).done(function(response) {
             $osf.unblock();
@@ -132,10 +153,13 @@ var swiftFolderPickerViewModel = oop.extend(OauthAddonFolderPicker, {
         var self = this;
         self.message('');
         self.messageClass('text-info');
+        self.authVersion('v2');
         self.authUrl(null);
         self.secretKey(null);
         self.accessKey(null);
         self.tenantName(null);
+        self.userDomainName(null);
+        self.projectDomainName(null);
     },
 
     createContainer: function(self, containerName) {
