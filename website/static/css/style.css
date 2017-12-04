@@ -758,52 +758,54 @@ table.add-links td {
 }
 
 table.add-links {
-  width: 100%;
-  margin:0;
-  padding:0;
-  border-collapse: collapse;
-  border-spacing: 0;
+    width: 100%;
+    margin:0;
+    padding:0;
+    border-collapse: collapse;
+    border-spacing: 0;
 }
+
 .fa-fix-width {
-  width: 20px;
+    width: 20px;
 }
+
 .fa-button {
-  padding: 5px;
-  margin-right: 5px;
+    padding: 5px;
+    margin-right: 5px;
 }
 
 @media screen and (max-width: 600px) {
     table.add-links  {
-      border: 0;
+        border: 0;
     }
 
     table.add-links  tr {
-      border: 1px solid #ddd;
-      margin-bottom: 10px;
-      display: block;
-      border-bottom: 2px solid #ddd;
+        border: 1px solid #ddd;
+        margin-bottom: 10px;
+        display: block;
+        border-bottom: 2px solid #ddd;
     }
 
     table.add-links  td {
-      display: block;
-      text-align: right;
-      font-size: 13px;
-      border-bottom: 1px dotted #ccc;
+        display: block;
+        text-align: right;
+        font-size: 13px;
+        border-bottom: 1px dotted #ccc;
     }
 
     table.add-links  td:first-child {
-      border-top: 0;
-      text-align: left;
+        border-top: 0;
+        text-align: left;
     }
 
     table.add-links  td:last-child {
-      border-bottom: 0;
+        border-bottom: 0;
     }
 
     table.add-links  td:before {
-      content: attr(data-label);
-      float: left;
-      font-weight: bold;
+        content: attr(data-label);
+        float: left;
+        font-weight: bold;
     }
 }
 
@@ -827,13 +829,14 @@ table.add-links {
 
 /* Remove gutters between bootstrap cols */
 .row.no-gutters {
-  margin-right: 0;
-  margin-left: 0;
+    margin-right: 0;
+    margin-left: 0;
 }
+
 .row.no-gutters > [class^="col-"],
 .row.no-gutters > [class*=" col-"] {
-  padding-right: 0;
-  padding-left: 0;
+    padding-right: 0;
+    padding-left: 0;
 }
 
 /* counter */
@@ -841,6 +844,7 @@ table.add-links {
     margin-top: -20px;
     margin-right: 5px;
 }
+
 /* Prevents comment from overlapping with counter*/
 .comment-box {
     padding-bottom: 25px;
