@@ -80,15 +80,6 @@ class BaseModel(TimeStampedModel):
         except cls.DoesNotExist:
             return None
 
-    @classmethod
-    def remove(cls, query=None):
-        return cls.objects.filter(query).delete() if query else cls.objects.all().delete()
-
-    @classmethod
-    def remove_one(cls, obj):
-        if obj.pk:
-            return obj.delete()
-
     @property
     def _primary_name(self):
         return '_id'
