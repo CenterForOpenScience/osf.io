@@ -21,7 +21,9 @@ var webpackTestConfig = {
             'window.$': 'jquery'
         }),
     ],
-    resolve: webpackCommon.resolve,
+    resolve: Object.assign({}, webpackCommon.resolve, {
+        descriptionFiles: ['package.json', 'bower.json'],
+    }),
     externals: {'jquery': 'jQuery', 'jquery-ui': 'jQuery.ui'},
     module: {
         rules: webpackCommon.module.rules.concat([
@@ -33,7 +35,6 @@ var webpackTestConfig = {
        fs: 'empty'
     }
 };
-webpackTestConfig.resolve.descriptionFiles = ["package.json", "bower.json"],
 module.exports = {
     frameworks: ['mocha', 'sinon'],
     files: [
