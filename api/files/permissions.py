@@ -1,7 +1,7 @@
 from rest_framework import permissions
 
 from api.base.utils import get_user_auth
-from osf.models import BaseFileNode
+from osf.models import BaseFileNode, AbstractNode
 
 class CheckedOutOrAdmin(permissions.BasePermission):
     def has_object_permission(self, request, view, obj):
@@ -23,7 +23,7 @@ class IsPreprintFile(permissions.BasePermission):
     def has_object_permission(self, request, view, obj):
         assert isinstance(obj, BaseFileNode), 'obj must be a BaseFileNode, got {}'.format(obj)
 
-        if request.method == 'DELETE' and obj.target.preprint_file == obj and not obj.target._has_abandoned_preprint:
+        if request.method == 'DELETE' and (obj.target.hasattr('preprint_file') and obj.target.preprint_file == obj) and not obj.target._has_abandoned_preprint:
             return False
 
         return True
