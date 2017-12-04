@@ -8,7 +8,7 @@ from django.db import migrations
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('osf', '0066_add_file_fields_for_target'),
+        ('osf', '0074_add_file_fields_for_target'),
     ]
 
     operations = [
@@ -20,9 +20,7 @@ class Migration(migrations.Migration):
         SET target_content_type_id = (SELECT id FROM django_content_type WHERE app_label = 'osf' AND model = 'abstractnode');
         """], ["""
         UPDATE osf_basefilenode
-        SET target_object_id = NULL;
-        UPDATE osf_basefilenode
-        SET target_content_type = NULL;
+        SET node_id = target_object_id;
         """]
         ),
     ]
