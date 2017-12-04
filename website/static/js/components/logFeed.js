@@ -84,6 +84,7 @@ var LogFeed = {
     view : function (ctrl) {
 
         var i;
+        var OSF_SUPPORT_EMAIL = $osf.osfSupportEmail();
         ctrl.paginators([]);
         if (ctrl.totalPages() > 1 && !ctrl.limitLogs) {
             // previous page
@@ -198,7 +199,7 @@ var LogFeed = {
             // Error message if the log request fails
             ctrl.failed ? m('p', [
                 'Unable to retrieve logs at this time. Please refresh the page or contact ',
-                m('a', {'href': 'mailto:support@osf.io'}, 'support@osf.io'),
+                m('a', {'href': 'mailto:' + OSF_SUPPORT_EMAIL}, OSF_SUPPORT_EMAIL),
                 ' if the problem persists.'
             ]) :
             // Show OSF spinner while there is a pending log request

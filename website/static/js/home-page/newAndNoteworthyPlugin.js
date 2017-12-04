@@ -8,7 +8,6 @@ var $osf = require('js/osfHelpers');
 var Raven = require('raven-js');
 var lodashGet = require('lodash.get');
 
-
 // CSS
 require('css/new-and-noteworthy-plugin.css');
 require('loaders.css/loaders.min.css');
@@ -123,7 +122,7 @@ var NewAndNoteworthy = {
     },
     view : function(ctrl) {
         if (ctrl.errorLoading()) {
-            return m('p.text-center.m-v-lg', 'Error loading projects. Please refresh the page. Contact support@osf.io for further assistance.');
+            return m('p.text-center.m-v-lg', 'Error loading projects. Please refresh the page. Contact ' + $osf.osfSupportEmail() + ' for further assistance.');
         }
 
         if (!ctrl.someDataLoaded()) {

@@ -49,8 +49,8 @@
             % if user_name and display_name:
             <li class="dropdown">
             <a class="dropdown-toggle btn-link" data-toggle="dropdown" role="button" aria-expanded="false" aria-label="Toggle auth dropdown">
-                <span class="osf-gravatar">
-                    <img src="${user_gravatar}" alt="User gravatar">
+                <span class="osf-profile-image">
+                    <img src="${user_profile_image}" alt="User profile image">
                 </span> ${display_name}
                 <span class="caret"></span>
             </a>

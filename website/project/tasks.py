@@ -151,7 +151,7 @@ def format_registration(node):
 
 def send_desk_share_error(node, resp, retries):
     mails.send_mail(
-        to_addr=settings.SUPPORT_EMAIL,
+        to_addr=settings.OSF_SUPPORT_EMAIL,
         mail=mails.SHARE_ERROR_DESK,
         node=node,
         resp=resp,

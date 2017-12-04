@@ -129,7 +129,10 @@ USE_CDN_FOR_CLIENT_LIBS = True
 
 USE_EMAIL = True
 FROM_EMAIL = 'openscienceframework-noreply@osf.io'
-SUPPORT_EMAIL = 'support@osf.io'
+
+# support email
+OSF_SUPPORT_EMAIL = 'support@osf.io'
+
 
 # Default settings for fake email address generation
 FAKE_EMAIL_NAME = 'freddiemercury'
@@ -201,6 +204,8 @@ COMMENT_MAXLENGTH = 1000
 PROFILE_IMAGE_LARGE = 70
 PROFILE_IMAGE_MEDIUM = 40
 PROFILE_IMAGE_SMALL = 20
+# Currently (8/21/2017) only gravatar supported.
+PROFILE_IMAGE_PROVIDER = 'gravatar'
 
 # Conference options
 CONFERENCE_MIN_COUNT = 5

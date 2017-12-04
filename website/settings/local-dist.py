@@ -107,3 +107,6 @@ SENDGRID_EMAIL_WHITELIST = []
 
 # Example of extending default settings
 # defaults.IMG_FMTS += ["pdf"]
+
+# support email
+OSF_SUPPORT_EMAIL = 'fake-support@osf.io'

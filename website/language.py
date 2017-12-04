@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """Various text used throughout the website, e.g. status messages, errors, etc.
 """
-
+from website import settings
 
 # Status Messages
 #################
@@ -190,7 +190,9 @@ TEMPLATED_FROM_PREFIX = 'Templated from '
 
 # MFR Error handling
 ERROR_PREFIX = "Unable to render. <a href='?action=download'>Download</a> file to view it."
-SUPPORT = u"Contact support@osf.io for further assistance."
+SUPPORT = u"Contact " + settings.OSF_SUPPORT_EMAIL + u"for further assistance."
+
+SUPPORT_LINK = 'please report it to <a href="mailto:' + settings.OSF_SUPPORT_EMAIL + '">' + settings.OSF_SUPPORT_EMAIL + '</a>.'
 
 # Custom Error Messages w/ support  # TODO: Where are these used? See [#OSF-6101]
 STATA_VERSION_ERROR = u'Version of given Stata file is not 104, 105, 108, 113 (Stata 8/9), 114 (Stata 10/11) or 115 (Stata 12)<p>{0}</p>'.format(SUPPORT)

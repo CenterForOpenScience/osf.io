@@ -53,7 +53,7 @@
                     </div>
                     <div class="support-col-body">
                         <p> For emails about technical support:</p>
-                        <p> <a href="mailto:support@osf.io" class="text-bigger">support@osf.io</a></p>
+                        <p> <a href="mailto:${osf_support_email}" class="text-bigger">${osf_support_email}</a></p>
                         <p> For all other questions or comments: </p>
                         <p><a href="mailto:contact@osf.io" class="text-bigger">contact@osf.io</a></p>
                     </div>

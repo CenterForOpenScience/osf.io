@@ -738,7 +738,7 @@ def request_export(auth):
                               'error_type': 'throttle_error'})
 
     mails.send_mail(
-        to_addr=settings.SUPPORT_EMAIL,
+        to_addr=settings.OSF_SUPPORT_EMAIL,
         mail=mails.REQUEST_EXPORT,
         user=auth.user,
     )
@@ -758,7 +758,7 @@ def request_deactivation(auth):
                         })
 
     mails.send_mail(
-        to_addr=settings.SUPPORT_EMAIL,
+        to_addr=settings.OSF_SUPPORT_EMAIL,
         mail=mails.REQUEST_DEACTIVATION,
         user=auth.user,
     )

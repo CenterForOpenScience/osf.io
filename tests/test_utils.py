@@ -435,13 +435,13 @@ class TestProfileUtils(DbTestCase):
     def setUp(self):
         self.user = UserFactory()
 
-    def test_get_other_user_gravatar_default_size(self):
-        gravitar = profile_utils.get_gravatar(self.user)
-        assert_true(gravitar)
+    def test_get_other_user_profile_image_default_size(self):
+        profile_image = profile_utils.get_profile_image_url(self.user)
+        assert_true(profile_image)
 
-    def test_get_other_user_gravatar_specific_size(self):
-        gravitar = profile_utils.get_gravatar(self.user, size=25)
-        assert_true(gravitar)
+    def test_get_other_user_profile_image(self):
+        profile_image = profile_utils.get_profile_image_url(self.user, size=25)
+        assert_true(profile_image)
 
 
 class TestSignalUtils(unittest.TestCase):

@@ -683,9 +683,7 @@ function doItemOp(operation, to, from, rename, conflict) {
         } else if (xhr.status === 503) {
             message = textStatus;
         } else {
-            message = 'Please refresh the page or ' +
-                'contact <a href="mailto: support@osf.io">support@osf.io</a> if the ' +
-                'problem persists.';
+            message = 'Please refresh the page or contact ' + $osf.osfSupportlink() + ' if the problem persists.';
         }
 
         $osf.growl(operation.verb + ' failed.', message);
@@ -992,7 +990,7 @@ function _fangornDropzoneError(treebeard, file, message, xhr) {
              msgText += '1. Cannot upload folders. <br>2. ';
          }
          msgText += 'Unable to reach the provider, please try again later. ';
-         msgText += 'If the problem persists, please contact support@osf.io.';
+         msgText += 'If the problem persists, please contact ' + $osf.osfSupportEmail() + '.';
     } else {
         //Osfstorage and most providers store message in {Object}message.{string}message,
         //but some, like Dataverse, have it in {string} message.

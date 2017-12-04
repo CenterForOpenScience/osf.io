@@ -778,6 +778,7 @@ class TestArchiverUtils(ArchiverTestCase):
 
     @mock.patch('website.mails.send_mail')
     def test_handle_archive_fail_copy(self, mock_send_mail):
+        url = settings.INTERNAL_DOMAIN + self.src._id
         archiver_utils.handle_archive_fail(
             ARCHIVER_NETWORK_ERROR,
             self.src,
@@ -795,11 +796,12 @@ class TestArchiverUtils(ArchiverTestCase):
             mimetype='html',
         )
         args_desk = dict(
-            to_addr=settings.SUPPORT_EMAIL,
+            to_addr=settings.OSF_SUPPORT_EMAIL,
             user=self.user,
             src=self.src,
             mail=mails.ARCHIVE_COPY_ERROR_DESK,
             results={},
+            url=url,
         )
         mock_send_mail.assert_has_calls([
             call(**args_user),
@@ -808,6 +810,7 @@ class TestArchiverUtils(ArchiverTestCase):
 
     @mock.patch('website.mails.send_mail')
     def test_handle_archive_fail_size(self, mock_send_mail):
+        url = settings.INTERNAL_DOMAIN + self.src._id
         archiver_utils.handle_archive_fail(
             ARCHIVER_SIZE_EXCEEDED,
             self.src,
@@ -824,13 +827,13 @@ class TestArchiverUtils(ArchiverTestCase):
             mimetype='html',
         )
         args_desk = dict(
-            to_addr=settings.SUPPORT_EMAIL,
+            to_addr=settings.OSF_SUPPORT_EMAIL,
             user=self.user,
             src=self.src,
             mail=mails.ARCHIVE_SIZE_EXCEEDED_DESK,
             stat_result={},
+            url=url,
         )
-
         mock_send_mail.assert_has_calls([
             call(**args_user),
             call(**args_desk),
