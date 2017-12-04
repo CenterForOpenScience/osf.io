@@ -31,7 +31,7 @@ class UserSettings(BaseOAuthUserSettings):
     serializer = S3Serializer
 
 
-class NodeSettings(BaseStorageAddon, BaseOAuthNodeSettings):
+class NodeSettings(BaseOAuthNodeSettings, BaseStorageAddon):
     oauth_provider = S3Provider
     serializer = S3Serializer
 

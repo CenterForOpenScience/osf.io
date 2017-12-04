@@ -633,13 +633,6 @@ button.close {
     display: inline-block
 }
 
-/* Navigation -- general style should be in style guide
--------------------------------------------------- */
-#navbarScope a.nav-user-dropdown {
-    padding-top: 12px;
-    padding-bottom: 11px;
-}
-
 /* Override insane add tag font
 -------------------------------------------------- */
 .tagsinput input {
@@ -723,23 +716,66 @@ div.ball-scale-blue>div {
     margin-bottom: 0;
 }
 
-/* To be added to osf-style: project overview -> componentQuickActions menu */
-#componentQuickActions ul.dropdown-menu > li > a:hover,
-#componentQuickActions ul.dropdown-menu > li > a:focus {
+/* To be added to osf-style: generic dropdown-menu */
+.generic-dropdown ul.dropdown-menu > li > a {
+    color: #000;
+}
+
+.generic-dropdown ul.dropdown-menu > li > a:hover,
+.generic-dropdown ul.dropdown-menu > li > a:focus {
     background-image: none;
     background-color: #D9D9D9;
 }
 
-#componentQuickActions button {
+.generic-dropdown button {
   padding: 4px 12px;
   line-height: 0;
 }
 
-#componentQuickActions ul {
+.generic-dropdown ul {
     background-color: #EFEFEF;
     min-width: 180px;
 }
 
-#componentQuickActions a {
+.generic-dropdown a {
     color: #333;
+}
+
+.generic-dropdown .fa {
+    padding-right: 7px;
+    width: 20px;
+}
+
+.generic-dropdown i.fa.fa-sort {
+    padding-left: 20px;
+}
+
+.category-list button {
+    padding: 5px 6px;
+}
+
+.category-list ul.dropdown-menu > li > a {
+    line-height: 1.65;
+    padding-left: 8px;
+}
+
+/* Remove gutters between bootstrap cols */
+.row.no-gutters {
+  margin-right: 0;
+  margin-left: 0;
+}
+.row.no-gutters > [class^="col-"],
+.row.no-gutters > [class*=" col-"] {
+  padding-right: 0;
+  padding-left: 0;
+}
+
+/* counter */
+.counter-comment {
+    margin-top: -20px;
+    margin-right: 5px;
+}
+/* Prevents comment from overlapping with counter*/
+.comment-box {
+    padding-bottom: 25px;
 }

@@ -80,8 +80,8 @@ class ActionSerializer(JSONAPISerializer):
     from_state = ser.ChoiceField(choices=States.choices(), read_only=True)
     to_state = ser.ChoiceField(choices=States.choices(), read_only=True)
 
-    date_created = ser.DateTimeField(read_only=True)
-    date_modified = ser.DateTimeField(read_only=True)
+    date_created = ser.DateTimeField(source='created', read_only=True)
+    date_modified = ser.DateTimeField(source='modified', read_only=True)
 
     provider = RelationshipField(
         read_only=True,

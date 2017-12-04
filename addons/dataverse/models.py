@@ -74,7 +74,7 @@ class UserSettings(BaseOAuthUserSettings):
     serializer = DataverseSerializer
 
 
-class NodeSettings(BaseStorageAddon, BaseOAuthNodeSettings):
+class NodeSettings(BaseOAuthNodeSettings, BaseStorageAddon):
     oauth_provider = DataverseProvider
     serializer = DataverseSerializer
 

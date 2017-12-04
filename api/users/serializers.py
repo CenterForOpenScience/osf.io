@@ -5,7 +5,7 @@ from rest_framework import serializers as ser
 from api.base.exceptions import InvalidModelValueError
 from api.base.serializers import (
     BaseAPISerializer, JSONAPISerializer, JSONAPIRelationshipSerializer,
-    DateByVersion, DevOnly, HideIfDisabled, IDField,
+    DateByVersion, HideIfDisabled, IDField,
     Link, LinksField, ListDictField, TypeField, RelationshipField,
     WaterbutlerLink, ShowIfCurrentUser
 )
@@ -20,7 +20,7 @@ class QuickFilesRelationshipField(RelationshipField):
 
     def to_representation(self, value):
         relationship_links = super(QuickFilesRelationshipField, self).to_representation(value)
-        quickfiles_guid = value.created.filter(type=QuickFilesNode._typedmodels_type).values_list('guids___id', flat=True).get()
+        quickfiles_guid = value.nodes_created.filter(type=QuickFilesNode._typedmodels_type).values_list('guids___id', flat=True).get()
         upload_url = website_utils.waterbutler_api_url_for(quickfiles_guid, 'osfstorage')
         relationship_links['links']['upload'] = {
             'href': upload_url,
@@ -44,7 +44,7 @@ class UserSerializer(JSONAPISerializer):
     non_anonymized_fields = ['type']
     id = IDField(source='_id', read_only=True)
     type = TypeField()
-    full_name = ser.CharField(source='fullname', required=True, label='Full name', help_text='Display name used in the general user interface')
+    full_name = ser.CharField(source='fullname', required=True, label='Full name', help_text='Display name used in the general user interface', max_length=200)
     given_name = ser.CharField(required=False, allow_blank=True, help_text='For bibliographic citations')
     middle_names = ser.CharField(required=False, allow_blank=True, help_text='For bibliographic citations')
     family_name = ser.CharField(required=False, allow_blank=True, help_text='For bibliographic citations')
@@ -74,16 +74,21 @@ class UserSerializer(JSONAPISerializer):
         related_view_kwargs={'user_id': '<_id>'},
     ))
 
-    registrations = DevOnly(HideIfDisabled(RelationshipField(
+    registrations = HideIfDisabled(RelationshipField(
         related_view='users:user-registrations',
         related_view_kwargs={'user_id': '<_id>'},
-    )))
+    ))
 
     institutions = HideIfDisabled(RelationshipField(
         related_view='users:user-institutions',
         related_view_kwargs={'user_id': '<_id>'},
         self_view='users:user-institutions-relationship',
         self_view_kwargs={'user_id': '<_id>'},
+    ))
+
+    preprints = HideIfDisabled(RelationshipField(
+        related_view='users:user-preprints',
+        related_view_kwargs={'user_id': '<_id>'},
     ))
 
     actions = ShowIfCurrentUser(RelationshipField(

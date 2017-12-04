@@ -30,6 +30,36 @@
                 "text": "GitHub content will be registered, but version history will not be copied to the registration."
             }
         },
+        "GitLab": {
+            "Permissions": {
+                "status": "partial",
+                "text": "Making an OSF project public or private is independent of making a GitLab repo public or private. The OSF does not alter the permissions of linked GitLab repos."
+            },
+            "View / download file versions": {
+                "status": "full",
+                "text": "GitLab files and their versions can be viewed/downloaded via OSF."
+            },
+            "Add / update files": {
+                "status": "none",
+                "text": "Adding/updating files in the project via OSF is not implemented yet."
+            },
+            "Delete files": {
+                "status": "none",
+                "text": "Deleting files via OSF is not implemented yet."
+            },
+            "Logs": {
+                "status": "none",
+                "text": "OSF does not keep track of changes made using Gitlab directly."
+            },
+            "Forking": {
+                "status": "partial",
+                "text": "Forking a project or component does not copy GitLab authorization unless the user forking the project is the same user who authorized the GitLab add-on in the source project being forked."
+            },
+            "Registering": {
+                "status": "partial",
+                "text": "GitLab content will be registered, but version history will not be copied to the registration."
+            }
+        },
         "Amazon S3": {
             "Permissions": {
                 "status": "partial",
@@ -118,6 +148,36 @@
             "Registering": {
                 "status": "partial",
                 "text": "Dropbox content will be registered, but version history will not be copied to the registration."
+            }
+        },
+        "OneDrive": {
+            "Permissions": {
+                "status": "partial",
+                "text": "Making an OSF project public or private is independent of OneDrive privacy. The OSF does not alter the permissions of linked OneDrive folders."
+            },
+            "View / download file versions": {
+                "status": "full",
+                "text": "OneDrive files and their versions can be viewed/downloaded via OSF.  OneNote files are unexportable and cannot be downloaded or viewed."
+            },
+            "Add / update files": {
+                "status": "none",
+                "text": "The OneDrive add-on is read-only."
+            },
+            "Delete files": {
+                "status": "none",
+                "text": "The OneDrive add-on is read-only."
+            },
+            "Logs": {
+                "status": "partial",
+                "text": "OSF keeps track of changes you make to your OneDrive add-on configuration.  It does not track changes to OneDrive content."
+            },
+            "Forking": {
+                "status": "partial",
+                "text": "Forking a project or component does not copy OneDrive authorization unless the user forking the project is the same user who authorized the OneDrive add-on in the source project being forked."
+            },
+            "Registering": {
+                "status": "partial",
+                "text": "OneDrive content will be registered, but version history will not be copied to the registration. OneNote files are unexportable and will not be archived."
             }
         },
         "Dataverse": {

@@ -351,6 +351,18 @@ class Registration(AbstractNode):
         for child in self.nodes_primary:
             child.delete_registration_tree(save=save)
 
+    def add_tag(self, tag, auth=None, save=True, log=True, system=False):
+        if self.retraction is None:
+            super(Registration, self).add_tag(tag, auth, save, log, system)
+        else:
+            raise NodeStateError('Cannot add tags to withdrawn registrations.')
+
+    def remove_tag(self, tag, auth, save=True):
+        if self.retraction is None:
+            super(Registration, self).remove_tag(tag, auth, save)
+        else:
+            raise NodeStateError('Cannot remove tags of withdrawn registrations.')
+
     class Meta:
         # custom permissions for use in the OSF Admin App
         permissions = (
@@ -387,6 +399,8 @@ class DraftRegistration(ObjectIDMixin, BaseModel):
 
     datetime_initiated = NonNaiveDateTimeField(auto_now_add=True)
     datetime_updated = NonNaiveDateTimeField(auto_now=True)
+    deleted = NonNaiveDateTimeField(null=True, blank=True)
+
     # Original Node a draft registration is associated with
     branched_from = models.ForeignKey('Node', related_name='registered_draft',
                                       null=True, on_delete=models.CASCADE)

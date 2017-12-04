@@ -39,7 +39,7 @@ class TestSerializeRevision(StorageTestCase):
                 'name': self.user.fullname,
                 'url': self.user.url,
             },
-            'date': self.versions[0].date_created.isoformat(),
+            'date': self.versions[0].created.isoformat(),
             'downloads': 2,
             'md5': None,
             'sha256': None,
@@ -63,7 +63,7 @@ class TestSerializeRevision(StorageTestCase):
         expected = {
             'index': 2,
             'user': None,
-            'date': self.versions[0].date_created.isoformat(),
+            'date': self.versions[0].created.isoformat(),
             'downloads': 0,
             'md5': None,
             'sha256': None,
