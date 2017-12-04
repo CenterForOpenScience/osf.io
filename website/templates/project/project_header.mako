@@ -71,6 +71,10 @@
                         % if node['is_public'] or user['is_contributor']:
                             <li><a href="${node['url']}addons/">Add-ons</a></li>
                         % endif
+
+                        % if node['is_public'] or user['is_contributor']:
+                            <li><a href="${node['url']}settings/">Settings</a></li>
+                        % endif
                     % endif
                     % if (user['can_comment'] or node['has_comments']) and not node['anonymous']:
                         <li id="commentsLink">

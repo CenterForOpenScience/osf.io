@@ -182,6 +182,7 @@ def serialize_wiki_settings(user, nodes):
         assert node, '{} is not a valid Node.'.format(node._id)
 
         can_read = node.has_permission(user, 'read')
+        is_admin = node.has_permission(user, 'admin')
         include_wiki_settings = node.include_wiki_settings(user)
 
         if not include_wiki_settings:
@@ -189,34 +190,37 @@ def serialize_wiki_settings(user, nodes):
         children = node.get_nodes(**{'is_deleted': False, 'is_node_link': False})
         children_tree = []
 
-        if node.admin_public_wiki(user):
+        wiki = node.get_addon('wiki')
+        if wiki:
             children_tree.append({
                 'select': {
                     'title': 'permission',
                     'permission':
                         'public'
-                        if node.get_addon('wiki').is_publicly_editable
+                        if wiki.is_publicly_editable
                         else 'private'
                 },
             })
 
-        children_tree.extend(serialize_wiki_settings(user, children))
+            children_tree.extend(serialize_wiki_settings(user, children))
 
-        item = {
-            'node': {
-                'id': node._id,
-                'url': node.url if can_read else '',
-                'title': node.title if can_read else 'Private Project',
-            },
-            'children': children_tree,
-            'kind': 'folder' if not node.parent_node or not node.parent_node.has_permission(user, 'read') else 'node',
-            'nodeType': node.project_or_component,
-            'category': node.category,
-            'permissions': {
-                'view': can_read,
-            },
-        }
+            item = {
+                'node': {
+                    'id': node._id,
+                    'url': node.url if can_read else '',
+                    'title': node.title if can_read else 'Private Project',
+                    'is_public': node.is_public
+                },
+                'children': children_tree,
+                'kind': 'folder' if not node.parent_node or not node.parent_node.has_permission(user, 'read') else 'node',
+                'nodeType': node.project_or_component,
+                'category': node.category,
+                'permissions': {
+                    'view': can_read,
+                    'admin': is_admin,
+                },
+            }
 
-        items.append(item)
+            items.append(item)
 
     return items
