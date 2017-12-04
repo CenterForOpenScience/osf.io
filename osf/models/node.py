@@ -2653,15 +2653,15 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
             self.is_public
         )
 
+    def admin_of_wiki(self, user):
+        return (
+            self.has_addon('wiki') and
+            self.has_permission(user, 'admin')
+        )
+
     def include_wiki_settings(self, user):
         """Check if node meets requirements to make publicly editable."""
-        return (
-            self.admin_public_wiki(user) or
-            any(
-                each.admin_public_wiki(user)
-                for each in self.get_descendants_recursive()
-            )
-        )
+        return self.get_descendants_recursive()
 
     def get_wiki_page(self, name=None, version=None, id=None):
         NodeWikiPage = apps.get_model('addons_wiki.NodeWikiPage')

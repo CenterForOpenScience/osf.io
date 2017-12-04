@@ -208,8 +208,8 @@
                   <!-- /ko -->
                 </span>
                 <p>
-                    Category: <span id="nodeCategoryEditable">${node['category']}</span>
-                    <span data-bind="css: icon"></span>
+                    Category: <span data-bind="css: icon"></span>
+                    <span id="nodeCategoryEditable">${node['category']}</span>
                 </p>
 
                 % if (node['description']) or (not node['description'] and 'write' in user['permissions'] and not node['is_registration']):
