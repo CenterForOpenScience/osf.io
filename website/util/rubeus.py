@@ -186,6 +186,7 @@ class NodeFileCollector(object):
         return node_name
 
     def _serialize_node(self, node, parent=None, grid_root=None, children=None):
+        children = children or []
         is_pointer = parent and node.is_linked_node
         can_view = node.can_view(auth=self.auth)
         can_edit = node.has_write_perm if hasattr(node, 'has_write_perm') else node.can_edit(auth=self.auth)
