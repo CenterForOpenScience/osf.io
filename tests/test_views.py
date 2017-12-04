@@ -836,6 +836,19 @@ class TestProjectViews(OsfTestCase):
         assert_in('fork_count', res.json['node'])
         assert_equal(0, res.json['node']['fork_count'])
 
+    def test_fork_count_does_not_include_fork_registrations(self):
+        user = AuthUserFactory()
+        project = ProjectFactory(creator=user)
+        auth = Auth(project.creator)
+        fork = project.fork_node(auth)
+        project.save()
+        registration = RegistrationFactory(project=fork)
+
+        url = project.api_url_for('view_project')
+        res = self.app.get(url, auth=user.auth)
+        assert_in('fork_count', res.json['node'])
+        assert_equal(1, res.json['node']['fork_count'])
+
     def test_registration_retraction_redirect(self):
         url = self.project.web_url_for('node_registration_retraction_redirect')
         res = self.app.get(url, auth=self.auth)
@@ -3382,6 +3395,20 @@ class TestAuthLoginAndRegisterLogic(OsfTestCase):
         assert_equal(
             data.get('next_url'),
             get_login_url(web_url_for('dashboard', _absolute=True), campaign='institution'))
+
+    def test_institution_login_next_url_with_auth(self):
+        # institution login: user with auth and next url
+        data = login_and_register_handler(self.auth, next_url=self.next_url, campaign='institution')
+        assert_equal(data.get('status_code'), http.FOUND)
+        assert_equal(data.get('next_url'), self.next_url)
+
+    def test_institution_login_next_url_without_auth(self):
+        # institution login: user without auth and next url
+        data = login_and_register_handler(self.no_auth, next_url=self.next_url ,campaign='institution')
+        assert_equal(data.get('status_code'), http.FOUND)
+        assert_equal(
+            data.get('next_url'),
+            get_login_url(self.next_url, campaign='institution'))
 
     def test_institution_regsiter_with_auth(self):
         # institution register: user with auth

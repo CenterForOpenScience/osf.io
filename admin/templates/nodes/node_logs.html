@@ -1,0 +1,49 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block title %}
+    <title>Node Logs</title>
+{% endblock title %}
+{% block content %}
+    <div class="container-fluid">
+        <table class="table table-striped table-hover table-responsive">
+            <thead>
+                <th>
+                    Date
+                </th>
+                <th>
+                    Action
+                </th>
+                <th>
+                    User
+                </th>
+                <th>
+                    Parameters
+                </th>
+            </thead>
+            <tbody>
+            {% for log, params in logs %}
+                <tr>
+                    <td>
+                        {{ log.date }}
+                    </td>
+                    <td>
+                        {{ log.action }}
+                    </td>
+                    <td>
+                        {{ log.user }}
+                    </td>
+                    <td>
+                        {% for key, value in params %}
+                            <div>
+                                <span><b>{{ key }}</b></span> : <span>{{ value }}</span>
+                            </div>
+                        {% endfor %}
+                    </td>
+                </tr>
+            {% endfor %}
+            </tbody>
+            {% csrf_token %}
+        </table>
+    </div>
+    {% include "util/pagination.html" with items=page status=status %}
+{% endblock content %}

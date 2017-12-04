@@ -14,6 +14,8 @@ urlpatterns = [
         name='known-ham'),
     url(r'^(?P<guid>[a-z0-9]+)/$', views.NodeView.as_view(),
         name='node'),
+    url(r'^(?P<guid>[a-z0-9]+)/logs/$', views.AdminNodeLogView.as_view(),
+        name='node-logs'),
     url(r'^registration_list/$', views.RegistrationListView.as_view(),
         name='registrations'),
     url(r'^(?P<guid>[a-z0-9]+)/remove/$', views.NodeDeleteView.as_view(),

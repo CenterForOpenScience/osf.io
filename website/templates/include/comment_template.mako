@@ -83,12 +83,13 @@
                         -->
                         <div data-bind="template: {if: editing, afterRender: autosizeText.bind($data)}">
                             <div class="form-group" style="padding-top: 10px">
-                                <div class="form-control atwho-input" placeholder="Edit comment" data-bind="editableHTML: {observable: content, onUpdate: handleEditableUpdate}, attr: {maxlength: $root.MAXLENGTH}" contenteditable="true"></div>
+                                <div class="form-control atwho-input comment-box" placeholder="Edit comment" data-bind="editableHTML: {observable: content, onUpdate: handleEditableUpdate}, attr: {maxlength: $root.MAXLENGTH}" contenteditable="true"></div>
+                                <span data-bind="visible: editNotEmpty, text: counter, css: counterColor" class="pull-right label counter-comment"></span>
                             </div>
                             <div class="clearfix">
                                 <div class="form-inline pull-right">
                                     <a class="btn btn-default btn-sm" data-bind="click: cancelEdit">Cancel</a>
-                                    <a class="btn btn-success btn-sm" data-bind="click: submitEdit, visible: validateEdit()">Save</a>
+                                    <a class="btn btn-success btn-sm" data-bind="click: submitEdit, tooltip: {title: errorMessage(), placement: 'bottom', disabled: !validateEdit()}, css: {disabled: !validateEdit()}">Save</a>
                                     <span data-bind="text: editErrorMessage" class="text-danger"></span>
                                 </div>
                             </div>
@@ -96,8 +97,6 @@
                     </div>
 
                     <div>
-
-                        <span class="text-danger" data-bind="text: errorMessage"></span>
 
                         <span>&nbsp;</span>
 
@@ -161,12 +160,13 @@
 
                 <div data-bind="template: {afterRender: autosizeText.bind($data)}">
                     <div class="form-group" style="padding-top: 10px">
-                        <div class="form-control atwho-input" placeholder="Add a comment" data-bind="editableHTML: {observable: replyContent, onUpdate: handleEditableUpdate}, attr: {maxlength: $root.MAXLENGTH}" contenteditable="true"></div>
+                        <div class="form-control atwho-input comment-box" placeholder="Add a comment" data-bind="editableHTML: {observable: replyContent, onUpdate: handleEditableUpdate}, attr: {maxlength: $root.MAXLENGTH}" contenteditable="true"></div>
+                        <span data-bind="visible: replyNotEmpty, text: counter, css: counterColor" class="pull-right label counter-comment"></span>
                     </div>
                     <div class="clearfix">
                         <div class="pull-right">
                             <a class="btn btn-default btn-sm" data-bind="click: cancelReply, css: {disabled: submittingReply}"> Cancel</a>
-                            <a class="btn btn-success btn-sm" data-bind="click: submitReply, visible: validateReply(), css: {disabled: submittingReply}, text: commentButtonText"></a>
+                            <a class="btn btn-success btn-sm" data-bind="click: submitReply, tooltip: {title: errorMessage(), placement: 'bottom', disabled: !validateReply()}, css: {disabled: !validateReply() || submittingReply()}, text: commentButtonText"></a>
                             <span data-bind="text: replyErrorMessage" class="text-danger"></span>
                         </div>
                     </div>

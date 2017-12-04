@@ -5,7 +5,7 @@ import json
 import bleach
 
 
-def strip_html(unclean, tags=[]):
+def strip_html(unclean, tags=None):
     """Sanitize a string, removing (as opposed to escaping) HTML tags
 
     :param unclean: A string to be stripped of HTML tags
@@ -13,6 +13,9 @@ def strip_html(unclean, tags=[]):
     :return: stripped string
     :rtype: str
     """
+    if not tags:
+        tags = []
+
     if unclean is None:
         return u''
     elif isinstance(unclean, dict) or isinstance(unclean, list):
