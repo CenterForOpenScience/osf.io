@@ -1,4 +1,7 @@
 import logging
+
+from dirtyfields import DirtyFieldsMixin
+
 from django.conf import settings
 from django.contrib.postgres import fields
 from django.core.urlresolvers import reverse
@@ -10,7 +13,7 @@ from osf.models.mixins import Loggable
 logger = logging.getLogger(__name__)
 
 
-class Institution(Loggable, base.ObjectIDMixin, base.BaseModel):
+class Institution(DirtyFieldsMixin, Loggable, base.ObjectIDMixin, base.BaseModel):
 
     # TODO Remove null=True for things that shouldn't be nullable
     # e.g. CharFields should never be null=True
@@ -81,6 +84,14 @@ class Institution(Loggable, base.ObjectIDMixin, base.BaseModel):
         return self.absolute_api_v2_url + 'relationships/nodes/'
 
     @property
+    def registrations_url(self):
+        return self.absolute_api_v2_url + 'registrations/'
+
+    @property
+    def registrations_relationship_url(self):
+        return self.absolute_api_v2_url + 'relationships/registrations/'
+
+    @property
     def logo_path(self):
         if self.logo_name:
             return '/static/img/institutions/shields/{}'.format(self.logo_name)
@@ -103,12 +114,21 @@ class Institution(Loggable, base.ObjectIDMixin, base.BaseModel):
             return None
 
     def update_search(self):
-        from website.search.search import update_institution
+        from website.search.search import update_institution, update_node
         from website.search.exceptions import SearchUnavailableError
+
         try:
             update_institution(self)
         except SearchUnavailableError as e:
             logger.exception(e)
+
+        saved_fields = self.get_dirty_fields()
+        if saved_fields and bool(self.pk):
+            for node in self.nodes.filter(is_deleted=False):
+                try:
+                    update_node(node, async=False)
+                except SearchUnavailableError as e:
+                    logger.exception(e)
 
     def save(self, *args, **kwargs):
         self.update_search()

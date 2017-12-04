@@ -2,11 +2,30 @@ import os
 import json
 import logging
 
+from contextlib import contextmanager
+
 from website import settings
 from osf.models import NodeLicense, MetaSchema
 from website.project.metadata.schemas import OSF_META_SCHEMAS
 
 logger = logging.getLogger(__file__)
+
+
+@contextmanager
+def disable_auto_now_fields(model):
+    """
+    Context manager to disable updates of all auto_now fields for a given model.
+
+    """
+    for field in model._meta.get_fields():
+        if hasattr(field, 'auto_now') and field.auto_now:
+            field.auto_now = False
+    try:
+        yield
+    finally:
+        for field in model._meta.get_fields():
+            if hasattr(field, 'auto_now') and not field.auto_now:
+                field.auto_now = True
 
 
 def ensure_licenses(*args, **kwargs):
@@ -18,10 +37,15 @@ def ensure_licenses(*args, **kwargs):
     """
     ninserted = 0
     nupdated = 0
+    try:
+        NodeLicense = args[0].get_model('osf', 'nodelicense')
+    except:
+        # Working outside a migration
+        from osf.models import NodeLicense
     with open(
             os.path.join(
                 settings.APP_PATH,
-                'node_modules', 'list-of-licenses', 'dist', 'list-of-licenses.json'
+                'node_modules', '@centerforopenscience', 'list-of-licenses', 'dist', 'list-of-licenses.json'
             )
     ) as fp:
         licenses = json.loads(fp.read())
@@ -62,6 +86,11 @@ def ensure_schemas(*args):
     """Import meta-data schemas from JSON to database if not already loaded
     """
     schema_count = 0
+    try:
+        MetaSchema = args[0].get_model('osf', 'metaschema')
+    except:
+        # Working outside a migration
+        from osf.models import MetaSchema
     for schema in OSF_META_SCHEMAS:
         schema_obj, created = MetaSchema.objects.update_or_create(
             name=schema['name'],

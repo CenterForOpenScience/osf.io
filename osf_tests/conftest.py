@@ -17,7 +17,6 @@ SILENT_LOGGERS = [
     'factory.containers',
     'framework.analytics',
     'framework.auth.core',
-    'framework.celery_tasks.signals',
     'website.app',
     'website.archiver.tasks',
     'website.mails',
@@ -28,6 +27,8 @@ SILENT_LOGGERS = [
     'requests_oauthlib.oauth2_session',
     'raven.base.Client',
     'raven.contrib.django.client.DjangoClient',
+    'transitions.core',
+    'MARKDOWN',
 ]
 for logger_name in SILENT_LOGGERS:
     logging.getLogger(logger_name).setLevel(logging.CRITICAL)

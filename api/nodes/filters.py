@@ -1,73 +1,38 @@
-import functools
-import operator
+from copy import deepcopy
 
 from django.db.models import Q
-from modularodm import Q as MQ
 
-from api.base.exceptions import InvalidFilterError, InvalidFilterOperator, InvalidFilterValue
-from api.base.filters import ListFilterMixin, ODMFilterMixin
+from api.base.exceptions import InvalidFilterOperator, InvalidFilterValue
+from api.base.filters import ListFilterMixin
 from api.base import utils
 
-from osf.models import NodeRelation, AbstractNode as Node
-
-
-class NodeODMFilterMixin(ODMFilterMixin):
-
-    def should_parse_special_query_params(self, field_name):
-        return field_name == 'preprint'
-
-    def parse_special_query_params(self, field_name, key, value, query):
-        op = 'ne' if utils.is_truthy(value) else 'eq'
-        query.get(key).update({
-            field_name: [{
-                'op': op,
-                'value': None,
-                'source_field_name': 'preprint_file'
-            }, {
-                'op': op,
-                'value': True,
-                'source_field_name': '_is_preprint_orphan'
-            }, {
-                'op': op,
-                'value': True,
-                'source_field_name': '_has_abandoned_preprint'
-            }]
-        })
-        return query
-
-    def should_convert_special_params_to_odm_query(self, field_name):
-        return field_name == 'preprint'
-
-    def convert_special_params_to_odm_query(self, field_name, query_params, key, data):
-        if isinstance(data, list):
-            if utils.is_falsy(query_params[key]):
-                # Use `or` when looking for not-preprints, to include both no file and is_orphaned
-                sub_query = functools.reduce(operator.or_, [
-                    MQ(item['source_field_name'], item['op'], item['value'])
-                    for item in data
-                ])
-            else:
-                sub_query = functools.reduce(operator.and_, [
-                    MQ(item['source_field_name'], item['op'], item['value'])
-                    for item in data
-                ])
-            return sub_query
-        else:
-            raise InvalidFilterError('Expected type list for field {}, got {}'.format(field_name, type(data)))
+from osf.models import NodeRelation, AbstractNode
 
 
 class NodesFilterMixin(ListFilterMixin):
 
-    def filter_by_field(self, queryset, field_name, operation):
+    def param_queryset(self, query_params, default_queryset):
+        filters = self.parse_query_params(query_params)
+        queryset = default_queryset
+
+        if filters:
+            for key, field_names in filters.iteritems():
+                for field_name, operation in field_names.iteritems():
+                    # filter[parent]=null
+                    if field_name == 'parent' and operation['op'] == 'eq' and not operation['value']:
+                        queryset = queryset.get_roots()
+                        query_params = deepcopy(query_params)
+                        query_params.pop(key)
+        return super(NodesFilterMixin, self).param_queryset(query_params, queryset)
+
+    def build_query_from_field(self, field_name, operation):
         if field_name == 'parent':
             if operation['op'] == 'eq':
                 if operation['value']:
                     # filter[parent]=<nid>
-                    parent = utils.get_object_or_error(Node, operation['value'], display_name='parent')
+                    parent = utils.get_object_or_error(AbstractNode, operation['value'], self.request, display_name='parent')
                     node_ids = NodeRelation.objects.filter(parent=parent, is_node_link=False).values_list('child_id', flat=True)
-                    return queryset.filter(id__in=node_ids)
-                # else filter[parent]=null
-                return queryset.get_roots()
+                    return Q(id__in=node_ids)
             elif operation['op'] == 'ne':
                 if not operation['value']:
                     # filter[parent][ne]=null
@@ -80,7 +45,7 @@ class NodesFilterMixin(ListFilterMixin):
                         .exclude(child__is_deleted=True)
                         .values_list('child_id', flat=True)
                     )
-                    return queryset.filter(id__in=set(child_ids))
+                    return Q(id__in=set(child_ids))
                 # TODO: support this case in the future:
                 # else filter[parent][ne]=<nid>
                 raise InvalidFilterValue(detail='Only "null" is accepted as valid input to "filter[parent][ne]"')
@@ -91,14 +56,15 @@ class NodesFilterMixin(ListFilterMixin):
         if field_name == 'root':
             if None in operation['value']:
                 raise InvalidFilterValue(value=operation['value'])
-            return queryset.filter(root__guids___id__in=operation['value'])
+            return Q(root__guids___id__in=operation['value'])
 
         if field_name == 'preprint':
-            preprint_filters = (
+            not_preprint_query = (
                 Q(preprint_file=None) |
                 Q(_is_preprint_orphan=True) |
                 Q(_has_abandoned_preprint=True)
             )
-            return queryset.exclude(preprint_filters) if utils.is_truthy(operation['value']) else queryset.filter(preprint_filters)
 
-        return super(NodesFilterMixin, self).filter_by_field(queryset, field_name, operation)
+            return ~not_preprint_query if utils.is_truthy(operation['value']) else not_preprint_query
+
+        return super(NodesFilterMixin, self).build_query_from_field(field_name, operation)

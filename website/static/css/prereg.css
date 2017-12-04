@@ -9,15 +9,22 @@ body, html {
     height: 100%;
 }
 
+.prereg-button-xs {
+    height: 100% !important; 
+    width: 100% !important;
+    max-width:100% !important;
+}
+
 .prereg-button {
-    height: 100%;
-    width: 100%;
+    height: 90px; 
+    width: 100%; 
+    max-width: 500px;
     position: relative;
     cursor: pointer;
     display: inline-block;
     text-align: center;
     font-weight: 500;
-    margin: 20px;
+    margin-top: 20px; 
     text-align: center;
 }
 
@@ -39,25 +46,44 @@ body, html {
     text-align: center;
 }
 .prereg-button-contents {
-    position: relative !important;
-    left: 20px;    
+    text-align: center;
 }
+
 .prereg-button-content-xs{
     position: relative !important;
-    left: 20px;
+    width: 100% !important;
+    max-width: 100% !important;
+    position: relative;
+    display: inline-block;
+}
+
+.prereg-action {
+    position: relative !important;
+    max-width: 500px;
+    width: 100%;
+    display: inline-block;
+}
+
+.prereg-text-left{
+    text-align: left;
+}
+
+.prereg-logo {
+    max-height:140px; 
+    max-width: 90%;
 }
 
 @media (max-width: 767px) {
     .prereg-button {
-        line-height: 48px;
+        line-height: 30px;
     }
 }
 
-@media (min-width: 992px) {
+ @media (min-width: 992px) {
     div[class^='col']:first-of-type .prereg-button {
-        line-height: 48px;
+        line-height: 30px;
     }
-}
+} 
 
 /* CONSENT PAGE */
 

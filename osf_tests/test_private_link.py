@@ -1,9 +1,11 @@
 import pytest
 
+from django.core.exceptions import ValidationError
+
 from website.project import new_private_link
 
-from .factories import PrivateLinkFactory, NodeFactory
-from osf.models import MetaSchema, DraftRegistration, NodeLog
+from .factories import PrivateLinkFactory, NodeFactory, AuthUserFactory
+from osf.models import MetaSchema, DraftRegistration, NodeLog, QuickFilesNode
 
 @pytest.mark.django_db
 def test_factory():
@@ -48,7 +50,7 @@ class TestPrivateLink:
     def test_create_from_node(self):
         proj = NodeFactory()
         user = proj.creator
-        schema = MetaSchema.find()[0]
+        schema = MetaSchema.objects.first()
         data = {'some': 'data'}
         draft = DraftRegistration.create_from_node(
             proj,
@@ -61,6 +63,13 @@ class TestPrivateLink:
         assert data == draft.registration_metadata
         assert proj == draft.branched_from
 
+    def test_cannot_be_added_for_quickfiles(self):
+        link = PrivateLinkFactory()
+        user = AuthUserFactory()
+        quickfiles = QuickFilesNode.objects.get(creator=user)
+
+        with pytest.raises(ValidationError):
+            link.nodes.add(quickfiles)
 
 @pytest.mark.django_db
 class TestNodeProperties:

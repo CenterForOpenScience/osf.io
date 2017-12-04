@@ -1,15 +1,11 @@
 # -*- coding: utf-8 -*-
-
 import requests
-from modularodm import Q
-from modularodm.exceptions import ModularOdmException
 
 from framework.auth import Auth
 
 from website import util
 from website import settings
-from website.project import new_node
-from osf.models import AbstractNode as Node, MailRecord
+from osf.models import MailRecord
 
 
 def record_message(message, nodes_created, users_created):
@@ -19,25 +15,6 @@ def record_message(message, nodes_created, users_created):
     record.users_created.add(*users_created),
     record.nodes_created.add(*nodes_created)
     record.save()
-
-
-def get_or_create_node(title, user):
-    """Get or create node by title and creating user.
-
-    :param str title: Node title
-    :param User user: User creating node
-    :return: Tuple of (node, created)
-    """
-    try:
-        node = Node.find_one(
-            Q('title', 'iexact', title)
-            & Q('is_deleted', 'ne', True)
-            & Q('contributors', 'eq', user)
-        )
-        return node, False
-    except ModularOdmException:
-        node = new_node('project', title, user)
-        return node, True
 
 
 def provision_node(conference, message, node, user):

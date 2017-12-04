@@ -69,7 +69,7 @@ function ProjectWiki(data) {
     var tbOptions = $.extend({}, projectSettingsTreebeardBase.defaults, {
         filesData: data,
         divID: 'wgrid',
-        onload : function () {
+        ondataload: function () {
             var tb = this;
             expandOnLoad.call(tb);
         },

@@ -1,3 +1,5 @@
+from include import IncludeManager
+
 from django.apps import apps
 from django.db import models
 from django.utils import timezone
@@ -14,6 +16,8 @@ class NodeLog(ObjectIDMixin, BaseModel):
         'user': 'user__guids___id',
         'original_node': 'original_node__guids___id'
     }
+
+    objects = IncludeManager()
 
     DATE_FORMAT = '%m/%d/%Y %H:%M UTC'
 
@@ -141,11 +145,13 @@ class NodeLog(ObjectIDMixin, BaseModel):
     action = models.CharField(max_length=255, db_index=True)  # , choices=action_choices)
     params = DateTimeAwareJSONField(default=dict)
     should_hide = models.BooleanField(default=False)
-    user = models.ForeignKey('OSFUser', related_name='logs', db_index=True, null=True, blank=True)
+    user = models.ForeignKey('OSFUser', related_name='logs', db_index=True,
+                             null=True, blank=True, on_delete=models.CASCADE)
     foreign_user = models.CharField(max_length=255, null=True, blank=True)
     node = models.ForeignKey('AbstractNode', related_name='logs',
-                             db_index=True, null=True, blank=True)
-    original_node = models.ForeignKey('AbstractNode', db_index=True, null=True, blank=True)
+                             db_index=True, null=True, blank=True, on_delete=models.CASCADE)
+    original_node = models.ForeignKey('AbstractNode', db_index=True,
+                                      null=True, blank=True, on_delete=models.CASCADE)
 
     def __unicode__(self):
         return ('({self.action!r}, user={self.user!r},, node={self.node!r}, params={self.params!r}) '
@@ -166,24 +172,6 @@ class NodeLog(ObjectIDMixin, BaseModel):
     @property
     def absolute_url(self):
         return self.absolute_api_v2_url
-
-    def clone_node_log(self, node_id):
-        """
-        When a node is forked or registered, all logs on the node need to be
-        cloned for the fork or registration.
-
-        :param node_id:
-        :return: cloned log
-        """
-        AbstractNode = apps.get_model('osf.AbstractNode')
-        original_log = self.load(self._id)
-        node = AbstractNode.load(node_id)
-        log_clone = original_log.clone()
-        log_clone.node = node
-        log_clone.original_node = original_log.original_node
-        log_clone.user = original_log.user
-        log_clone.save()
-        return log_clone
 
     def _natural_key(self):
         return self._id

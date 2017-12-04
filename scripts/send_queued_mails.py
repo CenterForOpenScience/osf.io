@@ -3,7 +3,6 @@ import logging
 import django
 from django.db import transaction
 from django.utils import timezone
-from modularodm import Q
 django.setup()
 
 from framework.celery_tasks import app as celery_app
@@ -49,19 +48,12 @@ def main(dry_run=True):
 
 
 def find_queued_mails_ready_to_be_sent():
-    return QueuedMail.find(
-        Q('send_at', 'lt', timezone.now()) &
-        Q('sent_at', 'eq', None)
-    )
-
+    return QueuedMail.objects.filter(send_at__lt=timezone.now(), sent_at__isnull=True)
 
 def pop_and_verify_mails_for_each_user(user_queue):
     for user_emails in user_queue.values():
         mail = user_emails[0]
-        mails_past_week = QueuedMail.find(
-            Q('user', 'eq', mail.user) &
-            Q('sent_at', 'gt', timezone.now() - settings.WAIT_BETWEEN_MAILS)
-        )
+        mails_past_week = mail.user.queuedmail_set.filter(sent_at__gt=timezone.now() - settings.WAIT_BETWEEN_MAILS)
         if not mails_past_week.count():
             yield mail
 

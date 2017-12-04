@@ -3,13 +3,28 @@ import os
 import urllib
 import uuid
 
+import ssl
 from pymongo import MongoClient
 import requests
 
-from framework.mongo.utils import to_mongo_key
-
 from addons.wiki import settings as wiki_settings
 from addons.wiki.exceptions import InvalidVersionError
+
+# MongoDB forbids field names that begin with "$" or contain ".". These
+# utilities map to and from Mongo field names.
+
+mongo_map = {
+    '.': '__!dot!__',
+    '$': '__!dollar!__',
+}
+
+def to_mongo(item):
+    for key, value in mongo_map.items():
+        item = item.replace(key, value)
+    return item
+
+def to_mongo_key(item):
+    return to_mongo(item).strip().lower()
 
 
 def generate_private_uuid(node, wname):
@@ -87,7 +102,7 @@ def migrate_uuid(node, wname):
 
 def share_db():
     """Generate db client for sharejs db"""
-    client = MongoClient(wiki_settings.SHAREJS_DB_URL)
+    client = MongoClient(wiki_settings.SHAREJS_DB_URL, ssl_cert_reqs=ssl.CERT_NONE)
     return client[wiki_settings.SHAREJS_DB_NAME]
 
 

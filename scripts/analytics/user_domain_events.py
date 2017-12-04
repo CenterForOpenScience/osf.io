@@ -1,12 +1,13 @@
 import pytz
 import logging
-from modularodm import Q
 from dateutil.parser import parse
 from datetime import datetime, timedelta
 
+from django.db.models import Q
+
 from osf.models import OSFUser
 from website.app import init_app
-from framework.mongo.utils import paginated
+from framework.database import paginated
 from scripts.analytics.base import EventAnalytics
 
 logger = logging.getLogger(__name__)
@@ -31,9 +32,9 @@ class UserDomainEvents(EventAnalytics):
         logger.info('Gathering user domains between {} and {}'.format(
             date, (date + timedelta(1)).isoformat()
         ))
-        user_query = (Q('date_confirmed', 'lt', date + timedelta(1)) &
-                      Q('date_confirmed', 'gte', date) &
-                      Q('username', 'ne', None))
+        user_query = (Q(date_confirmed__lt=date + timedelta(1)) &
+                      Q(date_confirmed__gte=date) &
+                      Q(username__isnull=False))
         users = paginated(OSFUser, query=user_query)
         user_domain_events = []
         for user in users:

@@ -9,7 +9,7 @@ from api.users.serializers import UserSerializer
 from api.institutions.serializers import InstitutionSerializer
 from osf.models import AbstractNode
 
-from osf.models import OSFUser as User
+from osf.models import OSFUser
 
 from osf.models import BaseFileNode
 
@@ -27,7 +27,7 @@ class SearchSerializer(JSONAPISerializer):
             serializer = NodeSerializer(data, context=self.context)
             return NodeSerializer.to_representation(serializer, data)
 
-        if isinstance(data, User):
+        if isinstance(data, OSFUser):
             serializer = UserSerializer(data, context=self.context)
             return UserSerializer.to_representation(serializer, data)
 

@@ -10,9 +10,6 @@ services:
   admin_assets:
     volumes:
       - osf-sync:/code:nocopy
-  sharejs:
-    volumes:
-      - osf-sync:/code:nocopy
   worker:
     volumes:
       - osf-sync:/code:nocopy
@@ -33,8 +30,8 @@ services:
 #      - osf-sync:/code:nocopy
 
 #  fakecas:
-#    image: quay.io/centerforopenscience/fakecas:latest
-#    command: fakecas -host=0.0.0.0:8080 -dbaddress=172.19.0.7:27017
+#    image: quay.io/centerforopenscience/fakecas:master
+#    command: fakecas -host=0.0.0.0:8080 -osfhost=localhost:5000 -dbaddress=postgres://postgres@postgres:5432/osf?sslmode=disable
 
 #  wb:
 #    volumes:
@@ -65,7 +62,18 @@ services:
 ##      - emberosf-sync:/ember-osf
 ##    depends_on:
 ##      - emberosf
-##    command: /bin/bash -c "cd /ember-osf && yarn link && cd /code && yarn link ember-osf && yarn --pure-lockfile && ./node_modules/bower/bin/bower install --allow-root --config.interactive=false && ./node_modules/ember-cli/bin/ember serve --host 0.0.0.0 --port 4200"
+##    command:
+##      - /bin/bash
+##      - -c
+##      - cd /ember-osf &&
+##        yarn link &&
+##        cd /code &&
+##        (rm -r node_modules || true) &&
+##        yarn --frozen-lockfile &&
+##        yarn link @centerforopenscience/ember-osf &&
+##        (rm -r bower_components || true) &&
+##        ./node_modules/.bin/bower install --allow-root --config.interactive=false &&
+##        yarn start --host 0.0.0.0 --port 4201 --live-reload-port 41954
 
 #  registries:
 #    volumes:
@@ -76,14 +84,78 @@ services:
 ##      - emberosf-sync:/ember-osf
 ##    depends_on:
 ##      - emberosf
-##    command: /bin/bash -c "cd /ember-osf && yarn link && cd /code && yarn link ember-osf && yarn --pure-lockfile && ./node_modules/bower/bin/bower install --allow-root --config.interactive=false && ./node_modules/ember-cli/bin/ember serve --host 0.0.0.0 --port 4300"
+##    command:
+##      - /bin/bash
+##      - -c
+##      - cd /ember-osf &&
+##        yarn link &&
+##        cd /code &&
+##        (rm -r node_modules || true) &&
+##        yarn --frozen-lockfile &&
+##        yarn link @centerforopenscience/ember-osf &&
+##        (rm -r bower_components || true) &&
+##        ./node_modules/.bin/bower install --allow-root --config.interactive=false &&
+##        yarn start --host 0.0.0.0 --port 4202 --live-reload-port 41955
+
+#  reviews:
+#    volumes:
+#      - reviews-sync:/code:nocopy
+#
+##      # Use this for ember-osf linked development (with docker-sync):
+##      - reviews_dist_vol:/code/dist
+##      - emberosf-sync:/ember-osf
+##    depends_on:
+##      - emberosf
+##    command:
+##      - /bin/bash
+##      - -c 
+##      - cd /ember-osf &&
+##        yarn link &&
+##        cd /code &&
+##        yarn link @centerforopenscience/ember-osf &&
+##        yarn --frozen-lockfile &&
+##        yarn start --host 0.0.0.0 --port 4203 --live-reload-port 41956
 
 #  # Use this for ember-osf linked development (with docker-sync):
 #  emberosf:
 #    build: ../ember-osf
-#    command: /bin/bash -c "yarn --pure-lockfile && ./node_modules/bower/bin/bower install --allow-root --config.interactive=false"
+#    command:
+#      - /bin/bash
+#      - -c
+#      - (rm -r node_modules || true) &&
+#        yarn --frozen-lockfile --ignore-engines &&
+#        (rm -r bower_components || true) &&
+#        ./node_modules/.bin/bower install --allow-root --config.interactive=false
 #    volumes:
 #      - emberosf-sync:/code:nocopy
+
+#  ####################
+#  # RabbitMQ SSL
+#  # Enable this, place the certs in ./ssl, and uncomment the BROKER_USE_SSL dictionary in local.py
+#  # Uncomment lines under worker in docker-compose
+#  #####################
+#  rabbitmq:
+#    ports:
+#      - 5671:5671
+#    environment:
+#      RABBITMQ_SSL_CERTFILE: /etc/ssl/server_certificate.pem
+#      RABBITMQ_SSL_KEYFILE: /etc/ssl/server_key.pem
+#      RABBITMQ_SSL_CACERTFILE: /etc/ssl/ca_certificate.pem
+#    volumes:
+#      - ./ssl/celery-server.cert.pem:/etc/ssl/server_certificate.pem:ro
+#      - ./ssl/celery-server.key.pem:/etc/ssl/server_key.pem:ro
+#      - ./ssl/ca-chain.cert.pem:/etc/ssl/ca_certificate.pem:ro
+
+#  sharejs:
+#    volumes:
+#      - sharejs-sync:/code:nocopy
+#
+#    command:
+#      - /bin/sh
+#      - -c 
+#      - |-
+#        npm install
+#        gosu node npm start
 
 volumes:
   osf-sync:
@@ -99,4 +171,13 @@ volumes:
 #    external: true
 
 #  preprints-sync:
+#    external: true
+
+#  registries-sync:
+#    external: true
+
+#  reviews-sync:
+#    external: true
+
+#  sharejs-sync:
 #    external: true
