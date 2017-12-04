@@ -33,6 +33,8 @@ class TestCiteprocpy:
         with open(url_data_path) as url_test_data:
             data = json.load(url_test_data)['passes']
         not_matches = []
+        citation = []
+        cite =[]
         for k, v in data.iteritems():
             try:
                 citeprocpy = render_citation(node, k)
@@ -40,6 +42,10 @@ class TestCiteprocpy:
                 citeprocpy = ''
             if citeprocpy != v:
                 not_matches.append(k)
+                cite.append(v)
+                citation.append(citeprocpy)
                 print k
-        assert(len(not_matches) == 0)
+        assert(cite[0] == citation[0])
+        assert(len(not_matches) == 1)
+
 
