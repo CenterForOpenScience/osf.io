@@ -213,7 +213,7 @@ class TestViewProject(OsfTestCase):
 
         assert_not_equal(result['node']['disapproval_link'], '')
         assert_in('/?token=', result['node']['disapproval_link'])
-        pending_reg.remove()
+        pending_reg.delete()
 
     def test_view_project_pending_registration_for_write_contributor_does_not_contain_cancel_link(self):
         write_user = UserFactory()
@@ -224,7 +224,7 @@ class TestViewProject(OsfTestCase):
         result = _view_project(pending_reg, Auth(write_user))
 
         assert_equal(result['node']['disapproval_link'], '')
-        pending_reg.remove()
+        pending_reg.delete()
 
     def test_view_project_child_exists(self):
         linked_node = ProjectFactory(creator=self.user)
