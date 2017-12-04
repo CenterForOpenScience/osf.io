@@ -117,7 +117,7 @@ class TestFileView:
         res = app.get(file_url, auth=user.auth)
         file.versions.first().reload()
         assert res.status_code == 200
-        assert res.json.keys() == ['data']
+        assert res.json.keys() == ['meta', 'data']
         attributes = res.json['data']['attributes']
         assert attributes['path'] == file.path
         assert attributes['kind'] == file.kind
@@ -439,7 +439,7 @@ class TestFileView:
         url = '/{}files/{}/'.format(API_BASE, guid._id)
         res = app.get(url, auth=user.auth)
         assert res.status_code == 200
-        assert res.json.keys() == ['data']
+        assert res.json.keys() == ['meta', 'data']
         assert res.json['data']['attributes']['path'] == file.path
 
         # test_get_file_invalid_guid_gives_404

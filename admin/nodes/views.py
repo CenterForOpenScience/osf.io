@@ -25,7 +25,7 @@ from osf.models.admin_log_entry import (
     REINDEX_ELASTIC,
 )
 from admin.nodes.templatetags.node_extras import reverse_node
-from admin.nodes.serializers import serialize_node, serialize_simple_user_and_node_permissions
+from admin.nodes.serializers import serialize_node, serialize_simple_user_and_node_permissions, serialize_log
 from website.project.tasks import update_node_share
 from website.project.views.register import osf_admin_change_status_identifier
 
@@ -116,7 +116,7 @@ class NodeDeleteBase(DeleteView):
         return super(NodeDeleteBase, self).get_context_data(**context)
 
     def get_object(self, queryset=None):
-        return Node.load(self.kwargs.get('guid'))
+        return Node.load(self.kwargs.get('guid')) or Registration.load(self.kwargs.get('guid'))
 
 
 class NodeDeleteView(PermissionRequiredMixin, NodeDeleteBase):
@@ -200,6 +200,34 @@ class NodeView(PermissionRequiredMixin, GuidView):
         guid = self.kwargs.get('guid')
         node = Node.load(guid) or Registration.load(guid)
         return serialize_node(node)
+
+
+class AdminNodeLogView(PermissionRequiredMixin, ListView):
+    """ Allow admins to see logs"""
+
+    template_name = 'nodes/node_logs.html'
+    context_object_name = 'node'
+    paginate_by = 10
+    paginate_orphans = 1
+    ordering = 'date'
+    permission_required = 'osf.view_node'
+    raise_exception = True
+
+    def get_object(self, queryset=None):
+        return Node.load(self.kwargs.get('guid')) or Registration.load(self.kwargs.get('guid'))
+
+    def get_queryset(self):
+        return self.get_object().logs.all().order_by(self.ordering)
+
+    def get_context_data(self, **kwargs):
+        query_set = self.get_queryset()
+        page_size = self.get_paginate_by(query_set)
+        paginator, page, query_set, is_paginated = self.paginate_queryset(
+            query_set, page_size)
+        return {
+            'logs': map(serialize_log, query_set),
+            'page': page,
+        }
 
 
 class RegistrationListView(PermissionRequiredMixin, ListView):

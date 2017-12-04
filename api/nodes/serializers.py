@@ -469,18 +469,11 @@ class NodeSerializer(JSONAPISerializer):
         """
         assert isinstance(node, AbstractNode), 'node must be a Node'
         auth = get_user_auth(self.context['request'])
-        old_tags = set(node.tags.values_list('name', flat=True))
-        if 'tags' in validated_data:
-            current_tags = set(validated_data.pop('tags', []))
-        elif self.partial:
-            current_tags = set(old_tags)
-        else:
-            current_tags = set()
 
-        for new_tag in (current_tags - old_tags):
-            node.add_tag(new_tag, auth=auth)
-        for deleted_tag in (old_tags - current_tags):
-            node.remove_tag(deleted_tag, auth=auth)
+        # Update tags
+        if 'tags' in validated_data:
+            new_tags = set(validated_data.pop('tags', []))
+            node.update_tags(new_tags, auth=auth)
 
         if validated_data:
 

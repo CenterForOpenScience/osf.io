@@ -1972,6 +1972,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         :param Node parent: parent template. Should only be passed in during recursion
         :return: The `Node` instance created.
         """
+        Registration = apps.get_model('osf.Registration')
         changes = changes or dict()
 
         # build the dict of attributes to change for the new node
@@ -1981,11 +1982,17 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         except (AttributeError, KeyError):
             attributes = dict()
 
-        # Non-contributors can't fork private nodes
+        if self.is_deleted:
+            raise NodeStateError('Cannot use deleted node as template.')
+
+        # Non-contributors can't template private nodes
         if not (self.is_public or self.has_permission(auth.user, 'read')):
             raise PermissionsError('{0!r} does not have permission to template node {1!r}'.format(auth.user, self._id))
 
         new = self.clone()
+        if isinstance(new, Registration):
+            new.recast('osf.node')
+
         new._is_templated_clone = True  # This attribute may be read in post_save handlers
 
         # Clear quasi-foreign fields
@@ -2056,17 +2063,12 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
             # template child nodes
             if not node_relation.is_node_link:
                 try:  # Catch the potential PermissionsError above
-                    templated_child = node_contained.use_as_template(auth, changes, top_level=False, parent=new)
+                    node_contained.use_as_template(auth, changes, top_level=False, parent=new)
                 except PermissionsError:
                     pass
-                else:
-                    NodeRelation.objects.get_or_create(
-                        parent=new, child=templated_child,
-                        is_node_link=False
-                    )
-                    templated_child.root = None
-                    templated_child.save()  # Recompute root on save()
 
+        new.root = None
+        new.save()  # Recompute root on save()
         return new
 
     def next_descendants(self, auth, condition=lambda auth, node: True):

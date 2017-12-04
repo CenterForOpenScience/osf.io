@@ -741,6 +741,15 @@ def make_url_map(app):
         ),
 
         Rule(
+            [
+                '/project/<pid>/addons/',
+                '/project/<pid>/node/<nid>/addons/',
+            ],
+            'get',
+            project_views.node.node_addons,
+            OsfWebRenderer('project/addons.mako', trust=False)
+        ),
+        Rule(
             '/settings/account/',
             'get',
             profile_views.user_account,
@@ -836,6 +845,12 @@ def make_url_map(app):
             '/profile/deactivate/',
             'post',
             profile_views.request_deactivation,
+            json_renderer,
+        ),
+        Rule(
+            '/profile/cancel_request_deactivation/',
+            'post',
+            profile_views.cancel_request_deactivation,
             json_renderer,
         ),
 
