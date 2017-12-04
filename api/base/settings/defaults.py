@@ -69,8 +69,7 @@ CSRF_COOKIE_SECURE = osf_settings.SECURE_MODE
 CSRF_COOKIE_HTTPONLY = osf_settings.SECURE_MODE
 
 ALLOWED_HOSTS = [
-    '.osf.io',
-    'localhost'
+    '.osf.io'
 ]
 
 
