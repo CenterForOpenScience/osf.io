@@ -26,7 +26,7 @@ from osf.models import BaseFileNode
 from osf.models import Institution
 from osf.models import QuickFilesNode
 from website import settings
-from website.filters import gravatar
+from website.filters import profile_image_url
 from osf.models.licenses import serialize_node_license_record
 from website.search import exceptions
 from website.search.util import build_query, clean_splitters
@@ -437,6 +437,7 @@ def serialize_contributors(node):
         ]
     }
 
+
 bulk_update_contributors = functools.partial(bulk_update_nodes, serialize_contributors)
 
 
@@ -663,7 +664,7 @@ def search_contributor(query, page=0, size=10, exclude=None, current_user=None):
     :param current_user: A User object of the current user
 
     :return: List of dictionaries, each containing the ID, full name,
-        most recent employment and education, gravatar URL of an OSF user
+        most recent employment and education, profile_image URL of an OSF user
 
     """
     start = (page * size)
@@ -719,11 +720,10 @@ def search_contributor(query, page=0, size=10, exclude=None, current_user=None):
                 'education': education,
                 'social': user.social_links,
                 'n_projects_in_common': n_projects_in_common,
-                'gravatar_url': gravatar(
-                    user,
-                    use_ssl=True,
-                    size=settings.PROFILE_IMAGE_MEDIUM
-                ),
+                'profile_image_url': profile_image_url(settings.PROFILE_IMAGE_PROVIDER,
+                                                       user,
+                                                       use_ssl=True,
+                                                       size=settings.PROFILE_IMAGE_MEDIUM),
                 'profile_url': user.profile_url,
                 'registered': user.is_registered,
                 'active': user.is_active

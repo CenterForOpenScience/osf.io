@@ -631,7 +631,7 @@ class TestAddonFileViews(OsfTestCase):
                 'render': '',
                 'sharejs': '',
                 'mfr': '',
-                'gravatar': '',
+                'profile_image': '',
                 'external': '',
                 'archived_from': '',
             },

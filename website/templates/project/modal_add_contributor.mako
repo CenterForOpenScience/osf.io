@@ -69,7 +69,7 @@
                                         </td>
                                         <td>
                                             <!-- height and width are explicitly specified for faster rendering -->
-                                            <img data-bind="attr: {src: contributor.gravatar_url}" height=35 width=35 />
+                                            <img data-bind="attr: {src: contributor.profile_image_url}" height=35 width=35 />
                                         </td>
                                         <td width="75%" >
                                             <a  data-bind="attr: {href: contributor.profile_url}" target="_blank">
@@ -242,7 +242,7 @@
                                         </td>
                                         <td>
                                             <!-- height and width are explicitly specified for faster rendering -->
-                                            <img data-bind="attr: {src: contributor.gravatar_url || '/static/img/unreg_gravatar.png'}" height=35 width=35 />
+                                            <img data-bind="attr: {src: contributor.profile_image_url || '/static/img/unreg_profile_image.png'}" height=35 width=35 />
                                         </td>
 
                                         <td>

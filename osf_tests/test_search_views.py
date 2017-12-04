@@ -43,7 +43,7 @@ class TestSearchViews(OsfTestCase):
         assert_equal(len(result), 1)
         brian = result[0]
         assert_equal(brian['fullname'], self.contrib.fullname)
-        assert_in('gravatar_url', brian)
+        assert_in('profile_image_url', brian)
         assert_equal(brian['registered'], self.contrib.is_registered)
         assert_equal(brian['active'], self.contrib.is_active)
 
