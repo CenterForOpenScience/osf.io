@@ -39,6 +39,7 @@ class TestSwiftViews(SwiftAddonTestCase, OAuthAddonConfigViewsTestCaseMixin, Osf
     def test_swift_settings_input_empty_keys(self):
         url = self.project.api_url_for('swift_add_user_account')
         rv = self.app.post_json(url,{
+            'auth_version': '',
             'auth_url': '',
             'access_key': '',
             'secret_key': '',
@@ -47,9 +48,10 @@ class TestSwiftViews(SwiftAddonTestCase, OAuthAddonConfigViewsTestCaseMixin, Osf
         assert_equals(rv.status_int, http.BAD_REQUEST)
         assert_in('All the fields above are required.', rv.body)
 
-    def test_swift_settings_input_empty_access_key(self):
+    def test_swift_settings_input_empty_access_key_v2(self):
         url = self.project.api_url_for('swift_add_user_account')
         rv = self.app.post_json(url,{
+            'auth_version': '2',
             'auth_url': 'Non-empty-auth-url',
             'access_key': '',
             'secret_key': 'Non-empty-secret-key',
@@ -58,9 +60,10 @@ class TestSwiftViews(SwiftAddonTestCase, OAuthAddonConfigViewsTestCaseMixin, Osf
         assert_equals(rv.status_int, http.BAD_REQUEST)
         assert_in('All the fields above are required.', rv.body)
 
-    def test_swift_settings_input_empty_secret_key(self):
+    def test_swift_settings_input_empty_secret_key_v2(self):
         url = self.project.api_url_for('swift_add_user_account')
         rv = self.app.post_json(url,{
+            'auth_version': '2',
             'auth_url': 'Non-empty-auth-url',
             'access_key': 'Non-empty-access-key',
             'secret_key': '',
@@ -69,9 +72,10 @@ class TestSwiftViews(SwiftAddonTestCase, OAuthAddonConfigViewsTestCaseMixin, Osf
         assert_equals(rv.status_int, http.BAD_REQUEST)
         assert_in('All the fields above are required.', rv.body)
 
-    def test_swift_settings_input_empty_tenant_name(self):
+    def test_swift_settings_input_empty_tenant_name_v2(self):
         url = self.project.api_url_for('swift_add_user_account')
         rv = self.app.post_json(url,{
+            'auth_version': '2',
             'auth_url': 'Non-empty-auth-url',
             'access_key': 'Non-empty-access-key',
             'secret_key': 'Non-empty-secret-key',
@@ -80,9 +84,10 @@ class TestSwiftViews(SwiftAddonTestCase, OAuthAddonConfigViewsTestCaseMixin, Osf
         assert_equals(rv.status_int, http.BAD_REQUEST)
         assert_in('All the fields above are required.', rv.body)
 
-    def test_swift_settings_input_empty_auth_url(self):
+    def test_swift_settings_input_empty_auth_url_v2(self):
         url = self.project.api_url_for('swift_add_user_account')
         rv = self.app.post_json(url,{
+            'auth_version': '2',
             'auth_url': '',
             'access_key': 'Non-empty-access-key',
             'secret_key': 'Non-empty-secret-key',
@@ -90,6 +95,102 @@ class TestSwiftViews(SwiftAddonTestCase, OAuthAddonConfigViewsTestCaseMixin, Osf
         }, auth=self.user.auth, expect_errors=True)
         assert_equals(rv.status_int, http.BAD_REQUEST)
         assert_in('All the fields above are required.', rv.body)
+
+    def test_swift_settings_input_empty_auth_version_v2(self):
+        url = self.project.api_url_for('swift_add_user_account')
+        rv = self.app.post_json(url,{
+            'auth_version': '',
+            'auth_url': 'Non-empty-auth-url',
+            'access_key': 'Non-empty-access-key',
+            'secret_key': 'Non-empty-secret-key',
+            'tenant_name': 'Non-empty-tenant-name'
+        }, auth=self.user.auth, expect_errors=True)
+        assert_equals(rv.status_int, http.BAD_REQUEST)
+        assert_in('All the fields above are required.', rv.body)
+
+    def test_swift_settings_input_empty_access_key_v3(self):
+        url = self.project.api_url_for('swift_add_user_account')
+        rv = self.app.post_json(url,{
+            'auth_version': '3',
+            'auth_url': 'Non-empty-auth-url',
+            'access_key': '',
+            'secret_key': 'Non-empty-secret-key',
+            'tenant_name': 'Non-empty-tenant-name',
+            'user_domain_name': 'Non-empty-user-domain-name',
+            'project_domain_name': 'Non-empty-project-domain-name'
+        }, auth=self.user.auth, expect_errors=True)
+        assert_equals(rv.status_int, http.BAD_REQUEST)
+        assert_in('All the fields above are required.', rv.body)
+
+    def test_swift_settings_input_empty_secret_key_v3(self):
+        url = self.project.api_url_for('swift_add_user_account')
+        rv = self.app.post_json(url,{
+            'auth_version': '3',
+            'auth_url': 'Non-empty-auth-url',
+            'access_key': 'Non-empty-access-key',
+            'secret_key': '',
+            'tenant_name': 'Non-empty-tenant-name',
+            'user_domain_name': 'Non-empty-user-domain-name',
+            'project_domain_name': 'Non-empty-project-domain-name'
+        }, auth=self.user.auth, expect_errors=True)
+        assert_equals(rv.status_int, http.BAD_REQUEST)
+        assert_in('All the fields above are required.', rv.body)
+
+    def test_swift_settings_input_empty_tenant_name_v3(self):
+        url = self.project.api_url_for('swift_add_user_account')
+        rv = self.app.post_json(url,{
+            'auth_version': '3',
+            'auth_url': 'Non-empty-auth-url',
+            'access_key': 'Non-empty-access-key',
+            'secret_key': 'Non-empty-secret-key',
+            'tenant_name': '',
+            'user_domain_name': 'Non-empty-user-domain-name',
+            'project_domain_name': 'Non-empty-project-domain-name'
+        }, auth=self.user.auth, expect_errors=True)
+        assert_equals(rv.status_int, http.BAD_REQUEST)
+        assert_in('All the fields above are required.', rv.body)
+
+    def test_swift_settings_input_empty_auth_url_v3(self):
+        url = self.project.api_url_for('swift_add_user_account')
+        rv = self.app.post_json(url,{
+            'auth_version': '3',
+            'auth_url': '',
+            'access_key': 'Non-empty-access-key',
+            'secret_key': 'Non-empty-secret-key',
+            'tenant_name': 'Non-empty-tenant-name',
+            'user_domain_name': 'Non-empty-user-domain-name',
+            'project_domain_name': 'Non-empty-project-domain-name'
+        }, auth=self.user.auth, expect_errors=True)
+        assert_equals(rv.status_int, http.BAD_REQUEST)
+        assert_in('All the fields above are required.', rv.body)
+
+    def test_swift_settings_input_empty_user_domain_name_v3(self):
+        url = self.project.api_url_for('swift_add_user_account')
+        rv = self.app.post_json(url,{
+            'auth_version': '3',
+            'auth_url': 'Non-empty-auth-url',
+            'access_key': 'Non-empty-access-key',
+            'secret_key': 'Non-empty-secret-key',
+            'tenant_name': 'Non-empty-tenant-name',
+            'user_domain_name': '',
+            'project_domain_name': 'Non-empty-project-domain-name'
+        }, auth=self.user.auth, expect_errors=True)
+        assert_equals(rv.status_int, http.BAD_REQUEST)
+        assert_in('The field `user_domain_name` is required when you choose identity V3.', rv.body)
+
+    def test_swift_settings_input_empty_project_domain_name_v3(self):
+        url = self.project.api_url_for('swift_add_user_account')
+        rv = self.app.post_json(url,{
+            'auth_version': '3',
+            'auth_url': 'Non-empty-auth-url',
+            'access_key': 'Non-empty-access-key',
+            'secret_key': 'Non-empty-secret-key',
+            'tenant_name': 'Non-empty-tenant-name',
+            'user_domain_name': 'Non-empty-user-domain-name',
+            'project_domain_name': ''
+        }, auth=self.user.auth, expect_errors=True)
+        assert_equals(rv.status_int, http.BAD_REQUEST)
+        assert_in('The field `project_domain_name` is required when you choose identity V3.', rv.body)
 
     def test_swift_set_bucket_no_settings(self):
         user = AuthUserFactory()
@@ -127,13 +228,29 @@ class TestSwiftViews(SwiftAddonTestCase, OAuthAddonConfigViewsTestCaseMixin, Osf
         assert_equal(res.status_code, http.BAD_REQUEST)
 
     @mock.patch('addons.swift.views.utils.can_list', return_value=False)
-    def test_user_settings_cant_list(self, mock_can_list):
+    def test_user_settings_cant_list_v2(self, mock_can_list):
         url = api_url_for('swift_add_user_account')
         rv = self.app.post_json(url, {
+            'auth_version': '2',
             'auth_url': '1234',
             'access_key': 'aldkjf',
             'secret_key': 'las',
             'tenant_name': 'ten'
+        }, auth=self.user.auth, expect_errors=True)
+        assert_equals(rv.status_int, http.BAD_REQUEST)
+        assert_in('Unable to list containers.', rv.body)
+
+    @mock.patch('addons.swift.views.utils.can_list', return_value=False)
+    def test_user_settings_cant_list_v3(self, mock_can_list):
+        url = api_url_for('swift_add_user_account')
+        rv = self.app.post_json(url, {
+            'auth_version': '3',
+            'auth_url': '1234',
+            'access_key': 'aldkjf',
+            'secret_key': 'las',
+            'tenant_name': 'ten',
+            'user_domain_name': 'Default',
+            'project_domain_name': 'Default'
         }, auth=self.user.auth, expect_errors=True)
         assert_equals(rv.status_int, http.BAD_REQUEST)
         assert_in('Unable to list containers.', rv.body)
