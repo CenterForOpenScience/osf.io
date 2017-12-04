@@ -110,7 +110,7 @@ class TestQuickFilesNode:
         user.merge_user(other_user)
         user.save()
 
-        stored_files = OsfStorageFile.objects.all()  #.select_related('target')
+        stored_files = OsfStorageFile.objects.all()
         assert stored_files.count() == 2
         for stored_file in stored_files:
             assert stored_file.target == quickfiles
