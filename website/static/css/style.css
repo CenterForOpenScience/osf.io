@@ -813,3 +813,13 @@ table.add-links {
   padding-right: 0;
   padding-left: 0;
 }
+
+/* counter */
+.counter-comment {
+    margin-top: -20px;
+    margin-right: 5px;
+}
+/* Prevents comment from overlapping with counter*/
+.comment-box {
+    padding-bottom: 25px;
+}
