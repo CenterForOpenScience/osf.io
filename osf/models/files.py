@@ -95,7 +95,7 @@ class BaseFileNode(TypedModel, CommentableMixin, OptionalGuidMixin, Taggable, Ob
     # A concrete version of a FileNode, must have an identifier
     versions = models.ManyToManyField('FileVersion')
 
-    target_content_type = models.ForeignKey(ContentType)
+    target_content_type = models.ForeignKey(ContentType, on_delete=models.CASCADE)
     target_object_id = models.PositiveIntegerField(null=True, blank=True)
     target = GenericForeignKey('target_content_type', 'target_object_id')
 
