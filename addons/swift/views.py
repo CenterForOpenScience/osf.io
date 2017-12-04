@@ -67,8 +67,12 @@ def swift_add_user_account(auth, **kwargs):
         access_key = request.json['access_key']
         secret_key = request.json['secret_key']
         tenant_name = request.json['tenant_name']
-        user_domain_name = request.json['user_domain_name']
-        project_domain_name = request.json['project_domain_name']
+        if auth_version == '3':
+            user_domain_name = request.json['user_domain_name']
+            project_domain_name = request.json['project_domain_name']
+        else:
+            user_domain_name = None
+            project_domain_name = None
     except KeyError:
         raise HTTPError(httplib.BAD_REQUEST)
 
