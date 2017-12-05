@@ -2,6 +2,7 @@
 
 require('css/log-feed.css');
 var m = require('mithril'); // exposes mithril methods, useful for redraw etc.
+var $ = require('jquery');
 var $osf = require('js/osfHelpers');
 var mHelpers = require('js/mithrilHelpers');
 var Raven = require('raven-js');

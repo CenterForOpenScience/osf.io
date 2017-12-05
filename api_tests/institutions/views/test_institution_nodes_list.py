@@ -138,6 +138,13 @@ class TestNodeListFiltering(NodesListFilteringMixin):
         return '/{}institutions/{}/nodes/?version=2.2&'.format(API_BASE, institution._id)
 
     @pytest.fixture()
+    def project(self, user, institution):
+        project = ProjectFactory(creator=user, title='Lait Cafe et Sucre', is_public=True)
+        project.affiliated_institutions.add(institution)
+        project.save()
+        return project
+
+    @pytest.fixture()
     def parent_project(self, user, contrib, institution):
         parent_project = ProjectFactory(creator=user, is_public=True)
         parent_project.add_contributor(contrib, save=False)
