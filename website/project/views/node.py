@@ -317,9 +317,23 @@ def collect_node_config_js(addons):
     """
     js_modules = []
     for addon in addons:
-        js_path = os.path.join('/', 'static', 'public', 'js', addon['short_name'], 'node-cfg.js')
-        if os.path.join(settings.ADDON_PATH, 'static', 'public', 'js', addon['short_name'], 'node-cfg.js'):
-            js_modules.append(js_path)
+        source_path = os.path.join(
+            settings.ADDON_PATH,
+            addon['short_name'],
+            'static',
+            'node-cfg.js',
+        )
+        if os.path.exists(source_path):
+            asset_path = os.path.join(
+                '/',
+                'static',
+                'public',
+                'js',
+                addon['short_name'],
+                'node-cfg.js',
+            )
+            js_modules.append(asset_path)
+
 
     return js_modules
 
