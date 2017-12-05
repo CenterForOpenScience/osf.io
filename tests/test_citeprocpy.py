@@ -4,17 +4,26 @@ from nose.tools import *
 
 from api.citations.utils import render_citation
 from osf_tests.factories import UserFactory
+from tests.base import OsfTestCase
 
-user = UserFactory(fullname='Henrique Harman')
 
 class Node:
     _id = '2nthu'
-    csl = {'publisher': 'Open Science Framework', 'author': [{'given': u'Henrique', 'family': u'Harman'}], 'URL': 'localhost:5000/2nthu', 'issued': {'date-parts': [[2016, 12, 6]]}, 'title': u'The study of chocolate in its many forms', 'type': 'webpage', 'id': u'2nthu'}
-    contributors=[user]
+    csl = {'publisher': 'Open Science Framework', 'author': [{'given': u'Henrique', 'family': u'Harman'}],
+           'URL': 'localhost:5000/2nthu', 'issued': {'date-parts': [[2016, 12, 6]]},
+           'title': u'The study of chocolate in its many forms', 'type': 'webpage', 'id': u'2nthu'}
+    contributors = []
+
     def get_visible(self, user):
         return True
 
-class TestCiteprocpy:
+
+class TestCiteprocpy(OsfTestCase):
+
+    def setUp(self):
+        super(TestCiteprocpy, self).setUp()
+        self.user = UserFactory(fullname='Henrique Harman')
+
     def test_failing_citations(self):
         node = Node()
         url_data_path = os.path.join(os.path.dirname(__file__), '../website/static/citeprocpy_test_data.json')
@@ -33,6 +42,7 @@ class TestCiteprocpy:
 
     def test_passing_citations(self):
         node = Node()
+        node.contributors.append(self.user)
         url_data_path = os.path.join(os.path.dirname(__file__), '../website/static/citeprocpy_test_data.json')
         with open(url_data_path) as url_test_data:
             data = json.load(url_test_data)['passes']
