@@ -18,6 +18,8 @@ urlpatterns = [
         name='node-logs'),
     url(r'^registration_list/$', views.RegistrationListView.as_view(),
         name='registrations'),
+    url(r'^(?P<guid>[a-z0-9]+)/update_embargo/$',
+        views.RegistrationUpdateEmbargoView.as_view(), name='update_embargo'),
     url(r'^(?P<guid>[a-z0-9]+)/remove/$', views.NodeDeleteView.as_view(),
         name='remove'),
     url(r'^(?P<guid>[a-z0-9]+)/restore/$', views.NodeDeleteView.as_view(),
