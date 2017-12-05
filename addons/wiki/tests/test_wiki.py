@@ -405,12 +405,9 @@ class TestWikiViews(OsfTestCase):
         assert_not_in('...', res['wiki_content'])
         assert_false(res['more'])
 
-    @pytest.mark.skip('Current behavior introduced from OSF-8584 is incorrect. To be fixed by OSF-9027.')
     def test_wiki_widget_long_content_cutoff(self):
         long_content = 'a' * 600
         self.project.update_node_wiki('home', long_content, Auth(self.user))
-        import ipdb
-        ipdb.set_trace()
         res = serialize_wiki_widget(self.project)
         assert_less(len(res['wiki_content']), 520)  # wiggle room for closing tags
         assert_in('...', res['wiki_content'])
