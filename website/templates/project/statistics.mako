@@ -30,11 +30,10 @@
          </div>
      </div>
      <div class="col-md-4 panel panel-default">
-             <div class="panel-body">
-                 <div class="text-center">
-                     <h3>Template Copies</h3>
-                     <h2>${node['templated_count']}</h2>
-                 </div>
+         <div class="panel-body">
+             <div class="text-center">
+                 <h3>Template Copies</h3>
+                 <h2>${node['templated_count']}</h2>
              </div>
          </div>
      </div>
