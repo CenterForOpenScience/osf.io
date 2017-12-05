@@ -187,6 +187,7 @@ class PreprintSerializer(TaxonomizableSerializerMixin, JSONAPISerializer):
             ))
 
         save_node = False
+        save_preprint = False
         recently_published = False
         primary_file = validated_data.pop('primary_file', None)
         if primary_file:
