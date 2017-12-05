@@ -1,10 +1,13 @@
 import os
 import re
+import httplib as http
 
 from citeproc import CitationStylesStyle, CitationStylesBibliography
 from citeproc import Citation, CitationItem
 from citeproc import formatter
 from citeproc.source.json import CiteProcJSON
+
+from framework.exceptions import HTTPError
 
 from osf.models import PreprintService
 from website.citations.utils import datetime_to_csl
@@ -130,8 +133,11 @@ def apa_reformat(node, cit):
     new_csl = cit.split('(')
     contributors_list = [x for x in node.contributors if node.get_visible(x)]
 
+    # throw error if there is no visible contributor
+    if len(contributors_list) == 0:
+        raise HTTPError(http.BAD_REQUEST)
     # handle only one contributor
-    if len(contributors_list) == 1:
+    elif len(contributors_list) == 1:
         name = process_name(node, contributors_list[0])
         new_apa = apa_name(name)
     # handle more than one contributor  but less than 8 contributors
@@ -168,8 +174,11 @@ def apa_name(name):
 def mla_reformat(node, cit):
     contributors_list = [x for x in node.contributors if node.get_visible(x)]
 
+    # throw error if there is no visible contributor
+    if len(contributors_list) == 0:
+        raise HTTPError(http.BAD_REQUEST)
     # handle only one contributor
-    if len(contributors_list) == 1:
+    elif len(contributors_list) == 1:
         name = process_name(node, contributors_list[0])
         new_mla = mla_name(name, initial=True).rstrip(' ')
     # handle more than one contributor  but less than 5 contributors
@@ -195,8 +204,11 @@ def chicago_reformat(node, cit):
     new_csl = cit.split('20')
     contributors_list = [x for x in node.contributors if node.get_visible(x)]
 
+    # throw error if there is no visible contributor
+    if len(contributors_list) == 0:
+        raise HTTPError(http.BAD_REQUEST)
     # handle only one contributor
-    if len(contributors_list) == 1:
+    elif len(contributors_list) == 1:
         name = process_name(node, contributors_list[0])
         new_chi = mla_name(name, initial=True) + ' '
     # handle more than one contributor  but less than 8 contributors

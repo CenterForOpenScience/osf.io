@@ -26,6 +26,7 @@ class TestCiteprocpy(OsfTestCase):
 
     def test_failing_citations(self):
         node = Node()
+        node.contributors.append(self.user)
         url_data_path = os.path.join(os.path.dirname(__file__), '../website/static/citeprocpy_test_data.json')
         with open(url_data_path) as url_test_data:
             data = json.load(url_test_data)['fails']
