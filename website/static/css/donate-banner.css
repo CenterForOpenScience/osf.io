@@ -1,8 +1,13 @@
+html {
+  --banner-color: #3B9DD4;
+}
+
 
 .donate-banner {
     width: 100%;
 }
 
 .donate-banner-background {
-    background: #3B9DD4;
+    background: var(--banner-color);
+
 }

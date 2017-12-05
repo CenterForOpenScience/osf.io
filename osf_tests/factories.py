@@ -13,6 +13,7 @@ from factory.django import DjangoModelFactory
 from django.utils import timezone
 from django.db.utils import IntegrityError
 from faker import Factory
+from datetime import timedelta
 
 from website import settings
 from website.notifications.constants import NOTIFICATION_TYPES
@@ -815,3 +816,17 @@ class ReviewActionFactory(DjangoModelFactory):
     creator = factory.SubFactory(AuthUserFactory)
 
     is_deleted = False
+
+class ScheduledBannerFactory(DjangoModelFactory):
+    default_text = factory.Faker('text')
+    mobile_text = factory.Faker('text')
+    default_photo = factory.Faker('file_name')
+    mobile_photo = factory.Faker('file_name')
+    license = factory.Faker('name')
+    color = 'white'
+    start_date = timezone.now()
+    end_date = start_date + timedelta(days=1)
+    #TODO: Make setting dates smarter
+
+    class Meta:
+        model = models.ScheduledBanner

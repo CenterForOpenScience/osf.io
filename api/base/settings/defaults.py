@@ -15,6 +15,9 @@ from urlparse import urlparse
 from website import settings as osf_settings
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
+MEDIA_URL = '/media/'
+MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/1.8/howto/deployment/checklist/
 
@@ -143,6 +146,7 @@ REST_FRAMEWORK = {
     'DEFAULT_VERSIONING_CLASS': 'api.base.versioning.BaseVersioning',
     'DEFAULT_VERSION': '2.0',
     'ALLOWED_VERSIONS': (
+        '0.0',
         '2.0',
         '2.1',
         '2.2',
@@ -239,6 +243,11 @@ STATIC_ROOT = os.path.join(BASE_DIR, 'static/vendor')
 
 API_BASE = 'v2/'
 STATIC_URL = '/static/'
+STATIC_FOLDER = os.path.join(BASE_DIR, 'static')
+
+STATICFILES_DIRS = (
+    os.path.join(BASE_DIR, 'static'),
+)
 
 NODE_CATEGORY_MAP = osf_settings.NODE_CATEGORY_MAP
 
