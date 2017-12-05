@@ -67,9 +67,24 @@
 
                     <div id="projectSettings" class="panel-body">
                         <div class="form-group">
-                            <label>Category:</label>
-                            <select data-bind="options: categoryOptions, optionsValue: 'value', optionsText: 'label', value: selectedCategory"></select>
+                            <label for="category">Category:</label>
                             <i>(For descriptive purposes)</i>
+                            <div class="dropdown generic-dropdown category-list">
+                                <button class="btn btn-default dropdown-toggle" type="button" data-toggle="dropdown">
+                                    <span data-bind="getIcon: selectedCategory"></span>
+                                    <span data-bind="text: selectedCategory" class="text-capitalize"></span>
+                                    <span data-bind="ifnot: selectedCategory">Uncategorized</span>
+                                    <i class="fa fa-sort"></i>
+                                </button>
+                                <ul class="dropdown-menu" data-bind="foreach: {data: categoryOptions, as: 'category'}">
+                                    <li>
+                                          <a href="#" data-bind="click: $root.setCategory.bind($root, category.value)">
+                                              <span data-bind="getIcon: category.value"></span>
+                                              <span data-bind="text: category.label"></span>
+                                          </a>
+                                    </li>
+                                </ul>
+                            </div>
                         </div>
                         <div class="form-group">
                             <label for="title">Title:</label>
@@ -152,7 +167,6 @@
                         </form>
                     %endif
 
-                        % if include_wiki_settings:
                             <h3>Configure</h3>
                             <div style="padding-left: 15px">
                                 %if  node['is_public']:
@@ -173,9 +187,6 @@
                                     <p id="configureWikiMessage"></p>
                                 </div>
                             </form>
-                        % else:
-                            <p class="text">To allow all OSF users to edit the wiki, <b>${node['title']}</b> must be public and the wiki enabled.</p>
-                        %endif
                     </div>
                 </div>
             %endif

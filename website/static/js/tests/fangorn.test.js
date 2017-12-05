@@ -10,7 +10,13 @@ var utils = require('tests/utils');
 var faker = require('faker');
 var $ = require('jquery');
 var Raven = require('raven-js');
+
+window.contextVars = {
+    osfSupportEmail : 'fake-support@osf.io',
+};
+
 var language = require('js/osfLanguage').projectSettings;
+
 
 describe('fangorn', () => {
     describe('FangornMoveAndDeleteUnitTests', () => {

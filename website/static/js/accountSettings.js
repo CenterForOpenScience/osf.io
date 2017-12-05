@@ -106,8 +106,7 @@ var UserProfileClient = oop.defclass({
 
             } else {
                 $osf.growl('Error', 'User profile not updated. Please refresh the page and try ' +
-                'again or contact <a href="mailto: support@osf.io">support@osf.io</a> ' +
-                'if the problem persists.', 'danger');
+                'again or contact ' + $osf.osfSupportLink() + ' if the problem persists.', 'danger');
             }
 
             Raven.captureMessage('Error fetching user profile', {
@@ -312,7 +311,7 @@ var ExternalIdentityViewModel = oop.defclass({
         }.bind(this));
         request.fail(function(xhr, status, error) {
             $osf.growl('Error',
-                'Revocation request failed. Please contact <a href="mailto: support@osf.io">support@osf.io</a> if the problem persists.',
+                'Revocation request failed. Please contact ' + $osf.osfSupportLink() + ' if the problem persists.',
                 'danger'
             );
             Raven.captureMessage('Error revoking connected identity', {
@@ -364,7 +363,7 @@ var DeactivateAccountViewModel = oop.defclass({
                 $osf.growl('Error', xhr.responseJSON.message_long, 'danger');
             } else {
                 $osf.growl('Error',
-                    'Deactivation request failed. Please contact <a href="mailto: support@osf.io">support@osf.io</a> if the problem persists.',
+                    'Deactivation request failed. Please contact ' + $osf.osfSupportLink() + ' if the problem persists.',
                     'danger'
                 );
             }
@@ -460,7 +459,7 @@ var ExportAccountViewModel = oop.defclass({
                 $osf.growl('Error', xhr.responseJSON.message_long, 'danger');
             } else {
                 $osf.growl('Error',
-                    'Export request failed. Please contact <a href="mailto: support@osf.io">support@osf.io</a> if the problem persists.',
+                    'Export request failed. Please contact ' + $osf.osfSupportLink() + ' if the problem persists.',
                     'danger'
                 );
             }
