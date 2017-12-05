@@ -226,6 +226,7 @@ def serialize_wiki_settings(user, nodes):
 
     return items
 
+
 def serialize_wiki_widget(node):
     wiki = node.get_addon('wiki')
     wiki_page = node.get_wiki_page('home')
@@ -235,7 +236,7 @@ def serialize_wiki_widget(node):
     MAX_DISPLAY_LENGTH = 400
     rendered_before_update = False
     if wiki_page and wiki_page.html(node):
-        wiki_html = BeautifulSoup(wiki_page.html(node))
+        wiki_html = BeautifulSoup(wiki_page.html(node)).text
         if len(wiki_html) > MAX_DISPLAY_LENGTH:
             wiki_html = BeautifulSoup(wiki_html[:MAX_DISPLAY_LENGTH] + '...', 'html.parser')
             more = True
