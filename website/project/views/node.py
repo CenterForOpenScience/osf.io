@@ -318,8 +318,9 @@ def collect_node_config_js(addons):
     js_modules = []
     for addon in addons:
         js_path = os.path.join('/', 'static', 'public', 'js', addon['short_name'], 'node-cfg.js')
-        if js_path:
+        if os.path.exists(js_path):
             js_modules.append(js_path)
+
     return js_modules
 
 
