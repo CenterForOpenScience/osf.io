@@ -303,7 +303,7 @@ def node_addons(auth, node, **kwargs):
 
     ret['addon_capabilities'] = settings.ADDON_CAPABILITIES
     ret['addon_categories'] = set([item for addon in addon_settings for item in addon['categories']])
-    ret['addon_settings'] = addon_settings
+    ret['addon_settings'] = [addon for addon in addon_settings if not addon['default']]
     ret['addon_js'] = collect_node_config_js([addon for addon in addon_settings if addon['enabled']])
 
     return ret
@@ -318,7 +318,7 @@ def collect_node_config_js(addons):
     js_modules = []
     for addon in addons:
         js_path = os.path.join('/', 'static', 'public', 'js', addon['short_name'], 'node-cfg.js')
-        if os.path.exists(js_path):
+        if os.path.join(settings.ADDON_PATH, 'static', 'public', 'js', addon['short_name'], 'node-cfg.js'):
             js_modules.append(js_path)
 
     return js_modules
