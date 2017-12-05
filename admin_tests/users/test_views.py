@@ -28,7 +28,7 @@ from osf_tests.factories import (
 from admin_tests.utilities import setup_view, setup_log_view, setup_form_view
 
 from admin.users import views
-from admin.users.forms import WorkshopForm, UserSearchForm
+from admin.users.forms import WorkshopForm, UserSearchForm, MergeUserForm
 from osf.models.admin_log_entry import AdminLogEntry
 
 pytestmark = pytest.mark.django_db
@@ -757,3 +757,25 @@ class TestUserReindex(AdminTestCase):
 
         nt.assert_true(mock_reindex_elastic.called)
         nt.assert_equal(AdminLogEntry.objects.count(), count + 1)
+
+class TestUserMerge(AdminTestCase):
+    def setUp(self):
+        super(TestUserMerge, self).setUp()
+        self.request = RequestFactory().post('/fake_path')
+
+    @mock.patch('osf.models.user.OSFUser.merge_user')
+    def test_merge_user(self, mock_merge_user):
+        user = UserFactory()
+        user_merged = UserFactory()
+
+        view = views.UserMergeAccounts()
+        view = setup_log_view(view, self.request, guid=user._id)
+
+        invalid_form = MergeUserForm(data={'user_guid_to_be_merged': 'Not a valid Guid'})
+        valid_form = MergeUserForm(data={'user_guid_to_be_merged': user_merged._id})
+
+        nt.assert_false(invalid_form.is_valid())
+        nt.assert_true(valid_form.is_valid())
+
+        view.form_valid(valid_form)
+        nt.assert_true(mock_merge_user.called_with())
