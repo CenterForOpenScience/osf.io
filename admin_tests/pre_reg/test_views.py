@@ -330,13 +330,13 @@ class TestPreregFiles(AdminTestCase):
 
         prereg_schema = get_prereg_schema()
         self.d_of_qs = {
-            'q7': OsfStorageFileNode(target=self.node, name='7'),
-            'q11': OsfStorageFileNode(target=self.node, name='11'),
-            'q16': OsfStorageFileNode(target=self.node, name='16'),
-            'q12': OsfStorageFileNode(target=self.node, name='12'),
-            'q13': OsfStorageFileNode(target=self.node, name='13'),
-            'q19': OsfStorageFileNode(target=self.node, name='19'),
-            'q26': OsfStorageFileNode(target=self.node, name='26')
+            'q7': OsfStorageFile(target=self.node, name='7'),
+            'q11': OsfStorageFile(target=self.node, name='11'),
+            'q16': OsfStorageFile(target=self.node, name='16'),
+            'q12': OsfStorageFile(target=self.node, name='12'),
+            'q13': OsfStorageFile(target=self.node, name='13'),
+            'q19': OsfStorageFile(target=self.node, name='19'),
+            'q26': OsfStorageFile(target=self.node, name='26')
         }
         data = {}
         for q, f in self.d_of_qs.iteritems():
