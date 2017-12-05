@@ -40,7 +40,7 @@ from website.archiver.decorators import fail_archive_on_error
 
 from website import mails
 from website import settings
-from website.util import waterbutler_url_for
+from website.util import waterbutler_api_url_for
 from website.util.sanitize import strip_html
 from osf.models import MetaSchema
 from addons.base.models import BaseStorageAddon
@@ -146,6 +146,42 @@ FILE_TREE = {
         }
     ],
 }
+
+WB_FILE_TREE = {
+    'attributes': {
+        'path': '/',
+        'name': '',
+        'kind': 'folder',
+        'children': [
+            {
+                'attributes': {
+                    'path': '/1234567',
+                    'name': 'Afile.file',
+                    'kind': 'file',
+                    'size': '128',
+                }
+            },
+            {
+                'attributes': {
+                    'path': '/qwerty',
+                    'name': 'A Folder',
+                    'kind': 'folder',
+                    'children': [
+                        {
+                            'attributes': {
+                                'path': '/qwerty/asdfgh',
+                                'name': 'coolphoto.png',
+                                'kind': 'file',
+                                'size': '256',
+                            }
+                        }
+                    ],
+                }
+            }
+       ],
+    }
+}
+
 
 class MockAddon(object):
 
@@ -357,28 +393,36 @@ class ArchiverTestCase(OsfTestCase):
         self.archive_job = self.dst.archive_job
 
 class TestStorageAddonBase(ArchiverTestCase):
+    tree_root = WB_FILE_TREE['attributes']['children']
+    tree_child = tree_root[0]
+    tree_grandchild = tree_root[1]['attributes']['children']
+    tree_great_grandchild = tree_grandchild[0]
 
-    RESP_MAP = {
-        '/': dict(data=FILE_TREE['children']),
-        '/1234567': dict(data=FILE_TREE['children'][0]),
-        '/qwerty': dict(data=FILE_TREE['children'][1]['children']),
-        '/qwerty/asdfgh': dict(data=FILE_TREE['children'][1]['children'][0]),
-    }
+    URLS = ['/', '/1234567', '/qwerty', '/qwerty/asdfgh']
 
+    def get_resp(self, url):
+        if '/qwerty/asdfgh' in url:
+            return dict(data=self.tree_great_grandchild)
+        if '/qwerty' in url:
+            return dict(data=self.tree_grandchild)
+        if '/1234567' in url:
+            return dict(data=self.tree_child)
+        return dict(data=self.tree_root)
+ 
     @httpretty.activate
     def _test__get_file_tree(self, addon_short_name):
         requests_made = []
+        # requests_to_make = []
         def callback(request, uri, headers):
-            path = request.querystring['path'][0]
-            requests_made.append(path)
-            return (200, headers, json.dumps(self.RESP_MAP[path]))
+            requests_made.append(uri)
+            return (200, headers, json.dumps(self.get_resp(uri)))
 
-        for path in self.RESP_MAP.keys():
-            url = waterbutler_url_for(
-                'metadata',
-                provider=addon_short_name,
+        for path in self.URLS:
+            url = waterbutler_api_url_for(
+                self.src._id,
+                addon_short_name,
+                meta=True,
                 path=path,
-                node=self.src,
                 user=self.user,
                 view_only=True,
                 _internal=True,
@@ -395,12 +439,17 @@ class TestStorageAddonBase(ArchiverTestCase):
         }
         file_tree = addon._get_file_tree(root, self.user)
         assert_equal(FILE_TREE, file_tree)
-        assert_equal(requests_made, ['/', '/qwerty'])  # no requests made for files
+        assert_equal(len(requests_made), 2) 
+
+        # Makes a request for folders ('/qwerty') but not files ('/1234567', '/qwerty/asdfgh')
+        assert_true(any('/qwerty' in url for url in requests_made))
+        assert_false(any('/1234567' in url for url in requests_made))
+        assert_false(any('/qwerty/asdfgh' in url for url in requests_made))
 
     def _test_addon(self, addon_short_name):
         self._test__get_file_tree(addon_short_name)
 
-    @pytest.mark.skip('Unskip when figshare addon is implemented')
+    # @pytest.mark.skip('Unskip when figshare addon is implemented')
     def test_addons(self):
         #  Test that each addon in settings.ADDONS_ARCHIVABLE other than wiki/forward implements the StorageAddonBase interface
         for addon in [a for a in settings.ADDONS_ARCHIVABLE if a not in ['wiki', 'forward']]:
