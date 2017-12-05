@@ -14,7 +14,7 @@ def get_profile_image_url(user, size=None):
     return profile_image_url(settings.PROFILE_IMAGE_PROVIDER,
                              user,
                              use_ssl=True,
-                             size=settings.PROFILE_IMAGE_MEDIUM),
+                             size=settings.PROFILE_IMAGE_MEDIUM)
 
 def serialize_user(user, node=None, admin=False, full=False, is_profile=False, include_node_counts=False):
     """
