@@ -34,7 +34,6 @@ class TestCiteprocpy:
             data = json.load(url_test_data)['passes']
         not_matches = []
         citation = []
-        cite =[]
         for k, v in data.iteritems():
             try:
                 citeprocpy = render_citation(node, k)
@@ -42,10 +41,8 @@ class TestCiteprocpy:
                 citeprocpy = ''
             if citeprocpy != v:
                 not_matches.append(k)
-                cite.append(v)
                 citation.append(citeprocpy)
                 print k
-        assert(cite[0] == citation[0])
-        assert(len(not_matches) == 1)
-
-
+        assert (len(not_matches) == 1)
+        assert (not_matches[0] == "apa")
+        assert(citation[0] == "Harman, H. (2016, December 6). The study of chocolate in its many forms. Retrieved from localhost:5000/2nthu")
