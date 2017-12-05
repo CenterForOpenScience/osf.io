@@ -1436,14 +1436,13 @@ function _fangornTitleColumnHelper(tb, item, col, nameTitle, toUrl, classNameOpt
         if (tb.options.links) {
             attrs = {
                 className: classNameOption,
-                href: item.data.id, // enables 'Open in new tab' in context menu [OSF-7832]
                 onclick: function(event) {
                     event.stopImmediatePropagation();
                     gotoFileEvent.call(tb, item, toUrl);
                 }
             };
         }
-        return m('a', attrs, nameTitle);
+        return m('span', attrs, nameTitle);
     }
     if ((item.data.nodeType === 'project' || item.data.nodeType ==='component') && item.data.permissions.view) {
         return m('a.' + classNameOption, {href: '/' + item.data.nodeID.toString() + toUrl}, nameTitle);
