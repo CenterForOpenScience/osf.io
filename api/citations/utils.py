@@ -45,11 +45,6 @@ def preprint_csl(preprint, node):
 
 
 def process_name(node, user):
-    if user.is_registered or user.is_disabled:
-        name = user.fullname
-    else:
-        name = user.get_unclaimed_record(node._id)['name']
-
     if user.family_name and user.given_name:
         """If the user has a family and given name, use those"""
         return {
@@ -59,6 +54,12 @@ def process_name(node, user):
             'middle_names': user.middle_names,
         }
     else:
+
+        if user.is_registered or user.is_disabled:
+            name = user.fullname
+        else:
+            name = user.get_unclaimed_record(node._id)['name']
+
         """ If the user doesn't autofill his family and given name """
         parsed = utils.impute_names(name)
         given_name = parsed['given']
