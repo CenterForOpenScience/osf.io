@@ -172,6 +172,19 @@ class TestUpdateNodeWiki(OsfTestCase):
         res = self.app.get(url, auth=self.user.auth)
         assert 'Read More' not in res.body
 
+    @pytest.mark.skip('Current behavior introduced from OSF-8584 is incorrect. To be fixed by OSF-9027.')
+    def test_read_more_when_more_than_400_character(self):
+        wiki_content = ''
+        for x in range(1000):
+            wiki_content += 'a'
+        assert len(wiki_content) == 1000
+        project = ProjectFactory(creator=self.user)
+        project.update_node_wiki('home', wiki_content, self.auth)
+        url = project.web_url_for('view_project')
+        res = self.app.get(url, auth=self.user.auth)
+        assert 'Read More' in res.body
+
+
 
 class TestRenameNodeWiki(OsfTestCase):
 
