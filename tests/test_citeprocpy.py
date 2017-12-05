@@ -8,7 +8,7 @@ from api.citations.utils import render_citation
 class Node:
     _id = '2nthu'
     csl = {'publisher': 'Open Science Framework', 'author': [{'given': u'Henrique', 'family': u'Harman'}], 'URL': 'localhost:5000/2nthu', 'issued': {'date-parts': [[2016, 12, 6]]}, 'title': u'The study of chocolate in its many forms', 'type': 'webpage', 'id': u'2nthu'}
-    contributors = [{'given': u'Henrique', 'family': u'Harman'}]
+    contributors = [{'given_name': u'Henrique', 'family_name': u'Harman'}]
 
 
 class TestCiteprocpy:
