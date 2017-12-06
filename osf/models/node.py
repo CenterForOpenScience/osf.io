@@ -44,7 +44,7 @@ from osf.models.spam import SpamMixin
 from osf.models.tag import Tag
 from osf.models.user import OSFUser
 from osf.models.validators import validate_doi, validate_title
-from osf.utils.auth import Auth, get_user
+from framework.auth.core import Auth, get_user
 from osf.utils.datetime_aware_jsonfield import DateTimeAwareJSONField
 from osf.utils.fields import NonNaiveDateTimeField
 from osf.utils.requests import DummyRequest, get_request_and_user_id
@@ -288,11 +288,9 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
 
     creator = models.ForeignKey(OSFUser,
                                 db_index=True,
-                                related_name='created',
+                                related_name='nodes_created',
                                 on_delete=models.SET_NULL,
                                 null=True, blank=True)
-    date_created = NonNaiveDateTimeField(auto_now_add=True)
-    date_modified = NonNaiveDateTimeField(db_index=True, auto_now=True)
     deleted_date = NonNaiveDateTimeField(null=True, blank=True)
     description = models.TextField(blank=True, default='')
     file_guid_to_share_uuids = DateTimeAwareJSONField(default=dict, blank=True)
@@ -647,6 +645,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         DraftRegistration = apps.get_model('osf.DraftRegistration')
         return DraftRegistration.objects.filter(
             models.Q(branched_from=self) &
+            models.Q(deleted__isnull=True) &
             (models.Q(registered_node=None) | models.Q(registered_node__is_deleted=True))
         )
 
@@ -1529,7 +1528,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         # Update existing identifiers
         if self.get_identifier('doi'):
             doi_status = 'unavailable' if permissions == 'private' else 'public'
-            enqueue_task(update_ezid_metadata_on_change.s(self, status=doi_status))
+            enqueue_task(update_ezid_metadata_on_change.s(self._id, status=doi_status))
 
         if log:
             action = NodeLog.MADE_PUBLIC if permissions == 'public' else NodeLog.MADE_PRIVATE
@@ -1634,11 +1633,9 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
 
         :param schema: Schema object
         :param auth: All the auth information including user, API key.
-        :param template: Template name
         :param data: Form data
         :param parent Node: parent registration of registration to be created
         """
-        # TODO(lyndsysimon): "template" param is not necessary - use schema.name?
         # NOTE: Admins can register child nodes even if they don't have write access them
         if not self.can_edit(auth=auth) and not self.is_admin_parent(user=auth.user):
             raise PermissionsError(
@@ -1683,13 +1680,6 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         registered.is_public = False
         # Copy unclaimed records to unregistered users for parent
         registered.copy_unclaimed_records()
-
-        # TODO: Do we need to recurse? .register already recurses
-        for node in registered.get_descendants_recursive():
-            node.is_public = False
-            node.save()
-            # Copy unclaimed records to unregistered users for children
-            node.copy_unclaimed_records()
 
         if parent:
             node_relation = NodeRelation.objects.get(parent=parent.registered_from, child=original)
@@ -2031,8 +2021,8 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         if len(new.title) > 200:
             new.title = new.title[:200]
 
-        # Slight hack - date_created is a read-only field.
-        new.date_created = timezone.now()
+        # Slight hack - created is a read-only field.
+        new.created = timezone.now()
 
         new.save(suppress_log=True)
 
@@ -2051,7 +2041,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
                 },
             },
             auth=auth,
-            log_date=new.date_created,
+            log_date=new.created,
             save=False,
         )
         new.save()
@@ -2081,7 +2071,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         returns a list of [(node, [children]), ...]
         """
         ret = []
-        for node in self._nodes.order_by('date_created').all():
+        for node in self._nodes.order_by('created').all():
             if condition(auth, node):
                 # base case
                 ret.append((node, []))
@@ -2997,7 +2987,7 @@ def add_project_created_log(sender, instance, created, **kwargs):
             log_action,
             params=log_params,
             auth=Auth(user=instance.creator),
-            log_date=instance.date_created,
+            log_date=instance.created,
             save=True,
         )
 

@@ -110,20 +110,20 @@ class ActionFilterMixin(object):
 
         # filter by date_created
         expected = set([l._id for l in expected_actions])
-        actual = get_actual(app, url, user, date_created=action.date_created)
+        actual = get_actual(app, url, user, date_created=action.created)
         assert expected == actual
 
         expected = set()
-        actual = get_actual(app, url, user, date_created=action.date_created - timedelta(days=1))
+        actual = get_actual(app, url, user, date_created=action.created - timedelta(days=1))
         assert expected == actual
 
         # filter by date_modified
         expected = set([l._id for l in expected_actions])
-        actual = get_actual(app, url, user, date_modified=action.date_modified)
+        actual = get_actual(app, url, user, date_modified=action.modified)
         assert expected == actual
 
         expected = set()
-        actual = get_actual(app, url, user, date_modified=action.date_modified - timedelta(days=1))
+        actual = get_actual(app, url, user, date_modified=action.modified - timedelta(days=1))
         assert expected == actual
 
         # filter by target

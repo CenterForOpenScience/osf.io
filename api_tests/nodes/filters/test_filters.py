@@ -6,7 +6,7 @@ from osf_tests.factories import (
     NodeRelationFactory,
     ProjectFactory,
 )
-from osf.utils.auth import Auth
+from framework.auth.core import Auth
 
 
 class NodesListFilteringMixin(object):
@@ -143,38 +143,38 @@ class NodesListDateFilteringMixin(object):
     @pytest.fixture()
     def node_may(self, user):
         node_may = ProjectFactory(creator=user)
-        node_may.date_created = '2016-05-01 00:00:00.000000+00:00'
+        node_may.created = '2016-05-01 00:00:00.000000+00:00'
         node_may.save()
         return node_may
 
     @pytest.fixture()
     def node_june(self, user):
         node_june = ProjectFactory(creator=user)
-        node_june.date_created = '2016-06-01 00:00:00.000000+00:00'
+        node_june.created = '2016-06-01 00:00:00.000000+00:00'
         node_june.save()
         return node_june
 
     @pytest.fixture()
     def node_july(self, user):
         node_july = ProjectFactory(creator=user)
-        node_july.date_created = '2016-07-01 00:00:00.000000+00:00'
+        node_july.created = '2016-07-01 00:00:00.000000+00:00'
         node_july.save()
         return node_july
 
     @pytest.fixture()
-    def date_created_url(self, url):
+    def created_url(self, url):
         return '{}filter[date_created]='.format(url)
 
-    def test_node_list_date_filter(self, app, user, node_may, node_june, node_july, url, date_created_url):
+    def test_node_list_date_filter(self, app, user, node_may, node_june, node_july, url, created_url):
 
-    #   test_date_filter_equals
+        # test_date_filter_equals
         expected = []
-        res = app.get('{}{}'.format(date_created_url, '2016-04-01'), auth=user.auth)
+        res = app.get('{}{}'.format(created_url, '2016-04-01'), auth=user.auth)
         actual = [node['id'] for node in res.json['data']]
         assert expected == actual
 
         expected = [node_may._id]
-        res = app.get('{}{}'.format(date_created_url, node_may.date_created), auth=user.auth)
+        res = app.get('{}{}'.format(created_url, node_may.created), auth=user.auth)
         actual = [node['id'] for node in res.json['data']]
         assert expected == actual
 
@@ -239,7 +239,7 @@ class NodesListDateFilteringMixin(object):
         assert expected == actual
 
         expected = [node_may._id]
-        res = app.get('{}{}'.format(res_url, node_may.date_created), auth=user.auth)
+        res = app.get('{}{}'.format(res_url, node_may.created), auth=user.auth)
         actual = [node['id'] for node in res.json['data']]
         assert expected == actual
 

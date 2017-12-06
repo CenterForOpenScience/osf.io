@@ -26,10 +26,9 @@ from website.project.views.contributor import notify_added_contributor
 from website.views import find_bookmark_collection
 
 from osf.models import AbstractNode, OSFUser, Tag, Contributor, Session
-from osf.utils.auth import Auth
+from framework.auth.core import Auth
 from osf.utils.names import impute_names_model
 from osf.exceptions import ValidationError
-from osf.modm_compat import Q
 
 from .utils import capture_signals
 from .factories import (
@@ -627,12 +626,12 @@ class TestCookieMethods:
         super_secret_key = 'children need maps'
         signer = itsdangerous.Signer(super_secret_key)
         assert(
-            Session.find(Q('data.auth_user_id', 'eq', user._id)).count() == 0
+            Session.objects.filter(data__auth_user_id=user._id).count() == 0
         )
 
         cookie = user.get_or_create_cookie(super_secret_key)
 
-        session = Session.find(Q('data.auth_user_id', 'eq', user._id))[0]
+        session = Session.objects.filter(data__auth_user_id=user._id).first()
 
         assert session._id == signer.unsign(cookie)
         assert session.data['auth_user_id'] == user._id
@@ -653,7 +652,7 @@ class TestCookieMethods:
     def test_get_user_by_cookie_no_user_id(self):
         user = UserFactory()
         cookie = user.get_or_create_cookie()
-        session = Session.find_one(Q('data.auth_user_id', 'eq', user._id))
+        session = Session.objects.get(data__auth_user_id=user._id)
         del session.data['auth_user_id']
         session.save()
         assert OSFUser.from_cookie(cookie) is None
@@ -1291,8 +1290,8 @@ class TestDisablingUsers(OsfTestCase):
 
     @mock.patch('website.mailchimp_utils.get_mailchimp_api')
     def test_disable_account_and_remove_sessions(self, mock_mail):
-        session1 = SessionFactory(user=self.user, date_created=(timezone.now() - dt.timedelta(seconds=settings.OSF_SESSION_TIMEOUT)))
-        session2 = SessionFactory(user=self.user, date_created=(timezone.now() - dt.timedelta(seconds=settings.OSF_SESSION_TIMEOUT)))
+        session1 = SessionFactory(user=self.user, created=(timezone.now() - dt.timedelta(seconds=settings.OSF_SESSION_TIMEOUT)))
+        session2 = SessionFactory(user=self.user, created=(timezone.now() - dt.timedelta(seconds=settings.OSF_SESSION_TIMEOUT)))
 
         self.user.mailchimp_mailing_lists[settings.MAILCHIMP_GENERAL_LIST] = True
         self.user.save()
@@ -1315,12 +1314,6 @@ class TestUser(OsfTestCase):
     def setUp(self):
         super(TestUser, self).setUp()
         self.user = AuthUserFactory()
-
-    def tearDown(self):
-        AbstractNode.remove()
-        OSFUser.remove()
-        Session.remove()
-        super(TestUser, self).tearDown()
 
     # Regression test for https://github.com/CenterForOpenScience/osf.io/issues/2454
     def test_add_unconfirmed_email_when_email_verifications_is_empty(self):
@@ -1410,7 +1403,7 @@ class TestUser(OsfTestCase):
             self.user.get_unconfirmed_email_for_token(token1)
 
     def test_contributed_property(self):
-        projects_contributed_to = AbstractNode.find(Q('contributors', 'eq', self.user))
+        projects_contributed_to = self.user.nodes.all()
         assert list(self.user.contributed.all()) == list(projects_contributed_to)
 
     def test_contributor_to_property(self):
@@ -1453,8 +1446,8 @@ class TestUser(OsfTestCase):
     def test_created_property(self):
         # make sure there's at least one project
         ProjectFactory(creator=self.user)
-        projects_created_by_user = AbstractNode.find(Q('creator', 'eq', self.user))
-        assert list(self.user.created.all()) == list(projects_created_by_user)
+        projects_created_by_user = AbstractNode.objects.filter(creator=self.user)
+        assert list(self.user.nodes_created.all()) == list(projects_created_by_user)
 
 
 # Copied from tests/models/test_user.py
@@ -1650,7 +1643,7 @@ class TestUserMerging(OsfTestCase):
         # check fields set on merged user
         assert other_user.merged_by == self.user
 
-        assert Session.find(Q('data.auth_user_id', 'eq', other_user._id)).count() == 0
+        assert not Session.objects.filter(data__auth_user_id=other_user._id).exists()
 
     def test_merge_unconfirmed(self):
         self._add_unconfirmed_user()

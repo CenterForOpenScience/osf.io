@@ -33,7 +33,7 @@ from osf.models.node import AbstractNodeQuerySet
 from osf.models.spam import SpamStatus
 from addons.wiki.models import NodeWikiPage
 from osf.exceptions import ValidationError, ValidationValueError
-from osf.utils.auth import Auth
+from framework.auth.core import Auth
 
 from osf_tests.factories import (
     AuthUserFactory,
@@ -520,8 +520,7 @@ class TestNodeMODMCompat:
         node_1 = ProjectFactory(is_public=False)
         node_2 = ProjectFactory(is_public=True)
 
-        results = Node.find()
-        assert len(results) == 2
+        assert Node.objects.all().count() == 2
 
         private = Node.objects.filter(is_public=False)
         assert node_1 in private
@@ -548,10 +547,10 @@ class TestNodeMODMCompat:
     def test_remove_one(self):
         node = ProjectFactory()
         node2 = ProjectFactory()
-        assert len(Node.find()) == 2  # sanity check
+        assert Node.objects.all().count() == 2  # sanity check
         Node.remove_one(node)
-        assert len(Node.find()) == 1
-        assert node2 in Node.find()
+        assert Node.objects.all().count() == 1
+        assert node2 in Node.objects.all()
 
     def test_querying_on_guid_id(self):
         node = NodeFactory()
@@ -645,7 +644,7 @@ class TestProject:
         assert node.category == 'project'
         assert bool(node._id)
         # assert_almost_equal(
-        #     node.date_created, timezone.now(),
+        #     node.created, timezone.now(),
         #     delta=datetime.timedelta(seconds=5),
         # )
         assert node.is_public is False
@@ -709,8 +708,8 @@ class TestLogging:
         # date is tzaware
         assert last_log.date.tzinfo == pytz.utc
 
-        # updates node.date_modified
-        assert_datetime_equal(node.date_modified, last_log.date)
+        # updates node.modified
+        assert_datetime_equal(node.modified, last_log.date)
 
 
 class TestTagging:
@@ -817,7 +816,7 @@ class TestNodeCreation:
         assert first_log.action == NodeLog.PROJECT_CREATED
         params = first_log.params
         assert params['node'] == node._id
-        assert_datetime_equal(first_log.date, node.date_created)
+        assert_datetime_equal(first_log.date, node.created)
 
 # Copied from tests/test_models.py
 class TestContributorMethods:
@@ -1986,7 +1985,7 @@ class TestPrivateLinks:
         link.save()
         assert link in node.private_links.all()
 
-    @mock.patch('osf.utils.auth.Auth.private_link')
+    @mock.patch('framework.auth.core.Auth.private_link')
     def test_has_anonymous_link(self, mock_property, node):
         mock_property.return_value(mock.MagicMock())
         mock_property.anonymous = True
@@ -2000,7 +1999,7 @@ class TestPrivateLinks:
 
         assert has_anonymous_link(node, auth2) is True
 
-    @mock.patch('osf.utils.auth.Auth.private_link')
+    @mock.patch('framework.auth.core.Auth.private_link')
     def test_has_no_anonymous_link(self, mock_property, node):
         mock_property.return_value(mock.MagicMock())
         mock_property.anonymous = False
@@ -2049,7 +2048,7 @@ class TestPrivateLinks:
     def test_create_from_node(self):
         proj = ProjectFactory()
         user = proj.creator
-        schema = MetaSchema.find()[0]
+        schema = MetaSchema.objects.first()
         data = {'some': 'data'}
         draft = DraftRegistration.create_from_node(
             proj,
@@ -2653,8 +2652,8 @@ class TestForkNode:
         assert fork._id in [n._id for n in original.forks.all()]
         # Note: Must cast ForeignList to list for comparison
         assert list(fork.contributors.all()) == [fork_user]
-        assert (fork_date - fork.date_created) < datetime.timedelta(seconds=30)
-        assert fork.forked_date != original.date_created
+        assert (fork_date - fork.created) < datetime.timedelta(seconds=30)
+        assert fork.forked_date != original.created
 
         # Test that pointers were copied correctly
         assert(
@@ -3512,7 +3511,7 @@ class TestTemplateNode:
         )
 
         assert new.title == self._default_title(project)
-        assert new.date_created != project.date_created
+        assert new.created != project.created
         self._verify_log(new)
 
     def test_simple_template_title_changed(self, project, auth):
@@ -3530,7 +3529,7 @@ class TestTemplateNode:
         )
 
         assert new.title == changed_title
-        assert new.date_created != project.date_created
+        assert new.created != project.created
         self._verify_log(new)
 
     def test_use_as_template_adds_default_addons(self, project, auth):
