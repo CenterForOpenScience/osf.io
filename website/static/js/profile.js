@@ -446,12 +446,11 @@ var NameViewModel = function(urls, modes, preventUnsaved, fetchCallback) {
                 name: self.full()
             },
             dataType: 'json',
-            success: function(response) {
-                self.imputedGiven(response.given);
-                self.imputedMiddle(response.middle);
-                self.imputedFamily(response.family);
-                self.imputedSuffix(response.suffix);
-            }
+        }).success(function (response) {
+            self.imputedGiven(response.given);
+            self.imputedMiddle(response.middle);
+            self.imputedFamily(response.family);
+            self.imputedSuffix(response.suffix);
         });
     };
 
