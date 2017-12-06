@@ -116,6 +116,9 @@ def gitlab_add_user_account(auth, **kwargs):
         account = ExternalAccount.objects.get(
             provider='gitlab', provider_id=user_info['web_url']
         )
+        if account.oauth_key != access_token:
+            account.oauth_key = access_token
+            account.save()
 
     user = auth.user
     if not user.external_accounts.filter(id=account.id).exists():
