@@ -346,7 +346,6 @@ def collect_node_config_js(addons):
             )
             js_modules.append(asset_path)
 
-
     return js_modules
 
 
