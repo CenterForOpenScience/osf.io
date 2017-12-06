@@ -314,7 +314,7 @@ def serialize_addons(node):
         config['addon_full_name'] = addon.full_name
         config['categories'] = addon.categories
         config['enabled'] = node.has_addon(addon.short_name)
-        config['default'] = addon.short_name in ['osfstorage']
+        config['default'] = addon.short_name in settings.ADDONS_DEFAULT
         addon_settings.append(config)
 
     addon_settings = sorted(addon_settings, key=lambda addon: addon['full_name'].lower())
