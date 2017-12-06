@@ -286,7 +286,7 @@ def node_addons(auth, node, **kwargs):
     ret['addon_capabilities'] = settings.ADDON_CAPABILITIES
 
     # If an an is default you cannot connect/disconnect so we don't have to load it.
-    ret['addon_settings'] = [addon for addon in addon_settings if not addon['default']]
+    ret['addon_settings'] = [addon for addon in addon_settings]
 
     # Addons can have multiple categories, but we only want a set of unique ones being used.
     ret['addon_categories'] = set([item for addon in addon_settings for item in addon['categories']])
