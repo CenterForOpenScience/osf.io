@@ -541,7 +541,11 @@ function checkConflictsRename(tb, item, name, cb) {
 
 function doItemOp(operation, to, from, rename, conflict) {
     var tb = this;
-    var inReadyQueue, filesRemaining, inConflictsQueue, syncMoves;
+    var inReadyQueue;
+    var filesRemaining;
+    var inConflictsQueue;
+    var syncMoves;
+
     var notRenameOp = typeof rename === 'undefined';
     if (notRenameOp) {
         filesRemaining = tb.syncFileMoveCache && tb.syncFileMoveCache[to.data.provider];
