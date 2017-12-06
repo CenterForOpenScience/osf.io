@@ -17,13 +17,15 @@ def disable_auto_now_fields(model):
     Context manager to disable updates of all auto_now fields for a given model.
 
     """
+    changed = []
     for field in model._meta.get_fields():
         if hasattr(field, 'auto_now') and field.auto_now:
             field.auto_now = False
+            changed.append(field)
     try:
         yield
     finally:
-        for field in model._meta.get_fields():
+        for field in changed:
             if hasattr(field, 'auto_now') and not field.auto_now:
                 field.auto_now = True
 
