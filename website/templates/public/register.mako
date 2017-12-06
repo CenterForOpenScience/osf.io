@@ -1,6 +1,6 @@
 <%inherit file="base.mako"/>
 
-<%def name="title()">Sign In</%def>
+<%def name="title()">Sign Up</%def>
 
 <%def name="content()">
 
