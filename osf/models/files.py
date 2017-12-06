@@ -6,7 +6,7 @@ import os
 import requests
 from dateutil.parser import parse as parse_date
 from django.apps import apps
-from django.db import models
+from django.db import models, IntegrityError
 from django.db.models import Manager
 from django.core.exceptions import ObjectDoesNotExist
 from django.utils import timezone
@@ -572,14 +572,23 @@ class Folder(models.Model):
             logger.warn('BaseFileNode._create_child caused an implicit save because you just created a child with an unsaved parent.')
             self.save()
 
-        child = self._resolve_class(kind)(
+        target_content_type = ContentType.objects.get_for_model(self.target)
+        if self._resolve_class(kind).objects.filter(
             name=name,
-            target=self.target,
-            path=path or '/' + name,
-            parent=self,
-            materialized_path=materialized_path or
-            os.path.join(self.materialized_path, name) + '/' if kind is Folder else ''
-        )
+            target_object_id=self.target.id,
+            target_content_type=target_content_type,
+            parent=self
+        ).exists():
+            raise IntegrityError('Child by that name already, exists, update instead')
+        else:
+            child = self._resolve_class(kind)(
+                name=name,
+                target=self.target,
+                path=path or '/' + name,
+                parent=self,
+                materialized_path=materialized_path or
+                os.path.join(self.materialized_path, name) + '/' if kind is Folder else ''
+            )
         if save:
             child.save()
         return child
