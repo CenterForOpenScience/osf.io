@@ -320,7 +320,7 @@ def serialize_addons(node):
     addon_settings = sorted(addon_settings, key=lambda addon: addon['full_name'].lower())
 
     return addon_settings
-
+  
 def collect_node_config_js(addons):
     """Collect webpack bundles for each of the addons' node-cfg.js modules. Return
     the URLs for each of the JS modules to be included on the node addons config page.
@@ -345,7 +345,6 @@ def collect_node_config_js(addons):
                 'node-cfg.js',
             )
             js_modules.append(asset_path)
-
 
     return js_modules
 
