@@ -23,7 +23,10 @@ def get_session_from_cookie(cookie_val):
     :return: the `Session` object or None
     """
 
-    session_id = itsdangerous.Signer(settings.SECRET_KEY).unsign(cookie_val)
+    try:
+        session_id = itsdangerous.Signer(settings.SECRET_KEY).unsign(cookie_val)
+    except itsdangerous.BadSignature:
+        return None
     try:
         session = Session.objects.get(_id=session_id)
         return session
