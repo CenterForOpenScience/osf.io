@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 
+import os
 import datetime
 import httplib as http
 import time
@@ -21,6 +22,7 @@ from tests.base import OsfTestCase, get_default_metaschema
 from osf_tests.factories import (AuthUserFactory, ProjectFactory,
                              RegistrationFactory)
 from website import settings
+from website.util.paths import webpack_asset
 from addons.base import views
 from addons.github.exceptions import ApiError
 from addons.github.models import GithubFolder, GithubFile, GithubFileNode
@@ -30,6 +32,7 @@ from osf.models import files as file_models
 from osf.models.files import BaseFileNode, TrashedFileNode
 from website.project import new_private_link
 from website.project.views.node import _view_project as serialize_node
+from website.project.views.node import serialize_addons, collect_node_config_js
 from website.util import api_url_for, rubeus
 from dateutil.parser import parse as parse_date
 from framework import sentry
@@ -1099,3 +1102,56 @@ class TestLegacyViews(OsfTestCase):
             provider='mycooladdon',
         )
         assert_urls_equal(res.location, expected_url)
+
+class TestViewUtils(OsfTestCase):
+
+    def setUp(self):
+        super(TestViewUtils, self).setUp()
+        self.user = AuthUserFactory()
+        self.auth_obj = Auth(user=self.user)
+        self.node = ProjectFactory(creator=self.user)
+        self.session = Session(data={'auth_user_id': self.user._id})
+        self.session.save()
+        self.cookie = itsdangerous.Signer(settings.SECRET_KEY).sign(self.session._id)
+        self.configure_addon()
+        self.JWE_KEY = jwe.kdf(settings.WATERBUTLER_JWE_SECRET.encode('utf-8'), settings.WATERBUTLER_JWE_SALT.encode('utf-8'))
+
+    def configure_addon(self):
+        self.user.add_addon('github')
+        self.user_addon = self.user.get_addon('github')
+        self.oauth_settings = GitHubAccountFactory(display_name='john')
+        self.oauth_settings.save()
+        self.user.external_accounts.add(self.oauth_settings)
+        self.user.save()
+        self.node.add_addon('github', self.auth_obj)
+        self.node_addon = self.node.get_addon('github')
+        self.node_addon.user = 'john'
+        self.node_addon.repo = 'youre-my-best-friend'
+        self.node_addon.user_settings = self.user_addon
+        self.node_addon.external_account = self.oauth_settings
+        self.node_addon.save()
+        self.user_addon.oauth_grants[self.node._id] = {self.oauth_settings._id: []}
+        self.user_addon.save()
+
+    def test_serialize_addons(self):
+        addon_dicts = serialize_addons(self.node)
+
+        enabled_addons = [addon for addon in addon_dicts if addon['enabled']]
+        assert len(enabled_addons) == 2
+        assert enabled_addons[0]['short_name'] == 'github'
+        assert enabled_addons[1]['short_name'] == 'osfstorage'
+
+        default_addons = [addon for addon in addon_dicts if addon['default']]
+        assert len(default_addons) == 1
+        assert default_addons[0]['short_name'] == 'osfstorage'
+
+    def test_collect_node_config_js(self):
+
+        addon_dicts = serialize_addons(self.node)
+
+        asset_paths = collect_node_config_js(addon_dicts)
+
+        # Default addons should be in in addon dicts, but they have no js assets because you can't
+        # connect/disconnect from them, think osfstorage, there's no node-cfg for that.
+        default_addons = [addon['short_name'] for addon in addon_dicts if addon['default']]
+        assert not any('/{}/'.format(addon) in asset_paths for addon in default_addons)

@@ -281,6 +281,24 @@ def node_addons(auth, node, **kwargs):
 
     ret = _view_project(node, auth, primary=True)
 
+    addon_settings = serialize_addons(node)
+
+    ret['addon_capabilities'] = settings.ADDON_CAPABILITIES
+
+    # If an an is default you cannot connect/disconnect so we don't have to load it.
+    ret['addon_settings'] = [addon for addon in addon_settings if not addon['default']]
+
+    # Addons can have multiple categories, but we only want a set of unique ones being used.
+    ret['addon_categories'] = set([item for addon in addon_settings for item in addon['categories']])
+
+    # The page only needs to load enabled addons and it refreshes when a new addon is being enabled.
+    ret['addon_js'] = collect_node_config_js([addon for addon in addon_settings if addon['enabled']])
+
+    return ret
+
+
+def serialize_addons(node):
+
     addon_settings = []
     addons_available = [addon for addon in settings.ADDONS_AVAILABLE
                         if addon not in settings.SYSTEM_ADDED_ADDONS['node']
@@ -301,13 +319,7 @@ def node_addons(auth, node, **kwargs):
 
     addon_settings = sorted(addon_settings, key=lambda addon: addon['full_name'].lower())
 
-    ret['addon_capabilities'] = settings.ADDON_CAPABILITIES
-    ret['addon_categories'] = set([item for addon in addon_settings for item in addon['categories']])
-    ret['addon_settings'] = [addon for addon in addon_settings if not addon['default']]
-    ret['addon_js'] = collect_node_config_js([addon for addon in addon_settings if addon['enabled']])
-
-    return ret
-
+    return addon_settings
 
 def collect_node_config_js(addons):
     """Collect webpack bundles for each of the addons' node-cfg.js modules. Return
