@@ -5,6 +5,8 @@ import logging
 
 from django.db import migrations
 from osf.models import PreprintService
+from osf.utils.migrations import disable_auto_now_fields
+
 logger = logging.getLogger(__name__)
 
 def add_preprint_doi_created(apps, schema_editor):
@@ -16,14 +18,15 @@ def add_preprint_doi_created(apps, schema_editor):
     current_preprint = 0
     logger.info('{} published preprints found with preprint_doi_created is null.'.format(preprints_count))
 
-    for preprint in null_preprint_doi_created:
-        current_preprint += 1
-        if preprint.get_identifier('doi'):
-            preprint.preprint_doi_created = preprint.date_published
-            preprint.save()
-            logger.info('Preprint ID {}, {}/{} preprint_doi_created field populated.'.format(preprint._id, current_preprint, preprints_count))
-        else:
-            logger.info('Preprint ID {}, {}/{} skipped because a DOI has not been created.'.format(preprint._id, current_preprint, preprints_count))
+    with disable_auto_now_fields(PreprintService):
+        for preprint in null_preprint_doi_created:
+            current_preprint += 1
+            if preprint.get_identifier('doi'):
+                preprint.preprint_doi_created = preprint.date_published
+                preprint.save()
+                logger.info('Preprint ID {}, {}/{} preprint_doi_created field populated.'.format(preprint._id, current_preprint, preprints_count))
+            else:
+                logger.info('Preprint ID {}, {}/{} skipped because a DOI has not been created.'.format(preprint._id, current_preprint, preprints_count))
 
 def reverse_func(apps, schema_editor):
     """
