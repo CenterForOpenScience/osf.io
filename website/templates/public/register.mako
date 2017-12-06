@@ -144,6 +144,7 @@
                         %if recaptcha_site_key:
                             <div class="col-xs-12">
                                 <div class="pull-right g-recaptcha" data-sitekey="${recaptcha_site_key}"></div>
+                            </div>
 
                         %endif
                             <div class="col-xs-12">
