@@ -1151,7 +1151,7 @@ class TestViewUtils(OsfTestCase):
 
         asset_paths = collect_node_config_js(addon_dicts)
 
-        # Default addons should be in in addon dicts, but they have no js assets because you can't
+        # Default addons should be in addon dicts, but they have no js assets because you can't
         # connect/disconnect from them, think osfstorage, there's no node-cfg for that.
         default_addons = [addon['short_name'] for addon in addon_dicts if addon['default']]
         assert not any('/{}/'.format(addon) in asset_paths for addon in default_addons)
