@@ -2517,7 +2517,7 @@ function _dropLogic(event, items, folder) {
 
     tb.syncFileMoveCache = tb.syncFileMoveCache || {};
     tb.syncFileMoveCache[folder.data.provider] = tb.syncFileMoveCache[folder.data.provider] || {};
-    tb.moveStates = tb.moveStates || [];
+    tb.moveStates = [];
 
     if (toMove.ready.length > 0) {
         tb.syncFileMoveCache[folder.data.provider].ready = tb.syncFileMoveCache[folder.data.provider].ready || [];
