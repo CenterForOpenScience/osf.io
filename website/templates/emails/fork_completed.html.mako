@@ -9,10 +9,4 @@
     <h3 class="text-center" style="padding: 0;margin: 30px 0 0 0;border: none;list-style: none;font-weight: 300;text-align: center;">The fork of <b>${title}</b> has been successfully created: <a href="${settings.DOMAIN + guid}">here.</a></h3>
   </td>
 </tr>
-<tr>
-  <td style="border-collapse: collapse;">
-    The OSF Team
-    Center for Open Science
-  </td>
-</tr>
 </%def>
