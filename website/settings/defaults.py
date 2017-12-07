@@ -198,6 +198,7 @@ COOKIE_DOMAIN = '.openscienceframework.org'  # Beaker
 SHORT_DOMAIN = 'osf.io'
 
 # TODO: Combine Python and JavaScript config
+# If you change COMMENT_MAXLENGTH, make sure you create a corresponding migration.
 COMMENT_MAXLENGTH = 1000
 
 # Profile image options
