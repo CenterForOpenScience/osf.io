@@ -1,7 +1,6 @@
 import urlparse
 import uuid
 
-from osf.utils.fields import NonNaiveDateTimeField
 from website.util import api_v2_url
 
 from django.db import models
@@ -56,8 +55,6 @@ class ApiOAuth2Application(base.ObjectIDMixin, base.BaseModel):
     # User-specified application descriptors
     name = models.CharField(db_index=True, blank=False, null=False, max_length=200)
     description = models.CharField(blank=True, null=True, max_length=1000)
-
-    date_created = NonNaiveDateTimeField(auto_now_add=True)
 
     home_url = models.URLField(blank=False, null=False)
     callback_url = models.URLField(blank=False, null=False)

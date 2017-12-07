@@ -56,7 +56,7 @@ License.prototype.toggleActive = function() {
 var User = function(result){
     var self = this;
     self.category = result.category;
-    self.gravatarUrl = ko.observable('');
+    self.profileImageUrl = ko.observable('');
     self.social = result.social;
     self.job_title = result.job_title;
     self.job = result.job;
@@ -65,9 +65,9 @@ var User = function(result){
     self.url = result.url;
     self.user = result.user;
 
-    $.ajax('/api/v1'+ result.url).success(function(data){
+    $.ajax('/api/v1'+ result.url).done(function(data){
         if (typeof data.profile !== 'undefined') {
-            self.gravatarUrl(data.profile.gravatar_url);
+            self.profileImageUrl(data.profile.profile_image_url);
         }
     });
 };
@@ -370,7 +370,7 @@ var ViewModel = function(params) {
             }
         };
 
-        $osf.postJSON(url, jsonData).success(function(data) {
+        $osf.postJSON(url, jsonData).done(function(data) {
 
             //Clear out our variables
             self.tags([]);
@@ -394,9 +394,12 @@ var ViewModel = function(params) {
             var nullLicenseCount = data.aggs.total || 0;
             if ((data.aggs || {}).licenses)  {
                 $.each(data.aggs.licenses, function(key, value) {
-                    licenseCounts.filter(function(l) {
+                    var licenseCount = licenseCounts.filter(function(l) {
                         return eqInsensitive(l.id, key);
-                    })[0].count(value);
+                    })[0];
+                    if (licenseCount) {
+                        licenseCount.count(value);
+                    }
                     nullLicenseCount -= value;
                 });
             }
@@ -468,7 +471,7 @@ var ViewModel = function(params) {
                 self.pushState();
             }
 
-            $osf.postJSON(window.contextVars.shareUrl + 'api/v2/search/creativeworks/_count', shareQuery).success(function(data) {
+            $osf.postJSON(window.contextVars.shareUrl + 'api/v2/search/creativeworks/_count', shareQuery).done(function(data) {
                 if(data.count > 0) {
                     self.shareCategory(new Category('SHARE', data.count, 'SHARE'));
                 }

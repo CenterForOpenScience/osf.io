@@ -1,13 +1,12 @@
 # -*- coding: utf-8 -*-
 
-from datetime import datetime, timedelta
+from datetime import timedelta
 
 from django.utils import timezone
 from nose.tools import *  # noqa
 
 from tests.base import OsfTestCase
-from tests.factories import RegistrationFactory
-from tests.factories import UserFactory
+from osf_tests.factories import RegistrationFactory, UserFactory
 
 from scripts.retract_registrations import main
 

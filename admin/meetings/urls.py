@@ -4,6 +4,8 @@ from django.conf.urls import url
 
 from admin.meetings import views
 
+app_name = 'admin'
+
 urlpatterns = [
     url(r'^$', views.MeetingListView.as_view(), name='list'),
     url(r'^create/$', views.MeetingCreateFormView.as_view(), name='create'),

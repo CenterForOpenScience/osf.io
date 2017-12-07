@@ -27,7 +27,7 @@ from website.project.decorators import (
 from website import language, settings
 from website.prereg import utils as prereg_utils
 from website.project import utils as project_utils
-from website.project.metadata.schemas import LATEST_SCHEMA_VERSION
+from website.project.metadata.schemas import LATEST_SCHEMA_VERSION, METASCHEMA_ORDERING
 from website.project.metadata.utils import serialize_meta_schema, serialize_draft_registration
 from website.project.utils import serialize_node
 from website.util import rapply
@@ -43,6 +43,8 @@ def must_be_branched_from_node(func):
     def wrapper(*args, **kwargs):
         node = kwargs['node']
         draft = kwargs['draft']
+        if draft.deleted:
+            raise HTTPError(http.GONE)
         if not draft.branched_from._id == node._id:
             raise HTTPError(
                 http.BAD_REQUEST,
@@ -127,6 +129,11 @@ def submit_draft_for_review(auth, node, draft, *args, **kwargs):
         validate_embargo_end_date(end_date_string, node)
         meta['embargo_end_date'] = end_date_string
     meta['registration_choice'] = registration_choice
+
+    if draft.registered_node and not draft.registered_node.is_deleted:
+        raise HTTPError(http.BAD_REQUEST, data=dict(message_long='This draft has already been registered, if you wish to '
+                                                              'register it again or submit it for review please create '
+                                                              'a new draft.'))
 
     # Don't allow resubmission unless submission was rejected
     if draft.approval and draft.approval.state != Sanction.REJECTED:
@@ -337,7 +344,8 @@ def delete_draft_registration(auth, node, draft, *args, **kwargs):
                 'message_long': 'This draft has already been registered and cannot be deleted.'
             }
         )
-    DraftRegistration.remove_one(draft)
+    draft.deleted = timezone.now()
+    draft.save(update_fields=['deleted'])
     return None, http.NO_CONTENT
 
 def get_metaschemas(*args, **kwargs):
@@ -350,9 +358,11 @@ def get_metaschemas(*args, **kwargs):
     count = request.args.get('count', 100)
     include = request.args.get('include', 'latest')
 
-    meta_schemas = MetaSchema.objects.filter(active=True).order_by('name')
+    meta_schemas = MetaSchema.objects.filter(active=True)
     if include == 'latest':
         meta_schemas.filter(schema_version=LATEST_SCHEMA_VERSION)
+
+    meta_schemas = sorted(meta_schemas, key=lambda x: METASCHEMA_ORDERING.index(x.name))
 
     return {
         'meta_schemas': [

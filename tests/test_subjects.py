@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 from django.core.exceptions import ValidationError
 from nose.tools import *  # flake8: noqa (PEP8 asserts)
-from modularodm.exceptions import ValidationValueError
+from osf.exceptions import ValidationValueError
 
 from tests.base import OsfTestCase
 from osf_tests.factories import SubjectFactory, PreprintFactory, PreprintProviderFactory

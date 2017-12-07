@@ -16,6 +16,8 @@ var LogFeed = require('js/components/logFeed');
 var pointers = require('js/pointers');
 var Comment = require('js/comment'); //jshint ignore:line
 var NodeControl = require('js/nodeControl');
+var CitationList = require('js/citationList');
+var CitationWidget = require('js/citationWidget');
 var mathrender = require('js/mathrender');
 var md = require('js/markdown').full;
 var oldMd = require('js/markdown').old;
@@ -33,6 +35,11 @@ $('body').on('nodeLoad', function(event, data) {
     if (!data.node.is_retracted) {
         // Initialize controller for "Add Links" modal
         new pointers.PointerManager('#addPointer', window.contextVars.node.title);
+    }
+    // Initialize CitationWidget if user isn't viewing through an anonymized VOL
+    if (!data.node.anonymous && !data.node.is_retracted) {
+        new CitationList('#citationList');
+        new CitationWidget('#citationStyleInput', '#citationText');
     }
     // Initialize nodeControl
     new NodeControl.NodeControl('#projectScope', data, {categories: nodeCategories});
@@ -112,8 +119,6 @@ $(document).ready(function () {
     });
 
     if (!ctx.node.isRetracted) {
-        m.startComputation();
-
         if (ctx.node.institutions.length && !ctx.node.anonymous) {
             m.mount(document.getElementById('instLogo'), m.component(institutionLogos, {institutions: window.contextVars.node.institutions}));
         }
@@ -123,9 +128,9 @@ $(document).ready(function () {
         m.mount(document.getElementById('logFeed'), m.component(LogFeed.LogFeed, {node: node}));
 
         // Treebeard Files view
-        $.ajax({
-            url:  nodeApiUrl + 'files/grid/'
-        }).done(function (data) {
+        var urlFilesGrid = nodeApiUrl + 'files/grid/';
+        var promise = m.request({ method: 'GET', config: $osf.setXHRAuthorization, url: urlFilesGrid});
+        promise.then(function (data) {
             var fangornOpts = {
                 divID: 'treeGrid',
                 filesData: data.data,
@@ -201,8 +206,12 @@ $(document).ready(function () {
             if (newComponentElem) {
                 m.mount(newComponentElem, AddComponentButton);
             }
-            m.endComputation();
-        });
+            return promise;
+        }, function(xhr, textStatus, error) {
+            Raven.captureMessage('Error retrieving filebrowser', {extra: {url: urlFilesGrid, textStatus: textStatus, error: error}});
+        }
+
+      );
 
     }
 
@@ -210,44 +219,85 @@ $(document).ready(function () {
     $('[data-toggle="tooltip"]').tooltip({container: 'body'});
 
     // Tag input
+    var nodeType = window.contextVars.node.isRegistration ? 'registrations':'nodes';
+    var tagsApiUrl = $osf.apiV2Url(nodeType + '/' + window.contextVars.node.id + '/');
     $('#node-tags').tagsInput({
         width: '100%',
-        interactive: window.contextVars.currentUser.canEdit,
+        interactive: window.contextVars.currentUser.canEditTags,
         maxChars: 128,
         defaultText: 'add a tag to enhance discoverability',
         onAddTag: function(tag) {
             $('#node-tags_tag').attr('data-default', 'add a tag');
-            var url = nodeApiUrl + 'tags/';
-            var data = {tag: tag};
-            var request = $osf.postJSON(url, data);
-            request.success(function() {
+            var newTagsList = window.contextVars.node.tags;
+            newTagsList.push(tag);
+            var payload = {
+                data: {
+                    type: nodeType,
+                    id: window.contextVars.node.id,
+                    attributes: {
+                        tags: newTagsList
+                    }
+                }
+            };
+
+            var request = $osf.ajaxJSON(
+                'PATCH',
+                tagsApiUrl,
+                {
+                    data: payload,
+                    isCors: true
+                }
+            );
+
+            request.done(function() {
                 window.contextVars.node.tags.push(tag);
             });
+
             request.fail(function(xhr, textStatus, error) {
                 Raven.captureMessage('Failed to add tag', {
                     extra: {
-                        tag: tag, url: url, textStatus: textStatus, error: error
+                        tag: tag, url: tagsApiUrl, textStatus: textStatus, error: error
                     }
                 });
             });
         },
         onRemoveTag: function(tag) {
-            var url = nodeApiUrl + 'tags/';
-            // Don't try to delete a blank tag (would result in a server error)
             if (!tag) {
                 return false;
             }
-            var request = $osf.ajaxJSON('DELETE', url, {'data': {'tag': tag}});
-            request.success(function() {
+            var newTagsList = window.contextVars.node.tags;
+            newTagsList.splice(newTagsList.indexOf(tag),1);
+
+            var payload = {
+                data: {
+                    type: nodeType,
+                    id: window.contextVars.node.id,
+                    attributes: {
+                        tags: newTagsList
+                    }
+                }
+            };
+
+            var request = $osf.ajaxJSON(
+                'PATCH',
+                tagsApiUrl,
+                {
+                    data: payload,
+                    isCors: true
+                }
+            );
+
+            request.done(function() {
                 window.contextVars.node.tags.splice(window.contextVars.node.tags.indexOf(tag), 1);
             });
+
             request.fail(function(xhr, textStatus, error) {
                 // Suppress "tag not found" errors, as the end result is what the user wanted (tag is gone)- eg could be because two people were working at same time
                 if (xhr.status !== 409) {
                     $osf.growl('Error', 'Could not remove tag');
                     Raven.captureMessage('Failed to remove tag', {
                         extra: {
-                            tag: tag, url: url, textStatus: textStatus, error: error
+                            tag: tag, url: tagsApiUrl, textStatus: textStatus, error: error
                         }
                     });
                 }

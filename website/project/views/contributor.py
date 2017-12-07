@@ -127,8 +127,8 @@ def get_contributors_from_parent(auth, node, **kwargs):
         raise HTTPError(http.FORBIDDEN)
 
     contribs = [
-        profile_utils.add_contributor_json(contrib)
-        for contrib in parent.visible_contributors
+        profile_utils.add_contributor_json(contrib, node=node)
+        for contrib in parent.contributors if contrib not in node.contributors
     ]
 
     return {'contributors': contribs}
@@ -454,7 +454,7 @@ def send_claim_email(email, unclaimed_user, node, notify=True, throttle=24 * 360
             email_template, preprint_provider = find_preprint_provider(node)
             if not email_template or not preprint_provider:
                 return
-            mail_tpl = getattr(mails, 'INVITE_PREPRINT')(email_template, preprint_provider.name)
+            mail_tpl = getattr(mails, 'INVITE_PREPRINT')(email_template, preprint_provider)
         else:
             mail_tpl = getattr(mails, 'INVITE_DEFAULT'.format(email_template.upper()))
 
@@ -529,7 +529,7 @@ def notify_added_contributor(node, contributor, auth=None, throttle=None, email_
             email_template, preprint_provider = find_preprint_provider(node)
             if not email_template or not preprint_provider:
                 return
-            email_template = getattr(mails, 'CONTRIBUTOR_ADDED_PREPRINT')(email_template, preprint_provider.name)
+            email_template = getattr(mails, 'CONTRIBUTOR_ADDED_PREPRINT')(email_template, preprint_provider)
         elif node.is_preprint:
             email_template = getattr(mails, 'CONTRIBUTOR_ADDED_PREPRINT_NODE_FROM_OSF'.format(email_template.upper()))
         else:
@@ -746,7 +746,7 @@ def claim_user_form(auth, **kwargs):
             status.push_status_message(language.CLAIMED_CONTRIBUTOR, kind='success', trust=True)
             # Redirect to CAS and authenticate the user with a verification key.
             return redirect(cas.get_login_url(
-                web_url_for('view_project', pid=pid, _absolute=True),
+                web_url_for('resolve_guid', guid=pid, _absolute=True),
                 username=user.username,
                 verification_key=user.verification_key
             ))

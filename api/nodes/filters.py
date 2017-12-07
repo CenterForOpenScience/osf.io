@@ -1,3 +1,5 @@
+from copy import deepcopy
+
 from django.db.models import Q
 
 from api.base.exceptions import InvalidFilterOperator, InvalidFilterValue
@@ -18,15 +20,17 @@ class NodesFilterMixin(ListFilterMixin):
                 for field_name, operation in field_names.iteritems():
                     # filter[parent]=null
                     if field_name == 'parent' and operation['op'] == 'eq' and not operation['value']:
-                        return queryset.get_roots()
-        return super(NodesFilterMixin, self).param_queryset(query_params, default_queryset)
+                        queryset = queryset.get_roots()
+                        query_params = deepcopy(query_params)
+                        query_params.pop(key)
+        return super(NodesFilterMixin, self).param_queryset(query_params, queryset)
 
     def build_query_from_field(self, field_name, operation):
         if field_name == 'parent':
             if operation['op'] == 'eq':
                 if operation['value']:
                     # filter[parent]=<nid>
-                    parent = utils.get_object_or_error(AbstractNode, operation['value'], display_name='parent')
+                    parent = utils.get_object_or_error(AbstractNode, operation['value'], self.request, display_name='parent')
                     node_ids = NodeRelation.objects.filter(parent=parent, is_node_link=False).values_list('child_id', flat=True)
                     return Q(id__in=node_ids)
             elif operation['op'] == 'ne':
@@ -52,7 +56,8 @@ class NodesFilterMixin(ListFilterMixin):
         if field_name == 'root':
             if None in operation['value']:
                 raise InvalidFilterValue(value=operation['value'])
-            return Q(root__guids___id__in=operation['value'])
+            with_as_root_query = Q(root__guids___id__in=operation['value'])
+            return ~with_as_root_query if operation['op'] == 'ne' else with_as_root_query
 
         if field_name == 'preprint':
             not_preprint_query = (
@@ -60,6 +65,7 @@ class NodesFilterMixin(ListFilterMixin):
                 Q(_is_preprint_orphan=True) |
                 Q(_has_abandoned_preprint=True)
             )
+
             return ~not_preprint_query if utils.is_truthy(operation['value']) else not_preprint_query
 
         return super(NodesFilterMixin, self).build_query_from_field(field_name, operation)

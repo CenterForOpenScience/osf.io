@@ -36,7 +36,7 @@ $(function() {
     });
 });
 
-$(window).load(function() {
+$(window).on('load', function() {
     if (typeof cm !== 'undefined') {
       cm.viewModel.onWindowResize();
     }

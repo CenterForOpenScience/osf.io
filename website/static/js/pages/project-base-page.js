@@ -8,6 +8,7 @@ var AccountClaimer = require('js/accountClaimer');
 // pages
 require('js/project');
 require('js/licensePicker');
+require('css/pages/project-page.css');
 
 var node = window.contextVars.node;
 var OFFSET = 49;
@@ -19,7 +20,7 @@ if (!window.contextVars.currentUser.isContributor) {
 }
 
 // Used for clearing backward/forward cache issues
-$(window).unload(function(){
+$(window).on('unload', function(){
     return 'Unload';
 });
 

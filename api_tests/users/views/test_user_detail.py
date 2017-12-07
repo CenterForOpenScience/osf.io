@@ -1,6 +1,11 @@
 # -*- coding: utf-8 -*-
+import mock
 import pytest
 import urlparse
+
+from django.db import connection, transaction
+from django.test import TransactionTestCase
+from django.test.utils import CaptureQueriesContext
 
 from osf.models import QuickFilesNode
 from website import util as website_utils
@@ -95,10 +100,32 @@ class TestUserDetail:
 
         assert upload_url == waterbutler_upload
 
+    def test_preprint_relationship(self, app, user_one):
+        url = "/{}users/{}/".format(API_BASE, user_one._id)
+        preprint_url = "/{}users/{}/preprints/".format(API_BASE, user_one._id)
+        res = app.get(url, auth=user_one)
+        user_json = res.json['data']
+        href_url = user_json['relationships']['preprints']['links']['related']['href']
+        assert preprint_url in href_url
+
+    def test_registrations_relationship(self, app, user_one):
+        url = "/{}users/{}/".format(API_BASE, user_one._id)
+        registration_url = "/{}users/{}/registrations/".format(API_BASE, user_one._id)
+        res = app.get(url, auth=user_one)
+        user_json = res.json['data']
+        href_url = user_json['relationships']['registrations']['links']['related']['href']
+        assert registration_url in href_url
+
     def test_nodes_relationship_is_absent(self, app, user_one):
         url = "/{}users/{}/".format(API_BASE, user_one._id)
         res = app.get(url, auth=user_one)
         assert 'node' not in res.json['data']['relationships'].keys()
+
+    # Regression test for https://openscience.atlassian.net/browse/OSF-8966
+    def test_browsable_api_for_user_detail(self, app, user_one):
+        url = "/{}users/{}/?format=api".format(API_BASE, user_one._id)
+        res = app.get(url, auth=user_one.auth)
+        assert res.status_code == 200
 
 
 @pytest.mark.django_db
@@ -424,6 +451,43 @@ class TestUserUpdate:
 
             }
         }
+
+    def test_select_for_update(self, app, user_one, url_user_one, data_new_user_one):
+        with transaction.atomic(), CaptureQueriesContext(connection) as ctx:
+            res = app.patch_json_api(url_user_one, {
+                'data': {
+                    'id': user_one._id,
+                    'type': 'users',
+                    'attributes': {
+                    'family_name': data_new_user_one['data']['attributes']['family_name'],
+                    }
+                }
+            }, auth=user_one.auth)
+
+        assert res.status_code == 200
+        assert res.json['data']['attributes']['family_name'] == data_new_user_one['data']['attributes']['family_name']
+
+        for_update_sql = connection.ops.for_update_sql()
+        assert any(for_update_sql in query['sql'] for query in ctx.captured_queries)
+
+    @mock.patch('osf.utils.requests.settings.SELECT_FOR_UPDATE_ENABLED', False)
+    def test_select_for_update_disabled(self, app, user_one, url_user_one, data_new_user_one):
+        with transaction.atomic(), CaptureQueriesContext(connection) as ctx:
+            res = app.patch_json_api(url_user_one, {
+                'data': {
+                    'id': user_one._id,
+                    'type': 'users',
+                    'attributes': {
+                    'family_name': data_new_user_one['data']['attributes']['family_name'],
+                    }
+                }
+            }, auth=user_one.auth)
+
+        assert res.status_code == 200
+        assert res.json['data']['attributes']['family_name'] == data_new_user_one['data']['attributes']['family_name']
+
+        for_update_sql = connection.ops.for_update_sql()
+        assert not any(for_update_sql in query['sql'] for query in ctx.captured_queries)
 
     def test_update_patch_errors(self, app, user_one, user_two, data_new_user_one, data_incorrect_type, data_incorrect_id, data_missing_type, data_missing_id, data_blank_but_not_empty_full_name, url_user_one):
 

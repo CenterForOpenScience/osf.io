@@ -17,7 +17,6 @@ from tests.base import OsfTestCase, get_default_metaschema
 
 from framework.auth import Auth
 from website.project.views.node import _view_project, _serialize_node_search, _get_children, _get_readable_descendants
-from website.profile.views import get_public_projects, get_public_components
 from website.views import serialize_node_summary
 from website.profile import utils
 from website import filters, settings
@@ -56,17 +55,16 @@ class TestUserSerializers(OsfTestCase):
         ProjectFactory(creator=user, is_public=True)
         CollectionFactory(creator=user)
         d = utils.serialize_user(user, full=True, include_node_counts=True)
-        gravatar = filters.gravatar(
-            user,
-            use_ssl=True,
-            size=settings.PROFILE_IMAGE_LARGE
-        )
+        profile_image_url = filters.profile_image_url(settings.PROFILE_IMAGE_PROVIDER,
+                                                  user,
+                                                  use_ssl=True,
+                                                  size=settings.PROFILE_IMAGE_LARGE)
         assert_equal(d['id'], user._primary_key)
         assert_equal(d['url'], user.url)
         assert_equal(d.get('username'), None)
         assert_equal(d['fullname'], user.fullname)
         assert_equal(d['registered'], user.is_registered)
-        assert_equal(d['gravatar_url'], gravatar)
+        assert_equal(d['profile_image_url'], profile_image_url)
         assert_equal(d['absolute_url'], user.absolute_url)
         assert_equal(d['date_registered'], user.date_registered.strftime('%Y-%m-%d'))
         projects = [
@@ -176,6 +174,19 @@ class TestNodeSerializers(OsfTestCase):
         assert_false(res['can_view'])
         assert_true(res['is_fork'])
 
+    def test_serialize_node_summary_child_exists(self):
+        user = UserFactory()
+        parent_node = ProjectFactory(creator=user)
+        linked_node = ProjectFactory(creator=user)
+        result = _view_project(parent_node, Auth(user))
+        assert_equal(result['node']['child_exists'], False)
+        parent_node.add_node_link(linked_node, Auth(user), save=True)
+        result = _view_project(parent_node, Auth(user))
+        assert_equal(result['node']['child_exists'], False)
+        child_component = NodeFactory(creator=user, parent=parent_node)
+        result = _view_project(parent_node, Auth(user))
+        assert_equal(result['node']['child_exists'], True)
+
     def test_serialize_node_search_returns_only_visible_contributors(self):
         node = NodeFactory()
         non_visible_contributor = UserFactory()
@@ -213,6 +224,18 @@ class TestViewProject(OsfTestCase):
 
         assert_equal(result['node']['disapproval_link'], '')
         pending_reg.remove()
+
+    def test_view_project_child_exists(self):
+        linked_node = ProjectFactory(creator=self.user)
+        result = _view_project(self.node, Auth(self.user))
+        assert_equal(result['node']['child_exists'], False)
+        self.node.add_node_link(linked_node, Auth(self.user), save=True)
+        result = _view_project(self.node, Auth(self.user))
+        assert_equal(result['node']['child_exists'], False)
+        child_component = NodeFactory(creator=self.user, parent=self.node)
+        result = _view_project(self.node, Auth(self.user))
+        assert_equal(result['node']['child_exists'], True)
+
 
 
 class TestViewProjectEmbeds(OsfTestCase):
@@ -368,55 +391,6 @@ class TestGetReadableDescendants(OsfTestCase):
             assert_in(node.title, ['Four', 'Eight', 'Nine'])
 
 
-class TestProfileNodeList(OsfTestCase):
-
-    def setUp(self):
-        OsfTestCase.setUp(self)
-        self.user = UserFactory()
-
-        self.public = ProjectFactory(is_public=True)
-        self.public_component = NodeFactory(parent=self.public, is_public=True)
-        self.private = ProjectFactory(is_public=False)
-        self.deleted = ProjectFactory(is_public=True, is_deleted=True)
-
-        for node in (self.public, self.public_component, self.private, self.deleted):
-            node.add_contributor(self.user, auth=Auth(node.creator))
-            node.save()
-
-    def test_get_public_projects(self):
-        res = get_public_projects(uid=self.user._id)
-        node_ids = [each['id'] for each in res]
-        assert_in(self.public._id, node_ids)
-        assert_not_in(self.private._id, node_ids)
-        assert_not_in(self.deleted._id, node_ids)
-        assert_not_in(self.public_component._id, node_ids)
-
-    def test_get_public_components(self):
-        res = get_public_components(uid=self.user._id)
-        node_ids = [each['id'] for each in res]
-        assert_in(self.public_component._id, node_ids)
-        assert_not_in(self.public._id, node_ids)
-        assert_not_in(self.private._id, node_ids)
-        assert_not_in(self.deleted._id, node_ids)
-
-    def test_get_public_components_excludes_linked_noncontributor_projects(self):
-        # self.user is not a contributor to linked project
-        pointee = ProjectFactory(is_public=True)
-        self.public.add_node_link(pointee, auth=Auth(self.public.creator), save=True)
-        res = get_public_components(uid=self.user._id)
-        node_ids = [each['id'] for each in res]
-        assert_not_in(pointee._id, node_ids)
-
-    def test_get_public_components_excludes_linked_contributor_projects(self):
-        # self.user is a contributor to linked project
-        pointee = ProjectFactory(is_public=True)
-        pointee.add_contributor(self.user, auth=Auth(pointee.creator))
-        self.public.add_node_link(pointee, auth=Auth(self.public.creator), save=True)
-        res = get_public_components(uid=self.user._id)
-        node_ids = [each['id'] for each in res]
-        assert_not_in(pointee._id, node_ids)
-
-
 class TestNodeLogSerializers(OsfTestCase):
 
     def test_serialize_node_for_logs(self):
@@ -472,7 +446,7 @@ class TestAddContributorJson(OsfTestCase):
         assert_equal(user_info['n_projects_in_common'], 0)
         assert_equal(user_info['registered'], True)
         assert_equal(user_info['active'], True)
-        assert_in('secure.gravatar.com', user_info['gravatar_url'])
+        assert_in('secure.gravatar.com', user_info['profile_image_url'])
         assert_equal(user_info['profile_url'], self.profile)
 
     def test_add_contributor_json_with_edu(self):
@@ -488,7 +462,7 @@ class TestAddContributorJson(OsfTestCase):
         assert_equal(user_info['n_projects_in_common'], 0)
         assert_equal(user_info['registered'], True)
         assert_equal(user_info['active'], True)
-        assert_in('secure.gravatar.com', user_info['gravatar_url'])
+        assert_in('secure.gravatar.com', user_info['profile_image_url'])
         assert_equal(user_info['profile_url'], self.profile)
 
     def test_add_contributor_json_with_job(self):
@@ -504,7 +478,7 @@ class TestAddContributorJson(OsfTestCase):
         assert_equal(user_info['n_projects_in_common'], 0)
         assert_equal(user_info['registered'], True)
         assert_equal(user_info['active'], True)
-        assert_in('secure.gravatar.com', user_info['gravatar_url'])
+        assert_in('secure.gravatar.com', user_info['profile_image_url'])
         assert_equal(user_info['profile_url'], self.profile)
 
     def test_add_contributor_json_with_job_and_edu(self):
@@ -521,5 +495,5 @@ class TestAddContributorJson(OsfTestCase):
         assert_equal(user_info['n_projects_in_common'], 0)
         assert_equal(user_info['registered'], True)
         assert_equal(user_info['active'], True)
-        assert_in('secure.gravatar.com', user_info['gravatar_url'])
+        assert_in('secure.gravatar.com', user_info['profile_image_url'])
         assert_equal(user_info['profile_url'], self.profile)

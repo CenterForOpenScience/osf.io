@@ -5,11 +5,14 @@ import httplib as http
 import markupsafe
 from django.core.paginator import Paginator
 from django.db.models import Q, QuerySet
+from flask import request
 
 from framework.exceptions import HTTPError
+from osf.utils.requests import check_select_for_update
+
 
 def get_or_http_error(Model, pk_or_query, allow_deleted=False, display_name=None):
-    """Load an instance of Model by primary key or modularodm.Q query. Raise an appropriate
+    """Load an instance of Model by primary key or query. Raise an appropriate
     HTTPError if no record is found or if the query fails to find a unique record
     :param type Model: StoredObject subclass to query
     :param pk_or_query:
@@ -28,10 +31,11 @@ def get_or_http_error(Model, pk_or_query, allow_deleted=False, display_name=None
     display_name = display_name or ''
     # FIXME: Not everything that uses this decorator needs to be markupsafe, but OsfWebRenderer error.mako does...
     safe_name = markupsafe.escape(display_name)
+    select_for_update = check_select_for_update(request)
 
     if isinstance(pk_or_query, Q):
         try:
-            instance = Model.objects.get(pk_or_query)
+            instance = Model.objects.filter(pk_or_query).select_for_update().get() if select_for_update else Model.objects.get(pk_or_query)
         except Model.DoesNotExist:
             raise HTTPError(http.NOT_FOUND, data=dict(
                 message_long='No {name} record matching that query could be found'.format(name=safe_name)
@@ -41,7 +45,7 @@ def get_or_http_error(Model, pk_or_query, allow_deleted=False, display_name=None
                 message_long='The query must match exactly one {name} record'.format(name=safe_name)
             ))
     else:
-        instance = Model.load(pk_or_query)
+        instance = Model.load(pk_or_query, select_for_update=select_for_update)
         if not instance:
             raise HTTPError(http.NOT_FOUND, data=dict(
                 message_long='No {name} record with that primary key could be found'.format(name=safe_name)
