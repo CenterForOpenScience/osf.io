@@ -212,7 +212,7 @@ def localize_timestamp(timestamp, user):
     try:
         user_locale = Locale(user.locale)
     except core.UnknownLocaleError:
-        user_locale = 'en'
+        user_locale = Locale('en')
 
     # Do our best to find a valid locale
     try:
@@ -223,7 +223,7 @@ def localize_timestamp(timestamp, user):
             user_locale = Locale(fix_locale(user.locale))
             user_locale.date_formats
         except (core.UnknownLocaleError, IOError):
-            user_locale = 'en'
+            user_locale = Locale('en')
 
     formatted_date = dates.format_date(timestamp, format='full', locale=user_locale)
     formatted_time = dates.format_time(timestamp, format='short', tzinfo=user_timezone, locale=user_locale)
