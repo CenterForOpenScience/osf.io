@@ -2,8 +2,6 @@ from django.conf import settings as drf_settings
 from django.conf.urls import include, url
 from django.conf.urls.static import static
 from django.views.generic.base import RedirectView
-from django.contrib import admin
-
 
 from . import views
 from . import settings
@@ -13,7 +11,6 @@ default_version = versioning.decimal_version_to_url_path(settings.REST_FRAMEWORK
 
 # Please keep URLs alphabetized for auto-generated documentation
 urlpatterns = [
-    url(r'^admin/', admin.site.urls),
     url('^(?P<version>(v2))/',
         include(
             [
