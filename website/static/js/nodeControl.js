@@ -23,7 +23,6 @@ var NodesPrivacy = require('js/nodesPrivacy').NodesPrivacy;
  */
 var ProjectViewModel = function(data, options) {
     var self = this;
-
     self._id = data.node.id;
     self.apiUrl = data.node.api_url;
     self.dateCreated = new $osf.FormattableDate(data.node.date_created);
@@ -42,12 +41,22 @@ var ProjectViewModel = function(data, options) {
     self.node = data.node;
     self.description = ko.observable(data.node.description ? data.node.description : '');
     self.title = data.node.title;
-    self.categoryValue = ko.observable(data.node.category_short);
+    self.hideCategory = ko.computed(function(){
+        return typeof self.node === 'undefined';
+    });
+    self.currentCategory = ko.observable(data.node.category_short);
+    self.selectedCategory = ko.observable(self.currentCategory());
+    self.setCategory = function(category){
+        self.selectedCategory(category);
+    };
+    self.categoryOptions = (options && options.categories) || {};
+    self.cancelCategoryUpdate = function() {
+        self.selectedCategory(self.currentCategory());
+    };
     self.isRegistration = data.node.is_registration;
     self.user = data.user;
     self.nodeIsPublic = data.node.is_public;
     self.nodeType = data.node.node_type;
-
     self.nodeIsPendingEmbargoTermination = ko.observable(data.node.is_pending_embargo_termination);
     self.makePublicTooltip = ko.computed(function() {
         if(self.nodeIsPendingEmbargoTermination()) {
@@ -60,10 +69,19 @@ var ProjectViewModel = function(data, options) {
         return !!(self.user.username && (self.nodeIsPublic || self.user.has_read_permissions));
     });
 
-    // Add icon to title
-    self.icon = ko.pureComputed(function() {
-        var category = self.categoryValue();
-        return iconmap.projectComponentIcons[category];
+    self.updateCategory = function() {
+        var payload = {'name': 'category', 'pk': self._id, 'value': self.selectedCategory()};
+        $osf.postJSON(self.apiUrl + 'edit/', payload)
+            .done(function(){
+                self.currentCategory(self.selectedCategory());
+            })
+            .fail(function() {
+                $osf.growl('Error', 'Unable to update this ' + self.nodeType + '\'s category. Please try again.', 'danger');
+            });
+    };
+
+    self.showCategoryButtons = ko.pureComputed(function(){
+        return self.userCanEdit && self.selectedCategory() !== self.currentCategory();
     });
 
     // Editable Title and Description
@@ -104,7 +122,7 @@ var ProjectViewModel = function(data, options) {
             }
         }));
 
-        var project_or_component_label = self.categoryValue() === 'project' ? 'project' : 'component';
+        var project_or_component_label = self.nodeType === 'project' ? 'project' : 'component';
         $('#nodeDescriptionEditable').editable($.extend({}, editableOptions, {
             name: 'description',
             title: 'Edit Description',
@@ -118,22 +136,6 @@ var ProjectViewModel = function(data, options) {
             }
         }));
 
-        var categories = (options && options.categories) || {};
-        var categoryOptions = $.map(categories, function(item) {
-            return {value: item.value, text: item.display_name};
-        });
-        $('#nodeCategoryEditable').editable($.extend({}, editableOptions, {
-            type: 'select',
-            name: 'category',
-            title: 'Select a category',
-            value: self.categoryValue(),
-            source: categoryOptions,
-            success: function(response, newValue) {
-                newValue = response.newValue;
-                self.categoryValue(newValue);
-                return {newValue: newValue};
-            }
-        }));
     } else {
       $('#nodeDescriptionEditable').html($osf.linkifyText(self.description()));
     }

@@ -849,3 +849,11 @@ table.add-links {
 .comment-box {
     padding-bottom: 25px;
 }
+
+.node-category {
+    display: inline-block;
+}
+
+.submit-category {
+    margin-left: 5px;
+}
