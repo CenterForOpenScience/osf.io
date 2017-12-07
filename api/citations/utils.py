@@ -173,7 +173,7 @@ def apa_name(name):
 
 def mla_reformat(node, cit):
     contributors_list = [x for x in node.contributors if node.get_visible(x)]
-
+    retrive_from = cit.split('Open')[-1]
     # throw error if there is no visible contributor
     if len(contributors_list) == 0:
         raise HTTPError(http.BAD_REQUEST)
@@ -196,7 +196,7 @@ def mla_reformat(node, cit):
         name = process_name(node, contributors_list[0])
         new_mla = mla_name(name, initial=True) + ' et al. '
     cit = new_mla
-    cit += u' \u201c' + node.title.title() + u'.\u201d Open' + cit.split('Open')[-1]
+    cit += u' \u201c' + node.title.title() + u'.\u201d Open' + retrive_from
     return cit
 
 
@@ -223,7 +223,7 @@ def chicago_reformat(node, cit):
             new_chi = first_one + 'and ' + last_one + ' '
     # handle 8 or more contributors
     else:
-        new_chi = mla_name(process_name(node, contributors_list[0]), initial=True)
+        new_chi = mla_name(process_name(node, contributors_list[0]), initial=True).rstrip(', ')
         name_list = [mla_name(process_name(node, x)) for x in contributors_list[1:7]]
         rest = ', '.join(name_list) + ' et al. '
         new_chi += ', ' + rest
