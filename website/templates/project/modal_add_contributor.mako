@@ -98,63 +98,63 @@
                                                     </span><br>
                                                 </span>
                                                 <span data-bind="visible: contributor.social.personal">
-                                                    <a data-bind="attr: {href: contributor.social.personal}" data-toggle="tooltip" title="Personal Website">
+                                                    <a data-bind="attr: {href: contributor.social.personal}" data-toggle="tooltip" title="Personal Website"  target="_blank">
                                                         <i class="fa fa-globe social-icons fa-lg"></i>
                                                     </a>
                                                 </span>
 
                                                 <span data-bind="visible: contributor.social.twitter">
-                                                    <a data-bind="attr: {href: contributor.social.twitter}" data-toggle="tooltip" title="Twitter">
+                                                    <a data-bind="attr: {href: contributor.social.twitter}" data-toggle="tooltip" title="Twitter" target="_blank">
                                                         <i class="fa fa-twitter social-icons fa-lg"></i>
                                                     </a>
                                                 </span>
                                                 <span data-bind="visible: contributor.social.github">
-                                                    <a data-bind="attr: {href: contributor.social.github}" data-toggle="tooltip" title="Github">
+                                                    <a data-bind="attr: {href: contributor.social.github}" data-toggle="tooltip" title="Github" target="_blank">
                                                         <i class="fa fa-github-alt social-icons fa-lg"></i>
                                                     </a>
                                                 </span>
                                                 <span data-bind="visible: contributor.social.linkedIn" >
-                                                    <a data-bind="attr: {href: contributor.social.linkedIn}" data-toggle="tooltip" title="LinkedIn">
+                                                    <a data-bind="attr: {href: contributor.social.linkedIn}" data-toggle="tooltip" title="LinkedIn" target="_blank">
                                                         <i class="fa fa-linkedin social-icons fa-lg"></i>
                                                     </a>
                                                 </span>
                                                 <span data-bind="visible: contributor.social.scholar">
-                                                    <a data-bind="attr: {href: contributor.social.scholar}" data-toggle="tooltip" title="Google Scholar">
+                                                    <a data-bind="attr: {href: contributor.social.scholar}" data-toggle="tooltip" title="Google Scholar" target="_blank">
                                                         <img class="social-icons fa-lg" src="/static/img/googlescholar.png">
                                                     </a>
                                                 </span>
                                                 <span data-bind="visible: contributor.social.impactStory">
-                                                    <a data-bind="attr: {href: contributor.social.impactStory}" data-toggle="tooltip" title="ImpactStory">
+                                                    <a data-bind="attr: {href: contributor.social.impactStory}" data-toggle="tooltip" title="ImpactStory" target="_blank">
                                                         <i class="fa fa-info-circle social-icons fa-lg"></i>
                                                     </a>
                                                 </span>
                                                 <span data-bind="visible: contributor.social.orcid">
-                                                    <a data-bind="attr: {href: contributor.social.orcid}" data-toggle="tooltip" title="ORCiD">
+                                                    <a data-bind="attr: {href: contributor.social.orcid}" data-toggle="tooltip" title="ORCiD" target="_blank">
                                                         <i class="fa social-icons fa-lg">iD</i>
                                                     </a>
                                                 </span>
                                                 <span data-bind="visible: contributor.social.researcherId">
-                                                    <a data-bind="attr: {href: contributor.social.researcherId}" data-toggle="tooltip" title="ResearcherID">
+                                                    <a data-bind="attr: {href: contributor.social.researcherId}" data-toggle="tooltip" title="ResearcherID" target="_blank">
                                                         <i class="fa social-icons fa-lg">R</i>
                                                     </a>
                                                 </span>
                                                 <span data-bind="visible: contributor.social.researchGate">
-                                                    <a data-bind="attr: {href: contributor.social.researchGate}" data-toggle="tooltip" title="ResearchGate">
+                                                    <a data-bind="attr: {href: contributor.social.researchGate}" data-toggle="tooltip" title="ResearchGate" target="_blank">
                                                         <img class="social-icons p-b-xs" src="/static/img/researchgate.jpg"></i>
                                                     </a>
                                                 </span>
                                                 <span data-bind="visible: contributor.social.academiaInstitution + social.academiaProfileID">
-                                                    <a data-bind="attr: {href: contributor.social.academiaInstitution + social.academiaProfileID}" data-toggle="tooltip" title="Academia">
+                                                    <a data-bind="attr: {href: contributor.social.academiaInstitution + social.academiaProfileID}" data-toggle="tooltip" title="Academia" target="_blank">
                                                         <i class="fa social-icons fa-lg">A</i>
                                                     </a>
                                                 </span>
                                                 <span data-bind="visible: contributor.social.baiduScholar">
-                                                    <a data-bind="attr: {href: contributor.social.baiduScholar}" data-toggle="tooltip" title="Baidu Scholar">
+                                                    <a data-bind="attr: {href: contributor.social.baiduScholar}" data-toggle="tooltip" title="Baidu Scholar" target="_blank">
                                                         <img class="social-icons fa-lg" src="/static/img/baiduscholar.png">
                                                     </a>
                                                 </span>
                                                 <span data-bind="visible: contributor.social.ssrn">
-                                                    <a data-bind="attr: {href: contributor.social.ssrn}" data-toggle="tooltip" title="SSRN">
+                                                    <a data-bind="attr: {href: contributor.social.ssrn}" data-toggle="tooltip" title="SSRN" target="_blank">
                                                         <img class="social-icons fa-lg" src="/static/img/SSRN.png">
                                                     </a>
                                                 </span>
