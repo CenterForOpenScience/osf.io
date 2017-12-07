@@ -279,7 +279,8 @@ class NodeList(JSONAPIBaseView, bulk_views.BulkUpdateJSONAPIView, bulk_views.Bul
     ordering = ('-modified', )  # default ordering
 
     # overrides NodesFilterMixin
-    @require_flag('test_flag')
+    # Uncomment below to see require_flag in action (test_flag needs to be set in admin app)
+    # @require_flag('test_flag')
     def get_default_queryset(self):
         return default_node_list_permission_queryset(user=self.request.user, model_cls=Node)
 

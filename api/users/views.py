@@ -16,6 +16,7 @@ from api.base.utils import (default_node_list_queryset,
                             get_object_or_error,
                             get_user_auth)
 from api.base.views import JSONAPIBaseView, WaterButlerMixin
+from api.base.waffle_decorators import require_sample
 from api.institutions.serializers import InstitutionSerializer
 from api.nodes.filters import NodesFilterMixin
 from api.nodes.serializers import NodeSerializer
@@ -155,6 +156,8 @@ class UserList(JSONAPIBaseView, generics.ListAPIView, ListFilterMixin):
     view_category = 'users'
     view_name = 'user-list'
 
+    # Uncomment below to see require_sample in action - test_sample needs to be set in admin app
+    # @require_sample('test_sample')
     def get_default_queryset(self):
         if self.request.version >= '2.3':
             return OSFUser.objects.filter(is_registered=True, date_disabled__isnull=True, merged_by__isnull=True)
