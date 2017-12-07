@@ -900,7 +900,10 @@ class LinksField(ser.Field):
             else:
                 ret[name] = url
         if hasattr(obj, 'get_absolute_url') and 'self' not in self.links:
-            ret['self'] = self.extend_absolute_url(obj)
+            extended_url = self.extend_absolute_url(obj)
+            ret['self'] = extended_url
+            if 'info' in ret:
+                ret['info'] = extended_url
         return ret
 
 
