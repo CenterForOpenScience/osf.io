@@ -73,35 +73,34 @@ $(document).ready(function(){
                                 m(columnSizeClass, m.component(NewAndNoteworthy, {}))
                             ])
 
-                            ]
-                        )),
-                        /*
-                        m('.prereg', m('.container',
-                            [
-                                m('.row', [
-                                    m(columnSizeClass,  m.component(Prereg, {}))
-                                ])
-                            ]
-                        )),
-                        */
-                        m('.meetings', m('.container',
-                            [
-                                m('.row', [
-                                    m(columnSizeClass,  m.component(MeetingsAndConferences, {}))
-                                ])
+                        ]
+                    )),
+                    /*
+                    m('.prereg', m('.container',
+                        [
+                            m('.row', [
+                                m(columnSizeClass,  m.component(Prereg, {}))
+                            ])
+                        ]
+                    )),
+                    */
+                    m('.meetings', m('.container',
+                        [
+                            m('.row', [
+                                m(columnSizeClass,  m.component(MeetingsAndConferences, {}))
+                            ])
 
-                            ]
-                        )),
-                        m('.preprints', m('.container',
-                            [
-                                m('.row', [
-                                    m(columnSizeClass,  m.component(Preprints, {}))
-                                ])
+                        ]
+                    )),
+                    m('.preprints', m('.container',
+                        [
+                            m('.row', [
+                                m(columnSizeClass,  m.component(Preprints, {}))
+                            ])
 
-                            ]
-                        ))
-                    ];
-                }
+                        ]
+                    ))
+                ];
             }
         }
     };
