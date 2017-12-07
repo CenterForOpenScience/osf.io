@@ -281,6 +281,24 @@ def node_addons(auth, node, **kwargs):
 
     ret = _view_project(node, auth, primary=True)
 
+    addon_settings = serialize_addons(node)
+
+    ret['addon_capabilities'] = settings.ADDON_CAPABILITIES
+
+    # If an addon is default you cannot connect/disconnect so we don't have to load it.
+    ret['addon_settings'] = [addon for addon in addon_settings]
+
+    # Addons can have multiple categories, but we only want a set of unique ones being used.
+    ret['addon_categories'] = set([item for addon in addon_settings for item in addon['categories']])
+
+    # The page only needs to load enabled addons and it refreshes when a new addon is being enabled.
+    ret['addon_js'] = collect_node_config_js([addon for addon in addon_settings if addon['enabled']])
+
+    return ret
+
+
+def serialize_addons(node):
+
     addon_settings = []
     addons_available = [addon for addon in settings.ADDONS_AVAILABLE
                         if addon not in settings.SYSTEM_ADDED_ADDONS['node']
@@ -296,18 +314,12 @@ def node_addons(auth, node, **kwargs):
         config['addon_full_name'] = addon.full_name
         config['categories'] = addon.categories
         config['enabled'] = node.has_addon(addon.short_name)
-        config['default'] = addon.short_name in ['osfstorage']
+        config['default'] = addon.short_name in settings.ADDONS_DEFAULT
         addon_settings.append(config)
 
     addon_settings = sorted(addon_settings, key=lambda addon: addon['full_name'].lower())
 
-    ret['addon_capabilities'] = settings.ADDON_CAPABILITIES
-    ret['addon_categories'] = set([item for addon in addon_settings for item in addon['categories']])
-    ret['addon_settings'] = addon_settings
-    ret['addon_js'] = collect_node_config_js([addon for addon in addon_settings if addon['enabled']])
-
-    return ret
-
+    return addon_settings
 
 def collect_node_config_js(addons):
     """Collect webpack bundles for each of the addons' node-cfg.js modules. Return
@@ -317,9 +329,22 @@ def collect_node_config_js(addons):
     """
     js_modules = []
     for addon in addons:
-        js_path = os.path.join('/', 'static', 'public', 'js', addon['short_name'], 'node-cfg.js')
-        if os.path.exists(js_path):
-            js_modules.append(js_path)
+        source_path = os.path.join(
+            settings.ADDON_PATH,
+            addon['short_name'],
+            'static',
+            'node-cfg.js',
+        )
+        if os.path.exists(source_path):
+            asset_path = os.path.join(
+                '/',
+                'static',
+                'public',
+                'js',
+                addon['short_name'],
+                'node-cfg.js',
+            )
+            js_modules.append(asset_path)
 
     return js_modules
 
