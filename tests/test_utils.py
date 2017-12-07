@@ -2,6 +2,7 @@
 import datetime
 import mock
 import os
+import pytest
 import time
 import unittest
 from django.utils import timezone
@@ -11,7 +12,7 @@ from nose.tools import *  # noqa (PEP8 asserts)
 import blinker
 
 from tests.base import OsfTestCase, DbTestCase
-from osf_tests.factories import RegistrationFactory, UserFactory
+from osf_tests.factories import RegistrationFactory, UserFactory, fake_email
 
 from framework.auth.utils import generate_csl_given_name
 from framework.routing import Rule, json_renderer
@@ -21,7 +22,7 @@ from website import settings
 from website import util
 from website.util import paths
 from website.util.mimetype import get_mimetype
-from website.util import web_url_for, api_url_for, is_json_request, waterbutler_url_for, conjunct, api_v2_url
+from website.util import web_url_for, api_url_for, is_json_request, waterbutler_api_url_for, conjunct, api_v2_url
 from website.project import utils as project_utils
 from website.profile import utils as profile_utils
 from website.util.time import throttle_period_expired
@@ -54,7 +55,6 @@ class TestTimeUtils(unittest.TestCase):
 
         is_expired = throttle_period_expired(timestamp=(timestamp - 31), throttle=30)
         assert_true(is_expired)
-
 
 class TestUrlForHelpers(unittest.TestCase):
 
@@ -204,48 +204,24 @@ class TestUrlForHelpers(unittest.TestCase):
         with self.app.test_request_context(content_type='application/json;charset=UTF-8'):
             assert_true(is_json_request())
 
-    def test_waterbutler_url_for(self):
+    def test_waterbutler_api_url_for(self):
         with self.app.test_request_context():
-            url = waterbutler_url_for('upload', 'provider', 'path', mock.Mock(_id='_id'))
+            url = waterbutler_api_url_for('fakeid', 'provider', '/path')
+        assert_in('/fakeid/', url)
+        assert_in('/path', url)
+        assert_in('/providers/provider/', url)
+        assert_in(settings.WATERBUTLER_URL, url)
 
-        assert_in('nid=_id', url)
-        assert_in('/file?', url)
-        assert_in('path=path', url)
-        assert_in('provider=provider', url)
-
-    def test_waterbutler_url_for_internal(self):
+    def test_waterbutler_api_url_for_internal(self):
         settings.WATERBUTLER_INTERNAL_URL = 'http://1.2.3.4:7777'
         with self.app.test_request_context():
-            url = waterbutler_url_for('upload', 'provider', 'path', mock.Mock(_id='_id'), _internal=True)
+            url = waterbutler_api_url_for('fakeid', 'provider', '/path', _internal=True)
 
         assert_not_in(settings.WATERBUTLER_URL, url)
         assert_in(settings.WATERBUTLER_INTERNAL_URL, url)
-        assert_in('nid=_id', url)
-        assert_in('/file?', url)
-        assert_in('path=path', url)
-        assert_in('provider=provider', url)
-
-    def test_waterbutler_url_for_implicit_cookie(self):
-        with self.app.test_request_context() as context:
-            context.request.cookies = {settings.COOKIE_NAME: 'cookie'}
-            url = waterbutler_url_for('upload', 'provider', 'path', mock.Mock(_id='_id'))
-
-        assert_in('nid=_id', url)
-        assert_in('/file?', url)
-        assert_in('path=path', url)
-        assert_in('cookie=cookie', url)
-        assert_in('provider=provider', url)
-
-    def test_waterbutler_url_for_cookie_not_required(self):
-        with self.app.test_request_context():
-            url = waterbutler_url_for('upload', 'provider', 'path', mock.Mock(_id='_id'))
-
-        assert_not_in('cookie', url)
-
-        assert_in('nid=_id', url)
-        assert_in('/file?', url)
-        assert_in('path=path', url)
-        assert_in('provider=provider', url)
+        assert_in('/fakeid/', url)
+        assert_in('/path', url)
+        assert_in('/providers/provider', url)
 
 
 class TestGetMimeTypes(unittest.TestCase):
@@ -434,13 +410,13 @@ class TestProfileUtils(DbTestCase):
     def setUp(self):
         self.user = UserFactory()
 
-    def test_get_other_user_gravatar_default_size(self):
-        gravitar = profile_utils.get_gravatar(self.user)
-        assert_true(gravitar)
+    def test_get_other_user_profile_image_default_size(self):
+        profile_image = profile_utils.get_profile_image_url(self.user)
+        assert_true(profile_image)
 
-    def test_get_other_user_gravatar_specific_size(self):
-        gravitar = profile_utils.get_gravatar(self.user, size=25)
-        assert_true(gravitar)
+    def test_get_other_user_profile_image(self):
+        profile_image = profile_utils.get_profile_image_url(self.user, size=25)
+        assert_true(profile_image)
 
 
 class TestSignalUtils(unittest.TestCase):
@@ -496,3 +472,22 @@ class TestUserUtils(unittest.TestCase):
         given_name = 'Cause'
         csl_given_name = generate_csl_given_name(given_name)
         assert_equal(csl_given_name, 'Cause')
+
+
+@pytest.mark.django_db
+class TestUserFactoryConflict:
+
+    def test_build_create_user_time_conflict(self):
+        # Test that build and create user factories do not create conflicting usernames 
+        # because they occured quickly
+        user_email_one = fake_email()
+        user_email_two = fake_email()
+        assert user_email_one != user_email_two
+
+        user_one_build = UserFactory.build()
+        user_two_build = UserFactory.build()
+        assert user_one_build.username != user_two_build.username
+
+        user_one_create = UserFactory()
+        user_two_create = UserFactory()
+        assert user_one_create.username != user_two_create.username

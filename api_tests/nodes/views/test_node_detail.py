@@ -22,6 +22,7 @@ from osf_tests.factories import (
     NodeLicenseRecordFactory,
     PrivateLinkFactory,
     PreprintFactory,
+    IdentifierFactory,
 )
 from rest_framework import exceptions
 from tests.base import fake
@@ -321,30 +322,6 @@ class NodeCRUDTestCase:
 
 @pytest.mark.django_db
 class TestNodeUpdate(NodeCRUDTestCase):
-
-    def test_select_for_update(self, app, user, title_new, description_new, category_new, project_public, url_public):
-        with transaction.atomic(), CaptureQueriesContext(connection) as ctx:
-            res = app.put_json_api(url_public, {
-                'data': {
-                    'id': project_public._id,
-                    'type': 'nodes',
-                    'attributes': {
-                        'title': title_new,
-                        'description': description_new,
-                        'category': category_new,
-                        'public': True
-                    }
-                }
-            }, auth=user.auth)
-
-        assert res.status_code == 200
-        assert res.content_type == 'application/vnd.api+json'
-        assert res.json['data']['attributes']['title'] == title_new
-        assert res.json['data']['attributes']['description'] == description_new
-        assert res.json['data']['attributes']['category'] == category_new
-
-        for_update_sql = connection.ops.for_update_sql()
-        assert any(for_update_sql in query['sql'] for query in ctx.captured_queries)
 
     def test_node_update_invalid_data(self, app, user, url_public):
         res = app.put_json_api(url_public, 'Incorrect data', auth=user.auth, expect_errors=True)
@@ -851,6 +828,25 @@ class TestNodeUpdate(NodeCRUDTestCase):
         )
         assert res.status_code == 200
 
+    @mock.patch('website.preprints.tasks.update_ezid_metadata_on_change.s')
+    def test_set_node_private_updates_ezid(self, mock_update_ezid_metadata, app, user, project_public, url_public, make_node_payload):
+        IdentifierFactory(referent=project_public, category='doi')
+        res = app.patch_json_api(url_public, make_node_payload(project_public, {'public': False}), auth=user.auth)
+        assert res.status_code == 200
+        project_public.reload()
+        assert not project_public.is_public
+        mock_update_ezid_metadata.assert_called_with(project_public._id, status='unavailable')
+
+    @mock.patch('website.preprints.tasks.update_ezid_metadata_on_change')
+    def test_set_node_with_preprint_private_updates_ezid(self, mock_update_ezid_metadata, app, user, project_public, url_public, make_node_payload):
+        target_object = PreprintFactory(project=project_public)
+
+        res = app.patch_json_api(url_public, make_node_payload(project_public, {'public': False}), auth=user.auth)
+        assert res.status_code == 200
+        project_public.reload()
+        assert not project_public.is_public
+        mock_update_ezid_metadata.assert_called_with(target_object._id, status='unavailable')
+
 
 @pytest.mark.django_db
 class TestNodeDelete(NodeCRUDTestCase):
@@ -924,6 +920,14 @@ class TestNodeDelete(NodeCRUDTestCase):
     @mock.patch('website.preprints.tasks.update_ezid_metadata_on_change.s')
     def test_delete_node_with_preprint_calls_preprint_update_status(self, mock_update_ezid_metadata_on_change, app, user, project_public, url_public):
         PreprintFactory(project=project_public)
+        app.delete_json_api(url_public, auth=user.auth, expect_errors=True)
+        project_public.reload()
+
+        assert mock_update_ezid_metadata_on_change.called
+
+    @mock.patch('website.preprints.tasks.update_ezid_metadata_on_change.s')
+    def test_delete_node_with_identifier_calls_preprint_update_status(self, mock_update_ezid_metadata_on_change, app, user, project_public, url_public):
+        IdentifierFactory(referent=project_public, category='doi')
         app.delete_json_api(url_public, auth=user.auth, expect_errors=True)
         project_public.reload()
 

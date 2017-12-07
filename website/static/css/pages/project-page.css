@@ -189,3 +189,62 @@ div.arrow-up {
 #nodesPrivacy #tb-tbody {
     max-height: 300px;
 }
+
+.addon-table{
+    width: 100%;
+    border: 1px solid lightgrey;
+}
+
+.addon-table td, .addon-table tr{
+    border: 1px solid lightgrey;
+
+}
+
+.addon-container {
+    padding: 10px;
+}
+
+li.addon-categories.active a{
+    background-color: #ddd;
+    color: black;
+}
+
+li.addon-categories.active>a:focus, li.addon-categories.active>a:hover{
+    background-color: #ddd;
+    color: black;
+}
+
+li.addon-categories a{
+    color: black;
+}
+
+.addon-list {
+    overflow-y: scroll;
+    overflow-x: hidden;
+    padding-left: 20px;
+    max-height: 300px;
+    min-height: 300px;
+}
+
+.select-addon-panel {
+    margin-left: 85px;
+    margin-right: 85px;
+    margin: 10px;
+}
+
+#filter-addons {
+    width: 100%;
+    padding: 10px;
+    padding-left: 10px;
+    border: 0px;
+}
+
+.addon-category-list {
+    vertical-align: baseline;
+    width:30%;
+}
+/*Moves maintenence alert under project header*/
+#maintenance.alert {
+    position: relative;
+    top: 45px;
+}

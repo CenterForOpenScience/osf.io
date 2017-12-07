@@ -27,8 +27,8 @@ class NodeSummary(SummaryAnalytics):
         timestamp_datetime = datetime(date.year, date.month, date.day).replace(tzinfo=pytz.UTC)
         query_datetime = timestamp_datetime + timedelta(1)
 
-        node_query = {'is_deleted': False, 'date_created__lte': query_datetime}
-        project_query = dict(chain(node_query.iteritems(), {'parent_nodes__isnull': True}.iteritems()))
+        node_query = {'is_deleted': False, 'created__lte': query_datetime}
+        project_query = node_query
 
         public_query = {'is_public': True}
         private_query = {'is_public': False}
@@ -53,9 +53,9 @@ class NodeSummary(SummaryAnalytics):
             },
             # Projects - the number of top-level only projects
             'projects': {
-                'total': Node.objects.filter(**project_query).count(),
-                'public': Node.objects.filter(**project_public_query).count(),
-                'private': Node.objects.filter(**project_private_query).count(),
+                'total': Node.objects.filter(**project_query).get_roots().count(),
+                'public': Node.objects.filter(**project_public_query).get_roots().count(),
+                'private': Node.objects.filter(**project_private_query).get_roots().count(),
             },
             # Registered Nodes - the number of registered projects and components
             'registered_nodes': {
@@ -66,10 +66,10 @@ class NodeSummary(SummaryAnalytics):
             },
             # Registered Projects - the number of registered top level projects
             'registered_projects': {
-                'total': Registration.objects.filter(**project_query).count(),
-                'public': Registration.objects.filter(**project_public_query).count(),
-                'embargoed': Registration.objects.filter(**project_private_query).count(),
-                'withdrawn': Registration.objects.filter(**project_retracted_query).count(),
+                'total': Registration.objects.filter(**project_query).get_roots().count(),
+                'public': Registration.objects.filter(**project_public_query).get_roots().count(),
+                'embargoed': Registration.objects.filter(**project_private_query).get_roots().count(),
+                'withdrawn': Registration.objects.filter(**project_retracted_query).get_roots().count(),
             }
         }
 

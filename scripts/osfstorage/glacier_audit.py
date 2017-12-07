@@ -12,7 +12,6 @@ import logging
 from boto.glacier.layer2 import Layer2
 from dateutil.parser import parse as parse_date
 from dateutil.relativedelta import relativedelta
-from django.db.models import Q
 
 from framework.celery_tasks import app as celery_app
 
@@ -67,9 +66,7 @@ def get_job(vault, job_id=None):
 
 def get_targets(date):
     return FileVersion.objects.filter(
-        date_created__lt=date - DELTA_DATE, metadata__has_key='archive', location__isnull=False
-    ).exclude(
-        status='cached'
+        created__lt=date - DELTA_DATE, metadata__has_key='archive', location__isnull=False
     ).iterator()
 
 

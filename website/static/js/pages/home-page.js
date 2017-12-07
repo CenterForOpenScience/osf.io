@@ -36,9 +36,7 @@ $(document).ready(function(){
                 return [
                     m(DonateBanner.background, m('.container',
                         [
-                            m('.row', [
-                                m(columnSizeClass,  m.component(DonateBanner.Banner, {}))
-                            ])
+                            m(columnSizeClass, m.component(DonateBanner.Banner, {}))
                         ]
                     )),
                     m('.prereg-banner', m('.container',
@@ -75,35 +73,35 @@ $(document).ready(function(){
                                 m(columnSizeClass, m.component(NewAndNoteworthy, {}))
                             ])
 
-                        ]
-                    )),
-                    /*
-                    m('.prereg', m('.container',
-                        [
-                            m('.row', [
-                                m(columnSizeClass,  m.component(Prereg, {}))
-                            ])
-                        ]
-                    )),
-                    */
-                    m('.meetings', m('.container',
-                        [
-                            m('.row', [
-                                m(columnSizeClass,  m.component(MeetingsAndConferences, {}))
-                            ])
+                            ]
+                        )),
+                        /*
+                        m('.prereg', m('.container',
+                            [
+                                m('.row', [
+                                    m(columnSizeClass,  m.component(Prereg, {}))
+                                ])
+                            ]
+                        )),
+                        */
+                        m('.meetings', m('.container',
+                            [
+                                m('.row', [
+                                    m(columnSizeClass,  m.component(MeetingsAndConferences, {}))
+                                ])
 
-                        ]
-                    )),
-                    m('.preprints', m('.container',
-                        [
-                            m('.row', [
-                                m(columnSizeClass,  m.component(Preprints, {}))
-                            ])
+                            ]
+                        )),
+                        m('.preprints', m('.container',
+                            [
+                                m('.row', [
+                                    m(columnSizeClass,  m.component(Preprints, {}))
+                                ])
 
-                        ]
-                    ))
-                ];
-
+                            ]
+                        ))
+                    ];
+                }
             }
         }
     };

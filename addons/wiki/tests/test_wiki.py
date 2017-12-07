@@ -14,7 +14,7 @@ from nose.tools import *  # noqa
 from tests.base import OsfTestCase, fake
 from osf_tests.factories import (
     UserFactory, NodeFactory, ProjectFactory,
-    AuthUserFactory
+    AuthUserFactory, RegistrationFactory
 )
 from addons.wiki.tests.factories import NodeWikiFactory
 
@@ -170,13 +170,13 @@ class TestWikiViews(OsfTestCase):
         # note: forward slashes not allowed in page_name
         page_name = fake.catch_phrase().replace('/', ' ')
 
-        old_wiki_page_count = NodeWikiPage.find().count()
+        old_wiki_page_count = NodeWikiPage.objects.all().count()
         url = self.project.web_url_for('project_wiki_edit_post', wname=page_name)
         # User submits to edit form with no content
         res = self.app.post(url, {'content': ''}, auth=self.user.auth).follow()
         assert_equal(res.status_code, 200)
 
-        new_wiki_page_count = NodeWikiPage.find().count()
+        new_wiki_page_count = NodeWikiPage.objects.all().count()
         # A new wiki page was created in the db
         assert_equal(new_wiki_page_count, old_wiki_page_count + 1)
 
@@ -190,13 +190,13 @@ class TestWikiViews(OsfTestCase):
         page_name = fake.catch_phrase().replace('/', ' ')
         page_content = fake.bs()
 
-        old_wiki_page_count = NodeWikiPage.find().count()
+        old_wiki_page_count = NodeWikiPage.objects.all().count()
         url = self.project.web_url_for('project_wiki_edit_post', wname=page_name)
         # User submits to edit form with no content
         res = self.app.post(url, {'content': page_content}, auth=self.user.auth).follow()
         assert_equal(res.status_code, 200)
 
-        new_wiki_page_count = NodeWikiPage.find().count()
+        new_wiki_page_count = NodeWikiPage.objects.all().count()
         # A new wiki page was created in the db
         assert_equal(new_wiki_page_count, old_wiki_page_count + 1)
 
@@ -459,6 +459,15 @@ class TestWikiViews(OsfTestCase):
         res = self.app.get(url)
         assert_equal(res.status_code, 200)
         assert_not_in('data-osf-panel="Edit"', res.text)
+
+    def test_wiki_widget_not_show_in_registration_for_contributor(self):
+        registration = RegistrationFactory(project=self.project)
+        res = self.app.get(
+            registration.web_url_for('view_project'),
+            auth=self.user.auth
+        )
+        assert_equal(res.status_code, 200)
+        assert_not_in('Add important information, links, or images here to describe your project.', res.text)
 
 
 class TestViewHelpers(OsfTestCase):
@@ -1231,6 +1240,7 @@ class TestPublicWiki(OsfTestCase):
                 'id': node._id,
                 'title': node.title,
                 'url': node.url,
+                'is_public': True
             },
             'children': [
                 {
@@ -1243,7 +1253,8 @@ class TestPublicWiki(OsfTestCase):
             'kind': 'folder',
             'nodeType': 'component',
             'category': 'hypothesis',
-            'permissions': {'view': True}
+            'permissions': {'view': True,
+                            'admin': True}
         }]
 
         assert_equal(data, expected)

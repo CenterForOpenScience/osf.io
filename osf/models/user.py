@@ -24,7 +24,6 @@ from django.db.models.signals import post_save
 from django.db import models
 from django.utils import timezone
 
-from django_extensions.db.models import TimeStampedModel
 from framework.auth import Auth, signals, utils
 from framework.auth.core import generate_verification_key
 from framework.auth.exceptions import (ChangePasswordError, ExpiredTokenError,
@@ -45,6 +44,7 @@ from osf.models.validators import validate_email, validate_social, validate_hist
 from osf.utils.datetime_aware_jsonfield import DateTimeAwareJSONField
 from osf.utils.fields import NonNaiveDateTimeField, LowercaseEmailField
 from osf.utils.names import impute_names
+from osf.utils.requests import check_select_for_update
 from website import settings as website_settings
 from website import filters, mails
 from website.project import new_bookmark_collection
@@ -55,6 +55,7 @@ MAX_QUICKFILES_MERGE_RENAME_ATTEMPTS = 1000
 
 def get_default_mailing_lists():
     return {'Open Science Framework Help': True}
+
 
 name_formatters = {
     'long': lambda user: user.fullname,
@@ -101,7 +102,7 @@ class OSFUserManager(BaseUserManager):
         return user
 
 
-class Email(BaseModel, TimeStampedModel):
+class Email(BaseModel):
     address = LowercaseEmailField(unique=True, db_index=True, validators=[validate_email])
     user = models.ForeignKey('OSFUser', related_name='emails', on_delete=models.CASCADE)
 
@@ -470,7 +471,8 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
         return utils.generate_csl_given_name(self.given_name, self.middle_names, self.suffix)
 
     def csl_name(self, node_id=None):
-        if self.is_registered:
+        # disabled users are set to is_registered = False but have a fullname
+        if self.is_registered or self.is_disabled:
             name = self.fullname
         else:
             name = self.get_unclaimed_record(node_id)['name']
@@ -563,6 +565,11 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
 
         :param user: A User object to be merged.
         """
+
+        # Attempt to prevent self merges which end up removing self as a contributor from all projects
+        if self == user:
+            raise ValueError('Cannot merge a user into itself')
+
         # Fail if the other user has conflicts.
         if not user.can_be_merged:
             raise MergeConflictError('Users cannot be merged')
@@ -657,7 +664,7 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
         # - projects where the user was a contributor
         for node in user.contributed:
             # Skip bookmark collection node
-            if node.is_bookmark_collection:
+            if node.is_bookmark_collection or node.is_quickfiles:
                 continue
             # if both accounts are contributor of the same project
             if node.is_contributor(self) and node.is_contributor(user):
@@ -681,7 +688,7 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
         from osf.models import BaseFileNode
 
         # - projects where the user was the creator
-        user.created.filter(is_bookmark_collection=False).exclude(type=QuickFilesNode._typedmodels_type).update(creator=self)
+        user.nodes_created.filter(is_bookmark_collection=False).exclude(type=QuickFilesNode._typedmodels_type).update(creator=self)
 
         # - file that the user has checked_out, import done here to prevent import error
         for file_node in BaseFileNode.files_checked_out(user=user):
@@ -1129,7 +1136,10 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
 
         # If this email is confirmed on another account, abort
         try:
-            user_to_merge = OSFUser.objects.get(emails__address=email)
+            if check_select_for_update():
+                user_to_merge = OSFUser.objects.filter(emails__address=email).select_for_update().get()
+            else:
+                user_to_merge = OSFUser.objects.get(emails__address=email)
         except OSFUser.DoesNotExist:
             user_to_merge = None
 
@@ -1423,7 +1433,7 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
         user_session = Session.objects.filter(
             data__auth_user_id=self._id
         ).order_by(
-            '-date_modified'
+            '-modified'
         ).first()
 
         if not user_session:

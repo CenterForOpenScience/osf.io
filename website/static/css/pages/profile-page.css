@@ -84,17 +84,13 @@ table.table.table-plain th, table.table.table-plain td {
     height:auto;
 }
 
-/* Profile gravatar
+/* Profile image
 -------------------------------------------------- */
-.profile-gravatar {
+.profile-profile-image {
     float: left;
     width:70px;
     height:70px;
     margin-right: .5em;
-}
-
-#social td:first-child {
-    word-break: break-all;
 }
 
 .fa.toggle-icon {

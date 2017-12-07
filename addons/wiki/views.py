@@ -14,7 +14,7 @@ from framework.flask import redirect
 from addons.wiki.utils import to_mongo_key
 from addons.wiki import settings
 from addons.wiki import utils as wiki_utils
-from website.profile.utils import get_gravatar
+from website.profile.utils import get_profile_image_url
 from website.project.views.node import _view_project
 from website.project.model import has_anonymous_link
 from website.project.decorators import (
@@ -224,11 +224,10 @@ def project_wiki_view(auth, wname, path=None, **kwargs):
     wiki_page = node.get_wiki_page(wiki_name)
     wiki_settings = node.get_addon('wiki')
     can_edit = (
-        auth.logged_in
-        and not node.is_registration
-        and (
-            node.has_permission(auth.user, 'write')
-            or wiki_settings.is_publicly_editable
+        auth.logged_in and not
+        node.is_registration and (
+            node.has_permission(auth.user, 'write') or
+            wiki_settings.is_publicly_editable
         )
     )
     versions = _get_wiki_versions(node, wiki_name, anonymous=anonymous)
@@ -319,7 +318,7 @@ def project_wiki_view(auth, wname, path=None, **kwargs):
                 'draft': node.api_url_for('wiki_page_draft', wname=wiki_name),
             }),
             'web': _get_wiki_web_urls(node, wiki_name),
-            'gravatar': get_gravatar(auth.user, 25),
+            'profile_image': get_profile_image_url(auth.user, 25),
         },
     }
     ret.update(_view_project(node, auth, primary=True))
