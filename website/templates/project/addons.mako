@@ -112,7 +112,7 @@
                     </div>
                 </div>
                 <div style="padding: 10px">
-                    % for addon in [addon for addon in addon_settings if addon['enabled']]:
+                    % for addon in [addon for addon in addon_settings if addon['enabled'] and not addon['default']]:
                         % if addon.get('node_settings_template'):
                             ${render_node_settings(addon)}
                         % endif

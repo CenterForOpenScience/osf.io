@@ -77,7 +77,8 @@ $(function() {
                 type: 'post',
                 contentType: 'application/json',
                 dataType: 'json',
-                beforeSend: $osf.setXHRAuthorization
+                beforeSend: $osf.setXHRAuthorization,
+                crossOrigin: true,
             },
             validate: function(value) {
                 if($.trim(value) === ''){

@@ -226,7 +226,7 @@ class NodeFileCollector(object):
         data = []
         if node.can_view(auth=self.auth):
             serialized_addons = self._collect_addons(node)
-            linked_node_sqs = node.node_relations.filter(is_node_link=True)
+            linked_node_sqs = node.node_relations.filter(is_node_link=True, child=OuterRef('pk'))
             has_write_perm_sqs = Contributor.objects.filter(node=OuterRef('pk'), write=True, user=self.auth.user)
             children = (AbstractNode.objects
                         .filter(is_deleted=False, _parents__parent=node)

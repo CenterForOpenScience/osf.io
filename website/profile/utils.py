@@ -8,13 +8,11 @@ from osf.models.contributor import get_contributor_permissions
 from website.util.permissions import reduce_permissions
 
 
-def get_profile_image_url(user, size=None):
-    if size is None:
-        size = settings.PROFILE_IMAGE_LARGE
+def get_profile_image_url(user, size=settings.PROFILE_IMAGE_MEDIUM):
     return profile_image_url(settings.PROFILE_IMAGE_PROVIDER,
                              user,
                              use_ssl=True,
-                             size=settings.PROFILE_IMAGE_MEDIUM),
+                             size=size)
 
 def serialize_user(user, node=None, admin=False, full=False, is_profile=False, include_node_counts=False):
     """

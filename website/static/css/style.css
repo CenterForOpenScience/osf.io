@@ -696,6 +696,12 @@ div.ball-scale-blue>div {
     overflow: scroll;
 }
 
+/* Add Links Modal
+----------------------- */
+.node-dates {
+    white-space: pre;
+}
+
 /* Password strength check component colors for darker backgrounds  */
 .pv-darkbg .text-danger {
     color: #f97773;
@@ -728,8 +734,8 @@ div.ball-scale-blue>div {
 }
 
 .generic-dropdown button {
-  padding: 4px 12px;
-  line-height: 0;
+    padding: 4px 12px;
+    line-height: 0;
 }
 
 .generic-dropdown ul {
@@ -739,6 +745,68 @@ div.ball-scale-blue>div {
 
 .generic-dropdown a {
     color: #333;
+}
+
+/* Table
+-----------------------*/
+table.add-links tr {
+    padding: 5px;
+  }
+
+table.add-links td {
+    padding: 10px;
+}
+
+table.add-links {
+    width: 100%;
+    margin:0;
+    padding:0;
+    border-collapse: collapse;
+    border-spacing: 0;
+}
+
+.fa-fix-width {
+    width: 20px;
+}
+
+.fa-button {
+    padding: 5px;
+    margin-right: 5px;
+}
+
+@media screen and (max-width: 600px) {
+    table.add-links  {
+        border: 0;
+    }
+
+    table.add-links  tr {
+        border: 1px solid #ddd;
+        margin-bottom: 10px;
+        display: block;
+        border-bottom: 2px solid #ddd;
+    }
+
+    table.add-links  td {
+        display: block;
+        text-align: right;
+        font-size: 13px;
+        border-bottom: 1px dotted #ccc;
+    }
+
+    table.add-links  td:first-child {
+        border-top: 0;
+        text-align: left;
+    }
+
+    table.add-links  td:last-child {
+        border-bottom: 0;
+    }
+
+    table.add-links  td:before {
+        content: attr(data-label);
+        float: left;
+        font-weight: bold;
+    }
 }
 
 .generic-dropdown .fa {
@@ -761,13 +829,14 @@ div.ball-scale-blue>div {
 
 /* Remove gutters between bootstrap cols */
 .row.no-gutters {
-  margin-right: 0;
-  margin-left: 0;
+    margin-right: 0;
+    margin-left: 0;
 }
+
 .row.no-gutters > [class^="col-"],
 .row.no-gutters > [class*=" col-"] {
-  padding-right: 0;
-  padding-left: 0;
+    padding-right: 0;
+    padding-left: 0;
 }
 
 /* counter */
@@ -775,6 +844,7 @@ div.ball-scale-blue>div {
     margin-top: -20px;
     margin-right: 5px;
 }
+
 /* Prevents comment from overlapping with counter*/
 .comment-box {
     padding-bottom: 25px;
