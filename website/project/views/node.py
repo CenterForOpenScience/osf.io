@@ -29,6 +29,7 @@ from website.project.decorators import (
     must_be_valid_project,
     must_have_permission,
     must_not_be_registration,
+    must_not_be_retracted_registration,
 )
 from website.tokens import process_token_or_pass
 from website.util.permissions import ADMIN, READ, WRITE, CREATOR_PERMISSIONS
@@ -241,17 +242,20 @@ def project_before_template(auth, node, **kwargs):
 
 @must_be_valid_project
 @must_be_contributor_or_public_but_not_anonymized
+@must_not_be_registration
 def node_registrations(auth, node, **kwargs):
     return _view_project(node, auth, primary=True, embed_registrations=True)
 
 
 @must_be_valid_project
 @must_be_contributor_or_public_but_not_anonymized
+@must_not_be_retracted_registration
 def node_forks(auth, node, **kwargs):
     return _view_project(node, auth, primary=True, embed_forks=True)
 
 
 @must_be_valid_project
+@must_not_be_retracted_registration
 @must_be_logged_in
 @must_have_permission(READ)
 def node_setting(auth, node, **kwargs):
@@ -357,6 +361,7 @@ def node_choose_addons(auth, node, **kwargs):
 
 
 @must_be_valid_project
+@must_not_be_retracted_registration
 @must_have_permission(READ)
 def node_contributors(auth, node, **kwargs):
     ret = _view_project(node, auth, primary=True)
@@ -521,6 +526,7 @@ def project_reorder_components(node, **kwargs):
 
 @must_be_valid_project
 @must_be_contributor_or_public
+@must_not_be_retracted_registration
 def project_statistics(auth, node, **kwargs):
     ret = _view_project(node, auth, primary=True)
     ret['node']['keenio_read_key'] = node.keenio_read_key
