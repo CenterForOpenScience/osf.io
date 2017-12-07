@@ -211,8 +211,8 @@ def chicago_reformat(node, cit):
     elif len(contributors_list) == 1:
         name = process_name(node, contributors_list[0])
         new_chi = mla_name(name, initial=True) + ' '
-    # handle more than one contributor  but less than 8 contributors
-    elif len(contributors_list) in range(1, 8):
+    # handle more than one contributor  but less than 9 contributors
+    elif len(contributors_list) in range(1, 9):
         first_one = mla_name(process_name(node, contributors_list[0]), initial=True)
         rest_ones = [mla_name(process_name(node, x)) for x in contributors_list[1:-1]]
         last_one = mla_name(process_name(node, contributors_list[-1]))
