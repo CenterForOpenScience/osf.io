@@ -275,8 +275,9 @@ def node_setting(auth, node, **kwargs):
     return ret
 
 @must_be_valid_project
+@must_not_be_registration
 @must_be_logged_in
-@must_have_permission(READ)
+@must_have_permission(WRITE)
 def node_addons(auth, node, **kwargs):
 
     ret = _view_project(node, auth, primary=True)

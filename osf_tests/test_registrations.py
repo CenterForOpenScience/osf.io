@@ -227,7 +227,8 @@ class TestRegisterNode:
         assert registration.is_registration
 
     def test_registered_date(self, registration):
-        assert_datetime_equal(registration.registered_date, timezone.now(), allowance=3000)
+        # allowance increased in OSF-9050, if this fails sporadically again then registrations may need to be optimized or this test reworked
+        assert_datetime_equal(registration.registered_date, timezone.now(), allowance=10000)
 
     def test_registered_addons(self, registration):
         assert (
