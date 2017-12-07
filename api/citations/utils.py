@@ -148,8 +148,8 @@ def apa_reformat(node, cit):
         new_apa += ' & ' + last_one
     # handle 8 or more contributors
     else:
-        name_list = [apa_name(process_name(node, x)) for x in contributors_list[:6]]
-        new_apa = ' '.join(name_list) + '... ' + apa_name(process_name(node, contributors_list[6]))
+        name_list = [apa_name(process_name(node, x)) for x in contributors_list[:5]]
+        new_apa = ' '.join(name_list) + '... ' + apa_name(process_name(node, contributors_list[-1]))
 
     cit = new_apa.rstrip(', ') + ' '
     for x in new_csl[1:]:
@@ -225,7 +225,8 @@ def chicago_reformat(node, cit):
     else:
         new_chi = mla_name(process_name(node, contributors_list[0]), initial=True).rstrip(', ')
         name_list = [mla_name(process_name(node, x)) for x in contributors_list[1:7]]
-        rest = ', '.join(name_list) + ' et al. '
+        rest = ', '.join(name_list)
+        rest = rest.rstrip(",") + ', et al. '
         new_chi += ', ' + rest
 
     cit = new_chi
