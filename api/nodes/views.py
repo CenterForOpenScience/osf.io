@@ -12,6 +12,7 @@ from addons.osfstorage.models import OsfStorageFolder
 from api.addons.serializers import NodeAddonFolderSerializer
 from api.addons.views import AddonSettingsMixin
 from api.base import generic_bulk_views as bulk_views
+from api.base.waffle_decorators import require_flag
 from api.base import permissions as base_permissions
 from api.base.exceptions import (
     InvalidModelValueError,
@@ -278,6 +279,7 @@ class NodeList(JSONAPIBaseView, bulk_views.BulkUpdateJSONAPIView, bulk_views.Bul
     ordering = ('-modified', )  # default ordering
 
     # overrides NodesFilterMixin
+    @require_flag('test_flag')
     def get_default_queryset(self):
         return default_node_list_permission_queryset(user=self.request.user, model_cls=Node)
 
