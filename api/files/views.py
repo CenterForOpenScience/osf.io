@@ -72,15 +72,15 @@ class FileDetail(JSONAPIBaseView, generics.RetrieveUpdateAPIView, FileMixin):
 
     def get_serializer_class(self):
         try:
-            node = self.get_node()
+            target = self.get_target()
         except (NotFound, Gone):
             return FileDetailSerializer
         else:
-            if isinstance(node, QuickFilesNode):
+            if isinstance(target, QuickFilesNode):
                 return QuickFilesDetailSerializer
             return FileDetailSerializer
 
-    def get_node(self):
+    def get_target(self):
         return self.get_file().target
 
     # overrides RetrieveAPIView
@@ -89,7 +89,7 @@ class FileDetail(JSONAPIBaseView, generics.RetrieveUpdateAPIView, FileMixin):
         file = self.get_file()
         if self.request.GET.get('create_guid', False):
             # allows quickfiles to be given guids when another user wants a permanent link to it
-            if (self.get_node().has_permission(user, 'admin') and utils.has_admin_scope(self.request)) or getattr(file.target, 'is_quickfiles', False):
+            if (self.get_target().has_permission(user, 'admin') and utils.has_admin_scope(self.request)) or getattr(file.target, 'is_quickfiles', False):
                 file.get_guid(create=True)
         return file
 
