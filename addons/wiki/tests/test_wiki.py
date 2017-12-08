@@ -1259,11 +1259,22 @@ class TestPublicWiki(OsfTestCase):
 
         assert_equal(data, expected)
 
-    def test_serialize_wiki_settings_no_wiki(self):
+    def test_serialize_wiki_settings_disabled_wiki(self):
         node = NodeFactory(parent=self.project, creator=self.user)
         node.delete_addon('wiki', self.consolidate_auth)
         data = serialize_wiki_settings(self.user, [node])
-        expected = []
+        expected = [{'node':
+                        {'url': node.url,
+                         'is_public': False,
+                         'id': node._id,
+                         'title': node.title},
+                    'category': 'hypothesis',
+                    'kind': 'folder',
+                    'nodeType': 'component',
+                    'children': [],
+                    'permissions': {'admin': True,
+                                    'view': True}
+                    }]
 
         assert_equal(data, expected)
 
