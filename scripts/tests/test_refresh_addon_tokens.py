@@ -29,7 +29,7 @@ class TestRefreshTokens(OsfTestCase):
 
     def tearDown(self):
         super(TestRefreshTokens, self).tearDown()
-        ExternalAccount.remove()
+        ExternalAccount.objects.all().delete()
 
     def test_look_up_provider(self):
         for Provider in PROVIDER_CLASSES:
