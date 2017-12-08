@@ -19,7 +19,7 @@
                class="btn btn-primary col-md-1">
                 <i class="fa fa-search"></i>
             </a>
-            <a href="{% url 'nodes:node-logs' node.id %}" class="btn btn-primary col-md-1 padded">
+            <a href="{% url 'nodes:node-logs' node.id %}" class="btn btn-primary col-md-1">
                 View Logs
             </a>
             {%  if perms.osf.delete_node %}

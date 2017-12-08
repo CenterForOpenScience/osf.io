@@ -1601,6 +1601,11 @@ class TestSendEmails(NotificationTestCase):
         node_lineage = emails.get_node_lineage(self.node)
         assert_equal(node_lineage, [self.project._id, self.node._id])
 
+    def test_fix_locale(self):
+        assert emails.fix_locale('en') == 'en'
+        assert emails.fix_locale('de_DE') == 'de_DE'
+        assert emails.fix_locale('de_de') == 'de_DE'
+
     def test_localize_timestamp(self):
         timestamp = timezone.now()
         self.user.timezone = 'America/New_York'

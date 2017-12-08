@@ -446,7 +446,7 @@ var NameViewModel = function(urls, modes, preventUnsaved, fetchCallback) {
                 name: self.full()
             },
             dataType: 'json',
-        }).success(function (response) {
+        }).done(function (response) {
             self.imputedGiven(response.given);
             self.imputedMiddle(response.middle);
             self.imputedFamily(response.family);

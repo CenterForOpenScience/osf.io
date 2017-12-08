@@ -28,6 +28,7 @@ from website.project.decorators import (
     must_be_valid_project,
     must_have_permission,
     must_not_be_registration,
+    must_not_be_retracted_registration,
 )
 from website.tokens import process_token_or_pass
 from website.util.permissions import ADMIN, READ, WRITE, CREATOR_PERMISSIONS
@@ -243,17 +244,20 @@ def project_before_template(auth, node, **kwargs):
 
 @must_be_valid_project
 @must_be_contributor_or_public_but_not_anonymized
+@must_not_be_registration
 def node_registrations(auth, node, **kwargs):
     return _view_project(node, auth, primary=True, embed_registrations=True)
 
 
 @must_be_valid_project
 @must_be_contributor_or_public_but_not_anonymized
+@must_not_be_retracted_registration
 def node_forks(auth, node, **kwargs):
     return _view_project(node, auth, primary=True, embed_forks=True)
 
 
 @must_be_valid_project
+@must_not_be_retracted_registration
 @must_be_logged_in
 @must_have_permission(READ)
 def node_setting(auth, node, **kwargs):
@@ -277,11 +281,30 @@ def node_setting(auth, node, **kwargs):
     return ret
 
 @must_be_valid_project
+@must_not_be_registration
 @must_be_logged_in
-@must_have_permission(READ)
+@must_have_permission(WRITE)
 def node_addons(auth, node, **kwargs):
 
     ret = _view_project(node, auth, primary=True)
+
+    addon_settings = serialize_addons(node)
+
+    ret['addon_capabilities'] = settings.ADDON_CAPABILITIES
+
+    # If an addon is default you cannot connect/disconnect so we don't have to load it.
+    ret['addon_settings'] = [addon for addon in addon_settings]
+
+    # Addons can have multiple categories, but we only want a set of unique ones being used.
+    ret['addon_categories'] = set([item for addon in addon_settings for item in addon['categories']])
+
+    # The page only needs to load enabled addons and it refreshes when a new addon is being enabled.
+    ret['addon_js'] = collect_node_config_js([addon for addon in addon_settings if addon['enabled']])
+
+    return ret
+
+
+def serialize_addons(node):
 
     addon_settings = []
     addons_available = [addon for addon in settings.ADDONS_AVAILABLE
@@ -298,18 +321,12 @@ def node_addons(auth, node, **kwargs):
         config['addon_full_name'] = addon.full_name
         config['categories'] = addon.categories
         config['enabled'] = node.has_addon(addon.short_name)
-        config['default'] = addon.short_name in ['osfstorage']
+        config['default'] = addon.short_name in settings.ADDONS_DEFAULT
         addon_settings.append(config)
 
     addon_settings = sorted(addon_settings, key=lambda addon: addon['full_name'].lower())
 
-    ret['addon_capabilities'] = settings.ADDON_CAPABILITIES
-    ret['addon_categories'] = set([item for addon in addon_settings for item in addon['categories']])
-    ret['addon_settings'] = addon_settings
-    ret['addon_js'] = collect_node_config_js([addon for addon in addon_settings if addon['enabled']])
-
-    return ret
-
+    return addon_settings
 
 def collect_node_config_js(addons):
     """Collect webpack bundles for each of the addons' node-cfg.js modules. Return
@@ -319,9 +336,23 @@ def collect_node_config_js(addons):
     """
     js_modules = []
     for addon in addons:
-        js_path = os.path.join('/', 'static', 'public', 'js', addon['short_name'], 'node-cfg.js')
-        if js_path:
-            js_modules.append(js_path)
+        source_path = os.path.join(
+            settings.ADDON_PATH,
+            addon['short_name'],
+            'static',
+            'node-cfg.js',
+        )
+        if os.path.exists(source_path):
+            asset_path = os.path.join(
+                '/',
+                'static',
+                'public',
+                'js',
+                addon['short_name'],
+                'node-cfg.js',
+            )
+            js_modules.append(asset_path)
+
     return js_modules
 
 
@@ -332,6 +363,7 @@ def node_choose_addons(auth, node, **kwargs):
 
 
 @must_be_valid_project
+@must_not_be_retracted_registration
 @must_have_permission(READ)
 def node_contributors(auth, node, **kwargs):
     ret = _view_project(node, auth, primary=True)
@@ -450,6 +482,7 @@ def project_reorder_components(node, **kwargs):
 
 @must_be_valid_project
 @must_be_contributor_or_public
+@must_not_be_retracted_registration
 def project_statistics(auth, node, **kwargs):
     ret = _view_project(node, auth, primary=True)
     ret['node']['keenio_read_key'] = node.keenio_read_key

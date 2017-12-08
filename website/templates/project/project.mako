@@ -11,7 +11,7 @@
 <div id="projectScope">
     <header class="subhead" id="overview">
         <div class="row no-gutters">
-            <div class="col-lg-9 col-md-12 cite-container">
+            <div class="col-lg-8 col-md-12 cite-container">
                 % if parent_node['exists']:
                     % if parent_node['can_view'] or parent_node['is_public'] or parent_node['is_contributor']:
                         <h2 class="node-parent-title">
@@ -33,7 +33,7 @@
                 </h2>
             </div>
             <div class="clearfix visible-md-block"></div>
-            <div class="col-lg-3">
+            <div class="col-lg-4">
                 <div class="btn-toolbar node-control pull-right">
                     <div class="btn-group">
                     % if not node["is_public"]:

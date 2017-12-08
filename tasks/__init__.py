@@ -465,8 +465,8 @@ ADMIN_TESTS = [
 @task
 def test_osf(ctx, numprocesses=None):
     """Run the OSF test suite."""
-    print('Testing modules "{}"'.format(OSF_TESTS + ADDON_TESTS))
-    test_module(ctx, module=OSF_TESTS + ADDON_TESTS, numprocesses=numprocesses)
+    print('Testing modules "{}"'.format(OSF_TESTS))
+    test_module(ctx, module=OSF_TESTS, numprocesses=numprocesses)
 
 @task
 def test_else(ctx, numprocesses=None):
@@ -491,8 +491,8 @@ def test_api2(ctx, numprocesses=None):
 @task
 def test_api3(ctx, numprocesses=None):
     """Run the API test suite."""
-    print('Testing modules "{}"'.format(API_TESTS3))
-    test_module(ctx, module=API_TESTS3, numprocesses=numprocesses)
+    print('Testing modules "{}"'.format(API_TESTS3 + OSF_TESTS))
+    test_module(ctx, module=API_TESTS3 + OSF_TESTS, numprocesses=numprocesses)
 
 
 @task
@@ -530,10 +530,10 @@ def test(ctx, all=False, syntax=False):
         flake(ctx)
         jshint(ctx)
 
-    test_osf(ctx)
+    test_else(ctx)  # /tests
     test_api1(ctx)
     test_api2(ctx)
-    test_api3(ctx)
+    test_api3(ctx)  # also /osf_tests
 
     if all:
         test_addons(ctx)
@@ -548,13 +548,13 @@ def test_js(ctx):
     karma(ctx)
 
 @task
-def test_travis_osf(ctx, numprocesses=None):
+def test_travis_addons(ctx, numprocesses=None):
     """
     Run half of the tests to help travis go faster. Lints and Flakes happen everywhere to keep from wasting test time.
     """
     flake(ctx)
     jshint(ctx)
-    test_osf(ctx, numprocesses=numprocesses)
+    test_addons(ctx, numprocesses=numprocesses)
 
 
 @task
@@ -584,7 +584,7 @@ def test_travis_api2(ctx, numprocesses=None):
 
 
 @task
-def test_travis_api3(ctx, numprocesses=None):
+def test_travis_api3_and_osf(ctx, numprocesses=None):
     flake(ctx)
     jshint(ctx)
     test_api3(ctx, numprocesses=numprocesses)
