@@ -78,7 +78,7 @@
                     % endif
                     % if (user['can_comment'] or node['has_comments']) and not node['anonymous']:
                         <li id="commentsLink">
-                            <a href="" class="hidden-lg cp-handle" data-bind="click:removeCount" data-toggle="collapse" data-target="#projectSubnav .navbar-collapse">
+                            <a href="" class="hidden-lg hidden-md cp-handle" data-bind="click:removeCount" data-toggle="collapse" data-target="#projectSubnav .navbar-collapse">
                                 Comments
                                 <span data-bind="if: unreadComments() !== 0">
                                     <span data-bind="text: displayCount" class="badge"></span>
