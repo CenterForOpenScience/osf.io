@@ -73,7 +73,7 @@
                         % endif
 
                         % if user['has_read_permissions'] and not node['is_registration'] or (node['is_registration'] and 'admin' in user['permissions']):
-                            <li class="pull-right"><a href="${node['url']}settings/">Settings</a></li>
+                            <li><a href="${node['url']}settings/">Settings</a></li>
                         % endif
                     % endif
                     % if (user['can_comment'] or node['has_comments']) and not node['anonymous']:
