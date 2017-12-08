@@ -14,7 +14,7 @@ class Migration(migrations.Migration):
 
     dependencies = [
         ('contenttypes', '0002_remove_content_type_name'),
-        ('osf', '0073_citationstyle_has_bibliography'),
+        ('osf', '0074_parse_citation_styles'),
     ]
 
     operations = [
