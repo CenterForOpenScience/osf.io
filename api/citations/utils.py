@@ -226,7 +226,7 @@ def chicago_reformat(node, cit):
         new_chi = mla_name(process_name(node, contributors_list[0]), initial=True).rstrip(', ')
         name_list = [mla_name(process_name(node, x)) for x in contributors_list[1:7]]
         rest = ', '.join(name_list)
-        rest = rest.rstrip(",") + ', et al. '
+        rest = rest.rstrip(',') + ', et al. '
         new_chi += ', ' + rest
 
     cit = new_chi
