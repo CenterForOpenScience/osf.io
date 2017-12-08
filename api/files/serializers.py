@@ -6,8 +6,9 @@ import furl
 import pytz
 
 from framework.auth.core import Auth
-from osf.models import BaseFileNode, OSFUser, Comment, PreprintService
+from osf.models import BaseFileNode, OSFUser, Comment, PreprintService, AbstractNode
 from rest_framework import serializers as ser
+from rest_framework.fields import SkipField
 from website import settings
 from website.util import api_v2_url
 
@@ -24,8 +25,8 @@ from api.base.serializers import (
     TypeField,
     WaterbutlerLink,
     VersionedDateTimeField,
-    DateByVersion,
     TargetField,
+    ShowIfVersion,
 )
 from api.base.exceptions import Conflict
 from api.base.utils import absolute_reverse
@@ -130,6 +131,13 @@ class FileTagField(ser.Field):
 
     def to_internal_value(self, data):
         return data
+
+
+class FileNodeRelationshipField(RelationshipField):
+    def to_representation(self, value):
+        if not isinstance(value.target, AbstractNode):
+            raise SkipField
+        return super(FileNodeRelationshipField, self).to_representation(value)
 
 
 class BaseFileSerializer(JSONAPISerializer):
@@ -308,7 +316,14 @@ class BaseFileSerializer(JSONAPISerializer):
 
 
 class FileSerializer(BaseFileSerializer):
-
+    node = ShowIfVersion(
+        FileNodeRelationshipField(
+            related_view='nodes:node-detail',
+            related_view_kwargs={'node_id': '<target._id>'},
+            help_text='The project that this file belongs to'
+        ),
+        min_version='2.0', max_version='2.6'
+    )
     target = TargetField(link_type='related', meta={'type': 'get_target_type'})
 
     def get_target_type(self, obj):
