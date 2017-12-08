@@ -12,7 +12,7 @@ from addons.osfstorage.models import OsfStorageFolder
 from api.addons.serializers import NodeAddonFolderSerializer
 from api.addons.views import AddonSettingsMixin
 from api.base import generic_bulk_views as bulk_views
-from api.base.waffle_decorators import require_flag
+# from api.base.waffle_decorators import require_flag
 from api.base import permissions as base_permissions
 from api.base.exceptions import (
     InvalidModelValueError,

@@ -5,7 +5,6 @@ from rest_framework import generics
 from rest_framework import permissions as drf_permissions
 
 from api.base.views import JSONAPIBaseView
-from api.base.filters import ListFilterMixin
 from api.waffle.serializers import WaffleSerializer
 
 

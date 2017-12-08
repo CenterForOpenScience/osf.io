@@ -1,10 +1,8 @@
-from waffle.utils import get_setting
 from waffle import flag_is_active, sample_is_active, switch_is_active
 from waffle.models import Sample, Flag, Switch
 from rest_framework import serializers as ser
 
-from api.base.serializers import (JSONAPISerializer, TypeField, RelationshipField)
-from api.users.serializers import UserSerializer
+from api.base.serializers import (JSONAPISerializer, TypeField)
 
 class WaffleSerializer(JSONAPISerializer):
     id = ser.CharField(source='name', required=True, help_text='The id of the waffle object, which is the same as the name')

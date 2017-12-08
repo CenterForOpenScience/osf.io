@@ -16,7 +16,7 @@ from api.base.utils import (default_node_list_queryset,
                             get_object_or_error,
                             get_user_auth)
 from api.base.views import JSONAPIBaseView, WaterButlerMixin
-from api.base.waffle_decorators import require_sample
+# from api.base.waffle_decorators import require_sample
 from api.institutions.serializers import InstitutionSerializer
 from api.nodes.filters import NodesFilterMixin
 from api.nodes.serializers import NodeSerializer
