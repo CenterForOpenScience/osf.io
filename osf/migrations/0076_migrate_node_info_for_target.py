@@ -8,7 +8,7 @@ from django.db import migrations
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('osf', '0074_add_file_fields_for_target'),
+        ('osf', '0075_add_file_fields_for_target'),
     ]
 
     operations = [
