@@ -83,8 +83,8 @@
                 <div class="form-group" data-bind=" css: { 'has-error': fullName() && !fullName.isValid(), 'has-success': fullName() && fullName.isValid() }">
                     <label for="inputName" class="col-sm-4 control-label">Full Name</label>
                     <div class="col-sm-8">
-                        ## Maxlength for full names must be 200 - quickfile titles use fullname
-                        <input autofocus type="text" class="form-control" id="inputName" placeholder="Name" data-bind="value: fullName, disable: submitted(), event: { blur: trim.bind($data, fullName) }" maxlength="200">
+                        ## Maxlength for full names must be 186 - quickfile titles use fullname + 's Quick Files
+                        <input autofocus type="text" class="form-control" id="inputName" placeholder="Name" data-bind="value: fullName, disable: submitted(), event: { blur: trim.bind($data, fullName) }" maxlength="186">
                         <p class="help-block" data-bind="validationMessage: fullName" style="display: none;"></p>
                     </div>
                 </div>
@@ -135,22 +135,19 @@
                 </div>
                 </br>
                 <div class="form-group m-t-md">
-                    <div class="col-md-5 col-sm-12" >
-                        <div class="col-xs-12">
-                            <a href="${non_institution_login_url}" >Already have an account?</a>
-                        </div>
+                    <div class="col-md-5 col-sm-12" style="padding-left: 25px">
+                        <a href="${non_institution_login_url}" >Already have an account?</a>
+                        <br>
+                        <a href="${institution_login_url}">Login through your institution  <i class="fa fa-arrow-right"></i></a>
                     </div>
                     <div class="col-md-7 col-sm-12">
                         %if recaptcha_site_key:
                             <div class="col-xs-12">
                                 <div class="pull-right g-recaptcha" data-sitekey="${recaptcha_site_key}"></div>
-
+                            </div>
                         %endif
                             <div class="col-xs-12">
-                                <span class="pull-right p-t-sm">
-                                    <a class="btn btn-default" href="${institution_login_url}">Sign in with your institution</a>
-                                    <button type="submit" class="btn btn-success" data-bind="disable: submitted()">Create account</button>
-                                </span>
+                                <span class="pull-right p-t-sm"><button type="submit" class="btn btn-success" data-bind="disable: submitted()">Create account</button></span>
                             </div>
                     </div>
                 </div>

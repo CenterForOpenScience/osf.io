@@ -198,6 +198,7 @@ COOKIE_DOMAIN = '.openscienceframework.org'  # Beaker
 SHORT_DOMAIN = 'osf.io'
 
 # TODO: Combine Python and JavaScript config
+# If you change COMMENT_MAXLENGTH, make sure you create a corresponding migration.
 COMMENT_MAXLENGTH = 1000
 
 # Profile image options
@@ -262,6 +263,7 @@ with open(os.path.join(ROOT, 'addons.json')) as fp:
     ADDONS_BASED_ON_IDS = addon_settings['addons_based_on_ids']
     ADDONS_DESCRIPTION = addon_settings['addons_description']
     ADDONS_URL = addon_settings['addons_url']
+    ADDONS_DEFAULT = addon_settings['addons_default']
 
 ADDON_CATEGORIES = [
     'documentation',
@@ -375,6 +377,7 @@ class CeleryConfig:
     Celery Configuration
     http://docs.celeryproject.org/en/latest/userguide/configuration.html
     """
+    timezone = 'UTC'
 
     task_default_queue = 'celery'
     task_low_queue = 'low'
@@ -491,6 +494,7 @@ class CeleryConfig:
         pass
     else:
         #  Setting up a scheduler, essentially replaces an independent cron job
+        # Note: these times must be in UTC
         beat_schedule = {
             '5-minute-emails': {
                 'task': 'website.notifications.tasks.send_users_email',
@@ -499,12 +503,12 @@ class CeleryConfig:
             },
             'daily-emails': {
                 'task': 'website.notifications.tasks.send_users_email',
-                'schedule': crontab(minute=0, hour=0),
+                'schedule': crontab(minute=0, hour=5),  # Daily at 12 a.m. EST
                 'args': ('email_digest',),
             },
             'refresh_addons': {
                 'task': 'scripts.refresh_addon_tokens',
-                'schedule': crontab(minute=0, hour=2),  # Daily 2:00 a.m
+                'schedule': crontab(minute=0, hour=7),  # Daily 2:00 a.m
                 'kwargs': {'dry_run': False, 'addons': {
                     'box': 60,          # https://docs.box.com/docs/oauth-20#section-6-using-the-access-and-refresh-tokens
                     'googledrive': 14,  # https://developers.google.com/identity/protocols/OAuth2#expiration
@@ -513,37 +517,37 @@ class CeleryConfig:
             },
             'retract_registrations': {
                 'task': 'scripts.retract_registrations',
-                'schedule': crontab(minute=0, hour=0),  # Daily 12 a.m
+                'schedule': crontab(minute=0, hour=5),  # Daily 12 a.m
                 'kwargs': {'dry_run': False},
             },
             'embargo_registrations': {
                 'task': 'scripts.embargo_registrations',
-                'schedule': crontab(minute=0, hour=0),  # Daily 12 a.m
+                'schedule': crontab(minute=0, hour=5),  # Daily 12 a.m
                 'kwargs': {'dry_run': False},
             },
             'add_missing_identifiers_to_preprints': {
                 'task': 'scripts.add_missing_identifiers_to_preprints',
-                'schedule': crontab(minute=0, hour=0),  # Daily 12 a.m
+                'schedule': crontab(minute=0, hour=5),  # Daily 12 a.m
                 'kwargs': {'dry_run': False},
             },
             'approve_registrations': {
                 'task': 'scripts.approve_registrations',
-                'schedule': crontab(minute=0, hour=0),  # Daily 12 a.m
+                'schedule': crontab(minute=0, hour=5),  # Daily 12 a.m
                 'kwargs': {'dry_run': False},
             },
             'approve_embargo_terminations': {
                 'task': 'scripts.approve_embargo_terminations',
-                'schedule': crontab(minute=0, hour=0),  # Daily 12 a.m
+                'schedule': crontab(minute=0, hour=5),  # Daily 12 a.m
                 'kwargs': {'dry_run': False},
             },
             'triggered_mails': {
                 'task': 'scripts.triggered_mails',
-                'schedule': crontab(minute=0, hour=0),  # Daily 12 a.m
+                'schedule': crontab(minute=0, hour=5),  # Daily 12 a.m
                 'kwargs': {'dry_run': False},
             },
             'send_queued_mails': {
                 'task': 'scripts.send_queued_mails',
-                'schedule': crontab(minute=0, hour=12),  # Daily 12 p.m.
+                'schedule': crontab(minute=0, hour=17),  # Daily 12 p.m.
                 'kwargs': {'dry_run': False},
             },
             'prereg_reminder': {
@@ -553,31 +557,31 @@ class CeleryConfig:
             },
             'new-and-noteworthy': {
                 'task': 'scripts.populate_new_and_noteworthy_projects',
-                'schedule': crontab(minute=0, hour=2, day_of_week=6),  # Saturday 2:00 a.m.
+                'schedule': crontab(minute=0, hour=7, day_of_week=6),  # Saturday 2:00 a.m.
                 'kwargs': {'dry_run': False}
             },
             'update_popular_nodes': {
                 'task': 'scripts.populate_popular_projects_and_registrations',
-                'schedule': crontab(minute=0, hour=2),  # Daily 2:00 a.m.
+                'schedule': crontab(minute=0, hour=7),  # Daily 2:00 a.m.
                 'kwargs': {'dry_run': False}
             },
             'run_keen_summaries': {
                 'task': 'scripts.analytics.run_keen_summaries',
-                'schedule': crontab(minute=00, hour=1),  # Daily 1:00 a.m.
+                'schedule': crontab(minute=0, hour=6),  # Daily 1:00 a.m.
                 'kwargs': {'yesterday': True}
             },
             'run_keen_snapshots': {
                 'task': 'scripts.analytics.run_keen_snapshots',
-                'schedule': crontab(minute=0, hour=3),  # Daily 3:00 a.m.
+                'schedule': crontab(minute=0, hour=8),  # Daily 3:00 a.m.
             },
             'run_keen_events': {
                 'task': 'scripts.analytics.run_keen_events',
-                'schedule': crontab(minute=0, hour=4),  # Daily 4:00 a.m.
+                'schedule': crontab(minute=0, hour=9),  # Daily 4:00 a.m.
                 'kwargs': {'yesterday': True}
             },
             'generate_sitemap': {
                 'task': 'scripts.generate_sitemap',
-                'schedule': crontab(minute=0, hour=0),  # Daily 12:00 a.m.
+                'schedule': crontab(minute=0, hour=5),  # Daily 12:00 a.m.
             },
         }
 
@@ -585,42 +589,42 @@ class CeleryConfig:
         # beat_schedule.update({
         #     'usage_audit': {
         #         'task': 'scripts.osfstorage.usage_audit',
-        #         'schedule': crontab(minute=0, hour=0),  # Daily 12 a.m
+        #         'schedule': crontab(minute=0, hour=5),  # Daily 12 a.m
         #         'kwargs': {'send_mail': True},
         #     },
         #     'stuck_registration_audit': {
         #         'task': 'scripts.stuck_registration_audit',
-        #         'schedule': crontab(minute=0, hour=6),  # Daily 6 a.m
+        #         'schedule': crontab(minute=0, hour=11),  # Daily 6 a.m
         #         'kwargs': {},
         #     },
         #     'glacier_inventory': {
         #         'task': 'scripts.osfstorage.glacier_inventory',
-        #         'schedule': crontab(minute=0, hour= 0, day_of_week=0),  # Sunday 12:00 a.m.
+        #         'schedule': crontab(minute=0, hour=5, day_of_week=0),  # Sunday 12:00 a.m.
         #         'args': (),
         #     },
         #     'glacier_audit': {
         #         'task': 'scripts.osfstorage.glacier_audit',
-        #         'schedule': crontab(minute=0, hour=6, day_of_week=0),  # Sunday 6:00 a.m.
+        #         'schedule': crontab(minute=0, hour=11, day_of_week=0),  # Sunday 6:00 a.m.
         #         'kwargs': {'dry_run': False},
         #     },
         #     'files_audit_0': {
         #         'task': 'scripts.osfstorage.files_audit.0',
-        #         'schedule': crontab(minute=0, hour=2, day_of_week=0),  # Sunday 2:00 a.m.
+        #         'schedule': crontab(minute=0, hour=7, day_of_week=0),  # Sunday 2:00 a.m.
         #         'kwargs': {'num_of_workers': 4, 'dry_run': False},
         #     },
         #     'files_audit_1': {
         #         'task': 'scripts.osfstorage.files_audit.1',
-        #         'schedule': crontab(minute=0, hour=2, day_of_week=0),  # Sunday 2:00 a.m.
+        #         'schedule': crontab(minute=0, hour=7, day_of_week=0),  # Sunday 2:00 a.m.
         #         'kwargs': {'num_of_workers': 4, 'dry_run': False},
         #     },
         #     'files_audit_2': {
         #         'task': 'scripts.osfstorage.files_audit.2',
-        #         'schedule': crontab(minute=0, hour=2, day_of_week=0),  # Sunday 2:00 a.m.
+        #         'schedule': crontab(minute=0, hour=7, day_of_week=0),  # Sunday 2:00 a.m.
         #         'kwargs': {'num_of_workers': 4, 'dry_run': False},
         #     },
         #     'files_audit_3': {
         #         'task': 'scripts.osfstorage.files_audit.3',
-        #         'schedule': crontab(minute=0, hour=2, day_of_week=0),  # Sunday 2:00 a.m.
+        #         'schedule': crontab(minute=0, hour=7, day_of_week=0),  # Sunday 2:00 a.m.
         #         'kwargs': {'num_of_workers': 4, 'dry_run': False},
         #     },
         # })

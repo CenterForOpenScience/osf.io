@@ -1623,10 +1623,10 @@ class NodeForksList(JSONAPIBaseView, generics.ListCreateAPIView, NodeMixin, Node
         try:
             fork = serializer.save(node=node)
         except Exception as exc:
-            mails.send_mail(user.email, mails.FORK_FAILED, title=node.title, guid=node._id, mimetype='html')
+            mails.send_mail(user.email, mails.FORK_FAILED, title=node.title, guid=node._id, mimetype='html', can_change_preferences=False)
             raise exc
         else:
-            mails.send_mail(user.email, mails.FORK_COMPLETED, title=fork.title, guid=fork._id, mimetype='html')
+            mails.send_mail(user.email, mails.FORK_COMPLETED, title=node.title, guid=fork._id, mimetype='html', can_change_preferences=False)
 
     # overrides ListCreateAPIView
     def get_parser_context(self, http_request):

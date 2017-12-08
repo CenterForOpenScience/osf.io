@@ -542,24 +542,31 @@ function checkConflictsRename(tb, item, name, cb) {
 function doItemOp(operation, to, from, rename, conflict) {
     var tb = this;
     var inReadyQueue;
-    var filesRemaining = tb.syncFileMoveCache && tb.syncFileMoveCache[to.data.provider];
-    var inConflictsQueue = filesRemaining.conflicts && filesRemaining.conflicts.length > 0;
-    var syncMoves = SYNC_UPLOAD_ADDONS.indexOf(from.data.provider) !== -1;
-    if (syncMoves) {
-        inReadyQueue = filesRemaining && filesRemaining.ready && filesRemaining.ready.length > 0;
-    }
-    if (inConflictsQueue) {
-        var s = filesRemaining.conflicts.length > 1 ? 's' : '';
-        var mithrilContent = m('div', { className: 'text-center' }, [
-            m('p.h4', filesRemaining.conflicts.length + ' conflict' + s + ' left to resolve.'),
-            m('div', {className: 'ball-pulse ball-scale-blue text-center'}, [
-                m('div',''),
-                m('div',''),
-                m('div',''),
-            ])
-        ]);
-        var header =  m('h3.break-word.modal-title', operation.action + ' "' + from.data.name +'"');
-        tb.modal.update(mithrilContent, m('', []), header);
+    var filesRemaining;
+    var inConflictsQueue;
+    var syncMoves;
+
+    var notRenameOp = typeof rename === 'undefined';
+    if (notRenameOp) {
+        filesRemaining = tb.syncFileMoveCache && tb.syncFileMoveCache[to.data.provider];
+        inConflictsQueue = filesRemaining.conflicts && filesRemaining.conflicts.length > 0;
+        syncMoves = SYNC_UPLOAD_ADDONS.indexOf(from.data.provider) !== -1;
+        if (syncMoves) {
+            inReadyQueue = filesRemaining && filesRemaining.ready && filesRemaining.ready.length > 0;
+        }
+        if (inConflictsQueue) {
+            var s = filesRemaining.conflicts.length > 1 ? 's' : '';
+            var mithrilContent = m('div', { className: 'text-center' }, [
+                m('p.h4', filesRemaining.conflicts.length + ' conflict' + s + ' left to resolve.'),
+                m('div', {className: 'ball-pulse ball-scale-blue text-center'}, [
+                    m('div',''),
+                    m('div',''),
+                    m('div',''),
+                ])
+            ]);
+            var header =  m('h3.break-word.modal-title', operation.action + ' "' + from.data.name +'"');
+            tb.modal.update(mithrilContent, m('', []), header);
+        }
     }
 
     var ogParent = from.parentID;
@@ -662,7 +669,9 @@ function doItemOp(operation, to, from, rename, conflict) {
             from.load = true;
         }
         var url = from.data.nodeUrl + 'files/' + from.data.provider + from.data.path;
-        addFileStatus(tb, from, true, '', url, conflict);
+        if (notRenameOp) {
+            addFileStatus(tb, from, true, '', url, conflict);
+        }
         // no need to redraw because fangornOrderFolder does it
         orderFolder.call(tb, from.parent());
     }).fail(function(xhr, textStatus) {
@@ -683,7 +692,7 @@ function doItemOp(operation, to, from, rename, conflict) {
         } else if (xhr.status === 503) {
             message = textStatus;
         } else {
-            message = 'Please refresh the page or contact ' + $osf.osfSupportlink() + ' if the problem persists.';
+            message = 'Please refresh the page or contact ' + $osf.osfSupportLink() + ' if the problem persists.';
         }
 
         $osf.growl(operation.verb + ' failed.', message);
@@ -694,11 +703,13 @@ function doItemOp(operation, to, from, rename, conflict) {
                 requestData: moveSpec
             }
         });
-        addFileStatus(tb, from, false, '', '', conflict);
+        if (notRenameOp) {
+            addFileStatus(tb, from, false, '', '', conflict);
+        }
         orderFolder.call(tb, from.parent());
     }).always(function(){
         from.inProgress = false;
-        if (typeof inConflictsQueue !== 'undefined' || syncMoves){
+        if (notRenameOp && (typeof inConflictsQueue !== 'undefined' || syncMoves)) {
             doSyncMove(tb, to.data.provider);
         }
     });
@@ -1436,14 +1447,13 @@ function _fangornTitleColumnHelper(tb, item, col, nameTitle, toUrl, classNameOpt
         if (tb.options.links) {
             attrs = {
                 className: classNameOption,
-                href: item.data.id, // enables 'Open in new tab' in context menu [OSF-7832]
                 onclick: function(event) {
                     event.stopImmediatePropagation();
                     gotoFileEvent.call(tb, item, toUrl);
                 }
             };
         }
-        return m('a', attrs, nameTitle);
+        return m('span', attrs, nameTitle);
     }
     if ((item.data.nodeType === 'project' || item.data.nodeType ==='component') && item.data.permissions.view) {
         return m('a.' + classNameOption, {href: '/' + item.data.nodeID.toString() + toUrl}, nameTitle);
@@ -2507,7 +2517,7 @@ function _dropLogic(event, items, folder) {
 
     tb.syncFileMoveCache = tb.syncFileMoveCache || {};
     tb.syncFileMoveCache[folder.data.provider] = tb.syncFileMoveCache[folder.data.provider] || {};
-    tb.moveStates = tb.moveStates || [];
+    tb.moveStates = [];
 
     if (toMove.ready.length > 0) {
         tb.syncFileMoveCache[folder.data.provider].ready = tb.syncFileMoveCache[folder.data.provider].ready || [];

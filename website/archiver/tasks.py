@@ -263,13 +263,13 @@ def archive(job_pk):
     logger.info('Received archive task for Node: {0} into Node: {1}'.format(src._id, dst._id))
     return celery.chain(
         [
-            celery.group(
+            celery.group([
                 stat_addon.si(
                     addon_short_name=target.name,
                     job_pk=job_pk,
                 )
                 for target in job.target_addons.all()
-            ),
+            ]),
             archive_node.s(
                 job_pk=job_pk
             )

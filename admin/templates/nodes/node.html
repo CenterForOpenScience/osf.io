@@ -1,5 +1,8 @@
 {% extends 'base.html' %}
 {% load static %}
+{% block top_includes %}
+    <script src="/static/js/nodes/registrations.js"></script>
+{% endblock %}
 {% load user_extras %}
 {% load node_extras %}
 {% block title %}
@@ -16,7 +19,7 @@
                class="btn btn-primary col-md-1">
                 <i class="fa fa-search"></i>
             </a>
-            <a href="{% url 'nodes:node-logs' node.id %}" class="btn btn-primary col-md-1 padded">
+            <a href="{% url 'nodes:node-logs' node.id %}" class="btn btn-primary col-md-1">
                 View Logs
             </a>
             {%  if perms.osf.delete_node %}
@@ -311,7 +314,30 @@
                             </tr>
                             <tr>
                                 <td>Embargo</td>
-                                <td>{{ node.embargo }}</td>
+                                <td>
+                                    <div class="row">
+                                        <div class="col-md-10">
+                                            <span id="table-view">
+                                                {{ node.embargo }}
+                                            </span>
+                                            <span class="form-view" style="display:none;">
+                                                <form id="embargo-update-form" action="{% url 'nodes:update_embargo' guid=node.id %}" method="post" class="row">
+                                                    {% csrf_token %}
+                                                    <div class="col-md-6">
+                                                        <input id='datepicker' type='datetime' name="date" class="form-control" value={{node.embargo_formatted}} />
+                                                    </div>
+                                                    <div class="col-md-6">
+                                                        <input id='embargo-update-submit' class="form-button btn btn-danger" type="submit" value="Update embargo"/>
+                                                    </div>
+                                                </form>
+                                            </span>
+                                        </div>
+                                        <div class="col-md-2">
+                                            <a id="show-modify-form">Edit</a>
+                                        </div>
+                                    </div>
+                                    <span id="date-validation" class="help-block"></span>
+                                </td>
                             </tr>
                             <tr>
                                 <td>Registered From</td>
@@ -319,6 +345,24 @@
                             </tr>
                         </tbody>
                         </table>
+                        <div class="modal" id="update-embargo-modal">
+                            <div class="modal-dialog">
+                                <form class="well">
+                                    <div class="modal-header">
+                                        <button type="button" class="close" data-dismiss="modal">x</button>
+                                        <h3>Are you sure you want to update this embargo?</h3>
+                                    </div>
+                                    <div class="modal-body">
+                                        Make sure you have confirmed this change with all the project admins.
+                                    </div>
+                                    <div class="modal-footer">
+                                        <input class="btn btn-danger" type="submit" value="Confirm" />
+                                        <button type="button" class="btn btn-default" data-dismiss="modal">
+                                            Cancel
+                                        </button>
+                                    </div></form>
+                            </div>
+                        </div>
                     {% endif %}
                 </td>
             </tr>
@@ -352,3 +396,11 @@
         </div>
     </div>
 {% endblock content %}
+
+{% block bottom_js %}
+<script>
+    window.templateVars = {
+        'updateEmbargoUrl': '{% url 'nodes:update_embargo' guid=node.id %}',
+    }
+</script>
+{% endblock %}

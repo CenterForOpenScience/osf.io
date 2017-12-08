@@ -13,7 +13,7 @@
 </tr>
 <tr>
   <td style="border-collapse: collapse;">
-    You can view the fork here <a href="${settings.DOMAIN + guid}">here.</a>
+    You can view the project <a href="${settings.DOMAIN + guid}">here.</a>
   </td>
 </tr>
 </%def>

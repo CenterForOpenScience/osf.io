@@ -19,6 +19,9 @@
         "bitbucket",
         "cloudfiles"
     ],
+    "addons_default": [
+        "osfstorage"
+    ],
     "addons_archivable": {
         "osfstorage": "full",
         "box": "partial",

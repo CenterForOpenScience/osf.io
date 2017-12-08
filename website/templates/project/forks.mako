@@ -8,7 +8,7 @@
 
 <div class="row">
         <div class="col-xs-9 col-sm-8">
-        <a href="analytics" class="padded strong">
+        <a href="${node['url']}analytics" class="padded strong">
             <span class="fa fa-arrow-left"></span> Back to Analytics
         </a>
 

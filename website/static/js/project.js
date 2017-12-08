@@ -80,7 +80,7 @@ NodeActions.forkNode = function() {
                 data: payload
             }
         );
-        $osf.growl('Fork status', 'Your fork is being forked you\'ll get an email when it\'s complete.', 'info');
+        $osf.growl('Fork status', 'Your fork is being created. You\'ll receive an email when it is complete.', 'info');
     });
 };
 
