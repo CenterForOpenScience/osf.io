@@ -371,7 +371,7 @@ class TestMessage(ContextTestCase):
             msg = message.ConferenceMessage()
             assert_equal(msg.conference_name, 'chocolate')
             assert_equal(msg.conference_category, 'data')
-        conf.__class__.remove_one(conf)
+        conf.__class__.delete(conf)
 
     def test_route_valid_b(self):
         recipient = '{0}conf-poster@osf.io'.format('test-' if settings.DEV_MODE else '')
@@ -420,7 +420,7 @@ class TestConferenceEmailViews(OsfTestCase):
         assert_equal(res.request.path, '/meetings/')
 
     def test_conference_submissions(self):
-        AbstractNode.remove()
+        AbstractNode.objects.all().delete()
         conference1 = ConferenceFactory()
         conference2 = ConferenceFactory()
         # Create conference nodes
