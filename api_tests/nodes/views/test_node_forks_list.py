@@ -328,7 +328,12 @@ class TestNodeForkCreate:
             res = app.post_json_api(public_project_url, fork_data_with_title, auth=user.auth)
             assert res.status_code == 201
             assert res.json['data']['id'] == public_project.forks.first()._id
-            mock_send_mail.assert_called_with(user.email, mails.FORK_COMPLETED, title=res.json['data']['attributes']['title'], guid=res.json['data']['id'], mimetype='html')
+            mock_send_mail.assert_called_with(user.email,
+                                              mails.FORK_COMPLETED,
+                                              title=public_project.title,
+                                              guid=res.json['data']['id'],
+                                              mimetype='html',
+                                              can_change_preferences=False)
 
     def test_send_email_failed(self, app, user, public_project_url, fork_data_with_title, public_project):
 
@@ -336,4 +341,9 @@ class TestNodeForkCreate:
             with mock.patch.object(mails, 'send_mail', return_value=None) as mock_send_mail:
                 with pytest.raises(Exception):
                     app.post_json_api(public_project_url, fork_data_with_title, auth=user.auth)
-                    mock_send_mail.assert_called_with(user.email, mails.FORK_FAILED, title=public_project.title, guid=public_project._id, mimetype='html')
+                    mock_send_mail.assert_called_with(user.email,
+                                                      mails.FORK_FAILED,
+                                                      title=public_project.title,
+                                                      guid=public_project._id,
+                                                      mimetype='html',
+                                                      can_change_preferences=False)

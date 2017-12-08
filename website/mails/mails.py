@@ -152,12 +152,12 @@ EXTERNAL_LOGIN_CONFIRM_EMAIL_CREATE = Mail(
 
 FORK_COMPLETED = Mail(
     'fork_completed',
-    subject='Your Fork has Completed'
+    subject='Your fork has completed'
 )
 
 FORK_FAILED = Mail(
     'fork_failed',
-    subject='Your Fork has Failed'
+    subject='Your fork has failed'
 )
 
 EXTERNAL_LOGIN_CONFIRM_EMAIL_LINK = Mail(
