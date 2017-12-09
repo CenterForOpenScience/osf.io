@@ -6,7 +6,7 @@
 <tr>
   <td style="border-collapse: collapse;">
 
-    <h3 class="text-center" style="padding: 0;margin: 30px 0 0 0;border: none;list-style: none;font-weight: 300;text-align: center;">The fork of <b>${title}</b> has been successfully created: <a href="${settings.DOMAIN + guid}">here.</a></h3>
+    <h3 class="text-center" style="padding: 0;margin: 30px 0 0 0;border: none;list-style: none;font-weight: 300;text-align: center;">The fork of <b>${title}</b> has been successfully created here: ${settings.DOMAIN + guid}</h3>
   </td>
 </tr>
 </%def>
