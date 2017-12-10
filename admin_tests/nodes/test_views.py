@@ -354,7 +354,6 @@ class TestAdminNodeLogView(AdminTestCase):
         self.user = AuthUserFactory()
         self.auth = Auth(self.user)
         self.node = ProjectFactory(creator=self.user)
-        self.node.save()
 
     def test_get_object(self):
 
@@ -372,7 +371,7 @@ class TestAdminNodeLogView(AdminTestCase):
 
         logs = view.get_queryset()
 
-        log_entry = logs.all()[0]
+        log_entry = logs.first()
         nt.assert_true(log_entry.action == 'edit_title')
         nt.assert_true(log_entry.params['title_new'] == u'New Title')
 
@@ -392,8 +391,8 @@ class TestAdminNodeLogView(AdminTestCase):
 
     def test_get_logs_for_children(self):
         """ The "create component" action is actually logged as a create_project action
-        for it's child with a log parameter 'node' having it's guid as a value. We have to ensure
-        that all the components a parent has created appear in it's admin app logs, so we can't just
+        for its child with a log parameter 'node' having its guid as a value. We have to ensure
+        that all the components a parent has created appear in its admin app logs, so we can't just
          do node.logs.all(), that will leave out component creation.
         """
 
