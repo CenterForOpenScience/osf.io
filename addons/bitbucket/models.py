@@ -36,6 +36,13 @@ class BitbucketFile(BitbucketFileNode, File):
         revision = revision or commitSha or branch
         return super(BitbucketFile, self).touch(auth_header, revision=revision, **kwargs)
 
+    @property
+    def _hashes(self):
+        try:
+            return {'commit': self._history[-1]['extra']['commitSha']}
+        except (IndexError, KeyError):
+            return None
+
 class BitbucketProvider(ExternalProvider):
     """Provider to handler Bitbucket OAuth workflow
 

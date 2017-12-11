@@ -35,7 +35,12 @@ class GoogleDriveFolder(GoogleDriveFileNode, Folder):
 
 
 class GoogleDriveFile(GoogleDriveFileNode, File):
-    pass
+    @property
+    def _hashes(self):
+        try:
+            return {'md5': self._history[-1]['extra']['hashes']['md5']}
+        except (IndexError, KeyError):
+            return None
 
 
 class GoogleDriveProvider(ExternalProvider):

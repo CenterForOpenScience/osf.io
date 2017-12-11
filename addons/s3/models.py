@@ -25,6 +25,13 @@ class S3Folder(S3FileNode, Folder):
 class S3File(S3FileNode, File):
     version_identifier = 'version'
 
+    @property
+    def _hashes(self):
+        try:
+            return self._history[-1]['extra']['hashes']
+        except (IndexError, KeyError):
+            return None
+
 
 class UserSettings(BaseOAuthUserSettings):
     oauth_provider = S3Provider

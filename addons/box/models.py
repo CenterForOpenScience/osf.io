@@ -31,7 +31,12 @@ class BoxFolder(BoxFileNode, Folder):
 
 
 class BoxFile(BoxFileNode, File):
-    pass
+    @property
+    def _hashes(self):
+        try:
+            return {'sha1': self._history[-1]['extra']['hashes']['sha1']}
+        except (IndexError, KeyError):
+            return None
 
 
 class Provider(ExternalProvider):

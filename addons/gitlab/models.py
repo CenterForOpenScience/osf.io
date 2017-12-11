@@ -32,6 +32,13 @@ class GitLabFolder(GitLabFileNode, Folder):
 class GitLabFile(GitLabFileNode, File):
     version_identifier = 'commitSha'
 
+    @property
+    def _hashes(self):
+        try:
+            return {'commit': self._history[-1]['extra']['commitSha']}
+        except (IndexError, KeyError):
+            return None
+
     def touch(self, auth_header, revision=None, ref=None, branch=None, **kwargs):
         revision = revision or ref or branch
         return super(GitLabFile, self).touch(auth_header, revision=revision, **kwargs)

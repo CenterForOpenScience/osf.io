@@ -25,7 +25,10 @@ class OwncloudFolder(OwncloudFileNode, Folder):
 
 
 class OwncloudFile(OwncloudFileNode, File):
-    pass
+    @property
+    def _hashes(self):
+        # ownCloud API doesn't provide this metadata
+        return None
 
 
 class OwnCloudProvider(BasicAuthProviderMixin):

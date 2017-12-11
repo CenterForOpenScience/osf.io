@@ -24,6 +24,13 @@ class DataverseFolder(DataverseFileNode, Folder):
 class DataverseFile(DataverseFileNode, File):
     version_identifier = 'version'
 
+    @property
+    def _hashes(self):
+        try:
+            return self._history[-1]['extra']['hashes']
+        except (IndexError, KeyError):
+            return None
+
     def update(self, revision, data, save=True, user=None):
         """Note: Dataverse only has psuedo versions, pass None to not save them
         Call super to update _history and last_touched anyway.

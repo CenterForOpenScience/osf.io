@@ -34,7 +34,12 @@ class DropboxFolder(DropboxFileNode, Folder):
 
 
 class DropboxFile(DropboxFileNode, File):
-    pass
+    @property
+    def _hashes(self):
+        try:
+            return {'Dropbox content_hash': self._history[-1]['extra']['hashes']['dropbox']}
+        except (IndexError, KeyError):
+            return None
 
 
 class Provider(ExternalProvider):

@@ -487,6 +487,27 @@ class File(models.Model):
     def restore(self, recursive=True, parent=None, save=True, deleted_on=None):
         raise UnableToRestore('You cannot restore something that is not deleted.')
 
+    @property
+    def last_known_metadata(self):
+        try:
+            last_history = self._history[-1]
+        except IndexError:
+            size = None
+        else:
+            size = last_history.get('size', None)
+        return {
+            'path': self._materialized_path,
+            'hashes': self._hashes,
+            'size': size,
+            'last_seen': self.last_touched
+        }
+
+    @property
+    def _hashes(self):
+        """ Hook for sublasses to return file hashes, commit SHAs, etc.
+        Returns dict or None
+        """
+        return None
 
 class Folder(models.Model):
 

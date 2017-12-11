@@ -25,6 +25,11 @@ class FigshareFolder(FigshareFileNode, Folder):
 class FigshareFile(FigshareFileNode, File):
     version_identifier = 'ref'
 
+    @property
+    def _hashes(self):
+        # figshare API doesn't provide this metadata
+        return None
+
     def update(self, revision, data, user=None, save=True):
         """Figshare does not support versioning.
         Always pass revision as None to avoid conflict.
