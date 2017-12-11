@@ -11,6 +11,7 @@ default_version = versioning.decimal_version_to_url_path(settings.REST_FRAMEWORK
 
 # Please keep URLs alphabetized for auto-generated documentation
 urlpatterns = [
+    url(r'^', include('waffle.urls')),
     url('^(?P<version>(v2))/',
         include(
             [
