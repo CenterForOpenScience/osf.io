@@ -229,63 +229,6 @@ class TestRubeus(OsfTestCase):
             expected
         )
 
-    def test_serialize_private_node(self):
-        user = UserFactory()
-        auth = Auth(user=user)
-        public = ProjectFactory.create(is_public=True)
-        # Add contributor with write permissions to avoid admin permission cascade
-        public.add_contributor(user, permissions=['read', 'write'])
-        public.save()
-        private = ProjectFactory(parent=public, is_public=False)
-        NodeFactory(parent=private)
-        collector = rubeus.NodeFileCollector(node=public, auth=auth)
-
-        private_dummy = collector._serialize_node(private)
-        assert_false(private_dummy['permissions']['edit'])
-        assert_false(private_dummy['permissions']['view'])
-        assert_equal(private_dummy['name'], 'Private Component')
-        assert_equal(len(private_dummy['children']), 0)
-
-    def test_get_node_name(self):
-        user = UserFactory()
-        auth = Auth(user=user)
-        another_user = UserFactory()
-        another_auth = Auth(user=another_user)
-
-        # Public (Can View)
-        public_project = ProjectFactory(is_public=True)
-        collector = rubeus.NodeFileCollector(node=public_project, auth=another_auth)
-        node_name =  sanitize.unescape_entities(public_project.title)
-        assert_equal(collector._serialize_node(public_project)['name'], node_name)
-
-        # Private  (Can't View)
-        registration_private = RegistrationFactory(creator=user)
-        registration_private.is_public = False
-        registration_private.save()
-        collector = rubeus.NodeFileCollector(node=registration_private, auth=another_auth)
-        assert_equal(collector._serialize_node(registration_private)['name'], u'Private Registration')
-
-        content = ProjectFactory(creator=user)
-        node = ProjectFactory(creator=user, is_public=True)
-
-        forked_private = node.fork_node(auth=auth)
-        forked_private.is_public = False
-        forked_private.save()
-        collector = rubeus.NodeFileCollector(node=forked_private, auth=another_auth)
-        assert_equal(collector._serialize_node(forked_private)['name'], u'Private Fork')
-
-        node.add_pointer(content, auth=auth)
-        collector = rubeus.NodeFileCollector(node=node, auth=another_auth)
-        assert_equal(collector._get_nodes(node)['children'][1]['name'], u'Private Link')
-
-        private_project = ProjectFactory(is_public=False)
-        collector = rubeus.NodeFileCollector(node=private_project, auth=another_auth)
-        assert_equal(collector._serialize_node(private_project)['name'], u'Private Component')
-
-        private_node = NodeFactory(is_public=False)
-        collector = rubeus.NodeFileCollector(node=private_node, auth=another_auth)
-        assert_equal(collector._serialize_node(private_node)['name'], u'Private Component')
-
     def test_get_nodes_deleted_component(self):
         node = NodeFactory(creator=self.project.creator, parent=self.project)
         node.is_deleted = True
@@ -303,6 +246,54 @@ class TestRubeus(OsfTestCase):
         ret = serializer._get_nodes(project)
         child = ret['children'][1]  # first child is OSFStorage, second child is pointer
         assert_true(child['isPointer'])
+
+    def test_private_components_not_shown(self):
+        user = UserFactory()
+        public_project = ProjectFactory(creator=user, is_public=True)
+        private_child = NodeFactory(parent=public_project, creator=user, is_public=False)
+        public_grandchild = NodeFactory(parent=private_child, creator=user, is_public=True)
+        private_greatgrandchild = NodeFactory(parent=public_grandchild, creator=user, is_public=False)
+        public_greatgreatgranchild = NodeFactory(parent=private_greatgrandchild, creator=user, is_public=True)
+
+        serializer = rubeus.NodeFileCollector(node=public_project, auth=Auth(user=UserFactory()))
+        ret = serializer.to_hgrid()
+
+        children = ret[0]['children']
+
+        assert 'osfstorage' == children[0]['provider']
+
+        assert public_grandchild._id == children[1]['nodeID']
+        assert public_grandchild.title == children[1]['name']
+        assert False == children[1]['permissions']['edit']
+
+        assert public_greatgreatgranchild._id == children[1]['children'][1]['nodeID']
+        assert public_greatgreatgranchild.title == children[1]['children'][1]['name']
+        assert False == children[1]['children'][1]['permissions']['edit']
+
+        assert 'Private Component' not in ret
+
+    def test_private_components_shown(self):
+        user = UserFactory()
+        public_project = ProjectFactory(creator=user, is_public=True)
+        private_child = NodeFactory(parent=public_project, creator=user, is_public=False)
+        public_grandchild = NodeFactory(parent=private_child, creator=user, is_public=True)
+
+        serializer = rubeus.NodeFileCollector(node=public_project, auth=Auth(user))
+        ret = serializer.to_hgrid()
+
+        children = ret[0]['children']
+
+        assert 'osfstorage' == children[0]['provider']
+
+        assert private_child._id == children[1]['nodeID']
+        assert private_child.title == children[1]['name']
+        assert True == children[1]['permissions']['edit']
+
+        assert public_grandchild._id == children[1]['children'][1]['nodeID']
+        assert public_grandchild.title == children[1]['children'][1]['name']
+        assert True == children[1]['children'][1]['permissions']['edit']
+
+        assert 'Private Component' not in ret
 
 
 # TODO: Make this more reusable across test modules
