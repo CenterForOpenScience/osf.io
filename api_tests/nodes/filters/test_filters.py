@@ -142,6 +142,13 @@ class NodesListFilteringMixin(object):
         assert child_node_two._id not in ids
         assert project._id in ids
 
+    #   test_root_ne_with_title_id_excludes_children_with_query_in_title_or_id
+        id_or_title = 'filter[title,id]={}'.format(child_node_two._id)
+        url = '{}{}&{}'.format(root_ne_url, parent_project._id, id_or_title)
+        res = app.get(url, auth=user.auth)
+        assert res.status_code == 200
+        assert len(res.json['data']) == 0
+
     def test_parent_filter_excludes_linked_nodes(self, app, user, parent_project, child_node_one, child_node_two, parent_url):
         linked_node = NodeFactory()
         parent_project.add_node_link(linked_node, auth=Auth(user))
