@@ -5,6 +5,7 @@ import httplib as http
 
 from flask import request
 from flask import send_from_directory
+from django.core.urlresolvers import reverse
 
 from geoip import geolite2
 
