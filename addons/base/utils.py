@@ -21,10 +21,10 @@ def get_addons_by_config_type(config_type, user):
     addons = [addon for addon in settings.ADDONS_AVAILABLE if config_type in addon.configs]
     return [serialize_addon_config(addon_config, user) for addon_config in sorted(addons, key=lambda cfg: cfg.full_name.lower())]
 
-def maybe_show_lost_file_metadata(auth, node, file):
+def maybe_show_lost_file_metadata(auth, node, file, error_type):
     msg = """
     </div>"""  # None is default
-    if (auth.user and node.is_contributor(auth.user)) or (auth.private_key and auth.private_key in node.private_link_keys_active):
+    if error_type != 'FILE_SUSPENDED' and ((auth.user and node.is_contributor(auth.user)) or (auth.private_key and auth.private_key in node.private_link_keys_active)):
         last_meta = file.last_known_metadata
         last_seen = last_meta.get('last_seen', None)
         hashes = last_meta.get('hashes', None)

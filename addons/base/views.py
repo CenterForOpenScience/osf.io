@@ -559,7 +559,7 @@ def addon_deleted_file(auth, node, error_type='BLAME_PROVIDER', **kwargs):
 
     error_msg = ''.join([
         ERROR_MESSAGES[error_type].format(**format_params),
-        maybe_show_lost_file_metadata(auth, node, file)
+        maybe_show_lost_file_metadata(auth, node, file_node, error_type)
     ])
     ret = serialize_node(node, auth, primary=True)
     ret.update(rubeus.collect_addon_assets(node))
