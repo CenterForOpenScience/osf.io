@@ -32,76 +32,74 @@ $(document).ready(function(){
             var dashboardInstitutions = _dashboardInstitutions.map(function(inst) {
                 return {logoPath: inst.logo_path, id: inst.id, name: inst.name};
             });
-            if (window.waffle.flag_is_active('test_flag')) {
-                return [
-                    m(DonateBanner.background, m('.container',
-                        [
-                            m(columnSizeClass, m.component(DonateBanner.Banner, {}))
-                        ]
-                    )),
-                    m('.prereg-banner', m('.container',
-                        [
-                            m('.row', [
-                                m(columnSizeClass,  m.component(PreregBanner, {}))
-                            ])
-                        ]
-                    )),
-                    m('.quickSearch', m('.container.p-t-lg',
-                        [
-                            m('.row.m-t-lg', [
-                                m(columnSizeClass, m.component(QuickSearchProject, {}))
-                            ])
-                        ]
-                    )),
-                    // TODO: We hide the institution logos on small screens. Better to make the carousel responsive.
-                    m('.institutions-panel.hidden-xs', m('.container',
-                        [
-                            m('.row', [
-                                m(columnSizeClass,  m.component(InstitutionsPanel, {
-                                    affiliatedInstitutions: affiliatedInstitutions,
-                                    allInstitutions: dashboardInstitutions
-                                }))
-                            ])
-                        ]
-                    )),
-                    m('.newAndNoteworthy', m('.container',
-                        [
-                            m('.row', [
-                                m(columnSizeClass, m('h3', 'Discover Public Projects'))
-                            ]),
-                            m('.row', [
-                                m(columnSizeClass, m.component(NewAndNoteworthy, {}))
-                            ])
+            return [
+                m(DonateBanner.background, m('.container',
+                    [
+                        m(columnSizeClass, m.component(DonateBanner.Banner, {}))
+                    ]
+                )),
+                m('.prereg-banner', m('.container',
+                    [
+                        m('.row', [
+                            m(columnSizeClass,  m.component(PreregBanner, {}))
+                        ])
+                    ]
+                )),
+                m('.quickSearch', m('.container.p-t-lg',
+                    [
+                        m('.row.m-t-lg', [
+                            m(columnSizeClass, m.component(QuickSearchProject, {}))
+                        ])
+                    ]
+                )),
+                // TODO: We hide the institution logos on small screens. Better to make the carousel responsive.
+                m('.institutions-panel.hidden-xs', m('.container',
+                    [
+                        m('.row', [
+                            m(columnSizeClass,  m.component(InstitutionsPanel, {
+                                affiliatedInstitutions: affiliatedInstitutions,
+                                allInstitutions: dashboardInstitutions
+                            }))
+                        ])
+                    ]
+                )),
+                m('.newAndNoteworthy', m('.container',
+                    [
+                        m('.row', [
+                            m(columnSizeClass, m('h3', 'Discover Public Projects'))
+                        ]),
+                        m('.row', [
+                            m(columnSizeClass, m.component(NewAndNoteworthy, {}))
+                        ])
 
-                        ]
-                    )),
-                    /*
-                    m('.prereg', m('.container',
-                        [
-                            m('.row', [
-                                m(columnSizeClass,  m.component(Prereg, {}))
-                            ])
-                        ]
-                    )),
-                    */
-                    m('.meetings', m('.container',
-                        [
-                            m('.row', [
-                                m(columnSizeClass,  m.component(MeetingsAndConferences, {}))
-                            ])
+                    ]
+                )),
+                /*
+                m('.prereg', m('.container',
+                    [
+                        m('.row', [
+                            m(columnSizeClass,  m.component(Prereg, {}))
+                        ])
+                    ]
+                )),
+                */
+                m('.meetings', m('.container',
+                    [
+                        m('.row', [
+                            m(columnSizeClass,  m.component(MeetingsAndConferences, {}))
+                        ])
 
-                        ]
-                    )),
-                    m('.preprints', m('.container',
-                        [
-                            m('.row', [
-                                m(columnSizeClass,  m.component(Preprints, {}))
-                            ])
+                    ]
+                )),
+                m('.preprints', m('.container',
+                    [
+                        m('.row', [
+                            m(columnSizeClass,  m.component(Preprints, {}))
+                        ])
 
-                        ]
-                    ))
-                ];
-            }
+                    ]
+                ))
+            ];
         }
     };
     m.mount(document.getElementById('osfHome'), m.component(osfHome, {}));
