@@ -2,10 +2,11 @@ from waffle import flag_is_active, sample_is_active, switch_is_active
 from waffle.models import Sample, Flag, Switch
 from rest_framework import serializers as ser
 
-from api.base.serializers import (JSONAPISerializer, TypeField)
+from api.base.serializers import JSONAPISerializer, TypeField, IDField
+from api.base.waffle_decorators import waffle_feature_is_active
 
 class WaffleSerializer(JSONAPISerializer):
-    id = ser.CharField(source='name', required=True, help_text='The id of the waffle object, which is the same as the name')
+    id = ser.SerializerMethodField()
     type = TypeField()
     name = ser.CharField(required=True, help_text='The name of the waffle object')
     active = ser.SerializerMethodField()
@@ -13,22 +14,12 @@ class WaffleSerializer(JSONAPISerializer):
 
     def get_active(self, obj):
         """
-        Use waffle helper to determine if waffle object is active
+        Use waffle_feature_is_active helper to determine if waffle flag, sample, or switch is active
         """
-        return {
-            Flag: self.lookup_flag,
-            Sample: self.lookup_sample,
-            Switch: self.lookup_switch
-        }.get(type(obj))(obj)
+        return waffle_feature_is_active(self.context.get('request'), type(obj).__name__, obj.name)
 
-    def lookup_flag(self, obj):
-        return flag_is_active(self.context.get('request'), obj)
-
-    def lookup_sample(self, obj):
-        return sample_is_active(obj)
-
-    def lookup_switch(self, obj):
-        return switch_is_active(obj)
+    def get_id(self, obj):
+        return '{}_{}'.format(type(obj).__name__.lower(), obj.id)
 
     class Meta:
-        type_ = 'waffle',
+        type_ = 'waffle'
