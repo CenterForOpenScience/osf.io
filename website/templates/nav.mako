@@ -49,7 +49,7 @@
             % if user_name and display_name:
             <li class="dropdown">
                 <a class="dropdown-toggle btn-link" data-toggle="dropdown" role="button" aria-expanded="false" aria-label="Toggle auth dropdown">
-                    <div class="osf-profile-image" style="float: left;">
+                    <div class="osf-profile-image">
                         <img src="${user_profile_image}" alt="User profile image">
                     </div>
                     <div class="nav-profile-name">
