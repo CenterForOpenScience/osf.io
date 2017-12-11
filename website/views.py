@@ -10,9 +10,6 @@ import urllib
 from django.apps import apps
 from django.db.models import Count
 from flask import request, send_from_directory, Response, stream_with_context
-from waffle.models import Flag, Switch, Sample
-from waffle.utils import get_setting
-from waffle import flag_is_active, sample_is_active
 
 from framework import sentry
 from framework.auth import Auth
@@ -22,7 +19,7 @@ from framework.exceptions import HTTPError
 from framework.flask import redirect  # VOL-aware redirect
 from framework.forms import utils as form_utils
 from framework.routing import proxy_url
-from framework.auth.core import get_current_user_id, _get_current_user
+from framework.auth.core import get_current_user_id
 from website import settings
 from website.institutions.views import serialize_institution
 
@@ -33,8 +30,6 @@ from website.util import permissions
 
 logger = logging.getLogger(__name__)
 preprints_dir = os.path.abspath(os.path.join(os.getcwd(), EXTERNAL_EMBER_APPS['preprints']['path']))
-
-
 
 def serialize_contributors_for_summary(node, max_count=3):
     # # TODO: Use .filter(visible=True) when chaining is fixed in django-include
@@ -128,6 +123,7 @@ def serialize_node_summary(node, auth, primary=True, show_path=False):
         summary['can_view'] = False
 
     return summary
+
 
 def index():
     try:  # Check if we're on an institution landing page
