@@ -32,6 +32,7 @@ from website import mails
 from website import settings
 from addons.base import exceptions
 from addons.base import signals as file_signals
+from addons.base.utils import maybe_show_lost_file_metadata
 from osf.models import (BaseFileNode, TrashedFileNode,
                         OSFUser, AbstractNode,
                         NodeLog, DraftRegistration, MetaSchema)
@@ -55,8 +56,7 @@ The file "{file_name}" stored on {provider} was deleted via the OSF.
 </p>
 <p>
 It was deleted by <a href="/{deleted_by_guid}">{deleted_by}</a> on {deleted_on}.
-</p>
-</div>''',
+</p>''',
                   'FILE_GONE_ACTOR_UNKNOWN': u'''
 <style>
 #toggleBar{{display: none;}}
@@ -67,8 +67,7 @@ The file "{file_name}" stored on {provider} was deleted via the OSF.
 </p>
 <p>
 It was deleted on {deleted_on}.
-</p>
-</div>''',
+</p>''',
                   'DONT_KNOW': u'''
 <style>
 #toggleBar{{display: none;}}
@@ -76,8 +75,7 @@ It was deleted on {deleted_on}.
 <div class="alert alert-info" role="alert">
 <p>
 File not found at {provider}.
-</p>
-</div>''',
+</p>''',
                   'BLAME_PROVIDER': u'''
 <style>
 #toggleBar{{display: none;}}
@@ -89,15 +87,13 @@ The provider ({provider}) may currently be unavailable or "{file_name}" may have
 </p>
 <p>
 You may wish to verify this through {provider}'s website.
-</p>
-</div>''',
+</p>''',
                   'FILE_SUSPENDED': u'''
 <style>
 #toggleBar{{display: none;}}
 </style>
 <div class="alert alert-info" role="alert">
-This content has been removed.
-</div>'''}
+This content has been removed.'''}
 
 WATERBUTLER_JWE_KEY = jwe.kdf(settings.WATERBUTLER_JWE_SECRET.encode('utf-8'), settings.WATERBUTLER_JWE_SALT.encode('utf-8'))
 
@@ -533,7 +529,7 @@ def addon_deleted_file(auth, node, error_type='BLAME_PROVIDER', **kwargs):
         deleted_on = file_node.deleted_on.strftime('%c') + ' UTC'
         if file_node.suspended:
             error_type = 'FILE_SUSPENDED'
-        elif file_node.deleted_by is None:
+        elif file_node.deleted_by is None or (auth.private_key and auth.private_key.anonymous):
             if file_node.provider == 'osfstorage':
                 error_type = 'FILE_GONE_ACTOR_UNKNOWN'
             else:
@@ -561,10 +557,14 @@ def addon_deleted_file(auth, node, error_type='BLAME_PROVIDER', **kwargs):
     if deleted_by:
         format_params['deleted_by_guid'] = markupsafe.escape(deleted_by_guid)
 
+    error_msg = ''.join([
+        ERROR_MESSAGES[error_type].format(**format_params),
+        maybe_show_lost_file_metadata(auth, node, file)
+    ])
     ret = serialize_node(node, auth, primary=True)
     ret.update(rubeus.collect_addon_assets(node))
     ret.update({
-        'error': ERROR_MESSAGES[error_type].format(**format_params),
+        'error': error_msg,
         'urls': {
             'render': None,
             'sharejs': None,
