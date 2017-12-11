@@ -34,29 +34,7 @@ from website.util import permissions
 logger = logging.getLogger(__name__)
 preprints_dir = os.path.abspath(os.path.join(os.getcwd(), EXTERNAL_EMBER_APPS['preprints']['path']))
 
-def generate_waffle_js(request):
-    """
-    Adapted from django-waffle v0.11.1, waffle/views.py, _generate_waffle_js method.
-    """
-    flag_values = {}
-    for f in Flag.objects.values_list('name', flat=True):
-        flag_values[f] = flag_is_active(request, f)
 
-    switches = Switch.objects.values_list('name', 'active')
-    switch_values = dict(switches)
-
-    sample_values = {}
-    for s in Sample.objects.values_list('name', flat=True):
-        sample_values[s] = sample_is_active(s)
-
-    return {
-        'flags': flag_values,
-        'switches': switch_values,
-        'samples': sample_values,
-        'flag_default': int(get_setting('FLAG_DEFAULT')),
-        'switch_default': int(get_setting('SWITCH_DEFAULT')),
-        'sample_default': int(get_setting('SAMPLE_DEFAULT')),
-    }
 
 def serialize_contributors_for_summary(node, max_count=3):
     # # TODO: Use .filter(visible=True) when chaining is fixed in django-include
@@ -184,14 +162,10 @@ def index():
             for inst in all_institutions
         ]
 
-        index_context = {
+        return {
             'home': True,
             'dashboard_institutions': dashboard_institutions,
         }
-        # Waffle expects the user to be under the request
-        request.user = _get_current_user()
-        index_context.update(generate_waffle_js(request))
-        return index_context
     else:  # Logged out: return landing page
         return {
             'home': True,

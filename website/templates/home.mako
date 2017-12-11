@@ -45,41 +45,6 @@
         window.contextVars = $.extend(true, {}, window.contextVars, {
             dashboardInstitutions: ${ dashboard_institutions | sjson, n},
         });
-        // Creating global waffle object to give access to flags, switches and samples
-        // Adapted from django-waffle v0.11.1, waffle/views.py
-        var FLAGS = ${ flags | sjson, n }
-        var SWITCHES = ${ switches | sjson, n }
-        var SAMPLES = ${ samples | sjson, n }
-
-        window.waffle = {
-            "flag_is_active": function waffle_flag(flag_name) {
-                if (${ flag_default }) {
-                    if (FLAGS[flag_name] === undefined) {
-                        return true;
-                    }
-                }
-                return !!FLAGS[flag_name]
-            },
-            "switch_is_active": function waffle_switch(switch_name) {
-                if (${ switch_default }) {
-                    if (SWITCHES[switch_name] === undefined) {
-                        return true;
-                    }
-                }
-                return !!SWITCHES[switch_name]
-            },
-            "sample_is_active": function waffle_sample(sample_name) {
-                if ( ${ sample_default }) {
-                    if (SAMPLES[sample_name] === undefined) {
-                        return true;
-                    }
-                }
-                return !!SAMPLES[sample_name]
-            },
-            "FLAGS": FLAGS,
-            "SWITCHES": SWITCHES,
-            "SAMPLES": SAMPLES
-        }
     </script>
     <script src=${"/static/public/js/home-page.js" | webpack_asset}></script>
 </%def>
