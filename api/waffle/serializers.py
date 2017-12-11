@@ -1,8 +1,6 @@
-from waffle import flag_is_active, sample_is_active, switch_is_active
-from waffle.models import Sample, Flag, Switch
 from rest_framework import serializers as ser
 
-from api.base.serializers import JSONAPISerializer, TypeField, IDField
+from api.base.serializers import JSONAPISerializer, TypeField
 from api.base.waffle_decorators import waffle_feature_is_active
 
 class WaffleSerializer(JSONAPISerializer):
