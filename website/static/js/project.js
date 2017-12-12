@@ -122,7 +122,7 @@ NodeActions.beforeTemplate = function(url, done) {
         var language = '<h4>Are you sure you want to create a new project using this project as a template?</h4>' +
                 '<p>Any add-ons configured for this project will not be authenticated in the new project.</p>';
         if(response.isRegistration){
-            language = '<h4>Are you sure you want to create a new registration using this project as a template?</h4>'
+            language = '<h4>Are you sure you want to create a new registration using this project as a template?</h4>';
         }
         bootbox.confirm({
             message: $osf.joinPrompts(response.prompts, (language)),
