@@ -1,3 +1,4 @@
+import markupsafe
 from os.path import basename
 
 from website import settings
@@ -31,17 +32,15 @@ def maybe_show_lost_file_metadata(auth, node, file, error_type):
         path = last_meta.get('path', None)
         size = last_meta.get('size', None)
         parts = [
-            """This file was """ if last_seen or hashes or path or size else '',
-            """last seen on {}""".format(last_seen) if last_seen else '',
-            """and found at path {}""".format(path) if last_seen and path else '',
-            """last found at path {}""".format(path) if not last_seen and path else '',
-            """with a file size of {}""".format(size) if size and (last_seen or path) else '',
-            """last seen with a file size of {}""".format(size) if size and not (last_seen or path) else '',
-            """.
-""" if last_seen or hashes or path or size else '',
-            """Hashes of last seen version:
-{}""".format(
-                '\n'.join(['{}: {}'.format(k, v) for k, v in hashes.items()])
+            """</br>This file was """ if last_seen or hashes or path or size else '',
+            """last seen on {} UTC """.format(last_seen.strftime('%c')) if last_seen else '',
+            """and found at path {} """.format(markupsafe.escape(path)) if last_seen and path else '',
+            """last found at path {} """.format(markupsafe.escape(path)) if not last_seen and path else '',
+            """with a file size of {} bytes""".format(size) if size and (last_seen or path) else '',
+            """last seen with a file size of {} bytes""".format(size) if size and not (last_seen or path) else '',
+            """.</br></br>""" if last_seen or hashes or path or size else '',
+            """Hashes of last seen version:</br>{}""".format(
+                '</br>'.join(['{}: {}'.format(k, v) for k, v in hashes.items()])
             ) if hashes else '',  # TODO: Format better for UI
             msg
         ]
