@@ -100,6 +100,8 @@ class CoreScopes(object):
 
     PROVIDERS_WRITE = 'providers_write'
 
+    WAFFLE_READ = 'waffle_read'
+
     NULL = 'null'
 
     # NOTE: Use with extreme caution.

@@ -5,7 +5,9 @@ from rest_framework import generics
 from rest_framework import permissions as drf_permissions
 
 from api.base.views import JSONAPIBaseView
+from api.base.permissions import TokenHasScope
 from api.waffle.serializers import WaffleSerializer
+from framework.auth.oauth_scopes import CoreScopes
 
 
 class WaffleList(JSONAPIBaseView, generics.ListAPIView):
@@ -49,8 +51,12 @@ class WaffleList(JSONAPIBaseView, generics.ListAPIView):
 
     """
     permission_classes = (
+        TokenHasScope,
         drf_permissions.IsAuthenticatedOrReadOnly,
     )
+
+    required_read_scopes = [CoreScopes.WAFFLE_READ]
+    required_write_scopes = [CoreScopes.NULL]
 
     serializer_class = WaffleSerializer
     view_category = 'waffle'
