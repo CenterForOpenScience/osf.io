@@ -6,10 +6,10 @@ from django.utils import timezone
 from osf.exceptions import ValidationValueError, ValidationTypeError
 from osf.utils.datetime_aware_jsonfield import DateTimeAwareJSONField
 from osf.utils.fields import NonNaiveDateTimeField
+from osf.utils import akismet
+from osf.utils.akismet import AkismetClientError
 
 from website import settings
-from website.util import akismet
-from website.util.akismet import AkismetClientError
 
 logger = logging.getLogger(__name__)
 
