@@ -14,6 +14,7 @@ from factory.django import DjangoModelFactory
 from django.utils import timezone
 from django.db.utils import IntegrityError
 from faker import Factory
+from waffle.models import Flag, Sample, Switch
 
 from reviews import workflow
 from website import settings
@@ -816,3 +817,30 @@ class ActionFactory(DjangoModelFactory):
     creator = factory.SubFactory(AuthUserFactory)
 
     is_deleted = False
+
+
+class FlagFactory(DjangoModelFactory):
+    name = factory.Faker('catch_phrase')
+    everyone = True
+    note = "This is a waffle test flag"
+
+    class Meta:
+        model = Flag
+
+
+class SampleFactory(DjangoModelFactory):
+    name = factory.Faker('catch_phrase')
+    percent = 100
+    note = "This is a waffle test sample"
+
+    class Meta:
+        model = Sample
+
+
+class SwitchFactory(DjangoModelFactory):
+    name = factory.Faker('catch_phrase')
+    active = True
+    note = "This is a waffle test switch"
+
+    class Meta:
+        model = Switch
