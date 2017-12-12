@@ -159,6 +159,16 @@ class TestNodeForksList:
         assert res.status_code == 403
         assert res.json['errors'][0]['detail'] == exceptions.PermissionDenied.default_detail
 
+    def test_forks_list_does_not_show_registrations_of_forks(self, app, public_project, public_fork, public_project_url):
+        reg = RegistrationFactory(project=public_fork, is_public=True)
+
+        # confirm registration shows up in node forks
+        assert reg in public_project.forks.all()
+        res = app.get(public_project_url)
+
+        # confirm registration of fork does not show up in public data
+        assert len(res.json['data']) == 0
+
 
 @pytest.mark.django_db
 class TestNodeForkCreate:
