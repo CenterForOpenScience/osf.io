@@ -36,10 +36,11 @@ GLACIER_SINGLE_OPERATION_THRESHOLD = 100 * (1024 * 1024)  # 100MB
 
 
 class Context(object):
-    container_primary = None
-    container_parity = None
-    vault = None
-    audit_temp_path = None
+    def __init__(self):
+        self.container_primary = None
+        self.container_parity = None
+        self.vault = None
+        self.audit_temp_path = None
 
 
 logger = logging.getLogger(__name__)
