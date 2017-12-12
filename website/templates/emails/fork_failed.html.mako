@@ -11,9 +11,4 @@
     </h3>
   </td>
 </tr>
-<tr>
-  <td style="border-collapse: collapse;">
-    You can view the project here: <a href="${settings.DOMAIN + guid}">${settings.DOMAIN + guid}</a>
-  </td>
-</tr>
 </%def>
