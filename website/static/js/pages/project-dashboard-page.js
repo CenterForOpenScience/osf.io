@@ -332,7 +332,8 @@ $(document).ready(function () {
         request.done(function(resp) {
             var rawText = resp.wiki_content || '*Add important information, links, or images here to describe your project.*';
             var renderedText = ctx.renderedBeforeUpdate ? oldMd.render(rawText) : md.render(rawText);
-            var truncatedText = $.truncate(renderedText, {length: 400});
+            // don't truncate the text when length = 400
+            var truncatedText = $.truncate(renderedText, {length: 401});
             markdownElement.html(truncatedText);
             mathrender.mathjaxify(markdownElement);
             markdownElement.show();

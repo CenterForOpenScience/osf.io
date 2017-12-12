@@ -383,8 +383,8 @@ class ListFilterMixin(FilterMixin):
                     query_parts.append(sub_query)
 
             if not isinstance(queryset, list):
-                query = functools.reduce(operator.and_, query_parts)
-                queryset = queryset.filter(query)
+                for query in query_parts:
+                    queryset = queryset.filter(query)
 
         return queryset
 

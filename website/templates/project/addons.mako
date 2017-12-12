@@ -69,7 +69,7 @@
                                         <td>
                                             <div class="addon-list">
                                                 % for addon in addon_settings:
-                                                     <div name="${addon['short_name']}" status="${'enabled' if addon.get('enabled') else 'disabled'}" categories="${' '.join(addon['categories'])}" class="addon-container">
+                                                     <div name="${addon['short_name']}" full_name="${addon['full_name']}" status="${'enabled' if addon.get('enabled') else 'disabled'}" categories="${' '.join(addon['categories'])}" class="addon-container">
                                                          <div class="row ${'text-muted' if addon.get('enabled') else ''}">
                                                              <div class="col-md-1">
                                                                  <img class="addon-icon" src="${addon['addon_icon_url']}">
