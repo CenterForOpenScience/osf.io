@@ -35,7 +35,9 @@ google-api-python-client==1.6.4
 Babel==2.5.1
 citeproc-py==0.4.0
 boto3==1.4.7
-django-waffle==0.12.0
+#Using own fork of django-waffle until https://github.com/jsocol/django-waffle/pull/259 is merged
+git+https://github.com/pattisdr/django-waffle.git
+
 # Support SSL SNI on Python < 2.7.9
 # (http://docs.python-requests.org/en/latest/community/faq/#what-are-hostname-doesn-t-match-errors)
 ndg-httpsclient==0.3.0
