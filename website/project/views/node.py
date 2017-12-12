@@ -239,7 +239,7 @@ def project_before_template(auth, node, **kwargs):
             if addon.to_json(auth.user)['addon_full_name']:
                 prompts.append(addon.to_json(auth.user)['addon_full_name'])
 
-    return {'prompts': prompts}
+    return {'prompts': prompts, 'isRegistration': node.is_registration}
 
 
 @must_be_valid_project
