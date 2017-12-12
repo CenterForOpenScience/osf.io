@@ -18,6 +18,7 @@ from website.project.decorators import (
     must_be_valid_project, must_be_contributor_or_public,
     must_have_permission,
     must_not_be_registration, must_be_registration,
+    must_not_be_retracted_registration
 )
 from website.identifiers.utils import get_or_create_identifiers, build_ezid_metadata
 from osf.models import Identifier, MetaSchema, NodeLog
@@ -36,6 +37,7 @@ from website.identifiers.client import EzidClient
 from .node import _view_project
 
 @must_be_valid_project
+@must_not_be_retracted_registration
 @must_be_contributor_or_public
 def node_register_page(auth, node, **kwargs):
     """Display the registration metadata for a registration.
@@ -57,6 +59,7 @@ def node_registration_retraction_redirect(auth, node, **kwargs):
     return redirect(node.web_url_for('node_registration_retraction_get', _guid=True))
 
 @must_be_valid_project
+@must_not_be_retracted_registration
 @must_have_permission(ADMIN)
 def node_registration_retraction_get(auth, node, **kwargs):
     """Prepares node object for registration retraction page.
@@ -114,6 +117,7 @@ def node_registration_retraction_post(auth, node, **kwargs):
     return {'redirectUrl': node.web_url_for('view_project')}
 
 @must_be_valid_project
+@must_not_be_retracted_registration
 @must_be_contributor_or_public
 def node_register_template_page(auth, node, metaschema_id, **kwargs):
     if node.is_registration and bool(node.registered_schema):
@@ -121,9 +125,8 @@ def node_register_template_page(auth, node, metaschema_id, **kwargs):
             meta_schema = MetaSchema.objects.get(_id=metaschema_id)
         except MetaSchema.DoesNotExist:
             # backwards compatability for old urls, lookup by name
-            try:
-                meta_schema = MetaSchema.objects.filter(name=_id_to_name(metaschema_id)).order_by('-schema_version').first()
-            except IndexError:
+            meta_schema = MetaSchema.objects.filter(name=_id_to_name(metaschema_id)).order_by('-schema_version').first()
+            if not meta_schema:
                 raise HTTPError(http.NOT_FOUND, data={
                     'message_short': 'Invalid schema name',
                     'message_long': 'No registration schema with that name could be found.'

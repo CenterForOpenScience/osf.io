@@ -115,8 +115,13 @@ def ensure_parity(version, dry_run):
 
 
 def ensure_backups(version, dry_run):
-    ensure_glacier(version, dry_run)
-    ensure_parity(version, dry_run)
+    try:
+        ensure_glacier(version, dry_run)
+        ensure_parity(version, dry_run)
+    except UnicodeDecodeError as e:
+        # Mostly due to legacy boto version, log for reporting and further investigation.
+        logger.error('UnicodeDecodeError with version: %s', version._id)
+        logger.exception(e)
     delete_temp_file(version)
 
 

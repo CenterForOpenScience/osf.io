@@ -10,6 +10,7 @@ from django.shortcuts import redirect
 from django.views.defaults import page_not_found
 from django.contrib.auth.mixins import PermissionRequiredMixin
 from django.http import HttpResponse
+from django.db.models import Q
 
 from website import search
 from osf.models import NodeLog
@@ -222,7 +223,11 @@ class AdminNodeLogView(PermissionRequiredMixin, ListView):
         return Node.load(self.kwargs.get('guid')) or Registration.load(self.kwargs.get('guid'))
 
     def get_queryset(self):
-        return self.get_object().logs.all().order_by(self.ordering)
+        node = self.get_object()
+        query = Q(node_id__in=list(Node.objects.get_children(node).values_list('id', flat=True)) + [node.id])
+        return NodeLog.objects.filter(query).order_by('-date').include(
+            'node__guids', 'user__guids', 'original_node__guids', limit_includes=10
+        )
 
     def get_context_data(self, **kwargs):
         query_set = self.get_queryset()

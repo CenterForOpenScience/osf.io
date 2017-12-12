@@ -887,6 +887,9 @@ class LinksField(ser.Field):
         # not just the field attribute.
         return obj
 
+    def extend_absolute_info_url(self, obj):
+        return extend_querystring_if_key_exists(obj.get_absolute_info_url(), self.context['request'], 'view_only')
+
     def extend_absolute_url(self, obj):
         return extend_querystring_if_key_exists(obj.get_absolute_url(), self.context['request'], 'view_only')
 
@@ -901,6 +904,13 @@ class LinksField(ser.Field):
                 ret[name] = url
         if hasattr(obj, 'get_absolute_url') and 'self' not in self.links:
             ret['self'] = self.extend_absolute_url(obj)
+
+        if 'info' in ret:
+            if hasattr(obj, 'get_absolute_info_url'):
+                ret['info'] = self.extend_absolute_info_url(obj)
+            else:
+                ret['info'] = extend_querystring_if_key_exists(ret['info'], self.context['request'], 'view_only')
+
         return ret
 
 

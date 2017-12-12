@@ -520,4 +520,4 @@ class PreprintFilterMixin(ListFilterMixin):
         else:
             query = no_user_query
 
-        return base_queryset.annotate(default=Exists(sub_qs)).filter(Q(default=True) & query)
+        return base_queryset.annotate(default=Exists(sub_qs)).filter(Q(default=True) & query).distinct('id', 'created')
