@@ -1940,7 +1940,7 @@ class NodeFilesList(JSONAPIBaseView, generics.ListAPIView, WaterButlerMixin, Lis
 
     # overrides ListAPIView
     def get_queryset(self):
-        return self.get_queryset_from_request()
+        return self.get_queryset_from_request().distinct()
 
 
 class NodeFileDetail(JSONAPIBaseView, generics.RetrieveAPIView, WaterButlerMixin, NodeMixin):
