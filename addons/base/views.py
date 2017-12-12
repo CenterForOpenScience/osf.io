@@ -527,7 +527,7 @@ def addon_deleted_file(auth, node, error_type='BLAME_PROVIDER', **kwargs):
         deleted_by = file_node.deleted_by
         deleted_by_guid = file_node.deleted_by._id if deleted_by else None
         deleted_on = file_node.deleted_on.strftime('%c') + ' UTC'
-        if file_node.suspended:
+        if getattr(file_node, 'suspended', False):
             error_type = 'FILE_SUSPENDED'
         elif file_node.deleted_by is None or (auth.private_key and auth.private_key.anonymous):
             if file_node.provider == 'osfstorage':
@@ -645,16 +645,12 @@ def addon_view_or_download_file(auth, path, provider, **kwargs):
         # Rollback the insertion of the file_node
         transaction.savepoint_rollback(savepoint_id)
         if not file_node.pk:
-            redirect_file_node = BaseFileNode.load(path)
+            file_node = BaseFileNode.load(path)
             # Allow osfstorage to redirect if the deep url can be used to find a valid file_node
-            if redirect_file_node and redirect_file_node.provider == 'osfstorage' and not redirect_file_node.is_deleted:
+            if file_node and file_node.provider == 'osfstorage' and not file_node.is_deleted:
                 return redirect(
-                    redirect_file_node.node.web_url_for('addon_view_or_download_file', path=redirect_file_node._id, provider=redirect_file_node.provider)
+                    file_node.node.web_url_for('addon_view_or_download_file', path=file_node._id, provider=file_node.provider)
                 )
-            raise HTTPError(httplib.NOT_FOUND, data={
-                'message_short': 'File Not Found',
-                'message_long': 'The requested file could not be found.'
-            })
         return addon_deleted_file(file_node=file_node, path=path, **kwargs)
     else:
         transaction.savepoint_commit(savepoint_id)

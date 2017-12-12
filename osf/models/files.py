@@ -601,6 +601,30 @@ class TrashedFile(TrashedFileNode):
     def kind(self):
         return 'file'
 
+    @property
+    def _hashes(self):
+        last_version = self.versions.last()
+        if not last_version:
+            return None
+        return {
+            'sha1': last_version.metadata['sha1'],
+            'sha256': last_version.metadata['sha256'],
+            'md5': last_version.metadata['md5']
+        }
+
+    @property
+    def last_known_metadata(self):
+        last_version = self.versions.last()
+        if not last_version:
+            size = None
+        else:
+            size = last_version.size
+        return {
+            'path': self.materialized_path,
+            'hashes': self._hashes,
+            'size': size,
+            'last_seen': self.modified
+        }
 
 class TrashedFolder(TrashedFileNode):
     @property
