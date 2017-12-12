@@ -14,7 +14,7 @@ from osf.models import AbstractNode, NodeLog
 from tests.utils import assert_items_equal, assert_latest_log
 from website.project.signals import contributor_removed
 from website.util.sanitize import strip_html
-from website.util import disconnected_from_listeners
+from api_tests.utils import disconnected_from_listeners
 from website.views import find_bookmark_collection
 
 

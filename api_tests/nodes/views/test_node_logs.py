@@ -11,7 +11,7 @@ from osf_tests.factories import (
     EmbargoFactory,
 )
 from tests.base import assert_datetime_equal
-from website.util import disconnected_from_listeners
+from api_tests.utils import disconnected_from_listeners
 from website.project.signals import contributor_removed
 
 API_LATEST = 0

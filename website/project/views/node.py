@@ -16,6 +16,7 @@ from framework.utils import iso8601format
 from framework.auth.decorators import must_be_logged_in, collect_auth
 from framework.exceptions import HTTPError
 from osf.models.nodelog import NodeLog
+from api.base.utils import rapply
 
 from website import language
 

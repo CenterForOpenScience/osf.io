@@ -1,13 +1,9 @@
 # -*- coding: utf-8 -*-
 
 from contextlib import contextmanager
-import collections
 import logging
 import re
 import urlparse
-
-from blinker import ANY
-import furl
 
 from django.utils.http import urlencode, urlquote
 from flask import request, url_for
@@ -31,27 +27,6 @@ waterbutler_action_map = {
     'create_folder': 'file',
 }
 
-
-# Function courtesy of @brianjgeiger and @abought, moved from API utils
-def rapply(data, func, *args, **kwargs):
-    """Recursively apply a function to all values in an iterable
-    :param dict | list | basestring data: iterable to apply func to
-    :param function func:
-    """
-    if isinstance(data, collections.Mapping):
-        return {
-            key: rapply(value, func, *args, **kwargs)
-            for key, value in data.iteritems()
-        }
-    elif isinstance(data, collections.Iterable) and not isinstance(data, basestring):
-        desired_type = type(data)
-        return desired_type(
-            rapply(item, func, *args, **kwargs) for item in data
-        )
-    else:
-        return func(data, *args, **kwargs)
-
-
 def conjunct(words, conj='and'):
     words = list(words)
     num_words = len(words)
@@ -63,7 +38,6 @@ def conjunct(words, conj='and'):
         return ' {0} '.format(conj).join(words)
     elif num_words > 2:
         return ', '.join(words[:-1]) + ', {0} {1}'.format(conj, words[-1])
-
 
 def _get_guid_url_for(url):
     """URL Post-processor transforms specific `/project/<pid>` or `/project/<pid>/node/<nid>`
@@ -139,61 +113,3 @@ def is_json_request():
     """Return True if the current request is a JSON/AJAX request."""
     content_type = request.content_type
     return content_type and ('application/json' in content_type)
-
-
-def waterbutler_api_url_for(node_id, provider, path='/', _internal=False, **kwargs):
-    assert path.startswith('/'), 'Path must always start with /'
-    url = furl.furl(website_settings.WATERBUTLER_INTERNAL_URL if _internal else website_settings.WATERBUTLER_URL)
-    segments = ['v1', 'resources', node_id, 'providers', provider] + path.split('/')[1:]
-    url.path.segments.extend([urlquote(x) for x in segments])
-    url.args.update(kwargs)
-    return url.url
-
-
-@contextmanager
-def disconnected_from(signal, listener):
-    """Temporarily disconnect a single listener from a Blinker signal."""
-    signal.disconnect(listener)
-    yield
-    signal.connect(listener)
-
-
-@contextmanager
-def disconnected_from_listeners(signal):
-    """Temporarily disconnect all listeners for a Blinker signal."""
-    listeners = list(signal.receivers_for(ANY))
-    for listener in listeners:
-        signal.disconnect(listener)
-    yield
-    for listener in listeners:
-        signal.connect(listener)
-
-
-def check_private_key_for_anonymized_link(private_key):
-    from osf.models import PrivateLink
-    try:
-        link = PrivateLink.objects.get(key=private_key)
-    except PrivateLink.DoesNotExist:
-        return False
-    return link.anonymous
-
-
-def get_headers_from_request(req):
-    """ Get and normalize DRF and Flask request headers
-    """
-    headers = getattr(req, 'META', {})
-    if headers:
-        headers = {
-            '-'.join([part.capitalize() for part in k.split('_')]).replace('Http-', ''): v
-            for k, v in headers.items()
-        }
-        remote_addr = (headers.get('X-Forwarded-For') or headers.get('Remote-Addr'))
-        headers['Remote-Addr'] = remote_addr.split(',')[0].strip() if remote_addr else None
-    else:
-        headers = getattr(req, 'headers', {})
-        headers = {
-            k: v
-            for k, v in headers.items()
-        }
-        headers['Remote-Addr'] = req.remote_addr
-    return headers

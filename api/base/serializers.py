@@ -20,11 +20,10 @@ from api.base.exceptions import JSONAPIException
 from api.base.exceptions import TargetNotSupportedError
 from api.base.exceptions import RelationshipPostMakesNoChanges
 from api.base.settings import BULK_SETTINGS
-from api.base.utils import absolute_reverse, extend_querystring_params, get_user_auth, extend_querystring_if_key_exists
+from api.base.utils import absolute_reverse, extend_querystring_params, get_user_auth, extend_querystring_if_key_exists, rapply
 from framework.auth import core as auth_core
 from osf.models import AbstractNode, MaintenanceState
 from website import settings
-from website import util as website_utils
 from website.util.sanitize import strip_html
 from website.project.model import has_anonymous_link
 
@@ -578,11 +577,11 @@ class RelationshipField(ser.HyperlinkedIdentityField):
                 field_counts_requested = self.process_related_counts_parameters(show_related_counts, value)
 
                 if utils.is_truthy(show_related_counts):
-                    meta[key] = website_utils.rapply(meta_data[key], _url_val, obj=value, serializer=self.parent, request=self.context['request'])
+                    meta[key] = rapply(meta_data[key], _url_val, obj=value, serializer=self.parent, request=self.context['request'])
                 elif utils.is_falsy(show_related_counts):
                     continue
                 elif self.field_name in field_counts_requested:
-                    meta[key] = website_utils.rapply(meta_data[key], _url_val, obj=value, serializer=self.parent, request=self.context['request'])
+                    meta[key] = rapply(meta_data[key], _url_val, obj=value, serializer=self.parent, request=self.context['request'])
                 else:
                     continue
             elif key == 'projects_in_common':
@@ -590,9 +589,9 @@ class RelationshipField(ser.HyperlinkedIdentityField):
                     continue
                 if not self.context['request'].query_params.get('show_projects_in_common', False):
                     continue
-                meta[key] = website_utils.rapply(meta_data[key], _url_val, obj=value, serializer=self.parent, request=self.context['request'])
+                meta[key] = rapply(meta_data[key], _url_val, obj=value, serializer=self.parent, request=self.context['request'])
             else:
-                meta[key] = website_utils.rapply(meta_data[key], _url_val, obj=value, serializer=self.parent, request=self.context['request'])
+                meta[key] = rapply(meta_data[key], _url_val, obj=value, serializer=self.parent, request=self.context['request'])
         return meta
 
     def lookup_attribute(self, obj, lookup_field):
@@ -850,7 +849,7 @@ class TargetField(ser.Field):
         If no meta information, self.link_type is equal to a string containing link's URL.  Otherwise,
         the link is represented as a links object with 'href' and 'meta' members.
         """
-        meta = website_utils.rapply(self.meta, _url_val, obj=value, serializer=self.parent, request=self.context['request'])
+        meta = rapply(self.meta, _url_val, obj=value, serializer=self.parent, request=self.context['request'])
         return {'links': {self.link_type: {'href': value.referent.get_absolute_url(), 'meta': meta}}}
 
 
@@ -1020,7 +1019,7 @@ class WaterbutlerLink(Link):
             if view_only:
                 self.kwargs['view_only'] = view_only
 
-        url = website_utils.waterbutler_api_url_for(obj.node._id, obj.provider, obj.path, **self.kwargs)
+        url = utils.waterbutler_api_url_for(obj.node._id, obj.provider, obj.path, **self.kwargs)
         if not url:
             raise SkipField
         else:
@@ -1122,7 +1121,7 @@ class JSONAPIListSerializer(ser.ListSerializer):
         ret = super(JSONAPIListSerializer, self).is_valid(**kwargs)
 
         if clean_html is True:
-            self._validated_data = website_utils.rapply(self.validated_data, strip_html)
+            self._validated_data = rapply(self.validated_data, strip_html)
 
         for data in self._validated_data:
             data.pop('type', None)
@@ -1333,7 +1332,7 @@ class JSONAPISerializer(BaseAPISerializer):
         return ret
 
     def sanitize_data(self):
-        return website_utils.rapply(self.validated_data, strip_html)
+        return rapply(self.validated_data, strip_html)
 
 
 class JSONAPIRelationshipSerializer(BaseAPISerializer):

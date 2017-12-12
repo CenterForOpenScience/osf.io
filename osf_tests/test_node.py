@@ -13,7 +13,8 @@ from website.util.permissions import READ, WRITE, ADMIN, expand_permissions, DEF
 from website.project.model import has_anonymous_link
 from website.project.signals import contributor_added, contributor_removed, after_create_registration
 from website.exceptions import NodeStateError
-from website.util import permissions, disconnected_from_listeners, api_url_for, web_url_for
+from website.util import permissions, api_url_for, web_url_for
+from api_tests.utils import disconnected_from_listeners
 from website.citations.utils import datetime_to_csl
 from website import language, settings
 from website.project.tasks import on_node_updated

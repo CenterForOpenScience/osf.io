@@ -17,7 +17,7 @@ from osf.utils.datetime_aware_jsonfield import DateTimeAwareJSONField
 from website import settings
 from addons.base import logger, serializer
 from website.oauth.signals import oauth_complete
-from website.util import waterbutler_api_url_for
+from api.base.utils import waterbutler_api_url_for
 
 lookup = TemplateLookup(
     directories=[

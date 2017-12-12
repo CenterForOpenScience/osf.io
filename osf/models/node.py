@@ -58,8 +58,8 @@ from website.project import signals as project_signals
 from website.project import tasks as node_tasks
 from website.project.model import NodeUpdateError
 from website.identifiers.tasks import update_ezid_metadata_on_change
-
-from website.util import (api_url_for, api_v2_url, get_headers_from_request,
+from osf.utils.requests import get_headers_from_request
+from website.util import (api_url_for, api_v2_url,
                           sanitize, web_url_for)
 from website.util.permissions import (ADMIN, CREATOR_PERMISSIONS,
                                       DEFAULT_CONTRIBUTOR_PERMISSIONS, READ,
