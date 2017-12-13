@@ -54,5 +54,9 @@
     "azureblobstorage": {
         "fullName": "Azure Blob Storage",
         "externalView": false
+    },
+    "s3compat": {
+        "fullName": "S3 Compatible Storage",
+        "externalView": false
     }
 }
