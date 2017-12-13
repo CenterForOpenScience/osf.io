@@ -3,6 +3,7 @@ import pytest
 from api.base.settings.defaults import API_BASE
 from framework.auth.core import Auth
 from osf.models import AbstractNode, NodeLog
+from osf.utils.sanitize import strip_html
 from osf_tests.factories import (
     NodeFactory,
     ProjectFactory,
@@ -11,7 +12,6 @@ from osf_tests.factories import (
 )
 from tests.base import fake
 from website.util import permissions
-from website.util.sanitize import strip_html
 
 
 @pytest.fixture()

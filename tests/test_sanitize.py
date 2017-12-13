@@ -3,7 +3,7 @@ import unittest
 
 from django.utils import timezone
 from nose.tools import *  # flake8: noqa
-from website.util import sanitize
+from osf.utils import sanitize
 
 
 class TestSanitize(unittest.TestCase):

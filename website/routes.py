@@ -23,13 +23,13 @@ from framework.routing import render_mako_string
 from framework.auth.core import _get_current_user
 
 from osf.models import Institution
+from osf.utils import sanitize
 from website import util
 from website import prereg
 from website import settings
 from website import language
 from website.util import metrics
 from website.util import paths
-from website.util import sanitize
 from website import maintenance
 from website import landing_pages as landing_page_views
 from website import views as website_views

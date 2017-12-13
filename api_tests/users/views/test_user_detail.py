@@ -6,6 +6,7 @@ import urlparse
 from django.db import connection, transaction
 from django.test.utils import CaptureQueriesContext
 
+from osf.utils.sanitize import strip_html
 from osf.models import QuickFilesNode
 from api.base.settings.defaults import API_BASE
 from api.base.utils import waterbutler_api_url_for
@@ -14,7 +15,6 @@ from osf_tests.factories import (
     CollectionFactory,
     ProjectFactory,
 )
-from website.util.sanitize import strip_html
 from website.views import find_bookmark_collection
 
 

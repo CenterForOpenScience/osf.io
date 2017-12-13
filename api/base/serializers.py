@@ -23,8 +23,8 @@ from api.base.settings import BULK_SETTINGS
 from api.base.utils import absolute_reverse, extend_querystring_params, get_user_auth, extend_querystring_if_key_exists, rapply
 from framework.auth import core as auth_core
 from osf.models import AbstractNode, MaintenanceState
+from osf.utils.sanitize import strip_html
 from website import settings
-from website.util.sanitize import strip_html
 from website.project.model import has_anonymous_link
 
 

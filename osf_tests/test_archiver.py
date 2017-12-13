@@ -40,8 +40,8 @@ from website.archiver.decorators import fail_archive_on_error
 
 from website import mails
 from website import settings
-from website.util.sanitize import strip_html
 from osf.models import MetaSchema
+from osf.utils.sanitize import strip_html
 from addons.base.models import BaseStorageAddon
 from api.base.utils import waterbutler_api_url_for
 

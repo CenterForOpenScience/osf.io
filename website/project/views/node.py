@@ -40,11 +40,11 @@ from website.project.metadata.utils import serialize_meta_schemas
 from osf.models import AbstractNode, PrivateLink, Contributor, Node, NodeRelation
 from osf.models.contributor import get_contributor_permissions
 from osf.models.licenses import serialize_node_license_record
+from osf.utils.sanitize import strip_html
 from website import settings
 from website.views import find_bookmark_collection, validate_page_num
 from website.views import serialize_node_summary
 from website.profile import utils
-from website.util.sanitize import strip_html
 from website.util import rapply
 from addons.mendeley.provider import MendeleyCitationsProvider
 from addons.zotero.provider import ZoteroCitationsProvider

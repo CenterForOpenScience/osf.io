@@ -15,8 +15,8 @@ from django.db.models import Exists, OuterRef
 
 from website import settings
 from website.util import paths
-from website.util import sanitize
 from website.settings import DISK_SAVING_MODE
+from osf.utils import sanitize
 
 
 logger = logging.getLogger(__name__)
