@@ -14,7 +14,9 @@ $(document).ready(function() {
     $("#embargo-update-form").submit(function (event) {
         event.preventDefault();
         $('#update-embargo-modal').modal('show');
+    });
 
+    $("#embargo-update-modal").submit(function (event) {
         var data = $('#embargo-update-form').serialize();
         data["validation_only"]="False";
         $.ajax({

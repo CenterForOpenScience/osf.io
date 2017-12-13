@@ -321,7 +321,7 @@
                                                 {{ node.embargo }}
                                             </span>
                                             <span class="form-view" style="display:none;">
-                                                <form id="embargo-update-form" action="{% url 'nodes:update_embargo' guid=node.id %}" method="post" class="row">
+                                                <form id="embargo-update-form" class="row">
                                                     {% csrf_token %}
                                                     <div class="col-md-6">
                                                         <input id='datepicker' type='datetime' name="date" class="form-control" value={{node.embargo_formatted}} />
