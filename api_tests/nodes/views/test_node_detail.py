@@ -828,7 +828,7 @@ class TestNodeUpdate(NodeCRUDTestCase):
         )
         assert res.status_code == 200
 
-    @mock.patch('website.preprints.tasks.update_ezid_metadata_on_change.s')
+    @mock.patch('website.identifiers.tasks.update_ezid_metadata_on_change.s')
     def test_set_node_private_updates_ezid(self, mock_update_ezid_metadata, app, user, project_public, url_public, make_node_payload):
         IdentifierFactory(referent=project_public, category='doi')
         res = app.patch_json_api(url_public, make_node_payload(project_public, {'public': False}), auth=user.auth)
@@ -837,7 +837,7 @@ class TestNodeUpdate(NodeCRUDTestCase):
         assert not project_public.is_public
         mock_update_ezid_metadata.assert_called_with(project_public._id, status='unavailable')
 
-    @mock.patch('website.preprints.tasks.update_ezid_metadata_on_change')
+    @mock.patch('website.identifiers.tasks.update_ezid_metadata_on_change')
     def test_set_node_with_preprint_private_updates_ezid(self, mock_update_ezid_metadata, app, user, project_public, url_public, make_node_payload):
         target_object = PreprintFactory(project=project_public)
 
@@ -917,7 +917,7 @@ class TestNodeDelete(NodeCRUDTestCase):
         # Bookmark collections are collections, so a 404 is returned
         assert res.status_code == 404
 
-    @mock.patch('website.preprints.tasks.update_ezid_metadata_on_change.s')
+    @mock.patch('website.identifiers.tasks.update_ezid_metadata_on_change.s')
     def test_delete_node_with_preprint_calls_preprint_update_status(self, mock_update_ezid_metadata_on_change, app, user, project_public, url_public):
         PreprintFactory(project=project_public)
         app.delete_json_api(url_public, auth=user.auth, expect_errors=True)
@@ -925,7 +925,7 @@ class TestNodeDelete(NodeCRUDTestCase):
 
         assert mock_update_ezid_metadata_on_change.called
 
-    @mock.patch('website.preprints.tasks.update_ezid_metadata_on_change.s')
+    @mock.patch('website.identifiers.tasks.update_ezid_metadata_on_change.s')
     def test_delete_node_with_identifier_calls_preprint_update_status(self, mock_update_ezid_metadata_on_change, app, user, project_public, url_public):
         IdentifierFactory(referent=project_public, category='doi')
         app.delete_json_api(url_public, auth=user.auth, expect_errors=True)

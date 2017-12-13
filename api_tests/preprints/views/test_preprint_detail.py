@@ -299,7 +299,7 @@ class TestPreprintUpdate:
         assert preprint.node.title == new_title
         assert mock_preprint_updated.called
 
-    @mock.patch('website.preprints.tasks.update_ezid_metadata_on_change')
+    @mock.patch('website.identifiers.tasks.update_ezid_metadata_on_change')
     def test_update_tags(self, mock_update_ezid, app, user, preprint, url):
         new_tags = ['hey', 'sup']
 
@@ -320,7 +320,7 @@ class TestPreprintUpdate:
         assert sorted(list(preprint.node.tags.all().values_list('name', flat=True))) == new_tags
         assert mock_update_ezid.called
 
-    @mock.patch('website.preprints.tasks.update_ezid_metadata_on_change')
+    @mock.patch('website.identifiers.tasks.update_ezid_metadata_on_change')
     def test_update_contributors(self, mock_update_ezid, app, user, preprint, url):
         new_user = AuthUserFactory()
         contributor_payload = {
