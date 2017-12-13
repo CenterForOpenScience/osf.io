@@ -309,10 +309,12 @@
                                 <td>Embargo</td>
                                 <td>{{ node.embargo }}</td>
                             </tr>
+                            {% if node.registered_from is not None %}
                             <tr>
                                 <td>Registered From</td>
-                                <td><a href="{% url 'nodes:node' node.registered_from %}">{{ node.registered_from }}</a></td>
+                                <td><a href="{% url 'nodes:node' guid=node.registered_from %}">{{ node.registered_from }}</a></td>
                             </tr>
+                            {% endif %}
                         </tbody>
                         </table>
                     {% endif %}
