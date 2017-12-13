@@ -292,6 +292,9 @@ $ docker-compose run --service-ports web
 - Test a Specific Method
   - `$ docker-compose run --rm web invoke test_module -m tests/test_conferences.py::TestProvisionNode::test_upload`
 
+- Test with Specific Parameters (1 cpu, capture stdout)
+  - `$ docker-compose run --rm web invoke test_module -m tests/test_conferences.py::TestProvisionNode::test_upload -n 1 --params '--capture=sys'`
+
 ## Managing Container State
 
 Restart a container:
