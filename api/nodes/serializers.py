@@ -32,7 +32,7 @@ from website.project import new_private_link
 from website.project.metadata.schemas import LATEST_SCHEMA_VERSION
 from website.project.metadata.utils import is_prereg_admin_not_project_admin
 from website.project.model import NodeUpdateError
-from website.util import permissions as osf_permissions
+from osf.utils import permissions as osf_permissions
 
 
 class NodeTagField(ser.Field):

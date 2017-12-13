@@ -51,8 +51,9 @@ from website.project.views.contributor import (
 )
 from website.project.views.node import _should_show_wiki_widget, _view_project, abbrev_authors
 from website.util import api_url_for, web_url_for
-from website.util import permissions, rubeus
+from website.util import rubeus
 from website.views import index
+from osf.utils import permissions
 from osf.models import Comment
 from osf.models import OSFUser
 from tests.base import (

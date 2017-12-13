@@ -47,7 +47,7 @@ from framework.auth.core import Auth, get_user
 from osf.utils.datetime_aware_jsonfield import DateTimeAwareJSONField
 from osf.utils.fields import NonNaiveDateTimeField
 from osf.utils.requests import DummyRequest, get_request_and_user_id
-from osf.utils.sanitize import unescape_entities
+from osf.utils import sanitize
 from osf.utils.workflows import DefaultStates
 from website import language, settings
 from website.citations.utils import datetime_to_csl
@@ -60,12 +60,11 @@ from website.project import tasks as node_tasks
 from website.project.model import NodeUpdateError
 from website.identifiers.tasks import update_ezid_metadata_on_change
 from osf.utils.requests import get_headers_from_request
-from website.util import (api_url_for, api_v2_url,
-                          sanitize, web_url_for)
-from website.util.permissions import (ADMIN, CREATOR_PERMISSIONS,
+from osf.utils.permissions import (ADMIN, CREATOR_PERMISSIONS,
                                       DEFAULT_CONTRIBUTOR_PERMISSIONS, READ,
                                       WRITE, expand_permissions,
                                       reduce_permissions)
+from website.util import api_url_for, api_v2_url, web_url_for
 from .base import BaseModel, Guid, GuidMixin, GuidMixinQuerySet
 
 
@@ -663,7 +662,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         """
         csl = {
             'id': self._id,
-            'title': unescape_entities(self.title),
+            'title': sanitize.unescape_entities(self.title),
             'author': [
                 contributor.csl_name(self._id)  # method in auth/model.py which parses the names of authors
                 for contributor in self.visible_contributors
@@ -1750,7 +1749,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
             'node_type': self.project_or_component,
             'url': self.url,
             # TODO: Titles shouldn't contain escaped HTML in the first place
-            'title': unescape_entities(self.title),
+            'title': sanitize.unescape_entities(self.title),
             'path': self.path_above(auth),
             'api_url': self.api_url,
             'is_public': self.is_public,

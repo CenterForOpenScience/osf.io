@@ -1,11 +1,10 @@
 # -*- coding: utf-8 -*-
 
-from contextlib import contextmanager
 import logging
 import re
 import urlparse
 
-from django.utils.http import urlencode, urlquote
+from django.utils.http import urlencode
 from flask import request, url_for
 
 from website import settings as website_settings
@@ -48,7 +47,7 @@ def _get_guid_url_for(url):
     guid_url = guid_url_profile_pattern.sub('', guid_url, count=1)
     return guid_url
 
-
+# Move to api utils?
 def api_url_for(view_name, _absolute=False, _xml=False, _internal=False, *args, **kwargs):
     """Reverse URL lookup for API routes (that use the JSONRenderer or XMLRenderer).
     Takes the same arguments as Flask's url_for, with the addition of
@@ -66,7 +65,7 @@ def api_url_for(view_name, _absolute=False, _xml=False, _internal=False, *args, 
         return urlparse.urljoin(domain, url)
     return url
 
-
+# Move somewhere
 def api_v2_url(path_str,
                params=None,
                base_route=website_settings.API_DOMAIN,
@@ -90,7 +89,7 @@ def api_v2_url(path_str,
 
     return x
 
-
+# Move to api utils?
 def web_url_for(view_name, _absolute=False, _internal=False, _guid=False, *args, **kwargs):
     """Reverse URL lookup for web routes (those that use the OsfWebRenderer).
     Takes the same arguments as Flask's url_for, with the addition of

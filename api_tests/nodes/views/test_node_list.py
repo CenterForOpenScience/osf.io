@@ -5,6 +5,7 @@ from api_tests.nodes.filters.test_filters import NodesListFilteringMixin, NodesL
 from framework.auth.core import Auth
 from osf.models import AbstractNode, Node, NodeLog
 from osf.utils.sanitize import strip_html
+from osf.utils import permissions
 from osf_tests.factories import (
     CollectionFactory,
     ProjectFactory,
@@ -16,7 +17,6 @@ from osf_tests.factories import (
 )
 from rest_framework import exceptions
 from tests.utils import assert_items_equal
-from website.util import permissions
 from website.views import find_bookmark_collection
 
 

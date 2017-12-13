@@ -74,7 +74,7 @@ def build_addon_root(node_settings, name, permissions=None,
     :return dict: Hgrid formatted dictionary for the addon root folder
 
     """
-    from website.util import check_private_key_for_anonymized_link
+    from osf.utils.permissions import check_private_key_for_anonymized_link
 
     permissions = permissions or DEFAULT_PERMISSIONS
     if name and not check_private_key_for_anonymized_link(private_key):

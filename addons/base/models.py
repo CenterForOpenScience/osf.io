@@ -17,7 +17,6 @@ from osf.utils.datetime_aware_jsonfield import DateTimeAwareJSONField
 from website import settings
 from addons.base import logger, serializer
 from website.oauth.signals import oauth_complete
-from api.base.utils import waterbutler_api_url_for
 
 lookup = TemplateLookup(
     directories=[
@@ -561,6 +560,7 @@ class BaseStorageAddon(object):
         return name
 
     def _get_fileobj_child_metadata(self, filenode, user, cookie=None, version=None):
+        from api.base.utils import waterbutler_api_url_for
 
         kwargs = {}
         if version:

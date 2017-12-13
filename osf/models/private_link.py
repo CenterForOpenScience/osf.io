@@ -3,7 +3,6 @@ from django.dispatch import receiver
 from django.core.exceptions import ValidationError
 
 from framework.utils import iso8601format
-from website.util import sanitize
 
 from osf.models.base import BaseModel, ObjectIDMixin
 from osf.utils.sanitize import unescape_entities

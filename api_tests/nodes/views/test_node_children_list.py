@@ -11,7 +11,7 @@ from osf_tests.factories import (
     AuthUserFactory,
 )
 from tests.base import fake
-from website.util import permissions
+from osf.utils import permissions
 
 
 @pytest.fixture()

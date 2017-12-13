@@ -16,11 +16,11 @@ from framework.exceptions import HTTPError
 from framework.status import push_status_message
 
 from osf.utils.sanitize import strip_html
+from osf.utils.permissions import ADMIN
 from osf.models import NodeLog, MetaSchema, DraftRegistration, Sanction
 from api.base.utils import rapply
 
 from website.exceptions import NodeStateError
-from website.util.permissions import ADMIN
 from website.project.decorators import (
     must_be_valid_project,
     must_have_permission,

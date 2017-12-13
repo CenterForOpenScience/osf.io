@@ -26,7 +26,7 @@ from website.institutions.views import serialize_institution
 from osf.models import BaseFileNode, Guid, Institution, PreprintService, AbstractNode, Node
 from website.settings import EXTERNAL_EMBER_APPS, PROXY_EMBER_APPS, INSTITUTION_DISPLAY_NODE_THRESHOLD, DOMAIN
 from website.project.model import has_anonymous_link
-from website.util import permissions
+from osf.utils import permissions
 
 logger = logging.getLogger(__name__)
 preprints_dir = os.path.abspath(os.path.join(os.getcwd(), EXTERNAL_EMBER_APPS['preprints']['path']))

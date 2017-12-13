@@ -24,6 +24,7 @@ from api.base.utils import absolute_reverse, extend_querystring_params, get_user
 from framework.auth import core as auth_core
 from osf.models import AbstractNode, MaintenanceState
 from osf.utils.sanitize import strip_html
+from osf.utils.permissions import check_private_key_for_anonymized_link
 from website import settings
 from website.project.model import has_anonymous_link
 
@@ -60,7 +61,7 @@ def is_anonymized(request):
     if hasattr(request, '_is_anonymized'):
         return request._is_anonymized
     private_key = request.query_params.get('view_only', None)
-    request._is_anonymized = website_utils.check_private_key_for_anonymized_link(private_key)
+    request._is_anonymized = check_private_key_for_anonymized_link(private_key)
     return request._is_anonymized
 
 

@@ -9,7 +9,7 @@ from osf_tests.factories import (
 )
 from rest_framework import exceptions
 from tests.utils import assert_latest_log, assert_latest_log_not
-from website.util import permissions
+from osf.utils import permissions
 from api_tests.utils import disconnected_from_listeners
 from website.project.signals import contributor_removed
 

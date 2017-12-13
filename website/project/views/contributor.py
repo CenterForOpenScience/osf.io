@@ -19,6 +19,7 @@ from framework.transactions.handlers import no_auto_transaction
 from framework.utils import get_timestamp, throttle_period_expired
 from osf.models import AbstractNode, OSFUser, PreprintService
 from osf.utils import sanitize
+from osf.utils.permissions import expand_permissions, ADMIN
 from website import mails, language, settings
 from website.notifications.utils import check_if_all_global_subscriptions_are_none
 from website.profile import utils as profile_utils
@@ -27,7 +28,6 @@ from website.project.decorators import (must_have_permission, must_be_valid_proj
 from website.project.model import has_anonymous_link
 from website.project.signals import unreg_contributor_added, contributor_added
 from website.util import web_url_for, is_json_request
-from website.util.permissions import expand_permissions, ADMIN
 from website.exceptions import NodeStateError
 
 

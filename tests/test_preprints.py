@@ -18,13 +18,13 @@ from osf_tests.factories import (
     UserFactory,
 )
 from osf_tests.utils import MockShareResponse
+from osf.utils import permissions
 from tests.utils import assert_logs
 from tests.base import OsfTestCase
 from website import settings, mails
 from website.identifiers.utils import get_doi_and_metadata_for_object
 from website.preprints.tasks import format_preprint, update_preprint_share, on_preprint_updated
 from website.project.views.contributor import find_preprint_provider
-from website.util import permissions
 from website.util.share import format_user
 
 
