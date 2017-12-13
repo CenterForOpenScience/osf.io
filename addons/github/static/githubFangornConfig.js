@@ -238,7 +238,7 @@ var _githubItemButtons = {
                             },
                             icon: 'fa fa-download',
                             className: 'text-primary'
-                        }, 'Download'),
+                        }, 'Download as zip'),
                         m.component(Fangorn.Components.button, {
                             onclick: function (event) {
                                 window.open(item.data.urls.repo, '_blank');
