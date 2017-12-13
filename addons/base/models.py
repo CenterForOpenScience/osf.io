@@ -602,7 +602,7 @@ class BaseStorageAddon(object):
             'kind': 'folder',
             'name': self.root_node.name,
         }
-        if filenode.get('kind') == 'file' or 'size' in filenode:
+        if filenode.get('kind') == 'file':
             return filenode
 
         kwargs = {
