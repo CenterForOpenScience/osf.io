@@ -279,3 +279,7 @@ LOGIN_BY_EPPN = osf_settings.to_bool('LOGIN_BY_EPPN', False)
 USER_TIMEZONE = osf_settings.USER_TIMEZONE
 USER_LOCALE = osf_settings.USER_LOCALE
 CLOUD_GATAWAY_ISMEMBEROF_PREFIX = osf_settings.CLOUD_GATAWAY_ISMEMBEROF_PREFIX
+# install-addons.py
+INSTALLED_APPS += ('addons.s3compat',)
+ADDONS_FOLDER_CONFIGURABLE.append('s3compat')
+ADDONS_OAUTH.append('s3compat')

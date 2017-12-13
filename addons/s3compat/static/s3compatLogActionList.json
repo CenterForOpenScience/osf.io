@@ -1,0 +1,11 @@
+{
+  "s3compat_bucket_linked" : "${user} linked the S3 Compatible Storage bucket ${bucket} to ${node}",
+  "s3compat_bucket_unlinked" : "${user} unselected the S3 Compatible Storage bucket ${bucket} in ${node}",
+  "s3compat_file_added" : "${user} added file ${path} to S3 Compatible Storage bucket ${bucket} in ${node}",
+  "s3compat_file_removed" : "${user} removed ${path} in S3 Compatible Storage bucket ${bucket} in ${node}",
+  "s3compat_file_updated" : "${user} updated file ${path} in S3 Compatible Storage bucket ${bucket} in ${node}",
+  "s3compat_folder_created" : "${user} created folder ${path} in S3 Compatible Storage bucket ${bucket} in ${node}",
+  "s3compat_node_authorized" : "${user} authorized the S3 Compatible Storage addon for ${node}",
+  "s3compat_node_deauthorized" : "${user} deauthorized the S3 Compatible Storage addon for ${node}",
+  "s3compat_node_deauthorized_no_user" : "S3 Compatible Storage addon for ${node} deauthorized"
+}

@@ -39,3 +39,5 @@ PROVIDERS = {
     'azureblobstorage': 'Azure Blob Storage',
     'weko': 'WEKO'
 }
+# install-addons.py
+PROVIDERS['s3compat'] = 'S3 Compatible Storage'

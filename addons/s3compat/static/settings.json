@@ -1,0 +1,7 @@
+{
+    "availableServices": [{"name": "IDCF Cloud",
+                           "host": "ds.jp-east.idcfcloud.com"},
+                          {"name": "SAKURA Cloud",
+                           "host": "b.sakurastorage.jp"}],
+    "encryptUploads": true
+}

@@ -20,7 +20,8 @@
         "swift",
         "azureblobstorage",
         "weko",
-        "jupyterhub"
+        "jupyterhub",
+        "s3compat"
     ],
     "addons_default": [
         "osfstorage"
@@ -43,7 +44,8 @@
         "swift": "partial",
         "azureblobstorage": "partial",
         "weko": "partial",
-        "jupyterhub": "partial"
+        "jupyterhub": "partial",
+        "s3compat": "partial"
     },
     "addons_commentable": [
         "osfstorage",
@@ -61,7 +63,8 @@
         "swift",
         "swift",
         "azureblobstorage",
-        "weko"
+        "weko",
+        "s3compat"
     ],
     "addons_based_on_ids": [
         "osfstorage",
@@ -89,7 +92,8 @@
         "swift": "Swift is a file storage add-on. Connect your Swift account to an OSF project to interact with files hosted on Swift via the OSF.",
         "azureblobstorage": "Azure Blob Storage is a file storage add-on. Connect your Azure Storage account to an OSF project to interact with files hosted on Azure Blob Storage (Block Blob) via the OSF.",
         "weko": "WEKO is an application server to share, archive data.",
-        "jupyterhub": "Jupyter is a web-based interactive computational environment. Files on an OSF project can be imported to/exported from Jupyter"
+        "jupyterhub": "Jupyter is a web-based interactive computational environment. Files on an OSF project can be imported to/exported from Jupyter",
+        "s3compat": "S3 Compatible Storage is a file storage add-on. Connect your S3 Compatible Storage account to an OSF project to interact with files hosted on S3 Compatible Storage via the OSF."
     },
     "addons_url": {
         "box": "http://www.box.com",
@@ -108,6 +112,7 @@
         "swift": "https://wiki.openstack.org/wiki/Swift",
         "azureblobstorage": "https://azure.microsoft.com/",
         "weko": "https://weko.at.nii.ac.jp/",
-        "jupyterhub": "https://jupyterhub.readthedocs.io/"
+        "jupyterhub": "https://jupyterhub.readthedocs.io/",
+        "s3compat": "https://aws.amazon.com/s3/"
     }
 }
