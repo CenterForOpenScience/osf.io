@@ -1,7 +1,6 @@
 var webpack = require('webpack');
 var path = require('path');
 var common = require('../webpack.common.config.js');
-var assign = require('object-assign');
 var BundleTracker = require('webpack-bundle-tracker');
 
 var websiteRoot = path.join(__dirname, '..', 'website', 'static');
@@ -25,7 +24,7 @@ common.output = {
     sourcePrefix: ''
 };
 
-var config = assign({}, common, {
+var config = Object.assign({}, common, {
     entry: {
         'admin-base-page': staticAdminPath('js/pages/base-page.js'),
         'prereg-admin-page': staticAdminPath('js/pages/prereg-admin-page.js'),

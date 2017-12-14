@@ -131,7 +131,7 @@
 
         <div class="row">
             <div class="col-md-2">
-                <img class="social-gravatar" data-bind="visible: gravatarUrl(), attr: {src: gravatarUrl()}">
+                <img class="social-profile-image" data-bind="visible: profileImageUrl(), attr: {src: profileImageUrl()}">
             </div>
             <div class="col-md-10">
                 <h4><a data-bind="attr: {href: url}, text: user"></a></h4>

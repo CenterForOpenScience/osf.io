@@ -1,6 +1,8 @@
 import pytest
+from django.utils import timezone
 
 from api.base.settings.defaults import API_BASE
+from django.contrib.auth.models import Permission
 from osf.models import MetaSchema
 from osf_tests.factories import (
     ProjectFactory,
@@ -11,7 +13,6 @@ from osf_tests.factories import (
 )
 from website.project.metadata.schemas import LATEST_SCHEMA_VERSION
 from website.project.metadata.utils import create_jsonschema_from_metaschema
-from website.settings import PREREG_ADMIN_TAG
 from website.util import permissions
 
 
@@ -106,6 +107,14 @@ class TestDraftRegistrationList(DraftRegistrationTestCase):
     #   test_unauthenticated_user_cannot_view_draft_list
         res = app.get(url_draft_registrations, expect_errors=True)
         assert res.status_code == 401
+
+    def test_deleted_draft_registration_does_not_show_up_in_draft_list(self, app, user, draft_registration, url_draft_registrations):
+        draft_registration.deleted = timezone.now()
+        draft_registration.save()
+        res = app.get(url_draft_registrations, auth=user.auth)
+        assert res.status_code == 200
+        data = res.json['data']
+        assert len(data) == 0
 
     def test_draft_with_registered_node_does_not_show_up_in_draft_list(self, app, user, project_public, draft_registration, url_draft_registrations):
         reg = RegistrationFactory(project = project_public)
@@ -371,7 +380,8 @@ class TestDraftRegistrationCreate(DraftRegistrationTestCase):
 
     def test_reviewer_cannot_create_draft_registration(self, app, user_read_contrib, project_public, payload, url_draft_registrations):
         user = AuthUserFactory()
-        user.add_system_tag(PREREG_ADMIN_TAG)
+        administer_permission = Permission.objects.get(codename='administer_prereg')
+        user.user_permissions.add(administer_permission)
         user.save()
 
         assert user_read_contrib in project_public.contributors.all()

@@ -123,12 +123,30 @@ class TestContributorViews(OsfTestCase):
             auth=self.auth,
             visible=False,
         )
-        self.project.save()
         component = NodeFactory(parent=self.project, creator=self.user)
+
+        user_already_on_component = AuthUserFactory()
+        component.add_contributor(
+            user_already_on_component,
+            auth=self.auth,
+            visible=True,
+        )
+        self.project.add_contributor(
+            user_already_on_component,
+            auth=self.auth,
+            visible=True,
+        )
+
+        self.project.save()
+        component.save()
+
         url = component.api_url_for('get_contributors_from_parent')
         res = self.app.get(url, auth=self.user.auth)
         # Should be all contributors, client-side handles marking
         # contributors that are already added to the child.
+
+        ids = [contrib['id'] for contrib in res.json['contributors']]
+        assert_not_in(user_already_on_component.id, ids)
         assert_equal(
             len(res.json['contributors']),
             2,

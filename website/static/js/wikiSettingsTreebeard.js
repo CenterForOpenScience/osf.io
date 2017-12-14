@@ -106,7 +106,12 @@ function ProjectWiki(data) {
                     css : iconcss,
                     sortInclude : false,
                     custom : function() {
-                        return 'Who can edit';
+
+                        if(!item.parent().data.permissions.admin){
+                            return 'Only admins may change permissions of this wiki.';
+                        } else {
+                            return item.parent().data.node.is_public ? 'Select who can edit' : 'This feature is disabled for wikis of private '  + item.parent().data.nodeType + 's.';
+                        }
                     }
                 },
                 {
@@ -118,7 +123,9 @@ function ProjectWiki(data) {
                             [m('select.form-control', {
                                 onchange: function(ev) {
                                     beforeChangePermissions(item, ev.target.value);
-                                }},
+                                },
+                                disabled: !item.parent().data.node.is_public || !item.parent().data.permissions.admin
+                                },
                                 [
                                     m('option', {value: 'private', selected : item.data.select.permission === 'public' ? 'selected': ''}, 'Contributors (with write access)'),
                                     m('option', {value: 'public', selected : item.data.select.permission === 'public' ? 'selected': '' }, 'All OSF users')

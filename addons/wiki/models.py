@@ -82,8 +82,8 @@ class NodeWikiPage(GuidMixin, BaseModel):
     version = models.IntegerField(default=1)
     date = NonNaiveDateTimeField(auto_now_add=True)
     content = models.TextField(default='', blank=True)
-    user = models.ForeignKey('osf.OSFUser', null=True, blank=True)
-    node = models.ForeignKey('osf.AbstractNode', null=True, blank=True)
+    user = models.ForeignKey('osf.OSFUser', null=True, blank=True, on_delete=models.CASCADE)
+    node = models.ForeignKey('osf.AbstractNode', null=True, blank=True, on_delete=models.CASCADE)
 
     @property
     def is_current(self):

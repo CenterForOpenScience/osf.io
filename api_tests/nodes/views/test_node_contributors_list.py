@@ -10,10 +10,12 @@ from api.nodes.serializers import NodeContributorsCreateSerializer
 from framework.auth.core import Auth
 from osf.models import NodeLog
 from osf_tests.factories import (
-    ProjectFactory,
+    fake_email,
     AuthUserFactory,
-    UserFactory,
+    ProjectFactory,
     UnconfirmedUserFactory,
+    UserFactory,
+
 )
 from rest_framework import exceptions
 from tests.base import capture_signals, fake
@@ -887,7 +889,7 @@ class TestNodeContributorAdd(NodeCRUDTestCase):
             assert res.json['data']['embeds']['users']['data']['id'] in project_public.contributors.values_list('guids___id', flat=True)
 
     def test_add_unregistered_contributor_already_contributor(self, app, user, project_public, url_public):
-        name, email = fake.name(), fake.email()
+        name, email = fake.name(), fake_email()
         project_public.add_unregistered_contributor(auth=Auth(user), fullname=name, email=email)
         payload = {
             'data': {

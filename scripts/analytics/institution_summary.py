@@ -34,10 +34,10 @@ class InstitutionSummary(SummaryAnalytics):
         for institution in institutions:
             node_query = (
                 Q(is_deleted=False) &
-                Q(date_created__lt=query_datetime)
+                Q(created__lt=query_datetime)
             )
 
-            project_query = node_query & Q(parent_nodes__isnull=True)
+            project_query = node_query
             public_query = Q(is_public=True)
             private_query = Q(is_public=False)
             node_public_query = node_query & public_query
@@ -50,7 +50,7 @@ class InstitutionSummary(SummaryAnalytics):
                     'name': ensure_bytes(institution.name),
                 },
                 'users': {
-                    'total': institution.osfuser_set.count(),
+                    'total': institution.osfuser_set.filter(is_active=True).count(),
                 },
                 'nodes': {
                     'total': institution.nodes.filter(node_query).exclude(type='osf.registration').count(),
@@ -58,9 +58,9 @@ class InstitutionSummary(SummaryAnalytics):
                     'private': institution.nodes.filter(node_private_query).exclude(type='osf.registration').count(),
                 },
                 'projects': {
-                    'total': institution.nodes.filter(project_query).exclude(type='osf.registration').count(),
-                    'public': institution.nodes.filter(project_public_query).exclude(type='osf.registration').count(),
-                    'private': institution.nodes.filter(project_private_query).exclude(type='osf.registration').count(),
+                    'total': institution.nodes.filter(project_query).exclude(type='osf.registration').get_roots().count(),
+                    'public': institution.nodes.filter(project_public_query).exclude(type='osf.registration').get_roots().count(),
+                    'private': institution.nodes.filter(project_private_query).exclude(type='osf.registration').get_roots().count(),
                 },
                 'registered_nodes': {
                     'total': institution.nodes.filter(node_query).filter(type='osf.registration').count(),
@@ -68,9 +68,9 @@ class InstitutionSummary(SummaryAnalytics):
                     'embargoed': institution.nodes.filter(node_private_query).filter(type='osf.registration').count(),
                 },
                 'registered_projects': {
-                    'total': institution.nodes.filter(project_query).filter(type='osf.registration').count(),
-                    'public': institution.nodes.filter(project_public_query).filter(type='osf.registration').count(),
-                    'embargoed': institution.nodes.filter(project_private_query).filter(type='osf.registration').count(),
+                    'total': institution.nodes.filter(project_query).filter(type='osf.registration').get_roots().count(),
+                    'public': institution.nodes.filter(project_public_query).filter(type='osf.registration').get_roots().count(),
+                    'embargoed': institution.nodes.filter(project_private_query).filter(type='osf.registration').get_roots().count(),
                 },
                 'keen': {
                     'timestamp': timestamp_datetime.isoformat()

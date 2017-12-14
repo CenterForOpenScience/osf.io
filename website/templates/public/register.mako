@@ -1,6 +1,6 @@
 <%inherit file="base.mako"/>
 
-<%def name="title()">Sign In</%def>
+<%def name="title()">Sign Up</%def>
 
 <%def name="content()">
 
@@ -34,7 +34,7 @@
     %for provider in preprint_campaigns.keys():
         %if campaign == provider:
             <div class="text-center m-t-lg">
-                <h3>${preprint_campaigns[provider]['name'] | n} Preprints</h3><hr>
+                <h3>${preprint_campaigns[provider]['name'] | n}</h3><hr>
             </div>
         %endif
     %endfor
@@ -83,28 +83,29 @@
                 <div class="form-group" data-bind=" css: { 'has-error': fullName() && !fullName.isValid(), 'has-success': fullName() && fullName.isValid() }">
                     <label for="inputName" class="col-sm-4 control-label">Full Name</label>
                     <div class="col-sm-8">
-                        <input autofocus type="text" class="form-control" id="inputName" placeholder="Name" data-bind="value: fullName, disable: submitted(), event: { blur: trim.bind($data, fullName) }">
+                        ## Maxlength for full names must be 186 - quickfile titles use fullname + 's Quick Files
+                        <input autofocus type="text" class="form-control" id="inputName" placeholder="Name" data-bind="value: fullName, disable: submitted(), event: { blur: trim.bind($data, fullName) }" maxlength="186">
                         <p class="help-block" data-bind="validationMessage: fullName" style="display: none;"></p>
                     </div>
                 </div>
                 <div class="form-group" data-bind="css: { 'has-error': email1() && !email1.isValid(), 'has-success': email1() && email1.isValid() }" >
                     <label for="inputEmail" class="col-sm-4 control-label">Email</label>
                     <div class="col-sm-8">
-                        <input type="text" class="form-control" id="inputEmail" placeholder="Email" data-bind="value: email1, disable: submitted(), event: { blur: trim.bind($data, email1) }">
+                        <input type="text" class="form-control" id="inputEmail" placeholder="Email" data-bind="value: email1, disable: submitted(), event: { blur: trim.bind($data, email1) }" maxlength="255">
                         <p class="help-block" data-bind="validationMessage: email1" style="display: none;"></p>
                     </div>
                 </div>
                 <div class="form-group" data-bind="css: { 'has-error': email2() && !email2.isValid(), 'has-success': email2() && email2.isValid() }">
                     <label for="inputEmail2" class="col-sm-4 control-label">Confirm Email</label>
                     <div class="col-sm-8">
-                        <input type="text" class="form-control" id="inputEmail2" placeholder="Re-enter email" data-bind=" value: email2, disable: submitted(), event: { blur: trim.bind($data, email2) }">
+                        <input type="text" class="form-control" id="inputEmail2" placeholder="Re-enter email" data-bind=" value: email2, disable: submitted(), event: { blur: trim.bind($data, email2) }" maxlength="255">
                         <p class="help-block" data-bind="validationMessage: email2" style="display: none;"></p>
                     </div>
                 </div>
                 <div class="form-group" data-bind="css: { 'has-error': password() && !password.isValid(), 'has-success': password() && password.isValid() }">
                     <label for="inputPassword3" class="col-sm-4 control-label">Password</label>
                     <div class="col-sm-8">
-                        <input type="password" class="form-control" id="inputPassword3" placeholder="Password" data-bind="textInput: typedPassword, value: password, disable: submitted(), event: { blur: trim.bind($data, password) }">
+                        <input type="password" class="form-control" id="inputPassword3" placeholder="Password" data-bind="textInput: typedPassword, value: password, disable: submitted(), event: { blur: trim.bind($data, password) }" maxlength="256">
                         <div class="row" data-bind="visible: typedPassword().length > 0">
                             <div class="col-xs-8">
                                 <div class="progress create-password">

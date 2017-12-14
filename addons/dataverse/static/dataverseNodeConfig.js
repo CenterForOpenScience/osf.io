@@ -29,6 +29,7 @@ function ViewModel(url) {
     self.loadedSettings = ko.observable(false);
     self.loadedDatasets = ko.observable(false);
     self.submitting = ko.observable(false);
+    self.authorizing = ko.observable(false);
 
     self.dataverses = ko.observableArray([]);
     self.datasets = ko.observableArray([]);
@@ -72,8 +73,7 @@ function ViewModel(url) {
     self.messages = {
         userSettingsError: ko.pureComputed(function() {
             return 'Could not retrieve settings. Please refresh the page or ' +
-                'contact <a href="mailto: support@osf.io">support@osf.io</a> if the ' +
-                'problem persists.';
+                'contact ' + $osf.osfSupportLink() + ' if the problem persists.';
         }),
         confirmDeauth: ko.pureComputed(function() {
             return 'Are you sure you want to remove this ' + self.addonName + ' account?';
@@ -93,8 +93,7 @@ function ViewModel(url) {
         authError: ko.pureComputed(function() {
             return 'Sorry, but there was a problem connecting to that instance of Dataverse. It ' +
                 'is likely that the instance hasn\'t been upgraded to Dataverse 4.0. If you ' +
-                'have any questions or believe this to be an error, please contact ' +
-                'support@osf.io.';
+                'have any questions or believe this to be an error, please contact ' + $osf.osfSupportEmail();
         }),
         tokenImportSuccess: ko.pureComputed(function() {
             return 'Successfully imported access token from profile.';
@@ -104,8 +103,7 @@ function ViewModel(url) {
         }),
         updateAccountsError: ko.pureComputed(function() {
             return 'Could not retrieve ' + self.addonName + ' account list at ' +
-                'this time. Please refresh the page. If the problem persists, email ' +
-                '<a href="mailto:support@osf.io">support@osf.io</a>.';
+                'this time. Please refresh the page. If the problem persists, email ' + $osf.osfSupportLink();
         }),
         datasetDeaccessioned: ko.pureComputed(function() {
             return 'This dataset has already been deaccessioned on Dataverse ' +
@@ -123,12 +121,12 @@ function ViewModel(url) {
         }),
         setDatasetError: ko.pureComputed(function() {
             return 'Could not connect to this dataset. Please refresh the page or ' +
-                'contact <a href="mailto: support@osf.io">support@osf.io</a> if the ' +
+                'contact ' + $osf.osfSupportLink() +' if the ' +
                 'problem persists.';
         }),
         getDatasetsError: ko.pureComputed(function() {
             return 'Could not load datasets. Please refresh the page or ' +
-                'contact <a href="mailto: support@osf.io">support@osf.io</a> if the ' +
+                'contact ' + $osf.osfSupportLink() +' if the ' +
                 'problem persists.';
         })
     };
@@ -267,6 +265,7 @@ ViewModel.prototype.updateFromData = function(data) {
 ViewModel.prototype.clearModal = function() {
     var self = this;
     self.message('');
+    self.authorizing(false);
     self.messageClass('text-info');
     self.apiToken(null);
     self.selectedHost(null);
@@ -297,7 +296,7 @@ ViewModel.prototype.setInfo = function() {
     }).fail(function(xhr, textStatus, error) {
         self.submitting(false);
         var errorMessage = (xhr.status === 410) ? self.messages.datasetDeaccessioned :
-            (xhr.status = 406) ? self.messages.forbiddenCharacters : self.messages.setDatasetError;
+            (xhr.status === 406) ? self.messages.forbiddenCharacters : self.messages.setDatasetError;
         self.changeMessage(errorMessage, 'text-danger');
         Raven.captureMessage('Could not authenticate with Dataverse', {
             extra: {
@@ -358,10 +357,13 @@ ViewModel.prototype.sendAuth = function() {
 
     // Selection should not be empty
     if( !self.selectedHost() ){
-        self.changeMessage("Please select a Dataverse repository.", 'text-danger');
+        self.changeMessage('Please select a Dataverse repository.', 'text-danger');
         return;
     }
+
     var url = self.urls().create;
+
+    self.authorizing(true);
     return $osf.postJSON(
         url,
         ko.toJS({
@@ -369,11 +371,13 @@ ViewModel.prototype.sendAuth = function() {
             api_token: self.apiToken
         })
     ).done(function() {
+        self.authorizing(false);
         self.clearModal();
         $modal.modal('hide');
         self.userHasAuth(true);
         self.importAuth();
     }).fail(function(xhr, textStatus, error) {
+        self.authorizing(false);
         var errorMessage = (xhr.status === 401) ? self.messages.authInvalid : self.messages.authError;
         self.changeMessage(errorMessage, 'text-danger');
         Raven.captureMessage('Could not authenticate with Dataverse', {

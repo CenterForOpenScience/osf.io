@@ -210,6 +210,9 @@ var Question = function(questionSchema, data) {
         value = self.data.value();
     } else {
         value = self.data.value || null;
+        if(value) {
+            value = $osf.decodeText(value);
+        }
     }
 
     if (self.type === 'choose' && self.format === 'multiselect') {
@@ -645,6 +648,7 @@ Draft.prototype.preRegisterPrompts = function(response, confirm) {
         };
     }
     var preRegisterPrompts = response.prompts || [];
+    preRegisterPrompts.push('Tags on a registration can be modified at any time to enhance discoverability.');
 
     var registrationModal = new RegistrationModal.ViewModel(
         confirm, preRegisterPrompts, validator
@@ -1389,7 +1393,7 @@ RegistrationManager.prototype.init = function() {
                         self.selectedSchema(preregSchema);
                         $('#newDraftRegistrationForm').submit();
                     });
-                }).always($osf.unblock);   
+                }).always($osf.unblock);
             }
         }
     }

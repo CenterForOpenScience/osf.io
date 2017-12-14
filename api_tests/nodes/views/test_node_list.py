@@ -120,7 +120,7 @@ class TestNodeList:
             assert project_json['embeds']['root']['data']['id'] == project.root._id
 
     def test_node_list_sorting(self, app, url):
-        res = app.get('{}?sort=-date_created'.format(url))
+        res = app.get('{}?sort=-created'.format(url))
         assert res.status_code == 200
 
         res = app.get('{}?sort=title'.format(url))
@@ -148,7 +148,7 @@ class TestNodeFiltering:
 
     @pytest.fixture()
     def public_project_one(self, tag_one, tag_two):
-        public_project_one = ProjectFactory(title='Public Project One', is_public=True)
+        public_project_one = ProjectFactory(title='Public Project One', description='One', is_public=True)
         public_project_one.add_tag(tag_one, Auth(public_project_one.creator), save=False)
         public_project_one.add_tag(tag_two, Auth(public_project_one.creator), save=False)
         public_project_one.save()
@@ -156,7 +156,7 @@ class TestNodeFiltering:
 
     @pytest.fixture()
     def public_project_two(self, tag_one):
-        public_project_two = ProjectFactory(title='Public Project Two', description='reason is shook', is_public=True)
+        public_project_two = ProjectFactory(title='Public Project Two', description='One or Two', is_public=True)
         public_project_two.add_tag(tag_one, Auth(public_project_two.creator), save=True)
         return public_project_two
 
@@ -248,11 +248,10 @@ class TestNodeFiltering:
         res = app.get(url, auth=user_one.auth)
         assert res.status_code == 200
         data = res.json['data']
-        assert len(data) == 4
+        assert len(data) == 5
 
         descriptions = [each['attributes']['description'] for each in data]
 
-        assert public_project_two.description not in descriptions
         assert public_project_one.description in descriptions
         assert public_project_three.description in descriptions
         assert user_one_private_project.description in descriptions
@@ -322,6 +321,32 @@ class TestNodeFiltering:
         assert private_project._id not in ids
         assert public_project._id in ids
 
+    def test_filtering_by_public_toplevel(self, app, user_one):
+        public_project = ProjectFactory(creator=user_one, is_public=True)
+        private_project = ProjectFactory(creator=user_one, is_public=False)
+
+        url = '/{}nodes/?filter[public]=false&filter[parent]=null'.format(API_BASE)
+        res = app.get(url, auth=user_one.auth)
+        node_json = res.json['data']
+
+        # No public projects returned
+        assert not any([each['attributes']['public'] for each in node_json])
+
+        ids = [each['id'] for each in node_json]
+        assert public_project._id not in ids
+        assert private_project._id in ids
+
+        url = '/{}nodes/?filter[public]=true&filter[parent]=null'.format(API_BASE)
+        res = app.get(url, auth=user_one.auth)
+        node_json = res.json['data']
+
+        # No private projects returned
+        assert all([each['attributes']['public'] for each in node_json])
+
+        ids = [each['id'] for each in node_json]
+        assert private_project._id not in ids
+        assert public_project._id in ids
+
     def test_filtering_tags(self, app, public_project_one, public_project_two, tag_one, tag_two):
         url = '/{}nodes/?filter[tags]={}'.format(API_BASE, tag_one)
 
@@ -364,10 +389,10 @@ class TestNodeFiltering:
         project_public_four = ProjectFactory(is_public=True, title='test', creator=user_one, description='test')
 
         for project in [project_public_one, project_public_two, project_public_three, project_private_one, project_private_two]:
-            project.date_created = '2016-10-25 00:00:00.000000+00:00'
+            project.created = '2016-10-25 00:00:00.000000+00:00'
             project.save()
 
-        project_public_four.date_created = '2016-10-28 00:00:00.000000+00:00'
+        project_public_four.created = '2016-10-28 00:00:00.000000+00:00'
         project_public_four.save()
 
         expected = [project_public_one._id, project_public_two._id, project_public_three._id]
@@ -581,7 +606,7 @@ class TestNodeFiltering:
         assert bookmark_collection._id not in ids
 
     #   test_alternate_filtering_field_logged_in
-        url = '/{}nodes/?filter[description]=shook'.format(API_BASE)
+        url = '/{}nodes/?filter[description]=One%20or%20Two'.format(API_BASE)
 
         res = app.get(url, auth=user_one.auth)
         node_json = res.json['data']
@@ -603,7 +628,6 @@ class TestNodeFiltering:
 
         ids = [each['id'] for each in node_json]
         assert public_project_one._id not in ids
-        assert public_project_two._id in ids
         assert public_project_three._id not in ids
         assert user_one_private_project._id not in ids
         assert user_two_private_project._id not in ids
@@ -756,6 +780,21 @@ class TestNodeFiltering:
 
         assert preprint.node._id not in ids
         assert unpublished.node._id in ids
+
+    def test_nodes_list_filter_multiple_field(self, app, public_project_one, public_project_two, public_project_three, user_one):
+
+        url = '/{}nodes/?filter[title,description]=One'.format(API_BASE)
+
+        res = app.get(url, auth=user_one.auth)
+        node_json = res.json['data']
+
+        ids = [each['id'] for each in node_json]
+        assert public_project_one._id in ids
+        assert 'One' in public_project_one.title
+
+        assert public_project_two._id in ids
+        assert 'One' in public_project_two.description
+        assert public_project_three._id not in ids
 
 
 @pytest.mark.django_db
@@ -2038,6 +2077,14 @@ class TestNodeBulkDelete:
         return ProjectFactory(title='Project Two', description='One Three', is_public=True, creator=user_one)
 
     @pytest.fixture()
+    def public_project_parent(self, user_one):
+        return ProjectFactory(title='Project with Component', description='Project with component', is_public=True, creator=user_one)
+
+    @pytest.fixture()
+    def public_component(self, user_one, public_project_parent):
+        return NodeFactory(parent=public_project_parent, creator=user_one)
+
+    @pytest.fixture()
     def user_one_private_project(self, user_one):
         return ProjectFactory(title='User One Private Project', is_public=False, creator=user_one)
 
@@ -2244,6 +2291,15 @@ class TestNodeBulkDelete:
 
         res = app.get(public_project_one_url, auth=user_one.auth)
         assert res.status_code == 200
+
+    def test_bulk_delete_project_with_component(self, app, user_one, public_project_parent, public_component, url):
+        new_payload = {'data': [{'id': public_project_parent._id, 'type': 'nodes'}, {'id': public_component._id, 'type': 'nodes'}]}
+        res = app.delete_json_api(url, new_payload, auth=user_one.auth, expect_errors=True, bulk=True)
+        assert res.status_code == 400
+
+        new_payload = {'data': [{'id': public_component._id, 'type': 'nodes'}, {'id': public_project_parent._id, 'type': 'nodes'}]}
+        res = app.delete_json_api(url, new_payload, auth=user_one.auth, bulk=True)
+        assert res.status_code == 204
 
 
 @pytest.mark.django_db
