@@ -8,7 +8,7 @@ require('ace-ext-language_tools');
 require('addons/wiki/static/ace-markdown-snippets.js');
 var Markdown = require('pagedown-ace-converter');
 Markdown.getSanitizingConverter = require('pagedown-ace-sanitizer').getSanitizingConverter;
-require('imports?Markdown=pagedown-ace-converter!pagedown-ace-editor');
+require('imports-loader?Markdown=pagedown-ace-converter!pagedown-ace-editor');
 
 
 var util = require('./util.js');
@@ -47,7 +47,7 @@ var FileEditor = {
         self.sharejs_running = true;
         if (typeof sharejs === 'undefined') {
             self.sharejs_running = false;
-        }        
+        }
 
         self.observables = observables;
 
@@ -139,7 +139,7 @@ var FileEditor = {
 
             return clean1 !== clean2;
         };
-        
+
         self.loadFile(false);
 
         return self;
