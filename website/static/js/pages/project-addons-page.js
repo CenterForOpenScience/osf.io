@@ -91,7 +91,7 @@ var filterAddons = function(event) {
         active_category = event.target.getAttribute('name');
     }
     for (var i = 0; i < containers.length; i++) {
-        if (containers[i].getAttribute('name').toUpperCase().indexOf(filter) > -1 &&
+        if (containers[i].getAttribute('full_name').toUpperCase().indexOf(filter) > -1 &&
                 (containers[i].getAttribute('categories').toUpperCase().indexOf(active_category.toUpperCase()) > -1 ||
                 active_category === 'All' ))
         {

@@ -80,7 +80,7 @@ NodeActions.forkNode = function() {
                 data: payload
             }
         );
-        $osf.growl('Fork status', 'Your fork is being forked you\'ll get an email when it\'s complete.', 'info');
+        $osf.growl('Fork status', 'Your fork is being created. You\'ll receive an email when it is complete.', 'info');
     });
 };
 
@@ -119,12 +119,13 @@ NodeActions.beforeTemplate = function(url, done) {
         url: url,
         contentType: 'application/json'
     }).done(function(response) {
+        var language = '<h4>Are you sure you want to create a new project using this project as a template?</h4>' +
+                '<p>Any add-ons configured for this project will not be authenticated in the new project.</p>';
+        if(response.isRegistration){
+            language = '<h4>Are you sure you want to create a new project using this registration as a template?</h4>';
+        }
         bootbox.confirm({
-            message: $osf.joinPrompts(response.prompts,
-                ('<h4>Are you sure you want to create a new project using this project as a template?</h4>' +
-                '<p>Any add-ons configured for this project will not be authenticated in the new project.</p>')),
-                //('Are you sure you want to create a new project using this project as a template? ' +
-                //  'Any add-ons configured for this project will not be authenticated in the new project.')),
+            message: $osf.joinPrompts(response.prompts, (language)),
             callback: function (result) {
                 if (result) {
                     done && done();

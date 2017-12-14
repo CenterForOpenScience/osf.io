@@ -1134,7 +1134,7 @@ class TestViewUtils(OsfTestCase):
         self.user_addon.save()
 
     def test_serialize_addons(self):
-        addon_dicts = serialize_addons(self.node)
+        addon_dicts = serialize_addons(self.node, self.auth_obj)
 
         enabled_addons = [addon for addon in addon_dicts if addon['enabled']]
         assert len(enabled_addons) == 2
@@ -1145,9 +1145,22 @@ class TestViewUtils(OsfTestCase):
         assert len(default_addons) == 1
         assert default_addons[0]['short_name'] == 'osfstorage'
 
+    def test_include_template_json(self):
+        """ Some addons (github, gitlab) need more specialized template infomation so we want to
+        ensure we get those extra variables that when the addon is enabled.
+        """
+        addon_dicts = serialize_addons(self.node, self.auth_obj)
+
+        enabled_addons = [addon for addon in addon_dicts if addon['enabled']]
+        assert len(enabled_addons) == 2
+        assert enabled_addons[1]['short_name'] == 'osfstorage'
+        assert enabled_addons[0]['short_name'] == 'github'
+        assert 'node_has_auth' in enabled_addons[0]
+        assert 'valid_credentials' in enabled_addons[0]
+
     def test_collect_node_config_js(self):
 
-        addon_dicts = serialize_addons(self.node)
+        addon_dicts = serialize_addons(self.node, self.auth_obj)
 
         asset_paths = collect_node_config_js(addon_dicts)
 

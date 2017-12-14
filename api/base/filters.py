@@ -383,8 +383,8 @@ class ListFilterMixin(FilterMixin):
                     query_parts.append(sub_query)
 
             if not isinstance(queryset, list):
-                query = functools.reduce(operator.and_, query_parts)
-                queryset = queryset.filter(query)
+                for query in query_parts:
+                    queryset = queryset.filter(query)
 
         return queryset
 
@@ -520,4 +520,4 @@ class PreprintFilterMixin(ListFilterMixin):
         else:
             query = no_user_query
 
-        return base_queryset.annotate(default=Exists(sub_qs)).filter(Q(default=True) & query)
+        return base_queryset.annotate(default=Exists(sub_qs)).filter(Q(default=True) & query).distinct('id', 'created')
