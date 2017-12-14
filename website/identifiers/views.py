@@ -2,11 +2,13 @@
 import httplib as http
 
 from framework.exceptions import HTTPError
+from osf.models import NodeLog
 
 from website.project.decorators import (
     must_be_valid_project,
     must_have_permission,
 )
+from website.identifiers.utils import get_or_create_identifiers
 from website.util.permissions import ADMIN
 
 
