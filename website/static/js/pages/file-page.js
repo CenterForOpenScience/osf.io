@@ -59,9 +59,9 @@ $(function() {
     }
 
     var titleEditable = function () {
-        var readOnlyProviders = ['bitbucket', 'figshare', 'dataverse'];
+        var readOnlyProviders = ['bitbucket', 'figshare', 'dataverse', 'gitlab', 'onedrive'];
         var ctx = window.contextVars;
-        if (readOnlyProviders.includes(ctx.file.provider) || ctx.file.checkoutUser || !ctx.currentUser.canEdit || ctx.node.isRegistration)
+        if (readOnlyProviders.indexOf(ctx.file.provider) >= 0 || ctx.file.checkoutUser || !ctx.currentUser.canEdit || ctx.node.isRegistration)
             return false;
         else
             return true;
