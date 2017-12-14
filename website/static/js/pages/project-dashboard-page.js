@@ -341,7 +341,7 @@ $(document).ready(function () {
     }
 
     // Remove delete UI if not contributor
-    if (!window.contextVars.currentUser.canEdit || window.contextVars.node.isRegistration) {
+    if (!window.contextVars.currentUser.canEdit) {
         $('a[title="Removing tag"]').remove();
         $('span.tag span').each(function(idx, elm) {
             $(elm).text($(elm).text().replace(/\s*$/, ''));
