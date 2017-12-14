@@ -48,6 +48,7 @@ from website.reviews import views as reviews_views
 from website.institutions import views as institution_views
 from website.notifications import views as notification_views
 from website.closed_challenges import views as closed_challenges_views
+from website.identifiers import views as identifier_views
 
 
 def get_globals():
@@ -1492,7 +1493,7 @@ def make_url_map(app):
                 '/project/<pid>/node/<nid>/identifiers/',
             ],
             'post',
-            project_views.register.node_identifiers_post,
+            identifier_views.node_identifiers_post,
             json_renderer,
         ),
 
