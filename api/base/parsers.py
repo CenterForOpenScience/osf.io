@@ -232,8 +232,6 @@ class HMACSignedParser(JSONParser):
         if not signing.default_signer.verify_payload(sig, payload):
             raise NotAuthenticated
 
-        import pdb; pdb.set_trace()
-
         # if time.time() > exp_time:
         #     raise JSONAPIException(detail='Signature has expired')
 
