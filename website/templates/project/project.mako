@@ -208,8 +208,26 @@
                   <!-- /ko -->
                 </span>
                 <p>
-                    Category: <span data-bind="css: icon"></span>
-                    <span id="nodeCategoryEditable">${node['category']}</span>
+                    <div class="node-category">Category:</div>
+                    <div data-bind="css: {hidden: hideCategory}" class="hidden dropdown generic-dropdown category-list node-category">
+                        <button class="btn btn-default dropdown-toggle" type="button" data-toggle="dropdown">
+                            <span data-bind="getIcon: selectedCategory"></span>
+                            <span data-bind="text: selectedCategory" class="text-capitalize"></span>
+                            <span data-bind="ifnot: selectedCategory">Uncategorized</span>
+                            <i data-bind="css: {hidden: showCategoryButtons}" class="fa fa-sort"></i>
+                        </button>
+                        <button type="submit" data-bind="visible: showCategoryButtons, click: updateCategory" class="btn btn-success submit-category"><i class="glyphicon glyphicon-ok"></i></button>
+                        <button type="button" data-bind="visible: showCategoryButtons, click: cancelCategoryUpdate" class="btn btn-default"><i class="glyphicon glyphicon-remove"></i></button>
+
+                        <ul class="dropdown-menu" role="menu" data-bind="css: {hidden: showCategoryButtons}, foreach: {data: categoryOptions, as: 'category'}">
+                            <li>
+                                  <a href="#" data-bind="click: $root.setCategory.bind($root, category.value)">
+                                      <span data-bind="getIcon: category.value"></span>
+                                      <span data-bind="text: category.display_name"></span>
+                                  </a>
+                            </li>
+                        </ul>
+                    </div>
                 </p>
 
                 % if (node['description']) or (not node['description'] and 'write' in user['permissions'] and not node['is_registration']):
