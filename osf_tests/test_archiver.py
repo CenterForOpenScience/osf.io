@@ -124,6 +124,7 @@ FILE_TREE = {
     'path': '/',
     'name': '',
     'kind': 'folder',
+    'size': '100',
     'children': [
         {
             'path': '/1234567',
@@ -152,6 +153,7 @@ WB_FILE_TREE = {
         'path': '/',
         'name': '',
         'kind': 'folder',
+        'size': '100',
         'children': [
             {
                 'attributes': {
@@ -436,6 +438,8 @@ class TestStorageAddonBase(ArchiverTestCase):
             'path': '/',
             'name': '',
             'kind': 'folder',
+            # Regression test for OSF-8696 confirming that size attr does not stop folders from recursing
+            'size': '100',
         }
         file_tree = addon._get_file_tree(root, self.user)
         assert_equal(FILE_TREE, file_tree)

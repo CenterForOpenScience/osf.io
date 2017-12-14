@@ -48,6 +48,8 @@ RUN set -ex \
         python-dev \
         # postgresql
         libpq-dev \
+        # file audits
+        par2 \
     && ARCH= \
     && dpkgArch="$(dpkg --print-architecture)" \
     && case "${dpkgArch##*-}" in \

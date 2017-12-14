@@ -5,7 +5,7 @@ var $osf = require('js/osfHelpers');
 var ctx = window.contextVars;
 
 var changeAddonSettingsSuccess = function () {
-    $osf.growl('Success', 'Your addon settings have been successfully changed.', 'success');
+    $osf.growl('Success', 'Your add-on settings have been successfully changed.', 'success');
     location.reload();
 };
 
@@ -23,7 +23,7 @@ $('.addon-container').each(function(ind, elm) {
             data[elm.attr('name')] = false;
             bootbox.confirm({
                 title: 'Disable Add-on?',
-                message: 'Are you sure you want to disable this addon?',
+                message: 'Are you sure you want to disable this add-on?',
                 callback: function (result) {
                     if (result) {
                         var request = $osf.postJSON(ctx.node.urls.api + 'settings/addons/', data);
@@ -46,7 +46,7 @@ $('.addon-container').each(function(ind, elm) {
             data[name] = true;
             bootbox.confirm({
                 title: 'Enable Add-on?',
-                message: 'Are you sure you want to enable this addon?',
+                message: 'Are you sure you want to enable this add-on?',
                 callback: function (result) {
                     if (result) {
                         var capabilities = $('#capabilities-' + name).html();
@@ -91,7 +91,7 @@ var filterAddons = function(event) {
         active_category = event.target.getAttribute('name');
     }
     for (var i = 0; i < containers.length; i++) {
-        if (containers[i].getAttribute('name').toUpperCase().indexOf(filter) > -1 &&
+        if (containers[i].getAttribute('full_name').toUpperCase().indexOf(filter) > -1 &&
                 (containers[i].getAttribute('categories').toUpperCase().indexOf(active_category.toUpperCase()) > -1 ||
                 active_category === 'All' ))
         {

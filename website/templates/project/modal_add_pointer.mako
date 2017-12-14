@@ -65,7 +65,7 @@
                                             <i data-bind="attr: {class: $root.selected($data) ? 'fa-fix-width fa fa-minus': 'fa-fix-width fa fa-plus' }, visible: !$root.processing() || ($root.processing() && !($root.isClicked() == $data.id))"></i>
                                             <i data-bind="visible: $root.processing() && $root.isClicked() == $data.id" class="fa-fix-width fa fa-spinner fa-spin"></i>
                                         </a>
-                                        <a data-toggle="tooltip" data-bind="attr: {href: $data.links.html, title: $root.title($data).long}, text: $root.title($data).short, "></a>
+                                        <a target="_blank" data-toggle="tooltip" data-bind="attr: {href: $data.links.html, title: $root.title($data).long}, text: $root.title($data).short, "></a>
                                     </td>
                                     <td data-label="" class="text-center node-dates" data-bind="text:$root.getDates($data)"></td>
                                     <td data-label="" class="text-center" data-bind="text:$root.authorText($data)"></td>

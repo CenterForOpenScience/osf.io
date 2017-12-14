@@ -201,7 +201,7 @@ class TestProvisionNode(ContextTestCase):
             'osfstorage',
             _internal=True,
             cookie=self.user.get_or_create_cookie(),
-            name='/' + file_name
+            name=file_name
         )
         mock_put.assert_called_with(
             mock_get_url.return_value,
@@ -220,7 +220,7 @@ class TestProvisionNode(ContextTestCase):
             'osfstorage',
             _internal=True,
             cookie=self.user.get_or_create_cookie(),
-            name='/' + settings.MISSING_FILE_NAME,
+            name=settings.MISSING_FILE_NAME,
         )
         mock_put.assert_called_with(
             mock_get_url.return_value,

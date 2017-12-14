@@ -14,7 +14,9 @@ $(document).ready(function() {
     $("#embargo-update-form").submit(function (event) {
         event.preventDefault();
         $('#update-embargo-modal').modal('show');
+    });
 
+    $("#embargo-update-modal").submit(function (event) {
         var data = $('#embargo-update-form').serialize();
         data["validation_only"]="False";
         $.ajax({
@@ -34,7 +36,7 @@ $(document).ready(function() {
         startDate: "+0d"
     })
         .on("change", function (e) {
-            $("#embargo-update-submit").removeClass('disabled');
+            $("#embargo-update-submit").prop('disabled', false);
             $("#date-validation").text('');
             var data = $('#embargo-update-form').serialize();
             data["validation_only"]="True";
@@ -44,7 +46,7 @@ $(document).ready(function() {
                 data: data
             }).fail(function (jqXHR, textStatus, error) {
                 $("#date-validation").text(jqXHR.responseText);
-                $("#embargo-update-submit").addClass('disabled');
+                $("#embargo-update-submit").prop('disabled', true);
             });
         });
 });

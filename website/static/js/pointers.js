@@ -94,11 +94,15 @@ var AddPointerViewModel = oop.extend(Paginator, {
         });
         self.searchWarningMsg(msg);
     },
+    cleanErrors: function(){
+        var self = this;
+        self.errorMsg('');
+        self.searchWarningMsg('');
+    },
     fetchResults: function(){
         var self = this;
         self.loadingResults(true);
-        self.errorMsg('');
-        self.searchWarningMsg('');
+        self.cleanErrors();
         self.results([]); // clears page for spinner
         self.selection([]);
         var pageNum = self.pageToGet() + 1;
@@ -190,6 +194,7 @@ var AddPointerViewModel = oop.extend(Paginator, {
         var self = this;
         self.processing(true);
         self.isClicked(data.id);
+        self.cleanErrors();
         var addUrl = $osf.apiV2Url('nodes/' + nodeId + '/node_links/');
         var request = $osf.ajaxJSON(
             'POST',
@@ -225,6 +230,7 @@ var AddPointerViewModel = oop.extend(Paginator, {
         var self = this;
         self.processing(true);
         self.isClicked(data.id);
+        self.cleanErrors();
         var requestNodeLinks = $osf.ajaxJSON(
             'GET',
             nodeLinksUrl,
@@ -287,13 +293,21 @@ var AddPointerViewModel = oop.extend(Paginator, {
         }
         return author;
     },
+    view: function(){
+        var self = this;
+        if (self.includePublic()){
+            self.searchAllProjects();
+        } else {
+            self.searchMyProjects();
+        }
+    },
     nodeView: function(){
         var self = this;
         if (self.inputType() !== 'nodes'){
             $('#getLinksRegistrationsTab').removeClass('active');
             $('#getLinksNodesTab').addClass('active');
             self.inputType('nodes');
-            self.searchMyProjects();
+            self.view();
         }
     },
     registrationView: function(){
@@ -302,7 +316,7 @@ var AddPointerViewModel = oop.extend(Paginator, {
             $('#getLinksNodesTab').removeClass('active');
             $('#getLinksRegistrationsTab').addClass('active');
             self.inputType('registrations');
-            self.searchMyProjects();
+            self.view();
         }
     },
     getDates: function(data){
@@ -316,6 +330,9 @@ var AddPointerViewModel = oop.extend(Paginator, {
     },
     clear: function (){
         var self = this;
+        self.results([]);
+        self.cleanErrors();
+        self.query('');
         if (self.dirty){
             window.location.reload();
         }

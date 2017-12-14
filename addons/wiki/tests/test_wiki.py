@@ -25,7 +25,7 @@ from addons.wiki.exceptions import InvalidVersionError
 from addons.wiki.models import NodeWikiPage, render_content
 from addons.wiki.utils import (
     get_sharejs_uuid, generate_private_uuid, share_db, delete_share_doc,
-    migrate_uuid, format_wiki_version, serialize_wiki_settings,
+    migrate_uuid, format_wiki_version, serialize_wiki_settings, serialize_wiki_widget
 )
 from framework.auth import Auth
 from addons.wiki.utils import to_mongo_key
@@ -394,50 +394,45 @@ class TestWikiViews(OsfTestCase):
         assert_in('Home', page_name_elem.text)
 
     def test_wiki_widget_no_content(self):
-        url = self.project.api_url_for('wiki_widget', wid='home')
-        res = self.app.get(url, auth=self.user.auth)
-        assert_is_none(res.json['wiki_content'])
+        res = serialize_wiki_widget(self.project)
+        assert_is_none(res['wiki_content'])
 
     def test_wiki_widget_short_content_no_cutoff(self):
         short_content = 'a' * 150
         self.project.update_node_wiki('home', short_content, Auth(self.user))
-        url = self.project.api_url_for('wiki_widget', wid='home')
-        res = self.app.get(url, auth=self.user.auth)
-        assert_in(short_content, res.json['wiki_content'])
-        assert_not_in('...', res.json['wiki_content'])
-        assert_false(res.json['more'])
+        res = serialize_wiki_widget(self.project)
+        assert_in(short_content, res['wiki_content'])
+        assert_not_in('...', res['wiki_content'])
+        assert_false(res['more'])
 
     def test_wiki_widget_long_content_cutoff(self):
         long_content = 'a' * 600
         self.project.update_node_wiki('home', long_content, Auth(self.user))
-        url = self.project.api_url_for('wiki_widget', wid='home')
-        res = self.app.get(url, auth=self.user.auth)
-        assert_less(len(res.json['wiki_content']), 520)  # wiggle room for closing tags
-        assert_in('...', res.json['wiki_content'])
-        assert_true(res.json['more'])
+        res = serialize_wiki_widget(self.project)
+        assert_less(len(res['wiki_content']), 520)  # wiggle room for closing tags
+        assert_in('...', res['wiki_content'])
+        assert_true(res['more'])
 
     def test_wiki_widget_with_multiple_short_pages_has_more(self):
         project = ProjectFactory(is_public=True, creator=self.user)
         short_content = 'a' * 150
         project.update_node_wiki('home', short_content, Auth(self.user))
         project.update_node_wiki('andanotherone', short_content, Auth(self.user))
-        url = project.api_url_for('wiki_widget', wid='home')
-        res = self.app.get(url, auth=self.user.auth)
-        assert_true(res.json['more'])
+        res = serialize_wiki_widget(project)
+        assert_true(res['more'])
 
     @mock.patch('addons.wiki.models.NodeWikiPage.rendered_before_update', new_callable=mock.PropertyMock)
     def test_wiki_widget_rendered_before_update(self, mock_rendered_before_update):
         # New pages use js renderer
         mock_rendered_before_update.return_value = False
         self.project.update_node_wiki('home', 'updated content', Auth(self.user))
-        url = self.project.api_url_for('wiki_widget', wid='home')
-        res = self.app.get(url, auth=self.user.auth)
-        assert_false(res.json['rendered_before_update'])
+        res = serialize_wiki_widget(self.project)
+        assert_false(res['rendered_before_update'])
 
         # Old pages use a different version of js render
         mock_rendered_before_update.return_value = True
-        res = self.app.get(url, auth=self.user.auth)
-        assert_true(res.json['rendered_before_update'])
+        res = serialize_wiki_widget(self.project)
+        assert_true(res['rendered_before_update'])
 
     def test_read_only_users_cannot_view_edit_pane(self):
         url = self.project.web_url_for('project_wiki_view', wname='home')
