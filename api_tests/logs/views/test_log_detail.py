@@ -159,6 +159,7 @@ class TestNodeFileLogDetail:
                 'node': node._id,
                 'project': node.parent_id,
                 'path': file_component.materialized_path,
+                'urls': {'url1': 'www.fake.org', 'url2': 'www.fake.com'},
                 'source': {
                     'materialized': file_component.materialized_path,
                     'addon': 'osfstorage',
@@ -182,6 +183,31 @@ class TestNodeFileLogDetail:
         node.save()
         return node
 
+    @pytest.fixture()
+    def node_with_folder_log(self, node, user_one, file_component, component):
+        # Node log is added directly to prove that URLs are removed in serialization
+        node.add_log(
+            'osf_storage_folder_created',
+            auth=Auth(user_one),
+            params={
+                'node': node._id,
+                'project': node.parent_id,
+                'path': file_component.materialized_path,
+                'urls': {'url1': 'www.fake.org', 'url2': 'www.fake.com'},
+                'source': {
+                    'materialized': file_component.materialized_path,
+                    'addon': 'osfstorage',
+                    'node': {
+                        '_id': component._id,
+                        'url': component.url,
+                        'title': component.title,
+                    }
+                }
+            },
+        )
+        node.save()
+        return node
+
     def test_title_visibility_in_file_move(self, app, url_node_logs, user_two, component, node_with_log):
         #test_title_not_hidden_from_contributor_in_file_move
         res = app.get(url_node_logs, auth=user_two.auth)
@@ -193,3 +219,13 @@ class TestNodeFileLogDetail:
         assert res.status_code == 200
         assert component.title not in res.json['data']
         assert res.json['data'][0]['attributes']['params']['source']['node_title'] == 'Private Component'
+
+    def test_file_log_keeps_url(self, app, url_node_logs, user_two, node_with_log):
+        res = app.get(url_node_logs, auth=user_two.auth)
+        assert res.status_code == 200
+        assert res.json['data'][0]['attributes']['params'].get('urls')
+
+    def test_folder_log_url_removal(self, app, url_node_logs, user_two, node_with_folder_log):
+        res = app.get(url_node_logs, auth=user_two.auth)
+        assert res.status_code == 200
+        assert not res.json['data'][0]['attributes']['params'].get('urls')

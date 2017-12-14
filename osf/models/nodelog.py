@@ -145,11 +145,13 @@ class NodeLog(ObjectIDMixin, BaseModel):
     action = models.CharField(max_length=255, db_index=True)  # , choices=action_choices)
     params = DateTimeAwareJSONField(default=dict)
     should_hide = models.BooleanField(default=False)
-    user = models.ForeignKey('OSFUser', related_name='logs', db_index=True, null=True, blank=True)
+    user = models.ForeignKey('OSFUser', related_name='logs', db_index=True,
+                             null=True, blank=True, on_delete=models.CASCADE)
     foreign_user = models.CharField(max_length=255, null=True, blank=True)
     node = models.ForeignKey('AbstractNode', related_name='logs',
-                             db_index=True, null=True, blank=True)
-    original_node = models.ForeignKey('AbstractNode', db_index=True, null=True, blank=True)
+                             db_index=True, null=True, blank=True, on_delete=models.CASCADE)
+    original_node = models.ForeignKey('AbstractNode', db_index=True,
+                                      null=True, blank=True, on_delete=models.CASCADE)
 
     def __unicode__(self):
         return ('({self.action!r}, user={self.user!r},, node={self.node!r}, params={self.params!r}) '

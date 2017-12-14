@@ -31,6 +31,7 @@ var sparseNodeFields = String([
     'contributors',
     'current_user_permissions',
     'date_modified',
+    'description',
     'parent',
     'public',
     'tags',
@@ -505,7 +506,7 @@ var MyProjects = {
                 if(!item.data.attributes.retracted){
                     var urlPrefix = item.data.attributes.registration ? 'registrations' : 'nodes';
                     // TODO assess sparse field usage (some already implemented)
-                    var url = $osf.apiV2Url(urlPrefix + '/' + id + '/logs/', { query : { 'page[size]' : 6, 'embed' : ['original_node', 'user', 'linked_node', 'template_node'], 'profile_image_size': PROFILE_IMAGE_SIZE, 'fields[users]' : sparseUserFields}});
+                    var url = $osf.apiV2Url(urlPrefix + '/' + id + '/logs/', { query : { 'page[size]' : 6, 'embed' : ['original_node', 'user', 'linked_node', 'linked_registration', 'template_node'], 'profile_image_size': PROFILE_IMAGE_SIZE, 'fields[users]' : sparseUserFields}});
                     var promise = self.getLogs(url);
                     return promise;
                 }
@@ -1922,12 +1923,16 @@ var Information = {
                                 item.embeds.preprints ? m('.fangorn-preprint.p-xs.m-b-xs', 'This project is a Preprint') : '',  // TODO: update once preprint node divorce is finished
                                 item.embeds.preprints && item.embeds.preprints.data[0].attributes.reviews_state && item.embeds.preprints.data[0].attributes.reviews_state !== 'initial' ? m('.text-capitalize', 'Status: ' + item.embeds.preprints.data[0].attributes.reviews_state) : '',  // is a preprint, has a state, provider uses moderation
                                 m('', 'Visibility : ' + (item.attributes.public ? 'Public' : 'Private')),
-                                m('.text-capitalize', 'Category: ' + category),
+                                m('', [
+                                  m('span', 'Category: '),
+                                  m('span', { className : mHelpers.getIcon(category) }),
+                                  m('span.text-capitalize', ' ' + category)
+                                ]),
                                 m('.text-capitalize', 'Permission: ' + permission),
                                 m('', 'Last Modified on: ' + (item.date ? item.date.local : ''))
                             ]),
                             m('p', [
-                                m('span', {style: 'white-space:pre-wrap'}, item.attributes.description)
+                                m('span', {style: 'white-space:pre-wrap'}, $osf.decodeText(item.attributes.description))
                             ]),
                             item.attributes.tags.length > 0 ?
                             m('p.m-t-md', [

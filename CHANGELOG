@@ -2,6 +2,28 @@
 Changelog
 *********
 
+0.125.0 (2017-12-05)
+====================
+
+- Add GitLab addon
+- Add OneDrive addon
+- Upgrade a number of Python dependencies
+- Use django-celery-beat for managing periodic tasks
+- Optimizations for files grid and adding contributors
+- APIv2 optimizations
+- Admin: Add custom taxonomy UI
+- Quick files UI on profile pages
+- APIv2 immediately returns preprint DOIs
+- Add `created` and `modified` fields to all models
+- Address Django deprecation warnings
+- Remove modularmodm as a dependency
+- Remove redundant osf.utils.auth module
+
+0.124.0 (2017-11-13)
+====================
+
+- Critical bug fixes
+
 0.123.0 (2017-10-26)
 ====================
 

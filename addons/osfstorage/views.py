@@ -69,7 +69,7 @@ def osfstorage_get_revisions(file_node, node_addon, payload, **kwargs):
     version_count = file_node.versions.count()
     # Don't worry. The only % at the end of the LIKE clause, the index is still used
     counts = dict(PageCounter.objects.filter(_id__startswith=counter_prefix).values_list('_id', 'total'))
-    qs = FileVersion.includable_objects.filter(basefilenode__id=file_node.id).include('creator__guids').order_by('-date_created')
+    qs = FileVersion.includable_objects.filter(basefilenode__id=file_node.id).include('creator__guids').order_by('-created')
 
     for i, version in enumerate(qs):
         version._download_count = counts.get('{}{}'.format(counter_prefix, version_count - i - 1), 0)
@@ -143,8 +143,8 @@ def osfstorage_get_children(file_node, **kwargs):
                         , 'downloads',  COALESCE(DOWNLOAD_COUNT, 0)
                         , 'version', (SELECT COUNT(*) FROM osf_basefilenode_versions WHERE osf_basefilenode_versions.basefilenode_id = F.id)
                         , 'contentType', LATEST_VERSION.content_type
-                        , 'modified', LATEST_VERSION.date_created
-                        , 'created', EARLIEST_VERSION.date_created
+                        , 'modified', LATEST_VERSION.created
+                        , 'created', EARLIEST_VERSION.created
                         , 'checkout', CHECKOUT_GUID
                         , 'md5', LATEST_VERSION.metadata ->> 'md5'
                         , 'sha256', LATEST_VERSION.metadata ->> 'sha256'
@@ -163,14 +163,14 @@ def osfstorage_get_children(file_node, **kwargs):
                 SELECT * FROM osf_fileversion
                 JOIN osf_basefilenode_versions ON osf_fileversion.id = osf_basefilenode_versions.fileversion_id
                 WHERE osf_basefilenode_versions.basefilenode_id = F.id
-                ORDER BY date_created DESC
+                ORDER BY created DESC
                 LIMIT 1
             ) LATEST_VERSION ON TRUE
             LEFT JOIN LATERAL (
                 SELECT * FROM osf_fileversion
                 JOIN osf_basefilenode_versions ON osf_fileversion.id = osf_basefilenode_versions.fileversion_id
                 WHERE osf_basefilenode_versions.basefilenode_id = F.id
-                ORDER BY date_created ASC
+                ORDER BY created ASC
                 LIMIT 1
             ) EARLIEST_VERSION ON TRUE
             LEFT JOIN LATERAL (

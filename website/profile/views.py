@@ -21,7 +21,7 @@ from framework.exceptions import HTTPError, PermissionsError
 from framework.flask import redirect  # VOL-aware redirect
 from framework.status import push_status_message
 
-from osf.models import ApiOAuth2Application, ApiOAuth2PersonalToken, OSFUser
+from osf.models import ApiOAuth2Application, ApiOAuth2PersonalToken, OSFUser, QuickFilesNode
 from website import mails
 from website import mailchimp_utils
 from website import settings
@@ -211,6 +211,7 @@ def _profile_view(profile, is_profile=False, include_node_counts=False):
         raise HTTPError(http.GONE)
 
     if profile:
+        profile_quickfilesnode = QuickFilesNode.objects.get_for_user(profile)
         profile_user_data = profile_utils.serialize_user(profile, full=True, is_profile=is_profile, include_node_counts=include_node_counts)
         ret = {
             'profile': profile_user_data,
@@ -219,6 +220,7 @@ def _profile_view(profile, is_profile=False, include_node_counts=False):
                 'is_profile': is_profile,
                 'can_edit': None,  # necessary for rendering nodes
                 'permissions': [],  # necessary for rendering nodes
+                'has_quickfiles': profile_quickfilesnode.files.filter(type='osf.osfstoragefile').exists()
             },
         }
         return ret
@@ -736,7 +738,7 @@ def request_export(auth):
                               'error_type': 'throttle_error'})
 
     mails.send_mail(
-        to_addr=settings.SUPPORT_EMAIL,
+        to_addr=settings.OSF_SUPPORT_EMAIL,
         mail=mails.REQUEST_EXPORT,
         user=auth.user,
     )
@@ -756,7 +758,7 @@ def request_deactivation(auth):
                         })
 
     mails.send_mail(
-        to_addr=settings.SUPPORT_EMAIL,
+        to_addr=settings.OSF_SUPPORT_EMAIL,
         mail=mails.REQUEST_DEACTIVATION,
         user=auth.user,
     )
@@ -764,3 +766,10 @@ def request_deactivation(auth):
     user.requested_deactivation = True
     user.save()
     return {'message': 'Sent account deactivation request'}
+
+@must_be_logged_in
+def cancel_request_deactivation(auth):
+    user = auth.user
+    user.requested_deactivation = False
+    user.save()
+    return {'message': 'You have canceled your deactivation request'}

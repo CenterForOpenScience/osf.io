@@ -56,7 +56,8 @@ class NodesFilterMixin(ListFilterMixin):
         if field_name == 'root':
             if None in operation['value']:
                 raise InvalidFilterValue(value=operation['value'])
-            return Q(root__guids___id__in=operation['value'])
+            with_as_root_query = Q(root__guids___id__in=operation['value'])
+            return ~with_as_root_query if operation['op'] == 'ne' else with_as_root_query
 
         if field_name == 'preprint':
             not_preprint_query = (

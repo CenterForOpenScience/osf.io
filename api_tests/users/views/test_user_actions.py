@@ -225,14 +225,14 @@ class TestActionCreate(object):
                 res = app.post_json_api(url, payload, auth=moderator.auth)
                 assert res.status_code == 201
 
-                action = preprint.actions.order_by('-date_created').first()
+                action = preprint.actions.order_by('-created').first()
                 assert action.trigger == trigger
 
                 preprint.refresh_from_db()
                 assert preprint.reviews_state == to_state
                 if preprint.in_public_reviews_state:
                     assert preprint.is_published
-                    assert preprint.date_published == action.date_created
+                    assert preprint.date_published == action.created
                     assert mock_ezid.called
                     mock_ezid.reset_mock()
                 else:
@@ -243,4 +243,4 @@ class TestActionCreate(object):
                 if trigger == 'edit_comment':
                     assert preprint.date_last_transitioned is None
                 else:
-                    assert preprint.date_last_transitioned == action.date_created
+                    assert preprint.date_last_transitioned == action.created

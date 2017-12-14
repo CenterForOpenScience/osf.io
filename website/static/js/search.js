@@ -56,7 +56,7 @@ License.prototype.toggleActive = function() {
 var User = function(result){
     var self = this;
     self.category = result.category;
-    self.gravatarUrl = ko.observable('');
+    self.profileImageUrl = ko.observable('');
     self.social = result.social;
     self.job_title = result.job_title;
     self.job = result.job;
@@ -67,7 +67,7 @@ var User = function(result){
 
     $.ajax('/api/v1'+ result.url).done(function(data){
         if (typeof data.profile !== 'undefined') {
-            self.gravatarUrl(data.profile.gravatar_url);
+            self.profileImageUrl(data.profile.profile_image_url);
         }
     });
 };

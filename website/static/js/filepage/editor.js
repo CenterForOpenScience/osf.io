@@ -155,7 +155,7 @@ var FileEditor = {
                         return m('li', m('a', {href: user.url}, [
                             m('img', {
                                 title: user.name,
-                                src: user.gravatar,
+                                src: user.profile_image,
                                 'data-container': 'body',
                                 'data-placement': 'top',
                                 'data-toggle': 'tooltip',
