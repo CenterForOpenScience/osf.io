@@ -10,7 +10,9 @@ from . import versioning
 default_version = versioning.decimal_version_to_url_path(settings.REST_FRAMEWORK['DEFAULT_VERSION'])
 
 # Please keep URLs alphabetized for auto-generated documentation
+
 urlpatterns = [
+    url(r'^_/wb/hooks/', include('api.wb.urls', namespace='wb')),
     url('^(?P<version>(v2))/',
         include(
             [

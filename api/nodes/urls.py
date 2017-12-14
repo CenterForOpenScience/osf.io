@@ -23,7 +23,6 @@ urlpatterns = [
     url(r'^(?P<node_id>\w+)/draft_registrations/(?P<draft_id>\w+)/$', views.NodeDraftRegistrationDetail.as_view(), name=views.NodeDraftRegistrationDetail.view_name),
     url(r'^(?P<node_id>\w+)/files/$', views.NodeProvidersList.as_view(), name=views.NodeProvidersList.view_name),
     url(r'^(?P<node_id>\w+)/files/providers/(?P<provider>\w+)/?$', views.NodeProviderDetail.as_view(), name=views.NodeProviderDetail.view_name),
-    url(r'^(?P<node_id>\w+)/files/providers/(?P<provider>\w+)/file_metadata/$', views.NodeProviderFileMetadataCreate.as_view(), name=views.NodeProviderFileMetadataCreate.view_name),
     url(r'^(?P<node_id>\w+)/files/(?P<provider>\w+)(?P<path>/(?:.*/)?)$', views.NodeFilesList.as_view(), name=views.NodeFilesList.view_name),
     url(r'^(?P<node_id>\w+)/files/(?P<provider>\w+)(?P<path>/.+[^/])$', views.NodeFileDetail.as_view(), name=views.NodeFileDetail.view_name),
     url(r'^(?P<node_id>\w+)/forks/$', views.NodeForksList.as_view(), name=views.NodeForksList.view_name),
