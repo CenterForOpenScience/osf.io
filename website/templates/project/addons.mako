@@ -1,5 +1,5 @@
 <%inherit file="project/project_base.mako"/>
-<%def name="title()">${node['title']} Addons</%def>
+<%def name="title()">${node['title']} Add-ons</%def>
 
 <div class="row project-page">
     <span id="selectAddonsAnchor" class="anchor"></span>
@@ -11,8 +11,8 @@
 
                 <div class="panel panel-default osf-affix" data-spy="affix" data-offset-top="0" data-offset-bottom="263"><!-- Begin sidebar -->
                     <ul class="nav nav-stacked nav-pills">
-                        <li><a href="#selectAddon">Select Addon</a></li>
-                        <li><a href="#configureAddon">Configure Addon</a></li>
+                        <li><a href="#selectAddonsAnchor">Select Add-ons</a></li>
+                        <li><a href="#configureAddonsAnchor">Configure Add-ons</a></li>
                     </ul>
                 </div><!-- End sidebar -->
 
