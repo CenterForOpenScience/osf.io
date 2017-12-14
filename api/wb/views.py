@@ -16,7 +16,7 @@ from api.wb.serializers import (
     NodeProviderFileMetadataCreateSerializer
 
 )
-
+from api.base.parsers import HMACSignedParser
 from framework.auth.oauth_scopes import CoreScopes
 
 
@@ -25,6 +25,7 @@ class MoveFile(JSONAPIBaseView, generics.CreateAPIView, NodeMixin, WaterButlerMi
     View for creating metadata for file move/copy in osfstorage.  Only WaterButler should talk to this endpoint.
     To move/copy a file, send a request to WB, and WB will call this view.
     """
+    parser_classes = (HMACSignedParser,)
 
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
