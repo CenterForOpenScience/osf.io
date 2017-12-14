@@ -66,6 +66,6 @@ class MoveFile(JSONAPIBaseView, generics.CreateAPIView, NodeMixin, WaterButlerMi
         return provider
 
     def create(self, request, *args, **kwargs):
-        response = super(NodeProviderFileMetadataCreate, self).create(request, *args, **kwargs)
+        response = super(MoveFile, self).create(request, *args, **kwargs)
         response.status_code = status.HTTP_200_OK if request.data.get('action', '') == 'move' else status.HTTP_201_CREATED
         return response

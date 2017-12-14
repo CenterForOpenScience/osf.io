@@ -12,7 +12,13 @@ default_version = versioning.decimal_version_to_url_path(settings.REST_FRAMEWORK
 # Please keep URLs alphabetized for auto-generated documentation
 
 urlpatterns = [
-    url(r'^_/wb/hooks/', include('api.wb.urls', namespace='wb')),
+    url(r'^_/',
+        include(
+            [
+                url(r'^wb/hooks/', include('api.wb.urls', namespace='wb')),
+            ]
+        )
+    ),
     url('^(?P<version>(v2))/',
         include(
             [
