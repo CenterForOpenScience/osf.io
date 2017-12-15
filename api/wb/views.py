@@ -1,6 +1,7 @@
 from rest_framework import generics, status, permissions as drf_permissions
 
 from osf.models import AbstractNode
+from addons.osfstorage.models import OsfStorageFileNode, OsfStorageFolder
 from api.base import permissions as base_permissions
 from api.base.utils import get_object_or_error
 from api.base.views import JSONAPIBaseView
@@ -13,7 +14,7 @@ from api.nodes.permissions import (
     ExcludeWithdrawals,
 )
 from api.wb.serializers import (
-    NodeProviderFileMetadataCreateSerializer
+    WaterbutlerSerializer
 
 )
 from api.base.parsers import HMACSignedParser
@@ -37,16 +38,25 @@ class MoveFile(JSONAPIBaseView, generics.CreateAPIView, NodeMixin, WaterButlerMi
     required_read_scopes = [CoreScopes.NODE_FILE_READ]
     required_write_scopes = [CoreScopes.NODE_FILE_WRITE]
 
-    serializer_class = NodeProviderFileMetadataCreateSerializer
-    view_category = 'nodes'
-    view_name = 'node-provider-file-metadata'
+    serializer_class = WaterbutlerSerializer
+    view_category = 'waterbutler'
+    view_name = 'waterbutler-move'
+
+    # Overrides CreateAPIView
+    def get_object(self):
+        return self.get_node()
 
     # overrides CreateApiView
     def perform_create(self, serializer):
-        source = AbstractNode.load(self.kwargs.get('node_id'))
-        return serializer.save(action='move', source_node=source)
+        source = serializer.validated_data.pop('source')
+        destination = serializer.validated_data.pop('destination')
+        dest_node = self.get_node(specific_node_id = destination['node'])
+        source = OsfStorageFileNode.get(source, self.get_object())
+        dest_parent = OsfStorageFolder.get(destination['parent'], dest_node)
+
+        return serializer.save(action='move', source=source, destination=dest_parent, name=destination['name'])
 
     def create(self, request, *args, **kwargs):
         response = super(MoveFile, self).create(request, *args, **kwargs)
-        response.status_code = status.HTTP_200_OK if request.data.get('action', '') == 'move' else status.HTTP_201_CREATED
+        response.status_code = status.HTTP_200_OK
         return response

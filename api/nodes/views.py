@@ -90,7 +90,7 @@ from api.nodes.serializers import (
     NodeViewOnlyLinkSerializer,
     NodeViewOnlyLinkUpdateSerializer,
     NodeCitationSerializer,
-    NodeCitationStyleSerializer,
+    NodeCitationStyleSerializer
 )
 from api.preprints.serializers import PreprintSerializer
 from api.registrations.serializers import RegistrationSerializer

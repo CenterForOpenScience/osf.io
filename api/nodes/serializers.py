@@ -990,7 +990,6 @@ class NodeProviderSerializer(JSONAPISerializer):
             }
         )
 
-
 class InstitutionRelated(JSONAPIRelationshipSerializer):
     id = ser.CharField(source='_id', required=False, allow_null=True)
     class Meta:
