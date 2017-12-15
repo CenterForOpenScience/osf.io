@@ -197,7 +197,8 @@ class NodeFileCollector(object):
             for descendant in self.find_readable_descendants(bnode):
                 yield descendant
 
-    def _serialize_node(self, node, parent=None, grid_root=None, children=[]):
+    def _serialize_node(self, node, parent=None, grid_root=None, children=None):
+        children = children or []
         is_pointer = parent and node.is_linked_node
         can_edit = node.has_write_perm if hasattr(node, 'has_write_perm') else node.can_edit(auth=self.auth)
 
