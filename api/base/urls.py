@@ -15,7 +15,7 @@ urlpatterns = [
     url(r'^_/',
         include(
             [
-                url(r'^wb/hooks/', include('api.wb.urls', namespace='wb')),
+                url(r'^wb/', include('api.wb.urls', namespace='wb')),
             ]
         )
     ),
