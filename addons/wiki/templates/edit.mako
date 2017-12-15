@@ -156,7 +156,8 @@
                           <!-- ko foreach: showCollaborators -->
                              <!-- ko ifnot: id === ${ user_id | sjson, n } -->
                                 <li><a data-bind="attr: { href: url }" >
-                                          <img data-container="body" data-bind="attr: {src: profile_image}, tooltip: {title: name, placement: 'top'}"
+                                          ## our shareJS explicitly passes back 'gravatar' despite our generalization
+                                          <img data-container="body" data-bind="attr: {src: gravatar}, tooltip: {title: name, placement: 'top'}"
                                                style="border: 1px solid black;" width="30px" height="30px">
                                       </a></li>
                              <!-- /ko -->
