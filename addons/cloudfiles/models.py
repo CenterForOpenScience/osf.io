@@ -16,6 +16,13 @@ from osf.models.files import (File,
 class CloudFilesFileNode(BaseFileNode):
     _provider = 'cloudfiles'
 
+    @property
+    def _hashes(self):
+        try:
+            return self._history[-1]['extra']['hashes']
+        except (IndexError, KeyError):
+            return None
+
 
 class CloudFilesFolder(CloudFilesFileNode, Folder):
     pass
@@ -35,14 +42,14 @@ class UserSettings(BaseOAuthUserSettings):
     serializer = CloudFilesSerializer
 
 
-class NodeSettings(BaseStorageAddon, BaseOAuthNodeSettings):
+class NodeSettings(BaseOAuthNodeSettings, BaseStorageAddon):
     oauth_provider = CloudFilesProvider
     serializer = CloudFilesSerializer
 
     folder_id = models.TextField(null=True, blank=True)
     folder_path = models.TextField(null=True, blank=True)
     folder_region = models.TextField(null=True, blank=True)
-    user_settings = models.ForeignKey(UserSettings, null=True, blank=True)
+    user_settings = models.ForeignKey(UserSettings, null=True, blank=True, on_delete=models.CASCADE)
 
     FORBIDDEN_CHARS_FOR_CONTAINER_NAMES = ['/', '?']
 
