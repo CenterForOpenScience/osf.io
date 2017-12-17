@@ -2,9 +2,12 @@ from __future__ import unicode_literals
 
 import pytest
 
+from addons.osfstorage import settings as osfstorage_settings
 from api.base.settings.defaults import API_BASE
 from api_tests import utils as api_utils
 from framework.auth.core import Auth
+from framework.auth import signing
+
 from osf_tests.factories import (
     AuthUserFactory,
     ProjectFactory,
@@ -12,6 +15,105 @@ from osf_tests.factories import (
 )
 from osf.models import QuickFilesNode
 from website.util import permissions
+
+
+@pytest.mark.django_db
+class StorageTestCase:
+    @pytest.fixture()
+    def user(self):
+        return AuthUserFactory()
+
+    @pytest.fixture()
+    def node(self, user):
+        return ProjectFactory(creator=user)
+
+    @pytest.fixture()
+    def osfstorage(self, node):
+        return node.get_addon('osfstorage')
+
+    @pytest.fixture()
+    def root_node(self, osfstorage):
+        return osfstorage.get_root()
+
+    @pytest.fixture()
+    def file(self, root_node, user):
+        file = root_node.append_file('test_file')
+        file.create_version(user, {
+            'object': '06d80e',
+            'service': 'cloud',
+            osfstorage_settings.WATERBUTLER_RESOURCE: 'osf',
+        }, {
+            'size': 1337,
+            'contentType': 'img/png'
+        }).save()
+        return file
+
+    @pytest.fixture()
+    def folder(self, root_node, user):
+        return root_node.append_folder('Nina Simone')
+
+    @pytest.fixture()
+    def folder_two(self, root_node, user):
+        return root_node.append_folder('Second Folder')
+
+
+@pytest.mark.django_db
+class HookTestCase(StorageTestCase):
+
+    def sign_payload(self, payload):
+        return signing.sign_data(signing.default_signer, payload)
+
+@pytest.mark.django_db
+class TestMove(HookTestCase):
+    @pytest.fixture()
+    def move_url(self, node):
+        return '/_/wb/hooks/{}/move/'.format(node._id)
+
+    @pytest.fixture()
+    def payload(self, file, folder, root_node, user):
+        return {
+            'source': file._id,
+            'node': root_node._id,
+            'user': user._id,
+            'destination': {
+                'parent': folder._id,
+                'node': folder.node._id,
+                'name': folder.name,
+            }
+        }
+
+    @pytest.fixture()
+    def signed_payload(self, payload):
+        return self.sign_payload(payload)
+
+    def test_move_hook(self, app, move_url, signed_payload):
+        res = app.post_json(move_url, signed_payload, expect_errors=False)
+        assert res.status_code == 200
+
+    def test_move_checkedout_file(self, app, file, user, move_url, signed_payload):
+        file.checkout = user
+        file.save()
+        res = app.post_json(move_url, signed_payload, expect_errors=True)
+        assert res.status_code == 400
+        assert 'Cannot move file as it is checked out.' in res._app_iter[0]
+
+    def test_move_checked_out_file_in_folder(self, app, root_node, user, folder, folder_two, move_url):
+        file = folder.append_file('No I don\'t wanna go')
+        file.checkout = user
+        file.save()
+        signed_payload = self.sign_payload({
+            'source': folder._id,
+            'node': root_node._id,
+            'user': user._id,
+            'destination': {
+                'parent': folder_two._id,
+                'node': folder_two.node._id,
+                'name': folder_two.name,
+            }
+        })
+        res = app.post_json(move_url, signed_payload, expect_errors=True)
+        assert 'Cannot move file as it is checked out.' in res._app_iter[0]
+
 
 
 @pytest.mark.django_db
@@ -60,7 +162,7 @@ class TestNodeProviderFileMetadataCreateView:
 
     @pytest.fixture()
     def create_metadata_url(self, node_one):
-        return '/{}nodes/{}/files/providers/osfstorage/file_metadata/'.format(API_BASE, node_one._id)
+        return '/_/wb/hooks/{}/move/'.format(node_one._id)
 
     @pytest.fixture()
     def move_payload(self, file_one, folder):
@@ -90,12 +192,13 @@ class TestNodeProviderFileMetadataCreateView:
 
     def test_must_have_auth_and_be_contributor(self, app, create_metadata_url, move_payload):
         # test_must_have_auth(self, app, file_url):
-        res = app.post_json_api(create_metadata_url, move_payload, expect_errors=True)
+        res = app.post_json(create_metadata_url, move_payload, expect_errors=True)
         assert res.status_code == 401
 
         # test_must_be_contributor(self, app, file_url):
         non_contributor = AuthUserFactory()
-        res = app.post_json_api(create_metadata_url, move_payload, auth=non_contributor.auth, expect_errors=True)
+        res = app.post_json(create_metadata_url, move_payload, auth=non_contributor.auth, expect_errors=True)
+        import pdb; pdb.set_trace()
         assert res.status_code == 403
 
     def test_move_file_from_root_to_subfolder_and_back(self, app, user, create_metadata_url, move_payload, file_one, folder, root_node_one):
