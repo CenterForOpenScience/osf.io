@@ -22,7 +22,7 @@ from api.base.parsers import HMACSignedParser
 from framework.auth.oauth_scopes import CoreScopes
 
 
-class MoveFileMetadata(JSONAPIBaseView, generics.CreateAPIView, NodeMixin, WaterButlerMixin):
+class MoveFileMetadata(JSONAPIBaseView, generics.CreateAPIView, WaterButlerMixin):
     """
     View for creating metadata for file move/copy in osfstorage.  Only WaterButler should talk to this endpoint.
     To move/copy a file, send a request to WB, and WB will call this view.
@@ -32,17 +32,30 @@ class MoveFileMetadata(JSONAPIBaseView, generics.CreateAPIView, NodeMixin, Water
     serializer_class = WaterbutlerMetadataSerializer
     view_category = 'wb'
     view_name = 'metadata-move'
+    node_lookup_url_kwarg = 'node_id'
 
     # Overrides CreateAPIView
     def get_object(self):
-        return self.get_node()
+        return self.get_node(self.kwargs[self.node_lookup_url_kwarg])
+
+    def get_node(self, node_id):
+        node = get_object_or_error(
+            AbstractNode,
+            node_id,
+            self.request,
+            display_name='node'
+        )
+        if node.is_registration:
+            raise NotFound
+        return node
 
     # overrides CreateApiView
     def perform_create(self, serializer):
         source = serializer.validated_data.pop('source')
         destination = serializer.validated_data.pop('destination')
+        name = destination.get('name')
 
-        dest_node = self.get_node(specific_node_id = destination.get('node'))
+        dest_node = self.get_node(node_id = destination.get('node'))
 
         try:
             source = OsfStorageFileNode.get(source, self.get_object())
@@ -53,8 +66,7 @@ class MoveFileMetadata(JSONAPIBaseView, generics.CreateAPIView, NodeMixin, Water
              dest_parent = OsfStorageFolder.get(destination.get('parent'), dest_node)
         except OsfStorageFolder.DoesNotExist:
             raise NotFound
-
-        return serializer.save(action='move', source=source, destination=dest_parent, name=destination['name'])
+        return serializer.save(action='move', source=source, destination=dest_parent, name=name)
 
     def create(self, request, *args, **kwargs):
         response = super(MoveFileMetadata, self).create(request, *args, **kwargs)
