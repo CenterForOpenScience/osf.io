@@ -316,9 +316,205 @@ class TestMove(HookTestCase):
         assert res.status_code == 400
         assert res.json['errors'][0]['detail'] == 'Invalid Payload'
 
-    # def test_expired_signature(self, app, move_url):
-    #     signed_payload = {"payload": "eyJkZXN0aW5hdGlvbiI6IHsibmFtZSI6ICJsb3JlbWlwc3VtLnR4dCIsICJub2RlIjogIjVwZXdrIiwgInBhcmVudCI6ICI1YTMyYTk3YWRhOGI5YjAwMzNhMmNkYzQifSwgInNvdXJjZSI6ICI1YTMyYTk2ZGRhOGI5YjAwMzNhMmNkYmIiLCAidGltZSI6IDE1MTMyOTM5MjgsICJ1c2VyIjogIngzamQ3In0=", "signature": "63b4e901ec7f25b2e929ff1a40771bd7bbff12966650ce5db42ecb4c9aad7a10"}
-    #
-    #     res = app.post_json(move_url, signed_payload, expect_errors=True)
-    #     assert res.status_code == 400
-    #     assert res.json['errors'][0]['detail'] == 'Signature has expired'
+
+@pytest.mark.django_db
+class TestCopy(HookTestCase):
+    @pytest.fixture()
+    def copy_url(self, node):
+        return '/_/wb/hooks/{}/copy/'.format(node._id)
+
+    @pytest.fixture()
+    def quickfiles_copy_url(self, quickfiles_node):
+        return '/_/wb/hooks/{}/copy/'.format(quickfiles_node._id)
+
+    @pytest.fixture()
+    def payload(self, file, folder, root_node, user):
+        return {
+            'source': file._id,
+            'node': root_node._id,
+            'user': user._id,
+            'destination': {
+                'parent': folder._id,
+                'node': folder.node._id,
+                'name': folder.name,
+            }
+        }
+
+    @pytest.fixture()
+    def signed_payload(self, payload):
+        return self.sign_payload(payload)
+
+    def test_copy_hook(self, app, copy_url, signed_payload, folder, file):
+        res = app.post_json(copy_url, signed_payload, expect_errors=False)
+        assert res.status_code == 201
+
+    def test_copy_checkedout_file(self, app, file, user, copy_url, signed_payload):
+        file.checkout = user
+        file.save()
+        res = app.post_json(copy_url, signed_payload, expect_errors=True)
+        assert res.status_code == 201
+
+    def test_copy_checked_out_file_in_folder(self, app, root_node, user, folder, folder_two, copy_url):
+        file = folder.append_file('No I don\'t wanna go')
+        file.checkout = user
+        file.save()
+        signed_payload = self.sign_payload({
+            'source': folder._id,
+            'node': root_node._id,
+            'user': user._id,
+            'destination': {
+                'parent': folder_two._id,
+                'node': folder_two.node._id,
+                'name': folder_two.name,
+            }
+        })
+        res = app.post_json(copy_url, signed_payload, expect_errors=True)
+        assert res.status_code == 201
+
+    def test_copy_checkedout_file_two_deep_in_folder(self, app, root_node, user, folder, folder_two, copy_url):
+        folder_nested = folder.append_folder('Nested')
+        file = folder_nested.append_file('No I don\'t wanna go')
+        file.checkout = user
+        file.save()
+
+        signed_payload = self.sign_payload({
+            'source': folder._id,
+            'node': root_node._id,
+            'user': user._id,
+            'destination': {
+                'parent': folder_two._id,
+                'node': folder_two.node._id,
+                'name': folder_two.name,
+            }
+        })
+        res = app.post_json(copy_url, signed_payload, expect_errors=True)
+        assert res.status_code == 201
+
+    def test_copy_preprint_file_out_of_node(self, app, user, copy_url, root_node, node, node_two, node_two_root_node, folder):
+        file = folder.append_file('No I don\'t wanna go')
+        node.preprint_file = file
+        node.save()
+
+        folder_two = node_two_root_node.append_folder('To There')
+        signed_payload = self.sign_payload({
+            'source': folder._id,
+            'node': root_node._id,
+            'user': user._id,
+            'destination': {
+                'parent': folder_two._id,
+                'node': folder_two.node._id,
+                'name': folder_two.name,
+            }
+        })
+        res = app.post_json(copy_url, signed_payload, expect_errors=True)
+        assert res.status_code == 201
+
+    def test_copy_file_out_of_node(self, app, user, copy_url, root_node, node, node_two, node_two_root_node, folder):
+        file = folder.append_file('in a galaxy')
+        node.preprint_file = root_node.append_file('far')
+        node.save()
+
+        folder_two = node_two_root_node.append_folder('To There')
+        signed_payload = self.sign_payload({
+            'source': folder._id,
+            'node': root_node._id,
+            'user': user._id,
+            'destination': {
+                'parent': folder_two._id,
+                'node': folder_two.node._id,
+                'name': folder_two.name,
+            }
+        })
+        res = app.post_json(copy_url, signed_payload, expect_errors=False)
+        assert res.status_code == 201
+
+    def test_within_node_copy_while_preprint(self, app, user, copy_url, file, node, folder, root_node):
+        node.preprint_file = file
+        node.save()
+        signed_payload = self.sign_payload({
+            'source': file._id,
+            'node': root_node._id,
+            'user': user._id,
+            'destination': {
+                'parent': folder._id,
+                'node': folder.node._id,
+                'name': folder.name,
+            }
+        })
+        res = app.post_json(copy_url, signed_payload, expect_errors=False)
+        assert res.status_code == 201
+
+    def test_can_copy_file_out_of_quickfiles_node(self, app, quickfiles_copy_url, quickfiles_file, quickfiles_node, quickfiles_folder, node, user):
+        dest_folder = OsfStorageFolder.objects.get(node=node)
+        signed_payload = self.sign_payload({
+            'source': quickfiles_folder._id,
+            'node': quickfiles_node._id,
+            'user': user._id,
+            'destination': {
+                'parent': dest_folder._id,
+                'node': node._id,
+                'name': quickfiles_file.name,
+            }
+        })
+        res = app.post_json(quickfiles_copy_url, signed_payload, expect_errors=False)
+        assert res.status_code == 201
+
+    def test_blank_destination_file_name(self, app, copy_url, user, root_node, folder, file):
+        signed_payload = self.sign_payload(
+            {
+                'source': file._id,
+                'node': root_node._id,
+                'user': user._id,
+                'destination': {
+                    'parent': folder._id,
+                    'node': folder.node._id,
+                    'name': '',
+                }
+            }
+        )
+        res = app.post_json(copy_url, signed_payload, expect_errors=False)
+        assert res.status_code == 201
+        file.reload()
+        assert file.name == 'test_file'
+
+    def test_blank_source(self, app, copy_url, user, root_node, folder, file):
+        signed_payload = self.sign_payload(
+            {
+                'source': '',
+                'node': root_node._id,
+                'user': user._id,
+                'destination': {
+                    'parent': folder._id,
+                    'node': folder.node._id,
+                    'name': 'hello.txt',
+                }
+            }
+        )
+        res = app.post_json(copy_url, signed_payload, expect_errors=True)
+        assert res.status_code == 400
+        assert res.json['errors'][0]['source'] == 'This field may not be blank.'
+
+    def test_no_parent(self, app, copy_url, user, root_node, folder, file):
+        signed_payload = self.sign_payload(
+            {
+                'source': file._id,
+                'node': root_node._id,
+                'user': user._id,
+                'destination': {
+                    'node': folder.node._id,
+                    'name': 'hello.txt',
+                }
+            }
+        )
+        res = app.post_json(copy_url, signed_payload, expect_errors=True)
+        assert res.status_code == 400
+        assert res.json['errors'][0]['detail'] == 'parent'
+
+    def test_invalid_payload(self, app, copy_url):
+        signed_payload = {
+            'key': 'incorrectly_formed_payload'
+        }
+
+        res = app.post_json(copy_url, signed_payload, expect_errors=True)
+        assert res.status_code == 400
+        assert res.json['errors'][0]['detail'] == 'Invalid Payload'
