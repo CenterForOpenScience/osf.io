@@ -9,9 +9,15 @@ from rest_framework import exceptions
 from website.files import exceptions as file_exceptions
 
 
+class DestinationSerializer(ser.Serializer):
+    parent = ser.CharField(write_only=True)
+    node = ser.CharField(write_only=True)
+    name = ser.CharField(write_only=True, allow_blank=True, allow_null=True)
+
+
 class WaterbutlerMetadataSerializer(ser.Serializer):
     source = ser.CharField(write_only=True)
-    destination = ser.DictField(write_only=True, child=ser.CharField())
+    destination = DestinationSerializer(write_only=True)
 
     id = IDField(source='_id', read_only=True)
     kind = ser.CharField(read_only=True)
