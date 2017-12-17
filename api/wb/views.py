@@ -1,4 +1,5 @@
 from rest_framework import generics, status, permissions as drf_permissions
+from rest_framework.exceptions import NotFound
 
 from osf.models import AbstractNode
 from addons.osfstorage.models import OsfStorageFileNode, OsfStorageFolder
@@ -40,9 +41,18 @@ class MoveFileMetadata(JSONAPIBaseView, generics.CreateAPIView, NodeMixin, Water
     def perform_create(self, serializer):
         source = serializer.validated_data.pop('source')
         destination = serializer.validated_data.pop('destination')
-        dest_node = self.get_node(specific_node_id = destination['node'])
-        source = OsfStorageFileNode.get(source, self.get_object())
-        dest_parent = OsfStorageFolder.get(destination['parent'], dest_node)
+
+        dest_node = self.get_node(specific_node_id = destination.get('node'))
+
+        try:
+            source = OsfStorageFileNode.get(source, self.get_object())
+        except OsfStorageFileNode.DoesNotExist:
+            raise NotFound
+
+        try:
+             dest_parent = OsfStorageFolder.get(destination.get('parent'), dest_node)
+        except OsfStorageFolder.DoesNotExist:
+            raise NotFound
 
         return serializer.save(action='move', source=source, destination=dest_parent, name=destination['name'])
 
