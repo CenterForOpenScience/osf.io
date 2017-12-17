@@ -34,10 +34,10 @@ class WaterbutlerMetadataSerializer(ser.Serializer):
         return obj.get_download_count()
 
     def get_sha256(self, obj):
-        return obj.versions.first().metadata.get('sha256', None)
+        return obj.versions.first().metadata.get('sha256', None) if obj.versions.exists() else None
 
     def get_md5(self, obj):
-        return obj.versions.first().metadata.get('md5', None)
+        return obj.versions.first().metadata.get('md5', None)  if obj.versions.exists() else None
 
     def get_size(self, obj):
         if obj.versions.exists():
