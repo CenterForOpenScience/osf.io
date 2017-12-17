@@ -18,7 +18,7 @@ urlpatterns = [
                 url(r'^wb/', include('api.wb.urls', namespace='wb')),
             ]
         )
-    ),
+        ),
     url('^(?P<version>(v2))/',
         include(
             [

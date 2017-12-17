@@ -227,7 +227,7 @@ class HMACSignedParser(JSONParser):
             payload = signing.unserialize_payload(data['payload'])
             exp_time = payload['time']
         except (KeyError, ValueError):
-            raise JSONAPIException(detail="Invalid Payload")
+            raise JSONAPIException(detail='Invalid Payload')
 
         if not signing.default_signer.verify_payload(sig, payload):
             raise NotAuthenticated

@@ -35,7 +35,7 @@ class BaseVersioning(drf_versioning.BaseVersioning):
     def get_url_path_version(self, kwargs):
         invalid_version_message = 'Invalid version in URL path.'
         version = kwargs.get(self.version_param)
-        if version == None:
+        if version is None:
             return self.default_version
         version = url_path_version_to_decimal(version)
         if not self.is_allowed_version(version):

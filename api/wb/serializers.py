@@ -1,12 +1,10 @@
 from django.db import IntegrityError
 
-from api.base.serializers import (IDField,
-                                  TypeField,)
-
-from api.files.serializers import FileSerializer
 from rest_framework import serializers as ser
 from rest_framework import exceptions
+
 from website.files import exceptions as file_exceptions
+from api.base.serializers import IDField
 
 
 class DestinationSerializer(ser.Serializer):
@@ -43,7 +41,7 @@ class WaterbutlerMetadataSerializer(ser.Serializer):
         return obj.versions.first().metadata.get('sha256', None) if obj.versions.exists() else None
 
     def get_md5(self, obj):
-        return obj.versions.first().metadata.get('md5', None)  if obj.versions.exists() else None
+        return obj.versions.first().metadata.get('md5', None) if obj.versions.exists() else None
 
     def get_size(self, obj):
         if obj.versions.exists():
