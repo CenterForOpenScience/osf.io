@@ -232,7 +232,7 @@ class HMACSignedParser(JSONParser):
         if not signing.default_signer.verify_payload(sig, payload):
             raise NotAuthenticated
 
-        # if time.time() > exp_time:
-        #     raise JSONAPIException(detail='Signature has expired')
+        if time.time() > exp_time:
+            raise JSONAPIException(detail='Signature has expired')
 
         return payload
