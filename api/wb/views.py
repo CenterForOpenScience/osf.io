@@ -14,33 +14,23 @@ from api.nodes.permissions import (
     ExcludeWithdrawals,
 )
 from api.wb.serializers import (
-    WaterbutlerSerializer
+    WaterbutlerMetadataSerializer
 
 )
 from api.base.parsers import HMACSignedParser
 from framework.auth.oauth_scopes import CoreScopes
 
 
-class MoveFile(JSONAPIBaseView, generics.CreateAPIView, NodeMixin, WaterButlerMixin):
+class MoveFileMetadata(JSONAPIBaseView, generics.CreateAPIView, NodeMixin, WaterButlerMixin):
     """
     View for creating metadata for file move/copy in osfstorage.  Only WaterButler should talk to this endpoint.
     To move/copy a file, send a request to WB, and WB will call this view.
     """
     parser_classes = (HMACSignedParser,)
 
-    permission_classes = (
-        drf_permissions.IsAuthenticatedOrReadOnly,
-        ContributorOrPublic,
-        ExcludeWithdrawals,
-        base_permissions.TokenHasScope,
-    )
-
-    required_read_scopes = [CoreScopes.NODE_FILE_READ]
-    required_write_scopes = [CoreScopes.NODE_FILE_WRITE]
-
-    serializer_class = WaterbutlerSerializer
-    view_category = 'waterbutler'
-    view_name = 'waterbutler-move'
+    serializer_class = WaterbutlerMetadataSerializer
+    view_category = 'wb'
+    view_name = 'metadata-move'
 
     # Overrides CreateAPIView
     def get_object(self):
@@ -57,6 +47,6 @@ class MoveFile(JSONAPIBaseView, generics.CreateAPIView, NodeMixin, WaterButlerMi
         return serializer.save(action='move', source=source, destination=dest_parent, name=destination['name'])
 
     def create(self, request, *args, **kwargs):
-        response = super(MoveFile, self).create(request, *args, **kwargs)
+        response = super(MoveFileMetadata, self).create(request, *args, **kwargs)
         response.status_code = status.HTTP_200_OK
         return response

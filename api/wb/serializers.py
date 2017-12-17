@@ -9,7 +9,7 @@ from rest_framework import exceptions
 from website.files import exceptions as file_exceptions
 
 
-class WaterbutlerSerializer(ser.Serializer):
+class WaterbutlerMetadataSerializer(ser.Serializer):
     source = ser.CharField(write_only=True)
     destination = ser.DictField(write_only=True, child=ser.CharField())
 
@@ -53,7 +53,6 @@ class WaterbutlerSerializer(ser.Serializer):
 
         try:
             # Current actions are only move and copy
-            import pdb; pdb.set_trace()
             return source.copy_under(destination, name) if action == 'copy' else source.move_under(destination, name)
         except IntegrityError:
             raise exceptions.ValidationError('File already exists with this name.')
