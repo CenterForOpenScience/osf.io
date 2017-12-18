@@ -5,7 +5,7 @@ var $osf = require('js/osfHelpers');
 var ctx = window.contextVars;
 
 var changeAddonSettingsSuccess = function () {
-    $osf.growl('Success', 'Your addon settings have been successfully changed.', 'success');
+    $osf.growl('Success', 'Your add-on settings have been successfully changed.', 'success');
     location.reload();
 };
 
@@ -23,7 +23,7 @@ $('.addon-container').each(function(ind, elm) {
             data[elm.attr('name')] = false;
             bootbox.confirm({
                 title: 'Disable Add-on?',
-                message: 'Are you sure you want to disable this addon?',
+                message: 'Are you sure you want to disable this add-on?',
                 callback: function (result) {
                     if (result) {
                         var request = $osf.postJSON(ctx.node.urls.api + 'settings/addons/', data);
@@ -44,35 +44,19 @@ $('.addon-container').each(function(ind, elm) {
             var data = {};
             var name = elm.attr('name');
             data[name] = true;
+            var capabilities = $('#capabilities-' + name).html();
             bootbox.confirm({
-                title: 'Enable Add-on?',
-                message: 'Are you sure you want to enable this addon?',
-                callback: function (result) {
+                message: capabilities,
+                callback: function(result) {
                     if (result) {
-                        var capabilities = $('#capabilities-' + name).html();
-                        if (capabilities) {
-                            bootbox.confirm({
-                                message: capabilities,
-                                callback: function(result) {
-                                    if (result) {
-                                        var request = $osf.postJSON(ctx.node.urls.api + 'settings/addons/', data);
-                                        request.done(changeAddonSettingsSuccess);
-                                        request.fail(changeAddonSettingsFailure);
-                                    }
-                                },
-                                buttons:{
-                                    confirm:{
-                                        label:'Confirm'
-                                    }
-                                }
-                            });
-                        }
+                        var request = $osf.postJSON(ctx.node.urls.api + 'settings/addons/', data);
+                        request.done(changeAddonSettingsSuccess);
+                        request.fail(changeAddonSettingsFailure);
                     }
                 },
-                buttons: {
-                    confirm: {
-                        label: 'Enable',
-                        className: 'btn-success'
+                buttons:{
+                    confirm:{
+                        label:'Confirm'
                     }
                 }
             });

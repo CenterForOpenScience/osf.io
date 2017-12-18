@@ -304,7 +304,7 @@ def main(env):
             {
                 '_id': 'ua',
                 'name': 'University of Arizona',
-                'description': 'A service supported by the <a href="http://www.library.arizona.edu/">University of Arizona Libraries</a>. For more information, please refer to the <a href="http://data.library.arizona.edu/osf">A Data Management page</a>.',
+                'description': 'A service supported by the <a href="http://www.library.arizona.edu/">University of Arizona Libraries</a>. For more information, please refer to the <a href="http://data.library.arizona.edu/osf">UA Data Management Page</a>.',
                 'banner_name': 'ua-banner.png',
                 'logo_name': 'ua-shield.png',
                 'login_url': SHIBBOLETH_SP_LOGIN.format(encode_uri_component('urn:mace:incommon:arizona.edu')),
@@ -792,7 +792,7 @@ def main(env):
             {
                 '_id': 'ua',
                 'name': 'University of Arizona [Test]',
-                'description': 'A service supported by the <a href="http://www.library.arizona.edu/">University of Arizona Libraries</a>. For more information, please refer to the <a href="http://data.library.arizona.edu/osf">A Data Management page</a>.',
+                'description': 'A service supported by the <a href="http://www.library.arizona.edu/">University of Arizona Libraries</a>. For more information, please refer to the <a href="http://data.library.arizona.edu/osf">UA Data Management Page</a>.',
                 'banner_name': 'ua-banner.png',
                 'logo_name': 'ua-shield.png',
                 'login_url': SHIBBOLETH_SP_LOGIN.format(encode_uri_component('urn:mace:incommon:arizona.edu')),

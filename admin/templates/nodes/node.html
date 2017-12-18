@@ -321,7 +321,7 @@
                                                 {{ node.embargo }}
                                             </span>
                                             <span class="form-view" style="display:none;">
-                                                <form id="embargo-update-form" action="{% url 'nodes:update_embargo' guid=node.id %}" method="post" class="row">
+                                                <form id="embargo-update-form" class="row">
                                                     {% csrf_token %}
                                                     <div class="col-md-6">
                                                         <input id='datepicker' type='datetime' name="date" class="form-control" value={{node.embargo_formatted}} />
@@ -339,10 +339,12 @@
                                     <span id="date-validation" class="help-block"></span>
                                 </td>
                             </tr>
+                            {% if node.registered_from is not None %}
                             <tr>
                                 <td>Registered From</td>
-                                <td><a href="{% url 'nodes:node' node.registered_from %}">{{ node.registered_from }}</a></td>
+                                <td><a href="{% url 'nodes:node' guid=node.registered_from %}">{{ node.registered_from }}</a></td>
                             </tr>
+                            {% endif %}
                         </tbody>
                         </table>
                         <div class="modal" id="update-embargo-modal">
