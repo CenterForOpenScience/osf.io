@@ -12,7 +12,6 @@
     <meta name="description" content="${self.description()}">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="fragment" content="!">
-    <script src="${wafflejs_url}"></script>
 
     % if sentry_dsn_js:
     <script src="/static/vendor/bower_components/raven-js/dist/raven.min.js"></script>
@@ -339,6 +338,7 @@
 
 <%def name="javascript_bottom()">
     ### Javascript loaded at the bottom of the page ###
+    <script src="${wafflejs_url}"></script>
 </%def>
 
 <%def name="footer()">
