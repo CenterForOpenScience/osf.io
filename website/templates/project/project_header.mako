@@ -22,7 +22,7 @@
                     % if parent_node['id']:
 
                         % if parent_node['can_view'] or parent_node['is_public'] or parent_node['is_contributor']:
-                            <li><a href="${parent_node['url']}" data-toggle="tooltip" title="${parent_node['title']}" data-placement="bottom" style="padding: 12px 17px;"> <i class="fa fa-level-down fa-rotate-180"></i>  </a></li>
+                            <li><a href="${parent_node['url']}" data-toggle="tooltip" title="${parent_node['title']}" data-placement="bottom"> <i class="fa fa-level-down fa-rotate-180"></i>  </a></li>
 
                         % else:
                             <li><a href="#" data-toggle="tooltip" title="Parent project is private" data-placement="bottom" style="cursor: default"> <i class="fa fa-level-down fa-rotate-180 text-muted"></i>  </a></li>
