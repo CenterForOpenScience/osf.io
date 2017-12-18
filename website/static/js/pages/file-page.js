@@ -95,7 +95,7 @@ $(function() {
                 return JSON.stringify(payload);
             },
             success: function(response) {
-                window.location.reload();
+                $osf.growl('Success', 'Your file was successfully renamed. To view the new filename in the file tree below, refresh the page.', 'success');
             },
             error: function (response) {
                 var msg = response.responseJSON.message;
