@@ -837,7 +837,7 @@ class TestNodeUpdate(NodeCRUDTestCase):
         assert not project_public.is_public
         mock_update_ezid_metadata.assert_called_with(project_public._id, status='unavailable')
 
-    @mock.patch('website.identifiers.tasks.update_ezid_metadata_on_change')
+    @mock.patch('website.preprints.tasks.update_ezid_metadata_on_change')
     def test_set_node_with_preprint_private_updates_ezid(self, mock_update_ezid_metadata, app, user, project_public, url_public, make_node_payload):
         target_object = PreprintFactory(project=project_public)
 
