@@ -709,7 +709,7 @@ function doItemOp(operation, to, from, rename, conflict) {
         orderFolder.call(tb, from.parent());
     }).always(function(){
         from.inProgress = false;
-        if (notRenameOp && (typeof inConflictsQueue !== 'undefined' || syncMoves)) {
+        if (notRenameOp && (inConflictsQueue || syncMoves)) {
             doSyncMove(tb, to.data.provider);
         }
     });

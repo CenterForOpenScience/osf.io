@@ -53,7 +53,7 @@ def archive_callback(dst):
             root.registered_from,
             root,
             root.registered_user,
-            dst.archive_job.target_addons,
+            dst.archive_job.target_addons.all(),
         )
 
 

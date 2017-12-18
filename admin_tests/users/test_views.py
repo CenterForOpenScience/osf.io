@@ -165,6 +165,7 @@ class TestDisableUser(AdminTestCase):
         self.view().delete(self.request)
         self.user.reload()
         nt.assert_false(self.user.is_disabled)
+        nt.assert_false(self.user.requested_deactivation)
         nt.assert_equal(AdminLogEntry.objects.count(), count + 1)
 
     def test_no_user(self):
