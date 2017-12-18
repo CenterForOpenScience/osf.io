@@ -1,14 +1,12 @@
 import time
 import collections
 from rest_framework.parsers import JSONParser
-from rest_framework.exceptions import ParseError
+from rest_framework.exceptions import ParseError, NotAuthenticated
 
 from framework.auth import signing
-
 from api.base.utils import is_bulk_request
 from api.base.renderers import JSONAPIRenderer
 from api.base.exceptions import JSONAPIException
-from rest_framework.exceptions import NotAuthenticated
 
 NO_ATTRIBUTES_ERROR = 'Request must include /data/attributes.'
 NO_RELATIONSHIPS_ERROR = 'Request must include /data/relationships.'

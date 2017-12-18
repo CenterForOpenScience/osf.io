@@ -113,15 +113,12 @@ from website.util.permissions import ADMIN, PERMISSIONS
 class NodeMixin(object):
     """Mixin with convenience methods for retrieving the current node based on the
     current URL. By default, fetches the current node based on the node_id kwarg.
-
-    If specific_node_id is specified, will attempt to retrieve this node instead of the
-    one on the node_id kwarg.
     """
 
     serializer_class = NodeSerializer
     node_lookup_url_kwarg = 'node_id'
 
-    def get_node(self, check_object_permissions=True, specific_node_id=None):
+    def get_node(self, check_object_permissions=True):
         node = None
 
         if self.kwargs.get('is_embedded') is True:
@@ -131,7 +128,7 @@ class NodeMixin(object):
         if node is None:
             node = get_object_or_error(
                 Node,
-                specific_node_id or self.kwargs[self.node_lookup_url_kwarg],
+                self.kwargs[self.node_lookup_url_kwarg],
                 self.request,
                 display_name='node'
             )
