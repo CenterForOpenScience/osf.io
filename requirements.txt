@@ -35,7 +35,7 @@ google-api-python-client==1.6.4
 Babel==2.5.1
 citeproc-py==0.4.0
 boto3==1.4.7
-#Using own fork of django-waffle until https://github.com/jsocol/django-waffle/pull/259 is merged
+#Using own fork of django-waffle until https://github.com/jsocol/django-waffle/pull/266 is merged
 git+https://github.com/pattisdr/django-waffle.git
 
 # Support SSL SNI on Python < 2.7.9
