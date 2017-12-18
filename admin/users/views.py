@@ -68,6 +68,7 @@ class UserDeleteView(PermissionRequiredMixin, DeleteView):
                 flag = USER_REMOVED
                 message = 'User account {} disabled'.format(user.pk)
             else:
+                user.requested_deactivation = False
                 user.date_disabled = None
                 subscribe_on_confirm(user)
                 user.is_registered = True

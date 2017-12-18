@@ -10,7 +10,8 @@ from admin.nodes.views import (
     NodeFlaggedSpamList,
     NodeKnownSpamList,
     NodeKnownHamList,
-    NodeConfirmHamView
+    NodeConfirmHamView,
+    AdminNodeLogView
 )
 from admin_tests.utilities import setup_log_view, setup_view
 
@@ -19,6 +20,7 @@ from django.test import RequestFactory
 from django.core.urlresolvers import reverse
 from django.core.exceptions import PermissionDenied
 from django.contrib.auth.models import Permission
+from framework.auth.core import Auth
 
 from tests.base import AdminTestCase
 from osf_tests.factories import AuthUserFactory, ProjectFactory, RegistrationFactory
@@ -341,3 +343,69 @@ class TestNodeConfirmHamView(AdminTestCase):
 
         self.registration.refresh_from_db()
         nt.assert_true(self.registration.spam_status == 4)
+
+
+class TestAdminNodeLogView(AdminTestCase):
+
+    def setUp(self):
+        super(TestAdminNodeLogView, self).setUp()
+
+        self.request = RequestFactory().post('/fake_path')
+        self.user = AuthUserFactory()
+        self.auth = Auth(self.user)
+        self.node = ProjectFactory(creator=self.user)
+
+    def test_get_object(self):
+
+        view = AdminNodeLogView()
+        view = setup_log_view(view, self.request, guid=self.node._id)
+
+        nt.assert_true(self.node, view.get_object())
+
+    def test_get_queryset(self):
+
+        self.node.set_title('New Title', auth=self.auth, save=True)
+
+        view = AdminNodeLogView()
+        view = setup_log_view(view, self.request, guid=self.node._id)
+
+        logs = view.get_queryset()
+
+        log_entry = logs.first()
+        nt.assert_true(log_entry.action == 'edit_title')
+        nt.assert_true(log_entry.params['title_new'] == u'New Title')
+
+    def test_get_context_data(self):
+
+        self.node.set_title('New Title', auth=self.auth, save=True)
+
+        view = AdminNodeLogView()
+        view = setup_log_view(view, self.request, guid=self.node._id)
+
+        logs = view.get_context_data()['logs']
+        log_entry = logs[0][0]
+        log_params = logs[0][1]
+        nt.assert_true(log_entry.action == NodeLog.EDITED_TITLE)
+        nt.assert_true((u'title_new', u'New Title') in log_params)
+        nt.assert_true((u'node', self.node._id) in log_params)
+
+    def test_get_logs_for_children(self):
+        """ The "create component" action is actually logged as a create_project action
+        for its child with a log parameter 'node' having its guid as a value. We have to ensure
+        that all the components a parent has created appear in its admin app logs, so we can't just
+         do node.logs.all(), that will leave out component creation.
+        """
+
+        component = ProjectFactory(creator=self.user, parent=self.node)
+        component.save()
+
+        view = AdminNodeLogView()
+        view = setup_log_view(view, self.request, guid=self.node._id)
+
+        logs = view.get_context_data()['logs']
+        log_entry = logs[0][0]
+        log_params = logs[0][1]
+
+        nt.assert_true(log_entry.action == NodeLog.PROJECT_CREATED)
+        nt.assert_true(log_entry.node._id == component._id)
+        nt.assert_true(('node', component._id) in log_params)

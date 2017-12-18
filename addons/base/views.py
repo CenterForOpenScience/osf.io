@@ -554,7 +554,7 @@ def addon_deleted_file(auth, node, error_type='BLAME_PROVIDER', **kwargs):
 
     format_params = dict(
         file_name=markupsafe.escape(file_name),
-        deleted_by=markupsafe.escape(deleted_by),
+        deleted_by=markupsafe.escape(getattr(deleted_by, 'fullname', None)),
         deleted_on=markupsafe.escape(deleted_on),
         provider=markupsafe.escape(provider_full)
     )
@@ -732,6 +732,7 @@ def addon_view_file(auth, node, file_node, version):
             'direct': None,
             'mode': 'render',
             'action': 'download',
+            'public_file': node.is_public,
         })
     )
 

@@ -72,13 +72,13 @@
                             <li><a href="${node['url']}addons/">Add-ons</a></li>
                         % endif
 
-                        % if user['has_read_permissions'] and not node['is_registration'] or (node['is_registration'] and 'admin' in user['permissions']):
-                            <li class="pull-right"><a href="${node['url']}settings/">Settings</a></li>
+                        % if user['has_read_permissions'] and not node['is_registration'] or (node['is_registration'] and 'write' in user['permissions']):
+                            <li><a href="${node['url']}settings/">Settings</a></li>
                         % endif
                     % endif
                     % if (user['can_comment'] or node['has_comments']) and not node['anonymous']:
                         <li id="commentsLink">
-                            <a href="" class="hidden-lg cp-handle" data-bind="click:removeCount" data-toggle="collapse" data-target="#projectSubnav .navbar-collapse">
+                            <a href="" class="hidden-lg hidden-md cp-handle" data-bind="click:removeCount" data-toggle="collapse" data-target="#projectSubnav .navbar-collapse">
                                 Comments
                                 <span data-bind="if: unreadComments() !== 0">
                                     <span data-bind="text: displayCount" class="badge"></span>

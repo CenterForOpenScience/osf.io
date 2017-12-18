@@ -38,7 +38,7 @@ def serialize_node(node):
     }
 
 def serialize_log(log):
-    return log, log.params.iteritems()
+    return log, list(log.params.iteritems())
 
 
 def serialize_simple_user_and_node_permissions(node, user):

@@ -95,7 +95,9 @@ def check_permissions(node_settings, auth, connection, branch, sha=None, repo=No
 
         has_access = (
             repo is not None and (
-                repo['permissions']['project_access']['access_level'] >= 30
+                # See https://docs.gitlab.com/ee/api/members.html
+                repo['permissions'].get('project_access', {}).get('access_level', 0) >= 30 or
+                repo['permissions'].get('group_access', {}).get('access_level', 0) >= 30
             )
         )
 
