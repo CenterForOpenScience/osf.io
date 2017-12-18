@@ -1068,7 +1068,13 @@ class TestArchiverListeners(ArchiverTestCase):
         self.dst.archive_job.save()
         with mock.patch('website.archiver.utils.handle_archive_fail') as mock_fail:
             listeners.archive_callback(self.dst)
-        mock_fail.assert_called_with(ARCHIVER_UNCAUGHT_ERROR, self.src, self.dst, self.user, self.dst.archive_job.target_addons)
+        call_args = mock_fail.call_args[0]
+        assert call_args[0] == ARCHIVER_UNCAUGHT_ERROR
+        assert call_args[1] == self.src
+        assert call_args[2] == self.dst
+        assert call_args[3] == self.user
+        assert call_args[3] == self.user
+        assert list(call_args[4]) == list(self.dst.archive_job.target_addons.all())
 
     def test_archive_callback_updates_archiving_state_when_done(self):
         proj = factories.NodeFactory()
