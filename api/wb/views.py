@@ -53,7 +53,7 @@ class FileMetadataMixin(generics.CreateAPIView):
 
 class MoveFileMetadataView(FileMetadataMixin):
     """
-    View for moving file metadata in OsfStorage.  
+    View for moving file metadata in OsfStorage.
     Only WaterButler should talk to this endpoint by sending a signed request.
     """
 
@@ -72,8 +72,8 @@ class MoveFileMetadataView(FileMetadataMixin):
 
 class CopyFileMetadataView(FileMetadataMixin):
     """
-    View for creating metadata for file move/copy in osfstorage.  Only WaterButler should talk to this endpoint.
-    To move/copy a file, send a request to WB, and WB will call this view.
+    View for copying file metadata in OsfStorage.
+    Only WaterButler should talk to this endpoint by sending a signed request.
     """
 
     view_name = 'metadata-copy'
