@@ -50,6 +50,8 @@ from tests.base import OsfTestCase, fake
 from tests import utils as test_utils
 from tests.utils import unique as _unique
 
+pytestmark = pytest.mark.django_db
+
 SILENT_LOGGERS = (
     'framework.celery_tasks.utils',
     'website.app',
@@ -1341,3 +1343,15 @@ class TestArchiveJobModel(OsfTestCase):
                 node.archive_job.update_target(target.name, ARCHIVER_SUCCESS)
         for node in reg.node_and_primary_descendants():
             assert_true(node.archive_job.archive_tree_finished())
+
+# Regression test for https://openscience.atlassian.net/browse/OSF-9085
+def test_archiver_uncaught_error_mail_renders():
+    src = factories.ProjectFactory()
+    user = src.creator
+    job = factories.ArchiveJobFactory()
+    mail = mails.ARCHIVE_UNCAUGHT_ERROR_DESK
+    assert mail.text(
+        user=user,
+        src=src,
+        results=job.target_addons.all(),
+    )

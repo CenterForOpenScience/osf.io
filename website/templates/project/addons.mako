@@ -81,9 +81,9 @@
                                                                  % if addon.get('default'):
                                                                     <div class="text-muted">(This is a default addon)</div>
                                                                  % elif addon.get('enabled'):
-                                                                    <a class="text-muted">(already connected)</a>
+                                                                    <a class="text-danger">Disable</a>
                                                                  % else:
-                                                                     <a>connect</a>
+                                                                     <a>Enable</a>
                                                                  % endif
                                                              </div>
                                                          </div>
