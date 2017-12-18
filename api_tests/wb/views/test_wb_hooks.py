@@ -368,6 +368,24 @@ class TestMove(HookTestCase):
         res = app.post_json(move_url, signed_payload, expect_errors=True)
         assert res.status_code == 404
 
+    def test_node_in_params_does_not_exist(self, app, file, root_node, user, folder):
+        move_url = '/_/wb/hooks/{}/move/'.format('12345')
+        test_file = folder.append_file('test_file')
+        signed_payload = self.sign_payload(
+            {
+                'source': file._id,
+                'node': root_node._id,
+                'user': user._id,
+                'destination': {
+                    'parent': folder._id,
+                    'node': folder.node._id,
+                    'name': 'test_file',
+                }
+            }
+        )
+        res = app.post_json(move_url, signed_payload, expect_errors=True)
+        assert res.status_code == 404
+
 
 @pytest.mark.django_db
 class TestCopy(HookTestCase):
