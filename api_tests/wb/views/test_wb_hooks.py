@@ -334,6 +334,40 @@ class TestMove(HookTestCase):
         assert res.status_code == 400
         assert res.json['errors'][0]['detail'] == 'File already exists with this name.'
 
+    def test_source_does_not_exist(self, app, move_url, root_node, user, folder):
+        test_file = folder.append_file('test_file')
+        signed_payload = self.sign_payload(
+            {
+                'source': '12345',
+                'node': root_node._id,
+                'user': user._id,
+                'destination': {
+                    'parent': folder._id,
+                    'node': folder.node._id,
+                    'name': 'test_file',
+                }
+            }
+        )
+        res = app.post_json(move_url, signed_payload, expect_errors=True)
+        assert res.status_code == 404
+
+    def test_parent_does_not_exist(self, app, file, move_url, root_node, user, folder):
+        test_file = folder.append_file('test_file')
+        signed_payload = self.sign_payload(
+            {
+                'source': file._id,
+                'node': root_node._id,
+                'user': user._id,
+                'destination': {
+                    'parent': '12345',
+                    'node': folder.node._id,
+                    'name': 'test_file',
+                }
+            }
+        )
+        res = app.post_json(move_url, signed_payload, expect_errors=True)
+        assert res.status_code == 404
+
 
 @pytest.mark.django_db
 class TestCopy(HookTestCase):
