@@ -207,6 +207,9 @@ class NodeFileCollector(object):
         if parent and grid_root and parent == grid_root:
             children = self._get_nodes(node)['children']
 
+        if not children:
+            children = []
+
         return {
             # TODO: Remove safe_unescape_html when mako html safe comes in
             'name': sanitize.unescape_entities(node.title),

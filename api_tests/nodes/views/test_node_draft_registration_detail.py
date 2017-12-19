@@ -3,6 +3,8 @@ import hashlib
 import pytest
 
 from api.base.settings.defaults import API_BASE
+from django.contrib.auth.models import Permission
+
 from osf.models import MetaSchema
 from osf_tests.factories import (
     ProjectFactory,
@@ -13,7 +15,6 @@ from osf_tests.factories import (
 from rest_framework import exceptions
 from test_node_draft_registration_list import DraftRegistrationTestCase
 from website.project.metadata.schemas import LATEST_SCHEMA_VERSION
-from website.settings import PREREG_ADMIN_TAG
 
 
 @pytest.mark.django_db
@@ -81,7 +82,8 @@ class TestDraftRegistrationDetail(DraftRegistrationTestCase):
 
     def test_reviewer_can_see_draft_registration(self, app, schema, draft_registration, url_draft_registrations):
         user = AuthUserFactory()
-        user.add_system_tag(PREREG_ADMIN_TAG)
+        administer_permission = Permission.objects.get(codename='administer_prereg')
+        user.user_permissions.add(administer_permission)
         user.save()
         res = app.get(url_draft_registrations, auth=user.auth)
         assert res.status_code == 200
@@ -151,6 +153,10 @@ class TestDraftRegistrationUpdate(DraftRegistrationTestCase):
                 }
             }
         }
+
+    @pytest.fixture()
+    def administer_permission(self):
+        return Permission.objects.get(codename='administer_prereg')
 
     def test_id_required_in_payload(self, app, user, url_draft_registrations):
         payload = {
@@ -288,9 +294,9 @@ class TestDraftRegistrationUpdate(DraftRegistrationTestCase):
         assert res.json['data']['attributes']['registration_metadata']['q2']['value'] == 'New response'
         assert 'q1' not in res.json['data']['attributes']['registration_metadata']
 
-    def test_reviewer_can_update_draft_registration(self, app, project_public, draft_registration_prereg):
+    def test_reviewer_can_update_draft_registration(self, app, project_public, draft_registration_prereg, administer_permission):
         user = AuthUserFactory()
-        user.add_system_tag(PREREG_ADMIN_TAG)
+        user.user_permissions.add(administer_permission)
         user.save()
 
         payload = {
@@ -315,9 +321,9 @@ class TestDraftRegistrationUpdate(DraftRegistrationTestCase):
         assert res.json['data']['attributes']['registration_metadata']['q2']['comments'][0]['value'] == 'This is incomplete.'
         assert 'q1' not in res.json['data']['attributes']['registration_metadata']
 
-    def test_reviewer_can_only_update_comment_fields_draft_registration(self, app, project_public, draft_registration_prereg):
+    def test_reviewer_can_only_update_comment_fields_draft_registration(self, app, project_public, draft_registration_prereg, administer_permission):
         user = AuthUserFactory()
-        user.add_system_tag(PREREG_ADMIN_TAG)
+        user.user_permissions.add(administer_permission)
         user.save()
 
         payload = {
@@ -340,9 +346,9 @@ class TestDraftRegistrationUpdate(DraftRegistrationTestCase):
         assert res.status_code == 400
         assert res.json['errors'][0]['detail'] == 'Additional properties are not allowed (u\'value\' was unexpected)'
 
-    def test_reviewer_can_update_nested_comment_fields_draft_registration(self, app, project_public, draft_registration_prereg):
+    def test_reviewer_can_update_nested_comment_fields_draft_registration(self, app, project_public, draft_registration_prereg, administer_permission):
         user = AuthUserFactory()
-        user.add_system_tag(PREREG_ADMIN_TAG)
+        user.user_permissions.add(administer_permission)
         user.save()
 
         payload = {
@@ -369,9 +375,9 @@ class TestDraftRegistrationUpdate(DraftRegistrationTestCase):
         assert res.status_code == 200
         assert res.json['data']['attributes']['registration_metadata']['q7']['value']['question']['comments'][0]['value'] == 'Add some clarity here.'
 
-    def test_reviewer_cannot_update_nested_value_fields_draft_registration(self, app, project_public, draft_registration_prereg):
+    def test_reviewer_cannot_update_nested_value_fields_draft_registration(self, app, project_public, draft_registration_prereg, administer_permission):
         user = AuthUserFactory()
-        user.add_system_tag(PREREG_ADMIN_TAG)
+        user.user_permissions.add(administer_permission)
         user.save()
 
         payload = {
@@ -541,7 +547,8 @@ class TestDraftRegistrationDelete(DraftRegistrationTestCase):
 
     def test_reviewer_cannot_delete_draft_registration(self, app, url_draft_registrations):
         user = AuthUserFactory()
-        user.add_system_tag(PREREG_ADMIN_TAG)
+        administer_permission = Permission.objects.get(codename='administer_prereg')
+        user.user_permissions.add(administer_permission)
         user.save()
 
         res = app.delete_json_api(url_draft_registrations, auth=user.auth, expect_errors=True)

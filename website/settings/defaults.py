@@ -129,7 +129,10 @@ USE_CDN_FOR_CLIENT_LIBS = True
 
 USE_EMAIL = True
 FROM_EMAIL = 'openscienceframework-noreply@osf.io'
-SUPPORT_EMAIL = 'support@osf.io'
+
+# support email
+OSF_SUPPORT_EMAIL = 'support@osf.io'
+
 
 # Default settings for fake email address generation
 FAKE_EMAIL_NAME = 'freddiemercury'
@@ -141,7 +144,11 @@ MAIL_USERNAME = 'osf-smtp'
 MAIL_PASSWORD = ''  # Set this in local.py
 
 # OR, if using Sendgrid's API
+# WARNING: If `SENDGRID_WHITELIST_MODE` is True,
+# `tasks.send_email` would only email recipients included in `SENDGRID_EMAIL_WHITELIST`
 SENDGRID_API_KEY = None
+SENDGRID_WHITELIST_MODE = False
+SENDGRID_EMAIL_WHITELIST = []
 
 # Mailchimp
 MAILCHIMP_API_KEY = None
@@ -151,6 +158,8 @@ MAILCHIMP_GENERAL_LIST = 'Open Science Framework General'
 
 #Triggered emails
 OSF_HELP_LIST = 'Open Science Framework Help'
+PREREG_AGE_LIMIT = timedelta(weeks=12)
+PREREG_WAIT_TIME = timedelta(weeks=2)
 WAIT_BETWEEN_MAILS = timedelta(days=7)
 NO_ADDON_WAIT_TIME = timedelta(weeks=8)
 NO_LOGIN_WAIT_TIME = timedelta(weeks=4)
@@ -189,12 +198,15 @@ COOKIE_DOMAIN = '.openscienceframework.org'  # Beaker
 SHORT_DOMAIN = 'osf.io'
 
 # TODO: Combine Python and JavaScript config
-COMMENT_MAXLENGTH = 500
+# If you change COMMENT_MAXLENGTH, make sure you create a corresponding migration.
+COMMENT_MAXLENGTH = 1000
 
 # Profile image options
 PROFILE_IMAGE_LARGE = 70
 PROFILE_IMAGE_MEDIUM = 40
 PROFILE_IMAGE_SMALL = 20
+# Currently (8/21/2017) only gravatar supported.
+PROFILE_IMAGE_PROVIDER = 'gravatar'
 
 # Conference options
 CONFERENCE_MIN_COUNT = 5
@@ -251,6 +263,7 @@ with open(os.path.join(ROOT, 'addons.json')) as fp:
     ADDONS_BASED_ON_IDS = addon_settings['addons_based_on_ids']
     ADDONS_DESCRIPTION = addon_settings['addons_description']
     ADDONS_URL = addon_settings['addons_url']
+    ADDONS_DEFAULT = addon_settings['addons_default']
 
 ADDON_CATEGORIES = [
     'documentation',
@@ -382,6 +395,7 @@ class CeleryConfig:
         'scripts.osfstorage.glacier_audit',
         'scripts.populate_new_and_noteworthy_projects',
         'scripts.populate_popular_projects_and_registrations',
+        'scripts.remind_draft_preregistrations',
         'website.search.elastic_search',
         'scripts.generate_sitemap',
         'scripts.generate_prereg_csv',
@@ -448,6 +462,7 @@ class CeleryConfig:
         'scripts.populate_new_and_noteworthy_projects',
         'scripts.populate_popular_projects_and_registrations',
         'scripts.refresh_addon_tokens',
+        'scripts.remind_draft_preregistrations',
         'scripts.retract_registrations',
         'scripts.embargo_registrations',
         'scripts.approve_registrations',
@@ -533,6 +548,11 @@ class CeleryConfig:
             'send_queued_mails': {
                 'task': 'scripts.send_queued_mails',
                 'schedule': crontab(minute=0, hour=17),  # Daily 12 p.m.
+                'kwargs': {'dry_run': False},
+            },
+            'prereg_reminder': {
+                'task': 'scripts.remind_draft_preregistrations',
+                'schedule': crontab(minute=0, hour=12), # Daily 12 p.m.
                 'kwargs': {'dry_run': False},
             },
             'new-and-noteworthy': {
@@ -622,8 +642,6 @@ SENSITIVE_DATA_SECRET = 'TrainglesAre5Squares'
 
 DRAFT_REGISTRATION_APPROVAL_PERIOD = datetime.timedelta(days=10)
 assert (DRAFT_REGISTRATION_APPROVAL_PERIOD > EMBARGO_END_DATE_MIN), 'The draft registration approval period should be more than the minimum embargo end date.'
-
-PREREG_ADMIN_TAG = "prereg_admin"
 
 # TODO: Remove references to this flag
 ENABLE_INSTITUTIONS = True
@@ -1866,6 +1884,12 @@ SITEMAP_REGISTRATION_CONFIG = OrderedDict([('loc', ''), ('lastmod', ''), ('chang
 SITEMAP_REVIEWS_CONFIG = OrderedDict([('loc', ''), ('lastmod', ''), ('changefreq', 'never'), ('priority', '0.5')])
 SITEMAP_PREPRINT_CONFIG = OrderedDict([('loc', ''), ('lastmod', ''), ('changefreq', 'yearly'), ('priority', '0.5')])
 SITEMAP_PREPRINT_FILE_CONFIG = OrderedDict([('loc', ''), ('lastmod', ''), ('changefreq', 'yearly'), ('priority', '0.5')])
+
+# For preventing indexing of QA nodes by Elastic and SHARE
+DO_NOT_INDEX_LIST = {
+    'tags': ['qatest', 'qa test'],
+    'titles': ['Bulk stress 201', 'Bulk stress 202', 'OSF API Registration test'],
+}
 
 CUSTOM_CITATIONS = {
     'bluebook-law-review': 'bluebook',

@@ -18,7 +18,7 @@ from website.util import permissions, api_url_for
 from website.project.views import drafts as draft_views
 
 from osf_tests.factories import (
-    NodeFactory, AuthUserFactory, DraftRegistrationFactory, RegistrationFactory
+    NodeFactory, AuthUserFactory, DraftRegistrationFactory, RegistrationFactory, Auth
 )
 from tests.test_registrations.base import RegistrationsTestBase
 
@@ -118,14 +118,17 @@ class TestDraftRegistrationViews(RegistrationsTestBase):
         assert_equal(res.status_code, http.BAD_REQUEST)
 
     def test_submit_draft_for_review_already_registered(self):
-        reg = RegistrationFactory(user=self.user)
+        self.draft.register(Auth(self.user), save=True)
+
         res = self.app.post_json(
-            reg.api_url_for('submit_draft_for_review', draft_id=self.draft._id),
-            self.invalid_payload,
+            self.draft_api_url('submit_draft_for_review'),
+            self.immediate_payload,
             auth=self.user.auth,
             expect_errors=True
         )
         assert_equal(res.status_code, http.BAD_REQUEST)
+        assert_equal(res.json['message_long'], 'This draft has already been registered, if you wish to register it '
+                                               'again or submit it for review please create a new draft.')
 
     def test_draft_before_register_page(self):
         url = self.draft_url('draft_before_register_page')

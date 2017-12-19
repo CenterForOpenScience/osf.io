@@ -1972,6 +1972,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         :param Node parent: parent template. Should only be passed in during recursion
         :return: The `Node` instance created.
         """
+        Registration = apps.get_model('osf.Registration')
         changes = changes or dict()
 
         # build the dict of attributes to change for the new node
@@ -1981,11 +1982,17 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         except (AttributeError, KeyError):
             attributes = dict()
 
-        # Non-contributors can't fork private nodes
+        if self.is_deleted:
+            raise NodeStateError('Cannot use deleted node as template.')
+
+        # Non-contributors can't template private nodes
         if not (self.is_public or self.has_permission(auth.user, 'read')):
             raise PermissionsError('{0!r} does not have permission to template node {1!r}'.format(auth.user, self._id))
 
         new = self.clone()
+        if isinstance(new, Registration):
+            new.recast('osf.node')
+
         new._is_templated_clone = True  # This attribute may be read in post_save handlers
 
         # Clear quasi-foreign fields
@@ -2392,7 +2399,12 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
             if not user.is_disabled:
                 user.disable_account()
                 user.is_registered = False
-                mails.send_mail(to_addr=user.username, mail=mails.SPAM_USER_BANNED, user=user)
+                mails.send_mail(
+                    to_addr=user.username,
+                    mail=mails.SPAM_USER_BANNED,
+                    user=user,
+                    osf_support_email=settings.OSF_SUPPORT_EMAIL
+                )
             user.save()
 
             # Make public nodes private from this contributor
@@ -2646,15 +2658,15 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
             self.is_public
         )
 
+    def admin_of_wiki(self, user):
+        return (
+            self.has_addon('wiki') and
+            self.has_permission(user, 'admin')
+        )
+
     def include_wiki_settings(self, user):
         """Check if node meets requirements to make publicly editable."""
-        return (
-            self.admin_public_wiki(user) or
-            any(
-                each.admin_public_wiki(user)
-                for each in self.get_descendants_recursive()
-            )
-        )
+        return self.get_descendants_recursive()
 
     def get_wiki_page(self, name=None, version=None, id=None):
         NodeWikiPage = apps.get_model('addons_wiki.NodeWikiPage')

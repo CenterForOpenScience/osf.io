@@ -220,10 +220,18 @@ class FilterMixin(object):
                         query.get(key).update({
                             field_name: self._parse_date_param(field, source_field_name, op, value)
                         })
-                    elif not isinstance(value, int) and (source_field_name in ['_id', 'root']):
+                    elif not isinstance(value, int) and source_field_name == '_id':
                         query.get(key).update({
                             field_name: {
                                 'op': 'in',
+                                'value': self.bulk_get_values(value, field),
+                                'source_field_name': source_field_name
+                            }
+                        })
+                    elif not isinstance(value, int) and source_field_name == 'root':
+                        query.get(key).update({
+                            field_name: {
+                                'op': op,
                                 'value': self.bulk_get_values(value, field),
                                 'source_field_name': source_field_name
                             }
@@ -356,6 +364,7 @@ class ListFilterMixin(FilterMixin):
 
         if filters:
             for key, field_names in filters.iteritems():
+
                 sub_query_parts = []
                 for field_name, data in field_names.iteritems():
                     operations = data if isinstance(data, list) else [data]
@@ -374,8 +383,8 @@ class ListFilterMixin(FilterMixin):
                     query_parts.append(sub_query)
 
             if not isinstance(queryset, list):
-                query = functools.reduce(operator.and_, query_parts)
-                queryset = queryset.filter(query)
+                for query in query_parts:
+                    queryset = queryset.filter(query)
 
         return queryset
 

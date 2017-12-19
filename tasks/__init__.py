@@ -41,6 +41,7 @@ def task(*args, **kwargs):
         new_task = invoke.task(args[0])
         ns.add_task(new_task)
         return new_task
+
     def decorator(f):
         new_task = invoke.task(f, *args, **kwargs)
         ns.add_task(new_task)
@@ -390,7 +391,7 @@ def requirements(ctx, base=False, addons=False, release=False, dev=False, quick=
 
 
 @task
-def test_module(ctx, module=None, numprocesses=None, params=None):
+def test_module(ctx, module=None, numprocesses=None, nocapture=False, params=None):
     """Helper for running tests.
     """
     os.environ['DJANGO_SETTINGS_MODULE'] = 'osf_tests.settings'
@@ -400,7 +401,10 @@ def test_module(ctx, module=None, numprocesses=None, params=None):
         numprocesses = cpu_count()
     # NOTE: Subprocess to compensate for lack of thread safety in the httpretty module.
     # https://github.com/gabrielfalcao/HTTPretty/issues/209#issue-54090252
-    args = ['-s']
+    if nocapture:
+        args = []
+    else:
+        args = ['-s']
     if numprocesses > 1:
         args += ['-n {}'.format(numprocesses), '--max-slave-restart=0']
     modules = [module] if isinstance(module, basestring) else module
@@ -410,6 +414,7 @@ def test_module(ctx, module=None, numprocesses=None, params=None):
         args.extend(params)
     retcode = pytest.main(args)
     sys.exit(retcode)
+
 
 OSF_TESTS = [
     'osf_tests',

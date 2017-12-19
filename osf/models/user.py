@@ -56,6 +56,7 @@ MAX_QUICKFILES_MERGE_RENAME_ATTEMPTS = 1000
 def get_default_mailing_lists():
     return {'Open Science Framework Help': True}
 
+
 name_formatters = {
     'long': lambda user: user.fullname,
     'surname': lambda user: user.family_name if user.family_name else user.fullname,

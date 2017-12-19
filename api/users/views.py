@@ -40,8 +40,8 @@ from osf.models import (Contributor,
                         AbstractNode,
                         PreprintService,
                         Node,
-                        Registration,
                         OSFUser,
+                        Registration,
                         PreprintProvider,
                         Action,)
 
@@ -526,6 +526,8 @@ class UserNodes(JSONAPIBaseView, generics.ListAPIView, UserMixin, NodesFilterMix
         base_permissions.TokenHasScope,
     )
 
+    model_class = AbstractNode
+
     required_read_scopes = [CoreScopes.USERS_READ, CoreScopes.NODE_BASE_READ]
     required_write_scopes = [CoreScopes.USERS_WRITE, CoreScopes.NODE_BASE_WRITE]
 
@@ -725,6 +727,8 @@ class UserRegistrations(JSONAPIBaseView, generics.ListAPIView, UserMixin, NodesF
         drf_permissions.IsAuthenticatedOrReadOnly,
         base_permissions.TokenHasScope,
     )
+
+    model_class = Registration
 
     required_read_scopes = [CoreScopes.USERS_READ, CoreScopes.NODE_REGISTRATIONS_READ]
     required_write_scopes = [CoreScopes.USERS_WRITE, CoreScopes.NODE_REGISTRATIONS_WRITE]

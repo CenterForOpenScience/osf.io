@@ -295,23 +295,6 @@ def _dataverse_root_folder(node_addon, auth, **kwargs):
 def dataverse_root_folder(node_addon, auth, **kwargs):
     return _dataverse_root_folder(node_addon, auth=auth)
 
-## Widget ##
-
-@must_be_contributor_or_public
-@must_have_addon(SHORT_NAME, 'node')
-def dataverse_widget(node_addon, **kwargs):
-
-    node = node_addon.owner
-    widget_url = node.api_url_for('dataverse_get_widget_contents')
-
-    ret = {
-        'complete': node_addon.complete,
-        'widget_url': widget_url,
-    }
-    ret.update(node_addon.config.to_json())
-
-    return ret, http.OK
-
 
 @must_be_contributor_or_public
 @must_have_addon(SHORT_NAME, 'node')

@@ -13,6 +13,9 @@ def strip_html(unclean, tags=None):
     :return: stripped string
     :rtype: str
     """
+    if not tags:
+        tags = []
+
     # We make this noop for non-string, non-collection inputs so this function can be used with higher-order
     # functions, such as rapply (recursively applies a function to collections)
     tags = tags or []

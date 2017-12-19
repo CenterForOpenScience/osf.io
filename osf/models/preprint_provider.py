@@ -72,8 +72,12 @@ class PreprintProvider(ObjectIDMixin, ReviewProviderMixin, BaseModel):
         return '{} with id {}'.format(self.name, self.id)
 
     @property
+    def has_highlighted_subjects(self):
+        return self.subjects.filter(highlighted=True).exists()
+
+    @property
     def highlighted_subjects(self):
-        if self.subjects.filter(highlighted=True).exists():
+        if self.has_highlighted_subjects:
             return self.subjects.filter(highlighted=True).order_by('text')[:10]
         else:
             return sorted(self.top_level_subjects, key=lambda s: s.text)[:10]

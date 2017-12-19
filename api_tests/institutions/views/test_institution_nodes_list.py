@@ -138,6 +138,28 @@ class TestNodeListFiltering(NodesListFilteringMixin):
         return '/{}institutions/{}/nodes/?version=2.2&'.format(API_BASE, institution._id)
 
     @pytest.fixture()
+    def parent_project_one(self, user, institution):
+        parent_project_one = ProjectFactory(creator=user, is_public=True)
+        parent_project_one.title = parent_project_one._id
+        parent_project_one.affiliated_institutions.add(institution)
+        parent_project_one.save()
+        return parent_project_one
+
+    @pytest.fixture()
+    def child_project_one(self, user, parent_project_one, institution):
+        child_project_one = ProjectFactory(parent=parent_project_one, is_public=True, title="Child of {}".format(parent_project_one._id), creator=user)
+        child_project_one.affiliated_institutions.add(institution)
+        child_project_one.save()
+        return child_project_one
+
+    @pytest.fixture()
+    def project(self, user, parent_project_one, institution):
+        project = ProjectFactory(creator=user, title='Neighbor of {}'.format(parent_project_one._id), is_public=True)
+        project.affiliated_institutions.add(institution)
+        project.save()
+        return project
+
+    @pytest.fixture()
     def parent_project(self, user, contrib, institution):
         parent_project = ProjectFactory(creator=user, is_public=True)
         parent_project.add_contributor(contrib, save=False)
@@ -146,8 +168,8 @@ class TestNodeListFiltering(NodesListFilteringMixin):
         return parent_project
 
     @pytest.fixture()
-    def child_node_one(self, user, parent_project, institution):
-        child_node_one = NodeFactory(parent=parent_project, creator=user, is_public = True)
+    def child_node_one(self, user, parent_project, institution, parent_project_one):
+        child_node_one = NodeFactory(parent=parent_project, title='Friend of {}'.format(parent_project_one._id), creator=user, is_public=True)
         child_node_one.affiliated_institutions.add(institution)
         child_node_one.save()
         return child_node_one

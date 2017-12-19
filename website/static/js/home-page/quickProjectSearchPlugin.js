@@ -359,7 +359,7 @@ var QuickSearchProject = {
     },
     view : function(ctrl) {
         if (ctrl.errorLoading()) {
-            return m('p.text-center.m-v-md', 'Error loading projects. Please refresh the page. Contact support@osf.io for further assistance.');
+            return m('p.text-center.m-v-md', 'Error loading projects. Please refresh the page. Contact ' + $osf.osfSupportEmail() + ' for further assistance.');
         }
 
         if (!ctrl.someDataLoaded()) {
@@ -454,7 +454,7 @@ var QuickSearchProject = {
 
         function searchBar() {
             return m('div.m-v-sm.quick-search-input', [
-                m('input[type=search]', {'id': 'searchQuery', 'class': 'form-control', placeholder: 'Quick search your projects', onkeyup: function(search) {
+                m('input[type=search]', {'id': 'searchQuery', 'class': 'form-control', placeholder: 'Search your projects', onkeyup: function(search) {
                     ctrl.filter(search.target.value);
                     ctrl.quickSearch();
                 }, onchange: function() {
