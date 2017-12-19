@@ -8,6 +8,8 @@ from website.addons.evernote import (settings, utils)
 from website.addons.evernote.serializer import EvernoteSerializer
 from website.oauth.models import (ExternalProvider, OAUTH1)
 
+from framework.auth import Auth
+
 from modularodm import fields
 
 import logging
@@ -123,3 +125,13 @@ class EvernoteNodeSettings(StorageAddonBase, AddonOAuthNodeSettingsBase):
         if self.folder_id is None:
             raise exceptions.AddonError('Folder is not configured')
         return {'folder': self.folder_id}
+
+    ##### Callback overrides #####
+    def after_delete(self, node=None, user=None):
+        self.deauthorize(Auth(user=user), add_log=True)
+        self.save()
+
+    def on_delete(self):
+        self.deauthorize(add_log=False)
+        self.save()
+
