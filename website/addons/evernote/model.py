@@ -126,6 +126,25 @@ class EvernoteNodeSettings(StorageAddonBase, AddonOAuthNodeSettingsBase):
             raise exceptions.AddonError('Folder is not configured')
         return {'folder': self.folder_id}
 
+    # borrowed from https://github.com/CenterForOpenScience/osf.io/blob/develop-backup/website/addons/s3/model.py#L130
+    def create_waterbutler_log(self, auth, action, metadata):
+        url = self.owner.web_url_for('addon_view_or_download_file', path=metadata['path'], provider='s3')
+
+        self.owner.add_log(
+            'evernote_{0}'.format(action),
+            auth=auth,
+            params={
+                'project': self.owner.parent_id,
+                'node': self.owner._id,
+                'path': metadata['materialized'],
+                'bucket': self.folder_id,
+                'urls': {
+                    'view': url,
+                    'download': url + '?action=download'
+                }
+            },
+        )
+
     ##### Callback overrides #####
     def after_delete(self, node=None, user=None):
         self.deauthorize(Auth(user=user), add_log=True)
@@ -134,4 +153,3 @@ class EvernoteNodeSettings(StorageAddonBase, AddonOAuthNodeSettingsBase):
     def on_delete(self):
         self.deauthorize(add_log=False)
         self.save()
-

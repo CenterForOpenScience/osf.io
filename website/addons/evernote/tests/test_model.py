@@ -17,7 +17,6 @@ from website.addons.evernote.tests.factories import (
 
 from website.addons.base.testing import models
 
-
 class TestNodeSettings(models.OAuthAddonNodeSettingsTestSuiteMixin, OsfTestCase):
 
     short_name = 'evernote'
@@ -28,26 +27,15 @@ class TestNodeSettings(models.OAuthAddonNodeSettingsTestSuiteMixin, OsfTestCase)
     UserSettingsFactory = EvernoteUserSettingsFactory
     ExternalAccountFactory = EvernoteAccountFactory
 
-    def test_hello(self):
-        assert True
+    @mock.patch("website.addons.evernote.utils.get_evernote_client")
+    @mock.patch("website.addons.evernote.utils.get_notebook")
+    def test_set_folder(self, mock_notebook, mock_client):
+        # TO DO:  need to mock utils.get_evernote_client and utils.get_notebook
+        mock_client.return_value = None
+        mock_notebook.return_value = {'name':'Test Notebook'}
 
-
-#     def test_folder_defaults_to_none(self):
-#         node_settings = BoxNodeSettings(user_settings=self.user_settings)
-#         node_settings.save()
-#         assert_is_none(node_settings.folder_id)
-
-#     @mock.patch("website.addons.box.model.Box.refresh_oauth_key")
-#     def test_serialize_credentials(self, mock_refresh):
-#         mock_refresh.return_value = True
-#         super(TestNodeSettings, self).test_serialize_credentials()
-
-#     @mock.patch(
-#         'website.addons.box.model.BoxUserSettings.revoke_remote_oauth_access',
-#         mock.PropertyMock()
-#     )
-#     def test_complete_has_auth_not_verified(self):
-#         super(TestNodeSettings, self).test_complete_has_auth_not_verified()
+        super(TestNodeSettings, self).test_set_folder()
+    
 
 class TestUserSettings(models.OAuthAddonUserSettingTestSuiteMixin, OsfTestCase):
 
