@@ -24,8 +24,7 @@ def main():
         start_time = datetime.strptime('2017-12-20 08:25:25', '%Y-%m-%d %H:%M:%S')
         start_time = start_time.replace(tzinfo=timezone.now().tzinfo)
 
-        #end_time need to be modified to the time when https://github.com/CenterForOpenScience/osf.io/pull/8076 is merged in and deployed
-        end_time = datetime.strptime('2017-12-20 08:25:26', '%Y-%m-%d %H:%M:%S')
+        end_time = datetime.strptime('2017-12-20 18:05:00', '%Y-%m-%d %H:%M:%S')
         end_time = start_time.replace(tzinfo=timezone.now().tzinfo)
 
         users = OSFUser.objects.filter(is_registered=True, date_disabled__isnull=True, date_registered__range=[start_time, end_time])
