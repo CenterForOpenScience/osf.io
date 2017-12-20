@@ -29,7 +29,7 @@ def main():
 
         count = 0
         for user in users:
-            if not user.mailchimp_mailing_lists[settings.MAILCHIMP_GENERAL_LIST]:
+            if settings.MAILCHIMP_GENERAL_LIST not in user.mailchimp_mailing_lists:
                 if not dry:
                     subscribe_mailchimp(settings.MAILCHIMP_GENERAL_LIST, user._id)
                     logger.info('User {} has been subscribed to OSF general mailing list'.format(user._id))
