@@ -1384,7 +1384,7 @@ class TestUserProfile(OsfTestCase):
                 'fname': self.user.given_name,
                 'lname': self.user.family_name,
             },
-            double_optin=True,
+            double_optin=False,
             update_existing=True
         )
         handlers.celery_teardown_request()
@@ -3879,7 +3879,7 @@ class TestConfigureMailingListViews(OsfTestCase):
                                                            'fname': user.given_name,
                                                            'lname': user.family_name,
                                                        },
-                                                       double_optin=True,
+                                                       double_optin=False,
                                                        update_existing=True)
 
     def test_get_mailchimp_get_endpoint_returns_200(self):
