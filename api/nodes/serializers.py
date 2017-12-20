@@ -12,7 +12,7 @@ from api.base.serializers import (VersionedDateTimeField, HideIfRegistration, ID
 from api.base.settings import ADDONS_FOLDER_CONFIGURABLE
 from api.base.utils import (absolute_reverse, get_object_or_error,
                             get_user_auth, is_truthy)
-from api.taxonomies.serializers import TaxonomyField
+from api.taxonomies.serializers import TaxonomizableSerializerMixin
 from django.apps import apps
 from django.conf import settings
 from django.core.exceptions import ValidationError
@@ -148,7 +148,7 @@ def get_license_details(node, validated_data):
         'copyrightHolders': license_holders
     }
 
-class NodeSerializer(JSONAPISerializer):
+class NodeSerializer(TaxonomizableSerializerMixin, JSONAPISerializer):
     # TODO: If we have to redo this implementation in any of the other serializers, subclass ChoiceField and make it
     # handle blank choices properly. Currently DRF ChoiceFields ignore blank options, which is incorrect in this
     # instance
@@ -221,7 +221,6 @@ class NodeSerializer(JSONAPISerializer):
     current_user_can_comment = ser.SerializerMethodField(help_text='Whether the current user is allowed to post comments')
     current_user_permissions = ser.SerializerMethodField(help_text='List of strings representing the permissions '
                                                                    'for the current user on this node.')
-    subjects = ser.SerializerMethodField()
 
     # Public is only write-able by admins--see update method
     public = ser.BooleanField(source='is_public', required=False,
@@ -387,13 +386,6 @@ class NodeSerializer(JSONAPISerializer):
         auth = Auth(user if not user.is_anonymous else None)
         return obj.can_comment(auth)
 
-    def get_subjects(self, obj):
-        return [
-            [
-                TaxonomyField().to_representation(subj) for subj in hier
-            ] for hier in obj.subject_hierarchy
-        ]
-
     class Meta:
         type_ = 'nodes'
 
@@ -473,14 +465,6 @@ class NodeSerializer(JSONAPISerializer):
         return {
             'node': node_comments
         }
-
-    def run_validation(self, *args, **kwargs):
-        # Overrides construtor for validated_data to allow writes to a SerializerMethodField
-        # Validation for `subjects` happens in the model
-        _validated_data = super(NodeSerializer, self).run_validation(*args, **kwargs)
-        if 'subjects' in self.initial_data:
-            _validated_data['subjects'] = self.initial_data['subjects']
-        return _validated_data
 
     def create(self, validated_data):
         request = self.context['request']
