@@ -1,9 +1,9 @@
 import logging
+import pytz
 import sys
 from datetime import datetime
 
 from django.db import transaction
-from django.utils import timezone
 
 from website.app import setup_django
 setup_django()
@@ -22,11 +22,8 @@ def main():
         script_utils.add_file_logger(logger, __file__)
 
     with transaction.atomic():
-        start_time = datetime.strptime('2017-12-20 08:25:25', '%Y-%m-%d %H:%M:%S')
-        start_time = start_time.replace(tzinfo=timezone.now().tzinfo)
-
-        end_time = datetime.strptime('2017-12-20 18:05:00', '%Y-%m-%d %H:%M:%S')
-        end_time = end_time.replace(tzinfo=timezone.now().tzinfo)
+        start_time = datetime(2017, 12, 20, 8, 25, 25, tzinfo=pytz.UTC)
+        end_time = datetime(2017, 12, 20, 18, 5, 1, tzinfo=pytz.UTC)
 
         users = OSFUser.objects.filter(is_registered=True, date_disabled__isnull=True, date_registered__range=[start_time, end_time])
 
