@@ -691,7 +691,16 @@ class TaxonomizableMixin(models.Model):
             s.object_hierarchy for s in self.subjects.exclude(children__in=self.subjects.all())
         ]
 
-    def set_subjects(self, preprint_subjects, auth, add_log=True):
+    def set_subjects(self, new_subjects, auth, add_log=True):
+        """ Helper for setting M2M subjects field from list of hierarchies received from UI.
+        Only authorized admins may set subjects.
+
+        :param list[list[Subject._id]] new_subjects: List of subject hierarchies to be validated and flattened
+        :param Auth auth: Auth object for requesting user
+        :param bool add_log: Whether or not to add a log (if called on a Loggable object)
+
+        :return: None
+        """
         if getattr(self, 'is_registration', False):
             raise PermissionsError('Registrations may not be modified.')
         if getattr(self, 'is_collection', False):
@@ -701,7 +710,7 @@ class TaxonomizableMixin(models.Model):
 
         old_subjects = list(self.subjects.values_list('id', flat=True))
         self.subjects.clear()
-        for subj_list in preprint_subjects:
+        for subj_list in new_subjects:
             subj_hierarchy = []
             for s in subj_list:
                 subj_hierarchy.append(s)
@@ -722,14 +731,3 @@ class TaxonomizableMixin(models.Model):
             )
 
         self.save(old_subjects=old_subjects)
-
-    def get_subjects(self):
-        ret = []
-        for subj_list in self.subject_hierarchy:
-            subj_hierarchy = []
-            for subj in subj_list:
-                if subj:
-                    subj_hierarchy += ({'id': subj._id, 'text': subj.text}, )
-            if subj_hierarchy:
-                ret.append(subj_hierarchy)
-        return ret
