@@ -31,11 +31,14 @@ def main():
         users = OSFUser.objects.filter(is_registered=True, date_disabled__isnull=True, date_registered__range=[start_time, end_time])
 
         if not dry:
+            count = 0
             for user in users:
-                subscribe_mailchimp(settings.MAILCHIMP_GENERAL_LIST, user._id)
-                logger.info('User {} has been subscribed to OSF general mailing list'.format(user._id))
+                if not user.mailchimp_mailing_lists[settings.MAILCHIMP_GENERAL_LIST]:
+                    subscribe_mailchimp(settings.MAILCHIMP_GENERAL_LIST, user._id)
+                    logger.info('User {} has been subscribed to OSF general mailing list'.format(user._id))
+                    count += 1
 
-            logger.info('{} users have been subscribed to OSF general mailing list'.format(users.count()))
+            logger.info('{} users have been subscribed to OSF general mailing list'.format(count))
 
         if dry:
             raise Exception('Abort Transaction - Dry Run')
