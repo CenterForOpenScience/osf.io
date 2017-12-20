@@ -52,7 +52,7 @@ class TestMailChimpHelpers(OsfTestCase):
                 'fname': user.given_name,
                 'lname': user.family_name,
             },
-            double_optin=False,
+            double_optin=True,
             update_existing=True,
         )
 
