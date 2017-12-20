@@ -3,11 +3,20 @@
 
 import os
 import glob
+import hashlib
 import subprocess
 
 import boto3
 
 from scripts.osfstorage import settings as storage_settings
+
+
+def sha256(file_path, chunk_size=4194304):  # 4MB
+    hasher = hashlib.sha256()
+    with open(file_path, 'rb') as f:
+        for chunk in iter(lambda: f.read(chunk_size), b''):
+            hasher.update(chunk)
+    return hasher.hexdigest()
 
 
 def create_parity_files(file_path, redundancy=5):
@@ -35,11 +44,12 @@ def create_parity_files(file_path, redundancy=5):
         if ret_code != 0:
             raise Exception('{0} failed with code {1}'.format(' '.join(args), ret_code))
 
-        return [
-            os.path.abspath(fpath)
-            for fpath in
+        paths = [
+            os.path.abspath(p)
+            for p in
             glob.glob(os.path.join(path, '{0}*.par2'.format(name)))
         ]
+        return [(p, sha256(p)) for p in paths]
 
 
 def get_glacier_client():
