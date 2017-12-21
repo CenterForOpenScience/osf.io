@@ -12,12 +12,9 @@ from api.base.serializers import LinksField
 from api.base.serializers import RelationshipField
 from api.base.serializers import HideIfProviderCommentsAnonymous
 from api.base.serializers import HideIfProviderCommentsPrivate
-
+from osf.exceptions import InvalidTriggerError
 from osf.models import PreprintService
-
-from reviews.exceptions import InvalidTriggerError
-from reviews.workflow import Triggers
-from reviews.workflow import States
+from osf.utils.workflows import DefaultStates, DefaultTriggers
 
 
 class ReviewableCountsRelationshipField(RelationshipField):
@@ -51,15 +48,98 @@ class ReviewableCountsRelationshipField(RelationshipField):
 
 
 class TargetRelationshipField(RelationshipField):
-    def get_object(self, preprint_id):
-        return PreprintService.objects.get(guids___id=preprint_id)
+    _target_class = None
+
+    def __init__(self, *args, **kwargs):
+        self._target_class = kwargs.pop('target_class', None)
+        super(TargetRelationshipField, self).__init__(*args, **kwargs)
+
+    @property
+    def TargetClass(self):
+        if self._target_class:
+            return self._target_class
+        raise NotImplementedError()
+
+    def get_object(self, object_id):
+        return self.TargetClass.load(object_id)
 
     def to_internal_value(self, data):
-        preprint = self.get_object(data)
-        return {'target': preprint}
+        target = self.get_object(data)
+        return {'target': target}
 
 
-class ActionSerializer(JSONAPISerializer):
+class BaseActionSerializer(JSONAPISerializer):
+    filterable_fields = frozenset([
+        'id',
+        'trigger',
+        'from_state',
+        'to_state',
+        'date_created',
+        'date_modified',
+        'target',
+    ])
+
+    id = ser.CharField(source='_id', read_only=True)
+
+    trigger = ser.ChoiceField(choices=DefaultTriggers.choices())
+
+    comment = HideIfProviderCommentsPrivate(ser.CharField(max_length=65535, required=False))
+
+    from_state = ser.ChoiceField(choices=DefaultStates.choices(), read_only=True)
+    to_state = ser.ChoiceField(choices=DefaultStates.choices(), read_only=True)
+
+    date_created = ser.DateTimeField(source='created', read_only=True)
+    date_modified = ser.DateTimeField(source='modified', read_only=True)
+
+    creator = RelationshipField(
+        read_only=True,
+        related_view='users:user-detail',
+        related_view_kwargs={'user_id': '<creator._id>'},
+        filter_key='creator__guids___id',
+        always_embed=True,
+    )
+
+    links = LinksField(
+        {
+            'self': 'get_action_url',
+        }
+    )
+
+    @property
+    def get_action_url(self):
+        raise NotImplementedError()
+
+    def get_absolute_url(self, obj):
+        return self.get_action_url(obj)
+
+    def create(self, validated_data):
+        trigger = validated_data.pop('trigger')
+        user = validated_data.pop('user')
+        target = validated_data.pop('target')
+        comment = validated_data.pop('comment', '')
+        try:
+            if trigger == DefaultTriggers.ACCEPT.value:
+                return target.run_accept(user, comment)
+            if trigger == DefaultTriggers.REJECT.value:
+                return target.run_reject(user, comment)
+            if trigger == DefaultTriggers.EDIT_COMMENT.value:
+                return target.run_edit_comment(user, comment)
+            if trigger == DefaultTriggers.SUBMIT.value:
+                return target.run_submit(user)
+        except InvalidTriggerError as e:
+            # Invalid transition from the current state
+            raise Conflict(e.message)
+        else:
+            raise JSONAPIAttributeException(attribute='trigger', detail='Invalid trigger.')
+
+    class Meta:
+        type_ = 'actions'
+        abstract = True
+
+class ReviewActionSerializer(BaseActionSerializer):
+    class Meta:
+        type_ = 'review-actions'
+
     filterable_fields = frozenset([
         'id',
         'trigger',
@@ -71,31 +151,11 @@ class ActionSerializer(JSONAPISerializer):
         'target',
     ])
 
-    id = ser.CharField(source='_id', read_only=True)
-
-    trigger = ser.ChoiceField(choices=Triggers.choices())
-
-    comment = HideIfProviderCommentsPrivate(ser.CharField(max_length=65535, required=False))
-
-    from_state = ser.ChoiceField(choices=States.choices(), read_only=True)
-    to_state = ser.ChoiceField(choices=States.choices(), read_only=True)
-
-    date_created = ser.DateTimeField(source='created', read_only=True)
-    date_modified = ser.DateTimeField(source='modified', read_only=True)
-
     provider = RelationshipField(
         read_only=True,
         related_view='preprint_providers:preprint_provider-detail',
         related_view_kwargs={'provider_id': '<target.provider._id>'},
         filter_key='target__provider___id',
-    )
-
-    target = TargetRelationshipField(
-        read_only=False,
-        required=True,
-        related_view='preprints:preprint-detail',
-        related_view_kwargs={'preprint_id': '<target._id>'},
-        filter_key='target__guids___id',
     )
 
     creator = HideIfProviderCommentsAnonymous(RelationshipField(
@@ -106,37 +166,14 @@ class ActionSerializer(JSONAPISerializer):
         always_embed=True,
     ))
 
-    links = LinksField(
-        {
-            'self': 'get_action_url',
-        }
+    target = TargetRelationshipField(
+        target_class=PreprintService,
+        read_only=False,
+        required=True,
+        related_view='preprints:preprint-detail',
+        related_view_kwargs={'preprint_id': '<target._id>'},
+        filter_key='target__guids___id',
     )
-
-    def get_absolute_url(self, obj):
-        return self.get_action_url(obj)
 
     def get_action_url(self, obj):
         return utils.absolute_reverse('actions:action-detail', kwargs={'action_id': obj._id, 'version': self.context['request'].parser_context['kwargs']['version']})
-
-    def create(self, validated_data):
-        trigger = validated_data.pop('trigger')
-        user = validated_data.pop('user')
-        target = validated_data.pop('target')
-        comment = validated_data.pop('comment', '')
-        try:
-            if trigger == Triggers.ACCEPT.value:
-                return target.reviews_accept(user, comment)
-            if trigger == Triggers.REJECT.value:
-                return target.reviews_reject(user, comment)
-            if trigger == Triggers.EDIT_COMMENT.value:
-                return target.reviews_edit_comment(user, comment)
-            if trigger == Triggers.SUBMIT.value:
-                return target.reviews_submit(user)
-        except InvalidTriggerError as e:
-            # Invalid transition from the current state
-            raise Conflict(e.message)
-        else:
-            raise JSONAPIAttributeException(attribute='trigger', detail='Invalid trigger.')
-
-    class Meta:
-        type_ = 'actions'

@@ -87,7 +87,6 @@ INSTALLED_APPS = (
 
     # OSF
     'osf',
-    'reviews',
 
     # Addons
     'addons.osfstorage',

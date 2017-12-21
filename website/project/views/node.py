@@ -739,7 +739,7 @@ def _view_project(node, auth, primary=False,
             'has_draft_registrations': node.has_active_draft_registrations,
             'is_preprint': node.is_preprint,
             'has_moderated_preprint': node_linked_preprint.provider.reviews_workflow if node_linked_preprint else '',
-            'preprint_state': node_linked_preprint.reviews_state if node_linked_preprint else '',
+            'preprint_state': node_linked_preprint.machine_state if node_linked_preprint else '',
             'preprint_word': node_linked_preprint.provider.preprint_word if node_linked_preprint else '',
             'preprint_provider': {
                 'name': node_linked_preprint.provider.name,

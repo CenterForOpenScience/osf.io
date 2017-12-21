@@ -2,11 +2,10 @@ from guardian.shortcuts import get_perms
 from rest_framework import serializers as ser
 from rest_framework.exceptions import ValidationError
 
-from reviews.workflow import Workflows
-
 from api.actions.serializers import ReviewableCountsRelationshipField
 from api.base.utils import absolute_reverse, get_user_auth
 from api.base.serializers import JSONAPISerializer, LinksField, RelationshipField, ShowIfVersion
+from api.preprint_providers.workflows import Workflows
 
 
 class PreprintProviderSerializer(JSONAPISerializer):
