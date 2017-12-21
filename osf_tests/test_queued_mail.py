@@ -20,6 +20,7 @@ def user():
     return UserFactory(is_registered=True)
 
 @pytest.mark.django_db
+@pytest.mark.skip  # Temp skip OSf-9095
 class TestQueuedMail:
 
     @pytest.fixture()
