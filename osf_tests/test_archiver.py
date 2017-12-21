@@ -1351,7 +1351,6 @@ class TestArchiveJobModel(OsfTestCase):
             assert_true(node.archive_job.archive_tree_finished())
 
 # Regression test for https://openscience.atlassian.net/browse/OSF-9085
-@pytest.mark.skip  # Temp skip OSf-9095
 def test_archiver_uncaught_error_mail_renders():
     src = factories.ProjectFactory()
     user = src.creator
@@ -1361,4 +1360,5 @@ def test_archiver_uncaught_error_mail_renders():
         user=user,
         src=src,
         results=job.target_addons.all(),
+        url=settings.INTERNAL_DOMAIN + src._id,
     )
