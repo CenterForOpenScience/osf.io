@@ -169,12 +169,12 @@ def ensure_backups(ctx, version, dry_run):
 
 
 def glacier_targets():
-    return FileVersion.objects.filter(location__has_key='object', metadata__archive__isnull=True)
+    return FileVersion.objects.filter(location__has_key='object', metadata__archive__isnull=True, size__gt=0)
 
 
 def parity_targets():
     # TODO: Add metadata.parity information from wb so we do not need to check remote services
-    return FileVersion.objects.filter(location__has_key='object')
+    return FileVersion.objects.filter(location__has_key='object', size__gt=0)
         # & metadata__parity__isnull=True
 
 
