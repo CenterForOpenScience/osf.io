@@ -15,11 +15,6 @@ class Migration(migrations.Migration):
 
     initial = True
 
-    dependencies = [
-        migrations.swappable_dependency(settings.AUTH_USER_MODEL),
-        ('osf', '0077_auto_20171214_1337'),
-    ]
-
     operations = [
         migrations.CreateModel(
             name='NodeSettings',
