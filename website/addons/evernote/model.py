@@ -74,10 +74,14 @@ class EvernoteNodeSettings(StorageAddonBase, AddonOAuthNodeSettingsBase):
     def set_folder(self, folder_id, auth):
 
         self.folder_id = str(folder_id)
-        client = utils.get_evernote_client(self.external_account.oauth_key)
-        _folder_data = utils.get_notebook(client, self.folder_id)
-        self.folder_name = _folder_data['name']
-        self.folder_path = _folder_data['name']
+
+        # client = utils.get_evernote_client(self.external_account.oauth_key)
+        # _folder_data = utils.get_notebook(client, self.folder_id)
+
+        (self.folder_name, self.folder_path) = self._folder_data(self.folder_id)
+        # self.folder_name = _folder_data['name']
+        # self.folder_path = _folder_data['name']
+
         self.save()
 
         if not self.complete:
@@ -89,6 +93,17 @@ class EvernoteNodeSettings(StorageAddonBase, AddonOAuthNodeSettingsBase):
             self.user_settings.save()
 
         self.nodelogger.log(action='folder_selected', save=True)
+
+    def _folder_data(self, folder_id):
+        # Split out from set_folder for ease of testing, due to
+        # outgoing requests. Should only be called by set_folder
+        client = utils.get_evernote_client(self.external_account.oauth_key)
+        _folder_data = utils.get_notebook(client, self.folder_id)
+
+        folder_name = _folder_data['name']
+        folder_path = _folder_data['name']
+
+        return folder_name, folder_path
 
     def fetch_full_folder_path(self):
 

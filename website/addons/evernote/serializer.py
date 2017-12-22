@@ -31,11 +31,11 @@ class EvernoteSerializer(StorageAddonSerializer):
         return {
             'auth': api_url_for('oauth_connect',
                                 service_name='evernote'),
-            'importAuth': node.api_url_for('evernote_add_user_auth'),
+            'importAuth': node.api_url_for('evernote_import_auth'),
             'folders': node.api_url_for('evernote_folder_list'),
             'config': node.api_url_for('evernote_set_config'),
             'notes': node.api_url_for('evernote_notes'),
             'files': node.api_url_for('evernote_notes'),
             'deauthorize': node.api_url_for('evernote_deauthorize_node'),
-            'accounts': node.api_url_for('evernote_get_user_settings'),
+            'accounts': node.api_url_for('evernote_account_list'),
         }

@@ -1,13 +1,13 @@
 from flask import request
 import httplib as http
 
-from framework.auth.decorators import must_be_logged_in
-from framework.exceptions import HTTPError, PermissionsError
+#from framework.auth.decorators import must_be_logged_in
+from framework.exceptions import HTTPError
 
 from website.addons.base import generic_views
 from website.addons.evernote import utils
 from website.addons.evernote.serializer import EvernoteSerializer
-from website.oauth.models import ExternalAccount
+#from website.oauth.models import ExternalAccount
 from website.util import permissions
 from website.project.decorators import (
     # must_be_contributor_or_public,
@@ -25,25 +25,44 @@ logger = logging.getLogger(__name__)
 SHORT_NAME = 'evernote'
 FULL_NAME = 'Evernote'
 
-@must_be_logged_in
-def evernote_get_user_settings(auth):
-    """ Returns the list of all of the current user's authorized Evernote accounts """
-    serializer = EvernoteSerializer(user_settings=auth.user.get_addon('evernote'))
-    return serializer.serialized_user_settings
+evernote_account_list = generic_views.account_list(
+    SHORT_NAME,
+    EvernoteSerializer
+)
+
+evernote_import_auth = generic_views.import_auth(
+    SHORT_NAME,
+    EvernoteSerializer
+)
 
 
-@must_have_addon('evernote', 'node')
-@must_have_permission(permissions.WRITE)
-def evernote_get_config(node_addon, auth, **kwargs):
-    """API that returns the serialized node settings."""
-    # following from box addon:
-    # if node_addon.external_account:
-    #     refresh_oauth_key(node_addon.external_account)
+# @must_be_logged_in
+# def evernote_get_user_settings(auth):
+#     """ Returns the list of all of the current user's authorized Evernote accounts """
+#     serializer = EvernoteSerializer(user_settings=auth.user.get_addon('evernote'))
+#     print('evernote_get_user_settings output', evernote_get_user_settings)
+#     return serializer.serialized_user_settings
 
-    #logger.debug(node_addon)
-    return {
-        'result': EvernoteSerializer().serialize_settings(node_addon, auth.user),
-    }
+
+# @must_have_addon('evernote', 'node')
+# @must_have_permission(permissions.WRITE)
+# def evernote_get_config(node_addon, auth, **kwargs):
+#     """API that returns the serialized node settings."""
+#     # following from evernote addon:
+#     # if node_addon.external_account:
+#     #     refresh_oauth_key(node_addon.external_account)
+
+#     #logger.debug(node_addon)
+#     result = {
+#         'result': EvernoteSerializer().serialize_settings(node_addon, auth.user),
+#     }
+#     print('evernote_get_config output', result)
+#     return result
+
+evernote_get_config = generic_views.get_config(
+    SHORT_NAME,
+    EvernoteSerializer
+)
 
 @must_not_be_registration
 @must_have_addon('evernote', 'user')
@@ -60,7 +79,7 @@ def evernote_set_config(node_addon, user_addon, auth, **kwargs):
 
     node_addon.set_folder(uid, auth=auth)
 
-    return {
+    result = {
         'result': {
             'folder': {
                 'name': path.replace('All Files', '') if path != 'All Files' else '/ (Full Evernote)',
@@ -71,32 +90,37 @@ def evernote_set_config(node_addon, user_addon, auth, **kwargs):
         'message': 'Successfully updated settings.',
     }
 
+    print ('evernote_set_config output', result)
+    return result
 
-@must_have_addon('evernote', 'user')
-@must_have_addon('evernote', 'node')
-@must_have_permission(permissions.WRITE)
-def evernote_add_user_auth(auth, node_addon, user_addon, **kwargs):
-    """Import evernote credentials from the currently logged-in user to a node.
-    """
-    external_account = ExternalAccount.load(
-        request.json['external_account_id']
-    )
 
-    if external_account not in user_addon.external_accounts:
-        raise HTTPError(http.FORBIDDEN)
+# @must_have_addon('evernote', 'user')
+# @must_have_addon('evernote', 'node')
+# @must_have_permission(permissions.WRITE)
+# def evernote_add_user_auth(auth, node_addon, user_addon, **kwargs):
+#     """Import evernote credentials from the currently logged-in user to a node.
+#     """
+#     external_account = ExternalAccount.load(
+#         request.json['external_account_id']
+#     )
 
-    try:
-        node_addon.set_auth(external_account, user_addon.owner)
-    except PermissionsError:
-        raise HTTPError(http.FORBIDDEN)
+#     if external_account not in user_addon.external_accounts:
+#         raise HTTPError(http.FORBIDDEN)
 
-    node_addon.set_user_auth(user_addon)
-    node_addon.save()
+#     try:
+#         node_addon.set_auth(external_account, user_addon.owner)
+#     except PermissionsError:
+#         raise HTTPError(http.FORBIDDEN)
 
-    return {
-        'result': EvernoteSerializer().serialize_settings(node_addon, auth.user),
-        'message': 'Successfully imported access token from profile.',
-    }
+#     node_addon.set_user_auth(user_addon)
+#     node_addon.save()
+
+#     result = {
+#         'result': EvernoteSerializer().serialize_settings(node_addon, auth.user),
+#         'message': 'Successfully imported access token from profile.',
+#     }
+
+#     return result
 
 
 evernote_deauthorize_node = generic_views.deauthorize_node(
@@ -126,6 +150,7 @@ def evernote_notes(node_addon, **kwargs):
               'updated': utils.timestamp_iso(note.updated)}
               for note in notes]
 
+    print('evernote_notes output', results)
     return results
 
 @must_have_addon('evernote', 'node')
@@ -143,7 +168,8 @@ def evernote_folder_list(node_addon, **kwargs):
     # figure out how to recast into the format that the folderpicker likes
 
     if folder_id is None:
-        return [{
+
+        result = [{
             'id': '0',
             'path': 'All Notes',
             'addon': 'evernote',
@@ -153,6 +179,7 @@ def evernote_folder_list(node_addon, **kwargs):
                 'folders': node.api_url_for('evernote_folder_list', notebookId='0'),
             }
         }]
+
     elif folder_id == '0':
 
         # return all the notebooks
@@ -165,7 +192,7 @@ def evernote_folder_list(node_addon, **kwargs):
         client = utils.get_evernote_client(token)
         notebooks = utils.get_notebooks(client)
 
-        return [{
+        result = [{
             'id': notebook['guid'],
             'path': notebook['name'],
             'addon': 'evernote',
@@ -177,7 +204,10 @@ def evernote_folder_list(node_addon, **kwargs):
 
         } for notebook in notebooks]
     else:
-        return []
+        result = []
+
+    print ('evernote_folder_list output', result)
+    return result
 
 
 evernote_root_folder = generic_views.root_folder(

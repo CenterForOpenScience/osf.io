@@ -10,7 +10,7 @@ api_routes = {
                 '/settings/evernote/accounts/',
             ],
             'get',
-            views.evernote_get_user_settings,
+            views.evernote_account_list,
             json_renderer,
         ),
 
@@ -41,7 +41,7 @@ api_routes = {
                 '/project/<pid>/node/<nid>/evernote/user_auth/'
             ],
             'put',
-            views.evernote_add_user_auth,
+            views.evernote_import_auth,
             json_renderer,
         ),
 
