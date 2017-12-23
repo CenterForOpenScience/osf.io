@@ -6,11 +6,12 @@ from swiftclient import exceptions as swift_exceptions
 from framework.exceptions import HTTPError
 
 from addons.swift.provider import SwiftProvider
+from addons.swift import settings
 
 def connect_swift(auth_version=None, auth_url=None, access_key=None,
                   user_domain_name=None, secret_key=None,
                   tenant_name=None, project_domain_name=None,
-                  node_settings=None):
+                  node_settings=None, timeout=None):
     """Helper to build an swiftclient.Connection object
     """
     if node_settings is not None:
@@ -26,7 +27,8 @@ def connect_swift(auth_version=None, auth_url=None, access_key=None,
                                 authurl=auth_url,
                                 user=access_key,
                                 key=secret_key,
-                                tenant_name=tenant_name)
+                                tenant_name=tenant_name,
+                                timeout=timeout)
     else:
         os_options = {'user_domain_name': user_domain_name,
                       'project_domain_name': project_domain_name,
@@ -35,7 +37,8 @@ def connect_swift(auth_version=None, auth_url=None, access_key=None,
                                 authurl=auth_url,
                                 user=access_key,
                                 key=secret_key,
-                                os_options=os_options)
+                                os_options=os_options,
+                                timeout=timeout)
     return connection
 
 
@@ -92,7 +95,8 @@ def can_list(auth_version, auth_url, access_key, user_domain_name, secret_key,
 
     try:
         connect_swift(auth_version, auth_url, access_key, user_domain_name,
-                      secret_key, tenant_name, project_domain_name).get_account()
+                      secret_key, tenant_name, project_domain_name,
+                      timeout=settings.TEST_TIMEOUT).get_account()
     except swift_exceptions.ClientException:
         return False
     return True
