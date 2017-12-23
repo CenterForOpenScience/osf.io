@@ -121,7 +121,7 @@ class NodeSettings(BaseStorageAddon, BaseOAuthNodeSettings):
 
     def serialize_waterbutler_credentials(self):
         if not self.has_auth:
-            raise exceptions.AddonError('Cannot serialize credentials for Swift addon')
+            raise exceptions.AddonError('Cannot serialize credentials for OpenStack Swift addon')
         provider = SwiftProvider(self.external_account)
         return {
             'auth_version': provider.auth_version,
@@ -135,7 +135,7 @@ class NodeSettings(BaseStorageAddon, BaseOAuthNodeSettings):
 
     def serialize_waterbutler_settings(self):
         if not self.folder_id:
-            raise exceptions.AddonError('Cannot serialize settings for Swift addon')
+            raise exceptions.AddonError('Cannot serialize settings for OpenStack Swift addon')
         return {
             'container': self.folder_id
         }

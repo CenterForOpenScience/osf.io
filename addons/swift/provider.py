@@ -28,7 +28,7 @@ def parse_auth_desc(host):
 class SwiftProvider(BasicAuthProviderMixin):
     """An alternative to `ExternalProvider` not tied to OAuth"""
 
-    name = 'Swift'
+    name = 'OpenStack Swift'
     short_name = 'swift'
 
     def __init__(self, account=None, auth_version=None, auth_url=None,

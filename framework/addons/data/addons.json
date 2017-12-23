@@ -382,7 +382,7 @@
                 "text": "Bitbucket content will be registered, but version history will not be copied to the registration."
             }
         },
-        "Swift": {
+        "OpenStack Swift": {
             "Permissions": {
                 "status": "partial",
                 "text": "Making an OSF project public or private is independent of making an Swift container public or private."

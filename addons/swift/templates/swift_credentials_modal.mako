@@ -3,7 +3,7 @@
         <div class="modal-content">
 
             <div class="modal-header">
-                <h3>Connect an Swift Account</h3>
+                <h3>Connect an OpenStack Swift Account</h3>
             </div>
 
             <form>
