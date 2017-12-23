@@ -48,7 +48,7 @@
         "externalView": true
     },
     "swift": {
-        "fullName": "Swift",
+        "fullName": "OpenStack Swift",
         "externalView": false
     },
     "azureblobstorage": {

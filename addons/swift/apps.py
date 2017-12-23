@@ -13,7 +13,7 @@ class SwiftAddonAppConfig(BaseAddonAppConfig):
 
     name = 'addons.swift'
     label = 'addons_swift'
-    full_name = 'Swift'
+    full_name = 'OpenStack Swift'
     short_name = 'swift'
     owners = ['user', 'node']
     configs = ['accounts', 'node']

@@ -18,7 +18,7 @@ from website.project.decorators import (
 )
 
 SHORT_NAME = 'swift'
-FULL_NAME = 'Swift'
+FULL_NAME = 'OpenStack Swift'
 
 swift_account_list = generic_views.account_list(
     SHORT_NAME,

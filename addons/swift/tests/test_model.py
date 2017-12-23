@@ -23,13 +23,13 @@ pytestmark = pytest.mark.django_db
 class TestUserSettings(OAuthAddonUserSettingTestSuiteMixin, unittest.TestCase):
 
     short_name = 'swift'
-    full_name = 'Swift'
+    full_name = 'OpenStack Swift'
     ExternalAccountFactory = SwiftAccountFactory
 
 class TestNodeSettings(OAuthAddonNodeSettingsTestSuiteMixin, unittest.TestCase):
 
     short_name = 'swift'
-    full_name = 'Swift'
+    full_name = 'OpenStack Swift'
     ExternalAccountFactory = SwiftAccountFactory
     NodeSettingsFactory = SwiftNodeSettingsFactory
     NodeSettingsClass = NodeSettings

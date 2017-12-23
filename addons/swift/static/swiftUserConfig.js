@@ -23,7 +23,7 @@ var $modal = $('#swiftInputCredentials');
 function ViewModel(url) {
     var self = this;
 
-    self.properName = 'Swift';
+    self.properName = 'OpenStack Swift';
     self.authVersion = ko.observable('v2');
     self.authUrl = ko.observable();
     self.accessKey = ko.observable();
@@ -111,7 +111,7 @@ function ViewModel(url) {
         }).fail(function(xhr, textStatus, error) {
             var errorMessage = (xhr.status === 400 && xhr.responseJSON.message !== undefined) ? xhr.responseJSON.message : language.authError;
             self.changeMessage(errorMessage, 'text-danger');
-            Raven.captureMessage('Could not authenticate with Swift', {
+            Raven.captureMessage('Could not authenticate with OpenStack Swift', {
                 extra: {
                     url: self.account_url,
                     textStatus: textStatus,
@@ -153,10 +153,10 @@ function ViewModel(url) {
     self.askDisconnect = function(account) {
         var self = this;
         bootbox.confirm({
-            title: 'Disconnect Swift Account?',
+            title: 'Disconnect OpenStack Swift Account?',
             message: '<p class="overflow">' +
-                'Are you sure you want to disconnect the Swift account <strong>' +
-                osfHelpers.htmlEscape(account.name) + '</strong>? This will revoke access to Swift for all projects associated with this account.' +
+                'Are you sure you want to disconnect the OpenStack Swift account <strong>' +
+                osfHelpers.htmlEscape(account.name) + '</strong>? This will revoke access to OpenStack Swift for all projects associated with this account.' +
                 '</p>',
             callback: function (confirm) {
                 if (confirm) {
