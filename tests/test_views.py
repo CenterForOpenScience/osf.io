@@ -37,7 +37,7 @@ from framework.exceptions import HTTPError
 from framework.transactions.handlers import no_auto_transaction
 from website import mailchimp_utils, mails, settings, language
 from addons.osfstorage import settings as osfstorage_settings
-from osf.models import AbstractNode, NodeLog
+from osf.models import AbstractNode, NodeLog, QuickFilesNode
 from website.profile.utils import add_contributor_json, serialize_unregistered
 from website.profile.views import fmt_date_or_none, update_osf_help_mails_subscription
 from website.project.decorators import check_can_access
@@ -4653,6 +4653,20 @@ class TestResolveGuid(OsfTestCase):
             '/{}/'.format(preprint._id)
         )
 
+    def test_deleted_quick_file_gone(self):
+        user = AuthUserFactory()
+        quickfiles = QuickFilesNode.objects.get(creator=user)
+        osfstorage = quickfiles.get_addon('osfstorage')
+        root = osfstorage.get_root()
+        test_file = root.append_file('soon_to_be_deleted.txt')
+        guid = test_file.get_guid(create=True)._id
+        test_file.delete()
+
+        url = web_url_for('resolve_guid', _guid=True, guid=guid)
+        res = self.app.get(url, expect_errors=True)
+
+        assert_equal(res.status_code, http.GONE)
+        assert_equal(res.request.path, '/{}/'.format(guid))
 
 class TestConfirmationViewBlockBingPreview(OsfTestCase):
 
