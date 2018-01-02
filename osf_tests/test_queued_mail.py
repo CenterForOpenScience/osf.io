@@ -5,11 +5,11 @@ import datetime as dt
 import pytest
 import mock
 from django.utils import timezone
-from website import settings
+from framework.auth.core import Auth
+from website.prereg.utils import get_prereg_schema
 
 from .factories import UserFactory, NodeFactory, DraftRegistrationFactory
 
-from osf.models import MetaSchema, DraftRegistrationApproval
 from osf.models.queued_mail import (
     queue_mail, WELCOME_OSF4M,
     NO_LOGIN, NO_ADDON, NEW_PUBLIC_PROJECT, PREREG_REMINDER
@@ -24,7 +24,7 @@ class TestQueuedMail:
 
     @pytest.fixture()
     def prereg(self, user):
-        return DraftRegistrationFactory(registration_schema=MetaSchema.objects.get(name='Prereg Challenge'))
+        return DraftRegistrationFactory(initiator=user, registration_schema=get_prereg_schema())
 
     def queue_mail(self, mail, user, send_at=None, **kwargs):
         mail = queue_mail(
@@ -166,16 +166,10 @@ class TestQueuedMail:
         mail = self.queue_mail(mail=PREREG_REMINDER, user=user, draft_id=prereg._id)
         assert not mail.send_mail()
 
-
+    @mock.patch('website.archiver.tasks.archive')
     @mock.patch('osf.models.queued_mail.send_mail')
-    def test_remind_prereg_presend_with_approval(self, mock_mail, user, prereg):
-        approval = DraftRegistrationApproval(
-            meta={
-                'registration_choice': 'immediate'
-            }
-        )
-        approval.save()
-        prereg.approval = approval
+    def test_remind_prereg_presend_submitted(self, mock_mail, mock_archive, user, prereg):
+        prereg.register(Auth(user))
         prereg.save()
 
         mail = self.queue_mail(mail=PREREG_REMINDER, user=user, draft_id=prereg._id)
@@ -187,5 +181,3 @@ class TestQueuedMail:
         prereg.deleted = timezone.now()
         prereg.save()
         assert not mail.send_mail()
-
-

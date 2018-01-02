@@ -1,10 +1,14 @@
+import mock
 import pytest
-from django.utils import timezone
 from website import settings
+from django.utils import timezone
+from framework.auth.core import Auth
+
+from website.prereg.utils import get_prereg_schema
 
 from .factories import UserFactory, DraftRegistrationFactory
 
-from osf.models import MetaSchema, DraftRegistrationApproval, QueuedMail
+from osf.models import QueuedMail
 from osf.models.queued_mail import PREREG_REMINDER_TYPE
 
 from scripts.remind_draft_preregistrations import main
@@ -15,7 +19,7 @@ def user():
 
 @pytest.fixture()
 def schema():
-    return MetaSchema.objects.get(name='Prereg Challenge')
+    return get_prereg_schema()
 
 @pytest.mark.django_db
 class TestPreregReminder:
@@ -54,14 +58,9 @@ class TestPreregReminder:
 
         assert QueuedMail.objects.filter(email_type=PREREG_REMINDER_TYPE).count() == 0
 
-    def test_dont_trigger_prereg_reminder_draft_submitted(self, draft):
-        approval = DraftRegistrationApproval(
-            meta={
-                'registration_choice': 'immediate'
-            }
-        )
-        approval.save()
-        draft.approval = approval
+    @mock.patch('website.archiver.tasks.archive')
+    def test_dont_trigger_prereg_reminder_draft_submitted(self, mock_archive, user, draft):
+        draft.register(Auth(user))
         draft.save()
         main(dry_run=False)
 

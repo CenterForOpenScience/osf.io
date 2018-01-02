@@ -243,3 +243,8 @@ li.addon-categories a{
     vertical-align: baseline;
     width:30%;
 }
+/*Moves maintenence alert under project header*/
+#maintenance.alert {
+    position: relative;
+    top: 45px;
+}

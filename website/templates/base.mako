@@ -224,6 +224,7 @@
                 newAndNoteworthy: ${ noteworthy_links_node | sjson, n },
                 maintenance: ${ maintenance | sjson, n},
                 analyticsMeta: {},
+                osfSupportEmail: ${osf_support_email | sjson, n },
             });
         </script>
 
@@ -350,21 +351,6 @@
 <%def name="content_wrap()">
     <div class="watermarked">
         <div class="container ${self.container_class()}">
-            ## Maintenance alert
-            % if maintenance:
-                <div id="maintenance" class="scripted alert alert-dismissible" role="alert">
-                <button type="button" class="close" data-dismiss="alert" aria-label="Close">
-                    <span aria-hidden="true">&times;</span></button>
-                <strong>Notice:</strong>
-                % if maintenance['message']:
-                    ${maintenance['message']}
-                % else:
-                    The site will undergo maintenance between <span id="maintenanceTime"></span>.
-                    Thank you for your patience.
-                % endif
-            </div>
-            % endif
-            ## End Maintenance alert
 
             % if status:
                 ${self.alert()}

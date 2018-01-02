@@ -228,14 +228,13 @@ $(document).ready(function () {
         defaultText: 'add a tag to enhance discoverability',
         onAddTag: function(tag) {
             $('#node-tags_tag').attr('data-default', 'add a tag');
-            var newTagsList = window.contextVars.node.tags;
-            newTagsList.push(tag);
+            window.contextVars.node.tags.push(tag);
             var payload = {
                 data: {
                     type: nodeType,
                     id: window.contextVars.node.id,
                     attributes: {
-                        tags: newTagsList
+                        tags: window.contextVars.node.tags
                     }
                 }
             };
@@ -249,11 +248,8 @@ $(document).ready(function () {
                 }
             );
 
-            request.done(function() {
-                window.contextVars.node.tags.push(tag);
-            });
-
             request.fail(function(xhr, textStatus, error) {
+                window.contextVars.node.tags.splice(window.contextVars.node.tags.indexOf(tag),1);
                 Raven.captureMessage('Failed to add tag', {
                     extra: {
                         tag: tag, url: tagsApiUrl, textStatus: textStatus, error: error
@@ -265,15 +261,13 @@ $(document).ready(function () {
             if (!tag) {
                 return false;
             }
-            var newTagsList = window.contextVars.node.tags;
-            newTagsList.splice(newTagsList.indexOf(tag),1);
-
+            window.contextVars.node.tags.splice(window.contextVars.node.tags.indexOf(tag),1);
             var payload = {
                 data: {
                     type: nodeType,
                     id: window.contextVars.node.id,
                     attributes: {
-                        tags: newTagsList
+                        tags: window.contextVars.node.tags
                     }
                 }
             };
@@ -287,11 +281,8 @@ $(document).ready(function () {
                 }
             );
 
-            request.done(function() {
-                window.contextVars.node.tags.splice(window.contextVars.node.tags.indexOf(tag), 1);
-            });
-
             request.fail(function(xhr, textStatus, error) {
+                window.contextVars.node.tags.push(tag);
                 // Suppress "tag not found" errors, as the end result is what the user wanted (tag is gone)- eg could be because two people were working at same time
                 if (xhr.status !== 409) {
                     $osf.growl('Error', 'Could not remove tag');
@@ -332,7 +323,8 @@ $(document).ready(function () {
         request.done(function(resp) {
             var rawText = resp.wiki_content || '*Add important information, links, or images here to describe your project.*';
             var renderedText = ctx.renderedBeforeUpdate ? oldMd.render(rawText) : md.render(rawText);
-            var truncatedText = $.truncate(renderedText, {length: 400});
+            // don't truncate the text when length = 400
+            var truncatedText = $.truncate(renderedText, {length: 401});
             markdownElement.html(truncatedText);
             mathrender.mathjaxify(markdownElement);
             markdownElement.show();
@@ -340,7 +332,7 @@ $(document).ready(function () {
     }
 
     // Remove delete UI if not contributor
-    if (!window.contextVars.currentUser.canEdit || window.contextVars.node.isRegistration) {
+    if (!window.contextVars.currentUser.canEditTags) {
         $('a[title="Removing tag"]').remove();
         $('span.tag span').each(function(idx, elm) {
             $(elm).text($(elm).text().replace(/\s*$/, ''));

@@ -434,7 +434,7 @@ var CommentModel = function(data, $parent, $root) {
             'id': userData.id,
             'urls': {'profile': userData.links.html},
             'fullname': userData.attributes.full_name,
-            'gravatarUrl': userData.links.profile_image
+            'profileImageUrl': userData.links.profile_image
         };
     } else if ('embeds' in data && 'user' in data.embeds && 'errors' in data.embeds.user) {
         var errors = data.embeds.user.errors;
@@ -444,7 +444,7 @@ var CommentModel = function(data, $parent, $root) {
                     'id': null,
                     'urls': {'profile': ''},
                     'fullname': errors[e].meta.full_name,
-                    'gravatarUrl': ''
+                    'profileImageUrl': ''
                 };
                 break;
             }

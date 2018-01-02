@@ -47,10 +47,10 @@ class GitLabClient(object):
         raise NotFoundError
 
     def repos(self):
-        return self.gitlab.getprojects()
+        return list(self.gitlab.getall(self.gitlab.getprojects, per_page=100))
 
     def user_repos(self, user):
-        return self.gitlab.getprojectsowned()
+        return list(self.gitlab.getall(self.gitlab.getprojectsowned, per_page=100))
 
     def create_repo(self, repo, **kwargs):
         return self.gitlab.createproject(repo)

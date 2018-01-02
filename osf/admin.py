@@ -11,7 +11,7 @@ class NodeAdmin(ForeignKeyAutocompleteAdmin):
     fields = list_displayable_fields(Node)
 
 class OSFUserAdmin(admin.ModelAdmin):
-    fields = list_displayable_fields(OSFUser)
+    fields = ['groups', 'user_permissions'] + list_displayable_fields(OSFUser)
 
 admin.site.register(OSFUser, OSFUserAdmin)
 admin.site.register(Node, NodeAdmin)

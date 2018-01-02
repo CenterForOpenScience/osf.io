@@ -6,7 +6,6 @@ import math
 from collections import defaultdict
 from itertools import islice
 
-from bs4 import BeautifulSoup
 from flask import request
 from django.apps import apps
 from django.core.exceptions import ValidationError
@@ -29,6 +28,7 @@ from website.project.decorators import (
     must_be_valid_project,
     must_have_permission,
     must_not_be_registration,
+    must_not_be_retracted_registration,
 )
 from website.tokens import process_token_or_pass
 from website.util.permissions import ADMIN, READ, WRITE, CREATOR_PERMISSIONS
@@ -45,8 +45,11 @@ from website.views import serialize_node_summary
 from website.profile import utils
 from website.util.sanitize import strip_html
 from website.util import rapply
-from addons.forward.utils import serialize_settings, settings_complete
-
+from addons.mendeley.provider import MendeleyCitationsProvider
+from addons.zotero.provider import ZoteroCitationsProvider
+from addons.wiki.utils import serialize_wiki_widget
+from addons.dataverse.utils import serialize_dataverse_widget
+from addons.forward.utils import serialize_forward_widget
 
 r_strip_html = lambda collection: rapply(collection, strip_html)
 logger = logging.getLogger(__name__)
@@ -236,22 +239,25 @@ def project_before_template(auth, node, **kwargs):
             if addon.to_json(auth.user)['addon_full_name']:
                 prompts.append(addon.to_json(auth.user)['addon_full_name'])
 
-    return {'prompts': prompts}
+    return {'prompts': prompts, 'isRegistration': node.is_registration}
 
 
 @must_be_valid_project
 @must_be_contributor_or_public_but_not_anonymized
+@must_not_be_registration
 def node_registrations(auth, node, **kwargs):
     return _view_project(node, auth, primary=True, embed_registrations=True)
 
 
 @must_be_valid_project
 @must_be_contributor_or_public_but_not_anonymized
+@must_not_be_retracted_registration
 def node_forks(auth, node, **kwargs):
     return _view_project(node, auth, primary=True, embed_forks=True)
 
 
 @must_be_valid_project
+@must_not_be_retracted_registration
 @must_be_logged_in
 @must_have_permission(READ)
 def node_setting(auth, node, **kwargs):
@@ -275,11 +281,30 @@ def node_setting(auth, node, **kwargs):
     return ret
 
 @must_be_valid_project
+@must_not_be_registration
 @must_be_logged_in
-@must_have_permission(READ)
+@must_have_permission(WRITE)
 def node_addons(auth, node, **kwargs):
 
     ret = _view_project(node, auth, primary=True)
+
+    addon_settings = serialize_addons(node, auth)
+
+    ret['addon_capabilities'] = settings.ADDON_CAPABILITIES
+
+    # If an addon is default you cannot connect/disconnect so we don't have to load it.
+    ret['addon_settings'] = [addon for addon in addon_settings]
+
+    # Addons can have multiple categories, but we only want a set of unique ones being used.
+    ret['addon_categories'] = set([item for addon in addon_settings for item in addon['categories']])
+
+    # The page only needs to load enabled addons and it refreshes when a new addon is being enabled.
+    ret['addon_js'] = collect_node_config_js([addon for addon in addon_settings if addon['enabled']])
+
+    return ret
+
+
+def serialize_addons(node, auth):
 
     addon_settings = []
     addons_available = [addon for addon in settings.ADDONS_AVAILABLE
@@ -296,18 +321,17 @@ def node_addons(auth, node, **kwargs):
         config['addon_full_name'] = addon.full_name
         config['categories'] = addon.categories
         config['enabled'] = node.has_addon(addon.short_name)
-        config['default'] = addon.short_name in ['osfstorage']
+        config['default'] = addon.short_name in settings.ADDONS_DEFAULT
+
+        if node.has_addon(addon.short_name):
+            node_json = node.get_addon(addon.short_name).to_json(auth.user)
+            config.update(node_json)
+
         addon_settings.append(config)
 
     addon_settings = sorted(addon_settings, key=lambda addon: addon['full_name'].lower())
 
-    ret['addon_capabilities'] = settings.ADDON_CAPABILITIES
-    ret['addon_categories'] = set([item for addon in addon_settings for item in addon['categories']])
-    ret['addon_settings'] = addon_settings
-    ret['addon_js'] = collect_node_config_js([addon for addon in addon_settings if addon['enabled']])
-
-    return ret
-
+    return addon_settings
 
 def collect_node_config_js(addons):
     """Collect webpack bundles for each of the addons' node-cfg.js modules. Return
@@ -317,9 +341,23 @@ def collect_node_config_js(addons):
     """
     js_modules = []
     for addon in addons:
-        js_path = os.path.join('/', 'static', 'public', 'js', addon['short_name'], 'node-cfg.js')
-        if js_path:
-            js_modules.append(js_path)
+        source_path = os.path.join(
+            settings.ADDON_PATH,
+            addon['short_name'],
+            'static',
+            'node-cfg.js',
+        )
+        if os.path.exists(source_path):
+            asset_path = os.path.join(
+                '/',
+                'static',
+                'public',
+                'js',
+                addon['short_name'],
+                'node-cfg.js',
+            )
+            js_modules.append(asset_path)
+
     return js_modules
 
 
@@ -330,6 +368,7 @@ def node_choose_addons(auth, node, **kwargs):
 
 
 @must_be_valid_project
+@must_not_be_retracted_registration
 @must_have_permission(READ)
 def node_contributors(auth, node, **kwargs):
     ret = _view_project(node, auth, primary=True)
@@ -383,68 +422,22 @@ def view_project(auth, node, **kwargs):
     }
 
     if 'wiki' in ret['addons']:
-        wiki = node.get_addon('wiki')
-        wiki_page = node.get_wiki_page('home')
-
-        # Show "Read more" link if there are multiple pages or has > 400 characters
-        more = len(node.wiki_pages_current.keys()) >= 2
-        MAX_DISPLAY_LENGTH = 400
-        rendered_before_update = False
-        if wiki_page and wiki_page.html(node):
-            wiki_html = BeautifulSoup(wiki_page.html(node))
-            if len(wiki_html) > MAX_DISPLAY_LENGTH:
-                wiki_html = BeautifulSoup(wiki_html[:MAX_DISPLAY_LENGTH] + '...', 'html.parser')
-                more = True
-
-            rendered_before_update = wiki_page.rendered_before_update
-        else:
-            wiki_html = None
-
-        wiki_widget_data = {
-            'complete': True,
-            'wiki_content': unicode(wiki_html) if wiki_html else None,
-            'wiki_content_url': node.api_url_for('wiki_page_content', wname='home'),
-            'rendered_before_update': rendered_before_update,
-            'more': more,
-            'include': False,
-        }
-        wiki_widget_data.update(wiki.config.to_json())
-        addons_widget_data['wiki'] = wiki_widget_data
+        addons_widget_data['wiki'] = serialize_wiki_widget(node)
 
     if 'dataverse' in ret['addons']:
-        node_addon = node.get_addon('dataverse')
-        widget_url = node.api_url_for('dataverse_get_widget_contents')
-
-        dataverse_widget_data = {
-            'complete': node_addon.complete,
-            'widget_url': widget_url,
-        }
-        dataverse_widget_data.update(node_addon.config.to_json())
-        addons_widget_data['dataverse'] = dataverse_widget_data
+        addons_widget_data['dataverse'] = serialize_dataverse_widget(node)
 
     if 'forward' in ret['addons']:
-        node_addon = node.get_addon('forward')
-        forward_widget_data = serialize_settings(node_addon)
-        forward_widget_data['complete'] = settings_complete(node_addon)
-        forward_widget_data.update(node_addon.config.to_json())
-        addons_widget_data['forward'] = forward_widget_data
+        addons_widget_data['forward'] = serialize_forward_widget(node)
 
     if 'zotero' in ret['addons']:
         node_addon = node.get_addon('zotero')
-        zotero_widget_data = node_addon.config.to_json()
-        zotero_widget_data.update({
-            'complete': node_addon.complete,
-            'list_id': node_addon.list_id,
-        })
+        zotero_widget_data = ZoteroCitationsProvider().widget(node_addon)
         addons_widget_data['zotero'] = zotero_widget_data
 
     if 'mendeley' in ret['addons']:
         node_addon = node.get_addon('mendeley')
-        mendeley_widget_data = node_addon.config.to_json()
-        mendeley_widget_data.update({
-            'complete': node_addon.complete,
-            'list_id': node_addon.list_id,
-        })
+        mendeley_widget_data = MendeleyCitationsProvider().widget(node_addon)
         addons_widget_data['mendeley'] = mendeley_widget_data
 
     ret.update({'addons_widget_data': addons_widget_data})
@@ -494,6 +487,7 @@ def project_reorder_components(node, **kwargs):
 
 @must_be_valid_project
 @must_be_contributor_or_public
+@must_not_be_retracted_registration
 def project_statistics(auth, node, **kwargs):
     ret = _view_project(node, auth, primary=True)
     ret['node']['keenio_read_key'] = node.keenio_read_key
@@ -732,6 +726,7 @@ def _view_project(node, auth, primary=False,
             'fork_count': node.forks.exclude(type='osf.registration').filter(is_deleted=False).count(),
             'private_links': [x.to_json() for x in node.private_links_active],
             'link': view_only_link,
+            'templated_count': node.templated_list.count(),
             'linked_nodes_count': NodeRelation.objects.filter(child=node, is_node_link=True).exclude(parent__type='osf.collection').count(),
             'anonymous': anonymous,
             'comment_level': node.comment_level,
@@ -744,7 +739,7 @@ def _view_project(node, auth, primary=False,
             'has_draft_registrations': node.has_active_draft_registrations,
             'is_preprint': node.is_preprint,
             'has_moderated_preprint': node_linked_preprint.provider.reviews_workflow if node_linked_preprint else '',
-            'preprint_state': node_linked_preprint.reviews_state if node_linked_preprint else '',
+            'preprint_state': node_linked_preprint.machine_state if node_linked_preprint else '',
             'preprint_word': node_linked_preprint.provider.preprint_word if node_linked_preprint else '',
             'preprint_provider': {
                 'name': node_linked_preprint.provider.name,

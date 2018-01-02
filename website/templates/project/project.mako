@@ -11,7 +11,7 @@
 <div id="projectScope">
     <header class="subhead" id="overview">
         <div class="row no-gutters">
-            <div class="col-lg-9 col-md-12 cite-container">
+            <div class="col-lg-8 col-md-12 cite-container">
                 % if parent_node['exists']:
                     % if parent_node['can_view'] or parent_node['is_public'] or parent_node['is_contributor']:
                         <h2 class="node-parent-title">
@@ -33,7 +33,7 @@
                 </h2>
             </div>
             <div class="clearfix visible-md-block"></div>
-            <div class="col-lg-3">
+            <div class="col-lg-4">
                 <div class="btn-toolbar node-control pull-right">
                     <div class="btn-group">
                     % if not node["is_public"]:
@@ -208,8 +208,8 @@
                   <!-- /ko -->
                 </span>
                 <p>
-                    Category: <span id="nodeCategoryEditable">${node['category']}</span>
-                    <span data-bind="css: icon"></span>
+                    Category: <span data-bind="css: icon"></span>
+                    <span id="nodeCategoryEditable">${node['category']}</span>
                 </p>
 
                 % if (node['description']) or (not node['description'] and 'write' in user['permissions'] and not node['is_registration']):
@@ -453,7 +453,7 @@
                     <span id="newComponent">
                         <button class="btn btn-sm btn-default" disabled="true">Add Component</button>
                     </span>
-                    <a class="btn btn-sm btn-default" data-toggle="modal" data-target="#addPointer">Link Projects</a>
+                    <a class="btn btn-sm btn-default" id="linkProjects" role="button" data-toggle="modal" data-target="#addPointer">Link Projects</a>
                 % endif
             </div>
         </div><!-- end addon-widget-header -->

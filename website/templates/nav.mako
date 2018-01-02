@@ -49,8 +49,8 @@
             % if user_name and display_name:
             <li class="dropdown">
             <a class="dropdown-toggle btn-link" data-toggle="dropdown" role="button" aria-expanded="false" aria-label="Toggle auth dropdown">
-                <span class="osf-gravatar">
-                    <img src="${user_gravatar}" alt="User gravatar">
+                <span class="osf-profile-image">
+                    <img src="${user_profile_image}" alt="User profile image">
                 </span> ${display_name}
                 <span class="caret"></span>
             </a>
@@ -87,5 +87,26 @@
     </div>
 </div>
 </nav>
+    <div class="container-fluid">
+        <div class="row">
+            <div class="col">
+                ## Maintenance alert
+                % if maintenance:
+                    <div id="maintenance" class="scripted alert alert-dismissible" role="alert">
+                    <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                        <span aria-hidden="true">&times;</span></button>
+                    <strong>Notice:</strong>
+                    % if maintenance['message']:
+                        ${maintenance['message']}
+                    % else:
+                        The site will undergo maintenance between <span id="maintenanceTime"></span>.
+                        Thank you for your patience.
+                    % endif
+                </div>
+                % endif
+                ## End Maintenance alert
+            </div>
+        </div>
+    </div>
 </div>
 </%def>

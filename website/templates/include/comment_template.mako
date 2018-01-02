@@ -49,8 +49,8 @@
 
                     <div class="comment-info">
                         <form class="form-inline">
-                            <span data-bind="if: author.gravatarUrl">
-                                <img data-bind="css: {'comment-gravatar': author.gravatarUrl}, attr: {src: author.gravatarUrl}"/>
+                            <span data-bind="if: author.profileImageUrl">
+                                <img data-bind="css: {'comment-profile-image': author.profileImageUrl}, attr: {src: author.profileImageUrl}"/>
                             </span>
                             <span data-bind="if: author.id">
                                 <a class="comment-author" data-bind="text: author.fullname, attr: {href: author.urls.profile}"></a>
@@ -89,7 +89,9 @@
                             <div class="clearfix">
                                 <div class="form-inline pull-right">
                                     <a class="btn btn-default btn-sm" data-bind="click: cancelEdit">Cancel</a>
-                                    <a class="btn btn-success btn-sm" data-bind="click: submitEdit, tooltip: {title: errorMessage(), placement: 'bottom', disabled: !validateEdit()}, css: {disabled: !validateEdit()}">Save</a>
+                                    <span data-bind="tooltip: {title: errorMessage(), placement: 'bottom', disabled: !validateEdit()}">
+                                        <a class="btn btn-success btn-sm" data-bind="click: submitEdit, css: {disabled: !validateEdit()}">Save</a>
+                                    </span>
                                     <span data-bind="text: editErrorMessage" class="text-danger"></span>
                                 </div>
                             </div>
@@ -166,7 +168,9 @@
                     <div class="clearfix">
                         <div class="pull-right">
                             <a class="btn btn-default btn-sm" data-bind="click: cancelReply, css: {disabled: submittingReply}"> Cancel</a>
-                            <a class="btn btn-success btn-sm" data-bind="click: submitReply, tooltip: {title: errorMessage(), placement: 'bottom', disabled: !validateReply()}, css: {disabled: !validateReply() || submittingReply()}, text: commentButtonText"></a>
+                            <span data-bind="tooltip: {title: errorMessage(), placement: 'bottom', disabled: !validateReply()}">
+                                <a class="btn btn-success btn-sm" data-bind="click: submitReply, css: {disabled: !validateReply() || submittingReply()}, text: commentButtonText"></a>
+                            </span>
                             <span data-bind="text: replyErrorMessage" class="text-danger"></span>
                         </div>
                     </div>

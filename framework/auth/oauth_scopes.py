@@ -95,8 +95,8 @@ class CoreScopes(object):
 
     SEARCH = 'search_read'
 
-    ACTIONS_READ = 'review_logs_read'
-    ACTIONS_WRITE = 'review_logs_write'
+    ACTIONS_READ = 'actions_read'
+    ACTIONS_WRITE = 'actions_write'
 
     PROVIDERS_WRITE = 'providers_write'
 

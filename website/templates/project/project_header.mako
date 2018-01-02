@@ -68,13 +68,17 @@
                             <li><a href="${node['url']}contributors/">Contributors</a></li>
                         % endif
 
-                        % if node['is_public'] or user['is_contributor']:
+                        % if 'write' in user['permissions'] and not node['is_registration']:
                             <li><a href="${node['url']}addons/">Add-ons</a></li>
+                        % endif
+
+                        % if user['has_read_permissions'] and not node['is_registration'] or (node['is_registration'] and 'write' in user['permissions']):
+                            <li><a href="${node['url']}settings/">Settings</a></li>
                         % endif
                     % endif
                     % if (user['can_comment'] or node['has_comments']) and not node['anonymous']:
                         <li id="commentsLink">
-                            <a href="" class="hidden-lg cp-handle" data-bind="click:removeCount" data-toggle="collapse" data-target="#projectSubnav .navbar-collapse">
+                            <a href="" class="hidden-lg hidden-md cp-handle" data-bind="click:removeCount" data-toggle="collapse" data-target="#projectSubnav .navbar-collapse">
                                 Comments
                                 <span data-bind="if: unreadComments() !== 0">
                                     <span data-bind="text: displayCount" class="badge"></span>
@@ -94,6 +98,17 @@
             padding-top: 55px;
         }
     </style>
+
+    %if maintenance:
+        <style type="text/css">
+            @media (max-width: 767px) {
+                #projectBanner .osf-project-navbar {
+                    position: absolute;
+                    top: 100px;
+                }
+            }
+        </style>
+    %endif
 
     % if node['is_registration']:  ## Begin registration undismissable labels
 

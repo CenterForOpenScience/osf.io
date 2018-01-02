@@ -44,7 +44,7 @@ class UserSerializer(JSONAPISerializer):
     non_anonymized_fields = ['type']
     id = IDField(source='_id', read_only=True)
     type = TypeField()
-    full_name = ser.CharField(source='fullname', required=True, label='Full name', help_text='Display name used in the general user interface', max_length=200)
+    full_name = ser.CharField(source='fullname', required=True, label='Full name', help_text='Display name used in the general user interface', max_length=186)
     given_name = ser.CharField(required=False, allow_blank=True, help_text='For bibliographic citations')
     middle_names = ser.CharField(required=False, allow_blank=True, help_text='For bibliographic citations')
     family_name = ser.CharField(required=False, allow_blank=True, help_text='For bibliographic citations')
@@ -88,11 +88,6 @@ class UserSerializer(JSONAPISerializer):
 
     preprints = HideIfDisabled(RelationshipField(
         related_view='users:user-preprints',
-        related_view_kwargs={'user_id': '<_id>'},
-    ))
-
-    actions = ShowIfCurrentUser(RelationshipField(
-        related_view='users:user-action-list',
         related_view_kwargs={'user_id': '<_id>'},
     ))
 

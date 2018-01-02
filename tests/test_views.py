@@ -35,8 +35,7 @@ from framework.auth.views import login_and_register_handler
 from framework.celery_tasks import handlers
 from framework.exceptions import HTTPError
 from framework.transactions.handlers import no_auto_transaction
-from website import mailchimp_utils
-from website import mails, settings
+from website import mailchimp_utils, mails, settings, language
 from addons.osfstorage import settings as osfstorage_settings
 from osf.models import AbstractNode, NodeLog
 from website.profile.utils import add_contributor_json, serialize_unregistered
@@ -611,7 +610,7 @@ class TestProjectViews(OsfTestCase):
         assert_equal(res.json['message_long'],
                      'You do not have permission to perform this action. '
                      'If this should not have occurred and the issue persists, '
-                     'please report it to <a href="mailto:support@osf.io">support@osf.io</a>.'
+                     + language.SUPPORT_LINK
                      )
         assert_in(self.user1, self.project.contributors)
 
@@ -888,6 +887,13 @@ class TestProjectViews(OsfTestCase):
         assert_not_in('Mako Runtime Error', res.body)
         assert_in(registration.title, res.body)
         assert_equal(res.status_code, 200)
+
+        for route in ['files', 'wiki/home', 'analytics', 'forks', 'contributors', 'settings', 'withdraw', 'register', 'register/fakeid']:
+            res = self.app.get('{}{}/'.format(url, route), auth=self.auth, allow_redirects=True)
+            assert_equal(res.status_code, 302, route)
+            res = res.follow()
+            assert_equal(res.status_code, 200, route)
+            assert_in('This project is a withdrawn registration of', res.body, route)
 
 
 class TestEditableChildrenViews(OsfTestCase):
@@ -1612,7 +1618,7 @@ class TestAddingContributorViews(OsfTestCase):
         assert_equal(res['email'], email)
         assert_equal(res['id'], None)
         assert_false(res['registered'])
-        assert_true(res['gravatar'])
+        assert_true(res['profile_image_url'])
         assert_false(res['active'])
 
     def test_deserialize_contributors(self):
@@ -1686,7 +1692,7 @@ class TestAddingContributorViews(OsfTestCase):
         assert_false(res['active'])
         assert_false(res['registered'])
         assert_equal(res['id'], user._primary_key)
-        assert_true(res['gravatar_url'])
+        assert_true(res['profile_image_url'])
         assert_equal(res['fullname'], name)
         assert_equal(res['email'], email)
 

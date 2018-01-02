@@ -1,0 +1,16 @@
+<form class="well" method="post" action="{% url 'users:merge-accounts' guid %}">
+    <div class="modal-header">
+        <h3>Merge Accounts</h3>
+    </div>
+    <div class="modal-body">
+        <span>Merge this user: <b>{{ user }}</b> <b>({{ guid }})</b>  with:</span>
+        {% csrf_token %}
+        <input placeholder="Enter guid" name="user_guid_to_be_merged">
+    </div>
+    <div class="modal-footer">
+        <input type="submit"  class="btn btn-success" value="Merge" />
+        <button type="button" class="btn btn-default" data-dismiss="modal">
+            Cancel
+        </button>
+    </div>
+</form>

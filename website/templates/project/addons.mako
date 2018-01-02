@@ -1,5 +1,5 @@
 <%inherit file="project/project_base.mako"/>
-<%def name="title()">${node['title']} Addons</%def>
+<%def name="title()">${node['title']} Add-ons</%def>
 
 <div class="row project-page">
     <span id="selectAddonsAnchor" class="anchor"></span>
@@ -11,8 +11,8 @@
 
                 <div class="panel panel-default osf-affix" data-spy="affix" data-offset-top="0" data-offset-bottom="263"><!-- Begin sidebar -->
                     <ul class="nav nav-stacked nav-pills">
-                        <li><a href="#selectAddon">Select Addon</a></li>
-                        <li><a href="#configureAddon">Configure Addon</a></li>
+                        <li><a href="#selectAddonsAnchor">Select Add-ons</a></li>
+                        <li><a href="#configureAddonsAnchor">Configure Add-ons</a></li>
                     </ul>
                 </div><!-- End sidebar -->
 
@@ -69,7 +69,7 @@
                                         <td>
                                             <div class="addon-list">
                                                 % for addon in addon_settings:
-                                                     <div name="${addon['short_name']}" status="${'enabled' if addon.get('enabled') else 'disabled'}" categories="${' '.join(addon['categories'])}" class="addon-container">
+                                                     <div name="${addon['short_name']}" full_name="${addon['full_name']}" status="${'enabled' if addon.get('enabled') else 'disabled'}" categories="${' '.join(addon['categories'])}" class="addon-container">
                                                          <div class="row ${'text-muted' if addon.get('enabled') else ''}">
                                                              <div class="col-md-1">
                                                                  <img class="addon-icon" src="${addon['addon_icon_url']}">
@@ -81,9 +81,9 @@
                                                                  % if addon.get('default'):
                                                                     <div class="text-muted">(This is a default addon)</div>
                                                                  % elif addon.get('enabled'):
-                                                                    <a class="text-muted">(already connected)</a>
+                                                                    <a class="text-danger">Disable</a>
                                                                  % else:
-                                                                     <a>connect</a>
+                                                                     <a>Enable</a>
                                                                  % endif
                                                              </div>
                                                          </div>
@@ -112,7 +112,7 @@
                     </div>
                 </div>
                 <div style="padding: 10px">
-                    % for addon in [addon for addon in addon_settings if addon['enabled']]:
+                    % for addon in [addon for addon in addon_settings if addon['enabled'] and not addon['default']]:
                         % if addon.get('node_settings_template'):
                             ${render_node_settings(addon)}
                         % endif

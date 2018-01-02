@@ -1,11 +1,16 @@
 from __future__ import unicode_literals
 
+import pytz
+from datetime import datetime
+
 from django.utils import timezone
-from django.core.exceptions import PermissionDenied
-from django.views.generic import ListView, DeleteView
+from django.core.exceptions import PermissionDenied, ValidationError
+from django.views.generic import ListView, DeleteView, View
 from django.shortcuts import redirect
 from django.views.defaults import page_not_found
 from django.contrib.auth.mixins import PermissionRequiredMixin
+from django.http import HttpResponse
+from django.db.models import Q
 
 from website import search
 from osf.models import NodeLog
@@ -13,6 +18,7 @@ from osf.models.user import OSFUser
 from osf.models.node import Node
 from osf.models.registrations import Registration
 from osf.models import SpamStatus
+from admin.base.utils import change_embargo_date, validate_embargo_date
 from admin.base.views import GuidFormView, GuidView
 from osf.models.admin_log_entry import (
     update_admin_log,
@@ -217,7 +223,11 @@ class AdminNodeLogView(PermissionRequiredMixin, ListView):
         return Node.load(self.kwargs.get('guid')) or Registration.load(self.kwargs.get('guid'))
 
     def get_queryset(self):
-        return self.get_object().logs.all().order_by(self.ordering)
+        node = self.get_object()
+        query = Q(node_id__in=list(Node.objects.get_children(node).values_list('id', flat=True)) + [node.id])
+        return NodeLog.objects.filter(query).order_by('-date').include(
+            'node__guids', 'user__guids', 'original_node__guids', limit_includes=10
+        )
 
     def get_context_data(self, **kwargs):
         query_set = self.get_queryset()
@@ -256,6 +266,38 @@ class RegistrationListView(PermissionRequiredMixin, ListView):
             'page': page,
         }
 
+
+class RegistrationUpdateEmbargoView(PermissionRequiredMixin, View):
+    """ Allow authorized admin user to update the embargo of a registration
+    """
+    permission_required = ('osf.change_node')
+    raise_exception = True
+
+    def post(self, request, *args, **kwargs):
+        validation_only = (request.POST.get('validation_only', False) == 'True')
+        end_date = request.POST.get('date')
+        user = request.user
+        registration = self.get_object()
+
+        try:
+            end_date = pytz.utc.localize(datetime.strptime(end_date, '%m/%d/%Y'))
+        except ValueError:
+            return HttpResponse('Please enter a valid date.', status=400)
+
+        try:
+            if validation_only:
+                validate_embargo_date(registration, user, end_date)
+            else:
+                change_embargo_date(registration, user, end_date)
+        except ValidationError as e:
+            return HttpResponse(e, status=409)
+        except PermissionDenied as e:
+            return HttpResponse(e, status=403)
+
+        return redirect(reverse_node(self.kwargs.get('guid')))
+
+    def get_object(self, queryset=None):
+        return Registration.load(self.kwargs.get('guid'))
 
 class NodeSpamList(PermissionRequiredMixin, ListView):
     SPAM_STATE = SpamStatus.UNKNOWN

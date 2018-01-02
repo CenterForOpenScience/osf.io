@@ -17,7 +17,7 @@ from osf.utils.datetime_aware_jsonfield import DateTimeAwareJSONField
 from website import settings
 from addons.base import logger, serializer
 from website.oauth.signals import oauth_complete
-from website.util import waterbutler_url_for
+from website.util import waterbutler_api_url_for
 
 lookup = TemplateLookup(
     directories=[
@@ -561,26 +561,37 @@ class BaseStorageAddon(object):
         return name
 
     def _get_fileobj_child_metadata(self, filenode, user, cookie=None, version=None):
-        kwargs = dict(
-            provider=self.config.short_name,
-            path=filenode.get('path', ''),
-            node=self.owner,
-            user=user,
-            view_only=True,
-        )
-        if cookie:
-            kwargs['cookie'] = cookie
+
+        kwargs = {}
         if version:
             kwargs['version'] = version
-        metadata_url = waterbutler_url_for('metadata', _internal=True, **kwargs)
+        if cookie:
+            kwargs['cookie'] = cookie
+        elif user:
+            kwargs['cookie'] = user.get_or_create_cookie()
+
+        metadata_url = waterbutler_api_url_for(
+            self.owner._id,
+            self.config.short_name,
+            path=filenode.get('path', '/'),
+            user=user,
+            view_only=True,
+            _internal=True,
+            **kwargs
+        )
 
         res = requests.get(metadata_url)
+
         if res.status_code != 200:
             raise HTTPError(res.status_code, data={'error': res.json()})
 
         # TODO: better throttling?
         time.sleep(1.0 / 5.0)
-        return res.json().get('data', [])
+
+        data = res.json().get('data', None)
+        if data:
+            return [child['attributes'] for child in data]
+        return []
 
     def _get_file_tree(self, filenode=None, user=None, cookie=None, version=None):
         """
@@ -591,7 +602,7 @@ class BaseStorageAddon(object):
             'kind': 'folder',
             'name': self.root_node.name,
         }
-        if filenode.get('kind') == 'file' or 'size' in filenode:
+        if filenode.get('kind') == 'file':
             return filenode
 
         kwargs = {

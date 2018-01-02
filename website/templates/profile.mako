@@ -25,10 +25,10 @@
     <div class="profile-fullname">
         <span>
             % if user['is_profile']:
-                <a href="#changeAvatarModal" data-toggle="modal"><img class='profile-gravatar' src="${profile['gravatar_url']}"
+                <a href="#changeAvatarModal" data-toggle="modal"><img class='profile-profile-image' src="${profile['profile_image_url']}"
                         rel="tooltip" title="Click to change avatar"/></a>
             % else:
-                <img class='profile-gravatar' src="${profile['gravatar_url']}"/>
+                <img class='profile-profile-image' src="${profile['profile_image_url']}"/>
             % endif
         </span>
         <span id="profileFullname" class="h1 overflow m-l-sm">

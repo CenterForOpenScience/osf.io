@@ -239,7 +239,7 @@ class TestPreprintProviderExportImport(AdminTestCase):
         res = self.view.get(self.request)
         content_dict = json.loads(res.content)
 
-        content_dict['fields']['_id'] = 'new_id'
+        content_dict['fields']['name'] = 'Awesome New Name'
         data = StringIO(unicode(json.dumps(content_dict), 'utf-8'))
         self.import_request.FILES['file'] = InMemoryUploadedFile(data, None, 'data', 'application/json', 500, None, {})
 
@@ -249,7 +249,7 @@ class TestPreprintProviderExportImport(AdminTestCase):
         new_provider = PreprintProvider.objects.get(id=provider_id)
 
         nt.assert_equal(res.status_code, 302)
-        nt.assert_equal(new_provider._id, 'new_id')
+        nt.assert_equal(new_provider.name, 'Awesome New Name')
         nt.assert_equal(new_provider.subjects.all().count(), 1)
         nt.assert_equal(new_provider.licenses_acceptable.all().count(), 1)
         nt.assert_equal(new_provider.subjects.all()[0].text, self.subject.text)
@@ -261,7 +261,7 @@ class TestPreprintProviderExportImport(AdminTestCase):
         res = self.view.get(self.request)
         content_dict = json.loads(res.content)
 
-        content_dict['fields']['_id'] = 'new_id'
+        content_dict['fields']['name'] = 'Awesome New Name'
         content_dict['fields']['new_field'] = 'this is a new field, not in the model'
         del content_dict['fields']['description']  # this is a old field, removed from the model JSON
 
@@ -274,7 +274,7 @@ class TestPreprintProviderExportImport(AdminTestCase):
         new_provider = PreprintProvider.objects.get(id=provider_id)
 
         nt.assert_equal(res.status_code, 302)
-        nt.assert_equal(new_provider._id, 'new_id')
+        nt.assert_equal(new_provider.name, 'Awesome New Name')
 
     def test_update_provider_existing_subjects(self):
         # If there are existing subjects for a provider, imported subjects are ignored

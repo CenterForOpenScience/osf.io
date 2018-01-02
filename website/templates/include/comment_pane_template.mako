@@ -1,6 +1,6 @@
 <div class="scripted comment-pane">
 
-    <div class="cp-handle-div cp-handle pull-right pointer visible-lg" data-bind="click:removeCount" data-toggle="tooltip" data-placement="bottom" title="Comments">
+    <div class="cp-handle-div cp-handle pull-right pointer visible-lg visible-md" data-bind="click:removeCount" data-toggle="tooltip" data-placement="bottom" title="Comments">
         <span data-bind="if: unreadComments() !== 0">
             <span data-bind="text: displayCount" class="badge unread-comments-count"></span>
         </span>
@@ -30,7 +30,9 @@
                         <div class="clearfix">
                             <div class="pull-right">
                                 <a class="btn btn-default btn-sm" data-bind="click: cancelReply, css: {disabled: submittingReply}">Cancel</a>
-                                <a class="btn btn-success btn-sm" data-bind="click: submitReply, tooltip: {title: errorMessage(), placement: 'bottom', disabled: !validateReply()}, css: {disabled: !validateReply() || submittingReply()}, text: commentButtonText"></a>
+                                <span data-bind="tooltip: {title: errorMessage(), placement: 'bottom', disabled: !validateReply()}">
+                                    <a class="btn btn-success btn-sm" data-bind="click: submitReply, css: {disabled: !validateReply() || submittingReply()}, text: commentButtonText"></a>
+                                </span>
                                 <span data-bind="text: replyErrorMessage" class="text-danger"></span>
                             </div>
                         </div>

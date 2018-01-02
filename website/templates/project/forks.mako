@@ -6,11 +6,13 @@
     <h2 class="text-300">Forks</h2>
 </div>
 
+<div class="row m-md">
+    <a href="${node['url']}analytics" class="padded strong">
+        <span class="fa fa-arrow-left"></span> Back to Analytics
+    </a>
+</div>
 <div class="row">
-        <div class="col-xs-9 col-sm-8">
-        <a href="analytics" class="padded strong">
-            <span class="fa fa-arrow-left"></span> Back to Analytics
-        </a>
+    <div class="col-xs-9 col-sm-8">
 
         % if node['fork_count']:
             ${render_nodes.render_nodes(nodes=node['forks'], sortable=False, user=user, pluralized_node_type='forks', show_path=False, include_js=True)}
@@ -18,14 +20,14 @@
                 <p class="m-md">This project has no forks. A fork is a copy of a project that you can change without
                 affecting the original project.</p>
         % endif
+    </div>
+    <div class="col-xs-3 col-sm-4">
+        <div class="m-md">
+            % if user_name and (user['is_contributor'] or node['is_public']) and not disk_saving_mode:
+                <a class="btn btn-success" type="button" onclick="NodeActions.forkNode();">New fork</a>
+            % endif
         </div>
-        <div class="col-xs-3 col-sm-4">
-                <div class="m-md">
-                    % if user_name and (user['is_contributor'] or node['is_public']) and not disk_saving_mode:
-                        <a class="btn btn-success" type="button" onclick="NodeActions.forkNode();">New fork</a>
-                    % endif
-                </div>
-        </div>
+    </div>
 </div>
 
 <%def name="javascript_bottom()">

@@ -31,3 +31,14 @@ class TestDisableAutoNowContextManager:
         node.title = 'ABC'
         node.save()
         assert node.modified != new_date_modified
+
+    def test_auto_now_does_not_modify_non_auto_now_fields(self, node):
+        old_created = node.created
+        assert Node._meta.get_field('created').auto_now is False
+
+        with disable_auto_now_fields(Node):
+            node.description = 'new cool description!!'
+        node.save()
+
+        assert node.created == old_created
+        assert Node._meta.get_field('created').auto_now is False
