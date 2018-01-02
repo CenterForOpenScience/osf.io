@@ -50,6 +50,8 @@ from tests.base import OsfTestCase, fake
 from tests import utils as test_utils
 from tests.utils import unique as _unique
 
+pytestmark = pytest.mark.django_db
+
 SILENT_LOGGERS = (
     'framework.celery_tasks.utils',
     'website.app',
@@ -124,6 +126,7 @@ FILE_TREE = {
     'path': '/',
     'name': '',
     'kind': 'folder',
+    'size': '100',
     'children': [
         {
             'path': '/1234567',
@@ -152,6 +155,7 @@ WB_FILE_TREE = {
         'path': '/',
         'name': '',
         'kind': 'folder',
+        'size': '100',
         'children': [
             {
                 'attributes': {
@@ -436,6 +440,8 @@ class TestStorageAddonBase(ArchiverTestCase):
             'path': '/',
             'name': '',
             'kind': 'folder',
+            # Regression test for OSF-8696 confirming that size attr does not stop folders from recursing
+            'size': '100',
         }
         file_tree = addon._get_file_tree(root, self.user)
         assert_equal(FILE_TREE, file_tree)
@@ -1062,7 +1068,13 @@ class TestArchiverListeners(ArchiverTestCase):
         self.dst.archive_job.save()
         with mock.patch('website.archiver.utils.handle_archive_fail') as mock_fail:
             listeners.archive_callback(self.dst)
-        mock_fail.assert_called_with(ARCHIVER_UNCAUGHT_ERROR, self.src, self.dst, self.user, self.dst.archive_job.target_addons)
+        call_args = mock_fail.call_args[0]
+        assert call_args[0] == ARCHIVER_UNCAUGHT_ERROR
+        assert call_args[1] == self.src
+        assert call_args[2] == self.dst
+        assert call_args[3] == self.user
+        assert call_args[3] == self.user
+        assert list(call_args[4]) == list(self.dst.archive_job.target_addons.all())
 
     def test_archive_callback_updates_archiving_state_when_done(self):
         proj = factories.NodeFactory()
@@ -1337,3 +1349,16 @@ class TestArchiveJobModel(OsfTestCase):
                 node.archive_job.update_target(target.name, ARCHIVER_SUCCESS)
         for node in reg.node_and_primary_descendants():
             assert_true(node.archive_job.archive_tree_finished())
+
+# Regression test for https://openscience.atlassian.net/browse/OSF-9085
+def test_archiver_uncaught_error_mail_renders():
+    src = factories.ProjectFactory()
+    user = src.creator
+    job = factories.ArchiveJobFactory()
+    mail = mails.ARCHIVE_UNCAUGHT_ERROR_DESK
+    assert mail.text(
+        user=user,
+        src=src,
+        results=job.target_addons.all(),
+        url=settings.INTERNAL_DOMAIN + src._id,
+    )
