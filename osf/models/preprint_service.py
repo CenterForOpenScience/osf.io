@@ -10,16 +10,15 @@ from django.contrib.contenttypes.fields import GenericRelation
 from framework.postcommit_tasks.handlers import enqueue_postcommit_task
 from framework.exceptions import PermissionsError
 from osf.models import NodeLog, Subject
+from osf.models.mixins import ReviewableMixin
 from osf.models.validators import validate_subject_hierarchy
 from osf.utils.fields import NonNaiveDateTimeField
+from osf.utils.workflows import DefaultStates
 from website.preprints.tasks import on_preprint_updated, get_and_set_preprint_identifiers
 from website.project.licenses import set_license
 from website.util import api_v2_url
 from website.util.permissions import ADMIN
 from website import settings, mails
-
-from reviews.models.mixins import ReviewableMixin
-from reviews.workflow import States
 
 from osf.models.base import BaseModel, GuidMixin
 from osf.models.identifiers import IdentifierMixin, Identifier
@@ -184,7 +183,7 @@ class PreprintService(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMi
             self.node._has_abandoned_preprint = False
 
             # In case this provider is ever set up to use a reviews workflow, put this preprint in a sensible state
-            self.reviews_state = States.ACCEPTED.value
+            self.machine_state = DefaultStates.ACCEPTED.value
             self.date_last_transitioned = self.date_published
 
             self.node.add_log(

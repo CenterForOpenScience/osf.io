@@ -364,7 +364,7 @@ class ExternalProvider(object):
         """
         pass
 
-    def refresh_oauth_key(self, force=False, extra={}, resp_auth_token_key='access_token',
+    def refresh_oauth_key(self, force=False, extra=None, resp_auth_token_key='access_token',
                           resp_refresh_token_key='refresh_token', resp_expiry_fn=None):
         """Handles the refreshing of an oauth_key for account associated with this provider.
            Not all addons need to use this, as some do not have oauth_keys that expire.
@@ -381,6 +381,7 @@ class ExternalProvider(object):
         datetime-formatted oauth_key expiry key, given a successful refresh response from
         `auto_refresh_url`. A default using 'expires_at' as a key is provided.
         """
+        extra = extra or {}
         # Ensure this is an authenticated Provider that uses token refreshing
         if not (self.account and self.auto_refresh_url):
             return False

@@ -129,7 +129,7 @@ class NodeSettings(BaseOAuthNodeSettings, BaseStorageAddon):
                 'project': self.owner.parent_id,
                 'node': self.owner._id,
                 'folder': self.folder_id,
-                'path': metadata['materialized'].strip('/'),
+                'path': metadata['materialized'].lstrip('/'),
                 'urls': {
                     'view': url,
                     'download': url + '?action=download'

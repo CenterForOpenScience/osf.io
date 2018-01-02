@@ -18,15 +18,10 @@
                     % if not node['is_registration']:
                         <li><a href="#configureNodeAnchor">${node['node_type'].capitalize()}</a></li>
 
-                        <li><a href="#selectAddonsAnchor">Select Add-ons</a></li>
-
-                        % if addon_enabled_settings:
-                            <li><a href="#configureAddonsAnchor">Configure Add-ons</a></li>
-                        % endif
-
                         % if 'admin' in user['permissions']:
-                            <li><a href="#createVolsAnchor">View-Only Links</a></li>
+                            <li><a href="#createVolsAnchor">View-only Links</a></li>
                         % endif
+
                         <li><a href="#configureWikiAnchor">Wiki</a></li>
 
                         % if 'admin' in user['permissions']:
@@ -72,9 +67,24 @@
 
                     <div id="projectSettings" class="panel-body">
                         <div class="form-group">
-                            <label>Category:</label>
-                            <select data-bind="options: categoryOptions, optionsValue: 'value', optionsText: 'label', value: selectedCategory"></select>
+                            <label for="category">Category:</label>
                             <i>(For descriptive purposes)</i>
+                            <div class="dropdown generic-dropdown category-list">
+                                <button class="btn btn-default dropdown-toggle" type="button" data-toggle="dropdown">
+                                    <span data-bind="getIcon: selectedCategory"></span>
+                                    <span data-bind="text: selectedCategory" class="text-capitalize"></span>
+                                    <span data-bind="ifnot: selectedCategory">Uncategorized</span>
+                                    <i class="fa fa-sort"></i>
+                                </button>
+                                <ul class="dropdown-menu" data-bind="foreach: {data: categoryOptions, as: 'category'}">
+                                    <li>
+                                          <a href="#" data-bind="click: $root.setCategory.bind($root, category.value)">
+                                              <span data-bind="getIcon: category.value"></span>
+                                              <span data-bind="text: category.label"></span>
+                                          </a>
+                                    </li>
+                                </ul>
+                            </div>
                         </div>
                         <div class="form-group">
                             <label for="title">Title:</label>
@@ -106,93 +116,12 @@
 
         % endif  ## End Configure Project
 
-        % if 'write' in user['permissions']:  ## Begin Select Addons
-
-            % if not node['is_registration']:
-
-                <div class="panel panel-default">
-                    <span id="selectAddonsAnchor" class="anchor"></span>
-                    <div class="panel-heading clearfix">
-                        <h3 class="panel-title">Select Add-ons</h3>
-                    </div>
-                    <div class="panel-body">
-                        <form id="selectAddonsForm">
-
-                            % for category in addon_categories:
-
-                                <%
-                                    addons = [
-                                        addon
-                                        for addon in addons_available
-                                        if category in addon.categories
-                                    ]
-                                %>
-
-                                % if addons:
-                                    <h3>${category.capitalize()}</h3>
-
-                                    % for addon in addons:
-                                        <div>
-                                            <label>
-                                                <input
-                                                    type="checkbox"
-                                                    name="${addon.short_name}"
-                                                    class="addon-select"
-                                                    ${'checked' if addon.short_name in addons_enabled else ''}
-                                                    ${'disabled' if (node['is_registration'] or bool(addon.added_mandatory)) else ''}
-                                                />
-                                                ${addon.full_name}
-                                            </label>
-                                        </div>
-                                    % endfor
-
-                                % endif
-
-                            % endfor
-
-                            <br />
-
-                            <div class="addon-settings-message text-success" style="padding-top: 10px;"></div>
-
-                        </form>
-
-                    </div>
-                </div>
-
-                % if addon_enabled_settings:
-                    <span id="configureAddonsAnchor" class="anchor"></span>
-
-                    <div id="configureAddons" class="panel panel-default">
-
-                        <div class="panel-heading clearfix">
-                            <h3 class="panel-title">Configure Add-ons</h3>
-                        </div>
-                        <div class="panel-body">
-
-                        % for node_settings_dict in addon_enabled_settings or []:
-                            ${render_node_settings(node_settings_dict)}
-
-                                % if not loop.last:
-                                    <hr />
-                                % endif
-
-                        % endfor
-
-                        </div>
-                    </div>
-
-                % endif
-
-            % endif
-
-        % endif  ## End Select Addons
-
         % if 'admin' in user['permissions']:  ## Begin create VOLS
             % if not node['is_registration']:
                 <div class="panel panel-default">
                     <span id="createVolsAnchor" class="anchor"></span>
                     <div class="panel-heading clearfix">
-                        <h3 class="panel-title">View-Only Links</h3>
+                        <h3 class="panel-title">View-only Links</h3>
                     </div>
                     <div class="panel-body">
                         <p>
@@ -206,7 +135,6 @@
                 </div>
             % endif
         % endif ## End create vols
-
         % if 'write' in user['permissions']:  ## Begin Wiki Config
             % if not node['is_registration']:
                 <div class="panel panel-default">
@@ -216,13 +144,12 @@
                     </div>
 
                 <div class="panel-body">
-                    %if wiki:
                         <form id="selectWikiForm">
                             <div>
                                 <label class="break-word">
                                     <input
                                             type="checkbox"
-                                            name="${wiki.short_name}"
+                                            name="wiki"
                                             class="wiki-select"
                                             data-bind="checked: enabled"
                                     />
@@ -237,12 +164,11 @@
                                 </div>
                             </div>
                         </form>
-                    %endif
 
-                        % if include_wiki_settings:
+                        %if wiki_enabled:
                             <h3>Configure</h3>
                             <div style="padding-left: 15px">
-                                %if  node['is_public']:
+                                %if node['is_public']:
                                     <p class="text">Control who can edit the wiki of <b>${node['title']}</b></p>
                                 %else:
                                     <p class="text">Control who can edit your wiki. To allow all OSF users to edit the wiki, <b>${node['title']}</b> must be public.</p>
@@ -260,8 +186,6 @@
                                     <p id="configureWikiMessage"></p>
                                 </div>
                             </form>
-                        % else:
-                            <p class="text">To allow all OSF users to edit the wiki, <b>${node['title']}</b> must be public and the wiki enabled.</p>
                         %endif
                     </div>
                 </div>
@@ -531,18 +455,6 @@
 
 </div>
 
-<%def name="render_node_settings(data)">
-    <%
-       template_name = data['node_settings_template']
-       tpl = data['template_lookup'].get_template(template_name).render(**data)
-    %>
-    ${ tpl | n }
-</%def>
-
-% for name, capabilities in addon_capabilities.iteritems():
-    <script id="capabilities-${name}" type="text/html">${ capabilities | n }</script>
-% endfor
-
 <%def name="stylesheets()">
     ${parent.stylesheets()}
     <link rel="stylesheet" href="/static/css/pages/project-page.css">
@@ -559,7 +471,7 @@
       window.contextVars.node.institutions = ${ node['institutions'] | sjson, n };
       window.contextVars.nodeCategories = ${ categories | sjson, n };
       window.contextVars.wiki = window.contextVars.wiki || {};
-      window.contextVars.wiki.isEnabled = ${wiki.short_name in addons_enabled | sjson, n };
+      window.contextVars.wiki.isEnabled = ${wiki_enabled | sjson, n };
       window.contextVars.currentUser = window.contextVars.currentUser || {};
       window.contextVars.currentUser.institutions = ${ user['institutions'] | sjson, n };
       window.contextVars.currentUser.permissions = ${ user['permissions'] | sjson, n } ;
@@ -577,9 +489,6 @@
     % if not node['is_registration']:
         <script type="text/javascript" src=${"/static/public/js/forward/node-cfg.js" | webpack_asset}></script>
     % endif
-    
-    % for js_asset in addon_js:
-        <script src="${js_asset | webpack_asset}"></script>
-    % endfor
+
 
 </%def>

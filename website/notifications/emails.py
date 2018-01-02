@@ -191,6 +191,17 @@ def get_settings_url(uid, user):
     assert node, 'get_settings_url recieved an invalid Node id'
     return node.web_url_for('node_setting', _guid=True, _absolute=True)
 
+def fix_locale(locale):
+    """Atempt to fix a locale to have the correct casing, e.g. de_de -> de_DE
+
+    This is NOT guaranteed to return a valid locale identifier.
+    """
+    try:
+        language, territory = locale.split('_', 1)
+    except ValueError:
+        return locale
+    else:
+        return '_'.join([language, territory.upper()])
 
 def localize_timestamp(timestamp, user):
     try:
@@ -201,7 +212,18 @@ def localize_timestamp(timestamp, user):
     try:
         user_locale = Locale(user.locale)
     except core.UnknownLocaleError:
-        user_locale = 'en'
+        user_locale = Locale('en')
+
+    # Do our best to find a valid locale
+    try:
+        user_locale.date_formats
+    except IOError:  # An IOError will be raised if locale's casing is incorrect, e.g. de_de vs. de_DE
+        # Attempt to fix the locale, e.g. de_de -> de_DE
+        try:
+            user_locale = Locale(fix_locale(user.locale))
+            user_locale.date_formats
+        except (core.UnknownLocaleError, IOError):
+            user_locale = Locale('en')
 
     formatted_date = dates.format_date(timestamp, format='full', locale=user_locale)
     formatted_time = dates.format_time(timestamp, format='short', tzinfo=user_timezone, locale=user_locale)

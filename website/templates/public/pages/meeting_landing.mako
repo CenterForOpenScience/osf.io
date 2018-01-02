@@ -27,7 +27,7 @@
         <div class="osf-meeting-header">
             <div class="container ">
             <div class="text-center m-b-lg">
-                <h1>OSF for Meetings</h1>
+                <h1><img src="/static/img/meeting-page/osf_meetings_white.png" alt="Logo for OSF meeting" style="width: 80%"></h1>
                 <h3>A <strong>free poster and presentation sharing service</strong> for academic meetings and conferences</h3>
             </div>
                 <div class="network-img"> </div>

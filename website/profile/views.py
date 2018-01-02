@@ -738,7 +738,7 @@ def request_export(auth):
                               'error_type': 'throttle_error'})
 
     mails.send_mail(
-        to_addr=settings.SUPPORT_EMAIL,
+        to_addr=settings.OSF_SUPPORT_EMAIL,
         mail=mails.REQUEST_EXPORT,
         user=auth.user,
     )
@@ -758,7 +758,7 @@ def request_deactivation(auth):
                         })
 
     mails.send_mail(
-        to_addr=settings.SUPPORT_EMAIL,
+        to_addr=settings.OSF_SUPPORT_EMAIL,
         mail=mails.REQUEST_DEACTIVATION,
         user=auth.user,
     )
@@ -766,3 +766,10 @@ def request_deactivation(auth):
     user.requested_deactivation = True
     user.save()
     return {'message': 'Sent account deactivation request'}
+
+@must_be_logged_in
+def cancel_request_deactivation(auth):
+    user = auth.user
+    user.requested_deactivation = False
+    user.save()
+    return {'message': 'You have canceled your deactivation request'}

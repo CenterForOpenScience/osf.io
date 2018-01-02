@@ -105,6 +105,7 @@ from osf.models import NodeRelation, Guid
 from osf.models import BaseFileNode
 from osf.models.files import File, Folder
 from addons.wiki.models import NodeWikiPage
+from website import mails
 from website.exceptions import NodeStateError
 from website.util.permissions import ADMIN, PERMISSIONS
 
@@ -1525,7 +1526,8 @@ class NodeForksList(JSONAPIBaseView, generics.ListCreateAPIView, NodeMixin, Node
 
     Paginated list of the current node's forks ordered by their `forked_date`. Forks are copies of projects that you can
     change without affecting the original project.  When creating a fork, your fork will will only contain public components or those
-    for which you are a contributor.  Private components that you do not have access to will not be forked.
+    for which you are a contributor.  Private components that you do not have access to will not be forked. You will receive an email
+    when your fork completes.
 
     ##Node Fork Attributes
 
@@ -1608,7 +1610,7 @@ class NodeForksList(JSONAPIBaseView, generics.ListCreateAPIView, NodeMixin, Node
 
     # overrides ListCreateAPIView
     def get_queryset(self):
-        all_forks = self.get_node().forks.order_by('-forked_date')
+        all_forks = self.get_node().forks.exclude(type='osf.registration').order_by('-forked_date')
         auth = get_user_auth(self.request)
 
         node_pks = [node.pk for node in all_forks if node.can_view(auth)]
@@ -1616,7 +1618,15 @@ class NodeForksList(JSONAPIBaseView, generics.ListCreateAPIView, NodeMixin, Node
 
     # overrides ListCreateAPIView
     def perform_create(self, serializer):
-        serializer.save(node=self.get_node())
+        user = get_user_auth(self.request).user
+        node = self.get_node()
+        try:
+            fork = serializer.save(node=node)
+        except Exception as exc:
+            mails.send_mail(user.email, mails.FORK_FAILED, title=node.title, guid=node._id, mimetype='html', can_change_preferences=False)
+            raise exc
+        else:
+            mails.send_mail(user.email, mails.FORK_COMPLETED, title=node.title, guid=fork._id, mimetype='html', can_change_preferences=False)
 
     # overrides ListCreateAPIView
     def get_parser_context(self, http_request):
@@ -1940,7 +1950,7 @@ class NodeFilesList(JSONAPIBaseView, generics.ListAPIView, WaterButlerMixin, Lis
 
     # overrides ListAPIView
     def get_queryset(self):
-        return self.get_queryset_from_request()
+        return self.get_queryset_from_request().distinct()
 
 
 class NodeFileDetail(JSONAPIBaseView, generics.RetrieveAPIView, WaterButlerMixin, NodeMixin):

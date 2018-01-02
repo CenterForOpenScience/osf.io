@@ -110,9 +110,9 @@ var ProjectViewModel = function(data, options) {
             title: 'Edit Description',
             emptytext: 'Add a brief description to your ' + project_or_component_label,
             emptyclass: 'text-muted',
-            value: self.description(),
+            value: $osf.decodeText(self.description()),
             success: function(response, newValue) {
-                newValue = response.newValue; // Update display to reflect changes, eg by sanitizer
+                newValue = $osf.decodeText(response.newValue); // Update display to reflect changes, eg by sanitizer
                 self.description(newValue);
                 return {newValue: newValue};
             }
@@ -226,8 +226,7 @@ var ProjectViewModel = function(data, options) {
         }).fail(function(xhr) {
             var message = 'We could not create the identifier at this time. ' +
                 'The DOI/ARK acquisition service may be down right now. ' +
-                'Please try again soon and/or contact ' +
-                '<a href="mailto: support@osf.io">support@osf.io</a>';
+                'Please try again soon and/or contact ' + $osf.osfSupportLink();
             $osf.growl('Error', message, 'danger');
             Raven.captureMessage('Could not create identifiers', {extra: {url: url, status: xhr.status}});
         }).always(function() {
