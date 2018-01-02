@@ -12,8 +12,6 @@ django.setup()
 from django.core.management.base import BaseCommand
 from django.db import transaction
 
-from osf.models import OSFUser, NotificationSubscription
-
 from website.notifications.utils import to_subscription_key
 
 from scripts import utils as script_utils
@@ -21,7 +19,13 @@ from scripts import utils as script_utils
 logger = logging.getLogger(__name__)
 
 
-def add_reviews_notification_setting(notification_type):
+def add_reviews_notification_setting(notification_type, state=None):
+    if state:
+        OSFUser = state.get_model('osf', 'OSFUser')
+        NotificationSubscription = state.get_model('osf', 'NotificationSubscription')
+    else:
+        from osf.models import OSFUser, NotificationSubscription
+
     active_users = OSFUser.objects.filter(date_confirmed__isnull=False).exclude(date_disabled__isnull=False).exclude(is_active=False).order_by('id')
     total_active_users = active_users.count()
 
@@ -66,9 +70,10 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
         dry_run = options.get('dry_run', False)
+        state = options.get('state', None)
         if not dry_run:
             script_utils.add_file_logger(logger, __file__)
         with transaction.atomic():
-            add_reviews_notification_setting(notification_type=options['notification'])
+            add_reviews_notification_setting(notification_type=options['notification'], state=state)
             if dry_run:
                 raise RuntimeError('Dry run, transaction rolled back.')

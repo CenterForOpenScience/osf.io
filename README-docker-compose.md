@@ -43,6 +43,10 @@
     - Configure docker to start at boot for Ubuntu 15.04 onwards
       `sudo systemctl enable docker`
 
+    - In order to run OSF Preprints, raise fs.inotify.max_user_watches from default value
+      `echo fs.inotify.max_user_watches=131072 | sudo tee -a /etc/sysctl.conf`
+      `sudo sysctl -p`
+
   - Windows
     - Install Microsoft Loopback Adapter (Windows 10 follow community comments as the driver was renamed)
       https://technet.microsoft.com/en-us/library/cc708322(v=ws.10).aspx
@@ -120,7 +124,7 @@ Ubuntu: Skip install of docker-sync. instead...
     _NOTE: When the various requirements installations are complete these containers will exit. You should only need to run these containers after pulling code that changes python requirements or if you update the python requirements._
 
 2. Start Core Component Services (Detached)
-  - `$ docker-compose up -d elasticsearch postgres tokumx rabbitmq`
+  - `$ docker-compose up -d elasticsearch postgres mongo rabbitmq`
 
 3. Remove your existing node_modules and start the assets watcher (Detached)
   - `$ rm -Rf ./node_modules`
@@ -291,6 +295,9 @@ $ docker-compose run --service-ports web
 
 - Test a Specific Method
   - `$ docker-compose run --rm web invoke test_module -m tests/test_conferences.py::TestProvisionNode::test_upload`
+
+- Test with Specific Parameters (1 cpu, capture stdout)
+  - `$ docker-compose run --rm web invoke test_module -m tests/test_conferences.py::TestProvisionNode::test_upload -n 1 --params '--capture=sys'`
 
 ## Managing Container State
 

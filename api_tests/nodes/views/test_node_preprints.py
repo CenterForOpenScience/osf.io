@@ -84,13 +84,14 @@ class TestNodePreprintIsPublishedList(PreprintIsPublishedListMixin):
         return '/{}nodes/{}/preprints/?version=2.2&'.format(API_BASE, project_published._id)
 
     @pytest.fixture()
-    def preprint_unpublished(self, user_admin_contrib, provider_one, project_public, subject):
-        return PreprintFactory(creator=user_admin_contrib, filename='mgla.pdf', provider=provider_one, subjects=[[subject._id]], project=project_public, is_published=False)
+    def preprint_unpublished(self, user_admin_contrib, provider_one, project_published, subject):
+        return PreprintFactory(creator=user_admin_contrib, filename='mgla.pdf', provider=provider_one, subjects=[[subject._id]], project=project_published, is_published=False)
 
     def test_unpublished_visible_to_admins(self, app, user_admin_contrib, preprint_unpublished, preprint_published, url):
         res = app.get(url, auth=user_admin_contrib.auth)
         assert len(res.json['data']) == 2
         assert preprint_unpublished._id in [d['id'] for d in res.json['data']]
+        assert preprint_published._id in [d['id'] for d in res.json['data']]
 
     def test_unpublished_invisible_to_write_contribs(self, app, user_write_contrib, preprint_unpublished, preprint_published, url):
         res = app.get(url, auth=user_write_contrib.auth)

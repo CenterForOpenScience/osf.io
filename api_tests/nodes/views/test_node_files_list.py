@@ -239,6 +239,11 @@ class TestNodeFilesList(ApiTestCase):
                                             })
         assert_equal(res.json['data'][0]['attributes']['name'], 'NewFile')
         assert_equal(res.json['data'][0]['attributes']['provider'], 'github')
+        assert_in(vol.key, res.json['data'][0]['links']['info'])
+        assert_in(vol.key, res.json['data'][0]['links']['move'])
+        assert_in(vol.key, res.json['data'][0]['links']['upload'])
+        assert_in(vol.key, res.json['data'][0]['links']['download'])
+        assert_in(vol.key, res.json['data'][0]['links']['delete'])
 
     def test_returns_node_files_list(self):
         self._prepare_mock_wb_response(provider='github', files=[{'name': 'NewFile'}])

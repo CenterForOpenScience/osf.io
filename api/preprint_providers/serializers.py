@@ -2,11 +2,10 @@ from guardian.shortcuts import get_perms
 from rest_framework import serializers as ser
 from rest_framework.exceptions import ValidationError
 
-from reviews.workflow import Workflows
-
 from api.actions.serializers import ReviewableCountsRelationshipField
 from api.base.utils import absolute_reverse, get_user_auth
 from api.base.serializers import JSONAPISerializer, LinksField, RelationshipField, ShowIfVersion
+from api.preprint_providers.workflows import Workflows
 
 
 class PreprintProviderSerializer(JSONAPISerializer):
@@ -57,7 +56,8 @@ class PreprintProviderSerializer(JSONAPISerializer):
 
     highlighted_taxonomies = RelationshipField(
         related_view='preprint_providers:highlighted-taxonomy-list',
-        related_view_kwargs={'provider_id': '<_id>'}
+        related_view_kwargs={'provider_id': '<_id>'},
+        related_meta={'has_highlighted_subjects': 'get_has_highlighted_subjects'}
     )
 
     licenses_acceptable = RelationshipField(
@@ -107,6 +107,9 @@ class PreprintProviderSerializer(JSONAPISerializer):
 
     class Meta:
         type_ = 'preprint_providers'
+
+    def get_has_highlighted_subjects(self, obj):
+        return obj.has_highlighted_subjects
 
     def get_absolute_url(self, obj):
         return obj.absolute_api_v2_url

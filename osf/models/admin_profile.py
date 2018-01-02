@@ -4,7 +4,8 @@ from django.db import models
 class AdminProfile(models.Model):
     primary_identifier_name = 'id'
 
-    user = models.OneToOneField('osf.OSFUser', related_name='admin_profile')
+    user = models.OneToOneField('osf.OSFUser', related_name='admin_profile',
+                                on_delete=models.CASCADE)
 
     desk_token = models.CharField(max_length=45, blank=True)
     desk_token_secret = models.CharField(max_length=45, blank=True)

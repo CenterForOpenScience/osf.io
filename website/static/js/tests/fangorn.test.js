@@ -10,21 +10,31 @@ var utils = require('tests/utils');
 var faker = require('faker');
 var $ = require('jquery');
 var Raven = require('raven-js');
+
+window.contextVars = {
+    osfSupportEmail : 'fake-support@osf.io',
+};
+
 var language = require('js/osfLanguage').projectSettings;
+
 
 describe('fangorn', () => {
     describe('FangornMoveAndDeleteUnitTests', () => {
         // folder setup
         var folder;
         var item;
-        var getItem = function(kind, id){
+        var getItem = function(kind, id, name){
             if(typeof id === 'undefined'){
                 id = 2;
+            }
+            if(typeof name === 'undefined'){
+                name = kind + id;
             }
             return {
                 'data': {
                     'provider': 'osfstorage',
                     'kind': kind,
+                    'name': name,
                     'extra': {},
                     'permissions': {
                         'edit': true
@@ -54,7 +64,7 @@ describe('fangorn', () => {
                 delete folder.data;
                 item = getItem('file', 3);
                 assert.equal(Fangorn.getCopyMode(folder, [item]), 'forbidden');
-            });                        
+            });
 
             it('cannot be dropped if isInvalidDropFolder returns true', () => {
                 folder = getItem('file', 2);
@@ -114,7 +124,7 @@ describe('fangorn', () => {
         describe('isInvalidDropFolder', () => {
             it('can be dropped if valid', () => {
                 assert.equal(Fangorn.isInvalidDropFolder(getItem('folder')), false);
-            });      
+            });
 
             it('cannot be dropped if target parentID is root', () => {
                 folder = getItem('folder');
@@ -126,15 +136,15 @@ describe('fangorn', () => {
                 folder = getItem('folder');
                 folder.inProgress = true;
                 assert.equal(Fangorn.isInvalidDropFolder(folder), true);
-            });            
+            });
 
             it('cannot be dropped if target kind is undefined', () => {
                 assert.equal(Fangorn.isInvalidDropFolder(getItem()), true);
-            });      
+            });
 
             it('cannot be dropped if target kind is file', () => {
                 assert.equal(Fangorn.isInvalidDropFolder(getItem('file')), true);
-            });                
+            });
 
             it('cannot be dropped if no edit permission for target', () => {
                 folder = getItem('folder');
@@ -146,7 +156,7 @@ describe('fangorn', () => {
                 folder = getItem('folder');
                 folder.data.provider = null;
                 assert.equal(Fangorn.isInvalidDropFolder(folder), true);
-            });          
+            });
 
             it('cannot be dropped if target has an associated status', () => {
                 folder = getItem('folder');
@@ -239,13 +249,13 @@ describe('fangorn', () => {
                 item = getItem('file', 3);
                 item.inProgress = true;
                 assert.equal(Fangorn.isInvalidDropItem(folder, item, false, false), true);
-            });            
+            });
 
             it('can be dropped if folder and allowed to be folder', () => {
                 folder = getItem('folder', 2);
                 item = getItem('folder', 3);
                 assert.equal(Fangorn.isInvalidDropItem(folder, item, false, false), false);
-            });            
+            });
 
             it('cannot be dropped if folder and not allowed to be folder', () => {
                 folder = getItem('folder', 2);
@@ -259,7 +269,7 @@ describe('fangorn', () => {
                 item = getItem('file', 3);
                 item.data.provider = 'github';
                 assert.equal(Fangorn.isInvalidDropItem(folder, item, false, true), false);
-            });            
+            });
 
             it('cannot be dropped if mustBeIntra is true and not same provider', () => {
                 folder = getItem('folder', 2);
@@ -323,6 +333,47 @@ describe('fangorn', () => {
             });
         });
 
+        describe('checkConflicts', () => {
+            it('returns conflict if moved file (name) already exist in folder', () => {
+                var folder = getItem('folder', 2);
+                var item = getItem('file', 5, 'exp.csv');
+                var itemDropped = getItem('file', 6, 'exp.csv');
+                folder.children = [item];
+                assert.deepEqual(Fangorn.checkConflicts([itemDropped], folder).conflicts, [itemDropped]);
+                assert.equal(Fangorn.checkConflicts([itemDropped], folder).ready.length, 0);
+            });
+
+            it('returns no conflicts if no file(s) of same name exist in folder', () => {
+                var folder = getItem('folder', 2);
+                var item = getItem('file', 3, 'exp.csv');
+                var item1 = getItem('file', 5, 'exp1.csv');
+                var item2 = getItem('file', 6, 'exp2.csv');
+                var movedItems = [item1, item2];
+                folder.children = [item];
+                assert.equal(Fangorn.checkConflicts(movedItems, folder).conflicts.length, 0);
+                assert.equal(Fangorn.checkConflicts(movedItems, folder).ready.length, movedItems.length);
+                assert.deepEqual(Fangorn.checkConflicts(movedItems, folder).ready, movedItems);
+
+            });
+
+            it('returns no conflicts if folder with similar files is dropped', () => {
+                var folder = getItem('folder', 2);
+                var item3 = getItem('file', 3, 'pluto.csv');
+                var item5 = getItem('file', 5, 'mars.csv');
+                folder.children = [item3, item5];
+
+                var folder2 = getItem('folder', 6);
+                var item7 = getItem('file', 7, 'pluto.csv');
+                var item8 = getItem('file', 8, 'mars.csv');
+                folder2.children = [item7, item8];
+
+                var movedFolder = folder2;
+                assert.equal(Fangorn.checkConflicts([movedFolder], folder).conflicts.length, 0);
+                assert.deepEqual(Fangorn.checkConflicts([movedFolder], folder).ready, [movedFolder]);
+            });
+
+        });
+
         describe('getAllChildren', () => {
             it('returns no children when there are no children', () => {
                 folder = getItem('folder', 2);
@@ -343,7 +394,7 @@ describe('fangorn', () => {
                 folder2.children = [item];
                 folder.children = [folder2];
                 assert.equal(Fangorn.getAllChildren(folder).length, 2);
-            });              
+            });
         });
 
         describe('folderContainsPreprint', () => {
@@ -376,7 +427,7 @@ describe('fangorn', () => {
                 folder2.children = [item];
                 folder.children = [folder2];
                 assert.equal(Fangorn.folderContainsPreprint(folder, 'abcdefg'), true);
-            });           
+            });
         });
 
         describe('multiselectContainsPreprint', () => {
@@ -394,7 +445,7 @@ describe('fangorn', () => {
                 item = getItem('file', 3);
                 item.data.path = 'bbbbbbb';
                 assert.equal(Fangorn.multiselectContainsPreprint([folder, item], 'abcdefg'), false);
-            });                       
+            });
         });
 
         describe('showDeleteMultiple', () => {
@@ -420,7 +471,7 @@ describe('fangorn', () => {
                 item = getItem('file', 3);
                 item.data.permissions.edit = true;
                 assert.equal(Fangorn.showDeleteMultiple([folder, item]), true);
-            });            
-        });        
+            });
+        });
     });
 });

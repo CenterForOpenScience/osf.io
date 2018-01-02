@@ -26,24 +26,24 @@ LIVE_RELOAD_DOMAIN = 'http://localhost:4200'
 PREPRINT_PROVIDER_DOMAINS = {
     'enabled': False,
     'prefix': 'http://local.',
-    'suffix': ':4200/'
+    'suffix': ':4201/'
 }
 USE_EXTERNAL_EMBER = True
 PROXY_EMBER_APPS = False
 EXTERNAL_EMBER_APPS = {
     'preprints': {
         'url': '/preprints/',
-        'server': 'http://192.168.168.167:4200/',
+        'server': 'http://192.168.168.167:4201/',
         'path': '/preprints/'
     },
     'registries': {
         'url': '/registries/',
-        'server': 'http://192.168.168.167:4300',
+        'server': 'http://192.168.168.167:4202',
         'path': '/registries/'
     },
     'reviews': {
         'url': '/reviews/',
-        'server': 'http://localhost:4400',
+        'server': 'http://localhost:4203',
         'path': '/reviews/'
     }
     # 'meetings': {
@@ -55,9 +55,6 @@ EXTERNAL_EMBER_APPS = {
 
 SEARCH_ENGINE = 'elastic'
 ELASTIC_TIMEOUT = 10
-
-# Comment out to use celery in development
-USE_CELERY = False
 
 # Email
 USE_EMAIL = False
@@ -76,24 +73,40 @@ SESSION_COOKIE_SECURE = SECURE_MODE
 OSF_SERVER_KEY = None
 OSF_SERVER_CERT = None
 
-##### Celery #####
-## Default RabbitMQ broker
-BROKER_URL = 'amqp://'
+# Comment out to use celery in development
+USE_CELERY = False
 
-# Celery with SSL
-# import ssl
-#
-# BROKER_USE_SSL = {
-#     'keyfile': '/etc/ssl/private/worker.key',
-#     'certfile': '/etc/ssl/certs/worker.pem',
-#     'ca_certs': '/etc/ssl/certs/ca-chain.cert.pem',
-#     'cert_reqs': ssl.CERT_REQUIRED,
-# }
+class CeleryConfig(defaults.CeleryConfig):
+    """
+    Celery configuration
+    """
+    ##### Celery #####
+    ## Default RabbitMQ broker
+    # broker_url = 'amqp://'
 
-# Default RabbitMQ backend
-CELERY_RESULT_BACKEND = 'amqp://'
+    # Celery with SSL
+    # import ssl
+    #
+    # broker_use_ssl = {
+    #     'keyfile': '/etc/ssl/private/worker.key',
+    #     'certfile': '/etc/ssl/certs/worker.pem',
+    #     'ca_certs': '/etc/ssl/certs/ca-chain.cert.pem',
+    #     'cert_reqs': ssl.CERT_REQUIRED,
+    # }
+
+    # Default RabbitMQ backend
+    # result_backend = 'amqp://'
+
 
 USE_CDN_FOR_CLIENT_LIBS = False
 
+# WARNING: `SENDGRID_WHITELIST_MODE` should always be True in local dev env to prevent unintentional spamming.
+# Add specific email addresses to `SENDGRID_EMAIL_WHITELIST` for testing purposes.
+SENDGRID_WHITELIST_MODE = True
+SENDGRID_EMAIL_WHITELIST = []
+
 # Example of extending default settings
 # defaults.IMG_FMTS += ["pdf"]
+
+# support email
+OSF_SUPPORT_EMAIL = 'fake-support@osf.io'

@@ -207,10 +207,10 @@
                        click: $root.collapsed() ? toggleExpand : null">
             <!-- ko if: ($parent === 'contrib' && $root.isSortable()) -->
                 <span class="fa fa-bars sortable-bars"></span>
-                <img class="m-l-xs" data-bind="attr: {src: contributor.gravatar_url}" />
+                <img class="m-l-xs" data-bind="attr: {src: contributor.profile_image_url}" />
             <!-- /ko -->
             <!-- ko ifnot: ($parent === 'contrib' && $root.isSortable()) -->
-                <img data-bind="attr: {src: contributor.gravatar_url}" />
+                <img data-bind="attr: {src: contributor.profile_image_url}" />
             <!-- /ko -->
             <span data-bind="attr: {class: contributor.expanded() ? 'fa toggle-icon fa-angle-up' : 'fa toggle-icon fa-angle-down'}"></span>
             <div class="card-header">

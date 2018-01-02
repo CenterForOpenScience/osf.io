@@ -10,6 +10,7 @@ from website.settings import DOMAIN as OSF_DOMAIN
 
 EMBARGO = 'embargo'
 IMMEDIATE = 'immediate'
+CANCELED = 'canceled'
 
 
 def serialize_user(user):
@@ -26,6 +27,13 @@ def serialize_draft_registration(draft, json_safe=True):
 
     embargo = get_embargo(draft, json_safe)
 
+    submitted = None
+    if draft.approval is not None:
+        if json_safe:
+            submitted = iso8601format(draft.approval.initiation_date)
+        else:
+            submitted = draft.approval.initiation_date
+
     return {
         'pk': draft._id,
         'initiator': serialize_user(draft.initiator),
@@ -33,7 +41,7 @@ def serialize_draft_registration(draft, json_safe=True):
         'registration_schema': serialize_meta_schema(draft.registration_schema),
         'initiated': iso8601format(draft.datetime_initiated) if json_safe else draft.datetime_initiated,
         'updated': iso8601format(draft.datetime_updated) if json_safe else draft.datetime_updated,
-        'submitted': iso8601format(draft.approval.initiation_date) if json_safe else draft.approval.initiation_date,
+        'submitted': submitted,
         'requires_approval': draft.requires_approval,
         'is_pending_approval': draft.is_pending_review,
         'is_approved': draft.is_approved,
@@ -66,12 +74,14 @@ def get_url(draft):
 
 
 def get_embargo(draft, json_safe):
-    registration_choice = draft.approval.meta.get('registration_choice', None)
-    if registration_choice == EMBARGO:
-        time = parser.parse(draft.approval.meta['embargo_end_date'])
-        return iso8601format(time) if json_safe else time
-    return IMMEDIATE
-
+    if draft.approval is not None:
+        registration_choice = draft.approval.meta.get('registration_choice', None)
+        if registration_choice == EMBARGO:
+            time = parser.parse(draft.approval.meta['embargo_end_date'])
+            return iso8601format(time) if json_safe else time
+        return IMMEDIATE
+    else:
+        return CANCELED
 
 def get_approval_status(draft):
     if draft.is_approved:

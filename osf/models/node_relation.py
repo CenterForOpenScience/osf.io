@@ -4,8 +4,8 @@ from .base import BaseModel, ObjectIDMixin
 
 
 class NodeRelation(ObjectIDMixin, BaseModel):
-    parent = models.ForeignKey('AbstractNode', related_name='node_relations')
-    child = models.ForeignKey('AbstractNode', related_name='_parents')
+    parent = models.ForeignKey('AbstractNode', related_name='node_relations', on_delete=models.CASCADE)
+    child = models.ForeignKey('AbstractNode', related_name='_parents', on_delete=models.CASCADE)
     is_node_link = models.BooleanField(default=False, db_index=True)
 
     def __unicode__(self):

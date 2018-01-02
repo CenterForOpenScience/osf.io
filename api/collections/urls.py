@@ -2,6 +2,8 @@ from django.conf.urls import url
 
 from api.collections import views
 
+app_name = 'osf'
+
 urlpatterns = [
     url(r'^$', views.CollectionList.as_view(), name=views.CollectionList.view_name),
     url(r'^(?P<collection_id>\w+)/$', views.CollectionDetail.as_view(), name=views.CollectionDetail.view_name),

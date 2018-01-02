@@ -155,6 +155,7 @@ var FileEditor = {
                         return m('li', m('a', {href: user.url}, [
                             m('img', {
                                 title: user.name,
+                                // our shareJS explicitly passes back 'gravatar' despite our generalization
                                 src: user.gravatar,
                                 'data-container': 'body',
                                 'data-placement': 'top',
