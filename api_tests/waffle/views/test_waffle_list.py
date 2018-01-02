@@ -49,7 +49,7 @@ class TestWaffleList:
         assert res.status_code == 200
         assert len(res.json['data']) == 1
         assert res.json['data'][0]['attributes']['name'] == 'active_flag'
-        assert res.json['data'][0]['attributes']['active'] == True
+        assert res.json['data'][0]['attributes']['active'] is True
 
     def test_waffle_flag_filter_does_not_exist(self, app, user, url, inactive_flag, active_flag):
         res = app.get(url + '?flags=jibberish', auth=user.auth)
