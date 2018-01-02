@@ -4,15 +4,15 @@ from __future__ import unicode_literals
 import logging
 
 from django.db import migrations
-from osf.models import PreprintService
 from osf.utils.migrations import disable_auto_now_fields
 
 logger = logging.getLogger(__name__)
 
-def add_preprint_doi_created(apps, schema_editor):
+def add_preprint_doi_created(state, schema):
     """
     Sets preprint_doi_created equal to date_published for existing published preprints.
     """
+    PreprintService = state.get_model('osf', 'preprintservice')
     null_preprint_doi_created = PreprintService.objects.filter(preprint_doi_created__isnull=True, date_published__isnull=False)
     preprints_count = null_preprint_doi_created.count()
     current_preprint = 0
@@ -28,10 +28,11 @@ def add_preprint_doi_created(apps, schema_editor):
             else:
                 logger.info('Preprint ID {}, {}/{} skipped because a DOI has not been created.'.format(preprint._id, current_preprint, preprints_count))
 
-def reverse_func(apps, schema_editor):
+def reverse_func(state, schema):
     """
     Reverses data migration. Sets preprint_doi_created field back to null.
     """
+    PreprintService = state.get_model('osf', 'preprintservice')
     logger.info('Reversing preprint_doi_created migration.')
     PreprintService.objects.filter(preprint_doi_created__isnull=False).update(preprint_doi_created=None)
 
@@ -42,5 +43,5 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
-         migrations.RunPython(add_preprint_doi_created, reverse_func)
+        migrations.RunPython(add_preprint_doi_created, reverse_func)
     ]

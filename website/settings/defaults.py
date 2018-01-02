@@ -474,6 +474,7 @@ class CeleryConfig:
         'scripts.analytics.run_keen_events',
         'scripts.generate_sitemap',
         'scripts.premigrate_created_modified',
+        'scripts.generate_prereg_csv',
     )
 
     # Modules that need metrics and release requirements
@@ -552,7 +553,7 @@ class CeleryConfig:
             },
             'prereg_reminder': {
                 'task': 'scripts.remind_draft_preregistrations',
-                'schedule': crontab(minute=0, hour=12), # Daily 12 p.m.
+                'schedule': crontab(minute=0, hour=12),  # Daily 12 p.m.
                 'kwargs': {'dry_run': False},
             },
             'new-and-noteworthy': {
@@ -582,6 +583,10 @@ class CeleryConfig:
             'generate_sitemap': {
                 'task': 'scripts.generate_sitemap',
                 'schedule': crontab(minute=0, hour=5),  # Daily 12:00 a.m.
+            },
+            'generate_prereg_csv': {
+                'task': 'scripts.generate_prereg_csv',
+                'schedule': crontab(minute=0, hour=10, day_of_week=0),  # Sunday 5:00 a.m.
             },
         }
 
