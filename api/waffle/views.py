@@ -66,9 +66,9 @@ class WaffleList(JSONAPIBaseView, generics.ListAPIView):
     def get_queryset(self):
         query_params = self.request.query_params
         if query_params:
-            flags = Flag.objects.filter(name__in=query_params.get('flags', '').split(','))
-            switches = Switch.objects.filter(name__in=query_params.get('switches', '').split(','))
-            samples = Sample.objects.filter(name__in=query_params.get('samples', '').split(','))
+            flags = Flag.objects.filter(name__in=query_params['flags'].split(',')) if 'flags' in query_params else []
+            switches = Switch.objects.filter(name__in=query_params['switches'].split(',')) if 'switches' in query_params else []
+            samples = Sample.objects.filter(name__in=query_params['samples'].split(',')) if 'samples' in query_params else []
             return list(chain(flags, switches, samples))
         else:
             return list(chain(Flag.objects.all(), Switch.objects.all(), Sample.objects.all()))
