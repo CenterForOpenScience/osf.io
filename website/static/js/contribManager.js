@@ -37,7 +37,7 @@ ko.bindingHandlers.filters = {
 
 // TODO: We shouldn't need both pageOwner (the current user) and currentUserCanEdit. Separate
 // out the permissions-related functions and remove currentUserCanEdit.
-var ContributorModel = function(contributor, currentUserCanEdit, pageOwner, isRegistration, isAdmin, index, options, contribShouter, changeShouter) {
+var ContributorModel = function(contributor, currentUserCanEdit, pageOwner, isRegistration, isParentAdmin, index, options, contribShouter, changeShouter) {
 
     var self = this;
     self.options = options;
@@ -91,7 +91,8 @@ var ContributorModel = function(contributor, currentUserCanEdit, pageOwner, isRe
     };
 
     self.currentUserCanEdit = currentUserCanEdit;
-    self.isAdmin = isAdmin;
+    // User is an admin on the parent project
+    self.isParentAdmin = isParentAdmin;
 
     self.deleteStaged = ko.observable(false);
 
@@ -107,7 +108,7 @@ var ContributorModel = function(contributor, currentUserCanEdit, pageOwner, isRe
     };
 
     self.canEdit = ko.computed(function() {
-        return self.currentUserCanEdit && !self.isAdmin;
+        return self.currentUserCanEdit && !self.isParentAdmin;
     });
 
     self.remove = function() {
@@ -153,11 +154,11 @@ var ContributorModel = function(contributor, currentUserCanEdit, pageOwner, isRe
     self.profileUrl = ko.observable(contributor.url);
 
     self.canRemove = ko.computed(function(){
-        return (self.id === pageOwner.id) && !isRegistration && !self.isAdmin;
+        return (self.id === pageOwner.id) && !isRegistration && !self.isParentAdmin;
     });
 
     self.canAddAdminContrib = ko.computed(function() {
-        return self.currentUserCanEdit && self.isAdmin;
+        return self.currentUserCanEdit && self.isParentAdmin;
     });
 
     self.isDirty = ko.pureComputed(function() {

@@ -259,7 +259,7 @@
             <div class="td-content" data-bind="visible: !$root.collapsed() || contributor.expanded()">
                 <input
                     type="checkbox" class="biblio visible-filter"
-                    data-bind="checked: visible, enable: $data.canEdit() && !contributor.isAdmin && !deleteStaged()"
+                    data-bind="checked: visible, enable: $data.canEdit() && !contributor.isParentAdmin && !deleteStaged()"
                 />
             </div>
         </td>
