@@ -119,7 +119,7 @@ var ContributorModel = function(contributor, currentUserCanEdit, pageOwner, isRe
     self.addParentAdmin = function() {
         // Immediately adds parent admin to the component with permissions=read and visible=True
         $osf.block();
-        var userData = JSON.parse(ko.toJSON(self));
+        var userData = self.serialize();
         userData.permission = 'read'; // default permission read
         userData.visible = true; // default visible is true
         return $osf.postJSON(
