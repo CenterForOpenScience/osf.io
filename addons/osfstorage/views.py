@@ -17,6 +17,7 @@ from framework.auth.decorators import must_be_signed
 
 from osf.exceptions import InvalidTagError, TagNotFoundError
 from osf.models import FileVersion, OSFUser
+from osf.utils.requests import check_select_for_update
 from website.project.decorators import (
     must_not_be_registration, must_have_addon, must_have_permission
 )
@@ -43,13 +44,48 @@ def make_error(code, message_short=None, message_long=None):
 @must_be_signed
 @must_have_addon('osfstorage', 'node')
 def osfstorage_update_metadata(node_addon, payload, **kwargs):
+    """Metadata received from WaterButler, is built incrementally via latent task calls to this endpoint.
+
+    The basic metadata response looks like::
+
+        {
+            "metadata": {
+                # file upload
+                "name": "file.name",
+                "md5": "d41d8cd98f00b204e9800998ecf8427e",
+                "path": "...",
+                "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+                "version": "2",
+                "downloads": "1",
+                "checkout": "...",
+                "modified": "a date",
+                "modified_utc": "a date in utc",
+
+                # glacier vault
+                "archive": "glacier_key",
+                "vault": "glacier_vault_name",
+
+                # parity files
+                "parity": {
+                    "redundancy": "5",
+                    "files": [
+                        {"name": "foo.txt.par2","sha256": "abc123"},
+                        {"name": "foo.txt.vol00+01.par2","sha256": "xyz321"},
+                    ]
+                }
+            },
+        }
+    """
     try:
         version_id = payload['version']
         metadata = payload['metadata']
     except KeyError:
         raise HTTPError(httplib.BAD_REQUEST)
 
-    version = FileVersion.load(version_id)
+    if check_select_for_update():
+        version = FileVersion.objects.filter(_id=version_id).select_for_update().first()
+    else:
+        version = FileVersion.objects.filter(_id=version_id).first()
 
     if version is None:
         raise HTTPError(httplib.NOT_FOUND)
