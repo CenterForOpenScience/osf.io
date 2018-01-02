@@ -120,11 +120,12 @@ var ContributorModel = function(contributor, currentUserCanEdit, pageOwner, isRe
     self.addParentAdmin = function() {
         // Immediately adds parent admin to the component with permissions=read and visible=True
         $osf.block();
+        var url = '/api/v1/project/' + window.contextVars.node.id + '/contributors/';
         var userData = self.serialize();
         userData.permission = 'read'; // default permission read
         userData.visible = true; // default visible is true
         return $osf.postJSON(
-            '/api/v1/project/' + window.contextVars.node.id + '/contributors/',
+            url,
             {users: [userData], node_ids: []}
         ).done(function(response) {
             window.location.reload();
