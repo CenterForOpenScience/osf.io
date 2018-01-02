@@ -1360,4 +1360,5 @@ def test_archiver_uncaught_error_mail_renders():
         user=user,
         src=src,
         results=job.target_addons.all(),
+        url=settings.INTERNAL_DOMAIN + src._id,
     )

@@ -1,10 +1,6 @@
 from django.apps import apps
 
-from guardian.shortcuts import get_objects_for_user
-
 from api.addons.views import AddonSettingsMixin
-from api.actions.views import get_actions_queryset
-from api.actions.serializers import ActionSerializer
 from api.base import permissions as base_permissions
 from api.base.exceptions import Conflict, UserGone
 from api.base.filters import ListFilterMixin, PreprintFilterMixin
@@ -40,10 +36,8 @@ from osf.models import (Contributor,
                         AbstractNode,
                         PreprintService,
                         Node,
-                        OSFUser,
                         Registration,
-                        PreprintProvider,
-                        Action,)
+                        OSFUser)
 
 
 class UserMixin(object):
@@ -790,68 +784,3 @@ class UserInstitutionsRelationship(JSONAPIBaseView, generics.RetrieveDestroyAPIV
             if val['id'] in current_institutions:
                 user.remove_institution(val['id'])
         user.save()
-
-
-class UserActionList(JSONAPIBaseView, generics.ListAPIView, ListFilterMixin, UserMixin):
-    """List of actions viewable by this user *Read-only*
-
-    Actions represent state changes and/or comments on a reviewable object (e.g. a preprint)
-
-    ##Action Attributes
-
-        name                            type                                description
-        ====================================================================================
-        date_created                    iso8601 timestamp                   timestamp that the action was created
-        date_modified                   iso8601 timestamp                   timestamp that the action was last modified
-        from_state                      string                              state of the reviewable before this action was created
-        to_state                        string                              state of the reviewable after this action was created
-        comment                         string                              comment explaining the state change
-        trigger                         string                              name of the trigger for this action
-
-    ##Relationships
-
-    ###Target
-    Link to the object (e.g. preprint) this action acts on
-
-    ###Provider
-    Link to detail for the target object's provider
-
-    ###Creator
-    Link to the user that created this action
-
-    ##Links
-    - `self` -- Detail page for the current action
-
-    ##Query Params
-
-    + `page=<Int>` -- page number of results to view, default 1
-
-    + `filter[<fieldname>]=<Str>` -- fields and values to filter the search results on.
-
-    Actions may be filtered by their `id`, `from_state`, `to_state`, `date_created`, `date_modified`, `creator`, `provider`, `target`
-    """
-    # Permissions handled in get_default_django_query
-    permission_classes = (
-        drf_permissions.IsAuthenticated,
-        base_permissions.TokenHasScope,
-        CurrentUser,
-    )
-
-    required_read_scopes = [CoreScopes.ACTIONS_READ]
-    required_write_scopes = [CoreScopes.NULL]
-
-    serializer_class = ActionSerializer
-    model_class = Action
-
-    ordering = ('-created',)
-    view_category = 'users'
-    view_name = 'user-action-list'
-
-    # overrides ListFilterMixin
-    def get_default_queryset(self):
-        provider_queryset = get_objects_for_user(self.get_user(), 'view_actions', PreprintProvider)
-        return get_actions_queryset().filter(target__node__is_public=True, target__provider__in=provider_queryset)
-
-    # overrides ListAPIView
-    def get_queryset(self):
-        return self.get_queryset_from_request()

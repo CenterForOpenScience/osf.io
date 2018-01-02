@@ -1,3 +1,4 @@
+import mock
 import pytest
 from website import settings
 from django.utils import timezone
@@ -57,7 +58,8 @@ class TestPreregReminder:
 
         assert QueuedMail.objects.filter(email_type=PREREG_REMINDER_TYPE).count() == 0
 
-    def test_dont_trigger_prereg_reminder_draft_submitted(self, user, draft):
+    @mock.patch('website.archiver.tasks.archive')
+    def test_dont_trigger_prereg_reminder_draft_submitted(self, mock_archive, user, draft):
         draft.register(Auth(user))
         draft.save()
         main(dry_run=False)
