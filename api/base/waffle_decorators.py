@@ -11,15 +11,15 @@ def waffle_feature_is_active(request, instance_type, instance_name):
     :return: Boolean. Is the flag/switch/or sample active?
     """
     waffle_map = {
-        'Flag': {
+        'flag': {
             'waffle_func': waffle.flag_is_active,
             'waffle_args': (request, instance_name)
         },
-        'Switch': {
+        'switch': {
             'waffle_func': waffle.switch_is_active,
             'waffle_args': (instance_name,)
         },
-        'Sample': {
+        'sample': {
             'waffle_func': waffle.sample_is_active,
             'waffle_args': (instance_name,)
         }
@@ -31,7 +31,7 @@ def require_flag(flag_name):
     Decorator to check whether waffle flag is active. If inactive, raises NotFound.
     """
     def wrapper(fn):
-        return check_waffle_object(fn, 'Flag', flag_name)
+        return check_waffle_object(fn, 'flag', flag_name)
     return wrapper
 
 def require_switch(switch_name):
@@ -39,7 +39,7 @@ def require_switch(switch_name):
     Decorator to check whether waffle switch is active. If inactive, raises NotFound.
     """
     def wrapper(fn):
-        return check_waffle_object(fn, 'Switch', switch_name)
+        return check_waffle_object(fn, 'switch', switch_name)
     return wrapper
 
 def require_sample(sample_name):
@@ -47,7 +47,7 @@ def require_sample(sample_name):
     Decorator to check whether waffle sample is active. If inactive, raises NotFound.
     """
     def wrapper(fn):
-        return check_waffle_object(fn, 'Sample', sample_name)
+        return check_waffle_object(fn, 'sample', sample_name)
     return wrapper
 
 def check_waffle_object(fn, instance_type, instance_name):

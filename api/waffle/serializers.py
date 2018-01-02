@@ -14,7 +14,7 @@ class WaffleSerializer(JSONAPISerializer):
         """
         Use waffle_feature_is_active helper to determine if waffle flag, sample, or switch is active
         """
-        return waffle_feature_is_active(self.context.get('request'), type(obj).__name__, obj.name)
+        return waffle_feature_is_active(self.context.get('request'), type(obj).__name__.lower(), obj.name)
 
     def get_id(self, obj):
         return '{}_{}'.format(type(obj).__name__.lower(), obj.id)
