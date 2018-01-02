@@ -26,7 +26,7 @@ bcrypt==3.1.4
 python-dateutil==2.6.1
 python-gnupg==0.4.1
 pytz==2017.3
-bleach==1.4.1
+bleach==2.1.1
 html5lib==0.999999999
 blinker==1.4
 furl==0.4.92
