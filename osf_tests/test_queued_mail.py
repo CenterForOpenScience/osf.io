@@ -20,7 +20,6 @@ def user():
     return UserFactory(is_registered=True)
 
 @pytest.mark.django_db
-@pytest.mark.skip  # Temp skip OSf-9095
 class TestQueuedMail:
 
     @pytest.fixture()
@@ -167,9 +166,9 @@ class TestQueuedMail:
         mail = self.queue_mail(mail=PREREG_REMINDER, user=user, draft_id=prereg._id)
         assert not mail.send_mail()
 
-
+    @mock.patch('website.archiver.tasks.archive')
     @mock.patch('osf.models.queued_mail.send_mail')
-    def test_remind_prereg_presend_submitted(self, mock_mail, user, prereg):
+    def test_remind_prereg_presend_submitted(self, mock_mail, mock_archive, user, prereg):
         prereg.register(Auth(user))
         prereg.save()
 
@@ -182,5 +181,3 @@ class TestQueuedMail:
         prereg.deleted = timezone.now()
         prereg.save()
         assert not mail.send_mail()
-
-
