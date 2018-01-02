@@ -86,7 +86,7 @@ module.exports = {
         cloudfiles:{
             authError: 'Could not connect to Cloud Files at this time. Please try again later.',
             userSettingsError: 'Could not retrieve settings. Please refresh the page or ' +
-                'contact ' + SUPPORT_LINK + ' if the problem persists.',
+                'contact ' + $osf.osfSupportLink() + ' if the problem persists.',
         },
         googledrive: {
           // Shown on clicking "Delete Access Token" for googledrive
