@@ -2,17 +2,18 @@
 # -*- coding: utf-8 -*-
 '''Migration script for Search-enabled Models.'''
 from __future__ import absolute_import
+from math import ceil
 
 import logging
 
-from django.db.models import Q
-from django.utils import timezone
+from django.db import connection
 from elasticsearch import helpers
 
 import website.search.search as search
-from framework.database import paginated
+from website.search.elastic_search import client
+from website.search_migration import JSON_UPDATE_NODES_SQL, JSON_UPDATE_FILES_SQL, JSON_UPDATE_USERS_SQL
 from scripts import utils as script_utils
-from osf.models import OSFUser, Institution, AbstractNode
+from osf.models import OSFUser, Institution, AbstractNode, BaseFileNode
 from website import settings
 from website.app import init_app
 from website.search.elastic_search import client as es_client
@@ -20,35 +21,78 @@ from website.search.search import update_institution
 
 logger = logging.getLogger(__name__)
 
-def migrate_nodes(index, query=None):
+def sql_migrate(index, sql, max_id, increment, **kwargs):
+    """ Run provided SQL and send output to elastic.
+
+    :param str index: Elastic index to update (formatted into `sql`)
+    :param str sql: SQL to format and run. See __init__.py in this module
+    :param int max_id: Last known object id. Indicates when to stop paging
+    :param int increment: Page size
+    :kwargs: Additional format arguments for `sql` arg
+
+    :return int: Number of migrated objects
+    """
+    total_pages = int(ceil(max_id / float(increment)))
+    total_objs = 0
+    page_start = 0
+    page_end = 0
+    page = 0
+    while page_end <= (max_id + increment):
+        page += 1
+        page_end += increment
+        if page <= total_pages:
+            logger.info('Updating page {} / {}'.format(page_end / increment, total_pages))
+        else:
+            # An extra page is included to cover the edge case where:
+            #       max_id == (total_pages * increment) - 1
+            # and two additional objects are created during runtime.
+            logger.info('Cleaning up...')
+        with connection.cursor() as cursor:
+            cursor.execute(sql.format(
+                index=index,
+                page_start=page_start,
+                page_end=page_end,
+                **kwargs))
+            ser_objs = cursor.fetchone()[0]
+            if ser_objs:
+                total_objs += len(ser_objs)
+                helpers.bulk(client(), ser_objs)
+        page_start = page_end
+    return total_objs
+
+def migrate_nodes(index, increment=10000):
     logger.info('Migrating nodes to index: {}'.format(index))
-    node_query = Q(is_public=True, is_deleted=False)
-    if query:
-        node_query = query & node_query
-    total = AbstractNode.objects.filter(node_query).count()
-    increment = 100
-    total_pages = (total // increment) + 1
-    pages = paginated(AbstractNode, query=node_query, increment=increment, each=False, include=['contributor__user__guids'])
+    max_nid = AbstractNode.objects.last().id
+    total_nodes = sql_migrate(
+        index,
+        JSON_UPDATE_NODES_SQL,
+        max_nid,
+        increment,
+        spam_flagged_removed_from_search=settings.SPAM_FLAGGED_REMOVE_FROM_SEARCH)
+    logger.info('{} nodes migrated'.format(total_nodes))
 
-    for page_number, page in enumerate(pages):
-        logger.info('Updating page {} / {}'.format(page_number + 1, total_pages))
-        AbstractNode.bulk_update_search(page, index=index)
+def migrate_files(index, increment=10000):
+    logger.info('Migrating files to index: {}'.format(index))
+    max_fid = BaseFileNode.objects.last().id
+    total_files = sql_migrate(
+        index,
+        JSON_UPDATE_FILES_SQL,
+        max_fid,
+        increment,
+        spam_flagged_removed_from_search=settings.SPAM_FLAGGED_REMOVE_FROM_SEARCH)
+    logger.info('{} files migrated'.format(total_files))
 
-    logger.info('Nodes migrated: {}'.format(total))
 
-
-def migrate_users(index):
+def migrate_users(index, increment=10000):
     logger.info('Migrating users to index: {}'.format(index))
-    n_migr = 0
-    n_iter = 0
-    users = paginated(OSFUser, query=None, each=True)
-    for user in users:
-        if user.is_active:
-            search.update_user(user, index=index)
-            n_migr += 1
-        n_iter += 1
+    max_uid = OSFUser.objects.last().id
+    total_users = sql_migrate(
+        index,
+        JSON_UPDATE_USERS_SQL,
+        max_uid,
+        increment)
+    logger.info('{} users migrated'.format(total_users))
 
-    logger.info('Users iterated: {0}\nUsers migrated: {1}'.format(n_iter, n_migr))
 
 def migrate_institutions(index):
     for inst in Institution.objects.filter(is_deleted=False):
@@ -66,17 +110,14 @@ def migrate(delete, index=None, app=None):
     ctx.push()
 
     new_index = set_up_index(index)
-    start_time = timezone.now()
 
     if settings.ENABLE_INSTITUTIONS:
         migrate_institutions(new_index)
     migrate_nodes(new_index)
+    migrate_files(new_index)
     migrate_users(new_index)
 
     set_up_alias(index, new_index)
-
-    # migrate nodes modified since start
-    migrate_nodes(new_index, query=Q(modified__gte=start_time))
 
     if delete:
         delete_old(new_index)
