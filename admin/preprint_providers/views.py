@@ -354,7 +354,7 @@ class ShareSourcePreprintProvider(PermissionRequiredMixin, View):
             raise ValueError('SHARE_API_TOKEN or SHARE_URL not set')
 
         debug_prepend = ''
-        if osf_settings.DEBUG_MODE:
+        if osf_settings.DEBUG_MODE or osf_settings.SHARE_PREPRINT_PROVIDER_PREPEND:
             assert osf_settings.SHARE_PREPRINT_PROVIDER_PREPEND, 'Local SHARE_PREPRINT_PROVIDER_PREPEND (e.g., \'alexschiller\') must be set when in DEBUG_MODE'
             debug_prepend = '{}_'.format(osf_settings.SHARE_PREPRINT_PROVIDER_PREPEND)
 
