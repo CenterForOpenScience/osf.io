@@ -2,6 +2,7 @@ from __future__ import unicode_literals
 
 import json
 import requests
+import urlparse
 
 from django.core import serializers
 from django.core.urlresolvers import reverse_lazy
@@ -12,6 +13,7 @@ from django.contrib.auth.mixins import PermissionRequiredMixin
 from django.forms.models import model_to_dict
 from django.shortcuts import redirect
 
+from website import settings as web_settings
 from admin.base import settings
 from admin.base.forms import ImportFileForm
 from admin.preprint_providers.forms import PreprintProviderForm, PreprintProviderCustomTaxonomyForm
@@ -21,7 +23,7 @@ from website import settings as osf_settings
 
 # When preprint_providers exclusively use Subject relations for creation, set this to False
 SHOW_TAXONOMIES_IN_PREPRINT_PROVIDER_CREATE = True
-FIELDS_TO_NOT_IMPORT_EXPORT = ['access_token', 'share_source']
+FIELDS_TO_NOT_IMPORT_EXPORT = ['access_token', 'share_source', 'subjects_acceptable', '_id']
 
 
 class PreprintProviderList(PermissionRequiredMixin, ListView):
@@ -43,7 +45,6 @@ class PreprintProviderList(PermissionRequiredMixin, ListView):
         return {
             'preprint_providers': query_set,
             'page': page,
-            'logohost': settings.OSF_URL
         }
 
 
@@ -125,10 +126,11 @@ class PreprintProviderDisplay(PermissionRequiredMixin, DetailView):
 
         subject_html += '</ul>'
         preprint_provider_attributes['subjects_acceptable'] = subject_html
+        preprint_provider_attributes['lower_name'] = preprint_provider._id
 
         kwargs['preprint_provider'] = preprint_provider_attributes
         kwargs['subject_ids'] = list(subject_ids)
-        kwargs['logohost'] = settings.OSF_URL
+        kwargs['logohost'] = urlparse.urljoin(web_settings.DOMAIN, web_settings.PREPRINTS_ASSETS)
         fields = model_to_dict(preprint_provider)
         fields['toplevel_subjects'] = list(subject_ids)
         fields['subjects_chosen'] = ', '.join(str(i) for i in subject_ids)
@@ -188,23 +190,30 @@ class ProcessCustomTaxonomy(PermissionRequiredMixin, View):
                 if request.is_ajax():
                     # An ajax request is for validation only, so run that validation!
                     try:
-                        response_data = validate_input(custom_provider=provider, data=taxonomy_json)
+                        response_data = validate_input(custom_provider=provider, data=taxonomy_json, add_missing=provider_form.cleaned_data['add_missing'])
+                        if response_data:
+                            added_subjects = [subject.text for subject in response_data]
+                            response_data = {'message': 'Custom taxonomy validated with added subjects: {}'.format(added_subjects), 'feedback_type': 'success'}
                     except (RuntimeError, AssertionError) as script_feedback:
                         response_data = {'message': script_feedback.message, 'feedback_type': 'error'}
                     if not response_data:
                         response_data = {'message': 'Custom taxonomy validated!', 'feedback_type': 'success'}
                 else:
                     # Actually do the migration of the custom taxonomies
-                    migrate(provider=provider._id, data=taxonomy_json)
+                    migrate(provider=provider._id, data=taxonomy_json, add_missing=provider_form.cleaned_data['add_missing'])
                     return redirect('preprint_providers:detail', preprint_provider_id=provider.id)
-
-            except ValueError as error:
+            except (ValueError, RuntimeError) as error:
                 response_data = {
-                    'message': 'There is an error with the submitted JSON. Here are some details: ' + error.message,
+                    'message': 'There is an error with the submitted JSON or the provider. Here are some details: ' + error.message,
                     'feedback_type': 'error'
                 }
-            # Return a JsonResponse with the JSON error or the validation error if it's not doing an actual migration
-            return JsonResponse(response_data)
+        else:
+            response_data = {
+                'message': 'There is a problem with the form. Here are some details: ' + unicode(provider_form.errors),
+                'feedback_type': 'error'
+            }
+        # Return a JsonResponse with the JSON error or the validation error if it's not doing an actual migration
+        return JsonResponse(response_data)
 
 class ExportPreprintProvider(PermissionRequiredMixin, View):
     permission_required = 'osf.change_preprintprovider'

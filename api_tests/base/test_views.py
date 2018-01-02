@@ -108,7 +108,8 @@ class TestStatusView(ApiTestCase):
         url = '/{}status/'.format(API_BASE)
         res = self.app.get(url)
         assert_equal(res.status_code, 200)
-        assert_equal(res.json, {'maintenance': None})
+        assert_in('maintenance', res.json)
+        assert_equal(res.json['maintenance'], None)
 
     def test_status_view_with_maintenance(self):
         maintenance.set_maintenance(message='test')

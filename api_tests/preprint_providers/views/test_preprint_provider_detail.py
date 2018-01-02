@@ -1,11 +1,12 @@
 import pytest
 
 from api.base.settings.defaults import API_BASE
+from api.preprint_providers.permissions import GroupHelper
 from osf_tests.factories import (
     PreprintProviderFactory,
     AuthUserFactory,
+    SubjectFactory,
 )
-from reviews.permissions import GroupHelper
 
 @pytest.mark.django_db
 class TestPreprintProviderExists:
@@ -14,6 +15,10 @@ class TestPreprintProviderExists:
 
     @pytest.fixture()
     def preprint_provider(self):
+        return PreprintProviderFactory()
+
+    @pytest.fixture()
+    def preprint_provider_two(self):
         return PreprintProviderFactory()
 
     @pytest.fixture()
@@ -49,6 +54,22 @@ class TestPreprintProviderExists:
 
         taxonomies_res = app.get('{}taxonomies/'.format(fake_url), expect_errors=True)
         assert taxonomies_res.status_code == 404
+
+    def test_has_highlighted_subjects_flag(self, app, preprint_provider, preprint_provider_two, provider_url):
+        subj_a = SubjectFactory(provider=preprint_provider, text='A', highlighted=True)
+        subj_b = SubjectFactory(provider=preprint_provider_two, text='B')
+
+        res = app.get(provider_url)
+        assert res.status_code == 200
+        res_subjects = res.json['data']['relationships']['highlighted_taxonomies']
+        assert res_subjects['links']['related']['meta']['has_highlighted_subjects'] is True
+
+        url_provider_two = '/{}preprint_providers/{}/'.format(API_BASE, preprint_provider_two._id)
+        res = app.get(url_provider_two)
+        assert res.status_code == 200
+        res_subjects = res.json['data']['relationships']['highlighted_taxonomies']
+        assert res_subjects['links']['related']['meta']['has_highlighted_subjects'] is False
+
 
 @pytest.mark.django_db
 class TestPreprintProviderUpdate:

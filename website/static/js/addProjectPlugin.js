@@ -288,22 +288,33 @@ var AddProject = {
                             ctrl.options.parentID !== null ? [
                                 m('label.f-w-lg.text-bigger','Category'),
                                 m('i', ' (for descriptive purposes)'),
-                                m('select.form-control', {
-                                    onchange : function(event) {
-                                        ctrl.newProjectCategory(this.value);
-                                        $osf.trackClick(options.trackingCategory, options.trackingAction, 'select-project-category');
-                                    }},
-                                    [
+                                m('div.dropdown.dropup.generic-dropdown.category-list', [
+                                    m('button[data-toggle="dropdown"]', {
+                                        className: 'btn btn-default dropdown-toggle',
+                                        type: 'button'
+                                      }, [
+                                        m('i', { className : mHelpers.getIcon(ctrl.newProjectCategory()) }),
+                                        m('span.text-capitalize', ctrl.newProjectCategory() || 'Uncategorized'),
+                                        m('i.fa.fa-sort')
+                                      ]),
+                                    m('ul.dropdown-menu', [
                                         mHelpers.unwrap(ctrl.options.categoryList).map(function(cat){
-                                            return m('option', {
-                                                type: 'option',
-                                                name: 'projectCategory',
-                                                value: cat.value,
-                                                selected: ctrl.newProjectCategory() === cat.value
-                                            }, cat.display_name|| m('i.text-muted', '(Empty category)'));
-
+                                            return m('li',
+                                                m('a', {
+                                                        onclick : function(){
+                                                              ctrl.newProjectCategory(cat.value);
+                                                              $osf.trackClick(options.trackingCategory, options.trackingAction, 'select-project-category');
+                                                            }
+                                                  }, [
+                                                    m('i', { className : mHelpers.getIcon(cat.value) }),
+                                                    m('span', cat.display_name || '(Empty category)')
+                                                  ]
+                                                )
+                                            );
                                         })
-                                    ])
+                                    ]),
+                                ])
+
                             ] : '',
                              ctrl.options.parentID === null ? m('.form-group.m-v-md', [
                                 m('label[for="projectTemplate].f-w-lg.text-bigger', 'Template (optional)'),

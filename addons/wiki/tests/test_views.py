@@ -5,6 +5,7 @@ import pytest
 from addons.wiki.exceptions import (NameInvalidError, NameMaximumLengthError,
      PageCannotRenameError, PageConflictError, PageNotFoundError)
 from addons.wiki.tests.factories import NodeWikiFactory
+from addons.wiki.utils import serialize_wiki_widget
 from framework.auth import Auth
 from osf.exceptions import ValidationError
 from osf.models import Guid
@@ -159,6 +160,27 @@ class TestUpdateNodeWiki(OsfTestCase):
         assert new_version_id in contributor.comments_viewed_timestamp
         assert wiki._id not in contributor.comments_viewed_timestamp
         assert comment.target.referent._id == new_version_id
+
+    # Regression test for https://openscience.atlassian.net/browse/OSF-8584
+    def test_no_read_more_when_less_than_400_character(self):
+        wiki_content = '1234567'
+        for x in range(39):
+            wiki_content += '1234567890'
+        assert len(wiki_content) == 397
+        project = ProjectFactory(creator=self.user)
+        project.update_node_wiki('home', wiki_content, self.auth)
+        res = serialize_wiki_widget(project)
+        assert not res['more']
+
+    def test_read_more_when_more_than_400_character(self):
+        wiki_content = ''
+        for x in range(1000):
+            wiki_content += 'a'
+        assert len(wiki_content) == 1000
+        project = ProjectFactory(creator=self.user)
+        project.update_node_wiki('home', wiki_content, self.auth)
+        res = serialize_wiki_widget(project)
+        assert res['more']
 
 
 class TestRenameNodeWiki(OsfTestCase):

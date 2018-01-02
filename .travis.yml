@@ -7,9 +7,8 @@ python:
 
 sudo: false
 
-# TODO: uncomment when https://github.com/travis-ci/travis-ci/issues/8836 is resolved
-# addons:
-#   chrome: stable
+addons:
+  chrome: stable
 
 cache:
   yarn: true
@@ -30,11 +29,11 @@ env:
     # - VARNISH_DEB="varnish_4.1.0-1~trusty_amd64.deb"
     - OSF_DB_PORT="54321"
   matrix:
-    - TEST_BUILD="osf"
+    - TEST_BUILD="addons"
     - TEST_BUILD="else"
     - TEST_BUILD="api1_and_js"
     - TEST_BUILD="api2"
-    - TEST_BUILD="api3"
+    - TEST_BUILD="api3_and_osf"
     # - TEST_BUILD="varnish"
 
 before_install:
