@@ -18,7 +18,8 @@ def user():
 
 @pytest.fixture()
 def all_identifiers():
-    return Identifier.objects.all()
+    # ark identifiers should not show up in identifier responses
+    return Identifier.objects.all().exclude(category='ark')
 
 @pytest.mark.django_db
 class TestRegistrationIdentifierList:
@@ -139,11 +140,15 @@ class TestNodeIdentifierList:
     def identifier_registration(self, registration):
         return IdentifierFactory(referent=registration)
 
+    @pytest.fixture()
+    def ark_identifier(self, node):
+        return IdentifierFactory(referent=node, category='ark')
+
     def test_identifier_list_success(self, res_node_identifiers):
         assert res_node_identifiers.status_code == 200
         assert res_node_identifiers.content_type == 'application/vnd.api+json'
 
-    def test_identifier_list_returns_correct_number_and_referent(self, node, identifier_node, res_node_identifiers, data_node_identifiers, all_identifiers):
+    def test_identifier_list_returns_correct_number_and_referent(self, node, identifier_node, ark_identifier, res_node_identifiers, data_node_identifiers, all_identifiers):
         # test_identifier_list_returns_correct_number
         total = res_node_identifiers.json['links']['meta']['total']
         assert total == all_identifiers.count()
@@ -226,7 +231,7 @@ class TestPreprintIdentifierList:
 
         # test_identifier_list_returns_correct_number
         total = res_preprint_identifier.json['links']['meta']['total']
-        assert total == Identifier.objects.filter(object_id=preprint.id).count()
+        assert total == Identifier.objects.filter(object_id=preprint.id).exclude(category='ark').count()
 
         # test_identifier_list_returns_correct_referent
         paths = [

@@ -23,7 +23,7 @@ Keep your research materials and data private, make it accessible to specific ot
 Create a permanent, time-stamped version of your projects and files.  Do this to preregister your design and analysis plan to conduct a confirmatory study, or archive your materials, data, and analysis scripts when publishing a report.<br>
 <br>
 <h4>Make your work citable</h4>
-Every project and file on the OSF has a permanent unique identifier, and every registration can be assigned a DOI/ARK.  Citations for public projects are generated automatically so that visitors can give you credit for your research.<br>
+Every project and file on the OSF has a permanent unique identifier, and every registration can be assigned a DOI.  Citations for public projects are generated automatically so that visitors can give you credit for your research.<br>
 <br>
 <h4>Measure your impact</h4>
 You can monitor traffic to your public projects and downloads of your public files.<br>
