@@ -24,6 +24,9 @@ class BaseWaffleSerializer(JSONAPISerializer):
     def get_id(self, obj):
         return '{}_{}'.format(self.get_type(obj), obj.id)
 
+    class Meta:
+        type_ = 'waffle'
+
 
 class FlagSerializer(BaseWaffleSerializer):
     class Meta:
