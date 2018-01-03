@@ -19,7 +19,7 @@ from rest_framework import serializers as ser
 from rest_framework.filters import OrderingFilter
 from osf.models import Subject, PreprintProvider, Node
 from osf.models.base import GuidMixin
-from reviews.workflow import States
+from osf.utils.workflows import DefaultStates
 
 
 def lowercase(lower):
@@ -220,10 +220,18 @@ class FilterMixin(object):
                         query.get(key).update({
                             field_name: self._parse_date_param(field, source_field_name, op, value)
                         })
-                    elif not isinstance(value, int) and (source_field_name in ['_id', 'root']):
+                    elif not isinstance(value, int) and source_field_name == '_id':
                         query.get(key).update({
                             field_name: {
                                 'op': 'in',
+                                'value': self.bulk_get_values(value, field),
+                                'source_field_name': source_field_name
+                            }
+                        })
+                    elif not isinstance(value, int) and source_field_name == 'root':
+                        query.get(key).update({
+                            field_name: {
+                                'op': op,
                                 'value': self.bulk_get_values(value, field),
                                 'source_field_name': source_field_name
                             }
@@ -356,6 +364,7 @@ class ListFilterMixin(FilterMixin):
 
         if filters:
             for key, field_names in filters.iteritems():
+
                 sub_query_parts = []
                 for field_name, data in field_names.iteritems():
                     operations = data if isinstance(data, list) else [data]
@@ -374,8 +383,8 @@ class ListFilterMixin(FilterMixin):
                     query_parts.append(sub_query)
 
             if not isinstance(queryset, list):
-                query = functools.reduce(operator.and_, query_parts)
-                queryset = queryset.filter(query)
+                for query in query_parts:
+                    queryset = queryset.filter(query)
 
         return queryset
 
@@ -504,11 +513,11 @@ class PreprintFilterMixin(ListFilterMixin):
             admin_user_query = Q(node__contributor__user_id=auth_user.id, node__contributor__admin=True)
             reviews_user_query = Q(node__is_public=True, provider__in=get_objects_for_user(auth_user, 'view_submissions', PreprintProvider))
             if allow_contribs:
-                contrib_user_query = ~Q(reviews_state=States.INITIAL.value) & Q(node__contributor__user_id=auth_user.id, node__contributor__read=True)
+                contrib_user_query = ~Q(machine_state=DefaultStates.INITIAL.value) & Q(node__contributor__user_id=auth_user.id, node__contributor__read=True)
                 query = (no_user_query | contrib_user_query | admin_user_query | reviews_user_query)
             else:
                 query = (no_user_query | admin_user_query | reviews_user_query)
         else:
             query = no_user_query
 
-        return base_queryset.annotate(default=Exists(sub_qs)).filter(Q(default=True) & query)
+        return base_queryset.annotate(default=Exists(sub_qs)).filter(Q(default=True) & query).distinct('id', 'created')

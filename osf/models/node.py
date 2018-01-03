@@ -27,7 +27,6 @@ from framework import status
 from framework.celery_tasks.handlers import enqueue_task
 from framework.exceptions import PermissionsError
 from framework.sentry import log_exception
-from reviews.workflow import States
 from addons.wiki.utils import to_mongo_key
 from osf.exceptions import ValidationValueError
 from osf.models.contributor import (Contributor, RecentlyAddedContributor,
@@ -48,6 +47,7 @@ from framework.auth.core import Auth, get_user
 from osf.utils.datetime_aware_jsonfield import DateTimeAwareJSONField
 from osf.utils.fields import NonNaiveDateTimeField
 from osf.utils.requests import DummyRequest, get_request_and_user_id
+from osf.utils.workflows import DefaultStates
 from website import language, settings
 from website.citations.utils import datetime_to_csl
 from website.exceptions import (InvalidTagError, NodeStateError,
@@ -448,7 +448,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
 
     @property
     def has_submitted_preprint(self):
-        return self.preprints.exclude(reviews_state=States.INITIAL.value).exists()
+        return self.preprints.exclude(machine_state=DefaultStates.INITIAL.value).exists()
 
     @property
     def is_preprint_orphan(self):
@@ -1818,11 +1818,12 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         return False
 
     # TODO: Optimize me (e.g. use bulk create)
-    def fork_node(self, auth, title=None):
+    def fork_node(self, auth, title=None, parent=None):
         """Recursively fork a node.
 
         :param Auth auth: Consolidated authorization
         :param str title: Optional text to prepend to forked title
+        :param Node parent: Sets parent, should only be non-null when recursing
         :return: Forked node
         """
         Registration = apps.get_model('osf.Registration')
@@ -1859,13 +1860,17 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         # Need to save here in order to access m2m fields
         forked.save()
 
+        if parent:
+            node_relation = NodeRelation.objects.get(parent=parent.forked_from, child=original)
+            NodeRelation.objects.get_or_create(_order=node_relation._order, parent=parent, child=forked)
+
         forked.tags.add(*self.all_tags.values_list('pk', flat=True))
         for node_relation in original.node_relations.filter(child__is_deleted=False):
             node_contained = node_relation.child
             # Fork child nodes
             if not node_relation.is_node_link:
                 try:  # Catch the potential PermissionsError above
-                    forked_node = node_contained.fork_node(auth=auth, title='')
+                    forked_node = node_contained.fork_node(auth=auth, title='', parent=forked)
                 except PermissionsError:
                     pass  # If this exception is thrown omit the node from the result set
                     forked_node = None
@@ -1956,15 +1961,18 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
             ]
             NodeLog.objects.bulk_create(logs_to_create)
 
-    def use_as_template(self, auth, changes=None, top_level=True):
+    def use_as_template(self, auth, changes=None, top_level=True, parent=None):
         """Create a new project, using an existing project as a template.
 
         :param auth: The user to be assigned as creator
         :param changes: A dictionary of changes, keyed by node id, which
                         override the attributes of the template project or its
                         children.
+        :param Bool top_level: indicates existence of parent TODO: deprecate
+        :param Node parent: parent template. Should only be passed in during recursion
         :return: The `Node` instance created.
         """
+        Registration = apps.get_model('osf.Registration')
         changes = changes or dict()
 
         # build the dict of attributes to change for the new node
@@ -1974,11 +1982,17 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         except (AttributeError, KeyError):
             attributes = dict()
 
-        # Non-contributors can't fork private nodes
+        if self.is_deleted:
+            raise NodeStateError('Cannot use deleted node as template.')
+
+        # Non-contributors can't template private nodes
         if not (self.is_public or self.has_permission(auth.user, 'read')):
             raise PermissionsError('{0!r} does not have permission to template node {1!r}'.format(auth.user, self._id))
 
         new = self.clone()
+        if isinstance(new, Registration):
+            new.recast('osf.node')
+
         new._is_templated_clone = True  # This attribute may be read in post_save handlers
 
         # Clear quasi-foreign fields
@@ -2038,22 +2052,23 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
             save=False,
         )
         new.save()
+
+        if parent:
+            node_relation = NodeRelation.objects.get(parent=parent.template_node, child=self)
+            NodeRelation.objects.get_or_create(_order=node_relation._order, parent=parent, child=new)
+
         # deal with the children of the node, if any
         for node_relation in self.node_relations.select_related('child').filter(child__is_deleted=False):
             node_contained = node_relation.child
             # template child nodes
             if not node_relation.is_node_link:
                 try:  # Catch the potential PermissionsError above
-                    templated_child = node_contained.use_as_template(auth, changes, top_level=False)
+                    node_contained.use_as_template(auth, changes, top_level=False, parent=new)
                 except PermissionsError:
                     pass
-                else:
-                    NodeRelation.objects.get_or_create(
-                        parent=new, child=templated_child,
-                        is_node_link=False
-                    )
-                    templated_child.save()  # Recompute root on save()
 
+        new.root = None
+        new.save()  # Recompute root on save()
         return new
 
     def next_descendants(self, auth, condition=lambda auth, node: True):
@@ -2384,7 +2399,12 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
             if not user.is_disabled:
                 user.disable_account()
                 user.is_registered = False
-                mails.send_mail(to_addr=user.username, mail=mails.SPAM_USER_BANNED, user=user)
+                mails.send_mail(
+                    to_addr=user.username,
+                    mail=mails.SPAM_USER_BANNED,
+                    user=user,
+                    osf_support_email=settings.OSF_SUPPORT_EMAIL
+                )
             user.save()
 
             # Make public nodes private from this contributor
@@ -2638,15 +2658,15 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
             self.is_public
         )
 
+    def admin_of_wiki(self, user):
+        return (
+            self.has_addon('wiki') and
+            self.has_permission(user, 'admin')
+        )
+
     def include_wiki_settings(self, user):
         """Check if node meets requirements to make publicly editable."""
-        return (
-            self.admin_public_wiki(user) or
-            any(
-                each.admin_public_wiki(user)
-                for each in self.get_descendants_recursive()
-            )
-        )
+        return self.get_descendants_recursive()
 
     def get_wiki_page(self, name=None, version=None, id=None):
         NodeWikiPage = apps.get_model('addons_wiki.NodeWikiPage')

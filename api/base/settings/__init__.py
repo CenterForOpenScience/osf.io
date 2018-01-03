@@ -34,3 +34,14 @@ def load_origins_whitelist():
     preprintprovider_origins = tuple(preprintprovider.domain.lower() for preprintprovider in PreprintProvider.objects.exclude(domain=''))
 
     ORIGINS_WHITELIST = tuple(urlparse(url).geturl().lower().split('{}://'.format(urlparse(url).scheme))[-1] for url in institution_origins + preprintprovider_origins)
+
+def build_latest_versions(version_data):
+    """Builds a dict with greatest version keyed for each major version"""
+    ret = {}
+    for version in reversed(version_data):
+        major_version = int(version.split('.')[0])
+        if major_version not in ret:
+            ret[major_version] = version
+    return ret
+
+LATEST_VERSIONS = build_latest_versions(REST_FRAMEWORK['ALLOWED_VERSIONS'])

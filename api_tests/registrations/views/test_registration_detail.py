@@ -4,14 +4,17 @@ from urlparse import urlparse
 from rest_framework import exceptions
 from api.base.settings.defaults import API_BASE
 from website.util import permissions
-from osf.models import Registration
+from osf.models import Registration, NodeLog
+from framework.auth import Auth
 from api.registrations.serializers import RegistrationSerializer, RegistrationDetailSerializer
 from osf_tests.factories import (
     ProjectFactory,
     RegistrationFactory,
     RegistrationApprovalFactory,
     AuthUserFactory,
+    WithdrawnRegistrationFactory,
 )
+from tests.utils import assert_latest_log
 
 @pytest.fixture()
 def user():
@@ -186,6 +189,7 @@ class TestRegistrationUpdate:
     def test_update_registration(self, app, user, read_only_contributor, read_write_contributor, public_registration, public_url, private_url, make_payload):
 
         private_registration_payload = make_payload()
+        non_contributor = AuthUserFactory()
 
     #   test_update_private_registration_logged_out
         res = app.put_json_api(private_url, private_registration_payload, expect_errors=True)
@@ -210,6 +214,10 @@ class TestRegistrationUpdate:
         res = app.put_json_api(public_url, public_to_private_payload, auth=user.auth, expect_errors=True)
         assert res.status_code == 400
         assert res.json['errors'][0]['detail'] == 'Registrations can only be turned from private to public.'
+
+        res = app.put_json_api(public_url, public_to_private_payload, auth=non_contributor.auth, expect_errors=True)
+        assert res.status_code == 403
+        assert res.json['errors'][0]['detail'] == 'You do not have permission to perform this action.'
 
     def test_fields(self, app, user, public_registration, private_registration, public_url, private_url, make_payload):
 
@@ -261,14 +269,14 @@ class TestRegistrationUpdate:
         assert private_registration.is_public
 
     def test_registration_fields_are_read_only(self):
-        writeable_fields = ['type', 'public', 'draft_registration', 'registration_choice', 'lift_embargo' ]
+        writeable_fields = ['type', 'public', 'draft_registration', 'registration_choice', 'lift_embargo', 'tags' ]
         for field in RegistrationSerializer._declared_fields:
             reg_field = RegistrationSerializer._declared_fields[field]
             if field not in writeable_fields:
                 assert getattr(reg_field, 'read_only', False) is True
 
     def test_registration_detail_fields_are_read_only(self):
-        writeable_fields = ['type', 'public', 'draft_registration', 'registration_choice', 'lift_embargo' ]
+        writeable_fields = ['type', 'public', 'draft_registration', 'registration_choice', 'lift_embargo', 'tags' ]
 
         for field in RegistrationDetailSerializer._declared_fields:
             reg_field = RegistrationSerializer._declared_fields[field]
@@ -289,3 +297,185 @@ class TestRegistrationUpdate:
         res = app.put_json_api(unapproved_url, unapproved_registration_payload, auth=user.auth, expect_errors=True)
         assert res.status_code == 400
         assert res.json['errors'][0]['detail'] == 'An unapproved registration cannot be made public.'
+
+
+@pytest.mark.django_db
+class TestRegistrationTags:
+
+    @pytest.fixture()
+    def user_admin(self):
+        return AuthUserFactory()
+
+    @pytest.fixture()
+    def user_read_contrib(self):
+        return AuthUserFactory()
+
+    @pytest.fixture()
+    def user_non_contrib(self):
+        return AuthUserFactory()
+
+    @pytest.fixture()
+    def project_public(self, user_admin, user_read_contrib):
+        project_public = ProjectFactory(title='Project One', is_public=True, creator=user_admin)
+        project_public.add_contributor(user_admin, permissions=permissions.CREATOR_PERMISSIONS, save=True)
+        project_public.add_contributor(user_read_contrib, permissions=permissions.DEFAULT_CONTRIBUTOR_PERMISSIONS, save=True)
+        return project_public
+
+    @pytest.fixture()
+    def registration_public(self, project_public, user_admin):
+        return RegistrationFactory(project=project_public, creator=user_admin, is_public=True)
+
+    @pytest.fixture()
+    def registration_private(self, project_public, user_admin):
+        return RegistrationFactory(project=project_public, creator=user_admin, is_public=False)
+
+    @pytest.fixture()
+    def registration_withdrawn(self, project_public, user_admin):
+        return RegistrationFactory(project=project_public, creator=user_admin, is_public=True)
+
+    @pytest.fixture()
+    def withdrawn_registration(self, registration_withdrawn, user_admin):
+        registration_withdrawn.add_tag('existing-tag', auth=Auth(user=user_admin))
+        registration_withdrawn.save()
+        withdrawn_registration = WithdrawnRegistrationFactory(registration=registration_withdrawn, user=user_admin)
+        withdrawn_registration.justification = 'We made a major error.'
+        withdrawn_registration.save()
+        return withdrawn_registration
+
+    @pytest.fixture()
+    def url_registration_public(self, registration_public):
+        return '/{}registrations/{}/'.format(API_BASE, registration_public._id)
+
+    @pytest.fixture()
+    def url_registration_private(self, registration_private):
+        return '/{}registrations/{}/'.format(API_BASE, registration_private._id)
+
+    @pytest.fixture()
+    def url_registration_withdrawn(self, registration_withdrawn, withdrawn_registration):
+        return '/{}registrations/{}/'.format(API_BASE, registration_withdrawn._id)
+
+    @pytest.fixture()
+    def new_tag_payload_public(self, registration_public):
+        return {
+            'data': {
+                'id': registration_public._id,
+                'type': 'registrations',
+                'attributes': {
+                    'tags': ['new-tag'],
+                }
+            }
+        }
+
+    @pytest.fixture()
+    def new_tag_payload_private(self, registration_private):
+        return {
+            'data': {
+                'id': registration_private._id,
+                'type': 'registrations',
+                'attributes': {
+                    'tags': ['new-tag'],
+                }
+            }
+        }
+
+    @pytest.fixture()
+    def new_tag_payload_withdrawn(self, registration_withdrawn):
+        return {
+            'data': {
+                'id': registration_withdrawn._id,
+                'type': 'registrations',
+                'attributes': {
+                    'tags': ['new-tag', 'existing-tag'],
+                }
+            }
+        }
+
+    def test_registration_tags(self, app, registration_public, registration_private, url_registration_public, url_registration_private, new_tag_payload_public, new_tag_payload_private, user_admin, user_non_contrib):
+        # test_registration_starts_with_no_tags
+        res = app.get(url_registration_public)
+        assert res.status_code == 200
+        assert len(res.json['data']['attributes']['tags']) == 0
+
+        # test_registration_does_not_expose_system_tags
+        registration_public.add_system_tag('systag', save=True)
+        res = app.get(url_registration_public)
+        assert res.status_code == 200
+        assert len(res.json['data']['attributes']['tags']) == 0
+
+        # test_contributor_can_add_tag_to_public_registration
+        with assert_latest_log(NodeLog.TAG_ADDED, registration_public):
+            res = app.patch_json_api(url_registration_public, new_tag_payload_public, auth=user_admin.auth)
+            assert res.status_code == 200
+            # Ensure data is correct from the PATCH response
+            assert len(res.json['data']['attributes']['tags']) == 1
+            assert res.json['data']['attributes']['tags'][0] == 'new-tag'
+            # Ensure data is correct in the database
+            registration_public.reload()
+            assert registration_public.tags.count() == 1
+            assert registration_public.tags.first()._id == 'new-tag'
+            # Ensure data is correct when GETting the resource again
+            reload_res = app.get(url_registration_public)
+            assert len(reload_res.json['data']['attributes']['tags']) == 1
+            assert reload_res.json['data']['attributes']['tags'][0] == 'new-tag'
+
+        # test_contributor_can_add_tag_to_private_registration
+        with assert_latest_log(NodeLog.TAG_ADDED, registration_private):
+            res = app.patch_json_api(url_registration_private, new_tag_payload_private, auth=user_admin.auth)
+            assert res.status_code == 200
+            # Ensure data is correct from the PATCH response
+            assert len(res.json['data']['attributes']['tags']) == 1
+            assert res.json['data']['attributes']['tags'][0] == 'new-tag'
+            # Ensure data is correct in the database
+            registration_private.reload()
+            assert registration_private.tags.count() == 1
+            assert registration_private.tags.first()._id == 'new-tag'
+            # Ensure data is correct when GETting the resource again
+            reload_res = app.get(url_registration_private, auth=user_admin.auth)
+            assert len(reload_res.json['data']['attributes']['tags']) == 1
+            assert reload_res.json['data']['attributes']['tags'][0] == 'new-tag'
+
+        # test_non_contributor_cannot_add_tag_to_registration
+        res = app.patch_json_api(url_registration_public, new_tag_payload_public, expect_errors=True, auth=user_non_contrib.auth)
+        assert res.status_code == 403
+
+        # test_partial_update_registration_does_not_clear_tagsb
+        new_payload = {
+            'data': {
+                'id': registration_private._id,
+                'type': 'registrations',
+                'attributes': {
+                    'public': True
+                }
+            }
+        }
+        res = app.patch_json_api(url_registration_private, new_payload, auth=user_admin.auth)
+        assert res.status_code == 200
+        assert len(res.json['data']['attributes']['tags']) == 1
+
+    def test_tags_add_and_remove_properly(self, app, user_admin, registration_public, new_tag_payload_public, url_registration_public):
+        with assert_latest_log(NodeLog.TAG_ADDED, registration_public):
+            res = app.patch_json_api(url_registration_public, new_tag_payload_public, auth=user_admin.auth)
+            assert res.status_code == 200
+            # Ensure adding tag data is correct from the PATCH response
+            assert len(res.json['data']['attributes']['tags']) == 1
+            assert res.json['data']['attributes']['tags'][0] == 'new-tag'
+        with assert_latest_log(NodeLog.TAG_REMOVED, registration_public), assert_latest_log(NodeLog.TAG_ADDED, registration_public, 1):
+            # Ensure removing and adding tag data is correct from the PATCH response
+            res = app.patch_json_api(url_registration_public, {'data': {'id': registration_public._id, 'type':'registrations', 'attributes': {'tags':['newer-tag']}}}, auth=user_admin.auth)
+            assert res.status_code == 200
+            assert len(res.json['data']['attributes']['tags']) == 1
+            assert res.json['data']['attributes']['tags'][0] == 'newer-tag'
+        with assert_latest_log(NodeLog.TAG_REMOVED, registration_public):
+            # Ensure removing tag data is correct from the PATCH response
+            res = app.patch_json_api(url_registration_public, {'data': {'id': registration_public._id, 'type':'registrations', 'attributes': {'tags': []}}}, auth=user_admin.auth)
+            assert res.status_code == 200
+            assert len(res.json['data']['attributes']['tags']) == 0
+
+    def test_tags_for_withdrawn_registration(self, app, registration_withdrawn ,user_admin,url_registration_withdrawn, new_tag_payload_withdrawn):
+        res = app.patch_json_api(url_registration_withdrawn, new_tag_payload_withdrawn, auth=user_admin.auth, expect_errors=True)
+        assert res.status_code == 409
+        assert res.json['errors'][0]['detail'] == 'Cannot add tags to withdrawn registrations.'
+
+        res = app.patch_json_api(url_registration_withdrawn, {'data': {'id': registration_withdrawn._id, 'type':'registrations', 'attributes': {'tags': []}}}, auth=user_admin.auth, expect_errors=True)
+        assert res.status_code == 409
+        assert res.json['errors'][0]['detail'] == 'Cannot remove tags of withdrawn registrations.'

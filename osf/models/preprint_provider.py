@@ -5,15 +5,13 @@ from django.db import models
 from django.db.models.signals import post_save
 from django.dispatch import receiver
 
+from api.preprint_providers.permissions import GroupHelper, PERMISSIONS
 from osf.models.base import BaseModel, ObjectIDMixin
 from osf.models.licenses import NodeLicense
+from osf.models.mixins import ReviewProviderMixin
 from osf.models.subject import Subject
 from osf.utils.datetime_aware_jsonfield import DateTimeAwareJSONField
 from osf.utils.fields import EncryptedTextField
-
-from reviews import permissions as reviews_permissions
-from reviews.models import ReviewProviderMixin
-
 from website import settings
 from website.util import api_v2_url
 
@@ -63,7 +61,7 @@ class PreprintProvider(ObjectIDMixin, ReviewProviderMixin, BaseModel):
                                         null=True, blank=True, on_delete=models.CASCADE)
 
     class Meta:
-        permissions = tuple(reviews_permissions.PERMISSIONS.items()) + (
+        permissions = tuple(PERMISSIONS.items()) + (
             # custom permissions for use in the OSF Admin App
             ('view_preprintprovider', 'Can view preprint provider details'),
         )
@@ -72,8 +70,12 @@ class PreprintProvider(ObjectIDMixin, ReviewProviderMixin, BaseModel):
         return '{} with id {}'.format(self.name, self.id)
 
     @property
+    def has_highlighted_subjects(self):
+        return self.subjects.filter(highlighted=True).exists()
+
+    @property
     def highlighted_subjects(self):
-        if self.subjects.filter(highlighted=True).exists():
+        if self.has_highlighted_subjects:
             return self.subjects.filter(highlighted=True).order_by('text')[:10]
         else:
             return sorted(self.top_level_subjects, key=lambda s: s.text)[:10]
@@ -130,4 +132,4 @@ def rules_to_subjects(rules):
 @receiver(post_save, sender=PreprintProvider)
 def create_provider_auth_groups(sender, instance, created, **kwargs):
     if created:
-        reviews_permissions.GroupHelper(instance).update_provider_auth_groups()
+        GroupHelper(instance).update_provider_auth_groups()

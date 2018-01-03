@@ -30,7 +30,7 @@ class GitLabFolder(GitLabFileNode, Folder):
 
 
 class GitLabFile(GitLabFileNode, File):
-    version_identifier = 'branch'
+    version_identifier = 'commitSha'
 
     def touch(self, auth_header, revision=None, ref=None, branch=None, **kwargs):
         revision = revision or ref or branch

@@ -5,7 +5,7 @@ from rest_framework import serializers as ser
 from api.base.exceptions import InvalidModelValueError
 from api.base.serializers import (
     BaseAPISerializer, JSONAPISerializer, JSONAPIRelationshipSerializer,
-    DateByVersion, DevOnly, HideIfDisabled, IDField,
+    DateByVersion, HideIfDisabled, IDField,
     Link, LinksField, ListDictField, TypeField, RelationshipField,
     WaterbutlerLink, ShowIfCurrentUser
 )
@@ -44,7 +44,7 @@ class UserSerializer(JSONAPISerializer):
     non_anonymized_fields = ['type']
     id = IDField(source='_id', read_only=True)
     type = TypeField()
-    full_name = ser.CharField(source='fullname', required=True, label='Full name', help_text='Display name used in the general user interface')
+    full_name = ser.CharField(source='fullname', required=True, label='Full name', help_text='Display name used in the general user interface', max_length=186)
     given_name = ser.CharField(required=False, allow_blank=True, help_text='For bibliographic citations')
     middle_names = ser.CharField(required=False, allow_blank=True, help_text='For bibliographic citations')
     family_name = ser.CharField(required=False, allow_blank=True, help_text='For bibliographic citations')
@@ -74,10 +74,10 @@ class UserSerializer(JSONAPISerializer):
         related_view_kwargs={'user_id': '<_id>'},
     ))
 
-    registrations = DevOnly(HideIfDisabled(RelationshipField(
+    registrations = HideIfDisabled(RelationshipField(
         related_view='users:user-registrations',
         related_view_kwargs={'user_id': '<_id>'},
-    )))
+    ))
 
     institutions = HideIfDisabled(RelationshipField(
         related_view='users:user-institutions',
@@ -86,8 +86,8 @@ class UserSerializer(JSONAPISerializer):
         self_view_kwargs={'user_id': '<_id>'},
     ))
 
-    actions = ShowIfCurrentUser(RelationshipField(
-        related_view='users:user-action-list',
+    preprints = HideIfDisabled(RelationshipField(
+        related_view='users:user-preprints',
         related_view_kwargs={'user_id': '<_id>'},
     ))
 

@@ -7,6 +7,7 @@ var bootbox = require('bootbox');
 var $osf = require('js/osfHelpers');
 var projectSettingsTreebeardBase = require('js/projectSettingsTreebeardBase');
 
+
 var ViewModel = function(data) {
     var self = this;
     self.url = $osf.apiV2Url('/nodes/', {'query': 'filter[root]=' + data.node.rootId + '&format=json&version=2.1'});
@@ -198,7 +199,7 @@ var ViewModel = function(data) {
                 }
             }
         }).fail(function (xhr, status, error) {
-            $osf.growl('Unable to modify the institution on this node. Please try again. If the problem persists, email <a href="mailto:support@osf.io.">support@osf.io</a>');
+            $osf.growl('Unable to modify the institution on this node. Please try again. If the problem persists, email ' + $osf.osfSupportLink());
             Raven.captureMessage('Unable to modify this institution!', {
                 extra: {
                     url: url,

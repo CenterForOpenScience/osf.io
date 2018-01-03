@@ -4,6 +4,7 @@ from django.utils import timezone
 import mock
 import pytest
 import pytz
+import random, string
 from framework.celery_tasks import handlers
 from framework.exceptions import PermissionsError
 from framework.sessions import set_session
@@ -322,6 +323,19 @@ class TestParentNode:
         registration_grandchild = NodeFactory(parent=registration_child)
         assert registration_grandchild.parent_node._id == registration_child._id
 
+    def test_recursive_registrations_have_correct_root(self, project, auth):
+        child = NodeFactory(parent=project)
+        grandchild = NodeFactory(parent=child)
+
+        with disconnected_from_listeners(after_create_registration):
+            reg_root = project.register_node(get_default_metaschema(), auth, '', None)
+        reg_child = reg_root._nodes.first()
+        reg_grandchild = reg_child._nodes.first()
+
+        assert reg_root.root == reg_root
+        assert reg_child.root == reg_root
+        assert reg_grandchild.root == reg_root
+
     def test_fork_has_no_parent(self, project, auth):
         fork = project.fork_node(auth=auth)
         assert fork.parent_node is None
@@ -337,6 +351,18 @@ class TestParentNode:
         fork_grandchild = NodeFactory(parent=fork_child)
         assert fork_grandchild.parent_node._id == fork_child._id
 
+    def test_recursive_forks_have_correct_root(self, project, auth):
+        child = NodeFactory(parent=project)
+        grandchild = NodeFactory(parent=child)
+
+        fork_root = project.fork_node(auth=auth)
+        fork_child = fork_root._nodes.first()
+        fork_grandchild = fork_child._nodes.first()
+
+        assert fork_root.root == fork_root
+        assert fork_child.root == fork_root
+        assert fork_grandchild.root == fork_root
+
     def test_template_has_no_parent(self, template):
         assert template.parent_node is None
 
@@ -348,6 +374,18 @@ class TestParentNode:
         template_child = NodeFactory(parent=template)
         new_project_grandchild = NodeFactory(parent=template_child)
         assert new_project_grandchild.parent_node._id == template_child._id
+
+    def test_recursive_templates_have_correct_root(self, project, auth):
+        child = NodeFactory(parent=project)
+        grandchild = NodeFactory(parent=child)
+
+        template_root = project.use_as_template(auth=auth)
+        template_child = template_root._nodes.first()
+        template_grandchild = template_child._nodes.first()
+
+        assert template_root.root == template_root
+        assert template_child.root == template_root
+        assert template_grandchild.root == template_root
 
     def test_template_project_does_not_copy_deleted_components(self, project, child, deleted_child, template):
         """Regression test for https://openscience.atlassian.net/browse/OSF-5942. """
@@ -2552,6 +2590,12 @@ class TestPointerMethods:
         fork = node.fork_node(auth=auth)
         assert not fork.nodes
 
+    def test_cannot_template_deleted_node(self, node, auth):
+        child = NodeFactory(parent=node, is_deleted=True)
+        child.save()
+        template = node.use_as_template(auth=auth, top_level=False)
+        assert not template.nodes
+
     def _fork_pointer(self, node, content, auth):
         pointer = node.add_pointer(content, auth=auth)
         forked = node.fork_pointer(pointer, auth=auth)
@@ -3305,6 +3349,10 @@ class TestOnNodeUpdate:
     def node(self):
         return ProjectFactory(is_public=True)
 
+    @pytest.fixture()
+    def registration(self, node):
+        return RegistrationFactory(is_public=True)
+
     def teardown_method(self, method):
         handlers.celery_before_request()
 
@@ -3344,7 +3392,7 @@ class TestOnNodeUpdate:
     @mock.patch('website.project.tasks.settings.SHARE_URL', 'https://share.osf.io')
     @mock.patch('website.project.tasks.settings.SHARE_API_TOKEN', 'Token')
     @mock.patch('website.project.tasks.requests')
-    def test_update_share_correctly(self, requests, node, user, request_context):
+    def test_update_share_correctly_for_projects(self, requests, node, user, request_context):
         cases = [{
             'is_deleted': False,
             'attrs': {'is_public': True, 'is_deleted': False, 'spam_status': SpamStatus.HAM}
@@ -3369,6 +3417,118 @@ class TestOnNodeUpdate:
             kwargs = requests.post.call_args[1]
             graph = kwargs['json']['data']['attributes']['data']['@graph']
             assert graph[1]['is_deleted'] == case['is_deleted']
+
+    @mock.patch('website.project.tasks.settings.SHARE_URL', 'https://share.osf.io')
+    @mock.patch('website.project.tasks.settings.SHARE_API_TOKEN', 'Token')
+    @mock.patch('website.project.tasks.requests')
+    @mock.patch('osf.models.registrations.Registration.archiving', mock.PropertyMock(return_value=False))
+    def test_update_share_correctly_for_registrations(self, requests, registration, user, request_context):
+        cases = [{
+            'is_deleted': False,
+            'attrs': {'is_public': True, 'is_deleted': False}
+        }, {
+            'is_deleted': True,
+            'attrs': {'is_public': False, 'is_deleted': False}
+        }, {
+            'is_deleted': True,
+            'attrs': {'is_public': True, 'is_deleted': True}
+        }, {
+            'is_deleted': False,
+            'attrs': {'is_public': True, 'is_deleted': False}
+        }]
+
+        for case in cases:
+            for attr, value in case['attrs'].items():
+                setattr(registration, attr, value)
+            registration.save()
+
+            on_node_updated(registration._id, user._id, False, {'is_public'})
+
+            assert registration.is_registration
+            kwargs = requests.post.call_args[1]
+            graph = kwargs['json']['data']['attributes']['data']['@graph']
+            payload = (item for item in graph if 'is_deleted' in item.keys()).next()
+            assert payload['is_deleted'] == case['is_deleted']
+
+    @mock.patch('website.project.tasks.settings.SHARE_URL', 'https://share.osf.io')
+    @mock.patch('website.project.tasks.settings.SHARE_API_TOKEN', 'Token')
+    @mock.patch('website.project.tasks.requests')
+    def test_update_share_correctly_for_projects_with_qa_tags(self, requests, node, user, request_context):
+        node.add_tag(settings.DO_NOT_INDEX_LIST['tags'][0], auth=Auth(user))
+        on_node_updated(node._id, user._id, False, {'is_public'})
+        kwargs = requests.post.call_args[1]
+        graph = kwargs['json']['data']['attributes']['data']['@graph']
+        payload = (item for item in graph if 'is_deleted' in item.keys()).next()
+        assert payload['is_deleted'] is True
+
+        node.remove_tag(settings.DO_NOT_INDEX_LIST['tags'][0], auth=Auth(user), save=True)
+        on_node_updated(node._id, user._id, False, {'is_public'})
+        kwargs = requests.post.call_args[1]
+        graph = kwargs['json']['data']['attributes']['data']['@graph']
+        payload = (item for item in graph if 'is_deleted' in item.keys()).next()
+        assert payload['is_deleted'] is False
+
+    @mock.patch('website.project.tasks.settings.SHARE_URL', 'https://share.osf.io')
+    @mock.patch('website.project.tasks.settings.SHARE_API_TOKEN', 'Token')
+    @mock.patch('website.project.tasks.requests')
+    @mock.patch('osf.models.registrations.Registration.archiving', mock.PropertyMock(return_value=False))
+    def test_update_share_correctly_for_registrations_with_qa_tags(self, requests, registration, user, request_context):
+        registration.add_tag(settings.DO_NOT_INDEX_LIST['tags'][0], auth=Auth(user))
+        on_node_updated(registration._id, user._id, False, {'is_public'})
+        kwargs = requests.post.call_args[1]
+        graph = kwargs['json']['data']['attributes']['data']['@graph']
+        payload = (item for item in graph if 'is_deleted' in item.keys()).next()
+        assert payload['is_deleted'] is True
+
+        registration.remove_tag(settings.DO_NOT_INDEX_LIST['tags'][0], auth=Auth(user), save=True)
+        on_node_updated(registration._id, user._id, False, {'is_public'})
+        kwargs = requests.post.call_args[1]
+        graph = kwargs['json']['data']['attributes']['data']['@graph']
+        payload = (item for item in graph if 'is_deleted' in item.keys()).next()
+        assert payload['is_deleted'] is False
+
+    @mock.patch('website.project.tasks.settings.SHARE_URL', 'https://share.osf.io')
+    @mock.patch('website.project.tasks.settings.SHARE_API_TOKEN', 'Token')
+    @mock.patch('website.project.tasks.requests')
+    def test_update_share_correctly_for_projects_with_qa_titles(self, requests, node, user, request_context):
+        node.title = settings.DO_NOT_INDEX_LIST['titles'][0].join(random.choice(string.ascii_lowercase) for i in range(5))
+        node.save()
+        on_node_updated(node._id, user._id, False, {'is_public'})
+        kwargs = requests.post.call_args[1]
+        graph = kwargs['json']['data']['attributes']['data']['@graph']
+        payload = (item for item in graph if 'is_deleted' in item.keys()).next()
+        assert payload['is_deleted'] is True
+
+        node.title = 'Not a qa title'
+        node.save()
+        assert node.title not in settings.DO_NOT_INDEX_LIST['titles']
+        on_node_updated(node._id, user._id, False, {'is_public'})
+        kwargs = requests.post.call_args[1]
+        graph = kwargs['json']['data']['attributes']['data']['@graph']
+        payload = (item for item in graph if 'is_deleted' in item.keys()).next()
+        assert payload['is_deleted'] is False
+
+    @mock.patch('website.project.tasks.settings.SHARE_URL', 'https://share.osf.io')
+    @mock.patch('website.project.tasks.settings.SHARE_API_TOKEN', 'Token')
+    @mock.patch('website.project.tasks.requests')
+    @mock.patch('osf.models.registrations.Registration.archiving', mock.PropertyMock(return_value=False))
+    def test_update_share_correctly_for_registrations_with_qa_titles(self, requests, registration, user, request_context):
+        registration.title = settings.DO_NOT_INDEX_LIST['titles'][0].join(random.choice(string.ascii_lowercase) for i in range(5))
+        registration.save()
+        on_node_updated(registration._id, user._id, False, {'is_public'})
+        kwargs = requests.post.call_args[1]
+        graph = kwargs['json']['data']['attributes']['data']['@graph']
+        payload = (item for item in graph if 'is_deleted' in item.keys()).next()
+        assert payload['is_deleted'] is True
+
+        registration.title = 'Not a qa title'
+        registration.save()
+        assert registration.title not in settings.DO_NOT_INDEX_LIST['titles']
+        on_node_updated(registration._id, user._id, False, {'is_public'})
+        kwargs = requests.post.call_args[1]
+        graph = kwargs['json']['data']['attributes']['data']['@graph']
+        payload = (item for item in graph if 'is_deleted' in item.keys()).next()
+        assert payload['is_deleted'] is False
 
     @mock.patch('website.project.tasks.settings.SHARE_URL', None)
     @mock.patch('website.project.tasks.settings.SHARE_API_TOKEN', None)
@@ -3514,6 +3674,16 @@ class TestTemplateNode:
         assert new.license.node_license._id == license.node_license._id
         self._verify_log(new)
 
+    def test_can_template_a_registration(self, user, auth):
+        registration = RegistrationFactory(creator=user)
+        new = registration.use_as_template(auth=auth)
+        assert new.is_registration is False
+
+    def test_cannot_template_deleted_registration(self, project, auth):
+        registration = RegistrationFactory(project=project, is_deleted=True)
+        new = registration.use_as_template(auth=auth)
+        assert not new.nodes
+        
     @pytest.fixture()
     def pointee(self, project, user, auth):
         pointee = ProjectFactory(creator=user)

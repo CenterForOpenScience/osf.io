@@ -444,24 +444,23 @@ class NodeSettings(BaseNodeSettings, BaseStorageAddon):
         return settings.WATERBUTLER_CREDENTIALS
 
     def create_waterbutler_log(self, auth, action, metadata):
-        url = self.owner.web_url_for(
-            'addon_view_or_download_file',
-            path=metadata['path'],
-            provider='osfstorage'
-        )
+        params = {
+            'node': self.owner._id,
+            'project': self.owner.parent_id,
+
+            'path': metadata['materialized'],
+        }
+
+        if (metadata['kind'] != 'folder'):
+            url = self.owner.web_url_for(
+                'addon_view_or_download_file',
+                path=metadata['path'],
+                provider='osfstorage'
+            )
+            params['urls'] = {'view': url, 'download': url + '?action=download'}
 
         self.owner.add_log(
             'osf_storage_{0}'.format(action),
             auth=auth,
-            params={
-                'node': self.owner._id,
-                'project': self.owner.parent_id,
-
-                'path': metadata['materialized'],
-
-                'urls': {
-                    'view': url,
-                    'download': url + '?action=download'
-                },
-            },
+            params=params
         )

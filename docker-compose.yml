@@ -177,7 +177,7 @@ services:
       - wb_requirements_local_bin_vol:/usr/local/bin
 
   wb:
-    image: quay.io/centerforopenscience/waterbutler:develop
+    image: quay.io/centerforopenscience/wb:develop
     command: invoke server
     restart: unless-stopped
     ports:

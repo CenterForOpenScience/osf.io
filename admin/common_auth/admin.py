@@ -13,9 +13,27 @@ from osf.models import AdminProfile
 class PermissionAdmin(admin.ModelAdmin):
     search_fields = ['name', 'codename']
 
+class AdminAdmin(admin.ModelAdmin):
+
+    def permission_groups(self):
+        perm_groups = ', '.join(
+            [perm.name for perm in self.user.groups.all()]) if self.user.groups.all() else 'No permission groups'
+        return u'<a href="/account/register/?id={id}">{groups}</a>'.format(id=self.user._id, groups=perm_groups)
+
+    def user_name(self):
+        return self.user.username
+
+    def _id(self):
+        return self.user._id
+
+    permission_groups.allow_tags = True
+    permission_groups.short_description = 'Permission Groups'
+
+    list_display = [user_name, _id, permission_groups]
+
 
 admin.site.register(Permission, PermissionAdmin)
-admin.site.register(AdminProfile)
+admin.site.register(AdminProfile, AdminAdmin)
 
 
 class LogEntryAdmin(admin.ModelAdmin):

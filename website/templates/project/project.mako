@@ -10,8 +10,8 @@
 
 <div id="projectScope">
     <header class="subhead" id="overview">
-        <div class="row">
-            <div class="col-sm-5 col-md-7 cite-container">
+        <div class="row no-gutters">
+            <div class="col-lg-8 col-md-12 cite-container">
                 % if parent_node['exists']:
                     % if parent_node['can_view'] or parent_node['is_public'] or parent_node['is_contributor']:
                         <h2 class="node-parent-title">
@@ -32,7 +32,8 @@
                     <span id="nodeTitleEditable" class="overflow">${node['title']}</span>
                 </h2>
             </div>
-            <div class="col-sm-7 col-md-5">
+            <div class="clearfix visible-md-block"></div>
+            <div class="col-lg-4">
                 <div class="btn-toolbar node-control pull-right">
                     <div class="btn-group">
                     % if not node["is_public"]:
@@ -89,7 +90,7 @@
                                     % if not disk_saving_mode:
                                     <li class="p-h-md">
                                         <span class="btn btn-primary btn-block m-v-sm" onclick="NodeActions.redirectForkPage();">
-                                            View Forks(${ node['fork_count']})
+                                            View Forks (${ node['fork_count']})
                                         </span>
                                     </li>
                                     %endif
@@ -207,8 +208,8 @@
                   <!-- /ko -->
                 </span>
                 <p>
-                    Category: <span id="nodeCategoryEditable">${node['category']}</span>
-                    <span data-bind="css: icon"></span>
+                    Category: <span data-bind="css: icon"></span>
+                    <span id="nodeCategoryEditable">${node['category']}</span>
                 </p>
 
                 % if (node['description']) or (not node['description'] and 'write' in user['permissions'] and not node['is_registration']):
@@ -320,7 +321,7 @@
 
 <div class="row">
 
-    <div class="col-sm-6 osf-dash-col">
+    <div class="col-sm-12 col-md-6 osf-dash-col">
 
         %if user['show_wiki_widget']:
             ${ render_addon_widget.render_addon_widget('wiki', addons_widget_data['wiki']) }
@@ -371,7 +372,7 @@
 
     </div>
 
-    <div class="col-sm-6 osf-dash-col">
+    <div class="col-sm-12 col-md-6 osf-dash-col">
 
         <!-- Citations -->
         % if not node['anonymous']:
@@ -452,7 +453,7 @@
                     <span id="newComponent">
                         <button class="btn btn-sm btn-default" disabled="true">Add Component</button>
                     </span>
-                    <a class="btn btn-sm btn-default" data-toggle="modal" data-target="#addPointer">Link Projects</a>
+                    <a class="btn btn-sm btn-default" id="linkProjects" role="button" data-toggle="modal" data-target="#addPointer">Link Projects</a>
                 % endif
             </div>
         </div><!-- end addon-widget-header -->
@@ -496,6 +497,7 @@ ${parent.javascript_bottom()}
         currentUser: {
             canComment: ${ user['can_comment'] | sjson, n },
             canEdit: ${ user['can_edit'] | sjson, n },
+            canEditTags: ${ user['can_edit_tags'] | sjson, n },
         },
         node: {
             id: ${node['id'] | sjson, n},

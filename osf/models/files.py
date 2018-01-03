@@ -348,6 +348,9 @@ class BaseFileNode(TypedModel, CommentableMixin, OptionalGuidMixin, Taggable, Ob
     def get_absolute_url(self):
         return self.absolute_api_v2_url
 
+    def get_absolute_info_url(self):
+        return self.absolute_api_v2_url
+
     def _repoint_guids(self, updated):
         logger.warn('BaseFileNode._repoint_guids is deprecated.')
 
