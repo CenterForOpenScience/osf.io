@@ -110,21 +110,17 @@ def render_citation(node, style='apa'):
     elif cit.count(title) == 0:
         cit = clean_up_common_errors(cit)
 
+    if isinstance(node, PreprintService):
+        cit_node = node.node
+    else:
+        cit_node = node
+
     if style == 'apa':
-        if isinstance(node, PreprintService):
-            cit = apa_reformat(node.node, cit)
-        else:
-            cit = apa_reformat(node, cit)
+        cit = apa_reformat(cit_node, cit)
     if style == 'chicago-author-date':
-        if isinstance(node, PreprintService):
-            cit = chicago_reformat(node.node, cit)
-        else:
-            cit = chicago_reformat(node, cit)
+        cit = chicago_reformat(cit_node, cit)
     if style == 'modern-language-association':
-        if isinstance(node, PreprintService):
-            cit = mla_reformat(node.node, cit)
-        else:
-            cit = mla_reformat(node, cit)
+        cit = mla_reformat(cit_node, cit)
 
     return cit
 
@@ -221,7 +217,7 @@ def chicago_reformat(node, cit):
             new_chi = first_one + ', ' + rest_part + ', and ' + last_one + ' '
         else:
             new_chi = first_one + 'and ' + last_one + ' '
-    # handle 8 or more contributors
+    # handle 11 or more contributors
     else:
         new_chi = mla_name(process_name(node, contributors_list[0]), initial=True).rstrip(', ')
         name_list = [mla_name(process_name(node, x)) for x in contributors_list[1:7]]
