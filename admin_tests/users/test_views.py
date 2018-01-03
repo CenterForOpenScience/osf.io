@@ -28,7 +28,7 @@ from osf_tests.factories import (
 from admin_tests.utilities import setup_view, setup_log_view, setup_form_view
 
 from admin.users import views
-from admin.users.forms import WorkshopForm, UserSearchForm
+from admin.users.forms import WorkshopForm, UserSearchForm, MergeUserForm
 from osf.models.admin_log_entry import AdminLogEntry
 
 pytestmark = pytest.mark.django_db
@@ -165,6 +165,7 @@ class TestDisableUser(AdminTestCase):
         self.view().delete(self.request)
         self.user.reload()
         nt.assert_false(self.user.is_disabled)
+        nt.assert_false(self.user.requested_deactivation)
         nt.assert_equal(AdminLogEntry.objects.count(), count + 1)
 
     def test_no_user(self):
@@ -619,6 +620,16 @@ class TestUserSearchView(AdminTestCase):
         nt.assert_equal(response.status_code, 302)
         nt.assert_equal(self.view.success_url, '/users/search/Hardy/')
 
+    def test_search_user_by_name_with_punctuation(self):
+        form_data = {
+            'name': '~Dr. Sportello-Fay, PI'
+        }
+        form = UserSearchForm(data=form_data)
+        nt.assert_true(form.is_valid())
+        response = self.view.form_valid(form)
+        nt.assert_equal(response.status_code, 302)
+        nt.assert_equal(self.view.success_url, furl.quote('/users/search/~Dr. Sportello-Fay, PI/', safe='/.,~'))
+
     def test_search_user_by_username(self):
         form_data = {
             'email': self.user_1.username
@@ -747,3 +758,25 @@ class TestUserReindex(AdminTestCase):
 
         nt.assert_true(mock_reindex_elastic.called)
         nt.assert_equal(AdminLogEntry.objects.count(), count + 1)
+
+class TestUserMerge(AdminTestCase):
+    def setUp(self):
+        super(TestUserMerge, self).setUp()
+        self.request = RequestFactory().post('/fake_path')
+
+    @mock.patch('osf.models.user.OSFUser.merge_user')
+    def test_merge_user(self, mock_merge_user):
+        user = UserFactory()
+        user_merged = UserFactory()
+
+        view = views.UserMergeAccounts()
+        view = setup_log_view(view, self.request, guid=user._id)
+
+        invalid_form = MergeUserForm(data={'user_guid_to_be_merged': 'Not a valid Guid'})
+        valid_form = MergeUserForm(data={'user_guid_to_be_merged': user_merged._id})
+
+        nt.assert_false(invalid_form.is_valid())
+        nt.assert_true(valid_form.is_valid())
+
+        view.form_valid(valid_form)
+        nt.assert_true(mock_merge_user.called_with())

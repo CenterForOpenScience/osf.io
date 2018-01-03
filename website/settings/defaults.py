@@ -129,7 +129,10 @@ USE_CDN_FOR_CLIENT_LIBS = True
 
 USE_EMAIL = True
 FROM_EMAIL = 'openscienceframework-noreply@osf.io'
-SUPPORT_EMAIL = 'support@osf.io'
+
+# support email
+OSF_SUPPORT_EMAIL = 'support@osf.io'
+
 
 # Default settings for fake email address generation
 FAKE_EMAIL_NAME = 'freddiemercury'
@@ -141,7 +144,11 @@ MAIL_USERNAME = 'osf-smtp'
 MAIL_PASSWORD = ''  # Set this in local.py
 
 # OR, if using Sendgrid's API
+# WARNING: If `SENDGRID_WHITELIST_MODE` is True,
+# `tasks.send_email` would only email recipients included in `SENDGRID_EMAIL_WHITELIST`
 SENDGRID_API_KEY = None
+SENDGRID_WHITELIST_MODE = False
+SENDGRID_EMAIL_WHITELIST = []
 
 # Mailchimp
 MAILCHIMP_API_KEY = None
@@ -151,6 +158,8 @@ MAILCHIMP_GENERAL_LIST = 'Open Science Framework General'
 
 #Triggered emails
 OSF_HELP_LIST = 'Open Science Framework Help'
+PREREG_AGE_LIMIT = timedelta(weeks=12)
+PREREG_WAIT_TIME = timedelta(weeks=2)
 WAIT_BETWEEN_MAILS = timedelta(days=7)
 NO_ADDON_WAIT_TIME = timedelta(weeks=8)
 NO_LOGIN_WAIT_TIME = timedelta(weeks=4)
@@ -189,12 +198,15 @@ COOKIE_DOMAIN = '.openscienceframework.org'  # Beaker
 SHORT_DOMAIN = 'osf.io'
 
 # TODO: Combine Python and JavaScript config
-COMMENT_MAXLENGTH = 500
+# If you change COMMENT_MAXLENGTH, make sure you create a corresponding migration.
+COMMENT_MAXLENGTH = 1000
 
 # Profile image options
 PROFILE_IMAGE_LARGE = 70
 PROFILE_IMAGE_MEDIUM = 40
 PROFILE_IMAGE_SMALL = 20
+# Currently (8/21/2017) only gravatar supported.
+PROFILE_IMAGE_PROVIDER = 'gravatar'
 
 # Conference options
 CONFERENCE_MIN_COUNT = 5
@@ -251,6 +263,7 @@ with open(os.path.join(ROOT, 'addons.json')) as fp:
     ADDONS_BASED_ON_IDS = addon_settings['addons_based_on_ids']
     ADDONS_DESCRIPTION = addon_settings['addons_description']
     ADDONS_URL = addon_settings['addons_url']
+    ADDONS_DEFAULT = addon_settings['addons_default']
 
 ADDON_CATEGORIES = [
     'documentation',
@@ -364,6 +377,7 @@ class CeleryConfig:
     Celery Configuration
     http://docs.celeryproject.org/en/latest/userguide/configuration.html
     """
+    timezone = 'UTC'
 
     task_default_queue = 'celery'
     task_low_queue = 'low'
@@ -381,6 +395,7 @@ class CeleryConfig:
         'scripts.osfstorage.glacier_audit',
         'scripts.populate_new_and_noteworthy_projects',
         'scripts.populate_popular_projects_and_registrations',
+        'scripts.remind_draft_preregistrations',
         'website.search.elastic_search',
         'scripts.generate_sitemap',
         'scripts.generate_prereg_csv',
@@ -447,6 +462,7 @@ class CeleryConfig:
         'scripts.populate_new_and_noteworthy_projects',
         'scripts.populate_popular_projects_and_registrations',
         'scripts.refresh_addon_tokens',
+        'scripts.remind_draft_preregistrations',
         'scripts.retract_registrations',
         'scripts.embargo_registrations',
         'scripts.approve_registrations',
@@ -458,6 +474,7 @@ class CeleryConfig:
         'scripts.analytics.run_keen_events',
         'scripts.generate_sitemap',
         'scripts.premigrate_created_modified',
+        'scripts.generate_prereg_csv',
     )
 
     # Modules that need metrics and release requirements
@@ -478,6 +495,7 @@ class CeleryConfig:
         pass
     else:
         #  Setting up a scheduler, essentially replaces an independent cron job
+        # Note: these times must be in UTC
         beat_schedule = {
             '5-minute-emails': {
                 'task': 'website.notifications.tasks.send_users_email',
@@ -486,12 +504,12 @@ class CeleryConfig:
             },
             'daily-emails': {
                 'task': 'website.notifications.tasks.send_users_email',
-                'schedule': crontab(minute=0, hour=0),
+                'schedule': crontab(minute=0, hour=5),  # Daily at 12 a.m. EST
                 'args': ('email_digest',),
             },
             'refresh_addons': {
                 'task': 'scripts.refresh_addon_tokens',
-                'schedule': crontab(minute=0, hour=2),  # Daily 2:00 a.m
+                'schedule': crontab(minute=0, hour=7),  # Daily 2:00 a.m
                 'kwargs': {'dry_run': False, 'addons': {
                     'box': 60,          # https://docs.box.com/docs/oauth-20#section-6-using-the-access-and-refresh-tokens
                     'googledrive': 14,  # https://developers.google.com/identity/protocols/OAuth2#expiration
@@ -500,66 +518,75 @@ class CeleryConfig:
             },
             'retract_registrations': {
                 'task': 'scripts.retract_registrations',
-                'schedule': crontab(minute=0, hour=0),  # Daily 12 a.m
+                'schedule': crontab(minute=0, hour=5),  # Daily 12 a.m
                 'kwargs': {'dry_run': False},
             },
             'embargo_registrations': {
                 'task': 'scripts.embargo_registrations',
-                'schedule': crontab(minute=0, hour=0),  # Daily 12 a.m
+                'schedule': crontab(minute=0, hour=5),  # Daily 12 a.m
                 'kwargs': {'dry_run': False},
             },
             'add_missing_identifiers_to_preprints': {
                 'task': 'scripts.add_missing_identifiers_to_preprints',
-                'schedule': crontab(minute=0, hour=0),  # Daily 12 a.m
+                'schedule': crontab(minute=0, hour=5),  # Daily 12 a.m
                 'kwargs': {'dry_run': False},
             },
             'approve_registrations': {
                 'task': 'scripts.approve_registrations',
-                'schedule': crontab(minute=0, hour=0),  # Daily 12 a.m
+                'schedule': crontab(minute=0, hour=5),  # Daily 12 a.m
                 'kwargs': {'dry_run': False},
             },
             'approve_embargo_terminations': {
                 'task': 'scripts.approve_embargo_terminations',
-                'schedule': crontab(minute=0, hour=0),  # Daily 12 a.m
+                'schedule': crontab(minute=0, hour=5),  # Daily 12 a.m
                 'kwargs': {'dry_run': False},
             },
             'triggered_mails': {
                 'task': 'scripts.triggered_mails',
-                'schedule': crontab(minute=0, hour=0),  # Daily 12 a.m
+                'schedule': crontab(minute=0, hour=5),  # Daily 12 a.m
                 'kwargs': {'dry_run': False},
             },
             'send_queued_mails': {
                 'task': 'scripts.send_queued_mails',
+                'schedule': crontab(minute=0, hour=17),  # Daily 12 p.m.
+                'kwargs': {'dry_run': False},
+            },
+            'prereg_reminder': {
+                'task': 'scripts.remind_draft_preregistrations',
                 'schedule': crontab(minute=0, hour=12),  # Daily 12 p.m.
                 'kwargs': {'dry_run': False},
             },
             'new-and-noteworthy': {
                 'task': 'scripts.populate_new_and_noteworthy_projects',
-                'schedule': crontab(minute=0, hour=2, day_of_week=6),  # Saturday 2:00 a.m.
+                'schedule': crontab(minute=0, hour=7, day_of_week=6),  # Saturday 2:00 a.m.
                 'kwargs': {'dry_run': False}
             },
             'update_popular_nodes': {
                 'task': 'scripts.populate_popular_projects_and_registrations',
-                'schedule': crontab(minute=0, hour=2),  # Daily 2:00 a.m.
+                'schedule': crontab(minute=0, hour=7),  # Daily 2:00 a.m.
                 'kwargs': {'dry_run': False}
             },
             'run_keen_summaries': {
                 'task': 'scripts.analytics.run_keen_summaries',
-                'schedule': crontab(minute=00, hour=1),  # Daily 1:00 a.m.
+                'schedule': crontab(minute=0, hour=6),  # Daily 1:00 a.m.
                 'kwargs': {'yesterday': True}
             },
             'run_keen_snapshots': {
                 'task': 'scripts.analytics.run_keen_snapshots',
-                'schedule': crontab(minute=0, hour=3),  # Daily 3:00 a.m.
+                'schedule': crontab(minute=0, hour=8),  # Daily 3:00 a.m.
             },
             'run_keen_events': {
                 'task': 'scripts.analytics.run_keen_events',
-                'schedule': crontab(minute=0, hour=4),  # Daily 4:00 a.m.
+                'schedule': crontab(minute=0, hour=9),  # Daily 4:00 a.m.
                 'kwargs': {'yesterday': True}
             },
             'generate_sitemap': {
                 'task': 'scripts.generate_sitemap',
-                'schedule': crontab(minute=0, hour=0),  # Daily 12:00 a.m.
+                'schedule': crontab(minute=0, hour=5),  # Daily 12:00 a.m.
+            },
+            'generate_prereg_csv': {
+                'task': 'scripts.generate_prereg_csv',
+                'schedule': crontab(minute=0, hour=10, day_of_week=0),  # Sunday 5:00 a.m.
             },
         }
 
@@ -567,42 +594,42 @@ class CeleryConfig:
         # beat_schedule.update({
         #     'usage_audit': {
         #         'task': 'scripts.osfstorage.usage_audit',
-        #         'schedule': crontab(minute=0, hour=0),  # Daily 12 a.m
+        #         'schedule': crontab(minute=0, hour=5),  # Daily 12 a.m
         #         'kwargs': {'send_mail': True},
         #     },
         #     'stuck_registration_audit': {
         #         'task': 'scripts.stuck_registration_audit',
-        #         'schedule': crontab(minute=0, hour=6),  # Daily 6 a.m
+        #         'schedule': crontab(minute=0, hour=11),  # Daily 6 a.m
         #         'kwargs': {},
         #     },
         #     'glacier_inventory': {
         #         'task': 'scripts.osfstorage.glacier_inventory',
-        #         'schedule': crontab(minute=0, hour= 0, day_of_week=0),  # Sunday 12:00 a.m.
+        #         'schedule': crontab(minute=0, hour=5, day_of_week=0),  # Sunday 12:00 a.m.
         #         'args': (),
         #     },
         #     'glacier_audit': {
         #         'task': 'scripts.osfstorage.glacier_audit',
-        #         'schedule': crontab(minute=0, hour=6, day_of_week=0),  # Sunday 6:00 a.m.
+        #         'schedule': crontab(minute=0, hour=11, day_of_week=0),  # Sunday 6:00 a.m.
         #         'kwargs': {'dry_run': False},
         #     },
         #     'files_audit_0': {
         #         'task': 'scripts.osfstorage.files_audit.0',
-        #         'schedule': crontab(minute=0, hour=2, day_of_week=0),  # Sunday 2:00 a.m.
+        #         'schedule': crontab(minute=0, hour=7, day_of_week=0),  # Sunday 2:00 a.m.
         #         'kwargs': {'num_of_workers': 4, 'dry_run': False},
         #     },
         #     'files_audit_1': {
         #         'task': 'scripts.osfstorage.files_audit.1',
-        #         'schedule': crontab(minute=0, hour=2, day_of_week=0),  # Sunday 2:00 a.m.
+        #         'schedule': crontab(minute=0, hour=7, day_of_week=0),  # Sunday 2:00 a.m.
         #         'kwargs': {'num_of_workers': 4, 'dry_run': False},
         #     },
         #     'files_audit_2': {
         #         'task': 'scripts.osfstorage.files_audit.2',
-        #         'schedule': crontab(minute=0, hour=2, day_of_week=0),  # Sunday 2:00 a.m.
+        #         'schedule': crontab(minute=0, hour=7, day_of_week=0),  # Sunday 2:00 a.m.
         #         'kwargs': {'num_of_workers': 4, 'dry_run': False},
         #     },
         #     'files_audit_3': {
         #         'task': 'scripts.osfstorage.files_audit.3',
-        #         'schedule': crontab(minute=0, hour=2, day_of_week=0),  # Sunday 2:00 a.m.
+        #         'schedule': crontab(minute=0, hour=7, day_of_week=0),  # Sunday 2:00 a.m.
         #         'kwargs': {'num_of_workers': 4, 'dry_run': False},
         #     },
         # })
@@ -620,8 +647,6 @@ SENSITIVE_DATA_SECRET = 'TrainglesAre5Squares'
 
 DRAFT_REGISTRATION_APPROVAL_PERIOD = datetime.timedelta(days=10)
 assert (DRAFT_REGISTRATION_APPROVAL_PERIOD > EMBARGO_END_DATE_MIN), 'The draft registration approval period should be more than the minimum embargo end date.'
-
-PREREG_ADMIN_TAG = "prereg_admin"
 
 # TODO: Remove references to this flag
 ENABLE_INSTITUTIONS = True
@@ -1864,6 +1889,12 @@ SITEMAP_REGISTRATION_CONFIG = OrderedDict([('loc', ''), ('lastmod', ''), ('chang
 SITEMAP_REVIEWS_CONFIG = OrderedDict([('loc', ''), ('lastmod', ''), ('changefreq', 'never'), ('priority', '0.5')])
 SITEMAP_PREPRINT_CONFIG = OrderedDict([('loc', ''), ('lastmod', ''), ('changefreq', 'yearly'), ('priority', '0.5')])
 SITEMAP_PREPRINT_FILE_CONFIG = OrderedDict([('loc', ''), ('lastmod', ''), ('changefreq', 'yearly'), ('priority', '0.5')])
+
+# For preventing indexing of QA nodes by Elastic and SHARE
+DO_NOT_INDEX_LIST = {
+    'tags': ['qatest', 'qa test'],
+    'titles': ['Bulk stress 201', 'Bulk stress 202', 'OSF API Registration test'],
+}
 
 CUSTOM_CITATIONS = {
     'bluebook-law-review': 'bluebook',

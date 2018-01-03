@@ -56,6 +56,7 @@ MAX_QUICKFILES_MERGE_RENAME_ATTEMPTS = 1000
 def get_default_mailing_lists():
     return {'Open Science Framework Help': True}
 
+
 name_formatters = {
     'long': lambda user: user.fullname,
     'surname': lambda user: user.family_name if user.family_name else user.fullname,
@@ -1013,11 +1014,11 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
         #       ref: https://tools.ietf.org/html/rfc822#section-6
         email = email.lower().strip()
 
-        if not external_identity and self.emails.filter(address=email).exists():
-            raise ValueError('Email already confirmed to this user.')
-
         with reraise_django_validation_errors():
             validate_email(email)
+
+        if not external_identity and self.emails.filter(address=email).exists():
+            raise ValueError('Email already confirmed to this user.')
 
         # If the unconfirmed email is already present, refresh the token
         if email in self.unconfirmed_emails:

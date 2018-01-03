@@ -26,7 +26,7 @@ from osf.models import BaseFileNode
 from osf.models import Institution
 from osf.models import QuickFilesNode
 from website import settings
-from website.filters import gravatar
+from website.filters import profile_image_url
 from osf.models.licenses import serialize_node_license_record
 from website.search import exceptions
 from website.search.util import build_query, clean_splitters
@@ -269,7 +269,7 @@ def format_result(result, parent_id=None):
         'is_pending_retraction': result['is_pending_retraction'],
         'embargo_end_date': result['embargo_end_date'],
         'is_pending_embargo': result['is_pending_embargo'],
-        'description': result['description'],
+        'description': sanitize.unescape_entities(result['description']),
         'category': result.get('category'),
         'date_created': result.get('date_created'),
         'date_registered': result.get('registered_date'),
@@ -391,7 +391,8 @@ def update_node(node, index=None, bulk=False, async=False):
     for file_ in paginated(OsfStorageFile, Q(node=node)):
         update_file(file_, index=index)
 
-    if node.is_deleted or not node.is_public or node.archiving or (node.is_spammy and settings.SPAM_FLAGGED_REMOVE_FROM_SEARCH) or node.is_quickfiles:
+    is_qa_node = bool(set(settings.DO_NOT_INDEX_LIST['tags']).intersection(node.tags.all().values_list('name', flat=True))) or any(substring in node.title for substring in settings.DO_NOT_INDEX_LIST['titles'])
+    if node.is_deleted or not node.is_public or node.archiving or (node.is_spammy and settings.SPAM_FLAGGED_REMOVE_FROM_SEARCH) or node.is_quickfiles or is_qa_node:
         delete_doc(node._id, node, index=index)
     else:
         category = get_doctype_from_node(node)
@@ -435,6 +436,7 @@ def serialize_contributors(node):
             node.contributor_set.filter(visible=True, user__is_active=True).order_by('_order').values('user__fullname', 'user__guids___id')
         ]
     }
+
 
 bulk_update_contributors = functools.partial(bulk_update_nodes, serialize_contributors)
 
@@ -510,7 +512,8 @@ def update_file(file_, index=None, delete=False):
     index = index or INDEX
 
     # TODO: Can remove 'not file_.name' if we remove all base file nodes with name=None
-    if not file_.name or not file_.node.is_public or delete or file_.node.is_deleted or file_.node.archiving:
+    file_node_is_qa = bool(set(settings.DO_NOT_INDEX_LIST['tags']).intersection(file_.node.tags.all().values_list('name', flat=True))) or any(substring in file_.node.title for substring in settings.DO_NOT_INDEX_LIST['titles'])
+    if not file_.name or not file_.node.is_public or delete or file_.node.is_deleted or file_.node.archiving or file_node_is_qa:
         client().delete(
             index=index,
             doc_type='file',
@@ -661,7 +664,7 @@ def search_contributor(query, page=0, size=10, exclude=None, current_user=None):
     :param current_user: A User object of the current user
 
     :return: List of dictionaries, each containing the ID, full name,
-        most recent employment and education, gravatar URL of an OSF user
+        most recent employment and education, profile_image URL of an OSF user
 
     """
     start = (page * size)
@@ -715,16 +718,15 @@ def search_contributor(query, page=0, size=10, exclude=None, current_user=None):
                 'id': doc['id'],
                 'employment': current_employment,
                 'education': education,
+                'social': user.social_links,
                 'n_projects_in_common': n_projects_in_common,
-                'gravatar_url': gravatar(
-                    user,
-                    use_ssl=True,
-                    size=settings.PROFILE_IMAGE_MEDIUM
-                ),
+                'profile_image_url': profile_image_url(settings.PROFILE_IMAGE_PROVIDER,
+                                                       user,
+                                                       use_ssl=True,
+                                                       size=settings.PROFILE_IMAGE_MEDIUM),
                 'profile_url': user.profile_url,
                 'registered': user.is_registered,
                 'active': user.is_active
-
             })
 
     return {

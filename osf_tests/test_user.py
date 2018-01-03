@@ -443,11 +443,10 @@ class TestOSFUser:
         )
 
     def test_profile_image_url(self, user):
-        expected = filters.gravatar(
-            user,
-            use_ssl=True,
-            size=settings.PROFILE_IMAGE_MEDIUM
-        )
+        expected = filters.profile_image_url(settings.PROFILE_IMAGE_PROVIDER,
+                                         user,
+                                         use_ssl=True,
+                                         size=settings.PROFILE_IMAGE_MEDIUM)
         assert user.profile_image_url(settings.PROFILE_IMAGE_MEDIUM) == expected
 
     def test_set_unusable_username_for_unsaved_user(self):
@@ -469,10 +468,9 @@ class TestOSFUser:
         assert user.has_usable_username() is False
 
     def test_profile_image_url_has_no_default_size(self, user):
-        expected = filters.gravatar(
-            user,
-            use_ssl=True,
-        )
+        expected = filters.profile_image_url(settings.PROFILE_IMAGE_PROVIDER,
+                                         user,
+                                         use_ssl=True)
         assert user.profile_image_url() == expected
         size = urlparse.parse_qs(urlparse.urlparse(user.profile_image_url()).query).get('size')
         assert size is None

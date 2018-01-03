@@ -50,6 +50,17 @@ var STATE_MAP = {
 var SYNC_UPLOAD_ADDONS = ['github', 'dataverse'];
 var READ_ONLY_ADDONS = ['bitbucket', 'gitlab', 'onedrive'];
 
+var CONFLICT_INFO = {
+    skip: {
+        passed: 'Skipped'
+    },
+    replace: {
+        passed: 'Moved or replaced old version'
+    },
+    keep: {
+        passed: 'Kept both versions'
+    }
+};
 
 var OPERATIONS = {
     RENAME: {
@@ -431,34 +442,63 @@ function _fangornToggleCheck(item) {
     return false;
 }
 
-function checkConflicts(tb, item, folder, cb) {
-    var messageArray = [];
-    for(var i = 0; i < folder.children.length; i++) {
-        var child = folder.children[i];
-        if (child.data.name === item.data.name && child.id !== item.id) {
-           messageArray.push([
-                m('p', 'An item named "' + child.data.name + '" already exists in this location.'),
-                m('h5.replace-file',
-                    '"Keep Both" will retain both files (and their version histories) in this location.'),
-                m('h5.replace-file',
-                    '"Replace" will overwrite the existing file in this location. ' +
-                    'You will lose previous versions of the overwritten file. ' +
-                    'You will keep previous versions of the moved file.'),
-                m('h5.replace-file', '"Cancel" will cancel the move.')
-            ]);
+function checkConflicts(items, folder){
 
-            tb.modal.update(
-                m('', messageArray), [
-                    m('span.btn.btn-default', {onclick: function() {tb.modal.dismiss();}}, 'Cancel'), //jshint ignore:line
-                    m('span.btn.btn-primary', {onclick: cb.bind(tb, 'keep')}, 'Keep Both'),
-                    m('span.btn.btn-primary', {onclick: cb.bind(tb, 'replace')}, 'Replace')
-                ],
-                m('h3.break-word.modal-title', 'Replace "' + child.data.name + '"?')
-            );
-            return;
+    var children = {
+      'names': [],
+      'ids': []
+    };
+    var ret = {
+        'conflicts' : [],
+        'ready': []
+    };
+
+    folder.children.forEach(function(child){
+        children.names.push(child.data.name);
+        children.ids.push(child.id);
+    });
+
+    items.forEach(function(item) {
+        if (children.names.includes(item.data.name) && !children.ids.includes(item.id)){
+            ret.conflicts.push(item);
+        } else {
+            ret.ready.push(item);
         }
+    });
+
+    return ret;
+}
+
+function handleCancel(tb, provider, mode, item){
+    if (mode === 'stop') {
+        tb.syncFileMoveCache[provider].conflicts.length = 0;
+        tb.modal.dismiss();
+    } else {
+        addFileStatus(tb, item, false, '', '', 'skip');
+        doSyncMove(tb, provider);
     }
-    cb('replace');
+}
+
+function displayConflict(tb, item, folder, cb) {
+    var mithrilContent = m('', [
+        m('p', 'An item named "' + item.data.name + '" already exists in this location.'),
+        m('h5.replace-file',
+            '"Keep Both" will retain both files (and their version histories) in this location.'),
+        m('h5.replace-file',
+            '"Replace" will overwrite the existing file in this location. ' +
+            'You will lose previous versions of the overwritten file. ' +
+            'You will keep previous versions of the moved file.'),
+        m('h5.replace-file', '"Skip" will skip the current file.'),
+        m('h5.replace-file', '"Stop" will only move files with no conflicts.')
+    ]);
+    var mithrilButtons = [
+        m('span.btn.btn-primary.btn-sm', {onclick: cb.bind(tb, 'keep')}, 'Keep Both'),
+        m('span.btn.btn-primary.btn-sm', {onclick: cb.bind(tb, 'replace')}, 'Replace'),
+        m('span.btn.btn-default.btn-sm', {onclick: function() {handleCancel(tb, folder.data.provider, 'skip', item);}}, 'Skip'),
+        m('span.btn.btn-danger.btn-sm', {onclick: function() {handleCancel(tb, folder.data.provider, 'stop');}}, 'Stop')
+    ];
+    var header = m('h3.break-word.modal-title', 'Replace "' + item.data.name + '"?');
+    tb.modal.update(mithrilContent, mithrilButtons, header);
 }
 
 function checkConflictsRename(tb, item, name, cb) {
@@ -501,10 +541,45 @@ function checkConflictsRename(tb, item, name, cb) {
 
 function doItemOp(operation, to, from, rename, conflict) {
     var tb = this;
+    // dismiss old modal immediately to prevent button mashing
     tb.modal.dismiss();
+    var inReadyQueue;
+    var filesRemaining;
+    var inConflictsQueue = false;
+    var syncMoves;
+
+    var notRenameOp = typeof rename === 'undefined';
+    if (notRenameOp) {
+        filesRemaining = tb.syncFileMoveCache && tb.syncFileMoveCache[to.data.provider];
+        syncMoves = SYNC_UPLOAD_ADDONS.indexOf(from.data.provider) !== -1;
+        if (syncMoves) {
+            inReadyQueue = filesRemaining && filesRemaining.ready && filesRemaining.ready.length > 0;
+        }
+
+        if (filesRemaining.conflicts) {
+            inConflictsQueue = true;
+            if (filesRemaining.conflicts.length > 0) {
+                var s = filesRemaining.conflicts.length > 1 ? 's' : '';
+                var mithrilContent = m('div', { className: 'text-center' }, [
+                    m('p.h4', filesRemaining.conflicts.length + ' conflict' + s + ' left to resolve.'),
+                    m('div', {className: 'ball-pulse ball-scale-blue text-center'}, [
+                        m('div',''),
+                        m('div',''),
+                        m('div',''),
+                    ])
+                ]);
+                var header =  m('h3.break-word.modal-title', operation.action + ' "' + from.data.name +'"');
+                tb.modal.update(mithrilContent, m('', []), header);
+            } else {
+                // remove the empty queue to know there are no remaining conflicts next time
+                filesRemaining.conflicts = undefined;
+            }
+        }
+    }
+
     var ogParent = from.parentID;
     if (to.id === ogParent && (!rename || rename === from.data.name)){
-      return;
+        return;
     }
 
     if (operation === OPERATIONS.COPY) {
@@ -601,6 +676,10 @@ function doItemOp(operation, to, from, rename, conflict) {
             from.open = true;
             from.load = true;
         }
+        var url = from.data.nodeUrl + 'files/' + from.data.provider + from.data.path;
+        if (notRenameOp) {
+            addFileStatus(tb, from, true, '', url, conflict);
+        }
         // no need to redraw because fangornOrderFolder does it
         orderFolder.call(tb, from.parent());
     }).fail(function(xhr, textStatus) {
@@ -621,9 +700,7 @@ function doItemOp(operation, to, from, rename, conflict) {
         } else if (xhr.status === 503) {
             message = textStatus;
         } else {
-            message = 'Please refresh the page or ' +
-                'contact <a href="mailto: support@osf.io">support@osf.io</a> if the ' +
-                'problem persists.';
+            message = 'Please refresh the page or contact ' + $osf.osfSupportLink() + ' if the problem persists.';
         }
 
         $osf.growl(operation.verb + ' failed.', message);
@@ -634,11 +711,13 @@ function doItemOp(operation, to, from, rename, conflict) {
                 requestData: moveSpec
             }
         });
-
+        if (notRenameOp) {
+            addFileStatus(tb, from, false, '', '', conflict);
+        }
         orderFolder.call(tb, from.parent());
     }).always(function(){
         from.inProgress = false;
-        if (SYNC_UPLOAD_ADDONS.indexOf(to.data.provider) !== -1){
+        if (notRenameOp && (inConflictsQueue || syncMoves)) {
             doSyncMove(tb, to.data.provider);
         }
     });
@@ -930,7 +1009,7 @@ function _fangornDropzoneError(treebeard, file, message, xhr) {
              msgText += '1. Cannot upload folders. <br>2. ';
          }
          msgText += 'Unable to reach the provider, please try again later. ';
-         msgText += 'If the problem persists, please contact support@osf.io.';
+         msgText += 'If the problem persists, please contact ' + $osf.osfSupportEmail() + '.';
     } else {
         //Osfstorage and most providers store message in {Object}message.{string}message,
         //but some, like Dataverse, have it in {string} message.
@@ -2356,12 +2435,20 @@ function _fangornOver(event, ui) {
  * @param success Boolean on whether upload actually happened
  * @param message String failure reason message, '' if success === true
  * @param link String with url to file, '' if success === false
+ * @param op String specifying type of move conflict resolution; ['keep', 'skip', 'replace']
  * @private
  */
-function addFileStatus(treebeard, file, success, message, link){
-    treebeard.uploadStates.push(
-        {'name': file.name, 'success': success, 'link': link, 'message': message}
-    );
+function addFileStatus(treebeard, file, success, message, link, op){
+    if (typeof op !== 'undefined'){
+        treebeard.moveStates.push(
+            {'name': file.data.name, 'success': success, 'link': link, 'op': op}
+        );
+    } else {
+        treebeard.uploadStates.push(
+            {'name': file.name, 'success': success, 'link': link, 'message': message}
+        );
+    }
+
 }
 
 /**
@@ -2434,25 +2521,92 @@ function _dropLogic(event, items, folder) {
         return tb.updateFolder(null, folder, _dropLogic.bind(tb, event, items, folder));
     }
 
-    if (SYNC_UPLOAD_ADDONS.indexOf(folder.data.provider) !== -1) {
-        tb.syncFileMoveCache = tb.syncFileMoveCache || {};
-        tb.syncFileMoveCache[folder.data.provider] = tb.syncFileMoveCache[folder.data.provider] || [];
-        $.each(items, function(index, item) {
-            tb.syncFileMoveCache[folder.data.provider].push({'item' : item, 'folder' : folder});
+    var toMove = checkConflicts(items, folder);
+
+    tb.syncFileMoveCache = tb.syncFileMoveCache || {};
+    tb.syncFileMoveCache[folder.data.provider] = tb.syncFileMoveCache[folder.data.provider] || {};
+    tb.moveStates = [];
+
+    if (toMove.ready.length > 0) {
+        tb.syncFileMoveCache[folder.data.provider].ready = tb.syncFileMoveCache[folder.data.provider].ready || [];
+        if (SYNC_UPLOAD_ADDONS.indexOf(folder.data.provider) !== -1) {
+            toMove.ready.forEach(function(item) {
+                tb.syncFileMoveCache[folder.data.provider].ready.push({'item' : item, 'folder' : folder});
+            });
+        } else {
+            toMove.ready.forEach(function(item) {
+                doItemOp.call(tb, copyMode === 'move' ? OPERATIONS.MOVE : OPERATIONS.COPY, folder, item, undefined, 'replace');
+            });
+        }
+    }
+
+    if (toMove.conflicts.length > 0) {
+        tb.syncFileMoveCache[folder.data.provider].conflicts = tb.syncFileMoveCache[folder.data.provider].conflicts || [];
+        toMove.conflicts.forEach(function(item) {
+            tb.syncFileMoveCache[folder.data.provider].conflicts.push({'item' : item, 'folder' : folder});
         });
+    }
+
+    if (tb.syncFileMoveCache[folder.data.provider].conflicts ||
+        tb.syncFileMoveCache[folder.data.provider].ready) {
         doSyncMove(tb, folder.data.provider);
-    }else{
-        $.each(items, function(index, item) {
-            checkConflicts(tb, item, folder, doItemOp.bind(tb, copyMode === 'move' ? OPERATIONS.MOVE : OPERATIONS.COPY, folder, item, undefined));
-        });
     }
 }
 
+function displayMoveStats(tb) {
+   var moveStatuses = tb.moveStates;
+   var total = moveStatuses && moveStatuses.length;
+   if (moveStatuses.length) {
+       tb.moveStates = [];
+       var failed = 0;
+       var skipped = 0;
+       tb.modal.update(m('', [
+           m('', [
+               moveStatuses.map(function(status){
+                  if (!status.success){
+                      failed++;
+                  }
+                  if (status.op === 'skip'){
+                      skipped++;
+                  }
+                  return m('',
+                       [
+                           m('.row', [
+                               m((status.success ? 'a[href="' + status.link + '"]' : '') + '.col-sm-7', status.name),
+                               m('.col-sm-1', m(status.success ? '.fa.fa-check.text-success' : '.fa.fa-times.text-danger')),
+                               m('.col-sm-4' + (status.success ? '.text-info' : '.text-danger'), CONFLICT_INFO[status.op].passed)
+                           ]),
+                           m('hr')
+                       ]
+                   );
+               })
+           ])
+       ]), m('', [
+           m('a.btn.btn-primary', {onclick: function() {tb.modal.dismiss();}}, 'Done'), //jshint ignore:line
+       ]), m('', [
+              m('h3.break-word.modal-title', 'Move Status'),
+              m('p', [
+                  m('span', failed !== total ? total - failed + '/' + total + ' files successfully moved.': ''),
+                  m('span', skipped ? ' Skipped ' + skipped + '/' + total + ' files.': '')
+                ])
+      ]));
+    } else {
+        tb.modal.dismiss();
+    }
+
+}
+
 function doSyncMove(tb, provider){
-    var cache = tb.syncFileMoveCache[provider];
-    if (cache.length > 0){
-        var itemData = cache.pop();
-        checkConflicts(tb, itemData.item, itemData.folder, doItemOp.bind(tb, copyMode === 'move' ? OPERATIONS.MOVE : OPERATIONS.COPY, itemData.folder, itemData.item, undefined));
+    var cache = tb.syncFileMoveCache && tb.syncFileMoveCache[provider];
+    var itemData;
+    if (cache.conflicts && cache.conflicts.length > 0) {
+        itemData = cache.conflicts.pop();
+        displayConflict(tb, itemData.item, itemData.folder, doItemOp.bind(tb, copyMode === 'move' ? OPERATIONS.MOVE : OPERATIONS.COPY, itemData.folder, itemData.item, undefined));
+    } else if (cache.ready && cache.ready.length > 0) {
+        itemData = cache.ready.pop();
+        doItemOp.call(tb, copyMode === 'move' ? OPERATIONS.MOVE : OPERATIONS.COPY, itemData.folder, itemData.item, undefined, 'replace');
+    } else {
+        displayMoveStats(tb);
     }
 }
 
@@ -2925,5 +3079,6 @@ module.exports = {
     isInvalidDropItem : isInvalidDropItem,
     getCopyMode : getCopyMode,
     multiselectContainsPreprint : multiselectContainsPreprint,
-    showDeleteMultiple : showDeleteMultiple
+    showDeleteMultiple : showDeleteMultiple,
+    checkConflicts : checkConflicts
 };

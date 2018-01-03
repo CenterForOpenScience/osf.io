@@ -35,7 +35,7 @@ from addons.base import signals as file_signals
 from osf.models import (BaseFileNode, TrashedFileNode,
                         OSFUser, AbstractNode,
                         NodeLog, DraftRegistration, MetaSchema)
-from website.profile.utils import get_gravatar
+from website.profile.utils import get_profile_image_url
 from website.project import decorators
 from website.project.decorators import must_be_contributor_or_public, must_be_valid_project
 from website.project.utils import serialize_node
@@ -195,7 +195,7 @@ def check_access(node, auth, action, cas_resp):
                 return True
             parent = parent.parent_node
 
-    # Users with the PREREG_ADMIN_TAG should be allowed to download files
+    # Users with the prereg admin permission should be allowed to download files
     # from prereg challenge draft registrations.
     try:
         prereg_schema = MetaSchema.objects.get(name='Prereg Challenge', schema_version=2)
@@ -207,7 +207,7 @@ def check_access(node, auth, action, cas_resp):
         if action == 'download' and \
                     auth.user is not None and \
                     prereg_draft_registration.count() > 0 and \
-                    settings.PREREG_ADMIN_TAG in auth.user.system_tags:
+                    auth.user.has_perm('osf.administer_prereg'):
             return True
     except MetaSchema.DoesNotExist:
         pass
@@ -409,6 +409,7 @@ def create_waterbutler_log(payload, **kwargs):
                     destination_path=payload['source']['materialized'],
                     source_addon=payload['source']['addon'],
                     destination_addon=payload['destination']['addon'],
+                    osf_support_email=settings.OSF_SUPPORT_EMAIL
                 )
 
             if payload.get('errors'):
@@ -553,7 +554,7 @@ def addon_deleted_file(auth, node, error_type='BLAME_PROVIDER', **kwargs):
 
     format_params = dict(
         file_name=markupsafe.escape(file_name),
-        deleted_by=markupsafe.escape(deleted_by),
+        deleted_by=markupsafe.escape(getattr(deleted_by, 'fullname', None)),
         deleted_on=markupsafe.escape(deleted_on),
         provider=markupsafe.escape(provider_full)
     )
@@ -568,7 +569,7 @@ def addon_deleted_file(auth, node, error_type='BLAME_PROVIDER', **kwargs):
             'render': None,
             'sharejs': None,
             'mfr': settings.MFR_SERVER_URL,
-            'gravatar': get_gravatar(auth.user, 25),
+            'profile_image': get_profile_image_url(auth.user, 25),
             'files': node.web_url_for('collect_file_trees'),
         },
         'extra': {},
@@ -731,6 +732,7 @@ def addon_view_file(auth, node, file_node, version):
             'direct': None,
             'mode': 'render',
             'action': 'download',
+            'public_file': node.is_public,
         })
     )
 
@@ -744,7 +746,7 @@ def addon_view_file(auth, node, file_node, version):
             'render': render_url.url,
             'mfr': settings.MFR_SERVER_URL,
             'sharejs': wiki_settings.SHAREJS_URL,
-            'gravatar': get_gravatar(auth.user, 25),
+            'profile_image': get_profile_image_url(auth.user, 25),
             'files': node.web_url_for('collect_file_trees'),
             'archived_from': get_archived_from_url(node, file_node) if node.is_registration else None,
         },

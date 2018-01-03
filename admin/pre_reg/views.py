@@ -2,7 +2,7 @@ from __future__ import unicode_literals
 
 import json
 
-from django.views.generic import ListView, DetailView, FormView, UpdateView
+from django.views.generic import ListView, DeleteView, DetailView, FormView, UpdateView
 from django.views.defaults import permission_denied, bad_request
 from django.contrib.auth.mixins import PermissionRequiredMixin
 from django.core.urlresolvers import reverse
@@ -14,17 +14,23 @@ from osf.models.admin_log_entry import (
     ACCEPT_PREREG,
     REJECT_PREREG,
     COMMENT_PREREG,
+    CHECKOUT_CHECKUP,
 )
 
-from admin.base import utils
 from admin.pre_reg import serializers
 from admin.pre_reg.forms import DraftRegistrationForm
 from framework.exceptions import PermissionsError
 from website.exceptions import NodeStateError
-from osf.models.files import BaseFileNode
-from osf.models.node import Node
-from osf.models.registrations import DraftRegistration
+
+from osf.models import (
+    BaseFileNode,
+    DraftRegistration,
+    MetaSchema,
+    Node,
+    OSFUser,
+)
 from website.project.metadata.schemas import from_json
+from website.prereg.utils import get_prereg_schema
 
 
 SORT_BY = {
@@ -47,7 +53,12 @@ class DraftListView(PermissionRequiredMixin, ListView):
     raise_exception = True
 
     def get_queryset(self):
-        return utils.get_submitted_preregistrations(self.get_ordering())
+        return DraftRegistration.objects.filter(
+            registration_schema=get_prereg_schema(),
+        ).exclude(
+            approval__isnull=True,
+            registered_node__isnull=True,
+        ).order_by(self.get_ordering())
 
     def get_context_data(self, **kwargs):
         query_set = kwargs.pop('object_list', self.object_list)
@@ -76,6 +87,46 @@ class DraftListView(PermissionRequiredMixin, ListView):
         return self.request.GET.get('order_by', self.ordering)
 
 
+class CheckoutCheckupView(PermissionRequiredMixin, DeleteView):
+    """ View for button that checks status of all prereg drafts and removes checkouts that lingered beyond approval/rejection"""
+    template_name = 'pre_reg/checkout_checkup.html'
+    permission_required = 'osf.view_prereg'
+    raise_exception = True
+
+    def get_context_data(self, **kwargs):
+        context = {}
+        context.setdefault('bad_drafts_count', str(self.get_object().count()))
+        return super(CheckoutCheckupView, self).get_context_data(**context)
+
+    def get_object(self, queryset=None):
+        self.prereg_admins = OSFUser.objects.filter(groups__name='prereg_view')
+        self.bad_drafts = DraftRegistration.objects.filter(
+            registration_schema=MetaSchema.objects.get(name='Prereg Challenge', schema_version=2),
+            approval__state__in=['approved', 'rejected'],
+            branched_from__files__checkout__in=self.prereg_admins
+        ).distinct().values_list('id', flat=True)
+        return self.bad_drafts
+
+    def delete(self, request, *args, **kwargs):
+        if not self.get('bad_drafts', None):
+            self.get_object()
+
+        for draft_id in self.bad_drafts:
+            draft = DraftRegistration.objects.get(id=draft_id)
+            for draft_file in draft.branched_from.files.filter(checkout__in=self.prereg_admins):
+                draft_file.checkout = None
+                draft_file.save()
+
+            update_admin_log(
+                user_id=self.request.user.id,
+                object_id=draft.branched_from._id,
+                object_repr='Node',
+                message='Cleared Prereg checkouts from {}'.format(draft.branched_from._id),
+                action_flag=CHECKOUT_CHECKUP
+            )
+        return redirect(reverse('pre_reg:prereg'))
+
+
 class DraftDetailView(PermissionRequiredMixin, DetailView):
     template_name = 'pre_reg/draft_detail.html'
     context_object_name = 'draft'
@@ -83,7 +134,7 @@ class DraftDetailView(PermissionRequiredMixin, DetailView):
     raise_exception = True
 
     def get_object(self, queryset=None):
-        draft = DraftRegistration.load(self.kwargs.get('draft_pk'))
+        draft = DraftRegistration.objects.select_related('approval').get(_id=self.kwargs.get('draft_pk'))
         self.checkout_files(draft)
         try:
             return serializers.serialize_draft_registration(draft)
@@ -94,10 +145,12 @@ class DraftDetailView(PermissionRequiredMixin, DetailView):
             ))
 
     def checkout_files(self, draft):
-        prereg_user = self.request.user
-        for item in get_metadata_files(draft):
-            item.checkout = prereg_user
-            item.save()
+        # Do not check out files if rejected or approved
+        if not draft.approval or draft.approval.state == 'unapproved':
+            prereg_user = self.request.user
+            for item in get_metadata_files(draft):
+                item.checkout = prereg_user
+                item.save()
 
 
 class DraftFormView(PermissionRequiredMixin, FormView):
