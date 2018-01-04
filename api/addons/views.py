@@ -13,7 +13,7 @@ from api.base.permissions import TokenHasScope
 from api.base.settings import ADDONS_OAUTH
 from api.base.views import JSONAPIBaseView
 
-from website import settings as osf_settings
+from website import settings as website_settings
 
 
 class AddonSettingsMixin(object):
@@ -77,7 +77,7 @@ class AddonList(JSONAPIBaseView, generics.ListAPIView, ListFilterMixin):
     ordering = ()
 
     def get_default_queryset(self):
-        return [conf for conf in osf_settings.ADDONS_AVAILABLE_DICT.itervalues() if 'accounts' in conf.configs]
+        return [conf for conf in website_settings.ADDONS_AVAILABLE_DICT.itervalues() if 'accounts' in conf.configs]
 
     def get_queryset(self):
         return self.get_queryset_from_request()

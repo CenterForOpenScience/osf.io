@@ -10,7 +10,7 @@ from nose.tools import *  # flake8: noqa
 from framework.auth import cas, core, oauth_scopes
 from website.util import api_v2_url
 from addons.twofactor.tests import _valid_code
-from website.settings import API_DOMAIN
+from api.base.settings import API_DOMAIN
 
 from tests.base import ApiTestCase
 from osf_tests.factories import AuthUserFactory, ProjectFactory, UserFactory

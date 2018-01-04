@@ -11,7 +11,8 @@ from framework.exceptions import HTTPError
 from framework.auth import utils
 from osf.models import PreprintService
 from website.citations.utils import datetime_to_csl
-from website.settings import CITATION_STYLES_PATH, BASE_PATH, CUSTOM_CITATIONS
+from website.settings import CITATION_STYLES_PATH, BASE_PATH
+from api.base.settings import CUSTOM_CITATIONS
 
 
 def clean_up_common_errors(cit):

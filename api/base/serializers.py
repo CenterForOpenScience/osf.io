@@ -17,10 +17,9 @@ from api.base import utils
 from osf.utils import permissions as osf_permissions
 from osf.utils import sanitize
 from api.base import exceptions as api_exceptions
-from api.base.settings import BULK_SETTINGS
+from api.base import settings
 from framework.auth import core as auth_core
 from osf.models import AbstractNode, MaintenanceState
-from website import settings
 from website.project.model import has_anonymous_link
 
 
@@ -1113,7 +1112,7 @@ class JSONAPIListSerializer(ser.ListSerializer):
     # overrides ListSerializer
     def run_validation(self, data):
         meta = getattr(self, 'Meta', None)
-        bulk_limit = getattr(meta, 'bulk_limit', BULK_SETTINGS['DEFAULT_BULK_LIMIT'])
+        bulk_limit = getattr(meta, 'bulk_limit', settings.BULK_SETTINGS['DEFAULT_BULK_LIMIT'])
 
         num_items = len(data)
 

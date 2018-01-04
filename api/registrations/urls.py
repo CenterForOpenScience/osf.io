@@ -1,7 +1,7 @@
 from django.conf.urls import url
 
 from api.registrations import views
-from website import settings
+from api.base import settings
 
 app_name = 'osf'
 

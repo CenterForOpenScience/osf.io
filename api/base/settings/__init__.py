@@ -19,10 +19,15 @@ except ImportError as error:
     warnings.warn('No api/base/settings/local.py settings file found. Did you remember to '
                   'copy local-dist.py to local.py?', ImportWarning)
 
+settings_to_check = ('WATERBUTLER_JWE_SECRET', 'WATERBUTLER_JWE_SALT', 'WATERBUTLER_JWT_SECRET', 'JWT_SECRET', 'JWE_SECRET',
+                     'DEFAULT_HMAC_SECRET', 'POPULAR_LINKS_NODE', 'NEW_AND_NOTEWORTHY_LINKS_NODE', 'SENSITIVE_DATA_SALT',
+                     'SENSITIVE_DATA_SECRET', 'BYPASS_THROTTLE_TOKEN')
+
+
 if not DEV_MODE and os.environ.get('DJANGO_SETTINGS_MODULE') == 'api.base.settings':
     from . import local
     from . import defaults
-    for setting in ('JWE_SECRET', 'JWT_SECRET', 'BYPASS_THROTTLE_TOKEN'):
+    for setting in settings_to_check:
         assert getattr(local, setting, None) and getattr(local, setting, None) != getattr(defaults, setting, None), '{} must be specified in local.py when DEV_MODE is False'.format(setting)
 
 def load_origins_whitelist():

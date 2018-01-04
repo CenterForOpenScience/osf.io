@@ -1,10 +1,9 @@
 import urlparse
 
 from osf.models import OSFUser, AbstractNode, Guid, BaseFileNode
-from website import settings as website_settings
 
+from api.base import settings
 from api.base.utils import absolute_reverse
-
 from api.base.serializers import (JSONAPISerializer, IDField, TypeField, RelationshipField, LinksField)
 
 def get_type(record):
@@ -65,4 +64,4 @@ class GuidSerializer(JSONAPISerializer):
     def get_absolute_html_url(self, obj):
         if not isinstance(obj.referent, BaseFileNode):
             return obj.referent.absolute_url
-        return urlparse.urljoin(website_settings.DOMAIN, '/{}/'.format(obj._id))
+        return urlparse.urljoin(settings.DOMAIN, '/{}/'.format(obj._id))

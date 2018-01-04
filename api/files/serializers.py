@@ -8,7 +8,6 @@ import pytz
 from framework.auth.core import Auth
 from osf.models import BaseFileNode, OSFUser, Comment
 from rest_framework import serializers as ser
-from website import settings
 from website.util import api_v2_url
 
 from api.base.serializers import (
@@ -25,6 +24,7 @@ from api.base.serializers import (
     WaterbutlerLink,
     VersionedDateTimeField,
 )
+from api.base import settings
 from api.base.exceptions import Conflict
 from api.base.utils import absolute_reverse
 from api.base.utils import get_user_auth

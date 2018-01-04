@@ -6,9 +6,9 @@ from framework.auth.core import Auth
 from framework.exceptions import PermissionsError
 from osf.models import Guid, Comment, BaseFileNode, SpamStatus
 from rest_framework.exceptions import ValidationError, PermissionDenied
+from website import settings as website_settings
 from api.base.exceptions import InvalidModelValueError, Conflict
 from api.base.utils import absolute_reverse
-from api.base.settings import osf_settings
 from api.base.serializers import (JSONAPISerializer,
                                   TargetField,
                                   RelationshipField,
@@ -159,7 +159,7 @@ class CommentCreateSerializer(CommentSerializer):
             raise ValueError('Invalid comment target.')
         elif not target.referent.belongs_to_node(node_id):
             raise ValueError('Cannot post to comment target on another node.')
-        elif isinstance(target.referent, BaseFileNode) and target.referent.provider not in osf_settings.ADDONS_COMMENTABLE:
+        elif isinstance(target.referent, BaseFileNode) and target.referent.provider not in website_settings.ADDONS_COMMENTABLE:
                 raise ValueError('Comments are not supported for this file provider.')
         return target
 

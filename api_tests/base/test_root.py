@@ -13,7 +13,7 @@ from api.base.settings.defaults import API_BASE
 
 from framework.auth.oauth_scopes import public_scopes
 from framework.auth.cas import CasResponse
-from website import settings
+from api.base import settings
 from osf.models import ApiOAuth2PersonalToken, Session
 
 

@@ -8,6 +8,7 @@ from api.base.serializers import (
     LinksField, RelationshipField, VersionedDateTimeField, JSONAPIListField
 )
 from api.base.utils import absolute_reverse, get_user_auth
+from api.base import settings
 from api.taxonomies.serializers import TaxonomyField
 from api.nodes.serializers import (
     NodeCitationSerializer,
@@ -16,7 +17,6 @@ from api.nodes.serializers import (
     NodeTagField
 )
 from framework.exceptions import PermissionsError
-from website import settings
 from website.exceptions import NodeStateError
 from website.project import signals as project_signals
 from osf.models import BaseFileNode, PreprintService, PreprintProvider, Node, NodeLicense

@@ -15,7 +15,7 @@ from osf_tests.factories import (
     SubjectFactory,
     PreprintProviderFactory,
 )
-from website.settings import EZID_FORMAT, DOI_NAMESPACE
+from api.base.settings import EZID_FORMAT, DOI_NAMESPACE
 
 
 def build_preprint_update_payload(

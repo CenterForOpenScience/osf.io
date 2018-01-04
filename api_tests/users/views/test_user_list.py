@@ -6,7 +6,7 @@ import unittest
 import urlparse
 from uuid import UUID
 
-from api.base.settings.defaults import API_BASE
+from api.base import settings
 from framework.auth.cas import CasResponse
 from osf.models import OSFUser, Session, ApiOAuth2PersonalToken
 from osf_tests.factories import (
@@ -16,7 +16,6 @@ from osf_tests.factories import (
     Auth,
 )
 from osf.utils.permissions import CREATOR_PERMISSIONS
-from website import settings
 
 
 @pytest.mark.django_db
@@ -31,12 +30,12 @@ class TestUsers:
         return AuthUserFactory(fullname='Freddie Mercury II')
 
     def test_returns_200(self, app):
-        res = app.get('/{}users/'.format(API_BASE))
+        res = app.get('/{}users/'.format(settings.API_BASE))
         assert res.status_code == 200
         assert res.content_type == 'application/vnd.api+json'
 
     def test_find_user_in_users(self, app, user_one, user_two):
-        url = '/{}users/'.format(API_BASE)
+        url = '/{}users/'.format(settings.API_BASE)
 
         res = app.get(url)
         user_son = res.json['data']
@@ -45,7 +44,7 @@ class TestUsers:
         assert user_two._id in ids
 
     def test_all_users_in_users(self, app, user_one, user_two):
-        url = '/{}users/'.format(API_BASE)
+        url = '/{}users/'.format(settings.API_BASE)
 
         res = app.get(url)
         user_son = res.json['data']
@@ -57,7 +56,7 @@ class TestUsers:
     def test_merged_user_is_not_in_user_list_after_2point3(
             self, app, user_one, user_two):
         user_two.merge_user(user_one)
-        res = app.get('/{}users/?version=2.3'.format(API_BASE))
+        res = app.get('/{}users/?version=2.3'.format(settings.API_BASE))
         user_son = res.json['data']
 
         ids = [each['id'] for each in user_son]
@@ -68,7 +67,7 @@ class TestUsers:
     def test_merged_user_is_returned_before_2point3(
             self, app, user_one, user_two):
         user_two.merge_user(user_one)
-        res = app.get('/{}users/'.format(API_BASE))
+        res = app.get('/{}users/'.format(settings.API_BASE))
         user_son = res.json['data']
 
         ids = [each['id'] for each in user_son]
@@ -77,7 +76,7 @@ class TestUsers:
         assert user_one._id in ids
 
     def test_find_multiple_in_users(self, app, user_one, user_two):
-        url = '/{}users/?filter[full_name]=fred'.format(API_BASE)
+        url = '/{}users/?filter[full_name]=fred'.format(settings.API_BASE)
 
         res = app.get(url)
         user_json = res.json['data']
@@ -86,7 +85,7 @@ class TestUsers:
         assert user_two._id in ids
 
     def test_find_single_user_in_users(self, app, user_one, user_two):
-        url = '/{}users/?filter[full_name]=my'.format(API_BASE)
+        url = '/{}users/?filter[full_name]=my'.format(settings.API_BASE)
         user_one.fullname = 'My Mom'
         user_one.save()
         res = app.get(url)
@@ -96,7 +95,7 @@ class TestUsers:
         assert user_two._id not in ids
 
     def test_find_no_user_in_users(self, app, user_one, user_two):
-        url = '/{}users/?filter[full_name]=NotMyMom'.format(API_BASE)
+        url = '/{}users/?filter[full_name]=NotMyMom'.format(settings.API_BASE)
         res = app.get(url)
         user_json = res.json['data']
         ids = [each['id'] for each in user_json]
@@ -118,7 +117,7 @@ class TestUsers:
             auth=Auth(user=user_one)
         )
         project2.save()
-        url = '/{}users/?show_projects_in_common=true'.format(API_BASE)
+        url = '/{}users/?show_projects_in_common=true'.format(settings.API_BASE)
         res = app.get(url, auth=user_two.auth)
         user_json = res.json['data']
         for user in user_json:
@@ -130,7 +129,7 @@ class TestUsers:
     def test_users_projects_in_common(self, app, user_one, user_two):
         user_one.fullname = 'hello'
         user_one.save()
-        url = '/{}users/?show_projects_in_common=true'.format(API_BASE)
+        url = '/{}users/?show_projects_in_common=true'.format(settings.API_BASE)
         res = app.get(url, auth=user_two.auth)
         user_json = res.json['data']
         for user in user_json:
@@ -148,7 +147,7 @@ class TestUsers:
         )
         project.save()
         url = '/{}users/{}/nodes/?embed=contributors&show_projects_in_common=true'.format(
-            API_BASE, user_two._id)
+            settings.API_BASE, user_two._id)
         res = app.get(url, auth=user_two.auth)
         user_json = res.json['data'][0]['embeds']['contributors']['data']
         for user in user_json:
@@ -174,7 +173,7 @@ class TestUsers:
             project.remove_node(auth=Auth(user=user_one))
             project.save()
         url = '/{}users/{}/nodes/?embed=contributors&show_projects_in_common=true'.format(
-            API_BASE, user_two._id)
+            settings.API_BASE, user_two._id)
         res = app.get(url, auth=user_two.auth)
         user_json = res.json['data'][0]['embeds']['contributors']['data']
         for user in user_json:
@@ -192,7 +191,7 @@ class TestUsers:
         )
         project.save()
         url = '/{}users/{}/nodes/?embed=contributors'.format(
-            API_BASE, user_two._id)
+            settings.API_BASE, user_two._id)
         res = app.get(url, auth=user_two.auth)
         user_json = res.json['data'][0]['embeds']['contributors']['data']
         for user in user_json:
@@ -204,7 +203,7 @@ class TestUsers:
         user_one.fullname = 'hello'
         user_one.save()
         url = '/{}users/?filter[full_name]={}'.format(
-            API_BASE, user_one.fullname)
+            settings.API_BASE, user_one.fullname)
         res = app.get(url, auth=user_two.auth)
         user_json = res.json['data']
         for user in user_json:
@@ -215,7 +214,7 @@ class TestUsers:
             self, app, user_one, user_two):
         user_one.fullname = 'hello'
         user_one.save()
-        url = '/{}users/'.format(API_BASE)
+        url = '/{}users/'.format(settings.API_BASE)
         res = app.get(url, auth=user_two.auth)
         user_json = res.json['data']
         for user in user_json:
@@ -225,7 +224,7 @@ class TestUsers:
     def test_users_list_takes_profile_image_size_param(
             self, app, user_one, user_two):
         size = 42
-        url = '/{}users/?profile_image_size={}'.format(API_BASE, size)
+        url = '/{}users/?profile_image_size={}'.format(settings.API_BASE, size)
         res = app.get(url)
         user_json = res.json['data']
         for user in user_json:
@@ -245,7 +244,7 @@ class TestUsers:
         doe_jane.family_name = 'Jane'
         doe_jane.save()
 
-        url = '/{}users/?filter[given_name,family_name]=Doe'.format(API_BASE)
+        url = '/{}users/?filter[given_name,family_name]=Doe'.format(settings.API_BASE)
         res = app.get(url)
         data = res.json['data']
         assert len(data) == 2
@@ -263,14 +262,14 @@ class TestUsers:
         doe_jane.save()
 
         url = '/{}users/?filter[given_name,family_name]=Doe&filter[id]={}'.format(
-            API_BASE, john_doe._id)
+            settings.API_BASE, john_doe._id)
         res = app.get(url)
         data = res.json['data']
         assert len(data) == 1
 
     def test_users_list_filter_multiple_fields_with_bad_filter(
             self, app, user_one, user_two):
-        url = '/{}users/?filter[given_name,not_a_filter]=Doe'.format(API_BASE)
+        url = '/{}users/?filter[given_name,not_a_filter]=Doe'.format(settings.API_BASE)
         res = app.get(url, expect_errors=True)
         assert res.status_code == 400
 
@@ -288,7 +287,7 @@ class TestUsersCreate:
 
     @pytest.fixture()
     def url_base(self):
-        return '/{}users/'.format(API_BASE)
+        return '/{}users/'.format(settings.API_BASE)
 
     @pytest.fixture()
     def data(self, email_unconfirmed):

@@ -7,12 +7,12 @@ from rest_framework.authentication import BasicAuthentication
 from rest_framework import exceptions
 
 from addons.twofactor.models import UserSettings as TwoFactorUserSettings
+from api.base import settings
 from api.base.exceptions import (UnconfirmedAccountError, UnclaimedAccountError, DeactivatedAccountError,
                                  MergedAccountError, InvalidAccountError, TwoFactorRequiredError)
 from framework.auth import cas
 from framework.auth.core import get_user
 from osf.models import OSFUser, Session
-from website import settings
 
 
 def get_session_from_cookie(cookie_val):

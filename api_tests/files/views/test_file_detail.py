@@ -7,7 +7,7 @@ import pytz
 
 from addons.github.models import GithubFileNode
 from addons.osfstorage import settings as osfstorage_settings
-from api.base.settings.defaults import API_BASE
+from api.base import settings
 from api_tests import utils as api_utils
 from framework.auth.core import Auth
 from osf.models import NodeLog, Session, QuickFilesNode
@@ -18,7 +18,6 @@ from osf_tests.factories import (
     UserFactory,
 )
 from tests.base import capture_signals
-from website import settings as website_settings
 from website.project.signals import contributor_removed
 
 
@@ -50,7 +49,7 @@ class TestFileView:
 
     @pytest.fixture()
     def file_url(self, file):
-        return '/{}files/{}/'.format(API_BASE, file._id)
+        return '/{}files/{}/'.format(settings.API_BASE, file._id)
 
     def test_must_have_auth_and_be_contributor(self, app, file_url):
         # test_must_have_auth(self, app, file_url):
@@ -111,9 +110,9 @@ class TestFileView:
         session = Session(data={'auth_user_id': user._id})
         session.save()
         cookie = itsdangerous.Signer(
-            website_settings.SECRET_KEY
+            settings.SECRET_KEY
         ).sign(session._id)
-        app.set_cookie(website_settings.COOKIE_NAME, str(cookie))
+        app.set_cookie(settings.COOKIE_NAME, str(cookie))
 
         res = app.get('{}?create_guid=1'.format(file_url), auth=user.auth)
 
@@ -179,7 +178,7 @@ class TestFileView:
             user=contributor, page='files'
         )
         res = app.get(
-            '/{}files/{}/?related_counts=True'.format(API_BASE, file._id),
+            '/{}files/{}/?related_counts=True'.format(settings.API_BASE, file._id),
             auth=user.auth
         )
         assert res.status_code == 200
@@ -247,8 +246,9 @@ class TestFileView:
         assert user._id == res.json['data']['relationships']['checkout']['links']['related']['meta']['id']
 
         assert '/{}users/{}/'.format(
-            API_BASE, user._id
+            settings.API_BASE, user._id
         ) in res.json['data']['relationships']['checkout']['links']['related']['href']
+        assert '/{}users/{}/'.format(settings.API_BASE, user._id) in res.json['data']['relationships']['checkout']['links']['related']['href']
 
         res = app.put_json_api(
             file_url, {
@@ -529,19 +529,19 @@ class TestFileView:
     def test_get_file_guids_misc(self, app, user, file, node):
         # test_get_file_resolves_guids
         guid = file.get_guid(create=True)
-        url = '/{}files/{}/'.format(API_BASE, guid._id)
+        url = '/{}files/{}/'.format(settings.API_BASE, guid._id)
         res = app.get(url, auth=user.auth)
         assert res.status_code == 200
         assert res.json.keys() == ['meta', 'data']
         assert res.json['data']['attributes']['path'] == file.path
 
         # test_get_file_invalid_guid_gives_404
-        url = '/{}files/{}/'.format(API_BASE, 'asdasasd')
+        url = '/{}files/{}/'.format(settings.API_BASE, 'asdasasd')
         res = app.get(url, auth=user.auth, expect_errors=True)
         assert res.status_code == 404
 
         # test_get_file_non_file_guid_gives_404
-        url = '/{}files/{}/'.format(API_BASE, node._id)
+        url = '/{}files/{}/'.format(settings.API_BASE, node._id)
         res = app.get(url, auth=user.auth, expect_errors=True)
         assert res.status_code == 404
 
@@ -565,7 +565,7 @@ class TestFileView:
         folder = node.get_addon('osfstorage').get_root(
         ).append_folder('I\'d be a teacher!!')
         folder.save()
-        folder_url = '/{}files/{}/'.format(API_BASE, folder._id)
+        folder_url = '/{}files/{}/'.format(settings.API_BASE, folder._id)
         res = app.get(folder_url, auth=user.auth)
         split_href = res.json['data']['relationships']['files']['links']['related']['href'].split(
             '/')
@@ -578,7 +578,7 @@ class TestFileView:
         root = osfstorage.get_root()
         test_file = root.append_file('speedyfile.txt')
 
-        url = '/{}files/{}/?embed=user'.format(API_BASE, test_file._id)
+        url = '/{}files/{}/?embed=user'.format(settings.API_BASE, test_file._id)
         res = app.get(url, auth=user.auth)
 
         assert res.json['data'].get('embeds', None)
@@ -625,7 +625,7 @@ class TestFileVersionView:
         }).save()
 
         res = app.get(
-            '/{}files/{}/versions/'.format(API_BASE, file._id),
+            '/{}files/{}/versions/'.format(settings.API_BASE, file._id),
             auth=user.auth,
         )
         assert res.status_code == 200
@@ -636,7 +636,7 @@ class TestFileVersionView:
     def test_load_and_property(self, app, user, file):
         # test_by_id
         res = app.get(
-            '/{}files/{}/versions/1/'.format(API_BASE, file._id),
+            '/{}files/{}/versions/1/'.format(settings.API_BASE, file._id),
             auth=user.auth,
         )
         assert res.status_code == 200
@@ -644,17 +644,17 @@ class TestFileVersionView:
 
         # test_read_only
         assert app.put(
-            '/{}files/{}/versions/1/'.format(API_BASE, file._id),
+            '/{}files/{}/versions/1/'.format(settings.API_BASE, file._id),
             expect_errors=True, auth=user.auth,
         ).status_code == 405
 
         assert app.post(
-            '/{}files/{}/versions/1/'.format(API_BASE, file._id),
+            '/{}files/{}/versions/1/'.format(settings.API_BASE, file._id),
             expect_errors=True, auth=user.auth,
         ).status_code == 405
 
         assert app.delete(
-            '/{}files/{}/versions/1/'.format(API_BASE, file._id),
+            '/{}files/{}/versions/1/'.format(settings.API_BASE, file._id),
             expect_errors=True, auth=user.auth,
         ).status_code == 405
 
@@ -687,7 +687,7 @@ class TestFileTagging:
 
     @pytest.fixture()
     def url(self, file_one):
-        return '/{}files/{}/'.format(API_BASE, file_one._id)
+        return '/{}files/{}/'.format(settings.API_BASE, file_one._id)
 
     def test_tags_add_and_update_properly(self, app, user, url, payload):
         # test_tags_add_properly

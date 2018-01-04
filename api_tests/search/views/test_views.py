@@ -1,7 +1,7 @@
 import pytest
 import uuid
 
-from api.base.settings.defaults import API_BASE
+from api.base import settings
 from api_tests import utils
 from framework.auth.core import Auth
 from osf.models import MetaSchema
@@ -12,7 +12,6 @@ from osf_tests.factories import (
     InstitutionFactory,
 )
 from osf_tests.utils import mock_archive
-from website import settings
 from website.project.metadata.schemas import LATEST_SCHEMA_VERSION
 from website.search import elastic_search
 from website.search import search
@@ -134,7 +133,7 @@ class TestSearch(ApiSearchTestCase):
 
     @pytest.fixture()
     def url_search(self):
-        return '/{}search/'.format(API_BASE)
+        return '/{}search/'.format(settings.API_BASE)
 
     def test_search_results(
             self, app, url_search, user, user_one, user_two,
@@ -187,13 +186,13 @@ class TestSearch(ApiSearchTestCase):
         components_link = search_fields['components']['related']['href']
         registrations_link = search_fields['registrations']['related']['href']
 
-        assert '/{}search/users/?q=%2A'.format(API_BASE) in users_link
-        assert '/{}search/files/?q=%2A'.format(API_BASE) in files_link
-        assert '/{}search/projects/?q=%2A'.format(API_BASE) in projects_link
+        assert '/{}search/users/?q=%2A'.format(settings.API_BASE) in users_link
+        assert '/{}search/files/?q=%2A'.format(settings.API_BASE) in files_link
+        assert '/{}search/projects/?q=%2A'.format(settings.API_BASE) in projects_link
         assert '/{}search/components/?q=%2A'.format(
-            API_BASE) in components_link
+            settings.API_BASE) in components_link
         assert '/{}search/registrations/?q=%2A'.format(
-            API_BASE) in registrations_link
+            settings.API_BASE) in registrations_link
 
         # test_search_fields_links_with_query
         url = '{}?q=science'.format(url_search)
@@ -207,21 +206,21 @@ class TestSearch(ApiSearchTestCase):
         components_link = search_fields['components']['related']['href']
         registrations_link = search_fields['registrations']['related']['href']
 
-        assert '/{}search/users/?q=science'.format(API_BASE) in users_link
-        assert '/{}search/files/?q=science'.format(API_BASE) in files_link
+        assert '/{}search/users/?q=science'.format(settings.API_BASE) in users_link
+        assert '/{}search/files/?q=science'.format(settings.API_BASE) in files_link
         assert '/{}search/projects/?q=science'.format(
-            API_BASE) in projects_link
+            settings.API_BASE) in projects_link
         assert '/{}search/components/?q=science'.format(
-            API_BASE) in components_link
+            settings.API_BASE) in components_link
         assert '/{}search/registrations/?q=science'.format(
-            API_BASE) in registrations_link
+            settings.API_BASE) in registrations_link
 
 
 class TestSearchComponents(ApiSearchTestCase):
 
     @pytest.fixture()
     def url_component_search(self):
-        return '/{}search/components/'.format(API_BASE)
+        return '/{}search/components/'.format(settings.API_BASE)
 
     def test_search_components(
             self, app, url_component_search, user, user_one, user_two,
@@ -333,7 +332,7 @@ class TestSearchFiles(ApiSearchTestCase):
 
     @pytest.fixture()
     def url_file_search(self):
-        return '/{}search/files/'.format(API_BASE)
+        return '/{}search/files/'.format(settings.API_BASE)
 
     def test_search_files(
             self, app, url_file_search, user, user_one,
@@ -399,7 +398,7 @@ class TestSearchProjects(ApiSearchTestCase):
 
     @pytest.fixture()
     def url_project_search(self):
-        return '/{}search/projects/'.format(API_BASE)
+        return '/{}search/projects/'.format(settings.API_BASE)
 
     def test_search_projects(
             self, app, url_project_search, user, user_one,
@@ -513,7 +512,7 @@ class TestSearchRegistrations(ApiSearchTestCase):
 
     @pytest.fixture()
     def url_registration_search(self):
-        return '/{}search/registrations/'.format(API_BASE)
+        return '/{}search/registrations/'.format(settings.API_BASE)
 
     @pytest.fixture()
     def schema(self):
@@ -653,7 +652,7 @@ class TestSearchUsers(ApiSearchTestCase):
 
     @pytest.fixture()
     def url_user_search(self):
-        return '/{}search/users/'.format(API_BASE)
+        return '/{}search/users/'.format(settings.API_BASE)
 
     def test_search_user(self, app, url_user_search, user, user_one, user_two):
 
@@ -730,7 +729,7 @@ class TestSearchInstitutions(ApiSearchTestCase):
 
     @pytest.fixture()
     def url_institution_search(self):
-        return '/{}search/institutions/'.format(API_BASE)
+        return '/{}search/institutions/'.format(settings.API_BASE)
 
     def test_search_institutions(
             self, app, url_institution_search, user, institution):

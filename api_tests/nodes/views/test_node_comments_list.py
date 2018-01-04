@@ -2,8 +2,7 @@
 import pytest
 
 from addons.wiki.tests.factories import NodeWikiFactory
-from api.base.settings import osf_settings
-from api.base.settings.defaults import API_BASE
+from api.base import settings
 from api_tests import utils as test_utils
 from framework.auth import core
 from osf.models import Guid
@@ -128,7 +127,7 @@ class TestNodeCommentsList(NodeCommentsListMixin):
         project_private = ProjectFactory(is_public=False, creator=user)
         comment_private = CommentFactory(node=project_private, user=user)
         url_private = '/{}nodes/{}/comments/'.format(
-            API_BASE, project_private._id)
+            settings.API_BASE, project_private._id)
         return {
             'project': project_private,
             'comment': comment_private,
@@ -139,7 +138,7 @@ class TestNodeCommentsList(NodeCommentsListMixin):
         project_public = ProjectFactory(is_public=True, creator=user)
         comment_public = CommentFactory(node=project_public, user=user)
         url_public = '/{}nodes/{}/comments/'.format(
-            API_BASE, project_public._id)
+            settings.API_BASE, project_public._id)
         return {
             'project': project_public,
             'comment': comment_public,
@@ -150,7 +149,7 @@ class TestNodeCommentsList(NodeCommentsListMixin):
         registration = RegistrationFactory(creator=user)
         comment_registration = CommentFactory(node=registration, user=user)
         url_registration = '/{}registrations/{}/comments/'.format(
-            API_BASE, registration._id)
+            settings.API_BASE, registration._id)
         return {
             'registration': registration,
             'comment': comment_registration,
@@ -168,7 +167,7 @@ class TestNodeCommentsListFiles(NodeCommentsListMixin):
             node=project_private, user=user,
             target=file_private.get_guid(), page='files')
         url_private = '/{}nodes/{}/comments/'.format(
-            API_BASE, project_private._id)
+            settings.API_BASE, project_private._id)
         return {
             'project': project_private,
             'file': file_private,
@@ -184,7 +183,7 @@ class TestNodeCommentsListFiles(NodeCommentsListMixin):
             target=file_public.get_guid(),
             page='files')
         url_public = '/{}nodes/{}/comments/'.format(
-            API_BASE, project_public._id)
+            settings.API_BASE, project_public._id)
         return {
             'project': project_public,
             'file': file_public,
@@ -200,7 +199,7 @@ class TestNodeCommentsListFiles(NodeCommentsListMixin):
             target=file_registration.get_guid(),
             page='files')
         url_registration = '/{}registrations/{}/comments/'.format(
-            API_BASE, registration._id)
+            settings.API_BASE, registration._id)
         return {
             'registration': registration,
             'file': file_registration,
@@ -231,7 +230,7 @@ class TestNodeCommentsListWiki(NodeCommentsListMixin):
             node=project_private, user=user, target=Guid.load(
                 wiki_private._id), page='wiki')
         url_private = '/{}nodes/{}/comments/'.format(
-            API_BASE, project_private._id)
+            settings.API_BASE, project_private._id)
         return {
             'project': project_private,
             'wiki': wiki_private,
@@ -247,7 +246,7 @@ class TestNodeCommentsListWiki(NodeCommentsListMixin):
             target=Guid.load(wiki_public._id),
             page='wiki')
         url_public = '/{}nodes/{}/comments/'.format(
-            API_BASE, project_public._id)
+            settings.API_BASE, project_public._id)
         return {
             'project': project_public,
             'wiki': wiki_public,
@@ -263,7 +262,7 @@ class TestNodeCommentsListWiki(NodeCommentsListMixin):
             target=Guid.load(wiki_registration._id),
             page='wiki')
         url_registration = '/{}registrations/{}/comments/'.format(
-            API_BASE, registration._id)
+            settings.API_BASE, registration._id)
         return {
             'registration': registration,
             'wiki': wiki_registration,
@@ -524,7 +523,7 @@ class TestNodeCommentCreate(NodeCommentsCreateMixin):
             user_read_contrib, permissions=['read'])
         project_private.save()
         url_private = '/{}nodes/{}/comments/'.format(
-            API_BASE, project_private._id)
+            settings.API_BASE, project_private._id)
         payload_private = payload(project_private._id)
         return {
             'project': project_private,
@@ -538,7 +537,7 @@ class TestNodeCommentCreate(NodeCommentsCreateMixin):
         project_public.add_contributor(user_read_contrib, permissions=['read'])
         project_public.save()
         url_public = '/{}nodes/{}/comments/'.format(
-            API_BASE, project_public._id)
+            settings.API_BASE, project_public._id)
         payload_public = payload(project_public._id)
         return {
             'project': project_public,
@@ -552,7 +551,7 @@ class TestNodeCommentCreate(NodeCommentsCreateMixin):
         project_public.add_contributor(user_read_contrib, permissions=['read'])
         project_public.save()
         url_public = '/{}nodes/{}/comments/'.format(
-            API_BASE, project_public._id)
+            settings.API_BASE, project_public._id)
         payload_public = payload(project_public._id)
         return {
             'project': project_public,
@@ -566,7 +565,7 @@ class TestNodeCommentCreate(NodeCommentsCreateMixin):
             user_read_contrib, permissions=['read'])
         project_private.save()
         url_private = '/{}nodes/{}/comments/'.format(
-            API_BASE, project_private._id)
+            settings.API_BASE, project_private._id)
         payload_private = payload(project_private._id)
         return {
             'project': project_private,
@@ -866,7 +865,7 @@ class TestNodeCommentCreate(NodeCommentsCreateMixin):
             'data': {
                 'type': 'comments',
                 'attributes': {
-                    'content': ('c' * (osf_settings.COMMENT_MAXLENGTH + 3))
+                    'content': ('c' * (settings.COMMENT_MAXLENGTH + 3))
                 },
                 'relationships': {
                     'target': {
@@ -885,10 +884,10 @@ class TestNodeCommentCreate(NodeCommentsCreateMixin):
             expect_errors=True)
         assert res.status_code == 400
         assert res.json['errors'][0]['detail'] == 'Ensure this field has no more than {} characters.'.format(
-            str(osf_settings.COMMENT_MAXLENGTH))
+            str(settings.COMMENT_MAXLENGTH))
 
     #   test_create_comment_invalid_target_node
-        url_fake = '/{}nodes/{}/comments/'.format(API_BASE, 'abcde')
+        url_fake = '/{}nodes/{}/comments/'.format(settings.API_BASE, 'abcde')
         payload_fake = payload('abcde')
         res = app.post_json_api(
             url_fake, payload_fake,
@@ -953,7 +952,7 @@ class TestFileCommentCreate(NodeCommentsCreateMixin):
             user_read_contrib, permissions=['read'])
         project_private.save()
         url_private = '/{}nodes/{}/comments/'.format(
-            API_BASE, project_private._id)
+            settings.API_BASE, project_private._id)
         file_private = test_utils.create_test_file(project_private, user)
         payload_private = payload(file_private.get_guid()._id)
         return {
@@ -969,7 +968,7 @@ class TestFileCommentCreate(NodeCommentsCreateMixin):
         project_public.add_contributor(user_read_contrib, permissions=['read'])
         project_public.save()
         url_public = '/{}nodes/{}/comments/'.format(
-            API_BASE, project_public._id)
+            settings.API_BASE, project_public._id)
         file_public = test_utils.create_test_file(project_public, user)
         payload_public = payload(file_public.get_guid()._id)
         return {
@@ -985,7 +984,7 @@ class TestFileCommentCreate(NodeCommentsCreateMixin):
         project_public.add_contributor(user_read_contrib, permissions=['read'])
         project_public.save()
         url_public = '/{}nodes/{}/comments/'.format(
-            API_BASE, project_public._id)
+            settings.API_BASE, project_public._id)
         file_public = test_utils.create_test_file(project_public, user)
         payload_public = payload(file_public.get_guid()._id)
         return {
@@ -1001,7 +1000,7 @@ class TestFileCommentCreate(NodeCommentsCreateMixin):
             user_read_contrib, permissions=['read'])
         project_private.save()
         url_private = '/{}nodes/{}/comments/'.format(
-            API_BASE, project_private._id)
+            settings.API_BASE, project_private._id)
         file_private = test_utils.create_test_file(project_private, user)
         payload_private = payload(file_private.get_guid()._id)
         return {
@@ -1083,7 +1082,7 @@ class TestWikiCommentCreate(NodeCommentsCreateMixin):
             user_read_contrib, permissions=['read'])
         project_private.save()
         url_private = '/{}nodes/{}/comments/'.format(
-            API_BASE, project_private._id)
+            settings.API_BASE, project_private._id)
         wiki = NodeWikiFactory(node=project_private, user=user)
         payload_private = payload(wiki._id)
         return {
@@ -1099,7 +1098,7 @@ class TestWikiCommentCreate(NodeCommentsCreateMixin):
         project_public.add_contributor(user_read_contrib, permissions=['read'])
         project_public.save()
         url_public = '/{}nodes/{}/comments/'.format(
-            API_BASE, project_public._id)
+            settings.API_BASE, project_public._id)
         wiki = NodeWikiFactory(node=project_public, user=user)
         payload_public = payload(wiki._id)
         return {
@@ -1115,7 +1114,7 @@ class TestWikiCommentCreate(NodeCommentsCreateMixin):
         project_public.add_contributor(user_read_contrib, permissions=['read'])
         project_public.save()
         url_public = '/{}nodes/{}/comments/'.format(
-            API_BASE, project_public._id)
+            settings.API_BASE, project_public._id)
         wiki = NodeWikiFactory(node=project_public, user=user)
         payload_public = payload(wiki._id)
         return {
@@ -1131,7 +1130,7 @@ class TestWikiCommentCreate(NodeCommentsCreateMixin):
             user_read_contrib, permissions=['read'])
         project_private.save()
         url_private = '/{}nodes/{}/comments/'.format(
-            API_BASE, project_private._id)
+            settings.API_BASE, project_private._id)
         wiki = NodeWikiFactory(node=project_private, user=user)
         payload_private = payload(wiki._id)
         return {
@@ -1217,7 +1216,7 @@ class TestCommentRepliesCreate(NodeCommentsCreateMixin):
             user_read_contrib, permissions=['read'], save=True)
         comment_private = CommentFactory(node=project_private, user=user)
         url_private = '/{}nodes/{}/comments/'.format(
-            API_BASE, project_private._id)
+            settings.API_BASE, project_private._id)
         payload_private = payload(comment_private._id)
         return {
             'project': project_private,
@@ -1233,7 +1232,7 @@ class TestCommentRepliesCreate(NodeCommentsCreateMixin):
             user_read_contrib, permissions=['read'], save=True)
         comment_public = CommentFactory(node=project_public, user=user)
         url_public = '/{}nodes/{}/comments/'.format(
-            API_BASE, project_public._id)
+            settings.API_BASE, project_public._id)
         payload_public = payload(comment_public._id)
         return {
             'project': project_public,
@@ -1252,7 +1251,7 @@ class TestCommentRepliesCreate(NodeCommentsCreateMixin):
             target=Guid.load(comment_private._id),
             user=user)
         url_private = '/{}nodes/{}/comments/'.format(
-            API_BASE, project_private._id)
+            settings.API_BASE, project_private._id)
         payload_private = payload(comment_reply._id)
         return {
             'project': project_private,
@@ -1272,7 +1271,7 @@ class TestCommentRepliesCreate(NodeCommentsCreateMixin):
             target=Guid.load(comment_public._id),
             user=user)
         url_public = '/{}nodes/{}/comments/'.format(
-            API_BASE, project_public._id)
+            settings.API_BASE, project_public._id)
         payload_public = payload(comment_reply._id)
         return {
             'project': project_public,
@@ -1313,7 +1312,7 @@ class TestCommentFiltering:
 
     @pytest.fixture()
     def url_base(self, project):
-        return '/{}nodes/{}/comments/'.format(API_BASE, project._id)
+        return '/{}nodes/{}/comments/'.format(settings.API_BASE, project._id)
 
     @pytest.fixture()
     def date_created_formatted(self, comment):

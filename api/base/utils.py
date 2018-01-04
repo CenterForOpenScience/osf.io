@@ -12,13 +12,13 @@ from rest_framework.reverse import reverse
 
 from api.base.authentication.drf import get_session_from_cookie
 from api.base.exceptions import Gone, UserGone
+from api.base import settings
 from framework.auth import Auth
 from framework.auth.cas import CasResponse
 from framework.auth.oauth_scopes import ComposedScopes, normalize_scopes
 from osf.models import OSFUser, Contributor, Node, Registration
 from osf.models.base import GuidMixin
 from osf.utils.requests import check_select_for_update
-from website import settings as website_settings
 from website import util as website_util  # noqa
 
 # These values are copied from rest_framework.fields.BooleanField
@@ -161,7 +161,7 @@ def has_admin_scope(request):
         tokened requests that do, and requests that are made via the
         OSF (i.e. have an osf cookie)
     """
-    cookie = request.COOKIES.get(website_settings.COOKIE_NAME)
+    cookie = request.COOKIES.get(settings.COOKIE_NAME)
     if cookie:
         return bool(get_session_from_cookie(cookie))
 
