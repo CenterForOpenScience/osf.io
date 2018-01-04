@@ -1,8 +1,10 @@
 import os
+import itertools
 import json
 import logging
 
 from contextlib import contextmanager
+from django.apps import apps
 
 from website import settings
 from osf.models import NodeLicense, MetaSchema
@@ -12,16 +14,21 @@ logger = logging.getLogger(__file__)
 
 
 @contextmanager
-def disable_auto_now_fields(model):
+def disable_auto_now_fields(model=None):
     """
     Context manager to disable updates of all auto_now fields for a given model.
+    If model=None, updates for all auto_now fields on all models will be disabled.
 
     """
+    all_app_models = list(itertools.chain(*[app.get_models() for app in apps.get_app_configs() if 'addons' in app.label or 'osf' in app.label]))
+    models = [model] if model else all_app_models
+
     changed = []
-    for field in model._meta.get_fields():
-        if hasattr(field, 'auto_now') and field.auto_now:
-            field.auto_now = False
-            changed.append(field)
+    for model in models:
+        for field in model._meta.get_fields():
+            if hasattr(field, 'auto_now') and field.auto_now:
+                field.auto_now = False
+                changed.append(field)
     try:
         yield
     finally:
