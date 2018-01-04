@@ -110,7 +110,8 @@ function ViewModel(url) {
             title: 'Disconnect Cloud Files Account?',
             message: '<p class="overflow">' +
                 'Are you sure you want to disconnect the Cloud Files account <strong>' +
-                osfHelpers.htmlEscape(account.name) + '</strong>? This will revoke access to Cloud Files for all projects associated with this account.' +
+                osfHelpers.htmlEscape(account.name) + '</strong>? This will revoke access to Cloud' +
+            ' Files for all projects associated with this account.' +
                 '</p>',
             callback: function (confirm) {
                 if (confirm) {

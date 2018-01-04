@@ -149,7 +149,7 @@ def cloudfiles_create_container(auth, node_addon, **kwargs):
     if any([char for char in node_addon.FORBIDDEN_CHARS_FOR_CONTAINER_NAMES
             if char in container_name]):
         return {
-            'message': ('Cloud Files container name cannot contain any of the characters: /?')
+            'message': ('Cloud Files container name cannot contain either of the characters: / or ?')
         }, httplib.BAD_REQUEST
 
     try:

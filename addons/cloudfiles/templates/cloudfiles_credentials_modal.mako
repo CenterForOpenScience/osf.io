@@ -3,7 +3,7 @@
         <div class="modal-content">
 
             <div class="modal-header">
-                <h3>Connect an Cloud Files Account</h3>
+                <h3>Connect a Cloud Files Account</h3>
             </div>
 
             <form>

@@ -92,5 +92,6 @@ class TestCreateContainer(CloudFilesAddonTestCase, OsfTestCase):
             'container_location': 'FAK'
         }, auth=self.user.auth, expect_errors=True)
 
-        assert_equal(res.json, {"message": 'Cloud Files container name cannot contain any of the characters: /?'})
+        assert_equal(res.json, {"message":
+                                    'Cloud Files container name cannot contain either of the characters: / or ?'})
         assert_equal(res.status_code, http.BAD_REQUEST)
