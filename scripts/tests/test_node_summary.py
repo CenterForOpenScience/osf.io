@@ -47,7 +47,7 @@ class TestNodeCount(OsfTestCase):
         self.date = timezone.now() - datetime.timedelta(days=1)
 
         for node in AbstractNode.objects.all():
-            node.date_created = self.date
+            node.created = self.date
             node.save()
         # modify_node_dates_in_mongo(self.date - datetime.timedelta(0.1))
 
@@ -107,7 +107,7 @@ class TestNodeCount(OsfTestCase):
 
         # Modify date to zero out dailies
         for node in AbstractNode.objects.all():
-            node.date_created = self.date - datetime.timedelta(days=1)
+            node.created = self.date - datetime.timedelta(days=1)
             node.save()
 
         self.results = NodeSummary().get_events(self.date.date())[0]
