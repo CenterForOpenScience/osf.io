@@ -55,9 +55,7 @@ def cloudfiles_add_user_account(auth, **kwargs):
         }, httplib.BAD_REQUEST
 
     try:
-        conn = connection.Connection(username=username,
-                               api_key=secret_key,
-                               region='IAD')
+        conn = connection.Connection(username=username, api_key=secret_key)
         for container in conn.object_store.containers():  # Checks if has necessary permission
             pass
     except HttpException:
