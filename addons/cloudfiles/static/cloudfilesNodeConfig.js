@@ -183,15 +183,6 @@ var ViewModel = oop.extend(OauthAddonFolderPicker,{
             });
         });
     },
-    isValidContainerName: function(containerName) {
-        if(containerName) {
-            var strictContainerName = new RegExp('[^?/]');
-            return strictContainerName.test(containerName);
-        } else {
-           return false
-        }
-    },
-
     openCreateContainer: function() {
         var self = this;
 
@@ -250,21 +241,6 @@ var ViewModel = oop.extend(OauthAddonFolderPicker,{
                             errorMessage.text('Container name cannot be empty');
                             errorMessage[0].classList.add('text-danger');
                             return false;
-                        } else if (!self.isValidContainerName(containerName)) {
-                            bootbox.confirm({
-                                title: 'Invalid container name',
-                                message: 'Cloud Files container Name cannot contain any of the characters: /?',
-                                callback: function (result) {
-                                    if (result) {
-                                        self.openCreateContainer();
-                                    }
-                                },
-                                buttons: {
-                                    confirm: {
-                                        label: 'Try again'
-                                    }
-                                }
-                            });
                         } else {
                             self.createContainer(self, containerName, containerLocation);
                         }
