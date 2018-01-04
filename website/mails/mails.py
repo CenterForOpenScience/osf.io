@@ -24,11 +24,12 @@ import logging
 from mako.lookup import TemplateLookup, Template
 
 from framework.email import tasks
-from website import settings
+from website import settings as website_settings
+from api.base import settings
 
 logger = logging.getLogger(__name__)
 
-EMAIL_TEMPLATES_DIR = os.path.join(settings.TEMPLATES_PATH, 'emails')
+EMAIL_TEMPLATES_DIR = os.path.join(website_settings.TEMPLATES_PATH, 'emails')
 
 _tpl_lookup = TemplateLookup(
     directories=[EMAIL_TEMPLATES_DIR],

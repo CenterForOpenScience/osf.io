@@ -1,4 +1,4 @@
-<% from website import settings %>
+<% from api.base import settings %>
 
 User: ${user.fullname} (${user.username}) [${user._id}]
 

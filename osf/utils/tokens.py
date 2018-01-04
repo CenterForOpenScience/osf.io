@@ -5,7 +5,7 @@ from flask import request
 
 from framework.exceptions import HTTPError
 
-from website import settings
+from api.base import settings
 from website.tokens import handlers
 from website.tokens.exceptions import TokenHandlerNotFound
 

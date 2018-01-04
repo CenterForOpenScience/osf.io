@@ -11,7 +11,7 @@ from framework.auth import Auth
 from framework.celery_tasks import app as celery_app
 
 from website.app import init_app
-from website import settings
+from api.base import settings
 from osf.models import NodeLog, Retraction
 
 from scripts import utils as scripts_utils

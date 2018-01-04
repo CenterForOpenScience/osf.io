@@ -6,8 +6,10 @@ import sys
 
 from django.utils import timezone
 
-from website import settings
+from api.base import settings
 
+
+LOG_PATH = os.path.join(settings.APP_PATH, 'logs')
 
 def format_now():
     return timezone.now().isoformat()
@@ -20,7 +22,7 @@ def add_file_logger(logger, script_name, suffix=None):
         name = '{0}-{1}'.format(name, suffix)
     file_handler = logging.FileHandler(
         os.path.join(
-            settings.LOG_PATH,
+            LOG_PATH,
             '.'.join([name, format_now(), 'log'])
         )
     )

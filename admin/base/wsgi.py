@@ -6,7 +6,7 @@ It exposes the WSGI callable as a module-level variable named ``application``.
 For more information on this file, see
 https://docs.djangoproject.com/en/1.8/howto/deployment/wsgi/
 """
-from website import settings
+from api.base import settings
 
 if not settings.DEBUG_MODE:
     from gevent import monkey

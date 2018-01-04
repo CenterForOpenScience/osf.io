@@ -7,7 +7,7 @@ from raven.contrib.flask import Sentry
 
 from framework.sessions import get_session
 
-from website import settings
+from api.base import settings
 
 logger = logging.getLogger(__name__)
 

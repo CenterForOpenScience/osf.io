@@ -10,7 +10,7 @@ setup_django()
 from osf.models import OSFUser
 from scripts import utils as script_utils
 from website.mailchimp_utils import subscribe_mailchimp
-from website import settings
+from api.base import settings
 
 logger = logging.getLogger(__name__)
 

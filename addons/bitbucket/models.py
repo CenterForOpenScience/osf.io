@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 
 import markupsafe
+import importlib
 
 from django.db import models
 
@@ -15,8 +16,9 @@ from addons.bitbucket.exceptions import NotFoundError
 from framework.auth import Auth
 from osf.models.external import ExternalProvider
 from osf.models.files import File, Folder, BaseFileNode
-from website import settings
 from website.util import web_url_for
+
+settings = importlib.import_module('api.base.settings')
 
 hook_domain = bitbucket_settings.HOOK_DOMAIN or settings.DOMAIN
 

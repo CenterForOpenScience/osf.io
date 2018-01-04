@@ -5,19 +5,20 @@ from flask import (Flask, request, jsonify, render_template,  # noqa
 )
 import furl
 
-from website import settings
+from website import settings as website_settings
+from api.base import settings
 
 # Create app
 app = Flask(
     __name__,
-    static_folder=settings.STATIC_FOLDER,
-    static_url_path=settings.STATIC_URL_PATH,
+    static_folder=website_settings.STATIC_FOLDER,
+    static_url_path=website_settings.STATIC_URL_PATH,
 )
 
 # Pull debug mode from settings
 app.debug = settings.DEBUG_MODE
 app.config['SENTRY_TAGS'] = {'App': 'web'}
-app.config['SENTRY_RELEASE'] = settings.VERSION
+app.config['SENTRY_RELEASE'] = website_settings.VERSION
 
 def rm_handler(app, handler_name, func, key=None):
     """Remove a handler from an application.

@@ -18,7 +18,8 @@ from framework.auth.signals import user_merged
 from framework.analytics import get_total_activity_count
 from framework.exceptions import PermissionsError
 from framework.celery_tasks import handlers
-from website import settings
+from api.base import settings
+from website import settings as website_settings
 from website import filters
 from website import mailchimp_utils
 from website.project.signals import contributor_added
@@ -443,11 +444,11 @@ class TestOSFUser:
         )
 
     def test_profile_image_url(self, user):
-        expected = filters.profile_image_url(settings.PROFILE_IMAGE_PROVIDER,
+        expected = filters.profile_image_url(website_settings.PROFILE_IMAGE_PROVIDER,
                                          user,
                                          use_ssl=True,
-                                         size=settings.PROFILE_IMAGE_MEDIUM)
-        assert user.profile_image_url(settings.PROFILE_IMAGE_MEDIUM) == expected
+                                         size=website_settings.PROFILE_IMAGE_MEDIUM)
+        assert user.profile_image_url(website_settings.PROFILE_IMAGE_MEDIUM) == expected
 
     def test_set_unusable_username_for_unsaved_user(self):
         user = UserFactory.build()
@@ -468,7 +469,7 @@ class TestOSFUser:
         assert user.has_usable_username() is False
 
     def test_profile_image_url_has_no_default_size(self, user):
-        expected = filters.profile_image_url(settings.PROFILE_IMAGE_PROVIDER,
+        expected = filters.profile_image_url(website_settings.PROFILE_IMAGE_PROVIDER,
                                          user,
                                          use_ssl=True)
         assert user.profile_image_url() == expected

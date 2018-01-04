@@ -4,7 +4,7 @@ import os
 
 from invoke import task
 
-from website import settings
+from api.base import settings
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 WHEELHOUSE_PATH = os.environ.get('WHEELHOUSE')

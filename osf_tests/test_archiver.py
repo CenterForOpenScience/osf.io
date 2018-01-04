@@ -39,7 +39,8 @@ from osf.models.archive import ArchiveTarget, ArchiveJob
 from website.archiver.decorators import fail_archive_on_error
 
 from website import mails
-from website import settings
+from website import settings as website_settings
+from api.base import settings
 from osf.models import MetaSchema
 from osf.utils.sanitize import strip_html
 from addons.base.models import BaseStorageAddon
@@ -457,7 +458,7 @@ class TestStorageAddonBase(ArchiverTestCase):
     # @pytest.mark.skip('Unskip when figshare addon is implemented')
     def test_addons(self):
         #  Test that each addon in settings.ADDONS_ARCHIVABLE other than wiki/forward implements the StorageAddonBase interface
-        for addon in [a for a in settings.ADDONS_ARCHIVABLE if a not in ['wiki', 'forward']]:
+        for addon in [a for a in website_settings.ADDONS_ARCHIVABLE if a not in ['wiki', 'forward']]:
             self._test_addon(addon)
 
 class TestArchiverTasks(ArchiverTestCase):
@@ -466,7 +467,7 @@ class TestArchiverTasks(ArchiverTestCase):
     @mock.patch('celery.chain')
     def test_archive(self, mock_chain, mock_enqueue):
         archive(job_pk=self.archive_job._id)
-        targets = [self.src.get_addon(name) for name in settings.ADDONS_ARCHIVABLE]
+        targets = [self.src.get_addon(name) for name in website_settings.ADDONS_ARCHIVABLE]
         target_addons = [addon for addon in targets if (addon and addon.complete and isinstance(addon, BaseStorageAddon))]
         assert_true(self.dst.archiving)
         mock_chain.assert_called_with(
@@ -556,7 +557,7 @@ class TestArchiverTasks(ArchiverTestCase):
         cookie = self.user.get_or_create_cookie()
         assert(mock_make_copy_request.called_with(
             self.archive_job._id,
-            settings.WATERBUTLER_URL + '/ops/copy',
+            website_settings.WATERBUTLER_URL + '/ops/copy',
             data=dict(
                 source=dict(
                     cookie=cookie,
@@ -1281,7 +1282,7 @@ class TestArchiveJobModel(OsfTestCase):
 
     def tearDown(self, *args, **kwargs):
         super(TestArchiveJobModel, self).tearDown(*args, **kwargs)
-        with open(os.path.join(settings.ROOT, 'addons.json')) as fp:
+        with open(os.path.join(website_settings.ROOT, 'addons.json')) as fp:
             addon_settings = json.load(fp)
             settings.ADDONS_ARCHIVABLE = addon_settings['addons_archivable']
 

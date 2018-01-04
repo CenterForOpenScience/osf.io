@@ -1,6 +1,6 @@
 import unittest
 
-from website import settings
+from api.base import settings
 
 
 requires_search = unittest.skipIf(

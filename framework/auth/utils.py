@@ -6,7 +6,7 @@ import requests
 
 from django.core.exceptions import ValidationError
 
-from website import settings
+from api.base import settings
 
 # email verification adopted from django. For licence information, see NOTICE
 USER_REGEX = re.compile(

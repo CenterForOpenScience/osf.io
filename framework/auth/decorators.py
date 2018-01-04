@@ -11,7 +11,7 @@ from framework.auth import signing
 from framework.flask import redirect
 from framework.exceptions import HTTPError
 from .core import Auth
-from website import settings
+from api.base import settings
 
 
 # TODO [CAS-10][OSF-7566]: implement long-term fix for URL preview/prefetch

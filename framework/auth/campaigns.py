@@ -5,7 +5,7 @@ from django.utils import timezone
 
 from website import mails
 from osf.models import PreprintProvider
-from website.settings import DOMAIN, CAMPAIGN_REFRESH_THRESHOLD
+from api.base.settings import DOMAIN, CAMPAIGN_REFRESH_THRESHOLD
 from framework.utils import throttle_period_expired
 
 

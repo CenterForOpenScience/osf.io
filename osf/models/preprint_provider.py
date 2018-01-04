@@ -14,7 +14,7 @@ from osf.models.mixins import ReviewProviderMixin
 from osf.models.subject import Subject
 from osf.utils.datetime_aware_jsonfield import DateTimeAwareJSONField
 from osf.utils.fields import EncryptedTextField
-from website import settings
+from api.base import settings
 from website.util import api_v2_url
 
 

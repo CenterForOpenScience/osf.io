@@ -13,7 +13,7 @@ from django.contrib.auth.mixins import PermissionRequiredMixin
 from django.forms.models import model_to_dict
 from django.shortcuts import redirect
 
-from website import settings as web_settings
+from api.base import settings as api_settings
 from admin.base import settings
 from admin.base.forms import ImportFileForm
 from admin.preprint_providers.forms import PreprintProviderForm, PreprintProviderCustomTaxonomyForm
@@ -130,7 +130,7 @@ class PreprintProviderDisplay(PermissionRequiredMixin, DetailView):
 
         kwargs['preprint_provider'] = preprint_provider_attributes
         kwargs['subject_ids'] = list(subject_ids)
-        kwargs['logohost'] = urlparse.urljoin(web_settings.DOMAIN, web_settings.PREPRINTS_ASSETS)
+        kwargs['logohost'] = urlparse.urljoin(api_settings.DOMAIN, api_settings.PREPRINTS_ASSETS)
         fields = model_to_dict(preprint_provider)
         fields['toplevel_subjects'] = list(subject_ids)
         fields['subjects_chosen'] = ', '.join(str(i) for i in subject_ids)

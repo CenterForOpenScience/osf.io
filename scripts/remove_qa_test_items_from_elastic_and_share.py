@@ -10,7 +10,7 @@ from django.db.models import Q
 from osf.models import AbstractNode
 from website.project.tasks import update_node_share
 from website.search.elastic_search import update_node
-from website.settings import DO_NOT_INDEX_LIST
+from api.base.settings import DO_NOT_INDEX_LIST
 from framework.database import paginated
 
 

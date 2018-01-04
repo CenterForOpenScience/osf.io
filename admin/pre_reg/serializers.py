@@ -5,7 +5,7 @@ from framework.utils import iso8601format
 from dateutil import parser
 
 from website.project.metadata.utils import serialize_meta_schema
-from website.settings import DOMAIN as OSF_DOMAIN
+from api.base.settings import DOMAIN as OSF_DOMAIN
 
 
 EMBARGO = 'embargo'

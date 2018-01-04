@@ -38,7 +38,7 @@ from osf.models.admin_log_entry import (
 from admin.users.serializers import serialize_user
 from admin.users.forms import EmailResetForm, WorkshopForm, UserSearchForm, MergeUserForm
 from admin.users.templatetags.user_extras import reverse_user
-from website.settings import DOMAIN, OSF_SUPPORT_EMAIL
+from api.base.settings import DOMAIN, OSF_SUPPORT_EMAIL
 
 
 class UserDeleteView(PermissionRequiredMixin, DeleteView):

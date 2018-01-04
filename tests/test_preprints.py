@@ -21,7 +21,8 @@ from osf_tests.utils import MockShareResponse
 from osf.utils import permissions
 from tests.utils import assert_logs
 from tests.base import OsfTestCase
-from website import settings, mails
+from api.base import settings
+from website import mails
 from website.identifiers.utils import get_doi_and_metadata_for_object
 from website.preprints.tasks import format_preprint, update_preprint_share, on_preprint_updated
 from website.project.views.contributor import find_preprint_provider

@@ -16,7 +16,7 @@ from werkzeug.local import LocalProxy
 
 from framework.flask import redirect
 from framework.sessions.utils import remove_session
-from website import settings
+from api.base import settings
 
 
 def add_key_to_url(url, scheme, key):

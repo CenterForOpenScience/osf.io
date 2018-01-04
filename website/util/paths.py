@@ -4,7 +4,8 @@ import os
 import json
 import logging
 
-from website import settings
+from api.base import settings
+from website import settings as website_settings
 
 
 logger = logging.getLogger(__name__)
@@ -16,7 +17,7 @@ def load_asset_paths():
         return
     asset_paths = None
     try:
-        with open(settings.ASSET_HASH_PATH) as fp:
+        with open(website_settings.ASSET_HASH_PATH) as fp:
             asset_paths = json.load(fp)
     except IOError:
         logger.error('No "webpack-assets.json" file found. You may need to run webpack.')
@@ -49,7 +50,7 @@ def resolve_addon_path(addon_config, file_name):
     :param str file_name: Asset file name (e.g. "files.js")
     """
     source_path = os.path.join(
-        settings.ADDON_PATH,
+        website_settings.ADDON_PATH,
         addon_config.short_name,
         'static',
         file_name,

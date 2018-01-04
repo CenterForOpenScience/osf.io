@@ -35,9 +35,9 @@ from addons.osfstorage.models import OsfStorageFile, OsfStorageFolder
 from framework.exceptions import HTTPError
 from osf.models import Node, NodeLog, Registration, BaseFileNode
 from api.base.utils import waterbutler_api_url_for
+from api.base.settings import ARCHIVE_TIMEOUT_TIMEDELTA, ARCHIVE_PROVIDER
 from scripts import utils as script_utils
 from website.archiver import ARCHIVER_SUCCESS
-from website.settings import ARCHIVE_TIMEOUT_TIMEDELTA, ARCHIVE_PROVIDER
 
 logger = logging.getLogger(__name__)
 

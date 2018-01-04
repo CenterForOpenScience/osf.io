@@ -8,7 +8,7 @@ from osf.models import Node, Registration, Sanction, MetaSchema, NodeLog
 from osf.utils.permissions import READ, WRITE, ADMIN
 from addons.wiki.models import NodeWikiPage
 
-from website import settings
+from api.base import settings
 
 from . import factories
 from .utils import assert_datetime_equal, mock_archive
@@ -512,7 +512,7 @@ class TestDraftRegistrations:
         assert draft.registration_schema == schema
         assert draft.registration_metadata == data
 
-    @mock.patch('website.settings.ENABLE_ARCHIVER', False)
+    @mock.patch('api.base.settings.ENABLE_ARCHIVER', False)
     def test_register(self):
         user = factories.UserFactory()
         auth = Auth(user)

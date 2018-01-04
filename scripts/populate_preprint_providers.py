@@ -7,7 +7,7 @@ import sys
 
 from django.db import transaction
 from website.app import init_app
-from website.settings import PREPRINT_PROVIDER_DOMAINS, DOMAIN, PROTOCOL
+from api.base.settings import PREPRINT_PROVIDER_DOMAINS, DOMAIN, PROTOCOL
 import django
 django.setup()
 

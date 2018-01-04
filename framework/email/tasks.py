@@ -4,7 +4,7 @@ from email.mime.text import MIMEText
 
 from framework.celery_tasks import app
 from framework.sentry import sentry
-from website import settings
+from api.base import settings
 import sendgrid
 
 logger = logging.getLogger(__name__)

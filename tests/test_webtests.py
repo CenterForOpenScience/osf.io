@@ -31,7 +31,8 @@ from osf_tests.factories import (
     UnregUserFactory,
 )
 from addons.wiki.tests.factories import NodeWikiFactory
-from website import settings, language
+from website import settings as website_settings, language
+from api.base import settings
 from addons.osfstorage.models import OsfStorageFile
 from website.util import web_url_for, api_url_for
 
@@ -772,32 +773,32 @@ class TestExplorePublicActivity(OsfTestCase):
 
         # Add project to new and noteworthy projects
         self.new_and_noteworthy_links_node = ProjectFactory(is_public=True)
-        self.new_and_noteworthy_links_node._id = settings.NEW_AND_NOTEWORTHY_LINKS_NODE
+        self.new_and_noteworthy_links_node._id = website_settings.NEW_AND_NOTEWORTHY_LINKS_NODE
         self.new_and_noteworthy_links_node.add_pointer(self.project, auth=Auth(self.new_and_noteworthy_links_node.creator), save=True)
 
         # Set up popular projects and registrations
         self.popular_links_node = ProjectFactory(is_public=True)
-        settings.POPULAR_LINKS_NODE = self.popular_links_node._id
+        website_settings.POPULAR_LINKS_NODE = self.popular_links_node._id
         self.popular_links_node.add_pointer(self.popular_project, auth=Auth(self.popular_links_node.creator), save=True)
 
         self.popular_links_registrations = ProjectFactory(is_public=True)
-        settings.POPULAR_LINKS_REGISTRATIONS = self.popular_links_registrations._id
+        website_settings.POPULAR_LINKS_REGISTRATIONS = self.popular_links_registrations._id
         self.popular_links_registrations.add_pointer(self.popular_registration, auth=Auth(self.popular_links_registrations.creator), save=True)
 
 
     def test_explore_page_loads_when_settings_not_configured(self):
 
-        old_settings_values = settings.POPULAR_LINKS_NODE, settings.NEW_AND_NOTEWORTHY_LINKS_NODE, settings.POPULAR_LINKS_REGISTRATIONS
+        old_settings_values = website_settings.POPULAR_LINKS_NODE, website_settings.NEW_AND_NOTEWORTHY_LINKS_NODE, website_settings.POPULAR_LINKS_REGISTRATIONS
 
-        settings.POPULAR_LINKS_NODE = 'notanode'
-        settings.NEW_AND_NOTEWORTHY_LINKS_NODE = 'alsototallywrong'
-        settings.POPULAR_LINKS_REGISTRATIONS = 'nopenope'
+        website_settings.POPULAR_LINKS_NODE = 'notanode'
+        website_settings.NEW_AND_NOTEWORTHY_LINKS_NODE = 'alsototallywrong'
+        website_settings.POPULAR_LINKS_REGISTRATIONS = 'nopenope'
 
         url = self.project.web_url_for('activity')
         res = self.app.get(url)
         assert_equal(res.status_code, 200)
 
-        settings.POPULAR_LINKS_NODE, settings.NEW_AND_NOTEWORTHY_LINKS_NODE, settings.POPULAR_LINKS_REGISTRATIONS = old_settings_values
+        website_settings.POPULAR_LINKS_NODE, website_settings.NEW_AND_NOTEWORTHY_LINKS_NODE, website_settings.POPULAR_LINKS_REGISTRATIONS = old_settings_values
 
     def test_new_and_noteworthy_and_popular_nodes_show_in_explore_activity(self):
 

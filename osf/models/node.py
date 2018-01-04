@@ -43,13 +43,14 @@ from osf.models.spam import SpamMixin
 from osf.models.tag import Tag
 from osf.models.user import OSFUser
 from osf.models.validators import validate_doi, validate_title
+from api.base import settings
 from framework.auth.core import Auth, get_user
 from osf.utils.datetime_aware_jsonfield import DateTimeAwareJSONField
 from osf.utils.fields import NonNaiveDateTimeField
 from osf.utils.requests import DummyRequest, get_request_and_user_id
 from osf.utils import sanitize
 from osf.utils.workflows import DefaultStates
-from website import language, settings
+from website import language, settings as website_settings
 from website.citations.utils import datetime_to_csl
 from website.exceptions import (InvalidTagError, NodeStateError,
                                 TagNotFoundError, UserNotAffiliatedError)
@@ -2897,7 +2898,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         """
         ret = super(AbstractNode, self).delete_addon(addon_name, auth, _force)
         if ret:
-            config = settings.ADDONS_AVAILABLE_DICT[addon_name]
+            config = website_settings.ADDONS_AVAILABLE_DICT[addon_name]
             self.add_log(
                 action=NodeLog.ADDON_REMOVED,
                 params={
@@ -3045,7 +3046,7 @@ def send_osf_signal(sender, instance, created, **kwargs):
 @receiver(post_save, sender=Node)
 def add_default_node_addons(sender, instance, created, **kwargs):
     if (created or instance._is_templated_clone) and instance.is_original and not instance._suppress_log:
-        for addon in settings.ADDONS_AVAILABLE:
+        for addon in website_settings.ADDONS_AVAILABLE:
             if 'node' in addon.added_default:
                 instance.add_addon(addon.short_name, auth=None, log=False)
 

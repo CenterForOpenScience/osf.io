@@ -9,6 +9,7 @@ from framework.celery_tasks import app as celery_app
 from framework.celery_tasks.utils import logged
 from framework.exceptions import HTTPError
 
+from api.base import settings
 from api.base.utils import waterbutler_api_url_for
 
 from website.archiver import (
@@ -25,7 +26,7 @@ from website.archiver import utils
 from website.archiver import signals as archiver_signals
 
 from website.project import signals as project_signals
-from website import settings
+from website import settings as website_settings
 from website.app import init_addons
 from osf.models import (
     ArchiveJob,
@@ -36,7 +37,7 @@ from osf.models import (
 
 def create_app_context():
     try:
-        init_addons(settings)
+        init_addons(website_settings)
     except AssertionError:  # ignore AssertionErrors
         pass
 

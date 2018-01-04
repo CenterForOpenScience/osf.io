@@ -10,7 +10,8 @@ import urlparse
 from scripts import generate_sitemap
 from osf_tests.factories import (AuthUserFactory, ProjectFactory, RegistrationFactory, CollectionFactory,
                                  PreprintFactory, PreprintProviderFactory, EmbargoFactory, UnconfirmedUserFactory)
-from website import settings
+from website import settings as website_settings
+from api.base import settings
 
 
 def get_all_sitemap_urls():
@@ -19,10 +20,10 @@ def get_all_sitemap_urls():
     generate_sitemap.main()
 
     # Parse the generated XML sitemap file
-    with open(os.path.join(settings.STATIC_FOLDER, 'sitemaps/sitemap_0.xml')) as f:
+    with open(os.path.join(website_settings.STATIC_FOLDER, 'sitemaps/sitemap_0.xml')) as f:
         tree = xml.etree.ElementTree.parse(f)
 
-    shutil.rmtree(settings.STATIC_FOLDER)
+    shutil.rmtree(website_settings.STATIC_FOLDER)
 
     # Get all the urls in the sitemap
     # Note: namespace was defined in the XML file, therefore necessary to include in tag

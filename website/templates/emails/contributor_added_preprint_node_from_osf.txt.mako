@@ -1,5 +1,5 @@
 <%!
-    from website import settings
+    from api.base import settings
 %>
 
 Hello ${user.fullname},

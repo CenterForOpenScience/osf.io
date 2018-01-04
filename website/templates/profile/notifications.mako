@@ -2,7 +2,7 @@
 <%def name="title()">Notifications</%def>
 
 <%def name="content()">
-<% from website import settings%>
+<% from api.base import settings%>
 <h2 class="page-header">Settings</h2>
 
 <div id="notificationSettings" class="row">

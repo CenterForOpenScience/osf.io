@@ -25,8 +25,8 @@ from framework.auth import Auth
 from framework.auth.decorators import must_be_logged_in
 from osf.models import OSFUser, Session
 from osf.utils import permissions
+from api.base import settings
 from website import mails
-from website import settings
 from website.project.decorators import (
     must_have_permission,
     must_be_contributor,

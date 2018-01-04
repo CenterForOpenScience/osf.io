@@ -8,7 +8,7 @@ from framework.celery_tasks import app
 from framework.celery_tasks.handlers import queued_task
 from framework.auth.signals import user_confirmed
 from osf.models import OSFUser
-from website import settings
+from api.base import settings
 
 
 def get_mailchimp_api():

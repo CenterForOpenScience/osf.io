@@ -6,7 +6,8 @@ import requests
 
 from framework.celery_tasks import app as celery_app
 
-from website import settings, mails
+from website import mails
+from api.base import settings
 from website.util.share import GraphNode, format_contributor
 
 

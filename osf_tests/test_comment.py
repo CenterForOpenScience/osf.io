@@ -9,7 +9,7 @@ from addons.github.models import GithubFile
 from addons.googledrive.models import GoogleDriveFile
 from addons.osfstorage.models import OsfStorageFile
 from addons.s3.models import S3File
-from website import settings
+from api.base import settings
 from addons.osfstorage import settings as osfstorage_settings
 from website.project.views.comment import update_file_guid_referent
 from website.project.signals import comment_added, mention_added, contributor_added

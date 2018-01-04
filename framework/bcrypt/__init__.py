@@ -8,7 +8,7 @@
 #   License: BSD
 
 import bcrypt
-from website import settings
+from api.base import settings
 
 def generate_password_hash(password, rounds=None):
     '''Generates a password hash using `bcrypt`. Specifying `log_rounds` sets

@@ -1,5 +1,4 @@
-from website.settings import DOMAIN as OSF_DOMAIN
-from website.settings import OSF_SUPPORT_EMAIL
+from api.base.settings import OSF_SUPPORT_EMAIL, DOMAIN as OSF_DOMAIN
 from osf.models import OSFUser
 from furl import furl
 

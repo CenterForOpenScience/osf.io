@@ -18,7 +18,8 @@ from framework import sentry
 from framework.celery_tasks import app as celery_app
 from osf.models import OSFUser, AbstractNode, PreprintService, PreprintProvider
 from scripts import utils as script_utils
-from website import settings
+from api.base import settings
+from website import settings as website_settings
 from website.app import init_app
 
 logger = logging.getLogger(__name__)
@@ -31,7 +32,7 @@ class Sitemap(object):
         self.errors = 0
         self.new_doc()
         if not settings.SITEMAP_TO_S3:
-            self.sitemap_dir = os.path.join(settings.STATIC_FOLDER, 'sitemaps')
+            self.sitemap_dir = os.path.join(website_settings.STATIC_FOLDER, 'sitemaps')
             if not os.path.exists(self.sitemap_dir):
                 print('Creating sitemap directory at `{}`'.format(self.sitemap_dir))
                 os.makedirs(self.sitemap_dir)

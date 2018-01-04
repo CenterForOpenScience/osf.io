@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-from website.settings import CeleryConfig
+from api.base.settings import CeleryConfig
 
 def match_by_module(task_path):
     task_parts = task_path.split('.')

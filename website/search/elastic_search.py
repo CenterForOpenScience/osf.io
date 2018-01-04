@@ -26,7 +26,8 @@ from osf.models import BaseFileNode
 from osf.models import Institution
 from osf.models import QuickFilesNode
 from osf.utils.sanitize import unescape_entities
-from website import settings
+from website import settings as website_settings
+from api.base import settings
 from website.filters import profile_image_url
 from osf.models.licenses import serialize_node_license_record
 from website.search import exceptions
@@ -724,10 +725,10 @@ def search_contributor(query, page=0, size=10, exclude=None, current_user=None):
                 'education': education,
                 'social': user.social_links,
                 'n_projects_in_common': n_projects_in_common,
-                'profile_image_url': profile_image_url(settings.PROFILE_IMAGE_PROVIDER,
+                'profile_image_url': profile_image_url(website_settings.PROFILE_IMAGE_PROVIDER,
                                                        user,
                                                        use_ssl=True,
-                                                       size=settings.PROFILE_IMAGE_MEDIUM),
+                                                       size=website_settings.PROFILE_IMAGE_MEDIUM),
                 'profile_url': user.profile_url,
                 'registered': user.is_registered,
                 'active': user.is_active

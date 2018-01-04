@@ -19,6 +19,7 @@ from osf.utils.sanitize import strip_html
 from osf.utils.permissions import ADMIN
 from osf.models import NodeLog, MetaSchema, DraftRegistration, Sanction
 from api.base.utils import rapply
+from api.base import settings
 
 from website.exceptions import NodeStateError
 from website.project.decorators import (
@@ -26,7 +27,7 @@ from website.project.decorators import (
     must_have_permission,
     http_error_if_disk_saving_mode
 )
-from website import language, settings
+from website import language
 from website.ember_osf_web.decorators import ember_flag_is_active
 from website.prereg import utils as prereg_utils
 from website.project import utils as project_utils

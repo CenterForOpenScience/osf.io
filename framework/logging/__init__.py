@@ -7,7 +7,7 @@ try:
 except ImportError:
     use_color = False
 
-from website import settings
+from api.base import settings
 
 handler = logging.StreamHandler()
 

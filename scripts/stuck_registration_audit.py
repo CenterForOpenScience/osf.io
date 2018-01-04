@@ -18,7 +18,8 @@ from framework.celery_tasks import app as celery_app
 from osf.management.commands import force_archive as fa
 from osf.models import ArchiveJob, Registration
 from website.archiver import ARCHIVER_INITIATED
-from website.settings import ARCHIVE_TIMEOUT_TIMEDELTA, ADDONS_REQUESTED
+from website.settings import ADDONS_REQUESTED
+from api.base.settings import ARCHIVE_TIMEOUT_TIMEDELTA
 
 from scripts import utils as scripts_utils
 

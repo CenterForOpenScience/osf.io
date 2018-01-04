@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """Various text used throughout the website, e.g. status messages, errors, etc.
 """
-from website import settings
+from api.base import settings
 
 # Status Messages
 #################

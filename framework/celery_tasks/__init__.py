@@ -6,7 +6,8 @@ from celery.utils.log import get_task_logger
 from raven import Client
 from raven.contrib.celery import register_signal
 
-from website.settings import SENTRY_DSN, VERSION, CeleryConfig
+from website.settings import VERSION
+from api.base.settings import SENTRY_DSN, CeleryConfig
 
 app = Celery()
 app.config_from_object(CeleryConfig)

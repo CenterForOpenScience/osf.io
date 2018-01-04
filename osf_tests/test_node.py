@@ -16,8 +16,9 @@ from osf.utils import permissions
 from website.util import api_url_for, web_url_for
 from api_tests.utils import disconnected_from_listeners
 from website.citations.utils import datetime_to_csl
-from website import language, settings
+from website import language, settings as website_settings
 from website.project.tasks import on_node_updated
+from api.base import settings
 from osf.utils.permissions import READ, WRITE, ADMIN, expand_permissions, DEFAULT_CONTRIBUTOR_PERMISSIONS
 
 from osf.models import (
@@ -619,10 +620,10 @@ class TestProject:
         assert node.logs.first().action == 'project_created'
         assert set(node.get_addon_names()) == set([
             addon_config.short_name
-            for addon_config in settings.ADDONS_AVAILABLE
+            for addon_config in website_settings.ADDONS_AVAILABLE
             if 'node' in addon_config.added_default
         ])
-        for addon_config in settings.ADDONS_AVAILABLE:
+        for addon_config in website_settings.ADDONS_AVAILABLE:
             if 'node' in addon_config.added_default:
                 assert addon_config.short_name in node.get_addon_names()
                 assert len([

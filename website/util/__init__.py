@@ -61,14 +61,14 @@ def api_url_for(view_name, _absolute=False, _xml=False, _internal=False, *args, 
     if _absolute:
         # We do NOT use the url_for's _external kwarg because app.config['SERVER_NAME'] alters
         # behavior in an unknown way (currently breaks tests). /sloria /jspies
-        domain = website_settings.INTERNAL_DOMAIN if _internal else website_settings.DOMAIN
+        domain = api_settings.INTERNAL_DOMAIN if _internal else api_settings.DOMAIN
         return urlparse.urljoin(domain, url)
     return url
 
 # Move somewhere
 def api_v2_url(path_str,
                params=None,
-               base_route=website_settings.API_DOMAIN,
+               base_route=api_settings.API_DOMAIN,
                base_prefix=api_settings.API_BASE,
                **kwargs):
     """
@@ -103,7 +103,7 @@ def web_url_for(view_name, _absolute=False, _internal=False, _guid=False, *args,
     if _absolute:
         # We do NOT use the url_for's _external kwarg because app.config['SERVER_NAME'] alters
         # behavior in an unknown way (currently breaks tests). /sloria /jspies
-        domain = website_settings.INTERNAL_DOMAIN if _internal else website_settings.DOMAIN
+        domain = api_settings.INTERNAL_DOMAIN if _internal else api_settings.DOMAIN
         return urlparse.urljoin(domain, url)
     return url
 

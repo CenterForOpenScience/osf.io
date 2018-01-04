@@ -9,7 +9,7 @@ from osf_tests.factories import UserFactory
 from osf.models.queued_mail import QueuedMail, queue_mail, NO_ADDON, NO_LOGIN_TYPE
 
 from scripts.send_queued_mails import main, pop_and_verify_mails_for_each_user, find_queued_mails_ready_to_be_sent
-from website import settings
+from api.base import settings
 
 class TestSendQueuedMails(OsfTestCase):
 

@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 from django.utils import timezone
 
-from website import settings
+from api.base import settings
 
 def no_addon(email):
     return len(email.user.get_addons()) == 0

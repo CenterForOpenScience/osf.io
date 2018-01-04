@@ -11,7 +11,7 @@ import datetime
 from dateutil.parser import parse
 from keen.client import KeenClient
 
-from website.settings import KEEN as keen_settings
+from api.base.settings import KEEN as keen_settings
 
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO)

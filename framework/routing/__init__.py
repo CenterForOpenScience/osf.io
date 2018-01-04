@@ -19,11 +19,12 @@ from framework.exceptions import HTTPError
 from framework.flask import app, redirect
 from framework.sessions import session
 
-from website import settings
+from website import settings as website_settings
+from api.base import settings
 
 logger = logging.getLogger(__name__)
 
-TEMPLATE_DIR = settings.TEMPLATES_PATH
+TEMPLATE_DIR = website_settings.TEMPLATES_PATH
 
 _TPL_LOOKUP = TemplateLookup(
     default_filters=[
@@ -31,7 +32,7 @@ _TPL_LOOKUP = TemplateLookup(
     ],
     directories=[
         TEMPLATE_DIR,
-        settings.ADDON_PATH,
+        website_settings.ADDON_PATH,
     ],
     module_directory='/tmp/mako_modules'
 )
@@ -47,7 +48,7 @@ _TPL_LOOKUP_SAFE = TemplateLookup(
     ],
     directories=[
         TEMPLATE_DIR,
-        settings.ADDON_PATH,
+        website_settings.ADDON_PATH,
     ],
     module_directory='/tmp/mako_modules',
 )

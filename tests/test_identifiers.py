@@ -15,7 +15,7 @@ from tests.test_addons import assert_urls_equal
 import furl
 import lxml.etree
 
-from website import settings
+from api.base import settings
 from website.identifiers.utils import to_anvl
 from website.identifiers import metadata
 from osf.models import Identifier, Subject, NodeLicense

@@ -7,7 +7,7 @@ from dateutil.parser import parse
 from django.utils import timezone
 
 from website.app import init_app
-from website.settings import KEEN as keen_settings
+from api.base.settings import KEEN as keen_settings
 from keen.client import KeenClient
 
 logger = logging.getLogger(__name__)

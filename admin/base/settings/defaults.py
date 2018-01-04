@@ -4,7 +4,7 @@ Django settings for the admin project.
 
 import os
 from urlparse import urlparse
-from website import settings as osf_settings
+from api.base import settings as osf_settings
 from django.contrib import messages
 from api.base.settings import *  # noqa
 # TODO ALL SETTINGS FROM API WILL BE IMPORTED AND WILL NEED TO BE OVERRRIDEN

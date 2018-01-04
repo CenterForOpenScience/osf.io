@@ -10,7 +10,7 @@ from osf.models import DraftRegistration, QueuedMail
 from osf.models.queued_mail import PREREG_REMINDER, PREREG_REMINDER_TYPE, queue_mail
 
 from website.app import init_app
-from website import settings
+from api.base import settings
 
 from scripts.utils import add_file_logger
 

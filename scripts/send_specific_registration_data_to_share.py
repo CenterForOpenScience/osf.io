@@ -7,7 +7,7 @@ django.setup()
 
 from osf.models import AbstractNode
 from scripts import utils as script_utils
-from website import settings
+from api.base import settings
 from website.app import setup_django
 from website.project.tasks import update_node_share
 

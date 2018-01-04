@@ -8,7 +8,7 @@ from osf.utils.datetime_aware_jsonfield import DateTimeAwareJSONField
 from osf.utils.fields import NonNaiveDateTimeField
 from osf.utils import akismet
 
-from website import settings
+from api.base import settings
 
 logger = logging.getLogger(__name__)
 

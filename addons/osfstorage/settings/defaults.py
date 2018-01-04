@@ -20,8 +20,6 @@ WATERBUTLER_SETTINGS = {
 
 WATERBUTLER_RESOURCE = 'folder'
 
-DISK_SAVING_MODE = settings.DISK_SAVING_MODE
-
 
 try:
     mod = importlib.import_module('.{}'.format(settings.MIGRATION_ENV), package='addons.osfstorage.settings')

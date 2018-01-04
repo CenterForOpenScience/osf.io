@@ -11,7 +11,7 @@ from tests.utils import mock_auth
 
 from framework.exceptions import HTTPError
 
-from website import settings
+from api.base import settings
 from osf.models import AbstractNode, Embargo, RegistrationApproval, Retraction, Sanction
 from website.tokens import decode, encode, TokenHandler
 from website.tokens.exceptions import TokenHandlerNotFound

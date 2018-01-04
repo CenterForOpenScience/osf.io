@@ -45,7 +45,7 @@ from osf.utils.datetime_aware_jsonfield import DateTimeAwareJSONField
 from osf.utils.fields import NonNaiveDateTimeField, LowercaseEmailField
 from osf.utils.names import impute_names
 from osf.utils.requests import check_select_for_update
-from website import settings as website_settings
+from api.base import settings as api_settings
 from website import filters, mails
 from website.project import new_bookmark_collection
 
@@ -370,7 +370,7 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
 
     @property
     def absolute_url(self):
-        return urlparse.urljoin(website_settings.DOMAIN, self.url)
+        return urlparse.urljoin(api_settings.DOMAIN, self.url)
 
     @property
     def absolute_api_v2_url(self):
@@ -604,7 +604,7 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
         notifications_configured = user.notifications_configured.copy()
         notifications_configured.update(self.notifications_configured)
         self.notifications_configured = notifications_configured
-        if not website_settings.RUNNING_MIGRATION:
+        if not api_settings.RUNNING_MIGRATION:
             for key, value in user.mailchimp_mailing_lists.iteritems():
                 # subscribe to each list if either user was subscribed
                 subscription = value or self.mailchimp_mailing_lists.get(key)
@@ -756,14 +756,14 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
 
         try:
             mailchimp_utils.unsubscribe_mailchimp(
-                list_name=website_settings.MAILCHIMP_GENERAL_LIST,
+                list_name=api_settings.MAILCHIMP_GENERAL_LIST,
                 user_id=self._id,
                 username=self.username
             )
         except mailchimp_utils.mailchimp.ListNotSubscribedError:
             pass
         except mailchimp_utils.mailchimp.InvalidApiKeyError:
-            if not website_settings.ENABLE_EMAIL_SUBSCRIPTIONS:
+            if not api_settings.ENABLE_EMAIL_SUBSCRIPTIONS:
                 pass
             else:
                 raise
@@ -1106,7 +1106,7 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
         :raises: KeyError if there is no token for the email.
         """
 
-        base = website_settings.DOMAIN if external else '/'
+        base = api_settings.DOMAIN if external else '/'
         token = self.get_confirmation_token(email, force=force, renew=renew)
         external = 'external/' if external_id_provider else ''
         destination = '?{}'.format(urllib.urlencode({'destination': destination})) if destination else ''
@@ -1388,7 +1388,7 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
         :returns: The unclaimed record for the project
         """
         uid = self._primary_key
-        base_url = website_settings.DOMAIN if external else '/'
+        base_url = api_settings.DOMAIN if external else '/'
         unclaimed_record = self.get_unclaimed_record(project_id)
         token = unclaimed_record['token']
         return '{base_url}user/{uid}/{project_id}/claim/?token={token}'\

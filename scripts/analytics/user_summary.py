@@ -13,8 +13,8 @@ from django.db.models import Q
 from django.utils import timezone
 
 from osf.models import OSFUser
+from api.base import settings
 from website.app import init_app
-from website import settings
 from framework.database import paginated
 from framework import sentry
 from scripts.analytics.base import SummaryAnalytics

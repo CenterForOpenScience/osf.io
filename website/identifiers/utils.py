@@ -4,7 +4,7 @@ import re
 import logging
 
 from framework.exceptions import HTTPError
-from website import settings
+from api.base import settings
 from website.identifiers.metadata import datacite_metadata_for_node, datacite_metadata_for_preprint
 
 logger = logging.getLogger(__name__)

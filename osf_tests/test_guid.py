@@ -8,7 +8,8 @@ from osf_tests.factories import AuthUserFactory, UserFactory, NodeFactory, NodeL
     RegistrationFactory, PreprintFactory, PreprintProviderFactory
 from tests.base import OsfTestCase
 from tests.test_websitefiles import TestFile
-from website.settings import MFR_SERVER_URL, WATERBUTLER_URL
+from api.base.settings import MFR_SERVER_URL
+from website.settings import WATERBUTLER_URL
 
 @pytest.mark.django_db
 class TestGuid:

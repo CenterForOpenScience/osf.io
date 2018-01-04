@@ -11,7 +11,7 @@ import mock
 
 from framework.auth.core import Auth
 
-from website import settings
+from api.base import settings
 import website.search.search as search
 from website.search import elastic_search
 from website.search.util import build_query

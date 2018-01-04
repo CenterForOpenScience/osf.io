@@ -10,7 +10,7 @@ from nose.tools import *  # noqa PEP8 asserts
 from datetime import timedelta
 
 from addons.twofactor.tests import _valid_code
-from website import settings
+from api.base import settings
 
 from tests.base import OsfTestCase
 from osf_tests.factories import ProjectFactory, AuthUserFactory, SessionFactory

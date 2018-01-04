@@ -12,7 +12,7 @@ from framework.auth import authenticate, external_first_login_authenticate
 from framework.auth.core import get_user, generate_verification_key
 from framework.flask import redirect
 from framework.exceptions import HTTPError
-from website import settings
+from api.base import settings
 
 
 class CasError(HTTPError):

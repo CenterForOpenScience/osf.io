@@ -21,7 +21,7 @@ from framework.celery_tasks.handlers import celery_before_request
 from framework.django.handlers import handlers as django_handlers
 from framework.flask import rm_handlers
 from osf.models import MetaSchema
-from website import settings
+from api.base import settings
 from website.app import init_app
 from website.notifications.listeners import (subscribe_contributor,
                                              subscribe_creator)

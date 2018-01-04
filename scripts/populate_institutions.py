@@ -10,7 +10,7 @@ import django
 from django.db import transaction
 django.setup()
 
-from website import settings
+from api.base import settings
 from website.app import init_app
 from osf.models import Institution
 from website.search.search import update_institution

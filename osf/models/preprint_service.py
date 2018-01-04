@@ -18,7 +18,7 @@ from osf.utils.permissions import ADMIN
 from website.preprints.tasks import on_preprint_updated, get_and_set_preprint_identifiers
 from website.project.licenses import set_license
 from website.util import api_v2_url
-from website import settings, mails
+from website import mails
 
 from osf.models.base import BaseModel, GuidMixin
 from osf.models.identifiers import IdentifierMixin, Identifier

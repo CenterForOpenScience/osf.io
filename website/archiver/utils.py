@@ -10,10 +10,8 @@ from website.archiver import (
     ARCHIVER_FORCED_FAILURE,
 )
 
-from website import (
-    mails,
-    settings
-)
+from website import mails
+from api.base import settings
 from osf.utils.sanitize import unescape_entities
 
 

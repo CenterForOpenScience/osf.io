@@ -11,7 +11,7 @@ from osf.models.spam import SpamMixin
 from osf.models import validators
 
 from framework.exceptions import PermissionsError
-from website import settings
+from api.base import settings
 from website.util import api_v2_url
 from website.project import signals as project_signals
 from website.project.model import get_valid_mentioned_users_guids

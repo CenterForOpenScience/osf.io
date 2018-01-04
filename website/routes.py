@@ -24,9 +24,10 @@ from framework.auth.core import _get_current_user
 
 from osf.models import Institution
 from osf.utils import sanitize
+from api.base import settings
+from website import settings as website_settings
 from website import util
 from website import prereg
-from website import settings
 from website import language
 from website.util import metrics
 from website.util import paths
@@ -86,8 +87,8 @@ def get_globals():
             'continent': getattr(location, 'continent', None),
             'country': getattr(location, 'country', None),
         },
-        'use_cdn': settings.USE_CDN_FOR_CLIENT_LIBS,
-        'sentry_dsn_js': settings.SENTRY_DSN_JS if sentry.enabled else None,
+        'use_cdn': website_settings.USE_CDN_FOR_CLIENT_LIBS,
+        'sentry_dsn_js': website_settings.SENTRY_DSN_JS if sentry.enabled else None,
         'dev_mode': settings.DEV_MODE,
         'allow_login': settings.ALLOW_LOGIN,
         'cookie_name': settings.COOKIE_NAME,
@@ -95,10 +96,10 @@ def get_globals():
         'prev_status': status.pop_previous_status_messages(),
         'domain': settings.DOMAIN,
         'api_domain': settings.API_DOMAIN,
-        'disk_saving_mode': settings.DISK_SAVING_MODE,
+        'disk_saving_mode': website_settings.DISK_SAVING_MODE,
         'language': language,
-        'noteworthy_links_node': settings.NEW_AND_NOTEWORTHY_LINKS_NODE,
-        'popular_links_node': settings.POPULAR_LINKS_NODE,
+        'noteworthy_links_node': website_settings.NEW_AND_NOTEWORTHY_LINKS_NODE,
+        'popular_links_node': website_settings.POPULAR_LINKS_NODE,
         'web_url_for': util.web_url_for,
         'api_url_for': util.api_url_for,
         'api_v2_url': util.api_v2_url,  # URL function for templates
@@ -107,12 +108,11 @@ def get_globals():
         'sanitize': sanitize,
         'sjson': lambda s: sanitize.safe_json(s),
         'webpack_asset': paths.webpack_asset,
-        'waterbutler_url': settings.WATERBUTLER_URL,
+        'waterbutler_url': website_settings.WATERBUTLER_URL,
         'mfr_url': settings.MFR_SERVER_URL,
         'login_url': cas.get_login_url(request_login_url),
         'reauth_url': util.web_url_for('auth_logout', redirect_url=request.url, reauth=True),
         'profile_url': cas.get_profile_url(),
-        'enable_institutions': settings.ENABLE_INSTITUTIONS,
         'keen': {
             'public': {
                 'project_id': settings.KEEN['public']['project_id'],
@@ -159,7 +159,7 @@ notemplate = OsfWebRenderer('', renderer=render_mako_string, trust=False)
 
 def favicon():
     return send_from_directory(
-        settings.STATIC_FOLDER,
+        website_settings.STATIC_FOLDER,
         'favicon.ico',
         mimetype='image/vnd.microsoft.icon'
     )
@@ -168,13 +168,13 @@ def favicon():
 def robots():
     """Serves the robots.txt file."""
     # Allow local robots.txt
-    if os.path.exists(os.path.join(settings.STATIC_FOLDER,
+    if os.path.exists(os.path.join(website_settings.STATIC_FOLDER,
                                    'robots.local.txt')):
         robots_file = 'robots.local.txt'
     else:
         robots_file = 'robots.txt'
     return send_from_directory(
-        settings.STATIC_FOLDER,
+        website_settings.STATIC_FOLDER,
         robots_file,
         mimetype='text/plain'
     )
@@ -188,7 +188,7 @@ def sitemap_file(path):
     else:
         raise HTTPError(http.NOT_FOUND)
     return send_from_directory(
-        settings.STATIC_FOLDER + '/sitemaps/',
+        website_settings.STATIC_FOLDER + '/sitemaps/',
         path,
         mimetype=mime
     )
@@ -197,9 +197,9 @@ def ember_app(path=None):
     """Serve the contents of the ember application"""
     ember_app_folder = None
     fp = path or 'index.html'
-    for k in settings.EXTERNAL_EMBER_APPS.keys():
+    for k in website_settings.EXTERNAL_EMBER_APPS.keys():
         if request.path.strip('/').startswith(k):
-            ember_app_folder = os.path.abspath(os.path.join(os.getcwd(), settings.EXTERNAL_EMBER_APPS[k]['path']))
+            ember_app_folder = os.path.abspath(os.path.join(os.getcwd(), website_settings.EXTERNAL_EMBER_APPS[k]['path']))
             break
 
     if not ember_app_folder:
@@ -278,9 +278,9 @@ def make_url_map(app):
     ])
 
     # Ember Applications
-    if settings.USE_EXTERNAL_EMBER:
+    if website_settings.USE_EXTERNAL_EMBER:
         # Routes that serve up the Ember application. Hide behind feature flag.
-        for prefix in settings.EXTERNAL_EMBER_APPS.keys():
+        for prefix in website_settings.EXTERNAL_EMBER_APPS.keys():
             process_rules(app, [
                 Rule(
                     [

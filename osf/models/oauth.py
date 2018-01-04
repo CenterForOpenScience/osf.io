@@ -9,7 +9,7 @@ from website.security import random_string
 
 from framework.auth import cas
 
-from website import settings
+from api.base import settings
 
 
 def generate_client_secret():

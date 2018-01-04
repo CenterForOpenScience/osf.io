@@ -2,7 +2,7 @@
 
 
 <%def name="content()">
-<% from website import settings %>
+<% from api.base import settings %>
 <tr>
   <td style="border-collapse: collapse;">
 

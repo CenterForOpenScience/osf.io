@@ -13,7 +13,7 @@ from framework.sessions import session
 
 from osf.exceptions import ValidationValueError, ValidationError
 from osf.utils.requests import check_select_for_update
-from website import security, settings
+from website import security
 
 name_formatters = {
     'long': lambda user: user.fullname,
@@ -24,13 +24,20 @@ name_formatters = {
     ),
 }
 
+# Expiration time for verification key
+EXPIRATION_TIME_DICT = {
+    'password': 24 * 60,    # 24 hours in minutes for forgot and reset password
+    'confirm': 24 * 60,     # 24 hours in minutes for confirm account and email
+    'claim': 30 * 24 * 60   # 30 days in minutes for claim contributor-ship
+}
+
 logger = logging.getLogger(__name__)
 
 
 def generate_verification_key(verification_type=None):
     """
     Generate a one-time verification key with an optional expiration time.
-    The type of the verification key determines the expiration time defined in `website.settings.EXPIRATION_TIME_DICT`.
+    The type of the verification key determines the expiration time defined in `EXPIRATION_TIME_DICT`.
 
     :param verification_type: None, verify, confirm or claim
     :return: a string or a dictionary
@@ -40,7 +47,7 @@ def generate_verification_key(verification_type=None):
     if not verification_type:
         return token
     # v2 with a token and the expiration time
-    expires = timezone.now() + dt.timedelta(minutes=settings.EXPIRATION_TIME_DICT[verification_type])
+    expires = timezone.now() + dt.timedelta(minutes=EXPIRATION_TIME_DICT[verification_type])
     return {
         'token': token,
         'expires': expires,

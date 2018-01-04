@@ -23,9 +23,10 @@ from framework.status import push_status_message
 from framework.utils import throttle_period_expired
 
 from osf.models import ApiOAuth2Application, ApiOAuth2PersonalToken, OSFUser, QuickFilesNode
+from api.base import settings
 from website import mails
 from website import mailchimp_utils
-from website import settings
+from website import settings as website_settings
 from website.ember_osf_web.decorators import ember_flag_is_active
 from website.oauth.utils import get_available_scopes
 from website.profile import utils as profile_utils
@@ -274,7 +275,7 @@ def user_account(auth, **kwargs):
     return {
         'user_id': user._id,
         'addons': user_addons,
-        'addons_js': collect_user_config_js([addon for addon in settings.ADDONS_AVAILABLE if 'user' in addon.configs]),
+        'addons_js': collect_user_config_js([addon for addon in website_settings.ADDONS_AVAILABLE if 'user' in addon.configs]),
         'addons_css': [],
         'requested_deactivation': user.requested_deactivation,
         'external_identity': user.external_identity
@@ -308,11 +309,11 @@ def user_addons(auth, **kwargs):
     ret = {
         'addon_settings': addon_utils.get_addons_by_config_type('accounts', user),
     }
-    accounts_addons = [addon for addon in settings.ADDONS_AVAILABLE if 'accounts' in addon.configs]
+    accounts_addons = [addon for addon in website_settings.ADDONS_AVAILABLE if 'accounts' in addon.configs]
     ret.update({
         'addon_enabled_settings': [addon.short_name for addon in accounts_addons],
         'addons_js': collect_user_config_js(accounts_addons),
-        'addon_capabilities': settings.ADDON_CAPABILITIES,
+        'addon_capabilities': website_settings.ADDON_CAPABILITIES,
         'addons_css': []
     })
     return ret

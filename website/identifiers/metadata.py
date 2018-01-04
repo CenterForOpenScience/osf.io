@@ -3,7 +3,7 @@ import unicodedata
 import lxml.etree
 import lxml.builder
 
-from website import settings
+from api.base import settings
 
 NAMESPACE = 'http://datacite.org/schema/kernel-4'
 XSI = 'http://www.w3.org/2001/XMLSchema-instance'

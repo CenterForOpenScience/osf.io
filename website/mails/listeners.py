@@ -4,7 +4,7 @@ All triggered emails live here.
 
 from django.utils import timezone
 
-from website import settings
+from api.base import settings
 from framework.auth import signals as auth_signals
 from website.project import signals as project_signals
 from website.conferences import signals as conference_signals

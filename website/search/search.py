@@ -2,7 +2,7 @@ import logging
 
 from framework.celery_tasks.handlers import enqueue_task
 
-from website import settings
+from api.base import settings
 
 logger = logging.getLogger(__name__)
 

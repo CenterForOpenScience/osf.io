@@ -6,7 +6,7 @@ from functools import wraps
 
 from raven import Client
 
-from website import settings
+from api.base import settings
 
 logger = logging.getLogger(__name__)
 sentry = Client(dsn=settings.SENTRY_DSN, release=settings.VERSION, tags={'App': 'celery'})

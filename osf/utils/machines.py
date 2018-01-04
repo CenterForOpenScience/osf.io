@@ -12,7 +12,7 @@ from osf.utils.workflows import DefaultStates, DefaultTriggers, DEFAULT_TRANSITI
 from website.mails import mails
 from website.preprints.tasks import get_and_set_preprint_identifiers
 from website.reviews import signals as reviews_signals
-from website.settings import DOMAIN, OSF_SUPPORT_EMAIL, OSF_CONTACT_EMAIL
+from api.base.settings import DOMAIN, OSF_SUPPORT_EMAIL, OSF_CONTACT_EMAIL
 
 
 class BaseMachine(Machine):

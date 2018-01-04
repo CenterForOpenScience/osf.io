@@ -15,7 +15,8 @@ from framework.auth import get_or_create_user
 from framework.auth.core import Auth
 
 from osf.models import OSFUser, AbstractNode
-from website import settings
+from api.base import settings
+from website import settings as website_settings
 from website.conferences import views
 from website.conferences import utils, message
 from website.util import api_url_for, web_url_for
@@ -104,7 +105,7 @@ class ContextTestCase(OsfTestCase):
     @classmethod
     def setUpClass(cls):
         super(ContextTestCase, cls).setUpClass()
-        settings.MAILGUN_API_KEY, cls._MAILGUN_API_KEY = cls.MAILGUN_API_KEY, settings.MAILGUN_API_KEY
+        website_settings.MAILGUN_API_KEY, cls._MAILGUN_API_KEY = cls.MAILGUN_API_KEY, website_settings.MAILGUN_API_KEY
 
     @classmethod
     def tearDownClass(cls):
@@ -117,7 +118,7 @@ class ContextTestCase(OsfTestCase):
             'timestamp': '123',
             'token': 'secret',
             'signature': hmac.new(
-                key=settings.MAILGUN_API_KEY,
+                key=website_settings.MAILGUN_API_KEY,
                 msg='{}{}'.format('123', 'secret'),
                 digestmod=hashlib.sha256,
             ).hexdigest(),
@@ -220,7 +221,7 @@ class TestProvisionNode(ContextTestCase):
             'osfstorage',
             _internal=True,
             cookie=self.user.get_or_create_cookie(),
-            name=settings.MISSING_FILE_NAME,
+            name=website_settings.MISSING_FILE_NAME,
         )
         mock_put.assert_called_with(
             mock_get_url.return_value,
@@ -567,7 +568,7 @@ class TestConferenceIntegration(ContextTestCase):
                 'timestamp': '123',
                 'token': 'secret',
                 'signature': hmac.new(
-                    key=settings.MAILGUN_API_KEY,
+                    key=website_settings.MAILGUN_API_KEY,
                     msg='{}{}'.format('123', 'secret'),
                     digestmod=hashlib.sha256,
                 ).hexdigest(),
@@ -615,7 +616,7 @@ class TestConferenceIntegration(ContextTestCase):
                 'timestamp': '123',
                 'token': 'secret',
                 'signature': hmac.new(
-                    key=settings.MAILGUN_API_KEY,
+                    key=website_settings.MAILGUN_API_KEY,
                     msg='{}{}'.format('123', 'secret'),
                     digestmod=hashlib.sha256,
                 ).hexdigest(),
@@ -656,7 +657,7 @@ class TestConferenceIntegration(ContextTestCase):
                 'timestamp': '123',
                 'token': 'secret',
                 'signature': hmac.new(
-                    key=settings.MAILGUN_API_KEY,
+                    key=website_settings.MAILGUN_API_KEY,
                     msg='{}{}'.format('123', 'secret'),
                     digestmod=hashlib.sha256,
                 ).hexdigest(),

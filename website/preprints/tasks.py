@@ -9,7 +9,8 @@ from framework.exceptions import HTTPError
 from framework.celery_tasks import app as celery_app
 from framework import sentry
 
-from website import settings, mails
+from api.base import settings
+from website import mails
 from website.util.share import GraphNode, format_contributor, format_subject
 from website.identifiers.tasks import update_ezid_metadata_on_change
 from website.identifiers.utils import request_identifiers_from_ezid, parse_identifiers

@@ -26,7 +26,8 @@ from framework.sessions import get_session
 from framework.utils import throttle_period_expired
 from osf.models import OSFUser
 from osf.utils.sanitize import strip_html
-from website import settings, mails, language
+from api.base import settings
+from website import mails, language
 from website.util import web_url_for
 from osf.exceptions import ValidationValueError
 from osf.models.preprint_provider import PreprintProvider

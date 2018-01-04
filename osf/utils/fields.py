@@ -1,7 +1,7 @@
 import jwe
 from cryptography.exceptions import InvalidTag
 from django.db import models
-from website import settings
+from api.base import settings
 
 from osf.exceptions import NaiveDatetimeException
 

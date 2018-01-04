@@ -6,7 +6,7 @@ List of scopes, nomenclature, and rationale can be found in the relevant "Login 
 
 from collections import namedtuple
 
-from website import settings
+from api.base import settings
 
 # Public scopes are described with 3 pieces of information: list of constituent scopes, a description, and whether or
 #   not this scope is available to be requested by the general public

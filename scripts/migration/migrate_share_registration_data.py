@@ -7,7 +7,7 @@ django.setup()
 
 from osf.models import Registration
 from scripts import utils as script_utils
-from website import settings
+from api.base import settings
 from website.app import init_app
 from website.project.tasks import update_node_share
 

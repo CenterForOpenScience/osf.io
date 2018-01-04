@@ -3,6 +3,7 @@
 import itertools
 import os
 import urlparse
+import importlib
 
 import markupsafe
 from addons.base.models import (BaseOAuthNodeSettings, BaseOAuthUserSettings,
@@ -13,7 +14,6 @@ from github3 import GitHubError
 from osf.models.external import ExternalProvider
 from osf.models.files import File, Folder, BaseFileNode
 from osf.utils.datetime_aware_jsonfield import DateTimeAwareJSONField
-from website import settings
 from addons.base import exceptions
 from addons.github import settings as github_settings
 from addons.github import utils
@@ -21,6 +21,7 @@ from addons.github.api import GitHubClient
 from addons.github.exceptions import ApiError, NotFoundError
 from addons.github.serializer import GitHubSerializer
 from website.util import web_url_for
+settings = importlib.import_module('api.base.settings')
 hook_domain = github_settings.HOOK_DOMAIN or settings.DOMAIN
 
 

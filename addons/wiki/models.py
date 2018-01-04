@@ -6,6 +6,7 @@ import logging
 import markdown
 import pytz
 from addons.base.models import BaseNodeSettings
+from addons.wiki.settings import WIKI_WHITELIST
 from bleach.callbacks import nofollow
 from bleach import Cleaner
 from functools import partial
@@ -16,7 +17,7 @@ from markdown.extensions import codehilite, fenced_code, wikilinks
 from osf.models import AbstractNode, NodeLog
 from osf.models.base import BaseModel, GuidMixin
 from osf.utils.fields import NonNaiveDateTimeField
-from website import settings
+from api.base import settings
 from addons.wiki import utils as wiki_utils
 from website.exceptions import NodeStateError
 from website.util import api_v2_url
@@ -74,7 +75,7 @@ def render_content(content, node):
 
     # linkify gets called after santize, because we're adding rel="nofollow"
     #   to <a> elements - but don't want to allow them for other elements.
-    sanitized_content = sanitize(html_output, **settings.WIKI_WHITELIST)
+    sanitized_content = sanitize(html_output, **WIKI_WHITELIST)
     return sanitized_content
 
 

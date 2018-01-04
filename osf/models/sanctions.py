@@ -13,7 +13,7 @@ from website.prereg import utils as prereg_utils
 
 from framework.auth import Auth
 from framework.exceptions import HTTPError, PermissionsError
-from website import settings as osf_settings
+from api.base import settings as osf_settings
 from website import tokens, mails
 from website.exceptions import (
     InvalidSanctionRejectionToken,

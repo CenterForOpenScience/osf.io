@@ -28,7 +28,6 @@ from framework.routing import json_renderer, proxy_url
 from framework.sentry import log_exception
 from framework.transactions.handlers import no_auto_transaction
 from website import mails
-from website import settings
 from addons.base import exceptions
 from addons.base import signals as file_signals
 from addons.base.utils import format_last_known_metadata
@@ -41,7 +40,8 @@ from website.project import decorators
 from website.project.decorators import must_be_contributor_or_public, must_be_valid_project, check_contributor_auth
 from website.ember_osf_web.decorators import ember_flag_is_active
 from website.project.utils import serialize_node
-from website.settings import MFR_SERVER_URL
+from api.base import settings
+from website import settings as website_settings
 from website.util import rubeus
 
 # import so that associated listener is instantiated and gets emails
@@ -546,7 +546,7 @@ def addon_deleted_file(auth, node, error_type='BLAME_PROVIDER', **kwargs):
     file_path = kwargs.get('path', file_node.path)
     file_name = file_node.name or os.path.basename(file_path)
     file_name_title, file_name_ext = os.path.splitext(file_name)
-    provider_full = settings.ADDONS_AVAILABLE_DICT[file_node.provider].full_name
+    provider_full = website_settings.ADDONS_AVAILABLE_DICT[file_node.provider].full_name
     try:
         file_guid = file_node.get_guid()._id
     except AttributeError:
@@ -590,7 +590,7 @@ def addon_deleted_file(auth, node, error_type='BLAME_PROVIDER', **kwargs):
         'materialized_path': file_node.materialized_path or file_path,
         'private': getattr(node.get_addon(file_node.provider), 'is_private', False),
         'file_tags': list(file_node.tags.filter(system=False).values_list('name', flat=True)) if not file_node._state.adding else [],  # Only access ManyRelatedManager if saved
-        'allow_comments': file_node.provider in settings.ADDONS_COMMENTABLE,
+        'allow_comments': file_node.provider in website_settings.ADDONS_COMMENTABLE,
     })
 
     return ret, httplib.GONE
@@ -671,7 +671,7 @@ def addon_view_or_download_file(auth, path, provider, **kwargs):
         _, extension = os.path.splitext(file_node.name)
         # avoid rendering files with the same format type.
         if format and '.{}'.format(format) != extension:
-            return redirect('{}/export?format={}&url={}'.format(MFR_SERVER_URL, format, urllib.quote(file_node.generate_waterbutler_url(
+            return redirect('{}/export?format={}&url={}'.format(settings.MFR_SERVER_URL, format, urllib.quote(file_node.generate_waterbutler_url(
                 **dict(extras, direct=None, version=version.identifier, _internal=extras.get('mode') == 'render')
             ))))
         return redirect(file_node.generate_waterbutler_url(**dict(extras, direct=None, version=version.identifier, _internal=extras.get('mode') == 'render')))
@@ -797,7 +797,7 @@ def addon_view_file(auth, node, file_node, version):
         'file_tags': list(file_node.tags.filter(system=False).values_list('name', flat=True)) if not file_node._state.adding else [],  # Only access ManyRelatedManager if saved
         'file_guid': file_node.get_guid()._id,
         'file_id': file_node._id,
-        'allow_comments': file_node.provider in settings.ADDONS_COMMENTABLE,
+        'allow_comments': file_node.provider in website_settings.ADDONS_COMMENTABLE,
         'checkout_user': file_node.checkout._id if file_node.checkout else None,
         'pre_reg_checkout': is_pre_reg_checkout(node, file_node),
     })

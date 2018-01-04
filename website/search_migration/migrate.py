@@ -17,7 +17,8 @@ from website.search_migration import (
     JSON_UPDATE_USERS_SQL, JSON_DELETE_USERS_SQL)
 from scripts import utils as script_utils
 from osf.models import OSFUser, Institution, AbstractNode, BaseFileNode
-from website import settings
+from website import settings as website_settings
+from api.base import settings
 from website.app import init_app
 from website.search.elastic_search import client as es_client
 from website.search.search import update_institution
@@ -154,7 +155,7 @@ def migrate(delete, remove=False, index=None, app=None):
 
     new_index = set_up_index(index)
 
-    if settings.ENABLE_INSTITUTIONS:
+    if website_settings.ENABLE_INSTITUTIONS:
         migrate_institutions(new_index)
     migrate_nodes(new_index, delete=delete)
     migrate_files(new_index, delete=delete)

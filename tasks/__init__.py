@@ -14,7 +14,8 @@ from time import sleep
 import invoke
 from invoke import Collection
 
-from website import settings
+from api.base import settings
+from website import settings as website_settings
 from .utils import pip_install, bin_prefix
 
 logging.getLogger('invoke').setLevel(logging.CRITICAL)
@@ -71,7 +72,7 @@ def server(ctx, host=None, port=5000, debug=True, gitlogs=False):
     context = None
     if settings.SECURE_MODE:
         context = (settings.OSF_SERVER_CERT, settings.OSF_SERVER_KEY)
-    app.run(host=host, port=port, debug=debug, threaded=debug, extra_files=[settings.ASSET_HASH_PATH], ssl_context=context)
+    app.run(host=host, port=port, debug=debug, threaded=debug, extra_files=[website_settings.ASSET_HASH_PATH], ssl_context=context)
 
 
 @task
@@ -136,7 +137,7 @@ def sharejs(ctx, host=None, port=None, db_url=None, cors_allow_origin=None):
     if settings.SENTRY_DSN:
         os.environ['SHAREJS_SENTRY_DSN'] = settings.SENTRY_DSN
 
-    share_server = os.path.join(settings.ADDON_PATH, 'wiki', 'shareServer.js')
+    share_server = os.path.join(website_settings.ADDON_PATH, 'wiki', 'shareServer.js')
     ctx.run('node {0}'.format(share_server))
 
 
@@ -189,7 +190,6 @@ def rebuild_search(ctx):
     """Delete and recreate the index for elasticsearch"""
     from website.app import init_app
     import requests
-    from website import settings
 
     init_app(routes=False, set_backends=True)
     if not settings.ELASTIC_URI.startswith('http'):
@@ -511,8 +511,8 @@ def wheelhouse(ctx, addons=False, release=False, dev=False, pty=True):
         inv wheelhouse --release
     """
     if release or addons:
-        for directory in os.listdir(settings.ADDON_PATH):
-            path = os.path.join(settings.ADDON_PATH, directory)
+        for directory in os.listdir(website_settings.ADDON_PATH):
+            path = os.path.join(website_settings.ADDON_PATH, directory)
             if os.path.isdir(path):
                 req_file = os.path.join(path, 'requirements.txt')
                 if os.path.exists(req_file):
@@ -535,8 +535,8 @@ def wheelhouse(ctx, addons=False, release=False, dev=False, pty=True):
 @task
 def addon_requirements(ctx):
     """Install all addon requirements."""
-    for directory in os.listdir(settings.ADDON_PATH):
-        path = os.path.join(settings.ADDON_PATH, directory)
+    for directory in os.listdir(website_settings.ADDON_PATH):
+        path = os.path.join(website_settings.ADDON_PATH, directory)
 
         requirements_file = os.path.join(path, 'requirements.txt')
         if os.path.isdir(path) and os.path.isfile(requirements_file):
@@ -551,8 +551,8 @@ def addon_requirements(ctx):
 
 @task
 def travis_addon_settings(ctx):
-    for directory in os.listdir(settings.ADDON_PATH):
-        path = os.path.join(settings.ADDON_PATH, directory, 'settings')
+    for directory in os.listdir(website_settings.ADDON_PATH):
+        path = os.path.join(website_settings.ADDON_PATH, directory, 'settings')
         if os.path.isdir(path):
             try:
                 open(os.path.join(path, 'local-travis.py'))
@@ -563,8 +563,8 @@ def travis_addon_settings(ctx):
 
 @task
 def copy_addon_settings(ctx):
-    for directory in os.listdir(settings.ADDON_PATH):
-        path = os.path.join(settings.ADDON_PATH, directory, 'settings')
+    for directory in os.listdir(website_settings.ADDON_PATH):
+        path = os.path.join(website_settings.ADDON_PATH, directory, 'settings')
         if os.path.isdir(path) and not os.path.isfile(os.path.join(path, 'local.py')):
             try:
                 open(os.path.join(path, 'local-dist.py'))

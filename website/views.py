@@ -24,8 +24,9 @@ from website import settings
 from website.institutions.views import serialize_institution
 
 from osf.models import BaseFileNode, Guid, Institution, PreprintService, AbstractNode, Node
-from website.settings import EXTERNAL_EMBER_APPS, PROXY_EMBER_APPS, EXTERNAL_EMBER_SERVER_TIMEOUT, INSTITUTION_DISPLAY_NODE_THRESHOLD, DOMAIN
+from website.settings import EXTERNAL_EMBER_APPS, PROXY_EMBER_APPS, EXTERNAL_EMBER_SERVER_TIMEOUT, INSTITUTION_DISPLAY_NODE_THRESHOLD
 from website.ember_osf_web.decorators import ember_flag_is_active
+from api.base.settings import DOMAIN
 from website.project.model import has_anonymous_link
 from osf.utils import permissions
 from api.preprint_providers.permissions import GroupHelper

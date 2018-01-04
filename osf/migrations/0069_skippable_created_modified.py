@@ -10,7 +10,7 @@ from django.db import migrations
 import django.utils.timezone
 import django_extensions.db.fields
 import osf.utils.fields
-from website import settings
+from api.base import settings
 
 logger = logging.getLogger(__file__)
 

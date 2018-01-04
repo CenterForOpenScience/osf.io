@@ -5,7 +5,7 @@ from faker import Factory
 
 from framework.django.handlers import handlers as django_handlers
 from framework.flask import rm_handlers
-from website import settings
+from api.base import settings
 from website.app import init_app
 from website.project.signals import contributor_added
 from website.project.views.contributor import notify_added_contributor

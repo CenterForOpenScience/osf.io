@@ -1,6 +1,5 @@
 import mock
 import pytest
-from website import settings
 from django.utils import timezone
 from framework.auth.core import Auth
 
@@ -8,6 +7,7 @@ from website.prereg.utils import get_prereg_schema
 
 from .factories import UserFactory, DraftRegistrationFactory
 
+from api.base import settings
 from osf.models import QueuedMail
 from osf.models.queued_mail import PREREG_REMINDER_TYPE
 

@@ -1,5 +1,4 @@
 from addons.base.apps import BaseAddonAppConfig
-from website import settings
 from website.util import rubeus
 from addons.osfstorage import settings as addon_settings
 
@@ -47,8 +46,6 @@ class OSFStorageAddonAppConfig(BaseAddonAppConfig):
     WATERBUTLER_SETTINGS = addon_settings.WATERBUTLER_SETTINGS
 
     WATERBUTLER_RESOURCE = addon_settings.WATERBUTLER_RESOURCE
-
-    DISK_SAVING_MODE = settings.DISK_SAVING_MODE
 
     FOLDER_SELECTED = 'osfstorage_folder_selected'
     NODE_AUTHORIZED = 'osfstorage_node_authorized'

@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 import os
 import urlparse
+import importlib
 
 from django.db import models
 import markupsafe
@@ -15,8 +16,8 @@ from addons.gitlab import settings as gitlab_settings
 from addons.gitlab.exceptions import ApiError, NotFoundError, GitLabError
 from framework.auth import Auth
 from osf.models.files import File, Folder, BaseFileNode
-from website import settings
 from website.util import web_url_for
+settings = importlib.import_module('api.base.settings')
 
 hook_domain = gitlab_settings.HOOK_DOMAIN or settings.DOMAIN
 

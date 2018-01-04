@@ -14,7 +14,7 @@ from framework.celery_tasks import app
 from celery.local import PromiseProxy
 from gevent.pool import Pool
 
-from website import settings
+from api.base import settings
 
 _local = threading.local()
 logger = logging.getLogger(__name__)

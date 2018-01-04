@@ -4,7 +4,7 @@ from django.utils import timezone
 from osf.utils.fields import NonNaiveDateTimeField
 from website.mails import Mail, send_mail
 from website.mails import presends
-from website import settings as osf_settings
+from api.base import settings
 
 from osf.models.base import BaseModel, ObjectIDMixin
 from osf.utils.datetime_aware_jsonfield import DateTimeAwareJSONField
@@ -51,8 +51,8 @@ class QueuedMail(ObjectIDMixin, BaseModel):
             subject=mail_struct['subject'],
             categories=mail_struct.get('categories', None)
         )
-        self.data['osf_url'] = osf_settings.DOMAIN
-        if presend and self.user.is_active and self.user.osf_mailing_lists.get(osf_settings.OSF_HELP_LIST):
+        self.data['osf_url'] = settings.DOMAIN
+        if presend and self.user.is_active and self.user.osf_mailing_lists.get(settings.OSF_HELP_LIST):
             send_mail(self.to_addr or self.user.username, mail, mimetype='html', **(self.data or {}))
             self.sent_at = timezone.now()
             self.save()

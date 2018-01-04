@@ -13,7 +13,7 @@ from framework.celery_tasks import app as celery_app
 
 from osf import models
 from website.app import init_app
-from website import settings
+from api.base import settings
 
 from scripts import utils as scripts_utils
 

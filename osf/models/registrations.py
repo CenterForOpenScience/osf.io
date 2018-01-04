@@ -11,7 +11,7 @@ from framework.exceptions import PermissionsError
 from osf.utils.fields import NonNaiveDateTimeField
 from website.exceptions import NodeStateError
 from website.util import api_v2_url
-from website import settings
+from api.base import settings
 
 from osf.models import (
     OSFUser, MetaSchema, RegistrationApproval,

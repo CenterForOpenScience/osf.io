@@ -35,7 +35,9 @@ from framework.auth.views import login_and_register_handler
 from framework.celery_tasks import handlers
 from framework.exceptions import HTTPError
 from framework.transactions.handlers import no_auto_transaction
-from website import mailchimp_utils, mails, settings, language
+from api.base import settings
+from website import settings as website_settings
+from website import mailchimp_utils, mails, language
 from addons.osfstorage import settings as osfstorage_settings
 from osf.models import AbstractNode, NodeLog, QuickFilesNode
 from website.profile.utils import add_contributor_json, serialize_unregistered
@@ -4572,27 +4574,27 @@ class TestIndexView(OsfTestCase):
         self.user.affiliated_institutions.add(self.inst_two)
 
         # tests 5 affiliated, non-registered, public projects
-        for i in range(settings.INSTITUTION_DISPLAY_NODE_THRESHOLD):
+        for i in range(website_settings.INSTITUTION_DISPLAY_NODE_THRESHOLD):
             node = ProjectFactory(creator=self.user, is_public=True)
             node.affiliated_institutions.add(self.inst_one)
 
         # tests 4 affiliated, non-registered, public projects
-        for i in range(settings.INSTITUTION_DISPLAY_NODE_THRESHOLD - 1):
+        for i in range(website_settings.INSTITUTION_DISPLAY_NODE_THRESHOLD - 1):
             node = ProjectFactory(creator=self.user, is_public=True)
             node.affiliated_institutions.add(self.inst_two)
 
         # tests 5 affiliated, registered, public projects
-        for i in range(settings.INSTITUTION_DISPLAY_NODE_THRESHOLD):
+        for i in range(website_settings.INSTITUTION_DISPLAY_NODE_THRESHOLD):
             registration = RegistrationFactory(creator=self.user, is_public=True)
             registration.affiliated_institutions.add(self.inst_three)
 
         # tests 5 affiliated, non-registered public components
-        for i in range(settings.INSTITUTION_DISPLAY_NODE_THRESHOLD):
+        for i in range(website_settings.INSTITUTION_DISPLAY_NODE_THRESHOLD):
             node = NodeFactory(creator=self.user, is_public=True)
             node.affiliated_institutions.add(self.inst_four)
 
         # tests 5 affiliated, non-registered, private projects
-        for i in range(settings.INSTITUTION_DISPLAY_NODE_THRESHOLD):
+        for i in range(website_settings.INSTITUTION_DISPLAY_NODE_THRESHOLD):
             node = ProjectFactory(creator=self.user)
             node.affiliated_institutions.add(self.inst_five)
 

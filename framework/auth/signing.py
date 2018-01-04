@@ -6,8 +6,7 @@ import time
 import base64
 import collections
 
-from website import settings
-
+from api.base import settings
 
 # Written by @jmcarp originally
 def order_recursive(data):

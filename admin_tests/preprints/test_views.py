@@ -128,7 +128,7 @@ class TestPreprintReindex(AdminTestCase):
         self.preprint = PreprintFactory(creator=self.user)
 
     @mock.patch('website.preprints.tasks.send_share_preprint_data')
-    @mock.patch('website.settings.SHARE_URL', 'ima_real_website')
+    @mock.patch('api.base.settings.SHARE_URL', 'ima_real_website')
     def test_reindex_preprint_share(self, mock_reindex_preprint):
         self.preprint.provider.access_token = 'totally real access token I bought from a guy wearing a trenchcoat in the summer'
         self.preprint.provider.save()

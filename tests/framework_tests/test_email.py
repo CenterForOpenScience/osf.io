@@ -7,7 +7,7 @@ from nose.tools import *  # flake8: noqa (PEP8 asserts)
 import sendgrid
 
 from framework.email.tasks import send_email, _send_with_sendgrid
-from website import settings
+from api.base import settings
 from tests.base import fake
 from osf_tests.factories import fake_email
 

@@ -20,7 +20,8 @@ from framework.utils import get_timestamp, throttle_period_expired
 from osf.models import AbstractNode, OSFUser, PreprintService
 from osf.utils import sanitize
 from osf.utils.permissions import expand_permissions, ADMIN
-from website import mails, language, settings
+from api.base import settings
+from website import mails, language, settings as website_settings
 from website.notifications.utils import check_if_all_global_subscriptions_are_none
 from website.profile import utils as profile_utils
 from website.project.decorators import (must_have_permission, must_be_valid_project, must_not_be_registration,
@@ -521,7 +522,7 @@ def notify_added_contributor(node, contributor, auth=None, throttle=None, email_
     if email_template == 'false':
         return
 
-    throttle = throttle or settings.CONTRIBUTOR_ADDED_EMAIL_THROTTLE
+    throttle = throttle or website_settings.CONTRIBUTOR_ADDED_EMAIL_THROTTLE
 
     # Email users for projects, or for components where they are not contributors on the parent node.
     if contributor.is_registered and \
