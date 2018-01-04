@@ -19,5 +19,8 @@
     "urijs": "^1.14.1",
     "webpack": "^1.7.2",
     "webpack-bundle-tracker": "0.0.8"
+  },
+  "scripts": {
+    "webpack-prod": "webpack --config webpack.prod.config.js"
   }
 }

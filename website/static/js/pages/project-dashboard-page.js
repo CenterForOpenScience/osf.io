@@ -219,44 +219,76 @@ $(document).ready(function () {
     $('[data-toggle="tooltip"]').tooltip({container: 'body'});
 
     // Tag input
+    var nodeType = window.contextVars.node.isRegistration ? 'registrations':'nodes';
+    var tagsApiUrl = $osf.apiV2Url(nodeType + '/' + window.contextVars.node.id + '/');
     $('#node-tags').tagsInput({
         width: '100%',
-        interactive: window.contextVars.currentUser.canEdit,
+        interactive: window.contextVars.currentUser.canEditTags,
         maxChars: 128,
         defaultText: 'add a tag to enhance discoverability',
         onAddTag: function(tag) {
             $('#node-tags_tag').attr('data-default', 'add a tag');
-            var url = nodeApiUrl + 'tags/';
-            var data = {tag: tag};
-            var request = $osf.postJSON(url, data);
-            request.done(function() {
-                window.contextVars.node.tags.push(tag);
-            });
+            window.contextVars.node.tags.push(tag);
+            var payload = {
+                data: {
+                    type: nodeType,
+                    id: window.contextVars.node.id,
+                    attributes: {
+                        tags: window.contextVars.node.tags
+                    }
+                }
+            };
+
+            var request = $osf.ajaxJSON(
+                'PATCH',
+                tagsApiUrl,
+                {
+                    data: payload,
+                    isCors: true
+                }
+            );
+
             request.fail(function(xhr, textStatus, error) {
+                window.contextVars.node.tags.splice(window.contextVars.node.tags.indexOf(tag),1);
                 Raven.captureMessage('Failed to add tag', {
                     extra: {
-                        tag: tag, url: url, textStatus: textStatus, error: error
+                        tag: tag, url: tagsApiUrl, textStatus: textStatus, error: error
                     }
                 });
             });
         },
         onRemoveTag: function(tag) {
-            var url = nodeApiUrl + 'tags/';
-            // Don't try to delete a blank tag (would result in a server error)
             if (!tag) {
                 return false;
             }
-            var request = $osf.ajaxJSON('DELETE', url, {'data': {'tag': tag}});
-            request.done(function() {
-                window.contextVars.node.tags.splice(window.contextVars.node.tags.indexOf(tag), 1);
-            });
+            window.contextVars.node.tags.splice(window.contextVars.node.tags.indexOf(tag),1);
+            var payload = {
+                data: {
+                    type: nodeType,
+                    id: window.contextVars.node.id,
+                    attributes: {
+                        tags: window.contextVars.node.tags
+                    }
+                }
+            };
+
+            var request = $osf.ajaxJSON(
+                'PATCH',
+                tagsApiUrl,
+                {
+                    data: payload,
+                    isCors: true
+                }
+            );
+
             request.fail(function(xhr, textStatus, error) {
+                window.contextVars.node.tags.push(tag);
                 // Suppress "tag not found" errors, as the end result is what the user wanted (tag is gone)- eg could be because two people were working at same time
                 if (xhr.status !== 409) {
                     $osf.growl('Error', 'Could not remove tag');
                     Raven.captureMessage('Failed to remove tag', {
                         extra: {
-                            tag: tag, url: url, textStatus: textStatus, error: error
+                            tag: tag, url: tagsApiUrl, textStatus: textStatus, error: error
                         }
                     });
                 }
@@ -291,7 +323,8 @@ $(document).ready(function () {
         request.done(function(resp) {
             var rawText = resp.wiki_content || '*Add important information, links, or images here to describe your project.*';
             var renderedText = ctx.renderedBeforeUpdate ? oldMd.render(rawText) : md.render(rawText);
-            var truncatedText = $.truncate(renderedText, {length: 400});
+            // don't truncate the text when length = 400
+            var truncatedText = $.truncate(renderedText, {length: 401});
             markdownElement.html(truncatedText);
             mathrender.mathjaxify(markdownElement);
             markdownElement.show();
@@ -299,7 +332,7 @@ $(document).ready(function () {
     }
 
     // Remove delete UI if not contributor
-    if (!window.contextVars.currentUser.canEdit || window.contextVars.node.isRegistration) {
+    if (!window.contextVars.currentUser.canEditTags) {
         $('a[title="Removing tag"]').remove();
         $('span.tag span').each(function(idx, elm) {
             $(elm).text($(elm).text().replace(/\s*$/, ''));

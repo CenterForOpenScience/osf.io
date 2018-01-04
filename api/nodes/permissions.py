@@ -157,9 +157,6 @@ class RegistrationAndPermissionCheckForPointers(permissions.BasePermission):
             raise exceptions.MethodNotAllowed(method=request.method)
         if node.is_collection or node.is_registration:
             raise exceptions.NotFound
-        if node_link.node.is_registration:
-            if request.method not in permissions.SAFE_METHODS:
-                raise exceptions.MethodNotAllowed
         if node != node_link.parent:
             raise exceptions.NotFound
         if request.method == 'DELETE' and not node.can_edit(auth):

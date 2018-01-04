@@ -34,74 +34,67 @@ class InstitutionSummary(SummaryAnalytics):
         # Convert to a datetime at midnight for queries and the timestamp
         timestamp_datetime = datetime(date.year, date.month, date.day).replace(tzinfo=pytz.UTC)
         query_datetime = timestamp_datetime + timedelta(days=1)
-
-        daily_query = Q(date_created__gte=timestamp_datetime)
-        node_query = Q(is_deleted=False) & Q(date_created__lt=query_datetime)
-        project_query = node_query & Q(parent_nodes__isnull=True)
+        daily_query = Q(created__gte=timestamp_datetime)
         public_query = Q(is_public=True)
         private_query = Q(is_public=False)
-        reg_type_query = Q(type='osf.registration')
-
-        node_public_query = node_query & public_query
-        node_private_query = node_query & private_query
-        project_public_query = project_query & public_query
-        project_private_query = project_query & private_query
 
         # `embargoed` used private status to determine embargoes, but old registrations could be private and unapproved registrations can also be private
         # `embargoed_v2` uses future embargo end dates on root
         embargo_v2_query = Q(root__embargo__end_date__gt=query_datetime)
 
         for institution in institutions:
+            node_qs = institution.nodes.filter(is_deleted=False, created__lt=query_datetime).exclude(type='osf.registration')
+            registration_qs = institution.nodes.filter(is_deleted=False, created__lt=query_datetime, type='osf.registration')
+
             count = {
                 'institution': {
                     'id': ensure_bytes(institution._id),
                     'name': ensure_bytes(institution.name),
                 },
                 'users': {
-                    'total': institution.osfuser_set.count(),
+                    'total': institution.osfuser_set.filter(is_active=True).count(),
                     'total_daily': institution.osfuser_set.filter(date_confirmed__gte=timestamp_datetime, date_confirmed__lt=query_datetime).count(),
                 },
                 'nodes': {
-                    'total': institution.nodes.filter(node_query).exclude(reg_type_query).count(),
-                    'public': institution.nodes.filter(node_public_query).exclude(reg_type_query).count(),
-                    'private': institution.nodes.filter(node_private_query).exclude(reg_type_query).count(),
+                    'total': node_qs.count(),
+                    'public': node_qs.filter(public_query).count(),
+                    'private': node_qs.filter(private_query).count(),
 
-                    'total_daily': institution.nodes.filter(node_query & daily_query).exclude(reg_type_query).count(),
-                    'public_daily': institution.nodes.filter(node_public_query & daily_query).exclude(reg_type_query).count(),
-                    'private_daily': institution.nodes.filter(node_private_query & daily_query).exclude(reg_type_query).count(),
+                    'total_daily': node_qs.filter(daily_query).count(),
+                    'public_daily': node_qs.filter(public_query & daily_query).count(),
+                    'private_daily': node_qs.filter(private_query & daily_query).count(),
                 },
+                # Projects use get_roots to remove children
                 'projects': {
-                    'total': institution.nodes.filter(project_query).exclude(reg_type_query).count(),
-                    'public': institution.nodes.filter(project_public_query).exclude(reg_type_query).count(),
-                    'private': institution.nodes.filter(project_private_query).exclude(reg_type_query).count(),
+                    'total': node_qs.get_roots().count(),
+                    'public': node_qs.filter(public_query).get_roots().count(),
+                    'private': node_qs.filter(private_query).get_roots().count(),
 
-                    'total_daily': institution.nodes.filter(project_query & daily_query).exclude(reg_type_query).count(),
-                    'public_daily': institution.nodes.filter(project_public_query & daily_query).exclude(reg_type_query).count(),
-                    'private_daily': institution.nodes.filter(project_private_query & daily_query).exclude(reg_type_query).count(),
-
+                    'total_daily': node_qs.filter(daily_query).get_roots().count(),
+                    'public_daily': node_qs.filter(public_query & daily_query).get_roots().count(),
+                    'private_daily': node_qs.filter(private_query & daily_query).get_roots().count(),
                 },
                 'registered_nodes': {
-                    'total': institution.nodes.filter(node_query & reg_type_query).count(),
-                    'public': institution.nodes.filter(node_public_query & reg_type_query).count(),
-                    'embargoed': institution.nodes.filter(node_private_query & reg_type_query).count(),
-                    'embargoed_v2': institution.nodes.filter(node_private_query & reg_type_query & embargo_v2_query).count(),
+                    'total': registration_qs.count(),
+                    'public': registration_qs.filter(public_query).count(),
+                    'embargoed': registration_qs.filter(private_query).count(),
+                    'embargoed_v2': registration_qs.filter(private_query & embargo_v2_query).count(),
 
-                    'total_daily': institution.nodes.filter(node_query & reg_type_query & daily_query).count(),
-                    'public_daily': institution.nodes.filter(node_public_query & reg_type_query & daily_query).count(),
-                    'embargoed_daily': institution.nodes.filter(node_private_query & reg_type_query & daily_query).count(),
-                    'embargoed_v2_daily': institution.nodes.filter(node_private_query & reg_type_query & daily_query & embargo_v2_query).count(),
-
+                    'total_daily': registration_qs.filter(daily_query).count(),
+                    'public_daily': registration_qs.filter(public_query & daily_query).count(),
+                    'embargoed_daily': registration_qs.filter(private_query & daily_query).count(),
+                    'embargoed_v2_daily': registration_qs.filter(private_query & daily_query & embargo_v2_query).count(),
                 },
                 'registered_projects': {
-                    'total': institution.nodes.filter(project_query & reg_type_query).count(),
-                    'public': institution.nodes.filter(project_public_query & reg_type_query).count(),
-                    'embargoed': institution.nodes.filter(project_private_query & reg_type_query).count(),
-                    'embargoed_v2': institution.nodes.filter(project_private_query & reg_type_query & embargo_v2_query).count(),
+                    'total': registration_qs.get_roots().count(),
+                    'public': registration_qs.filter(public_query).get_roots().count(),
+                    'embargoed': registration_qs.filter(private_query).get_roots().count(),
+                    'embargoed_v2': registration_qs.filter(private_query & embargo_v2_query).get_roots().count(),
 
-                    'total_daily': institution.nodes.filter(project_query & reg_type_query & daily_query).count(),
-                    'public_daily': institution.nodes.filter(project_public_query & reg_type_query & daily_query).count(),
-                    'embargoed_daily': institution.nodes.filter(project_private_query & reg_type_query & daily_query).count(),
-                    'embargoed_v2_daily': institution.nodes.filter(project_private_query & reg_type_query & daily_query & embargo_v2_query).count(),
+                    'total_daily': registration_qs.filter(daily_query).get_roots().count(),
+                    'public_daily': registration_qs.filter(public_query & daily_query).get_roots().count(),
+                    'embargoed_daily': registration_qs.filter(private_query & daily_query).get_roots().count(),
+                    'embargoed_v2_daily': registration_qs.filter(private_query & daily_query & embargo_v2_query).get_roots().count(),
                 },
                 'keen': {
                     'timestamp': timestamp_datetime.isoformat()

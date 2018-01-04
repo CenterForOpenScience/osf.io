@@ -7,6 +7,7 @@ var $osf = require('js/osfHelpers');
 var oop = require('js/oop');
 var ChangeMessageMixin = require('js/changeMessage');
 var language = require('js/osfLanguage').projectSettings;
+var NodesDelete = require('js/nodesDelete').NodesDelete;
 
 var ProjectSettings = oop.extend(
     ChangeMessageMixin,
@@ -90,6 +91,10 @@ var ProjectSettings = oop.extend(
             });
             request.fail(self.updateError.bind(self));
             return request;
+        },
+        setCategory: function(category){
+            var self = this;
+            self.selectedCategory(category);
         },
         /*cancel handler*/
         cancelAll: function() {

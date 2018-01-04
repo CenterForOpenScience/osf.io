@@ -35,8 +35,7 @@ from framework.auth.views import login_and_register_handler
 from framework.celery_tasks import handlers
 from framework.exceptions import HTTPError
 from framework.transactions.handlers import no_auto_transaction
-from website import mailchimp_utils
-from website import mails, settings
+from website import mailchimp_utils, mails, settings, language
 from addons.osfstorage import settings as osfstorage_settings
 from osf.models import AbstractNode, NodeLog
 from website.profile.utils import add_contributor_json, serialize_unregistered
@@ -65,10 +64,11 @@ from tests.base import (
     assert_datetime_equal,
 )
 from tests.base import test_app as mock_app
+from api_tests.utils import create_test_file
 
 pytestmark = pytest.mark.django_db
 
-from osf.models import NodeRelation
+from osf.models import NodeRelation, QuickFilesNode
 from osf_tests.factories import (
     fake_email,
     ApiOAuth2ApplicationFactory,
@@ -610,7 +610,7 @@ class TestProjectViews(OsfTestCase):
         assert_equal(res.json['message_long'],
                      'You do not have permission to perform this action. '
                      'If this should not have occurred and the issue persists, '
-                     'please report it to <a href="mailto:support@osf.io">support@osf.io</a>.'
+                     + language.SUPPORT_LINK
                      )
         assert_in(self.user1, self.project.contributors)
 
@@ -835,6 +835,19 @@ class TestProjectViews(OsfTestCase):
         assert_in('fork_count', res.json['node'])
         assert_equal(0, res.json['node']['fork_count'])
 
+    def test_fork_count_does_not_include_fork_registrations(self):
+        user = AuthUserFactory()
+        project = ProjectFactory(creator=user)
+        auth = Auth(project.creator)
+        fork = project.fork_node(auth)
+        project.save()
+        registration = RegistrationFactory(project=fork)
+
+        url = project.api_url_for('view_project')
+        res = self.app.get(url, auth=user.auth)
+        assert_in('fork_count', res.json['node'])
+        assert_equal(1, res.json['node']['fork_count'])
+
     def test_registration_retraction_redirect(self):
         url = self.project.web_url_for('node_registration_retraction_redirect')
         res = self.app.get(url, auth=self.auth)
@@ -874,6 +887,13 @@ class TestProjectViews(OsfTestCase):
         assert_not_in('Mako Runtime Error', res.body)
         assert_in(registration.title, res.body)
         assert_equal(res.status_code, 200)
+
+        for route in ['files', 'wiki/home', 'analytics', 'forks', 'contributors', 'settings', 'withdraw', 'register', 'register/fakeid']:
+            res = self.app.get('{}{}/'.format(url, route), auth=self.auth, allow_redirects=True)
+            assert_equal(res.status_code, 302, route)
+            res = res.follow()
+            assert_equal(res.status_code, 200, route)
+            assert_in('This project is a withdrawn registration of', res.body, route)
 
 
 class TestEditableChildrenViews(OsfTestCase):
@@ -952,13 +972,12 @@ class TestGetNodeTree(OsfTestCase):
         res = self.app.get(url, auth=self.user.auth)
         tree = res.json[0]
         parent_node_id = tree['node']['id']
-        child1_id = tree['children'][0]['node']['id']
-        child2_id = tree['children'][1]['node']['id']
-        child3_id = tree['children'][2]['node']['id']
+        child_ids = [child['node']['id'] for child in tree['children']]
+
         assert_equal(parent_node_id, project._primary_key)
-        assert_equal(child1_id, child1._primary_key)
-        assert_equal(child2_id, child2._primary_key)
-        assert_equal(child3_id, child3._primary_key)
+        assert_in(child1._primary_key, child_ids)
+        assert_in(child2._primary_key, child_ids)
+        assert_in(child3._primary_key, child_ids)
 
     def test_get_node_with_child_linked_to_parent(self):
         project = ProjectFactory(creator=self.user)
@@ -1394,6 +1413,23 @@ class TestUserProfile(OsfTestCase):
         assert_equal(mock_client.lists.subscribe.call_count, 0)
         handlers.celery_teardown_request()
 
+    def test_user_with_quickfiles(self):
+        quickfiles_node = QuickFilesNode.objects.get_for_user(self.user)
+        create_test_file(quickfiles_node, self.user, filename='skrr_skrrrrrrr.pdf')
+
+        url = web_url_for('profile_view_id', uid=self.user._id)
+        res = self.app.get(url, auth=self.user.auth)
+
+        assert_in('Quick files', res.body)
+
+    def test_user_with_no_quickfiles(self):
+        assert(not QuickFilesNode.objects.first().files.filter(type='osf.osfstoragefile').exists())
+
+        url = web_url_for('profile_view_id', uid=self.user._primary_key)
+        res = self.app.get(url, auth=self.user.auth)
+
+        assert_not_in('Quick files', res.body)
+
 
 class TestUserProfileApplicationsPage(OsfTestCase):
 
@@ -1582,7 +1618,7 @@ class TestAddingContributorViews(OsfTestCase):
         assert_equal(res['email'], email)
         assert_equal(res['id'], None)
         assert_false(res['registered'])
-        assert_true(res['gravatar'])
+        assert_true(res['profile_image_url'])
         assert_false(res['active'])
 
     def test_deserialize_contributors(self):
@@ -1656,7 +1692,7 @@ class TestAddingContributorViews(OsfTestCase):
         assert_false(res['active'])
         assert_false(res['registered'])
         assert_equal(res['id'], user._primary_key)
-        assert_true(res['gravatar_url'])
+        assert_true(res['profile_image_url'])
         assert_equal(res['fullname'], name)
         assert_equal(res['email'], email)
 
@@ -3365,6 +3401,20 @@ class TestAuthLoginAndRegisterLogic(OsfTestCase):
         assert_equal(
             data.get('next_url'),
             get_login_url(web_url_for('dashboard', _absolute=True), campaign='institution'))
+
+    def test_institution_login_next_url_with_auth(self):
+        # institution login: user with auth and next url
+        data = login_and_register_handler(self.auth, next_url=self.next_url, campaign='institution')
+        assert_equal(data.get('status_code'), http.FOUND)
+        assert_equal(data.get('next_url'), self.next_url)
+
+    def test_institution_login_next_url_without_auth(self):
+        # institution login: user without auth and next url
+        data = login_and_register_handler(self.no_auth, next_url=self.next_url ,campaign='institution')
+        assert_equal(data.get('status_code'), http.FOUND)
+        assert_equal(
+            data.get('next_url'),
+            get_login_url(self.next_url, campaign='institution'))
 
     def test_institution_regsiter_with_auth(self):
         # institution register: user with auth

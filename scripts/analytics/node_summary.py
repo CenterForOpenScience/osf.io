@@ -30,24 +30,15 @@ class NodeSummary(SummaryAnalytics):
         timestamp_datetime = datetime(date.year, date.month, date.day).replace(tzinfo=pytz.UTC)
         query_datetime = timestamp_datetime + timedelta(days=1)
 
-        node_query = Q(is_deleted=False, date_created__lte=query_datetime)
-        project_query = node_query & Q(parent_nodes__isnull=True)
+        node_qs = Node.objects.filter(is_deleted=False, created__lte=query_datetime)
+        registration_qs = Registration.objects.filter(is_deleted=False, created__lte=query_datetime)
 
         public_query = Q(is_public=True)
         private_query = Q(is_public=False)
 
         # node_query encompasses lte query_datetime
-        daily_query = Q(date_created__gte=timestamp_datetime)
+        daily_query = Q(created__gte=timestamp_datetime)
         retracted_query = Q(retraction__isnull=False)
-
-        node_public_query = node_query & public_query
-        node_private_query = node_query & private_query
-        node_daily_query = node_query & public_query
-
-        node_retracted_query = node_query & retracted_query
-        project_public_query = project_query & public_query
-        project_private_query = project_query & private_query
-        project_retracted_query = project_query & retracted_query
 
         # `embargoed` used private status to determine embargoes, but old registrations could be private and unapproved registrations can also be private
         # `embargoed_v2` uses future embargo end dates on root
@@ -59,48 +50,48 @@ class NodeSummary(SummaryAnalytics):
             },
             # Nodes - the number of projects and components
             'nodes': {
-                'total': Node.objects.filter(node_query).count(),
-                'public': Node.objects.filter(node_public_query).count(),
-                'private': Node.objects.filter(node_private_query).count(),
-                'total_daily': Node.objects.filter(node_query & daily_query).count(),
-                'public_daily': Node.objects.filter(node_public_query & daily_query).count(),
-                'private_daily': Node.objects.filter(node_private_query & daily_query).count(),
+                'total': node_qs.count(),
+                'public': node_qs.filter(public_query).count(),
+                'private': node_qs.filter(private_query).count(),
+                'total_daily': node_qs.filter(daily_query).count(),
+                'public_daily': node_qs.filter(public_query & daily_query).count(),
+                'private_daily': node_qs.filter(private_query & daily_query).count(),
             },
             # Projects - the number of top-level only projects
             'projects': {
-                'total': Node.objects.filter(project_query).count(),
-                'public': Node.objects.filter(project_public_query).count(),
-                'private': Node.objects.filter(project_private_query).count(),
-                'total_daily': Node.objects.filter(project_query & daily_query).count(),
-                'public_daily': Node.objects.filter(project_public_query & daily_query).count(),
-                'private_daily': Node.objects.filter(project_private_query & daily_query).count(),
+                'total': node_qs.get_roots().count(),
+                'public': node_qs.filter(public_query).get_roots().count(),
+                'private': node_qs.filter(private_query).get_roots().count(),
+                'total_daily': node_qs.filter(daily_query).get_roots().count(),
+                'public_daily': node_qs.filter(public_query & daily_query).get_roots().count(),
+                'private_daily': node_qs.filter(private_query & daily_query).get_roots().count(),
             },
             # Registered Nodes - the number of registered projects and components
             'registered_nodes': {
-                'total': Registration.objects.filter(node_query).count(),
-                'public': Registration.objects.filter(node_public_query).count(),
-                'embargoed': Registration.objects.filter(node_private_query).count(),
-                'embargoed_v2': Registration.objects.filter(node_private_query & embargo_v2_query).count(),
-                'withdrawn': Registration.objects.filter(node_retracted_query).count(),
-                'total_daily': Registration.objects.filter(node_query & daily_query).count(),
-                'public_daily': Registration.objects.filter(node_public_query & daily_query).count(),
-                'embargoed_daily': Registration.objects.filter(node_private_query & daily_query).count(),
-                'embargoed_v2_daily': Registration.objects.filter(node_private_query & daily_query & embargo_v2_query).count(),
-                'withdrawn_daily': Registration.objects.filter(node_retracted_query & daily_query).count(),
+                'total': registration_qs.count(),
+                'public': registration_qs.filter(public_query).count(),
+                'embargoed': registration_qs.filter(private_query).count(),
+                'embargoed_v2': registration_qs.filter(private_query & embargo_v2_query).count(),
+                'withdrawn': registration_qs.filter(retracted_query).count(),
+                'total_daily': registration_qs.filter(daily_query).count(),
+                'public_daily': registration_qs.filter(public_query & daily_query).count(),
+                'embargoed_daily': registration_qs.filter(private_query & daily_query).count(),
+                'embargoed_v2_daily': registration_qs.filter(private_query & daily_query & embargo_v2_query).count(),
+                'withdrawn_daily': registration_qs.filter(retracted_query & daily_query).count(),
 
             },
             # Registered Projects - the number of registered top level projects
             'registered_projects': {
-                'total': Registration.objects.filter(project_query).count(),
-                'public': Registration.objects.filter(project_public_query).count(),
-                'embargoed': Registration.objects.filter(project_private_query).count(),
-                'embargoed_v2': Registration.objects.filter(project_private_query & embargo_v2_query).count(),
-                'withdrawn': Registration.objects.filter(project_retracted_query).count(),
-                'total_daily': Registration.objects.filter(project_query & daily_query).count(),
-                'public_daily': Registration.objects.filter(project_public_query & daily_query).count(),
-                'embargoed_daily': Registration.objects.filter(project_private_query & daily_query).count(),
-                'embargoed_v2_daily': Registration.objects.filter(project_private_query & daily_query & embargo_v2_query).count(),
-                'withdrawn_daily': Registration.objects.filter(project_retracted_query & daily_query).count(),
+                'total': registration_qs.get_roots().count(),
+                'public': registration_qs.filter(public_query).get_roots().count(),
+                'embargoed': registration_qs.filter(private_query).get_roots().count(),
+                'embargoed_v2': registration_qs.filter(private_query & embargo_v2_query).get_roots().count(),
+                'withdrawn': registration_qs.filter(retracted_query).get_roots().count(),
+                'total_daily': registration_qs.filter(daily_query).get_roots().count(),
+                'public_daily': registration_qs.filter(public_query & daily_query).get_roots().count(),
+                'embargoed_daily': registration_qs.filter(private_query & daily_query).get_roots().count(),
+                'embargoed_v2_daily': registration_qs.filter(private_query & daily_query & embargo_v2_query).get_roots().count(),
+                'withdrawn_daily': registration_qs.filter(retracted_query & daily_query).get_roots().count(),
             }
         }
 

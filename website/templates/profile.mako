@@ -25,10 +25,10 @@
     <div class="profile-fullname">
         <span>
             % if user['is_profile']:
-                <a href="#changeAvatarModal" data-toggle="modal"><img class='profile-gravatar' src="${profile['gravatar_url']}"
+                <a href="#changeAvatarModal" data-toggle="modal"><img class='profile-profile-image' src="${profile['profile_image_url']}"
                         rel="tooltip" title="Click to change avatar"/></a>
             % else:
-                <img class='profile-gravatar' src="${profile['gravatar_url']}"/>
+                <img class='profile-profile-image' src="${profile['profile_image_url']}"/>
             % endif
         </span>
         <span id="profileFullname" class="h1 overflow m-l-sm">
@@ -98,25 +98,52 @@
 <hr />
 <div class="row">
     <div class="col-sm-6">
-        <div class="panel panel-default">
-            <div class="panel-heading clearfix">
-              <h3 class="panel-title" >Public projects</h3>
+        % if user['has_quickfiles']:
+        <div class="row">
+            <div class="col-sm-12">
+        %endif
+                <div class="panel panel-default">
+                    <div class="panel-heading clearfix">
+                      <h3 class="panel-title" >Public projects</h3>
+                    </div>
+                    <div class="panel-body clearfix" id="publicProjects">
+                        <div class="ball-pulse ball-scale-blue text-center">
+                          <div></div>
+                          <div></div>
+                          <div></div>
+                        </div>
+                    </div>
+                </div>
             </div>
-            <div class="panel-body clearfix" id="publicProjects">
-                <div class="ball-pulse ball-scale-blue text-center">
-                  <div></div>
-                  <div></div>
-                  <div></div>
+        % if user['has_quickfiles']:
+        </div>
+        <div class="row">
+            <div class="col-sm-12">
+        %else:
+            <div class="col-sm-6">
+            %endif
+                <div class="panel panel-default">
+                    <div class="panel-heading clearfix">
+                        <h3 class="panel-title">Public components</h3>
+                    </div>
+                    <div class="panel-body clearfix" id="publicComponents">
+                      <div class="ball-pulse ball-scale-blue text-center">
+                        <div></div>
+                        <div></div>
+                        <div></div>
+                      </div>
+                    </div>
                 </div>
             </div>
         </div>
     </div>
+    % if user['has_quickfiles']:
     <div class="col-sm-6">
         <div class="panel panel-default">
             <div class="panel-heading clearfix">
-                <h3 class="panel-title">Public components</h3>
+                <h3 class="panel-title">Quick files</h3>
             </div>
-            <div class="panel-body clearfix" id="publicComponents">
+            <div class="panel-body clearfix" id="quickFiles">
               <div class="ball-pulse ball-scale-blue text-center">
                 <div></div>
                 <div></div>
@@ -125,6 +152,7 @@
             </div>
         </div>
     </div>
+    % endif
 </div><!-- end row -->
 
 <%include file="include/profile/social.mako" />

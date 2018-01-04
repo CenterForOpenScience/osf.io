@@ -1,6 +1,7 @@
 from django.conf.urls import url
 from . import views
 
+app_name = 'osf'
 
 urlpatterns = [
     url(r'^$', views.UserList.as_view(), name=views.UserList.view_name),

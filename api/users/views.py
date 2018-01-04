@@ -8,9 +8,7 @@ from api.base.parsers import (JSONAPIRelationshipParser,
                               JSONAPIRelationshipParserForRegularJSON)
 from api.base.serializers import AddonAccountSerializer
 from api.base.utils import (default_node_list_queryset,
-                            default_node_permission_queryset,
-                            default_registration_list_queryset,
-                            default_registration_permission_queryset,
+                            default_node_list_permission_queryset,
                             get_object_or_error,
                             get_user_auth)
 from api.base.views import JSONAPIBaseView, WaterButlerMixin
@@ -29,11 +27,17 @@ from api.users.serializers import (UserAddonSettingsSerializer,
                                    ReadEmailUserDetailSerializer,)
 from django.contrib.auth.models import AnonymousUser
 from framework.auth.oauth_scopes import CoreScopes, normalize_scopes
-from django.db.models import Q
 from rest_framework import permissions as drf_permissions
 from rest_framework import generics
 from rest_framework.exceptions import NotAuthenticated, NotFound
-from osf.models import Contributor, ExternalAccount, QuickFilesNode, AbstractNode, PreprintService, OSFUser
+from osf.models import (Contributor,
+                        ExternalAccount,
+                        QuickFilesNode,
+                        AbstractNode,
+                        PreprintService,
+                        Node,
+                        Registration,
+                        OSFUser)
 
 
 class UserMixin(object):
@@ -459,7 +463,7 @@ class UserAddonAccountDetail(JSONAPIBaseView, generics.RetrieveAPIView, UserMixi
 class UserNodes(JSONAPIBaseView, generics.ListAPIView, UserMixin, NodesFilterMixin):
     """List of nodes that the user contributes to. *Read-only*.
 
-    Paginated list of nodes that the user contributes to ordered by `date_modified`.  User registrations are not available
+    Paginated list of nodes that the user contributes to ordered by `modified`.  User registrations are not available
     at this endpoint. Each resource contains the full representation of the node, meaning additional requests to an individual
     node's detail view are not necessary. If the user id in the path is the same as the logged-in user, all nodes will be
     visible.  Otherwise, you will only be able to see the other user's publicly-visible nodes.  The special user id `me`
@@ -516,6 +520,8 @@ class UserNodes(JSONAPIBaseView, generics.ListAPIView, UserMixin, NodesFilterMix
         base_permissions.TokenHasScope,
     )
 
+    model_class = AbstractNode
+
     required_read_scopes = [CoreScopes.USERS_READ, CoreScopes.NODE_BASE_READ]
     required_write_scopes = [CoreScopes.USERS_WRITE, CoreScopes.NODE_BASE_WRITE]
 
@@ -523,24 +529,22 @@ class UserNodes(JSONAPIBaseView, generics.ListAPIView, UserMixin, NodesFilterMix
     view_category = 'users'
     view_name = 'user-nodes'
 
-    ordering = ('-date_modified',)
+    ordering = ('-modified',)
 
     # overrides NodesFilterMixin
     def get_default_queryset(self):
         user = self.get_user()
-        qs = default_node_list_queryset().filter(contributor__user__id=user.id)
         if user != self.request.user:
-            return qs & default_node_permission_queryset(self.request.user)
-        return qs
+            return default_node_list_permission_queryset(user=self.request.user, model_cls=Node).filter(contributor__user__id=user.id)
+        return default_node_list_queryset(model_cls=Node).filter(contributor__user__id=user.id)
 
     # overrides ListAPIView
     def get_queryset(self):
         return (
             AbstractNode.objects.filter(id__in=set(self.get_queryset_from_request().values_list('id', flat=True)))
             .select_related('node_license')
-            .order_by('-date_modified', )
+            .order_by('-modified', )
             .include('contributor__user__guids', 'root__guids', limit_includes=10)
-            .distinct('id', 'date_modified')
         )
 
 
@@ -581,7 +585,7 @@ class UserPreprints(JSONAPIBaseView, generics.ListAPIView, UserMixin, PreprintFi
         base_permissions.TokenHasScope,
     )
 
-    ordering = ('-date_created')
+    ordering = ('-created')
     model_class = AbstractNode
 
     required_read_scopes = [CoreScopes.USERS_READ, CoreScopes.NODE_PREPRINTS_READ]
@@ -600,19 +604,11 @@ class UserPreprints(JSONAPIBaseView, generics.ListAPIView, UserMixin, PreprintFi
         target_user = self.get_user(check_permissions=False)
 
         # Permissions on the list objects are handled by the query
-        default_qs = PreprintService.objects.filter(
-            node__isnull=False,
-            node__is_deleted=False,
-            node___contributors__guids___id=target_user._id
-        )
-        no_user_query = Q(is_published=True, node__is_public=True)
-        if auth_user:
-            admin_user_query = Q(node__contributor__user_id=auth_user.id, node__contributor__admin=True)
-            return default_qs.filter(no_user_query | admin_user_query)
-        return default_qs.filter(no_user_query)
+        default_qs = PreprintService.objects.filter(node___contributors__guids___id=target_user._id)
+        return self.preprints_queryset(default_qs, auth_user, allow_contribs=False)
 
     def get_queryset(self):
-        return self.get_queryset_from_request().distinct('id', 'date_created')
+        return self.get_queryset_from_request()
 
 
 class UserInstitutions(JSONAPIBaseView, generics.ListAPIView, UserMixin):
@@ -648,7 +644,7 @@ class UserRegistrations(JSONAPIBaseView, generics.ListAPIView, UserMixin, NodesF
     logged-in user.
 
     A withdrawn registration will display a limited subset of information, namely, title, description,
-    date_created, registration, withdrawn, date_registered, withdrawal_justification, and registration supplement. All
+    created, registration, withdrawn, date_registered, withdrawal_justification, and registration supplement. All
     other fields will be displayed as null. Additionally, the only relationships permitted to be accessed for a withdrawn
     registration are the contributors - other relationships will return a 403.
 
@@ -726,6 +722,8 @@ class UserRegistrations(JSONAPIBaseView, generics.ListAPIView, UserMixin, NodesF
         base_permissions.TokenHasScope,
     )
 
+    model_class = Registration
+
     required_read_scopes = [CoreScopes.USERS_READ, CoreScopes.NODE_REGISTRATIONS_READ]
     required_write_scopes = [CoreScopes.USERS_WRITE, CoreScopes.NODE_REGISTRATIONS_WRITE]
 
@@ -733,18 +731,18 @@ class UserRegistrations(JSONAPIBaseView, generics.ListAPIView, UserMixin, NodesF
     view_category = 'users'
     view_name = 'user-registrations'
 
-    ordering = ('-date_modified',)
+    ordering = ('-modified',)
 
     # overrides NodesFilterMixin
     def get_default_queryset(self):
         user = self.get_user()
         current_user = self.request.user
-        qs = default_registration_list_queryset() & default_registration_permission_queryset(current_user)
+        qs = default_node_list_permission_queryset(user=current_user, model_cls=Registration)
         return qs.filter(contributor__user__id=user.id)
 
     # overrides ListAPIView
     def get_queryset(self):
-        return self.get_queryset_from_request().select_related('node_license').include('contributor__user__guids', 'root__guids', limit_includes=10).distinct('id', 'date_modified')
+        return self.get_queryset_from_request().select_related('node_license').include('contributor__user__guids', 'root__guids', limit_includes=10)
 
 
 class UserInstitutionsRelationship(JSONAPIBaseView, generics.RetrieveDestroyAPIView, UserMixin):

@@ -1,10 +1,12 @@
+import datetime
+
 import mock
 from nose import tools as nt
 from django.test import RequestFactory
 from django.db import transaction
 from django.http import Http404
 from django.core.urlresolvers import reverse
-from django.contrib.auth.models import Permission
+from django.contrib.auth.models import Group, Permission
 from django.core.exceptions import PermissionDenied
 
 from tests.base import AdminTestCase
@@ -26,6 +28,7 @@ from admin.pre_reg.views import (
     DraftListView,
     DraftDetailView,
     DraftFormView,
+    CheckoutCheckupView,
     CommentUpdateView,
     get_metadata_files,
     get_file_questions,
@@ -62,7 +65,7 @@ class TestDraftListView(AdminTestCase):
         nt.assert_equal(len(res), 2)
         nt.assert_is_instance(res[0], DraftRegistration)
 
-    def test_queryset_returns_in_order_date_updated(self):
+    def test_queryset_returns_in_order_date_submitted(self):
         created_first_submitted_second = DraftRegistrationFactory(
             initiator=self.user,
             registration_schema=self.schema,
@@ -79,7 +82,9 @@ class TestDraftListView(AdminTestCase):
 
         created_second_submitted_first.submit_for_review(self.user, {}, save=True)
         created_first_submitted_second.submit_for_review(self.user, {}, save=True)
+        created_second_submitted_first.datetime_updated = created_first_submitted_second.datetime_updated + datetime.timedelta(1)
 
+        assert created_second_submitted_first.datetime_updated > created_first_submitted_second.datetime_updated
         res = list(self.view.get_queryset())
         nt.assert_true(res[0] == created_first_submitted_second)
 
@@ -360,13 +365,19 @@ class TestPreregFiles(AdminTestCase):
             }
         self.draft = DraftRegistrationFactory(
             initiator=self.user,
+            branched_from=self.node,
             registration_schema=prereg_schema,
             registration_metadata=data
         )
+
         self.prereg_user.save()
         self.admin_user = UserFactory()
+        self.admin_user.is_superuser = True
+        self.admin_user.groups.add(Group.objects.get(name='prereg_admin'))
+        self.admin_user.groups.add(Group.objects.get(name='prereg_view'))
+        self.admin_user.save()
 
-    def test_checkout_files(self):
+    def test_checkout_checkin_files(self):
         self.draft.submit_for_review(self.user, {}, save=True)
         request = RequestFactory().get('/fake_path')
         view = DraftDetailView()
@@ -377,18 +388,105 @@ class TestPreregFiles(AdminTestCase):
             f.refresh_from_db()
             nt.assert_equal(self.admin_user, f.checkout)
 
-    def test_checkin_files(self):
+        view2 = DraftFormView()
+        view2 = setup_view(view2, request, draft_pk=self.draft._id)
+        view2.checkin_files(self.draft)
+
+        for q, f in self.d_of_qs.iteritems():
+            f.refresh_from_db()
+            nt.assert_equal(None, f.checkout)
+
+    def test_rejected_approved_checkouts(self):
         self.draft.submit_for_review(self.user, {}, save=True)
+
+        # Test rejected does not checkout files
+        self.draft.approval.state = 'rejected'
+        self.draft.approval.save()
+
         request = RequestFactory().get('/fake_path')
         view = DraftDetailView()
         view = setup_user_view(view, request, self.admin_user,
                                draft_pk=self.draft._id)
         view.checkout_files(self.draft)
-        view2 = DraftFormView()
-        view2 = setup_view(view2, request, draft_pk=self.draft._id)
-        view2.checkin_files(self.draft)
+
         for q, f in self.d_of_qs.iteritems():
+            f.refresh_from_db()
             nt.assert_equal(None, f.checkout)
+
+        # Test approved does not checkout files
+        self.draft.approval.state = 'approved'
+        self.draft.approval.save()
+
+        request = RequestFactory().get('/fake_path')
+        view = DraftDetailView()
+        view = setup_user_view(view, request, self.admin_user,
+                               draft_pk=self.draft._id)
+        view.checkout_files(self.draft)
+
+        for q, f in self.d_of_qs.iteritems():
+            f.refresh_from_db()
+            nt.assert_equal(None, f.checkout)
+
+    def test_rejected_does_not_checkout_files(self):
+        self.draft.submit_for_review(self.user, {}, save=True)
+        self.draft.approval.state = 'rejected'
+        self.draft.approval.save()
+
+        request = RequestFactory().get('/fake_path')
+        view = DraftDetailView()
+        view = setup_user_view(view, request, self.admin_user,
+                               draft_pk=self.draft._id)
+        view.checkout_files(self.draft)
+
+        for q, f in self.d_of_qs.iteritems():
+            f.refresh_from_db()
+            nt.assert_equal(None, f.checkout)
+
+    def test_checkout_checkup(self):
+        self.draft.submit_for_review(self.user, {}, save=True)
+        request = RequestFactory().get('/fake_path')
+
+        # Test Approved removes checkout
+        self.draft.approval.state = 'approved'
+        self.draft.approval.save()
+
+        file_q7 = self.d_of_qs['q7']
+        file_q7.checkout = self.admin_user
+        file_q7.save()
+
+        view = CheckoutCheckupView()
+        view = setup_user_view(view, request, user=self.admin_user)
+        view.delete(request, user=self.admin_user)
+        file_q7.refresh_from_db()
+        assert file_q7.checkout is None
+
+        # Test Rejected removes checkout
+        self.draft.approval.state = 'rejected'
+        self.draft.approval.save()
+
+        file_q7 = self.d_of_qs['q7']
+        file_q7.checkout = self.admin_user
+        file_q7.save()
+
+        view = CheckoutCheckupView()
+        view = setup_user_view(view, request, user=self.admin_user)
+        view.delete(request, user=self.admin_user)
+        file_q7.refresh_from_db()
+        assert file_q7.checkout is None
+
+        # Test Unapprove does not remove checkout
+        self.draft.approval.state = 'unapproved'
+        self.draft.approval.save()
+
+        file_q7 = self.d_of_qs['q7']
+        file_q7.checkout = self.admin_user
+        file_q7.save()
+
+        view = CheckoutCheckupView()
+        view = setup_user_view(view, request, user=self.admin_user)
+        view.delete(request, user=self.admin_user)
+        file_q7.refresh_from_db()
+        assert file_q7.checkout == self.admin_user
 
     def test_get_meta_data_files(self):
         for item in get_metadata_files(self.draft):

@@ -32,14 +32,18 @@ class PreprintSummary(SummaryAnalytics):
         elastic_query = {
             "query": {
                 "bool": {
-                    "must": {
-                        "match": {
-                            "type": "preprints"
+                    "must": [
+                        {
+                            "match": {
+                                "type": "preprint"
+                            }
                         },
-                        "match": {
-                            "sources": None
+                        {
+                            "match": {
+                                "sources": None
+                            }
                         }
-                    },
+                    ],
                     'filter': [
                         {
                             "range": {
@@ -56,7 +60,7 @@ class PreprintSummary(SummaryAnalytics):
         counts = []
         for preprint_provider in PreprintProvider.objects.all():
             name = preprint_provider.name if preprint_provider.name != 'Open Science Framework' else 'OSF'
-            elastic_query['query']['bool']['must']['match']['sources'] = name
+            elastic_query['query']['bool']['must'][1]['match']['sources'] = name
             resp = requests.post('https://share.osf.io/api/v2/search/creativeworks/_search', json=elastic_query).json()
             counts.append({
                 'keen': {
