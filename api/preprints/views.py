@@ -358,7 +358,7 @@ class PreprintIdentifierList(IdentifierList, PreprintMixin):
 
         name           type                   description
         ----------------------------------------------------------------------------
-        category       string                 e.g. 'ark', 'doi'
+        category       string                 e.g. 'doi'
         value          string                 the identifier value itself
 
     ##Links

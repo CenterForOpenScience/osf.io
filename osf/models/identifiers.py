@@ -11,7 +11,7 @@ class Identifier(ObjectIDMixin, BaseModel):
     object_id = models.PositiveIntegerField(null=True, blank=True)
     content_type = models.ForeignKey(ContentType, null=True, blank=True, on_delete=models.CASCADE)
     referent = GenericForeignKey()
-    # category: e.g. 'ark', 'doi'
+    # category: e.g. 'doi'
     category = models.CharField(max_length=10)  # longest was 3, 8/19/2016
     # value: e.g. 'FK424601'
     value = models.CharField(max_length=50)  # longest was 21, 8/19/2016

@@ -26,7 +26,7 @@ class IdentifierList(JSONAPIBaseView, generics.ListAPIView, ListFilterMixin):
 
         name           type                   description
         ----------------------------------------------------------------------------
-        category       string                 e.g. 'ark', 'doi'
+        category       string                 e.g. 'doi'
         value          string                 the identifier value itself
 
     ##Links
@@ -71,7 +71,7 @@ class IdentifierList(JSONAPIBaseView, generics.ListAPIView, ListFilterMixin):
 
     def get_default_queryset(self):
         obj = self.get_object()
-        return obj.identifiers.all()
+        return obj.identifiers.exclude(category='ark')
 
     # overrides ListCreateAPIView
     def get_queryset(self):
@@ -88,7 +88,7 @@ class IdentifierDetail(JSONAPIBaseView, generics.RetrieveAPIView):
 
         name           type                   description
         ----------------------------------------------------------------------------
-        category       string                 e.g. 'ark', 'doi'
+        category       string                 e.g. 'doi'
         value          string                 the identifier value itself
 
     ##Links
