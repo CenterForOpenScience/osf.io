@@ -38,7 +38,6 @@ boto3==1.4.7
 # Support SSL SNI on Python < 2.7.9
 # (http://docs.python-requests.org/en/latest/community/faq/#what-are-hostname-doesn-t-match-errors)
 ndg-httpsclient==0.3.0
-git+https://github.com/CenterForOpenScience/modular-odm.git@0.4.0
 # Python markdown extensions for comment emails
 git+git://github.com/CenterForOpenScience/mdx_del_ins.git
 
