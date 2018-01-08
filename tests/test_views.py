@@ -821,6 +821,18 @@ class TestProjectViews(OsfTestCase):
         assert_equal(res.status_code, http.OK)
         assert_in('show_wiki_widget', res.json['user'])
 
+    def test_fork_grandcomponents_has_correct_root(self):
+        user = AuthUserFactory()
+        project = ProjectFactory(creator=user)
+        child = NodeFactory(parent=project, creator=self.user)
+        grand_child = NodeFactory(parent=child, creator=self.user)
+        project.save()
+
+        fork = project.fork_node(auth)
+        fork.save()
+        grand_child_fork = fork.nodes[0].nodes[0]
+        assert_equal(grand_child_fork.root, fork)
+
     def test_fork_count_does_not_include_deleted_forks(self):
         user = AuthUserFactory()
         project = ProjectFactory(creator=user)
