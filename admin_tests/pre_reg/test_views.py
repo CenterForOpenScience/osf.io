@@ -37,9 +37,9 @@ from admin.pre_reg.views import (
 from admin.pre_reg.forms import DraftRegistrationForm
 from osf.models.admin_log_entry import AdminLogEntry
 
-
 class TestDraftListView(AdminTestCase):
-    def setUp(self):
+    @mock.patch('website.archiver.tasks.archive')
+    def setUp(self, mock_archive):
         super(TestDraftListView, self).setUp()
         self.user = AuthUserFactory()
         self.schema = utils.draft_reg_util()
