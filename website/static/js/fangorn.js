@@ -55,7 +55,7 @@ var CONFLICT_INFO = {
         passed: 'Skipped'
     },
     replace: {
-        passed: 'Replaced old version'
+        passed: 'Moved or replaced old version'
     },
     keep: {
         passed: 'Kept both versions'
@@ -541,31 +541,39 @@ function checkConflictsRename(tb, item, name, cb) {
 
 function doItemOp(operation, to, from, rename, conflict) {
     var tb = this;
+    // dismiss old modal immediately to prevent button mashing
+    tb.modal.dismiss();
     var inReadyQueue;
     var filesRemaining;
-    var inConflictsQueue;
+    var inConflictsQueue = false;
     var syncMoves;
 
     var notRenameOp = typeof rename === 'undefined';
     if (notRenameOp) {
         filesRemaining = tb.syncFileMoveCache && tb.syncFileMoveCache[to.data.provider];
-        inConflictsQueue = filesRemaining.conflicts && filesRemaining.conflicts.length > 0;
         syncMoves = SYNC_UPLOAD_ADDONS.indexOf(from.data.provider) !== -1;
         if (syncMoves) {
             inReadyQueue = filesRemaining && filesRemaining.ready && filesRemaining.ready.length > 0;
         }
-        if (inConflictsQueue) {
-            var s = filesRemaining.conflicts.length > 1 ? 's' : '';
-            var mithrilContent = m('div', { className: 'text-center' }, [
-                m('p.h4', filesRemaining.conflicts.length + ' conflict' + s + ' left to resolve.'),
-                m('div', {className: 'ball-pulse ball-scale-blue text-center'}, [
-                    m('div',''),
-                    m('div',''),
-                    m('div',''),
-                ])
-            ]);
-            var header =  m('h3.break-word.modal-title', operation.action + ' "' + from.data.name +'"');
-            tb.modal.update(mithrilContent, m('', []), header);
+
+        if (filesRemaining.conflicts) {
+            inConflictsQueue = true;
+            if (filesRemaining.conflicts.length > 0) {
+                var s = filesRemaining.conflicts.length > 1 ? 's' : '';
+                var mithrilContent = m('div', { className: 'text-center' }, [
+                    m('p.h4', filesRemaining.conflicts.length + ' conflict' + s + ' left to resolve.'),
+                    m('div', {className: 'ball-pulse ball-scale-blue text-center'}, [
+                        m('div',''),
+                        m('div',''),
+                        m('div',''),
+                    ])
+                ]);
+                var header =  m('h3.break-word.modal-title', operation.action + ' "' + from.data.name +'"');
+                tb.modal.update(mithrilContent, m('', []), header);
+            } else {
+                // remove the empty queue to know there are no remaining conflicts next time
+                filesRemaining.conflicts = undefined;
+            }
         }
     }
 
@@ -709,7 +717,7 @@ function doItemOp(operation, to, from, rename, conflict) {
         orderFolder.call(tb, from.parent());
     }).always(function(){
         from.inProgress = false;
-        if (notRenameOp && (typeof inConflictsQueue !== 'undefined' || syncMoves)) {
+        if (notRenameOp && (inConflictsQueue || syncMoves)) {
             doSyncMove(tb, to.data.provider);
         }
     });

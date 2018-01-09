@@ -18,6 +18,7 @@ def strip_html(unclean, tags=None):
 
     # We make this noop for non-string, non-collection inputs so this function can be used with higher-order
     # functions, such as rapply (recursively applies a function to collections)
+    tags = tags or []
     if not isinstance(unclean, basestring) and not is_iterable(unclean) and unclean is not None:
         return unclean
     return bleach.clean(unclean, strip=True, tags=tags, attributes=[], styles=[])

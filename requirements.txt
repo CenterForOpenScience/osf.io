@@ -35,10 +35,10 @@ google-api-python-client==1.6.4
 Babel==2.5.1
 citeproc-py==0.4.0
 boto3==1.4.7
+pymongo==3.6.0
 # Support SSL SNI on Python < 2.7.9
 # (http://docs.python-requests.org/en/latest/community/faq/#what-are-hostname-doesn-t-match-errors)
 ndg-httpsclient==0.3.0
-git+https://github.com/CenterForOpenScience/modular-odm.git@0.4.0
 # Python markdown extensions for comment emails
 git+git://github.com/CenterForOpenScience/mdx_del_ins.git
 
@@ -87,7 +87,7 @@ django-typed-models==0.7.0
 git+https://github.com/cos-forks/django-dirtyfields@develop
 git+https://github.com/cos-forks/django-extensions@master
 django-include==0.2.4
-psycopg2==2.6.2
+psycopg2==2.7.3
 ujson==1.35
 sqlparse==0.2.4
 psycogreen==1.0

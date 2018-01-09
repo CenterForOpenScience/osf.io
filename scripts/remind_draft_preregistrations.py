@@ -3,8 +3,10 @@ import logging
 from django.db import transaction
 from django.utils import timezone
 
+from website.prereg.utils import get_prereg_schema
+
 from framework.celery_tasks import app as celery_app
-from osf.models import DraftRegistration, MetaSchema, QueuedMail
+from osf.models import DraftRegistration, QueuedMail
 from osf.models.queued_mail import PREREG_REMINDER, PREREG_REMINDER_TYPE, queue_mail
 
 from website.app import init_app
@@ -47,10 +49,10 @@ def find_neglected_prereg_within_reminder_limit():
 
     return DraftRegistration.objects.filter(
         deleted__isnull=True,
-        approval__isnull=True,
-        registration_schema=MetaSchema.objects.get(name='Prereg Challenge'),
+        registered_node=None,
+        registration_schema=get_prereg_schema(),
         datetime_initiated__lte=timezone.now()-settings.PREREG_WAIT_TIME,
-        datetime_initiated__gte=timezone.now()-settings.PREREG_AGE_LIMIT
+        datetime_initiated__gte=timezone.now()-settings.PREREG_AGE_LIMIT,
     ).exclude(_id__in = already_queued)
 
 
