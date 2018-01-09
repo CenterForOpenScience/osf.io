@@ -37,8 +37,8 @@ def serialize_user(user, node=None, admin=False, full=False, is_profile=False, i
         'active': user.is_active,
     }
     if node is not None:
-        visible = False
         if admin_contributor:
+            visible = False
             for x in node.parents:
                 if x.contributor_set.filter(user=user, admin=True, visible=True).exists():
                     visible = True
