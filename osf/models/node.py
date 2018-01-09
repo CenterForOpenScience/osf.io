@@ -1695,7 +1695,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
             node_contained = node_relation.child
             # Register child nodes
             if not node_relation.is_node_link:
-                node_contained.register_node(  # noqa
+                node_contained.register_node(
                     schema=schema,
                     auth=auth,
                     data=data,
