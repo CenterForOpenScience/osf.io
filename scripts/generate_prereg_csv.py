@@ -54,6 +54,7 @@ def main():
         to_addr=settings.OSF_SUPPORT_EMAIL,
         attachment_name=filename,
         attachment_content=output.getvalue(),
+        celery=False  # attachment is not JSON-serializable, so don't pass it to celery
     )
 
     logger.info('Updated prereg CSV email sent.')
