@@ -824,8 +824,9 @@ class TestProjectViews(OsfTestCase):
     def test_fork_grandcomponents_has_correct_root(self):
         user = AuthUserFactory()
         project = ProjectFactory(creator=user)
-        child = NodeFactory(parent=project, creator=self.user)
-        grand_child = NodeFactory(parent=child, creator=self.user)
+        auth = Auth(project.creator)
+        child = NodeFactory(parent=project, creator=user)
+        grand_child = NodeFactory(parent=child, creator=user)
         project.save()
 
         fork = project.fork_node(auth)
