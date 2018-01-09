@@ -1,11 +1,14 @@
+from osf.models import ScheduledBanner
+from rest_framework import generics
+from rest_framework.exceptions import NotFound
+
+from api.base.views import JSONAPIBaseView
 from api.base.utils import get_object_or_error
+from api.banners.serializers import BannerSerializer
+
 from django.db.models import Q
 from django.utils import timezone
-from api.base.views import JSONAPIBaseView
-from api.banners.serializers import BannerSerializer
-from rest_framework import generics
-from osf.models import ScheduledBanner
-from rest_framework.exceptions import NotFound
+
 
 class CurrentBanner(JSONAPIBaseView, generics.RetrieveAPIView):
 

@@ -1,6 +1,6 @@
 from django.db import models
 
-from osf.utils.storage import ApiFileStorage
+from osf.utils.storage import BannerImageStorage
 
 from osf.exceptions import ValidationValueError
 from osf.utils.fields import NonNaiveDateTimeField
@@ -21,10 +21,10 @@ class ScheduledBanner(models.Model):
     color = models.TextField()
     license = models.TextField(blank=True, null=True)
 
-    default_photo = models.FileField(storage=ApiFileStorage())
+    default_photo = models.FileField(storage=BannerImageStorage())
     default_text = models.TextField()
 
-    mobile_photo = models.FileField(blank=True, null=True, storage=ApiFileStorage())
+    mobile_photo = models.FileField(storage=BannerImageStorage())
     mobile_text = models.TextField(blank=True, null=True)
 
     def save(self, *args, **kwargs):
