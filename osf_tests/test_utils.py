@@ -22,7 +22,7 @@ class TestDisableAutoNowContextManager:
 
         # update and save within context manager, confirm date doesn't change (i.e. auto_now was set to False)
         new_date_modified = node.modified
-        with disable_auto_now_fields(Node):
+        with disable_auto_now_fields(models=[Node]):
             node.title = 'AB'
             node.save()
         assert node.modified == new_date_modified
@@ -55,7 +55,7 @@ class TestDisableAutoNowContextManager:
         old_created = node.created
         assert Node._meta.get_field('created').auto_now is False
 
-        with disable_auto_now_fields(Node):
+        with disable_auto_now_fields(models=[Node]):
             node.description = 'new cool description!!'
         node.save()
 

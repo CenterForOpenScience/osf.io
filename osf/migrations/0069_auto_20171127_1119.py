@@ -18,7 +18,7 @@ def add_preprint_doi_created(state, schema):
     current_preprint = 0
     logger.info('{} published preprints found with preprint_doi_created is null.'.format(preprints_count))
 
-    with disable_auto_now_fields(PreprintService):
+    with disable_auto_now_fields(models=[PreprintService]):
         for preprint in null_preprint_doi_created:
             current_preprint += 1
             if preprint.get_identifier('doi'):

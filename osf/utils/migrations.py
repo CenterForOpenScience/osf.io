@@ -13,15 +13,26 @@ from website.project.metadata.schemas import OSF_META_SCHEMAS
 logger = logging.getLogger(__file__)
 
 
-@contextmanager
-def disable_auto_now_fields(model=None):
+def get_osf_models():
     """
-    Context manager to disable updates of all auto_now fields for a given model.
-    If model=None, updates for all auto_now fields on all models will be disabled.
+    Helper function to retrieve all osf related models.
 
+    Example usage:
+        with disable_auto_now_fields(models=get_osf_models()):
+            ...
     """
-    all_app_models = list(itertools.chain(*[app.get_models() for app in apps.get_app_configs() if 'addons' in app.label or 'osf' in app.label]))
-    models = [model] if model else all_app_models
+    return list(itertools.chain(*[app.get_models() for app in apps.get_app_configs() if app.label.startswith('addons_') or app.label.startswith('osf')]))
+
+@contextmanager
+def disable_auto_now_fields(models=None):
+    """
+    Context manager to disable auto_now field updates.
+    If models=None, updates for all auto_now fields on *all* models will be disabled.
+
+    :param list models: Optional list of models for which auto_now field updates should be disabled.
+    """
+    if not models:
+        models = apps.get_models()
 
     changed = []
     for model in models:
