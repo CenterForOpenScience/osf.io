@@ -4,7 +4,7 @@ var assert = require('chai').assert;
 var utils = require('tests/utils');
 var faker = require('faker');
 
-var licenses = require('json!@centerforopenscience/list-of-licenses');
+var licenses = require('json-loader!@centerforopenscience/list-of-licenses');
 var $ = require('jquery');
 
 var LicensePicker = require('js/licensePicker');
