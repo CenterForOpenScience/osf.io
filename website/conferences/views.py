@@ -4,7 +4,7 @@ import httplib
 import logging
 
 from django.db import transaction
-from bulk_update.helper import bulk_update
+from django_bulk_update.helper import bulk_update
 
 from addons.osfstorage.models import OsfStorageFile
 from framework.auth import get_or_create_user
@@ -174,7 +174,7 @@ def _render_conference_node(node, idx, conf):
         'category': conf.field_names['submission1'] if conf.field_names['submission1'] in tags else conf.field_names['submission2'],
         'download': download_count,
         'downloadUrl': download_url,
-        'dateCreated': node.date_created.isoformat(),
+        'dateCreated': node.created.isoformat(),
         'confName': conf.name,
         'confUrl': web_url_for('conference_results', meeting=conf.endpoint),
         'tags': ' '.join(tags)
@@ -228,7 +228,7 @@ def conference_results(meeting):
     :param str meeting: Endpoint name for a conference.
     """
     try:
-        conf = Conference.objects.get(endpoint=meeting)
+        conf = Conference.objects.get(endpoint__iexact=meeting)
     except Conference.DoesNotExist:
         raise HTTPError(httplib.NOT_FOUND)
 
@@ -262,7 +262,7 @@ def conference_submissions(**kwargs):
 
 def conference_view(**kwargs):
     meetings = []
-    for conf in Conference.find():
+    for conf in Conference.objects.all():
         if conf.num_submissions < settings.CONFERENCE_MIN_COUNT:
             continue
         if (hasattr(conf, 'is_meeting') and (conf.is_meeting is False)):

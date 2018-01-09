@@ -81,7 +81,7 @@ class BaseFileNode(TypedModel, CommentableMixin, OptionalGuidMixin, Taggable, Ob
 
     # The User that has this file "checked out"
     # Should only be used for OsfStorage
-    checkout = models.ForeignKey('osf.OSFUser', blank=True, null=True)
+    checkout = models.ForeignKey('osf.OSFUser', blank=True, null=True, on_delete=models.CASCADE)
     # The last time the touch method was called on this FileNode
     last_touched = NonNaiveDateTimeField(null=True, blank=True)
     # A list of dictionaries sorted by the 'modified' key
@@ -91,9 +91,9 @@ class BaseFileNode(TypedModel, CommentableMixin, OptionalGuidMixin, Taggable, Ob
     # A concrete version of a FileNode, must have an identifier
     versions = models.ManyToManyField('FileVersion')
 
-    node = models.ForeignKey('osf.AbstractNode', blank=True, null=True, related_name='files')
-    parent = models.ForeignKey('self', blank=True, null=True, default=None, related_name='_children')
-    copied_from = models.ForeignKey('self', blank=True, null=True, default=None, related_name='copy_of')
+    node = models.ForeignKey('osf.AbstractNode', blank=True, null=True, related_name='files', on_delete=models.CASCADE)
+    parent = models.ForeignKey('self', blank=True, null=True, default=None, related_name='_children', on_delete=models.CASCADE)
+    copied_from = models.ForeignKey('self', blank=True, null=True, default=None, related_name='copy_of', on_delete=models.CASCADE)
 
     provider = models.CharField(max_length=25, blank=False, null=False, db_index=True)
 
@@ -103,7 +103,7 @@ class BaseFileNode(TypedModel, CommentableMixin, OptionalGuidMixin, Taggable, Ob
 
     is_deleted = False
     deleted_on = NonNaiveDateTimeField(blank=True, null=True)
-    deleted_by = models.ForeignKey('osf.OSFUser', related_name='files_deleted_by', null=True, blank=True)
+    deleted_by = models.ForeignKey('osf.OSFUser', related_name='files_deleted_by', null=True, blank=True, on_delete=models.CASCADE)
 
     objects = BaseFileNodeManager()
     active = ActiveFileNodeManager()
@@ -209,8 +209,8 @@ class BaseFileNode(TypedModel, CommentableMixin, OptionalGuidMixin, Taggable, Ob
 
         return guids
 
-    def to_storage(self):
-        storage = super(BaseFileNode, self).to_storage()
+    def to_storage(self, **kwargs):
+        storage = super(BaseFileNode, self).to_storage(**kwargs)
         if 'trashed' not in self.type.lower():
             for key in tuple(storage.keys()):
                 if 'deleted' in key:
@@ -348,6 +348,9 @@ class BaseFileNode(TypedModel, CommentableMixin, OptionalGuidMixin, Taggable, Ob
     def get_absolute_url(self):
         return self.absolute_api_v2_url
 
+    def get_absolute_info_url(self):
+        return self.absolute_api_v2_url
+
     def _repoint_guids(self, updated):
         logger.warn('BaseFileNode._repoint_guids is deprecated.')
 
@@ -480,8 +483,8 @@ class File(models.Model):
             'checkout': self.checkout._id if self.checkout else None,
             'version': newest_version.identifier if newest_version else None,
             'contentType': newest_version.content_type if newest_version else None,
-            'modified': newest_version.date_modified.isoformat() if newest_version.date_modified else None,
-            'created': self.versions.all().first().date_modified.isoformat() if self.versions.all().first().date_modified else None,
+            'modified': newest_version.external_modified.isoformat() if newest_version.external_modified else None,
+            'created': self.versions.all().first().external_modified.isoformat() if self.versions.all().first().external_modified else None,
         })
 
     def restore(self, recursive=True, parent=None, save=True, deleted_on=None):
@@ -570,7 +573,7 @@ class TrashedFileNode(BaseFileNode):
         self.recast(self._resolve_class(type_cls)._typedmodels_type)
 
         if save:
-            self.save()
+            self.save(update_modified=False)
 
         return self
 
@@ -616,21 +619,22 @@ class FileVersion(ObjectIDMixin, BaseModel):
     """A version of an OsfStorageFileNode. contains information
     about where the file is located, hashes and datetimes
     """
+    # Note on fields:
+    # `created`: Date version record was created. This is the date displayed to the user.
+    # `modified`: Date this object was last modified. Distinct from the date the file associated
+    #       with this object was last modified
+    # `external_modified`: Date file modified on third-party backend. Not displayed to user, since
+    #       this date may be earlier than the date of upload if the file already
+    #       exists on the backend
 
-    creator = models.ForeignKey('OSFUser', null=True, blank=True)
+    creator = models.ForeignKey('OSFUser', null=True, blank=True, on_delete=models.CASCADE)
 
     identifier = models.CharField(max_length=100, blank=False, null=False)  # max length on staging was 51
-
-    # Date version record was created. This is the date displayed to the user.
-    date_created = NonNaiveDateTimeField(auto_now_add=True)
 
     size = models.BigIntegerField(default=-1, blank=True, null=True)
 
     content_type = models.CharField(max_length=100, blank=True, null=True)  # was 24 on staging
-    # Date file modified on third-party backend. Not displayed to user, since
-    # this date may be earlier than the date of upload if the file already
-    # exists on the backend
-    date_modified = NonNaiveDateTimeField(null=True, blank=True)
+    external_modified = NonNaiveDateTimeField(null=True, blank=True)
 
     metadata = DateTimeAwareJSONField(blank=True, default=dict)
     location = DateTimeAwareJSONField(default=None, blank=True, null=True, validators=[validate_location])
@@ -655,7 +659,7 @@ class FileVersion(ObjectIDMixin, BaseModel):
         self.size = self.metadata.get('size', self.size)
         self.content_type = self.metadata.get('contentType', self.content_type)
         if self.metadata.get('modified'):
-            self.date_modified = parse_date(self.metadata['modified'], ignoretz=False)
+            self.external_modified = parse_date(self.metadata['modified'], ignoretz=False)
 
         if save:
             self.save()
@@ -691,4 +695,4 @@ class FileVersion(ObjectIDMixin, BaseModel):
         return True
 
     class Meta:
-        ordering = ('-date_created',)
+        ordering = ('-created',)

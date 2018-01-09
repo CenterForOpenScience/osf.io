@@ -7,7 +7,7 @@ from django.db import models
 from framework.auth.decorators import Auth
 from framework.exceptions import HTTPError
 from osf.models.files import File, Folder, FileVersion, BaseFileNode
-from osf.utils.auth import _get_current_user
+from framework.auth.core import _get_current_user
 from addons.base import exceptions
 from addons.dataverse.client import connect_from_settings_or_401
 from addons.dataverse.serializer import DataverseSerializer
@@ -74,7 +74,7 @@ class UserSettings(BaseOAuthUserSettings):
     serializer = DataverseSerializer
 
 
-class NodeSettings(BaseStorageAddon, BaseOAuthNodeSettings):
+class NodeSettings(BaseOAuthNodeSettings, BaseStorageAddon):
     oauth_provider = DataverseProvider
     serializer = DataverseSerializer
 
@@ -83,7 +83,7 @@ class NodeSettings(BaseStorageAddon, BaseOAuthNodeSettings):
     dataset_doi = models.TextField(blank=True, null=True)
     _dataset_id = models.TextField(blank=True, null=True)
     dataset = models.TextField(blank=True, null=True)
-    user_settings = models.ForeignKey(UserSettings, null=True, blank=True)
+    user_settings = models.ForeignKey(UserSettings, null=True, blank=True, on_delete=models.CASCADE)
 
     @property
     def folder_name(self):

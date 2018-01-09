@@ -12,6 +12,7 @@ import xml
 import django
 django.setup()
 import logging
+import tempfile
 
 from framework import sentry
 from framework.celery_tasks import app as celery_app
@@ -29,11 +30,13 @@ class Sitemap(object):
         self.sitemap_count = 0
         self.errors = 0
         self.new_doc()
-        self.sitemap_dir = os.path.join(settings.STATIC_FOLDER, 'sitemaps')
-        if not os.path.exists(self.sitemap_dir):
-            print('Creating sitemap directory at `{}`'.format(self.sitemap_dir))
-            os.makedirs(self.sitemap_dir)
-        if settings.SITEMAP_TO_S3:
+        if not settings.SITEMAP_TO_S3:
+            self.sitemap_dir = os.path.join(settings.STATIC_FOLDER, 'sitemaps')
+            if not os.path.exists(self.sitemap_dir):
+                print('Creating sitemap directory at `{}`'.format(self.sitemap_dir))
+                os.makedirs(self.sitemap_dir)
+        else:
+            self.sitemap_dir = tempfile.mkdtemp()
             assert settings.SITEMAP_AWS_BUCKET, 'SITEMAP_AWS_BUCKET must be set for sitemap files to be sent to S3'
             assert settings.AWS_ACCESS_KEY_ID, 'AWS_ACCESS_KEY_ID must be set for sitemap files to be sent to S3'
             assert settings.AWS_SECRET_ACCESS_KEY, 'AWS_SECRET_ACCESS_KEY must be set for sitemap files to be sent to S3'
@@ -43,6 +46,10 @@ class Sitemap(object):
                 aws_secret_access_key=settings.AWS_SECRET_ACCESS_KEY,
                 region_name='us-east-1'
             )
+
+    def cleanup(self):
+        if settings.SITEMAP_TO_S3:
+            shutil.rmtree(self.sitemap_dir)
 
     def new_doc(self):
         """Creates new sitemap document and resets the url_count."""
@@ -149,7 +156,7 @@ class Sitemap(object):
         print('Generating Sitemap')
 
         # Progress bar
-        progress = script_utils.Progress()
+        progress = script_utils.Progress(precision=0)
 
         # Static urls
         progress.start(len(settings.SITEMAP_STATIC_URLS), 'STAT: ')
@@ -176,13 +183,13 @@ class Sitemap(object):
         objs = (AbstractNode.objects
             .filter(is_public=True, is_deleted=False, retraction_id__isnull=True)
             .exclude(type__in=["osf.collection", "osf.quickfilesnode"])
-            .values('guids___id', 'date_modified'))
+            .values('guids___id', 'modified'))
         progress.start(objs.count(), 'NODE: ')
         for obj in objs:
             try:
                 config = settings.SITEMAP_NODE_CONFIG
                 config['loc'] = urlparse.urljoin(settings.DOMAIN, '/{}/'.format(obj['guids___id']))
-                config['lastmod'] = obj['date_modified'].strftime('%Y-%m-%d')
+                config['lastmod'] = obj['modified'].strftime('%Y-%m-%d')
                 self.add_url(config)
             except Exception as e:
                 self.log_errors('NODE', obj['guids___id'], e)
@@ -197,7 +204,7 @@ class Sitemap(object):
         osf = PreprintProvider.objects.get(_id='osf')
         for obj in objs:
             try:
-                preprint_date = obj.date_modified.strftime('%Y-%m-%d')
+                preprint_date = obj.modified.strftime('%Y-%m-%d')
                 config = settings.SITEMAP_PREPRINT_CONFIG
                 preprint_url = obj.url
                 provider = obj.provider
@@ -252,7 +259,9 @@ class Sitemap(object):
 @celery_app.task(name='scripts.generate_sitemap')
 def main():
     init_app(routes=False)  # Sets the storage backends on all models
-    Sitemap().generate()
+    sitemap = Sitemap()
+    sitemap.generate()
+    sitemap.cleanup()
 
 if __name__ == '__main__':
     init_app(set_backends=True, routes=False)

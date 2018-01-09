@@ -92,7 +92,6 @@ INSTALLED_APPS = (
 
     # OSF
     'osf',
-    'reviews',
 
     # Addons
     'addons.osfstorage',
@@ -242,5 +241,9 @@ if DEBUG:
     INSTALLED_APPS += ('debug_toolbar', )
     MIDDLEWARE_CLASSES += ('debug_toolbar.middleware.DebugToolbarMiddleware', )
     DEBUG_TOOLBAR_CONFIG = {
-        'SHOW_TOOLBAR_CALLBACK': lambda(_): True
+        'SHOW_TOOLBAR_CALLBACK': lambda(_): True,
+        'DISABLE_PANELS': {
+            'debug_toolbar.panels.templates.TemplatesPanel',
+            'debug_toolbar.panels.redirects.RedirectsPanel'
+        }
     }

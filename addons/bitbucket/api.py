@@ -72,7 +72,8 @@ class BitbucketClient(BaseClient):
             'GET',
             self._build_url(settings.BITBUCKET_V2_API_URL, 'repositories', self.username),
             expects=(200, ),
-            throws=HTTPError(401)
+            throws=HTTPError(401),
+            params={'pagelen': 100}
         )
         return res.json()['values']
 
@@ -93,7 +94,8 @@ class BitbucketClient(BaseClient):
             'GET',
             self._build_url(settings.BITBUCKET_V2_API_URL, 'teams') + '?role=member',
             expects=(200, ),
-            throws=HTTPError(401)
+            throws=HTTPError(401),
+            params={'pagelen': 100}
         )
         teams = [x['username'] for x in res.json()['values']]
 

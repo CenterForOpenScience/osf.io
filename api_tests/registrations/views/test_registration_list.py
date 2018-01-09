@@ -1011,16 +1011,6 @@ class TestRegistrationBulkUpdate:
         assert res.status_code == 400
         assert res.json['errors'][0]['detail'] == 'Registrations can only be turned from private to public.'
 
-        # 400 from attempting to update with empty data
-        res = app.put_json_api(url, empty_payload, auth=user.auth, bulk=True, expect_errors=True)
-        assert res.status_code == 400
-        assert res.json['errors'][0]['detail'] == 'Registrations can only be turned from private to public.'
-
-        # 400 from attempting to update with bad data
-        res = app.put_json_api(url, bad_payload, auth=user.auth, bulk=True, expect_errors=True)
-        assert res.json['errors'][0]['detail'] == 'Registrations can only be turned from private to public.'
-        assert res.status_code == 400
-
         # Confirm no changes have occured
         registration_one.refresh_from_db()
         registration_two.refresh_from_db()

@@ -319,7 +319,7 @@ AddContributorViewModel = oop.extend(Paginator, {
         if (!self.inviteName().trim().length) {
             return 'Full Name is required.';
         }
-        if (self.inviteEmail() && !$osf.isEmail(self.inviteEmail())) {
+        if (self.inviteEmail() && !$osf.isEmail(self.inviteEmail().replace(/^\s+|\s+$/g, ''))) {
             return 'Not a valid email address.';
         }
         // Make sure that entered email is not already in selection
@@ -341,9 +341,10 @@ AddContributorViewModel = oop.extend(Paginator, {
         var validated = self.validateInviteForm();
         if (typeof validated === 'string') {
             self.inviteError(validated);
+            self.canSubmit(true);
             return false;
         }
-        return self.postInviteRequest(self.inviteName(), self.inviteEmail());
+        return self.postInviteRequest(self.inviteName(), self.inviteEmail().replace(/^\s+|\s+$/g, ''));
     },
     add: function (data) {
         var self = this;

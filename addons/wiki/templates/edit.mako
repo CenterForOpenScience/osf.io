@@ -156,6 +156,7 @@
                           <!-- ko foreach: showCollaborators -->
                              <!-- ko ifnot: id === ${ user_id | sjson, n } -->
                                 <li><a data-bind="attr: { href: url }" >
+                                          ## our shareJS explicitly passes back 'gravatar' despite our generalization
                                           <img data-container="body" data-bind="attr: {src: gravatar}, tooltip: {title: name, placement: 'top'}"
                                                style="border: 1px solid black;" width="30px" height="30px">
                                       </a></li>
@@ -388,7 +389,7 @@ ${parent.javascript_bottom()}
             userId: ${user_id | sjson, n },
             userName: ${ user_full_name | sjson, n },
             userUrl: ${ user_url | sjson, n },
-            userGravatar: ${ urls['gravatar'] | sjson, n }.replace('&amp;', '&')
+            userProfileImage: ${ urls['profile_image'] | sjson, n }.replace('&amp;', '&')
         }
     };
     window.contextVars.analyticsMeta = $.extend(true, {}, window.contextVars.analyticsMeta, {

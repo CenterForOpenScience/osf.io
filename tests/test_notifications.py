@@ -4,7 +4,6 @@ from babel import dates, Locale
 from schema import Schema, And, Use, Or
 from django.utils import timezone
 
-from osf.modm_compat import Q
 from nose.tools import *  # noqa PEP8 asserts
 
 from framework.auth import Auth
@@ -16,6 +15,7 @@ from website.notifications import emails
 from website.notifications import utils
 from website import mails, settings
 from website.project.signals import contributor_removed, node_deleted
+from website.reviews import listeners
 from website.util import api_url_for
 from website.util import web_url_for
 
@@ -23,7 +23,6 @@ from osf_tests import factories
 from tests.base import capture_signals
 from tests.base import OsfTestCase, NotificationTestCase
 
-from reviews.models import mixins
 
 
 class TestNotificationsModels(OsfTestCase):
@@ -1602,6 +1601,11 @@ class TestSendEmails(NotificationTestCase):
         node_lineage = emails.get_node_lineage(self.node)
         assert_equal(node_lineage, [self.project._id, self.node._id])
 
+    def test_fix_locale(self):
+        assert emails.fix_locale('en') == 'en'
+        assert emails.fix_locale('de_DE') == 'de_DE'
+        assert emails.fix_locale('de_de') == 'de_DE'
+
     def test_localize_timestamp(self):
         timestamp = timezone.now()
         self.user.timezone = 'America/New_York'
@@ -1790,6 +1794,28 @@ class TestSendDigest(OsfTestCase):
         message = group_by_node(user_groups[last_user_index]['info'])
         assert_equal(kwargs['message'], message)
 
+    @mock.patch('website.mails.send_mail')
+    def test_send_users_email_ignores_disabled_users(self, mock_send_mail):
+        send_type = 'email_transactional'
+        d = factories.NotificationDigestFactory(
+            send_type=send_type,
+            event='comment_replies',
+            timestamp=timezone.now(),
+            message='Hello',
+            node_lineage=[factories.ProjectFactory()._id]
+        )
+        d.save()
+
+        user_groups = list(get_users_emails(send_type))
+        last_user_index = len(user_groups) - 1
+
+        user = OSFUser.load(user_groups[last_user_index]['user_id'])
+        user.is_disabled = True
+        user.save()
+
+        send_users_email(send_type)
+        assert_false(mock_send_mail.called)
+
     def test_remove_sent_digest_notifications(self):
         d = factories.NotificationDigestFactory(
             event='comment_replies',
@@ -1817,7 +1843,7 @@ class TestNotificationsReviews(OsfTestCase):
             'provider_contact_email': 'contact@osf.io',
             'provider_support_email': 'support@osf.io',
         }
-        self.action = factories.ActionFactory()
+        self.action = factories.ReviewActionFactory()
         factories.NotificationSubscriptionFactory(
             _id=self.user._id + '_' + 'global_comments',
             user=self.user,
@@ -1843,10 +1869,10 @@ class TestNotificationsReviews(OsfTestCase):
 
     @mock.patch('website.mails.mails.send_mail')
     def test_reviews_submit_notification(self, mock_send_email):
-        mixins.reviews_submit_notification(self, context=self.context_info, recipients=[self.sender, self.user])
+        listeners.reviews_submit_notification(self, context=self.context_info, recipients=[self.sender, self.user])
         assert_true(mock_send_email.called)
 
     @mock.patch('website.notifications.emails.notify_global_event')
     def test_reviews_notification(self, mock_notify):
-        mixins.reviews_notification(self, creator=self.sender, context=self.context_info, action=self.action, template='test.html.mako')
+        listeners.reviews_notification(self, creator=self.sender, context=self.context_info, action=self.action, template='test.html.mako')
         assert_true(mock_notify.called)

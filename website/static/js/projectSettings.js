@@ -92,6 +92,10 @@ var ProjectSettings = oop.extend(
             request.fail(self.updateError.bind(self));
             return request;
         },
+        setCategory: function(category){
+            var self = this;
+            self.selectedCategory(category);
+        },
         /*cancel handler*/
         cancelAll: function() {
             var self = this;

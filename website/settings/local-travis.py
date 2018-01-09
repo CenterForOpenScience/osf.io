@@ -5,6 +5,7 @@ These settings override what's in website/settings/defaults.py
 NOTE: local.py will not be added to source control.
 '''
 import inspect
+import logging
 
 from . import defaults
 import os
@@ -56,13 +57,16 @@ SESSION_COOKIE_SECURE = SECURE_MODE
 OSF_SERVER_KEY = None
 OSF_SERVER_CERT = None
 
-##### Celery #####
-## Default RabbitMQ broker
-BROKER_URL = 'amqp://'
+class CeleryConfig(defaults.CeleryConfig):
+    """
+    Celery configuration
+    """
+    ## Default RabbitMQ broker
+    broker_url = 'amqp://'
 
-# In-memory result backend
-CELERY_RESULT_BACKEND = 'cache'
-CELERY_CACHE_BACKEND = 'memory'
+    # In-memory result backend
+    result_backend = 'cache'
+    cache_backend = 'memory'
 
 USE_CDN_FOR_CLIENT_LIBS = False
 
@@ -95,3 +99,5 @@ POPULAR_LINKS_REGISTRATIONS = 'woooo'
 
 EZID_USERNAME = 'testfortravisnotreal'
 EZID_PASSWORD = 'testfortravisnotreal'
+
+logging.getLogger('celery.app.trace').setLevel(logging.FATAL)

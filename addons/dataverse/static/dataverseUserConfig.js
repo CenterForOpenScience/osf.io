@@ -52,6 +52,8 @@ function ViewModel(url) {
         var extraSlash = self.host() && self.host().substr(self.host().length - 1) === '/' ? '' : '/';
         return self.host() ? 'https://' + self.host() + extraSlash + tokenPath : null;
     });
+    // Controls the loaders in dataverseInputCredentials modal
+    self.authorizing = ko.observable(false);
 
     // Flashed messages
     self.message = ko.observable('');
@@ -61,6 +63,7 @@ function ViewModel(url) {
     self.clearModal = function() {
         self.message('');
         self.messageClass('text-info');
+        self.authorizing(false);
         self.apiToken(null);
         self.selectedHost(null);
         self.customHost(null);
@@ -94,23 +97,23 @@ function ViewModel(url) {
     self.sendAuth = function() {
         // Selection should not be empty
         if( !self.selectedHost() ){
-            self.changeMessage("Please select a Dataverse repository.", 'text-danger');
+            self.changeMessage('Please select a Dataverse repository.', 'text-danger');
             return;
         }
 
         if ( !self.useCustomHost() && !self.apiToken() ){
-            self.changeMessage("Please enter an API token.", 'text-danger');
+            self.changeMessage('Please enter an API token.', 'text-danger');
             return;
         }
 
         if ( self.useCustomHost() && ( !self.customHost() || !self.apiToken() ) )  {
-            self.changeMessage("Please enter a Dataverse host and an API token.", 'text-danger');
+            self.changeMessage('Please enter a Dataverse host and an API token.', 'text-danger');
             return;
         }
 
-
         var url = self.urls().create;
 
+        self.authorizing(true);
         return osfHelpers.postJSON(
             url,
             ko.toJS({
@@ -118,11 +121,13 @@ function ViewModel(url) {
                 api_token: self.apiToken
             })
         ).done(function() {
+            self.authorizing(false);
             self.clearModal();
             $modal.modal('hide');
             self.updateAccounts();
 
         }).fail(function(xhr, textStatus, error) {
+            self.authorizing(false);
             var errorMessage = (xhr.status === 401) ? language.authInvalid : language.authError;
             self.changeMessage(errorMessage, 'text-danger');
             Raven.captureMessage('Could not authenticate with Dataverse', {

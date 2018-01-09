@@ -2,6 +2,7 @@
 
 require('css/log-feed.css');
 var m = require('mithril'); // exposes mithril methods, useful for redraw etc.
+var $ = require('jquery');
 var $osf = require('js/osfHelpers');
 var mHelpers = require('js/mithrilHelpers');
 var Raven = require('raven-js');
@@ -84,6 +85,7 @@ var LogFeed = {
     view : function (ctrl) {
 
         var i;
+        var OSF_SUPPORT_EMAIL = $osf.osfSupportEmail();
         ctrl.paginators([]);
         if (ctrl.totalPages() > 1 && !ctrl.limitLogs) {
             // previous page
@@ -198,7 +200,7 @@ var LogFeed = {
             // Error message if the log request fails
             ctrl.failed ? m('p', [
                 'Unable to retrieve logs at this time. Please refresh the page or contact ',
-                m('a', {'href': 'mailto:support@osf.io'}, 'support@osf.io'),
+                m('a', {'href': 'mailto:' + OSF_SUPPORT_EMAIL}, OSF_SUPPORT_EMAIL),
                 ' if the problem persists.'
             ]) :
             // Show OSF spinner while there is a pending log request
@@ -216,7 +218,7 @@ var LogFeed = {
                     image = m('img', { src : item.embeds.user.errors[0].meta.profile_image});
                 }
                 return m('.db-activity-item', [
-                    m('', [m('.db-log-avatar.m-r-xs', image), m('span.p-l-sm.p-r-sm', ''), m.component(LogText.LogText, item)]),
+                    m('', [m('.db-log-avatar.db-log-avatar-project-overview.m-r-xs', image), m('span.p-l-sm.p-r-sm', ''), m.component(LogText.LogText, item)]),
                     m('.text-right', m('span.text-muted.m-r-xs', item.attributes.formattableDate.local))
                 ]);
             }) : '',

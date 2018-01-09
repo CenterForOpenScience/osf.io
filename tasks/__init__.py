@@ -41,6 +41,7 @@ def task(*args, **kwargs):
         new_task = invoke.task(args[0])
         ns.add_task(new_task)
         return new_task
+
     def decorator(f):
         new_task = invoke.task(f, *args, **kwargs)
         ns.add_task(new_task)
@@ -390,7 +391,7 @@ def requirements(ctx, base=False, addons=False, release=False, dev=False, quick=
 
 
 @task
-def test_module(ctx, module=None, numprocesses=None, params=None):
+def test_module(ctx, module=None, numprocesses=None, nocapture=False, params=None):
     """Helper for running tests.
     """
     os.environ['DJANGO_SETTINGS_MODULE'] = 'osf_tests.settings'
@@ -400,7 +401,10 @@ def test_module(ctx, module=None, numprocesses=None, params=None):
         numprocesses = cpu_count()
     # NOTE: Subprocess to compensate for lack of thread safety in the httpretty module.
     # https://github.com/gabrielfalcao/HTTPretty/issues/209#issue-54090252
-    args = ['-s']
+    if nocapture:
+        args = []
+    else:
+        args = ['-s']
     if numprocesses > 1:
         args += ['-n {}'.format(numprocesses), '--max-slave-restart=0']
     modules = [module] if isinstance(module, basestring) else module
@@ -410,6 +414,7 @@ def test_module(ctx, module=None, numprocesses=None, params=None):
         args.extend(params)
     retcode = pytest.main(args)
     sys.exit(retcode)
+
 
 OSF_TESTS = [
     'osf_tests',
@@ -460,8 +465,8 @@ ADMIN_TESTS = [
 @task
 def test_osf(ctx, numprocesses=None):
     """Run the OSF test suite."""
-    print('Testing modules "{}"'.format(OSF_TESTS + ADDON_TESTS))
-    test_module(ctx, module=OSF_TESTS + ADDON_TESTS, numprocesses=numprocesses)
+    print('Testing modules "{}"'.format(OSF_TESTS))
+    test_module(ctx, module=OSF_TESTS, numprocesses=numprocesses)
 
 @task
 def test_else(ctx, numprocesses=None):
@@ -486,8 +491,8 @@ def test_api2(ctx, numprocesses=None):
 @task
 def test_api3(ctx, numprocesses=None):
     """Run the API test suite."""
-    print('Testing modules "{}"'.format(API_TESTS3))
-    test_module(ctx, module=API_TESTS3, numprocesses=numprocesses)
+    print('Testing modules "{}"'.format(API_TESTS3 + OSF_TESTS))
+    test_module(ctx, module=API_TESTS3 + OSF_TESTS, numprocesses=numprocesses)
 
 
 @task
@@ -525,10 +530,10 @@ def test(ctx, all=False, syntax=False):
         flake(ctx)
         jshint(ctx)
 
-    test_osf(ctx)
+    test_else(ctx)  # /tests
     test_api1(ctx)
     test_api2(ctx)
-    test_api3(ctx)
+    test_api3(ctx)  # also /osf_tests
 
     if all:
         test_addons(ctx)
@@ -543,13 +548,13 @@ def test_js(ctx):
     karma(ctx)
 
 @task
-def test_travis_osf(ctx, numprocesses=None):
+def test_travis_addons(ctx, numprocesses=None):
     """
     Run half of the tests to help travis go faster. Lints and Flakes happen everywhere to keep from wasting test time.
     """
     flake(ctx)
     jshint(ctx)
-    test_osf(ctx, numprocesses=numprocesses)
+    test_addons(ctx, numprocesses=numprocesses)
 
 
 @task
@@ -579,7 +584,7 @@ def test_travis_api2(ctx, numprocesses=None):
 
 
 @task
-def test_travis_api3(ctx, numprocesses=None):
+def test_travis_api3_and_osf(ctx, numprocesses=None):
     flake(ctx)
     jshint(ctx)
     test_api3(ctx, numprocesses=numprocesses)
@@ -953,22 +958,20 @@ def set_maintenance(ctx, message='', level=1, start=None, end=None):
     from website.app import setup_django
     setup_django()
     from website.maintenance import set_maintenance
-    """Creates a maintenance notice.
+    """Display maintenance notice across OSF applications (incl. preprints, registries, etc.)
 
-    Message is required.
-    Level defaults to 1. Valid levels are 1 (info), 2 (warning), and 3 (danger).
-
-    Set the time period for the maintenance notice to be displayed.
-    If no start or end values are displayed, default to starting now
-    and ending 24 hours from now. If no timezone info is passed along,
-    everything will be converted to UTC.
-
-    If a given end time results in a start that is after the end, start
-    will be changed to be 24 hours before the end time.
+    start - Start time for the maintenance period
+    end - End time for the mainteance period
+        NOTE: If no start or end values are provided, default to starting now
+        and ending 24 hours from now.
+    message - Message to display. If omitted, will be:
+        "The site will undergo maintenance between <localized start time> and <localized end time>. Thank you
+        for your patience."
+    level - Severity level. Modifies the color of the displayed notice. Must be one of 1 (info), 2 (warning), 3 (danger).
 
     Examples:
-        invoke set_maintenance --message 'OSF down for scheduled maintenance.' --start 2016-03-16T15:41:00-04:00
-        invoke set_maintenance --message 'Apocalypse' --level 3 --end 2016-03-16T15:41:00-04:00
+        invoke set_maintenance --start 2016-03-16T15:41:00-04:00 --end 2016-03-16T15:42:00-04:00
+        invoke set_maintenance --message 'The OSF is experiencing issues connecting to a 3rd party service' --level 2 --start 2016-03-16T15:41:00-04:00 --end 2016-03-16T15:42:00-04:00
     """
     state = set_maintenance(message, level, start, end)
     print('Maintenance notice up {} to {}.'.format(state['start'], state['end']))

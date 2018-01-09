@@ -36,7 +36,7 @@ from website import views as website_views
 from website.citations import views as citation_views
 from website.search import views as search_views
 from website.oauth import views as oauth_views
-from website.profile.utils import get_gravatar
+from website.profile.utils import get_profile_image_url
 from website.profile import views as profile_views
 from website.project import views as project_views
 from addons.base import views as addon_views
@@ -74,7 +74,7 @@ def get_globals():
         'user_locale': user.locale if user and user.locale else '',
         'user_timezone': user.timezone if user and user.timezone else '',
         'user_url': user.url if user else '',
-        'user_gravatar': get_gravatar(user=user, size=25) if user else '',
+        'user_profile_image': get_profile_image_url(user=user, size=25) if user else '',
         'user_email_verifications': user.unconfirmed_email_info if user else [],
         'user_api_url': user.api_url if user else '',
         'user_entry_point': metrics.get_entry_point(user) if user else '',
@@ -121,7 +121,8 @@ def get_globals():
         },
         'maintenance': maintenance.get_maintenance(),
         'recaptcha_site_key': settings.RECAPTCHA_SITE_KEY,
-        'custom_citations': settings.CUSTOM_CITATIONS
+        'custom_citations': settings.CUSTOM_CITATIONS,
+        'osf_support_email': settings.OSF_SUPPORT_EMAIL,
     }
 
 
@@ -142,6 +143,7 @@ class OsfWebRenderer(WebRenderer):
     def __init__(self, *args, **kwargs):
         kwargs['data'] = get_globals
         super(OsfWebRenderer, self).__init__(*args, **kwargs)
+
 
 #: Use if a view only redirects or raises error
 notemplate = OsfWebRenderer('', renderer=render_mako_string, trust=False)
@@ -752,6 +754,15 @@ def make_url_map(app):
         ),
 
         Rule(
+            [
+                '/project/<pid>/addons/',
+                '/project/<pid>/node/<nid>/addons/',
+            ],
+            'get',
+            project_views.node.node_addons,
+            OsfWebRenderer('project/addons.mako', trust=False)
+        ),
+        Rule(
             '/settings/account/',
             'get',
             profile_views.user_account,
@@ -846,6 +857,12 @@ def make_url_map(app):
             '/profile/deactivate/',
             'post',
             profile_views.request_deactivation,
+            json_renderer,
+        ),
+        Rule(
+            '/profile/cancel_request_deactivation/',
+            'post',
+            profile_views.cancel_request_deactivation,
             json_renderer,
         ),
 
@@ -961,6 +978,7 @@ def make_url_map(app):
 
         Rule(['/search/', '/search/<type>/'], ['get', 'post'], search_views.search_search, json_renderer),
         Rule('/search/projects/', 'get', search_views.search_projects_by_title, json_renderer),
+        Rule('/share/search/', 'get', website_views.legacy_share_v1_search, json_renderer),
 
     ], prefix='/api/v1')
 
