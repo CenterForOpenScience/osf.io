@@ -174,7 +174,7 @@ def _render_conference_node(node, idx, conf):
         'category': conf.field_names['submission1'] if conf.field_names['submission1'] in tags else conf.field_names['submission2'],
         'download': download_count,
         'downloadUrl': download_url,
-        'dateCreated': node.date_created.isoformat(),
+        'dateCreated': node.created.isoformat(),
         'confName': conf.name,
         'confUrl': web_url_for('conference_results', meeting=conf.endpoint),
         'tags': ' '.join(tags)
@@ -228,7 +228,7 @@ def conference_results(meeting):
     :param str meeting: Endpoint name for a conference.
     """
     try:
-        conf = Conference.objects.get(endpoint=meeting)
+        conf = Conference.objects.get(endpoint__iexact=meeting)
     except Conference.DoesNotExist:
         raise HTTPError(httplib.NOT_FOUND)
 

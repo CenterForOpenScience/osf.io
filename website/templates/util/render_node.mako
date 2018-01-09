@@ -58,7 +58,7 @@
                     <i class="fa fa-code-fork" onclick="NodeActions.forkPointer('${summary['id']}', '${summary['primary_id']}');" data-toggle="tooltip" title="Create a fork of ${summary['title']}"></i>
                 % endif
                 % if summary['primary'] and summary['logged_in'] and summary['is_contributor'] and not summary['is_registration']:
-                    <div class="dropdown pull-right" id="componentQuickActions">
+                    <div class="generic-dropdown dropdown pull-right">
                         <button class="btn btn-default dropdown-toggle" type="button" data-toggle="dropdown">
                             <span class="glyphicon glyphicon-option-horizontal"></span>
                         </button>

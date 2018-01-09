@@ -218,7 +218,8 @@ def login_and_register_handler(auth, login=True, campaign=None, next_url=None, l
             # GET `/register` or '/login` with `campaign=institution`
             # unlike other campaigns, institution login serves as an alternative for authentication
             if campaign == 'institution':
-                next_url = web_url_for('dashboard', _absolute=True)
+                if next_url is None:
+                    next_url = web_url_for('dashboard', _absolute=True)
                 data['status_code'] = http.FOUND
                 if auth.logged_in:
                     data['next_url'] = next_url
@@ -761,7 +762,8 @@ def send_confirm_email(user, email, renew=False, external_id_provider=None, exte
         email=email,
         merge_target=merge_target,
         external_id_provider=external_id_provider,
-        branded_preprints_provider=branded_preprints_provider
+        branded_preprints_provider=branded_preprints_provider,
+        osf_support_email=settings.OSF_SUPPORT_EMAIL
     )
 
 

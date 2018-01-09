@@ -443,11 +443,10 @@ class TestOSFUser:
         )
 
     def test_profile_image_url(self, user):
-        expected = filters.gravatar(
-            user,
-            use_ssl=True,
-            size=settings.PROFILE_IMAGE_MEDIUM
-        )
+        expected = filters.profile_image_url(settings.PROFILE_IMAGE_PROVIDER,
+                                         user,
+                                         use_ssl=True,
+                                         size=settings.PROFILE_IMAGE_MEDIUM)
         assert user.profile_image_url(settings.PROFILE_IMAGE_MEDIUM) == expected
 
     def test_set_unusable_username_for_unsaved_user(self):
@@ -469,10 +468,9 @@ class TestOSFUser:
         assert user.has_usable_username() is False
 
     def test_profile_image_url_has_no_default_size(self, user):
-        expected = filters.gravatar(
-            user,
-            use_ssl=True,
-        )
+        expected = filters.profile_image_url(settings.PROFILE_IMAGE_PROVIDER,
+                                         user,
+                                         use_ssl=True)
         assert user.profile_image_url() == expected
         size = urlparse.parse_qs(urlparse.urlparse(user.profile_image_url()).query).get('size')
         assert size is None
@@ -1290,8 +1288,8 @@ class TestDisablingUsers(OsfTestCase):
 
     @mock.patch('website.mailchimp_utils.get_mailchimp_api')
     def test_disable_account_and_remove_sessions(self, mock_mail):
-        session1 = SessionFactory(user=self.user, date_created=(timezone.now() - dt.timedelta(seconds=settings.OSF_SESSION_TIMEOUT)))
-        session2 = SessionFactory(user=self.user, date_created=(timezone.now() - dt.timedelta(seconds=settings.OSF_SESSION_TIMEOUT)))
+        session1 = SessionFactory(user=self.user, created=(timezone.now() - dt.timedelta(seconds=settings.OSF_SESSION_TIMEOUT)))
+        session2 = SessionFactory(user=self.user, created=(timezone.now() - dt.timedelta(seconds=settings.OSF_SESSION_TIMEOUT)))
 
         self.user.mailchimp_mailing_lists[settings.MAILCHIMP_GENERAL_LIST] = True
         self.user.save()
@@ -1447,7 +1445,7 @@ class TestUser(OsfTestCase):
         # make sure there's at least one project
         ProjectFactory(creator=self.user)
         projects_created_by_user = AbstractNode.objects.filter(creator=self.user)
-        assert list(self.user.created.all()) == list(projects_created_by_user)
+        assert list(self.user.nodes_created.all()) == list(projects_created_by_user)
 
 
 # Copied from tests/models/test_user.py

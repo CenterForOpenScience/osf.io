@@ -55,17 +55,16 @@ class TestUserSerializers(OsfTestCase):
         ProjectFactory(creator=user, is_public=True)
         CollectionFactory(creator=user)
         d = utils.serialize_user(user, full=True, include_node_counts=True)
-        gravatar = filters.gravatar(
-            user,
-            use_ssl=True,
-            size=settings.PROFILE_IMAGE_LARGE
-        )
+        profile_image_url = filters.profile_image_url(settings.PROFILE_IMAGE_PROVIDER,
+                                                  user,
+                                                  use_ssl=True,
+                                                  size=settings.PROFILE_IMAGE_LARGE)
         assert_equal(d['id'], user._primary_key)
         assert_equal(d['url'], user.url)
         assert_equal(d.get('username'), None)
         assert_equal(d['fullname'], user.fullname)
         assert_equal(d['registered'], user.is_registered)
-        assert_equal(d['gravatar_url'], gravatar)
+        assert_equal(d['profile_image_url'], profile_image_url)
         assert_equal(d['absolute_url'], user.absolute_url)
         assert_equal(d['date_registered'], user.date_registered.strftime('%Y-%m-%d'))
         projects = [
@@ -447,7 +446,7 @@ class TestAddContributorJson(OsfTestCase):
         assert_equal(user_info['n_projects_in_common'], 0)
         assert_equal(user_info['registered'], True)
         assert_equal(user_info['active'], True)
-        assert_in('secure.gravatar.com', user_info['gravatar_url'])
+        assert_in('secure.gravatar.com', user_info['profile_image_url'])
         assert_equal(user_info['profile_url'], self.profile)
 
     def test_add_contributor_json_with_edu(self):
@@ -463,7 +462,7 @@ class TestAddContributorJson(OsfTestCase):
         assert_equal(user_info['n_projects_in_common'], 0)
         assert_equal(user_info['registered'], True)
         assert_equal(user_info['active'], True)
-        assert_in('secure.gravatar.com', user_info['gravatar_url'])
+        assert_in('secure.gravatar.com', user_info['profile_image_url'])
         assert_equal(user_info['profile_url'], self.profile)
 
     def test_add_contributor_json_with_job(self):
@@ -479,7 +478,7 @@ class TestAddContributorJson(OsfTestCase):
         assert_equal(user_info['n_projects_in_common'], 0)
         assert_equal(user_info['registered'], True)
         assert_equal(user_info['active'], True)
-        assert_in('secure.gravatar.com', user_info['gravatar_url'])
+        assert_in('secure.gravatar.com', user_info['profile_image_url'])
         assert_equal(user_info['profile_url'], self.profile)
 
     def test_add_contributor_json_with_job_and_edu(self):
@@ -496,5 +495,5 @@ class TestAddContributorJson(OsfTestCase):
         assert_equal(user_info['n_projects_in_common'], 0)
         assert_equal(user_info['registered'], True)
         assert_equal(user_info['active'], True)
-        assert_in('secure.gravatar.com', user_info['gravatar_url'])
+        assert_in('secure.gravatar.com', user_info['profile_image_url'])
         assert_equal(user_info['profile_url'], self.profile)

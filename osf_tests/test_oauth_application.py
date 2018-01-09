@@ -37,7 +37,7 @@ class TestApiOAuth2Application(OsfTestCase):
     @pytest.mark.skip('Django\'s editable=False does not prevent edits')
     def test_cant_edit_creation_date(self):
         with pytest.raises(AttributeError):
-            self.api_app.date_created = timezone.now()
+            self.api_app.created = timezone.now()
 
     def test_invalid_home_url_raises_exception(self):
         with pytest.raises(ValidationError):

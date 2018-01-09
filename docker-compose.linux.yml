@@ -145,3 +145,14 @@ services:
 #      - ./ssl/celery-server.cert.pem:/etc/ssl/server_certificate.pem:ro
 #      - ./ssl/celery-server.key.pem:/etc/ssl/server_key.pem:ro
 #      - ./ssl/ca-chain.cert.pem:/etc/ssl/ca_certificate.pem:ro
+
+#  sharejs:
+#    volumes:
+#      - sharejs-sync:/code:nocopy
+#
+#    command:
+#      - /bin/sh
+#      - -c 
+#      - |-
+#        npm install
+#        gosu node npm start

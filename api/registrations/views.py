@@ -82,7 +82,7 @@ class RegistrationList(JSONAPIBaseView, generics.ListAPIView, bulk_views.BulkUpd
 
     Registrations are read-only snapshots of a project. This view is a list of all current registrations for which a user
     has access.  A withdrawn registration will display a limited subset of information, namely, title, description,
-    date_created, registration, withdrawn, date_registered, withdrawal_justification, and registration supplement. All
+    created, registration, withdrawn, date_registered, withdrawal_justification, and registration supplement. All
     other fields will be displayed as null. Additionally, the only relationships permitted to be accessed for a withdrawn
     registration are the contributors - other relationships will return a 403.
 
@@ -153,7 +153,7 @@ class RegistrationList(JSONAPIBaseView, generics.ListAPIView, bulk_views.BulkUpd
     view_category = 'registrations'
     view_name = 'registration-list'
 
-    ordering = ('-date_modified',)
+    ordering = ('-modified',)
     model_class = Registration
 
     # overrides BulkUpdateJSONAPIView
@@ -211,7 +211,7 @@ class RegistrationDetail(JSONAPIBaseView, generics.RetrieveUpdateAPIView, Regist
 
     Each resource contains the full representation of the registration, meaning additional requests to an individual
     registration's detail view are not necessary. A withdrawn registration will display a limited subset of information,
-    namely, title, description, date_created, registration, withdrawn, date_registered, withdrawal_justification, and
+    namely, title, description, created, registration, withdrawn, date_registered, withdrawal_justification, and
     registration supplement. All other fields will be displayed as null. Additionally, the only relationships permitted
     to be accessed for a withdrawn registration are the contributors - other relationships will return a 403.
 
@@ -511,7 +511,7 @@ class RegistrationChildrenList(JSONAPIBaseView, generics.ListAPIView, ListFilter
 
     <!--- Copied Query Params from NodeList -->
 
-    Nodes may be filtered by their `id`, `title`, `category`, `description`, `public`, `tags`, `date_created`, `date_modified`,
+    Nodes may be filtered by their `id`, `title`, `category`, `description`, `public`, `tags`, `date_created`, `modified`,
     `root`, `parent`, and `contributors`.  Most are string fields and will be filtered using simple substring matching.  `public`
     is a boolean, and can be filtered using truthy values, such as `true`, `false`, `0`, or `1`.  Note that quoting `true`
     or `false` in the query will cause the match to fail regardless.  `tags` is an array of simple strings.
@@ -534,7 +534,7 @@ class RegistrationChildrenList(JSONAPIBaseView, generics.ListAPIView, ListFilter
     required_read_scopes = [CoreScopes.NODE_REGISTRATIONS_READ]
     required_write_scopes = [CoreScopes.NULL]
 
-    ordering = ('-date_modified',)
+    ordering = ('-modified',)
 
     def get_default_queryset(self):
         return default_node_list_permission_queryset(user=self.request.user, model_cls=Registration)
@@ -542,7 +542,7 @@ class RegistrationChildrenList(JSONAPIBaseView, generics.ListAPIView, ListFilter
     def get_queryset(self):
         registration = self.get_node()
         registration_pks = registration.node_relations.filter(is_node_link=False).select_related('child').values_list('child__pk', flat=True)
-        return self.get_queryset_from_request().filter(pk__in=registration_pks).can_view(self.request.user).order_by('-date_modified')
+        return self.get_queryset_from_request().filter(pk__in=registration_pks).can_view(self.request.user).order_by('-modified')
 
 
 class RegistrationCitationDetail(NodeCitationDetail, RegistrationMixin):
@@ -652,7 +652,7 @@ class RegistrationForksList(NodeForksList, RegistrationMixin):
     <!--- Copied Query Params from NodeList -->
 
     Nodes may be filtered by their `title`, `category`, `description`, `public`, `registration`, `tags`, `date_created`,
-    `date_modified`, `root`, `parent`, and `contributors`. Most are string fields and will be filtered using simple
+    `modified`, `root`, `parent`, and `contributors`. Most are string fields and will be filtered using simple
     substring matching.  Others are booleans, and can be filtered using truthy values, such as `true`, `false`, `0`, or `1`.
     Note that quoting `true` or `false` in the query will cause the match to fail regardless. `tags` is an array of simple strings.
 
@@ -949,7 +949,7 @@ class RegistrationLinkedRegistrationsList(NodeLinkedRegistrationsList, Registrat
 
     Each resource contains the full representation of the registration, meaning additional requests to an individual
     registration's detail view are not necessary. A withdrawn registration will display a limited subset of information,
-    namely, title, description, date_created, registration, withdrawn, date_registered, withdrawal_justification, and
+    namely, title, description, created, registration, withdrawn, date_registered, withdrawal_justification, and
     registration supplement. All other fields will be displayed as null. Additionally, the only relationships permitted
     to be accessed for a withdrawn registration are the contributors - other relationships will return a 403.
 

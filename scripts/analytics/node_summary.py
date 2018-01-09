@@ -1,4 +1,7 @@
-from itertools import chain
+import django
+django.setup()
+
+from django.db.models import Q
 import pytz
 import logging
 from dateutil.parser import parse
@@ -25,21 +28,21 @@ class NodeSummary(SummaryAnalytics):
 
         # Convert to a datetime at midnight for queries and the timestamp
         timestamp_datetime = datetime(date.year, date.month, date.day).replace(tzinfo=pytz.UTC)
-        query_datetime = timestamp_datetime + timedelta(1)
+        query_datetime = timestamp_datetime + timedelta(days=1)
 
-        node_query = {'is_deleted': False, 'date_created__lte': query_datetime}
-        project_query = node_query
+        node_qs = Node.objects.filter(is_deleted=False, created__lte=query_datetime)
+        registration_qs = Registration.objects.filter(is_deleted=False, created__lte=query_datetime)
 
-        public_query = {'is_public': True}
-        private_query = {'is_public': False}
-        retracted_query = {'retraction__isnull': False}
+        public_query = Q(is_public=True)
+        private_query = Q(is_public=False)
 
-        node_public_query = dict(chain(node_query.iteritems(), public_query.iteritems()))
-        node_private_query = dict(chain(node_query.iteritems(), private_query.iteritems()))
-        node_retracted_query = dict(chain(node_query.iteritems(), retracted_query.iteritems()))
-        project_public_query = dict(chain(project_query.iteritems(), public_query.iteritems()))
-        project_private_query = dict(chain(project_query.iteritems(), private_query.iteritems()))
-        project_retracted_query = dict(chain(project_query.iteritems(), retracted_query.iteritems()))
+        # node_query encompasses lte query_datetime
+        daily_query = Q(created__gte=timestamp_datetime)
+        retracted_query = Q(retraction__isnull=False)
+
+        # `embargoed` used private status to determine embargoes, but old registrations could be private and unapproved registrations can also be private
+        # `embargoed_v2` uses future embargo end dates on root
+        embargo_v2_query = Q(root__embargo__end_date__gt=query_datetime)
 
         totals = {
             'keen': {
@@ -47,29 +50,48 @@ class NodeSummary(SummaryAnalytics):
             },
             # Nodes - the number of projects and components
             'nodes': {
-                'total': Node.objects.filter(**node_query).count(),
-                'public': Node.objects.filter(**node_public_query).count(),
-                'private': Node.objects.filter(**node_private_query).count()
+                'total': node_qs.count(),
+                'public': node_qs.filter(public_query).count(),
+                'private': node_qs.filter(private_query).count(),
+                'total_daily': node_qs.filter(daily_query).count(),
+                'public_daily': node_qs.filter(public_query & daily_query).count(),
+                'private_daily': node_qs.filter(private_query & daily_query).count(),
             },
             # Projects - the number of top-level only projects
             'projects': {
-                'total': Node.objects.filter(**project_query).get_roots().count(),
-                'public': Node.objects.filter(**project_public_query).get_roots().count(),
-                'private': Node.objects.filter(**project_private_query).get_roots().count(),
+                'total': node_qs.get_roots().count(),
+                'public': node_qs.filter(public_query).get_roots().count(),
+                'private': node_qs.filter(private_query).get_roots().count(),
+                'total_daily': node_qs.filter(daily_query).get_roots().count(),
+                'public_daily': node_qs.filter(public_query & daily_query).get_roots().count(),
+                'private_daily': node_qs.filter(private_query & daily_query).get_roots().count(),
             },
             # Registered Nodes - the number of registered projects and components
             'registered_nodes': {
-                'total': Registration.objects.filter(**node_query).count(),
-                'public': Registration.objects.filter(**node_public_query).count(),
-                'embargoed': Registration.objects.filter(**node_private_query).count(),
-                'withdrawn': Registration.objects.filter(**node_retracted_query).count(),
+                'total': registration_qs.count(),
+                'public': registration_qs.filter(public_query).count(),
+                'embargoed': registration_qs.filter(private_query).count(),
+                'embargoed_v2': registration_qs.filter(private_query & embargo_v2_query).count(),
+                'withdrawn': registration_qs.filter(retracted_query).count(),
+                'total_daily': registration_qs.filter(daily_query).count(),
+                'public_daily': registration_qs.filter(public_query & daily_query).count(),
+                'embargoed_daily': registration_qs.filter(private_query & daily_query).count(),
+                'embargoed_v2_daily': registration_qs.filter(private_query & daily_query & embargo_v2_query).count(),
+                'withdrawn_daily': registration_qs.filter(retracted_query & daily_query).count(),
+
             },
             # Registered Projects - the number of registered top level projects
             'registered_projects': {
-                'total': Registration.objects.filter(**project_query).get_roots().count(),
-                'public': Registration.objects.filter(**project_public_query).get_roots().count(),
-                'embargoed': Registration.objects.filter(**project_private_query).get_roots().count(),
-                'withdrawn': Registration.objects.filter(**project_retracted_query).get_roots().count(),
+                'total': registration_qs.get_roots().count(),
+                'public': registration_qs.filter(public_query).get_roots().count(),
+                'embargoed': registration_qs.filter(private_query).get_roots().count(),
+                'embargoed_v2': registration_qs.filter(private_query & embargo_v2_query).get_roots().count(),
+                'withdrawn': registration_qs.filter(retracted_query).get_roots().count(),
+                'total_daily': registration_qs.filter(daily_query).get_roots().count(),
+                'public_daily': registration_qs.filter(public_query & daily_query).get_roots().count(),
+                'embargoed_daily': registration_qs.filter(private_query & daily_query).get_roots().count(),
+                'embargoed_v2_daily': registration_qs.filter(private_query & daily_query & embargo_v2_query).get_roots().count(),
+                'withdrawn_daily': registration_qs.filter(retracted_query & daily_query).get_roots().count(),
             }
         }
 
@@ -95,7 +117,7 @@ if __name__ == '__main__':
     args = node_summary.parse_args()
     yesterday = args.yesterday
     if yesterday:
-        date = (timezone.now() - timedelta(1)).date()
+        date = (timezone.now() - timedelta(days=1)).date()
     else:
         date = parse(args.date).date() if args.date else None
     events = node_summary.get_events(date)

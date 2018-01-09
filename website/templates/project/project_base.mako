@@ -1,16 +1,106 @@
 <%inherit file="../base.mako"/>
 
-<%def name="og_description()">
-
+<%def name="description_meta()">
     %if node['description']:
-        ${sanitize.strip_html(node['description']) + ' | '}
+        ${sanitize.strip_html(node['description']) + ' '}
     %endif
     Hosted on the Open Science Framework
-
-
 </%def>
 
-## To change the postion of alert on project pages, override alert()
+<%def name="title_meta()">
+    %if node['title']:
+        ${node['title']}
+    %endif
+</%def>
+
+<%def name="datemodified_meta()">
+    %if node['date_modified']:
+        ${node['date_modified'].split('T')[0]}
+    %endif
+</%def>
+
+<%def name="datecreated_meta()">
+    %if node['date_created']:
+        ${node['date_created'].split('T')[0]}
+    %endif
+</%def>
+
+<%def name="identifier_meta()">
+    <%
+        identifiers = {}
+        if node['identifiers']:
+            identifiers = {
+              'doi' : node['identifiers']['doi'],
+              'ark' : node['identifiers']['ark']
+            }
+        return identifiers
+    %>
+</%def>
+
+<%def name="license_meta()">
+    %if node['license']:
+        ${sanitize.strip_html(node['license']['name'])}
+    %endif
+</%def>
+
+<%def name="keywords_meta()">
+    %if node['tags']:
+        <%
+            return [tag for tag in node['tags']] + [node['category']]
+        %>
+    %endif
+</%def>
+
+<%def name="authors_meta()">
+    %if node['contributors'] and not node['anonymous']:
+        <%
+            return [contrib['fullname'] for contrib in node['contributors'] if isinstance(contrib, dict)]
+        %>
+    %endif
+</%def>
+
+<%def name="institutions_meta()">
+    %if node['institutions']:
+        <%
+            return [ins['name'] for ins in node['institutions'] if isinstance(ins, dict)]
+        %>
+    %endif
+</%def>
+
+<%def name="relations_meta()">
+    <%
+        relations = []
+        relations.extend([
+            node['registered_from_url'],
+            node['forked_from_display_absolute_url'],
+            node['preprint_url'] or '',
+            parent_node['absolute_url'] if parent_node['exists'] else ''
+        ])
+        return relations
+    %>
+</%def>
+
+<%def name="category_meta()">
+    %if node['category']:
+        ${node['category']}
+    %endif
+</%def>
+
+<%def name="url_meta()">
+    %if node['absolute_url']:
+        ${node['absolute_url']}
+    %endif
+</%def>
+
+<%def name="image_meta()">
+    <%
+        from website import settings
+        return settings.DOMAIN.rstrip('/') + settings.PREPRINTS_ASSETS + 'osf/sharing.png'
+    %>
+</%def>
+
+
+## To change the position of alert on project pages, override alert()
 <%def name="alert()"> </%def>
 
 <%def name="content()">
@@ -71,7 +161,7 @@
             isAdmin: ${ user.get('is_admin', False) | sjson, n},
             canComment: ${ user['can_comment'] | sjson, n},
             canEdit: ${ user['can_edit'] | sjson, n},
-            gravatarUrl: ${user_gravatar | sjson, n}
+            profileImageUrl: ${user_profile_image | sjson, n}
         },
         node: {
             ## TODO: Abstract me
