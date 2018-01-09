@@ -69,6 +69,7 @@ USE_POSTGRES = True
 DEV_MODE = False
 DEBUG_MODE = False
 SECURE_MODE = not DEBUG_MODE  # Set secure cookie
+FAKECAS_MODE = False
 
 PROTOCOL = 'https://' if SECURE_MODE else 'http://'
 DOMAIN = PROTOCOL + 'localhost:5000/'

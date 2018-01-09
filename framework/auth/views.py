@@ -781,10 +781,42 @@ def register_user(**kwargs):
     :raises: HTTPError(http.BAD_REQUEST) if validation fails or user already exists
     """
 
+    json_data = request.get_json()
+
+    # FAKECAS_MODE: Bypass confirmation logic by creating confirmed user when using fakeCAS.
+    if settings.FAKECAS_MODE:
+
+        full_name = strip_html(request.json['fullName'])
+        email = request.json['email1']
+        password = request.json['password']
+        try:
+            user, created = framework_auth.get_or_create_user(full_name, email, reset_password=False, is_spam=False)
+        except Exception as e:
+            raise HTTPError(
+                http.BAD_REQUEST,
+                data=dict(message_long=e.message)
+            )
+
+        if created:
+            user.set_password(password)
+            user.update_date_last_login()
+            user.save()
+            user.register(email)
+            mails.send_mail(to_addr=user.username, mail=mails.WELCOME, mimetype='html', user=user)
+            return {'message': 'A new OSF account has been created for you successfully! Please login in to continue.'}
+
+        raise HTTPError(
+            http.BAD_REQUEST,
+            data=dict(
+                message_long=language.ALREADY_REGISTERED.format(
+                    email=markupsafe.escape(email)
+                )
+            )
+        )
+
     # Verify that email address match.
     # Note: Both `landing.mako` and `register.mako` already have this check on the form. Users can not submit the form
     # if emails do not match. However, this check should not be removed given we may use the raw api call directly.
-    json_data = request.get_json()
     if str(json_data['email1']).lower() != str(json_data['email2']).lower():
         raise HTTPError(
             http.BAD_REQUEST,
