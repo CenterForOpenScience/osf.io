@@ -45,7 +45,7 @@ var BannerDisplay = {
         var mobile_text = args.banner.attributes.mobile_text;
         var color = args.banner.attributes.color;
 
-        document.documentElement.style.setProperty('--banner-color', color);
+        $('.donate-banner-background')[0].style.backgroundColor = color;
 
         return m('.row',
             [
