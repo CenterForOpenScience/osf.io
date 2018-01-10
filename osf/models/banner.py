@@ -6,6 +6,19 @@ from osf.exceptions import ValidationValueError
 from osf.utils.fields import NonNaiveDateTimeField
 
 
+def validate_banner_dates(banner_id, start_date, end_date):
+    if start_date > end_date:
+        raise ValidationValueError('Start date must be before end date.')
+
+    overlapping = ScheduledBanner.objects.filter(
+        (models.Q(start_date__gte=start_date) & models.Q(start_date__lt=end_date)) |
+        (models.Q(end_date__gt=start_date) & models.Q(end_date__lte=end_date)) |
+        (models.Q(start_date__lt=start_date) & models.Q(end_date__gt=end_date))
+    ).exclude(id=banner_id).exists()
+
+    if overlapping:
+        raise ValidationValueError('Banners dates cannot be overlapping.')
+
 class ScheduledBanner(models.Model):
 
     class Meta:
@@ -28,16 +41,5 @@ class ScheduledBanner(models.Model):
     mobile_text = models.TextField(blank=True, null=True)
 
     def save(self, *args, **kwargs):
-        if self.start_date > self.end_date:
-            raise ValidationValueError('Start date must be before end date.')
-
-        overlapping = ScheduledBanner.objects.filter(
-            (models.Q(start_date__gte=self.start_date) & models.Q(start_date__lt=self.end_date)) |
-            (models.Q(end_date__gt=self.start_date) & models.Q(end_date__lte=self.end_date)) |
-            (models.Q(start_date__lt=self.start_date) & models.Q(end_date__gt=self.end_date))
-        ).exclude(id=self.id).exists()
-
-        if overlapping:
-            raise ValidationValueError('Banners dates cannot be overlapping.')
-        else:
-            super(ScheduledBanner, self).save(*args, **kwargs)
+        validate_banner_dates(self.id, self.start_date, self.end_date)
+        super(ScheduledBanner, self).save(*args, **kwargs)

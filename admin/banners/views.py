@@ -1,9 +1,11 @@
 from __future__ import unicode_literals
 
+from django.shortcuts import render, redirect
 from django.forms.models import model_to_dict
 from django.core.urlresolvers import reverse_lazy
 from django.views.generic import ListView, DetailView, View, CreateView, UpdateView, DeleteView
 from django.contrib.auth.mixins import PermissionRequiredMixin
+from django.contrib import messages
 
 from admin.banners.forms import BannerForm
 from osf.models import ScheduledBanner
@@ -63,6 +65,17 @@ class BannerChangeForm(PermissionRequiredMixin, UpdateView):
     def get_success_url(self, *args, **kwargs):
         return reverse_lazy('banners:detail', kwargs={'banner_id': self.kwargs.get('banner_id')})
 
+    def post(self, request, *args, **kwargs):
+        form = BannerForm(request.POST, request.FILES)
+        bid = kwargs['banner_id']
+        if form.is_valid():
+            form.save()
+        else:
+            for error in form.non_field_errors():
+                messages.error(request, error)
+
+        return redirect('banners:detail', banner_id=bid)
+
 
 class BannerDetail(PermissionRequiredMixin, View):
     permission_required = 'osf.view_banner'
@@ -86,8 +99,6 @@ class CreateBanner(PermissionRequiredMixin, CreateView):
 
     def get_context_data(self, *args, **kwargs):
         return super(CreateBanner, self).get_context_data(*args, **kwargs)
-
-    #TODO: Form validation here
 
 
 class DeleteBanner(PermissionRequiredMixin, DeleteView):

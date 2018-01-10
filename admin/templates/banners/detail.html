@@ -33,6 +33,13 @@
                         Modify banner
                     </button>
                 {% endif %}
+                {% if messages %}
+                    <ul class="messages">
+                        {% for message in messages %}
+                            <li class="{{ message.tags }}">{{ message }}</li>
+                        {% endfor %}
+                    </ul>
+                {% endif %}
             </div>
         </div>
         <div class="row" id="table-view">

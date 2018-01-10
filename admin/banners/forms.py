@@ -1,6 +1,7 @@
 from django import forms
-from osf.models import ScheduledBanner
+from osf.exceptions import ValidationValueError
 from django.forms.widgets import TextInput, DateInput
+from osf.models.banner import ScheduledBanner, validate_banner_dates
 
 
 class BannerForm(forms.ModelForm):
@@ -13,3 +14,17 @@ class BannerForm(forms.ModelForm):
             'end_date': DateInput(attrs={'class': 'datepicker'}),
             'license': TextInput(),
         }
+
+    def __init__(self, *args, **kwargs):
+        self.banner_id=kwargs.get('banner_id')
+        super(BannerForm, self).__init__(*args, **kwargs)
+
+    def clean(self):
+        data = self.cleaned_data
+
+        try:
+            validate_banner_dates(self.banner_id, data['start_date'], data['end_date'])
+        except ValidationValueError as e:
+            raise forms.ValidationError(e.message)
+
+        return data
