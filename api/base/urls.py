@@ -1,4 +1,3 @@
-
 from django.conf.urls import include, url
 from django.views.generic.base import RedirectView
 
@@ -10,14 +9,6 @@ default_version = versioning.decimal_version_to_url_path(settings.REST_FRAMEWORK
 
 # Please keep URLs alphabetized for auto-generated documentation
 urlpatterns = [
-    url('^(?P<version>(_))/',
-        include(
-            [
-                url(r'^$', views.private_root, name='private_root'),
-                url(r'^media/', include('api.media.urls', namespace='media')),
-            ]
-        )
-        ),
     url('^(?P<version>(v2))/',
         include(
             [

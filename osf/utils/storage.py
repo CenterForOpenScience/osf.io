@@ -1,9 +1,7 @@
 from __future__ import absolute_import
 
-import urlparse
 from django.db import models
-from website import settings as osf_settings
-from api.base import settings as api_settings
+from website.util import api_v2_url
 
 from django.core.files.storage import Storage
 from django.core.files.base import ContentFile
@@ -16,7 +14,6 @@ class BannerImage(models.Model):
 
 @deconstructible
 class BannerImageStorage(Storage):
-    media_url = urlparse.urljoin(osf_settings.API_DOMAIN, '_{}'.format(api_settings.MEDIA_URL))
     def _open(self, name, mode='rb'):
         assert mode == 'rb'
         icon = BannerImage.objects.get(filename=name)
@@ -33,4 +30,4 @@ class BannerImageStorage(Storage):
         return name
 
     def url(self, name):
-        return urlparse.urljoin(self.media_url, name)
+        return api_v2_url('/banners/{}/'.format(name))

@@ -12,7 +12,7 @@ var DonateBanner = {
         self.bannerLoaded = m.prop(false);
 
         // Load new and noteworthy nodes
-        var bannerUrl = $osf.apiV2Url('banners/current');
+        var bannerUrl = $osf.apiV2Url('banners/current/');
         var bannerPromise = m.request({method: 'GET', url: bannerUrl}, background=true);
         bannerPromise.then(function(result){
             self.banner(result.data);

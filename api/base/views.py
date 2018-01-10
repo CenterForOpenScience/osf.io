@@ -777,23 +777,6 @@ def root(request, format=None, **kwargs):
 
 @api_view(('GET',))
 @throttle_classes([RootAnonThrottle, UserRateThrottle])
-def private_root(request, format=None, **kwargs):
-    """
-
-    # Welcome to the new private OSF endpoint
-    """
-
-    return_val = {
-        'meta': {
-            'message': 'Welcome to the OSF API.',
-        },
-    }
-
-    return Response(return_val)
-
-
-@api_view(('GET',))
-@throttle_classes([RootAnonThrottle, UserRateThrottle])
 def status_check(request, format=None, **kwargs):
     maintenance = MaintenanceState.objects.all().first()
     return Response({
