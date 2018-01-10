@@ -64,6 +64,21 @@ class TestPreprintProviderSubjects(ApiTestCase):
         self.lawless_url = '/{}preprint_providers/{}/taxonomies/?page[size]=15&'.format(API_BASE, self.lawless_preprint_provider._id)
         self.ruled_url = '/{}preprint_providers/{}/taxonomies/?page[size]=15&'.format(API_BASE, self.ruled_preprint_provider._id)
 
+    def test_max_page_size(self):
+        base_url = '/{}preprint_providers/{}/taxonomies/'.format(API_BASE, self.lawless_preprint_provider._id)
+
+        res = self.app.get(base_url)
+        assert_equal(res.status_code, 200)
+        assert_equal(res.json['links']['meta']['per_page'], 10)
+
+        res = self.app.get(base_url + '?page[size]=150')
+        assert_equal(res.status_code, 200)
+        assert_equal(res.json['links']['meta']['per_page'], 150)
+
+        res = self.app.get(base_url + '?page[size]=2018')
+        assert_equal(res.status_code, 200)
+        assert_equal(res.json['links']['meta']['per_page'], 1000)
+
     def test_no_rules_grabs_all(self):
         res = self.app.get(self.lawless_url)
 
