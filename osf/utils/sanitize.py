@@ -21,13 +21,20 @@ def strip_html(unclean, tags=None):
     :return: stripped string
     :rtype: str
     """
-    tags = tags or []
+    if not tags:
+        tags = []
 
+    if unclean is None:
+        return u''
+    elif isinstance(unclean, dict) or isinstance(unclean, list):
+        return bleach.clean(str(unclean), strip=True, tags=[], attributes=[], styles=[])
     # We make this noop for non-string, non-collection inputs so this function can be used with higher-order
     # functions, such as rapply (recursively applies a function to collections)
-    if not isinstance(unclean, basestring) and not is_iterable(unclean) and unclean is not None:
+    # If it's not a string and not an iterable (string, list, dict, return unclean)
+    elif not isinstance(unclean, basestring) and not is_iterable(unclean):
         return unclean
-    return bleach.clean(unclean, strip=True, tags=tags, attributes=[], styles=[])
+    else:
+        return bleach.clean(unclean, strip=True, tags=tags, attributes=[], styles=[])
 
 
 # TODO: Remove unescape_entities when mako html safe comes in
