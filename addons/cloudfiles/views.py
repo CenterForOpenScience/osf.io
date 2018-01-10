@@ -55,14 +55,15 @@ def cloudfiles_add_user_account(auth, **kwargs):
         }, httplib.BAD_REQUEST
 
     try:
-        conn = connection.Connection(username=username, api_key=secret_key)
-        for container in conn.object_store.containers():  # Checks if has necessary permission
+        # Region is required for the client, but arbitrary here.
+        conn = connection.Connection(username=username, api_key=secret_key, region='IAD')
+        for _ in conn.object_store.containers():  # Checks if has necessary permission
             pass
     except HttpException:
         return {
-            'message': ('Unable to access account.\n'
-                'Check to make sure that the above credentials are valid, '
-                'and that they have permission to list containers.')
+            'message': 'Unable to access account.\n'
+                       'Check to make sure that the above credentials are valid, '
+                       'and that they have permission to list containers.'
         }, httplib.BAD_REQUEST
 
     try:
@@ -74,7 +75,6 @@ def cloudfiles_add_user_account(auth, **kwargs):
             display_name=username,
         )
         account.save()
-
     except ValidationError:
         # ... or get the old one
         account = ExternalAccount.objects.get(
@@ -96,6 +96,7 @@ def cloudfiles_add_user_account(auth, **kwargs):
     auth.user.save()
 
     return {}
+
 
 @must_have_addon(SHORT_NAME, 'node')
 @must_be_addon_authorizer(SHORT_NAME)
@@ -132,6 +133,7 @@ cloudfiles_deauthorize_node = generic_views.deauthorize_node(
     SHORT_NAME
 )
 
+
 @must_be_addon_authorizer(SHORT_NAME)
 @must_have_addon(SHORT_NAME, 'node')
 @must_have_permission('write')
@@ -141,13 +143,13 @@ def cloudfiles_create_container(auth, node_addon, **kwargs):
 
     if not container_name:
         return {
-            'message': ('Cloud Files container name must contain characters')
+            'message': 'Cloud Files container name must contain characters'
         }, httplib.BAD_REQUEST
 
     if any([char for char in node_addon.FORBIDDEN_CHARS_FOR_CONTAINER_NAMES
             if char in container_name]):
         return {
-            'message': ('Cloud Files container name cannot contain either of the characters: / or ?')
+            'message': 'Cloud Files container name cannot contain either of the characters: / or ?'
         }, httplib.BAD_REQUEST
 
     try:
@@ -159,8 +161,8 @@ def cloudfiles_create_container(auth, node_addon, **kwargs):
     except HttpException:
         return {
             'message': ('Unable to access account.\n'
-                'Check to make sure that the above credentials are valid, '
-                'and that they have permission to create containers.')
+                        'Check to make sure that the above credentials are valid, '
+                        'and that they have permission to create containers.')
         }, httplib.BAD_REQUEST
 
     return {}

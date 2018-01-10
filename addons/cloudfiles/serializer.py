@@ -3,6 +3,7 @@ from addons.base.serializer import StorageAddonSerializer
 from rackspace import connection
 import openstack
 
+
 class CloudFilesSerializer(StorageAddonSerializer):
 
     addon_short_name = 'cloudfiles'
@@ -16,10 +17,11 @@ class CloudFilesSerializer(StorageAddonSerializer):
             return False
 
         try:
+            # Region is required for the client, but arbitrary here.
             conn = connection.Connection(username=external_account.provider_id,
-                                  api_key=external_account.oauth_secret,
-                                  region=node.folder_region)
-            for container in conn.object_store.containers():  # Checks if has necessary permission
+                                         api_key=external_account.oauth_secret,
+                                         region=node.folder_region)
+            for _ in conn.object_store.containers():  # Checks if has necessary permission
                 pass
             return True
         except openstack.exceptions.SDKException:
