@@ -756,7 +756,7 @@ var InstitutionMetrics = function() {
     // Affiliated Private Registrations
     var affiliated_private_registered_node_chart = new keenAnalysis.Query("sum", {
         eventCollection: "institution_summary",
-        targetProperty: "registered_nodes.private",
+        targetProperty: "registered_nodes.embargoed_v2",
         timeframe: "previous_1_days",
         groupBy: "institution.name",
         timezone: "UTC"
@@ -800,7 +800,7 @@ var InstitutionMetrics = function() {
     // Affiliated Private Projects Registrations
     var affiliated_private_registered_projects_chart = new keenAnalysis.Query("sum", {
         eventCollection: "institution_summary",
-        targetProperty: "registered_projects.private",
+        targetProperty: "registered_projects.embargoed_v2",
         timeframe: "previous_1_days",
         groupBy: "institution.name",
         timezone: "UTC"

@@ -4,6 +4,7 @@ import logging
 import requests
 from dateutil.parser import parse
 from datetime import datetime, timedelta
+from django.utils import timezone
 
 from website.app import init_app
 from scripts.analytics.base import SummaryAnalytics
@@ -26,7 +27,7 @@ class PreprintSummary(SummaryAnalytics):
 
         # Convert to a datetime at midnight for queries and the timestamp
         timestamp_datetime = datetime(date.year, date.month, date.day).replace(tzinfo=pytz.UTC)
-        query_datetime = timestamp_datetime + timedelta(1)
+        query_datetime = timestamp_datetime + timedelta(days=1)
 
         elastic_query = {
             "query": {
@@ -85,7 +86,7 @@ if __name__ == '__main__':
     args = preprint_summary.parse_args()
     yesterday = args.yesterday
     if yesterday:
-        date = (datetime.today() - timedelta(1)).date()
+        date = (timezone.now() - timedelta(days=1)).date()
     else:
         date = parse(args.date).date() if args.date else None
     events = preprint_summary.get_events(date)
