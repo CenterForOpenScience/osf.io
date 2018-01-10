@@ -304,8 +304,7 @@ WHERE (TYPE = 'osf.node' OR TYPE = 'osf.registration')
   AND is_public IS TRUE
   AND is_deleted IS FALSE
   AND (spam_status IS NULL OR NOT ((spam_status = 2 or spam_status = 3) AND {spam_flagged_removed_from_search}))
-  AND NOT (UPPER(N.title :: TEXT) LIKE UPPER(
-'%[''Bulk stress 201'', ''Bulk stress 202'', ''OSF API Registration test'']%') -- is_qa_node
+  AND NOT (UPPER(N.title::text) LIKE UPPER('%Bulk stress 201%') OR UPPER(N.title::text) LIKE UPPER('%Bulk stress 202%') OR UPPER(N.title::text) LIKE UPPER('%OSF API Registration test%') -- is_qa_node
            OR N.id IN  -- Comes from website.settings.DO_NOT_INDEX_LIST
               (SELECT THRUTAGS.abstractnode_id
                FROM osf_abstractnode_tags THRUTAGS
@@ -454,8 +453,7 @@ WHERE name IS NOT NULL
                                AND is_public IS TRUE
                                AND is_deleted IS FALSE
                                AND (spam_status IS NULL OR NOT ((spam_status = 2 or spam_status = 3) AND {spam_flagged_removed_from_search}))
-                               AND NOT (UPPER(osf_abstractnode.title :: TEXT) LIKE UPPER(
-                             '%[''Bulk stress 201'', ''Bulk stress 202'', ''OSF API Registration test'']%')
+                               AND NOT (UPPER(osf_abstractnode.title::text) LIKE UPPER('%Bulk stress 201%') OR UPPER(osf_abstractnode.title::text) LIKE UPPER('%Bulk stress 202%') OR UPPER(osf_abstractnode.title::text) LIKE UPPER('%OSF API Registration test%') -- is_qa_node
                                         OR "osf_abstractnode"."id" IN
                                            (SELECT THRUTAGS.abstractnode_id
                                             FROM osf_abstractnode_tags THRUTAGS
@@ -651,8 +649,7 @@ WHERE NOT ((TYPE = 'osf.node' OR TYPE = 'osf.registration')
   AND N.is_public IS TRUE
   AND N.is_deleted IS FALSE
   AND (spam_status IS NULL OR NOT ((spam_status = 2 or spam_status = 3) AND {spam_flagged_removed_from_search}))
-  AND NOT (UPPER(N.title :: TEXT) LIKE UPPER(
-'%[''Bulk stress 201'', ''Bulk stress 202'', ''OSF API Registration test'']%') -- is_qa_node
+  AND NOT (UPPER(N.title::text) LIKE UPPER('%Bulk stress 201%') OR UPPER(N.title::text) LIKE UPPER('%Bulk stress 202%') OR UPPER(N.title::text) LIKE UPPER('%OSF API Registration test%') -- is_qa_node
            OR N.id IN  -- Comes from website.settings.DO_NOT_INDEX_LIST
               (SELECT THRUTAGS.abstractnode_id
                FROM osf_abstractnode_tags THRUTAGS
@@ -687,8 +684,7 @@ WHERE NOT (name IS NOT NULL
                                AND NOT ((spam_status = 1 OR spam_status = 2) AND {spam_flagged_removed_from_search})
                                -- settings.SPAM_FLAGGED_REMOVE_FROM_SEARCH
                                -- node.archiving or is_qa_node
-                               AND NOT (UPPER(osf_abstractnode.title :: TEXT) LIKE UPPER(
-                             '%[''Bulk stress 201'', ''Bulk stress 202'', ''OSF API Registration test'']%')
+                               AND NOT (UPPER(osf_abstractnode.title::text) LIKE UPPER('%Bulk stress 201%') OR UPPER(osf_abstractnode.title::text) LIKE UPPER('%Bulk stress 202%') OR UPPER(osf_abstractnode.title::text) LIKE UPPER('%OSF API Registration test%') -- is_qa_node
                                         OR "osf_abstractnode"."id" IN
                                            (SELECT THRUTAGS.abstractnode_id
                                             FROM osf_abstractnode_tags THRUTAGS
