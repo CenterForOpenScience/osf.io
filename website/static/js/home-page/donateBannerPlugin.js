@@ -38,8 +38,8 @@ var DonateBanner = {
 
 var BannerDisplay = {
     view: function(ctrl, args) {
-        var default_photo = args.banner.attributes.default_photo_url;
-        var mobile_photo = args.banner.attributes.mobile_photo_url;
+        var default_photo = args.banner.links.default_photo;
+        var mobile_photo = args.banner.links.mobile_photo;
         var default_text = args.banner.attributes.default_text;
         var mobile_text = args.banner.attributes.mobile_text;
         var color = args.banner.attributes.color;
