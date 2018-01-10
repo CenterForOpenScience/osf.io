@@ -37,5 +37,9 @@ class BannerSerializer(JSONAPISerializer):
             return text + ' Image copyright {}.'.format(banner.license)
         return text
 
+    # Only the current banner's URL is surfaced through the API
+    def get_absolute_url(self, obj):
+        return None
+
     class Meta:
         type_ = 'banners'
