@@ -54,14 +54,14 @@ class TestScheduledBanner:
             )
         assert e.value.message == 'Start date must be before end date.'
 
-        # Banner ends on other banners start date works
+        # Banner ends right before next starts
         ScheduledBannerFactory(
             start_date=date - timedelta(days=3),
-            end_date=date
+            end_date=date - timedelta(days=1)
         )
 
-        # Banner begins on other banners end date works
+        # Banner begins right after previous ends
         ScheduledBannerFactory(
-            start_date=date + timedelta(days=4),
-            end_date=date + timedelta(days=4)
+            start_date=date + timedelta(days=5),
+            end_date=date + timedelta(days=5)
         )

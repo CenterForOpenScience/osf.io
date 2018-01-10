@@ -243,11 +243,6 @@ STATIC_ROOT = os.path.join(BASE_DIR, 'static/vendor')
 
 API_BASE = 'v2/'
 STATIC_URL = '/static/'
-STATIC_FOLDER = os.path.join(BASE_DIR, 'static')
-
-STATICFILES_DIRS = (
-    os.path.join(BASE_DIR, 'static'),
-)
 
 NODE_CATEGORY_MAP = osf_settings.NODE_CATEGORY_MAP
 

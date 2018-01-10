@@ -1,3 +1,4 @@
+from api.base.utils import absolute_reverse
 from rest_framework import serializers as ser
 
 from api.base.serializers import JSONAPISerializer, DateByVersion
@@ -33,13 +34,13 @@ class BannerSerializer(JSONAPISerializer):
         return self.get_default_text(banner)
 
     def add_license(self, banner, text):
-        if banner.license:
+        if banner.license and not banner.license.lower() == 'none':
             return text + ' Image copyright {}.'.format(banner.license)
         return text
 
     # Only the current banner's URL is surfaced through the API
     def get_absolute_url(self, obj):
-        return None
+        return absolute_reverse('banners:banner-current', kwargs={'version': 'v2'})
 
     class Meta:
         type_ = 'banners'

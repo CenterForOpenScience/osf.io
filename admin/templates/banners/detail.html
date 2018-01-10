@@ -19,10 +19,18 @@
             </div>
         </div>
         <div class="row">
-            <div class="col-md-12 text-center">
+            <div class="col-sm-md-lg-12 hidden-xs">
                 <div class="banner-background-color" style="background-color:{{banner.color}};">
-                    <img src="{{banner_image}}">
+                    <img class="img-responsive" src="{{default_photo}}"/>
                 </div>
+            </div>
+            <div class="col-xs-12 hidden-sm hidden-md hidden-lg">
+                <div class="banner-background-color" style="background-color:{{banner.color}};">
+                    <img class="img-responsive" src="{{mobile_photo}}"/>
+                </div>
+            </div>
+            <div class="col-md-12 text-center">
+
                 <h2>{{ preprint_provider.name }}</h2>
             </div>
         </div>

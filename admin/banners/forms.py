@@ -16,7 +16,8 @@ class BannerForm(forms.ModelForm):
         }
 
     def __init__(self, *args, **kwargs):
-        self.banner_id=kwargs.get('banner_id')
+        banner = kwargs.get('instance')
+        self.banner_id = banner.id if banner else None
         super(BannerForm, self).__init__(*args, **kwargs)
 
     def clean(self):

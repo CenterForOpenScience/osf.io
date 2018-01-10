@@ -2,7 +2,6 @@ var m = require('mithril');
 var $osf = require('js/osfHelpers');
 
 // CSS
-require('css/donate-banner.css');
 require('css/meetings-and-conferences.css');
 
 

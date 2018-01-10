@@ -1,4 +1,5 @@
 from django.db import models
+from datetime import datetime
 
 from osf.utils.storage import BannerImageStorage
 
@@ -11,9 +12,9 @@ def validate_banner_dates(banner_id, start_date, end_date):
         raise ValidationValueError('Start date must be before end date.')
 
     overlapping = ScheduledBanner.objects.filter(
-        (models.Q(start_date__gte=start_date) & models.Q(start_date__lt=end_date)) |
-        (models.Q(end_date__gt=start_date) & models.Q(end_date__lte=end_date)) |
-        (models.Q(start_date__lt=start_date) & models.Q(end_date__gt=end_date))
+        (models.Q(start_date__gte=start_date) & models.Q(start_date__lte=end_date)) |
+        (models.Q(end_date__gte=start_date) & models.Q(end_date__lte=end_date)) |
+        (models.Q(start_date__lte=start_date) & models.Q(end_date__gte=end_date))
     ).exclude(id=banner_id).exists()
 
     if overlapping:
@@ -41,5 +42,7 @@ class ScheduledBanner(models.Model):
     mobile_text = models.TextField(blank=True, null=True)
 
     def save(self, *args, **kwargs):
+        self.start_date = datetime.combine(self.start_date, datetime.min.time())
+        self.end_date = datetime.combine(self.end_date, datetime.max.time())
         validate_banner_dates(self.id, self.start_date, self.end_date)
         super(ScheduledBanner, self).save(*args, **kwargs)

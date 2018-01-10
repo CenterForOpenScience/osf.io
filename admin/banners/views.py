@@ -1,6 +1,6 @@
 from __future__ import unicode_literals
 
-from django.shortcuts import render, redirect
+from django.shortcuts import redirect
 from django.forms.models import model_to_dict
 from django.core.urlresolvers import reverse_lazy
 from django.views.generic import ListView, DetailView, View, CreateView, UpdateView, DeleteView
@@ -47,7 +47,8 @@ class BannerDisplay(PermissionRequiredMixin, DetailView):
         kwargs['banner'] = banner_dict
         fields = banner_dict
         kwargs['change_form'] = BannerForm(initial=fields)
-        kwargs['banner_image'] = banner.default_photo.url
+        kwargs['default_photo'] = banner.default_photo.url
+        kwargs['mobile_photo'] = banner.mobile_photo.url
 
         return kwargs
 
@@ -66,8 +67,8 @@ class BannerChangeForm(PermissionRequiredMixin, UpdateView):
         return reverse_lazy('banners:detail', kwargs={'banner_id': self.kwargs.get('banner_id')})
 
     def post(self, request, *args, **kwargs):
-        form = BannerForm(request.POST, request.FILES)
         bid = kwargs['banner_id']
+        form = BannerForm(request.POST, request.FILES, instance=self.get_object())
         if form.is_valid():
             form.save()
         else:
@@ -106,20 +107,6 @@ class DeleteBanner(PermissionRequiredMixin, DeleteView):
     raise_exception = True
     template_name = 'banners/confirm_delete.html'
     success_url = reverse_lazy('banners:list')
-
-    def delete(self, request, *args, **kwargs):
-        banner = self.get_object()
-        default_photo_used = ScheduledBanner.objects.filter(
-            default_photo=banner.default_photo
-        ).exclude(id=banner.id).exists()
-        mobile_photo_used = ScheduledBanner.objects.filter(
-            mobile_photo=banner.mobile_photo
-        ).exclude(id=banner.id).exists()
-        if not default_photo_used:
-            banner.default_photo.delete()
-        if not mobile_photo_used:
-            banner.mobile_photo.delete()
-        return super(DeleteBanner, self).delete(request, *args, **kwargs)
 
     def get_object(self, queryset=None):
         return ScheduledBanner.objects.get(id=self.kwargs['banner_id'])
