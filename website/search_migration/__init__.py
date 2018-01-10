@@ -38,6 +38,10 @@ SELECT json_agg(
             , 'registered_date', N.registered_date
             , 'id', NODE_GUID._id
             , 'category', CASE
+                          WHEN N.type = 'osf.registration'
+                            THEN 'registration'
+                          WHEN PREPRINT.URL IS NOT NULL
+                            THEN 'preprint'
                           WHEN PARENT_GUID._id IS NULL
                             THEN 'project'
                           ELSE 'component'
