@@ -303,13 +303,14 @@ FROM osf_abstractnode AS N
 WHERE (TYPE = 'osf.node' OR TYPE = 'osf.registration')
   AND is_public IS TRUE
   AND is_deleted IS FALSE
-  AND (spam_status IS NULL OR NOT ((spam_status = 2 or spam_status = 3) AND {spam_flagged_removed_from_search}))
+  AND (spam_status IS NULL OR NOT (spam_status = 2 or (spam_status = 1 AND {spam_flagged_removed_from_search})))
   AND NOT (UPPER(N.title::text) LIKE UPPER('%Bulk stress 201%') OR UPPER(N.title::text) LIKE UPPER('%Bulk stress 202%') OR UPPER(N.title::text) LIKE UPPER('%OSF API Registration test%') -- is_qa_node
            OR N.id IN  -- Comes from website.settings.DO_NOT_INDEX_LIST
               (SELECT THRUTAGS.abstractnode_id
                FROM osf_abstractnode_tags THRUTAGS
                  INNER JOIN osf_tag TAGS ON (THRUTAGS.tag_id = TAGS.id)
-               WHERE TAGS.name = '[''qatest'', ''qa test'']'))
+               WHERE (TAGS.name = 'qatest'
+                  OR TAGS.name = 'qa test')))
   AND NOT (N.id IN  -- node.archiving
            (SELECT AJ.dst_node_id  -- May need to be made recursive as AJ table grows
             FROM osf_archivejob AJ
@@ -452,13 +453,14 @@ WHERE name IS NOT NULL
                          WHERE (TYPE = 'osf.node' OR TYPE = 'osf.registration' OR TYPE = 'osf.quickfilesnode')
                                AND is_public IS TRUE
                                AND is_deleted IS FALSE
-                               AND (spam_status IS NULL OR NOT ((spam_status = 2 or spam_status = 3) AND {spam_flagged_removed_from_search}))
+                               AND (spam_status IS NULL OR NOT (spam_status = 2 or (spam_status = 1 AND {spam_flagged_removed_from_search})))
                                AND NOT (UPPER(osf_abstractnode.title::text) LIKE UPPER('%Bulk stress 201%') OR UPPER(osf_abstractnode.title::text) LIKE UPPER('%Bulk stress 202%') OR UPPER(osf_abstractnode.title::text) LIKE UPPER('%OSF API Registration test%') -- is_qa_node
                                         OR "osf_abstractnode"."id" IN
-                                           (SELECT THRUTAGS.abstractnode_id
-                                            FROM osf_abstractnode_tags THRUTAGS
-                                              INNER JOIN osf_tag TAGS ON (THRUTAGS.tag_id = TAGS.id)
-                                            WHERE TAGS.name = '[''qatest'', ''qa test'']'))
+                                          (SELECT THRUTAGS.abstractnode_id
+                                           FROM osf_abstractnode_tags THRUTAGS
+                                             INNER JOIN osf_tag TAGS ON (THRUTAGS.tag_id = TAGS.id)
+                                           WHERE (TAGS.name = 'qatest'
+                                              OR TAGS.name = 'qa test')))
                                AND NOT (osf_abstractnode.id IN
                                         (SELECT AJ.dst_node_id
                                          FROM osf_archivejob AJ
@@ -648,13 +650,14 @@ FROM osf_abstractnode AS N
 WHERE NOT ((TYPE = 'osf.node' OR TYPE = 'osf.registration')
   AND N.is_public IS TRUE
   AND N.is_deleted IS FALSE
-  AND (spam_status IS NULL OR NOT ((spam_status = 2 or spam_status = 3) AND {spam_flagged_removed_from_search}))
+  AND (spam_status IS NULL OR NOT (spam_status = 2 or (spam_status = 1 AND {spam_flagged_removed_from_search})))
   AND NOT (UPPER(N.title::text) LIKE UPPER('%Bulk stress 201%') OR UPPER(N.title::text) LIKE UPPER('%Bulk stress 202%') OR UPPER(N.title::text) LIKE UPPER('%OSF API Registration test%') -- is_qa_node
            OR N.id IN  -- Comes from website.settings.DO_NOT_INDEX_LIST
-              (SELECT THRUTAGS.abstractnode_id
-               FROM osf_abstractnode_tags THRUTAGS
-                 INNER JOIN osf_tag TAGS ON (THRUTAGS.tag_id = TAGS.id)
-               WHERE TAGS.name = '[''qatest'', ''qa test'']'))
+             (SELECT THRUTAGS.abstractnode_id
+              FROM osf_abstractnode_tags THRUTAGS
+                INNER JOIN osf_tag TAGS ON (THRUTAGS.tag_id = TAGS.id)
+              WHERE (TAGS.name = 'qatest'
+                 OR TAGS.name = 'qa test')))
   AND NOT (N.id IN  -- node.archiving
            (SELECT AJ.dst_node_id  -- May need to be made recursive as AJ table grows
             FROM osf_archivejob AJ
@@ -681,15 +684,16 @@ WHERE NOT (name IS NOT NULL
                          WHERE (TYPE = 'osf.node' OR TYPE = 'osf.registration' OR TYPE = 'osf.quickfilesnode')
                                AND is_public IS TRUE
                                AND is_deleted IS FALSE
-                               AND NOT ((spam_status = 1 OR spam_status = 2) AND {spam_flagged_removed_from_search})
+                               AND (spam_status IS NULL OR NOT (spam_status = 2 or (spam_status = 1 AND {spam_flagged_removed_from_search})))
                                -- settings.SPAM_FLAGGED_REMOVE_FROM_SEARCH
                                -- node.archiving or is_qa_node
                                AND NOT (UPPER(osf_abstractnode.title::text) LIKE UPPER('%Bulk stress 201%') OR UPPER(osf_abstractnode.title::text) LIKE UPPER('%Bulk stress 202%') OR UPPER(osf_abstractnode.title::text) LIKE UPPER('%OSF API Registration test%') -- is_qa_node
                                         OR "osf_abstractnode"."id" IN
-                                           (SELECT THRUTAGS.abstractnode_id
-                                            FROM osf_abstractnode_tags THRUTAGS
-                                              INNER JOIN osf_tag TAGS ON (THRUTAGS.tag_id = TAGS.id)
-                                            WHERE TAGS.name = '[''qatest'', ''qa test'']'))
+                                          (SELECT THRUTAGS.abstractnode_id
+                                           FROM osf_abstractnode_tags THRUTAGS
+                                             INNER JOIN osf_tag TAGS ON (THRUTAGS.tag_id = TAGS.id)
+                                           WHERE (TAGS.name = 'qatest'
+                                              OR TAGS.name = 'qa test')))
                                AND NOT (osf_abstractnode.id IN
                                         (SELECT AJ.dst_node_id
                                          FROM osf_archivejob AJ
