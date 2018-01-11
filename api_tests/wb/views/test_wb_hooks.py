@@ -271,7 +271,7 @@ class TestMove(HookTestCase):
         )
         res = app.post_json(move_url, signed_payload, expect_errors=True)
         assert res.status_code == 400
-        assert res.json['errors'][0]['source'] == 'This field may not be blank.'
+        assert res.json['source'][0] == 'This field may not be blank.'
 
     def test_no_parent(self, app, move_url, user, root_node, folder, file):
         signed_payload = self.sign_payload(
@@ -287,7 +287,7 @@ class TestMove(HookTestCase):
         )
         res = app.post_json(move_url, signed_payload, expect_errors=True)
         assert res.status_code == 400
-        assert res.json['errors'][0]['detail'] == 'parent'
+        assert res.json['destination']['parent'][0] == 'This field is required.'
 
     def test_rename_file(self, app, move_url, user, root_node, folder, file):
         signed_payload = self.sign_payload(
@@ -562,7 +562,7 @@ class TestCopy(HookTestCase):
         )
         res = app.post_json(copy_url, signed_payload, expect_errors=True)
         assert res.status_code == 400
-        assert res.json['errors'][0]['source'] == 'This field may not be blank.'
+        assert res.json['source'][0] == 'This field may not be blank.'
 
     def test_no_parent(self, app, copy_url, user, root_node, folder, file):
         signed_payload = self.sign_payload(
@@ -578,7 +578,7 @@ class TestCopy(HookTestCase):
         )
         res = app.post_json(copy_url, signed_payload, expect_errors=True)
         assert res.status_code == 400
-        assert res.json['errors'][0]['detail'] == 'parent'
+        assert res.json['destination']['parent'][0] == 'This field is required.'
 
     def test_invalid_payload(self, app, copy_url):
         signed_payload = {

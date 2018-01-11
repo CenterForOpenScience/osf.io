@@ -52,12 +52,10 @@ class WaterbutlerMetadataSerializer(ser.Serializer):
     def create(self, validated_data):
         source = validated_data.pop('source')
         destination = validated_data.pop('destination')
-        action = validated_data.pop('action', '')
         name = validated_data.pop('name')
 
         try:
-            # Current actions are only move and copy
-            return source.copy_under(destination, name) if action == 'copy' else source.move_under(destination, name)
+            return self.context['view'].perform_file_action(source, destination, name)
         except IntegrityError:
             raise exceptions.ValidationError('File already exists with this name.')
         except file_exceptions.FileNodeCheckedOutError:
