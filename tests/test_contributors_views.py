@@ -46,9 +46,11 @@ class TestContributorUtils(OsfTestCase):
         user = AuthUserFactory()
         self.project.add_contributor(user, auth=Auth(self.project.creator), visible=False)
         self.project.save()
+        self.project.reload()
         serialized = utils.serialize_contributors(node.admin_contributors, node, admin=True, admin_contributor=True)
         assert_equal(len(serialized), 1)
         assert_false(serialized[0]['visible'])
+
 
 class TestContributorViews(OsfTestCase):
 
