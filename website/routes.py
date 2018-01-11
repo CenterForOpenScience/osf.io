@@ -5,6 +5,7 @@ import httplib as http
 
 from flask import request
 from flask import send_from_directory
+from django.core.urlresolvers import reverse
 
 from geoip import geolite2
 
@@ -122,6 +123,7 @@ def get_globals():
         'recaptcha_site_key': settings.RECAPTCHA_SITE_KEY,
         'custom_citations': settings.CUSTOM_CITATIONS,
         'osf_support_email': settings.OSF_SUPPORT_EMAIL,
+        'wafflejs_url': '{api_domain}{waffle_url}'.format(api_domain=settings.API_DOMAIN.rstrip('/'), waffle_url=reverse('wafflejs'))
     }
 
 

@@ -19,6 +19,7 @@ from api.base.settings.defaults import API_BASE
 from api.base.serializers import JSONAPISerializer, BaseAPISerializer
 from api.base import serializers as base_serializers
 from api.nodes.serializers import NodeSerializer, RelationshipField
+from api.waffle.serializers import WaffleSerializer, BaseWaffleSerializer
 from api.registrations.serializers import RegistrationSerializer
 
 SER_MODULES = []
@@ -163,6 +164,9 @@ class TestApiBaseSerializers(ApiTestCase):
         base_get_absolute_url = JSONAPISerializer.get_absolute_url
 
         for serializer in serializers:
+            # Waffle endpoints are nonstandard
+            if serializer == WaffleSerializer or serializer == BaseWaffleSerializer:
+                continue
             if not re.match('^(api_test|test).*', serializer.__module__):
                 assert hasattr(serializer, 'get_absolute_url'), 'No get_absolute_url method'
                 assert_not_equal(serializer.get_absolute_url, base_get_absolute_url)
