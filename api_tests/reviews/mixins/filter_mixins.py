@@ -3,14 +3,14 @@ from datetime import timedelta
 import pytest
 from furl import furl
 
+from api.preprint_providers.permissions import GroupHelper
 from osf_tests.factories import (
-    ActionFactory,
+    ReviewActionFactory,
     AuthUserFactory,
     PreprintFactory,
     PreprintProviderFactory,
     ProjectFactory,
 )
-from reviews.permissions import GroupHelper
 
 
 def get_actual(app, url, user=None, sort=None, expect_errors=False, **filters):
@@ -42,7 +42,7 @@ def get_actual(app, url, user=None, sort=None, expect_errors=False, **filters):
 
 
 @pytest.mark.django_db
-class ActionFilterMixin(object):
+class ReviewActionFilterMixin(object):
 
     @pytest.fixture()
     def url(self):
@@ -58,7 +58,7 @@ class ActionFilterMixin(object):
         for provider in providers:
             preprint = PreprintFactory(provider=provider, project=ProjectFactory(is_public=True))
             for _ in range(5):
-                actions.append(ActionFactory(target=preprint))
+                actions.append(ReviewActionFactory(target=preprint))
         return actions
 
     @pytest.fixture()
@@ -164,8 +164,8 @@ class ReviewableFilterMixin(object):
         reviewable = expected_reviewables[0]
 
         # filter by reviews_state
-        expected = set([r._id for r in expected_reviewables if r.reviews_state == reviewable.reviews_state])
-        actual = get_actual(app, url, user, reviews_state=reviewable.reviews_state)
+        expected = set([r._id for r in expected_reviewables if r.machine_state == reviewable.machine_state])
+        actual = get_actual(app, url, user, reviews_state=reviewable.machine_state)
         assert expected == actual
 
         # order by date_last_transitioned

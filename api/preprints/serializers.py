@@ -91,7 +91,7 @@ class PreprintSerializer(JSONAPISerializer):
         related_view_kwargs={'node_id': '<node._id>'},
     )
 
-    reviews_state = ser.CharField(read_only=True, max_length=15)
+    reviews_state = ser.CharField(source='machine_state', read_only=True, max_length=15)
     date_last_transitioned = DateByVersion(read_only=True)
 
     citation = RelationshipField(
@@ -134,8 +134,8 @@ class PreprintSerializer(JSONAPISerializer):
         read_only=False
     )
 
-    actions = RelationshipField(
-        related_view='preprints:preprint-action-list',
+    review_actions = RelationshipField(
+        related_view='preprints:preprint-review-action-list',
         related_view_kwargs={'preprint_id': '<_id>'}
     )
 
@@ -195,8 +195,9 @@ class PreprintSerializer(JSONAPISerializer):
         if published and preprint.provider.is_reviewed:
             raise Conflict('{} uses a moderation workflow, so preprints must be submitted for review instead of published directly. Submit a preprint by creating a `submit` Action at {}'.format(
                 preprint.provider.name,
-                absolute_reverse('actions:create-action', kwargs={
-                    'version': self.context['request'].parser_context['kwargs']['version']
+                absolute_reverse('preprints:preprint-review-action-list', kwargs={
+                    'version': self.context['request'].parser_context['kwargs']['version'],
+                    'preprint_id': preprint._id
                 })
             ))
 

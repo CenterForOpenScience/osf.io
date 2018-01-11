@@ -43,6 +43,10 @@
     - Configure docker to start at boot for Ubuntu 15.04 onwards
       `sudo systemctl enable docker`
 
+    - In order to run OSF Preprints, raise fs.inotify.max_user_watches from default value
+      `echo fs.inotify.max_user_watches=131072 | sudo tee -a /etc/sysctl.conf`
+      `sudo sysctl -p`
+
   - Windows
     - Install Microsoft Loopback Adapter (Windows 10 follow community comments as the driver was renamed)
       https://technet.microsoft.com/en-us/library/cc708322(v=ws.10).aspx

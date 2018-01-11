@@ -1,5 +1,5 @@
-import pytest
 import mock
+import pytest
 
 from api.base.settings.defaults import API_BASE
 from api.preprint_providers.permissions import GroupHelper
@@ -10,33 +10,9 @@ from osf_tests.factories import (
 )
 from website.util import permissions as osf_permissions
 
-from api_tests.reviews.mixins.filter_mixins import ReviewActionFilterMixin
-
-
-class TestReviewActionFilters(ReviewActionFilterMixin):
-    @pytest.fixture()
-    def url(self):
-        return '/{}actions/reviews/'.format(API_BASE)
-
-    @pytest.fixture()
-    def expected_actions(self, all_actions, allowed_providers):
-        actions = super(TestReviewActionFilters, self).expected_actions(all_actions, allowed_providers)
-        node = actions[0].target.node
-        node.is_public = False
-        node.save()
-        return [a for a in actions if a.target.node.is_public]
-
-    def test_no_permission(self, app, url, expected_actions):
-        res = app.get(url, expect_errors=True)
-        assert res.status_code == 401
-
-        some_rando = AuthUserFactory()
-        res = app.get(url, auth=some_rando.auth)
-        assert not res.json['data']
-
 
 @pytest.mark.django_db
-class TestReviewActionCreateRelated(object):
+class TestReviewActionCreateRoot(object):
     def create_payload(self, reviewable_id=None, **attrs):
         payload = {
             'data': {
@@ -56,7 +32,7 @@ class TestReviewActionCreateRelated(object):
 
     @pytest.fixture()
     def url(self, preprint):
-        return '/{}preprints/{}/review_actions/'.format(API_BASE, preprint._id)
+        return '/{}actions/reviews/'.format(API_BASE)
 
     @pytest.fixture()
     def provider(self):
