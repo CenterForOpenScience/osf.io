@@ -30,9 +30,9 @@ class UserDomainEvents(EventAnalytics):
         date = datetime(date.year, date.month, date.day).replace(tzinfo=pytz.UTC)
 
         logger.info('Gathering user domains between {} and {}'.format(
-            date, (date + timedelta(1)).isoformat()
+            date, (date + timedelta(days=1)).isoformat()
         ))
-        user_query = (Q(date_confirmed__lt=date + timedelta(1)) &
+        user_query = (Q(date_confirmed__lt=date + timedelta(days=1)) &
                       Q(date_confirmed__gte=date) &
                       Q(username__isnull=False))
         users = paginated(OSFUser, query=user_query)
