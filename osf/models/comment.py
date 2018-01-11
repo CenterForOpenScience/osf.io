@@ -9,6 +9,7 @@ from osf.models.base import GuidMixin, Guid, BaseModel
 from osf.models.mixins import CommentableMixin
 from osf.models.spam import SpamMixin
 from osf.models import validators
+from osf.utils.fields import NonNaiveDateTimeField
 
 from framework.exceptions import PermissionsError
 from website import settings
@@ -39,6 +40,7 @@ class Comment(GuidMixin, SpamMixin, CommentableMixin, BaseModel):
 
     edited = models.BooleanField(default=False)
     is_deleted = models.BooleanField(default=False)
+    deleted = NonNaiveDateTimeField(blank=True, null=True)
     # The type of root_target: node/files
     page = models.CharField(max_length=255, blank=True)
     content = models.TextField(

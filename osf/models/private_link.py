@@ -6,12 +6,14 @@ from framework.utils import iso8601format
 from website.util import sanitize
 
 from osf.models.base import BaseModel, ObjectIDMixin
+from osf.utils.fields import NonNaiveDateTimeField
 
 
 class PrivateLink(ObjectIDMixin, BaseModel):
     key = models.CharField(max_length=512, null=False, unique=True, blank=False)
     name = models.CharField(max_length=255, blank=True, null=True)
     is_deleted = models.BooleanField(default=False)
+    deleted = NonNaiveDateTimeField(blank=True, null=True)
     anonymous = models.BooleanField(default=False)
 
     nodes = models.ManyToManyField('AbstractNode', related_name='private_links')
