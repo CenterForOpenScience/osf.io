@@ -170,7 +170,7 @@ def celery_beat(ctx, level='debug', schedule=None):
     ctx.run(bin_prefix(cmd), pty=True)
 
 @task
-def migrate_search(ctx, delete=False, index=settings.ELASTIC_INDEX):
+def migrate_search(ctx, delete=True, remove=False, index=settings.ELASTIC_INDEX):
     """Migrate the search-enabled models."""
     from website.app import init_app
     init_app(routes=False, set_backends=False)
@@ -182,7 +182,7 @@ def migrate_search(ctx, delete=False, index=settings.ELASTIC_INDEX):
     for logger in SILENT_LOGGERS:
         logging.getLogger(logger).setLevel(logging.ERROR)
 
-    migrate(delete, index=index)
+    migrate(delete, remove=remove, index=index)
 
 @task
 def rebuild_search(ctx):
@@ -207,7 +207,7 @@ def rebuild_search(ctx):
     print('Creating index {}'.format(settings.ELASTIC_INDEX))
     print('----- PUT {}'.format(url))
     requests.put(url)
-    migrate_search(ctx)
+    migrate_search(ctx, delete=False)
 
 
 @task
@@ -462,7 +462,8 @@ def test_travis_else(ctx, numprocesses=None):
 def test_travis_api1_and_js(ctx, numprocesses=None):
     flake(ctx)
     jshint(ctx)
-    karma(ctx)
+    # TODO: Uncomment when https://github.com/travis-ci/travis-ci/issues/8836 is resolved
+    # karma(ctx)
     test_api1(ctx, numprocesses=numprocesses)
 
 
