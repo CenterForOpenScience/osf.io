@@ -15,9 +15,15 @@ $(document).ready(function() {
         $('#show-modify-form').text(new_text);
     });
 
+    var blackoutDates = JSON.parse($('#blackout-dates')[0].value);
+
     $(".datepicker").datepicker({
         format: "mm/dd/yyyy",
-        startDate: "+0d"
+        startDate: "+0d",
+        beforeShowDay: function(date){
+            var string = $.datepicker.formatDate('yy-mm-dd', date);
+            return [ blackoutDates.indexOf(string) === -1];
+        }
     });
 
     $(".colorpicker").colorpicker();

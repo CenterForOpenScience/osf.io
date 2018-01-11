@@ -1,5 +1,8 @@
 from __future__ import unicode_literals
 
+import json
+from datetime import timedelta
+
 from django.shortcuts import redirect
 from django.forms.models import model_to_dict
 from django.core.urlresolvers import reverse_lazy
@@ -10,6 +13,18 @@ from django.contrib import messages
 from admin.banners.forms import BannerForm
 from osf.models import ScheduledBanner
 
+
+def daterange(start_date, end_date):
+    for n in range(int((end_date - start_date).days) + 1):
+        yield start_date + timedelta(n)
+
+
+def get_blackout_dates(current_banner_id=None):
+    blackout_dates = []
+    for banner in ScheduledBanner.objects.exclude(id=current_banner_id):
+        for dt in daterange(banner.start_date, banner.end_date):
+            blackout_dates.append(dt.strftime('%Y-%m-%d'))
+    return blackout_dates
 
 class BannerList(PermissionRequiredMixin, ListView):
     paginate_by = 25
@@ -49,6 +64,7 @@ class BannerDisplay(PermissionRequiredMixin, DetailView):
         kwargs['change_form'] = BannerForm(initial=fields)
         kwargs['default_photo'] = banner.default_photo.url
         kwargs['mobile_photo'] = banner.mobile_photo.url
+        kwargs['blackoutDates'] = json.dumps(get_blackout_dates(banner.id))
 
         return kwargs
 
@@ -99,6 +115,7 @@ class CreateBanner(PermissionRequiredMixin, CreateView):
     form_class = BannerForm
 
     def get_context_data(self, *args, **kwargs):
+        kwargs['blackoutDates'] = json.dumps(get_blackout_dates())
         return super(CreateBanner, self).get_context_data(*args, **kwargs)
 
 
