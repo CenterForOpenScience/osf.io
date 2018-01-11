@@ -216,7 +216,7 @@ class HMACSignedParser(JSONParser):
 
     def parse(self, stream, media_type=None, parser_context=None):
         """
-        Parses the incoming bytestream as JSON and returns the resulting data.
+        Parses the incoming bytestream as JSON. Validates the 'signature' in the payload then returns the resulting data.
         """
         data = super(HMACSignedParser, self).parse(stream, media_type=media_type, parser_context=parser_context)
 
