@@ -338,7 +338,8 @@
 
 <%def name="javascript_bottom()">
     ### Javascript loaded at the bottom of the page ###
-    <script src="${wafflejs_url}"></script>
+    <!-- Uncomment to include a waffle object to access flags, samples, and switches. -->
+    <!-- <script src="${wafflejs_url}"></script> -->
 </%def>
 
 <%def name="footer()">
