@@ -105,7 +105,7 @@ class BaseFileNode(TypedModel, CommentableMixin, OptionalGuidMixin, Taggable, Ob
     _materialized_path = models.TextField(blank=True, null=True)  # 482 on staging
 
     is_deleted = False
-    deleted_on = NonNaiveDateTimeField(blank=True, null=True)
+    deleted = NonNaiveDateTimeField(blank=True, null=True)
     deleted_by = models.ForeignKey('osf.OSFUser', related_name='files_deleted_by', null=True, blank=True, on_delete=models.CASCADE)
 
     objects = BaseFileNodeManager()

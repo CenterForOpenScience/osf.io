@@ -14,6 +14,7 @@ from osf.models.external import ExternalAccount
 from osf.models.node import AbstractNode
 from osf.models.user import OSFUser
 from osf.utils.datetime_aware_jsonfield import DateTimeAwareJSONField
+from osf.utils.fields import NonNaiveDateTimeField
 from website import settings
 from addons.base import logger, serializer
 from website.oauth.signals import oauth_complete
@@ -38,7 +39,8 @@ lookup = TemplateLookup(
 
 
 class BaseAddonSettings(ObjectIDMixin, BaseModel):
-    deleted = models.BooleanField(default=False)
+    is_deleted = models.BooleanField(default=False)
+    deleted = NonNaiveDateTimeField(null=True, blank=True)
 
     class Meta:
         abstract = True
@@ -52,7 +54,7 @@ class BaseAddonSettings(ObjectIDMixin, BaseModel):
         return self.config.short_name
 
     def delete(self, save=True):
-        self.deleted = True
+        self.is_deleted = True
         self.on_delete()
         if save:
             self.save()

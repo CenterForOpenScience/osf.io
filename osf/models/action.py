@@ -8,6 +8,7 @@ from include import IncludeManager
 from osf.models.base import BaseModel, ObjectIDMixin
 from osf.utils.workflows import DefaultStates, DefaultTriggers, ReviewStates, ReviewTriggers
 from osf.utils import permissions
+from osf.utils.fields import NonNaiveDateTimeField
 
 
 class BaseAction(ObjectIDMixin, BaseModel):
@@ -26,6 +27,7 @@ class BaseAction(ObjectIDMixin, BaseModel):
 
     is_deleted = models.BooleanField(default=False)
     auto = models.BooleanField(default=False)
+    deleted = NonNaiveDateTimeField(blank=True, null=True)
 
     @property
     def target(self):
