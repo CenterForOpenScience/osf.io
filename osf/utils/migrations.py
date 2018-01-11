@@ -1,8 +1,10 @@
 import os
+import itertools
 import json
 import logging
 
 from contextlib import contextmanager
+from django.apps import apps
 
 from website import settings
 from osf.models import NodeLicense, MetaSchema
@@ -11,17 +13,33 @@ from website.project.metadata.schemas import OSF_META_SCHEMAS
 logger = logging.getLogger(__file__)
 
 
-@contextmanager
-def disable_auto_now_fields(model):
+def get_osf_models():
     """
-    Context manager to disable updates of all auto_now fields for a given model.
+    Helper function to retrieve all osf related models.
 
+    Example usage:
+        with disable_auto_now_fields(models=get_osf_models()):
+            ...
     """
+    return list(itertools.chain(*[app.get_models() for app in apps.get_app_configs() if app.label.startswith('addons_') or app.label.startswith('osf')]))
+
+@contextmanager
+def disable_auto_now_fields(models=None):
+    """
+    Context manager to disable auto_now field updates.
+    If models=None, updates for all auto_now fields on *all* models will be disabled.
+
+    :param list models: Optional list of models for which auto_now field updates should be disabled.
+    """
+    if not models:
+        models = apps.get_models()
+
     changed = []
-    for field in model._meta.get_fields():
-        if hasattr(field, 'auto_now') and field.auto_now:
-            field.auto_now = False
-            changed.append(field)
+    for model in models:
+        for field in model._meta.get_fields():
+            if hasattr(field, 'auto_now') and field.auto_now:
+                field.auto_now = False
+                changed.append(field)
     try:
         yield
     finally:
