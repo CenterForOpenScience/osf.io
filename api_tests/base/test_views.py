@@ -37,9 +37,11 @@ for mod in URLS_MODULES:
     for patt in urlpatterns:
         VIEW_CLASSES.append(patt.callback.cls)
 
-EXCLUDED_VIEWS = [MoveFileMetadataView, CopyFileMetadataView]
 
 class TestApiBaseViews(ApiTestCase):
+    def setUp(self):
+        super(TestApiBaseViews, self).setUp()
+        self.EXCLUDED_VIEWS = [MoveFileMetadataView, CopyFileMetadataView]
 
     def test_root_returns_200(self):
         res = self.app.get('/{}'.format(API_BASE))
@@ -65,7 +67,7 @@ class TestApiBaseViews(ApiTestCase):
             (IsAuthenticated, IsAuthenticatedOrReadOnly)
         ]
         for view in VIEW_CLASSES:
-            if view in EXCLUDED_VIEWS:
+            if view in self.EXCLUDED_VIEWS:
                 continue
             for cls in base_permissions:
                 if isinstance(cls, tuple):
@@ -83,7 +85,7 @@ class TestApiBaseViews(ApiTestCase):
 
     def test_view_classes_support_embeds(self):
         for view in VIEW_CLASSES:
-            if view in EXCLUDED_VIEWS:
+            if view in self.EXCLUDED_VIEWS:
                 continue
             assert_true(hasattr(view, '_get_embed_partial'), "{0} lacks embed support".format(view))
 
