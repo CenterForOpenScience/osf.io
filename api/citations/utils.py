@@ -1,14 +1,12 @@
 import os
 import re
-from urlparse import urlparse
-import xml.etree.ElementTree as etree
 
 from citeproc import CitationStylesStyle, CitationStylesBibliography
 from citeproc import Citation, CitationItem
 from citeproc import formatter
 from citeproc.source.json import CiteProcJSON
 
-from osf.models import PreprintService
+from osf.models import PreprintService, CitationStyle
 from website.citations.utils import datetime_to_csl
 from website.settings import CITATION_STYLES_PATH, BASE_PATH, CUSTOM_CITATIONS
 
@@ -61,17 +59,13 @@ def render_citation(node, style='apa'):
     try:
         bib_style = CitationStylesStyle(path, validate=False)
     except ValueError:
-        dependent_path = os.path.join(CITATION_STYLES_PATH, 'dependent', style)
-        if dependent_path:
-            root = etree.parse('{}.csl'.format(dependent_path)).getroot()
-            for child in root[0]:
-                if 'link' in child.tag and child.get('rel') == 'independent-parent':
-                    style = urlparse(child.get('href')).path.split('/')[-1]
-                    path = os.path.join(CITATION_STYLES_PATH, style)
-                    bib_style = CitationStylesStyle(path, validate=False)
-                    break
-            else:
-                ValueError('Unable to find the independent style related to {}.csl'.format(style))
+        citation_style = CitationStyle.load(style)
+        if citation_style is not None and citation_style.has_parent_style:
+            parent_style = citation_style.parent_style
+            parent_path = os.path.join(CITATION_STYLES_PATH, parent_style)
+            bib_style = CitationStylesStyle(parent_path, validate=False)
+        else:
+            raise ValueError('Unable to find a dependent or independent parent style related to {}.csl'.format(style))
 
     bibliography = CitationStylesBibliography(bib_style, bib_source, formatter.plain)
 
