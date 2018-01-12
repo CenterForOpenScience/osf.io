@@ -588,7 +588,7 @@ class TestConferenceIntegration(ContextTestCase):
         nodes = AbstractNode.objects.filter(title=title)
         assert_equal(nodes.count(), 1)
         node = nodes[0]
-        assert_equal(node.get_wiki_page('home').content, body)
+        assert_equal(node.get_wiki_version('home').content, body)
         assert_true(mock_send_mail.called)
         call_args, call_kwargs = mock_send_mail.call_args
         assert_absolute(call_kwargs['conf_view_url'])
@@ -677,7 +677,7 @@ class TestConferenceIntegration(ContextTestCase):
         nodes = AbstractNode.objects.filter(title=title)
         assert_equal(nodes.count(), 1)
         node = nodes[0]
-        assert_equal(node.get_wiki_page('home').content, body)
+        assert_equal(node.get_wiki_version('home').content, body)
         assert_true(mock_send_mail.called)
         call_args, call_kwargs = mock_send_mail.call_args
         assert_absolute(call_kwargs['conf_view_url'])
