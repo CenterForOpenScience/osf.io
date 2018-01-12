@@ -14,16 +14,6 @@ settings_routes = {
     'prefix': '/api/v1',
 }
 
-widget_routes = {
-    'rules': [
-        Rule([
-            '/project/<pid>/wiki/widget/',
-            '/project/<pid>/node/<nid>/wiki/widget/',
-        ], 'get', views.wiki_widget, json_renderer),
-    ],
-    'prefix': '/api/v1',
-}
-
 # NOTE: <wname> refers to a wiki page's key, e.g. 'Home'
 page_routes = {
 

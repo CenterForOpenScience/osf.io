@@ -5,7 +5,7 @@ import json
 import bleach
 
 
-def strip_html(unclean, tags=[]):
+def strip_html(unclean, tags=None):
     """Sanitize a string, removing (as opposed to escaping) HTML tags
 
     :param unclean: A string to be stripped of HTML tags
@@ -13,8 +13,12 @@ def strip_html(unclean, tags=[]):
     :return: stripped string
     :rtype: str
     """
+    if not tags:
+        tags = []
+
     # We make this noop for non-string, non-collection inputs so this function can be used with higher-order
     # functions, such as rapply (recursively applies a function to collections)
+    tags = tags or []
     if not isinstance(unclean, basestring) and not is_iterable(unclean) and unclean is not None:
         return unclean
     return bleach.clean(unclean, strip=True, tags=tags, attributes=[], styles=[])

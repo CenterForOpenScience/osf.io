@@ -1,5 +1,4 @@
 # -*- coding: utf-8 -*-
-import functools
 import time
 
 import datetime
@@ -26,7 +25,7 @@ from framework.auth.core import Auth
 from osf import models
 from osf.models.sanctions import Sanction
 from osf.utils.names import impute_names_model
-from osf.modm_compat import Q
+from osf.utils.workflows import DefaultStates, DefaultTriggers
 from addons.osfstorage.models import OsfStorageFile
 
 fake = Factory.create()
@@ -177,7 +176,7 @@ class UnconfirmedUserFactory(DjangoModelFactory):
 class BaseNodeFactory(DjangoModelFactory):
     title = factory.Faker('catch_phrase')
     description = factory.Faker('sentence')
-    date_created = factory.LazyFunction(timezone.now)
+    created = factory.LazyFunction(timezone.now)
     creator = factory.SubFactory(AuthUserFactory)
 
     class Meta:
@@ -246,9 +245,7 @@ class NodeLicenseRecordFactory(DjangoModelFactory):
     def _create(cls, *args, **kwargs):
         kwargs['node_license'] = kwargs.get(
             'node_license',
-            models.NodeLicense.find_one(
-                Q('name', 'eq', 'No license')
-            )
+            models.NodeLicense.objects.get(name='No license')
         )
         return super(NodeLicenseRecordFactory, cls)._create(*args, **kwargs)
 
@@ -585,6 +582,8 @@ class PreprintFactory(DjangoModelFactory):
         subjects = kwargs.pop('subjects', None) or [[SubjectFactory()._id]]
         instance.node.preprint_article_doi = doi
 
+        instance.machine_state = kwargs.pop('machine_state', 'initial')
+
         user = kwargs.pop('creator', None) or instance.node.creator
         if not instance.node.is_contributor(user):
             instance.node.add_contributor(
@@ -801,3 +800,18 @@ class SessionFactory(DjangoModelFactory):
 class ArchiveJobFactory(DjangoModelFactory):
     class Meta:
         model = models.ArchiveJob
+
+
+class ReviewActionFactory(DjangoModelFactory):
+    class Meta:
+        model = models.ReviewAction
+
+    trigger = FuzzyChoice(choices=DefaultTriggers.values())
+    comment = factory.Faker('text')
+    from_state = FuzzyChoice(choices=DefaultStates.values())
+    to_state = FuzzyChoice(choices=DefaultStates.values())
+
+    target = factory.SubFactory(PreprintFactory)
+    creator = factory.SubFactory(AuthUserFactory)
+
+    is_deleted = False

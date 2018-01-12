@@ -92,6 +92,7 @@ var returnTextParams = function (param, text, logObject, view_url) {
         if (type === 'wiki_updated' && source === 'home') {
             source = 'Home';
         }
+        source = $osf.decodeText(source);
         return view_url ? m('a', {href: $osf.toRelativeUrl(view_url, window)}, source) : m('span', source);
     }
     return m('span', text);
@@ -238,23 +239,23 @@ var LogPieces = {
             // Log action is node_removed
             if (logObject.attributes.action === 'node_removed') {
                 if (logObject.attributes.params.params_node) {
-                    return m('span', logObject.attributes.params.params_node.title);
+                    return m('span', $osf.decodeText(logObject.attributes.params.params_node.title));
             }}
             else if(paramIsReturned(nodeObject, logObject) && nodeObject.data){
                 if (nodeObject.data.links && nodeObject.data.attributes) {
                     return m('a', {href: $osf.toRelativeUrl(nodeObject.data.links.html, window), onclick: function() {
                         $osf.trackClick(logObject.trackingCategory, logObject.trackingAction, 'navigate-to-project-from-logs');
-                    }}, nodeObject.data.attributes.title);
+                    }}, $osf.decodeText(nodeObject.data.attributes.title));
                 }
                 else if (nodeObject.data.attributes) {
-                    return m('span', nodeObject.data.attributes.title);
+                    return m('span', $osf.decodeText(nodeObject.data.attributes.title));
                 }
             }
             // Original node has been deleted
             else if (!paramIsReturned(nodeObject, logObject)) {
                 var deletedNode = logObject.attributes.params.params_node;
                 if (paramIsReturned(deletedNode, logObject)){
-                     return m('span', deletedNode.title);
+                     return m('span', $osf.decodeText(deletedNode.title));
                 }
             }
             return m('span', 'a project');
@@ -286,7 +287,7 @@ var LogPieces = {
         view: function(ctrl, logObject) {
             var forkedFrom = logObject.attributes.params.params_node;
             var id = forkedFrom.id;
-            var title = forkedFrom.title;
+            var title = $osf.decodeText(forkedFrom.title);
             if (paramIsReturned(forkedFrom, logObject) && title){
                 if (id) {
                     return m('a', {href: '/' + id + '/' }, title);
@@ -300,36 +301,35 @@ var LogPieces = {
     pointer: {
         view: function (ctrl, logObject) {
             var linked_node = logObject.embeds.linked_node;
-            if(paramIsReturned(linked_node, logObject)){
-                return m('a', {href: $osf.toRelativeUrl(linked_node.data.links.html, window)}, linked_node.data.attributes.title);
+            if (linked_node && paramIsReturned(linked_node, logObject) && !linked_node.errors) {
+                return m('a', {href: $osf.toRelativeUrl(linked_node.data.links.html, window)}, $osf.decodeText(linked_node.data.attributes.title));
             }
-            // Applicable when pointer has been deleted
-            var pointer_info = logObject.attributes.params.pointer;
-            if (paramIsReturned(pointer_info, logObject)) {
-                return m('span', pointer_info.title);
+            var linked_registration = logObject.embeds.linked_registration;
+            if (linked_registration && paramIsReturned(linked_registration, logObject) && !linked_registration.errors) {
+                return m('a', {href: $osf.toRelativeUrl(linked_registration.data.links.html, window)}, $osf.decodeText(linked_registration.data.attributes.title));
             }
-            return m('span','a project');
+            return m('span', 'a project');
         }
     },
     // Pointer category
     pointer_category: {
         view: function (ctrl, logObject) {
             var linked_node = logObject.embeds.linked_node;
-            if(paramIsReturned(linked_node, logObject)){
-                var category = linked_node.data.attributes.category;
+            var category = '';
+            if (linked_node && paramIsReturned(linked_node, logObject) && !linked_node.errors) {
+                category = linked_node.data.attributes.category;
                 if (category !== '') {
                     return m('span', linked_node.data.attributes.category);
                 }
             }
-
-            var linkedNodeParams = logObject.attributes.params.pointer;
-            if (paramIsReturned(linkedNodeParams, logObject)) {
-                if (linkedNodeParams.category !== '') {
-                     return m('span', linkedNodeParams.category);
+            var linked_registration = logObject.embeds.linked_registration;
+            if (linked_registration && paramIsReturned(linked_registration, logObject) && !linked_registration.errors) {
+                category = linked_registration.data.attributes.category;
+                if (category !== '') {
+                    return m('span', linked_registration.data.attributes.category);
                 }
-
             }
-            return m('span','project');
+            return m('span', '');
         }
     },
     // Node that acted as template to create a new node involved
@@ -338,12 +338,12 @@ var LogPieces = {
             var template_node = logObject.embeds.template_node;
 
             if(paramIsReturned(template_node, logObject)){
-                return m('a', {href: $osf.toRelativeUrl(template_node.data.links.html, window)}, template_node.data.attributes.title);
+                return m('a', {href: $osf.toRelativeUrl(template_node.data.links.html, window)}, $osf.decodeText(template_node.data.attributes.title));
             }
 
             var templateFromParams = logObject.attributes.params.template_node;
                 if (paramIsReturned(templateFromParams, logObject && templateFromParams.title)){
-                    return m('span', templateFromParams.title);
+                    return m('span', $osf.decodeText(templateFromParams.title));
                 }
             return m('span','a project' );
         }
@@ -581,6 +581,17 @@ var LogPieces = {
         }
     },
 
+    onedrive_folder: {
+        view: function(ctrl, logObject) {
+            var folder = logObject.attributes.params.folder;
+
+            if(paramIsReturned(folder, logObject)){
+                return m('span', folder === '/' ? '/ (Full OneDrive)' : folder);
+            }
+            return m('span', '');
+        }
+    },
+
     citation: {
         view: function(ctrl, logObject) {
             return returnTextParams('citation_name', '', logObject);
@@ -724,7 +735,18 @@ var LogPieces = {
             }
             return m('span', 'a');
         }
-    }
+    },
+
+    gitlab_repo: {
+        view: function(ctrl, logObject){
+            var gitlab_user = logObject.attributes.params.gitlab_user;
+            var gitlab_repo = logObject.attributes.params.gitlab_repo;
+            if (paramIsReturned(gitlab_repo, logObject) && paramIsReturned(gitlab_user, logObject)) {
+                return m('span', gitlab_user + '/' + gitlab_repo);
+            }
+            return m('span', '');
+        }
+    },
 };
 
 module.exports = {

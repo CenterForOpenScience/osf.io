@@ -4,10 +4,11 @@ Files views.
 from flask import request
 
 from website.util import rubeus
-from website.project.decorators import must_be_contributor_or_public
+from website.project.decorators import must_be_contributor_or_public, must_not_be_retracted_registration
 from website.project.views.node import _view_project
 
 
+@must_not_be_retracted_registration
 @must_be_contributor_or_public
 def collect_file_trees(auth, node, **kwargs):
     """Collect file trees for all add-ons implementing HGrid views, then

@@ -94,6 +94,9 @@ var ShareJSDoc = function(url, metadata, viewText, editor) {
     }
     // Send user metadata
     function register() {
+        // our shareJS explicitly wants 'userGravatar' and not our more general 'userProfileImage'
+        // see https://github.com/CenterForOpenScience/sharejs/search?utf8=%E2%9C%93&q=gravatar&type=
+        metadata.userGravatar = metadata.userProfileImage;
         socket.send(JSON.stringify(metadata));
     }
 
@@ -180,6 +183,8 @@ var ShareJSDoc = function(url, metadata, viewText, editor) {
         onopen(event);
         if (madeConnection) {
             viewModel.status('connected');
+        } else {
+            viewModel.status('disconnected');
         }
     };
     // This will be called on both connect and reconnect

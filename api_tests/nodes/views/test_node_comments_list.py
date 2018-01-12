@@ -980,12 +980,12 @@ class TestCommentFiltering:
 
     @pytest.fixture()
     def date_created_formatted(self, comment):
-        return comment.date_created.strftime('%Y-%m-%dT%H:%M:%S.%f')
+        return comment.created.strftime('%Y-%m-%dT%H:%M:%S.%f')
 
     @pytest.fixture()
     def date_modified_formatted(self, user, comment):
         comment.edit('Edited comment', auth=core.Auth(user), save=True)
-        return comment.date_modified.strftime('%Y-%m-%dT%H:%M:%S.%f')
+        return comment.modified.strftime('%Y-%m-%dT%H:%M:%S.%f')
 
     def test_filtering(self, app, user, project, comment, comment_deleted, date_created_formatted, date_modified_formatted, url_base):
 

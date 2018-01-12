@@ -23,8 +23,8 @@ class CollectionSerializer(JSONAPISerializer):
     type = TypeField()
 
     title = ser.CharField(required=True)
-    date_created = DateByVersion(read_only=True)
-    date_modified = DateByVersion(read_only=True)
+    date_created = DateByVersion(source='created', read_only=True)
+    date_modified = DateByVersion(source='modified', read_only=True)
     bookmarks = ser.BooleanField(read_only=False, default=False, source='is_bookmark_collection')
 
     links = LinksField({})

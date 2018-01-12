@@ -17,7 +17,7 @@ from website.project.signals import comment_added, mention_added, contributor_ad
 from framework.exceptions import PermissionsError
 from tests.base import capture_signals
 from osf.models import Comment, NodeLog, Guid, BaseFileNode
-from osf.utils.auth import Auth
+from framework.auth.core import Auth
 from .factories import (
     CommentFactory,
     ProjectFactory,

@@ -21,7 +21,7 @@ def list_citation_styles():
             Q(short_title__icontains=query)
         )
     return {
-        'styles': [style.to_json() for style in citation_styles]
+        'styles': [style.to_json() for style in citation_styles if style.has_bibliography]
     }
 
 
