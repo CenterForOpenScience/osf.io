@@ -9,7 +9,7 @@ class Commentable(object):
     @property
     def root_target_page(self):
         """The page type associated with the object/Comment.root_target.
-        E.g. For a NodeWikiPage, the page name is 'wiki'."""
+        E.g. For a WikiPage, the page name is 'wiki'."""
         raise NotImplementedError
 
     @property

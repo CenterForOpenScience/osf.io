@@ -104,7 +104,6 @@ from osf.models import OSFUser
 from osf.models import NodeRelation, Guid
 from osf.models import BaseFileNode
 from osf.models.files import File, Folder
-from addons.wiki.models import NodeWikiPage
 from website import mails
 from website.exceptions import NodeStateError
 from website.util.permissions import ADMIN, PERMISSIONS
@@ -2880,9 +2879,7 @@ class NodeWikiList(JSONAPIBaseView, generics.ListAPIView, NodeMixin, ListFilterM
     ordering = ('-date', )  # default ordering
 
     def get_default_queryset(self):
-        node = self.get_node()
-        node_wiki_pages = node.wiki_pages_current.values() if node.wiki_pages_current else []
-        return NodeWikiPage.objects.filter(guids___id__in=node_wiki_pages)
+        return self.get_node().wikis.filter(is_deleted=False)
 
     def get_queryset(self):
         return self.get_queryset_from_request()
