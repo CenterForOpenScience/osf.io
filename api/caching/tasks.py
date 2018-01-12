@@ -36,6 +36,7 @@ def get_bannable_urls(instance):
             except AttributeError:
                 # some referents don't have an absolute_api_v2_url
                 # I'm looking at you NodeWikiPage
+                # Note: NodeWikiPage has been deprecated. Is this an issue with WikiPage/WikiVersion?
                 pass
             else:
                 url_string = '{scheme}://{netloc}{path}.*'.format(scheme=varnish_parsed_url.scheme,

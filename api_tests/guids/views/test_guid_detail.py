@@ -1,7 +1,6 @@
 import pytest
 
 from addons.osfstorage.models import OsfStorageFile
-from addons.wiki.tests.factories import NodeWikiFactory
 from api.base.settings.defaults import API_BASE
 from osf_tests.factories import (
     AuthUserFactory,

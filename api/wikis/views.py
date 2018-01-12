@@ -12,9 +12,12 @@ from api.wikis.serializers import (
     NodeWikiDetailSerializer,
     RegistrationWikiDetailSerializer,
 )
+from api.wiki_versions.serializers import (
+    WikiVersionSerializer,
+)
 
 from framework.auth.oauth_scopes import CoreScopes
-from addons.wiki.models import NodeWikiPage
+from addons.wiki.models import WikiPage
 
 
 class WikiMixin(object):
@@ -27,16 +30,12 @@ class WikiMixin(object):
 
     def get_wiki(self, check_permissions=True):
         pk = self.kwargs[self.wiki_lookup_url_kwarg]
-        wiki = NodeWikiPage.load(pk)
+        wiki = WikiPage.load(pk)
         if not wiki:
             raise NotFound
 
         if wiki.is_deleted:
             raise Gone
-
-        # only show current wiki versions
-        if not wiki.is_current:
-            raise NotFound
 
         if check_permissions:
             # May raise a permission denied
@@ -143,4 +142,63 @@ class WikiContent(JSONAPIBaseView, generics.RetrieveAPIView, WikiMixin):
 
     def get(self, request, **kwargs):
         wiki = self.get_wiki()
-        return Response(wiki.content)
+        return Response(wiki.get_version().content)
+
+class WikiVersions(JSONAPIBaseView, generics.ListAPIView, WikiMixin):
+    """View for rendering all versions of a particular WikiPage
+
+    ###Permissions
+
+    Wiki versions on public nodes are given read-only access to everyone. Wiki versions on private nodes are only visible to
+    contributors and administrators on the parent node.
+
+    Note that if an anonymous view_only key is being used, the user relationship will not be exposed.
+
+    ##Attributes
+
+    OSF wiki entities have the "wikis" `type`.
+
+        name                        type                   description
+        ======================================================================================================
+        date_modified               iso8601 timestamp      timestamp when the wiki version was last updated
+        content_type                string                 MIME-type
+        identifier                  integer                version number of the wiki
+
+    ##Relationships
+
+    ###User
+
+    The user who created the wiki version.
+
+    ###WikiPage
+
+    The wiki that this version belongs to
+
+    ##Links
+
+        self:  the canonical api endpoint of this wiki
+        download: the link to retrive the contents of the wiki version
+
+    ##Query Params
+
+    *None*.
+
+    #This Request/Response
+
+    """
+
+    permission_classes = (
+        drf_permissions.IsAuthenticatedOrReadOnly,
+        base_permissions.TokenHasScope,
+        ContributorOrPublic,
+        ExcludeWithdrawals
+    )
+    view_category = 'wikis'
+    view_name = 'wiki-versions'
+    serializer_class = WikiVersionSerializer
+
+    required_read_scopes = [CoreScopes.WIKI_BASE_READ]
+    required_write_scopes = [CoreScopes.NULL]
+
+    def get_queryset(self):
+        return self.get_wiki().get_versions()

@@ -2,7 +2,7 @@
 import pytest
 import mock
 
-from addons.wiki.tests.factories import NodeWikiFactory
+from addons.wiki.tests.factories import WikiFactory, WikiVersionFactory
 from api.base.settings import osf_settings
 from api.base.settings.defaults import API_BASE
 from api_tests import utils as test_utils
@@ -179,26 +179,26 @@ class TestNodeCommentsListWiki(NodeCommentsListMixin):
     @pytest.fixture()
     def project_private_dict(self, user):
         project_private = ProjectFactory(is_public=False, creator=user)
-        wiki_private = NodeWikiFactory(node=project_private, user=user)
-        comment_private = CommentFactory(node=project_private, user=user, target=Guid.load(wiki_private._id), page='wiki')
+        wiki_page_private = WikiFactory(node=project_private, user=user)
+        comment_private = CommentFactory(node=project_private, user=user, target=Guid.load(wiki_page_private._id), page='wiki')
         url_private = '/{}nodes/{}/comments/'.format(API_BASE, project_private._id)
-        return {'project': project_private, 'wiki': wiki_private, 'comment': comment_private, 'url': url_private}
+        return {'project': project_private, 'wiki': wiki_page_private, 'comment': comment_private, 'url': url_private}
 
     @pytest.fixture()
     def project_public_dict(self, user):
         project_public = ProjectFactory(is_public=True, creator=user)
-        wiki_public = NodeWikiFactory(node=project_public, user=user)
-        comment_public = CommentFactory(node=project_public, user=user, target=Guid.load(wiki_public._id), page='wiki')
+        wiki_page_public = WikiFactory(node=project_public, user=user)
+        comment_public = CommentFactory(node=project_public, user=user, target=Guid.load(wiki_page_public._id), page='wiki')
         url_public = '/{}nodes/{}/comments/'.format(API_BASE, project_public._id)
-        return {'project': project_public, 'wiki': wiki_public, 'comment': comment_public, 'url': url_public}
+        return {'project': project_public, 'wiki': wiki_page_public, 'comment': comment_public, 'url': url_public}
 
     @pytest.fixture()
     def registration_dict(self, user):
         registration = RegistrationFactory(creator=user)
-        wiki_registration = NodeWikiFactory(node=registration, user=user)
-        comment_registration = CommentFactory(node=registration, user=user, target=Guid.load(wiki_registration._id), page='wiki')
+        wiki_page_registration = WikiFactory(node=registration, user=user)
+        comment_registration = CommentFactory(node=registration, user=user, target=Guid.load(wiki_page_registration._id), page='wiki')
         url_registration = '/{}registrations/{}/comments/'.format(API_BASE, registration._id)
-        return {'registration': registration, 'wiki': wiki_registration, 'comment': comment_registration, 'url': url_registration}
+        return {'registration': registration, 'wiki': wiki_page_registration, 'comment': comment_registration, 'url': url_registration}
 
     def test_comments_on_deleted_wikis_are_not_returned(self, app, user, project_private_dict, mock_update_search=None):
         # Delete wiki
@@ -820,9 +820,9 @@ class TestWikiCommentCreate(NodeCommentsCreateMixin):
         project_private.add_contributor(user_read_contrib, permissions=['read'])
         project_private.save()
         url_private = '/{}nodes/{}/comments/'.format(API_BASE, project_private._id)
-        wiki = NodeWikiFactory(node=project_private, user=user)
-        payload_private = payload(wiki._id)
-        return {'project': project_private, 'url': url_private, 'wiki': wiki, 'payload': payload_private}
+        wiki_page_private = WikiFactory(node=project_private, user=user)
+        payload_private = payload(wiki_page_private._id)
+        return {'project': project_private, 'url': url_private, 'wiki': wiki_page_private, 'payload': payload_private}
 
     @pytest.fixture()
     def project_public_comment_private(self, user, user_read_contrib, payload):
@@ -830,9 +830,9 @@ class TestWikiCommentCreate(NodeCommentsCreateMixin):
         project_public.add_contributor(user_read_contrib, permissions=['read'])
         project_public.save()
         url_public = '/{}nodes/{}/comments/'.format(API_BASE, project_public._id)
-        wiki = NodeWikiFactory(node=project_public, user=user)
-        payload_public = payload(wiki._id)
-        return {'project': project_public, 'url': url_public, 'wiki': wiki, 'payload': payload_public}
+        wiki_page_public = WikiFactory(node=project_public, user=user)
+        payload_public = payload(wiki_page_public._id)
+        return {'project': project_public, 'url': url_public, 'wiki': wiki_page_public, 'payload': payload_public}
 
     @pytest.fixture()
     def project_public_comment_public(self, user, user_read_contrib, payload):
@@ -841,9 +841,9 @@ class TestWikiCommentCreate(NodeCommentsCreateMixin):
         project_public.add_contributor(user_read_contrib, permissions=['read'])
         project_public.save()
         url_public = '/{}nodes/{}/comments/'.format(API_BASE, project_public._id)
-        wiki = NodeWikiFactory(node=project_public, user=user)
-        payload_public = payload(wiki._id)
-        return {'project': project_public, 'url': url_public, 'wiki': wiki, 'payload': payload_public}
+        wiki_page_public = WikiFactory(node=project_public, user=user)
+        payload_public = payload(wiki_page_public._id)
+        return {'project': project_public, 'url': url_public, 'wiki': wiki_page_public, 'payload': payload_public}
 
     @pytest.fixture()
     def project_private_comment_public(self, user, user_read_contrib, payload):
@@ -851,19 +851,19 @@ class TestWikiCommentCreate(NodeCommentsCreateMixin):
         project_private.add_contributor(user_read_contrib, permissions=['read'])
         project_private.save()
         url_private = '/{}nodes/{}/comments/'.format(API_BASE, project_private._id)
-        wiki = NodeWikiFactory(node=project_private, user=user)
-        payload_private = payload(wiki._id)
-        return {'project': project_private, 'url': url_private, 'wiki': wiki, 'payload': payload_private}
+        wiki_page_private = WikiFactory(node=project_private, user=user)
+        payload_private = payload(wiki_page_private._id)
+        return {'project': project_private, 'url': url_private, 'wiki': wiki_page_private, 'payload': payload_private}
 
     def test_create_wiki_comment_errors(self, app, user, payload, project_private_comment_private, mock_update_search=None):
 
     #   test_create_wiki_comment_invalid_target_id
         project_dict = project_private_comment_private
-        wiki = NodeWikiFactory(node=ProjectFactory(), user=user)
-        payload_req = payload(wiki._id)
+        wiki_page = WikiFactory(node=ProjectFactory(), user=user)
+        payload_req = payload(wiki_page._id)
         res = app.post_json_api(project_dict['url'], payload_req, auth=user.auth, expect_errors=True)
         assert res.status_code == 400
-        assert res.json['errors'][0]['detail'] == 'Invalid comment target \'' + str(wiki._id) + '\'.'
+        assert res.json['errors'][0]['detail'] == 'Invalid comment target \'' + str(wiki_page._id) + '\'.'
 
     #   test_create_wiki_comment_invalid_target_type
         project_dict = project_private_comment_private
@@ -1090,12 +1090,12 @@ class TestCommentFiltering:
         assert test_file._id in res.json['data'][0]['relationships']['target']['links']['related']['href']
 
     def test_filtering_by_target_wiki(self, app, user, project, comment, comment_deleted, url_base):
-        test_wiki = NodeWikiFactory(node=project, user=user)
-        wiki_comment = CommentFactory(node=project, user=user, target=Guid.load(test_wiki._id), page='wiki')
-        url = url_base + '?filter[target]=' + str(test_wiki._id)
+        wiki_page = WikiFactory(node=project, user=user)
+        wiki_comment = CommentFactory(node=project, user=user, target=Guid.load(wiki_page._id), page='wiki')
+        url = url_base + '?filter[target]=' + str(wiki_page._id)
         res = app.get(url, auth=user.auth)
         assert len(res.json['data']) == 1
-        assert test_wiki.get_absolute_url() == res.json['data'][0]['relationships']['target']['links']['related']['href']
+        assert wiki_page.get_absolute_url() == res.json['data'][0]['relationships']['target']['links']['related']['href']
 
     def test_filtering_by_page_files(self, app, user, project, comment, comment_deleted, url_base):
         test_file = test_utils.create_test_file(project, user)
@@ -1106,8 +1106,8 @@ class TestCommentFiltering:
         assert 'files' == res.json['data'][0]['attributes']['page']
 
     def test_filtering_by_page_wiki(self, app, user, project, comment, comment_deleted, url_base):
-        test_wiki = NodeWikiFactory(node=project, user=user)
-        wiki_comment = CommentFactory(node=project, user=user, target=Guid.load(test_wiki._id), page='wiki')
+        wiki_page = WikiFactory(node=project, user=user)
+        wiki_comment = CommentFactory(node=project, user=user, target=Guid.load(wiki_page._id), page='wiki')
         url = url_base + '?filter[page]=wiki'
         res = app.get(url, auth=user.auth)
         assert len(res.json['data']) == 1

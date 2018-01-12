@@ -59,7 +59,7 @@ class WikiSerializer(JSONAPISerializer):
         return 'file'
 
     def get_size(self, obj):
-        return sys.getsizeof(obj.content)
+        return sys.getsizeof(obj.get_version().content)
 
     def get_current_user_can_comment(self, obj):
         user = self.context['request'].user
@@ -71,7 +71,7 @@ class WikiSerializer(JSONAPISerializer):
 
     def get_extra(self, obj):
         return {
-            'version': obj.version
+            'version': obj.get_version().identifier
         }
 
     def get_wiki_content(self, obj):
@@ -82,7 +82,6 @@ class WikiSerializer(JSONAPISerializer):
 
 
 class NodeWikiSerializer(WikiSerializer):
-
     node = RelationshipField(
         related_view='nodes:node-detail',
         related_view_kwargs={'node_id': '<node._id>'}
@@ -93,6 +92,11 @@ class NodeWikiSerializer(WikiSerializer):
         related_view_kwargs={'node_id': '<node._id>'},
         related_meta={'unread': 'get_unread_comments_count'},
         filter={'target': '<_id>'}
+    )
+
+    versions = RelationshipField(
+        related_view='wikis:wiki-versions',
+        related_view_kwargs={'wiki_id': '<_id>'},
     )
 
 
