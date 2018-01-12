@@ -11,12 +11,15 @@ from django.db import models
 from framework.forms.utils import sanitize
 from markdown.extensions import codehilite, fenced_code, wikilinks
 from osf.models import AbstractNode, NodeLog
-from osf.models.base import BaseModel, GuidMixin
+from osf.models.base import BaseModel, GuidMixin, ObjectIDMixin
 from osf.utils.fields import NonNaiveDateTimeField
+from osf.utils.requests import DummyRequest, get_request_and_user_id
 from website import settings
 from addons.wiki import utils as wiki_utils
 from website.exceptions import NodeStateError
 from website.util import api_v2_url
+from website.files.exceptions import VersionNotFoundError
+from website.util import get_headers_from_request
 
 from .exceptions import (
     NameEmptyError,
@@ -75,6 +78,219 @@ def render_content(content, node):
 
 def build_wiki_url(node, label, base, end):
     return '/{pid}/wiki/{wname}/'.format(pid=node._id, wname=label)
+
+
+class WikiVersion(ObjectIDMixin, BaseModel):
+    user = models.ForeignKey('osf.OSFUser', null=True, blank=True, on_delete=models.CASCADE)
+    wiki_page = models.ForeignKey('WikiPage', null=True, blank=True, on_delete=models.CASCADE, related_name='versions')
+    content = models.TextField(default='', blank=True)
+    identifier = models.IntegerField(default=1)
+    date = NonNaiveDateTimeField(auto_now_add=True)
+
+    @property
+    def is_current(self):
+        return not self.wiki_page.is_deleted and int(self.identifier) == self.wiki_page.current_version_number
+
+    def html(self, node):
+        """The cleaned HTML of the page"""
+        sanitized_content = render_content(self.content, node=node)
+        try:
+            from bleach import linkify
+
+            return linkify(
+                sanitized_content,
+                [nofollow, ],
+            )
+        except TypeError:
+            logger.warning('Returning unlinkified content.')
+            return sanitized_content
+
+    def raw_text(self, node):
+        """ The raw text of the page, suitable for using in a test search"""
+
+        return sanitize(self.html(node), tags=[], strip=True)
+
+    @property
+    def rendered_before_update(self):
+        return self.date < WIKI_CHANGE_DATE
+
+    def get_draft(self, node):
+        """
+        Return most recently edited version of wiki, whether that is the
+        last saved version or the most recent sharejs draft.
+        """
+
+        db = wiki_utils.share_db()
+        sharejs_uuid = wiki_utils.get_sharejs_uuid(node, self.wiki_page.page_name)
+
+        doc_item = db['docs'].find_one({'_id': sharejs_uuid})
+        if doc_item:
+            sharejs_version = doc_item['_v']
+            sharejs_timestamp = doc_item['_m']['mtime']
+            sharejs_timestamp /= 1000  # Convert to appropriate units
+            sharejs_date = datetime.datetime.utcfromtimestamp(sharejs_timestamp).replace(tzinfo=pytz.utc)
+
+            if sharejs_version > 1 and sharejs_date > self.date:
+                return doc_item['_data']
+
+        return self.content
+
+    def save(self, *args, **kwargs):
+        rv = super(WikiVersion, self).save(*args, **kwargs)
+        if self.wiki_page.node:
+            self.wiki_page.node.update_search()
+        self.wiki_page.date = self.date
+        self.wiki_page.save()
+        self.spam_check()
+        return rv
+
+    def spam_check(self):
+        request, user_id = get_request_and_user_id()
+        request_headers = {}
+        if not isinstance(request, DummyRequest):
+            request_headers = {
+                k: v
+                for k, v in get_headers_from_request(request).items()
+                if isinstance(v, basestring)
+            }
+        return self.wiki_page.node.check_spam(self.user, ['wiki_pages_current'], request_headers)
+
+    def clone_version(self, wiki_page):
+        """Clone a node wiki page.
+        :param wiki_page: The wiki_page you want attached to the clone.
+        :return: The cloned wiki version
+        """
+        clone = self.clone()
+        clone.wiki_page = wiki_page
+        clone.user = self.user
+        clone.save()
+        return clone
+
+    @property
+    def absolute_api_v2_url(self):
+        path = '/wiki_versions/{}/'.format(self._id)
+        return api_v2_url(path)
+
+    # used by django and DRF
+    def get_absolute_url(self):
+        return self.absolute_api_v2_url
+
+
+class WikiPage(GuidMixin, BaseModel):
+    page_name = models.CharField(max_length=200, validators=[validate_page_name, ])
+    date = NonNaiveDateTimeField(auto_now_add=True)
+    user = models.ForeignKey('osf.OSFUser', null=True, blank=True, on_delete=models.CASCADE)
+    node = models.ForeignKey('osf.AbstractNode', null=True, blank=True, on_delete=models.CASCADE, related_name='wikis')
+    is_deleted = models.BooleanField(default=False, db_index=True)
+
+    def save(self, *args, **kwargs):
+        rv = super(WikiPage, self).save(*args, **kwargs)
+        if self.node:
+            self.node.update_search()
+        return rv
+
+    def belongs_to_node(self, node_id):
+        """Check whether the wiki is attached to the specified node."""
+        return self.node._id == node_id
+
+    @property
+    def current_version_number(self):
+        if self.versions.exists():
+            return self.versions.count()
+        return 0
+
+    @property
+    def url(self):
+        return u'{}wiki/{}/'.format(self.node.url, self.page_name)
+
+    def create_version(self, user, content):
+        version = WikiVersion(user=user, wiki_page=self, content=content, identifier=self.current_version_number + 1)
+        version.save()
+        return version
+
+    def get_version(self, version=None, required=False):
+        if version is None:
+            if self.versions.exists():
+                return self.versions.last()
+            return None
+        try:
+            return self.versions.get(identifier=version)
+        except WikiVersion.DoesNotExist:
+            if required:
+                raise VersionNotFoundError(version)
+            return None
+
+    def get_versions(self):
+        return self.versions.all().order_by('-date')
+
+    def rename(self, new_name, save=True):
+        self.page_name = new_name
+        if save:
+            self.save()
+
+    @property
+    def root_target_page(self):
+        """The comment page type associated with WikiPages."""
+        return 'wiki'
+
+    @property
+    def deep_url(self):
+        return u'{}wiki/{}/'.format(self.node.deep_url, self.page_name)
+
+    def clone_wiki(self, node_id):
+        """Clone a wiki page.
+        :param node: The Node of the cloned wiki page
+        :return: The cloned wiki page
+        """
+        node = AbstractNode.load(node_id)
+        if not node:
+            raise ValueError('Invalid node')
+        clone = self.clone()
+        clone.node = node
+        clone.user = self.user
+        clone.save()
+        return clone
+
+    @classmethod
+    def clone_wiki_versions(cls, node, copy, user, save=True):
+        """Clone wiki pages for a forked or registered project.
+        First clones the WikiPage, then clones all WikiPage versions.
+        :param node: The Node that was forked/registered
+        :param copy: The fork/registration
+        :param user: The user who forked or registered the node
+        :param save: Whether to save the fork/registration
+        :return: copy
+        """
+        for wiki_page in node.wikis.all():
+            new_wiki_page = wiki_page.clone_wiki(copy._id)
+            if save:
+                new_wiki_page.save()
+            for version in wiki_page.get_versions():
+                new_version = version.clone_version(new_wiki_page)
+                if save:
+                    new_version.save()
+        return copy
+
+    def to_json(self, user):
+        return {}
+
+    def get_extra_log_params(self, comment):
+        return {'wiki': {'name': self.page_name, 'url': comment.get_comment_page_url()}}
+
+    # For Comment API compatibility
+    @property
+    def target_type(self):
+        """The object "type" used in the OSF v2 API."""
+        return 'wiki'
+
+    # used by django and DRF
+    def get_absolute_url(self):
+        return self.absolute_api_v2_url
+
+    @property
+    def absolute_api_v2_url(self):
+        path = '/wikis/{}/'.format(self._id)
+        return api_v2_url(path)
 
 
 class NodeWikiPage(GuidMixin, BaseModel):
@@ -290,12 +506,12 @@ class NodeSettings(BaseNodeSettings):
 
     def after_fork(self, node, fork, user, save=True):
         """Copy wiki settings and wiki pages to forks."""
-        NodeWikiPage.clone_wiki_versions(node, fork, user, save)
+        WikiPage.clone_wiki_versions(node, fork, user, save)
         return super(NodeSettings, self).after_fork(node, fork, user, save)
 
     def after_register(self, node, registration, user, save=True):
         """Copy wiki settings and wiki pages to registrations."""
-        NodeWikiPage.clone_wiki_versions(node, registration, user, save)
+        WikiPage.clone_wiki_versions(node, registration, user, save)
         clone = self.clone()
         clone.owner = registration
         if save:
