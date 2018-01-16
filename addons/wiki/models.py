@@ -145,6 +145,7 @@ class WikiVersion(ObjectIDMixin, BaseModel):
         return rv
 
     def spam_check(self):
+        # Since wiki_pages_current will be removed from Node model, when a new WikiVersion is saved, trigger a spam check.
         request, user_id = get_request_and_user_id()
         request_headers = {}
         if not isinstance(request, DummyRequest):
@@ -265,7 +266,7 @@ class WikiPage(GuidMixin, BaseModel):
             new_wiki_page = wiki_page.clone_wiki(copy._id)
             if save:
                 new_wiki_page.save()
-            for version in wiki_page.get_versions():
+            for version in wiki_page.get_versions().order_by('date'):
                 new_version = version.clone_version(new_wiki_page)
                 if save:
                     new_version.save()

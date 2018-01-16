@@ -2701,20 +2701,16 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
                 return None
         return WikiVersion.load(id)
 
-    def update_node_wiki(self, name, content, auth):
-        """Update the node's wiki page with new content.
+    def create_or_update_node_wiki(self, name, content, auth):
+        """Create a WikiPage and a WikiVersion if none exist, otherwise, just create a WikiVersion
 
         :param page: A string, the page's name, e.g. ``"home"``.
         :param content: A string, the posted content.
         :param auth: All the auth information including user, API key.
         """
         WikiPage = apps.get_model('addons_wiki.WikiPage')
-
-        current = None
         wiki_page = self.get_wiki_page(name)
-        if wiki_page:
-            current = wiki_page.get_version()
-        else:
+        if not wiki_page:
             wiki_page = WikiPage(
                 page_name=name,
                 user=auth.user,
@@ -2722,14 +2718,16 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
             )
             wiki_page.save()
         new_version = wiki_page.create_version(user=auth.user, content=content)
+        return wiki_page, new_version
 
-        if current:
-            for contrib in self.contributors:
-                if contrib.comments_viewed_timestamp.get(current._id, None):
-                    timestamp = contrib.comments_viewed_timestamp[current._id]
-                    contrib.comments_viewed_timestamp[new_version._id] = timestamp
-                    del contrib.comments_viewed_timestamp[current._id]
-                    contrib.save()
+    def update_node_wiki(self, name, content, auth):
+        """Update the node's wiki page with new content.
+
+        :param page: A string, the page's name, e.g. ``"home"``.
+        :param content: A string, the posted content.
+        :param auth: All the auth information including user, API key.
+        """
+        wiki_page, new_version = self.create_or_update_node_wiki(name, content, auth)
 
         self.add_log(
             action=NodeLog.WIKI_UPDATED,
