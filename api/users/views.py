@@ -549,7 +549,6 @@ class UserNodes(JSONAPIBaseView, generics.ListAPIView, UserMixin, NodesFilterMix
         return (
             AbstractNode.objects.filter(id__in=set(self.get_queryset_from_request().values_list('id', flat=True)))
             .select_related('node_license')
-            .order_by('-modified', )
             .include('contributor__user__guids', 'root__guids', limit_includes=10)
         )
 
