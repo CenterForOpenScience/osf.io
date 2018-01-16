@@ -143,26 +143,27 @@ def index():
 
     user_id = get_current_user_id()
     if user_id:  # Logged in: return either landing page or user home page
-        all_institutions = (
-            Institution.objects.filter(
-                is_deleted=False,
-                nodes__is_public=True,
-                nodes__is_deleted=False,
-                nodes__type='osf.node'
-            )
-            .annotate(Count('nodes'))
-            .filter(nodes__count__gte=INSTITUTION_DISPLAY_NODE_THRESHOLD)
-            .order_by('name').only('_id', 'name', 'logo_name')
-        )
-        dashboard_institutions = [
-            {'id': inst._id, 'name': inst.name, 'logo_path': inst.logo_path_rounded_corners}
-            for inst in all_institutions
-        ]
-
-        return {
-            'home': True,
-            'dashboard_institutions': dashboard_institutions,
-        }
+        # all_institutions = (
+        #     Institution.objects.filter(
+        #         is_deleted=False,
+        #         nodes__is_public=True,
+        #         nodes__is_deleted=False,
+        #         nodes__type='osf.node'
+        #     )
+        #     .annotate(Count('nodes'))
+        #     .filter(nodes__count__gte=INSTITUTION_DISPLAY_NODE_THRESHOLD)
+        #     .order_by('name').only('_id', 'name', 'logo_name')
+        # )
+        # dashboard_institutions = [
+        #     {'id': inst._id, 'name': inst.name, 'logo_path': inst.logo_path_rounded_corners}
+        #     for inst in all_institutions
+        # ]
+        #
+        # return {
+        #     'home': True,
+        #     'dashboard_institutions': dashboard_institutions,
+        # }
+        return send_from_directory(ember_osf_web_dir, 'index.html')
     else:  # Logged out: return landing page
         return {
             'home': True,
