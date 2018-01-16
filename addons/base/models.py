@@ -5,6 +5,7 @@ import time
 import markupsafe
 import requests
 from django.db import models
+from django.utils import timezone
 from framework.auth import Auth
 from framework.auth.decorators import must_be_logged_in
 from framework.exceptions import HTTPError, PermissionsError
@@ -55,6 +56,7 @@ class BaseAddonSettings(ObjectIDMixin, BaseModel):
 
     def delete(self, save=True):
         self.is_deleted = True
+        self.deleted = timezone.now()
         self.on_delete()
         if save:
             self.save()
