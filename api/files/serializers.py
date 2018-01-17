@@ -191,7 +191,7 @@ class BaseFileSerializer(JSONAPISerializer):
     })
 
     def get_download_link(self, obj):
-        return get_file_download_link(obj)
+        return get_file_download_link(obj, view_only=self.context['request'].query_params.get('view_only'))
 
     class Meta:
         type_ = 'files'
@@ -387,17 +387,21 @@ class FileVersionSerializer(JSONAPISerializer):
 
     def get_download_link(self, obj):
         return get_file_download_link(
-            self.context['view'].get_file(), version=obj.identifier
+            self.context['view'].get_file(), version=obj.identifier,
+            view_only=self.context['request'].query_params.get('view_only')
         )
 
 
-def get_file_download_link(obj, version=None):
+def get_file_download_link(obj, version=None, view_only=None):
     guid = obj.get_guid()
     url = furl.furl(settings.DOMAIN).set(
-        path=(obj.node._id, 'download', guid._id if guid else obj._id),
+        path=(obj.node._id, 'download', guid._id if guid else obj._id,),
     )
 
     if version:
-        url.set(query={obj.version_identifier: version})
+        url.args[obj.version_identifier] = version
+
+    if view_only:
+        url.args['view_only'] = view_only
 
     return url.url

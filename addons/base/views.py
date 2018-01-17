@@ -711,13 +711,11 @@ def persistent_file_download(**kwargs):
                 'message_long': 'The requested file could not be found.'
             })
 
+    query_params = request.args.to_dict()
+    query_params.setdefault('version', file.versions.first().identifier)
+
     return redirect(
-        file.generate_waterbutler_url(
-            version=request.args.get(
-                file.version_identifier,
-                file.versions.first().identifier
-            )
-        ),
+        file.generate_waterbutler_url(**query_params),
         code=httplib.FOUND
     )
 
