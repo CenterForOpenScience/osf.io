@@ -3330,6 +3330,7 @@ class NodeViewOnlyLinkDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIV
     def perform_destroy(self, link):
         assert isinstance(link, PrivateLink), 'link must be a PrivateLink'
         link.is_deleted = True
+        link.deleted = timezone.now()
         link.save()
         enqueue_postcommit_task(ban_url, (self.get_node(),), {}, celery=True, once_per_request=True)
 
