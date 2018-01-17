@@ -186,9 +186,12 @@ class BaseFileSerializer(JSONAPISerializer):
         'move': WaterbutlerLink(),
         'upload': WaterbutlerLink(),
         'delete': WaterbutlerLink(),
-        'download': WaterbutlerLink(must_be_file=True),
+        'download': 'get_download_link',
         'new_folder': WaterbutlerLink(must_be_folder=True, kind='folder'),
     })
+
+    def get_download_link(self, obj):
+        return get_file_download_link(obj, view_only=self.context['request'].get('view_only'))
 
     class Meta:
         type_ = 'files'
@@ -358,7 +361,8 @@ class FileVersionSerializer(JSONAPISerializer):
     date_created = DateByVersion(source='created', read_only=True, help_text='The date that this version was created')
     links = LinksField({
         'self': 'self_url',
-        'html': 'absolute_url'
+        'html': 'absolute_url',
+        'download': 'get_download_link',
     })
 
     class Meta:
@@ -380,3 +384,24 @@ class FileVersionSerializer(JSONAPISerializer):
 
     def get_absolute_url(self, obj):
         return self.self_url(obj)
+
+    def get_download_link(self, obj):
+        return get_file_download_link(
+            self.context['view'].get_file(), version=obj.identifier,
+            view_only=self.context['request'].get('view_only')
+        )
+
+
+def get_file_download_link(obj, version=None, view_only=None):
+    guid = obj.get_guid()
+    url = furl.furl(settings.DOMAIN).set(
+        path=(obj.node._id, 'download', guid._id if guid else obj._id),
+    )
+
+    if version:
+        url.set(query={obj.version_identifier: version})
+
+    if view_only:
+        url.add(query=view_only)
+
+    return url.url

@@ -3,10 +3,13 @@ from __future__ import unicode_literals
 
 import mock
 import datetime
+import urlparse
 
 import pytest
 from nose.tools import *  # noqa
 from dateutil.parser import parse as parse_datetime
+
+from website import settings
 
 from addons.osfstorage.models import OsfStorageFileNode, OsfStorageFolder
 from framework.auth.core import Auth
@@ -1044,3 +1047,23 @@ class TestFileViews(StorageTestCase):
         assert redirect_two.status_code == 302
         res = redirect_two.follow(auth=self.user.auth)
         assert res.status_code == 200
+
+    def test_download_file(self):
+        file = create_test_file(node=self.node, user=self.user)
+
+        base_url = '/{}/download/{}/'
+
+        # Test download works with path
+        url = base_url.format(file.node._id, file._id)
+        redirect = self.app.get(url, auth=self.user.auth)
+        assert redirect.status_code == 302
+
+        # Test download works with guid
+        url = base_url.format(file.node._id, file.get_guid()._id)
+        redirect = self.app.get(url, auth=self.user.auth)
+        assert redirect.status_code == 302
+
+        # Test nonexistant file 404's
+        url = base_url.format(file.node._id, 'FakeGuid')
+        redirect = self.app.get(url, auth=self.user.auth, expect_errors=True)
+        assert redirect.status_code == 404
