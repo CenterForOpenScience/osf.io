@@ -11,6 +11,7 @@ from addons.base.models import BaseNodeSettings, BaseStorageAddon
 from osf.exceptions import InvalidTagError, NodeStateError, TagNotFoundError
 from framework.auth.core import Auth
 from osf.models.mixins import Loggable
+from osf.models import AbstractNode
 from osf.models.files import File, FileVersion, Folder, TrashedFileNode, BaseFileNode, BaseFileNodeManager
 from osf.utils.auth import Auth
 from osf.utils import permissions
@@ -310,7 +311,7 @@ class OsfStorageFile(OsfStorageFileNode, File):
             return None
 
     def add_tag_log(self, action, tag, auth):
-        if isinstance(self.target, Loggable):
+        if isinstance(self.target, AbstractNode):
             node = self.target
             node.add_log(
                 action=action,
