@@ -62,7 +62,8 @@ class BaseAddonSettings(ObjectIDMixin, BaseModel):
             self.save()
 
     def undelete(self, save=True):
-        self.deleted = False
+        self.is_deleted = False
+        self.deleted = None
         self.on_add()
         if save:
             self.save()

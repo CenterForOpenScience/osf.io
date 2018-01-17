@@ -9,6 +9,7 @@ from itertools import islice
 
 from flask import request
 from django.apps import apps
+from django.utils import timezone
 from django.core.exceptions import ValidationError
 from django.db.models import Q, OuterRef, Subquery
 
@@ -639,6 +640,7 @@ def remove_private_link(*args, **kwargs):
         raise HTTPError(http.NOT_FOUND)
 
     link.is_deleted = True
+    link.deleted = timezone.now()
     link.save()
 
     for node in link.nodes.all():
