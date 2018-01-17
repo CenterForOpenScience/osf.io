@@ -227,7 +227,9 @@ class TestOsfstorageFileNode(StorageTestCase):
         child = self.node_settings.get_root().append_file('Test')
         field_names = [f.name for f in child._meta.get_fields() if not f.is_relation and f.name not in ['id', 'content_type_pk']]
         child_data = {f: getattr(child, f) for f in field_names}
-        child.delete()
+        mock_now = datetime.datetime(2017, 3, 16, 11, 00, tzinfo=pytz.utc)
+        with mock.patch.object(timezone, 'now', return_value=mock_now):
+            child.delete()
 
         assert_is(OsfStorageFileNode.load(child._id), None)
         trashed = models.TrashedFileNode.load(child._id)
@@ -236,9 +238,10 @@ class TestOsfstorageFileNode(StorageTestCase):
         trashed_storage['parent'] = trashed.parent._id
         child_storage['materialized_path'] = child.materialized_path
         assert_equal(trashed.path, '/' + child._id)
+        assert_equals(trashed.deleted, mock_now)
         trashed_field_names = [f.name for f in child._meta.get_fields() if not f.is_relation and
-                               f.name not in ['id', '_materialized_path', 'content_type_pk', '_path', 'deleted_on', 'deleted_by', 'type', 'modified']]
-        for f, value in child_data.items():
+                               f.name not in ['id', '_materialized_path', 'content_type_pk', '_path', 'deleted', 'deleted_by', 'type', 'modified']]
+        for f, value in child_data.iteritems():
             if f in trashed_field_names:
                 assert_equal(getattr(trashed, f), value)
 

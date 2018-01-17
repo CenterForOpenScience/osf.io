@@ -688,6 +688,11 @@ class TestProject:
                     for addon in node.addons
                     if addon.config.short_name == addon_config.short_name
                 ])
+        mock_now = datetime.datetime(2017, 3, 16, 11, 00, tzinfo=pytz.utc)
+        with mock.patch.object(timezone, 'now', return_value=mock_now):
+            deleted_node = NodeFactory(is_deleted=True)
+        assert deleted_node.is_deleted
+        assert deleted_node.deleted == mock_now
 
     def test_project_factory(self):
         node = ProjectFactory()
@@ -3915,6 +3920,7 @@ class TestRemoveNode:
         assert parent_project.is_deleted
         # parent node should have a log of the event
         assert parent_project.logs.latest().action == 'project_deleted'
+        assert parent_project.deleted == parent_project.logs.latest().date
 
     def test_remove_project_with_project_child_deletes_all_in_hierarchy(self, parent_project, project, auth):
         parent_project.remove_node(auth=auth)

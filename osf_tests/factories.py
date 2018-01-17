@@ -187,6 +187,14 @@ class BaseNodeFactory(DjangoModelFactory):
     class Meta:
         model = models.Node
 
+    @classmethod
+    def _create(cls, target_class, *args, **kwargs):
+        instance = super(BaseNodeFactory, cls)._create(target_class, *args, **kwargs)
+        if instance.is_deleted and not instance.deleted:
+            instance.deleted = timezone.now()
+            instance.save()
+        return instance
+
 
 class ProjectFactory(BaseNodeFactory):
     category = 'project'
@@ -270,6 +278,14 @@ class PrivateLinkFactory(DjangoModelFactory):
     key = factory.Faker('md5')
     anonymous = False
     creator = factory.SubFactory(UserFactory)
+
+    @classmethod
+    def _create(cls, target_class, *args, **kwargs):
+        instance = super(PrivateLinkFactory, cls)._create(target_class, *args, **kwargs)
+        if instance.is_deleted and not instance.deleted:
+            instance.deleted = timezone.now()
+            instance.save()
+        return instance
 
 
 class CollectionFactory(DjangoModelFactory):
