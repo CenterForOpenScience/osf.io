@@ -1,5 +1,9 @@
+import pytz
+import mock
+import datetime
 import pytest
 
+from django.utils import timezone
 from api.base.settings.defaults import API_BASE
 from osf_tests.factories import (
     ProjectFactory,
@@ -180,10 +184,13 @@ class TestViewOnlyLinksDelete:
         return '/{}nodes/{}/view_only_links/{}/'.format(API_BASE, public_project._id, view_only_link._id)
 
     def test_admin_can_delete_vol(self, app, user, url, view_only_link):
-        res = app.delete(url, auth=user.auth)
+        mock_now = datetime.datetime(2017, 3, 16, 11, 00, tzinfo=pytz.utc)
+        with mock.patch.object(timezone, 'now', return_value=mock_now):
+            res = app.delete(url, auth=user.auth)
         view_only_link.reload()
         assert res.status_code == 204
         assert view_only_link.is_deleted == True
+        assert view_only_link.deleted == mock_now
 
     def test_vol_delete(self, app, write_contrib, read_contrib, non_contrib, url):
 

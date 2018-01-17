@@ -1,4 +1,8 @@
+import mock
+import pytz
 import pytest
+import datetime
+from django.utils import timezone
 from collections import OrderedDict
 
 from django.core.exceptions import ValidationError
@@ -301,9 +305,11 @@ class TestCommentModel:
     def test_delete(self, node):
         comment = CommentFactory(node=node)
         auth = Auth(comment.user)
-
-        comment.delete(auth=auth, save=True)
+        mock_now = datetime.datetime(2017, 3, 16, 11, 00, tzinfo=pytz.utc)
+        with mock.patch.object(timezone, 'now', return_value=mock_now):
+            comment.delete(auth=auth, save=True)
         assert comment.is_deleted, True
+        assert comment.deleted == mock_now
         assert comment.node.logs.count() == 2
         assert comment.node.logs.latest().action == NodeLog.COMMENT_REMOVED
 
@@ -313,6 +319,7 @@ class TestCommentModel:
         comment.delete(auth=auth, save=True)
         comment.undelete(auth=auth, save=True)
         assert not comment.is_deleted
+        assert not comment.deleted
         assert comment.node.logs.count() == 3
         assert comment.node.logs.latest().action == NodeLog.COMMENT_RESTORED
 
