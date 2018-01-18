@@ -1873,6 +1873,8 @@ class NodeFilesList(JSONAPIBaseView, generics.ListAPIView, WaterButlerMixin, Lis
 
     + `filter[<fieldname>]=<Str>` -- fields and values to filter the search results on.
 
+    + `info=` -- when present this param returns the metadata for the folder it's pointed to, instead of that folder's children. This has no effect on files.
+
     Node files may be filtered by `id`, `name`, `node`, `kind`, `path`, `provider`, `size`, and `last_touched`.
 
     #This Request/Response
@@ -1951,6 +1953,23 @@ class NodeFilesList(JSONAPIBaseView, generics.ListAPIView, WaterButlerMixin, Lis
     # overrides ListAPIView
     def get_queryset(self):
         return self.get_queryset_from_request().distinct()
+
+    def get_queryset_from_request(self):
+        path = self.kwargs[self.path_lookup_url_kwarg]
+        # query param info when used on a folder gives that folder's metadata instead of the metadata of it's children
+        if 'info' in self.request.query_params and path.endswith('/'):
+            fobj = self.fetch_from_waterbutler()
+
+            if isinstance(fobj, list):
+                node = self.get_node(check_object_permissions=False)
+                base_class = BaseFileNode.resolve_class(self.kwargs[self.provider_lookup_url_kwarg], BaseFileNode.FOLDER)
+                return base_class.objects.filter(node=node, _path=path)
+            elif isinstance(fobj, OsfStorageFolder):
+                return BaseFileNode.objects.filter(id__in=[fobj.id])
+            else:
+                raise NotFound
+        else:
+            return super(NodeFilesList, self).get_queryset_from_request()
 
 
 class NodeFileDetail(JSONAPIBaseView, generics.RetrieveAPIView, WaterButlerMixin, NodeMixin):
