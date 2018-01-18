@@ -261,7 +261,7 @@ class TestNodeFilesList(ApiTestCase):
         assert_equal(res.json['data'][0]['attributes']['provider'], 'github')
 
     def test_returns_node_folder(self):
-        self._prepare_mock_wb_response(provider='github', files=[{'name': 'Folder'}], folder=False, path='/Folder/')
+        self._prepare_mock_wb_response(provider='github', files=[{'name': 'Folder'}], folder=True, path='/Folder/')
         self.add_github()
         url = '/{}nodes/{}/files/github/Folder/?info='.format(API_BASE, self.project._id)
         res = self.app.get(url, auth=self.user.auth, headers={
