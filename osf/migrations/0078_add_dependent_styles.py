@@ -27,10 +27,34 @@ def update_styles(*args):
 
             namespace = root.nsmap.get(None)
             selector = '{{{ns}}}info/{{{ns}}}'.format(ns=namespace)
-
             title = root.find(selector + 'title').text
-            # `has_bibliography` is set to `True` for Bluebook citation formats due to the special way we handle them.
-            has_bibliography = root.find('{{{ns}}}{tag}'.format(ns=namespace, tag='bibliography')) is not None or 'Bluebook' in title
+            has_bibliography = 'Bluebook' in title
+
+            if not has_bibliography:
+                bib = root.find('{{{ns}}}{bib}'.format(ns=namespace, bib='bibliography'))
+                layout = bib.find('{{{ns}}}{layout}'.format(ns=namespace, layout='layout')) if bib is not None else None
+                has_bibliography = True
+                if layout is not None and len(layout.getchildren()) == 1 and 'choose' in layout.getchildren()[0].tag:
+                    choose = layout.find('{{{ns}}}{choose}'.format(ns=namespace, choose='choose'))
+                    else_tag = choose.find('{{{ns}}}{tag}'.format(ns=namespace, tag='else'))
+                    if else_tag is None:
+                        supported_types = []
+                        match_none = False
+                        for child in choose.getchildren():
+                            types = child.get('type', None)
+                            match_none = child.get('match', 'any') == 'none'
+                            if types is not None:
+                                types = types.split(' ')
+                                supported_types.extend(types)
+
+                                if 'webpage' in types:
+                                    break
+                        else:
+                            if len(supported_types) and not match_none:
+                                # has_bibliography set to False now means that either bibliography tag is absent
+                                # or our type (webpage) is not supported by the current version of this style.
+                                has_bibliography = False
+
             # Required
             fields = {
                 '_id': os.path.splitext(os.path.basename(style_file))[0],
@@ -72,40 +96,35 @@ def update_styles(*args):
             links = root.findall(selector + 'link')
             for link in links:
                 if link.get('rel') == 'independent-parent':
-                    parent_style = urlparse(link.get('href')).path.split('/')[-1]
-                    parent_path = os.path.join(settings.CITATION_STYLES_PATH, '{}.csl'.format(parent_style))
-                    with open(parent_path, 'r') as parent:
+                    parent_style_id = urlparse(link.get('href')).path.split('/')[-1]
+                    parent_style = CitationStyle.load(parent_style_id)
+
+                    if parent_style is not None:
+                        parent_has_bibliography = parent_style.has_bibliography
+                        fields = {
+                            '_id': style_id,
+                            'title': title,
+                            'has_bibliography': parent_has_bibliography,
+                            'parent_style': parent_style_id
+                        }
+
+                        # Optional
                         try:
-                            parent_root = etree.parse(parent).getroot()
-                        except etree.XMLSyntaxError:
-                            continue
-                        else:
-                            parent_namespace = parent_root.nsmap.get(None)
-                            parent_selector = '{{{ns}}}info/{{{ns}}}'.format(ns=parent_namespace)
-                            parent_title = root.find(parent_selector + 'title').text
-                            parent_has_bibliography = parent_root.find('{{{ns}}}{tag}'.format(ns=parent_namespace, tag='bibliography')) is not None or 'Bluebook' in parent_title
-                            fields = {
-                                '_id': style_id,
-                                'title': title,
-                                'has_bibliography': parent_has_bibliography,
-                                'parent_style': os.path.splitext(os.path.basename(parent_style))[0]
-                            }
+                            fields['short_title'] = root.find(selector + "title-short").text
+                        except AttributeError:
+                            pass
 
-                            # Optional
-                            try:
-                                fields['short_title'] = root.find(selector + "title-short").text
-                            except AttributeError:
-                                pass
+                        try:
+                            fields['summary'] = root.find(selector + 'summary').text
+                        except AttributeError:
+                            pass
 
-                            try:
-                                fields['summary'] = root.find(selector + 'summary').text
-                            except AttributeError:
-                                pass
+                        style = CitationStyle(**fields)
+                        style.save()
+                        break
 
-                            style = CitationStyle(**fields)
-                            style.save()
-
-                            break
+                    else:
+                        logger.debug("Unable to load parent_style object: parent {}, dependent style {}".format(parent_style_id, style_id))
             else:
                 fields = {
                     '_id': style_id,
