@@ -14,7 +14,8 @@ def get_profile_image_url(user, size=settings.PROFILE_IMAGE_MEDIUM):
                              use_ssl=True,
                              size=size)
 
-def serialize_user(user, node=None, admin=False, full=False, is_profile=False, include_node_counts=False, admin_contributor=False):
+
+def serialize_user(user, node=None, admin=False, full=False, is_profile=False, include_node_counts=False):
     """
     Return a dictionary representation of a registered user.
 
@@ -37,7 +38,7 @@ def serialize_user(user, node=None, admin=False, full=False, is_profile=False, i
         'active': user.is_active,
     }
     if node is not None:
-        if admin_contributor:
+        if admin:
             visible = False
             for x in node.parents:
                 if x.contributor_set.filter(user=user, admin=True, visible=True).exists():
@@ -45,11 +46,6 @@ def serialize_user(user, node=None, admin=False, full=False, is_profile=False, i
                     pass
             flags = {
                 'visible': visible,
-                'permission': 'read',
-            }
-        elif admin:
-            flags = {
-                'visible': False,
                 'permission': 'read',
             }
         else:
@@ -112,17 +108,10 @@ def serialize_user(user, node=None, admin=False, full=False, is_profile=False, i
 
 
 def serialize_contributors(contribs, node, **kwargs):
-    admin_contributor = kwargs.get('admin_contributor', False)
-    if not admin_contributor:
-        return [
-            serialize_user(contrib, node, **kwargs)
-            for contrib in contribs
-        ]
-    else:
-        return [
-            serialize_user(contrib, node, **kwargs)
-            for contrib in contribs if not node.contributor_set.filter(user=contrib).exists()
-        ]
+    return [
+        serialize_user(contrib, node, **kwargs)
+        for contrib in contribs
+    ]
 
 
 def serialize_visible_contributors(node):

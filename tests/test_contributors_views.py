@@ -48,7 +48,7 @@ class TestContributorUtils(OsfTestCase):
             user, auth=Auth(self.project.creator), permissions=['admin', 'read', 'wrtie'], visible=False
         )
         self.project.save()
-        serialized = utils.serialize_contributors(node.admin_contributors, node, admin=True, admin_contributor=True)
+        serialized = utils.serialize_contributors(node.admin_contributors, node, admin=True)
         assert_equal(len(serialized), 1)
         assert_false(serialized[0]['visible'])
 

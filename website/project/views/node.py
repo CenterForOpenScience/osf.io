@@ -374,7 +374,7 @@ def node_contributors(auth, node, **kwargs):
     ret = _view_project(node, auth, primary=True)
     ret['contributors'] = utils.serialize_contributors(node.contributors, node)
     ret['adminContributors'] = utils.serialize_contributors(
-        node.admin_contributors, node, admin=True, admin_contributor=True
+        node.parent_admin_contributors, node, admin=True
     )
     return ret
 
