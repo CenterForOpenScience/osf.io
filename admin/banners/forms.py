@@ -4,6 +4,8 @@ from django.forms.widgets import TextInput, DateInput
 from osf.models.banner import ScheduledBanner, validate_banner_dates
 
 
+ACCEPTABLE_FILE_TYPES = ('svg',)
+
 class BannerForm(forms.ModelForm):
     class Meta:
         model = ScheduledBanner
@@ -19,6 +21,17 @@ class BannerForm(forms.ModelForm):
         banner = kwargs.get('instance')
         self.banner_id = banner.id if banner else None
         super(BannerForm, self).__init__(*args, **kwargs)
+
+    def clean_default_photo(self):
+        return self.check_photo_type(self.cleaned_data['default_photo'])
+
+    def clean_mobile_photo(self):
+        return self.check_photo_type(self.cleaned_data['mobile_photo'])
+
+    def check_photo_type(self, photo):
+        if not photo.name.lower().endswith(ACCEPTABLE_FILE_TYPES):
+            raise forms.ValidationError('Photos must be of type {}.'.format(ACCEPTABLE_FILE_TYPES))
+        return photo
 
     def clean(self):
         data = self.cleaned_data
