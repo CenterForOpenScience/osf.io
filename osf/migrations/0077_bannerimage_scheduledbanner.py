@@ -26,6 +26,7 @@ class Migration(migrations.Migration):
             name='ScheduledBanner',
             fields=[
                 ('id', models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
+                ('name', models.TextField()),
                 ('start_date', osf.utils.fields.NonNaiveDateTimeField()),
                 ('end_date', osf.utils.fields.NonNaiveDateTimeField()),
                 ('color', models.TextField()),

@@ -15,6 +15,7 @@ class BannerForm(forms.ModelForm):
             'start_date': DateInput(attrs={'class': 'datepicker'}),
             'end_date': DateInput(attrs={'class': 'datepicker'}),
             'license': TextInput(),
+            'name': TextInput(),
         }
 
     def __init__(self, *args, **kwargs):

@@ -6,7 +6,6 @@ from api.base.serializers import JSONAPISerializer, DateByVersion, LinksField
 
 class BannerSerializer(JSONAPISerializer):
 
-    #TODO: Wut to do with id?? Where my id's at?
     start_date = DateByVersion(read_only=True)
     end_date = DateByVersion(read_only=True)
     color = ser.CharField(read_only=True)

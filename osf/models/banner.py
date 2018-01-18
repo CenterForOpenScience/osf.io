@@ -30,6 +30,7 @@ class ScheduledBanner(models.Model):
             ('delete_banner', 'Can delete banner'),
         )
 
+    name = models.TextField()
     start_date = NonNaiveDateTimeField()
     end_date = NonNaiveDateTimeField()
     color = models.TextField()

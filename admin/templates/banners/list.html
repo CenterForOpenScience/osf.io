@@ -16,6 +16,7 @@
     <table class="table table-striped table-hover table-responsive">
     <thead>
         <tr>
+            <th>Name</th>
             <th>Dates</th>
             <th>Color</th>
             <th>Text</th>
@@ -26,7 +27,10 @@
     {% for banner in banners %}
     <tr>
         <td>
-            <a href="{% url 'banners:detail' banner_id=banner.id %}">{{ banner.start_date }} - {{ banner.end_date }}</a>
+            <a href="{% url 'banners:detail' banner_id=banner.id %}">{{ banner.name }}</a>
+        </td>
+        <td>
+            {{ banner.start_date }} - {{ banner.end_date }}
         </td>
         <td>
             {{ banner.color }}
