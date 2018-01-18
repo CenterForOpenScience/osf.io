@@ -261,13 +261,13 @@ class TestNodeFilesList(ApiTestCase):
         assert_equal(res.json['data'][0]['attributes']['provider'], 'github')
 
     def test_returns_node_folder(self):
-        self._prepare_mock_wb_response(provider='github', files=[{'name': 'Folder'}], folder=True, path='/Folder/')
+        self._prepare_mock_wb_response(provider='github', files=[{'name': 'Folder'}], path='/Folder/')
         self.add_github()
         url = '/{}nodes/{}/files/github/Folder/?info='.format(API_BASE, self.project._id)
         res = self.app.get(url, auth=self.user.auth, headers={
             'COOKIE': 'foo=bar;'  # Webtests doesnt support cookies?
         })
-        # test create
+
         assert_equal(res.status_code, 200)
         assert_equal(res.json['data'][0]['attributes']['name'], 'Folder')
         assert_equal(res.json['data'][0]['attributes']['provider'], 'github')
