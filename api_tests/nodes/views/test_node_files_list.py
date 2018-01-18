@@ -269,8 +269,8 @@ class TestNodeFilesList(ApiTestCase):
         })
         # test create
         assert_equal(res.status_code, 200)
-        assert_equal(res.json['data']['attributes']['name'], 'Folder')
-        assert_equal(res.json['data']['attributes']['provider'], 'github')
+        assert_equal(res.json['data'][0]['attributes']['name'], 'Folder')
+        assert_equal(res.json['data'][0]['attributes']['provider'], 'github')
 
     def test_returns_node_file(self):
         self._prepare_mock_wb_response(provider='github', files=[{'name': 'NewFile'}], folder=False, path='/file')
