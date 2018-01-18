@@ -263,7 +263,7 @@ class TestNodeFilesList(ApiTestCase):
     def test_returns_node_folder(self):
         self._prepare_mock_wb_response(provider='github', files=[{'name': 'Folder'}], folder=False, path='/Folder/')
         self.add_github()
-        url = '/{}nodes/{}/files/github/Folder/'.format(API_BASE, self.project._id)
+        url = '/{}nodes/{}/files/github/Folder/?info='.format(API_BASE, self.project._id)
         res = self.app.get(url, auth=self.user.auth, headers={
             'COOKIE': 'foo=bar;'  # Webtests doesnt support cookies?
         })
