@@ -59,9 +59,7 @@ class TestConfigViews(ZoteroTestCase, views.OAuthCitationAddonConfigViewsTestCas
         assert_false(self.node_settings.complete)
         assert_equal(self.node_settings.list_id, None)
         assert_equal(self.node_settings.library_id, 'Fake Library Key')
-        url = self.project.api_url_for('{0}_widget'.format(self.ADDON_SHORT_NAME))
-        res = self.app.get(url, auth=self.user.auth).json
-
+        res = self.citationsProvider().widget(self.project.get_addon(self.ADDON_SHORT_NAME))
         assert_false(res['complete'])
         assert_equal(res['list_id'], None)
         assert_equal(res['library_id'], 'Fake Library Key')
@@ -69,6 +67,7 @@ class TestConfigViews(ZoteroTestCase, views.OAuthCitationAddonConfigViewsTestCas
     def test_widget_view_complete(self):
         # JSON: everything a widget needs
         # Library must be set, then folder.
+        # Sets library key
         self.citationsProvider().set_config(
             self.node_settings,
             self.user,
@@ -78,6 +77,7 @@ class TestConfigViews(ZoteroTestCase, views.OAuthCitationAddonConfigViewsTestCas
             self.library.json['id'],
             self.library.name
         )
+        # Sets folder
         self.citationsProvider().set_config(
             self.node_settings,
             self.user,
@@ -88,8 +88,7 @@ class TestConfigViews(ZoteroTestCase, views.OAuthCitationAddonConfigViewsTestCas
         assert_true(self.node_settings.complete)
         assert_equal(self.node_settings.list_id, 'Fake Key')
         assert_equal(self.node_settings.library_id, 'Fake Library Key')
-        url = self.project.api_url_for('{0}_widget'.format(self.ADDON_SHORT_NAME))
-        res = self.app.get(url, auth=self.user.auth).json
+        res = self.citationsProvider().widget(self.project.get_addon(self.ADDON_SHORT_NAME))
         assert_true(res['complete'])
         assert_equal(res['list_id'], 'Fake Key')
         assert_equal(res['library_id'], 'Fake Library Key')
