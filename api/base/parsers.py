@@ -72,8 +72,10 @@ class JSONAPIParser(JSONParser):
             if object_id is None:
                 raise JSONAPIException(source={'pointer': '/data/id'}, detail=NO_ID_ERROR)
 
-            if object_type is None:
-                raise JSONAPIException(source={'pointer': '/data/type'}, detail=NO_TYPE_ERROR)
+            if 'preprint' not in parser_context['request'].path or \
+                    (parser_context['request'].version >= 2.7 and request_method == 'PATCH'):
+                if object_type is None:
+                    raise JSONAPIException(source={'pointer': '/data/type'}, detail=NO_TYPE_ERROR)
 
         attributes = resource_object.get('attributes')
         parsed = {'id': object_id, 'type': object_type}
@@ -177,8 +179,10 @@ class JSONAPIOnetoOneRelationshipParser(JSONParser):
             if id_ is None:
                 raise JSONAPIException(source={'pointer': '/data/id'}, detail=NO_ID_ERROR)
 
-            if type_ is None:
-                raise JSONAPIException(source={'pointer': '/data/type'}, detail=NO_TYPE_ERROR)
+            if 'preprint' not in parser_context['request'].path or \
+                    (parser_context['request'].version >= 2.7 and parser_context['request'].method == 'PATCH'):
+                if type_ is None:
+                    raise JSONAPIException(source={'pointer': '/data/type'}, detail=NO_TYPE_ERROR)
 
             return data
 
