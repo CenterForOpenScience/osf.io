@@ -37,8 +37,8 @@ class WikiVersionSerializer(JSONAPISerializer):
         return 'text/markdown'
 
     def get_wiki_content(self, obj):
-        return absolute_reverse('wikis:wiki-content', kwargs={
-            'wiki_id': obj.wiki_page._id,
+        return absolute_reverse('wiki_versions:wiki-version-content', kwargs={
+            'wiki_version_id': obj._id,
             'version': self.context['request'].parser_context['kwargs']['version']
         })
 

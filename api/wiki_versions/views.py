@@ -1,9 +1,11 @@
 from rest_framework import generics, permissions as drf_permissions
 from rest_framework.exceptions import NotFound
+from rest_framework.views import Response
 
 from api.base.exceptions import Gone
 from api.base import permissions as base_permissions
 from api.base.views import JSONAPIBaseView
+from api.base.renderers import PlainTextRenderer
 from api.wiki_versions.permissions import ContributorOrPublic, ExcludeWithdrawals
 from api.wiki_versions.serializers import (
     WikiVersionSerializer,
@@ -32,6 +34,31 @@ class WikiVersionMixin(object):
             # May raise a permission denied
             self.check_object_permissions(self.request, wiki)
         return wiki
+
+
+class WikiVersionContent(JSONAPIBaseView, generics.RetrieveAPIView, WikiVersionMixin):
+    """ View for rendering wiki content for a specific version."""
+
+    permission_classes = (
+        drf_permissions.IsAuthenticatedOrReadOnly,
+        base_permissions.TokenHasScope,
+        ContributorOrPublic,
+        ExcludeWithdrawals
+    )
+
+    required_read_scopes = [CoreScopes.WIKI_BASE_READ]
+    required_write_scopes = [CoreScopes.NULL]
+
+    renderer_classes = (PlainTextRenderer, )
+    view_category = 'wiki-versions'
+    view_name = 'wiki-version-content'
+
+    def get_serializer_class(self):
+        return None
+
+    def get(self, request, **kwargs):
+        wiki_version = self.get_wiki_version()
+        return Response(wiki_version.content)
 
 
 class WikiVersionDetail(JSONAPIBaseView, generics.RetrieveAPIView, WikiVersionMixin):

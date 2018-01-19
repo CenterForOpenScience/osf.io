@@ -340,7 +340,6 @@ class ApiWikiTestCase(ApiTestCase):
 
     def _add_project_wiki_version(self, node, user):
         from addons.wiki.tests.factories import WikiFactory, WikiVersionFactory
-        # API will only return current wiki pages
         # Mock out update_search. TODO: Remove when StoredFileNode is implemented
         with mock.patch('osf.models.AbstractNode.update_search'):
             wiki_page = WikiFactory(node=node, user=user)
