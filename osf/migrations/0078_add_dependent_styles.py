@@ -4,7 +4,6 @@ import os
 from django.db import migrations
 from lxml import etree
 
-from osf.models.citation import CitationStyle
 from website import settings
 from urlparse import urlparse
 
@@ -14,9 +13,10 @@ def get_style_files(path):
     files = (os.path.join(path, x) for x in os.listdir(path))
     return (f for f in files if os.path.isfile(f))
 
-def update_styles(*args):
+def update_styles(state, schema):
     # drop all styles
-    CitationStyle.remove()
+    CitationStyle = state.get_model('osf', 'citationstyle')
+    CitationStyle.objects.all().delete()
 
     for style_file in get_style_files(settings.CITATION_STYLES_PATH):
         with open(style_file, 'r') as f:
@@ -97,7 +97,7 @@ def update_styles(*args):
             for link in links:
                 if link.get('rel') == 'independent-parent':
                     parent_style_id = urlparse(link.get('href')).path.split('/')[-1]
-                    parent_style = CitationStyle.load(parent_style_id)
+                    parent_style = CitationStyle.objects.get(_id=parent_style_id)
 
                     if parent_style is not None:
                         parent_has_bibliography = parent_style.has_bibliography
@@ -136,9 +136,10 @@ def update_styles(*args):
                 style.save()
 
 
-def revert(*args):
+def revert(state, schema):
     # The revert of this migration simply removes all CitationStyle instances.
-    CitationStyle.remove()
+    CitationStyle = state.get_model('osf', 'citationstyle')
+    CitationStyle.objects.all().delete()
 
 class Migration(migrations.Migration):
 
