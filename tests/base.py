@@ -290,14 +290,10 @@ class ApiAddonTestCase(ApiTestCase):
 
     def tearDown(self):
         super(ApiAddonTestCase, self).tearDown()
-        self.user.remove()
-        self.node.remove()
-        if self.node_settings:
-            self.node_settings.remove()
-        if self.user_settings:
-            self.user_settings.remove()
+        self.user.delete()
+        self.node.delete()
         if self.account:
-            self.account.remove()
+            self.account.delete()
 
 
 @override_settings(ROOT_URLCONF='admin.base.urls')

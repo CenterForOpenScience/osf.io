@@ -100,7 +100,7 @@ class SanctionTokenHandlerBase(OsfTestCase):
             return
         approval_token = self.sanction.approval_state[self.user._id]['approval_token']
         handler = TokenHandler.from_string(approval_token)
-        self.Model.remove_one(self.sanction)
+        self.Model.delete(self.sanction)
         with mock_auth(self.user):
             try:
                 handler.to_response()

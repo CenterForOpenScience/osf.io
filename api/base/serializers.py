@@ -282,7 +282,7 @@ def _url_val(val, obj, serializer, request, **kwargs):
         return url
 
 
-class DateByVersion(ser.DateTimeField):
+class VersionedDateTimeField(ser.DateTimeField):
     """
     Custom DateTimeField that forces dates into the ISO-8601 format with timezone information in version 2.2.
     """
@@ -294,7 +294,7 @@ class DateByVersion(ser.DateTimeField):
                 self.format = '%Y-%m-%dT%H:%M:%S.%fZ'
             else:
                 self.format = '%Y-%m-%dT%H:%M:%S.%f' if value.microsecond else '%Y-%m-%dT%H:%M:%S'
-        return super(DateByVersion, self).to_representation(value)
+        return super(VersionedDateTimeField, self).to_representation(value)
 
 
 class IDField(ser.CharField):

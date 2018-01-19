@@ -6,7 +6,7 @@ from api.base.serializers import (
     TypeField,
     LinksField,
     RelationshipField,
-    DateByVersion,
+    VersionedDateTimeField,
 )
 
 from api.base.utils import absolute_reverse
@@ -16,7 +16,7 @@ class WikiVersionSerializer(JSONAPISerializer):
     id = IDField(source='_id', read_only=True)
     type = TypeField()
     identifier = ser.IntegerField()
-    date_modified = DateByVersion(source='date')
+    date_modified = VersionedDateTimeField(source='date')
     content_type = ser.SerializerMethodField()
 
     wiki_page = RelationshipField(

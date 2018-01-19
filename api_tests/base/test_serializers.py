@@ -405,10 +405,10 @@ class TestShowIfVersion(ApiTestCase):
         assert_not_in('node_links', data['attributes'])
 
 
-class TestDateByVersion(DbTestCase):
+class VersionedDateTimeField(DbTestCase):
 
     def setUp(self):
-        super(TestDateByVersion, self).setUp()
+        super(VersionedDateTimeField, self).setUp()
         self.node = factories.NodeFactory()
         self.old_date = datetime.utcnow()   # naive dates before django-osf
         self.old_date_without_microseconds = self.old_date.replace(microsecond=0)
