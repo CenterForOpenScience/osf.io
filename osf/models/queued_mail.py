@@ -58,7 +58,7 @@ class QueuedMail(ObjectIDMixin, BaseModel):
             self.save()
             return True
         else:
-            self.__class__.remove_one(self)
+            self.__class__.delete(self)
             return False
 
     def find_sent_of_same_type_and_user(self):
