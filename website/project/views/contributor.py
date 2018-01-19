@@ -520,9 +520,8 @@ def notify_added_contributor(node, contributor, auth=None, throttle=None, email_
     throttle = throttle or settings.CONTRIBUTOR_ADDED_EMAIL_THROTTLE
 
     # Email users for projects, or for components where they are not contributors on the parent node.
-    if (contributor.is_registered
-            and not node.parent_node
-            or node.parent_node and not node.parent_node.is_contributor(contributor)):
+    if contributor.is_registered and \
+            (not node.parent_node or (node.parent_node and not node.parent_node.is_contributor(contributor))):
 
         preprint_provider = None
         if email_template == 'preprint':
