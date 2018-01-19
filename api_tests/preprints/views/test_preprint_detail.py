@@ -22,7 +22,6 @@ def build_preprint_update_payload(node_id, attributes=None, relationships=None, 
     payload = {
         'data': {
             'id': node_id,
-            'type': content_type,
             'attributes': attributes,
             'relationships': relationships
         }
@@ -548,7 +547,6 @@ class TestPreprintUpdateLicense:
                 'data': {
                     'id': node_id,
                     'attributes': attributes,
-                    'type': content_type,
                     'relationships': {
                         'license': {
                             'data': {
