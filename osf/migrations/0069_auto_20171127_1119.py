@@ -20,7 +20,7 @@ def add_preprint_doi_created(state, schema):
     ContentType = state.get_model('contenttypes', 'ContentType')
     Identifier = state.get_model('osf', 'identifier')
 
-    with disable_auto_now_fields(PreprintService):
+    with disable_auto_now_fields(models=[PreprintService]):
         for preprint in null_preprint_doi_created:
             current_preprint += 1
             content_type = ContentType.objects.get_for_model(preprint)

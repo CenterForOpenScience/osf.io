@@ -545,14 +545,6 @@ class TestNodeMODMCompat:
             node.save()
         assert excinfo.value.message_dict == {'title': ['Title cannot exceed 200 characters.']}
 
-    def test_remove_one(self):
-        node = ProjectFactory()
-        node2 = ProjectFactory()
-        assert Node.objects.all().count() == 2  # sanity check
-        Node.remove_one(node)
-        assert Node.objects.all().count() == 1
-        assert node2 in Node.objects.all()
-
     def test_querying_on_guid_id(self):
         node = NodeFactory()
         assert len(node._id) == 5
@@ -3683,7 +3675,7 @@ class TestTemplateNode:
         registration = RegistrationFactory(project=project, is_deleted=True)
         new = registration.use_as_template(auth=auth)
         assert not new.nodes
-        
+
     @pytest.fixture()
     def pointee(self, project, user, auth):
         pointee = ProjectFactory(creator=user)

@@ -238,8 +238,8 @@ DESK_KEY_SECRET = ''
 TINYMCE_APIKEY = ''
 
 if DEBUG:
-    INSTALLED_APPS += ('debug_toolbar', )
-    MIDDLEWARE_CLASSES += ('debug_toolbar.middleware.DebugToolbarMiddleware', )
+    INSTALLED_APPS += ('debug_toolbar', 'nplusone.ext.django',)
+    MIDDLEWARE_CLASSES += ('debug_toolbar.middleware.DebugToolbarMiddleware', 'nplusone.ext.django.NPlusOneMiddleware',)
     DEBUG_TOOLBAR_CONFIG = {
         'SHOW_TOOLBAR_CALLBACK': lambda(_): True,
         'DISABLE_PANELS': {
@@ -247,3 +247,6 @@ if DEBUG:
             'debug_toolbar.panels.redirects.RedirectsPanel'
         }
     }
+
+# If set to True, automated tests with extra queries will fail.
+NPLUSONE_RAISE = False
