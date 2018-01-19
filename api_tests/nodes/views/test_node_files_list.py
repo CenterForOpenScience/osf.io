@@ -8,6 +8,7 @@ from nose.tools import *  # flake8: noqa
 
 from framework.auth.core import Auth
 
+from addons.github.models import GithubFolder
 from addons.github.tests.factories import GitHubAccountFactory
 from website.util import waterbutler_api_url_for
 from api.base.settings.defaults import API_BASE
@@ -260,11 +261,17 @@ class TestNodeFilesList(ApiTestCase):
         assert_equal(res.json['data'][0]['attributes']['name'], 'NewFile')
         assert_equal(res.json['data'][0]['attributes']['provider'], 'github')
 
-    def test_returns_node_folder(self):
+    def test_returns_folder_metadata_not_children(self):
+        folder = GithubFolder(
+            name='Folder',
+            node=self.project,
+            path='/Folder/'
+        )
+        folder.save()
         self._prepare_mock_wb_response(provider='github', files=[{'name': 'Folder'}], path='/Folder/')
         self.add_github()
-        url = '/{}nodes/{}/files/github/Folder/?info='.format(API_BASE, self.project._id)
-        res = self.app.get(url, auth=self.user.auth, headers={
+        url = '/{}nodes/{}/files/github/Folder/'.format(API_BASE, self.project._id)
+        res = self.app.get(url, params={'info': ''}, auth=self.user.auth, headers={
             'COOKIE': 'foo=bar;'  # Webtests doesnt support cookies?
         })
 
