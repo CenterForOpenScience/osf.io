@@ -131,7 +131,7 @@ def parse_identifiers(ezid_response):
                 'ark': '{0}{1}'.format(settings.ARK_NAMESPACE.replace('ark:', ''), suffix),
             }
         else:
-            return {'doi': doi.replace('doi:', ''), }
+            return {'doi': doi.replace('doi:', '')}
     else:
         return dict(
             [each.strip('/') for each in pair.strip().split(':') if 'doi' in each]
@@ -161,7 +161,7 @@ def get_or_create_identifiers(target_object):
                     'ark': '{0}{1}'.format(settings.ARK_NAMESPACE.replace('ark:', ''), suffix),
                 }
             else:
-                return {'doi': doi.replace('doi:', ''),}
+                return {'doi': doi.replace('doi:', '')}
         else:
             return dict(
                 [each.strip('/') for each in pair.strip().split(':') if 'doi' in each]
