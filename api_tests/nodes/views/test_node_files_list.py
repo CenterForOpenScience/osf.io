@@ -1,8 +1,8 @@
 import datetime
 import json
 
-import httpretty
-import pytest
+import furl
+import responses
 from django.utils import timezone
 from nose.tools import *  # flake8: noqa
 
@@ -26,10 +26,10 @@ def prepare_mock_wb_response(
         files=None,
         folder=True,
         path='/',
-        method=httpretty.GET,
+        method=responses.GET,
         status_code=200
     ):
-    """Prepare a mock Waterbutler response with httpretty.
+    """Prepare a mock Waterbutler response with responses library.
 
     :param Node node: Target node.
     :param str provider: Addon provider
@@ -71,14 +71,15 @@ def prepare_mock_wb_response(
     body = json.dumps({
         u'data': jsonapi_data
     })
-    httpretty.register_uri(
-        method,
-        wb_url,
-        body=body,
-        status=status_code,
-        content_type='application/json'
+    responses.add(
+        responses.Response(
+            method,
+            wb_url,
+            body=body,
+            status=status_code,
+            content_type='application/json'
+        )
     )
-
 
 
 class TestNodeFilesList(ApiTestCase):
@@ -93,12 +94,9 @@ class TestNodeFilesList(ApiTestCase):
 
         self.public_project = ProjectFactory(creator=self.user, is_public=True)
         self.public_url = '/{}nodes/{}/files/'.format(API_BASE, self.public_project._id)
-        httpretty.enable()
 
     def tearDown(self):
         super(TestNodeFilesList, self).tearDown()
-        httpretty.disable()
-        httpretty.reset()
 
     def add_github(self):
         user_auth = Auth(self.user)
@@ -227,16 +225,17 @@ class TestNodeFilesList(ApiTestCase):
         assert_in('github', providers)
         assert_in('osfstorage', providers)
 
+    @responses.activate
     def test_vol_node_files_list(self):
         self._prepare_mock_wb_response(provider='github', files=[{'name': 'NewFile'}])
         self.add_github()
         vol = self.view_only_link()
         url = '/{}nodes/{}/files/github/?view_only={}'.format(API_BASE, self.project._id, vol.key)
         res = self.app.get(url, auth=self.user_two.auth)
-        wb_request = httpretty.last_request()
-        assert_equal(wb_request.querystring, {u'view_only': [unicode(vol.key, 'utf-8')],
-                                              u'meta': [u'True']
-                                            })
+        wb_request = responses.calls[-1].request
+        url = furl.furl(wb_request.url)
+
+        assert_equal(url.query, 'meta=True&view_only={}'.format(unicode(vol.key, 'utf-8')))
         assert_equal(res.json['data'][0]['attributes']['name'], 'NewFile')
         assert_equal(res.json['data'][0]['attributes']['provider'], 'github')
         assert_in(vol.key, res.json['data'][0]['links']['info'])
@@ -245,6 +244,7 @@ class TestNodeFilesList(ApiTestCase):
         assert_in(vol.key, res.json['data'][0]['links']['download'])
         assert_in(vol.key, res.json['data'][0]['links']['delete'])
 
+    @responses.activate
     def test_returns_node_files_list(self):
         self._prepare_mock_wb_response(provider='github', files=[{'name': 'NewFile'}])
         self.add_github()
@@ -260,6 +260,7 @@ class TestNodeFilesList(ApiTestCase):
         assert_equal(res.json['data'][0]['attributes']['name'], 'NewFile')
         assert_equal(res.json['data'][0]['attributes']['provider'], 'github')
 
+    @responses.activate
     def test_returns_node_file(self):
         self._prepare_mock_wb_response(provider='github', files=[{'name': 'NewFile'}], folder=False, path='/file')
         self.add_github()
@@ -294,6 +295,7 @@ class TestNodeFilesList(ApiTestCase):
         })
         assert_equal(res.status_code, 404)
 
+    @responses.activate
     def test_waterbutler_server_error_returns_503(self):
         self._prepare_mock_wb_response(status_code=500)
         self.add_github()
@@ -303,14 +305,17 @@ class TestNodeFilesList(ApiTestCase):
         })
         assert_equal(res.status_code, 503)
 
+    @responses.activate
     def test_waterbutler_invalid_data_returns_503(self):
         wb_url = waterbutler_api_url_for(self.project._id, provider='github', path='/', meta=True)
         self.add_github()
-        httpretty.register_uri(
-            httpretty.GET,
-            wb_url,
-            body=json.dumps({}),
-            status=400
+        responses.add(
+            responses.Response(
+                responses.GET,
+                wb_url,
+                body=json.dumps({}),
+                status=400
+            )
         )
         url = '/{}nodes/{}/files/github/'.format(API_BASE, self.project._id)
         res = self.app.get(url, auth=self.user.auth, expect_errors=True)
@@ -340,13 +345,16 @@ class TestNodeFilesList(ApiTestCase):
         assert_equal(res.status_code, 404)
         assert_equal(res.json['errors'][0]['detail'], 'The {} provider is not configured for this project.'.format(provider))
 
+    @responses.activate
     def test_handles_bad_waterbutler_request(self):
         wb_url = waterbutler_api_url_for(self.project._id, provider='github', path='/', meta=True)
-        httpretty.register_uri(
-            httpretty.GET,
-            wb_url,
-            body=json.dumps({}),
-            status=418
+        responses.add(
+            responses.Response(
+                responses.GET,
+                wb_url,
+                body=json.dumps({}),
+                status=418
+            )
         )
         self.add_github()
         url = '/{}nodes/{}/files/github/'.format(API_BASE, self.project._id)
@@ -366,7 +374,6 @@ class TestNodeFilesListFiltering(ApiTestCase):
         super(TestNodeFilesListFiltering, self).setUp()
         self.user = AuthUserFactory()
         self.project = ProjectFactory(creator=self.user)
-        httpretty.enable()
         # Prep HTTP mocks
         prepare_mock_wb_response(
             node=self.project,
@@ -376,11 +383,6 @@ class TestNodeFilesListFiltering(ApiTestCase):
                 {'name': 'xyz', 'path': '/xyz', 'materialized': '/xyz', 'kind': 'file'},
             ]
         )
-
-    def tearDown(self):
-        super(TestNodeFilesListFiltering, self).tearDown()
-        httpretty.disable()
-        httpretty.reset()
 
     def add_github(self):
         user_auth = Auth(self.user)
@@ -504,12 +506,6 @@ class TestNodeFilesListPagination(ApiTestCase):
         super(TestNodeFilesListPagination, self).setUp()
         self.user = AuthUserFactory()
         self.project = ProjectFactory(creator=self.user)
-        httpretty.enable()
-
-    def tearDown(self):
-        super(TestNodeFilesListPagination, self).tearDown()
-        httpretty.disable()
-        httpretty.reset()
 
     def add_github(self):
         user_auth = Auth(self.user)
