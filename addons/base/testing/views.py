@@ -328,7 +328,7 @@ class OAuthCitationAddonConfigViewsTestCaseMixin(OAuthAddonConfigViewsTestCaseMi
     def test_citation_list_root(self):
 
         responses.add(
-            responses.Responses(
+            responses.Response(
                 responses.GET,
                 self.foldersApiUrl,
                 body=self.mockResponses['folders'],
@@ -349,7 +349,7 @@ class OAuthCitationAddonConfigViewsTestCaseMixin(OAuthAddonConfigViewsTestCaseMi
     def test_citation_list_non_root(self):
 
         responses.add(
-            responses.Responses(
+            responses.Response(
                 responses.GET,
                 self.foldersApiUrl,
                 body=self.mockResponses['folders'],
@@ -358,7 +358,7 @@ class OAuthCitationAddonConfigViewsTestCaseMixin(OAuthAddonConfigViewsTestCaseMi
         )
 
         responses.add(
-            responses.Responses(
+            responses.Response(
                 responses.GET,
                 self.documentsApiUrl,
                 body=self.mockResponses['documents'],
@@ -387,7 +387,7 @@ class OAuthCitationAddonConfigViewsTestCaseMixin(OAuthAddonConfigViewsTestCaseMi
         self.node_settings.save()
 
         responses.add(
-            responses.Responses(
+            responses.Response(
                 responses.GET,
                 self.foldersApiUrl,
                 body=self.mockResponses['folders'],
@@ -396,7 +396,7 @@ class OAuthCitationAddonConfigViewsTestCaseMixin(OAuthAddonConfigViewsTestCaseMi
         )
 
         responses.add(
-            responses.Responses(
+            responses.Response(
                 responses.GET,
                 self.documentsApiUrl,
                 body=self.mockResponses['documents'],

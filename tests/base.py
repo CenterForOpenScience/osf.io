@@ -189,7 +189,7 @@ class MockRequestTestCase(unittest.TestCase):
         if self.DISABLE_OUTGOING_CONNECTIONS:
             for method in methods:
                 responses.add(
-                    responses.Responses(
+                    responses.Response(
                         method,
                         re.compile(r'.*'),
                         body=kill,
