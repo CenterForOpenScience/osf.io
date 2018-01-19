@@ -107,6 +107,7 @@ def request_identifiers_from_ezid(target_object):
             'already_exists': already_exists
         }
 
+
 def parse_identifiers(ezid_response):
     """
     Note: ARKs include a leading slash. This is stripped here to avoid multiple
@@ -152,6 +153,6 @@ def get_or_create_identifiers(target_object):
             }
         else:
             return dict(
-                [each.strip('/') for each in pair.strip().split(':')]
+                [each.strip('/') for each in pair.strip().split(':') if 'doi' in each]
                 for pair in resp['success'].split('|')
             )

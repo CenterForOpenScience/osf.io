@@ -197,13 +197,13 @@
                   <!-- ko if: idCreationInProgress() -->
                     <p>
                       <i class="fa fa-spinner fa-lg fa-spin"></i>
-                        <span class="text-info">Creating DOI and ARK. Please wait...</span>
+                        <span class="text-info">Creating DOI. Please wait...</span>
                     </p>
                   <!-- /ko -->
 
                   <!-- ko ifnot: idCreationInProgress() -->
                   <p>
-                  <a data-bind="click: askCreateIdentifiers, visible: !idCreationInProgress()">Create DOI / ARK</a>
+                  <a data-bind="click: askCreateIdentifiers, visible: !idCreationInProgress()">Create DOI</a>
                   </p>
                   <!-- /ko -->
                 </span>
