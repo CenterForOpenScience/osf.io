@@ -94,6 +94,7 @@ def request_identifiers_from_ezid(target_object):
 
         client = get_ezid_client()
         already_exists = False
+        new = True
         try:
             resp = client.create_identifier(doi, metadata)
         except HTTPError as error:
@@ -101,10 +102,12 @@ def request_identifiers_from_ezid(target_object):
             if 'identifier already exists' not in error.message.lower():
                 raise
             resp = client.get_identifier(doi)
+            new = False
 
         return {
             'response': resp,
-            'already_exists': already_exists
+            'already_exists': already_exists,
+            'new': new
         }
 
 
@@ -117,17 +120,21 @@ def parse_identifiers(ezid_response):
     """
     resp = ezid_response['response']
     exists = ezid_response['already_exists']
+    new = ezid_response['new']
 
     if exists:
         doi = resp['success']
         suffix = doi.strip(settings.DOI_NAMESPACE)
-        return {
-            'doi': doi.replace('doi:', ''),
-            'ark': '{0}{1}'.format(settings.ARK_NAMESPACE.replace('ark:', ''), suffix),
-        }
+        if not new:
+            return {
+                'doi': doi.replace('doi:', ''),
+                'ark': '{0}{1}'.format(settings.ARK_NAMESPACE.replace('ark:', ''), suffix),
+            }
+        else:
+            return {'doi': doi.replace('doi:', ''), }
     else:
         return dict(
-            [each.strip('/') for each in pair.strip().split(':')]
+            [each.strip('/') for each in pair.strip().split(':') if 'doi' in each]
             for pair in resp['success'].split('|')
         )
 
@@ -143,14 +150,18 @@ def get_or_create_identifiers(target_object):
 
         resp = response_dict['response']
         exists = response_dict['already_exists']
+        new = response_dict['new']
 
         if exists:
             doi = resp['success']
             suffix = doi.strip(settings.DOI_NAMESPACE)
-            return {
-                'doi': doi.replace('doi:', ''),
-                'ark': '{0}{1}'.format(settings.ARK_NAMESPACE.replace('ark:', ''), suffix),
-            }
+            if not new:
+                return {
+                    'doi': doi.replace('doi:', ''),
+                    'ark': '{0}{1}'.format(settings.ARK_NAMESPACE.replace('ark:', ''), suffix),
+                }
+            else:
+                return {'doi': doi.replace('doi:', ''),}
         else:
             return dict(
                 [each.strip('/') for each in pair.strip().split(':') if 'doi' in each]
