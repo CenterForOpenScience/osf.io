@@ -120,23 +120,20 @@ def parse_identifiers(ezid_response):
     """
     resp = ezid_response['response']
     exists = ezid_response['already_exists']
-    new = ezid_response['new']
 
     if exists:
         doi = resp['success']
         suffix = doi.strip(settings.DOI_NAMESPACE)
-        if not new:
-            return {
-                'doi': doi.replace('doi:', ''),
-                'ark': '{0}{1}'.format(settings.ARK_NAMESPACE.replace('ark:', ''), suffix),
-            }
-        else:
-            return {'doi': doi.replace('doi:', '')}
+        return {
+            'doi': doi.replace('doi:', ''),
+            'ark': '{0}{1}'.format(settings.ARK_NAMESPACE.replace('ark:', ''), suffix),
+        }
     else:
         return dict(
             [each.strip('/') for each in pair.strip().split(':') if 'doi' in each]
             for pair in resp['success'].split('|')
         )
+
 
 def get_or_create_identifiers(target_object):
     """
