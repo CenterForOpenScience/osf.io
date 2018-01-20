@@ -352,7 +352,7 @@ class TestNodeFilesList(ApiTestCase):
             responses.Response(
                 responses.GET,
                 wb_url,
-                body=json.dumps({}),
+                json={},
                 status=418
             )
         )

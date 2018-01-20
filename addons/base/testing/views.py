@@ -331,7 +331,7 @@ class OAuthCitationAddonConfigViewsTestCaseMixin(OAuthAddonConfigViewsTestCaseMi
             responses.Response(
                 responses.GET,
                 self.foldersApiUrl,
-                body=self.mockResponses['folders'],
+                json=self.mockResponses['folders'],
                 content_type='application/json'
             )
         )
@@ -352,7 +352,7 @@ class OAuthCitationAddonConfigViewsTestCaseMixin(OAuthAddonConfigViewsTestCaseMi
             responses.Response(
                 responses.GET,
                 self.foldersApiUrl,
-                body=self.mockResponses['folders'],
+                json=self.mockResponses['folders'],
                 content_type='application/json'
             )
         )
@@ -390,7 +390,7 @@ class OAuthCitationAddonConfigViewsTestCaseMixin(OAuthAddonConfigViewsTestCaseMi
             responses.Response(
                 responses.GET,
                 self.foldersApiUrl,
-                body=self.mockResponses['folders'],
+                json=self.mockResponses['folders'],
                 content_type='application/json'
             )
         )
@@ -399,7 +399,7 @@ class OAuthCitationAddonConfigViewsTestCaseMixin(OAuthAddonConfigViewsTestCaseMi
             responses.Response(
                 responses.GET,
                 self.documentsApiUrl,
-                body=self.mockResponses['documents'],
+                json=self.mockResponses['documents'],
                 content_type='application/json'
             )
         )
