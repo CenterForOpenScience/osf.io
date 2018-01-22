@@ -2,7 +2,7 @@ from osf.models import DraftRegistration, MetaSchema
 
 
 def draft_reg_util():
-    DraftRegistration.remove()
+    DraftRegistration.objects.all().delete()
     return MetaSchema.objects.get(name='Prereg Challenge', schema_version=2)
 
 

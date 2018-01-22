@@ -9,7 +9,7 @@ from api.base.serializers import (
     Link,
     LinksField,
     RelationshipField,
-    DateByVersion,
+    VersionedDateTimeField,
 )
 from api.base.utils import absolute_reverse
 
@@ -30,7 +30,7 @@ class WikiSerializer(JSONAPISerializer):
     size = ser.SerializerMethodField()
     path = ser.SerializerMethodField()
     materialized_path = ser.SerializerMethodField(method_name='get_path')
-    date_modified = DateByVersion(source='date')
+    date_modified = VersionedDateTimeField(source='date')
     content_type = ser.SerializerMethodField()
     current_user_can_comment = ser.SerializerMethodField(help_text='Whether the current user is allowed to post comments')
     extra = ser.SerializerMethodField(help_text='Additional metadata about this wiki')

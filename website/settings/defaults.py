@@ -450,6 +450,8 @@ class CeleryConfig:
     # Default RabbitMQ backend
     result_backend = os.environ.get('CELERY_RESULT_BACKEND', broker_url)
 
+    beat_scheduler = 'django_celery_beat.schedulers:DatabaseScheduler'
+
     # Modules to import when celery launches
     imports = (
         'framework.celery_tasks',

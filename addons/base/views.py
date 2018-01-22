@@ -459,7 +459,7 @@ def addon_delete_file_node(self, node, user, event_type, payload):
                 if item.kind == 'file' and not TrashedFileNode.load(item._id):
                     item.delete(user=user)
                 elif item.kind == 'folder':
-                    BaseFileNode.remove_one(item)
+                    BaseFileNode.delete(item)
         else:
             try:
                 file_node = BaseFileNode.resolve_class(provider, BaseFileNode.FILE).objects.get(

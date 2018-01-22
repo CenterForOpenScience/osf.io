@@ -30,7 +30,7 @@ class TestGlacierInventory(OsfTestCase):
 
     def tearDown(self):
         super(TestGlacierInventory, self).tearDown()
-        model.OsfStorageFileVersion.remove()
+        model.OsfStorageFileVersion.objects.all().delete()
 
     def test_inventory(self):
         version = FileVersionFactory(
