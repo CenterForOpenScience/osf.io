@@ -42,6 +42,8 @@ class PreprintService(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMi
     identifiers = GenericRelation(Identifier, related_query_name='preprintservices')
     preprint_doi_created = NonNaiveDateTimeField(default=None, null=True, blank=True)
 
+    deleted = NonNaiveDateTimeField(null=True, blank=True)
+
     class Meta:
         unique_together = ('node', 'provider')
         permissions = (
