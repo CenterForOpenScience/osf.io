@@ -77,37 +77,17 @@ class TestBannerDisplay:
     def test_get_object(self, view, today_banner):
         obj = view.get_object()
         assert type(obj) is ScheduledBanner
-        assert obj.start_date == today_banner.start_date
+        assert obj.name == today_banner.name
 
     def test_context_data(self, view, today_banner):
         data = view.get_context_data()
         assert type(data) is dict
         assert type(data['banner']) is dict
-        assert data['banner']['start_date'] == today_banner.start_date
+        assert data['banner']['name'] == today_banner.name
 
     def test_get(self, view, req):
         res = view.get(req)
         assert res.status_code == 200
-
-class TestChangeForm:
-    #TODO: Add an actual test here
-    @pytest.fixture()
-    def view(self, req, user, tomorrow_banner):
-        view = views.BannerChangeForm()
-        setup_form_view(view, req, form=BannerForm())
-        view.kwargs = {'banner_id': tomorrow_banner.id}
-        return view
-
-    def test_banner_form(self):
-        new_data = {
-            'color': '#000000',
-            'default_text': 'sum txt',
-            'start_date': '12/24/2017',
-            'end_date': '12/25/2017',
-            '_id': 'newbanner'
-        }
-        form = BannerForm(data=new_data)
-        assert form.is_valid()
 
 #TODO: I probably shouldnt need to do this
 @override_settings(ROOT_URLCONF='admin.base.urls')
@@ -123,8 +103,6 @@ class TestDeleteBanner:
         res = view.delete(req)
         assert res.url == '/banners/'
         assert res.status_code == 302
-
-        #TODO: Test photo deletion
 
     def test_get(self, view, req):
         res = view.get(req)
