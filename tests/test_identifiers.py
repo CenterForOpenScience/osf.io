@@ -234,12 +234,11 @@ class TestIdentifierViews(OsfTestCase):
             res.json['doi'],
             self.node.get_identifier_value('doi')
         )
-        assert_equal(
-            res.json['ark'],
-            self.node.get_identifier_value('ark')
-        )
-        assert_equal(res.status_code, 201)
 
+        with assert_raises(KeyError):
+            ark = res.json['ark']
+
+        assert_equal(res.status_code, 201)
 
     @httpretty.activate
     def test_create_identifiers_exists(self):
