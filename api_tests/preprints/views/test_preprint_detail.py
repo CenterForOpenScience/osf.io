@@ -1,6 +1,9 @@
 import mock
+import pytz
 import pytest
+import datetime
 
+from django.utils import timezone
 from rest_framework import exceptions
 
 from api.base.settings.defaults import API_BASE
@@ -144,11 +147,15 @@ class TestPreprintDelete:
         return '/{}preprints/{{}}/'.format(API_BASE)
 
     def test_can_delete_unpublished(self, app, user, url, unpublished_preprint):
-        previous_ids = list(PreprintService.objects.all().values_list('pk', flat=True))
-        app.delete(url.format(unpublished_preprint._id), auth=user.auth)
-        remaining_ids = list(PreprintService.objects.all().values_list('pk', flat=True))
-        assert unpublished_preprint.pk in previous_ids
-        assert unpublished_preprint.pk not in remaining_ids
+        previous_guids = list(PreprintService.objects.all().values_list('guids___id', flat=True))
+        mock_now = datetime.datetime(2017, 3, 16, 11, 00, tzinfo=pytz.utc)
+        with mock.patch.object(timezone, 'now', return_value=mock_now):
+            app.delete(url.format(unpublished_preprint._id), auth=user.auth)
+        remaining_guids = [result['id'] for result in app.get('/{}preprints/'.format(API_BASE)).json['data']]
+        unpublished_preprint.reload()
+        assert unpublished_preprint._id in previous_guids
+        assert unpublished_preprint._id not in remaining_guids
+        assert unpublished_preprint.deleted == mock_now
 
     def test_cannot_delete_published(self, app, user, published_preprint, url):
         previous_ids = list(PreprintService.objects.all().values_list('pk', flat=True))
@@ -159,15 +166,20 @@ class TestPreprintDelete:
         assert published_preprint.pk in remaining_ids
 
     def test_deletes_only_requested_document(self, app, user, published_preprint, unpublished_preprint, url):
-        previous_ids = list(PreprintService.objects.all().values_list('pk', flat=True))
-        res = app.delete(url.format(unpublished_preprint._id), auth=user.auth)
-        remaining_ids = list(PreprintService.objects.all().values_list('pk', flat=True))
+        previous_guids = list(PreprintService.objects.all().values_list('guids___id', flat=True))
+        mock_now = datetime.datetime(2017, 3, 16, 11, 00, tzinfo=pytz.utc)
+        with mock.patch.object(timezone, 'now', return_value=mock_now):
+            app.delete(url.format(unpublished_preprint._id), auth=user.auth)
+        remaining_guids = [result['id'] for result in app.get('/{}preprints/'.format(API_BASE)).json['data']]
+        unpublished_preprint.reload()
 
-        assert unpublished_preprint.pk in previous_ids
-        assert published_preprint.pk in previous_ids
+        assert unpublished_preprint._id in previous_guids
+        assert published_preprint._id in previous_guids
 
-        assert unpublished_preprint.pk not in remaining_ids
-        assert published_preprint.pk in remaining_ids
+        assert unpublished_preprint._id not in remaining_guids
+        assert published_preprint._id in remaining_guids
+
+        assert unpublished_preprint.deleted == mock_now
 
 @pytest.mark.django_db
 class TestPreprintUpdate:
