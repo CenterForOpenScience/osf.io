@@ -49,7 +49,7 @@ def preprint_csl(preprint, node):
 
 def process_name(node, user):
     if user.family_name and user.given_name:
-        """If the user has a family and given name, use those"""
+        #If the user has a family and given name, use those
         return {
             'family_name': user.family_name,
             'suffix': user.suffix,
@@ -63,17 +63,13 @@ def process_name(node, user):
         else:
             name = user.get_unclaimed_record(node._id)['name']
 
-        """ If the user doesn't autofill his family and given name """
+        #If the user doesn't autofill his family and given name
         parsed = utils.impute_names(name)
-        given_name = parsed['given']
-        middle_names = parsed['middle']
-        family_name = parsed['family']
-        suffix = parsed['suffix']
         return {
-            'family_name': family_name,
-            'suffix': suffix,
-            'given_name': given_name,
-            'middle_names': middle_names
+            'family_name': parsed['family'],
+            'suffix': parsed['suffix'],
+            'given_name': parsed['given'],
+            'middle_names': parsed['middle']
         }
 
 
@@ -127,17 +123,18 @@ def render_citation(node, style='apa'):
 
 def apa_reformat(node, cit):
     new_csl = cit.split('(')
-    contributors_list = [x for x in node.contributors if node.get_visible(x)]
+    contributors_list = node.contributors.filter(visible=True)
+    contributors_list_length = len(contributors_list)
 
     # throw error if there is no visible contributor
-    if len(contributors_list) == 0:
+    if contributors_list_length == 0:
         raise HTTPError(http.BAD_REQUEST)
     # handle only one contributor
-    elif len(contributors_list) == 1:
+    elif contributors_list_length == 1:
         name = process_name(node, contributors_list[0])
         new_apa = apa_name(name)
     # handle more than one contributor  but less than 8 contributors
-    elif len(contributors_list) in range(1, 8):
+    elif contributors_list_length in range(1, 8):
         name_list = [apa_name(process_name(node, x)) for x in contributors_list[:-1]]
         new_apa = ' '.join(name_list)
         last_one = apa_name(process_name(node, contributors_list[-1]))
@@ -168,17 +165,19 @@ def apa_name(name):
 
 
 def mla_reformat(node, cit):
-    contributors_list = [x for x in node.contributors if node.get_visible(x)]
+    contributors_list = node.contributors.filter(visible=True)
+    contributors_list_length = len(contributors_list)
     retrive_from = cit.split('Open')[-1]
+
     # throw error if there is no visible contributor
-    if len(contributors_list) == 0:
+    if contributors_list_length == 0:
         raise HTTPError(http.BAD_REQUEST)
     # handle only one contributor
-    elif len(contributors_list) == 1:
+    elif contributors_list_length == 1:
         name = process_name(node, contributors_list[0])
         new_mla = mla_name(name, initial=True).rstrip(' ')
     # handle more than one contributor  but less than 5 contributors
-    elif len(contributors_list) in range(1, 5):
+    elif contributors_list_length in range(1, 5):
         first_one = mla_name(process_name(node, contributors_list[0]), initial=True)
         rest_ones = [mla_name(process_name(node, x)) for x in contributors_list[1:-1]]
         last_one = mla_name(process_name(node, contributors_list[-1]))
@@ -198,17 +197,18 @@ def mla_reformat(node, cit):
 
 def chicago_reformat(node, cit):
     new_csl = cit.split('20')
-    contributors_list = [x for x in node.contributors if node.get_visible(x)]
+    contributors_list = node.contributors.filter(visible=True)
+    contributors_list_length = len(contributors_list)
 
     # throw error if there is no visible contributor
-    if len(contributors_list) == 0:
+    if contributors_list_length == 0:
         raise HTTPError(http.BAD_REQUEST)
     # handle only one contributor
-    elif len(contributors_list) == 1:
+    elif contributors_list_length == 1:
         name = process_name(node, contributors_list[0])
         new_chi = mla_name(name, initial=True) + ' '
     # handle more than one contributor  but less than 11 contributors
-    elif len(contributors_list) in range(1, 11):
+    elif contributors_list_length in range(1, 11):
         first_one = mla_name(process_name(node, contributors_list[0]), initial=True)
         rest_ones = [mla_name(process_name(node, x)) for x in contributors_list[1:-1]]
         last_one = mla_name(process_name(node, contributors_list[-1]))
