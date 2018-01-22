@@ -184,19 +184,6 @@ class MockRequestTestCase(unittest.TestCase):
 
     DISABLE_OUTGOING_CONNECTIONS = False
 
-    def setUp(self):
-        super(MockRequestTestCase, self).setUp()
-        if self.DISABLE_OUTGOING_CONNECTIONS:
-            for method in methods:
-                responses.add(
-                    responses.Response(
-                        method,
-                        re.compile(r'.*'),
-                        body=kill,
-                    )
-                )
-
-
 class OsfTestCase(DbTestCase, AppTestCase, SearchTestCase, MockRequestTestCase):
     """Base `TestCase` for tests that require both scratch databases and the OSF
     application. Note: superclasses must call `super` in order for all setup and
