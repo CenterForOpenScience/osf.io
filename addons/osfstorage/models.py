@@ -178,7 +178,7 @@ class OsfStorageFileNode(BaseFileNode):
         """
         from osf.models import NodeLog  # Avoid circular import
 
-        if self.is_checked_out and self.checkout != user:
+        if isinstance(self.target, AbstractNode) and self.is_checked_out and self.checkout != user:
             # Allow project admins to force check in
             if self.target.has_permission(user, permissions.ADMIN):
                 # But don't allow force check in for prereg admin checked out files
