@@ -71,11 +71,12 @@ def prepare_mock_wb_response(
     body = json.dumps({
         u'data': jsonapi_data
     })
+
     responses.add(
         responses.Response(
             method,
             wb_url,
-            body=body,
+            json=body,
             status=status_code,
             content_type='application/json'
         )
@@ -278,6 +279,7 @@ class TestNodeFilesList(ApiTestCase):
         assert_equal(res.json['data']['attributes']['name'], 'NewFile')
         assert_equal(res.json['data']['attributes']['provider'], 'github')
 
+    @responses.activate
     def test_notfound_node_file_returns_folder(self):
         self._prepare_mock_wb_response(provider='github', files=[{'name': 'NewFile'}], path='/file')
         url = '/{}nodes/{}/files/github/file'.format(API_BASE, self.project._id)
@@ -286,6 +288,7 @@ class TestNodeFilesList(ApiTestCase):
         })
         assert_equal(res.status_code, 404)
 
+    @responses.activate
     def test_notfound_node_folder_returns_file(self):
         self._prepare_mock_wb_response(provider='github', files=[{'name': 'NewFile'}], folder=False, path='/')
 
@@ -321,6 +324,7 @@ class TestNodeFilesList(ApiTestCase):
         res = self.app.get(url, auth=self.user.auth, expect_errors=True)
         assert_equal(res.status_code, 503)
 
+    @responses.activate
     def test_handles_unauthenticated_waterbutler_request(self):
         self._prepare_mock_wb_response(status_code=401)
         self.add_github()
@@ -329,6 +333,7 @@ class TestNodeFilesList(ApiTestCase):
         assert_equal(res.status_code, 403)
         assert_in('detail', res.json['errors'][0])
 
+    @responses.activate
     def test_handles_notfound_waterbutler_request(self):
         invalid_provider = 'gilkjadsflhub'
         self._prepare_mock_wb_response(status_code=404, provider=invalid_provider)
@@ -402,6 +407,7 @@ class TestNodeFilesListFiltering(ApiTestCase):
         addon.user_settings.oauth_grants[self.project._id] = {oauth_settings._id: []}
         addon.user_settings.save()
 
+    @responses.activate
     def test_node_files_are_filterable_by_name(self):
         url = '/{}nodes/{}/files/github/?filter[name]=xyz'.format(API_BASE, self.project._id)
         self.add_github()
@@ -418,6 +424,7 @@ class TestNodeFilesListFiltering(ApiTestCase):
         assert_equal(len(res.json['data']), 1)  # filters out 'abc'
         assert_equal(res.json['data'][0]['attributes']['name'], 'xyz')
 
+    @responses.activate
     def test_node_files_filter_by_name_case_insensitive(self):
         url = '/{}nodes/{}/files/github/?filter[name]=XYZ'.format(API_BASE, self.project._id)
         self.add_github()
@@ -434,6 +441,7 @@ class TestNodeFilesListFiltering(ApiTestCase):
         assert_equal(len(res.json['data']), 1)  # filters out 'abc', but finds 'xyz'
         assert_equal(res.json['data'][0]['attributes']['name'], 'xyz')
 
+    @responses.activate
     def test_node_files_are_filterable_by_path(self):
         url = '/{}nodes/{}/files/github/?filter[path]=abc'.format(API_BASE, self.project._id)
         self.add_github()
@@ -450,6 +458,7 @@ class TestNodeFilesListFiltering(ApiTestCase):
         assert_equal(len(res.json['data']), 1)  # filters out 'xyz'
         assert_equal(res.json['data'][0]['attributes']['name'], 'abc')
 
+    @responses.activate
     def test_node_files_are_filterable_by_kind(self):
         url = '/{}nodes/{}/files/github/?filter[kind]=folder'.format(API_BASE, self.project._id)
         self.add_github()
@@ -466,6 +475,7 @@ class TestNodeFilesListFiltering(ApiTestCase):
         assert_equal(len(res.json['data']), 1)  # filters out 'xyz'
         assert_equal(res.json['data'][0]['attributes']['name'], 'abc')
 
+    @responses.activate
     def test_node_files_external_provider_can_filter_by_last_touched(self):
         yesterday_stamp = timezone.now() - datetime.timedelta(days=1)
         self.add_github()
