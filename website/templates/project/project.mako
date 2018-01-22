@@ -189,8 +189,8 @@
                 <span data-bind="if: hasIdentifiers()" class="scripted">
                   <p>
                     Identifiers:
-                  DOI <span data-bind="text: doi"></span> |
-                  ARK <span data-bind="text: ark"></span>
+                  DOI <span data-bind="text: doi"></span>
+                      <span data-bind="if: hasArk()" class="scripted">| ARK <span data-bind="text: ark"></span></span>
                   </p>
                 </span>
                 <span data-bind="if: canCreateIdentifiers()" class="scripted">

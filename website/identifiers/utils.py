@@ -103,7 +103,8 @@ def request_identifiers_from_ezid(target_object):
                 raise
             resp = client.get_identifier(doi)
             new = False
-
+        if new:
+            resp = {'success': resp['success'].split('|')[0]}
         return {
             'response': resp,
             'already_exists': already_exists,
@@ -129,10 +130,7 @@ def parse_identifiers(ezid_response):
             'ark': '{0}{1}'.format(settings.ARK_NAMESPACE.replace('ark:', ''), suffix),
         }
     else:
-        return dict(
-            [each.strip('/') for each in pair.strip().split(':') if 'doi' in each]
-            for pair in resp['success'].split('|')
-        )
+        return {'doi': resp['success'].strip().split(':')[1]}
 
 
 def get_or_create_identifiers(target_object):
@@ -148,7 +146,6 @@ def get_or_create_identifiers(target_object):
         resp = response_dict['response']
         exists = response_dict['already_exists']
         new = response_dict['new']
-
         if exists:
             doi = resp['success']
             suffix = doi.strip(settings.DOI_NAMESPACE)
@@ -160,7 +157,4 @@ def get_or_create_identifiers(target_object):
             else:
                 return {'doi': doi.replace('doi:', '')}
         else:
-            return dict(
-                [each.strip('/') for each in pair.strip().split(':') if 'doi' in each]
-                for pair in resp['success'].split('|')
-            )
+            return {'doi': resp['success'].strip().split(':')[1]}
