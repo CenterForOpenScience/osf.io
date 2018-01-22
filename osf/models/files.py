@@ -96,7 +96,7 @@ class BaseFileNode(TypedModel, CommentableMixin, OptionalGuidMixin, Taggable, Ob
     versions = models.ManyToManyField('FileVersion')
 
     target_content_type = models.ForeignKey(ContentType, on_delete=models.CASCADE)
-    target_object_id = models.PositiveIntegerField(null=True, blank=True)
+    target_object_id = models.PositiveIntegerField()
     target = GenericForeignKey('target_content_type', 'target_object_id')
 
     parent = models.ForeignKey('self', blank=True, null=True, default=None, related_name='_children', on_delete=models.CASCADE)
