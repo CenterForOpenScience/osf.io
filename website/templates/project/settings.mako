@@ -108,7 +108,6 @@
                         <hr />
                             <span data-bind="stopBinding: true">
                                 <span id="bulkDeleteNode">
-
                                     <button id="deleteNode"
                                     % if node['child_exists']:
                                         data-toggle="modal" data-target="#nodesDelete"

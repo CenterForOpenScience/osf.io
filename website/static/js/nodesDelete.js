@@ -1,5 +1,5 @@
 /**
- * Controller for deleting a node and its children (if they exists)
+ * Controller for deleting a node and its children (if they exist)
  */
 'use strict';
 
@@ -41,14 +41,13 @@ function getNodesOriginal(nodeTree, nodesOriginal) {
 }
 
 function deleteNode(nodeType, isPreprint, nodeApiUrl){
-
-    var preprint_message = '<p class="danger">This ' + nodeType + ' contains a preprint. Deleting this ' +
-    nodeType + ' will also delete your preprint. This action is irreversible.</p>';
+    var preprintMessage = '<br><br>This ' + nodeType + ' contains a <strong>preprint</strong>. Deleting this ' +
+      nodeType + ' will also delete your <strong>preprint</strong>. This action is irreversible.';
 
     // It's possible that the XHR request for contributors has not finished before getting to this
     // point; only construct the HTML for the list of contributors if the contribs list is populated
     var message = '<p>It will no longer be available to other contributors on the project.' +
-    (isPreprint ? preprint_message : '');
+    (isPreprint ? preprintMessage : '');
 
     $osf.confirmDangerousAction({
         title: 'Are you sure you want to delete this ' + nodeType + '?',
@@ -123,14 +122,16 @@ function batchNodesDelete(nodes, nodeType) {
  *
  * @type {NodesDeleteViewModel}
  */
-var NodesDeleteViewModel = function(nodeType, nodeApiUrl) {
+var NodesDeleteViewModel = function(nodeType, isPreprint, nodeApiUrl) {
     var self = this;
 
     self.SELECT = 'select';
     self.CONFIRM = 'confirm';
+    self.QUICKDELETE = 'quickDelete';
     self.nodeType = nodeType;
     self.confirmationString = '';
     self.treebeardUrl = nodeApiUrl + 'tree/';
+    self.isPreprint = isPreprint;
     self.nodesOriginal = {};
     self.nodesDeleted = ko.observable();
     self.nodesChanged = ko.observableArray([]);
@@ -176,34 +177,31 @@ var NodesDeleteViewModel = function(nodeType, nodeApiUrl) {
     });
 
     self.message = ko.computed(function() {
-        if (self.page() === self.CONFIRM) {
-            if (self.nodeType === 'project')
-                return 'The following project and components will be deleted';
+        var message = 'It looks like your ' + self.nodeType + ' has components within it. To delete this ' +
+          self.nodeType + ', you must also delete all child components.';
 
-            if (self.nodeType === 'component')
-                return 'The following components will be deleted';
+        var preprintMessage = '<br><br>This ' + self.nodeType + ' also contains a <strong>preprint</strong>. Deleting this ' +
+          self.nodeType + ' will also delete your <strong>preprint</strong>. This action is irreversible.';
+
+        var confirm_message = 'The following ' + (self.nodeType === 'project' ? 'project and ' : '') + 'components will be deleted.';
+
+        if (self.page() === self.CONFIRM) {
+            return confirm_message;
         }
 
-        if (self.nodeType === 'project')
-            return {
-                select: 'It looks like your project has components within it. To delete this project, you must also delete all child components',
-                confirm: 'The following project and components will be deleted.'
-            }[self.page()];
-
-        if (self.nodeType === 'component')
-            return {
-                select: 'It looks like your componet has components within it. To delete this component, you must also delete all child components',
-                confirm: 'The following components will be deleted.'
-            }[self.page()];
+        return {
+            select: message + (self.isPreprint ? preprintMessage : ''),
+            confirm: confirm_message
+        }[self.page()];
     });
 
     self.warning = ko.computed(function() {
-        if (self.nodeType === 'project')
-            return 'Please note that deleting your project will erase all your project data and this process is IRREVERSIBLE.';
-
-        if (self.nodeType === 'component')
-            return 'Please note that deleting your component will erase all your component data and this process is IRREVERSIBLE.';
+        return 'Please note that deleting your ' + self.nodeType + ' will erase all your ' +
+          self.nodeType + ' data and this process is IRREVERSIBLE.';
     });
+    self.atMaxLength = ko.observable(false);
+    self.confirmInput = ko.observable('');
+    self.canDelete = ko.observable(false);
 };
 
 /**
@@ -242,6 +240,16 @@ NodesDeleteViewModel.prototype.selectProjects = function() {
     this.page(this.SELECT);
 };
 
+NodesDeleteViewModel.prototype.handleEditableUpdate = function(element) {
+    var self = this;
+    var $element = $(element);
+    var inputText = $element[0].innerText;
+    var inputTextLength = inputText.length;
+
+    self.atMaxLength(inputTextLength >= self.confirmationString.length);
+    self.canDelete(inputText === self.confirmationString);
+};
+
 NodesDeleteViewModel.prototype.confirmWarning =  function() {
     var nodesState = ko.toJS(this.nodesState);
     for (var node in nodesState) {
@@ -276,28 +284,23 @@ NodesDeleteViewModel.prototype.confirmChanges =  function() {
         return node.changed;
     });
 
-    if ($('#bbConfirmTextDelete').val() === this.confirmationString) {
-        if (nodesChanged.length <= 100) {
-            $osf.block('Deleting Project');
-            batchNodesDelete(nodesChanged.reverse(), self.nodeType).then(function () {
-                self.page(self.WARNING);
-            }).fail(function (xhr) {
-                $osf.unblock();
-                var errorMessage = 'Unable to delete project';
-                if (xhr.responseJSON && xhr.responseJSON.errors) {
-                    errorMessage = xhr.responseJSON.errors[0].detail;
-                }
-                $osf.growl('Problem deleting project', errorMessage);
-                Raven.captureMessage('Could not batch delete projects.');
-                self.clear();
-                $('#nodesDelete').modal('hide');
-            }).always(function() {
-                $osf.unblock();
-            });
-        }
-    }
-    else {
-        $osf.growl('Verification failed', 'Strings did not match');
+    if (nodesChanged.length <= 100) {
+        $osf.block('Deleting Project');
+        batchNodesDelete(nodesChanged.reverse(), self.nodeType).then(function () {
+            self.page(self.WARNING);
+        }).fail(function (xhr) {
+            $osf.unblock();
+            var errorMessage = 'Unable to delete project';
+            if (xhr.responseJSON && xhr.responseJSON.errors) {
+                errorMessage = xhr.responseJSON.errors[0].detail;
+            }
+            $osf.growl('Problem deleting project', errorMessage);
+            Raven.captureMessage('Could not batch delete projects.');
+            self.clear();
+            $('#nodesDelete').modal('hide');
+        }).always(function() {
+            $osf.unblock();
+        });
     }
 };
 
@@ -311,15 +314,83 @@ NodesDeleteViewModel.prototype.back = function() {
     this.page(this.SELECT);
 };
 
-function NodesDelete(nodeType, nodeApiUrl) {
+/**
+ * view model which corresponds to nodes_delete.mako (#nodesDelete)
+ * Used for quickly deleting nodes with no children.
+ * @type {QuickDeleteViewModel}
+ */
+
+var QuickDeleteViewModel = function(nodeType, isPreprint, nodeApiUrl){
+    var self = this;
+    self.confirmationString = $osf.getConfirmationString();
+    self.QUICKDELETE = 'quickDelete';
+    self.SELECT = 'select';
+    self.CONFIRM = 'confirm';
+    self.page = ko.observable(self.QUICKDELETE);
+    self.confirmInput = ko.observable('');
+    self.canDelete = ko.observable(false);
+    self.nodeType = nodeType;
+    self.nodeApiUrl = nodeApiUrl;
+    self.isPreprint = isPreprint;
+    self.message = ko.computed(function(){
+        var preprintMessage = '<br><br>This ' + self.nodeType + ' contains a <strong>preprint</strong>. Deleting this ' +
+          self.nodeType + ' will also delete your <strong>preprint</strong>. This action is irreversible.';
+        var message = 'It will no longer be available to other contributors on the project.' +
+        (self.isPreprint ? preprintMessage : '');
+
+        return message;
+    });
+    self.atMaxLength = ko.observable(false);
+    self.nodesDeleted = ko.observable(true);
+    self.pageTitle = ko.computed(function() {
+        return 'Are you sure you want to delete this ' + self.nodeType + '?';
+    });
+};
+
+QuickDeleteViewModel.prototype.clear = function(){
+    var self = this;
+    self.nodesDeleted = ko.observable(false);
+};
+
+QuickDeleteViewModel.prototype.handleEditableUpdate = function(element) {
+    var self = this;
+    var $element = $(element);
+    var inputText = $element[0].innerText;
+    var inputTextLength = inputText.length;
+
+    self.atMaxLength(inputTextLength >= self.confirmationString.length);
+    self.canDelete(inputText === self.confirmationString);
+};
+
+QuickDeleteViewModel.prototype.confirmChanges = function(){
+    var self = this;
+    var request = $.ajax({
+        type: 'DELETE',
+        dataType: 'json',
+        url: self.nodeApiUrl
+    });
+    request.done(function(response) {
+        // Redirect to either the parent project or the dashboard
+        window.location.href = response.url;
+    });
+    request.fail($osf.handleJSONError);
+};
+
+function NodesDelete(childExists, nodeType, isPreprint, nodeApiUrl) {
     var self = this;
 
     self.selector = '#nodesDelete';
     self.$element = $(self.selector);
-    self.viewModel = new NodesDeleteViewModel(nodeType, nodeApiUrl);
-    self.viewModel.fetchNodeTree().done(function(response) {
-        new NodesDeleteTreebeard('nodesDeleteTreebeard', response, self.viewModel.nodesState, self.viewModel.nodesOriginal);
-    });
+
+    if (childExists) {
+        self.viewModel = new NodesDeleteViewModel(nodeType, isPreprint, nodeApiUrl);
+        self.viewModel.fetchNodeTree().done(function(response) {
+            new NodesDeleteTreebeard('nodesDeleteTreebeard', response, self.viewModel.nodesState, self.viewModel.nodesOriginal);
+        });
+    } else {
+        self.viewModel = new QuickDeleteViewModel(nodeType, isPreprint, nodeApiUrl);
+    }
+
     return self.viewModel;
 }
 
@@ -328,11 +399,7 @@ var NodesDeleteManager = function(){
 
     self.modal = ko.observable();
     self.delete = function (childExists, nodeType, isPreprint, nodeApiUrl) {
-        if (childExists) {
-            return self.modal(new NodesDelete(nodeType, nodeApiUrl));
-        } else {
-            return deleteNode(nodeType, isPreprint, nodeApiUrl);
-        }
+        return self.modal(new NodesDelete(childExists, nodeType, isPreprint, nodeApiUrl));
     };
 };
 

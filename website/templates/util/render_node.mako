@@ -68,9 +68,7 @@
                             % if summary['is_admin']:
                             <li>
                                 <a tabindex="-1"
-                                  % if summary['childExists']:
                                     data-toggle="modal" data-target="#nodesDelete"
-                                  % endif:
                                     data-bind="click: $root.delete.bind($root, ${summary['childExists'] | sjson, n}, '${summary['node_type']}', ${summary['isPreprint'] | sjson, n}, '${summary['api_url']}')"
                                     type="button">
                                     Delete
