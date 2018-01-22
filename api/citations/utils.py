@@ -123,7 +123,7 @@ def render_citation(node, style='apa'):
 
 def apa_reformat(node, cit):
     new_csl = cit.split('(')
-    contributors_list = node.contributors.filter(visible=True)
+    contributors_list = node.visible_contributors
     contributors_list_length = len(contributors_list)
 
     # throw error if there is no visible contributor
@@ -165,7 +165,7 @@ def apa_name(name):
 
 
 def mla_reformat(node, cit):
-    contributors_list = node.contributors.filter(visible=True)
+    contributors_list = node.visible_contributors
     contributors_list_length = len(contributors_list)
     retrive_from = cit.split('Open')[-1]
 
@@ -197,7 +197,7 @@ def mla_reformat(node, cit):
 
 def chicago_reformat(node, cit):
     new_csl = cit.split('20')
-    contributors_list = node.contributors.filter(visible=True)
+    contributors_list = node.visible_contributors
     contributors_list_length = len(contributors_list)
 
     # throw error if there is no visible contributor
