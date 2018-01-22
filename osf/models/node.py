@@ -2233,7 +2233,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
             )
 
         self.is_deleted = True
-        self.deleted = date
+        self.deleted = log_date
         self.save()
 
         project_signals.node_deleted.send(self)
