@@ -68,7 +68,7 @@ class UserMixin(object):
 
         if self.kwargs.get('is_embedded') is True:
             if key in self.request.parents[OSFUser]:
-                return self.request.parents[key]
+                return self.request.parents[OSFUser].get(key)
 
         current_user = self.request.user
 
