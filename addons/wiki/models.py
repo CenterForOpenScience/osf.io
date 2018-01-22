@@ -195,6 +195,23 @@ class WikiPage(GuidMixin, BaseModel):
             self.node.update_search()
         return rv
 
+    def update_active_sharejs(self, node):
+        """
+        Update all active sharejs sessions with latest wiki content.
+        """
+
+        """
+        TODO: This def is meant to be used after updating wiki content via
+        the v2 API, once updating has been implemented. It should be removed
+        if not used for that purpose.
+        """
+
+        sharejs_uuid = wiki_utils.get_sharejs_uuid(node, self.page_name)
+        contributors = [user._id for user in node.contributors]
+        wiki_utils.broadcast_to_sharejs('reload',
+                                        sharejs_uuid,
+                                        data=contributors)
+
     def belongs_to_node(self, node_id):
         """Check whether the wiki is attached to the specified node."""
         return self.node._id == node_id
