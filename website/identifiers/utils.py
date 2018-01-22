@@ -146,6 +146,7 @@ def get_or_create_identifiers(target_object):
         resp = response_dict['response']
         exists = response_dict['already_exists']
         new = response_dict['new']
+        
         if exists:
             doi = resp['success']
             suffix = doi.strip(settings.DOI_NAMESPACE)
