@@ -3,7 +3,17 @@
 from __future__ import unicode_literals
 
 from django.db import migrations
+from django.db.models import OuterRef, Subquery
 import osf.utils.fields
+
+from osf.models import PreprintService, NodeLog
+
+
+def update_deleted_field(*args, **kwargs):
+    nodelog_subqueryset  = NodeLog.objects.filter(node_id=OuterRef('node___id'), action='project_deleted').values('date')
+    PreprintService.objects.filter(node__is_deleted=True).update(
+        deleted=Subquery(nodelog_subqueryset)
+    )
 
 
 class Migration(migrations.Migration):
@@ -25,6 +35,11 @@ class Migration(migrations.Migration):
         ),
         migrations.AddField(
             model_name='comment',
+            name='deleted',
+            field=osf.utils.fields.NonNaiveDateTimeField(blank=True, null=True),
+        ),
+        migrations.AddField(
+            model_name='preprintservice',
             name='deleted',
             field=osf.utils.fields.NonNaiveDateTimeField(blank=True, null=True),
         ),
@@ -71,6 +86,17 @@ class Migration(migrations.Migration):
             """
             UPDATE osf_reviewaction
             SET deleted='epoch' WHERE deleted IS NULL AND is_deleted=True;
+            """,
+            """
+            UPDATE osf_preprintservice
+            SET deleted = (
+              SELECT date FROM osf_nodelog
+              WHERE node_id = osf_preprintservice.node_id AND action = 'project_deleted'
+              LIMIT 1
+            ) WHERE (
+              SELECT is_deleted from osf_abstractnode
+              WHERE node_id = osf_abstractnode.id
+            ) = True;
             """
             ], [
         ])
