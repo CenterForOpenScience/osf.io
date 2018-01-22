@@ -22,4 +22,9 @@ class Migration(migrations.Migration):
             name='target_content_type',
             field=models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to='contenttypes.ContentType'),
         ),
+        migrations.AlterField(
+            model_name='basefilenode',
+            name='target_object_id',
+            field=models.PositiveIntegerField(),
+        ),
     ]
