@@ -1,25 +1,13 @@
 # -*- coding: utf-8 -*-
 from __future__ import unicode_literals
 
-import logging
-
+from django.contrib.auth.models import Group
 from guardian.shortcuts import assign_perm
 from guardian.shortcuts import get_perms
 from guardian.shortcuts import remove_perm
 from rest_framework import permissions as drf_permissions
 
-from django.contrib.auth.models import Group
-
 from api.base.utils import get_user_auth
-from osf.models.action import Action
-from website.util import permissions as osf_permissions
-
-from reviews.models import ReviewableMixin, ReviewProviderMixin
-from reviews.workflow import Triggers
-
-
-logger = logging.getLogger(__name__)
-
 
 # Object-level permissions for providers.
 # Prefer assigning object permissions to groups and adding users to groups, over assigning permissions to users.
@@ -53,16 +41,6 @@ GROUPS = {
     # 'reviewer': (),  # TODO Implement reviewers
 }
 
-
-# Required permission to perform each action. `None` means no permissions required.
-TRIGGER_PERMISSIONS = {
-    Triggers.SUBMIT.value: None,
-    Triggers.ACCEPT.value: 'accept_submissions',
-    Triggers.REJECT.value: 'reject_submissions',
-    Triggers.EDIT_COMMENT.value: 'edit_review_comments',
-}
-
-
 class GroupHelper(object):
     """Helper for managing permission groups for a given provider.
     """
@@ -89,46 +67,6 @@ class GroupHelper(object):
 
     def get_permissions(self, user):
         return [p for p in get_perms(user, self.provider) if p in PERMISSIONS]
-
-
-class ActionPermission(drf_permissions.BasePermission):
-    def has_object_permission(self, request, view, obj):
-        auth = get_user_auth(request)
-        if auth.user is None:
-            return False
-
-        target = None
-        provider = None
-        if isinstance(obj, Action):
-            target = obj.target
-            provider = target.provider
-        elif isinstance(obj, ReviewableMixin):
-            target = obj
-            provider = target.provider
-        elif isinstance(obj, ReviewProviderMixin):
-            provider = obj
-        else:
-            raise ValueError('Not a reviews-related model: {}'.format(obj))
-
-        serializer = view.get_serializer()
-
-        if request.method in drf_permissions.SAFE_METHODS:
-            # Moderators and node contributors can view actions
-            is_node_contributor = target is not None and target.node.has_permission(auth.user, osf_permissions.READ)
-            return is_node_contributor or auth.user.has_perm('view_actions', provider)
-        else:
-            # Moderators and node admins can trigger state changes.
-            is_node_admin = target is not None and target.node.has_permission(auth.user, osf_permissions.ADMIN)
-            if not (is_node_admin or auth.user.has_perm('view_submissions', provider)):
-                return False
-
-            # User can trigger state changes on this reviewable, but can they use this trigger in particular?
-            serializer = view.get_serializer(data=request.data)
-            serializer.is_valid(raise_exception=True)
-            trigger = serializer.validated_data.get('trigger')
-            permission = TRIGGER_PERMISSIONS[trigger]
-            return permission is None or request.user.has_perm(permission, target.provider)
-
 
 class CanSetUpProvider(drf_permissions.BasePermission):
     def has_object_permission(self, request, view, obj):

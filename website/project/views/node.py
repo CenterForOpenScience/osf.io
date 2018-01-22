@@ -239,7 +239,7 @@ def project_before_template(auth, node, **kwargs):
             if addon.to_json(auth.user)['addon_full_name']:
                 prompts.append(addon.to_json(auth.user)['addon_full_name'])
 
-    return {'prompts': prompts}
+    return {'prompts': prompts, 'isRegistration': node.is_registration}
 
 
 @must_be_valid_project
@@ -288,7 +288,7 @@ def node_addons(auth, node, **kwargs):
 
     ret = _view_project(node, auth, primary=True)
 
-    addon_settings = serialize_addons(node)
+    addon_settings = serialize_addons(node, auth)
 
     ret['addon_capabilities'] = settings.ADDON_CAPABILITIES
 
@@ -304,7 +304,7 @@ def node_addons(auth, node, **kwargs):
     return ret
 
 
-def serialize_addons(node):
+def serialize_addons(node, auth):
 
     addon_settings = []
     addons_available = [addon for addon in settings.ADDONS_AVAILABLE
@@ -322,6 +322,11 @@ def serialize_addons(node):
         config['categories'] = addon.categories
         config['enabled'] = node.has_addon(addon.short_name)
         config['default'] = addon.short_name in settings.ADDONS_DEFAULT
+
+        if node.has_addon(addon.short_name):
+            node_json = node.get_addon(addon.short_name).to_json(auth.user)
+            config.update(node_json)
+
         addon_settings.append(config)
 
     addon_settings = sorted(addon_settings, key=lambda addon: addon['full_name'].lower())
@@ -734,7 +739,7 @@ def _view_project(node, auth, primary=False,
             'has_draft_registrations': node.has_active_draft_registrations,
             'is_preprint': node.is_preprint,
             'has_moderated_preprint': node_linked_preprint.provider.reviews_workflow if node_linked_preprint else '',
-            'preprint_state': node_linked_preprint.reviews_state if node_linked_preprint else '',
+            'preprint_state': node_linked_preprint.machine_state if node_linked_preprint else '',
             'preprint_word': node_linked_preprint.provider.preprint_word if node_linked_preprint else '',
             'preprint_provider': {
                 'name': node_linked_preprint.provider.name,

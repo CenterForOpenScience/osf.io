@@ -51,7 +51,7 @@ def main():
 
     mails.send_mail(
         mail=mails.PREREG_CSV,
-        to_addr=settings.SUPPORT_EMAIL,
+        to_addr=settings.OSF_SUPPORT_EMAIL,
         attachment_name=filename,
         attachment_content=output.getvalue(),
     )

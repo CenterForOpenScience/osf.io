@@ -381,10 +381,7 @@ class ExternalProvider(object):
         datetime-formatted oauth_key expiry key, given a successful refresh response from
         `auto_refresh_url`. A default using 'expires_at' as a key is provided.
         """
-
-        if not extra:
-            extra = {}
-
+        extra = extra or {}
         # Ensure this is an authenticated Provider that uses token refreshing
         if not (self.account and self.auto_refresh_url):
             return False
