@@ -68,15 +68,11 @@ def prepare_mock_wb_response(
     if not folder:
         jsonapi_data = jsonapi_data[0]
 
-    body = json.dumps({
-        u'data': jsonapi_data
-    })
-
     responses.add(
         responses.Response(
             method,
             wb_url,
-            json=body,
+            json={u'data': jsonapi_data},
             status=status_code,
             content_type='application/json'
         )
