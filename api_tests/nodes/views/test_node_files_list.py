@@ -353,7 +353,7 @@ class TestNodeFilesList(ApiTestCase):
             responses.Response(
                 responses.GET,
                 wb_url,
-                json={},
+                json={'bad' : 'json'},
                 status=418
             )
         )
@@ -538,6 +538,7 @@ class TestNodeFilesListPagination(ApiTestCase):
             assert int_file_name > previous_file_name, 'Files were not in order'
             previous_file_name = int_file_name
 
+    @responses.activate
     def test_node_files_are_sorted_correctly(self):
         prepare_mock_wb_response(
             node=self.project,
