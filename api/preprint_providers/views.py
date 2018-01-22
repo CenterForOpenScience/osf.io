@@ -1,29 +1,25 @@
-from guardian.shortcuts import get_objects_for_user
-from django.db.models import Q
 
+from django.db.models import Q
+from guardian.shortcuts import get_objects_for_user
 from rest_framework import generics
 from rest_framework import permissions as drf_permissions
 from rest_framework.exceptions import NotAuthenticated
-
-from framework.auth.oauth_scopes import CoreScopes
-
-from osf.models import AbstractNode, Subject, PreprintProvider
-
-from reviews import permissions as reviews_permissions
 
 from api.base import permissions as base_permissions
 from api.base.exceptions import InvalidFilterValue, InvalidFilterOperator, Conflict
 from api.base.filters import PreprintFilterMixin, ListFilterMixin
 from api.base.views import JSONAPIBaseView
-from api.base.pagination import MaxSizePagination
+from api.base.pagination import MaxSizePagination, IncreasedPageSizePagination
 from api.base.utils import get_object_or_error, get_user_auth, is_truthy
 from api.licenses.views import LicenseList
 from api.taxonomies.serializers import TaxonomySerializer
 from api.taxonomies.utils import optimize_subject_query
 from api.preprint_providers.serializers import PreprintProviderSerializer
+from api.preprint_providers.permissions import CanSetUpProvider, PERMISSIONS
 from api.preprints.serializers import PreprintSerializer
-
 from api.preprints.permissions import PreprintPublishedOrAdmin
+from framework.auth.oauth_scopes import CoreScopes
+from osf.models import AbstractNode, Subject, PreprintProvider
 
 class PreprintProviderList(JSONAPIBaseView, generics.ListAPIView, ListFilterMixin):
     """
@@ -100,8 +96,8 @@ class PreprintProviderList(JSONAPIBaseView, generics.ListAPIView, ListFilterMixi
                 raise NotAuthenticated()
             value = operation['value'].lstrip('[').rstrip(']')
             permissions = [v.strip() for v in value.split(',')]
-            if any(p not in reviews_permissions.PERMISSIONS for p in permissions):
-                valid_permissions = ', '.join(reviews_permissions.PERMISSIONS.keys())
+            if any(p not in PERMISSIONS for p in permissions):
+                valid_permissions = ', '.join(PERMISSIONS.keys())
                 raise InvalidFilterValue('Invalid permission! Valid values are: {}'.format(valid_permissions))
             return Q(id__in=get_objects_for_user(auth_user, permissions, PreprintProvider, any_perm=True))
 
@@ -180,7 +176,7 @@ class PreprintProviderDetail(JSONAPIBaseView, generics.RetrieveUpdateAPIView):
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
         base_permissions.TokenHasScope,
-        reviews_permissions.CanSetUpProvider,
+        CanSetUpProvider,
     )
 
     required_read_scopes = [CoreScopes.ALWAYS_PUBLIC]
@@ -301,6 +297,7 @@ class PreprintProviderTaxonomies(JSONAPIBaseView, generics.ListAPIView):
     required_write_scopes = [CoreScopes.NULL]
 
     serializer_class = TaxonomySerializer
+    pagination_class = IncreasedPageSizePagination
 
     ordering = ('-id',)
 

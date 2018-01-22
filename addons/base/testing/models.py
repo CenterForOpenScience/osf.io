@@ -164,11 +164,10 @@ class OAuthAddonNodeSettingsTestSuiteMixin(OAuthAddonModelTestSuiteMixinBase):
 
     def tearDown(self):
         super(OAuthAddonNodeSettingsTestSuiteMixin, self).tearDown()
-        self.user_settings.remove()
-        self.node_settings.remove()
-        self.external_account.remove()
-        self.node.remove()
-        self.user.remove()
+        self.user_settings.delete()
+        self.external_account.delete()
+        self.node.delete()
+        self.user.delete()
 
     def test_configured_true(self):
         assert_true(self.node_settings.has_auth)

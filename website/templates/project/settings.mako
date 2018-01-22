@@ -144,13 +144,12 @@
                     </div>
 
                 <div class="panel-body">
-                    %if wiki:
                         <form id="selectWikiForm">
                             <div>
                                 <label class="break-word">
                                     <input
                                             type="checkbox"
-                                            name="${wiki.short_name}"
+                                            name="wiki"
                                             class="wiki-select"
                                             data-bind="checked: enabled"
                                     />
@@ -165,11 +164,11 @@
                                 </div>
                             </div>
                         </form>
-                    %endif
 
+                        %if wiki_enabled:
                             <h3>Configure</h3>
                             <div style="padding-left: 15px">
-                                %if  node['is_public']:
+                                %if node['is_public']:
                                     <p class="text">Control who can edit the wiki of <b>${node['title']}</b></p>
                                 %else:
                                     <p class="text">Control who can edit your wiki. To allow all OSF users to edit the wiki, <b>${node['title']}</b> must be public.</p>
@@ -187,6 +186,7 @@
                                     <p id="configureWikiMessage"></p>
                                 </div>
                             </form>
+                        %endif
                     </div>
                 </div>
             %endif

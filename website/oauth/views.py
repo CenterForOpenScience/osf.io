@@ -27,7 +27,7 @@ def oauth_disconnect(external_account_id, auth):
             user_settings.revoke_oauth_access(account)
             user_settings.save()
 
-    # ExternalAccount.remove_one(account)
+    # ExternalAccount.delete(account)
     # # only after all addons have been dealt with can we remove it from the user
     user.external_accounts.remove(account)
     user.save()

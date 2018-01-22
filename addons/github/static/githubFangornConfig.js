@@ -192,6 +192,14 @@ var _githubItemButtons = {
                         className: 'text-info'
                     }, branchArray)
                 );
+            } else {
+                buttons.push(
+                    m.component(Fangorn.Components.button, {
+                        onclick: function (event) { Fangorn.ButtonEvents._downloadZipEvent.call(tb, event, item); },
+                        icon: 'fa fa-download',
+                        className: 'text-primary'
+                    }, 'Download as zip')
+                );
             }
             if (tb.options.placement !== 'fileview') {
                 // If File and FileRead are not defined dropzone is not supported and neither is uploads
@@ -220,13 +228,6 @@ var _githubItemButtons = {
                             icon: 'fa fa-trash',
                             className: 'text-danger'
                         }, 'Delete Folder'));
-                        buttons.push(
-                            m.component(Fangorn.Components.button, {
-                                onclick: function (event) { Fangorn.ButtonEvents._downloadZipEvent.call(tb, event, item); },
-                                icon: 'fa fa-download',
-                                className: 'text-primary'
-                            }, 'Download as zip')
-                        );
                     }
                 }
                 if (item.data.addonFullname) {
@@ -237,7 +238,7 @@ var _githubItemButtons = {
                             },
                             icon: 'fa fa-download',
                             className: 'text-primary'
-                        }, 'Download'),
+                        }, 'Download as zip'),
                         m.component(Fangorn.Components.button, {
                             onclick: function (event) {
                                 window.open(item.data.urls.repo, '_blank');

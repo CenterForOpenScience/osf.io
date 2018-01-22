@@ -55,7 +55,7 @@ var CONFLICT_INFO = {
         passed: 'Skipped'
     },
     replace: {
-        passed: 'Replaced old version'
+        passed: 'Moved or replaced old version'
     },
     keep: {
         passed: 'Kept both versions'
@@ -541,25 +541,40 @@ function checkConflictsRename(tb, item, name, cb) {
 
 function doItemOp(operation, to, from, rename, conflict) {
     var tb = this;
+    // dismiss old modal immediately to prevent button mashing
+    tb.modal.dismiss();
     var inReadyQueue;
-    var filesRemaining = tb.syncFileMoveCache && tb.syncFileMoveCache[to.data.provider];
-    var inConflictsQueue = filesRemaining.conflicts && filesRemaining.conflicts.length > 0;
-    var syncMoves = SYNC_UPLOAD_ADDONS.indexOf(from.data.provider) !== -1;
-    if (syncMoves) {
-        inReadyQueue = filesRemaining && filesRemaining.ready && filesRemaining.ready.length > 0;
-    }
-    if (inConflictsQueue) {
-        var s = filesRemaining.conflicts.length > 1 ? 's' : '';
-        var mithrilContent = m('div', { className: 'text-center' }, [
-            m('p.h4', filesRemaining.conflicts.length + ' conflict' + s + ' left to resolve.'),
-            m('div', {className: 'ball-pulse ball-scale-blue text-center'}, [
-                m('div',''),
-                m('div',''),
-                m('div',''),
-            ])
-        ]);
-        var header =  m('h3.break-word.modal-title', operation.action + ' "' + from.data.name +'"');
-        tb.modal.update(mithrilContent, m('', []), header);
+    var filesRemaining;
+    var inConflictsQueue = false;
+    var syncMoves;
+
+    var notRenameOp = typeof rename === 'undefined';
+    if (notRenameOp) {
+        filesRemaining = tb.syncFileMoveCache && tb.syncFileMoveCache[to.data.provider];
+        syncMoves = SYNC_UPLOAD_ADDONS.indexOf(from.data.provider) !== -1;
+        if (syncMoves) {
+            inReadyQueue = filesRemaining && filesRemaining.ready && filesRemaining.ready.length > 0;
+        }
+
+        if (filesRemaining.conflicts) {
+            inConflictsQueue = true;
+            if (filesRemaining.conflicts.length > 0) {
+                var s = filesRemaining.conflicts.length > 1 ? 's' : '';
+                var mithrilContent = m('div', { className: 'text-center' }, [
+                    m('p.h4', filesRemaining.conflicts.length + ' conflict' + s + ' left to resolve.'),
+                    m('div', {className: 'ball-pulse ball-scale-blue text-center'}, [
+                        m('div',''),
+                        m('div',''),
+                        m('div',''),
+                    ])
+                ]);
+                var header =  m('h3.break-word.modal-title', operation.action + ' "' + from.data.name +'"');
+                tb.modal.update(mithrilContent, m('', []), header);
+            } else {
+                // remove the empty queue to know there are no remaining conflicts next time
+                filesRemaining.conflicts = undefined;
+            }
+        }
     }
 
     var ogParent = from.parentID;
@@ -662,7 +677,9 @@ function doItemOp(operation, to, from, rename, conflict) {
             from.load = true;
         }
         var url = from.data.nodeUrl + 'files/' + from.data.provider + from.data.path;
-        addFileStatus(tb, from, true, '', url, conflict);
+        if (notRenameOp) {
+            addFileStatus(tb, from, true, '', url, conflict);
+        }
         // no need to redraw because fangornOrderFolder does it
         orderFolder.call(tb, from.parent());
     }).fail(function(xhr, textStatus) {
@@ -694,11 +711,13 @@ function doItemOp(operation, to, from, rename, conflict) {
                 requestData: moveSpec
             }
         });
-        addFileStatus(tb, from, false, '', '', conflict);
+        if (notRenameOp) {
+            addFileStatus(tb, from, false, '', '', conflict);
+        }
         orderFolder.call(tb, from.parent());
     }).always(function(){
         from.inProgress = false;
-        if (typeof inConflictsQueue !== 'undefined' || syncMoves){
+        if (notRenameOp && (inConflictsQueue || syncMoves)) {
             doSyncMove(tb, to.data.provider);
         }
     });
@@ -2506,7 +2525,7 @@ function _dropLogic(event, items, folder) {
 
     tb.syncFileMoveCache = tb.syncFileMoveCache || {};
     tb.syncFileMoveCache[folder.data.provider] = tb.syncFileMoveCache[folder.data.provider] || {};
-    tb.moveStates = tb.moveStates || [];
+    tb.moveStates = [];
 
     if (toMove.ready.length > 0) {
         tb.syncFileMoveCache[folder.data.provider].ready = tb.syncFileMoveCache[folder.data.provider].ready || [];

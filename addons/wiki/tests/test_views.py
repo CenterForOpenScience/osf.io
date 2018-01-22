@@ -5,6 +5,7 @@ import pytest
 from addons.wiki.exceptions import (NameInvalidError, NameMaximumLengthError,
      PageCannotRenameError, PageConflictError, PageNotFoundError)
 from addons.wiki.tests.factories import NodeWikiFactory
+from addons.wiki.utils import serialize_wiki_widget
 from framework.auth import Auth
 from osf.exceptions import ValidationError
 from osf.models import Guid
@@ -168,9 +169,18 @@ class TestUpdateNodeWiki(OsfTestCase):
         assert len(wiki_content) == 397
         project = ProjectFactory(creator=self.user)
         project.update_node_wiki('home', wiki_content, self.auth)
-        url = project.web_url_for('view_project')
-        res = self.app.get(url, auth=self.user.auth)
-        assert 'Read More' not in res.body
+        res = serialize_wiki_widget(project)
+        assert not res['more']
+
+    def test_read_more_when_more_than_400_character(self):
+        wiki_content = ''
+        for x in range(1000):
+            wiki_content += 'a'
+        assert len(wiki_content) == 1000
+        project = ProjectFactory(creator=self.user)
+        project.update_node_wiki('home', wiki_content, self.auth)
+        res = serialize_wiki_widget(project)
+        assert res['more']
 
 
 class TestRenameNodeWiki(OsfTestCase):

@@ -201,7 +201,7 @@ class TestProvisionNode(ContextTestCase):
             'osfstorage',
             _internal=True,
             cookie=self.user.get_or_create_cookie(),
-            name='/' + file_name
+            name=file_name
         )
         mock_put.assert_called_with(
             mock_get_url.return_value,
@@ -220,7 +220,7 @@ class TestProvisionNode(ContextTestCase):
             'osfstorage',
             _internal=True,
             cookie=self.user.get_or_create_cookie(),
-            name='/' + settings.MISSING_FILE_NAME,
+            name=settings.MISSING_FILE_NAME,
         )
         mock_put.assert_called_with(
             mock_get_url.return_value,
@@ -371,7 +371,7 @@ class TestMessage(ContextTestCase):
             msg = message.ConferenceMessage()
             assert_equal(msg.conference_name, 'chocolate')
             assert_equal(msg.conference_category, 'data')
-        conf.__class__.remove_one(conf)
+        conf.__class__.delete(conf)
 
     def test_route_valid_b(self):
         recipient = '{0}conf-poster@osf.io'.format('test-' if settings.DEV_MODE else '')
@@ -420,7 +420,7 @@ class TestConferenceEmailViews(OsfTestCase):
         assert_equal(res.request.path, '/meetings/')
 
     def test_conference_submissions(self):
-        AbstractNode.remove()
+        AbstractNode.objects.all().delete()
         conference1 = ConferenceFactory()
         conference2 = ConferenceFactory()
         # Create conference nodes
