@@ -42,7 +42,7 @@ def prepare_mock_wb_response(
     """
     node = node
     files = files or []
-    wb_url = waterbutler_api_url_for(node._id, provider=provider, path=path, meta=True)
+    wb_url = waterbutler_api_url_for(node._id, provider=provider, _internal=True, path=path, meta=True, view_only=None)
 
     default_file = {
         u'contentType': None,
@@ -307,7 +307,7 @@ class TestNodeFilesList(ApiTestCase):
 
     @responses.activate
     def test_waterbutler_invalid_data_returns_503(self):
-        wb_url = waterbutler_api_url_for(self.project._id, provider='github', path='/', meta=True)
+        wb_url = waterbutler_api_url_for(self.project._id, _internal=True, provider='github', path='/', meta=True)
         self.add_github()
         responses.add(
             responses.Response(
@@ -347,7 +347,7 @@ class TestNodeFilesList(ApiTestCase):
 
     @responses.activate
     def test_handles_bad_waterbutler_request(self):
-        wb_url = waterbutler_api_url_for(self.project._id, provider='github', path='/', meta=True)
+        wb_url = waterbutler_api_url_for(self.project._id, _internal=True, provider='github', path='/', meta=True)
         responses.add(
             responses.Response(
                 responses.GET,
