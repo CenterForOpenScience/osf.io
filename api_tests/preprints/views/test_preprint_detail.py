@@ -133,7 +133,7 @@ class TestPreprintDetail:
         embed_url = url + '?embed=identifiers'
         res = app.get(embed_url, auth=user.auth)
         assert res.status_code == 200
-        assert 'preprints' in res.json['data']['embeds']['identifiers']['link']['self']
+        assert 'preprints' in res.json['data']['embeds']['identifiers']['links']['self']
 
 
 @pytest.mark.django_db
