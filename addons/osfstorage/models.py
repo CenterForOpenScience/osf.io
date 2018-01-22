@@ -382,7 +382,7 @@ class OsfStorageFile(OsfStorageFileNode, File):
 
 class OsfStorageFolder(OsfStorageFileNode, Folder):
 
-    is_root = models.NullBooleanField(default=False)
+    is_root = models.NullBooleanField(default=None)
 
     objects = OsfStorageFolderManager()
 
