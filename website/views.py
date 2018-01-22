@@ -8,7 +8,6 @@ import requests
 import urllib
 
 from django.apps import apps
-from django.db.models import Count
 from flask import request, send_from_directory, Response, stream_with_context
 
 from framework import sentry
@@ -24,7 +23,7 @@ from website import settings
 from website.institutions.views import serialize_institution
 
 from osf.models import BaseFileNode, Guid, Institution, PreprintService, AbstractNode, Node
-from website.settings import EXTERNAL_EMBER_APPS, PROXY_EMBER_APPS, INSTITUTION_DISPLAY_NODE_THRESHOLD, DOMAIN
+from website.settings import EXTERNAL_EMBER_APPS, PROXY_EMBER_APPS, DOMAIN
 from website.project.model import has_anonymous_link
 from website.util import permissions
 
