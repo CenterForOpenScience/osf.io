@@ -55,21 +55,19 @@ def process_name(node, user):
             'given_name': user.given_name,
             'middle_names': user.middle_names,
         }
+    elif user.is_registered or user.is_disabled:
+        name = user.fullname
     else:
+        name = user.get_unclaimed_record(node._id)['name']
 
-        if user.is_registered or user.is_disabled:
-            name = user.fullname
-        else:
-            name = user.get_unclaimed_record(node._id)['name']
-
-        #If the user doesn't autofill his family and given name
-        parsed = utils.impute_names(name)
-        return {
-            'family_name': parsed['family'],
-            'suffix': parsed['suffix'],
-            'given_name': parsed['given'],
-            'middle_names': parsed['middle']
-        }
+    #If the user doesn't autofill his family and given name
+    parsed = utils.impute_names(name)
+    return {
+        'family_name': parsed['family'],
+        'suffix': parsed['suffix'],
+        'given_name': parsed['given'],
+        'middle_names': parsed['middle']
+    }
 
 
 def render_citation(node, style='apa'):
