@@ -314,6 +314,9 @@ def create_waterbutler_log(payload, **kwargs):
     with transaction.atomic():
         try:
             auth = payload['auth']
+            # Don't log download actions
+            if payload['action'] in ('download_file', 'download_zip'):
+                return {'status': 'success'}
             action = LOG_ACTION_MAP[payload['action']]
         except KeyError:
             raise HTTPError(httplib.BAD_REQUEST)
