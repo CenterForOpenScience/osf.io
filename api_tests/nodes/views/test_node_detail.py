@@ -247,7 +247,6 @@ class TestNodeDetail:
         url = url_public + '?embed=identifiers'
         res = app.get(url, auth=user.auth)
         assert res.status_code == 200
-        assert 'nodes' in res.json['data']['embeds']['identifiers']['links']['self']
 
 
 @pytest.mark.django_db
