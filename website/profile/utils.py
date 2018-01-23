@@ -14,6 +14,7 @@ def get_profile_image_url(user, size=settings.PROFILE_IMAGE_MEDIUM):
                              use_ssl=True,
                              size=size)
 
+
 def serialize_user(user, node=None, admin=False, full=False, is_profile=False, include_node_counts=False):
     """
     Return a dictionary representation of a registered user.
@@ -38,8 +39,13 @@ def serialize_user(user, node=None, admin=False, full=False, is_profile=False, i
     }
     if node is not None:
         if admin:
+            visible = False
+            for x in node.parents:
+                if x.contributor_set.filter(user=user, admin=True, visible=True).exists():
+                    visible = True
+                    pass
             flags = {
-                'visible': False,
+                'visible': visible,
                 'permission': 'read',
             }
         else:

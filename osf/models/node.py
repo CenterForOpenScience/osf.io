@@ -903,9 +903,31 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         return admin_ids
 
     @property
+    def parent_admin_contributor_ids(self):
+        def get_admin_contributor_ids(node):
+            return Contributor.objects.select_related('user').filter(
+                node=node,
+                user__is_active=True,
+                admin=True
+            ).values_list('user__guids___id', flat=True)
+
+        contributor_ids = set(self.contributors.values_list('guids___id', flat=True))
+        admin_ids = set()
+        for parent in self.parents:
+            admins = get_admin_contributor_ids(parent)
+            admin_ids.update(set(admins).difference(contributor_ids))
+        return admin_ids
+
+    @property
     def admin_contributors(self):
         return OSFUser.objects.filter(
             guids___id__in=self.admin_contributor_ids
+        ).order_by('family_name')
+
+    @property
+    def parent_admin_contributors(self):
+        return OSFUser.objects.filter(
+            guids___id__in=self.parent_admin_contributor_ids
         ).order_by('family_name')
 
     def set_permissions(self, user, permissions, validate=True, save=False):
