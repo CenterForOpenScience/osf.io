@@ -107,11 +107,9 @@
                     % if 'admin' in user['permissions']:
                         <hr />
                             <span data-bind="stopBinding: true">
-                                <span id="bulkDeleteNode">
-                                    <button id="deleteNode"
-                                    % if node['child_exists']:
-                                        data-toggle="modal" data-target="#nodesDelete"
-                                    % endif
+                                <span id="deleteNode">
+                                    <button
+                                    data-toggle="modal" data-target="#nodesDelete"
                                     data-bind="click: $root.delete.bind($root, ${node['child_exists'] | sjson, n}, '${node['node_type']}', ${node['is_preprint'] | sjson, n}, '${node['api_url']}')"
                                     class="btn btn-danger btn-delete-node">Delete ${node['node_type']}</button>
                                     <%include file="project/nodes_delete.mako"/>

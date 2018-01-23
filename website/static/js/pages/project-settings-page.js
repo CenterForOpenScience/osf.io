@@ -83,15 +83,9 @@ $(document).ready(function() {
         ko.applyBindings(projectSettingsVM, $('#projectSettings')[0]);
     }
 
-    if(ctx.node.childExists){
-        var selector = '#bulkDeleteNode';
-        if ($(selector).length){
-            new NodesDelete.DeleteManager(selector);
-        }
-    } else {
-        $('#deleteNode').on('click', function() {
-            ProjectSettings.getConfirmationCode(ctx.node.nodeType, ctx.node.isPreprint);
-        });
+    var selector = '#deleteNode';
+    if ($(selector).length){
+        new NodesDelete.DeleteManager(selector);
     }
 
     // TODO: Knockout-ify me
