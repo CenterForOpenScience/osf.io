@@ -189,6 +189,7 @@ def mla_reformat(node, cit):
     else:
         name = process_name(node, contributors_list.first())
         new_mla = mla_name(name, initial=True) + ' et al. '
+
     cit = new_mla
     cit += u' \u201c' + node.title.title() + u'.\u201d Open' + retrive_from
     return cit
