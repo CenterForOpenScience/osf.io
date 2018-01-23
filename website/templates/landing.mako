@@ -311,7 +311,7 @@
 
       </div>
     </div>
-    <div class="space-top space-bottom feature-6">
+    <div class  ="space-top space-bottom feature-6">
       <div class="container">
         <div class="row">
           <div class="col-md-8">
@@ -336,11 +336,12 @@
 
     </div>
 
-
 </%def>
 
 <%def name="footer()">
-
+    <div style="margin-top:-25px">
+        <%include file="footer.mako"/>
+    </div>
 </%def>
 
 <%def name="stylesheets()">
