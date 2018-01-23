@@ -55,4 +55,4 @@ class TestCiteprocpy(OsfTestCase):
                 not_matches.append(k)
                 citation.append(citeprocpy)
                 print k
-        assert (len(not_matches) == 0)
+        assert(len(not_matches) == 0)
