@@ -40,38 +40,6 @@ function getNodesOriginal(nodeTree, nodesOriginal) {
     return nodesOriginal;
 }
 
-function deleteNode(nodeType, isPreprint, nodeApiUrl){
-    var preprintMessage = '<br><br>This ' + nodeType + ' contains a <strong>preprint</strong>. Deleting this ' +
-      nodeType + ' will also delete your <strong>preprint</strong>. This action is irreversible.';
-
-    // It's possible that the XHR request for contributors has not finished before getting to this
-    // point; only construct the HTML for the list of contributors if the contribs list is populated
-    var message = '<p>It will no longer be available to other contributors on the project.' +
-    (isPreprint ? preprintMessage : '');
-
-    $osf.confirmDangerousAction({
-        title: 'Are you sure you want to delete this ' + nodeType + '?',
-        message: message,
-        callback: function () {
-            var request = $.ajax({
-                type: 'DELETE',
-                dataType: 'json',
-                url: nodeApiUrl
-            });
-            request.done(function(response) {
-                // Redirect to either the parent project or the dashboard
-                window.location.href = response.url;
-            });
-            request.fail($osf.handleJSONError);
-        },
-        buttons: {
-            success: {
-                label: 'Delete'
-            }
-        }
-    });
-}
-
 /**
  * Deletes all nodes in changed state
  * uses API v2 bulk requests
