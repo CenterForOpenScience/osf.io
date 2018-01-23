@@ -122,7 +122,7 @@ def render_citation(node, style='apa'):
 
 def apa_reformat(node, cit):
     new_csl = cit.split('(')
-    contributors_list = node.visible_contributors
+    contributors_list = list(node.visible_contributors)
     contributors_list_length = len(contributors_list)
 
     # throw error if there is no visible contributor
@@ -130,18 +130,18 @@ def apa_reformat(node, cit):
         raise HTTPError(http.BAD_REQUEST)
     # handle only one contributor
     elif contributors_list_length == 1:
-        name = process_name(node, contributors_list.first())
+        name = process_name(node, contributors_list[0])
         new_apa = apa_name(name)
     # handle more than one contributor  but less than 8 contributors
     elif contributors_list_length in range(1, 8):
-        name_list = [apa_name(process_name(node, x)) for x in contributors_list.reverse()[1:].reverse()]
+        name_list = [apa_name(process_name(node, x)) for x in contributors_list[:-1]]
         new_apa = ' '.join(name_list)
-        last_one = apa_name(process_name(node, contributors_list.last()))
+        last_one = apa_name(process_name(node, contributors_list[-1]))
         new_apa += ' & ' + last_one
     # handle 8 or more contributors
     else:
         name_list = [apa_name(process_name(node, x)) for x in contributors_list[:5]]
-        new_apa = ' '.join(name_list) + '... ' + apa_name(process_name(node, contributors_list.last()))
+        new_apa = ' '.join(name_list) + '... ' + apa_name(process_name(node, contributors_list[-1]))
 
     cit = new_apa.rstrip(', ') + ' '
     for x in new_csl[1:]:
@@ -164,7 +164,7 @@ def apa_name(name):
 
 
 def mla_reformat(node, cit):
-    contributors_list = node.visible_contributors
+    contributors_list = list(node.visible_contributors)
     contributors_list_length = len(contributors_list)
     retrive_from = cit.split('Open')[-1]
 
@@ -173,13 +173,13 @@ def mla_reformat(node, cit):
         raise HTTPError(http.BAD_REQUEST)
     # handle only one contributor
     elif contributors_list_length == 1:
-        name = process_name(node, contributors_list.first())
+        name = process_name(node, contributors_list[0])
         new_mla = mla_name(name, initial=True).rstrip(' ')
     # handle more than one contributor  but less than 5 contributors
     elif contributors_list_length in range(1, 5):
-        first_one = mla_name(process_name(node, contributors_list.first()), initial=True)
-        rest_ones = [mla_name(process_name(node, x)) for x in list(contributors_list)[1:-1]]
-        last_one = mla_name(process_name(node, contributors_list.last()))
+        first_one = mla_name(process_name(node, contributors_list[0]), initial=True)
+        rest_ones = [mla_name(process_name(node, x)) for x in contributors_list[1:-1]]
+        last_one = mla_name(process_name(node, contributors_list[-1]))
         if rest_ones:
             rest_part = ', '.join(rest_ones)
             new_mla = first_one + ', ' + rest_part + ', and ' + last_one
@@ -187,7 +187,7 @@ def mla_reformat(node, cit):
             new_mla = first_one + 'and ' + last_one
     # handle 5 or more contributors
     else:
-        name = process_name(node, contributors_list.first())
+        name = process_name(node, contributors_list[0])
         new_mla = mla_name(name, initial=True) + ' et al. '
 
     cit = new_mla
@@ -197,7 +197,7 @@ def mla_reformat(node, cit):
 
 def chicago_reformat(node, cit):
     new_csl = cit.split('20')
-    contributors_list = node.visible_contributors
+    contributors_list = list(node.visible_contributors)
     contributors_list_length = len(contributors_list)
 
     # throw error if there is no visible contributor
@@ -205,13 +205,13 @@ def chicago_reformat(node, cit):
         raise HTTPError(http.BAD_REQUEST)
     # handle only one contributor
     elif contributors_list_length == 1:
-        name = process_name(node, contributors_list.first())
+        name = process_name(node, contributors_list[0])
         new_chi = mla_name(name, initial=True) + ' '
     # handle more than one contributor  but less than 11 contributors
     elif contributors_list_length in range(1, 11):
-        first_one = mla_name(process_name(node, contributors_list.first()), initial=True)
-        rest_ones = [mla_name(process_name(node, x)) for x in list(contributors_list)[1:-1]]
-        last_one = mla_name(process_name(node, contributors_list.last()))
+        first_one = mla_name(process_name(node, contributors_list[0]), initial=True)
+        rest_ones = [mla_name(process_name(node, x)) for x in contributors_list[1:-1]]
+        last_one = mla_name(process_name(node, contributors_list[-1]))
         if rest_ones:
             rest_part = ', '.join(rest_ones)
             new_chi = first_one + ', ' + rest_part + ', and ' + last_one + ' '
@@ -219,7 +219,7 @@ def chicago_reformat(node, cit):
             new_chi = first_one + 'and ' + last_one + ' '
     # handle 11 or more contributors
     else:
-        new_chi = mla_name(process_name(node, contributors_list.first()), initial=True).rstrip(', ')
+        new_chi = mla_name(process_name(node, contributors_list[0]), initial=True).rstrip(', ')
         name_list = [mla_name(process_name(node, x)) for x in contributors_list[1:7]]
         rest = ', '.join(name_list)
         rest = rest.rstrip(',') + ', et al. '
