@@ -6,7 +6,7 @@ from addons.base.models import (BaseOAuthNodeSettings, BaseOAuthUserSettings,
 from django.db import models
 from framework.auth.decorators import Auth
 from framework.exceptions import HTTPError
-from osf.models.files import File, Folder, FileVersion, BaseFileNode
+from osf.models.files import File, Folder, BaseFileNode
 from framework.auth.core import _get_current_user
 from addons.base import exceptions
 from addons.dataverse.client import connect_from_settings_or_401
@@ -25,16 +25,12 @@ class DataverseFile(DataverseFileNode, File):
     version_identifier = 'version'
 
     def update(self, revision, data, save=True, user=None):
-        """Note: Dataverse only has psuedo versions, don't save them
+        """Note: Dataverse only has psuedo versions, pass None to not save them
+        Call super to update _history and last_touched anyway.
         Dataverse requires a user for the weird check below
         """
-        self.name = data['name']
-        self.materialized_path = data['materialized']
-        if save:
-            self.save()
-
-        version = FileVersion(identifier=revision)
-        version.update_metadata(data, save=False)
+        version = super(DataverseFile, self).update(None, data, user=user, save=save)
+        version.identifier = revision
 
         user = user or _get_current_user()
         if not user or not self.node.can_edit(user=user):

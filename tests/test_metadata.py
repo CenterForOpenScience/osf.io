@@ -19,7 +19,7 @@ class TestMetaData(OsfTestCase):
     def test_ensure_schemas(self):
 
         # Should be zero MetaSchema records to begin with
-        MetaSchema.remove()
+        MetaSchema.objects.all().delete()
         assert_equal(
             MetaSchema.objects.all().count(),
             0
