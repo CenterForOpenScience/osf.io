@@ -3,3 +3,7 @@
     padding-left: 5px;
     padding-right: 5px;
 }
+
+.banner-image {
+    max-height: 300px;
+}

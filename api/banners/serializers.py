@@ -1,13 +1,13 @@
 from api.base.utils import absolute_reverse
 from rest_framework import serializers as ser
 
-from api.base.serializers import JSONAPISerializer, DateByVersion, LinksField
+from api.base.serializers import JSONAPISerializer, VersionedDateTimeField, LinksField
 
 
 class BannerSerializer(JSONAPISerializer):
 
-    start_date = DateByVersion(read_only=True)
-    end_date = DateByVersion(read_only=True)
+    start_date = VersionedDateTimeField(read_only=True)
+    end_date = VersionedDateTimeField(read_only=True)
     color = ser.CharField(read_only=True)
     license = ser.CharField(read_only=True)
     default_text = ser.SerializerMethodField()

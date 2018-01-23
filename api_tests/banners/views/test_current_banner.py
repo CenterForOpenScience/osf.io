@@ -21,15 +21,13 @@ class TestPreprintDetail:
     @pytest.fixture()
     def tomorrow_banner(self, date):
         return ScheduledBannerFactory(
-            start_date=date+timedelta(days=1),
-            end_date=date+timedelta(days=2)
+            start_date=date+timedelta(days=1)
         )
 
     @pytest.fixture()
     def yesterday_banner(self, date):
         return ScheduledBannerFactory(
-            start_date=date-timedelta(days=1),
-            end_date=date
+            start_date=date-timedelta(days=1)
         )
 
     @pytest.fixture()
@@ -48,11 +46,7 @@ class TestPreprintDetail:
         assert res.status_code == 200
         assert res.content_type == 'application/vnd.api+json'
         assert data['type'] == 'banners'
-        # assert data['id'] == banner._id
 
     # When there's no current banner endpoint returns dummy ScheduledBanner with no data
     def test_no_current_banner(self, tomorrow_banner, yesterday_banner, data):
-        assert not data.get('start_date')
-
-    def test_no_banners(self, data):
         assert not data.get('start_date')

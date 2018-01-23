@@ -25,16 +25,14 @@ class ScheduledBanner(models.Model):
     class Meta:
         # Custom permissions for use in the OSF Admin App
         permissions = (
-            ('view_banner', 'Can view banner details'),
-            ('change_banner', 'Can change banner details'),
-            ('delete_banner', 'Can delete banner'),
+            ('view_scheduledbanner', 'Can view scheduled banner details'),
         )
 
-    name = models.TextField()
+    name = models.CharField(unique=True, max_length=256)
     start_date = NonNaiveDateTimeField()
     end_date = NonNaiveDateTimeField()
-    color = models.TextField()
-    license = models.TextField(blank=True, null=True)
+    color = models.CharField(max_length=7)
+    license = models.CharField(blank=True, null=True, max_length=256)
 
     default_photo = models.FileField(storage=BannerImageStorage())
     default_text = models.TextField()

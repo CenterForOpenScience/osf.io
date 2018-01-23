@@ -30,7 +30,7 @@ class BannerList(PermissionRequiredMixin, ListView):
     paginate_by = 25
     template_name = 'banners/list.html'
     ordering = 'start_date'
-    permission_required = 'osf.view_banner'
+    permission_required = 'osf.view_scheduledbanner'
     raise_exception = True
     model = ScheduledBanner
 
@@ -49,7 +49,7 @@ class BannerList(PermissionRequiredMixin, ListView):
 class BannerDisplay(PermissionRequiredMixin, DetailView):
     model = ScheduledBanner
     template_name = 'banners/detail.html'
-    permission_required = 'osf.view_banner'
+    permission_required = 'osf.view_scheduledbanner'
     raise_exception = True
 
     def get_object(self, queryset=None):
@@ -70,7 +70,7 @@ class BannerDisplay(PermissionRequiredMixin, DetailView):
 
 
 class BannerChangeForm(PermissionRequiredMixin, UpdateView):
-    permission_required = 'osf.change_banner'
+    permission_required = 'osf.change_scheduledbanner'
     raise_exception = True
     model = ScheduledBanner
     form_class = BannerForm
@@ -95,7 +95,7 @@ class BannerChangeForm(PermissionRequiredMixin, UpdateView):
 
 
 class BannerDetail(PermissionRequiredMixin, View):
-    permission_required = 'osf.view_banner'
+    permission_required = 'osf.view_scheduledbanner'
     raise_exception = True
 
     def get(self, request, *args, **kwargs):
@@ -107,7 +107,7 @@ class BannerDetail(PermissionRequiredMixin, View):
         return view(request, *args, **kwargs)
 
 class CreateBanner(PermissionRequiredMixin, CreateView):
-    permission_required = 'osf.change_banner'
+    permission_required = 'osf.change_scheduledbanner'
     raise_exception = True
     template_name = 'banners/create.html'
     success_url = reverse_lazy('banners:list')
@@ -120,7 +120,7 @@ class CreateBanner(PermissionRequiredMixin, CreateView):
 
 
 class DeleteBanner(PermissionRequiredMixin, DeleteView):
-    permission_required = 'osf.delete_banner'
+    permission_required = 'osf.delete_scheduledbanner'
     raise_exception = True
     template_name = 'banners/confirm_delete.html'
     success_url = reverse_lazy('banners:list')

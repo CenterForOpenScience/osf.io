@@ -13,7 +13,7 @@
     <div class="container-fluid">
         <div class="row">
             <div class="col-md-12">
-                {%  if perms.osf.delete_banner %}
+                {%  if perms.osf.delete_scheduledbanner %}
                     <a class="btn btn-danger" href={% url 'banners:delete' banner.id %}>Delete banner</a>
                 {% endif %}
             </div>
@@ -21,12 +21,12 @@
         <div class="row">
             <div class="col-sm-md-lg-12 hidden-xs">
                 <div class="banner-background-color" style="background-color:{{banner.color}};">
-                    <img class="img-responsive" src="{{default_photo}}"/>
+                    <img class="img-responsive banner-image" src="{{default_photo}}"/>
                 </div>
             </div>
             <div class="col-xs-12 hidden-sm hidden-md hidden-lg">
                 <div class="banner-background-color" style="background-color:{{banner.color}};">
-                    <img class="img-responsive" src="{{mobile_photo}}"/>
+                    <img class="img-responsive banner-image" src="{{mobile_photo}}"/>
                 </div>
             </div>
             <div class="col-md-12 text-center">
@@ -36,7 +36,7 @@
         </div>
         <div class="row">
             <div class="col-md-12">
-                {% if perms.osf.change_banner %}
+                {% if perms.osf.change_scheduledbanner %}
                     <button id="show-modify-form" class="btn btn-link" type="button">
                         Modify banner
                     </button>

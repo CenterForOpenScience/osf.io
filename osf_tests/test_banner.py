@@ -62,6 +62,5 @@ class TestScheduledBanner:
 
         # Banner begins right after previous ends
         ScheduledBannerFactory(
-            start_date=date + timedelta(days=5),
-            end_date=date + timedelta(days=5)
+            start_date=date + timedelta(days=5)
         )

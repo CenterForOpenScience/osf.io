@@ -1,9 +1,7 @@
 var m = require('mithril');
 var $osf = require('js/osfHelpers');
 
-// CSS
-require('css/meetings-and-conferences.css');
-
+require('css/donate-banner.css');
 
 var DonateBanner = {
     controller: function() {
@@ -11,7 +9,7 @@ var DonateBanner = {
         self.banner = m.prop();
         self.bannerLoaded = m.prop(false);
 
-        // Load new and noteworthy nodes
+        // Load banner
         var bannerUrl = $osf.apiV2Url('banners/current/');
         var bannerPromise = m.request({method: 'GET', url: bannerUrl}, background=true);
         bannerPromise.then(function(result){
@@ -54,10 +52,10 @@ var BannerDisplay = {
                         }
                     },
                     m('.col-sm-md-lg-12.hidden-xs',
-                        m('img.donate-banner.img-responsive', {'src': default_photo, 'alt': default_text})
+                        m('img.donate-banner.img-responsive.banner-image', {'src': default_photo, 'alt': default_text})
                     ),
                     m('.col-xs-12.hidden-sm.hidden-md.hidden-lg',
-                        m('img.donate-banner.img-responsive', {'src': mobile_photo, 'alt': mobile_text})
+                        m('img.donate-banner.img-responsive.banner-image', {'src': mobile_photo, 'alt': mobile_text})
                     )
                 ),
             ]

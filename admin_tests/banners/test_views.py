@@ -6,13 +6,15 @@ from datetime import timedelta
 from django.utils import timezone
 from django.test import RequestFactory
 from django.test.utils import override_settings
+from django.contrib.auth.models import Permission
+from django.core.exceptions import PermissionDenied
+
 
 from osf.models import ScheduledBanner
-from admin.banners.forms import BannerForm
 
 from osf_tests.factories import ScheduledBannerFactory, AuthUserFactory
 
-from admin_tests.utilities import setup_user_view, setup_form_view
+from admin_tests.utilities import setup_view
 
 pytestmark = pytest.mark.django_db
 
@@ -28,8 +30,7 @@ def today_banner():
 @pytest.fixture()
 def tomorrow_banner(date):
     return ScheduledBannerFactory(
-        start_date=date + timedelta(days=1),
-        end_date=date + timedelta(days=2)
+        start_date=date + timedelta(days=1)
     )
 
 @pytest.fixture()
@@ -37,20 +38,23 @@ def user():
     return AuthUserFactory()
 
 @pytest.fixture()
-def req():
-    return RequestFactory().get('/fake_path')
+def req(user):
+    req = RequestFactory().get('/fake_path')
+    req.user = user
+    return req
+
 
 class TestBannerList:
 
     @pytest.fixture()
-    def view(self, req):
-        view = views.BannerList()
-        setup_user_view(view, req, user=user)
-        return view
+    def plain_view(self):
+        return views.BannerList
 
-    def test_get_list(self, view, req):
-        res = view.get(req)
-        assert res.status_code == 200
+    @pytest.fixture()
+    def view(self, req, plain_view):
+        view = plain_view()
+        setup_view(view, req)
+        return view
 
     def test_get_queryset(self, view, today_banner, tomorrow_banner):
         banners = list(view.get_queryset())
@@ -65,13 +69,29 @@ class TestBannerList:
         assert (len(data['banners']), 2)
         assert type(data['banners'][0]) is ScheduledBanner
 
+    def test_no_user_permissions_raises_error(self, req, plain_view):
+        with pytest.raises(PermissionDenied):
+            plain_view.as_view()(req)
+
+    def test_correct_view_permissions(self, req, user, plain_view):
+        view_permission = Permission.objects.get(codename='view_scheduledbanner')
+        user.user_permissions.add(view_permission)
+        user.save()
+
+        res = plain_view.as_view()(req)
+        assert res.status_code == 200
+
+
 class TestBannerDisplay:
 
     @pytest.fixture()
-    def view(self, req, user, today_banner):
-        view = views.BannerDisplay()
-        setup_user_view(view, req, user=user)
-        view.kwargs['banner_id'] = today_banner.id
+    def plain_view(self):
+        return views.BannerDisplay
+
+    @pytest.fixture()
+    def view(self, req, plain_view, today_banner):
+        view = plain_view()
+        setup_view(view, req, banner_id=today_banner.id)
         return view
 
     def test_get_object(self, view, today_banner):
@@ -85,18 +105,30 @@ class TestBannerDisplay:
         assert type(data['banner']) is dict
         assert data['banner']['name'] == today_banner.name
 
-    def test_get(self, view, req):
-        res = view.get(req)
+    def test_no_user_permissions_raises_error(self, req, plain_view, today_banner):
+        with pytest.raises(PermissionDenied):
+            plain_view.as_view()(req, banner_id=today_banner.id)
+
+    def test_correct_view_permissions(self, req, user, plain_view, today_banner):
+        view_permission = Permission.objects.get(codename='view_scheduledbanner')
+        user.user_permissions.add(view_permission)
+        user.save()
+
+        res = plain_view.as_view()(req, banner_id=today_banner.id)
         assert res.status_code == 200
 
-#TODO: I probably shouldnt need to do this
+
 @override_settings(ROOT_URLCONF='admin.base.urls')
 class TestDeleteBanner:
-    @pytest.fixture
-    def view(self, req, user, today_banner):
-        view = views.DeleteBanner()
-        setup_user_view(view, req, user=user)
-        view.kwargs['banner_id'] = today_banner.id
+
+    @pytest.fixture()
+    def plain_view(self):
+        return views.DeleteBanner
+
+    @pytest.fixture()
+    def view(self, req, plain_view, today_banner):
+        view = plain_view()
+        setup_view(view, req, banner_id=today_banner.id)
         return view
 
     def test_delete(self, view, req, app):
@@ -104,17 +136,32 @@ class TestDeleteBanner:
         assert res.url == '/banners/'
         assert res.status_code == 302
 
-    def test_get(self, view, req):
-        res = view.get(req)
+    def test_no_user_permissions_raises_error(self, req, plain_view, today_banner):
+        with pytest.raises(PermissionDenied):
+            plain_view.as_view()(req, banner_id=today_banner.id)
+
+    def test_correct_permissions(self, req, user, plain_view, today_banner):
+        delete_permission = Permission.objects.get(codename='delete_scheduledbanner')
+        user.user_permissions.add(delete_permission)
+        user.save()
+
+        res = plain_view.as_view()(req, banner_id=today_banner.id)
         assert res.status_code == 200
 
 class TestCreateBanner:
-    @pytest.fixture
-    def view(self, req):
-        view = views.CreateBanner()
-        setup_form_view(view, req, form=BannerForm())
-        return view
 
-    def test_get(self, view, req):
-        res = view.get(req)
+    @pytest.fixture()
+    def plain_view(self):
+        return views.CreateBanner
+
+    def test_no_user_permissions_raises_error(self, req, plain_view):
+        with pytest.raises(PermissionDenied):
+            plain_view.as_view()(req)
+
+    def test_correct_view_permissions(self, req, user, plain_view):
+        change_permission = Permission.objects.get(codename='change_scheduledbanner')
+        user.user_permissions.add(change_permission)
+        user.save()
+
+        res = plain_view.as_view()(req)
         assert res.status_code == 200

@@ -7,9 +7,9 @@ from django.core.files.storage import Storage
 from django.core.files.base import ContentFile
 from django.utils.deconstruct import deconstructible
 
-
+# Could easily be genericized - would just need a generic url to serve images
 class BannerImage(models.Model):
-    filename = models.TextField(unique=True)
+    filename = models.CharField(unique=True, max_length=256)
     image = models.BinaryField()
 
 @deconstructible
@@ -26,6 +26,7 @@ class BannerImageStorage(Storage):
     def delete(self, name):
         BannerImage.objects.get(filename=name).delete()
 
+    # Note: Banner image names must be unique
     def get_available_name(self, name, max_length=None):
         return name
 

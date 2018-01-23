@@ -817,6 +817,10 @@ class ReviewActionFactory(DjangoModelFactory):
     is_deleted = False
 
 class ScheduledBannerFactory(DjangoModelFactory):
+    # Banners are set for 24 hours from start_date if no end date is given
+    class Meta:
+        model = models.ScheduledBanner
+
     name = factory.Faker('name')
     default_text = factory.Faker('text')
     mobile_text = factory.Faker('text')
@@ -825,8 +829,4 @@ class ScheduledBannerFactory(DjangoModelFactory):
     license = factory.Faker('name')
     color = 'white'
     start_date = timezone.now()
-    end_date = start_date
-    #TODO: Make setting dates smarter
-
-    class Meta:
-        model = models.ScheduledBanner
+    end_date = factory.LazyAttribute(lambda o: o.start_date)

@@ -39,7 +39,7 @@
             {{ banner.default_text }}
         </td>
         <td>
-            {%  if perms.osf.delete_banner %}
+            {%  if perms.osf.delete_scheduledbanner %}
                 <a class="btn btn-danger" href={% url 'banners:delete' banner.id %}>Delete banner</a>
             {% endif %}
         </td>
