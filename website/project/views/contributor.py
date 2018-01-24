@@ -407,6 +407,7 @@ def send_claim_registered_email(claimer, unclaimed_user, node, throttle=24 * 360
         node=node,
         claim_url=claim_url,
         fullname=unclaimed_record['name'],
+        osf_contact_email=settings.OSF_CONTACT_EMAIL,
     )
     unclaimed_record['last_sent'] = get_timestamp()
     unclaimed_user.save()
@@ -418,6 +419,7 @@ def send_claim_registered_email(claimer, unclaimed_user, node, throttle=24 * 360
         fullname=claimer.fullname,
         referrer=referrer,
         node=node,
+        osf_contact_email=settings.OSF_CONTACT_EMAIL,
     )
 
 
@@ -491,7 +493,8 @@ def send_claim_email(email, unclaimed_user, node, notify=True, throttle=24 * 360
                 user=unclaimed_user,
                 referrer=referrer,
                 fullname=unclaimed_record['name'],
-                node=node
+                node=node,
+                osf_contact_email=settings.OSF_CONTACT_EMAIL,
             )
         mail_tpl = mails.FORWARD_INVITE
         to_addr = referrer.username
@@ -506,7 +509,8 @@ def send_claim_email(email, unclaimed_user, node, notify=True, throttle=24 * 360
         claim_url=claim_url,
         email=claimer_email,
         fullname=unclaimed_record['name'],
-        branded_service=preprint_provider
+        branded_service=preprint_provider,
+        osf_contact_email=settings.OSF_CONTACT_EMAIL,
     )
 
     return to_addr
