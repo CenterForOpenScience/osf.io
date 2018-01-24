@@ -180,7 +180,7 @@ def mla_reformat(node, cit):
         last_one = mla_name(process_name(node, contributors_list[-1]))
         if rest_ones:
             rest_part = ', '.join(rest_ones)
-            new_mla = first_one + ', ' + rest_part + ', and ' + last_one
+            new_mla = first_one.rstrip(',') + ', ' + rest_part + ', and ' + last_one
         else:
             new_mla = first_one + 'and ' + last_one
     # handle 5 or more contributors
@@ -212,7 +212,7 @@ def chicago_reformat(node, cit):
         last_one = mla_name(process_name(node, contributors_list[-1]))
         if rest_ones:
             rest_part = ', '.join(rest_ones)
-            new_chi = first_one + ', ' + rest_part + ', and ' + last_one + ' '
+            new_chi = first_one.rstrip(',') + ', ' + rest_part + ', and ' + last_one + ' '
         else:
             new_chi = first_one + 'and ' + last_one + ' '
     # handle 11 or more contributors
@@ -247,9 +247,8 @@ def mla_name(name, initial=False):
             mla += name['given_name']
             if name['middle_names']:
                 mla += ' ' + name['middle_names'][0]
-            mla += ','
-        if name['suffix']:
-            mla += ' ' + name['suffix']
         if name['family_name']:
             mla += ' ' + name['family_name']
+        if name['suffix']:
+            mla += ' ' + name['suffix']
     return mla
