@@ -116,7 +116,7 @@ def serialize_node_summary(node, auth, primary=True, show_path=False):
             'show_path': show_path,
             'contributors': contributor_data['contributors'],
             'others_count': contributor_data['others_count'],
-            'description': node.description if len(node.description) < 150 else node.description[0:150] + '...',
+            'description': node.description if len(node.description) <= 150 else node.description[0:150] + '...',
         })
     else:
         summary['can_view'] = False
