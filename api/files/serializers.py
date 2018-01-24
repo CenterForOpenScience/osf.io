@@ -191,7 +191,8 @@ class BaseFileSerializer(JSONAPISerializer):
     })
 
     def get_download_link(self, obj):
-        return get_file_download_link(obj, view_only=self.context['request'].query_params.get('view_only'))
+        if obj.is_file:
+            return get_file_download_link(obj, view_only=self.context['request'].query_params.get('view_only'))
 
     class Meta:
         type_ = 'files'
