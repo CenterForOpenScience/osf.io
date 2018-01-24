@@ -226,8 +226,11 @@ class WikiPage(GuidMixin, BaseModel):
     def url(self):
         return u'{}wiki/{}/'.format(self.node.url, self.page_name)
 
-    def create_version(self, user, content):
-        version = WikiVersion(user=user, wiki_page=self, content=content, identifier=self.current_version_number + 1)
+    def create_version(self, user, content, created=None, modified=None, date=None):
+        if created and modified and date:
+            version = WikiVersion(user=user, wiki_page=self, content=content, identifier=self.current_version_number + 1, created=created, modified=modified, date=date)
+        else:
+            version = WikiVersion(user=user, wiki_page=self, content=content, identifier=self.current_version_number + 1)
         version.save()
         return version
 
