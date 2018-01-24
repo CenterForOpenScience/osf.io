@@ -888,22 +888,13 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
 
     @property
     def admin_contributor_ids(self):
-        def get_admin_contributor_ids(node):
-            return Contributor.objects.select_related('user').filter(
-                node=node,
-                user__is_active=True,
-                admin=True
-            ).values_list('user__guids___id', flat=True)
-
-        contributor_ids = set(self.contributors.values_list('guids___id', flat=True))
-        admin_ids = set(get_admin_contributor_ids(self))
-        for parent in self.parents:
-            admins = get_admin_contributor_ids(parent)
-            admin_ids.update(set(admins).difference(contributor_ids))
-        return admin_ids
+        return self._get_admin_contributor_ids(include_self=True)
 
     @property
     def parent_admin_contributor_ids(self):
+        return self._get_admin_contributor_ids()
+
+    def _get_admin_contributor_ids(self, include_self=False):
         def get_admin_contributor_ids(node):
             return Contributor.objects.select_related('user').filter(
                 node=node,
@@ -912,7 +903,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
             ).values_list('user__guids___id', flat=True)
 
         contributor_ids = set(self.contributors.values_list('guids___id', flat=True))
-        admin_ids = set()
+        admin_ids = set(get_admin_contributor_ids(self)) if include_self else set()
         for parent in self.parents:
             admins = get_admin_contributor_ids(parent)
             admin_ids.update(set(admins).difference(contributor_ids))
