@@ -11,7 +11,6 @@ from framework.sessions.utils import remove_session
 
 
 __all__ = [
-    'get_display_name',
     'Auth',
     'get_user',
     'check_password',
@@ -20,13 +19,6 @@ __all__ = [
     'logout',
     'register_unconfirmed',
 ]
-
-
-def get_display_name(username):
-    """Return the username to display in the navbar. Shortens long usernames."""
-    if len(username) > 40:
-        return '%s...%s' % (username[:20].strip(), username[-15:].strip())
-    return username
 
 
 # check_password(actual_pw_hash, given_password) -> Boolean
