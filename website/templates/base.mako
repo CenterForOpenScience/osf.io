@@ -225,6 +225,7 @@
                 maintenance: ${ maintenance | sjson, n},
                 analyticsMeta: {},
                 osfSupportEmail: ${osf_support_email | sjson, n },
+                osfContactEmail: ${osf_contact_email | sjson, n },
             });
         </script>
 
