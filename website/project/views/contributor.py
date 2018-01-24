@@ -551,7 +551,8 @@ def notify_added_contributor(node, contributor, auth=None, throttle=None, email_
             node=node,
             referrer_name=auth.user.fullname if auth else '',
             all_global_subscriptions_none=check_if_all_global_subscriptions_are_none(contributor),
-            branded_service=preprint_provider
+            branded_service=preprint_provider,
+            osf_contact_email=settings.OSF_CONTACT_EMAIL
         )
 
         contributor.contributor_added_email_records[node._id]['last_sent'] = get_timestamp()
@@ -756,6 +757,7 @@ def claim_user_form(auth, **kwargs):
         'email': claimer_email if claimer_email else '',
         'fullname': user.fullname,
         'form': forms.utils.jsonify(form) if is_json_request() else form,
+        'osf_contact_email': settings.OSF_CONTACT_EMAIL,
     }
 
 

@@ -545,7 +545,8 @@ def external_login_confirm_email_get(auth, uid, token):
             to_addr=user.username,
             mail=mails.WELCOME,
             mimetype='html',
-            user=user
+            user=user,
+            osf_contact_email=settings.OSF_CONTACT_EMAIL
         )
         service_url += '&{}'.format(urllib.urlencode({'new': 'true'}))
     elif external_status == 'LINK':
@@ -624,7 +625,8 @@ def confirm_email_get(token, auth=None, **kwargs):
             to_addr=user.username,
             mail=mails.WELCOME,
             mimetype='html',
-            user=user
+            user=user,
+            osf_contact_email=settings.OSF_CONTACT_EMAIL
         )
 
     # new random verification key, allows CAS to authenticate the user w/o password one-time only.
