@@ -130,9 +130,12 @@ class TestPreprintDetail:
     def test_preprint_embed_identifiers(self, app, user, preprint, url):
         expected_doi = EZID_FORMAT.format(namespace=DOI_NAMESPACE, guid=preprint._id).replace('doi:', '')
         preprint.set_identifier_values(doi=expected_doi, ark='testark')
+        preprint.save()
         embed_url = url + '?embed=identifiers'
         res = app.get(embed_url, auth=user.auth)
         assert res.status_code == 200
+        link = res.json['data']['relationships']['identifiers']['links']['related']['href']
+        assert '/v2/preprints/{}/identifiers'.format(preprint._id) in link
 
 
 @pytest.mark.django_db
