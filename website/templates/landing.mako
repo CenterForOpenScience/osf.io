@@ -311,7 +311,7 @@
 
       </div>
     </div>
-    <div class  ="space-top space-bottom feature-6">
+    <div class="space-top space-bottom feature-6">
       <div class="container">
         <div class="row">
           <div class="col-md-8">
