@@ -339,7 +339,9 @@
 </%def>
 
 <%def name="footer()">
-    <div style="margin-top:-25px"><%include file="footer.mako"/></div>
+    <div style="margin-top:-25px">
+        <%include file="footer.mako"/>
+    </div>
 </%def>
 
 <%def name="stylesheets()">
