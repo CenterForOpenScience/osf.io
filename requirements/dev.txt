@@ -37,3 +37,6 @@ pydevd==0.0.6
 
 # n+1 query detection
 nplusone==0.8.2
+
+# newrelic APM agent
+newrelic==2.60.0.46
