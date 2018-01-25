@@ -1177,7 +1177,7 @@ class TestArchiverScripts(ArchiverTestCase):
             archive_job.datetime_initiated = timezone.now() - delta
             archive_job.save()
             reg.save()
-            ArchiveJob.remove_one(archive_job)
+            ArchiveJob.delete(archive_job)
             legacy.append(reg._id)
         for i in range(5):
             reg = factories.RegistrationFactory()

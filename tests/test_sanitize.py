@@ -18,11 +18,11 @@ class TestSanitize(unittest.TestCase):
         )
         assert_equal(
             sanitize.clean_tag('<iframe src=evilsite>'),
-            '&lt;iframe src=&quot;evilsite&quot;&gt;',
+            '&lt;iframe src=&quot;evilsite&quot;&gt;&lt;/iframe&gt;',
         )
         assert_equal(
             sanitize.clean_tag(');</span><script></script><span>'),
-            ');&lt;/span&gt;&lt;script&gt;&lt;/script&gt;&lt;span&gt;',
+            ');&lt;script&gt;&lt;/script&gt;&lt;span&gt;&lt;/span&gt;',
         )
 
     def test_clean_tag(self):

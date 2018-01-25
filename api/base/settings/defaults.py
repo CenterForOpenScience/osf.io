@@ -32,12 +32,6 @@ DATABASES = {
 }
 
 DATABASE_ROUTERS = ['osf.db.router.PostgreSQLFailoverRouter', ]
-CELERY_IMPORTS = [
-    'osf.management.commands.migratedata',
-    'osf.management.commands.migraterelations',
-    'osf.management.commands.verify',
-]
-
 PASSWORD_HASHERS = [
     'django.contrib.auth.hashers.BCryptSHA256PasswordHasher',
     'django.contrib.auth.hashers.BCryptPasswordHasher',
@@ -274,4 +268,5 @@ SELECT_FOR_UPDATE_ENABLED = True
 # Disable anonymous user permissions in django-guardian
 ANONYMOUS_USER_NAME = None
 
-CELERY_BEAT_SCHEDULER = 'django_celery_beat.schedulers:DatabaseScheduler'
+# If set to True, automated tests with extra queries will fail.
+NPLUSONE_RAISE = False

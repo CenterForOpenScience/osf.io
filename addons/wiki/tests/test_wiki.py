@@ -725,8 +725,10 @@ class TestWikiLinks(OsfTestCase):
         content = u'<span></span><iframe src="http://httpbin.org/"></iframe>'
         node = ProjectFactory()
         wiki = NodeWikiFactory(content=content, node=node)
-        expected = render_content(content, node)
-        assert_equal(expected, wiki.html(node))
+        assert_equal(
+            '<p><span></span>&lt;iframe src="<a href="http://httpbin.org/" rel="nofollow">http://httpbin.org/</a>"&gt;&lt;/iframe&gt;</p>',
+            wiki.html(node)
+        )
 
 
 class TestWikiUuid(OsfTestCase):

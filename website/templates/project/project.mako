@@ -273,7 +273,7 @@
     <%include file="include/comment_pane_template.mako"/>
 % endif
 
-% if node['is_preprint']:
+% if node['is_preprint'] and (user['is_contributor'] or node['has_published_preprint']):
 <div class="row">
     <div class="col-xs-12">
         <div class="pp-notice m-b-md p-md clearfix">
@@ -299,9 +299,9 @@
                 This project represents a ${node['preprint_word']}.
             % endif
             <a href="http://help.osf.io/m/preprints">Learn more</a> about how to work with ${node['preprint_word']} files.
-            <a href="${node['preprint_url']}" class="btn btn-default btn-sm m-r-xs pull-right">View preprint</a>
+            <a href="${node['preprint_url']}" class="btn btn-default btn-sm m-r-xs pull-right">View ${node['preprint_word']}</a>
             % if user['is_admin']:
-                <a href="${node['preprint_url']}edit" class="btn btn-default btn-sm m-r-xs pull-right">Edit preprint</a>
+                <a href="${node['preprint_url']}edit" class="btn btn-default btn-sm m-r-xs pull-right">Edit ${node['preprint_word']}</a>
             % endif
         </div>
     </div>
