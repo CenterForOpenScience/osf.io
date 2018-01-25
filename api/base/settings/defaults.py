@@ -267,9 +267,5 @@ SELECT_FOR_UPDATE_ENABLED = True
 # Disable anonymous user permissions in django-guardian
 ANONYMOUS_USER_NAME = None
 
-if DEBUG:
-    INSTALLED_APPS += ('nplusone.ext.django',)
-    MIDDLEWARE_CLASSES += ('nplusone.ext.django.NPlusOneMiddleware',)
-
 # If set to True, automated tests with extra queries will fail.
 NPLUSONE_RAISE = False
