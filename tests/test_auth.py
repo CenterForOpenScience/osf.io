@@ -76,6 +76,7 @@ class TestAuthUtils(OsfTestCase):
             username=user.username,
             password='gattaca',
             fullname='Rosie',
+            osf_contact_email=settings.OSF_CONTACT_EMAIL
         )
 
         user.reload()
@@ -189,6 +190,7 @@ class TestAuthUtils(OsfTestCase):
             'mimetype': 'plain',
             'mail': mails.PASSWORD_RESET,
             'to_addr': user.username,
+            'osf_contact_email': settings.OSF_CONTACT_EMAIL,
         })
 
     @mock.patch('framework.auth.utils.requests.post')
