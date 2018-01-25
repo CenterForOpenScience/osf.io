@@ -15,7 +15,6 @@ from framework.routing import Rule
 from framework.flask import redirect
 from framework.routing import WebRenderer
 from framework.exceptions import HTTPError
-from framework.auth import get_display_name
 from framework.routing import json_renderer
 from framework.routing import process_rules
 from framework.auth import views as auth_views
@@ -78,7 +77,7 @@ def get_globals():
         'user_api_url': user.api_url if user else '',
         'user_entry_point': metrics.get_entry_point(user) if user else '',
         'user_institutions': user_institutions if user else None,
-        'display_name': get_display_name(user.fullname) if user else '',
+        'display_name': user.fullname if user else '',
         'anon': {
             'continent': getattr(location, 'continent', None),
             'country': getattr(location, 'country', None),
