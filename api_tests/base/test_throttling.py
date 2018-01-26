@@ -9,7 +9,8 @@ from osf_tests.factories import AuthUserFactory, ProjectFactory
 
 
 pytestmark = pytest.mark.skip(
-    'Unskip when throttling no longer fails on travis')
+    'Unskip when throttling no longer fails on travis'
+)
 
 
 class TestDefaultThrottleClasses(ApiTestCase):

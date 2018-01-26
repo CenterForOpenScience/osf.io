@@ -53,7 +53,8 @@ class TestFlaskDjangoIntegration:
             except BaseException:
                 assert_true(
                     False,
-                    'Exception from push_status_message via API v2 with type "{}".'.format(status))
+                    'Exception from push_status_message via API v2 with type "{}".'.format(status)
+                )
 
     def test_push_status_message_expected_error(self):
         status_message = 'This is a message'
@@ -61,20 +62,24 @@ class TestFlaskDjangoIntegration:
             push_status_message(status_message, kind='error')
             assert_true(
                 False,
-                'push_status_message() should have generated a ValidationError exception.')
+                'push_status_message() should have generated a ValidationError exception.'
+            )
         except ValidationError as e:
             assert_equal(
                 e.detail[0],
                 status_message,
-                'push_status_message() should have passed along the message with the Exception.')
+                'push_status_message() should have passed along the message with the Exception.'
+            )
         except RuntimeError:
             assert_true(
                 False,
-                'push_status_message() should have caught the runtime error and replaced it.')
+                'push_status_message() should have caught the runtime error and replaced it.'
+            )
         except BaseException:
             assert_true(
                 False,
-                'Exception from push_status_message when called from the v2 API with type "error"')
+                'Exception from push_status_message when called from the v2 API with type "error"'
+            )
 
     @mock.patch('framework.status.session')
     def test_push_status_message_unexpected_error(self, mock_sesh):
@@ -88,11 +93,13 @@ class TestFlaskDjangoIntegration:
             push_status_message(status_message, kind='error')
             assert_true(
                 False,
-                'push_status_message() should have generated a RuntimeError exception.')
+                'push_status_message() should have generated a RuntimeError exception.'
+            )
         except ValidationError as e:
             assert_true(
                 False,
-                'push_status_message() should have re-raised the RuntimeError not gotten ValidationError.')
+                'push_status_message() should have re-raised the RuntimeError not gotten ValidationError.'
+            )
         except RuntimeError as e:
             assert_equal(getattr(e, 'message', None),
                          exception_message,

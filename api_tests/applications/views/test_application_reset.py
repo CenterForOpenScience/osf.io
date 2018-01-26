@@ -72,20 +72,16 @@ class TestApplicationReset:
 
     @mock.patch('osf.models.ApiOAuth2Application.reset_secret')
     def test_other_user_cannot_reset(
-            self,
-            mock_method,
-            app,
-            user_app,
-            user_reset_url,
-            correct):
+            self, mock_method, app, user_app, user_reset_url, correct
+    ):
         mock_method.return_value(True)
         old_secret = user_app.client_secret
         other_user = AuthUserFactory()
         res = app.post_json_api(
-            user_reset_url,
-            correct,
+            user_reset_url, correct,
             auth=other_user.auth,
-            expect_errors=True)
+            expect_errors=True
+        )
         assert res.status_code == 403
         mock_method.assert_not_called()
         user_app.reload()
@@ -93,19 +89,15 @@ class TestApplicationReset:
 
     @mock.patch('osf.models.ApiOAuth2Application.reset_secret')
     def test_unauth_user_cannot_reset(
-            self,
-            mock_method,
-            app,
-            user_app,
-            user_reset_url,
-            correct):
+            self, mock_method, app, user_app, user_reset_url, correct
+    ):
         mock_method.return_value(True)
         old_secret = user_app.client_secret
         res = app.post_json_api(
-            user_reset_url,
-            correct,
+            user_reset_url, correct,
             auth=None,
-            expect_errors=True)
+            expect_errors=True
+        )
         assert res.status_code == 401
         mock_method.assert_not_called()
         user_app.reload()

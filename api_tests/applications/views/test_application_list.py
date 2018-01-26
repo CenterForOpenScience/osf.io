@@ -55,14 +55,14 @@ class TestApplicationList:
             self, app, user, user_app, url):
         res = app.get(url, auth=user.auth)
         assert len(
-            res.json['data']) == ApiOAuth2Application.objects.filter(
-            owner=user).count()
+            res.json['data']
+        ) == ApiOAuth2Application.objects.filter(owner=user).count()
 
     def test_other_user_should_see_only_their_applications(self, app, url):
         other_user = AuthUserFactory()
         other_user_apps = [
-            ApiOAuth2ApplicationFactory(
-                owner=other_user) for i in xrange(2)]
+            ApiOAuth2ApplicationFactory(owner=other_user) for i in xrange(2)
+        ]
 
         res = app.get(url, auth=other_user.auth)
         assert len(res.json['data']) == len(other_user_apps)
@@ -80,15 +80,16 @@ class TestApplicationList:
         res = app.get(url, auth=user.auth)
         assert res.status_code == 200
         assert len(
-            res.json['data']) == ApiOAuth2Application.objects.count() - 1
+            res.json['data']
+        ) == ApiOAuth2Application.objects.count() - 1
 
     def test_created_applications_are_tied_to_request_user_with_data_specified(
             self, app, user, url, sample_data):
         res = app.post_json_api(
-            url,
-            sample_data,
+            url, sample_data,
             auth=user.auth,
-            expect_errors=True)
+            expect_errors=True
+        )
         assert res.status_code == 201
 
         assert res.json['data']['attributes']['owner'] == user._id
@@ -100,8 +101,9 @@ class TestApplicationList:
             self, app, user, url, sample_data):
         data = copy.copy(sample_data)
         data['data']['attributes']['callback_url'] = 'itunes:///invalid_url_of_doom'
-        res = app.post_json_api(url, data,
-                                auth=user.auth, expect_errors=True)
+        res = app.post_json_api(
+            url, data, auth=user.auth, expect_errors=True
+        )
         assert res.status_code == 400
 
     def test_field_content_is_sanitized_upon_submission(

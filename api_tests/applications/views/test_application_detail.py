@@ -72,9 +72,10 @@ class TestApplicationDetail:
 
     def test_non_owner_cant_delete(self, app, user_app_url):
         non_owner = AuthUserFactory()
-        res = app.delete(user_app_url,
-                         auth=non_owner.auth,
-                         expect_errors=True)
+        res = app.delete(
+            user_app_url, auth=non_owner.auth,
+            expect_errors=True
+        )
         assert res.status_code == 403
 
     @mock.patch('framework.auth.cas.CasClient.revoke_application_tokens')
@@ -89,12 +90,15 @@ class TestApplicationDetail:
             self, app, user, user_app, user_app_url):
         user_app_copy = user_app
         new_name = 'The instance formerly known as Prince'
-        res = app.patch_json_api(user_app_url,
-                                 {'data': {'attributes': {'name': new_name},
-                                           'id': user_app.client_id,
-                                           'type': 'applications'}},
-                                 auth=user.auth,
-                                 expect_errors=True)
+        res = app.patch_json_api(
+            user_app_url,
+            {
+                'data': {
+                    'attributes': {'name': new_name},
+                    'id': user_app.client_id,
+                    'type': 'applications'
+                }
+            }, auth=user.auth, expect_errors=True)
         user_app_copy.reload()
         assert res.status_code == 200
 
@@ -106,17 +110,24 @@ class TestApplicationDetail:
                 'name': new_name,
                 'description': user_app_copy.description,
                 'home_url': user_app_copy.home_url,
-                'callback_url': user_app_copy.callback_url},
-            res.json['data']['attributes'])
+                'callback_url': user_app_copy.callback_url
+            },
+            res.json['data']['attributes']
+        )
 
     def test_updating_an_instance_does_not_change_the_number_of_instances(
             self, app, user, user_app, user_app_url):
         new_name = 'The instance formerly known as Prince'
-        res = app.patch_json_api(user_app_url,
-                                 {'data': {
-                                     'attributes': {'name': new_name},
-                                     'id': user_app.client_id,
-                                     'type': 'applications'}}, auth=user.auth)
+        res = app.patch_json_api(
+            user_app_url,
+            {
+                'data': {
+                    'attributes': {'name': new_name},
+                    'id': user_app.client_id,
+                    'type': 'applications'
+                }
+            }, auth=user.auth
+        )
         assert res.status_code == 200
 
         list_url = _get_application_list_url()
@@ -133,12 +144,7 @@ class TestApplicationDetail:
         assert not user_app.is_active
 
     def test_update_application(
-            self,
-            app,
-            user,
-            user_app,
-            user_app_url,
-            make_payload):
+            self, app, user, user_app, user_app_url, make_payload):
 
         valid_payload = make_payload()
         incorrect_type_payload = make_payload(type='incorrect')
@@ -152,7 +158,8 @@ class TestApplicationDetail:
             user_app_url,
             valid_payload,
             auth=user.auth,
-            expect_errors=True)
+            expect_errors=True
+        )
         assert res.status_code == 200
 
     #   test_update_application_incorrect_type_payload
@@ -160,7 +167,8 @@ class TestApplicationDetail:
             user_app_url,
             incorrect_type_payload,
             auth=user.auth,
-            expect_errors=True)
+            expect_errors=True
+        )
         assert res.status_code == 409
 
     #   test_update_application_incorrect_id_payload
@@ -168,7 +176,8 @@ class TestApplicationDetail:
             user_app_url,
             incorrect_id_payload,
             auth=user.auth,
-            expect_errors=True)
+            expect_errors=True
+        )
         assert res.status_code == 409
 
     #   test_update_application_no_type
@@ -176,7 +185,8 @@ class TestApplicationDetail:
             user_app_url,
             missing_type_payload,
             auth=user.auth,
-            expect_errors=True)
+            expect_errors=True
+        )
         assert res.status_code == 400
 
     #   test_update_application_no_id
@@ -184,19 +194,22 @@ class TestApplicationDetail:
             user_app_url,
             missing_id_payload,
             auth=user.auth,
-            expect_errors=True)
+            expect_errors=True
+        )
         assert res.status_code == 400
 
     #   test_update_application_no_attributes
         payload = {
             'id': user_app.client_id,
             'type': 'applications',
-            'name': 'The instance formerly known as Prince'}
+            'name': 'The instance formerly known as Prince'
+        }
         res = app.put_json_api(
             user_app_url,
             payload,
             auth=user.auth,
-            expect_errors=True)
+            expect_errors=True
+        )
         assert res.status_code == 400
 
     #   test_partial_update_application_incorrect_type_payload
@@ -204,7 +217,8 @@ class TestApplicationDetail:
             user_app_url,
             incorrect_type_payload,
             auth=user.auth,
-            expect_errors=True)
+            expect_errors=True
+        )
         assert res.status_code == 409
 
     #   test_partial_update_application_incorrect_id_payload
@@ -212,7 +226,8 @@ class TestApplicationDetail:
             user_app_url,
             incorrect_id_payload,
             auth=user.auth,
-            expect_errors=True)
+            expect_errors=True
+        )
         assert res.status_code == 409
 
     #   test_partial_update_application_no_type
@@ -220,7 +235,8 @@ class TestApplicationDetail:
             user_app_url,
             missing_type_payload,
             auth=user.auth,
-            expect_errors=True)
+            expect_errors=True
+        )
         assert res.status_code == 400
 
     #   test_partial_update_application_no_id
@@ -228,20 +244,22 @@ class TestApplicationDetail:
             user_app_url,
             missing_id_payload,
             auth=user.auth,
-            expect_errors=True)
+            expect_errors=True
+        )
         assert res.status_code == 400
 
     #   test_partial_update_application_no_attributes
         payload = {
-            'data':
-                {'id': user_app.client_id,
-                 'type': 'applications',
-                 'name': 'The instance formerly known as Prince'
-                 }
+            'data': {
+                'id': user_app.client_id,
+                'type': 'applications',
+                'name': 'The instance formerly known as Prince'
+            }
         }
         res = app.patch_json_api(
             user_app_url,
             payload,
             auth=user.auth,
-            expect_errors=True)
+            expect_errors=True
+        )
         assert res.status_code == 400
