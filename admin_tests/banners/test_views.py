@@ -5,7 +5,6 @@ from admin.banners import views
 from datetime import timedelta
 from django.utils import timezone
 from django.test import RequestFactory
-from django.test.utils import override_settings
 from django.contrib.auth.models import Permission
 from django.core.exceptions import PermissionDenied
 
@@ -82,6 +81,7 @@ class TestBannerList:
         assert res.status_code == 200
 
 
+@pytest.mark.urls('admin.base.urls')
 class TestBannerDisplay:
 
     @pytest.fixture()
@@ -118,7 +118,7 @@ class TestBannerDisplay:
         assert res.status_code == 200
 
 
-@override_settings(ROOT_URLCONF='admin.base.urls')
+@pytest.mark.urls('admin.base.urls')
 class TestDeleteBanner:
 
     @pytest.fixture()
@@ -131,7 +131,7 @@ class TestDeleteBanner:
         setup_view(view, req, banner_id=today_banner.id)
         return view
 
-    def test_delete(self, view, req, app):
+    def test_delete(self, view, req):
         res = view.delete(req)
         assert res.url == '/banners/'
         assert res.status_code == 302
