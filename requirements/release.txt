@@ -6,5 +6,7 @@
 pyrax==1.9.7
 # uwsgi
 uwsgi==2.0.12
+# newrelic APM agent
+-newrelic==2.60.0.46
 # Scripts
 progressbar==2.3
