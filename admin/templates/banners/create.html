@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+{% load render_bundle from webpack_loader %}
+{% block title %}
+    <title>OSF Admin | Schedule banner</title>
+{% endblock title %}
+{% block content %}
+    <div class="container-fluid">
+        <div class="row">
+            <div class="col-md-12">
+                <h2>Schedule a banner</h2>
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-md-9">
+                <form action="" method="post" enctype="multipart/form-data">
+                    {% csrf_token %}
+                    {{ form.non_field_errors }}
+                    {% for field in form %}
+                         <div class="fieldWrapper">
+                             <span class="text-danger">{{ field.errors }}</span>
+                             <p>
+                                 {{ field.label_tag }}
+                                 {{ field }}
+                             </p>
+                         </div>
+                    {% endfor %}
+                    <input type="submit" class="btn btn-primary" value="Save">
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <input type="hidden" id="blackout-dates" value="{{ blackoutDates }}" readonly>
+
+{% endblock content %}
+
+{% block bottom_js %}
+    {% render_bundle 'banners' %}
+{% endblock %}

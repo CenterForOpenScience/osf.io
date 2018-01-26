@@ -1,8 +1,3 @@
-
-.donate-banner {
-    width: 100%;
-}
-
-.donate-banner-background {
-    background: #3B9DD4;
+.banner-image {
+    max-height: 300px;
 }

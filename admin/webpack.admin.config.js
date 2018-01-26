@@ -31,6 +31,7 @@ var config = Object.assign({}, common, {
         'admin-registration-edit-page': staticAdminPath('js/pages/admin-registration-edit-page.js'),
         'dashboard': staticAdminPath('js/sales_analytics/dashboard.js'),
         'metrics-page': staticAdminPath('js/pages/metrics-page.js'),
+        'banners': staticAdminPath('js/banners/banners.js'),
     },
     plugins: plugins,
     debug: true,

@@ -1,6 +1,4 @@
-from django.conf import settings as drf_settings
 from django.conf.urls import include, url
-from django.conf.urls.static import static
 from django.views.generic.base import RedirectView
 
 from . import views
@@ -19,6 +17,7 @@ urlpatterns = [
                 url(r'^actions/', include('api.actions.urls', namespace='actions')),
                 url(r'^addons/', include('api.addons.urls', namespace='addons')),
                 url(r'^applications/', include('api.applications.urls', namespace='applications')),
+                url(r'^banners/', include('api.banners.urls', namespace='banners')),
                 url(r'^citations/', include('api.citations.urls', namespace='citations')),
                 url(r'^collections/', include('api.collections.urls', namespace='collections')),
                 url(r'^comments/', include('api.comments.urls', namespace='comments')),
@@ -46,8 +45,5 @@ urlpatterns = [
         ),
     url(r'^$', RedirectView.as_view(pattern_name=views.root), name='redirect-to-root', kwargs={'version': default_version})
 ]
-
-
-urlpatterns += static('/static/', document_root=drf_settings.STATIC_ROOT)
 
 handler404 = views.error_404
