@@ -2,8 +2,8 @@
 Changelog
 *********
 
-0.129.0 (TBD)
-=============
+0.129.0 (2018-01-26)
+====================
 
 - Return 410 for deleted files.
 - Fix preprint citation suffixes.
