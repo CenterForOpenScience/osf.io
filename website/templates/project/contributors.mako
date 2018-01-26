@@ -259,7 +259,7 @@
             <div class="td-content" data-bind="visible: !$root.collapsed() || contributor.expanded()">
                 <input
                     type="checkbox" class="biblio visible-filter"
-                    data-bind="checked: visible, enable: $data.canEdit() && !contributor.isAdmin && !deleteStaged()"
+                    data-bind="checked: visible, enable: $data.canEdit() && !contributor.isParentAdmin && !deleteStaged()"
                 />
             </div>
         </td>
@@ -269,6 +269,11 @@
                         <button href="#removeContributor" class="btn btn-danger btn-sm m-l-md"
                            data-bind="click: remove"
                            data-toggle="modal">Remove</button>
+                <!-- /ko -->
+                <!-- ko if: (canAddAdminContrib) -->
+                        <button class="btn btn-success btn-sm m-l-md"
+                           data-bind="click: addParentAdmin"
+                        ><i class="fa fa-plus"></i> Add</button>
                 <!-- /ko -->
             </div>
         </td>
