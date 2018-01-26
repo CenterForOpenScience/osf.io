@@ -69,9 +69,10 @@ class TestMaintenanceDisplay:
         assert res.status_code == 200
 
     def test_create_maintenance(self, view, req):
-        req.POST = {'start': '2018/01/27 10:24', 'level': 1}
+        message = 'Whooo. Its Custom!'
+        req.POST = {'start': '2018/01/27 10:24', 'level': 1, 'message': message}
         view.post(req)
-        assert MaintenanceState.objects.first()
+        assert MaintenanceState.objects.first().message == message
 
 
 @pytest.mark.urls('admin.base.urls')
