@@ -4,6 +4,7 @@ import pytest
 from api.base.settings.defaults import API_BASE
 from osf_tests.factories import AuthUserFactory
 
+
 @pytest.mark.django_db
 class TestThrottling:
 
@@ -42,7 +43,7 @@ class TestThrottling:
         assert res.status_code == 429
 
     def test_user_rate_throttle_with_throttle_token(self, app, url, user):
-        headers = { 'X-THROTTLE-TOKEN': 'test-token'}
+        headers = {'X-THROTTLE-TOKEN': 'test-token'}
         res = app.get(url, auth=user.auth, headers=headers)
         assert res.status_code == 200
         res = app.get(url, auth=user.auth, headers=headers)
@@ -57,7 +58,8 @@ class TestThrottling:
         res = app.get(url, headers=headers)
         assert res.status_code == 200
 
-    def test_user_rate_throttle_with_incorrect_throttle_token(self, app, url, user):
+    def test_user_rate_throttle_with_incorrect_throttle_token(
+            self, app, url, user):
         headers = {'X-THROTTLE-TOKEN': 'fake-token'}
         res = app.get(url, auth=user.auth, headers=headers)
         assert res.status_code == 200

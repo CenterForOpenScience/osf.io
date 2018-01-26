@@ -2,6 +2,7 @@ import pytest
 
 from api.base.settings.defaults import API_BASE
 
+
 @pytest.mark.django_db
 class TestAddonsList:
 

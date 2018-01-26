@@ -16,6 +16,7 @@ from api.base.middleware import CorsMiddleware
 from tests.base import ApiTestCase
 from osf_tests import factories
 
+
 class MiddlewareTestCase(ApiTestCase):
     MIDDLEWARE = None
 
@@ -85,7 +86,8 @@ class TestCorsMiddleware(MiddlewareTestCase):
         assert_equal(response['Access-Control-Allow-Origin'], domain.geturl())
 
     @override_settings(CORS_ORIGIN_ALLOW_ALL=False)
-    def test_cross_origin_request_with_Authorization_and_cookie_does_not_get_cors_headers(self):
+    def test_cross_origin_request_with_Authorization_and_cookie_does_not_get_cors_headers(
+            self):
         url = api_v2_url('users/me/')
         domain = urlparse("https://dinosaurs.sexy")
         request = self.request_factory.get(
@@ -100,7 +102,8 @@ class TestCorsMiddleware(MiddlewareTestCase):
         assert_not_in('Access-Control-Allow-Origin', response)
 
     @override_settings(CORS_ORIGIN_ALLOW_ALL=False)
-    def test_non_institution_preflight_request_requesting_authorization_header_gets_cors_headers(self):
+    def test_non_institution_preflight_request_requesting_authorization_header_gets_cors_headers(
+            self):
         url = api_v2_url('users/me/')
         domain = urlparse("https://dinosaurs.sexy")
         request = self.request_factory.options(

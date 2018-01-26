@@ -6,6 +6,7 @@ from osf_tests.factories import (
     UserFactory,
 )
 
+
 @pytest.mark.django_db
 class TestInstitutionUsersList:
 
