@@ -193,6 +193,7 @@
             ga('linker:autoLink', ['centerforopenscience.org', 'cos.io'] );
             ga('set', 'dimension1', ${user_hash(user_id) | sjson, n});
             ga('set', 'dimension2', ${create_timestamp() | sjson, n});
+            ga('set', 'dimension3', (${ user_id | sjson, n} != "") ? 'logged in': 'not logged in');
             ga('send', 'pageview');
             </script>
 
