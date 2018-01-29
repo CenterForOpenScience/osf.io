@@ -47,7 +47,6 @@ def disable_auto_now_fields(models=None):
             if hasattr(field, 'auto_now') and not field.auto_now:
                 field.auto_now = True
 
-
 def ensure_licenses(*args, **kwargs):
     """Upsert the licenses in our database based on a JSON file.
 

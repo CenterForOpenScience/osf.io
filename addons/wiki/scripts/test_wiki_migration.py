@@ -23,7 +23,7 @@ def nodes_with_wikis():
     return AbstractNode.objects.exclude(wiki_pages_versions={})
 
 def count_nodes_with_wikis():
-    print ("Nodes with wikis to be looped through: {}".format(len(nodes_with_wikis())))
+    print ('Nodes with wikis to be looped through: {}'.format(len(nodes_with_wikis())))
 
 def comments_to_be_repointed():
     """
@@ -37,14 +37,14 @@ def comments_to_be_repointed():
     return wikis_with_comments
 
 def count_comments_to_be_repointed():
-    print ("{} Comments should be repointed".format(len(comments_to_be_repointed())))
+    print ('{} Comments should be repointed'.format(len(comments_to_be_repointed())))
 
 def count_expected_wiki_pages():
     """
     One WikiPage will be created for every key in wiki_pages_versions on all nodes with wikis.
     This function returns the number of WikiPage instances you should expect post-migration
     """
-    print ("Expect {} WikiPages to be created during the migration".format(len(wiki_pages_to_be_created())))
+    print ('Expect {} WikiPages to be created during the migration'.format(len(wiki_pages_to_be_created())))
 
 def count_expected_wiki_versions():
     """
@@ -54,7 +54,7 @@ def count_expected_wiki_versions():
     Note, this count will differ from counting NodeWikiPage where is_deleted=False, which is not a good way to decide which
     wikis to copy. The is_deleted property on the NodeWikiPage picks up if the wiki has been deleted, but also renamed.
     """
-    print ("Expect {} WikiVersions to be created during the migration".format(len(wiki_versions_to_be_created())))
+    print ('Expect {} WikiVersions to be created during the migration'.format(len(wiki_versions_to_be_created())))
 
 def wiki_pages_to_be_created():
     """
@@ -106,9 +106,9 @@ def check_that_last_wiki_version_is_also_current():
                 former = NodeWikiPage.load(node.wiki_pages_versions[key][-1])
                 if Comment.objects.filter(root_target=current.guids.all()[0]).exists() or current.page_name != former.page_name or current.version != former.version or check_contributors(node, current._id):
                         problem_discrepancies.append(node)
-    print("{} nodes whose last guid on wiki_pages_versions does not match the guid on wiki_pages_current".format(len(discrepancies)))
-    print("{}/{} nodes flagged as problematic".format(len(problem_discrepancies), len(discrepancies)))
-    print("{}/{} nodes are registrations or forks".format(reg_fork_count, len(discrepancies)))
+    print('{} nodes whose last guid on wiki_pages_versions does not match the guid on wiki_pages_current'.format(len(discrepancies)))
+    print('{}/{} nodes flagged as problematic'.format(len(problem_discrepancies), len(discrepancies)))
+    print('{}/{} nodes are registrations or forks'.format(reg_fork_count, len(discrepancies)))
     print(problem_discrepancies)
 
 def node_with_wikis_that_are_registrations_or_forks():

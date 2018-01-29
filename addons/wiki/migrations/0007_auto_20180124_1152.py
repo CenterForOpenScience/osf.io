@@ -6,7 +6,6 @@ from django.contrib.contenttypes.models import ContentType
 from bulk_update.helper import bulk_update
 
 from osf.models import AbstractNode, Comment, Guid
-from osf.utils.migrations import disable_auto_now_fields
 
 from addons.wiki.models import NodeWikiPage, WikiPage, WikiVersion
 from addons.wiki.utils import to_mongo_key
@@ -20,7 +19,7 @@ def reverse_func(apps, schema_editor):
     """
     This will not restore all NodeWikiPages, where NodeWikiPage was later renamed.
     """
-    for node in AbstractNode.objects.exclude(wiki_pages_versions={}).prefetch_related('wiki_pages_versions'):
+    for node in AbstractNode.objects.exclude(wiki_pages_versions={}):
         for wiki in node.wikis.filter(is_deleted=False):
             old_wiki_page_ids = node.wiki_pages_versions[to_mongo_key(wiki.page_name)]
             old_wiki_pages = NodeWikiPage.objects.filter(node_id=node.id, page_name=wiki.page_name).order_by('version')
@@ -42,12 +41,14 @@ def move_comment_target(current_target, desired_target):
 
 def update_comments_viewed_timestamp(node, current_wiki_object, desired_wiki_object):
     """Replace the current_wiki_object keys in the comments_viewed_timestamp dict with the desired wiki_object_id """
+    contributors_pending_save = []
     for contrib in node.contributors:
         if contrib.comments_viewed_timestamp.get(current_wiki_object._id, None):
             timestamp = contrib.comments_viewed_timestamp[current_wiki_object._id]
             contrib.comments_viewed_timestamp[desired_wiki_object._id] = timestamp
             del contrib.comments_viewed_timestamp[current_wiki_object._id]
-            contrib.save()
+            contributors_pending_save.append(contrib)
+    bulk_update(contributors_pending_save)
     return
 
 def migrate_guid_referent(guid_id, desired_referent):
@@ -61,43 +62,51 @@ def migrate_guid_referent(guid_id, desired_referent):
     return guid
 
 def create_wiki_page(node, node_wiki, page_name):
-    with disable_auto_now_fields(models=[WikiPage]):
-        return WikiPage(
-            page_name=page_name,
-            user=node_wiki.user,
-            node=node,
-            date=node_wiki.date,
-            created=node_wiki.created,
-            modified=node_wiki.modified,
-        )
+    return WikiPage(
+        page_name=page_name,
+        user=node_wiki.user,
+        node=node,
+        date=node_wiki.date,
+        created=node_wiki.created,
+        modified=node_wiki.modified,
+    )
 
-def create_wiki_version(node, node_wiki, wiki_page):
-    with disable_auto_now_fields(models=[WikiVersion]):
-        return WikiVersion(
-            wiki_page=wiki_page,
-            user=node_wiki.user,
-            date=node_wiki.date,
-            created=node_wiki.created,
-            modified=node_wiki.modified,
-            content=node_wiki.content,
-            identifier=node_wiki.version,
-        )
+def create_wiki_version(node_wiki, wiki_page):
+    return WikiVersion(
+        wiki_page=wiki_page,
+        user=node_wiki.user,
+        date=node_wiki.date,
+        created=node_wiki.created,
+        modified=node_wiki.modified,
+        content=node_wiki.content,
+        identifier=node_wiki.version,
+    )
+
+def create_guids():
+    guid_count = 0
+    content_type = ContentType.objects.get_for_model(WikiPage)
+    wiki_pages = WikiPage.objects.all()
+    for wp in wiki_pages:
+        guid_count += 1
+        print 'Guid: {}/{}'.format(guid_count, wiki_pages.count())
+        Guid.objects.create(object_id=wp.id, content_type=content_type)
+    return
 
 def create_wiki_pages(nodes):
     node_total = nodes.count()
     node_count = 0
     wiki_pages = []
-    print "Creating wiki pages"
+    print 'Creating wiki pages'
     for node in nodes.iterator():
         node_count += 1
-        print "NODE: {}/{}".format(node_count, node_total)
+        print 'NODE: {}/{}'.format(node_count, node_total)
         for wiki_key, version_list in node.wiki_pages_versions.iteritems():
             node_wiki = NodeWikiPage.load(version_list[0])
             latest_page_name = NodeWikiPage.load(version_list[-1]).page_name
             wiki_pages.append(create_wiki_page(node, node_wiki, latest_page_name))
-    with disable_auto_now_fields(models=[WikiPage]):
-        print "Saving wiki pages"
-        WikiPage.objects.bulk_create(wiki_pages)
+    print 'Saving wiki pages'
+    WikiPage.objects.bulk_create(wiki_pages)
+    create_guids()
     return
 
 def create_wiki_versions(nodes):
@@ -105,10 +114,10 @@ def create_wiki_versions(nodes):
     guids_pending = []
     node_count = 0
     node_total = nodes.count()
-    print "Creating wiki versions"
+    print 'Creating wiki versions'
     for node in nodes.iterator():
         node_count += 1
-        print "NODE: {}/{}".format(node_count, node_total)
+        print 'NODE: {}/{}'.format(node_count, node_total)
         for wiki_key, version_list in node.wiki_pages_versions.iteritems():
             node_wiki = NodeWikiPage.load(version_list[0])
             page_name = NodeWikiPage.load(version_list[-1]).page_name
@@ -116,31 +125,36 @@ def create_wiki_versions(nodes):
             for index, version in enumerate(version_list):
                 if index:
                     node_wiki = NodeWikiPage.load(version)
-                wiki_versions_pending.append(create_wiki_version(node, node_wiki, wiki_page))
+                wiki_versions_pending.append(create_wiki_version(node_wiki, wiki_page))
                 guids_pending.append(migrate_guid_referent(node_wiki._id, wiki_page))
             move_comment_target(node_wiki, wiki_page)
             update_comments_viewed_timestamp(node, node_wiki, wiki_page)
-    with disable_auto_now_fields(models=[WikiVersion]):
-        print "Saving wiki versions"
-        WikiVersion.objects.bulk_create(wiki_versions_pending)
-    print "Saving guid referents"
+    print 'Saving wiki versions'
+    WikiVersion.objects.bulk_create(wiki_versions_pending)
+    print 'Saving guid referents'
     bulk_update(guids_pending)
     return
 
 def migrate_node_wiki_pages(apps, schema_editor):
-    """For every node, loop through all the NodeWikiPages on node.wiki_pages_versions.  Create a WikiPage, and then a WikiVersion corresponding
+    """
+    TODO Before running, temporarily set date, modified, and created fields on the WikiPage and WikiVersion models to something like:
+    NonNaiveDateTimeField(auto_now_add=False, auto_now=False)
+
+    For every node, loop through all the NodeWikiPages on node.wiki_pages_versions.  Create a WikiPage, and then a WikiVersion corresponding
     to each WikiPage.
         - Loads all nodes with wikis on them.
         - For each node, loops through all the keys in wiki_pages_versions.
         - Creates all wiki pages and then bulk creates them, for speed.
+        - For all wiki pages that were just created, create and save a guid (since bulk_create doesn't call save method)
         - Loops through all nodes again, creating a WikiVersion for every guid for all wiki pages on a node.
         - Repoints guids from old wiki to new WikiPage
         - For the most recent version of the WikiPage, repoint comments to the new WikiPage
         - For comments_viewed_timestamp that point to the NodeWikiPage, repoint to the new WikiPage
     """
-    nodes_with_wikis = AbstractNode.objects.exclude(wiki_pages_versions={}).prefetch_related('wiki_pages_versions')
+    nodes_with_wikis = AbstractNode.objects.exclude(wiki_pages_versions={})
     create_wiki_pages(nodes_with_wikis)
     create_wiki_versions(nodes_with_wikis)
+    return
 
 
 class Migration(migrations.Migration):
