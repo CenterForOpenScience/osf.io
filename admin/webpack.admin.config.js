@@ -15,10 +15,14 @@ var staticAdminPath = function(dir) {
 var plugins = common.plugins.concat([
     // for using webpack with Django
     new BundleTracker({filename: './webpack-stats.json'}),
+    new webpack.LoaderOptionsPlugin({
+        debug: true,
+        minimize: true
+    })
 ]);
 
 common.output = {
-    path: './static/public/js/',
+    path: path.join(__dirname, 'static', 'public', 'js'),
     // publicPath: '/static/', // used to generate urls to e.g. images
     filename: '[name].js',
     sourcePrefix: ''
@@ -33,8 +37,7 @@ var config = Object.assign({}, common, {
         'metrics-page': staticAdminPath('js/pages/metrics-page.js'),
     },
     plugins: plugins,
-    debug: true,
     devtool: 'source-map',
 });
-config.resolve.root = [websiteRoot, adminRoot];
+config.resolve.modules.push(websiteRoot, adminRoot);
 module.exports = config;

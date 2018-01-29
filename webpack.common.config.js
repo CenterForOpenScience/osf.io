@@ -128,16 +128,21 @@ fs.writeFileSync(staticPath('js/_allLogTexts.json'), JSON.stringify(mainLogs));
 fs.writeFileSync(staticPath('js/_anonymousLogTexts.json'), JSON.stringify(anonymousLogs));
 
 var resolve = {
-    extensions: ['', '.es6.js', '.js', '.min.js'],
-    root: root,
-    // Look for required files in bower and npm directories
-    modulesDirectories: ['./website/static/vendor/bower_components', 'node_modules'],
+    modules: [
+        root,
+        './website/static/vendor/bower_components',
+        'node_modules',
+    ],
+    extensions: ['*', '.es6.js', '.js', '.min.js'],
     // Need to alias libraries that aren't managed by bower or npm
     alias: {
         'knockout-sortable': staticPath('vendor/knockout-sortable/knockout-sortable.js'),
         'bootstrap-editable': staticPath('vendor/bootstrap-editable-custom/js/bootstrap-editable.js'),
         'jquery-blockui': staticPath('vendor/jquery-blockui/jquery.blockui.js'),
         'bootstrap': staticPath('vendor/bower_components/bootstrap/dist/js/bootstrap.min.js'),
+        'Caret.js': staticPath('vendor/bower_components/Caret.js/dist/jquery.caret.min.js'),
+        'osf-panel': staticPath('vendor/bower_components/osf-panel/dist/jquery-osfPanel.min.js'),
+        'jquery-qrcode': staticPath('vendor/bower_components/jquery-qrcode/jquery.qrcode.min.js'),
         'jquery-tagsinput': staticPath('vendor/bower_components/jquery.tagsinput/jquery.tagsinput.js'),
         'clipboard': staticPath('vendor/bower_components/clipboard/dist/clipboard.js'),
         'history': nodePath('historyjs/scripts/bundled/html4+html5/jquery.history.js'),
@@ -176,11 +181,7 @@ var externals = {
 
 var plugins = [
     // Bundle common code between modules
-    new webpack.optimize.CommonsChunkPlugin('vendor', 'vendor.js'),
-    // Bower support
-    new webpack.ResolverPlugin(
-        new webpack.ResolverPlugin.DirectoryDescriptionFilePlugin('bower.json', ['main'])
-    ),
+    new webpack.optimize.CommonsChunkPlugin({ name: 'vendor', filename: 'vendor.js' }),
     // Make jQuery available in all modules without having to do require('jquery')
     new webpack.ProvidePlugin({
         $: 'jquery',
@@ -193,9 +194,8 @@ var plugins = [
     }),
 ];
 
-
 var output = {
-    path: './website/static/public/js/',
+    path: path.join(__dirname, 'website', 'static', 'public', 'js'),
     // publicPath: '/static/', // used to generate urls to e.g. images
     filename: '[name].js',
     sourcePrefix: ''
@@ -209,9 +209,9 @@ module.exports = {
     plugins: plugins,
     output: output,
     module: {
-        loaders: [
+        rules: [
             {test: /\.es6\.js$/, exclude: [/node_modules/, /bower_components/, /vendor/], loader: 'babel-loader'},
-            {test: /\.css$/, loaders: ['style', 'css']},
+            {test: /\.css$/, use: [{loader: 'style-loader'}, {loader: 'css-loader'}]},
             // url-loader uses DataUrls; files-loader emits files
             {test: /\.png$/, loader: 'url-loader?limit=100000&mimetype=image/ng'},
             {test: /\.gif$/, loader: 'url-loader?limit=10000&mimetype=image/gif'},
@@ -220,8 +220,7 @@ module.exports = {
             {test: /\.svg/, loader: 'file-loader'},
             {test: /\.eot/, loader: 'file-loader'},
             {test: /\.ttf/, loader: 'file-loader'},
-            //Dirty hack because mime-type's json file is "special"
-            {test: /db.json/, loader: 'json-loader'}
+            { parser: { amd: false }}
         ]
     },
     node: {
