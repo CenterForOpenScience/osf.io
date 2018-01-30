@@ -41,12 +41,12 @@ class TestApiOAuth2Application(OsfTestCase):
 
     def test_invalid_home_url_raises_exception(self):
         with pytest.raises(ValidationError):
-            api_app = ApiOAuth2ApplicationFactory(home_url="Totally not a URL")
+            api_app = ApiOAuth2ApplicationFactory(home_url='Totally not a URL')
             api_app.save()
 
     def test_invalid_callback_url_raises_exception(self):
         with pytest.raises(ValidationError):
-            api_app = ApiOAuth2ApplicationFactory(callback_url="itms://itunes.apple.com/us/app/apple-store/id375380948?mt=8")
+            api_app = ApiOAuth2ApplicationFactory(callback_url='itms://itunes.apple.com/us/app/apple-store/id375380948?mt=8')
             api_app.save()
 
     def test_name_cannot_be_blank(self):
@@ -80,4 +80,3 @@ class TestApiOAuth2Application(OsfTestCase):
             self.api_app.deactivate(save=True)
         self.api_app.reload()
         assert self.api_app.is_active is True
-

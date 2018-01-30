@@ -6,7 +6,7 @@ var bootbox = require('bootbox');
 var $ = require('jquery');
 var language = require('js/osfLanguage').registrations;
 
-var template = require('raw!templates/registration-modal.html');
+var template = require('raw-loader!templates/registration-modal.html');
 $(document).ready(function() {
     $('body').append(template);
 });

@@ -298,6 +298,23 @@ class TestAddonLogs(OsfTestCase):
             'github_addon_file_renamed',
         )
 
+    def test_action_downloads(self):
+        url = self.node.api_url_for('create_waterbutler_log')
+        download_actions=('download_file', 'download_zip')
+        for action in download_actions:
+            payload = self.build_payload(metadata={'path': 'foo'}, action=action)
+            nlogs = self.node.logs.count()
+            res = self.app.put_json(
+                url,
+                payload,
+                headers={'Content-Type': 'application/json'},
+                expect_errors=False,
+            )
+            assert_equal(res.status_code, 200)
+
+        self.node.reload()
+        assert_equal(self.node.logs.count(), nlogs)
+
     def test_add_file_osfstorage_log(self):
         self.configure_osf_addon()
         path = 'pizza'
