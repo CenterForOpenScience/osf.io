@@ -178,11 +178,6 @@ def migrate(provider=None, share_title=None, data=None, dry_run=False, copy=Fals
     do_custom_mapping(custom_provider, data.get('custom', {}))
     map_preprints_to_custom_subjects(custom_provider, data.get('merge', {}), dry_run=dry_run)
 
-def process_shell_escaped_quotes(data):
-    # Translate shell-style escaped quotes for apostrophes - "Children\''s" to "Children\'s"
-    return data.replace("\\\'", "\'")
-
-
 class Command(BaseCommand):
     def add_arguments(self, parser):
         super(Command, self).add_arguments(parser)
@@ -221,13 +216,6 @@ class Command(BaseCommand):
             help='Adds "used-but-not-included" subjects.'
         )
         parser.add_argument(
-            '--escape-quotes',
-            action='store_true',
-            dest='escape_quotes',
-            help='Properly handles escaped quotes in data entered from the command line,'
-            '\nTo specify a subject with text containing an apostrophe, as in Women\'s Studies, include two quotes after the escape backslash.'
-        )
-        parser.add_argument(
             '--share-title',
             action='store',
             type=str,
@@ -240,10 +228,7 @@ class Command(BaseCommand):
         BEPRESS_PROVIDER = PreprintProvider.objects.filter(_id='osf').first()
         dry_run = options.get('dry_run')
         provider = options['provider']
-        data_given = options['data'] or '{}'
-        if options.get('escape_quotes'):
-            data_given = process_shell_escaped_quotes(data_given)
-        data = json.loads(data_given)
+        data = json.loads(options['data'] or '{}')
         share_title = options.get('share_title')
         copy = options.get('from_subjects_acceptable')
         add_missing = options.get('add_missing')
