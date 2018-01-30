@@ -2077,27 +2077,51 @@ class TestNodeContributorBulkUpdate(NodeCRUDTestCase):
 
     #   test_bulk_update_contributors_must_have_at_least_one_bibliographic_contributor
         res = app.put_json_api(
-            url_public, {
+            url_public,
+            {
                 'data': [
                     payload_public_two, {
                         'id': make_contrib_id(
-                            project_public._id, user._id), 'type': 'contributors', 'attributes': {
-                            'permission': 'admin', 'bibliographic': False}}, {
+                            project_public._id, user._id
+                        ),
+                        'type': 'contributors',
+                        'attributes': {
+                            'permission': 'admin',
+                            'bibliographic': False
+                        }
+                    }, {
                         'id': make_contrib_id(
-                            project_public._id, user_two._id), 'type': 'contributors', 'attributes': {
-                            'bibliographic': False}}]}, auth=user.auth, expect_errors=True, bulk=True)
+                            project_public._id, user_two._id
+                        ),
+                        'type': 'contributors',
+                        'attributes': {
+                            'bibliographic': False
+                        }
+                    }
+                ]
+            },
+            auth=user.auth,
+            expect_errors=True, bulk=True)
 
         assert res.status_code == 400
         assert res.json['errors'][0]['detail'] == 'Must have at least one visible contributor'
 
     #   test_bulk_update_contributors_must_have_at_least_one_admin
         res = app.put_json_api(
-            url_public, {
-                'data': [
-                    payload_public_two, {
-                        'id': make_contrib_id(
-                            project_public._id, user._id), 'type': 'contributors', 'attributes': {
-                            'permission': 'read'}}]}, auth=user.auth, expect_errors=True, bulk=True)
+            url_public,
+            {'data': [
+                payload_public_two, {
+                    'id': make_contrib_id(
+                        project_public._id, user._id
+                    ),
+                    'type': 'contributors',
+                    'attributes': {
+                            'permission': 'read'
+                    }
+                }
+            ]},
+            auth=user.auth,
+            expect_errors=True, bulk=True)
         assert res.status_code == 400
         assert res.json['errors'][0]['detail'] == '{} is the only admin.'.format(
             user.fullname)
@@ -2105,24 +2129,32 @@ class TestNodeContributorBulkUpdate(NodeCRUDTestCase):
     def test_bulk_update_contributors_public_projects_logged_in(
             self, app, user, payload_public_one, payload_public_two, url_public):
         res = app.put_json_api(
-            url_public, {
-                'data': [
-                    payload_public_one, payload_public_two]}, auth=user.auth, bulk=True)
+            url_public,
+            {'data': [payload_public_one, payload_public_two]},
+            auth=user.auth, bulk=True
+        )
         assert res.status_code == 200
         data = res.json['data']
-        assert_items_equal([data[0]['attributes']['permission'],
-                            data[1]['attributes']['permission']], ['admin', 'write'])
+        assert_items_equal(
+            [data[0]['attributes']['permission'],
+             data[1]['attributes']['permission']],
+            ['admin', 'write']
+        )
 
     def test_bulk_update_contributors_private_projects_logged_in_contrib(
             self, app, user, payload_private_one, payload_private_two, url_private):
         res = app.put_json_api(
-            url_private, {
-                'data': [
-                    payload_private_one, payload_private_two]}, auth=user.auth, bulk=True)
+            url_private,
+            {'data': [payload_private_one, payload_private_two]},
+            auth=user.auth, bulk=True
+        )
         assert res.status_code == 200
         data = res.json['data']
-        assert_items_equal([data[0]['attributes']['permission'],
-                            data[1]['attributes']['permission']], ['admin', 'write'])
+        assert_items_equal(
+            [data[0]['attributes']['permission'],
+             data[1]['attributes']['permission']],
+            ['admin', 'write']
+        )
 
 
 @pytest.mark.django_db
@@ -2138,13 +2170,8 @@ class TestNodeContributorBulkPartialUpdate(NodeCRUDTestCase):
 
     @pytest.fixture()
     def project_public(
-            self,
-            user,
-            user_two,
-            user_three,
-            title,
-            description,
-            category):
+            self, user, user_two, user_three, title,
+            description, category):
         project_public = ProjectFactory(
             title=title,
             description=description,
@@ -2153,22 +2180,21 @@ class TestNodeContributorBulkPartialUpdate(NodeCRUDTestCase):
             creator=user
         )
         project_public.add_contributor(
-            user_two, permissions=[
-                permissions.READ], visible=True, save=True)
+            user_two,
+            permissions=[permissions.READ],
+            visible=True, save=True
+        )
         project_public.add_contributor(
-            user_three, permissions=[
-                permissions.READ], visible=True, save=True)
+            user_three,
+            permissions=[permissions.READ],
+            visible=True, save=True
+        )
         return project_public
 
     @pytest.fixture()
     def project_private(
-            self,
-            user,
-            user_two,
-            user_three,
-            title,
-            description,
-            category):
+            self, user, user_two, user_three, title,
+            description, category):
         project_private = ProjectFactory(
             title=title,
             description=description,
@@ -2177,11 +2203,13 @@ class TestNodeContributorBulkPartialUpdate(NodeCRUDTestCase):
             creator=user
         )
         project_private.add_contributor(
-            user_two, permissions=[
-                permissions.READ], visible=True, save=True)
+            user_two,
+            permissions=[permissions.READ],
+            visible=True, save=True)
         project_private.add_contributor(
-            user_three, permissions=[
-                permissions.READ], visible=True, save=True)
+            user_three,
+            permissions=[permissions.READ],
+            visible=True, save=True)
         return project_private
 
     @pytest.fixture()
@@ -2228,10 +2256,7 @@ class TestNodeContributorBulkPartialUpdate(NodeCRUDTestCase):
 
     @pytest.fixture()
     def payload_private_two(
-            self,
-            user_three,
-            project_private,
-            make_contrib_id):
+            self, user_three, project_private, make_contrib_id):
         return {
             'id': make_contrib_id(project_private._id, user_three._id),
             'type': 'contributors',
@@ -2242,26 +2267,16 @@ class TestNodeContributorBulkPartialUpdate(NodeCRUDTestCase):
         }
 
     def test_bulk_partial_update_errors(
-            self,
-            app,
-            user,
-            user_two,
-            user_four,
-            project_public,
-            payload_public_one,
-            payload_public_two,
-            payload_private_one,
-            payload_private_two,
-            url_public,
-            url_private,
-            make_contrib_id):
+            self, app, user, user_two, user_four,
+            project_public, payload_public_one,
+            payload_public_two, payload_private_one,
+            payload_private_two, url_public,
+            url_private, make_contrib_id):
 
         #   test_bulk_partial_update_contributors_blank_request
         res = app.patch_json_api(
-            url_public,
-            auth=user.auth,
-            expect_errors=True,
-            bulk=True)
+            url_public, auth=user.auth,
+            expect_errors=True, bulk=True)
         assert res.status_code == 400
 
     #   test_bulk_partial_update_contributors_public_project_one_not_found
@@ -2273,116 +2288,121 @@ class TestNodeContributorBulkPartialUpdate(NodeCRUDTestCase):
 
         empty_payload = {'data': [invalid_id, payload_public_one]}
         res = app.patch_json_api(
-            url_public,
-            empty_payload,
-            auth=user.auth,
-            expect_errors=True,
-            bulk=True)
+            url_public, empty_payload, auth=user.auth,
+            expect_errors=True, bulk=True)
         assert res.status_code == 400
         assert res.json['errors'][0]['detail'] == 'Could not find all objects to update.'
 
         res = app.get(url_public)
         data = res.json['data']
-        assert_items_equal([data[0]['attributes']['permission'],
-                            data[1]['attributes']['permission'],
-                            data[2]['attributes']['permission']],
-                           ['admin',
-                            'read',
-                            'read'])
+        assert_items_equal(
+            [data[0]['attributes']['permission'],
+             data[1]['attributes']['permission'],
+             data[2]['attributes']['permission']],
+            ['admin', 'read', 'read']
+        )
 
     #   test_bulk_partial_update_contributors_public_projects_logged_out
         res = app.patch_json_api(
-            url_public, {
-                'data': [
-                    payload_public_one, payload_public_two]}, bulk=True, expect_errors=True)
+            url_public,
+            {'data': [payload_public_one, payload_public_two]},
+            bulk=True, expect_errors=True)
         assert res.status_code == 401
 
         res = app.get(url_public, auth=user.auth)
         data = res.json['data']
-        assert_items_equal([data[0]['attributes']['permission'],
-                            data[1]['attributes']['permission'],
-                            data[2]['attributes']['permission']],
-                           ['admin',
-                            'read',
-                            'read'])
+        assert_items_equal(
+            [data[0]['attributes']['permission'],
+             data[1]['attributes']['permission'],
+             data[2]['attributes']['permission']],
+            ['admin', 'read', 'read']
+        )
 
     #   test_bulk_partial_update_contributors_private_projects_logged_out
         res = app.patch_json_api(
-            url_private, {
-                'data': [
-                    payload_private_one, payload_private_two]}, expect_errors=True, bulk=True)
+            url_private,
+            {'data': [payload_private_one, payload_private_two]},
+            expect_errors=True, bulk=True
+        )
         assert res.status_code == 401
 
         res = app.get(url_private, auth=user.auth)
         data = res.json['data']
-        assert_items_equal([data[0]['attributes']['permission'],
-                            data[1]['attributes']['permission'],
-                            data[2]['attributes']['permission']],
-                           ['admin',
-                            'read',
-                            'read'])
+        assert_items_equal(
+            [data[0]['attributes']['permission'],
+             data[1]['attributes']['permission'],
+             data[2]['attributes']['permission']],
+            ['admin', 'read', 'read'])
 
     #   test_bulk_partial_update_contributors_private_projects_logged_in_non_contrib
-        res = app.patch_json_api(url_private,
-                                 {'data': [payload_private_one,
-                                           payload_private_two]},
-                                 auth=user_four.auth,
-                                 expect_errors=True,
-                                 bulk=True)
+        res = app.patch_json_api(
+            url_private,
+            {'data': [payload_private_one,
+                      payload_private_two]},
+            auth=user_four.auth,
+            expect_errors=True, bulk=True)
         assert res.status_code == 403
 
         res = app.get(url_private, auth=user.auth)
         data = res.json['data']
-        assert_items_equal([data[0]['attributes']['permission'],
-                            data[1]['attributes']['permission'],
-                            data[2]['attributes']['permission']],
-                           ['admin',
-                            'read',
-                            'read'])
+        assert_items_equal(
+            [data[0]['attributes']['permission'],
+             data[1]['attributes']['permission'],
+             data[2]['attributes']['permission']],
+            ['admin', 'read', 'read']
+        )
 
     #   test_bulk_partial_update_contributors_private_projects_logged_in_read_only_contrib
-        res = app.patch_json_api(url_private,
-                                 {'data': [payload_private_one,
-                                           payload_private_two]},
-                                 auth=user_two.auth,
-                                 expect_errors=True,
-                                 bulk=True)
+        res = app.patch_json_api(
+            url_private,
+            {'data': [payload_private_one,
+                      payload_private_two]},
+            auth=user_two.auth,
+            expect_errors=True, bulk=True)
         assert res.status_code == 403
 
         res = app.get(url_private, auth=user.auth)
         data = res.json['data']
-        assert_items_equal([data[0]['attributes']['permission'],
-                            data[1]['attributes']['permission'],
-                            data[2]['attributes']['permission']],
-                           ['admin',
-                            'read',
-                            'read'])
+        assert_items_equal(
+            [data[0]['attributes']['permission'],
+             data[1]['attributes']['permission'],
+             data[2]['attributes']['permission']],
+            ['admin', 'read', 'read'])
 
     #   test_bulk_partial_update_contributors_projects_send_dictionary_not_list
-        res = app.patch_json_api(url_public, {'data': payload_public_one},
-                                 auth=user.auth, expect_errors=True, bulk=True)
+        res = app.patch_json_api(
+            url_public,
+            {'data': payload_public_one},
+            auth=user.auth,
+            expect_errors=True, bulk=True)
         assert res.status_code == 400
         assert res.json['errors'][0]['detail'] == 'Expected a list of items but got type "dict".'
 
     #   test_bulk_partial_update_contributors_id_not_supplied
-        res = app.patch_json_api(url_public,
-                                 {'data': [{'type': 'contributors',
-                                            'attributes': {}}]},
-                                 auth=user.auth,
-                                 expect_errors=True,
-                                 bulk=True)
+        res = app.patch_json_api(
+            url_public,
+            {'data': [{
+                'type': 'contributors',
+                'attributes': {}
+            }]},
+            auth=user.auth,
+            expect_errors=True, bulk=True)
         assert res.status_code == 400
         assert len(res.json['errors']) == 1
         assert res.json['errors'][0]['detail'] == 'Contributor identifier not provided.'
 
     #   test_bulk_partial_update_contributors_type_not_supplied
-        res = app.patch_json_api(url_public,
-                                 {'data': [{'id': make_contrib_id(project_public._id,
-                                                                  user_two._id),
-                                            'attributes': {}}]},
-                                 auth=user.auth,
-                                 expect_errors=True,
-                                 bulk=True)
+        res = app.patch_json_api(
+            url_public,
+            {'data': [{
+                'id': make_contrib_id(
+                    project_public._id,
+                    user_two._id
+                ),
+                'attributes': {}
+            }]},
+            auth=user.auth,
+            expect_errors=True, bulk=True)
         assert res.status_code == 400
         assert len(res.json['errors']) == 1
         assert res.json['errors'][0]['source']['pointer'] == '/data/0/type'
@@ -2394,8 +2414,9 @@ class TestNodeContributorBulkPartialUpdate(NodeCRUDTestCase):
             'type': 'Wrong type.',
             'attributes': {}
         }
-        res = app.patch_json_api(url_public, {'data': [invalid_type]},
-                                 auth=user.auth, expect_errors=True, bulk=True)
+        res = app.patch_json_api(
+            url_public, {'data': [invalid_type]},
+            auth=user.auth, expect_errors=True, bulk=True)
         assert res.status_code == 409
 
     #   test_bulk_partial_update_contributors_wrong_id
@@ -2405,83 +2426,95 @@ class TestNodeContributorBulkPartialUpdate(NodeCRUDTestCase):
             'attributes': {}
         }
 
-        res = app.patch_json_api(url_public, {'data': [invalid_id]},
-                                 auth=user.auth, expect_errors=True, bulk=True)
+        res = app.patch_json_api(
+            url_public, {'data': [invalid_id]},
+            auth=user.auth, expect_errors=True, bulk=True)
         assert res.status_code == 400
         assert res.json['errors'][0]['detail'] == 'Could not find all objects to update.'
 
     #   test_bulk_partial_update_contributors_limits
         contrib_update_list = {'data': [payload_public_one] * 101}
         res = app.patch_json_api(
-            url_public,
-            contrib_update_list,
-            auth=user.auth,
-            expect_errors=True,
-            bulk=True)
+            url_public, contrib_update_list,
+            auth=user.auth, expect_errors=True, bulk=True)
         assert res.json['errors'][0]['detail'] == 'Bulk operation limit is 100, got 101.'
         assert res.json['errors'][0]['source']['pointer'] == '/data'
 
     #   test_bulk_partial_update_invalid_permissions
         res = app.patch_json_api(
-            url_public, {
+            url_public,
+            {
                 'data': [
                     payload_public_two, {
                         'id': make_contrib_id(
-                            project_public._id, user_two._id), 'type': 'contributors', 'attributes': {
-                            'permission': 'super-user'}}]}, auth=user.auth, expect_errors=True, bulk=True)
+                            project_public._id,
+                            user_two._id
+                        ),
+                        'type': 'contributors',
+                        'attributes': {'permission': 'super-user'}
+                    }]
+            },
+            auth=user.auth, expect_errors=True, bulk=True)
         assert res.status_code == 400
         assert res.json['errors'][0]['detail'] == '"super-user" is not a valid choice.'
 
         res = app.get(url_public, auth=user.auth)
         data = res.json['data']
-        assert_items_equal([data[0]['attributes']['permission'],
-                            data[1]['attributes']['permission'],
-                            data[2]['attributes']['permission']],
-                           ['admin',
-                            'read',
-                            'read'])
+        assert_items_equal(
+            [data[0]['attributes']['permission'],
+             data[1]['attributes']['permission'],
+             data[2]['attributes']['permission']],
+            ['admin', 'read', 'read'])
 
     #   test_bulk_partial_update_invalid_bibliographic
         res = app.patch_json_api(
-            url_public, {
-                'data': [
-                    payload_public_two, {
-                        'id': make_contrib_id(
-                            project_public._id, user_two._id), 'type': 'contributors', 'attributes': {
-                            'bibliographic': 'true and false'}}]}, auth=user.auth, expect_errors=True, bulk=True)
+            url_public,
+            {'data': [
+                payload_public_two, {
+                    'id': make_contrib_id(
+                        project_public._id, user_two._id),
+                    'type': 'contributors',
+                    'attributes': {'bibliographic': 'true and false'}
+                }]
+            },
+            auth=user.auth,
+            expect_errors=True, bulk=True)
         assert res.status_code == 400
         assert res.json['errors'][0]['detail'] == '"true and false" is not a valid boolean.'
 
         res = app.get(url_public, auth=user.auth)
         data = res.json['data']
-        assert_items_equal([data[0]['attributes']['permission'],
-                            data[1]['attributes']['permission'],
-                            data[2]['attributes']['permission']],
-                           ['admin',
-                            'read',
-                            'read'])
+        assert_items_equal(
+            [data[0]['attributes']['permission'],
+             data[1]['attributes']['permission'],
+             data[2]['attributes']['permission']],
+            ['admin', 'read', 'read'])
 
     def test_bulk_partial_update_contributors_public_projects_logged_in(
             self, app, user, payload_public_one, payload_public_two, url_public):
         res = app.patch_json_api(
-            url_public, {
-                'data': [
-                    payload_public_one, payload_public_two]}, auth=user.auth, bulk=True)
+            url_public,
+            {'data': [payload_public_one, payload_public_two]},
+            auth=user.auth, bulk=True)
         assert res.status_code == 200
         data = res.json['data']
-        assert_items_equal([data[0]['attributes']['permission'],
-                            data[1]['attributes']['permission']], ['admin', 'write'])
+        assert_items_equal(
+            [data[0]['attributes']['permission'],
+             data[1]['attributes']['permission']],
+            ['admin', 'write'])
 
     def test_bulk_partial_update_contributors_private_projects_logged_in_contrib(
             self, app, user, payload_private_one, payload_private_two, url_private):
         res = app.patch_json_api(
-            url_private, {
-                'data': [
-                    payload_private_one, payload_private_two]}, auth=user.auth, bulk=True)
+            url_private,
+            {'data': [payload_private_one, payload_private_two]},
+            auth=user.auth, bulk=True)
         assert res.status_code == 200
         data = res.json['data']
-        assert_items_equal([data[0]['attributes']['permission'],
-                            data[1]['attributes']['permission']], ['admin', 'write'])
+        assert_items_equal(
+            [data[0]['attributes']['permission'],
+             data[1]['attributes']['permission']],
+            ['admin', 'write'])
 
 
 class TestNodeContributorBulkDelete(NodeCRUDTestCase):
@@ -2496,13 +2529,8 @@ class TestNodeContributorBulkDelete(NodeCRUDTestCase):
 
     @pytest.fixture()
     def project_public(
-            self,
-            user,
-            user_two,
-            user_three,
-            title,
-            description,
-            category):
+            self, user, user_two, user_three, title,
+            description, category):
         project_public = ProjectFactory(
             title=title,
             description=description,
@@ -2511,22 +2539,19 @@ class TestNodeContributorBulkDelete(NodeCRUDTestCase):
             creator=user
         )
         project_public.add_contributor(
-            user_two, permissions=[
-                permissions.READ], visible=True, save=True)
+            user_two,
+            permissions=[permissions.READ],
+            visible=True, save=True)
         project_public.add_contributor(
-            user_three, permissions=[
-                permissions.READ], visible=True, save=True)
+            user_three,
+            permissions=[permissions.READ],
+            visible=True, save=True)
         return project_public
 
     @pytest.fixture()
     def project_private(
-            self,
-            user,
-            user_two,
-            user_three,
-            title,
-            description,
-            category):
+            self, user, user_two, user_three, title,
+            description, category):
         project_private = ProjectFactory(
             title=title,
             description=description,
@@ -2535,11 +2560,13 @@ class TestNodeContributorBulkDelete(NodeCRUDTestCase):
             creator=user
         )
         project_private.add_contributor(
-            user_two, permissions=[
-                permissions.READ], visible=True, save=True)
+            user_two,
+            permissions=[permissions.READ],
+            visible=True, save=True)
         project_private.add_contributor(
-            user_three, permissions=[
-                permissions.READ], visible=True, save=True)
+            user_three,
+            permissions=[permissions.READ],
+            visible=True, save=True)
         return project_private
 
     @pytest.fixture()
@@ -2574,78 +2601,77 @@ class TestNodeContributorBulkDelete(NodeCRUDTestCase):
 
     @pytest.fixture()
     def payload_private_two(
-            self,
-            user_three,
-            project_private,
-            make_contrib_id):
+            self, user_three, project_private, make_contrib_id):
         return {
             'id': make_contrib_id(project_private._id, user_three._id),
             'type': 'contributors',
         }
 
     def test_bulk_delete_contributors_errors(
-            self,
-            app,
-            user,
-            user_two,
-            user_four,
-            project_public,
-            payload_public_one,
-            payload_public_two,
-            payload_private_one,
-            payload_private_two,
-            url_public,
-            url_private,
-            make_contrib_id):
+            self, app, user, user_two, user_four,
+            project_public, payload_public_one,
+            payload_public_two, payload_private_one,
+            payload_private_two, url_public,
+            url_private, make_contrib_id):
 
         #   test_bulk_delete_contributors_blank_request
         res = app.delete_json_api(
-            url_public,
-            auth=user.auth,
-            expect_errors=True,
-            bulk=True)
+            url_public, auth=user.auth,
+            expect_errors=True, bulk=True)
         assert res.status_code == 400
 
     #   test_bulk_delete_invalid_id_format
-        res = app.delete_json_api(url_public,
-                                  {'data': [{'id': '12345',
-                                             'type': 'contributors'}]},
-                                  auth=user.auth,
-                                  expect_errors=True,
-                                  bulk=True)
+        res = app.delete_json_api(
+            url_public,
+            {'data': [{
+                'id': '12345',
+                'type': 'contributors'
+            }]},
+            auth=user.auth,
+            expect_errors=True, bulk=True)
         assert res.status_code == 400
         assert res.json['errors'][0]['detail'] == 'Contributor identifier incorrectly formatted.'
 
     #   test_bulk_delete_invalid_id
-        res = app.delete_json_api(url_public,
-                                  {'data': [{'id': '12345-abcde',
-                                             'type': 'contributors'}]},
-                                  auth=user.auth,
-                                  expect_errors=True,
-                                  bulk=True)
+        res = app.delete_json_api(
+            url_public,
+            {'data': [{
+                'id': '12345-abcde',
+                'type': 'contributors'
+            }]},
+            auth=user.auth,
+            expect_errors=True, bulk=True)
         assert res.status_code == 400
         assert res.json['errors'][0]['detail'] == 'Could not find all objects to delete.'
 
     #   test_bulk_delete_non_contributor
-        res = app.delete_json_api(url_public,
-                                  {'data': [{'id': make_contrib_id(project_public._id,
-                                                                   user_four._id),
-                                             'type': 'contributors'}]},
-                                  auth=user.auth,
-                                  expect_errors=True,
-                                  bulk=True)
+        res = app.delete_json_api(
+            url_public,
+            {'data': [{
+                'id': make_contrib_id(
+                    project_public._id, user_four._id
+                ),
+                'type': 'contributors'
+            }]},
+            auth=user.auth,
+            expect_errors=True, bulk=True)
         assert res.status_code == 404
 
     #   test_bulk_delete_all_contributors
-        res = app.delete_json_api(url_public,
-                                  {'data': [payload_public_one,
-                                            payload_public_two,
-                                            {'id': make_contrib_id(project_public._id,
-                                                                   user._id),
-                                             'type': 'contributors'}]},
-                                  auth=user.auth,
-                                  expect_errors=True,
-                                  bulk=True)
+        res = app.delete_json_api(
+            url_public,
+            {'data': [
+                payload_public_one,
+                payload_public_two,
+                {
+                    'id': make_contrib_id(
+                        project_public._id, user._id
+                    ),
+                    'type': 'contributors'
+                }
+            ]},
+            auth=user.auth,
+            expect_errors=True, bulk=True)
         assert res.status_code == 400
         assert res.json['errors'][0]['detail'] in [
             'Must have at least one registered admin contributor',
@@ -2654,28 +2680,33 @@ class TestNodeContributorBulkDelete(NodeCRUDTestCase):
         assert len(project_public.contributors) == 3
 
     #   test_bulk_delete_contributors_no_id
-        res = app.delete_json_api(url_public,
-                                  {'data': [{'type': 'contributors'}]},
-                                  auth=user.auth,
-                                  expect_errors=True,
-                                  bulk=True)
+        res = app.delete_json_api(
+            url_public,
+            {'data': [{'type': 'contributors'}]},
+            auth=user.auth,
+            expect_errors=True, bulk=True)
         assert res.status_code == 400
         assert res.json['errors'][0]['detail'] == 'Request must include /data/id.'
 
     #   test_bulk_delete_contributors_no_type
-        res = app.delete_json_api(url_public, {'data': [{'id': make_contrib_id(
-            project_public._id, user_two._id)}]}, auth=user.auth, expect_errors=True, bulk=True)
+        res = app.delete_json_api(
+            url_public,
+            {'data': [{'id': make_contrib_id(
+                project_public._id, user_two._id
+            )}]},
+            auth=user.auth, expect_errors=True, bulk=True)
         assert res.status_code == 400
         assert res.json['errors'][0]['detail'] == 'Request must include /type.'
 
     #   test_bulk_delete_contributors_invalid_type
-        res = app.delete_json_api(url_public,
-                                  {'data': [{'type': 'Wrong type',
-                                             'id': make_contrib_id(project_public._id,
-                                                                   user_two._id)}]},
-                                  auth=user.auth,
-                                  expect_errors=True,
-                                  bulk=True)
+        res = app.delete_json_api(
+            url_public,
+            {'data': [{
+                'type': 'Wrong type',
+                'id': make_contrib_id(
+                    project_public._id, user_two._id)
+            }]},
+            auth=user.auth, expect_errors=True, bulk=True)
         assert res.status_code == 409
 
     #   test_bulk_delete_dict_inside_data
@@ -2698,9 +2729,9 @@ class TestNodeContributorBulkDelete(NodeCRUDTestCase):
         assert len(res.json['data']) == 3
 
         res = app.delete_json_api(
-            url_public, {
-                'data': [
-                    payload_public_one, payload_public_two]}, expect_errors=True, bulk=True)
+            url_public,
+            {'data': [payload_public_one, payload_public_two]},
+            expect_errors=True, bulk=True)
         assert res.status_code == 401
 
         res = app.get(url_public, auth=user.auth)
@@ -2711,9 +2742,9 @@ class TestNodeContributorBulkDelete(NodeCRUDTestCase):
         assert len(res.json['data']) == 3
 
         res = app.delete_json_api(
-            url_private, {
-                'data': [
-                    payload_private_one, payload_private_two]}, expect_errors=True, bulk=True)
+            url_private,
+            {'data': [payload_private_one, payload_private_two]},
+            expect_errors=True, bulk=True)
         assert res.status_code == 401
 
         res = app.get(url_private, auth=user.auth)
@@ -2723,12 +2754,11 @@ class TestNodeContributorBulkDelete(NodeCRUDTestCase):
         res = app.get(url_private, auth=user.auth)
         assert len(res.json['data']) == 3
 
-        res = app.delete_json_api(url_private,
-                                  {'data': [payload_private_one,
-                                            payload_private_two]},
-                                  auth=user_four.auth,
-                                  expect_errors=True,
-                                  bulk=True)
+        res = app.delete_json_api(
+            url_private,
+            {'data': [payload_private_one,payload_private_two]},
+            auth=user_four.auth,
+            expect_errors=True, bulk=True)
         assert res.status_code == 403
 
         res = app.get(url_private, auth=user.auth)
@@ -2738,12 +2768,11 @@ class TestNodeContributorBulkDelete(NodeCRUDTestCase):
         res = app.get(url_private, auth=user.auth)
         assert len(res.json['data']) == 3
 
-        res = app.delete_json_api(url_private,
-                                  {'data': [payload_private_one,
-                                            payload_private_two]},
-                                  auth=user_two.auth,
-                                  expect_errors=True,
-                                  bulk=True)
+        res = app.delete_json_api(
+            url_private,
+            {'data': [payload_private_one, payload_private_two]},
+            auth=user_two.auth,
+            expect_errors=True, bulk=True)
         assert res.status_code == 403
 
         res = app.get(url_private, auth=user.auth)
@@ -2759,8 +2788,9 @@ class TestNodeContributorBulkDelete(NodeCRUDTestCase):
 
         new_payload = {'data': [payload_public_one, invalid_id]}
 
-        res = app.delete_json_api(url_public, new_payload, auth=user.auth,
-                                  expect_errors=True, bulk=True)
+        res = app.delete_json_api(
+            url_public, new_payload, auth=user.auth,
+            expect_errors=True, bulk=True)
         assert res.status_code == 400
         assert res.json['errors'][0]['detail'] == 'Could not find all objects to delete.'
 
@@ -2770,21 +2800,16 @@ class TestNodeContributorBulkDelete(NodeCRUDTestCase):
     #   test_bulk_delete_contributors_limits
         new_payload = {'data': [payload_public_one] * 101}
         res = app.delete_json_api(
-            url_public,
-            new_payload,
-            auth=user.auth,
-            expect_errors=True,
-            bulk=True)
+            url_public, new_payload, auth=user.auth,
+            expect_errors=True, bulk=True)
         assert res.status_code == 400
         assert res.json['errors'][0]['detail'] == 'Bulk operation limit is 100, got 101.'
         assert res.json['errors'][0]['source']['pointer'] == '/data'
 
     #   test_bulk_delete_contributors_no_payload
         res = app.delete_json_api(
-            url_public,
-            auth=user.auth,
-            expect_errors=True,
-            bulk=True)
+            url_public, auth=user.auth,
+            expect_errors=True, bulk=True)
         assert res.status_code == 400
 
     def test_bulk_delete_contributors_public_project_logged_in(
@@ -2796,9 +2821,9 @@ class TestNodeContributorBulkDelete(NodeCRUDTestCase):
         # We can remove this when StoredFileNode is implemented in osf-models
         with disconnected_from_listeners(contributor_removed):
             res = app.delete_json_api(
-                url_public, {
-                    'data': [
-                        payload_public_one, payload_public_two]}, auth=user.auth, bulk=True)
+                url_public,
+                {'data': [payload_public_one, payload_public_two]},
+                auth=user.auth, bulk=True)
         assert res.status_code == 204
 
         res = app.get(url_public, auth=user.auth)
@@ -2813,9 +2838,9 @@ class TestNodeContributorBulkDelete(NodeCRUDTestCase):
         # We can remove this when StoredFileNode is implemented in osf-models
         with disconnected_from_listeners(contributor_removed):
             res = app.delete_json_api(
-                url_private, {
-                    'data': [
-                        payload_private_one, payload_private_two]}, auth=user.auth, bulk=True)
+                url_private,
+                {'data': [payload_private_one, payload_private_two]},
+                auth=user.auth, bulk=True)
         assert res.status_code == 204
 
         res = app.get(url_private, auth=user.auth)

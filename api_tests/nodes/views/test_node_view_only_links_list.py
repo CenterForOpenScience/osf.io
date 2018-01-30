@@ -33,11 +33,9 @@ def non_contrib():
 def public_project(user, read_contrib, write_contrib):
     public_project = ProjectFactory(is_public=True, creator=user)
     public_project.add_contributor(
-        read_contrib, permissions=[
-            permissions.READ])
+        read_contrib, permissions=[permissions.READ])
     public_project.add_contributor(
-        write_contrib, permissions=[
-            permissions.READ, permissions.WRITE])
+        write_contrib, permissions=[permissions.READ, permissions.WRITE])
     public_project.save()
     return public_project
 
@@ -59,14 +57,7 @@ class TestViewOnlyLinksList:
             API_BASE, public_project._id)
 
     def test_non_mutating_view_only_links_list_tests(
-            self,
-            app,
-            user,
-            write_contrib,
-            read_contrib,
-            non_contrib,
-            public_project,
-            url):
+            self, app, user, write_contrib, read_contrib, non_contrib, url):
 
         #   test_admin_can_view_vols_list
         res = app.get(url, auth=user.auth)
@@ -125,10 +116,11 @@ class TestViewOnlyLinksCreate:
                 'anonymous': False,
             }
         }
-        res = app.post_json_api(url,
-                                {'data': payload},
-                                auth=user.auth,
-                                expect_errors=True)
+        res = app.post_json_api(
+            url,
+            {'data': payload},
+            auth=user.auth,
+            expect_errors=True)
         assert res.status_code == 400
         assert res.json['errors'][0]['detail'] == 'Invalid link name.'
 
@@ -163,11 +155,7 @@ class TestViewOnlyLinksCreate:
         assert data['embeds']['creator']['data']['id'] == user._id
 
     def test_admin_can_create_vol(
-            self,
-            app,
-            user,
-            public_project,
-            view_only_link):
+            self, app, user, public_project):
         url = '/{}nodes/{}/view_only_links/?embed=creator'.format(
             API_BASE, public_project._id)
         payload = {
@@ -185,12 +173,7 @@ class TestViewOnlyLinksCreate:
         assert data['embeds']['creator']['data']['id'] == user._id
 
     def test_cannot_create_vol(
-            self,
-            app,
-            write_contrib,
-            read_contrib,
-            non_contrib,
-            url):
+            self, app, write_contrib, read_contrib, non_contrib, url):
 
         #   test_read_write_cannot_create_vol
         payload = {
@@ -199,10 +182,11 @@ class TestViewOnlyLinksCreate:
                 'anonymous': True,
             }
         }
-        res = app.post_json_api(url,
-                                {'data': payload},
-                                auth=write_contrib.auth,
-                                expect_errors=True)
+        res = app.post_json_api(
+            url,
+            {'data': payload},
+            auth=write_contrib.auth,
+            expect_errors=True)
         assert res.status_code == 403
 
     #   test_read_only_cannot_create_vol
@@ -212,10 +196,11 @@ class TestViewOnlyLinksCreate:
                 'anonymous': True,
             }
         }
-        res = app.post_json_api(url,
-                                {'data': payload},
-                                auth=read_contrib.auth,
-                                expect_errors=True)
+        res = app.post_json_api(
+            url,
+            {'data': payload},
+            auth=read_contrib.auth,
+            expect_errors=True)
         assert res.status_code == 403
 
     #   test_logged_in_user_cannot_create_vol
@@ -225,10 +210,11 @@ class TestViewOnlyLinksCreate:
                 'anonymous': True,
             }
         }
-        res = app.post_json_api(url,
-                                {'data': payload},
-                                auth=non_contrib.auth,
-                                expect_errors=True)
+        res = app.post_json_api(
+            url,
+            {'data': payload},
+            auth=non_contrib.auth,
+            expect_errors=True)
         assert res.status_code == 403
 
     #   test_unauthenticated_user_cannot_create_vol

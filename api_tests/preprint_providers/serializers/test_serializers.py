@@ -19,8 +19,9 @@ class TestPreprintProviderSerializer(DbTestCase):
     def test_preprint_provider_serialization_v2(self):
         req = make_drf_request_with_version(version='2.0')
         result = PreprintProviderSerializer(
-            self.preprint_provider, context={
-                'request': req}).data
+            self.preprint_provider,
+            context={'request': req}
+        ).data
 
         data = result['data']
         attributes = data['attributes']
@@ -41,8 +42,9 @@ class TestPreprintProviderSerializer(DbTestCase):
     def test_preprint_provider_serialization_v24(self):
         req = make_drf_request_with_version(version='2.4')
         result = PreprintProviderSerializer(
-            self.preprint_provider, context={
-                'request': req}).data
+            self.preprint_provider,
+            context={'request': req}
+        ).data
 
         data = result['data']
         attributes = data['attributes']
@@ -61,8 +63,9 @@ class TestPreprintProviderSerializer(DbTestCase):
     def test_preprint_provider_serialization_v25(self):
         req = make_drf_request_with_version(version='2.5')
         result = PreprintProviderSerializer(
-            self.preprint_provider, context={
-                'request': req}).data
+            self.preprint_provider,
+            context={'request': req}
+        ).data
 
         data = result['data']
         attributes = data['attributes']

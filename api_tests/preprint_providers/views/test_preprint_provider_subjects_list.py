@@ -3,7 +3,6 @@ from nose.tools import *  # flake8: noqa
 from api.base.settings.defaults import API_BASE
 
 from tests.base import ApiTestCase
-from osf.models import Subject
 from osf_tests.factories import SubjectFactory, PreprintProviderFactory
 
 
@@ -283,10 +282,16 @@ class TestPreprintProviderSpecificSubjects(ApiTestCase):
         assert_equal(res_1.json['links']['meta']['total'], 3)
         assert_equal(res_2.json['links']['meta']['total'], 3)
 
-        assert_equal(len(set([d['attributes']['text'] for d in res_1.json['data']]) & set(
-            [d['attributes']['text'] for d in res_2.json['data']])), 0)
-        assert_equal(len(set([d['attributes']['text'] for d in res_1.json['data']]) | set(
-            [d['attributes']['text'] for d in res_2.json['data']])), 6)
+        assert_equal(
+            len(set([d['attributes']['text'] for d in res_1.json['data']]) &
+                set([d['attributes']['text'] for d in res_2.json['data']])),
+            0
+        )
+        assert_equal(
+            len(set([d['attributes']['text'] for d in res_1.json['data']]) |
+                set([d['attributes']['text'] for d in res_2.json['data']])),
+            6
+        )
 
     def test_mapped_subjects_are_not_shared_filter(self):
         res_1 = self.app.get(
@@ -303,10 +308,16 @@ class TestPreprintProviderSpecificSubjects(ApiTestCase):
         assert_equal(res_1.json['links']['meta']['total'], 1)
         assert_equal(res_2.json['links']['meta']['total'], 1)
 
-        assert_equal(len(set([d['attributes']['text'] for d in res_1.json['data']]) & set(
-            [d['attributes']['text'] for d in res_2.json['data']])), 0)
-        assert_equal(len(set([d['attributes']['text'] for d in res_1.json['data']]) | set(
-            [d['attributes']['text'] for d in res_2.json['data']])), 2)
+        assert_equal(
+            len(set([d['attributes']['text'] for d in res_1.json['data']]) &
+                set([d['attributes']['text'] for d in res_2.json['data']])),
+            0
+        )
+        assert_equal(
+            len(set([d['attributes']['text'] for d in res_1.json['data']]) |
+                set([d['attributes']['text'] for d in res_2.json['data']])),
+            2
+        )
 
     def test_mapped_subjects_filter_wrong_provider(self):
         res_1 = self.app.get(

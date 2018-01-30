@@ -1,5 +1,4 @@
 import pytest
-from urlparse import urlparse
 
 from api.base.settings.defaults import API_BASE
 from framework.auth.core import Auth
@@ -13,7 +12,8 @@ from rest_framework import exceptions
 from tests.utils import assert_latest_log
 
 
-def node_url_for(n_id): return '/{}nodes/{}/'.format(API_BASE, n_id)
+def node_url_for(n_id):
+    return '/{}nodes/{}/'.format(API_BASE, n_id)
 
 
 @pytest.fixture()
@@ -65,14 +65,9 @@ class TestNodeLinkDetail:
             API_BASE, public_project._id, public_pointer._id)
 
     def test_node_link_detail(
-            self,
-            app,
-            user,
-            non_contrib,
-            private_pointer_project,
-            public_pointer_project,
-            public_url,
-            private_url):
+            self, app, user, non_contrib,
+            private_pointer_project, public_pointer_project,
+            public_url, private_url):
 
         #   test_returns_embedded_public_node_pointer_detail_logged_out
         res = app.get(public_url)
@@ -183,12 +178,7 @@ class TestDeleteNodeLink:
         assert pointer.child not in public_project.nodes
 
     def test_cannot_delete_if_registration(
-            self,
-            app,
-            user,
-            public_project,
-            user_two,
-            public_pointer):
+            self, app, user, public_project, user_two):
         registration = RegistrationFactory(project=public_project)
 
         url = '/{}registrations/{}/node_links/'.format(

@@ -5,6 +5,7 @@ from osf_tests.factories import (
     ProjectFactory,
     AuthUserFactory,
     PrivateLinkFactory,
+    NodeFactory
 )
 from website.util import permissions
 
@@ -33,11 +34,9 @@ def non_contrib():
 def public_project(user, read_contrib, write_contrib):
     public_project = ProjectFactory(is_public=True, creator=user)
     public_project.add_contributor(
-        read_contrib, permissions=[
-            permissions.READ])
+        read_contrib, permissions=[permissions.READ])
     public_project.add_contributor(
-        write_contrib, permissions=[
-            permissions.READ, permissions.WRITE])
+        write_contrib, permissions=[permissions.READ, permissions.WRITE])
     public_project.save()
     return public_project
 
@@ -59,15 +58,7 @@ class TestViewOnlyLinksDetail:
             API_BASE, public_project._id, view_only_link._id)
 
     def test_non_mutating_view_only_links_detail_tests(
-            self,
-            app,
-            user,
-            write_contrib,
-            read_contrib,
-            non_contrib,
-            url,
-            public_project,
-            view_only_link):
+            self, app, user, write_contrib, read_contrib, non_contrib, url):
 
         #   test_admin_can_view_vol_detail
         res = app.get(url, auth=user.auth)
@@ -91,12 +82,7 @@ class TestViewOnlyLinksDetail:
         assert res.status_code == 401
 
     def test_deleted_vol_not_returned(
-            self,
-            app,
-            user,
-            public_project,
-            view_only_link,
-            url):
+            self, app, user, public_project, view_only_link, url):
         res = app.get(url, auth=user.auth)
         assert res.status_code == 200
         assert res.json['data']['attributes']['name'] == 'testlink'
@@ -163,12 +149,7 @@ class TestViewOnlyLinksUpdate:
         assert res.json['data']['attributes']['anonymous']
 
     def test_cannot_update_vol(
-            self,
-            app,
-            write_contrib,
-            read_contrib,
-            non_contrib,
-            url):
+            self, app, write_contrib, read_contrib, non_contrib, url):
 
         #   test_read_write_cannot_update_vol
         payload = {
@@ -177,10 +158,11 @@ class TestViewOnlyLinksUpdate:
                 'anonymous': True,
             }
         }
-        res = app.put_json_api(url,
-                               {'data': payload},
-                               auth=write_contrib.auth,
-                               expect_errors=True)
+        res = app.put_json_api(
+            url,
+            {'data': payload},
+            auth=write_contrib.auth,
+            expect_errors=True)
         assert res.status_code == 403
 
     #   test_read_only_cannot_update_vol
@@ -190,10 +172,11 @@ class TestViewOnlyLinksUpdate:
                 'anonymous': True,
             }
         }
-        res = app.put_json_api(url,
-                               {'data': payload},
-                               auth=read_contrib.auth,
-                               expect_errors=True)
+        res = app.put_json_api(
+            url,
+            {'data': payload},
+            auth=read_contrib.auth,
+            expect_errors=True)
         assert res.status_code == 403
 
     #   test_logged_in_user_cannot_update_vol
@@ -203,10 +186,11 @@ class TestViewOnlyLinksUpdate:
                 'anonymous': True,
             }
         }
-        res = app.put_json_api(url,
-                               {'data': payload},
-                               auth=non_contrib.auth,
-                               expect_errors=True)
+        res = app.put_json_api(
+            url,
+            {'data': payload},
+            auth=non_contrib.auth,
+            expect_errors=True)
         assert res.status_code == 403
 
     #   test_unauthenticated_user_cannot_update_vol
@@ -235,12 +219,7 @@ class TestViewOnlyLinksDelete:
         assert view_only_link.is_deleted
 
     def test_vol_delete(
-            self,
-            app,
-            write_contrib,
-            read_contrib,
-            non_contrib,
-            url):
+            self, app, write_contrib, read_contrib, non_contrib, url):
 
         #   test_read_write_cannot_delete_vol
         res = app.delete(url, auth=write_contrib.auth, expect_errors=True)

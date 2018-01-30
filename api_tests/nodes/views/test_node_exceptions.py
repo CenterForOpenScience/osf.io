@@ -45,14 +45,8 @@ class TestExceptionFormatting:
         return '/{}nodes/{}/'.format(API_BASE, private_project._id)
 
     def test_exception_formatting(
-            self,
-            app,
-            user,
-            non_contrib,
-            public_project,
-            private_project,
-            private_url,
-            project_no_title):
+            self, app, user, non_contrib, public_project,
+            private_project, private_url, project_no_title):
 
         error_required_field = 'This field is required.'
         error_blank_field = 'This field may not be blank.'
@@ -60,10 +54,8 @@ class TestExceptionFormatting:
     #   test_creates_project_with_no_title_formatting
         url = '/{}nodes/'.format(API_BASE)
         res = app.post_json_api(
-            url,
-            project_no_title,
-            auth=user.auth,
-            expect_errors=True)
+            url, project_no_title,
+            auth=user.auth, expect_errors=True)
         errors = res.json['errors']
         assert isinstance(errors, list)
         assert res.json['errors'][0]['source'] == {
@@ -93,10 +85,16 @@ class TestExceptionFormatting:
 
     #   test_update_project_with_no_title_or_category_formatting
         res = app.put_json_api(
-            private_url, {
+            private_url,
+            {
                 'data': {
-                    'type': 'nodes', 'id': private_project._id, 'attributes': {
-                        'description': 'New description'}}}, auth=user.auth, expect_errors=True)
+                    'type': 'nodes',
+                    'id': private_project._id,
+                    'attributes': {
+                        'description': 'New description'}
+                }
+            },
+            auth=user.auth, expect_errors=True)
         errors = res.json['errors']
         assert isinstance(errors, list)
         assert len(errors) == 2

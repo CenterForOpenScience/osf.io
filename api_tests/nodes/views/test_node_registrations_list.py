@@ -9,7 +9,8 @@ from osf_tests.factories import (
 )
 
 
-def node_url_for(n_id): return '/{}nodes/{}/'.format(API_BASE, n_id)
+def node_url_for(n_id):
+    return '/{}nodes/{}/'.format(API_BASE, n_id)
 
 
 @pytest.fixture()
@@ -53,15 +54,8 @@ class TestNodeRegistrationList:
             API_BASE, public_project._id)
 
     def test_node_registration_list(
-            self,
-            app,
-            user,
-            public_project,
-            private_project,
-            public_registration,
-            private_registration,
-            public_url,
-            private_url):
+            self, app, user, public_project, private_project,
+            public_url, private_url):
 
         #   test_return_public_registrations_logged_out
         res = app.get(public_url)
@@ -79,7 +73,8 @@ class TestNodeRegistrationList:
         assert res.json['data'][0]['attributes']['registration'] is True
         url = res.json['data'][0]['relationships']['registered_from']['links']['related']['href']
         assert urlparse(
-            url).path == '/{}nodes/{}/'.format(API_BASE, public_project._id)
+            url
+        ).path == '/{}nodes/{}/'.format(API_BASE, public_project._id)
         assert res.content_type == 'application/vnd.api+json'
         assert res.json['data'][0]['type'] == 'registrations'
 
@@ -94,6 +89,7 @@ class TestNodeRegistrationList:
         assert res.json['data'][0]['attributes']['registration'] is True
         url = res.json['data'][0]['relationships']['registered_from']['links']['related']['href']
         assert urlparse(
-            url).path == '/{}nodes/{}/'.format(API_BASE, private_project._id)
+            url
+        ).path == '/{}nodes/{}/'.format(API_BASE, private_project._id)
         assert res.content_type == 'application/vnd.api+json'
         assert res.json['data'][0]['type'] == 'registrations'

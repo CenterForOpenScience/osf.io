@@ -44,12 +44,8 @@ class TestDraftRegistrationDetail(DraftRegistrationTestCase):
             API_BASE, project_public._id, draft_registration._id)
 
     def test_admin_can_view_draft(
-            self,
-            app,
-            user,
-            draft_registration,
-            schema,
-            url_draft_registrations):
+            self, app, user, draft_registration,
+            schema, url_draft_registrations):
         res = app.get(url_draft_registrations, auth=user.auth)
         assert res.status_code == 200
         data = res.json['data']
@@ -58,11 +54,8 @@ class TestDraftRegistrationDetail(DraftRegistrationTestCase):
         assert data['attributes']['registration_metadata'] == {}
 
     def test_cannot_view_draft(
-            self,
-            app,
-            user_write_contrib,
-            user_read_contrib,
-            user_non_contrib,
+            self, app, user_write_contrib,
+            user_read_contrib, user_non_contrib,
             url_draft_registrations):
 
         #   test_read_only_contributor_cannot_view_draft
@@ -158,8 +151,7 @@ class TestDraftRegistrationUpdate(DraftRegistrationTestCase):
 
     @pytest.fixture()
     def metadata_registration(
-            self,
-            prereg_metadata,
+            self, prereg_metadata,
             draft_registration_prereg):
         return prereg_metadata(draft_registration_prereg)
 
@@ -208,26 +200,19 @@ class TestDraftRegistrationUpdate(DraftRegistrationTestCase):
             }
         }
         res = app.put_json_api(
-            url_draft_registrations,
-            payload,
-            auth=user.auth,
-            expect_errors=True)
+            url_draft_registrations, payload,
+            auth=user.auth, expect_errors=True)
         assert res.status_code == 400
         errors = res.json['errors'][0]
         assert errors['source']['pointer'] == '/data/id'
         assert errors['detail'] == 'This field may not be null.'
 
     def test_admin_can_update_draft(
-            self,
-            app,
-            user,
-            schema,
-            payload,
-            url_draft_registrations):
+            self, app, user, schema,
+            payload, url_draft_registrations):
         res = app.put_json_api(
             url_draft_registrations,
-            payload,
-            auth=user.auth)
+            payload, auth=user.auth)
         assert res.status_code == 200
         data = res.json['data']
         assert data['attributes']['registration_supplement'] == schema._id
@@ -238,22 +223,16 @@ class TestDraftRegistrationUpdate(DraftRegistrationTestCase):
         url = '/{}nodes/{}/draft_registrations/{}/'.format(
             API_BASE, project_other._id, draft_registration._id)
         res = app.put_json_api(
-            url,
-            payload,
-            auth=user.auth,
+            url, payload, auth=user.auth,
             expect_errors=True)
         assert res.status_code == 400
         errors = res.json['errors'][0]
         assert errors['detail'] == 'This draft registration is not created from the given node.'
 
     def test_cannot_update_draft(
-            self,
-            app,
-            user_write_contrib,
-            user_read_contrib,
-            user_non_contrib,
-            payload,
-            url_draft_registrations):
+            self, app, user_write_contrib,
+            user_read_contrib, user_non_contrib,
+            payload, url_draft_registrations):
 
         #   test_read_only_contributor_cannot_update_draft
         res = app.put_json_api(
@@ -282,8 +261,7 @@ class TestDraftRegistrationUpdate(DraftRegistrationTestCase):
     #   test_unauthenticated_user_cannot_update_draft
         res = app.put_json_api(
             url_draft_registrations,
-            payload,
-            expect_errors=True)
+            payload, expect_errors=True)
         assert res.status_code == 401
 
     def test_registration_metadata_must_be_supplied(
@@ -292,8 +270,7 @@ class TestDraftRegistrationUpdate(DraftRegistrationTestCase):
 
         res = app.put_json_api(
             url_draft_registrations,
-            payload,
-            auth=user.auth,
+            payload, auth=user.auth,
             expect_errors=True)
         errors = res.json['errors'][0]
         assert res.status_code == 400
@@ -306,8 +283,7 @@ class TestDraftRegistrationUpdate(DraftRegistrationTestCase):
 
         res = app.put_json_api(
             url_draft_registrations,
-            payload,
-            auth=user.auth,
+            payload, auth=user.auth,
             expect_errors=True)
         errors = res.json['errors'][0]
         assert res.status_code == 400
@@ -320,8 +296,7 @@ class TestDraftRegistrationUpdate(DraftRegistrationTestCase):
 
         res = app.put_json_api(
             url_draft_registrations,
-            payload,
-            auth=user.auth,
+            payload, auth=user.auth,
             expect_errors=True)
         errors = res.json['errors'][0]
         assert res.status_code == 400
@@ -334,8 +309,7 @@ class TestDraftRegistrationUpdate(DraftRegistrationTestCase):
 
         res = app.put_json_api(
             url_draft_registrations,
-            payload,
-            auth=user.auth,
+            payload, auth=user.auth,
             expect_errors=True)
         errors = res.json['errors'][0]
         assert res.status_code == 400
@@ -349,8 +323,7 @@ class TestDraftRegistrationUpdate(DraftRegistrationTestCase):
 
         res = app.put_json_api(
             url_draft_registrations,
-            payload,
-            auth=user.auth,
+            payload, auth=user.auth,
             expect_errors=True)
         errors = res.json['errors'][0]
         assert res.status_code == 400
@@ -363,35 +336,25 @@ class TestDraftRegistrationUpdate(DraftRegistrationTestCase):
 
         res = app.put_json_api(
             url_draft_registrations,
-            payload,
-            auth=user.auth,
+            payload, auth=user.auth,
             expect_errors=True)
         errors = res.json['errors'][0]
         assert res.status_code == 400
         assert errors['detail'] == 'u\'Nope, data collection has not begun\' is not one of [u\'No, data collection has not begun\', u\'Yes, data collection is underway or complete\']'
 
     def test_cannot_update_registration_schema(
-            self,
-            app,
-            user,
-            schema,
-            payload,
-            schema_prereg,
-            url_draft_registrations):
+            self, app, user, schema, payload,
+            schema_prereg, url_draft_registrations):
         payload['data']['attributes']['registration_supplement'] = schema_prereg._id
         res = app.put_json_api(
             url_draft_registrations,
-            payload,
-            auth=user.auth,
+            payload, auth=user.auth,
             expect_errors=True)
         assert res.status_code == 200
         assert res.json['data']['attributes']['registration_supplement'] == schema._id
 
     def test_required_metaschema_questions_not_required_on_update(
-            self,
-            app,
-            user,
-            project_public,
+            self, app, user, project_public,
             draft_registration_prereg,
             metadata_registration):
 
@@ -417,18 +380,14 @@ class TestDraftRegistrationUpdate(DraftRegistrationTestCase):
         }
 
         res = app.put_json_api(
-            url,
-            payload,
-            auth=user.auth,
+            url, payload, auth=user.auth,
             expect_errors=True)
         assert res.status_code == 200
         assert res.json['data']['attributes']['registration_metadata']['q2']['value'] == 'New response'
         assert 'q1' not in res.json['data']['attributes']['registration_metadata']
 
     def test_reviewer_can_update_draft_registration(
-            self,
-            app,
-            project_public,
+            self, app, project_public,
             draft_registration_prereg,
             administer_permission):
         user = AuthUserFactory()
@@ -453,8 +412,7 @@ class TestDraftRegistrationUpdate(DraftRegistrationTestCase):
             API_BASE, project_public._id, draft_registration_prereg._id)
 
         res = app.put_json_api(
-            url,
-            payload,
+            url, payload,
             auth=user.auth,
             expect_errors=True)
         assert res.status_code == 200
@@ -485,9 +443,7 @@ class TestDraftRegistrationUpdate(DraftRegistrationTestCase):
             API_BASE, project_public._id, draft_registration_prereg._id)
 
         res = app.put_json_api(
-            url,
-            payload,
-            auth=user.auth,
+            url, payload, auth=user.auth,
             expect_errors=True)
         assert res.status_code == 400
         assert res.json['errors'][0][
@@ -521,9 +477,7 @@ class TestDraftRegistrationUpdate(DraftRegistrationTestCase):
             API_BASE, project_public._id, draft_registration_prereg._id)
 
         res = app.put_json_api(
-            url,
-            payload,
-            auth=user.auth,
+            url, payload, auth=user.auth,
             expect_errors=True)
         assert res.status_code == 200
         assert res.json['data']['attributes']['registration_metadata']['q7'][
@@ -557,9 +511,7 @@ class TestDraftRegistrationUpdate(DraftRegistrationTestCase):
             API_BASE, project_public._id, draft_registration_prereg._id)
 
         res = app.put_json_api(
-            url,
-            payload,
-            auth=user.auth,
+            url, payload, auth=user.auth,
             expect_errors=True)
         assert res.status_code == 400
         assert res.json['errors'][0][
@@ -599,8 +551,7 @@ class TestDraftRegistrationPatch(DraftRegistrationTestCase):
 
     @pytest.fixture()
     def metadata_registration(
-            self,
-            prereg_metadata,
+            self, prereg_metadata,
             draft_registration_prereg):
         return prereg_metadata(draft_registration_prereg)
 
@@ -636,29 +587,20 @@ class TestDraftRegistrationPatch(DraftRegistrationTestCase):
         }
 
     def test_admin_can_update_draft(
-            self,
-            app,
-            user,
-            schema,
-            payload,
+            self, app, user, schema, payload,
             url_draft_registrations):
         res = app.patch_json_api(
             url_draft_registrations,
-            payload,
-            auth=user.auth)
+            payload, auth=user.auth)
         assert res.status_code == 200
         data = res.json['data']
         assert data['attributes']['registration_supplement'] == schema._id
         assert data['attributes']['registration_metadata'] == payload['data']['attributes']['registration_metadata']
 
     def test_cannot_update_draft(
-            self,
-            app,
-            user_write_contrib,
-            user_read_contrib,
-            user_non_contrib,
-            payload,
-            url_draft_registrations):
+            self, app, user_write_contrib,
+            user_read_contrib, user_non_contrib,
+            payload, url_draft_registrations):
 
         #   test_read_only_contributor_cannot_update_draft
         res = app.patch_json_api(
@@ -687,8 +629,7 @@ class TestDraftRegistrationPatch(DraftRegistrationTestCase):
     #   test_unauthenticated_user_cannot_update_draft
         res = app.patch_json_api(
             url_draft_registrations,
-            payload,
-            expect_errors=True)
+            payload, expect_errors=True)
         assert res.status_code == 401
 
 
@@ -723,11 +664,8 @@ class TestDraftRegistrationDelete(DraftRegistrationTestCase):
         assert res.status_code == 204
 
     def test_cannot_delete_draft(
-            self,
-            app,
-            user_write_contrib,
-            user_read_contrib,
-            user_non_contrib,
+            self, app, user_write_contrib,
+            user_read_contrib, user_non_contrib,
             url_draft_registrations):
 
         #   test_read_only_contributor_cannot_delete_draft
@@ -777,8 +715,7 @@ class TestDraftRegistrationDelete(DraftRegistrationTestCase):
 
         res = app.delete_json_api(
             url_draft_registrations,
-            auth=user.auth,
-            expect_errors=True)
+            auth=user.auth, expect_errors=True)
         assert res.status_code == 403
         assert res.json['errors'][0]['detail'] == exceptions.PermissionDenied.default_detail
 
@@ -807,8 +744,7 @@ class TestDraftPreregChallengeRegistrationMetadataValidation(
 
     @pytest.fixture()
     def url_draft_registrations(
-            self,
-            project_public,
+            self, project_public,
             draft_registration_prereg):
         return '/{}nodes/{}/draft_registrations/{}/'.format(
             API_BASE, project_public._id, draft_registration_prereg._id)
@@ -832,8 +768,7 @@ class TestDraftPreregChallengeRegistrationMetadataValidation(
         }
         res = app.put_json_api(
             url_draft_registrations,
-            payload,
-            auth=user.auth)
+            payload, auth=user.auth)
         assert res.status_code == 200
         assert res.json['data']['attributes']['registration_metadata']['q1']['value'] == 'This is my answer.'
 
@@ -844,8 +779,7 @@ class TestDraftPreregChallengeRegistrationMetadataValidation(
         }
         res = app.put_json_api(
             url_draft_registrations,
-            payload,
-            auth=user.auth,
+            payload, auth=user.auth,
             expect_errors=True)
         assert res.status_code == 400
         assert res.json['errors'][0][
@@ -858,8 +792,7 @@ class TestDraftPreregChallengeRegistrationMetadataValidation(
         }
         res = app.put_json_api(
             url_draft_registrations,
-            payload,
-            auth=user.auth,
+            payload, auth=user.auth,
             expect_errors=True)
         assert res.status_code == 400
         assert res.json['errors'][0]['detail'] == '12345 is not of type \'string\''
@@ -875,18 +808,13 @@ class TestDraftPreregChallengeRegistrationMetadataValidation(
         }
         res = app.put_json_api(
             url_draft_registrations,
-            payload,
-            auth=user.auth,
+            payload, auth=user.auth,
             expect_errors=True)
         assert res.status_code == 400
         assert res.json['errors'][0]['detail'] == '{u\'question\': {u\'value\': u\'This is my answer.\'}} is not of type \'string\''
 
     def test_second_level_answers(
-            self,
-            app,
-            user,
-            payload,
-            url_draft_registrations):
+            self, app, user, payload, url_draft_registrations):
         payload['data']['attributes']['registration_metadata']['q7'] = {
             'value': {
                 'question': {
@@ -896,8 +824,7 @@ class TestDraftPreregChallengeRegistrationMetadataValidation(
         }
         res = app.put_json_api(
             url_draft_registrations,
-            payload,
-            auth=user.auth)
+            payload, auth=user.auth)
         assert res.status_code == 200
         assert res.json['data']['attributes']['registration_metadata']['q7']['value']['question']['value'] == 'This is my answer.'
 
@@ -912,8 +839,7 @@ class TestDraftPreregChallengeRegistrationMetadataValidation(
         }
         res = app.put_json_api(
             url_draft_registrations,
-            payload,
-            auth=user.auth,
+            payload, auth=user.auth,
             expect_errors=True)
         assert res.status_code == 400
         assert res.json['errors'][0][
@@ -930,12 +856,11 @@ class TestDraftPreregChallengeRegistrationMetadataValidation(
         }
         res = app.put_json_api(
             url_draft_registrations,
-            payload,
-            auth=user.auth,
+            payload, auth=user.auth,
             expect_errors=True)
         assert res.status_code == 400
-        assert res.json['errors'][0][
-            'detail'] == 'Additional properties are not allowed (u\'values\' was unexpected)'
+        assert res.json['errors'][0]['detail'] == \
+               'Additional properties are not allowed (u\'values\' was unexpected)'
 
     def test_second_level_open_ended_answer_must_have_correct_type(
             self, app, user, payload, url_draft_registrations):
@@ -946,8 +871,7 @@ class TestDraftPreregChallengeRegistrationMetadataValidation(
         }
         res = app.put_json_api(
             url_draft_registrations,
-            payload,
-            auth=user.auth,
+            payload, auth=user.auth,
             expect_errors=True)
         assert res.status_code == 400
         assert res.json['errors'][0]['detail'] == 'u\'This is my answer\' is not of type \'object\''
@@ -963,20 +887,15 @@ class TestDraftPreregChallengeRegistrationMetadataValidation(
         }
         res = app.put_json_api(
             url_draft_registrations,
-            payload,
-            auth=user.auth,
+            payload, auth=user.auth,
             expect_errors=True)
         assert res.status_code == 400
         assert res.json['errors'][0]['detail'] == 'True is not of type \'string\''
 
     def test_uploader_metadata(
-            self,
-            app,
-            user,
-            project_public,
+            self, app, user, project_public,
             draft_registration_prereg,
-            payload,
-            url_draft_registrations):
+            payload, url_draft_registrations):
         sha256 = hashlib.pbkdf2_hmac('sha256', b'password', b'salt', 100000)
         payload['data']['attributes']['registration_metadata']['q7'] = {
             'value': {
@@ -994,21 +913,16 @@ class TestDraftPreregChallengeRegistrationMetadataValidation(
         }
         res = app.put_json_api(
             url_draft_registrations,
-            payload,
-            auth=user.auth,
+            payload, auth=user.auth,
             expect_errors=True)
         assert res.status_code == 200
         assert res.json['data']['attributes']['registration_metadata']['q7']['value'][
             'uploader']['value'] == 'Screen Shot 2016-03-30 at 7.02.05 PM.png'
 
     def test_uploader_metadata_incorrect_key(
-            self,
-            app,
-            user,
-            project_public,
+            self, app, user, project_public,
             draft_registration_prereg,
-            payload,
-            url_draft_registrations):
+            payload, url_draft_registrations):
         sha256 = hashlib.pbkdf2_hmac('sha256', b'password', b'salt', 100000)
         payload['data']['attributes']['registration_metadata']['q7'] = {
             'value': {
@@ -1026,8 +940,7 @@ class TestDraftPreregChallengeRegistrationMetadataValidation(
         }
         res = app.put_json_api(
             url_draft_registrations,
-            payload,
-            auth=user.auth,
+            payload, auth=user.auth,
             expect_errors=True)
         assert res.status_code == 400
         assert res.json['errors'][0][
@@ -1040,8 +953,7 @@ class TestDraftPreregChallengeRegistrationMetadataValidation(
         }
         res = app.put_json_api(
             url_draft_registrations,
-            payload,
-            auth=user.auth,
+            payload, auth=user.auth,
             expect_errors=True)
         assert res.status_code == 400
         assert (
@@ -1057,8 +969,7 @@ class TestDraftPreregChallengeRegistrationMetadataValidation(
         }
         res = app.put_json_api(
             url_draft_registrations,
-            payload,
-            auth=user.auth,
+            payload, auth=user.auth,
             expect_errors=True)
         assert res.status_code == 200
         assert res.json['data']['attributes']['registration_metadata']['q15']['value'] == 'No blinding is involved in this study.'

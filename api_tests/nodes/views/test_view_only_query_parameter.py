@@ -79,8 +79,7 @@ def private_node_two(admin, read_contrib, write_contrib):
         creator=admin,
         title='Private Two')
     private_node_two.add_contributor(
-        read_contrib, permissions=[
-            permissions.READ], save=True)
+        read_contrib, permissions=[permissions.READ], save=True)
     private_node_two.add_contributor(
         write_contrib,
         permissions=[
@@ -100,8 +99,7 @@ def public_node_one(admin, read_contrib, write_contrib):
     public_node_one = ProjectFactory(
         is_public=True, creator=admin, title='Public One')
     public_node_one.add_contributor(
-        read_contrib, permissions=[
-            permissions.READ], save=True)
+        read_contrib, permissions=[permissions.READ], save=True)
     public_node_one.add_contributor(
         write_contrib,
         permissions=[
@@ -137,8 +135,7 @@ def public_node_two(admin, read_contrib, write_contrib):
     public_node_two = ProjectFactory(
         is_public=True, creator=admin, title='Public Two')
     public_node_two.add_contributor(
-        read_contrib, permissions=[
-            permissions.READ], save=True)
+        read_contrib, permissions=[permissions.READ], save=True)
     public_node_two.add_contributor(
         write_contrib,
         permissions=[
@@ -174,13 +171,8 @@ def public_node_two_url(public_node_two):
 class TestNodeDetailViewOnlyLinks:
 
     def test_private_node(
-            self,
-            app,
-            admin,
-            read_contrib,
-            valid_contributors,
-            private_node_one,
-            private_node_one_url,
+            self, app, admin, read_contrib, valid_contributors,
+            private_node_one, private_node_one_url,
             private_node_one_private_link,
             private_node_one_anonymous_link,
             public_node_one_url,
@@ -190,8 +182,9 @@ class TestNodeDetailViewOnlyLinks:
         #   test_private_node_with_link_works_when_using_link
         res_normal = app.get(private_node_one_url, auth=read_contrib.auth)
         assert res_normal.status_code == 200
-        res_linked = app.get(private_node_one_url,
-                             {'view_only': private_node_one_private_link.key})
+        res_linked = app.get(
+            private_node_one_url,
+            {'view_only': private_node_one_private_link.key})
         assert res_linked.status_code == 200
         assert res_linked.json['data']['attributes']['current_user_permissions'] == [
             'read']
@@ -326,8 +319,8 @@ class TestNodeDetailViewOnlyLinks:
 
     #   test_view_only_key_in_relationships_links
         res = app.get(
-            private_node_one_url, {
-                'view_only': private_node_one_private_link.key})
+            private_node_one_url,
+            {'view_only': private_node_one_private_link.key})
         assert res.status_code == 200
         res_relationships = res.json['data']['relationships']
         for key, value in res_relationships.iteritems():
@@ -338,8 +331,8 @@ class TestNodeDetailViewOnlyLinks:
 
     #   test_view_only_key_in_self_and_html_links
         res = app.get(
-            private_node_one_url, {
-                'view_only': private_node_one_private_link.key})
+            private_node_one_url,
+            {'view_only': private_node_one_private_link.key})
         assert res.status_code == 200
         links = res.json['data']['links']
         assert private_node_one_private_link.key in links['self']
@@ -367,9 +360,7 @@ class TestNodeDetailViewOnlyLinks:
 class TestNodeListViewOnlyLinks:
 
     def test_node_list_view_only_links(
-            self,
-            app,
-            valid_contributors,
+            self, app, valid_contributors,
             private_node_one,
             private_node_one_private_link,
             private_node_one_anonymous_link):

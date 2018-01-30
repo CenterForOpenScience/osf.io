@@ -29,12 +29,7 @@ class TestNodeInstitutionDetail:
         return NodeFactory(creator=user)
 
     def test_node_institution_detail(
-        self,
-        app,
-        user,
-        institution,
-        node_one,
-        node_two,
+        self, app, user, institution, node_one, node_two,
     ):
 
         #   test_return_institution

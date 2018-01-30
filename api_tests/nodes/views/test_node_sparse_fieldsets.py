@@ -6,7 +6,6 @@ from osf_tests.factories import (
     AuthUserFactory,
     PrivateLinkFactory,
 )
-from tests.base import ApiTestCase
 from website.util import permissions
 
 
@@ -35,13 +34,8 @@ class TestNodeSparseFieldsList:
         return '/{}nodes/?fields[nodes]='.format(API_BASE)
 
     def test_node_sparse_fields_list(
-            self,
-            app,
-            user,
-            deleted_project,
-            private_project,
-            public_project,
-            url):
+            self, app, user, deleted_project,
+            private_project, public_project, url):
 
         #   test_empty_fields_returns_no_attributes
         res = app.get(url)
@@ -243,8 +237,7 @@ class TestSparseViewOnlyLinks:
 
     @pytest.fixture()
     def private_node_one(
-            self,
-            creation_user,
+            self, creation_user,
             contributing_read_user,
             contributing_write_user):
         private_node_one = ProjectFactory(
@@ -252,11 +245,12 @@ class TestSparseViewOnlyLinks:
             creator=creation_user,
             title='Private One')
         private_node_one.add_contributor(
-            contributing_read_user, permissions=[
-                permissions.READ], save=True)
+            contributing_read_user,
+            permissions=[permissions.READ], save=True)
         private_node_one.add_contributor(
-            contributing_write_user, permissions=[
-                permissions.READ, permissions.WRITE], save=True)
+            contributing_write_user,
+            permissions=[permissions.READ, permissions.WRITE],
+            save=True)
         return private_node_one
 
     @pytest.fixture()

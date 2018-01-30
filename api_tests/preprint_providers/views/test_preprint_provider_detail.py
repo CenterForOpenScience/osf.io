@@ -64,16 +64,12 @@ class TestPreprintProviderExists:
         assert taxonomies_res.status_code == 404
 
     def test_has_highlighted_subjects_flag(
-            self,
-            app,
-            preprint_provider,
-            preprint_provider_two,
-            provider_url):
-        subj_a = SubjectFactory(
+            self, app, preprint_provider,
+            preprint_provider_two, provider_url):
+        SubjectFactory(
             provider=preprint_provider,
-            text='A',
-            highlighted=True)
-        subj_b = SubjectFactory(provider=preprint_provider_two, text='B')
+            text='A', highlighted=True)
+        SubjectFactory(provider=preprint_provider_two, text='B')
 
         res = app.get(provider_url)
         assert res.status_code == 200
@@ -122,12 +118,7 @@ class TestPreprintProviderUpdate:
             API_BASE, preprint_provider._id)
 
     def test_update_reviews_settings(
-            self,
-            app,
-            preprint_provider,
-            url,
-            admin,
-            moderator):
+            self, app, preprint_provider, url, admin, moderator):
         payload = self.settings_payload(
             preprint_provider.id,
             reviews_workflow='pre-moderation',
@@ -142,17 +133,13 @@ class TestPreprintProviderUpdate:
         # Random user can't set up moderation
         some_rando = AuthUserFactory()
         res = app.patch_json_api(
-            url,
-            payload,
-            auth=some_rando.auth,
+            url, payload, auth=some_rando.auth,
             expect_errors=True)
         assert res.status_code == 403
 
         # Moderator can't set up moderation
         res = app.patch_json_api(
-            url,
-            payload,
-            auth=moderator.auth,
+            url, payload, auth=moderator.auth,
             expect_errors=True)
         assert res.status_code == 403
 
@@ -163,10 +150,8 @@ class TestPreprintProviderUpdate:
             reviews_comments_private=False,
         )
         res = app.patch_json_api(
-            url,
-            partial_payload,
-            auth=admin.auth,
-            expect_errors=True)
+            url, partial_payload,
+            auth=admin.auth, expect_errors=True)
         assert res.status_code == 400
 
         partial_payload = self.settings_payload(
@@ -175,10 +160,8 @@ class TestPreprintProviderUpdate:
             reviews_comments_anonymous=False,
         )
         res = app.patch_json_api(
-            url,
-            partial_payload,
-            auth=admin.auth,
-            expect_errors=True)
+            url, partial_payload,
+            auth=admin.auth, expect_errors=True)
         assert res.status_code == 400
 
         # Admin can set up moderation
@@ -191,9 +174,7 @@ class TestPreprintProviderUpdate:
 
         # ...but only once
         res = app.patch_json_api(
-            url,
-            payload,
-            auth=admin.auth,
+            url, payload, auth=admin.auth,
             expect_errors=True)
         assert res.status_code == 409
 
@@ -204,10 +185,8 @@ class TestPreprintProviderUpdate:
             reviews_comments_anonymous=True
         )
         res = app.patch_json_api(
-            url,
-            another_payload,
-            auth=admin.auth,
-            expect_errors=True)
+            url, another_payload,
+            auth=admin.auth, expect_errors=True)
         assert res.status_code == 409
 
         preprint_provider.refresh_from_db()

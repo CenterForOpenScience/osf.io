@@ -42,11 +42,8 @@ class LinkedRegistrationsTestCase:
 
     @pytest.fixture()
     def node_private(
-            self,
-            user_admin_contrib,
-            user_write_contrib,
-            user_read_contrib,
-            registration):
+            self, user_admin_contrib, user_write_contrib,
+            user_read_contrib, registration):
         node_private = NodeFactory(creator=user_admin_contrib)
         node_private.add_contributor(
             user_write_contrib,
@@ -72,15 +69,10 @@ class TestNodeLinkedRegistrationsList(LinkedRegistrationsTestCase):
         return request
 
     def test_view_linked_registrations(
-            self,
-            make_request,
-            user_admin_contrib,
-            user_write_contrib,
-            user_read_contrib,
-            user_non_contrib,
-            registration,
-            node_public,
-            node_private):
+            self, make_request, user_admin_contrib,
+            user_write_contrib, user_read_contrib,
+            user_non_contrib, registration,
+            node_public, node_private):
 
         #   test_public_node_unauthenticated_user_can_view_linked_registrations
         res = make_request(node_id=node_public._id)
@@ -137,15 +129,9 @@ class TestNodeLinkedRegistrationsRelationshipRetrieve(
         return request
 
     def test_can_vew_linked_registrations_relationship(
-            self,
-            make_request,
-            registration,
-            user_admin_contrib,
-            user_write_contrib,
-            user_read_contrib,
-            user_non_contrib,
-            node_public,
-            node_private):
+            self, make_request, registration, user_admin_contrib,
+            user_write_contrib, user_read_contrib, user_non_contrib,
+            node_public, node_private):
 
         #   test_public_node_unauthenticated_user_can_view_linked_registrations_relationship
         res = make_request(node_id=node_public._id)
@@ -209,15 +195,11 @@ class TestNodeLinkedRegistrationsRelationshipCreate(
                 API_BASE, node_id)
             if auth:
                 return app.post_json_api(
-                    url,
-                    make_payload(
-                        registration_id=reg_id),
-                    auth=auth,
-                    expect_errors=expect_errors)
+                    url, make_payload(registration_id=reg_id),
+                    auth=auth, expect_errors=expect_errors)
             return app.post_json_api(
                 url,
-                make_payload(
-                    registration_id=reg_id),
+                make_payload(registration_id=reg_id),
                 expect_errors=expect_errors)
         return request
 
@@ -246,12 +228,8 @@ class TestNodeLinkedRegistrationsRelationshipCreate(
         assert registration._id in linked_registrations
 
     def test_cannot_create_linked_registrations_relationship(
-            self,
-            make_request,
-            user_admin_contrib,
-            user_read_contrib,
-            user_non_contrib,
-            node_private):
+            self, make_request, user_admin_contrib, user_read_contrib,
+            user_non_contrib, node_private):
 
         #   test_read_contributor_cannot_create_linked_registrations_relationship
         registration = RegistrationFactory(is_public=True)
@@ -331,8 +309,8 @@ class TestNodeLinkedRegistrationsRelationshipCreate(
             self, make_request, user_admin_contrib, node_private):
         registration = RegistrationFactory()
         registration.add_contributor(
-            user_admin_contrib, auth=Auth(
-                registration.creator))
+            user_admin_contrib,
+            auth=Auth(registration.creator))
         registration.save()
         res = make_request(
             node_id=node_private._id,
@@ -347,8 +325,9 @@ class TestNodeLinkedRegistrationsRelationshipCreate(
             self, make_request, user_admin_contrib, node_private):
         registration = RegistrationFactory()
         registration.add_contributor(
-            user_admin_contrib, auth=Auth(
-                registration.creator), permissions=['read'])
+            user_admin_contrib,
+            auth=Auth(registration.creator),
+            permissions=['read'])
         registration.save()
         res = make_request(
             node_id=node_private._id,
@@ -383,14 +362,11 @@ class TestNodeLinkedRegistrationsRelationshipUpdate(
             if auth:
                 return app.put_json_api(
                     url,
-                    make_payload(
-                        registration_id=reg_id),
-                    auth=auth,
-                    expect_errors=expect_errors)
+                    make_payload(registration_id=reg_id),
+                    auth=auth, expect_errors=expect_errors)
             return app.put_json_api(
                 url,
-                make_payload(
-                    registration_id=reg_id),
+                make_payload(registration_id=reg_id),
                 expect_errors=expect_errors)
         return request
 
@@ -486,10 +462,12 @@ class TestNodeLinkedRegistrationsRelationshipDelete(
             url = '/{}nodes/{}/relationships/linked_registrations/'.format(
                 API_BASE, node_id)
             if auth:
-                return app.delete_json_api(url, make_payload(
-                    reg_id), auth=auth, expect_errors=expect_errors)
+                return app.delete_json_api(
+                    url, make_payload(reg_id),
+                    auth=auth, expect_errors=expect_errors)
             return app.delete_json_api(
-                url, make_payload(reg_id), expect_errors=expect_errors)
+                url, make_payload(reg_id),
+                expect_errors=expect_errors)
         return request
 
     def test_admin_contributor_can_delete_linked_registrations_relationship(
@@ -511,13 +489,8 @@ class TestNodeLinkedRegistrationsRelationshipDelete(
         assert res.status_code == 204
 
     def test_linked_registrations_relationship_errors(
-            self,
-            make_request,
-            registration,
-            user_admin_contrib,
-            user_read_contrib,
-            user_non_contrib,
-            node_private):
+            self, make_request, registration, user_admin_contrib,
+            user_read_contrib, user_non_contrib, node_private):
 
         #   test_read_contributor_cannot_delete_linked_registrations_relationship
         res = make_request(

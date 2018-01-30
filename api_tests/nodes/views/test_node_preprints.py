@@ -1,17 +1,12 @@
 import pytest
 
-from addons.osfstorage.models import OsfStorageFile
 from api.base.settings.defaults import API_BASE
-from api_tests import utils as test_utils
 from api_tests.preprints.filters.test_filters import PreprintsListFilteringMixin
 from api_tests.preprints.views.test_preprint_list_mixin import PreprintIsPublishedListMixin, PreprintIsValidListMixin
-from framework.auth.core import Auth
-from osf.models import PreprintService
 from osf_tests.factories import (
     PreprintFactory,
     AuthUserFactory,
     ProjectFactory,
-    SubjectFactory,
     PreprintProviderFactory,
 )
 from website.util import permissions
@@ -97,44 +92,34 @@ class TestNodePreprintIsPublishedList(PreprintIsPublishedListMixin):
 
     @pytest.fixture()
     def preprint_unpublished(
-            self,
-            user_admin_contrib,
-            provider_one,
-            project_published,
-            subject):
-        return PreprintFactory(creator=user_admin_contrib,
-                               filename='mgla.pdf',
-                               provider=provider_one,
-                               subjects=[[subject._id]],
-                               project=project_published,
-                               is_published=False)
+            self, user_admin_contrib, provider_one,
+            project_published, subject):
+        return PreprintFactory(
+            creator=user_admin_contrib,
+            filename='mgla.pdf',
+            provider=provider_one,
+            subjects=[[subject._id]],
+            project=project_published,
+            is_published=False)
 
     def test_unpublished_visible_to_admins(
-            self,
-            app,
-            user_admin_contrib,
+            self, app, user_admin_contrib,
             preprint_unpublished,
-            preprint_published,
-            url):
+            preprint_published, url):
         res = app.get(url, auth=user_admin_contrib.auth)
         assert len(res.json['data']) == 2
         assert preprint_unpublished._id in [d['id'] for d in res.json['data']]
         assert preprint_published._id in [d['id'] for d in res.json['data']]
 
     def test_unpublished_invisible_to_write_contribs(
-            self,
-            app,
-            user_write_contrib,
-            preprint_unpublished,
-            preprint_published,
-            url):
+            self, app, user_write_contrib, preprint_unpublished, url):
         res = app.get(url, auth=user_write_contrib.auth)
         assert len(res.json['data']) == 1
         assert preprint_unpublished._id not in [
             d['id'] for d in res.json['data']]
 
     def test_filter_published_false_write_contrib(
-            self, app, user_write_contrib, preprint_unpublished, url):
+            self, app, user_write_contrib, url):
         res = app.get(
             '{}filter[is_published]=false'.format(url),
             auth=user_write_contrib.auth)
@@ -190,14 +175,8 @@ class TestNodePreprintIsValidList(PreprintIsValidListMixin):
     # test override: custom exception checks because of node permission
     # failures
     def test_preprint_node_deleted_invisible(
-            self,
-            app,
-            user_admin_contrib,
-            user_write_contrib,
-            user_non_contrib,
-            project,
-            preprint,
-            url):
+            self, app, user_admin_contrib, user_write_contrib,
+            user_non_contrib, project, preprint, url):
         project.is_deleted = True
         project.save()
         # no auth

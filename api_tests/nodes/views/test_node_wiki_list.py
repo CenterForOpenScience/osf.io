@@ -83,15 +83,8 @@ class TestNodeWikiList:
             API_BASE, private_registration._id)
 
     def test_return_wikis(
-            self,
-            app,
-            user,
-            non_contrib,
-            private_registration,
-            public_wiki,
-            private_wiki,
-            public_url,
-            private_url,
+            self, app, user, non_contrib, private_registration,
+            public_wiki, private_wiki, public_url, private_url,
             private_registration_url):
 
         #   test_return_public_node_wikis_logged_out_user
@@ -165,16 +158,9 @@ class TestNodeWikiList:
         assert res.json['errors'][0]['detail'] == exceptions.PermissionDenied.default_detail
 
     def test_relationship_links(
-            self,
-            app,
-            user,
-            public_project,
-            private_project,
-            public_registration,
-            private_registration,
-            public_url,
-            private_url,
-            public_registration_url,
+            self, app, user, public_project, private_project,
+            public_registration, private_registration,
+            public_url, private_url, public_registration_url,
             private_registration_url):
 
         #   test_public_node_wikis_relationship_links
@@ -222,12 +208,8 @@ class TestNodeWikiList:
             0]['relationships']['comments']['links']['related']['href']
 
     def test_not_returned(
-            self,
-            app,
-            public_project,
-            public_registration,
-            public_url,
-            public_registration_url):
+            self, app, public_project, public_registration,
+            public_url, public_registration_url):
 
         #   test_registration_wikis_not_returned_from_nodes_endpoint
         res = app.get(public_url)

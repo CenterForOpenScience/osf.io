@@ -57,8 +57,9 @@ class TestNodeLogList:
     @pytest.fixture()
     def pointer_embargo(self, user):
         return RegistrationFactory(
-            creator=user, embargo=EmbargoFactory(
-                user=user), is_public=False)
+            creator=user,
+            embargo=EmbargoFactory(user=user),
+            is_public=False)
 
     @pytest.fixture()
     def private_project(self, user):
@@ -88,12 +89,8 @@ class TestNodeLogList:
         assert 'Rheisen' == public_project.logs.latest().params['tag']
 
     def test_remove_tag(
-            self,
-            app,
-            user,
-            user_auth,
-            public_project,
-            public_url):
+            self, app, user, user_auth,
+            public_project, public_url):
         public_project.add_tag('Rheisen', auth=user_auth)
         assert public_project.logs.latest().action == 'tag_added'
         public_project.remove_tag('Rheisen', auth=user_auth)
@@ -105,13 +102,8 @@ class TestNodeLogList:
         assert public_project.logs.latest().params['tag'] == 'Rheisen'
 
     def test_project_creation(
-            self,
-            app,
-            user,
-            public_project,
-            private_project,
-            public_url,
-            private_url):
+            self, app, user, public_project, private_project,
+            public_url, private_url):
 
         #   test_project_created
         res = app.get(public_url)
@@ -152,13 +144,8 @@ class TestNodeLogList:
         assert res.json['data'][API_LATEST]['attributes']['action'] == 'addon_added'
 
     def test_project_add_remove_contributor(
-            self,
-            app,
-            user,
-            contrib,
-            user_auth,
-            public_project,
-            public_url):
+            self, app, user, contrib, user_auth,
+            public_project, public_url):
         public_project.add_contributor(contrib, auth=user_auth)
         assert public_project.logs.latest().action == 'contributor_added'
         # Disconnect contributor_removed so that we don't check in files
@@ -173,12 +160,8 @@ class TestNodeLogList:
         assert res.json['data'][1]['attributes']['action'] == 'contributor_added'
 
     def test_remove_addon(
-            self,
-            app,
-            user,
-            user_auth,
-            public_project,
-            public_url):
+            self, app, user, user_auth,
+            public_project, public_url):
         public_project.add_addon('github', auth=user_auth)
         assert public_project.logs.latest().action == 'addon_added'
         old_log_length = len(list(public_project.logs.all()))
@@ -191,14 +174,8 @@ class TestNodeLogList:
         assert res.json['data'][API_LATEST]['attributes']['action'] == 'addon_removed'
 
     def test_pointers(
-            self,
-            app,
-            user,
-            user_auth,
-            contrib,
-            public_project,
-            pointer,
-            public_url):
+            self, app, user, user_auth, contrib,
+            public_project, pointer, public_url):
         public_project.add_pointer(pointer, auth=user_auth, save=True)
         assert public_project.logs.latest().action == 'pointer_created'
         res = app.get(public_url, auth=user.auth)
@@ -250,14 +227,8 @@ class TestNodeLogList:
         assert res.json['data'][API_LATEST]['attributes']['params']['pointer'] is None
 
     def test_registration_pointers(
-            self,
-            app,
-            user,
-            user_auth,
-            non_contrib,
-            public_project,
-            pointer_registration,
-            public_url):
+            self, app, user, user_auth, non_contrib,
+            public_project, pointer_registration, public_url):
         public_project.add_pointer(
             pointer_registration, auth=user_auth, save=True)
         assert public_project.logs.latest().action == 'pointer_created'
@@ -295,14 +266,8 @@ class TestNodeLogList:
         assert res.json['data'][API_LATEST]['attributes']['params']['pointer'] is None
 
     def test_embargo_pointers(
-            self,
-            app,
-            user,
-            user_auth,
-            non_contrib,
-            public_project,
-            pointer_embargo,
-            public_url):
+            self, app, user, user_auth, non_contrib,
+            public_project, pointer_embargo, public_url):
         public_project.add_pointer(pointer_embargo, auth=user_auth, save=True)
         assert public_project.logs.latest().action == 'pointer_created'
         res = app.get(public_url, auth=user.auth)

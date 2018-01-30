@@ -35,12 +35,7 @@ class TestPreprintProviderList:
         return provider
 
     def test_preprint_provider_list(
-            self,
-            app,
-            url,
-            user,
-            provider_one,
-            provider_two):
+            self, app, url, user):
         # Test length and not auth
         res = app.get(url)
         assert res.status_code == 200
@@ -61,13 +56,7 @@ class TestPreprintProviderList:
         ('share_publish_type', 'Thesis'),
     ])
     def test_preprint_provider_list_filtering(
-            self,
-            filter_type,
-            filter_value,
-            app,
-            url,
-            provider_one,
-            provider_two):
+            self, filter_type, filter_value, app, url):
         res = app.get('{}filter[{}]={}'.format(url, filter_type, filter_value))
         assert res.status_code == 200
         assert len(res.json['data']) == 1
