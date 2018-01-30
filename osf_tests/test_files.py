@@ -6,8 +6,7 @@ from addons.osfstorage import settings as osfstorage_settings
 from osf.models import BaseFileNode, Folder, File
 from osf_tests.factories import (
     UserFactory,
-    ProjectFactory,
-    PreprintFactory
+    ProjectFactory
 )
 
 pytestmark = pytest.mark.django_db

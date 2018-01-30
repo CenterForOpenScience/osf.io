@@ -43,7 +43,6 @@ def make_error(code, message_short=None, message_long=None):
 
 
 @must_be_signed
-@must_have_addon('osfstorage', 'node')
 def osfstorage_update_metadata(payload, **kwargs):
     """Metadata received from WaterButler, is built incrementally via latent task calls to this endpoint.
 

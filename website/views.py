@@ -322,7 +322,7 @@ def resolve_guid(guid, suffix=None):
 
             return send_from_directory(preprints_dir, 'index.html')
 
-        if isinstance(referent, BaseFileNode) and referent.is_file and referent.node.is_quickfiles:
+        if isinstance(referent, BaseFileNode) and referent.is_file and referent.target.is_quickfiles:
             if referent.is_deleted:
                 raise HTTPError(http.GONE)
             if PROXY_EMBER_APPS:

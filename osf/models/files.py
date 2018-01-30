@@ -26,7 +26,7 @@ from osf.utils.fields import NonNaiveDateTimeField
 from api.base.utils import waterbutler_api_url_for
 from website.files import utils
 from website.files.exceptions import VersionNotFoundError
-from website.util import api_v2_url
+from website.util import api_v2_url, web_url_for
 
 __all__ = (
     'File',
