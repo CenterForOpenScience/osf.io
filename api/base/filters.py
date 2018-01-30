@@ -108,7 +108,7 @@ class JSONAPIFilterSet(django_filters.rest_framework.FilterSet):
 
     # TODO - there must be a better way to recognize these
     MANY_TO_MANY_FIELDS = ['tags', 'contributors']
-    DATE_FIELDS = ['date_created', 'date_modified']
+    DATE_FIELDS = ['created', 'modified']
 
     def __init__(self, data=None, *args, **kwargs):
         self.or_fields = {}

@@ -108,6 +108,6 @@ class NodeFilterSet(JSONAPIFilterSet):
         fields = [
             'title',
             'description',
-            'date_created',
-            'date_modified',
+            'created',
+            'modified',
         ]
