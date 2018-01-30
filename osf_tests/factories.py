@@ -821,7 +821,7 @@ class ReviewActionFactory(DjangoModelFactory):
 class FlagFactory(DjangoModelFactory):
     name = factory.Faker('catch_phrase')
     everyone = True
-    note = "This is a waffle test flag"
+    note = 'This is a waffle test flag'
 
     class Meta:
         model = Flag
@@ -830,7 +830,7 @@ class FlagFactory(DjangoModelFactory):
 class SampleFactory(DjangoModelFactory):
     name = factory.Faker('catch_phrase')
     percent = 100
-    note = "This is a waffle test sample"
+    note = 'This is a waffle test sample'
 
     class Meta:
         model = Sample
@@ -839,7 +839,7 @@ class SampleFactory(DjangoModelFactory):
 class SwitchFactory(DjangoModelFactory):
     name = factory.Faker('catch_phrase')
     active = True
-    note = "This is a waffle test switch"
+    note = 'This is a waffle test switch'
 
     class Meta:
         model = Switch
