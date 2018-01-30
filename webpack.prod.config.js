@@ -33,7 +33,7 @@ module.exports = assign(common, {
         })
     ]),
     output: {
-        path: path.join(__dirname, 'website', 'static', 'public', 'js'),
+        path: path.resolve(__dirname, 'website', 'static', 'public', 'js'),
         // publicPath: '/static/', // used to generate urls to e.g. images
 
         // Append hash to filenames for cachebusting

@@ -5,16 +5,16 @@ var fs = require('fs');
 var SaveAssetsJson = require('assets-webpack-plugin');
 
 var addons = require('./addons.json');
-var root = path.join(__dirname, 'website', 'static');
+var root = path.resolve(__dirname, 'website', 'static');
 /** Return the absolute path given a path relative to ./website/static */
 var staticPath = function(dir) {
-    return path.join(root, dir);
+    return path.resolve(root, dir);
 };
 var nodePath = function(dir) {
-    return path.join(__dirname, 'node_modules', dir);
+    return path.resolve(__dirname, 'node_modules', dir);
 };
 var addonsPath = function(dir) {
-    return path.join(__dirname, 'addons', dir);
+    return path.resolve(__dirname, 'addons', dir);
 };
 
 /**
@@ -103,20 +103,20 @@ var addonModules = ['files.js', 'node-cfg.js', 'user-cfg.js', 'file-detail.js', 
 addons.addons.forEach(function(addonName) {
     var baseDir = addonName + '/';
     addonModules.forEach(function(module) {
-        var modulePath = path.join(__dirname, 'addons',
+        var modulePath = path.resolve(__dirname, 'addons',
                                   addonName, 'static', module);
         if (fs.existsSync(modulePath)) {
             var entryPoint = baseDir + module.split('.')[0];
             entry[entryPoint] =  modulePath;
         }
     });
-    var logTextPath = path.join(__dirname, 'addons',
+    var logTextPath = path.resolve(__dirname, 'addons',
         addonName, 'static', addonName + 'LogActionList.json');
     if(fs.existsSync(logTextPath)){
         addonLog = require(logTextPath);
         for (var attrname in addonLog) { mainLogs[attrname] = addonLog[attrname]; }
     }
-    var anonymousLogTextPath = path.join(__dirname, 'addons',
+    var anonymousLogTextPath = path.resolve(__dirname, 'addons',
         addonName, 'static', addonName + 'AnonymousLogActionList.json');
     if(fs.existsSync(anonymousLogTextPath)) {
         anonymousAddonLog = require(anonymousLogTextPath);
@@ -161,7 +161,7 @@ var resolve = {
         'highlight-css': nodePath('highlight.js/styles/default.css'),
         'pikaday-css': nodePath('pikaday/css/pikaday.css'),
         // Also alias some internal libraries for easy access
-        'addons': path.join(__dirname, 'addons'),
+        'addons': path.resolve(__dirname, 'addons'),
         'tests': staticPath('js/tests'),
         // GASP Items not defined as main in its package.json
         'TweenLite' : nodePath('gsap/src/minified/TweenLite.min.js'),
@@ -190,12 +190,12 @@ var plugins = [
     // Slight hack to make sure that CommonJS is always used
     new webpack.DefinePlugin({
         'define.amd': false,
-        '__ENABLE_DEV_MODE_CONTROLS': fs.existsSync(staticPath(path.join('built', 'git_logs.json')))
+        '__ENABLE_DEV_MODE_CONTROLS': fs.existsSync(staticPath(path.resolve('built', 'git_logs.json')))
     }),
 ];
 
 var output = {
-    path: path.join(__dirname, 'website', 'static', 'public', 'js'),
+    path: path.resolve(__dirname, 'website', 'static', 'public', 'js'),
     // publicPath: '/static/', // used to generate urls to e.g. images
     filename: '[name].js',
     sourcePrefix: ''

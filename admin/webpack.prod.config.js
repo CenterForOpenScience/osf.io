@@ -31,12 +31,9 @@ module.exports = assign(admin, {
             minimize: true
         })
     ]),
-    output: {
-        path: './static/public/js/',
+    output: Object.assign({}, admin.output, {
         // publicPath: '/static/', // used to generate urls to e.g. images
-
         // Append hash to filenames for cachebusting
         filename: '[name].[chunkhash].js',
-        sourcePrefix: ''
-    }
+    }),
 });

@@ -1,7 +1,3 @@
-/**
- *
- */
-
 var webpack = require('webpack');
 var webpackCommon = require('./webpack.common.config.js');
 

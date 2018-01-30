@@ -3,12 +3,12 @@ var path = require('path');
 var common = require('../webpack.common.config.js');
 var BundleTracker = require('webpack-bundle-tracker');
 
-var websiteRoot = path.join(__dirname, '..', 'website', 'static');
+var websiteRoot = path.resolve(__dirname, '..', 'website', 'static');
 
-var adminRoot = path.join(__dirname, 'static');
+var adminRoot = path.resolve(__dirname, 'static');
 
 var staticAdminPath = function(dir) {
-    return path.join(adminRoot, dir);
+    return path.resolve(adminRoot, dir);
 };
 
 // Adding bundle tracker to plugins
@@ -22,7 +22,7 @@ var plugins = common.plugins.concat([
 ]);
 
 common.output = {
-    path: path.join(__dirname, 'static', 'public', 'js'),
+    path: path.resolve(__dirname, 'static', 'public', 'js'),
     // publicPath: '/static/', // used to generate urls to e.g. images
     filename: '[name].js',
     sourcePrefix: ''
