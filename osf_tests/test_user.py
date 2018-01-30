@@ -1381,10 +1381,10 @@ class TestUser(OsfTestCase):
     def test_cannot_remove_primary_email_from_email_list(self):
         with pytest.raises(PermissionsError) as e:
             self.user.remove_email(self.user.username)
-        assert e.value.message == "Can't remove primary email"
+        assert e.value.message == 'Can\'t remove primary email'
 
     def test_add_same_unconfirmed_email_twice(self):
-        email = "test@mail.com"
+        email = 'test@mail.com'
         token1 = self.user.add_unconfirmed_email(email)
         self.user.save()
         self.user.reload()
@@ -1635,7 +1635,6 @@ class TestUserMerging(OsfTestCase):
             else:
                 assert getattr(self.user, k) == v, '{} doesn\'t match expectation'.format(k)
 
-
         assert sorted(self.user.system_tags) == ['other', 'shared', 'user']
 
         # check fields set on merged user
@@ -1692,7 +1691,7 @@ class TestUserMerging(OsfTestCase):
         assert creating_user.external_identity == {}
         assert verified_user.external_identity == {}
         assert no_id_user.external_identity == {}
-        assert no_provider_user.external_identity== {}
+        assert no_provider_user.external_identity == {}
 
         no_provider_user.merge_user(linking_user)
         assert linking_user.external_identity == {}
@@ -1746,7 +1745,7 @@ class TestUserValidation(OsfTestCase):
             data = json.load(url_test_data)
 
         fails_at_end = False
-        for should_pass in data["testsPositive"]:
+        for should_pass in data['testsPositive']:
             try:
                 self.user.social = {'profileWebsites': [should_pass]}
                 self.user.save()
@@ -1755,7 +1754,7 @@ class TestUserValidation(OsfTestCase):
                 fails_at_end = True
                 print('\"' + should_pass + '\" failed but should have passed while testing that the validator ' + data['testsPositive'][should_pass])
 
-        for should_fail in data["testsNegative"]:
+        for should_fail in data['testsNegative']:
             self.user.social = {'profileWebsites': [should_fail]}
             try:
                 with pytest.raises(ValidationError):
