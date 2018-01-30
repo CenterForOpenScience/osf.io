@@ -167,24 +167,8 @@ class SearchTestCase(unittest.TestCase):
         elastic_search.delete_index(settings.ELASTIC_INDEX)
 
 
-methods = [
-    responses.GET,
-    responses.PUT,
-    responses.HEAD,
-    responses.POST,
-    responses.PATCH,
-    responses.DELETE,
-]
-def kill(*args, **kwargs):
-    logger.error('httppretty.kill: %s - %s', args, kwargs)
-    raise responses.errors.UnmockedError()
 
-
-class MockRequestTestCase(unittest.TestCase):
-
-    DISABLE_OUTGOING_CONNECTIONS = False
-
-class OsfTestCase(DbTestCase, AppTestCase, SearchTestCase, MockRequestTestCase):
+class OsfTestCase(DbTestCase, AppTestCase, SearchTestCase):
     """Base `TestCase` for tests that require both scratch databases and the OSF
     application. Note: superclasses must call `super` in order for all setup and
     teardown methods to be called correctly.
@@ -192,7 +176,7 @@ class OsfTestCase(DbTestCase, AppTestCase, SearchTestCase, MockRequestTestCase):
     pass
 
 
-class ApiTestCase(DbTestCase, ApiAppTestCase, SearchTestCase, MockRequestTestCase):
+class ApiTestCase(DbTestCase, ApiAppTestCase, SearchTestCase):
     """Base `TestCase` for tests that require both scratch databases and the OSF
     API application. Note: superclasses must call `super` in order for all setup and
     teardown methods to be called correctly.
@@ -279,7 +263,7 @@ class ApiAddonTestCase(ApiTestCase):
 
 
 @override_settings(ROOT_URLCONF='admin.base.urls')
-class AdminTestCase(DbTestCase, DjangoTestCase, SearchTestCase, MockRequestTestCase):
+class AdminTestCase(DbTestCase, DjangoTestCase, SearchTestCase):
     pass
 
 class NotificationTestCase(OsfTestCase):

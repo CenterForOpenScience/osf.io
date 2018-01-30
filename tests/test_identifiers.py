@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-
+import mock
 import responses
 from nose.tools import *  # noqa
 
@@ -203,13 +203,14 @@ class TestIdentifierViews(OsfTestCase):
 
     def setUp(self):
         super(TestIdentifierViews, self).setUp()
-        settings.EZID_USERNAME = 'testfortravisnotreal'
-        settings.EZID_PASSWORD = 'testfortravisnotreal'
+
 
         self.user = AuthUserFactory()
         self.node = RegistrationFactory(creator=self.user, is_public=True)
 
     @responses.activate
+    @mock.patch('settings.EZID_USERNAME', 'testfortravisnotreal')
+    @mock.patch('settings.EZID_PASSWORD', 'testfortravisnotreal')
     def test_create_identifiers_not_exists(self):
         identifier = self.node._id
         url = furl.furl('https://ezid.cdlib.org/id')
@@ -245,6 +246,8 @@ class TestIdentifierViews(OsfTestCase):
         assert_equal(res.status_code, 201)
 
     @responses.activate
+    @mock.patch('settings.EZID_USERNAME', 'testfortravisnotreal')
+    @mock.patch('settings.EZID_PASSWORD', 'testfortravisnotreal')
     def test_create_identifiers_exists(self):
         identifier = self.node._id
         doi = settings.EZID_FORMAT.format(namespace=settings.DOI_NAMESPACE, guid=identifier)

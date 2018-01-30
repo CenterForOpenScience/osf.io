@@ -92,9 +92,6 @@ class TestNodeFilesList(ApiTestCase):
         self.public_project = ProjectFactory(creator=self.user, is_public=True)
         self.public_url = '/{}nodes/{}/files/'.format(API_BASE, self.public_project._id)
 
-    def tearDown(self):
-        super(TestNodeFilesList, self).tearDown()
-
     def add_github(self):
         user_auth = Auth(self.user)
         self.project.add_addon('github', auth=user_auth)
