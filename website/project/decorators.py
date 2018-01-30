@@ -242,7 +242,7 @@ def _must_be_contributor_factory(include_public, include_view_only_anon=True):
 
             kwargs['auth'] = Auth.from_kwargs(request.args.to_dict(), kwargs)
 
-            response = check_contributor_auth(kwargs['node'], kwargs['auth'], include_public, include_view_only_anon)
+            response = check_contributor_auth(target, kwargs['auth'], include_public, include_view_only_anon)
 
             return response or func(*args, **kwargs)
 

@@ -1068,7 +1068,7 @@ class TestFileViews(StorageTestCase):
         assert res.status_code == 200
 
     def test_download_file(self):
-        file = create_test_file(node=self.node, user=self.user)
+        file = create_test_file(target=self.node, user=self.user)
         folder = self.node_settings.get_root().append_folder('Folder')
 
         base_url = '/download/{}/'

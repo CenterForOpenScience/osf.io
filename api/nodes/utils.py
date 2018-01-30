@@ -6,7 +6,6 @@ from rest_framework.status import is_server_error
 import requests
 
 from addons.osfstorage.models import OsfStorageFile, OsfStorageFolder
-from website.util import waterbutler_api_url_for
 from osf.models import AbstractNode
 
 from api.base.exceptions import ServiceUnavailableError

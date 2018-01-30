@@ -13,11 +13,10 @@ from framework.auth.core import Auth
 from osf.models.mixins import Loggable
 from osf.models import AbstractNode
 from osf.models.files import File, FileVersion, Folder, TrashedFileNode, BaseFileNode, BaseFileNodeManager
-from osf.utils.auth import Auth
 from osf.utils import permissions
 from website.files import exceptions
 from website.files import utils as files_utils
-from website.util import api_url_for, web_url_for
+from website.util import api_url_for
 
 settings = apps.get_app_config('addons_osfstorage')
 

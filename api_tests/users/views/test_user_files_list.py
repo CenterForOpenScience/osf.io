@@ -1,6 +1,5 @@
 # -*- coding: utf-8 -*-
 import pytest
-from django.contrib.contenttypes.models import ContentType
 
 from osf_tests.factories import AuthUserFactory
 from api.base import utils
@@ -92,7 +91,7 @@ class TestUserQuickFiles:
 
     def test_get_files_detail_has_user_relationship(self, app, user, quickfiles):
         file_id = quickfiles.files.all().values_list('_id', flat=True).first()
-        url = "/{}files/{}/".format(API_BASE, file_id)
+        url = '/{}files/{}/'.format(API_BASE, file_id)
         res = app.get(url, auth=user.auth)
         file_detail_json = res.json['data']
 
