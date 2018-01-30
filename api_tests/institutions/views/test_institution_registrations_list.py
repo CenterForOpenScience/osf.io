@@ -89,17 +89,19 @@ class TestInstitutionRegistrationList(ApiTestCase):
         registration3.affiliated_institutions.add(self.institution)
         registration3.add_contributor(self.user2, auth=Auth(self.user1))
         registration3.add_contributor(
-            user3, auth=Auth(
-                self.user1), visible=False)
+            user3, auth=Auth(self.user1), visible=False)
         registration3.save()
         registration3_url = '/{0}registrations/{1}/?embed=contributors'.format(
             API_BASE, registration3._id)
 
         res = self.app.get(registration3_url)
-        assert_true(res.json['data']['embeds']['contributors']
-                    ['links']['meta']['total_bibliographic'])
-        assert_equal(res.json['data']['embeds']['contributors']
-                     ['links']['meta']['total_bibliographic'], 2)
+        assert_true(
+            res.json['data']['embeds']['contributors']['links']['meta']['total_bibliographic']
+        )
+        assert_equal(
+            res.json['data']['embeds']['contributors']['links']['meta']['total_bibliographic'],
+            2
+        )
 
 
 class TestRegistrationListFiltering(
@@ -115,10 +117,14 @@ class TestRegistrationListFiltering(
 
         A_children = [
             child for child in Node.objects.get_children(
-                self.node_A)]
+                self.node_A
+            )
+        ]
         B2_children = [
             child for child in Node.objects.get_children(
-                self.node_B2)]
+                self.node_B2
+            )
+        ]
 
         for child in (A_children + B2_children):
             child.affiliated_institutions.add(self.institution)

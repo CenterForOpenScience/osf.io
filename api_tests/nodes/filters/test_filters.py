@@ -35,7 +35,8 @@ class NodesListFilteringMixin(object):
         return ProjectFactory(
             parent=parent_project_one,
             title="Child of {}".format(
-                parent_project_one._id),
+                parent_project_one._id
+            ),
             creator=user)
 
     @pytest.fixture()
@@ -43,7 +44,8 @@ class NodesListFilteringMixin(object):
         return ProjectFactory(
             creator=user,
             title='Neighbor of {}'.format(
-                parent_project_one._id))
+                parent_project_one._id
+            ))
 
     @pytest.fixture()
     def parent_project(self, user, contrib):
@@ -56,7 +58,8 @@ class NodesListFilteringMixin(object):
         return NodeFactory(
             parent=parent_project,
             title='Friend of {}'.format(
-                parent_project_one._id),
+                parent_project_one._id
+            ),
             creator=user)
 
     @pytest.fixture()
@@ -99,23 +102,15 @@ class NodesListFilteringMixin(object):
         return '{}filter[contributors]='.format(url)
 
     def test_non_mutating_list_filtering_tests(
-            self,
-            app,
-            user,
-            contrib,
-            project,
-            parent_project,
-            child_node_one,
-            child_node_two,
-            grandchild_node_one,
+            self, app, user, contrib, project,
+            parent_project, child_node_one,
+            child_node_two, grandchild_node_one,
             grandchild_node_two,
             great_grandchild_node_two,
-            root_ne_url,
-            parent_url,
-            root_url,
-            contributors_url,
-            parent_project_one,
-            child_project_one):
+            root_ne_url, parent_url, root_url,
+            contributors_url, parent_project_one,
+            child_project_one
+    ):
 
         #   test_parent_filter_null
         expected = [parent_project._id, project._id, parent_project_one._id]
@@ -128,7 +123,8 @@ class NodesListFilteringMixin(object):
         res = app.get(
             '{}{}'.format(
                 parent_url,
-                child_node_two._id),
+                child_node_two._id
+            ),
             auth=user.auth)
         actual = [node['id'] for node in res.json['data']]
         assert expected == actual
@@ -138,7 +134,8 @@ class NodesListFilteringMixin(object):
         res = app.get(
             '{}{}'.format(
                 parent_url,
-                parent_project._id),
+                parent_project._id
+            ),
             auth=user.auth)
         actual = [node['id'] for node in res.json['data']]
         assert set(expected) == set(actual)
@@ -147,7 +144,8 @@ class NodesListFilteringMixin(object):
         res = app.get(
             '{}null'.format(root_url),
             auth=user.auth,
-            expect_errors=True)
+            expect_errors=True
+        )
         assert res.status_code == 400
         assert res.json['errors'][0]['source']['parameter'] == 'filter'
 
@@ -156,8 +154,10 @@ class NodesListFilteringMixin(object):
         res = app.get(
             '{}{}'.format(
                 root_url,
-                child_node_two._id),
-            auth=user.auth)
+                child_node_two._id
+            ),
+            auth=user.auth
+        )
         actual = [node['id'] for node in res.json['data']]
         assert expected == actual
 
@@ -172,8 +172,10 @@ class NodesListFilteringMixin(object):
         res = app.get(
             '{}{}'.format(
                 root_url,
-                parent_project._id),
-            auth=user.auth)
+                parent_project._id
+            ),
+            auth=user.auth
+        )
         actual = [node['id'] for node in res.json['data']]
         assert set(expected) == set(actual)
 
@@ -182,8 +184,10 @@ class NodesListFilteringMixin(object):
         res = app.get(
             '{}{}'.format(
                 contributors_url,
-                contrib._id),
-            auth=user.auth)
+                contrib._id
+            ),
+            auth=user.auth
+        )
         actual = [node['id'] for node in res.json['data']]
         assert expected == actual
 
@@ -204,7 +208,9 @@ class NodesListFilteringMixin(object):
             root_ne_url,
             parent_project._id,
             'filter[title]={}'.format(
-                parent_project_one.title))
+                parent_project_one.title
+            )
+        )
         res = app.get(url, auth=user.auth)
         assert res.status_code == 200
         assert len(res.json['data']) == 3
@@ -228,20 +234,18 @@ class NodesListFilteringMixin(object):
         assert parent_project._id not in ids
 
     def test_parent_filter_excludes_linked_nodes(
-            self,
-            app,
-            user,
-            parent_project,
-            child_node_one,
-            child_node_two,
-            parent_url):
+            self, app, user, parent_project,
+            child_node_one, child_node_two,
+            parent_url
+    ):
         linked_node = NodeFactory()
         parent_project.add_node_link(linked_node, auth=Auth(user))
         expected = [child_node_one._id, child_node_two._id]
         res = app.get(
             '{}{}'.format(
                 parent_url,
-                parent_project._id),
+                parent_project._id
+            ),
             auth=user.auth)
         actual = [node['id'] for node in res.json['data']]
         assert linked_node._id not in actual
@@ -249,8 +253,10 @@ class NodesListFilteringMixin(object):
 
     def test_tag_filter(self, app, user, parent_project, tags_url):
         parent_project.add_tag(
-            'reason', auth=Auth(
-                parent_project.creator), save=True)
+            'reason',
+            auth=Auth(parent_project.creator),
+            save=True
+        )
         expected = [parent_project._id]
         res = app.get('{}reason'.format(tags_url), auth=user.auth)
         actual = [node['id'] for node in res.json['data']]
@@ -298,14 +304,10 @@ class NodesListDateFilteringMixin(object):
         return '{}filter[date_created]='.format(url)
 
     def test_node_list_date_filter(
-            self,
-            app,
-            user,
-            node_may,
-            node_june,
-            node_july,
-            url,
-            created_url):
+            self, app, user, node_may,
+            node_june, node_july, url,
+            created_url
+    ):
 
         # test_date_filter_equals
         expected = []
@@ -317,7 +319,8 @@ class NodesListDateFilteringMixin(object):
         res = app.get(
             '{}{}'.format(
                 created_url,
-                node_may.created),
+                node_may.created
+            ),
             auth=user.auth)
         actual = [node['id'] for node in res.json['data']]
         assert expected == actual

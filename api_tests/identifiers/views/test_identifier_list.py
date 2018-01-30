@@ -60,12 +60,9 @@ class TestRegistrationIdentifierList:
         assert res_registration_identifiers.content_type == 'application/vnd.api+json'
 
     def test_identifier_list_returns_correct_number_and_referent(
-            self,
-            registration,
-            identifier_registration,
-            data_registration_identifiers,
-            res_registration_identifiers,
-            all_identifiers):
+            self, registration, data_registration_identifiers,
+            res_registration_identifiers, all_identifiers
+    ):
         # test_identifier_list_returns_correct_number
         total = res_registration_identifiers.json['links']['meta']['total']
         assert total == all_identifiers.count()
@@ -94,19 +91,20 @@ class TestRegistrationIdentifierList:
         assert_items_equal(values_in_response, values)
 
     def test_identifier_filter_by_category(
-            self,
-            app,
-            registration,
-            identifier_registration,
-            url_registration_identifiers):
+            self, app, registration,
+            url_registration_identifiers
+    ):
         IdentifierFactory(referent=registration, category='nopeid')
         identifiers_for_registration = registration.identifiers
         assert identifiers_for_registration.count() == 2
         assert_items_equal(
             list(
                 identifiers_for_registration.values_list(
-                    'category', flat=True)), [
-                'carpid', 'nopeid'])
+                    'category',
+                    flat=True
+                )
+            ), ['carpid', 'nopeid']
+        )
 
         filter_url = '{}?filter[category]=carpid'.format(
             url_registration_identifiers)
@@ -118,19 +116,17 @@ class TestRegistrationIdentifierList:
         assert total == carpid_total
 
     def test_node_identifier_not_returned_from_registration_endpoint(
-            self,
-            node,
-            identifier_node,
-            identifier_registration,
+            self, identifier_node, identifier_registration,
             res_registration_identifiers,
-            data_registration_identifiers):
+            data_registration_identifiers
+    ):
         assert res_registration_identifiers.status_code == 200
         assert len(data_registration_identifiers) == 1
         assert identifier_registration._id == data_registration_identifiers[0]['id']
         assert identifier_node._id != data_registration_identifiers[0]['id']
 
     def test_node_not_allowed_from_registrations_endpoint(
-            self, app, node, identifier_node):
+            self, app, node):
         url = '/{}registrations/{}/identifiers/'.format(API_BASE, node._id)
         res = app.get(url, expect_errors=True)
         assert res.status_code == 404
@@ -172,12 +168,9 @@ class TestNodeIdentifierList:
         assert res_node_identifiers.content_type == 'application/vnd.api+json'
 
     def test_identifier_list_returns_correct_number_and_referent(
-            self,
-            node,
-            identifier_node,
-            res_node_identifiers,
-            data_node_identifiers,
-            all_identifiers):
+            self, node, res_node_identifiers,
+            data_node_identifiers, all_identifiers
+    ):
         # test_identifier_list_returns_correct_number
         total = res_node_identifiers.json['links']['meta']['total']
         assert total == all_identifiers.count()
@@ -200,12 +193,13 @@ class TestNodeIdentifierList:
 
         # test_identifier_list_returns_correct_values
         values = [identifier.value for identifier in all_identifiers]
-        values_in_response = [identifier['attributes']['value']
-                              for identifier in data_node_identifiers]
+        values_in_response = [
+            identifier['attributes']['value'] for identifier in data_node_identifiers
+        ]
         assert_items_equal(values_in_response, values)
 
     def test_identifier_filter_by_category(
-            self, app, node, identifier_node, url_node_identifiers):
+            self, app, node, url_node_identifiers):
         IdentifierFactory(referent=node, category='nopeid')
         identifiers_for_node = Identifier.objects.filter(object_id=node.id)
 
@@ -224,19 +218,16 @@ class TestNodeIdentifierList:
         assert total == carpid_total
 
     def test_registration_identifier_not_returned_from_registration_endpoint(
-            self,
-            registration,
-            identifier_node,
-            identifier_registration,
-            res_node_identifiers,
-            data_node_identifiers):
+            self, identifier_node, identifier_registration,
+            res_node_identifiers, data_node_identifiers
+    ):
         assert res_node_identifiers.status_code == 200
         assert len(data_node_identifiers) == 1
         assert identifier_node._id == data_node_identifiers[0]['id']
         assert identifier_registration._id != data_node_identifiers[0]['id']
 
     def test_registration_not_allowed_from_nodes_endpoint(
-            self, app, registration, identifier_registration):
+            self, app, registration):
         url = '/{}nodes/{}/identifiers/'.format(API_BASE, registration._id)
         res = app.get(url, expect_errors=True)
         assert res.status_code == 404
@@ -266,19 +257,17 @@ class TestPreprintIdentifierList:
         assert res_preprint_identifier.content_type == 'application/vnd.api+json'
 
     def test_identifier_list_returns_correct_number_and_referent(
-            self,
-            preprint,
-            res_preprint_identifier,
-            data_preprint_identifier,
-            all_identifiers,
-            user):
+            self, preprint, res_preprint_identifier,
+            data_preprint_identifier, user
+    ):
         # add another preprint so there are more identifiers
         PreprintFactory(creator=user)
 
         # test_identifier_list_returns_correct_number
         total = res_preprint_identifier.json['links']['meta']['total']
         assert total == Identifier.objects.filter(
-            object_id=preprint.id).count()
+            object_id=preprint.id
+        ).count()
 
         # test_identifier_list_returns_correct_referent
         paths = [

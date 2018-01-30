@@ -20,11 +20,9 @@ class TestInstitutionList:
         return '/{}institutions/'.format(API_BASE)
 
     def test_return_all_institutions(
-            self,
-            app,
-            institution_one,
-            institution_two,
-            url_institution):
+            self, app, institution_one,
+            institution_two, url_institution
+    ):
         res_institutions = app.get(url_institution)
         data_institutions = res_institutions.json['data']
 

@@ -48,12 +48,10 @@ class TestInstitutionNodeList:
         return '/{0}institutions/{1}/nodes/'.format(API_BASE, institution._id)
 
     def test_return_all_public_nodes(
-            self,
-            app,
-            public_node,
-            user_private_node,
-            private_node,
-            institution_node_url):
+            self, app, public_node,
+            user_private_node, private_node,
+            institution_node_url
+    ):
         res = app.get(institution_node_url)
 
         assert res.status_code == 200
@@ -64,13 +62,10 @@ class TestInstitutionNodeList:
         assert private_node._id not in ids
 
     def test_does_not_return_private_nodes_with_auth(
-            self,
-            app,
-            user,
-            public_node,
-            user_private_node,
-            private_node,
-            institution_node_url):
+            self, app, user, public_node,
+            user_private_node, private_node,
+            institution_node_url
+    ):
         res = app.get(institution_node_url, auth=user.auth)
 
         assert res.status_code == 200
@@ -81,11 +76,9 @@ class TestInstitutionNodeList:
         assert private_node._id not in ids
 
     def test_registration_not_returned(
-            self,
-            app,
-            institution,
-            public_node,
-            institution_node_url):
+            self, app, public_node,
+            institution_node_url
+    ):
         registration = RegistrationFactory(project=public_node, is_public=True)
         res = app.get(institution_node_url)
 
@@ -183,8 +176,11 @@ class TestNodeListFiltering(NodesListFilteringMixin):
     @pytest.fixture()
     def project(self, user, parent_project_one, institution):
         project = ProjectFactory(
-            creator=user, title='Neighbor of {}'.format(
-                parent_project_one._id), is_public=True)
+            creator=user,
+            title='Neighbor of {}'.format(
+                parent_project_one._id),
+            is_public=True
+        )
         project.affiliated_institutions.add(institution)
         project.save()
         return project
@@ -199,11 +195,9 @@ class TestNodeListFiltering(NodesListFilteringMixin):
 
     @pytest.fixture()
     def child_node_one(
-            self,
-            user,
-            parent_project,
-            institution,
-            parent_project_one):
+            self, user, parent_project,
+            institution, parent_project_one
+    ):
         child_node_one = NodeFactory(
             parent=parent_project,
             title='Friend of {}'.format(
@@ -242,10 +236,9 @@ class TestNodeListFiltering(NodesListFilteringMixin):
 
     @pytest.fixture()
     def great_grandchild_node_two(
-            self,
-            user,
-            grandchild_node_two,
-            institution):
+            self, user, grandchild_node_two,
+            institution
+    ):
         great_grandchild_node_two = NodeFactory(
             parent=grandchild_node_two, creator=user, is_public=True)
         great_grandchild_node_two.affiliated_institutions.add(institution)

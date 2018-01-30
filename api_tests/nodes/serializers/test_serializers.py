@@ -13,7 +13,7 @@ from osf_tests.factories import (
     RegistrationFactory,
     ProjectFactory
 )
-from tests.base import DbTestCase, assert_datetime_equal
+from tests.base import assert_datetime_equal
 from tests.utils import make_drf_request_with_version
 
 
@@ -128,8 +128,8 @@ class TestNodeRegistrationSerializer:
             registered_by).path == '/{}users/{}/'.format(API_BASE, user._id)
         assert 'registered_from' in relationships
         registered_from = relationships['registered_from']['links']['related']['href']
-        assert urlparse(registered_from).path == '/{}nodes/{}/'.format(API_BASE,
-                                                                       registration.registered_from._id)
+        assert urlparse(registered_from).path == '/{}nodes/{}/'.format(
+            API_BASE, registration.registered_from._id)
         api_registrations_url = '/{}registrations/'.format(API_BASE)
         for relationship in relationship_urls:
             if relationship in should_not_relate_to_registrations:

@@ -43,14 +43,13 @@ def public_project(admin_contributor):
 
 @pytest.fixture()
 def private_project(
-        admin_contributor,
-        write_contrib,
-        read_contrib,
-        disabled_contrib):
+        admin_contributor, write_contrib,
+        read_contrib, disabled_contrib):
     private_project = ProjectFactory(creator=admin_contributor)
     private_project.add_contributor(
-        write_contrib, permissions=[
-            'read', 'write'], auth=Auth(admin_contributor))
+        write_contrib,
+        permissions=['read', 'write'],
+        auth=Auth(admin_contributor))
     private_project.add_contributor(
         read_contrib,
         permissions=['read'],
@@ -76,15 +75,10 @@ def disable_user(disabled_contrib, private_project):
 class NodeCitationsMixin:
 
     def test_node_citations(
-            self,
-            app,
-            admin_contributor,
-            write_contrib,
-            read_contrib,
-            non_contrib,
-            disabled_contrib,
-            private_url,
-            public_url):
+            self, app, admin_contributor,
+            write_contrib, read_contrib,
+            non_contrib, private_url, public_url
+    ):
 
         #   test_admin_can_view_private_project_citations
         res = app.get(private_url, auth=admin_contributor.auth)
@@ -114,14 +108,12 @@ class NodeCitationsMixin:
 
     #   test_citations_are_read_only
         post_res = app.post_json_api(
-            public_url,
-            {},
+            public_url, {},
             auth=admin_contributor.auth,
             expect_errors=True)
         assert post_res.status_code == 405
         put_res = app.put_json_api(
-            public_url,
-            {},
+            public_url, {},
             auth=admin_contributor.auth,
             expect_errors=True)
         assert put_res.status_code == 405

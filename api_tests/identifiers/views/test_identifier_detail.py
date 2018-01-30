@@ -2,7 +2,6 @@ import pytest
 from urlparse import urlparse
 
 from api.base.settings.defaults import API_BASE
-from osf.models import Identifier
 from osf_tests.factories import (
     RegistrationFactory,
     AuthUserFactory,
@@ -54,12 +53,9 @@ class TestIdentifierDetail:
         return res_node.json['data']
 
     def test_identifier_registration_detail(
-            self,
-            user,
-            registration,
-            identifier_registration,
-            res_registration,
-            data_registration):
+            self, registration, identifier_registration,
+            res_registration, data_registration
+    ):
 
         # test_identifier_detail_success_registration
         assert res_registration.status_code == 200
@@ -67,9 +63,10 @@ class TestIdentifierDetail:
 
         # test_identifier_detail_returns_correct_referent_registration
         path = urlparse(
-            data_registration['relationships']['referent']['links']['related']['href']).path
-        assert '/{}registrations/{}/'.format(API_BASE,
-                                             registration._id) == path
+            data_registration['relationships']['referent']['links']['related']['href']
+        ).path
+        assert '/{}registrations/{}/'.format(
+            API_BASE, registration._id) == path
 
         # test_identifier_detail_returns_correct_category_registration
         assert data_registration['attributes']['category'] == identifier_registration.category
@@ -78,20 +75,18 @@ class TestIdentifierDetail:
         assert data_registration['attributes']['value'] == identifier_registration.value
 
     def test_identifier_node_detail(
-            self,
-            user,
-            node,
-            identifier_node,
-            res_node,
-            data_node):
+            self, node, identifier_node,
+            res_node, data_node
+    ):
 
         # test_identifier_detail_success_node
         assert res_node.status_code == 200
         assert res_node.content_type == 'application/vnd.api+json'
 
         # test_identifier_detail_returns_correct_referent_node
-        path = urlparse(data_node['relationships']
-                        ['referent']['links']['related']['href']).path
+        path = urlparse(
+            data_node['relationships']['referent']['links']['related']['href']
+        ).path
         assert '/{}nodes/{}/'.format(API_BASE, node._id) == path
 
         # test_identifier_detail_returns_correct_category_node

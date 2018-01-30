@@ -26,9 +26,11 @@ class LogsTestCase:
     def node_private(self, user_one):
         node_private = ProjectFactory(is_public=False)
         node_private.add_contributor(
-            user_one, permissions=[
-                osf_permissions.READ], auth=Auth(
-                node_private.creator), log=True, save=True)
+            user_one,
+            permissions=[osf_permissions.READ],
+            auth=Auth(node_private.creator),
+            log=True, save=True
+        )
         return node_private
 
     @pytest.fixture()
@@ -36,12 +38,10 @@ class LogsTestCase:
         node_public = ProjectFactory(is_public=True)
         node_public.add_contributor(
             user_one,
-            permissions=[
-                osf_permissions.READ],
-            auth=Auth(
-                node_public.creator),
-            log=True,
-            save=True)
+            permissions=[osf_permissions.READ],
+            auth=Auth(node_public.creator),
+            log=True, save=True
+        )
         return node_public
 
     @pytest.fixture()
@@ -97,12 +97,8 @@ class LogsTestCase:
 class TestLogDetail(LogsTestCase):
 
     def test_log_detail_private(
-            self,
-            app,
-            url_log_detail_private,
-            user_one,
-            user_two,
-            log_private):
+            self, app, url_log_detail_private,
+            user_one, user_two, log_private):
         # test_log_detail_returns_data
         res = app.get(url_log_detail_private, auth=user_one.auth)
         assert res.status_code == 200
@@ -116,17 +112,13 @@ class TestLogDetail(LogsTestCase):
         # test_log_detail_private_non_contributor_cannot_access_logs
         res = app.get(
             url_log_detail_private,
-            auth=user_two.auth,
-            expect_errors=True)
+            auth=user_two.auth, expect_errors=True
+        )
         assert res.status_code == 403
 
     def test_log_detail_public(
-            self,
-            app,
-            url_log_detail_public,
-            log_public,
-            user_two,
-            user_one):
+            self, app, url_log_detail_public,
+            log_public, user_two, user_one):
         # test_log_detail_public_not_logged_in_can_access_logs
         res = app.get(url_log_detail_public, expect_errors=True)
         assert res.status_code == 200
@@ -136,8 +128,7 @@ class TestLogDetail(LogsTestCase):
         # test_log_detail_public_non_contributor_can_access_logs
         res = app.get(
             url_log_detail_public,
-            auth=user_two.auth,
-            expect_errors=True)
+            auth=user_two.auth, expect_errors=True)
         assert res.status_code == 200
         data = res.json['data']
         assert data['id'] == log_public._id
@@ -243,12 +234,8 @@ class TestNodeFileLogDetail:
         return node
 
     def test_title_visibility_in_file_move(
-            self,
-            app,
-            url_node_logs,
-            user_two,
-            component,
-            node_with_log):
+            self, app, url_node_logs,
+            user_two, component, node_with_log):
         # test_title_not_hidden_from_contributor_in_file_move
         res = app.get(url_node_logs, auth=user_two.auth)
         assert res.status_code == 200
@@ -261,21 +248,15 @@ class TestNodeFileLogDetail:
         assert res.json['data'][0]['attributes']['params']['source']['node_title'] == 'Private Component'
 
     def test_file_log_keeps_url(
-            self,
-            app,
-            url_node_logs,
-            user_two,
-            node_with_log):
+            self, app, url_node_logs, user_two
+    ):
         res = app.get(url_node_logs, auth=user_two.auth)
         assert res.status_code == 200
         assert res.json['data'][0]['attributes']['params'].get('urls')
 
     def test_folder_log_url_removal(
-            self,
-            app,
-            url_node_logs,
-            user_two,
-            node_with_folder_log):
+            self, app, url_node_logs, user_two
+    ):
         res = app.get(url_node_logs, auth=user_two.auth)
         assert res.status_code == 200
         assert not res.json['data'][0]['attributes']['params'].get('urls')

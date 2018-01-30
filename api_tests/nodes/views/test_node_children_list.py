@@ -26,8 +26,12 @@ class TestNodeChildrenList:
     def private_project(self, user):
         private_project = ProjectFactory()
         private_project.add_contributor(
-            user, permissions=[
-                permissions.READ, permissions.WRITE])
+            user,
+            permissions=[
+                permissions.READ,
+                permissions.WRITE
+            ]
+        )
         private_project.save()
         return private_project
 
@@ -56,10 +60,7 @@ class TestNodeChildrenList:
         return '/{}nodes/{}/children/'.format(API_BASE, public_project._id)
 
     def test_return_public_node_children_list(
-            self,
-            app,
-            public_project,
-            public_component,
+            self, app, public_component,
             public_project_url):
 
         # test_return_public_node_children_list_logged_out
@@ -107,19 +108,13 @@ class TestNodeChildrenList:
         assert len(res.json['data']) == 1
 
     def test_node_children_list_does_not_include_unauthorized_projects(
-            self, app, user, component, private_project, private_project_url):
-        private_component = NodeFactory(parent=private_project)
+            self, app, user, private_project, private_project_url):
+        NodeFactory(parent=private_project)
         res = app.get(private_project_url, auth=user.auth)
         assert len(res.json['data']) == 1
 
     def test_node_children_list_does_not_include_deleted(
-            self,
-            app,
-            user,
-            public_project,
-            public_component,
-            component,
-            public_project_url):
+            self, app, user, public_project, public_project_url):
         child_project = NodeFactory(parent=public_project, creator=user)
         child_project.save()
 
@@ -139,20 +134,14 @@ class TestNodeChildrenList:
         assert 1 == len(ids)
 
     def test_node_children_list_does_not_include_node_links(
-            self,
-            app,
-            user,
-            public_project,
-            private_project,
-            public_component,
-            component,
-            pointer,
+            self, app, user, public_project, public_component,
             public_project_url):
         pointed_to = ProjectFactory(is_public=True)
 
         public_project.add_pointer(
-            pointed_to, auth=Auth(
-                public_project.creator))
+            pointed_to,
+            auth=Auth(public_project.creator)
+        )
 
         res = app.get(public_project_url, auth=user.auth)
         ids = [node['id'] for node in res.json['data']]
@@ -221,15 +210,13 @@ class TestNodeChildCreate:
         read_contrib = AuthUserFactory()
         project.add_contributor(
             read_contrib,
-            permissions=[
-                permissions.READ],
-            auth=Auth(user),
-            save=True)
+            permissions=[permissions.READ],
+            auth=Auth(user), save=True
+        )
         res = app.post_json_api(
-            url,
-            child,
-            auth=read_contrib.auth,
-            expect_errors=True)
+            url, child, auth=read_contrib.auth,
+            expect_errors=True
+        )
         assert res.status_code == 403
 
         project.reload()
@@ -238,10 +225,9 @@ class TestNodeChildCreate:
     #   test_creates_child_logged_in_non_contributor
         non_contrib = AuthUserFactory()
         res = app.post_json_api(
-            url,
-            child,
-            auth=non_contrib.auth,
-            expect_errors=True)
+            url, child, auth=non_contrib.auth,
+            expect_errors=True
+        )
         assert res.status_code == 403
 
         project.reload()
@@ -409,18 +395,15 @@ class TestNodeChildrenBulkCreate:
 
     def test_bulk_children_create_blank_request(self, app, user, url):
         res = app.post_json_api(
-            url,
-            auth=user.auth,
-            expect_errors=True,
-            bulk=True)
+            url, auth=user.auth,
+            expect_errors=True, bulk=True)
         assert res.status_code == 400
 
     def test_bulk_creates_children_limits(self, app, user, child_one, url):
-        res = app.post_json_api(url,
-                                {'data': [child_one] * 101},
-                                auth=user.auth,
-                                expect_errors=True,
-                                bulk=True)
+        res = app.post_json_api(
+            url, {'data': [child_one] * 101},
+            auth=user.auth, expect_errors=True, bulk=True
+        )
         assert res.status_code == 400
         assert res.json['errors'][0]['detail'] == 'Bulk operation limit is 100, got 101.'
         assert res.json['errors'][0]['source']['pointer'] == '/data'
@@ -430,9 +413,10 @@ class TestNodeChildrenBulkCreate:
 
         #   test_bulk_creates_children_logged_out_user
         res = app.post_json_api(
-            url, {
-                'data': [
-                    child_one, child_two]}, expect_errors=True, bulk=True)
+            url,
+            {'data': [child_one, child_two]},
+            expect_errors=True, bulk=True
+        )
         assert res.status_code == 401
 
         project.reload()
@@ -442,14 +426,14 @@ class TestNodeChildrenBulkCreate:
         read_contrib = AuthUserFactory()
         project.add_contributor(
             read_contrib,
-            permissions=[
-                permissions.READ],
+            permissions=[permissions.READ],
             auth=Auth(user),
             save=True)
         res = app.post_json_api(
-            url, {
-                'data': [
-                    child_one, child_two]}, auth=read_contrib.auth, expect_errors=True, bulk=True)
+            url,
+            {'data': [child_one, child_two]},
+            auth=read_contrib.auth,
+            expect_errors=True, bulk=True)
         assert res.status_code == 403
 
         project.reload()
@@ -458,9 +442,10 @@ class TestNodeChildrenBulkCreate:
     #   test_bulk_creates_children_logged_in_non_contributor
         non_contrib = AuthUserFactory()
         res = app.post_json_api(
-            url, {
-                'data': [
-                    child_one, child_two]}, auth=non_contrib.auth, expect_errors=True, bulk=True)
+            url,
+            {'data': [child_one, child_two]},
+            auth=non_contrib.auth,
+            expect_errors=True, bulk=True)
         assert res.status_code == 403
 
         project.reload()
@@ -469,9 +454,9 @@ class TestNodeChildrenBulkCreate:
     def test_bulk_creates_children_logged_in_owner(
             self, app, user, project, child_one, child_two, url):
         res = app.post_json_api(
-            url, {
-                'data': [
-                    child_one, child_two]}, auth=user.auth, bulk=True)
+            url,
+            {'data': [child_one, child_two]},
+            auth=user.auth, bulk=True)
         assert res.status_code == 201
         assert res.json['data'][0]['attributes']['title'] == child_one['attributes']['title']
         assert res.json['data'][0]['attributes']['description'] == child_one['attributes']['description']
@@ -500,9 +485,9 @@ class TestNodeChildrenBulkCreate:
             save=True)
 
         res = app.post_json_api(
-            url, {
-                'data': [
-                    child_one, child_two]}, auth=write_contrib.auth, bulk=True)
+            url,
+            {'data': [child_one, child_two]},
+            auth=write_contrib.auth, bulk=True)
         assert res.status_code == 201
         assert res.json['data'][0]['attributes']['title'] == child_one['attributes']['title']
         assert res.json['data'][0]['attributes']['description'] == child_one['attributes']['description']
@@ -589,11 +574,8 @@ class TestNodeChildrenBulkCreate:
             }]
         }
         res = app.post_json_api(
-            url,
-            child,
-            auth=user.auth,
-            expect_errors=True,
-            bulk=True)
+            url, child, auth=user.auth,
+            expect_errors=True, bulk=True)
         assert res.status_code == 400
         assert res.json['errors'][0]['detail'] == 'This field may not be null.'
         assert res.json['errors'][0]['source']['pointer'] == '/data/1/type'
@@ -614,11 +596,8 @@ class TestNodeChildrenBulkCreate:
             }]
         }
         res = app.post_json_api(
-            url,
-            child,
-            auth=user.auth,
-            expect_errors=True,
-            bulk=True)
+            url, child, auth=user.auth,
+            expect_errors=True, bulk=True)
         assert res.status_code == 409
         assert res.json['errors'][0]['detail'] == 'This resource has a type of "nodes", but you set the json body\'s type field to "Wrong type.". You probably need to change the type field to match the resource\'s type.'
 
@@ -635,11 +614,8 @@ class TestNodeChildrenBulkCreate:
             }]
         }
         res = app.post_json_api(
-            url,
-            child,
-            auth=user.auth,
-            expect_errors=True,
-            bulk=True)
+            url, child, auth=user.auth,
+            expect_errors=True, bulk=True)
         assert res.status_code == 400
         assert res.json['errors'][0]['detail'] == 'Request must include /data/attributes.'
         assert res.json['errors'][0]['source']['pointer'] == '/data/attributes'

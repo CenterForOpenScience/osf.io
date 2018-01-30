@@ -44,7 +44,8 @@ class TestFileSerializer:
         req = make_drf_request_with_version(version='2.2')
         data = FileSerializer(file_one, context={'request': req}).data['data']
         assert datetime.strftime(
-            modified, new_format) == data['attributes']['date_modified']
+            modified, new_format
+        ) == data['attributes']['date_modified']
 
         # test_date_created_formats_to_old_format
         req = make_drf_request_with_version(version='2.0')
@@ -55,4 +56,5 @@ class TestFileSerializer:
         req = make_drf_request_with_version(version='2.2')
         data = FileSerializer(file_one, context={'request': req}).data['data']
         assert datetime.strftime(
-            created, new_format) == data['attributes']['date_created']
+            created, new_format
+        ) == data['attributes']['date_created']

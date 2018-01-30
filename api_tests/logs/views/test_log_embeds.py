@@ -36,13 +36,8 @@ class TestLogEmbeds:
         return url_registration_log
 
     def test_log_embed_types(
-            self,
-            app,
-            registration_log,
-            make_url_registration_log,
-            user,
-            project,
-            registration):
+            self, app, make_url_registration_log,
+            user, project, registration):
 
         # test_embed_original_node
         url_registration_log = make_url_registration_log(

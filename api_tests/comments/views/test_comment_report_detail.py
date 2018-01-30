@@ -124,18 +124,16 @@ class ReportDetailViewMixin(object):
             self, app, user, contributor, non_contrib, payload, private_url):
         # test_private_node_reported_contributor_cannot_update_report_detail
         res = app.put_json_api(
-            private_url,
-            payload,
-            auth=contributor.auth,
-            expect_errors=True)
+            private_url, payload,
+            auth=contributor.auth, expect_errors=True
+        )
         assert res.status_code == 403
 
         # test_private_node_logged_in_non_contrib_cannot_update_report_detail
         res = app.put_json_api(
-            private_url,
-            payload,
-            auth=non_contrib.auth,
-            expect_errors=True)
+            private_url, payload,
+            auth=non_contrib.auth, expect_errors=True
+        )
         assert res.status_code == 403
 
         # test_private_node_logged_out_contributor_cannot_update_detail
@@ -152,18 +150,16 @@ class ReportDetailViewMixin(object):
             self, app, user, contributor, non_contrib, payload, public_url):
         # test_public_node_reported_contributor_cannot_update_detail
         res = app.put_json_api(
-            public_url,
-            payload,
-            auth=contributor.auth,
-            expect_errors=True)
+            public_url, payload,
+            auth=contributor.auth, expect_errors=True
+        )
         assert res.status_code == 403
 
         # test_public_node_logged_in_non_contrib_cannot_update_other_users_report_detail
         res = app.put_json_api(
-            public_url,
-            payload,
-            auth=non_contrib.auth,
-            expect_errors=True)
+            public_url, payload,
+            auth=non_contrib.auth, expect_errors=True
+        )
         assert res.status_code == 403
 
         # test_public_node_logged_out_contributor_cannot_update_report_detail
@@ -202,27 +198,21 @@ class ReportDetailViewMixin(object):
         assert res.json['data']['attributes']['message'] == payload['data']['attributes']['message']
 
     def test_private_node_delete_report_detail_auth_misc(
-            self,
-            app,
-            user,
-            contributor,
-            non_contrib,
-            private_project,
-            payload,
-            private_url,
-            comment):
+            self, app, user, contributor, non_contrib,
+            private_project, private_url, comment
+    ):
         # test_private_node_reported_contributor_cannot_delete_report_detail
         res = app.delete_json_api(
-            private_url,
-            auth=contributor.auth,
-            expect_errors=True)
+            private_url, auth=contributor.auth,
+            expect_errors=True
+        )
         assert res.status_code == 403
 
         # test_private_node_logged_in_non_contrib_cannot_delete_report_detail
         res = app.delete_json_api(
-            private_url,
-            auth=non_contrib.auth,
-            expect_errors=True)
+            private_url, auth=non_contrib.auth,
+            expect_errors=True
+        )
         assert res.status_code == 403
 
         # test_private_node_logged_out_contributor_cannot_delete_detail
@@ -233,7 +223,8 @@ class ReportDetailViewMixin(object):
         comment_new = CommentFactory.build(
             node=private_project,
             user=contributor,
-            target=comment.target)
+            target=comment.target
+        )
         comment_new.reports = {user._id: {
             'category': 'spam',
             'text': 'This is spam',
@@ -251,15 +242,13 @@ class ReportDetailViewMixin(object):
 
         # test_public_node_reported_contributor_cannot_delete_detail
         res = app.delete_json_api(
-            public_url,
-            auth=contributor.auth,
+            public_url, auth=contributor.auth,
             expect_errors=True)
         assert res.status_code == 403
 
         # test_public_node_logged_in_non_contrib_cannot_delete_other_users_report_detail
         res = app.delete_json_api(
-            public_url,
-            auth=non_contrib.auth,
+            public_url, auth=non_contrib.auth,
             expect_errors=True)
         assert res.status_code == 403
 
@@ -419,8 +408,10 @@ class TestWikiCommentReportDetailView(ReportDetailViewMixin):
     @pytest.fixture()
     def comment(self, user, contributor, private_project, wiki):
         comment = CommentFactory(
-            node=private_project, target=Guid.load(
-                wiki._id), user=contributor)
+            node=private_project,
+            target=Guid.load(wiki._id),
+            user=contributor
+        )
         comment.reports = {user._id: {
             'category': 'spam',
             'text': 'This is spam',
@@ -450,8 +441,10 @@ class TestWikiCommentReportDetailView(ReportDetailViewMixin):
     @pytest.fixture()
     def public_comment(self, user, contributor, public_project, public_wiki):
         public_comment = CommentFactory(
-            node=public_project, target=Guid.load(
-                public_wiki._id), user=contributor)
+            node=public_project,
+            target=Guid.load(public_wiki._id),
+            user=contributor
+        )
         public_comment.reports = {user._id: {
             'category': 'spam',
             'text': 'This is spam',

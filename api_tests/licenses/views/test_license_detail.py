@@ -1,5 +1,4 @@
 import pytest
-import functools
 
 from api.base.settings.defaults import API_BASE
 from osf.models.licenses import NodeLicense

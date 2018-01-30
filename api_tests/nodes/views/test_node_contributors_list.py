@@ -153,15 +153,8 @@ class TestNodeContributorList(NodeCRUDTestCase):
                 user_id, api_perm)
 
     def test_return(
-            self,
-            app,
-            user,
-            user_two,
-            project_public,
-            project_private,
-            url_public,
-            url_private,
-            make_contrib_id):
+            self, app, user, user_two, project_public,
+            url_public, url_private, make_contrib_id):
 
         #   test_return_public_contributor_list_logged_in
         res = app.get(url_public, auth=user_two.auth)
@@ -247,8 +240,9 @@ class TestNodeContributorList(NodeCRUDTestCase):
             self, app, user_two, project_public, url_public):
         non_bibliographic_user = UserFactory()
         project_public.add_contributor(
-            non_bibliographic_user, visible=False, auth=Auth(
-                project_public.creator))
+            non_bibliographic_user,
+            visible=False,
+            auth=Auth(project_public.creator))
         project_public.save()
         res = app.get(url_public, auth=user_two.auth)
         assert res.status_code == 200
@@ -256,9 +250,7 @@ class TestNodeContributorList(NodeCRUDTestCase):
             project_public.visible_contributor_ids)
 
     def test_unregistered_contributor_field_is_null_if_account_claimed(
-            self,
-            app,
-            user):
+            self, app, user):
         project = ProjectFactory(creator=user, is_public=True)
         url = '/{}nodes/{}/contributors/'.format(API_BASE, project._id)
         res = app.get(url, auth=user.auth, expect_errors=True)
@@ -268,15 +260,12 @@ class TestNodeContributorList(NodeCRUDTestCase):
             'unregistered_contributor') is None
 
     def test_unregistered_contributors_show_up_as_name_associated_with_project(
-            self,
-            app,
-            user):
+            self, app, user):
         project = ProjectFactory(creator=user, is_public=True)
         project.add_unregistered_contributor(
             'Robert Jackson',
             'robert@gmail.com',
-            auth=Auth(user),
-            save=True)
+            auth=Auth(user), save=True)
         url = '/{}nodes/{}/contributors/'.format(API_BASE, project._id)
         res = app.get(url, auth=user.auth, expect_errors=True)
         assert res.status_code == 200
@@ -302,8 +291,7 @@ class TestNodeContributorList(NodeCRUDTestCase):
         project_public.add_unregistered_contributor(
             'Robert Jackson',
             'robert@gmail.com',
-            auth=Auth(user),
-            save=True
+            auth=Auth(user), save=True
         )
 
         for i in range(0, 10):
@@ -319,11 +307,11 @@ class TestNodeContributorList(NodeCRUDTestCase):
                 save=True
             )
         req_one = app.get(
-            '{}?page=2'.format(url_public), auth=Auth(
-                project_public.creator))
+            '{}?page=2'.format(url_public),
+            auth=Auth(project_public.creator))
         req_two = app.get(
-            '{}?page=2'.format(url_public), auth=Auth(
-                project_public.creator))
+            '{}?page=2'.format(url_public),
+            auth=Auth(project_public.creator))
         id_one = [item['id'] for item in req_one.json['data']]
         id_two = [item['id'] for item in req_two.json['data']]
         for a, b in zip(id_one, id_two):
@@ -386,12 +374,7 @@ class TestNodeContributorAdd(NodeCRUDTestCase):
         }
 
     def test_add_contributors_errors(
-            self,
-            app,
-            user,
-            user_two,
-            user_three,
-            url_public):
+            self, app, user, user_two, user_three, url_public):
 
         #   test_add_node_contributors_relationships_is_a_list
         data = {
@@ -404,9 +387,7 @@ class TestNodeContributorAdd(NodeCRUDTestCase):
             }
         }
         res = app.post_json_api(
-            url_public,
-            data,
-            auth=user.auth,
+            url_public, data, auth=user.auth,
             expect_errors=True)
         assert res.status_code == 400
         assert res.json['errors'][0]['detail'] == exceptions.ParseError.default_detail
@@ -421,9 +402,7 @@ class TestNodeContributorAdd(NodeCRUDTestCase):
             }
         }
         res = app.post_json_api(
-            url_public,
-            data,
-            auth=user.auth,
+            url_public, data, auth=user.auth,
             expect_errors=True)
         assert res.status_code == 400
         assert res.json['errors'][0]['detail'] == 'A user ID or full name must be provided to add a contributor.'
@@ -439,9 +418,7 @@ class TestNodeContributorAdd(NodeCRUDTestCase):
             }
         }
         res = app.post_json_api(
-            url_public,
-            data,
-            auth=user.auth,
+            url_public, data, auth=user.auth,
             expect_errors=True)
         assert res.status_code == 400
         assert res.json['errors'][0]['detail'] == 'A user ID or full name must be provided to add a contributor.'
@@ -460,9 +437,7 @@ class TestNodeContributorAdd(NodeCRUDTestCase):
             }
         }
         res = app.post_json_api(
-            url_public,
-            data,
-            auth=user.auth,
+            url_public, data, auth=user.auth,
             expect_errors=True)
         assert res.status_code == 400
         assert res.json['errors'][0]['detail'] == exceptions.ParseError.default_detail
@@ -482,9 +457,7 @@ class TestNodeContributorAdd(NodeCRUDTestCase):
             }
         }
         res = app.post_json_api(
-            url_public,
-            data,
-            auth=user.auth,
+            url_public, data, auth=user.auth,
             expect_errors=True)
         assert res.status_code == 400
         assert res.json['errors'][0]['detail'] == 'Request must include /data.'
@@ -506,9 +479,7 @@ class TestNodeContributorAdd(NodeCRUDTestCase):
             }
         }
         res = app.post_json_api(
-            url_public,
-            data,
-            auth=user.auth,
+            url_public, data, auth=user.auth,
             expect_errors=True)
         assert res.status_code == 400
         assert res.json['errors'][0]['detail'] == 'Request must include /type.'
@@ -530,9 +501,7 @@ class TestNodeContributorAdd(NodeCRUDTestCase):
             }
         }
         res = app.post_json_api(
-            url_public,
-            data,
-            auth=user.auth,
+            url_public, data, auth=user.auth,
             expect_errors=True)
         assert res.status_code == 400
         assert res.json['errors'][0]['detail'] == 'A user ID or full name must be provided to add a contributor.'
@@ -555,9 +524,7 @@ class TestNodeContributorAdd(NodeCRUDTestCase):
             }
         }
         res = app.post_json_api(
-            url_public,
-            data,
-            auth=user.auth,
+            url_public, data, auth=user.auth,
             expect_errors=True)
         assert res.status_code == 404
 
@@ -578,9 +545,7 @@ class TestNodeContributorAdd(NodeCRUDTestCase):
             }
         }
         res = app.post_json_api(
-            url_public,
-            data,
-            auth=user.auth,
+            url_public, data, auth=user.auth,
             expect_errors=True)
         assert res.status_code == 400
         assert res.json['errors'][0]['source']['pointer'] == '/data/type'
@@ -603,9 +568,7 @@ class TestNodeContributorAdd(NodeCRUDTestCase):
             }
         }
         res = app.post_json_api(
-            url_public,
-            data,
-            auth=user.auth,
+            url_public, data, auth=user.auth,
             expect_errors=True)
         assert res.status_code == 409
 
@@ -628,13 +591,8 @@ class TestNodeContributorAdd(NodeCRUDTestCase):
         assert res.json['errors'][0]['detail'] == exceptions.ParseError.default_detail
 
     def test_add_contributor_is_visible_by_default(
-            self,
-            app,
-            user,
-            user_two,
-            project_public,
-            data_user_two,
-            url_public):
+            self, app, user, user_two, project_public,
+            data_user_two, url_public):
         with assert_latest_log(NodeLog.CONTRIB_ADDED, project_public):
             del data_user_two['data']['attributes']['bibliographic']
             res = app.post_json_api(
@@ -681,9 +639,7 @@ class TestNodeContributorAdd(NodeCRUDTestCase):
                 }
             }
             res = app.post_json_api(
-                url_private,
-                data,
-                auth=user.auth,
+                url_private, data, auth=user.auth,
                 expect_errors=True)
             assert res.status_code == 201
             assert res.json['data']['id'] == '{}-{}'.format(
@@ -695,14 +651,8 @@ class TestNodeContributorAdd(NodeCRUDTestCase):
             assert not project_private.get_visible(user_two)
 
     def test_adds_contributor_public_project_non_admin(
-            self,
-            app,
-            user,
-            user_two,
-            user_three,
-            project_public,
-            data_user_three,
-            url_public):
+            self, app, user, user_two, user_three,
+            project_public, data_user_three, url_public):
         project_public.add_contributor(
             user_two,
             permissions=[
@@ -730,13 +680,8 @@ class TestNodeContributorAdd(NodeCRUDTestCase):
         assert user_two not in project_public.contributors.all()
 
     def test_adds_contributor_private_project_admin(
-            self,
-            app,
-            user,
-            user_two,
-            project_private,
-            data_user_two,
-            url_private):
+            self, app, user, user_two, project_private,
+            data_user_two, url_private):
         with assert_latest_log(NodeLog.CONTRIB_ADDED, project_private):
             res = app.post_json_api(url_private, data_user_two, auth=user.auth)
             assert res.status_code == 201
@@ -765,9 +710,7 @@ class TestNodeContributorAdd(NodeCRUDTestCase):
                 }
             }
             res = app.post_json_api(
-                url_private,
-                data,
-                auth=user.auth,
+                url_private, data, auth=user.auth,
                 expect_errors=True)
             assert res.status_code == 201
 
@@ -884,9 +827,7 @@ class TestNodeContributorAdd(NodeCRUDTestCase):
             }
         }
         res = app.post_json_api(
-            url_private,
-            data,
-            auth=user.auth,
+            url_private, data, auth=user.auth,
             expect_errors=True)
         assert res.status_code == 400
 
@@ -949,9 +890,7 @@ class TestNodeContributorAdd(NodeCRUDTestCase):
             }
         }
         res = app.post_json_api(
-            url_private,
-            data,
-            auth=user.auth,
+            url_private, data, auth=user.auth,
             expect_errors=True)
         assert res.status_code == 404
 
@@ -959,22 +898,17 @@ class TestNodeContributorAdd(NodeCRUDTestCase):
         assert len(project_private.contributors) == 1
 
     def test_adds_contributor_private_project_non_admin(
-            self,
-            app,
-            user,
-            user_two,
-            user_three,
-            project_private,
-            data_user_three,
-            url_private):
+            self, app, user, user_two, user_three,
+            project_private, data_user_three, url_private):
         project_private.add_contributor(
             user_two,
             permissions=[
                 permissions.READ,
                 permissions.WRITE],
             auth=Auth(user))
-        res = app.post_json_api(url_private, data_user_three,
-                                auth=user_two.auth, expect_errors=True)
+        res = app.post_json_api(
+            url_private, data_user_three,
+            auth=user_two.auth, expect_errors=True)
         assert res.status_code == 403
 
         project_private.reload()
@@ -1098,10 +1032,8 @@ class TestNodeContributorAdd(NodeCRUDTestCase):
             }
         }
         res = app.post_json_api(
-            url_public,
-            payload,
-            auth=user.auth,
-            expect_errors=True)
+            url_public, payload,
+            auth=user.auth, expect_errors=True)
         project_public.reload()
         assert res.status_code == 400
         assert res.json['errors'][0]['detail'] == '{} is already a contributor.'.format(
@@ -1127,10 +1059,8 @@ class TestNodeContributorAdd(NodeCRUDTestCase):
             }
         }
         res = app.post_json_api(
-            url_public,
-            payload,
-            auth=user.auth,
-            expect_errors=True)
+            url_public, payload,
+            auth=user.auth, expect_errors=True)
         assert res.status_code == 400
         assert res.json['errors'][0]['detail'] == 'Deactivated users cannot be added as contributors.'
 
@@ -1149,20 +1079,14 @@ class TestNodeContributorAdd(NodeCRUDTestCase):
             }
         }
         res = app.post_json_api(
-            url_public,
-            payload,
-            auth=user.auth,
-            expect_errors=True)
+            url_public, payload,
+            auth=user.auth, expect_errors=True)
         assert res.status_code == 400
         assert res.json['errors'][0]['detail'] == 'Deactivated users cannot be added as contributors.'
 
     def test_add_contributor_index_returned(
-            self,
-            app,
-            user,
-            data_user_two,
-            data_user_three,
-            url_public):
+            self, app, user, data_user_two,
+            data_user_three, url_public):
         res = app.post_json_api(url_public, data_user_two, auth=user.auth)
         assert res.status_code == 201
         assert res.json['data']['attributes']['index'] == 1
@@ -1194,10 +1118,8 @@ class TestNodeContributorAdd(NodeCRUDTestCase):
             }
         }
         res = app.post_json_api(
-            url_public,
-            payload,
-            auth=user.auth,
-            expect_errors=True)
+            url_public, payload,
+            auth=user.auth, expect_errors=True)
         assert res.status_code == 400
         assert res.json['errors'][0]['detail'] == '4 is not a valid contributor index for node with id {}'.format(
             project_public._id)
@@ -1229,8 +1151,8 @@ class TestNodeContributorAdd(NodeCRUDTestCase):
         assert res.status_code == 201
         contributor_obj = project_public.contributor_set.get(user=user_two)
         index = list(
-            project_public.get_contributor_order()).index(
-            contributor_obj.pk)
+            project_public.get_contributor_order()
+        ).index(contributor_obj.pk)
         assert index == 0
 
     def test_add_contributor_set_index_last(
@@ -1260,8 +1182,8 @@ class TestNodeContributorAdd(NodeCRUDTestCase):
         assert res.status_code == 201
         contributor_obj = project_public.contributor_set.get(user=user_two)
         index = list(
-            project_public.get_contributor_order()).index(
-            contributor_obj.pk)
+            project_public.get_contributor_order()
+        ).index(contributor_obj.pk)
         assert index == 3
 
     def test_add_inactive_merged_user_as_contributor(
@@ -1307,10 +1229,8 @@ class TestNodeContributorAdd(NodeCRUDTestCase):
             }
         }
         res = app.post_json_api(
-            url_public,
-            payload,
-            auth=user.auth,
-            expect_errors=True)
+            url_public, payload,
+            auth=user.auth, expect_errors=True)
         assert res.status_code == 404
         assert (
             res.json['errors'][0]['detail'] ==
@@ -1405,11 +1325,7 @@ class TestNodeContributorCreateEmail(NodeCRUDTestCase):
 
     @mock.patch('framework.auth.views.mails.send_mail')
     def test_add_contributor_sends_email(
-            self,
-            mock_mail,
-            app,
-            user,
-            user_two,
+            self, mock_mail, app, user, user_two,
             url_project_contribs):
         url = '{}?send_email=default'.format(url_project_contribs)
         payload = {
@@ -1547,9 +1463,7 @@ class TestNodeContributorCreateEmail(NodeCRUDTestCase):
             }
         }
         res = app.post_json_api(
-            url,
-            payload,
-            auth=user.auth,
+            url, payload, auth=user.auth,
             expect_errors=True)
         assert res.status_code == 400
         assert res.json['errors'][0]['detail'] == 'true is not a valid email preference.'
@@ -1629,19 +1543,17 @@ class TestNodeContributorBulkCreate(NodeCRUDTestCase):
         }
 
     def test_node_contributor_bulk_create_contributor_exists(
-            self,
-            app,
-            user,
-            user_two,
-            project_public,
-            payload_one,
-            payload_two,
-            url_public):
+            self, app, user, user_two, project_public,
+            payload_one, payload_two, url_public):
         project_public.add_contributor(
-            user_two, permissions=[
-                permissions.READ], visible=True, save=True)
-        res = app.post_json_api(url_public, {'data': [payload_two, payload_one]},
-                                auth=user.auth, expect_errors=True, bulk=True)
+            user_two,
+            permissions=[permissions.READ],
+            visible=True, save=True)
+        res = app.post_json_api(
+            url_public,
+            {'data': [payload_two, payload_one]},
+            auth=user.auth,
+            expect_errors=True, bulk=True)
         assert res.status_code == 400
         assert 'is already a contributor' in res.json['errors'][0]['detail']
 
@@ -1649,29 +1561,20 @@ class TestNodeContributorBulkCreate(NodeCRUDTestCase):
         assert len(res.json['data']) == 2
 
     def test_node_contributor_bulk_create_errors(
-            self,
-            app,
-            user,
-            user_two,
-            project_private,
-            payload_one,
-            payload_two,
-            url_public,
-            url_private):
+            self, app, user, user_two, project_private,
+            payload_one, payload_two, url_public, url_private):
 
         #   test_bulk_create_contributors_blank_request
         res = app.post_json_api(
-            url_public,
-            auth=user.auth,
-            expect_errors=True,
-            bulk=True)
+            url_public, auth=user.auth,
+            expect_errors=True, bulk=True)
         assert res.status_code == 400
 
     #   test_node_contributor_bulk_create_logged_out_public_project
         res = app.post_json_api(
-            url_public, {
-                'data': [
-                    payload_one, payload_two]}, expect_errors=True, bulk=True)
+            url_public,
+            {'data': [payload_one, payload_two]},
+            expect_errors=True, bulk=True)
         assert res.status_code == 401
 
         res = app.get(url_public, auth=user.auth)
@@ -1679,9 +1582,9 @@ class TestNodeContributorBulkCreate(NodeCRUDTestCase):
 
     #   test_node_contributor_bulk_create_logged_out_private_project
         res = app.post_json_api(
-            url_private, {
-                'data': [
-                    payload_one, payload_two]}, expect_errors=True, bulk=True)
+            url_private,
+            {'data': [payload_one, payload_two]},
+            expect_errors=True, bulk=True)
         assert res.status_code == 401
 
         res = app.get(url_private, auth=user.auth)
@@ -1697,13 +1600,12 @@ class TestNodeContributorBulkCreate(NodeCRUDTestCase):
 
     #   test_node_contributor_bulk_create_logged_in_read_only_contrib_private_project
         project_private.add_contributor(
-            user_two, permissions=[
-                permissions.READ], save=True)
-        res = app.post_json_api(url_private,
-                                {'data': [payload_two]},
-                                auth=user_two.auth,
-                                expect_errors=True,
-                                bulk=True)
+            user_two, permissions=[permissions.READ], save=True)
+        res = app.post_json_api(
+            url_private,
+            {'data': [payload_two]},
+            auth=user_two.auth,
+            expect_errors=True, bulk=True)
         assert res.status_code == 403
 
         res = app.get(url_public, auth=user.auth)
@@ -1712,9 +1614,9 @@ class TestNodeContributorBulkCreate(NodeCRUDTestCase):
     def test_node_contributor_bulk_create_logged_in_public_project_project(
             self, app, user, payload_one, payload_two, url_public):
         res = app.post_json_api(
-            url_public, {
-                'data': [
-                    payload_one, payload_two]}, auth=user.auth, bulk=True)
+            url_public,
+            {'data': [payload_one, payload_two]},
+            auth=user.auth, bulk=True)
         assert res.status_code == 201
         assert_items_equal([res.json['data'][0]['attributes']['bibliographic'],
                             res.json['data'][1]['attributes']['bibliographic']], [True, False])
@@ -1758,8 +1660,11 @@ class TestNodeContributorBulkCreate(NodeCRUDTestCase):
                 }
             }
         }
-        res = app.post_json_api(url_public, {'data': [payload_one, invalid_id_payload]},
-                                auth=user.auth, expect_errors=True, bulk=True)
+        res = app.post_json_api(
+            url_public,
+            {'data': [payload_one, invalid_id_payload]},
+            auth=user.auth,
+            expect_errors=True, bulk=True)
         assert res.status_code == 404
 
         res = app.get(url_public, auth=user.auth)
@@ -1775,11 +1680,8 @@ class TestNodeContributorBulkCreate(NodeCRUDTestCase):
     #   test_node_contributor_ugly_payload
         payload = 'sdf;jlasfd'
         res = app.post_json_api(
-            url_public,
-            payload,
-            auth=user.auth,
-            expect_errors=True,
-            bulk=True)
+            url_public, payload, auth=user.auth,
+            expect_errors=True, bulk=True)
         assert res.status_code == 400
         assert res.json['errors'][0]['detail'] == exceptions.ParseError.default_detail
 
@@ -1801,11 +1703,8 @@ class TestNodeContributorBulkCreate(NodeCRUDTestCase):
         }
         payload = {'data': [payload_two, payload]}
         res = app.post_json_api(
-            url_public,
-            payload,
-            auth=user.auth,
-            expect_errors=True,
-            bulk=True)
+            url_public, payload, auth=user.auth,
+            expect_errors=True, bulk=True)
         assert res.status_code == 400
 
         res = app.get(url_public, auth=user.auth)
@@ -1825,13 +1724,8 @@ class TestNodeContributorBulkUpdate(NodeCRUDTestCase):
 
     @pytest.fixture()
     def project_public(
-            self,
-            user,
-            user_two,
-            user_three,
-            title,
-            description,
-            category):
+            self, user, user_two, user_three, title,
+            description, category):
         project_public = ProjectFactory(
             title=title,
             description=description,
@@ -1840,22 +1734,19 @@ class TestNodeContributorBulkUpdate(NodeCRUDTestCase):
             creator=user
         )
         project_public.add_contributor(
-            user_two, permissions=[
-                permissions.READ], visible=True, save=True)
+            user_two,
+            permissions=[permissions.READ],
+            visible=True, save=True)
         project_public.add_contributor(
-            user_three, permissions=[
-                permissions.READ], visible=True, save=True)
+            user_three,
+            permissions=[permissions.READ],
+            visible=True, save=True)
         return project_public
 
     @pytest.fixture()
     def project_private(
-            self,
-            user,
-            user_two,
-            user_three,
-            title,
-            description,
-            category):
+            self, user, user_two, user_three,
+            title, description, category):
         project_private = ProjectFactory(
             title=title,
             description=description,
@@ -1864,11 +1755,13 @@ class TestNodeContributorBulkUpdate(NodeCRUDTestCase):
             creator=user
         )
         project_private.add_contributor(
-            user_two, permissions=[
-                permissions.READ], visible=True, save=True)
+            user_two,
+            permissions=[permissions.READ],
+            visible=True, save=True)
         project_private.add_contributor(
-            user_three, permissions=[
-                permissions.READ], visible=True, save=True)
+            user_three,
+            permissions=[permissions.READ],
+            visible=True, save=True)
         return project_private
 
     @pytest.fixture()
@@ -1915,10 +1808,7 @@ class TestNodeContributorBulkUpdate(NodeCRUDTestCase):
 
     @pytest.fixture()
     def payload_private_two(
-            self,
-            user_three,
-            project_private,
-            make_contrib_id):
+            self, user_three, project_private, make_contrib_id):
         return {
             'id': make_contrib_id(project_private._id, user_three._id),
             'type': 'contributors',
@@ -1929,34 +1819,23 @@ class TestNodeContributorBulkUpdate(NodeCRUDTestCase):
         }
 
     def test_bulk_update_contributors_errors(
-            self,
-            app,
-            user,
-            user_two,
-            user_four,
-            project_public,
-            payload_public_one,
-            payload_public_two,
-            payload_private_one,
-            payload_private_two,
-            url_public,
-            url_private,
-            make_contrib_id):
+            self, app, user, user_two, user_four, project_public,
+            payload_public_one, payload_public_two,
+            payload_private_one, payload_private_two,
+            url_public, url_private, make_contrib_id):
 
         #   test_bulk_update_contributors_blank_request
         res = app.patch_json_api(
-            url_public,
-            auth=user.auth,
-            expect_errors=True,
-            bulk=True)
+            url_public, auth=user.auth,
+            expect_errors=True, bulk=True)
         assert res.status_code == 400
 
     #   test_bulk_update_contributors_dict_instead_of_list
-        res = app.put_json_api(url_public,
-                               {'data': payload_public_one},
-                               auth=user.auth,
-                               expect_errors=True,
-                               bulk=True)
+        res = app.put_json_api(
+            url_public,
+            {'data': payload_public_one},
+            auth=user.auth,
+            expect_errors=True, bulk=True)
         assert res.status_code == 400
 
     #   test_bulk_update_contributors_public_project_one_not_found
@@ -1967,116 +1846,129 @@ class TestNodeContributorBulkUpdate(NodeCRUDTestCase):
         }
         empty_payload = {'data': [invalid_id, payload_public_one]}
         res = app.put_json_api(
-            url_public,
-            empty_payload,
-            auth=user.auth,
-            expect_errors=True,
-            bulk=True)
+            url_public, empty_payload, auth=user.auth,
+            expect_errors=True, bulk=True)
         assert res.status_code == 400
         assert res.json['errors'][0]['detail'] == 'Could not find all objects to update.'
 
         res = app.get(url_public)
         data = res.json['data']
-        assert_items_equal([data[0]['attributes']['permission'],
-                            data[1]['attributes']['permission'],
-                            data[2]['attributes']['permission']],
-                           ['admin',
-                            'read',
-                            'read'])
+        assert_items_equal(
+            [data[0]['attributes']['permission'],
+             data[1]['attributes']['permission'],
+             data[2]['attributes']['permission']],
+            ['admin', 'read', 'read']
+        )
 
     #   test_bulk_update_contributors_public_projects_logged_out
         res = app.put_json_api(
-            url_public, {
-                'data': [
-                    payload_public_one, payload_public_two]}, expect_errors=True, bulk=True)
+            url_public,
+            {
+                'data': [payload_public_one,
+                         payload_public_two]
+            },
+            expect_errors=True, bulk=True)
         assert res.status_code == 401
 
         res = app.get(url_public, auth=user.auth)
         data = res.json['data']
-        assert_items_equal([data[0]['attributes']['permission'],
-                            data[1]['attributes']['permission'],
-                            data[2]['attributes']['permission']],
-                           ['admin',
-                            'read',
-                            'read'])
+        assert_items_equal(
+            [data[0]['attributes']['permission'],
+             data[1]['attributes']['permission'],
+             data[2]['attributes']['permission']],
+            ['admin', 'read', 'read']
+        )
 
     #   test_bulk_update_contributors_private_projects_logged_out
         res = app.put_json_api(
-            url_private, {
-                'data': [
-                    payload_private_one, payload_private_two]}, expect_errors=True, bulk=True)
+            url_private,
+            {
+                'data': [payload_private_one,
+                         payload_private_two]
+            },
+            expect_errors=True, bulk=True)
         assert res.status_code == 401
 
         res = app.get(url_private, auth=user.auth)
         data = res.json['data']
-        assert_items_equal([data[0]['attributes']['permission'],
-                            data[1]['attributes']['permission'],
-                            data[2]['attributes']['permission']],
-                           ['admin',
-                            'read',
-                            'read'])
+        assert_items_equal(
+            [data[0]['attributes']['permission'],
+             data[1]['attributes']['permission'],
+             data[2]['attributes']['permission']],
+            ['admin', 'read', 'read'])
 
     #   test_bulk_update_contributors_private_projects_logged_in_non_contrib
-        res = app.put_json_api(url_private,
-                               {'data': [payload_private_one,
-                                         payload_private_two]},
-                               auth=user_four.auth,
-                               expect_errors=True,
-                               bulk=True)
+        res = app.put_json_api(
+            url_private,
+            {
+                'data': [payload_private_one,
+                         payload_private_two]
+            },
+            auth=user_four.auth,
+            expect_errors=True, bulk=True)
         assert res.status_code == 403
 
         res = app.get(url_private, auth=user.auth)
         data = res.json['data']
-        assert_items_equal([data[0]['attributes']['permission'],
-                            data[1]['attributes']['permission'],
-                            data[2]['attributes']['permission']],
-                           ['admin',
-                            'read',
-                            'read'])
+        assert_items_equal(
+            [data[0]['attributes']['permission'],
+             data[1]['attributes']['permission'],
+             data[2]['attributes']['permission']],
+            ['admin', 'read', 'read'])
 
     #   test_bulk_update_contributors_private_projects_logged_in_read_only_contrib
-        res = app.put_json_api(url_private,
-                               {'data': [payload_private_one,
-                                         payload_private_two]},
-                               auth=user_two.auth,
-                               expect_errors=True,
-                               bulk=True)
+        res = app.put_json_api(
+            url_private,
+            {
+                'data': [payload_private_one,
+                         payload_private_two]
+            },
+            auth=user_two.auth,
+            expect_errors=True, bulk=True)
         assert res.status_code == 403
 
         res = app.get(url_private, auth=user.auth)
         data = res.json['data']
-        assert_items_equal([data[0]['attributes']['permission'],
-                            data[1]['attributes']['permission'],
-                            data[2]['attributes']['permission']],
-                           ['admin',
-                            'read',
-                            'read'])
+        assert_items_equal(
+            [data[0]['attributes']['permission'],
+             data[1]['attributes']['permission'],
+             data[2]['attributes']['permission']],
+            ['admin', 'read', 'read']
+        )
 
     #   test_bulk_update_contributors_projects_send_dictionary_not_list
-        res = app.put_json_api(url_public, {'data': payload_public_one},
-                               auth=user.auth, expect_errors=True, bulk=True)
+        res = app.put_json_api(
+            url_public,
+            {'data': payload_public_one},
+            auth=user.auth,
+            expect_errors=True, bulk=True)
         assert res.status_code == 400
         assert res.json['errors'][0]['detail'] == 'Expected a list of items but got type "dict".'
 
     #   test_bulk_update_contributors_id_not_supplied
-        res = app.put_json_api(url_public,
-                               {'data': [{'type': 'contributors',
-                                          'attributes': {}}]},
-                               auth=user.auth,
-                               expect_errors=True,
-                               bulk=True)
+        res = app.put_json_api(
+            url_public,
+            {'data': [{
+                'type': 'contributors',
+                'attributes': {}
+            }]},
+            auth=user.auth,
+            expect_errors=True, bulk=True)
         assert res.status_code == 400
         assert len(res.json['errors']) == 1
         assert res.json['errors'][0]['detail'] == 'Contributor identifier not provided.'
 
     #   test_bulk_update_contributors_type_not_supplied
-        res = app.put_json_api(url_public,
-                               {'data': [{'id': make_contrib_id(project_public._id,
-                                                                user_two._id),
-                                          'attributes': {}}]},
-                               auth=user.auth,
-                               expect_errors=True,
-                               bulk=True)
+        res = app.put_json_api(
+            url_public,
+            {'data': [{
+                'id': make_contrib_id(
+                    project_public._id, user_two._id
+                ),
+                'attributes': {}
+            }]},
+            auth=user.auth,
+            expect_errors=True, bulk=True)
         assert res.status_code == 400
         assert len(res.json['errors']) == 1
         assert res.json['errors'][0]['source']['pointer'] == '/data/0/type'
@@ -2110,61 +2002,78 @@ class TestNodeContributorBulkUpdate(NodeCRUDTestCase):
             'type': 'contributors',
             'attributes': {}
         }
-        res = app.put_json_api(url_public, {'data': [invalid_id]},
-                               auth=user.auth, expect_errors=True, bulk=True)
+        res = app.put_json_api(
+            url_public, {'data': [invalid_id]},
+            auth=user.auth, expect_errors=True, bulk=True)
         assert res.status_code == 400
         assert res.json['errors'][0]['detail'] == 'Could not find all objects to update.'
 
     #   test_bulk_update_contributors_limits
         contrib_update_list = {'data': [payload_public_one] * 101}
         res = app.put_json_api(
-            url_public,
-            contrib_update_list,
-            auth=user.auth,
-            expect_errors=True,
-            bulk=True)
+            url_public, contrib_update_list,
+            auth=user.auth, expect_errors=True, bulk=True)
         assert res.json['errors'][0]['detail'] == 'Bulk operation limit is 100, got 101.'
         assert res.json['errors'][0]['source']['pointer'] == '/data'
 
     #   test_bulk_update_contributors_invalid_permissions
         res = app.put_json_api(
-            url_public, {
+            url_public,
+            {
                 'data': [
                     payload_public_two, {
                         'id': make_contrib_id(
-                            project_public._id, user_two._id), 'type': 'contributors', 'attributes': {
-                            'permission': 'super-user'}}]}, auth=user.auth, expect_errors=True, bulk=True)
+                            project_public._id, user_two._id
+                        ),
+                        'type': 'contributors',
+                        'attributes': {
+                            'permission': 'super-user'}
+                    }
+                ]
+            },
+            auth=user.auth,
+            expect_errors=True, bulk=True)
         assert res.status_code == 400
         assert res.json['errors'][0]['detail'] == '"super-user" is not a valid choice.'
 
         res = app.get(url_public, auth=user.auth)
         data = res.json['data']
-        assert_items_equal([data[0]['attributes']['permission'],
-                            data[1]['attributes']['permission'],
-                            data[2]['attributes']['permission']],
-                           ['admin',
-                            'read',
-                            'read'])
+        assert_items_equal(
+            [data[0]['attributes']['permission'],
+             data[1]['attributes']['permission'],
+             data[2]['attributes']['permission']],
+            ['admin','read','read']
+        )
 
     #   test_bulk_update_contributors_invalid_bibliographic
         res = app.put_json_api(
-            url_public, {
+            url_public,
+            {
                 'data': [
                     payload_public_two, {
                         'id': make_contrib_id(
-                            project_public._id, user_two._id), 'type': 'contributors', 'attributes': {
-                            'bibliographic': 'true and false'}}]}, auth=user.auth, expect_errors=True, bulk=True)
+                            project_public._id, user_two._id
+                        ),
+                        'type': 'contributors',
+                        'attributes': {
+                            'bibliographic': 'true and false'
+                        }
+                    }
+                ]
+            },
+            auth=user.auth,
+            expect_errors=True, bulk=True)
         assert res.status_code == 400
         assert res.json['errors'][0]['detail'] == '"true and false" is not a valid boolean.'
 
         res = app.get(url_public, auth=user.auth)
         data = res.json['data']
-        assert_items_equal([data[0]['attributes']['permission'],
-                            data[1]['attributes']['permission'],
-                            data[2]['attributes']['permission']],
-                           ['admin',
-                            'read',
-                            'read'])
+        assert_items_equal(
+            [data[0]['attributes']['permission'],
+             data[1]['attributes']['permission'],
+             data[2]['attributes']['permission']],
+            ['admin', 'read', 'read']
+        )
 
     #   test_bulk_update_contributors_must_have_at_least_one_bibliographic_contributor
         res = app.put_json_api(

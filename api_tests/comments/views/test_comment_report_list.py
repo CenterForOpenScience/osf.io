@@ -165,10 +165,9 @@ class CommentReportsMixin(object):
             }
         }
         res = app.post_json_api(
-            private_url,
-            payload,
-            auth=user.auth,
-            expect_errors=True)
+            private_url, payload,
+            auth=user.auth, expect_errors=True
+        )
         assert res.status_code == 409
 
         # test_report_comment_no_type
@@ -182,10 +181,9 @@ class CommentReportsMixin(object):
             }
         }
         res = app.post_json_api(
-            private_url,
-            payload,
-            auth=user.auth,
-            expect_errors=True)
+            private_url, payload,
+            auth=user.auth, expect_errors=True
+        )
         assert res.status_code == 400
         assert res.json['errors'][0]['detail'] == 'This field may not be blank.'
         assert res.json['errors'][0]['source']['pointer'] == '/data/type'
@@ -202,10 +200,9 @@ class CommentReportsMixin(object):
             }
         }
         res = app.post_json_api(
-            private_url,
-            payload,
-            auth=user.auth,
-            expect_errors=True)
+            private_url, payload,
+            auth=user.auth, expect_errors=True
+        )
         assert res.status_code == 400
         assert res.json['errors'][0]['detail'] == '\"' + \
             category + '\"' + ' is not a valid choice.'
@@ -233,15 +230,10 @@ class CommentReportsMixin(object):
         assert res.json['data']['attributes']['message'] == payload['data']['attributes']['message']
 
     def test_private_node_report_comment_auth_misc(
-            self,
-            app,
-            user,
-            contributor,
-            non_contrib,
-            private_project,
-            private_url,
-            comment,
-            payload):
+            self, app, user, contributor,
+            non_contrib, private_project,
+            private_url, comment, payload
+    ):
 
         # test_private_node_logged_out_user_cannot_report_comment
         res = app.post_json_api(private_url, payload, expect_errors=True)
@@ -249,10 +241,9 @@ class CommentReportsMixin(object):
 
         # test_private_node_logged_in_non_contrib_cannot_report_comment
         res = app.post_json_api(
-            private_url,
-            payload,
-            auth=non_contrib.auth,
-            expect_errors=True)
+            private_url, payload,
+            auth=non_contrib.auth, expect_errors=True
+        )
         assert res.status_code == 403
 
         # test_private_node_logged_in_contributor_can_report_comment
@@ -269,33 +260,26 @@ class CommentReportsMixin(object):
             self, app, user, contributor, private_url, payload):
         # test_user_cannot_report_own_comment
         res = app.post_json_api(
-            private_url,
-            payload,
-            auth=contributor.auth,
-            expect_errors=True)
+            private_url, payload,
+            auth=contributor.auth, expect_errors=True
+        )
         assert res.status_code == 400
         assert res.json['errors'][0]['detail'] == 'You cannot report your own comment.'
 
         # test_user_cannot_report_comment_twice
         # User cannot report the comment again
         res = app.post_json_api(
-            private_url,
-            payload,
-            auth=user.auth,
-            expect_errors=True)
+            private_url, payload,
+            auth=user.auth, expect_errors=True
+        )
         assert res.status_code == 400
         assert res.json['errors'][0]['detail'] == 'Comment already reported.'
 
     def test_public_node_report_comment_auth_misc(
-            self,
-            app,
-            user,
-            contributor,
-            non_contrib,
-            public_project,
-            public_url,
-            public_comment,
-            payload):
+            self, app, user, contributor,
+            non_contrib, public_project,
+            public_url, public_comment, payload
+    ):
         # def test_public_node_logged_out_user_cannot_report_comment(self):
         res = app.post_json_api(public_url, payload, expect_errors=True)
         assert res.status_code == 401
@@ -396,8 +380,10 @@ class TestWikiCommentReportsView(CommentReportsMixin):
     @pytest.fixture()
     def comment(self, user, contributor, private_project, wiki):
         comment = CommentFactory(
-            node=private_project, target=Guid.load(
-                wiki._id), user=contributor)
+            node=private_project,
+            target=Guid.load(wiki._id),
+            user=contributor
+        )
         comment.reports = comment.reports or {}
         comment.reports[user._id] = {
             'category': 'spam',
@@ -428,8 +414,10 @@ class TestWikiCommentReportsView(CommentReportsMixin):
     @pytest.fixture()
     def public_comment(self, user, contributor, public_project, public_wiki):
         public_comment = CommentFactory(
-            node=public_project, target=Guid.load(
-                public_wiki._id), user=contributor)
+            node=public_project,
+            target=Guid.load(public_wiki._id),
+            user=contributor
+        )
         public_comment.reports = public_comment.reports or {}
         public_comment.reports[user._id] = {
             'category': 'spam',

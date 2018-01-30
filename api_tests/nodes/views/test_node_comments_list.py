@@ -42,12 +42,8 @@ class NodeCommentsListMixin(object):
         raise NotImplementedError
 
     def test_return_comments(
-            self,
-            app,
-            user,
-            user_non_contrib,
-            project_public_dict,
-            project_private_dict,
+            self, app, user, user_non_contrib,
+            project_public_dict, project_private_dict,
             registration_dict):
 
         #   test_return_public_node_comments_logged_out_user
@@ -98,8 +94,7 @@ class NodeCommentsListMixin(object):
     def test_return_both_deleted_and_undeleted_comments(
             self, app, user, project_private_dict, mock_update_search=None):
         deleted_comment = CommentFactory(
-            node=project_private_dict['project'],
-            user=user,
+            node=project_private_dict['project'], user=user,
             target=project_private_dict['comment'].target,
             is_deleted=True)
         res = app.get(project_private_dict['url'], auth=user.auth)
@@ -171,10 +166,8 @@ class TestNodeCommentsListFiles(NodeCommentsListMixin):
         project_private = ProjectFactory(is_public=False, creator=user)
         file_private = test_utils.create_test_file(project_private, user)
         comment_private = CommentFactory(
-            node=project_private,
-            user=user,
-            target=file_private.get_guid(),
-            page='files')
+            node=project_private, user=user,
+            target=file_private.get_guid(), page='files')
         url_private = '/{}nodes/{}/comments/'.format(
             API_BASE, project_private._id)
         return {
@@ -188,8 +181,7 @@ class TestNodeCommentsListFiles(NodeCommentsListMixin):
         project_public = ProjectFactory(is_public=True, creator=user)
         file_public = test_utils.create_test_file(project_public, user)
         comment_public = CommentFactory(
-            node=project_public,
-            user=user,
+            node=project_public, user=user,
             target=file_public.get_guid(),
             page='files')
         url_public = '/{}nodes/{}/comments/'.format(
@@ -205,8 +197,7 @@ class TestNodeCommentsListFiles(NodeCommentsListMixin):
         registration = RegistrationFactory(creator=user)
         file_registration = test_utils.create_test_file(registration, user)
         comment_registration = CommentFactory(
-            node=registration,
-            user=user,
+            node=registration, user=user,
             target=file_registration.get_guid(),
             page='files')
         url_registration = '/{}registrations/{}/comments/'.format(
@@ -254,8 +245,9 @@ class TestNodeCommentsListWiki(NodeCommentsListMixin):
         project_public = ProjectFactory(is_public=True, creator=user)
         wiki_public = NodeWikiFactory(node=project_public, user=user)
         comment_public = CommentFactory(
-            node=project_public, user=user, target=Guid.load(
-                wiki_public._id), page='wiki')
+            node=project_public, user=user,
+            target=Guid.load(wiki_public._id),
+            page='wiki')
         url_public = '/{}nodes/{}/comments/'.format(
             API_BASE, project_public._id)
         return {
@@ -269,8 +261,9 @@ class TestNodeCommentsListWiki(NodeCommentsListMixin):
         registration = RegistrationFactory(creator=user)
         wiki_registration = NodeWikiFactory(node=registration, user=user)
         comment_registration = CommentFactory(
-            node=registration, user=user, target=Guid.load(
-                wiki_registration._id), page='wiki')
+            node=registration, user=user,
+            target=Guid.load(wiki_registration._id),
+            page='wiki')
         url_registration = '/{}registrations/{}/comments/'.format(
             API_BASE, registration._id)
         return {
@@ -323,10 +316,7 @@ class NodeCommentsCreateMixin(object):
         raise NotImplementedError
 
     def test_node_comments(
-            self,
-            app,
-            user,
-            user_read_contrib,
+            self, app, user, user_read_contrib,
             user_non_contrib,
             project_private_comment_private,
             project_private_comment_public,
@@ -586,10 +576,7 @@ class TestNodeCommentCreate(NodeCommentsCreateMixin):
             'payload': payload_private}
 
     def test_create_comment_errors(
-            self,
-            app,
-            user,
-            payload,
+            self, app, user, payload,
             project_private_comment_private):
 
         #   test_create_comment_invalid_data
@@ -906,10 +893,8 @@ class TestNodeCommentCreate(NodeCommentsCreateMixin):
         url_fake = '/{}nodes/{}/comments/'.format(API_BASE, 'abcde')
         payload_fake = payload('abcde')
         res = app.post_json_api(
-            url_fake,
-            payload_fake,
-            auth=user.auth,
-            expect_errors=True)
+            url_fake, payload_fake,
+            auth=user.auth, expect_errors=True)
         assert res.status_code == 404
         assert res.json['errors'][0]['detail'] == exceptions.NotFound.default_detail
 
@@ -1028,10 +1013,7 @@ class TestFileCommentCreate(NodeCommentsCreateMixin):
             'payload': payload_private}
 
     def test_create_file_comment_errors(
-            self,
-            app,
-            user,
-            payload,
+            self, app, user, payload,
             project_private_comment_private):
 
         #   test_create_file_comment_invalid_target_id
@@ -1039,10 +1021,8 @@ class TestFileCommentCreate(NodeCommentsCreateMixin):
         file = test_utils.create_test_file(ProjectFactory(), user)
         payload_req = payload(file._id)
         res = app.post_json_api(
-            project_dict['url'],
-            payload_req,
-            auth=user.auth,
-            expect_errors=True)
+            project_dict['url'], payload_req,
+            auth=user.auth, expect_errors=True)
         assert res.status_code == 400
         assert res.json['errors'][0]['detail'] == 'Invalid comment target \'' + \
             str(file._id) + '\'.'
@@ -1066,10 +1046,8 @@ class TestFileCommentCreate(NodeCommentsCreateMixin):
             }
         }
         res = app.post_json_api(
-            project_dict['url'],
-            payload_req,
-            auth=user.auth,
-            expect_errors=True)
+            project_dict['url'], payload_req,
+            auth=user.auth, expect_errors=True)
         assert res.status_code == 409
         assert res.json['errors'][0]['detail'] == 'The target resource has a type of "files", but you set the json body\'s type field to "Invalid".  You probably need to change the type field to match the target resource\'s type.'
 
@@ -1165,12 +1143,8 @@ class TestWikiCommentCreate(NodeCommentsCreateMixin):
             'payload': payload_private}
 
     def test_create_wiki_comment_errors(
-            self,
-            app,
-            user,
-            payload,
-            project_private_comment_private,
-            mock_update_search=None):
+            self, app, user, payload,
+            project_private_comment_private):
 
         #   test_create_wiki_comment_invalid_target_id
         project_dict = project_private_comment_private
@@ -1276,8 +1250,9 @@ class TestCommentRepliesCreate(NodeCommentsCreateMixin):
             user_read_contrib, permissions=['read'], save=True)
         comment_private = CommentFactory(node=project_private, user=user)
         comment_reply = CommentFactory(
-            node=project_private, target=Guid.load(
-                comment_private._id), user=user)
+            node=project_private,
+            target=Guid.load(comment_private._id),
+            user=user)
         url_private = '/{}nodes/{}/comments/'.format(
             API_BASE, project_private._id)
         payload_private = payload(comment_reply._id)
@@ -1295,8 +1270,9 @@ class TestCommentRepliesCreate(NodeCommentsCreateMixin):
             user_read_contrib, permissions=['read'], save=True)
         comment_public = CommentFactory(node=project_public, user=user)
         comment_reply = CommentFactory(
-            node=project_public, target=Guid.load(
-                comment_public._id), user=user)
+            node=project_public,
+            target=Guid.load(comment_public._id),
+            user=user)
         url_public = '/{}nodes/{}/comments/'.format(
             API_BASE, project_public._id)
         payload_public = payload(comment_reply._id)
@@ -1313,10 +1289,8 @@ class TestCommentRepliesCreate(NodeCommentsCreateMixin):
         target_comment = CommentFactory(node=ProjectFactory(), user=user)
         payload_req = payload(target_comment._id)
         res = app.post_json_api(
-            project_dict['url'],
-            payload_req,
-            auth=user.auth,
-            expect_errors=True)
+            project_dict['url'], payload_req,
+            auth=user.auth, expect_errors=True)
         assert res.status_code == 400
         assert res.json['errors'][0]['detail'] == 'Invalid comment target \'' + \
             str(target_comment._id) + '\'.'
@@ -1336,10 +1310,8 @@ class TestCommentFiltering:
     @pytest.fixture()
     def comment_deleted(self, user, project):
         return CommentFactory(
-            node=project,
-            user=user,
-            is_deleted=True,
-            page='node')
+            node=project, user=user,
+            is_deleted=True, page='node')
 
     @pytest.fixture()
     def url_base(self, project):
@@ -1355,15 +1327,9 @@ class TestCommentFiltering:
         return comment.modified.strftime('%Y-%m-%dT%H:%M:%S.%f')
 
     def test_filtering(
-            self,
-            app,
-            user,
-            project,
-            comment,
-            comment_deleted,
-            date_created_formatted,
-            date_modified_formatted,
-            url_base):
+            self, app, user, project, comment,
+            comment_deleted, date_created_formatted,
+            date_modified_formatted, url_base):
 
         #   test_node_comments_with_no_filter_returns_all_comments
         res = app.get(url_base, auth=user.auth)
@@ -1458,51 +1424,32 @@ class TestCommentFiltering:
         assert 'node' == res.json['data'][1]['attributes']['page']
 
     def test_filtering_for_comment_replies(
-            self,
-            app,
-            user,
-            project,
-            comment,
-            comment_deleted,
-            url_base):
-        reply = CommentFactory(
-            node=project,
-            user=user,
-            target=Guid.load(
-                comment._id))
+            self, app, user, project, comment, url_base):
+        CommentFactory(
+            node=project, user=user,
+            target=Guid.load(comment._id))
         url = url_base + '?filter[target]=' + str(comment._id)
         res = app.get(url, auth=user.auth)
         assert len(res.json['data']) == 1
         assert comment._id in res.json['data'][0]['relationships']['target']['links']['related']['href']
 
     def test_filtering_by_target_file(
-            self,
-            app,
-            user,
-            project,
-            comment,
-            comment_deleted,
-            url_base):
+            self, app, user, project, url_base):
         test_file = test_utils.create_test_file(project, user)
         target = test_file.get_guid()
-        file_comment = CommentFactory(node=project, user=user, target=target)
+        CommentFactory(node=project, user=user, target=target)
         url = url_base + '?filter[target]=' + str(target._id)
         res = app.get(url, auth=user.auth)
         assert len(res.json['data']) == 1
         assert test_file._id in res.json['data'][0]['relationships']['target']['links']['related']['href']
 
     def test_filtering_by_target_wiki(
-            self,
-            app,
-            user,
-            project,
-            comment,
-            comment_deleted,
-            url_base):
+            self, app, user, project, url_base):
         test_wiki = NodeWikiFactory(node=project, user=user)
-        wiki_comment = CommentFactory(
-            node=project, user=user, target=Guid.load(
-                test_wiki._id), page='wiki')
+        CommentFactory(
+            node=project, user=user,
+            target=Guid.load(test_wiki._id),
+            page='wiki')
         url = url_base + '?filter[target]=' + str(test_wiki._id)
         res = app.get(url, auth=user.auth)
         assert len(res.json['data']) == 1
@@ -1510,17 +1457,10 @@ class TestCommentFiltering:
         ) == res.json['data'][0]['relationships']['target']['links']['related']['href']
 
     def test_filtering_by_page_files(
-            self,
-            app,
-            user,
-            project,
-            comment,
-            comment_deleted,
-            url_base):
+            self, app, user, project, url_base):
         test_file = test_utils.create_test_file(project, user)
-        file_comment = CommentFactory(
-            node=project,
-            user=user,
+        CommentFactory(
+            node=project, user=user,
             target=test_file.get_guid(),
             page='files')
         url = url_base + '?filter[page]=files'
@@ -1529,17 +1469,12 @@ class TestCommentFiltering:
         assert 'files' == res.json['data'][0]['attributes']['page']
 
     def test_filtering_by_page_wiki(
-            self,
-            app,
-            user,
-            project,
-            comment,
-            comment_deleted,
-            url_base):
+            self, app, user, project, url_base):
         test_wiki = NodeWikiFactory(node=project, user=user)
-        wiki_comment = CommentFactory(
-            node=project, user=user, target=Guid.load(
-                test_wiki._id), page='wiki')
+        CommentFactory(
+            node=project, user=user,
+            target=Guid.load(test_wiki._id),
+            page='wiki')
         url = url_base + '?filter[page]=wiki'
         res = app.get(url, auth=user.auth)
         assert len(res.json['data']) == 1

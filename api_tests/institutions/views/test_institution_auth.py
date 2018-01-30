@@ -19,11 +19,9 @@ def make_user(username, fullname):
 
 
 def make_payload(
-        institution,
-        username,
-        fullname='Fake User',
-        given_name='',
-        family_name=''):
+        institution, username, fullname='Fake User',
+        given_name='', family_name=''
+):
     data = {
         'provider': {
             'id': institution._id,
@@ -61,9 +59,8 @@ class TestInstitutionAuth:
         with capture_signals() as mock_signals:
             res = app.post(
                 url_auth_institution,
-                make_payload(
-                    institution,
-                    username))
+                make_payload(institution, username)
+            )
 
         assert res.status_code == 204
         assert mock_signals.signals_sent() == set([signals.user_confirmed])
@@ -82,9 +79,8 @@ class TestInstitutionAuth:
         with capture_signals() as mock_signals:
             res = app.post(
                 url_auth_institution,
-                make_payload(
-                    institution,
-                    username))
+                make_payload(institution, username)
+            )
 
         assert res.status_code == 204
         assert mock_signals.signals_sent() == set()
@@ -101,9 +97,8 @@ class TestInstitutionAuth:
 
         res = app.post(
             url_auth_institution,
-            make_payload(
-                institution,
-                username))
+            make_payload(institution, username)
+        )
         assert res.status_code == 204
 
         user.reload()
@@ -113,7 +108,8 @@ class TestInstitutionAuth:
         res = app.post(
             url_auth_institution,
             'al;kjasdfljadf',
-            expect_errors=True)
+            expect_errors=True
+        )
         assert res.status_code == 403
 
     def test_user_names_guessed_if_not_provided(
@@ -122,9 +118,8 @@ class TestInstitutionAuth:
         username = 'fake@user.edu'
         res = app.post(
             url_auth_institution,
-            make_payload(
-                institution,
-                username))
+            make_payload(institution, username)
+        )
 
         assert res.status_code == 204
         user = OSFUser.objects.filter(username=username).first()
@@ -144,7 +139,9 @@ class TestInstitutionAuth:
                 institution,
                 username,
                 family_name='West',
-                given_name='Kanye'))
+                given_name='Kanye'
+            )
+        )
 
         assert res.status_code == 204
         user = OSFUser.objects.filter(username=username).first()

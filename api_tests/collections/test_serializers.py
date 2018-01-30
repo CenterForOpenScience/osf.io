@@ -23,8 +23,8 @@ class TestNodeSerializer:
             modified_format = '%Y-%m-%dT%H:%M:%S.%f' if collection.modified.microsecond else '%Y-%m-%dT%H:%M:%S'
 
         result = CollectionSerializer(
-            collection, context={
-                'request': req}).data
+            collection, context={'request': req}
+        ).data
         data = result['data']
         assert data['id'] == collection._id
         assert data['type'] == 'collections'

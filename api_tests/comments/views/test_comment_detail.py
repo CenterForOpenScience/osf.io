@@ -115,13 +115,9 @@ class CommentDetailMixin(object):
         return payload
 
     def test_private_node_comments_related_auth(
-            self,
-            app,
-            user,
-            contributor,
-            non_contrib,
-            comment,
-            private_url):
+            self, app, user, non_contrib,
+            comment, private_url
+    ):
         # test_private_node_logged_in_contributor_can_view_comment
         res = app.get(private_url, auth=user.auth)
         assert res.status_code == 200
@@ -144,8 +140,10 @@ class CommentDetailMixin(object):
         private_link = PrivateLinkFactory(anonymous=False)
         private_link.nodes.add(private_project)
         private_link.save()
-        res = app.get('/{}comments/{}/'.format(API_BASE, comment._id),
-                      {'view_only': private_link.key}, expect_errors=True)
+        res = app.get(
+            '/{}comments/{}/'.format(API_BASE, comment._id),
+            {'view_only': private_link.key}, expect_errors=True
+        )
         assert res.status_code == 200
         assert comment._id == res.json['data']['id']
         assert comment.content == res.json['data']['attributes']['content']
@@ -154,8 +152,10 @@ class CommentDetailMixin(object):
         private_link = PrivateLinkFactory(anonymous=True)
         private_link.nodes.add(private_project)
         private_link.save()
-        res = app.get('/{}comments/{}/'.format(API_BASE,
-                                               comment._id), {'view_only': private_link.key})
+        res = app.get(
+            '/{}comments/{}/'.format(API_BASE,comment._id),
+            {'view_only': private_link.key}
+        )
         assert res.status_code == 200
         assert comment._id == res.json['data']['id']
         assert comment.content == res.json['data']['attributes']['content']
@@ -164,22 +164,20 @@ class CommentDetailMixin(object):
         # test_private_node_user_with_anonymous_link_cannot_see_mention_info
         comment.content = 'test with [@username](userlink) and @mention'
         comment.save()
-        res = app.get('/{}comments/{}/'.format(API_BASE,
-                                               comment._id), {'view_only': private_link.key})
+        res = app.get(
+            '/{}comments/{}/'.format(API_BASE, comment._id),
+            {'view_only': private_link.key}
+        )
         assert res.status_code == 200
         assert comment._id == res.json['data']['id']
         assert 'test with @A User and @mention' == res.json['data']['attributes']['content']
 
     def test_public_node_comment_auth_misc(
-            self,
-            app,
-            user,
-            non_contrib,
-            public_project,
-            public_url,
-            public_comment,
-            registration_comment,
-            comment_url):
+            self, app, user, non_contrib,
+            public_project, public_url,
+            public_comment, registration_comment,
+            comment_url
+    ):
         # test_public_node_logged_in_contributor_can_view_comment
         res = app.get(public_url, auth=user.auth)
         assert res.status_code == 200
@@ -208,23 +206,18 @@ class CommentDetailMixin(object):
         private_link = PrivateLinkFactory(anonymous=False)
         private_link.nodes.add(public_project)
         private_link.save()
-        res = app.get('/{}comments/{}/'.format(API_BASE,
-                                               public_comment._id),
-                      {'view_only': private_link.key},
-                      expect_errors=True)
+        res = app.get(
+            '/{}comments/{}/'.format(API_BASE, public_comment._id),
+            {'view_only': private_link.key}, expect_errors=True
+        )
         assert public_comment._id == res.json['data']['id']
         assert public_comment.content == res.json['data']['attributes']['content']
 
     def test_comment_has_multiple_links(
-            self,
-            app,
-            user,
-            public_url,
-            public_project,
-            public_comment,
-            public_comment_reply,
-            comment_url,
-            registration):
+            self, app, user, public_url,
+            public_project, public_comment,
+            comment_url, registration
+    ):
         res = app.get(public_url)
         assert res.status_code == 200
         # test_comment_has_user_link
@@ -267,10 +260,9 @@ class CommentDetailMixin(object):
 
         # test_private_node_logged_in_non_contrib_cannot_update_comment
         res = app.put_json_api(
-            private_url,
-            payload,
-            auth=non_contrib.auth,
-            expect_errors=True)
+            private_url, payload,
+            auth=non_contrib.auth, expect_errors=True
+        )
         assert res.status_code == 403
         assert res.json['errors'][0]['detail'] == exceptions.PermissionDenied.default_detail
 
@@ -280,63 +272,53 @@ class CommentDetailMixin(object):
         assert res.json['errors'][0]['detail'] == exceptions.NotAuthenticated.default_detail
 
     def test_public_node_comment_auth_misc(
-            self,
-            app,
-            user,
-            contributor,
-            non_contrib,
-            public_url,
-            public_comment,
-            public_comment_payload):
+            self, app, user, contributor,
+            non_contrib, public_url,
+            public_comment_payload
+    ):
         # test_public_node_only_contributor_commenter_can_update_comment
         res = app.put_json_api(
-            public_url,
-            public_comment_payload,
-            auth=user.auth)
+            public_url, public_comment_payload,
+            auth=user.auth
+        )
         assert res.status_code == 200
         assert public_comment_payload['data']['attributes']['content'] == res.json['data']['attributes']['content']
 
         # test_public_node_contributor_cannot_update_other_users_comment
         res = app.put_json_api(
-            public_url,
-            public_comment_payload,
-            auth=contributor.auth,
-            expect_errors=True)
+            public_url, public_comment_payload,
+            auth=contributor.auth, expect_errors=True
+        )
         assert res.status_code == 403
         assert res.json['errors'][0]['detail'] == exceptions.PermissionDenied.default_detail
 
         # test_public_node_non_contrib_cannot_update_other_users_comment
         res = app.put_json_api(
-            public_url,
-            public_comment_payload,
-            auth=non_contrib.auth,
-            expect_errors=True)
+            public_url, public_comment_payload,
+            auth=non_contrib.auth, expect_errors=True
+        )
         assert res.status_code == 403
         assert res.json['errors'][0]['detail'] == exceptions.PermissionDenied.default_detail
 
         # test_public_node_logged_out_user_cannot_update_comment
         res = app.put_json_api(
-            public_url,
-            public_comment_payload,
-            expect_errors=True)
+            public_url, public_comment_payload,
+            expect_errors=True
+        )
         assert res.status_code == 401
         assert res.json['errors'][0]['detail'] == exceptions.NotAuthenticated.default_detail
 
     def test_update_comment_misc(
-            self,
-            app,
-            user,
-            private_url,
-            comment,
-            set_up_payload):
+            self, app, user, private_url,
+            comment, set_up_payload
+    ):
         # test_update_comment_cannot_exceed_max_length
         content = ('c' * (osf_settings.COMMENT_MAXLENGTH + 3))
         payload = set_up_payload(comment._id, content=content)
         res = app.put_json_api(
-            private_url,
-            payload,
-            auth=user.auth,
-            expect_errors=True)
+            private_url, payload,
+            auth=user.auth, expect_errors=True
+        )
         assert res.status_code == 400
         assert (res.json['errors'][0]['detail'] == 'Ensure this field has no more than {} characters.'.format(
             str(osf_settings.COMMENT_MAXLENGTH)))
@@ -344,10 +326,9 @@ class CommentDetailMixin(object):
         # test_update_comment_cannot_be_empty
         payload = set_up_payload(comment._id, content='')
         res = app.put_json_api(
-            private_url,
-            payload,
-            auth=user.auth,
-            expect_errors=True)
+            private_url, payload,
+            auth=user.auth, expect_errors=True
+        )
         assert res.status_code == 400
         assert res.json['errors'][0]['detail'] == 'This field may not be blank.'
 
@@ -361,8 +342,8 @@ class CommentDetailMixin(object):
         reply_target = Guid.load(comment._id)
         reply = CommentFactory(
             node=private_project,
-            target=reply_target,
-            user=user)
+            target=reply_target, user=user
+        )
         reply_url = '/{}comments/{}/'.format(API_BASE, reply._id)
         res = app.delete_json_api(reply_url, auth=user.auth)
         assert res.status_code == 204
@@ -372,8 +353,8 @@ class CommentDetailMixin(object):
         reply_target = Guid.load(comment._id)
         reply = CommentFactory(
             node=private_project,
-            target=reply_target,
-            user=user)
+            target=reply_target, user=user
+        )
         reply_url = '/{}comments/{}/'.format(API_BASE, reply._id)
         reply.is_deleted = True
         reply.save()
@@ -388,16 +369,15 @@ class CommentDetailMixin(object):
         # def
         # test_private_node_contributor_cannot_delete_other_users_comment(self):
         res = app.delete_json_api(
-            private_url,
-            auth=contributor.auth,
-            expect_errors=True)
+            private_url, auth=contributor.auth,
+            expect_errors=True
+        )
         assert res.status_code == 403
         assert res.json['errors'][0]['detail'] == exceptions.PermissionDenied.default_detail
 
     # def test_private_node_non_contrib_cannot_delete_comment(self):
         res = app.delete_json_api(
-            private_url,
-            auth=non_contrib.auth,
+            private_url, auth=non_contrib.auth,
             expect_errors=True)
         assert res.status_code == 403
         assert res.json['errors'][0]['detail'] == exceptions.PermissionDenied.default_detail
@@ -410,9 +390,9 @@ class CommentDetailMixin(object):
         comment.is_deleted = True
         comment.save()
         res = app.delete_json_api(
-            private_url,
-            auth=user.auth,
-            expect_errors=True)
+            private_url, auth=user.auth,
+            expect_errors=True
+        )
         assert res.status_code == 400
         assert res.json['errors'][0]['detail'] == 'Comment already deleted.'
 
@@ -428,7 +408,7 @@ class CommentDetailMixin(object):
         assert res.json['data']['attributes']['content'] == comment.content
 
     def test_private_node_cannot_undelete_comment_situation(
-            self, app, user, contributor, non_contrib, comment, set_up_payload):
+            self, app, contributor, non_contrib, comment, set_up_payload):
         comment.is_deleted = True
         comment.save()
         url = '/{}comments/{}/'.format(API_BASE, comment._id)
@@ -436,17 +416,13 @@ class CommentDetailMixin(object):
 
         # test_private_node_contributor_cannot_undelete_other_users_comment
         res = app.patch_json_api(
-            url,
-            payload,
-            auth=contributor.auth,
+            url, payload, auth=contributor.auth,
             expect_errors=True)
         assert res.status_code == 403
 
         # test_private_node_non_contrib_cannot_undelete_comment
         res = app.patch_json_api(
-            url,
-            payload,
-            auth=non_contrib.auth,
+            url, payload, auth=non_contrib.auth,
             expect_errors=True)
         assert res.status_code == 403
 
@@ -463,16 +439,14 @@ class CommentDetailMixin(object):
             self, app, user, contributor, non_contrib, public_url, public_comment):
         # test_public_node_contributor_cannot_delete_other_users_comment
         res = app.delete_json_api(
-            public_url,
-            auth=contributor.auth,
+            public_url, auth=contributor.auth,
             expect_errors=True)
         assert res.status_code == 403
         assert res.json['errors'][0]['detail'] == exceptions.PermissionDenied.default_detail
 
         # test_public_node_non_contrib_cannot_delete_other_users_comment
         res = app.delete_json_api(
-            public_url,
-            auth=non_contrib.auth,
+            public_url, auth=non_contrib.auth,
             expect_errors=True)
         assert res.status_code == 403
         assert res.json['errors'][0]['detail'] == exceptions.PermissionDenied.default_detail
@@ -486,8 +460,7 @@ class CommentDetailMixin(object):
         public_comment.is_deleted = True
         public_comment.save()
         res = app.delete_json_api(
-            public_url,
-            auth=user.auth,
+            public_url, auth=user.auth,
             expect_errors=True)
         assert res.status_code == 400
         assert res.json['errors'][0]['detail'] == 'Comment already deleted.'
@@ -536,13 +509,9 @@ class CommentDetailMixin(object):
         assert res.json['data']['attributes']['content'] is None
 
     def test_public_node_deleted_comments_auth_misc(
-            self,
-            app,
-            user,
-            contributor,
-            non_contrib,
-            public_project,
-            public_comment):
+            self, app, user, contributor, non_contrib,
+            public_project, public_comment
+    ):
         public_comment.is_deleted = True
         public_comment.save()
         url = '/{}comments/{}/'.format(API_BASE, public_comment._id)
@@ -573,10 +542,13 @@ class CommentDetailMixin(object):
         private_link.nodes.add(public_project)
         private_link.save()
 
-        res = app.get('/{}comments/{}/'.format(API_BASE,
-                                               public_comment._id),
-                      {'view_only': private_link.key},
-                      expect_errors=True)
+        res = app.get(
+            '/{}comments/{}/'.format(
+                API_BASE,public_comment._id
+            ),
+            {'view_only': private_link.key},
+            expect_errors=True
+        )
         assert res.status_code == 200
         assert res.json['data']['attributes']['content'] is None
 
@@ -618,8 +590,8 @@ class TestCommentDetailView(CommentDetailMixin):
         reply_target = Guid.load(public_comment._id)
         return CommentFactory(
             node=public_project,
-            target=reply_target,
-            user=user)
+            target=reply_target, user=user
+        )
 
     @pytest.fixture()
     def public_url(self, public_comment):
@@ -648,15 +620,14 @@ class TestCommentDetailView(CommentDetailMixin):
 
     @pytest.fixture()
     def registration_comment_reply(
-            self,
-            user,
-            registration,
-            registration_comment):
+            self, user, registration,
+            registration_comment
+    ):
         reply_target = Guid.load(registration_comment._id)
         return CommentFactory(
             node=registration,
-            target=reply_target,
-            user=user)
+            target=reply_target, user=user
+        )
 
     @pytest.fixture()
     def replies_url(self, registration, registration_comment):
@@ -693,10 +664,9 @@ class TestCommentDetailView(CommentDetailMixin):
         url = '/{}comments/{}/'.format(API_BASE, comment._id)
         payload = set_up_payload(comment._id)
         res = app.put_json_api(
-            url,
-            payload,
-            auth=non_contrib.auth,
-            expect_errors=True)
+            url, payload, auth=non_contrib.auth,
+            expect_errors=True
+        )
         assert res.status_code == 403
         assert res.json['errors'][0]['detail'] == exceptions.PermissionDenied.default_detail
 
@@ -724,7 +694,8 @@ class TestCommentDetailView(CommentDetailMixin):
         assert node_uri == registration_url
 
     def test_registration_comment_has_usable_node_relationship_link(
-            self, app, user, registration, registration_url, registration_comment_reply):
+            self, app, user, registration, registration_url
+    ):
         res = app.get(registration_url, auth=user.auth)
         assert res.status_code == 200
         comments_url = res.json['data']['relationships']['comments']['links']['related']['href']
@@ -788,8 +759,8 @@ class TestFileCommentDetailView(CommentDetailMixin):
         reply_target = Guid.load(public_comment._id)
         return CommentFactory(
             node=public_project,
-            target=reply_target,
-            user=user)
+            target=reply_target, user=user
+        )
 
     @pytest.fixture()
     def public_url(self, public_comment):
@@ -821,10 +792,9 @@ class TestFileCommentDetailView(CommentDetailMixin):
 
     @pytest.fixture()
     def registration_comment_reply(
-            self,
-            user,
-            registration,
-            registration_comment):
+            self, user, registration,
+            registration_comment
+    ):
         reply_target = Guid.load(registration_comment._id)
         return CommentFactory(
             node=registration,
@@ -869,10 +839,9 @@ class TestFileCommentDetailView(CommentDetailMixin):
         url = '/{}comments/{}/'.format(API_BASE, comment._id)
         payload = set_up_payload(comment._id)
         res = app.put_json_api(
-            url,
-            payload,
-            auth=non_contrib.auth,
-            expect_errors=True)
+            url, payload, auth=non_contrib.auth,
+            expect_errors=True
+        )
         assert res.status_code == 403
         assert res.json['errors'][0]['detail'] == exceptions.PermissionDenied.default_detail
 
@@ -916,9 +885,9 @@ class TestWikiCommentDetailView(CommentDetailMixin):
     def comment(self, user, private_project, wiki):
         return CommentFactory(
             node=private_project,
-            target=Guid.load(
-                wiki._id),
-            user=user)
+            target=Guid.load(wiki._id),
+            user=user
+        )
 
     @pytest.fixture()
     def private_url(self, comment):
@@ -945,8 +914,7 @@ class TestWikiCommentDetailView(CommentDetailMixin):
     def public_comment(self, user, public_project, public_wiki):
         return CommentFactory(
             node=public_project,
-            target=Guid.load(
-                public_wiki._id),
+            target=Guid.load(public_wiki._id),
             user=user)
 
     @pytest.fixture()
@@ -955,7 +923,8 @@ class TestWikiCommentDetailView(CommentDetailMixin):
         return CommentFactory(
             node=public_project,
             target=reply_target,
-            user=user)
+            user=user
+        )
 
     @pytest.fixture()
     def public_url(self, public_comment):
@@ -978,8 +947,10 @@ class TestWikiCommentDetailView(CommentDetailMixin):
     @pytest.fixture()
     def registration_comment(self, user, registration, registration_wiki):
         return CommentFactory(
-            node=registration, target=Guid.load(
-                registration_wiki._id), user=user)
+            node=registration,
+            target=Guid.load(registration_wiki._id),
+            user=user
+        )
 
     @pytest.fixture()
     def comment_url(self, registration_comment):
@@ -987,15 +958,14 @@ class TestWikiCommentDetailView(CommentDetailMixin):
 
     @pytest.fixture()
     def registration_comment_reply(
-            self,
-            user,
-            registration,
-            registration_comment):
+            self, user, registration,
+            registration_comment
+    ):
         reply_target = Guid.load(registration_comment._id)
         return CommentFactory(
             node=registration,
-            target=reply_target,
-            user=user)
+            target=reply_target, user=user
+        )
 
     def test_wiki_comment_has_target_link_with_correct_type(
             self, app, public_url, public_wiki):
@@ -1013,8 +983,10 @@ class TestWikiCommentDetailView(CommentDetailMixin):
         project = ProjectFactory(is_public=True)
         test_wiki = NodeWikiFactory(node=project, user=user)
         comment = CommentFactory(
-            node=project, target=Guid.load(
-                test_wiki._id), user=non_contrib)
+            node=project,
+            target=Guid.load(test_wiki._id),
+            user=non_contrib
+        )
         url = '/{}comments/{}/'.format(API_BASE, comment._id)
         payload = set_up_payload(comment._id)
         res = app.put_json_api(url, payload, auth=non_contrib.auth)
@@ -1026,17 +998,18 @@ class TestWikiCommentDetailView(CommentDetailMixin):
         project = ProjectFactory(is_public=True)
         test_wiki = NodeWikiFactory(node=project, user=user)
         comment = CommentFactory(
-            node=project, target=Guid.load(
-                test_wiki._id), user=non_contrib)
+            node=project,
+            target=Guid.load(test_wiki._id),
+            user=non_contrib
+        )
         project.comment_level = 'private'
         project.save()
         url = '/{}comments/{}/'.format(API_BASE, comment._id)
         payload = set_up_payload(comment._id)
         res = app.put_json_api(
-            url,
-            payload,
-            auth=non_contrib.auth,
-            expect_errors=True)
+            url, payload, auth=non_contrib.auth,
+            expect_errors=True
+        )
         assert res.status_code == 403
         assert res.json['errors'][0]['detail'] == exceptions.PermissionDenied.default_detail
 
@@ -1045,8 +1018,10 @@ class TestWikiCommentDetailView(CommentDetailMixin):
         project = ProjectFactory(is_public=True, comment_level='public')
         test_wiki = NodeWikiFactory(node=project, user=user)
         comment = CommentFactory(
-            node=project, target=Guid.load(
-                test_wiki._id), user=non_contrib)
+            node=project,
+            target=Guid.load(test_wiki._id),
+            user=non_contrib
+        )
         url = '/{}comments/{}/'.format(API_BASE, comment._id)
         res = app.delete_json_api(url, auth=non_contrib.auth)
         assert res.status_code == 204

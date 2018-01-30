@@ -29,8 +29,8 @@ class TestGuidDetail:
         # test_redirect_to_node_view
         url = '/{}guids/{}/'.format(API_BASE, project._id)
         res = app.get(url, auth=user.auth)
-        redirect_url = '{}{}nodes/{}/'.format(API_DOMAIN,
-                                              API_BASE, project._id)
+        redirect_url = '{}{}nodes/{}/'.format(
+            API_DOMAIN, API_BASE, project._id)
         assert res.status_code == 302
         assert res.location == redirect_url
 
@@ -55,16 +55,15 @@ class TestGuidDetail:
         # test_redirect_to_file_view
         test_file = OsfStorageFile.create(
             node=ProjectFactory(),
-            path='/test',
-            name='test',
+            path='/test', name='test',
             materialized_path='/test',
         )
         test_file.save()
         guid = test_file.get_guid(create=True)
         url = '/{}guids/{}/'.format(API_BASE, guid._id)
         res = app.get(url, auth=user.auth)
-        redirect_url = '{}{}files/{}/'.format(API_DOMAIN,
-                                              API_BASE, test_file._id)
+        redirect_url = '{}{}files/{}/'.format(
+            API_DOMAIN, API_BASE, test_file._id)
         assert res.status_code == 302
         assert res.location == redirect_url
 

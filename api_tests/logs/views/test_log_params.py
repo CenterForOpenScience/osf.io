@@ -37,8 +37,8 @@ class TestLogContributors(LogsTestCase):
         project.add_unregistered_contributor(
             'Robert Jackson',
             'robert@gmail.com',
-            auth=Auth(user_one),
-            save=True)
+            auth=Auth(user_one), save=True
+        )
         relevant_log = project.logs.latest()
         url = '/{}logs/{}/'.format(API_BASE, relevant_log._id)
         res = app.get(url, auth=user_one.auth)

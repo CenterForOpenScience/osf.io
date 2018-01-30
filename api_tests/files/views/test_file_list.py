@@ -71,14 +71,8 @@ class TestFileFiltering:
             node, user, filename='file_four')
 
     def test_get_all_files(
-            self,
-            app,
-            user,
-            node,
-            file_one,
-            file_two,
-            file_three,
-            file_four):
+            self, app, user, node
+    ):
         res = app.get(
             '/{}nodes/{}/files/osfstorage/'.format(API_BASE, node._id),
             auth=user.auth
@@ -87,14 +81,10 @@ class TestFileFiltering:
         assert len(data) == 4
 
     def test_filter_on_single_tag(
-            self,
-            app,
-            user,
-            node,
-            file_one,
-            file_two,
-            file_three,
-            file_four):
+            self, app, user, node,
+            file_one, file_two,
+            file_three, file_four
+    ):
         file_one.add_tag('new', Auth(user))
         file_two.add_tag('new', Auth(user))
         file_three.add_tag('news', Auth(user))
@@ -141,14 +131,8 @@ class TestFileFiltering:
         assert len(res.json.get('data')) == 1
 
     def test_filtering_on_multiple_tags(
-            self,
-            app,
-            user,
-            node,
-            file_one,
-            file_two,
-            file_three,
-            file_four):
+            self, app, user, node, file_one
+    ):
         # test_filtering_on_multiple_tags_one_match
         file_one.add_tag('cat', Auth(user))
 
@@ -165,14 +149,8 @@ class TestFileFiltering:
         assert len(res.json.get('data')) == 1
 
     def test_filtering_by_tags_returns_distinct(
-            self,
-            app,
-            user,
-            node,
-            file_one,
-            file_two,
-            file_three,
-            file_four):
+            self, app, user, node, file_one
+    ):
         # regression test for returning multiple of the same file
         file_one.add_tag('cat', Auth(user))
         file_one.add_tag('cAt', Auth(user))
