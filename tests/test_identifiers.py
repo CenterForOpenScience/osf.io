@@ -245,8 +245,8 @@ class TestIdentifierViews(OsfTestCase):
         assert_equal(res.status_code, 201)
 
     @responses.activate
-    @mock.patch('settings.EZID_USERNAME', 'testfortravisnotreal')
-    @mock.patch('settings.EZID_PASSWORD', 'testfortravisnotreal')
+    @mock.patch('website.settings.EZID_USERNAME', 'testfortravisnotreal')
+    @mock.patch('website.settings.EZID_PASSWORD', 'testfortravisnotreal')
     def test_create_identifiers_exists(self):
         identifier = self.node._id
         doi = settings.EZID_FORMAT.format(namespace=settings.DOI_NAMESPACE, guid=identifier)
