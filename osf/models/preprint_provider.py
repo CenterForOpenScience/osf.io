@@ -113,9 +113,9 @@ class PreprintProvider(ObjectIDMixin, ReviewProviderMixin, DirtyFieldsMixin, Bas
         path = '/preprint_providers/{}/'.format(self._id)
         return api_v2_url(path)
 
-    def save(self):
+    def save(self, *args, **kwargs):
         dirty_fields = self.get_dirty_fields()
-        old_id = dirty_fields['_id']
+        old_id = dirty_fields.get('_id', None)
         if old_id:
             for permission_type in GROUPS.keys():
                 group_name = GROUP_FORMAT.format(provider_id=old_id, group=permission_type)
@@ -126,7 +126,7 @@ class PreprintProvider(ObjectIDMixin, ReviewProviderMixin, DirtyFieldsMixin, Bas
                 except Group.DoesNotExist:
                     pass
 
-        return super(PreprintProvider, self).save()
+        return super(PreprintProvider, self).save(*args, **kwargs)
 
 def rules_to_subjects(rules):
     if not rules:
