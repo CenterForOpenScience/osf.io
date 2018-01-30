@@ -94,7 +94,7 @@ def request_identifiers_from_ezid(target_object):
 
         client = get_ezid_client()
         already_exists = False
-        new = True
+        only_doi = True
         try:
             resp = client.create_identifier(doi, metadata)
         except HTTPError as error:
@@ -102,13 +102,13 @@ def request_identifiers_from_ezid(target_object):
             if 'identifier already exists' not in error.message.lower():
                 raise
             resp = client.get_identifier(doi)
-            new = False
-        if new:
+            only_doi = False
+        if only_doi:
             resp = {'success': resp['success'].split('|')[0]}
         return {
             'response': resp,
             'already_exists': already_exists,
-            'new': new
+            'only_doi': only_doi
         }
 
 
@@ -149,11 +149,11 @@ def get_or_create_identifiers(target_object):
 
         resp = response_dict['response']
         exists = response_dict['already_exists']
-        new = response_dict['new']
+        only_doi = response_dict['only_doi']
         if exists:
             doi = resp['success']
             suffix = doi.strip(settings.DOI_NAMESPACE)
-            if not new:
+            if not only_doi:
                 return {
                     'doi': doi.replace('doi:', ''),
                     'ark': '{0}{1}'.format(settings.ARK_NAMESPACE.replace('ark:', ''), suffix),
