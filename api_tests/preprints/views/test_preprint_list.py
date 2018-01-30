@@ -12,7 +12,6 @@ from api_tests.preprints.views.test_preprint_list_mixin import (
     PreprintIsValidListMixin,
 )
 from api_tests.reviews.mixins.filter_mixins import ReviewableFilterMixin
-from framework.auth.core import Auth
 from osf.models import PreprintService, Node
 from osf.utils.workflows import DefaultStates
 from osf_tests.factories import (

@@ -2,7 +2,6 @@ import copy
 import mock
 import pytest
 
-from osf.models import ApiOAuth2PersonalToken
 from osf_tests.factories import (
     ApiOAuth2PersonalTokenFactory,
     AuthUserFactory,
@@ -88,11 +87,7 @@ class TestTokenList:
                 data_sample['data']['attributes']['token_id'])
 
     def test_create_returns_token_id(
-            self,
-            app,
-            url_token_list,
-            data_sample,
-            user_one):
+            self, app, url_token_list, data_sample, user_one):
         res = app.post_json_api(
             url_token_list,
             data_sample,
@@ -113,12 +108,7 @@ class TestTokenList:
         assert res.json['data']['attributes']['name'] == cleaned_text
 
     def test_created_tokens_show_up_in_api_list(
-            self,
-            app,
-            url_token_list,
-            data_sample,
-            user_one,
-            tokens_user_one):
+            self, app, url_token_list, data_sample, user_one, tokens_user_one):
         res = app.post_json_api(
             url_token_list,
             data_sample,
@@ -133,27 +123,25 @@ class TestTokenList:
         assert res.status_code == 401
 
     def test_cannot_create_admin_token(
-            self,
-            app,
+            self, app, url_token_list, data_sample, user_one):
+        data_sample['data']['attributes']['scopes'] = 'osf.admin'
+        res = app.post_json_api(
             url_token_list,
             data_sample,
-            user_one):
-        data_sample['data']['attributes']['scopes'] = 'osf.admin'
-        res = app.post_json_api(url_token_list,
-                                data_sample,
-                                auth=user_one.auth,
-                                expect_errors=True
-                                )
+            auth=user_one.auth,
+            expect_errors=True
+        )
         assert res.status_code == 400
         assert res.json['errors'][0]['detail'] == 'User requested invalid scope'
 
     def test_cannot_create_usercreate_token(
             self, app, url_token_list, data_sample, user_one):
         data_sample['data']['attributes']['scopes'] = 'osf.users.create'
-        res = app.post_json_api(url_token_list,
-                                data_sample,
-                                auth=user_one.auth,
-                                expect_errors=True
-                                )
+        res = app.post_json_api(
+            url_token_list,
+            data_sample,
+            auth=user_one.auth,
+            expect_errors=True
+        )
         assert res.status_code == 400
         assert res.json['errors'][0]['detail'] == 'User requested invalid scope'

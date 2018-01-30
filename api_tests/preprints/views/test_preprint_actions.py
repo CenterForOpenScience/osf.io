@@ -23,7 +23,8 @@ class TestPreprintActionFilters(ReviewActionFilterMixin):
         if request.param:
             user.groups.add(
                 GroupHelper(
-                    preprint.provider).get_group('moderator'))
+                    preprint.provider
+                ).get_group('moderator'))
         else:
             preprint.node.add_contributor(
                 user,

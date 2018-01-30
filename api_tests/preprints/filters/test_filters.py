@@ -53,21 +53,23 @@ class PreprintsListFilteringMixin(object):
 
     @pytest.fixture()
     def preprint_one(self, user, project_one, provider_one, subject_one):
-        preprint_one = PreprintFactory(creator=user,
-                                       project=project_one,
-                                       provider=provider_one,
-                                       subjects=[[subject_one._id]])
+        preprint_one = PreprintFactory(
+            creator=user,
+            project=project_one,
+            provider=provider_one,
+            subjects=[[subject_one._id]])
         preprint_one.original_publication_date = '2013-12-25 10:09:08.070605+00:00'
         preprint_one.save()
         return preprint_one
 
     @pytest.fixture()
     def preprint_two(self, user, project_two, provider_two, subject_two):
-        preprint_two = PreprintFactory(creator=user,
-                                       project=project_two,
-                                       filename='howto_reason.txt',
-                                       provider=provider_two,
-                                       subjects=[[subject_two._id]])
+        preprint_two = PreprintFactory(
+            creator=user,
+            project=project_two,
+            filename='howto_reason.txt',
+            provider=provider_two,
+            subjects=[[subject_two._id]])
         preprint_two.created = '2013-12-11 10:09:08.070605+00:00'
         preprint_two.date_published = '2013-12-11 10:09:08.070605+00:00'
         preprint_two.original_publication_date = '2013-12-11 10:09:08.070605+00:00'
@@ -76,18 +78,14 @@ class PreprintsListFilteringMixin(object):
 
     @pytest.fixture()
     def preprint_three(
-            self,
-            user,
-            project_three,
-            provider_three,
-            subject_one,
-            subject_two):
-        preprint_three = PreprintFactory(creator=user,
-                                         project=project_three,
-                                         filename='darn_reason.txt',
-                                         provider=provider_three,
-                                         subjects=[[subject_one._id],
-                                                   [subject_two._id]])
+            self, user, project_three, provider_three,
+            subject_one, subject_two):
+        preprint_three = PreprintFactory(
+            creator=user,
+            project=project_three,
+            filename='darn_reason.txt',
+            provider=provider_three,
+            subjects=[[subject_one._id], [subject_two._id]])
         preprint_three.created = '2013-12-11 10:09:08.070605+00:00'
         preprint_three.date_published = '2013-12-11 10:09:08.070605+00:00'
         preprint_three.original_publication_date = '2013-12-11 10:09:08.070605+00:00'
@@ -203,15 +201,11 @@ class PreprintsListFilteringMixin(object):
     # This test could hypothetically fail if the time between fixture
     # creations splits a day (e.g., midnight)
     def test_date_modified_filter_equals_returns_multiple(
-            self,
-            app,
-            user,
-            preprint_one,
-            preprint_two,
-            preprint_three,
-            date_modified_url):
-        expected = set(
-            [preprint_one._id, preprint_two._id, preprint_three._id])
+            self, app, user, preprint_one, preprint_two,
+            preprint_three, date_modified_url):
+        expected = set([preprint_one._id,
+                        preprint_two._id,
+                        preprint_three._id])
         res = app.get(
             '{}{}'.format(
                 date_modified_url,
@@ -301,45 +295,34 @@ class PreprintsListFilteringMixin(object):
         assert expected == actual
 
     def test_multiple_filters_returns_one(
-            self,
-            app,
-            user,
-            preprint_two,
-            is_published_and_modified_url):
+            self, app, user, preprint_two, is_published_and_modified_url):
         expected = set([preprint_two._id])
-        res = app.get(is_published_and_modified_url,
-                      auth=user.auth
-                      )
+        res = app.get(
+            is_published_and_modified_url,
+            auth=user.auth
+        )
         actual = set([preprint['id'] for preprint in res.json['data']])
         assert expected == actual
 
     def test_subject_filter_using_id(
-            self,
-            app,
-            user,
-            subject_one,
-            preprint_one,
-            preprint_three,
+            self, app, user, subject_one, preprint_one, preprint_three,
             has_subject):
         expected = set([preprint_one._id, preprint_three._id])
-        res = app.get('{}{}'.format(has_subject, subject_one._id),
-                      auth=user.auth
-                      )
+        res = app.get(
+            '{}{}'.format(has_subject, subject_one._id),
+            auth=user.auth
+        )
         actual = set([preprint['id'] for preprint in res.json['data']])
         assert expected == actual
 
     def test_subject_filter_using_text(
-            self,
-            app,
-            user,
-            subject_one,
-            preprint_one,
-            preprint_three,
-            has_subject):
+            self, app, user, subject_one, preprint_one,
+            preprint_three, has_subject):
         expected = set([preprint_one._id, preprint_three._id])
-        res = app.get('{}{}'.format(has_subject, subject_one.text),
-                      auth=user.auth
-                      )
+        res = app.get(
+            '{}{}'.format(has_subject, subject_one.text),
+            auth=user.auth
+        )
         actual = set([preprint['id'] for preprint in res.json['data']])
         assert expected == actual
 
@@ -350,13 +333,8 @@ class PreprintsListFilteringMixin(object):
         assert len(res.json['data']) == 0
 
     def test_node_is_public_filter(
-            self,
-            app,
-            user,
-            preprint_one,
-            preprint_two,
-            preprint_three,
-            node_is_public_url):
+            self, app, user, preprint_one, preprint_two,
+            preprint_three, node_is_public_url):
         preprint_one.node.is_public = False
         preprint_one.node.save()
         preprint_two.node.is_public = True
@@ -386,13 +364,8 @@ class PreprintsListFilteringMixin(object):
 
     @pytest.mark.parametrize('group_name', ['admin', 'moderator'])
     def test_permissions(
-            self,
-            app,
-            url,
-            preprint_one,
-            preprint_two,
-            preprint_three,
-            group_name):
+            self, app, url, preprint_one, preprint_two,
+            preprint_three, group_name):
         another_user = AuthUserFactory()
         preprints = (preprint_one, preprint_two, preprint_three)
 

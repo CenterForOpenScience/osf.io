@@ -2,8 +2,6 @@ import pytest
 
 from tests.json_api_test_app import JSONAPITestApp
 from api.base.settings.defaults import API_BASE
-from api_tests import utils as api_utils
-from tests.base import ApiTestCase
 from osf_tests.factories import (
     AuthUserFactory,
     ProjectFactory,

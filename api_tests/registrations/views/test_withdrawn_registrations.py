@@ -4,7 +4,6 @@ from urlparse import urlparse
 from api_tests.nodes.views.test_node_contributors_list import NodeCRUDTestCase
 from api.base.settings.defaults import API_BASE
 from framework.auth.core import Auth
-from tests.base import fake
 from osf_tests.factories import (
     ProjectFactory,
     CommentFactory,
@@ -56,13 +55,7 @@ class TestWithdrawnRegistrations(NodeCRUDTestCase):
         assert res.status_code == 200
 
     def test_cannot_errors(
-            self,
-            app,
-            user,
-            project_public,
-            registration,
-            withdrawn_registration,
-            pointer_public):
+            self, app, user, registration, pointer_public):
 
         #   test_cannot_access_withdrawn_children
         url = '/{}registrations/{}/children/'.format(
@@ -106,28 +99,16 @@ class TestWithdrawnRegistrations(NodeCRUDTestCase):
         assert res.status_code == 403
 
     def test_cannot_access_withdrawn_comments(
-            self,
-            app,
-            user,
-            project_public,
-            pointer_public,
-            registration,
-            withdrawn_registration):
+            self, app, user, registration):
         project_public = ProjectFactory(is_public=True, creator=user)
-        comment_public = CommentFactory(node=project_public, user=user)
+        CommentFactory(node=project_public, user=user)
         url = '/{}registrations/{}/comments/'.format(
             API_BASE, registration._id)
         res = app.get(url, auth=user.auth, expect_errors=True)
         assert res.status_code == 403
 
     def test_cannot_access_withdrawn_node_logs(
-            self,
-            app,
-            user,
-            project_public,
-            pointer_public,
-            registration,
-            withdrawn_registration):
+            self, app, user,registration):
         project_public = ProjectFactory(is_public=True, creator=user)
         url = '/{}registrations/{}/logs/'.format(API_BASE, registration._id)
         res = app.get(url, auth=user.auth, expect_errors=True)

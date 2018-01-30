@@ -37,12 +37,8 @@ class TestTaxonomy:
         return res_subject_list.json['data']
 
     def test_taxonomy_success(
-            self,
-            subject,
-            subject_child_one,
-            subject_child_two,
-            subjects,
-            res_subject_list):
+            self, subject, subject_child_one, subject_child_two,
+            subjects, res_subject_list):
         # make sure there are subjects to filter through
         assert len(subjects) > 0
         assert res_subject_list.status_code == 200
@@ -65,12 +61,8 @@ class TestTaxonomy:
                 assert subject.parent._id in parents_ids
 
     def test_taxonomy_filter_top_level(
-            self,
-            app,
-            subject,
-            subject_child_one,
-            subject_child_two,
-            url_subject_list):
+            self, app, subject, subject_child_one,
+            subject_child_two, url_subject_list):
         top_level_subjects = Subject.objects.filter(parent__isnull=True)
         top_level_url = '{}?filter[parents]=null'.format(url_subject_list)
 

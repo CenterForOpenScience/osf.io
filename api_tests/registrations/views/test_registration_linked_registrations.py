@@ -34,19 +34,17 @@ class LinkedRegistrationsTestCase(ApiTestCase):
             creator=self.admin_contributor,
             is_public=True)
         public_node.add_contributor(
-            self.rw_contributor, auth=Auth(
-                self.admin_contributor))
+            self.rw_contributor, auth=Auth(self.admin_contributor))
         public_node.add_contributor(
             self.read_contributor,
             permissions=['read'],
-            auth=Auth(
-                self.admin_contributor))
+            auth=Auth(self.admin_contributor))
         public_node.add_pointer(
-            self.public_linked_registration, auth=Auth(
-                self.admin_contributor))
+            self.public_linked_registration,
+            auth=Auth(self.admin_contributor))
         public_node.add_pointer(
-            self.private_linked_registration, auth=Auth(
-                self.rw_contributor))
+            self.private_linked_registration,
+            auth=Auth(self.rw_contributor))
         public_node.save()
         self.public_registration = public_node.register_node(
             get_default_metaschema(), Auth(self.admin_contributor), '', None)
@@ -55,19 +53,18 @@ class LinkedRegistrationsTestCase(ApiTestCase):
 
         private_node = NodeFactory(creator=self.admin_contributor)
         private_node.add_contributor(
-            self.rw_contributor, auth=Auth(
-                self.admin_contributor))
+            self.rw_contributor,
+            auth=Auth(self.admin_contributor))
         private_node.add_contributor(
             self.read_contributor,
             permissions=['read'],
-            auth=Auth(
-                self.admin_contributor))
+            auth=Auth(self.admin_contributor))
         private_node.add_pointer(
-            self.public_linked_registration, auth=Auth(
-                self.admin_contributor))
+            self.public_linked_registration,
+            auth=Auth(self.admin_contributor))
         private_node.add_pointer(
-            self.private_linked_registration, auth=Auth(
-                self.rw_contributor))
+            self.private_linked_registration,
+            auth=Auth(self.rw_contributor))
         private_node.save()
         self.private_registration = private_node.register_node(
             get_default_metaschema(), Auth(self.admin_contributor), '', None)
@@ -83,10 +80,7 @@ class TestRegistrationLinkedRegistrationsList(LinkedRegistrationsTestCase):
         super(TestRegistrationLinkedRegistrationsList, self).setUp()
 
     def make_request(
-            self,
-            registration_id=None,
-            auth=None,
-            expect_errors=False):
+            self, registration_id=None, auth=None, expect_errors=False):
         url = '/{}registrations/{}/linked_registrations/'.format(
             API_BASE, registration_id)
         if auth:
@@ -160,8 +154,9 @@ class TestRegistrationLinkedRegistrationsList(LinkedRegistrationsTestCase):
             expect_errors=True
         )
         assert_equal(res.status_code, 401)
-        assert_equal(res.json['errors'][0]['detail'],
-                     'Authentication credentials were not provided.')
+        assert_equal(
+            res.json['errors'][0]['detail'],
+            'Authentication credentials were not provided.')
 
 
 class TestRegistrationsLinkedRegistrationsRelationship(
@@ -173,10 +168,7 @@ class TestRegistrationsLinkedRegistrationsRelationship(
             API_BASE, self.public_registration._id)
 
     def make_request(
-            self,
-            registration_id=None,
-            auth=None,
-            expect_errors=False):
+            self, registration_id=None, auth=None, expect_errors=False):
         url = '/{}registrations/{}/relationships/linked_registrations/'.format(
             API_BASE, registration_id)
         if auth:
@@ -256,24 +248,21 @@ class TestRegistrationsLinkedRegistrationsRelationship(
 
     def test_cannot_create_linked_registrations_relationship(self):
         res = self.app.post_json_api(
-            self.public_url,
-            {},
+            self.public_url, {},
             auth=self.admin_contributor.auth,
             expect_errors=True)
         assert_equal(res.status_code, 405)
 
     def test_cannot_update_linked_registrations_relationship(self):
         res = self.app.put_json_api(
-            self.public_url,
-            {},
+            self.public_url, {},
             auth=self.admin_contributor.auth,
             expect_errors=True)
         assert_equal(res.status_code, 405)
 
     def test_cannot_delete_linked_registrations_relationship(self):
         res = self.app.delete_json_api(
-            self.public_url,
-            {},
+            self.public_url, {},
             auth=self.admin_contributor.auth,
             expect_errors=True)
         assert_equal(res.status_code, 405)

@@ -4,7 +4,6 @@ import pytest
 import urlparse
 
 from django.db import connection, transaction
-from django.test import TransactionTestCase
 from django.test.utils import CaptureQueriesContext
 
 from osf.models import QuickFilesNode
@@ -199,17 +198,13 @@ class TestUserRoutesNodeRoutes:
         return find_bookmark_collection(user_one)
 
     def test_get_200_responses(
-            self,
-            app,
-            user_one,
-            user_two,
+            self, app, user_one, user_two,
             project_public_user_one,
             project_public_user_two,
             project_private_user_one,
             project_private_user_two,
             project_deleted_user_one,
-            folder,
-            folder_deleted,
+            folder, folder_deleted,
             bookmark_collection):
 
         #   test_get_200_path_users_me_userone_logged_in
@@ -491,11 +486,7 @@ class TestUserUpdate:
         }
 
     def test_select_for_update(
-            self,
-            app,
-            user_one,
-            url_user_one,
-            data_new_user_one):
+            self, app, user_one, url_user_one, data_new_user_one):
         with transaction.atomic(), CaptureQueriesContext(connection) as ctx:
             res = app.patch_json_api(url_user_one, {
                 'data': {
@@ -516,11 +507,7 @@ class TestUserUpdate:
 
     @mock.patch('osf.utils.requests.settings.SELECT_FOR_UPDATE_ENABLED', False)
     def test_select_for_update_disabled(
-            self,
-            app,
-            user_one,
-            url_user_one,
-            data_new_user_one):
+            self, app, user_one, url_user_one, data_new_user_one):
         with transaction.atomic(), CaptureQueriesContext(connection) as ctx:
             res = app.patch_json_api(url_user_one, {
                 'data': {
@@ -540,17 +527,10 @@ class TestUserUpdate:
                        for query in ctx.captured_queries)
 
     def test_update_patch_errors(
-            self,
-            app,
-            user_one,
-            user_two,
-            data_new_user_one,
-            data_incorrect_type,
-            data_incorrect_id,
-            data_missing_type,
-            data_missing_id,
-            data_blank_but_not_empty_full_name,
-            url_user_one):
+            self, app, user_one, user_two, data_new_user_one,
+            data_incorrect_type, data_incorrect_id,
+            data_missing_type, data_missing_id,
+            data_blank_but_not_empty_full_name, url_user_one):
 
         #   test_update_user_blank_but_not_empty_full_name
         res = app.put_json_api(
@@ -637,22 +617,28 @@ class TestUserUpdate:
         assert res.status_code == 400
 
     #   test_patch_fields_not_nested
-        res = app.put_json_api(url_user_one,
-                               {'data': {'id': user_one._id,
-                                         'type': 'users',
-                                         'full_name': 'New name'}},
-                               auth=user_one.auth,
-                               expect_errors=True)
+        res = app.put_json_api(
+            url_user_one,
+            {'data': {
+                'id': user_one._id,
+                'type': 'users',
+                'full_name': 'New name'}
+            },
+            auth=user_one.auth,
+            expect_errors=True)
         assert res.status_code == 400
         assert res.json['errors'][0]['detail'] == 'Request must include /data/attributes.'
 
     #   test_partial_patch_fields_not_nested
-        res = app.patch_json_api(url_user_one,
-                                 {'data': {'id': user_one._id,
-                                           'type': 'users',
-                                           'full_name': 'New name'}},
-                                 auth=user_one.auth,
-                                 expect_errors=True)
+        res = app.patch_json_api(
+            url_user_one,
+            {'data': {
+                'id': user_one._id,
+                'type': 'users',
+                'full_name': 'New name'}
+            },
+            auth=user_one.auth,
+            expect_errors=True)
         assert res.status_code == 400
 
     #   test_patch_user_logged_out
@@ -843,11 +829,7 @@ class TestUserUpdate:
         assert user_one.social['github'] == 'even_newer_github'
 
     def test_put_user_logged_in(
-            self,
-            app,
-            user_one,
-            data_new_user_one,
-            url_user_one):
+            self, app, user_one, data_new_user_one, url_user_one):
         # Logged in user updates their user information via put
         res = app.put_json_api(
             url_user_one,

@@ -10,7 +10,6 @@ from osf_tests.factories import (
 )
 from tests.utils import make_drf_request_with_version, mock_archive
 from website.project.metadata.schemas import LATEST_SCHEMA_VERSION
-from website.search import search
 
 
 @pytest.mark.django_db

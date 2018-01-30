@@ -27,14 +27,12 @@ class PreprintCitationsMixin(object):
 
     def test_preprint_citations_are_read_only(self):
         post_res = self.app.post_json_api(
-            self.published_preprint_url,
-            {},
+            self.published_preprint_url, {},
             auth=self.admin_contributor.auth,
             expect_errors=True)
         assert_equal(post_res.status_code, 405)
         put_res = self.app.put_json_api(
-            self.published_preprint_url,
-            {},
+            self.published_preprint_url, {},
             auth=self.admin_contributor.auth,
             expect_errors=True)
         assert_equal(put_res.status_code, 405)
@@ -66,8 +64,7 @@ class TestPreprintCitations(PreprintCitationsMixin, ApiTestCase):
         assert_equal(res.status_code, 200)
         assert_equal(
             res.json['data']['links']['self'],
-            display_absolute_url(
-                self.published_preprint))
+            display_absolute_url(self.published_preprint))
 
 
 class TestPreprintCitationContent(PreprintCitationsMixin, ApiTestCase):

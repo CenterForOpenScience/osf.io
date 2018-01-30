@@ -63,12 +63,7 @@ class TestUserInstititutionRelationship:
         assert institution_two._id in ids
 
     def test_delete_one(
-            self,
-            app,
-            user,
-            institution_one,
-            institution_two,
-            url):
+            self, app, user, institution_one, institution_two, url):
         res = app.delete_json_api(
             url,
             {'data': [
@@ -86,12 +81,7 @@ class TestUserInstititutionRelationship:
         assert institution_two._id in ids
 
     def test_delete_multiple(
-            self,
-            app,
-            user,
-            institution_one,
-            institution_two,
-            url):
+            self, app, user, institution_one, institution_two, url):
         res = app.delete_json_api(
             url,
             {'data': [
@@ -110,12 +100,7 @@ class TestUserInstititutionRelationship:
         assert institution_two._id not in ids
 
     def test_delete_one_not_existing(
-            self,
-            app,
-            user,
-            institution_one,
-            institution_two,
-            url):
+            self, app, user, institution_one, institution_two, url):
         res = app.delete_json_api(
             url,
             {'data': [
@@ -133,13 +118,7 @@ class TestUserInstititutionRelationship:
         assert institution_two._id in ids
 
     def test_institution_relationship_errors(
-            self,
-            app,
-            user,
-            user_two,
-            institution_one,
-            institution_two,
-            url):
+            self, app, user, user_two, institution_one, institution_two, url):
 
         #   test_type_mistyped
         res = app.delete_json_api(

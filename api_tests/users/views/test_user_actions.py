@@ -21,10 +21,8 @@ class TestReviewActionFilters(ReviewActionFilterMixin):
     @pytest.fixture()
     def expected_actions(self, all_actions, allowed_providers):
         actions = super(
-            TestReviewActionFilters,
-            self).expected_actions(
-            all_actions,
-            allowed_providers)
+            TestReviewActionFilters, self
+        ).expected_actions(all_actions, allowed_providers)
         node = actions[0].target.node
         node.is_public = False
         node.save()
@@ -77,8 +75,7 @@ class TestReviewActionCreateRelated(object):
             node__creator=node_admin,
             is_published=False)
         preprint.node.add_contributor(
-            node_admin, permissions=[
-                osf_permissions.ADMIN])
+            node_admin, permissions=[osf_permissions.ADMIN])
         return preprint
 
     @pytest.fixture()
@@ -89,13 +86,7 @@ class TestReviewActionCreateRelated(object):
 
     @mock.patch('website.preprints.tasks.get_and_set_preprint_identifiers.si')
     def test_create_permissions(
-            self,
-            mock_ezid,
-            app,
-            url,
-            preprint,
-            node_admin,
-            moderator):
+            self, mock_ezid, app, url, preprint, node_admin, moderator):
         assert preprint.machine_state == 'initial'
 
         submit_payload = self.create_payload(preprint._id, trigger='submit')
@@ -107,8 +98,7 @@ class TestReviewActionCreateRelated(object):
         # A random user can't submit
         some_rando = AuthUserFactory()
         res = app.post_json_api(
-            url,
-            submit_payload,
+            url, submit_payload,
             auth=some_rando.auth,
             expect_errors=True)
         assert res.status_code == 403
@@ -129,8 +119,7 @@ class TestReviewActionCreateRelated(object):
 
         # A random user can't accept
         res = app.post_json_api(
-            url,
-            accept_payload,
+            url, accept_payload,
             auth=some_rando.auth,
             expect_errors=True)
         assert res.status_code == 403
@@ -140,16 +129,14 @@ class TestReviewActionCreateRelated(object):
         another_moderator.groups.add(GroupHelper(
             PreprintProviderFactory()).get_group('moderator'))
         res = app.post_json_api(
-            url,
-            accept_payload,
+            url, accept_payload,
             auth=another_moderator.auth,
             expect_errors=True)
         assert res.status_code == 403
 
         # Node admin can't accept
         res = app.post_json_api(
-            url,
-            accept_payload,
+            url, accept_payload,
             auth=node_admin.auth,
             expect_errors=True)
         assert res.status_code == 403
@@ -175,8 +162,7 @@ class TestReviewActionCreateRelated(object):
         provider.save()
         submit_payload = self.create_payload(preprint._id, trigger='submit')
         res = app.post_json_api(
-            url,
-            submit_payload,
+            url, submit_payload,
             auth=node_admin.auth,
             expect_errors=True)
         assert res.status_code == 409
@@ -218,8 +204,7 @@ class TestReviewActionCreateRelated(object):
         bad_payload = self.create_payload(
             preprint._id, trigger='badtriggerbad')
         res = app.post_json_api(
-            url,
-            bad_payload,
+            url, bad_payload,
             auth=moderator.auth,
             expect_errors=True)
         assert res.status_code == 400
@@ -227,21 +212,14 @@ class TestReviewActionCreateRelated(object):
         # test target is required
         bad_payload = self.create_payload(trigger='accept')
         res = app.post_json_api(
-            url,
-            bad_payload,
+            url, bad_payload,
             auth=moderator.auth,
             expect_errors=True)
         assert res.status_code == 400
 
     @mock.patch('website.preprints.tasks.get_and_set_preprint_identifiers.si')
     def test_valid_transitions(
-            self,
-            mock_ezid,
-            app,
-            url,
-            preprint,
-            provider,
-            moderator):
+            self, mock_ezid, app, url, preprint, provider, moderator):
         valid_transitions = {
             'post-moderation': [
                 ('accepted', 'edit_comment', 'accepted'),

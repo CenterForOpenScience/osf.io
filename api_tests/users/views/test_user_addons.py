@@ -58,18 +58,24 @@ class UserAddonListMixin(object):
         assert_equal(addon_data, [])
 
     def test_settings_list_raises_error_if_PUT(self):
-        res = self.app.put_json_api(self.setting_list_url, {
-            'id': self.short_name,
-            'type': 'user-addons'
-        }, auth=self.user.auth,
+        res = self.app.put_json_api(
+            self.setting_list_url,
+            {
+                'id': self.short_name,
+                'type': 'user-addons'
+            },
+            auth=self.user.auth,
             expect_errors=True)
         assert_equal(res.status_code, 405)
 
     def test_settings_list_raises_error_if_PATCH(self):
-        res = self.app.patch_json_api(self.setting_list_url, {
-            'id': self.short_name,
-            'type': 'user-addons'
-        }, auth=self.user.auth,
+        res = self.app.patch_json_api(
+            self.setting_list_url,
+            {
+                'id': self.short_name,
+                'type': 'user-addons'
+            },
+            auth=self.user.auth,
             expect_errors=True)
         assert_equal(res.status_code, 405)
 
@@ -113,7 +119,9 @@ class UserAddonDetailMixin(object):
             addon_data = res.json['data']
             assert_true(addon_data['attributes']['user_has_auth'])
             assert_in(
-                self.node._id, addon_data['links']['accounts'][self.account_id]['nodes_connected'][0])
+                self.node._id,
+                addon_data['links']['accounts'][self.account_id]['nodes_connected'][0]
+            )
         if wrong_type:
             assert_equal(res.status_code, 404)
 

@@ -34,11 +34,9 @@ def non_contributor():
 def public_project(user, read_only_user, read_write_user):
     public_project = ProjectFactory(is_public=True, creator=user)
     public_project.add_contributor(
-        read_only_user, permissions=[
-            permissions.READ])
+        read_only_user, permissions=[permissions.READ])
     public_project.add_contributor(
-        read_write_user, permissions=[
-            permissions.WRITE])
+        read_write_user, permissions=[permissions.WRITE])
     public_project.save()
     return public_project
 
@@ -97,13 +95,8 @@ class TestViewOnlyLinksNodes:
             API_BASE, view_only_link._id)
 
     def test_view_only_links_nodes(
-            self,
-            app,
-            user,
-            read_only_user,
-            read_write_user,
-            non_contributor,
-            url):
+            self, app, user, read_only_user, read_write_user,
+            non_contributor, url):
 
         #   test_admin_can_view_vol_nodes_detail
         res = app.get(url, auth=user.auth)
@@ -135,14 +128,8 @@ class TestViewOnlyLinkNodesSet:
             API_BASE, view_only_link._id)
 
     def test_admin_can_set_single_node(
-            self,
-            app,
-            user,
-            public_project,
-            component_one,
-            component_one_payload,
-            view_only_link,
-            url):
+            self, app, user, public_project, component_one,
+            component_one_payload, view_only_link, url):
         res = app.post_json_api(url, component_one_payload, auth=user.auth)
         view_only_link.reload()
         assert res.status_code == 201
@@ -150,14 +137,8 @@ class TestViewOnlyLinkNodesSet:
         assert component_one in view_only_link.nodes.all()
 
     def test_admin_can_set_multiple_nodes(
-            self,
-            app,
-            user,
-            public_project,
-            component_one,
-            component_two,
-            view_only_link,
-            url):
+            self, app, user, public_project, component_one,
+            component_two, view_only_link, url):
         payload = {
             'data': [
                 {
@@ -177,13 +158,8 @@ class TestViewOnlyLinkNodesSet:
         assert component_two in view_only_link.nodes.all()
 
     def test_set_nodes_does_not_duplicate_nodes(
-            self,
-            app,
-            user,
-            public_project,
-            component_one,
-            view_only_link,
-            url):
+            self, app, user, public_project, component_one,
+            view_only_link, url):
         payload = {
             'data': [
                 {
@@ -221,8 +197,7 @@ class TestViewOnlyLinkNodesSet:
             ]
         }
         res = app.post_json_api(
-            url,
-            payload,
+            url, payload,
             auth=user.auth,
             expect_errors=True)
         assert res.status_code == 400
@@ -245,8 +220,7 @@ class TestViewOnlyLinkNodesSet:
             ]
         }
         res = app.post_json_api(
-            url,
-            payload,
+            url, payload,
             auth=user.auth,
             expect_errors=True)
         view_only_link.reload()
@@ -256,13 +230,8 @@ class TestViewOnlyLinkNodesSet:
         assert second_level_component in view_only_link.nodes.all()
 
     def test_set_node_second_level_component_with_first_level_parent(
-            self,
-            app,
-            user,
-            first_level_component,
-            second_level_component,
-            view_only_link,
-            url):
+            self, app, user, first_level_component,
+            second_level_component, view_only_link, url):
         """
         Parent Project (already associated with VOL)
             ->  First Level Component (included)
@@ -287,15 +256,8 @@ class TestViewOnlyLinkNodesSet:
         assert second_level_component in view_only_link.nodes.all()
 
     def test_view_only_link_nodes_set_errors(
-            self,
-            app,
-            user,
-            read_write_user,
-            read_only_user,
-            non_contributor,
-            component_one_payload,
-            component_one,
-            url):
+            self, app, user, read_write_user, read_only_user,
+            non_contributor, component_one_payload, component_one, url):
 
         #   test_invalid_nodes_in_payload
         payload = {
@@ -387,14 +349,8 @@ class TestViewOnlyLinkNodesUpdate:
         }
 
     def test_admin_can_update_nodes_single_node_to_add(
-            self,
-            app,
-            user,
-            url,
-            public_project,
-            component_one,
-            view_only_link,
-            update_payload):
+            self, app, user, url, public_project, component_one,
+            view_only_link, update_payload):
         res = app.put_json_api(url, update_payload, auth=user.auth)
         view_only_link.reload()
         assert res.status_code == 200
@@ -403,15 +359,8 @@ class TestViewOnlyLinkNodesUpdate:
         assert component_one in view_only_link.nodes.all()
 
     def test_admin_can_update_nodes_multiple_nodes_to_add(
-            self,
-            app,
-            user,
-            public_project,
-            component_one,
-            component_two,
-            view_only_link,
-            url,
-            update_payload):
+            self, app, user, public_project, component_one,
+            component_two, view_only_link, url, update_payload):
         update_payload['data'].append({
             'type': 'nodes',
             'id': component_two._id
@@ -425,14 +374,8 @@ class TestViewOnlyLinkNodesUpdate:
         assert component_two in view_only_link.nodes.all()
 
     def test_admin_can_update_nodes_single_node_to_remove(
-            self,
-            app,
-            user,
-            public_project,
-            component_one,
-            view_only_link,
-            update_payload,
-            url):
+            self, app, user, public_project, component_one,
+            view_only_link, update_payload, url):
         view_only_link.nodes.add(component_one)
         view_only_link.save()
         update_payload['data'].pop()
@@ -444,15 +387,8 @@ class TestViewOnlyLinkNodesUpdate:
         assert component_one not in view_only_link.nodes.all()
 
     def test_admin_can_update_nodes_multiple_nodes_to_remove(
-        self,
-        app,
-        user,
-        public_project,
-        component_one,
-        component_two,
-        view_only_link,
-        update_payload,
-        url,
+            self, app, user, public_project, component_one,
+            component_two, view_only_link, update_payload, url,
     ):
         view_only_link.nodes.add(component_one)
         view_only_link.nodes.add(component_two)
@@ -467,15 +403,8 @@ class TestViewOnlyLinkNodesUpdate:
         assert component_two not in view_only_link.nodes.all()
 
     def test_admin_can_update_nodes_single_add_single_remove(
-            self,
-            app,
-            user,
-            public_project,
-            component_one,
-            component_two,
-            view_only_link,
-            update_payload,
-            url):
+            self, app, user, public_project, component_one,
+            component_two, view_only_link, update_payload, url):
         view_only_link.nodes.add(component_two)
         view_only_link.save()
         res = app.put_json_api(url, update_payload, auth=user.auth)
@@ -487,14 +416,8 @@ class TestViewOnlyLinkNodesUpdate:
         assert component_two not in view_only_link.nodes.all()
 
     def test_admin_can_update_nodes_multiple_add_multiple_remove(
-            self,
-            app,
-            user,
-            public_project,
-            component_one,
-            component_two,
-            view_only_link,
-            url):
+            self, app, user, public_project, component_one,
+            component_two, view_only_link, url):
         view_only_link.nodes.add(component_one)
         view_only_link.nodes.add(component_two)
         view_only_link.save()
@@ -526,12 +449,8 @@ class TestViewOnlyLinkNodesUpdate:
         assert component_four in view_only_link.nodes.all()
 
     def test_update_nodes_no_changes(
-            self,
-            app,
-            user,
-            public_project,
-            view_only_link,
-            url):
+            self, app, user, public_project,
+            view_only_link, url):
         payload = {
             'data': [{
                 'type': 'nodes',
@@ -614,14 +533,8 @@ class TestViewOnlyLinkNodesUpdate:
         assert second_level_component in view_only_link.nodes.all()
 
     def test_update_node_second_level_component_with_first_level_parent(
-            self,
-            app,
-            user,
-            public_project,
-            first_level_component,
-            second_level_component,
-            view_only_link,
-            url):
+            self, app, user, public_project, first_level_component,
+            second_level_component, view_only_link, url):
         """
         Parent Project (included)
             ->  First Level Component (included)
@@ -652,16 +565,9 @@ class TestViewOnlyLinkNodesUpdate:
         assert second_level_component in view_only_link.nodes.all()
 
     def test_view_only_link_nodes_update_errors(
-            self,
-            app,
-            user,
-            read_write_user,
-            read_only_user,
-            non_contributor,
-            public_project,
-            component_one,
-            update_payload,
-            url):
+            self, app, user, read_write_user, read_only_user,
+            non_contributor, public_project, component_one,
+            update_payload, url):
 
         #   test_invalid_nodes_in_payload
         payload = {

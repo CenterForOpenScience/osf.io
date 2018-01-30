@@ -137,22 +137,10 @@ class TestSearch(ApiSearchTestCase):
         return '/{}search/'.format(API_BASE)
 
     def test_search_results(
-            self,
-            app,
-            url_search,
-            user,
-            user_one,
-            user_two,
-            institution,
-            component,
-            component_private,
-            component_public,
-            file_component,
-            file_private,
-            file_public,
-            project,
-            project_public,
-            project_private):
+            self, app, url_search, user, user_one, user_two,
+            institution, component, component_private,
+            component_public, file_component, file_private,
+            file_public, project, project_public, project_private):
 
         # test_search_no_auth
         res = app.get(url_search)
@@ -348,14 +336,8 @@ class TestSearchFiles(ApiSearchTestCase):
         return '/{}search/files/'.format(API_BASE)
 
     def test_search_files(
-            self,
-            app,
-            url_file_search,
-            user,
-            user_one,
-            file_public,
-            file_component,
-            file_private):
+            self, app, url_file_search, user, user_one,
+            file_public, file_component, file_private):
 
         # test_search_public_file_no_auth
         res = app.get(url_file_search)
@@ -420,15 +402,8 @@ class TestSearchProjects(ApiSearchTestCase):
         return '/{}search/projects/'.format(API_BASE)
 
     def test_search_projects(
-            self,
-            app,
-            url_project_search,
-            user,
-            user_one,
-            user_two,
-            project,
-            project_public,
-            project_private):
+            self, app, url_project_search, user, user_one,
+            user_two, project, project_public, project_private):
 
         # test_search_public_project_no_auth
         res = app.get(url_project_search)
@@ -568,15 +543,8 @@ class TestSearchRegistrations(ApiSearchTestCase):
             return registration_private
 
     def test_search_registrations(
-            self,
-            app,
-            url_registration_search,
-            user,
-            user_one,
-            user_two,
-            registration,
-            registration_public,
-            registration_private):
+            self, app, url_registration_search, user, user_one, user_two,
+            registration, registration_public, registration_private):
 
         # test_search_public_registration_no_auth
         res = app.get(url_registration_search)
@@ -765,11 +733,7 @@ class TestSearchInstitutions(ApiSearchTestCase):
         return '/{}search/institutions/'.format(API_BASE)
 
     def test_search_institutions(
-            self,
-            app,
-            url_institution_search,
-            user,
-            institution):
+            self, app, url_institution_search, user, institution):
 
         # test_search_institutions_no_auth
         res = app.get(url_institution_search)

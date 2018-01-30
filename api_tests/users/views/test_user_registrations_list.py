@@ -5,9 +5,7 @@ from api.base.settings.defaults import API_BASE
 from api_tests.registrations.filters.test_filters import RegistrationListFilteringMixin
 from osf_tests.factories import (
     AuthUserFactory,
-    BookmarkCollectionFactory,
     CollectionFactory,
-    NodeFactory,
     ProjectFactory,
     RegistrationFactory,
 )
@@ -110,16 +108,12 @@ class TestUserRegistrations:
             is_private=True)
 
     def test_user_registrations(
-            self,
-            app,
-            user_one,
-            user_two,
+            self, app, user_one, user_two,
             reg_project_public_user_one,
             reg_project_public_user_two,
             reg_project_private_user_one,
             reg_project_private_user_two,
-            folder,
-            folder_deleted,
+            folder, folder_deleted,
             project_deleted_user_one):
 
         #   test_authorized_in_gets_200

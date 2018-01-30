@@ -59,10 +59,7 @@ class TestNodeRelationshipNodeLinks:
 
     @pytest.fixture()
     def public_linking_node_source(
-            self,
-            contributor,
-            private_node,
-            public_node):
+            self, contributor, private_node, public_node):
         public_linking_node_source = NodeFactory(
             is_public=True, creator=contributor)
         public_linking_node_source.add_pointer(
@@ -102,18 +99,9 @@ class TestNodeRelationshipNodeLinks:
         return payload
 
     def test_node_relationship_node_links(
-            self,
-            app,
-            user,
-            url,
-            public_url,
-            linking_node,
-            private_node,
-            admin_node,
-            public_node,
-            contributor_node,
-            other_node,
-            payload):
+            self, app, user, url, public_url, linking_node,
+            private_node, admin_node, public_node,
+            contributor_node, other_node, payload):
 
         #   get_relationship_linked_nodes
         res = app.get(url, auth=user.auth)
@@ -305,11 +293,13 @@ class TestNodeRelationshipNodeLinks:
         assert res.status_code == 405
 
     #   type_mistyped
-        res = app.post_json_api(url,
-                                {'data': [{'type': 'not_linked_nodes',
-                                           'id': contributor_node._id}]},
-                                auth=user.auth,
-                                expect_errors=True)
+        res = app.post_json_api(
+            url,
+            {'data': [{
+                'type': 'not_linked_nodes',
+                'id': contributor_node._id}]},
+            auth=user.auth,
+            expect_errors=True)
 
         assert res.status_code == 405
 
@@ -387,11 +377,7 @@ class TestNodeLinkedNodes:
 
     @pytest.fixture()
     def node_source(
-            self,
-            user,
-            auth,
-            private_node_one,
-            private_node_two,
+            self, user, auth, private_node_one, private_node_two,
             public_node):
         node_source = NodeFactory(creator=user)
         node_source.add_pointer(private_node_one, auth=auth)
@@ -423,21 +409,17 @@ class TestNodeLinkedNodes:
         res = app.get(url, auth=user.auth)
 
         assert res.status_code == 200
-        nodes_returned = [linked_node['id']
-                          for linked_node in res.json['data']]
+        nodes_returned = [
+            linked_node['id']for linked_node in res.json['data']
+        ]
         assert len(nodes_returned) == len(node_ids)
 
         for node_id in node_ids:
             assert node_id in nodes_returned
 
     def test_linked_nodes_only_return_viewable_nodes(
-            self,
-            app,
-            auth,
-            private_node_one,
-            private_node_two,
-            public_node,
-            node_ids):
+            self, app, auth, private_node_one, private_node_two,
+            public_node, node_ids):
         user = AuthUserFactory()
         new_linking_node = NodeFactory(creator=user)
         private_node_one.add_contributor(user, auth=auth, save=True)
@@ -473,8 +455,9 @@ class TestNodeLinkedNodes:
             '/{}registrations/{}/linked_nodes/'.format(API_BASE, new_linking_registration._id),
             auth=user.auth
         )
-        nodes_returned = [linked_node['id']
-                          for linked_node in res.json['data']]
+        nodes_returned = [
+            linked_node['id'] for linked_node in res.json['data']
+        ]
         assert len(nodes_returned) == len(node_ids) - 1
 
         assert private_node_one._id in nodes_returned
@@ -482,21 +465,16 @@ class TestNodeLinkedNodes:
         assert private_node_two._id not in nodes_returned
 
     def test_linked_nodes_doesnt_return_deleted_nodes(
-            self,
-            app,
-            user,
-            url,
-            private_node_one,
-            private_node_two,
-            public_node,
-            node_ids):
+            self, app, user, url, private_node_one,
+            private_node_two, public_node, node_ids):
         private_node_one.is_deleted = True
         private_node_one.save()
         res = app.get(url, auth=user.auth)
 
         assert res.status_code == 200
-        nodes_returned = [linked_node['id']
-                          for linked_node in res.json['data']]
+        nodes_returned = [
+            linked_node['id'] for linked_node in res.json['data']
+        ]
         assert len(nodes_returned) == len(node_ids) - 1
 
         assert private_node_one._id not in nodes_returned

@@ -3,12 +3,10 @@ import pytest
 from api.base.settings.defaults import API_BASE
 from api_tests.preprints.filters.test_filters import PreprintsListFilteringMixin
 from api_tests.preprints.views.test_preprint_list_mixin import PreprintIsPublishedListMixin, PreprintIsValidListMixin
-from osf.models import PreprintService, Node
 from osf_tests.factories import (
     ProjectFactory,
     PreprintFactory,
     AuthUserFactory,
-    SubjectFactory,
     PreprintProviderFactory,
 )
 from website.util import permissions
@@ -44,13 +42,8 @@ class TestUserPreprints:
             creator=user_one)
 
     def test_gets(
-            self,
-            app,
-            user_one,
-            user_two,
-            preprint,
-            project_public,
-            project_private):
+            self, app, user_one, user_two, preprint,
+            project_public, project_private):
 
         #   test_authorized_in_gets_200
         url = '/{}users/{}/preprints/'.format(API_BASE, user_one._id)
@@ -176,36 +169,26 @@ class TestUserPreprintIsPublishedList(PreprintIsPublishedListMixin):
 
     @pytest.fixture()
     def preprint_unpublished(
-            self,
-            user_admin_contrib,
-            provider_one,
-            project_public,
-            subject):
-        return PreprintFactory(creator=user_admin_contrib,
-                               filename='mgla.pdf',
-                               provider=provider_one,
-                               subjects=[[subject._id]],
-                               project=project_public,
-                               is_published=False)
+            self, user_admin_contrib, provider_one,
+            project_public, subject):
+        return PreprintFactory(
+            creator=user_admin_contrib,
+            filename='mgla.pdf',
+            provider=provider_one,
+            subjects=[[subject._id]],
+            project=project_public,
+            is_published=False)
 
     def test_unpublished_visible_to_admins(
-            self,
-            app,
-            user_admin_contrib,
-            preprint_unpublished,
-            preprint_published,
-            url):
+            self, app, user_admin_contrib, preprint_unpublished,
+            preprint_published, url):
         res = app.get(url, auth=user_admin_contrib.auth)
         assert len(res.json['data']) == 2
         assert preprint_unpublished._id in [d['id'] for d in res.json['data']]
 
     def test_unpublished_invisible_to_write_contribs(
-            self,
-            app,
-            user_write_contrib,
-            preprint_unpublished,
-            preprint_published,
-            url):
+            self, app, user_write_contrib, preprint_unpublished,
+            preprint_published, url):
         res = app.get(url, auth=user_write_contrib.auth)
         assert len(res.json['data']) == 1
         assert preprint_unpublished._id not in [

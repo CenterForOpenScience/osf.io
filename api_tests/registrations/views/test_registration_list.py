@@ -1,4 +1,3 @@
-import datetime
 import dateutil.relativedelta
 from django.utils import timezone
 import mock
@@ -9,7 +8,6 @@ from urlparse import urlparse
 from api.base.settings.defaults import API_BASE
 from api_tests.nodes.views.test_node_draft_registration_list import DraftRegistrationTestCase
 from api_tests.registrations.filters.test_filters import RegistrationListFilteringMixin
-from django.db.models import Q
 from framework.auth.core import Auth
 from osf.models import MetaSchema, DraftRegistration
 from osf_tests.factories import (
@@ -50,9 +48,10 @@ class TestRegistrationList(ApiTestCase):
         assert_equal(res.status_code, 200)
         assert_equal(res.content_type, 'application/vnd.api+json')
         url = res.json['data'][0]['relationships']['registered_from']['links']['related']['href']
-        assert_equal(urlparse(url).path,
-                     '/{}nodes/{}/'.format(API_BASE,
-                                           self.public_project._id))
+        assert_equal(
+            urlparse(url).path,
+            '/{}nodes/{}/'.format(API_BASE, self.public_project._id)
+        )
 
     def test_return_registrations_logged_in_contributor(self):
         res = self.app.get(self.url, auth=self.user.auth)
@@ -66,9 +65,11 @@ class TestRegistrationList(ApiTestCase):
 
         assert_equal(res.content_type, 'application/vnd.api+json')
 
-        assert_items_equal([registered_from_one, registered_from_two],
-                           ['/{}nodes/{}/'.format(API_BASE, self.public_project._id),
-                            '/{}nodes/{}/'.format(API_BASE, self.project._id)])
+        assert_items_equal(
+            [registered_from_one, registered_from_two],
+            ['/{}nodes/{}/'.format(API_BASE, self.public_project._id),
+             '/{}nodes/{}/'.format(API_BASE, self.project._id)]
+        )
 
     def test_return_registrations_logged_in_non_contributor(self):
         res = self.app.get(self.url, auth=self.user_two.auth)
@@ -79,26 +80,27 @@ class TestRegistrationList(ApiTestCase):
 
         assert_equal(res.content_type, 'application/vnd.api+json')
 
-        assert_equal(registered_from,
-                     '/{}nodes/{}/'.format(API_BASE,
-                                           self.public_project._id))
+        assert_equal(
+            registered_from,
+            '/{}nodes/{}/'.format(API_BASE, self.public_project._id))
 
     def test_total_biographic_contributor_in_registration(self):
         user3 = AuthUserFactory()
         registration = RegistrationFactory(is_public=True, creator=self.user)
         registration.add_contributor(self.user_two, auth=Auth(self.user))
         registration.add_contributor(
-            user3, auth=Auth(
-                self.user), visible=False)
+            user3, auth=Auth(self.user), visible=False)
         registration.save()
         registration_url = '/{0}registrations/{1}/?embed=contributors'.format(
             API_BASE, registration._id)
 
         res = self.app.get(registration_url)
-        assert_true(res.json['data']['embeds']['contributors']
-                    ['links']['meta']['total_bibliographic'])
-        assert_equal(res.json['data']['embeds']['contributors']
-                     ['links']['meta']['total_bibliographic'], 2)
+        assert_true(
+            res.json['data']['embeds']['contributors']['links']['meta']['total_bibliographic']
+        )
+        assert_equal(
+            res.json['data']['embeds']['contributors']['links']['meta']['total_bibliographic'],
+        2)
 
     def test_exclude_nodes_from_registrations_endpoint(self):
         res = self.app.get(self.url, auth=self.user.auth)
@@ -548,12 +550,7 @@ class TestRegistrationCreate(DraftRegistrationTestCase):
 
     @mock.patch('framework.celery_tasks.handlers.enqueue_task')
     def test_admin_can_create_registration(
-            self,
-            mock_enqueue,
-            app,
-            user,
-            payload,
-            url_registrations):
+            self, mock_enqueue, app, user, payload, url_registrations):
         res = app.post_json_api(url_registrations, payload, auth=user.auth)
         data = res.json['data']['attributes']
         assert res.status_code == 201
@@ -562,12 +559,8 @@ class TestRegistrationCreate(DraftRegistrationTestCase):
         assert data['public'] is False
 
     def test_cannot_create_registration(
-            self,
-            app,
-            user_write_contrib,
-            user_read_contrib,
-            payload,
-            url_registrations):
+            self, app, user_write_contrib, user_read_contrib,
+            payload, url_registrations):
 
         # def test_write_only_contributor_cannot_create_registration(self):
         res = app.post_json_api(
@@ -660,13 +653,8 @@ class TestRegistrationCreate(DraftRegistrationTestCase):
 
     @mock.patch('framework.celery_tasks.handlers.enqueue_task')
     def test_required_top_level_questions_must_be_answered_on_draft(
-            self,
-            mock_enqueue,
-            app,
-            user,
-            project_public,
-            prereg_metadata,
-            url_registrations):
+            self, mock_enqueue, app, user, project_public,
+            prereg_metadata, url_registrations):
         prereg_schema = MetaSchema.objects.get(
             name='Prereg Challenge',
             schema_version=LATEST_SCHEMA_VERSION)
@@ -702,13 +690,8 @@ class TestRegistrationCreate(DraftRegistrationTestCase):
 
     @mock.patch('framework.celery_tasks.handlers.enqueue_task')
     def test_required_top_level_questions_must_be_answered_on_draft(
-            self,
-            mock_enqueue,
-            app,
-            user,
-            project_public,
-            prereg_metadata,
-            url_registrations):
+            self, mock_enqueue, app, user, project_public,
+            prereg_metadata, url_registrations):
         prereg_schema = MetaSchema.objects.get(
             name='Prereg Challenge',
             schema_version=LATEST_SCHEMA_VERSION)
@@ -771,8 +754,7 @@ class TestRegistrationCreate(DraftRegistrationTestCase):
         }
 
         res = app.post_json_api(
-            url_registrations,
-            payload,
+            url_registrations, payload,
             auth=user.auth,
             expect_errors=True)
         assert res.status_code == 400
@@ -780,13 +762,8 @@ class TestRegistrationCreate(DraftRegistrationTestCase):
 
     @mock.patch('framework.celery_tasks.handlers.enqueue_task')
     def test_required_third_level_questions_must_be_answered_on_draft(
-            self,
-            mock_enqueue,
-            app,
-            user,
-            project_public,
-            prereg_metadata,
-            url_registrations):
+            self, mock_enqueue, app, user, project_public,
+            prereg_metadata, url_registrations):
         prereg_schema = MetaSchema.objects.get(
             name='Prereg Challenge',
             schema_version=LATEST_SCHEMA_VERSION)
@@ -814,8 +791,7 @@ class TestRegistrationCreate(DraftRegistrationTestCase):
         }
 
         res = app.post_json_api(
-            url_registrations,
-            payload,
+            url_registrations, payload,
             auth=user.auth,
             expect_errors=True)
         assert res.status_code == 400
@@ -845,12 +821,7 @@ class TestRegistrationCreate(DraftRegistrationTestCase):
             ' u\'practical failure to replicate\', u\'inconclusive\']')
 
     def test_invalid_registration_choice(
-            self,
-            app,
-            user,
-            draft_registration,
-            payload,
-            url_registrations):
+            self, app, user, draft_registration, url_registrations):
         payload = {
             'data': {
                 'type': 'registrations',
@@ -861,8 +832,7 @@ class TestRegistrationCreate(DraftRegistrationTestCase):
             }
         }
         res = app.post_json_api(
-            url_registrations,
-            payload,
+            url_registrations, payload,
             auth=user.auth,
             expect_errors=True)
         assert res.status_code == 400
@@ -892,11 +862,7 @@ class TestRegistrationCreate(DraftRegistrationTestCase):
 
     @mock.patch('framework.celery_tasks.handlers.enqueue_task')
     def test_embargo_must_be_less_than_four_years(
-            self,
-            mock_enqueue,
-            app,
-            user,
-            draft_registration,
+            self, mock_enqueue, app, user, draft_registration,
             url_registrations):
         today = timezone.now()
         five_years = (
@@ -924,12 +890,8 @@ class TestRegistrationCreate(DraftRegistrationTestCase):
 
     @mock.patch('framework.celery_tasks.handlers.enqueue_task')
     def test_embargo_registration(
-            self,
-            mock_enqueue,
-            app,
-            user,
-            draft_registration,
-            url_registrations):
+            self, mock_enqueue, app, user,
+            draft_registration, url_registrations):
         today = timezone.now()
         next_week = (
             today +
@@ -1146,16 +1108,8 @@ class TestRegistrationBulkUpdate:
         }
 
     def test_bulk_update_errors(
-            self,
-            app,
-            user,
-            registration_one,
-            registration_two,
-            public_payload,
-            private_payload,
-            empty_payload,
-            bad_payload,
-            url):
+            self, app, user, registration_one, registration_two,
+            public_payload, private_payload, url):
 
         # test_bulk_update_registrations_blank_request
         res = app.put_json_api(
@@ -1177,8 +1131,7 @@ class TestRegistrationBulkUpdate:
         ]}
 
         res = app.put_json_api(
-            url,
-            payload,
+            url, payload,
             auth=user.auth,
             expect_errors=True,
             bulk=True)
@@ -1187,8 +1140,7 @@ class TestRegistrationBulkUpdate:
 
         # test_bulk_update_registrations_logged_out
         res = app.put_json_api(
-            url,
-            public_payload,
+            url, public_payload,
             expect_errors=True,
             bulk=True)
         assert res.status_code == 401
@@ -1197,8 +1149,7 @@ class TestRegistrationBulkUpdate:
         # test_bulk_update_registrations_logged_in_non_contrib
         non_contrib = AuthUserFactory()
         res = app.put_json_api(
-            url,
-            private_payload,
+            url, private_payload,
             auth=non_contrib.auth,
             expect_errors=True,
             bulk=True)
@@ -1209,8 +1160,13 @@ class TestRegistrationBulkUpdate:
         res = app.put_json_api(
             url, {
                 'data': {
-                    'id': registration_one._id, 'type': 'nodes', 'attributes': {
-                        'public': True}}}, auth=user.auth, expect_errors=True, bulk=True)
+                    'id': registration_one._id,
+                    'type': 'nodes',
+                    'attributes': {'public': True}
+                }
+            },
+            auth=user.auth,
+            expect_errors=True, bulk=True)
         assert res.status_code == 400
         assert res.json['errors'][0]['detail'] == 'Expected a list of items but got type "dict".'
 
@@ -1219,8 +1175,12 @@ class TestRegistrationBulkUpdate:
             url, {
                 'data': [
                     public_payload['data'][1], {
-                        'type': 'registrations', 'attributes': {
-                            'public': True}}]}, auth=user.auth, expect_errors=True, bulk=True)
+                        'type': 'registrations',
+                        'attributes': {'public': True}}
+                ]
+            },
+            auth=user.auth,
+            expect_errors=True, bulk=True)
         assert res.status_code == 400
         assert len(res.json['errors']) == 1
         assert res.json['errors'][0]['source']['pointer'] == '/data/1/id'
@@ -1231,8 +1191,12 @@ class TestRegistrationBulkUpdate:
             url, {
                 'data': [
                     public_payload['data'][1], {
-                        'id': registration_one._id, 'attributes': {
-                            'public': True}}]}, auth=user.auth, expect_errors=True, bulk=True)
+                        'id': registration_one._id,
+                        'attributes': {'public': True}
+                    }
+                ]
+            }, auth=user.auth,
+            expect_errors=True, bulk=True)
         assert res.status_code == 400
         assert len(res.json['errors']) == 1
         assert res.json['errors'][0]['source']['pointer'] == '/data/1/type'
@@ -1243,8 +1207,13 @@ class TestRegistrationBulkUpdate:
             url, {
                 'data': [
                     public_payload['data'][1], {
-                        'id': registration_one._id, 'type': 'Incorrect', 'attributes': {
-                            'public': True}}]}, auth=user.auth, expect_errors=True, bulk=True)
+                        'id': registration_one._id,
+                        'type': 'Incorrect',
+                        'attributes': {'public': True}
+                    }
+                ]
+            }, auth=user.auth,
+            expect_errors=True, bulk=True)
         assert res.status_code == 409
 
         # test_bulk_update_limits
@@ -1301,13 +1270,8 @@ class TestRegistrationBulkUpdate:
         assert res.json['errors'][0]['detail'] == exceptions.PermissionDenied.default_detail
 
     def test_bulk_update_embargo_logged_in_contrib(
-            self,
-            app,
-            user,
-            registration_one,
-            registration_two,
-            public_payload,
-            url):
+            self, app, user, registration_one, registration_two,
+            public_payload, url):
         assert registration_one.embargo_termination_approval is None
         assert registration_two.embargo_termination_approval is None
 

@@ -76,8 +76,6 @@ class TestExceptionFormatting:
         url = '/{}users/{}/'.format(API_BASE, 'me')
         res = app.get(
             url,
-            auth=(
-                user.username,
-                'nottherightone'),
+            auth=(user.username, 'nottherightone'),
             expect_errors=True)
         assert res.status_code == 401

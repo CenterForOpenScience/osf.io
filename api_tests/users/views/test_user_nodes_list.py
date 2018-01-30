@@ -4,9 +4,7 @@ from api.base.settings.defaults import API_BASE
 from api_tests.nodes.filters.test_filters import NodesListFilteringMixin, NodesListDateFilteringMixin
 from osf_tests.factories import (
     AuthUserFactory,
-    BookmarkCollectionFactory,
     CollectionFactory,
-    NodeFactory,
     PreprintFactory,
     ProjectFactory,
     RegistrationFactory,
@@ -88,18 +86,13 @@ class TestUserNodes:
             is_public=True)
 
     def test_user_nodes(
-            self,
-            app,
-            user_one,
-            user_two,
+            self, app, user_one, user_two,
             public_project_user_one,
             public_project_user_two,
             private_project_user_one,
             private_project_user_two,
             deleted_project_user_one,
-            folder,
-            deleted_folder,
-            registration):
+            folder, deleted_folder, registration):
 
         #   test_authorized_in_gets_200
         url = "/{}users/{}/nodes/".format(API_BASE, user_one._id)
@@ -202,13 +195,8 @@ class TestUserNodesPreprintsFiltering:
         return '/{}users/me/nodes/?filter[preprint]='.format(API_BASE)
 
     def test_filter_false(
-            self,
-            app,
-            user,
-            abandoned_preprint_node,
-            no_preprints_node,
-            orphaned_preprint_node,
-            url_base):
+            self, app, user, abandoned_preprint_node,
+            no_preprints_node, orphaned_preprint_node, url_base):
         expected_ids = [
             abandoned_preprint_node._id,
             no_preprints_node._id,
@@ -219,12 +207,8 @@ class TestUserNodesPreprintsFiltering:
         assert set(expected_ids) == set(actual_ids)
 
     def test_filter_true(
-            self,
-            app,
-            user,
-            valid_preprint_node,
-            valid_preprint,
-            url_base):
+            self, app, user, valid_preprint_node,
+            valid_preprint, url_base):
         expected_ids = [valid_preprint_node._id]
         res = app.get('{}true'.format(url_base), auth=user.auth)
         actual_ids = [n['id'] for n in res.json['data']]
