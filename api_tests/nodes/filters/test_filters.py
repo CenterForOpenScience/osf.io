@@ -3,7 +3,6 @@ import pytest
 from osf_tests.factories import (
     AuthUserFactory,
     NodeFactory,
-    NodeRelationFactory,
     ProjectFactory,
 )
 from framework.auth.core import Auth

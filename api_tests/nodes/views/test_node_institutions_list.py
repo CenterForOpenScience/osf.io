@@ -1,6 +1,5 @@
 import pytest
 
-from tests.base import ApiTestCase
 from osf_tests.factories import InstitutionFactory, NodeFactory, AuthUserFactory
 from api.base.settings.defaults import API_BASE
 

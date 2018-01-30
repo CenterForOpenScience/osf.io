@@ -1,13 +1,9 @@
-import datetime
 import pytest
-import pytz
-import urlparse
 
 from dateutil.parser import parse as parse_date
 
 from api.base.settings.defaults import API_BASE
 from framework.auth.core import Auth
-from osf.models import NodeLog, Registration, Sanction
 from osf_tests.factories import (
     AuthUserFactory,
     ProjectFactory,

@@ -1,6 +1,5 @@
 # -*- coding: utf-8 -*-
 import pytest
-import mock
 
 from addons.wiki.tests.factories import NodeWikiFactory
 from api.base.settings import osf_settings

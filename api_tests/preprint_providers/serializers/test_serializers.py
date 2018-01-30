@@ -1,9 +1,6 @@
 # -*- coding: utf-8 -*-
-import functools
-
 from nose.tools import *  # flake8: noqa
 
-from api.base.settings.defaults import API_BASE
 from api.preprint_providers.serializers import PreprintProviderSerializer
 from osf_tests.factories import PreprintProviderFactory
 from tests.base import DbTestCase

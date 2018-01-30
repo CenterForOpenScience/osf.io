@@ -18,8 +18,6 @@ from api.base.permissions import TokenHasScope
 from website.settings import DEBUG_MODE
 from website import maintenance
 
-from django.contrib.auth.models import User
-
 import importlib
 
 URLS_MODULES = []

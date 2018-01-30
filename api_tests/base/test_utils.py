@@ -7,7 +7,6 @@ from rest_framework import fields
 from rest_framework.exceptions import ValidationError
 from api.base import utils as api_utils
 
-from tests.base import ApiTestCase
 from framework.status import push_status_message
 
 

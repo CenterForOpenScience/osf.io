@@ -1,7 +1,6 @@
 import pytest
 import mock
 
-from osf.models import ApiOAuth2Application
 from website.util import api_v2_url
 from osf_tests.factories import ApiOAuth2ApplicationFactory, AuthUserFactory
 

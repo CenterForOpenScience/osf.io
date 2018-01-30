@@ -11,10 +11,8 @@ from addons.dataverse.tests.factories import DataverseAccountFactory, DataverseN
 from addons.dropbox.tests.factories import DropboxAccountFactory, DropboxNodeSettingsFactory
 from addons.github.tests.factories import GitHubAccountFactory, GitHubNodeSettingsFactory
 from addons.googledrive.tests.factories import GoogleDriveAccountFactory, GoogleDriveNodeSettingsFactory
-from addons.mendeley.tests.factories import MendeleyAccountFactory, MendeleyNodeSettingsFactory
 from addons.owncloud.tests.factories import OwnCloudAccountFactory, OwnCloudNodeSettingsFactory
 from addons.s3.tests.factories import S3AccountFactory, S3NodeSettingsFactory
-from addons.zotero.tests.factories import ZoteroAccountFactory, ZoteroNodeSettingsFactory
 from addons.figshare.tests.factories import FigshareAccountFactory, FigshareNodeSettingsFactory
 from api.base.settings.defaults import API_BASE
 from osf_tests.factories import AuthUserFactory

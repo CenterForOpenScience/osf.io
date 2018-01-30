@@ -2,7 +2,6 @@
 import pytest
 
 from django.http import HttpResponse
-from tests.base import ApiTestCase, fake
 
 from urlparse import urlparse
 import mock

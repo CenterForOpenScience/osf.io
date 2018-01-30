@@ -1,5 +1,4 @@
 import pytest
-from urlparse import urlparse
 
 from api.collections.serializers import CollectionSerializer
 from osf_tests.factories import (
