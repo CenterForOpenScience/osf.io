@@ -7,7 +7,6 @@ import urlparse
 from django.utils.http import urlencode
 from flask import request, url_for
 
-from website import settings as website_settings
 from api.base import settings as api_settings
 
 logger = logging.getLogger(__name__)

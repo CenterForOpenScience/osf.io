@@ -307,7 +307,7 @@ def make_url_map(app):
                 ),
             ], prefix='/' + prefix)
 
-        if settings.EXTERNAL_EMBER_APPS.get('ember_osf_web'):
+        if website_settings.EXTERNAL_EMBER_APPS.get('ember_osf_web'):
             process_rules(app, [
                 Rule(
                     ember_osf_web_views.routes,

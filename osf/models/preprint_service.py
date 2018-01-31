@@ -19,6 +19,7 @@ from website.preprints.tasks import on_preprint_updated, get_and_set_preprint_id
 from website.project.licenses import set_license
 from website.util import api_v2_url
 from website import mails
+from api.base import settings
 
 from osf.models.base import BaseModel, GuidMixin
 from osf.models.identifiers import IdentifierMixin, Identifier

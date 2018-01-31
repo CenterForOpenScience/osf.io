@@ -20,6 +20,7 @@ from osf.models import OSFUser, Contributor, Node, Registration
 from osf.models.base import GuidMixin
 from osf.utils.requests import check_select_for_update
 from website import util as website_util  # noqa
+from website import settings as website_settings
 
 # These values are copied from rest_framework.fields.BooleanField
 # BooleanField cannot be imported here without raising an
