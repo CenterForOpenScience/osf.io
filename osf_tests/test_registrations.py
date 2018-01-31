@@ -5,7 +5,6 @@ import datetime
 from django.utils import timezone
 from framework.auth.core import Auth
 from osf.models import Node, Registration, Sanction, MetaSchema, NodeLog
-from addons.wiki.models import WikiPage, WikiVersion
 
 from website import settings
 from website.util.permissions import READ, WRITE, ADMIN
@@ -289,7 +288,7 @@ class TestRegisterNode:
         )
         current_wiki = WikiVersionFactory(
             wiki_page=wiki_page,
-            identifier = 2
+            identifier=2
         )
         registration = project.register_node(get_default_metaschema(), Auth(user), '', None)
         assert registration.wiki_private_uuids == {}

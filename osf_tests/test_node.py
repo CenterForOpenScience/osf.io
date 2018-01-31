@@ -32,7 +32,6 @@ from osf.models import (
 )
 from osf.models.node import AbstractNodeQuerySet
 from osf.models.spam import SpamStatus
-from addons.wiki.models import WikiPage, WikiVersion
 from osf.exceptions import ValidationError, ValidationValueError
 from framework.auth.core import Auth
 
