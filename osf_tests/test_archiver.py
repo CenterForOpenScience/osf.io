@@ -9,7 +9,7 @@ import re
 from contextlib import nested
 
 import celery
-import httpretty
+import responses
 import mock  # noqa
 from django.utils import timezone
 from django.db import IntegrityError
@@ -413,14 +413,8 @@ class TestStorageAddonBase(ArchiverTestCase):
             return dict(data=self.tree_child)
         return dict(data=self.tree_root)
  
-    @httpretty.activate
+    @responses.activate
     def _test__get_file_tree(self, addon_short_name):
-        requests_made = []
-        # requests_to_make = []
-        def callback(request, uri, headers):
-            requests_made.append(uri)
-            return (200, headers, json.dumps(self.get_resp(uri)))
-
         for path in self.URLS:
             url = waterbutler_api_url_for(
                 self.src._id,
@@ -431,10 +425,14 @@ class TestStorageAddonBase(ArchiverTestCase):
                 view_only=True,
                 _internal=True,
             )
-            httpretty.register_uri(httpretty.GET,
-                                   url,
-                                   body=callback,
-                                   content_type='applcation/json')
+            responses.add(
+                responses.Response(
+                    responses.GET,
+                    url,
+                    json=self.get_resp(url),
+                    content_type='applcation/json'
+                )
+            )
         addon = self.src.get_or_add_addon(addon_short_name, auth=self.auth)
         root = {
             'path': '/',
@@ -445,12 +443,13 @@ class TestStorageAddonBase(ArchiverTestCase):
         }
         file_tree = addon._get_file_tree(root, self.user)
         assert_equal(FILE_TREE, file_tree)
-        assert_equal(len(requests_made), 2) 
+        assert_equal(len(responses.calls), 2)
 
         # Makes a request for folders ('/qwerty') but not files ('/1234567', '/qwerty/asdfgh')
-        assert_true(any('/qwerty' in url for url in requests_made))
-        assert_false(any('/1234567' in url for url in requests_made))
-        assert_false(any('/qwerty/asdfgh' in url for url in requests_made))
+        requests_made_urls = [call.request.url for call in responses.calls]
+        assert_true(any('/qwerty' in url for url in requests_made_urls))
+        assert_false(any('/1234567' in url for url in requests_made_urls))
+        assert_false(any('/qwerty/asdfgh' in url for url in requests_made_urls))
 
     def _test_addon(self, addon_short_name):
         self._test__get_file_tree(addon_short_name)

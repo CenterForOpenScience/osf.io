@@ -7,8 +7,7 @@ pytz==2014.9
 python-dateutil==2.5.0
 html5lib==0.999999999
 bleach==2.1.1
-requests==2.5.3
-urllib3==1.10.4
+requests==2.18.4
+urllib3==1.22
 requests-oauthlib==0.5.0
 oauthlib==1.1.2  # Mendeley pins to a much lower version but OSF overrides
-HTTPretty==0.8.14
