@@ -71,7 +71,8 @@ class TestFileFiltering:
             node, user, filename='file_four')
 
     def test_get_all_files(
-            self, app, user, node
+            self, app, user, node, file_one, file_two,
+            file_three, file_four
     ):
         res = app.get(
             '/{}nodes/{}/files/osfstorage/'.format(API_BASE, node._id),

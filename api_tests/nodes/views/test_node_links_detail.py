@@ -178,7 +178,7 @@ class TestDeleteNodeLink:
         assert pointer.child not in public_project.nodes
 
     def test_cannot_delete_if_registration(
-            self, app, user, public_project, user_two):
+            self, app, user, public_project, user_two, public_pointer):
         registration = RegistrationFactory(project=public_project)
 
         url = '/{}registrations/{}/node_links/'.format(

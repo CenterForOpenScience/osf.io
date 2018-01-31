@@ -54,8 +54,8 @@ class TestNodeRegistrationList:
             API_BASE, public_project._id)
 
     def test_node_registration_list(
-            self, app, user, public_project, private_project,
-            public_url, private_url):
+            self, app, user, public_project, private_project, public_registration,
+            private_registration, public_url, private_url):
 
         #   test_return_public_registrations_logged_out
         res = app.get(public_url)

@@ -107,7 +107,8 @@ class TestNodeList:
         assert registration._id not in ids
 
     def test_node_list_has_root(
-            self, app, user, url):
+            self, app, user, url, public_project, private_project,
+            deleted_project):
         res = app.get(url, auth=user.auth)
         projects_with_root = 0
         for project in res.json['data']:
@@ -548,7 +549,8 @@ class TestNodeFiltering:
         assert len(res.json.get('data')) == 1
 
     def test_filtering_contributors(
-            self, app, user_one):
+            self, app, user_one, user_one_private_project,
+            preprint):
         res = app.get(
             '/{}nodes/?filter[contributors]={}'.format(
                 API_BASE, user_one._id

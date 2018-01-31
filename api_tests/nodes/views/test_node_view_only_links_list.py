@@ -155,7 +155,7 @@ class TestViewOnlyLinksCreate:
         assert data['embeds']['creator']['data']['id'] == user._id
 
     def test_admin_can_create_vol(
-            self, app, user, public_project):
+            self, app, user, public_project, view_only_link):
         url = '/{}nodes/{}/view_only_links/?embed=creator'.format(
             API_BASE, public_project._id)
         payload = {

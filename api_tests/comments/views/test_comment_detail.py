@@ -214,9 +214,8 @@ class CommentDetailMixin(object):
         assert public_comment.content == res.json['data']['attributes']['content']
 
     def test_comment_has_multiple_links(
-            self, app, user, public_url,
-            public_project, public_comment,
-            comment_url, registration
+            self, app, user, public_url, public_project, public_comment,
+            public_comment_reply, comment_url, registration
     ):
         res = app.get(public_url)
         assert res.status_code == 200
@@ -694,7 +693,8 @@ class TestCommentDetailView(CommentDetailMixin):
         assert node_uri == registration_url
 
     def test_registration_comment_has_usable_node_relationship_link(
-            self, app, user, registration, registration_url
+            self, app, user, registration, registration_url,
+            registration_comment_reply
     ):
         res = app.get(registration_url, auth=user.auth)
         assert res.status_code == 200

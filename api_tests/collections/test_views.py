@@ -1680,7 +1680,7 @@ class TestCollectionBulkCreate:
         return bookmark_user_one
 
     def test_bulk_create_logged_in(
-            self, app, url_collections, collection_one,
+            self, app, bookmark_user_one, url_collections, collection_one,
             collection_two, user_one
     ):
         res = app.post_json_api(

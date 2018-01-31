@@ -108,13 +108,14 @@ class TestNodeChildrenList:
         assert len(res.json['data']) == 1
 
     def test_node_children_list_does_not_include_unauthorized_projects(
-            self, app, user, private_project, private_project_url):
+            self, app, user, component, private_project, private_project_url):
         NodeFactory(parent=private_project)
         res = app.get(private_project_url, auth=user.auth)
         assert len(res.json['data']) == 1
 
     def test_node_children_list_does_not_include_deleted(
-            self, app, user, public_project, public_project_url):
+            self, app, user, public_project, public_component,
+            component, public_project_url):
         child_project = NodeFactory(parent=public_project, creator=user)
         child_project.save()
 
