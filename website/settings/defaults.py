@@ -133,6 +133,8 @@ FROM_EMAIL = 'openscienceframework-noreply@osf.io'
 # support email
 OSF_SUPPORT_EMAIL = 'support@osf.io'
 
+# prereg email
+PREREG_EMAIL = 'prereg@cos.io'
 
 # Default settings for fake email address generation
 FAKE_EMAIL_NAME = 'freddiemercury'

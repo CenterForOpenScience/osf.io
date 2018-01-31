@@ -6,7 +6,6 @@ import mock
 import pytest
 import pytz
 import requests
-from django.utils import timezone
 
 from scripts.analytics.preprint_summary import PreprintSummary
 
@@ -59,4 +58,3 @@ class TestPreprintCount:
         data = results[0]
         assert data['provider']['name'] == 'Test 1'
         assert data['provider']['total'] == 1
-
