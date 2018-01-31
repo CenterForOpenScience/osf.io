@@ -7,7 +7,6 @@ from osf_tests.factories import (
     AuthUserFactory,
     SubjectFactory,
 )
-from osf.utils import permissions
 
 @pytest.mark.django_db
 class PreprintListMatchesPreprintDetailMixin:

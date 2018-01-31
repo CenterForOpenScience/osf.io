@@ -17,11 +17,11 @@ from osf_tests.factories import (
     UserFactory,
 
 )
+from osf.utils import permissions
 from rest_framework import exceptions
 from tests.base import capture_signals, fake
 from tests.utils import assert_latest_log, assert_items_equal
 from website.project.signals import contributor_added, contributor_removed
-from website.util import permissions
 from api_tests.utils import disconnected_from_listeners
 
 @pytest.fixture()

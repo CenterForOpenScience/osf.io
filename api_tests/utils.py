@@ -30,7 +30,6 @@ def urlparse_drop_netloc(url):
     return url[2]
 
 
-
 @contextmanager
 def disconnected_from_listeners(signal):
     """Temporarily disconnect all listeners for a Blinker signal."""
