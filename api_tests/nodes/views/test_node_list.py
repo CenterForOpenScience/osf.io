@@ -641,7 +641,7 @@ class TestNodeFiltering:
         assert res.status_code == 400
         errors = res.json['errors']
         assert len(errors) == 1
-        assert errors[0]['detail'] == '\'notafield\' is not a valid field for this endpoint.'
+        assert errors[0]['detail'] == "Value 'notafield' is not a filterable field."
 
     def test_filtering_on_root(self, app, user_one):
         root = ProjectFactory(is_public=True)

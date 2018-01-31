@@ -1,3 +1,4 @@
+import django_filters
 from django.apps import apps
 
 from api.addons.views import AddonSettingsMixin
@@ -17,6 +18,7 @@ from api.nodes.filters import NodesFilterMixin
 from api.nodes.serializers import NodeSerializer
 from api.preprints.serializers import PreprintSerializer
 from api.registrations.serializers import RegistrationSerializer
+from api.users.filters import UserFilterSet
 from api.users.permissions import (CurrentUser, ReadOnlyOrCurrentUser,
                                    ReadOnlyOrCurrentUserRelationship)
 from api.users.serializers import (UserAddonSettingsSerializer,
@@ -85,7 +87,8 @@ class UserMixin(object):
         return obj
 
 
-class UserList(JSONAPIBaseView, generics.ListAPIView, ListFilterMixin):
+class UserList(JSONAPIBaseView, generics.ListAPIView):
+
     """List of users registered on the OSF.
 
     Paginated list of users ordered by the date they registered.  Each resource contains the full representation of the
@@ -145,6 +148,9 @@ class UserList(JSONAPIBaseView, generics.ListAPIView, ListFilterMixin):
 
     serializer_class = UserSerializer
 
+    filter_backends = (django_filters.rest_framework.DjangoFilterBackend,)
+    filter_class = UserFilterSet
+
     ordering = ('-date_registered')
     view_category = 'users'
     view_name = 'user-list'
@@ -156,7 +162,7 @@ class UserList(JSONAPIBaseView, generics.ListAPIView, ListFilterMixin):
 
     # overrides ListCreateAPIView
     def get_queryset(self):
-        return self.get_queryset_from_request()
+        return self.get_default_queryset()
 
 
 class UserDetail(JSONAPIBaseView, generics.RetrieveUpdateAPIView, UserMixin):

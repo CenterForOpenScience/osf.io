@@ -63,6 +63,7 @@ Django==1.11.9  # pyup: <2.0 # Remove this when we're on Py3
 djangorestframework==3.6.3
 django-cors-headers==1.3.1
 djangorestframework-bulk==0.2.1
+django-filter==1.1
 pyjwt==1.5.3
 # django-celery-beat==1.0.1  # BSD 3 Clause
 # Contains a fix for handling disabled tasks that still has not been release

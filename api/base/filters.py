@@ -3,9 +3,12 @@ import functools
 import operator
 import re
 
+import django_filters
+from django.db import models
 import pytz
 from guardian.shortcuts import get_objects_for_user
 from api.base import utils
+from api.base.fields import NullModelMultipleChoiceCaseInsensitiveField
 from api.base.exceptions import (InvalidFilterComparisonType,
                                  InvalidFilterError, InvalidFilterFieldError,
                                  InvalidFilterMatchType, InvalidFilterOperator,
@@ -64,6 +67,148 @@ class OSFOrderingFilter(OrderingFilter):
                 return sorted_list
             return queryset.sort(*ordering)
         return queryset
+
+
+class MultiValueCharFilter(django_filters.BaseInFilter, django_filters.filters.CharFilter):
+
+    def filter(self, qs, value):
+        q = Q()
+        values = value or []
+        for value in values:
+            q |= Q(**{'{}__icontains'.format(self.name): value.strip()})
+        qs = qs.filter(q)
+
+        return qs
+
+
+class NullModelMultipleChoiceFilter(django_filters.ModelChoiceFilter):
+
+    field_class = NullModelMultipleChoiceCaseInsensitiveField
+
+    def __init__(self, *args, **kwargs):
+        # use base_name to filter later on for a null relationship
+        self.base_name = kwargs.pop('base_name')
+        super(NullModelMultipleChoiceFilter, self).__init__(*args, **kwargs)
+
+    def filter(self, qs, value):
+        if value == 'null':
+            return qs.filter(Q(**{'{}__isnull'.format(self.base_name): True}))
+
+        q = Q()
+        values = value or []
+        for value in values:
+            q |= Q(**{self.name: value})
+        return qs.filter(q)
+
+
+class JSONAPIFilterSet(django_filters.rest_framework.FilterSet):
+
+    QUERY_PATTERN = re.compile(r'^filter\[(?P<fields>((?:,*\s*\w+)*))\](\[(?P<op>\w+)\])?$')
+    FILTER_FIELDS = re.compile(r'(?:,*\s*(\w+)+)')
+
+    # TODO - there must be a better way to recognize these
+    MANY_TO_MANY_FIELDS = ['tags', 'contributors']
+    DATE_FIELDS = ['created', 'modified']
+
+    def __init__(self, data=None, *args, **kwargs):
+        self.or_fields = {}
+        self.operator_fields = []
+        field_names = []
+        if data:
+            new_data = {}
+            for key, value in data.iteritems():
+                match = self.QUERY_PATTERN.match(key)
+                if match:
+                    match_dict = match.groupdict()
+                    fields = match_dict['fields']
+                    field_names = self.FILTER_FIELDS.findall(fields.strip())
+                    op = match_dict.get('op', None)
+                    # some filter values can be passed in brackets, with spaces between them
+                    value = value.replace('[', '').replace(']', '')
+                    values = value.split(',')
+                    if len(field_names) > 1:
+                        self.or_fields[frozenset(field_names)] = values
+                    elif op and op != 'eq':
+                        self.operator_fields.append({'field': field_names[0], 'value': value, 'op': op})
+                    else:
+                        new_data.update({field_names[0]: value})
+            data = self.postprocess_data(new_data)
+        super(JSONAPIFilterSet, self).__init__(data=data, *args, **kwargs)
+
+        for field in field_names:
+            if field not in self.form.fields:
+                raise InvalidFilterFieldError(parameter='filter', value=field)
+
+    def postprocess_data(self, data):
+        data_to_return = {}
+        for field_name, value in data.iteritems():
+            # to filter on a relationship field, values must be in a list
+            if field_name in self.MANY_TO_MANY_FIELDS and value != 'null':
+                if field_name == 'contributors':
+                    field_name = '_contributors'
+                value = value if type(value) == list else value.split(',')
+            if value == 'true' or value == 'false':
+                value = value.title()
+            if field_name in self.DATE_FIELDS:
+                try:
+                    value_datetime = date_parser.parse(value, ignoretz=False)
+                    if not value_datetime.tzinfo:
+                        value = value_datetime.replace(tzinfo=pytz.utc).isoformat()
+                except ValueError:
+                    raise InvalidFilterValue(
+                        value=value,
+                        field_type='date'
+                    )
+
+            data_to_return[field_name] = value
+
+        return data_to_return
+
+    @property
+    def qs(self, *args, **kwargs):
+        self.form.is_valid()
+        qs = super(JSONAPIFilterSet, self).qs
+        if self.operator_fields:
+            qs = self.filter_operators(qs)
+        return self.filter_groups(qs)
+
+    def filter_groups(self, qs):
+        for group, values in self.or_fields.iteritems():
+            group_q = Q()
+            for field in group:
+                if field not in self.form.fields.keys():
+                    raise InvalidFilterFieldError(parameter='filter', value=field)
+                for value in values:
+                    group_q |= Q(**{self.filters[field].name: value})
+            qs = qs.filter(group_q)
+
+        return qs
+
+    def filter_operators(self, qs):
+        for field_dict in self.operator_fields:
+            value = field_dict['value']
+            field = field_dict['field']
+            op = field_dict['op']
+
+            if field in self.DATE_FIELDS:
+                value = datetime.datetime.strptime(value, '%Y-%m-%d').replace(tzinfo=pytz.UTC)
+            if op == 'ne':
+                qs = qs.filter(~Q(**{field: value}))
+            else:
+                filter_left = '{}__{}'.format(field, op)
+                qs = qs.filter(Q(**{filter_left: value}))
+
+            return qs
+
+    class Meta:
+        filter_overrides = {
+            models.CharField: {
+                'filter_class': MultiValueCharFilter,
+            },
+            models.TextField: {
+                'filter_class': MultiValueCharFilter,
+            }
+        }
 
 
 class FilterMixin(object):
