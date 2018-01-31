@@ -95,19 +95,19 @@ class TestUserNodes:
             folder, deleted_folder, registration):
 
         #   test_authorized_in_gets_200
-        url = "/{}users/{}/nodes/".format(API_BASE, user_one._id)
+        url = '/{}users/{}/nodes/'.format(API_BASE, user_one._id)
         res = app.get(url, auth=user_one.auth)
         assert res.status_code == 200
         assert res.content_type == 'application/vnd.api+json'
 
     #   test_anonymous_gets_200
-        url = "/{}users/{}/nodes/".format(API_BASE, user_one._id)
+        url = '/{}users/{}/nodes/'.format(API_BASE, user_one._id)
         res = app.get(url)
         assert res.status_code == 200
         assert res.content_type == 'application/vnd.api+json'
 
     #   test_get_projects_logged_in
-        url = "/{}users/{}/nodes/".format(API_BASE, user_one._id)
+        url = '/{}users/{}/nodes/'.format(API_BASE, user_one._id)
         res = app.get(url, auth=user_one.auth)
         node_json = res.json['data']
 
@@ -122,7 +122,7 @@ class TestUserNodes:
         assert registration._id not in ids
 
     #   test_get_projects_not_logged_in
-        url = "/{}users/{}/nodes/".format(API_BASE, user_one._id)
+        url = '/{}users/{}/nodes/'.format(API_BASE, user_one._id)
         res = app.get(url)
         node_json = res.json['data']
 
@@ -136,7 +136,7 @@ class TestUserNodes:
         assert registration._id not in ids
 
     #   test_get_projects_logged_in_as_different_user
-        url = "/{}users/{}/nodes/".format(API_BASE, user_two._id)
+        url = '/{}users/{}/nodes/'.format(API_BASE, user_two._id)
         res = app.get(url, auth=user_one.auth)
         node_json = res.json['data']
 

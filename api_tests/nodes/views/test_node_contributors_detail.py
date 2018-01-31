@@ -644,7 +644,7 @@ class TestNodeContributorUpdate:
     def test_node_update_invalid_data(self, app, user, url_creator):
         res = app.put_json_api(
             url_creator,
-            "Incorrect data",
+            'Incorrect data',
             auth=user.auth,
             expect_errors=True)
         assert res.status_code == 400
@@ -652,7 +652,7 @@ class TestNodeContributorUpdate:
 
         res = app.put_json_api(
             url_creator,
-            ["Incorrect data"],
+            ['Incorrect data'],
             auth=user.auth,
             expect_errors=True)
         assert res.status_code == 400
@@ -778,7 +778,7 @@ class TestNodeContributorUpdate:
             res = app.put_json_api(url_contrib, data, auth=user.auth)
             assert res.status_code == 200
             attributes = res.json['data']['attributes']
-            assert attributes['bibliographic'] == False
+            assert not attributes['bibliographic']
 
             project.reload()
             assert not project.get_visible(contrib)
@@ -819,7 +819,7 @@ class TestNodeContributorUpdate:
             assert res.status_code == 200
             attributes = res.json['data']['attributes']
             assert attributes['permission'] == permissions.READ
-            assert attributes['bibliographic'] == False
+            assert not attributes['bibliographic']
 
             project.reload()
             assert project.get_permissions(contrib) == [permissions.READ]

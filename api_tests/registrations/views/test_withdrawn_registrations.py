@@ -108,8 +108,8 @@ class TestWithdrawnRegistrations(NodeCRUDTestCase):
         assert res.status_code == 403
 
     def test_cannot_access_withdrawn_node_logs(
-            self, app, user,registration):
-        project_public = ProjectFactory(is_public=True, creator=user)
+            self, app, user, registration):
+        ProjectFactory(is_public=True, creator=user)
         url = '/{}registrations/{}/logs/'.format(API_BASE, registration._id)
         res = app.get(url, auth=user.auth, expect_errors=True)
         assert res.status_code == 403

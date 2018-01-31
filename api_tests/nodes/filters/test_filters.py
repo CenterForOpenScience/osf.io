@@ -33,7 +33,7 @@ class NodesListFilteringMixin(object):
     def child_project_one(self, user, parent_project_one):
         return ProjectFactory(
             parent=parent_project_one,
-            title="Child of {}".format(
+            title='Child of {}'.format(
                 parent_project_one._id
             ),
             creator=user)

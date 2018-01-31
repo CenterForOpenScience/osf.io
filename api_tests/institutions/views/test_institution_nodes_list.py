@@ -108,7 +108,7 @@ class TestInstitutionNodeList:
         component.affiliated_institutions.add(institution)
         component.save()
         res = app.get(institution_node_url, auth=user.auth)
-        affiliated_node_ids = [node['id'] for node in res.json['data']]
+        affiliated_node_ids = [x['id'] for x in res.json['data']]
         assert res.status_code == 200
         assert node._id not in affiliated_node_ids
         assert component._id not in affiliated_node_ids
@@ -166,7 +166,7 @@ class TestNodeListFiltering(NodesListFilteringMixin):
         child_project_one = ProjectFactory(
             parent=parent_project_one,
             is_public=True,
-            title="Child of {}".format(
+            title='Child of {}'.format(
                 parent_project_one._id),
             creator=user)
         child_project_one.affiliated_institutions.add(institution)

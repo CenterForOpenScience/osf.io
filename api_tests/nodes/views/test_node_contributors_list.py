@@ -20,7 +20,7 @@ from osf_tests.factories import (
 from rest_framework import exceptions
 from tests.base import capture_signals, fake
 from tests.utils import assert_latest_log, assert_items_equal
-from website.project.signals import contributor_added, unreg_contributor_added, contributor_removed
+from website.project.signals import contributor_added, contributor_removed
 from website.util import permissions, disconnected_from_listeners
 
 
@@ -2042,7 +2042,7 @@ class TestNodeContributorBulkUpdate(NodeCRUDTestCase):
             [data[0]['attributes']['permission'],
              data[1]['attributes']['permission'],
              data[2]['attributes']['permission']],
-            ['admin','read','read']
+            ['admin', 'read', 'read']
         )
 
     #   test_bulk_update_contributors_invalid_bibliographic
@@ -2469,13 +2469,15 @@ class TestNodeContributorBulkPartialUpdate(NodeCRUDTestCase):
     #   test_bulk_partial_update_invalid_bibliographic
         res = app.patch_json_api(
             url_public,
-            {'data': [
-                payload_public_two, {
-                    'id': make_contrib_id(
-                        project_public._id, user_two._id),
-                    'type': 'contributors',
-                    'attributes': {'bibliographic': 'true and false'}
-                }]
+            {
+                'data': [
+                    payload_public_two, {
+                        'id': make_contrib_id(
+                            project_public._id, user_two._id),
+                        'type': 'contributors',
+                        'attributes': {'bibliographic': 'true and false'}
+                    }
+                ]
             },
             auth=user.auth,
             expect_errors=True, bulk=True)
@@ -2756,7 +2758,7 @@ class TestNodeContributorBulkDelete(NodeCRUDTestCase):
 
         res = app.delete_json_api(
             url_private,
-            {'data': [payload_private_one,payload_private_two]},
+            {'data': [payload_private_one, payload_private_two]},
             auth=user_four.auth,
             expect_errors=True, bulk=True)
         assert res.status_code == 403

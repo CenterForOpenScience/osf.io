@@ -31,7 +31,7 @@ class TestUserQuickFiles:
 
     @pytest.fixture()
     def url(self, user):
-        return "/{}users/{}/quickfiles/".format(API_BASE, user._id)
+        return '/{}users/{}/quickfiles/'.format(API_BASE, user._id)
 
     def test_authorized_gets_200(self, app, user, url):
         res = app.get(url, auth=user.auth)
@@ -76,7 +76,7 @@ class TestUserQuickFiles:
         root_two.append_file('Sister.txt')
         root_two.append_file('Abigail.txt')
 
-        url = "/{}users/me/quickfiles/".format(API_BASE)
+        url = '/{}users/me/quickfiles/'.format(API_BASE)
         res = app.get(url, auth=user.auth)
         node_json = res.json['data']
 
@@ -95,7 +95,7 @@ class TestUserQuickFiles:
         file_id = OsfStorageFile.objects.filter(
             node__creator=user).values_list(
             '_id', flat=True).first()
-        url = "/{}files/{}/".format(API_BASE, file_id)
+        url = '/{}files/{}/'.format(API_BASE, file_id)
         res = app.get(url, auth=user.auth)
         file_detail_json = res.json['data']
 

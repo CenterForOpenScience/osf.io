@@ -88,13 +88,15 @@ class TestTokenDetail:
         new_name = 'The token formerly known as Prince'
         res = app.patch_json_api(
             url_token_detail,
-            {'data': {
-                'attributes': {
-                    'name': new_name,
-                    'scopes': 'osf.full_write'
-                },
-                'id': token_user_one._id,
-                'type': 'tokens'}
+            {
+                'data': {
+                    'attributes': {
+                        'name': new_name,
+                        'scopes': 'osf.full_write'
+                    },
+                    'id': token_user_one._id,
+                    'type': 'tokens'
+                }
             },
             auth=user_one.auth)
         user_one_token.reload()
@@ -134,7 +136,7 @@ class TestTokenDetail:
     def test_deleting_token_flags_instance_inactive(
             self, mock_method, app, url_token_detail, user_one, token_user_one):
         mock_method.return_value(True)
-        res = app.delete(url_token_detail, auth=user_one.auth)
+        app.delete(url_token_detail, auth=user_one.auth)
         token_user_one.reload()
         assert not token_user_one.is_active
 

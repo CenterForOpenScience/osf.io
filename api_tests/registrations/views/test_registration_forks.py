@@ -78,7 +78,7 @@ class TestRegistrationForksList:
         res = app.get(public_registration_url)
         assert len(res.json['data']) == 0
         # Fork defaults to private
-        assert public_fork.is_public == False
+        assert not public_fork.is_public
 
         public_fork.is_public = True
         public_fork.save()
@@ -91,7 +91,7 @@ class TestRegistrationForksList:
         assert data['attributes']['title'] == 'Fork of ' + \
             public_registration.title
         assert data['id'] == public_fork._id
-        assert data['attributes']['registration'] == False
+        assert not data['attributes']['registration']
         assert data['attributes']['fork'] is True
 
     def test_can_access_public_registration_forks_list_authenticated_contributor(
@@ -99,12 +99,12 @@ class TestRegistrationForksList:
         res = app.get(public_registration_url, auth=user.auth)
         assert res.status_code == 200
 
-        assert public_fork.is_public == False
+        assert not public_fork.is_public
         assert len(res.json['data']) == 1
         data = res.json['data'][0]
         assert data['attributes']['title'] == 'Fork of ' + public_project.title
         assert data['id'] == public_fork._id
-        assert data['attributes']['registration'] == False
+        assert not data['attributes']['registration']
         assert data['attributes']['fork'] is True
 
     def test_can_access_public_registration_forks_list_authenticated_non_contributor(
@@ -116,7 +116,7 @@ class TestRegistrationForksList:
 
         assert len(res.json['data']) == 0
         # Fork defaults to private
-        assert public_fork.is_public == False
+        assert not public_fork.is_public
 
         public_fork.is_public = True
         public_fork.save()
@@ -127,7 +127,7 @@ class TestRegistrationForksList:
         data = res.json['data'][0]
         assert data['attributes']['title'] == 'Fork of ' + public_project.title
         assert data['id'] == public_fork._id
-        assert data['attributes']['registration'] == False
+        assert not data['attributes']['registration']
         assert data['attributes']['fork'] is True
 
     def test_authentication(
@@ -162,7 +162,7 @@ class TestRegistrationForksList:
         forked_node_links = data['embeds']['node_links']['data'][0]['embeds']['target_node']['data']
         assert forked_node_links['id'] == pointer._id
         assert forked_node_links['attributes']['title'] == pointer.title
-        assert data['attributes']['registration'] == False
+        assert not data['attributes']['registration']
         assert data['attributes']['fork'] is True
 
         expected_logs = list(
@@ -269,7 +269,7 @@ class TestRegistrationForkCreate:
         data = res.json['data']
         assert data['id'] == public_registration.forks.first()._id
         assert data['attributes']['title'] == fork_data_with_title['data']['attributes']['title']
-        assert data['attributes']['registration'] == False
+        assert not data['attributes']['registration']
         assert data['attributes']['fork'] is True
 
     def test_create_fork_from_private_registration_with_new_title(
@@ -283,7 +283,7 @@ class TestRegistrationForkCreate:
         data = res.json['data']
         assert data['id'] == private_registration.forks.first()._id
         assert data['attributes']['title'] == fork_data_with_title['data']['attributes']['title']
-        assert data['attributes']['registration'] == False
+        assert not data['attributes']['registration']
         assert data['attributes']['fork'] is True
 
     def test_can_fork_public_registration_logged_in(
@@ -298,7 +298,7 @@ class TestRegistrationForkCreate:
         assert data['id'] == public_registration.forks.first()._id
         assert data['attributes']['title'] == 'Fork of ' + \
             public_registration.title
-        assert data['attributes']['registration'] == False
+        assert not data['attributes']['registration']
         assert data['attributes']['fork'] is True
 
     def test_cannot_fork_public_registration_logged_out(
@@ -321,7 +321,7 @@ class TestRegistrationForkCreate:
         assert data['id'] == public_registration.forks.first()._id
         assert data['attributes']['title'] == 'Fork of ' + \
             public_registration.title
-        assert data['attributes']['registration'] == False
+        assert not data['attributes']['registration']
         assert data['attributes']['fork'] is True
 
     def test_cannot_fork_private_registration_logged_out(
@@ -351,7 +351,7 @@ class TestRegistrationForkCreate:
         data = res.json['data']
         assert data['attributes']['title'] == 'Fork of ' + \
             private_registration.title
-        assert data['attributes']['registration'] == False
+        assert not data['attributes']['registration']
         assert data['attributes']['fork'] is True
 
         fork_contributors = data['embeds']['contributors']['data'][0]['embeds']['users']['data']

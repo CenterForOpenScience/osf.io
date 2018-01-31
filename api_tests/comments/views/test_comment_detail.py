@@ -153,7 +153,7 @@ class CommentDetailMixin(object):
         private_link.nodes.add(private_project)
         private_link.save()
         res = app.get(
-            '/{}comments/{}/'.format(API_BASE,comment._id),
+            '/{}comments/{}/'.format(API_BASE, comment._id),
             {'view_only': private_link.key}
         )
         assert res.status_code == 200
@@ -172,7 +172,7 @@ class CommentDetailMixin(object):
         assert comment._id == res.json['data']['id']
         assert 'test with @A User and @mention' == res.json['data']['attributes']['content']
 
-    def test_public_node_comment_auth_misc(
+    def test_public_node_comment_can_view_misc(
             self, app, user, non_contrib,
             public_project, public_url,
             public_comment, registration_comment,
@@ -271,7 +271,7 @@ class CommentDetailMixin(object):
         assert res.status_code == 401
         assert res.json['errors'][0]['detail'] == exceptions.NotAuthenticated.default_detail
 
-    def test_public_node_comment_auth_misc(
+    def test_public_node_comment_update_misc(
             self, app, user, contributor,
             non_contrib, public_url,
             public_comment_payload
@@ -544,7 +544,7 @@ class CommentDetailMixin(object):
 
         res = app.get(
             '/{}comments/{}/'.format(
-                API_BASE,public_comment._id
+                API_BASE, public_comment._id
             ),
             {'view_only': private_link.key},
             expect_errors=True
@@ -688,7 +688,7 @@ class TestCommentDetailView(CommentDetailMixin):
         assert comments_res.status_code == 200
         replies_url = comments_res.json['data'][0]['relationships']['replies']['links']['related']['href']
         replies_uri = test_utils.urlparse_drop_netloc(replies_url)
-        replies_res = app.get(replies_uri, auth=user.auth)
+        app.get(replies_uri, auth=user.auth)
         node_url = comments_res.json['data'][0]['relationships']['node']['links']['related']['href']
         node_uri = test_utils.urlparse_drop_netloc(node_url)
         assert node_uri == registration_url
@@ -861,7 +861,7 @@ class TestFileCommentDetailView(CommentDetailMixin):
             self, app, user, private_project, file, private_url):
         # Delete commented file
         osfstorage = private_project.get_addon('osfstorage')
-        root_node = osfstorage.get_root()
+        osfstorage.get_root()
         file.delete()
         res = app.get(private_url, auth=user.auth, expect_errors=True)
         assert res.status_code == 404

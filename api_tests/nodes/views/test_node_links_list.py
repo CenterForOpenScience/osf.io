@@ -1302,7 +1302,7 @@ class TestBulkDeleteNodeLinks:
     # Regression test for https://openscience.atlassian.net/browse/OSF-4322
     def test_bulk_delete_link_that_is_not_linked_to_correct_node(
             self, app, user, private_url, public_payload):
-        project = ProjectFactory(creator=user)
+        ProjectFactory(creator=user)
         # The node link belongs to a different project
         res = app.delete_json_api(
             private_url, public_payload, auth=user.auth,

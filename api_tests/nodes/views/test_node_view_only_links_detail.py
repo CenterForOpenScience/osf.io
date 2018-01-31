@@ -119,7 +119,7 @@ class TestViewOnlyLinksUpdate:
 
     def test_admin_can_update_vol_name(self, app, user, view_only_link, url):
         assert view_only_link.name == 'testlink'
-        assert view_only_link.anonymous == False
+        assert not view_only_link.anonymous
 
         payload = {
             'attributes': {
@@ -130,12 +130,12 @@ class TestViewOnlyLinksUpdate:
 
         assert res.status_code == 200
         assert res.json['data']['attributes']['name'] == 'updated vol name'
-        assert res.json['data']['attributes']['anonymous'] == False
+        assert not res.json['data']['attributes']['anonymous']
 
     def test_admin_can_update_vol_anonymous(
             self, app, user, view_only_link, url):
         assert view_only_link.name == 'testlink'
-        assert view_only_link.anonymous == False
+        assert not view_only_link.anonymous
 
         payload = {
             'attributes': {

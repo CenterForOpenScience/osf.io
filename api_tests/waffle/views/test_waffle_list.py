@@ -66,4 +66,4 @@ class TestWaffleList:
         assert res.status_code == 200
         assert len(res.json['data']) == 1
         assert res.json['data'][0]['attributes']['name'] == 'inactive_switch'
-        assert res.json['data'][0]['attributes']['active'] == False
+        assert not res.json['data'][0]['attributes']['active']

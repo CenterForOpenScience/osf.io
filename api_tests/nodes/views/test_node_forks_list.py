@@ -72,7 +72,7 @@ class TestNodeForksList:
         assert res.status_code == 200
         assert len(res.json['data']) == 0
         # Fork defaults to private
-        assert public_fork.is_public == False
+        assert not public_fork.is_public
 
         public_fork.is_public = True
         public_fork.save()
@@ -83,19 +83,19 @@ class TestNodeForksList:
         data = res.json['data'][0]
         assert data['attributes']['title'] == 'Fork of ' + public_project.title
         assert data['id'] == public_fork._id
-        assert data['attributes']['registration'] == False
+        assert not data['attributes']['registration']
         assert data['attributes']['fork']
 
     def test_can_access_public_node_forks_list_authenticated_contributor(
             self, app, user, public_project, public_fork, public_project_url):
         res = app.get(public_project_url, auth=user.auth)
         assert res.status_code == 200
-        assert public_fork.is_public == False
+        assert not public_fork.is_public
         assert len(res.json['data']) == 1
         data = res.json['data'][0]
         assert data['attributes']['title'] == 'Fork of ' + public_project.title
         assert data['id'] == public_fork._id
-        assert data['attributes']['registration'] == False
+        assert not data['attributes']['registration']
         assert data['attributes']['fork']
 
     def test_can_access_public_node_forks_list_authenticated_non_contributor(
@@ -105,7 +105,7 @@ class TestNodeForksList:
         assert res.status_code == 200
         assert len(res.json['data']) == 0
         # Fork defaults to private
-        assert public_fork.is_public == False
+        assert not public_fork.is_public
 
         public_fork.is_public = True
         public_fork.save()
@@ -116,7 +116,7 @@ class TestNodeForksList:
         data = res.json['data'][0]
         assert data['attributes']['title'] == 'Fork of ' + public_project.title
         assert data['id'] == public_fork._id
-        assert data['attributes']['registration'] == False
+        assert not data['attributes']['registration']
         assert data['attributes']['fork']
 
     def test_authenticated_contributor_can_access_private_node_forks_list(

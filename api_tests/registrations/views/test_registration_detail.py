@@ -219,10 +219,10 @@ class TestRegistrationUpdate:
     @pytest.fixture()
     def make_payload(self, private_registration):
         def payload(
-            id=private_registration._id,
-            type='registrations',
-            attributes={
-                'public': True}):
+                id=private_registration._id,
+                type='registrations',
+                attributes={'public': True}
+        ):
             return {
                 'data': {
                     'id': id,

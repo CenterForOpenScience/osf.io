@@ -391,18 +391,18 @@ class TestPreprintUpdate:
             self, mock_update_ezid, app, user, preprint, url):
         new_user = AuthUserFactory()
         contributor_payload = {
-            "data": {
-                "attributes": {
-                    "bibliographic": True,
-                    "permission": "write",
-                    "send_email": False
+            'data': {
+                'attributes': {
+                    'bibliographic': True,
+                    'permission': 'write',
+                    'send_email': False
                 },
-                "type": "contributors",
-                "relationships": {
-                    "users": {
-                        "data": {
-                            "id": new_user._id,
-                            "type": "users"
+                'type': 'contributors',
+                'relationships': {
+                    'users': {
+                        'data': {
+                            'id': new_user._id,
+                            'type': 'users'
                         }
                     }
                 }
@@ -1246,7 +1246,7 @@ class TestReviewsPreprintDetailPermissions:
     def public_project(self, admin, write_contrib):
         public_project = ProjectFactory(creator=admin, is_public=True)
         public_project.add_contributor(
-            write_contrib, permissions=[ 'read', 'write'], save=True)
+            write_contrib, permissions=['read', 'write'], save=True)
         return public_project
 
     @pytest.fixture()

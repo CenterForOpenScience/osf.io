@@ -1385,7 +1385,7 @@ class TestNodeBulkCreate:
     #   test_bulk_create_no_type
         payload = {
             'data': [{
-                "attributes": {
+                'attributes': {
                     'category': category,
                     'title': title
                 }
@@ -1405,8 +1405,9 @@ class TestNodeBulkCreate:
             'data': [
                 public_project, {
                     'type': 'Incorrect type.',
-                    "attributes": {
-                        'category': category, 'title': title
+                    'attributes': {
+                        'category': category,
+                        'title': title
                     }
                 }
             ]
@@ -1487,9 +1488,11 @@ class TestNodeBulkCreate:
 
         res = app.delete_json_api(
             url,
-            {'data': [
-                {'id': id_one, 'type': 'nodes'},
-                {'id': id_two, 'type': 'nodes'}]
+            {
+                'data': [
+                    {'id': id_one, 'type': 'nodes'},
+                    {'id': id_two, 'type': 'nodes'}
+                ]
             },
             auth=user_one.auth,
             expect_errors=True, bulk=True)
@@ -1661,21 +1664,21 @@ class TestNodeBulkUpdate:
 
     #   test_bulk_update_blank_but_not_empty_title
         payload = {
-            "data": [
+            'data': [
                 {
-                    "id": public_project_one._id,
-                    "type": "nodes",
-                    "attributes": {
-                        "title": "This shouldn't update.",
-                        "category": "instrumentation"
+                    'id': public_project_one._id,
+                    'type': 'nodes',
+                    'attributes': {
+                        'title': 'This shouldn\'t update.',
+                        'category': 'instrumentation'
                     }
                 },
                 {
-                    "id": public_project_two._id,
-                    "type": "nodes",
-                    "attributes": {
-                        "title": " ",
-                        "category": "hypothesis"
+                    'id': public_project_two._id,
+                    'type': 'nodes',
+                    'attributes': {
+                        'title': '',
+                        'category': 'hypothesis'
                     }
                 }
             ]
@@ -1777,7 +1780,7 @@ class TestNodeBulkUpdate:
                 'type': 'nodes',
                 'attributes': {
                     'title': new_title,
-                    'category': "project"
+                    'category': 'project'
                 }
             }},
             auth=user.auth,
@@ -1815,7 +1818,7 @@ class TestNodeBulkUpdate:
         assert res.status_code == 400
         assert len(res.json['errors']) == 1
         assert res.json['errors'][0]['source']['pointer'] == '/data/1/id'
-        assert res.json['errors'][0]['detail'] == "This field may not be null."
+        assert res.json['errors'][0]['detail'] == 'This field may not be null.'
 
         public_project_two_url = '/{}nodes/{}/'.format(
             API_BASE, public_project_two._id)
@@ -1841,7 +1844,7 @@ class TestNodeBulkUpdate:
         assert res.status_code == 400
         assert len(res.json['errors']) == 1
         assert res.json['errors'][0]['source']['pointer'] == '/data/1/type'
-        assert res.json['errors'][0]['detail'] == "This field may not be null."
+        assert res.json['errors'][0]['detail'] == 'This field may not be null.'
 
         public_project_two_url = '/{}nodes/{}/'.format(
             API_BASE, public_project_two._id)
@@ -2203,7 +2206,7 @@ class TestNodeBulkPartialUpdate:
                 'id': public_project_one._id,
                 'attributes': {
                     'title': new_title,
-                    'category': "project"
+                    'category': 'project'
                 }
             }},
             auth=user.auth,
@@ -2713,7 +2716,7 @@ class TestNodeBulkDelete:
 
     #   test_bulk_delete_with_query_params_wrong_type
         res_url = '{}?{}&{}'.format(
-            url, public_query_params, "type=node_not_nodes")
+            url, public_query_params, 'type=node_not_nodes')
         res = app.delete_json_api(
             res_url, auth=user_one.auth,
             expect_errors=True, bulk=True)
@@ -2913,7 +2916,7 @@ class TestNodeBulkDelete:
         res = app.get(user_one_private_project_url, auth=user_one.auth)
         assert res.status_code == 200
 
-        url = "/{}nodes/{}/".format(API_BASE, user_two_private_project._id)
+        url = '/{}nodes/{}/'.format(API_BASE, user_two_private_project._id)
         res = app.get(url, auth=user_two.auth)
         assert res.status_code == 200
 

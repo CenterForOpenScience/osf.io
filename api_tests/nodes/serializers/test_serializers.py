@@ -43,7 +43,7 @@ class TestNodeSerializer:
         assert attributes['public'] == node.is_public
         assert attributes['tags'] == [str(each.name)
                                       for each in node.tags.all()]
-        assert attributes['current_user_can_comment'] == False
+        assert not attributes['current_user_can_comment']
         assert attributes['category'] == node.category
         assert attributes['registration'] == node.is_registration
         assert attributes['fork'] == node.is_fork

@@ -65,7 +65,7 @@ class TestFileView:
     def test_deleted_file_return_410(self, app, node, user):
         deleted_file = api_utils.create_test_file(node, user, create_guid=True)
         url_with_guid = '/{}files/{}/'.format(
-            API_BASE,deleted_file.get_guid()._id
+            API_BASE, deleted_file.get_guid()._id
         )
         url_with_id = '/{}files/{}/'.format(API_BASE, deleted_file._id)
 

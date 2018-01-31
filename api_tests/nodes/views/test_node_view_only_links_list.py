@@ -136,7 +136,7 @@ class TestViewOnlyLinksCreate:
         assert res.status_code == 201
         data = res.json['data']
         assert data['attributes']['name'] == 'testlink'
-        assert data['attributes']['anonymous'] == False
+        assert not data['attributes']['anonymous']
         assert data['embeds']['creator']['data']['id'] == user._id
 
     def test_default_name_not_in_payload(self, app, user, public_project):
@@ -151,7 +151,7 @@ class TestViewOnlyLinksCreate:
         assert res.status_code == 201
         data = res.json['data']
         assert data['attributes']['name'] == 'Shared project link'
-        assert data['attributes']['anonymous'] == False
+        assert not data['attributes']['anonymous']
         assert data['embeds']['creator']['data']['id'] == user._id
 
     def test_admin_can_create_vol(

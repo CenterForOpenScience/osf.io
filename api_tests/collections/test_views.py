@@ -1594,11 +1594,11 @@ class TestReturnDeletedCollection:
     def test_return_deleted_collection(self, app):
 
         user = AuthUserFactory()
-        non_contrib = AuthUserFactory()
+        AuthUserFactory()
 
         collection_deleted = CollectionFactory(
             is_deleted=True, creator=user, title='This collection has been deleted')
-        collection = CollectionFactory(
+        CollectionFactory(
             creator=user, title='A boring collection')
 
         title_new = 'This deleted node has been edited'
@@ -2072,7 +2072,7 @@ class TestCollectionBulkUpdate:
             'attributes': {}}
         res = app.put_json_api(
             url_collections,
-            {'data': [payload_collection['data'][1],new_payload]},
+            {'data': [payload_collection['data'][1], new_payload]},
             auth=user_one.auth,
             expect_errors=True, bulk=True
         )
@@ -2917,7 +2917,7 @@ class TestBulkDeleteCollectionNodeLinks:
 
         # Regression test for https://openscience.atlassian.net/browse/OSF-4322
         # test_bulk_delete_link_that_is_not_linked_to_correct_node
-        project = ProjectFactory(creator=user_one)
+        ProjectFactory(creator=user_one)
         # The node link belongs to a different project
         res = app.delete_json_api(
             url_collection_one, payload_collection_two,

@@ -211,8 +211,7 @@ class TestNodeCommentsListFiles(NodeCommentsListMixin):
             self, app, user, project_private_dict):
         # Delete commented file
         osfstorage = project_private_dict['project'].get_addon('osfstorage')
-        root_node = osfstorage.get_root()
-        # root_node.delete(project_private_dict['file'])
+        osfstorage.get_root()
         project_private_dict['file'].delete(user=user)
         res = app.get(project_private_dict['url'], auth=user.auth)
         assert res.status_code == 200

@@ -139,7 +139,7 @@ class TestApplicationDetail:
     def test_deleting_application_flags_instance_inactive(
             self, mock_method, app, user, user_app, user_app_url):
         mock_method.return_value(True)
-        res = app.delete(user_app_url, auth=user.auth)
+        app.delete(user_app_url, auth=user.auth)
         user_app.reload()
         assert not user_app.is_active
 
