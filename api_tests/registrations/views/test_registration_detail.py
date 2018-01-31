@@ -217,11 +217,15 @@ class TestRegistrationUpdate:
             API_BASE, private_registration._id)
 
     @pytest.fixture()
-    def make_payload(self, private_registration):
+    def attributes(self):
+        return {'public': True}
+
+    @pytest.fixture()
+    def make_payload(self, private_registration, attributes):
         def payload(
                 id=private_registration._id,
                 type='registrations',
-                attributes={'public': True}
+                attributes=attributes
         ):
             return {
                 'data': {
