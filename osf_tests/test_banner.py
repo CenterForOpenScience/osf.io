@@ -3,7 +3,7 @@ import pytest
 from datetime import timedelta
 from django.utils import timezone
 from osf.exceptions import ValidationValueError
-from osf_tests.factories  import ScheduledBannerFactory
+from osf_tests.factories import ScheduledBannerFactory
 
 @pytest.mark.django_db
 class TestScheduledBanner:
@@ -28,7 +28,6 @@ class TestScheduledBanner:
                 end_date=date + timedelta(days=6)
             )
         assert e.value.message == 'Banners dates cannot be overlapping.'
-
 
         # Banner overlapping on start
         with pytest.raises(ValidationValueError) as e:

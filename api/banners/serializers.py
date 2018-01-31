@@ -10,8 +10,8 @@ class BannerSerializer(JSONAPISerializer):
     end_date = VersionedDateTimeField(read_only=True)
     color = ser.CharField(read_only=True)
     license = ser.CharField(read_only=True)
-    default_text = ser.SerializerMethodField()
-    mobile_text = ser.SerializerMethodField()
+    default_alt_text = ser.SerializerMethodField()
+    mobile_alt_text = ser.SerializerMethodField()
 
     links = LinksField({
         'self': 'get_absolute_url',
@@ -27,13 +27,13 @@ class BannerSerializer(JSONAPISerializer):
         if banner.mobile_photo:
             return banner.mobile_photo.url
 
-    def get_default_text(self, banner):
-        return self.add_license(banner, banner.default_text)
+    def get_default_alt_text(self, banner):
+        return self.add_license(banner, banner.default_alt_text)
 
-    def get_mobile_text(self, banner):
-        if banner.mobile_text:
-            return self.add_license(banner, banner.mobile_text)
-        return self.get_default_text(banner)
+    def get_mobile_alt_text(self, banner):
+        if banner.mobile_alt_text:
+            return self.add_license(banner, banner.mobile_alt_text)
+        return self.get_default_alt_text(banner)
 
     def add_license(self, banner, text):
         if banner.license and not banner.license.lower() == 'none':

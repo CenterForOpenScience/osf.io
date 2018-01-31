@@ -35,10 +35,10 @@ class ScheduledBanner(models.Model):
     license = models.CharField(blank=True, null=True, max_length=256)
 
     default_photo = models.FileField(storage=BannerImageStorage())
-    default_text = models.TextField()
+    default_alt_text = models.TextField()
 
     mobile_photo = models.FileField(storage=BannerImageStorage())
-    mobile_text = models.TextField(blank=True, null=True)
+    mobile_alt_text = models.TextField(blank=True, null=True)
 
     def save(self, *args, **kwargs):
         self.start_date = datetime.combine(self.start_date, datetime.min.time())

@@ -823,8 +823,8 @@ class ScheduledBannerFactory(DjangoModelFactory):
         model = models.ScheduledBanner
 
     name = factory.Faker('name')
-    default_text = factory.Faker('text')
-    mobile_text = factory.Faker('text')
+    default_alt_text = factory.Faker('text')
+    mobile_alt_text = factory.Faker('text')
     default_photo = factory.Faker('file_name')
     mobile_photo = factory.Faker('file_name')
     license = factory.Faker('name')

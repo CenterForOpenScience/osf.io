@@ -14,6 +14,12 @@ class BannerForm(forms.ModelForm):
             'color': TextInput(attrs={'class': 'colorpicker'}),
             'start_date': DateInput(attrs={'class': 'datepicker'}),
             'end_date': DateInput(attrs={'class': 'datepicker'}),
+            'default_alt_text': TextInput(attrs={'placeholder': 'Alt text for accessibility'}),
+            'mobile_alt_text': TextInput(attrs={'placeholder': 'Alt text for accessibility'}),
+        }
+        labels = {
+            'default_alt_text': 'Default photo alt text',
+            'mobile_alt_text': 'Mobile photo alt text'
         }
 
     def __init__(self, *args, **kwargs):

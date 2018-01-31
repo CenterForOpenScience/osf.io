@@ -43,10 +43,10 @@ var DonateBanner = {
 
 var BannerDisplay = {
     view: function(ctrl, args) {
-        var default_photo = args.banner.links.default_photo;
-        var mobile_photo = args.banner.links.mobile_photo;
-        var default_text = args.banner.attributes.default_text;
-        var mobile_text = args.banner.attributes.mobile_text;
+        var defaultPhoto = args.banner.links.default_photo;
+        var mobilePhoto = args.banner.links.mobile_photo;
+        var defaultAltText = args.banner.attributes.default_alt_text;
+        var mobileAltText = args.banner.attributes.mobile_alt_text;
         var color = args.banner.attributes.color;
 
         $('.donate-banner-background')[0].style.backgroundColor = color;
@@ -59,10 +59,10 @@ var BannerDisplay = {
                         }
                     },
                     m('.col-sm-md-lg-12.hidden-xs',
-                        m('img.donate-banner.img-responsive.banner-image', {'src': default_photo, 'alt': default_text})
+                        m('img.donate-banner.img-responsive.banner-image', {'src': defaultPhoto, 'alt': defaultAltText})
                     ),
                     m('.col-xs-12.hidden-sm.hidden-md.hidden-lg',
-                        m('img.donate-banner.img-responsive.banner-image', {'src': mobile_photo, 'alt': mobile_text})
+                        m('img.donate-banner.img-responsive.banner-image', {'src': mobilePhoto, 'alt': mobileAltText})
                     )
                 ),
             ]
