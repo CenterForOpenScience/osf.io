@@ -148,9 +148,9 @@ class NodeWikiPage(GuidMixin, BaseModel):
         html_output = build_html_output(self.content, node=node)
         try:
             cleaner = Cleaner(
-                tags=settings.WIKI_WHITELIST['tags'],
-                attributes=settings.WIKI_WHITELIST['attributes'],
-                styles=settings.WIKI_WHITELIST['styles'],
+                tags=WIKI_WHITELIST['tags'],
+                attributes=WIKI_WHITELIST['attributes'],
+                styles=WIKI_WHITELIST['styles'],
                 filters=[partial(LinkifyFilter, callbacks=[nofollow, ])]
             )
 

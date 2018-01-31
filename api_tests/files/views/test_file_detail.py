@@ -64,9 +64,9 @@ class TestFileView:
     def test_deleted_file_return_410(self, app, node, user):
         deleted_file = api_utils.create_test_file(node, user, create_guid=True)
         url_with_guid = '/{}files/{}/'.format(
-            API_BASE, deleted_file.get_guid()._id
+            settings.API_BASE, deleted_file.get_guid()._id
         )
-        url_with_id = '/{}files/{}/'.format(API_BASE, deleted_file._id)
+        url_with_id = '/{}files/{}/'.format(settings.API_BASE, deleted_file._id)
 
         res = app.get(url_with_guid, auth=user.auth)
         assert res.status_code == 200
