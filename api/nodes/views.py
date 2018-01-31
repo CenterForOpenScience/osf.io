@@ -2421,7 +2421,7 @@ class NodeLogList(JSONAPIBaseView, generics.ListAPIView, NodeMixin, ListFilterMi
     * 'edit_title': A Node's title is changed
     * 'edit_description': A Node's description is changed
     * 'updated_fields': One or more of a Node's fields are changed
-    * 'external_ids_added': An external identifier is added to a Node (e.g. DOI, ARK)
+    * 'external_ids_added': An external identifier is added to a Node (e.g. DOI)
     ===
     * 'contributor_added': A Contributor is added to a Node
     * 'contributor_removed': A Contributor is removed from a Node

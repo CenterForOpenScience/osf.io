@@ -119,7 +119,7 @@ class TestPreprintDetail:
 
     def test_published_preprint_doi_link_returned_after_datacite_request(self, app, user, preprint, url):
         expected_doi = EZID_FORMAT.format(namespace=DOI_NAMESPACE, guid=preprint._id).replace('doi:', '')
-        preprint.set_identifier_values(doi=expected_doi, ark='testark')
+        preprint.set_identifier_values(doi=expected_doi)
         res = app.get(url, auth=user.auth)
         assert res.json['data']['id'] == preprint._id
         assert res.json['data']['attributes']['is_published'] is True
