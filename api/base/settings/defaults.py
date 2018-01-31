@@ -67,13 +67,12 @@ COOKIE_NAME = 'osf'
 # TODO: Override OSF_COOKIE_DOMAIN in local.py in production
 OSF_COOKIE_DOMAIN = None
 # server-side verification timeout
-OSF_SESSION_TIMEOUT = 30 * 24 * 60 * 60  # 30 days in seconds
 # TODO: Override SECRET_KEY in local.py in production
 SECRET_KEY = 'CHANGEME'
-SESSION_COOKIE_SECURE = SECURE_MODE
-SESSION_COOKIE_HTTPONLY = True
 
 # session:
+OSF_SESSION_TIMEOUT = 30 * 24 * 60 * 60  # 30 days in seconds
+SESSION_COOKIE_HTTPONLY = True
 SESSION_COOKIE_NAME = 'api'
 SESSION_COOKIE_SECURE = SECURE_MODE
 
@@ -1883,7 +1882,6 @@ SPAM_ACCOUNT_SUSPENSION_THRESHOLD = datetime.timedelta(hours=24)
 SPAM_FLAGGED_MAKE_NODE_PRIVATE = False
 SPAM_FLAGGED_REMOVE_FROM_SEARCH = False
 
-ENABLE_ARCHIVER = True
 
 DEFAULT_HMAC_SECRET = 'changeme'
 DEFAULT_HMAC_ALGORITHM = hashlib.sha256
@@ -1904,6 +1902,7 @@ DB_PASS = None
 
 
 ###### ARCHIVER ###########
+ENABLE_ARCHIVER = True
 ARCHIVE_PROVIDER = 'osfstorage'
 
 MAX_ARCHIVE_SIZE = 5 * 1024 ** 3  # == math.pow(1024, 3) == 1 GB
