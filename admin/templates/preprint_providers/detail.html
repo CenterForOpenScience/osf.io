@@ -16,6 +16,11 @@
             <div class="col-md-12">
                 <a class="btn btn-primary" href={% url 'preprint_providers:export' preprint_provider.id %}>Export preprint provider metadata</a>
                 {%  if perms.osf.delete_preprintprovider %}
+                    {%  if preprint_provider.share_source or preprint_provider.access_token %}
+                    <a class="btn btn-primary disabled">Share source or token already exist</a>
+                    {% else %}
+                    <a class="btn btn-primary" href={% url 'preprint_providers:share_source' preprint_provider.id %}>Setup Share Source</a>
+                    {% endif %}
                 <a class="btn btn-danger" href={% url 'preprint_providers:delete' preprint_provider.id %}>Delete preprint provider</a>
                 {% endif %}
             </div>
