@@ -18,7 +18,7 @@ def add_banner_perms_to_groups(*args, **kwargs):
     osf_admin = Group.objects.get(name='osf_admin')
     read_only = Group.objects.get(name='read_only')
 
-    [osf_admin.permissions.add(perm) for perm in [view_permission, edit_permission, delete_permission]]
+    osf_admin.permissions.add(view_permission, edit_permission, delete_permission)
     osf_admin.save()
 
     read_only.permissions.add(view_permission)
@@ -33,7 +33,7 @@ def remove_banner_perms_from_groups(*args, **kwargs):
     osf_admin = Group.objects.get(name='osf_admin')
     read_only = Group.objects.get(name='read_only')
 
-    [osf_admin.permissions.remove(perm) for perm in [view_permission, edit_permission, delete_permission]]
+    osf_admin.permissions.remove(view_permission, edit_permission, delete_permission)
     osf_admin.save()
 
     read_only.permissions.remove(view_permission)

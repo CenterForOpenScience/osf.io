@@ -5,7 +5,7 @@ from django.utils import timezone
 
 from api.base.settings.defaults import API_BASE
 
-from osf_tests.factories  import ScheduledBannerFactory
+from osf_tests.factories import ScheduledBannerFactory
 
 @pytest.mark.django_db
 class TestPreprintDetail:
@@ -21,13 +21,13 @@ class TestPreprintDetail:
     @pytest.fixture()
     def tomorrow_banner(self, date):
         return ScheduledBannerFactory(
-            start_date=date+timedelta(days=1)
+            start_date=date + timedelta(days=1)
         )
 
     @pytest.fixture()
     def yesterday_banner(self, date):
         return ScheduledBannerFactory(
-            start_date=date-timedelta(days=1)
+            start_date=date - timedelta(days=1)
         )
 
     @pytest.fixture()
