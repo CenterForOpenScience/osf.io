@@ -201,7 +201,7 @@ var ProjectViewModel = function(data, options) {
             title: 'Create identifiers',
             message: '<p class="overflow">' +
                 'Are you sure you want to create a DOI for this ' +
-                $osf.htmlEscape(self.nodeType) + '? A DOI identifier' +
+                $osf.htmlEscape(self.nodeType) + '? A DOI' +
                 ' is persistent and will always resolve to this page.',
             callback: function(confirmed) {
                 if (confirmed) {

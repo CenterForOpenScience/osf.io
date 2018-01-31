@@ -234,10 +234,7 @@ class TestIdentifierViews(OsfTestCase):
             res.json['doi'],
             self.node.get_identifier_value('doi')
         )
-
-        with assert_raises(KeyError):
-            ark = res.json['ark']
-
+        assert_not_in(res.json.keys(), 'ark')
         assert_equal(res.status_code, 201)
 
     @httpretty.activate
