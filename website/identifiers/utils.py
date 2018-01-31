@@ -103,8 +103,6 @@ def request_identifiers_from_ezid(target_object):
                 raise
             resp = client.get_identifier(doi)
             only_doi = False
-        if only_doi:
-            resp = {'success': resp['success'].split('|')[0]}
         return {
             'response': resp,
             'already_exists': already_exists,
