@@ -90,7 +90,6 @@ class UserAddonListMixin(object):
         res = self.app.get(
             self.setting_list_url,
             expect_errors=True)
-
         assert_equal(res.status_code, 401)
 
     def test_settings_list_user_cannot_view_other_user(self):
