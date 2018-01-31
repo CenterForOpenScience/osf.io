@@ -130,11 +130,7 @@ def parse_identifiers(ezid_response):
             'ark': '{0}{1}'.format(settings.ARK_NAMESPACE.replace('ark:', ''), suffix),
         }
     else:
-        identifiers = dict(
-            [each.strip('/') for each in pair.strip().split(':')]
-            for pair in resp['success'].split('|')
-        )
-        return identifiers['doi']
+        return {'doi': resp['success'].strip().split(':')[1]}
 
 
 def get_or_create_identifiers(target_object):
