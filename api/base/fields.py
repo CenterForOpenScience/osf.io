@@ -5,6 +5,12 @@ from django.core.exceptions import ValidationError
 
 class NullModelMultipleChoiceCaseInsensitiveField(forms.ModelMultipleChoiceField):
 
+    def __init__(self, *args, **kwargs):
+        # use the default empty label -- it looks like the latest release did something different here
+        # with null values that we'd need to look into that might make this whole thing go away!!!
+        kwargs.pop('empty_label')
+        super(NullModelMultipleChoiceCaseInsensitiveField, self).__init__(*args, **kwargs)
+
     def clean(self, value):
         # let a custom filter handle the actual filtering for null values later in the qs
         if value == 'null':
