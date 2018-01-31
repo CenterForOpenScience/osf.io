@@ -1708,7 +1708,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
             node_contained = node_relation.child
             # Register child nodes
             if not node_relation.is_node_link:
-                registered_child = node_contained.register_node(  # noqa
+                node_contained.register_node(
                     schema=schema,
                     auth=auth,
                     data=data,
@@ -1873,28 +1873,24 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         # Need to save here in order to access m2m fields
         forked.save()
 
+        forked.tags.add(*self.all_tags.values_list('pk', flat=True))
+
         if parent:
             node_relation = NodeRelation.objects.get(parent=parent.forked_from, child=original)
             NodeRelation.objects.get_or_create(_order=node_relation._order, parent=parent, child=forked)
 
-        forked.tags.add(*self.all_tags.values_list('pk', flat=True))
         for node_relation in original.node_relations.filter(child__is_deleted=False):
             node_contained = node_relation.child
             # Fork child nodes
             if not node_relation.is_node_link:
                 try:  # Catch the potential PermissionsError above
-                    forked_node = node_contained.fork_node(auth=auth, title='', parent=forked)
+                    node_contained.fork_node(
+                        auth=auth,
+                        title='',
+                        parent=forked,
+                    )
                 except PermissionsError:
                     pass  # If this exception is thrown omit the node from the result set
-                    forked_node = None
-                if forked_node is not None:
-                    NodeRelation.objects.get_or_create(
-                        is_node_link=False,
-                        parent=forked,
-                        child=forked_node
-                    )
-                    forked_node.root = None
-                    forked_node.save()  # Recompute root on save()
             else:
                 # Copy linked nodes
                 NodeRelation.objects.get_or_create(
