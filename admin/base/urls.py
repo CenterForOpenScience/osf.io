@@ -14,6 +14,7 @@ urlpatterns = [
         include([
             url(r'^$', views.home, name='home'),
             url(r'^admin/', admin.site.urls),
+            url(r'^banners/', include('admin.banners.urls', namespace='banners')),
             url(r'^spam/', include('admin.spam.urls', namespace='spam')),
             url(r'^institutions/', include('admin.institutions.urls', namespace='institutions')),
             url(r'^preprint_providers/', include('admin.preprint_providers.urls', namespace='preprint_providers')),

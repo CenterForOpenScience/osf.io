@@ -100,6 +100,7 @@ def get_globals():
         'web_url_for': util.web_url_for,
         'api_url_for': util.api_url_for,
         'api_v2_url': util.api_v2_url,  # URL function for templates
+        'api_v2_domain': settings.API_DOMAIN,
         'api_v2_base': util.api_v2_url(''),  # Base url used by JS api helper
         'sanitize': sanitize,
         'sjson': lambda s: sanitize.safe_json(s),

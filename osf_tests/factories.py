@@ -817,6 +817,20 @@ class ReviewActionFactory(DjangoModelFactory):
 
     is_deleted = False
 
+class ScheduledBannerFactory(DjangoModelFactory):
+    # Banners are set for 24 hours from start_date if no end date is given
+    class Meta:
+        model = models.ScheduledBanner
+
+    name = factory.Faker('name')
+    default_alt_text = factory.Faker('text')
+    mobile_alt_text = factory.Faker('text')
+    default_photo = factory.Faker('file_name')
+    mobile_photo = factory.Faker('file_name')
+    license = factory.Faker('name')
+    color = 'white'
+    start_date = timezone.now()
+    end_date = factory.LazyAttribute(lambda o: o.start_date)
 
 class FlagFactory(DjangoModelFactory):
     name = factory.Faker('catch_phrase')
