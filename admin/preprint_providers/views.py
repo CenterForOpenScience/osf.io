@@ -1,6 +1,7 @@
 from __future__ import unicode_literals
 
 import json
+import requests
 import urlparse
 
 from django.core import serializers
@@ -18,6 +19,7 @@ from admin.base.forms import ImportFileForm
 from admin.preprint_providers.forms import PreprintProviderForm, PreprintProviderCustomTaxonomyForm
 from osf.models import PreprintProvider, Subject, NodeLicense
 from osf.models.preprint_provider import rules_to_subjects
+from website import settings as osf_settings
 
 # When preprint_providers exclusively use Subject relations for creation, set this to False
 SHOW_TAXONOMIES_IN_PREPRINT_PROVIDER_CREATE = True
@@ -327,6 +329,52 @@ class ImportPreprintProvider(PermissionRequiredMixin, View):
         if subject_data and not provider.subjects.count():
             self.add_subjects(provider, subject_data)
         return provider
+
+
+class ShareSourcePreprintProvider(PermissionRequiredMixin, View):
+    permission_required = 'osf.change_preprintprovider'
+    raise_exception = True
+
+    def get(self, request, *args, **kwargs):
+        preprint_provider = PreprintProvider.objects.get(id=self.kwargs['preprint_provider_id'])
+
+        resp_json = self.share_post(preprint_provider)
+        for data in resp_json['included']:
+            if data['type'] == 'ShareUser':
+                preprint_provider.access_token = data['attributes']['token']
+            elif data['type'] == 'SourceConfig':
+                preprint_provider.share_source = data['attributes']['label']
+        preprint_provider.save()
+        return redirect(reverse_lazy('preprint_providers:detail', kwargs={'preprint_provider_id': preprint_provider.id}))
+
+    def share_post(self, preprint_provider):
+        if preprint_provider.share_source or preprint_provider.access_token:
+            raise ValueError('Cannot update share_source or access_token because one or the other already exists')
+        if not osf_settings.SHARE_API_TOKEN or not osf_settings.SHARE_URL:
+            raise ValueError('SHARE_API_TOKEN or SHARE_URL not set')
+
+        debug_prepend = ''
+        if osf_settings.DEBUG_MODE or osf_settings.SHARE_PREPRINT_PROVIDER_PREPEND:
+            assert osf_settings.SHARE_PREPRINT_PROVIDER_PREPEND, 'Local SHARE_PREPRINT_PROVIDER_PREPEND (e.g., \'alexschiller\') must be set when in DEBUG_MODE'
+            debug_prepend = '{}_'.format(osf_settings.SHARE_PREPRINT_PROVIDER_PREPEND)
+
+        return requests.post(
+            '{}api/v2/sources/'.format(osf_settings.SHARE_URL),
+            json={
+                'data': {
+                    'type': 'Source',
+                    'attributes': {
+                        'homePage': preprint_provider.domain if preprint_provider.domain else '{}/preprints/{}/'.format(osf_settings.DOMAIN, preprint_provider._id),
+                        'longTitle': debug_prepend + preprint_provider.name,
+                        'iconUrl': '{}{}{}/square_color_no_transparent.png'.format(settings.OSF_URL, osf_settings.PREPRINTS_ASSETS, preprint_provider._id)
+                    }
+                }
+            },
+            headers={
+                'Authorization': 'Bearer {}'.format(osf_settings.SHARE_API_TOKEN),
+                'Content-Type': 'application/vnd.api+json'
+            }
+        ).json()
 
 
 class SubjectDynamicUpdateView(PermissionRequiredMixin, View):

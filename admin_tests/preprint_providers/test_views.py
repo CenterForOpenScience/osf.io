@@ -1,6 +1,7 @@
 import json
 from io import StringIO
 
+import mock
 from nose import tools as nt
 from django.test import RequestFactory
 from django.core.files.uploadedfile import InMemoryUploadedFile
@@ -422,3 +423,41 @@ class TestProcessCustomTaxonomy(AdminTestCase):
 
         with nt.assert_raises(AssertionError):
             self.view.post(self.request)
+
+
+class TestShareSourcePreprintProvider(AdminTestCase):
+    def setUp(self):
+        self.user = AuthUserFactory()
+        self.user.is_superuser = True
+        self.user.save()
+
+        self.preprint_provider = PreprintProviderFactory()
+
+        self.request = RequestFactory().get('/fake_path')
+        self.view = views.ShareSourcePreprintProvider()
+        self.view = setup_user_view(self.view, self.request, user=self.user)
+        self.view.kwargs = {'preprint_provider_id': self.preprint_provider.id}
+
+    @mock.patch.object(views.ShareSourcePreprintProvider, 'share_post')
+    def test_update_share_token_and_source(self, share_resp):
+        token = 'tokennethbranagh'
+        label = 'sir'
+        share_resp.return_value = {
+            'included': [{
+                'attributes': {
+                    'token': token,
+                },
+                'type': 'ShareUser',
+            }, {
+                'attributes': {
+                    'label': label
+                },
+                'type': 'SourceConfig',
+            }]
+        }
+
+        self.view.get(self.request)
+        self.preprint_provider.refresh_from_db()
+
+        assert self.preprint_provider.access_token == token
+        assert self.preprint_provider.share_source == label

@@ -342,6 +342,9 @@ EZID_PASSWORD = None
 # Format for DOIs and ARKs
 EZID_FORMAT = '{namespace}osf.io/{guid}'
 
+# Leave as `None` for production, test/staging/local envs must set
+SHARE_PREPRINT_PROVIDER_PREPEND = None
+
 SHARE_REGISTRATION_URL = ''
 SHARE_URL = None
 SHARE_API_TOKEN = None  # Required to send project updates to SHARE
