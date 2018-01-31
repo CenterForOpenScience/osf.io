@@ -82,7 +82,7 @@ class PreprintListMatchesPreprintDetailMixin:
 
     def test_unpublished_invisible_to_non_contribs(
             self, app, user_non_contrib, preprint_unpublished,
-            list_url, detail_url):
+            preprint_published, list_url, detail_url):
         res = app.get(list_url, auth=user_non_contrib.auth)
         assert len(res.json['data']) == 1
         assert preprint_unpublished._id not in [
@@ -95,7 +95,8 @@ class PreprintListMatchesPreprintDetailMixin:
         assert res.status_code == 403
 
     def test_unpublished_invisible_to_public(
-            self, app, preprint_unpublished, list_url, detail_url):
+            self, app, preprint_unpublished, preprint_published,
+            list_url, detail_url):
         res = app.get(list_url)
         assert len(res.json['data']) == 1
         assert preprint_unpublished._id not in [
@@ -173,14 +174,15 @@ class PreprintIsPublishedListMixin:
             is_published=True)
 
     def test_unpublished_invisible_to_non_contribs(
-            self, app, user_non_contrib, preprint_unpublished, url):
+            self, app, user_non_contrib, preprint_unpublished,
+            preprint_published, url):
         res = app.get(url, auth=user_non_contrib.auth)
         assert len(res.json['data']) == 1
         assert preprint_unpublished._id not in [
             d['id'] for d in res.json['data']]
 
     def test_unpublished_invisible_to_public(
-            self, app, preprint_unpublished, url):
+            self, app, preprint_unpublished, preprint_published, url):
         res = app.get(url)
         assert len(res.json['data']) == 1
         assert preprint_unpublished._id not in [

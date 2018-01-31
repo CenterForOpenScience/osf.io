@@ -483,16 +483,17 @@ class TestRegistrationTags:
 
     @pytest.fixture()
     def url_registration_public(self, registration_public):
-        return '/{}registrations/{}/'.format(API_BASE, registration_public._id)
+        return '/{}registrations/{}/'.format(
+            API_BASE, registration_public._id)
 
     @pytest.fixture()
     def url_registration_private(self, registration_private):
-        return '/{}registrations/{}/'.format(API_BASE,
-                                             registration_private._id)
+        return '/{}registrations/{}/'.format(
+            API_BASE, registration_private._id)
 
     @pytest.fixture()
     def url_registration_withdrawn(
-            self, registration_withdrawn):
+            self, registration_withdrawn, withdrawn_registration):
         return '/{}registrations/{}/'.format(
             API_BASE, registration_withdrawn._id)
 

@@ -248,7 +248,7 @@ class TestNodeFileLogDetail:
         assert res.json['data'][0]['attributes']['params']['source']['node_title'] == 'Private Component'
 
     def test_file_log_keeps_url(
-            self, app, url_node_logs, user_two
+            self, app, url_node_logs, user_two, node_with_log
     ):
         res = app.get(url_node_logs, auth=user_two.auth)
         assert res.status_code == 200

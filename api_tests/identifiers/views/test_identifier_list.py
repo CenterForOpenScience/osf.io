@@ -60,8 +60,9 @@ class TestRegistrationIdentifierList:
         assert res_registration_identifiers.content_type == 'application/vnd.api+json'
 
     def test_identifier_list_returns_correct_number_and_referent(
-            self, registration, data_registration_identifiers,
-            res_registration_identifiers, all_identifiers
+            self, registration, identifier_registration,
+            data_registration_identifiers, res_registration_identifiers,
+            all_identifiers
     ):
         # test_identifier_list_returns_correct_number
         total = res_registration_identifiers.json['links']['meta']['total']
@@ -91,7 +92,7 @@ class TestRegistrationIdentifierList:
         assert_items_equal(values_in_response, values)
 
     def test_identifier_filter_by_category(
-            self, app, registration,
+            self, app, registration, identifier_registration,
             url_registration_identifiers
     ):
         IdentifierFactory(referent=registration, category='nopeid')
@@ -168,7 +169,7 @@ class TestNodeIdentifierList:
         assert res_node_identifiers.content_type == 'application/vnd.api+json'
 
     def test_identifier_list_returns_correct_number_and_referent(
-            self, node, res_node_identifiers,
+            self, node, identifier_node, res_node_identifiers,
             data_node_identifiers, all_identifiers
     ):
         # test_identifier_list_returns_correct_number
@@ -199,7 +200,7 @@ class TestNodeIdentifierList:
         assert_items_equal(values_in_response, values)
 
     def test_identifier_filter_by_category(
-            self, app, node, url_node_identifiers):
+            self, app, node, identifier_node, url_node_identifiers):
         IdentifierFactory(referent=node, category='nopeid')
         identifiers_for_node = Identifier.objects.filter(object_id=node.id)
 

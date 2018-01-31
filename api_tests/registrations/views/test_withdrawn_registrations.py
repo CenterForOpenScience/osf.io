@@ -55,7 +55,8 @@ class TestWithdrawnRegistrations(NodeCRUDTestCase):
         assert res.status_code == 200
 
     def test_cannot_errors(
-            self, app, user, registration, pointer_public):
+            self, app, user, project_public, registration,
+            withdrawn_registration, pointer_public):
 
         #   test_cannot_access_withdrawn_children
         url = '/{}registrations/{}/children/'.format(
@@ -99,7 +100,8 @@ class TestWithdrawnRegistrations(NodeCRUDTestCase):
         assert res.status_code == 403
 
     def test_cannot_access_withdrawn_comments(
-            self, app, user, registration):
+            self, app, user, project_public, pointer_public,
+            registration, withdrawn_registration):
         project_public = ProjectFactory(is_public=True, creator=user)
         CommentFactory(node=project_public, user=user)
         url = '/{}registrations/{}/comments/'.format(
@@ -108,7 +110,8 @@ class TestWithdrawnRegistrations(NodeCRUDTestCase):
         assert res.status_code == 403
 
     def test_cannot_access_withdrawn_node_logs(
-            self, app, user, registration):
+            self, app, user, project_public, pointer_public,
+            registration, withdrawn_registration):
         ProjectFactory(is_public=True, creator=user)
         url = '/{}registrations/{}/logs/'.format(API_BASE, registration._id)
         res = app.get(url, auth=user.auth, expect_errors=True)
