@@ -84,6 +84,7 @@ INSTALLED_APPS = (
     'raven.contrib.django.raven_compat',
     'django_extensions',
     'guardian',
+    'waffle',
 
     # OSF
     'osf',
@@ -191,7 +192,6 @@ MIDDLEWARE_CLASSES = (
     'api.base.middleware.DjangoGlobalMiddleware',
     'api.base.middleware.CeleryTaskMiddleware',
     'api.base.middleware.PostcommitTaskMiddleware',
-
     # A profiling middleware. ONLY FOR DEV USE
     # Uncomment and add "prof" to url params to recieve a profile for that url
     # 'api.base.middleware.ProfileMiddleware',
@@ -205,7 +205,7 @@ MIDDLEWARE_CLASSES = (
     # 'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'django.middleware.security.SecurityMiddleware',
-
+    'waffle.middleware.WaffleMiddleware',
 )
 
 TEMPLATES = [

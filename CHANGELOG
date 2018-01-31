@@ -2,6 +2,14 @@
 Changelog
 *********
 
+0.130.0 (2018-01-30)
+====================
+
+- Integrate django-waffle for feature flagging.
+- Upgrade to webpack 3.
+- Move identifiers code to website/identifiers/
+- Lint osf_tests.
+
 0.129.0 (2018-01-26)
 ====================
 

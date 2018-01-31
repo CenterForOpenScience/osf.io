@@ -19,7 +19,7 @@ var LICENSE_PROPERTIES = {
     'copyrightHolders': 'Copyright Holders'
 };
 
-var template = require('raw!templates/license-picker.html');
+var template = require('raw-loader!templates/license-picker.html');
 
 /**
  * @class LicensePicker: Knockout.js view model for project license selection
