@@ -133,6 +133,8 @@ FROM_EMAIL = 'openscienceframework-noreply@osf.io'
 # support email
 OSF_SUPPORT_EMAIL = 'support@osf.io'
 
+# prereg email
+PREREG_EMAIL = 'prereg@cos.io'
 
 # Default settings for fake email address generation
 FAKE_EMAIL_NAME = 'freddiemercury'
@@ -449,6 +451,8 @@ class CeleryConfig:
 
     # Default RabbitMQ backend
     result_backend = os.environ.get('CELERY_RESULT_BACKEND', broker_url)
+
+    beat_scheduler = 'django_celery_beat.schedulers:DatabaseScheduler'
 
     # Modules to import when celery launches
     imports = (

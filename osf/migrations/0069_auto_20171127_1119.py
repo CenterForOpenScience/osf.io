@@ -17,16 +17,19 @@ def add_preprint_doi_created(state, schema):
     preprints_count = null_preprint_doi_created.count()
     current_preprint = 0
     logger.info('{} published preprints found with preprint_doi_created is null.'.format(preprints_count))
+    ContentType = state.get_model('contenttypes', 'ContentType')
+    Identifier = state.get_model('osf', 'identifier')
 
-    with disable_auto_now_fields(PreprintService):
+    with disable_auto_now_fields(models=[PreprintService]):
         for preprint in null_preprint_doi_created:
             current_preprint += 1
-            if preprint.get_identifier('doi'):
+            content_type = ContentType.objects.get_for_model(preprint)
+            if Identifier.objects.filter(object_id=preprint.id, category='doi', content_type=content_type).exists():
                 preprint.preprint_doi_created = preprint.date_published
                 preprint.save()
-                logger.info('Preprint ID {}, {}/{} preprint_doi_created field populated.'.format(preprint._id, current_preprint, preprints_count))
+                logger.info('Preprint ID {}, {}/{} preprint_doi_created field populated.'.format(preprint.id, current_preprint, preprints_count))
             else:
-                logger.info('Preprint ID {}, {}/{} skipped because a DOI has not been created.'.format(preprint._id, current_preprint, preprints_count))
+                logger.info('Preprint ID {}, {}/{} skipped because a DOI has not been created.'.format(preprint.id, current_preprint, preprints_count))
 
 def reverse_func(state, schema):
     """

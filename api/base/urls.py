@@ -15,6 +15,7 @@ urlpatterns = [
     url(r'^_/',
         include(
             [
+                url(r'^', include('waffle.urls')),
                 url(r'^wb/', include('api.wb.urls', namespace='wb')),
             ]
         )
@@ -48,6 +49,7 @@ urlpatterns = [
                 url(r'^tokens/', include('api.tokens.urls', namespace='tokens')),
                 url(r'^users/', include('api.users.urls', namespace='users')),
                 url(r'^view_only_links/', include('api.view_only_links.urls', namespace='view-only-links')),
+                url(r'^_waffle/', include('api.waffle.urls', namespace='waffle')),
                 url(r'^wikis/', include('api.wikis.urls', namespace='wikis')),
             ],
         )

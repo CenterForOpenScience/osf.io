@@ -17,7 +17,7 @@ def migrate_user_guid_array_to_m2m(state, schema):
 
 def unmigrate_user_guid_array_from_m2m(state, schema):
     Comment = state.get_model('osf', 'comment')
-    with disable_auto_now_fields(Comment):
+    with disable_auto_now_fields(models=[Comment]):
         for comment in Comment.objects.exclude(ever_mentioned__isnull=False).all():
             comment._ever_mentioned = list(comment.ever_mentioned.values_list('guids___id', flat=True))
             comment.save()

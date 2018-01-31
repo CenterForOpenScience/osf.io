@@ -39,8 +39,7 @@ class CitationsNodeTestCase(OsfTestCase):
 
     def tearDown(self):
         super(CitationsNodeTestCase, self).tearDown()
-        OSFUser.remove()
-        OSFUser.remove()
+        OSFUser.objects.all().delete()
 
     def test_csl_single_author(self):
         # Nodes with one contributor generate valid CSL-data

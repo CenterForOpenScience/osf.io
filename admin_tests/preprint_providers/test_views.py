@@ -188,7 +188,7 @@ class TestPreprintProviderChangeForm(AdminTestCase):
 
         stripped_advisory_board = '<div><ul><li>Bill Nye</li></ul></div>'
         stripped_description = '<span>Open Preprints Open Science</span>'
-        stripped_footer_links = '<p>Xiv: Support | Contact | <a href=""><span class="fa fa-facebook"></span></a></p>'
+        stripped_footer_links = '<p>Xiv: Support | </p>Contact | <a href=""><span class="fa fa-facebook"></span></a><p></p>'
 
         form = PreprintProviderForm(data=new_data)
         nt.assert_true(form.is_valid())
@@ -239,6 +239,7 @@ class TestPreprintProviderExportImport(AdminTestCase):
         res = self.view.get(self.request)
         content_dict = json.loads(res.content)
 
+        content_dict['fields']['_id'] = 'new_id'
         content_dict['fields']['name'] = 'Awesome New Name'
         data = StringIO(unicode(json.dumps(content_dict), 'utf-8'))
         self.import_request.FILES['file'] = InMemoryUploadedFile(data, None, 'data', 'application/json', 500, None, {})
@@ -249,6 +250,7 @@ class TestPreprintProviderExportImport(AdminTestCase):
         new_provider = PreprintProvider.objects.get(id=provider_id)
 
         nt.assert_equal(res.status_code, 302)
+        nt.assert_equal(new_provider._id, 'new_id')
         nt.assert_equal(new_provider.name, 'Awesome New Name')
         nt.assert_equal(new_provider.subjects.all().count(), 1)
         nt.assert_equal(new_provider.licenses_acceptable.all().count(), 1)
@@ -261,6 +263,7 @@ class TestPreprintProviderExportImport(AdminTestCase):
         res = self.view.get(self.request)
         content_dict = json.loads(res.content)
 
+        content_dict['fields']['_id'] = 'new_id'
         content_dict['fields']['name'] = 'Awesome New Name'
         content_dict['fields']['new_field'] = 'this is a new field, not in the model'
         del content_dict['fields']['description']  # this is a old field, removed from the model JSON
@@ -274,6 +277,7 @@ class TestPreprintProviderExportImport(AdminTestCase):
         new_provider = PreprintProvider.objects.get(id=provider_id)
 
         nt.assert_equal(res.status_code, 302)
+        nt.assert_equal(new_provider._id, 'new_id')
         nt.assert_equal(new_provider.name, 'Awesome New Name')
 
     def test_update_provider_existing_subjects(self):

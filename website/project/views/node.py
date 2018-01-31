@@ -9,7 +9,7 @@ from itertools import islice
 from flask import request
 from django.apps import apps
 from django.core.exceptions import ValidationError
-from django.db.models import Count, Q, OuterRef, Exists, Subquery
+from django.db.models import Q, OuterRef, Exists, Subquery
 
 from framework import status
 from framework.utils import iso8601format
@@ -373,7 +373,7 @@ def node_choose_addons(auth, node, **kwargs):
 def node_contributors(auth, node, **kwargs):
     ret = _view_project(node, auth, primary=True)
     ret['contributors'] = utils.serialize_contributors(node.contributors, node)
-    ret['adminContributors'] = utils.serialize_contributors(node.admin_contributors, node, admin=True)
+    ret['adminContributors'] = utils.serialize_contributors(node.parent_admin_contributors, node, admin=True)
     return ret
 
 
@@ -804,12 +804,12 @@ def _view_project(node, auth, primary=False,
     if embed_registrations:
         data['node']['registrations'] = [
             serialize_node_summary(node=each, auth=auth, show_path=False)
-            for each in node.registrations_all.order_by('-registered_date').exclude(is_deleted=True).annotate(nlogs=Count('logs'))
+            for each in node.registrations_all.order_by('-registered_date').exclude(is_deleted=True)
         ]
     if embed_forks:
         data['node']['forks'] = [
             serialize_node_summary(node=each, auth=auth, show_path=False)
-            for each in node.forks.exclude(type='osf.registration').exclude(is_deleted=True).order_by('-forked_date').annotate(nlogs=Count('logs'))
+            for each in node.forks.exclude(type='osf.registration').exclude(is_deleted=True).order_by('-forked_date')
         ]
     return data
 
