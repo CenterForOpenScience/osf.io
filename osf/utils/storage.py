@@ -31,4 +31,4 @@ class BannerImageStorage(Storage):
         return name
 
     def url(self, name):
-        return api_v2_url('/banners/{}/'.format(name))
+        return api_v2_url('/banners/{}/'.format(name), base_prefix='_/')

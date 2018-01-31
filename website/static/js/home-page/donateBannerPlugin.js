@@ -1,5 +1,7 @@
 var m = require('mithril');
 var $osf = require('js/osfHelpers');
+var Raven = require('raven-js');
+var lodashGet = require('lodash.get');
 
 require('css/donate-banner.css');
 
@@ -10,11 +12,16 @@ var DonateBanner = {
         self.bannerLoaded = m.prop(false);
 
         // Load banner
-        var bannerUrl = $osf.apiV2Url('banners/current/');
+        var domain = lodashGet(window, 'contextVars.apiV2Domain', '');
+        var bannerUrl =   domain + '_/banners/current/';
         var bannerPromise = m.request({method: 'GET', url: bannerUrl}, background=true);
         bannerPromise.then(function(result){
             self.banner(result.data);
             self.bannerLoaded(true);
+        }, function(error) {
+            Raven.captureMessage('Error in request to ' + bannerUrl, {
+                extra: {error: error}
+            });
         });
     },
     view : function(ctrl) {

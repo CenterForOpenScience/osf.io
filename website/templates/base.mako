@@ -209,6 +209,7 @@
                 // Whether or not this page is loaded under osf.io or another domain IE: institutions
                 isOnRootDomain: ${domain | sjson, n } === window.location.origin + '/',
                 cookieName: ${ cookie_name | sjson, n },
+                apiV2Domain: ${ api_v2_domain | sjson, n },
                 apiV2Prefix: ${ api_v2_base | sjson, n },
                 registerUrl: ${ api_url_for('register_user') | sjson, n },
                 currentUser: {

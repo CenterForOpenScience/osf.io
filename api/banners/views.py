@@ -20,8 +20,10 @@ from django.core.files.base import ContentFile
 class CurrentBanner(JSONAPIBaseView, generics.RetrieveAPIView):
 
     serializer_class = BannerSerializer
+    # This view goes under the _/ namespace
+    versioning_class = None
     view_category = 'banners'
-    view_name = 'banner-current'
+    view_name = 'current'
 
     permission_classes = (
         base_permissions.TokenHasScope,
@@ -41,6 +43,8 @@ class CurrentBanner(JSONAPIBaseView, generics.RetrieveAPIView):
 class BannerMedia(JSONAPIBaseView):
 
     serializer_class = BannerSerializer
+    # This view goes under the _/ namespace
+    versioning_class = None
     view_category = 'banners'
     view_name = 'media'
 

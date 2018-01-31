@@ -32,7 +32,7 @@ class TestPreprintDetail:
 
     @pytest.fixture()
     def url(self):
-        return '/{}banners/current/'.format(API_BASE)
+        return '/_/banners/current/'
 
     @pytest.fixture()
     def res(self, app, url):

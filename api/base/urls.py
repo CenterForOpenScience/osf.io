@@ -9,7 +9,14 @@ default_version = versioning.decimal_version_to_url_path(settings.REST_FRAMEWORK
 
 # Please keep URLs alphabetized for auto-generated documentation
 urlpatterns = [
-    url(r'^_/', include('waffle.urls')),
+    url(r'^_/',
+        include(
+            [
+                url(r'^', include('waffle.urls')),
+                url(r'^banners/', include('api.banners.urls', namespace='banners')),
+            ],
+        )
+        ),
     url('^(?P<version>(v2))/',
         include(
             [
@@ -18,7 +25,6 @@ urlpatterns = [
                 url(r'^actions/', include('api.actions.urls', namespace='actions')),
                 url(r'^addons/', include('api.addons.urls', namespace='addons')),
                 url(r'^applications/', include('api.applications.urls', namespace='applications')),
-                url(r'^banners/', include('api.banners.urls', namespace='banners')),
                 url(r'^citations/', include('api.citations.urls', namespace='citations')),
                 url(r'^collections/', include('api.collections.urls', namespace='collections')),
                 url(r'^comments/', include('api.comments.urls', namespace='comments')),

@@ -43,7 +43,7 @@ class BannerSerializer(JSONAPISerializer):
     # Only the current banner's URL is surfaced through the API
     # Individual banners are not accessible publicly
     def get_absolute_url(self, obj):
-        return absolute_reverse('banners:banner-current', kwargs={'version': 'v2'})
+        return absolute_reverse('banners:current')
 
     class Meta:
         type_ = 'banners'
