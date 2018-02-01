@@ -98,17 +98,18 @@ class WikiVersion(ObjectIDMixin, BaseModel):
 
     def html(self, node):
         """The cleaned HTML of the page"""
-        sanitized_content = render_content(self.content, node=node)
+        html_output = build_html_output(self.content, node=node)
         try:
-            from bleach import linkify
-
-            return linkify(
-                sanitized_content,
-                [nofollow, ],
+            cleaner = Cleaner(
+                tags=settings.WIKI_WHITELIST['tags'],
+                attributes=settings.WIKI_WHITELIST['attributes'],
+                styles=settings.WIKI_WHITELIST['styles'],
+                filters=[partial(LinkifyFilter, callbacks=[nofollow, ])]
             )
+            return cleaner.clean(html_output)
         except TypeError:
             logger.warning('Returning unlinkified content.')
-            return sanitized_content
+            return render_content(self.content, node=node)
 
     def raw_text(self, node):
         """ The raw text of the page, suitable for using in a test search"""
