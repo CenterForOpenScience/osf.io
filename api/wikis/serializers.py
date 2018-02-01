@@ -127,3 +127,59 @@ class RegistrationWikiDetailSerializer(RegistrationWikiSerializer):
     Overrides NodeWikiSerializer to make id required.
     """
     id = IDField(source='_id', required=True)
+
+
+class WikiVersionSerializer(JSONAPISerializer):
+    filterable_fields = frozenset([
+        'id',
+        'size',
+        'identifier',
+        'content_type',
+    ])
+
+    id = ser.CharField(read_only=True, source='identifier')
+    size = ser.SerializerMethodField()
+    content_type = ser.SerializerMethodField()
+    date_created = VersionedDateTimeField(source='created', read_only=True, help_text='The date that this version was created')
+
+    wiki_page = RelationshipField(
+        related_view='wikis:wiki-detail',
+        related_view_kwargs={'wiki_id': '<wiki_page._id>'}
+    )
+
+    user = RelationshipField(
+        related_view='users:user-detail',
+        related_view_kwargs={'user_id': '<user._id>'}
+    )
+
+    links = LinksField({
+        'self': 'self_url',
+        'download': 'get_wiki_content'
+    })
+
+    def self_url(self, obj):
+        return absolute_reverse('wikis:wiki-version-detail', kwargs={
+            'version_id': obj.identifier,
+            'wiki_id': obj.wiki_page._id,
+            'version': self.context['request'].parser_context['kwargs']['version']
+        })
+
+    def get_size(self, obj):
+        # The size of this wiki at this version
+        return sys.getsizeof(obj.content)
+
+    def get_content_type(self, obj):
+        return 'text/markdown'
+
+    def get_wiki_content(self, obj):
+        return absolute_reverse('wikis:wiki-version-content', kwargs={
+            'version_id': obj.identifier,
+            'wiki_id': obj.wiki_page._id,
+            'version': self.context['request'].parser_context['kwargs']['version']
+        })
+
+    def get_absolute_url(self, obj):
+        return obj.get_absolute_url()
+
+    class Meta:
+        type_ = 'wiki-versions'

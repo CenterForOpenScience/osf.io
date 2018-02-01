@@ -79,19 +79,19 @@ class TestWikiVersionList:
         res = app.get(public_url)
         assert res.status_code == 200
         wiki_ids = [wiki['id'] for wiki in res.json['data']]
-        assert public_wiki.get_version()._id in wiki_ids
+        assert str(public_wiki.get_version().identifier) in wiki_ids
 
     #   test_return_public_node_wiki_versions_logged_in_non_contributor
         res = app.get(public_url, auth=non_contrib.auth)
         assert res.status_code == 200
         wiki_ids = [wiki['id'] for wiki in res.json['data']]
-        assert public_wiki.get_version()._id in wiki_ids
+        assert str(public_wiki.get_version().identifier) in wiki_ids
 
     #   test_return_public_node_wiki_versions_logged_in_contributor
         res = app.get(public_url, auth=user.auth)
         assert res.status_code == 200
         wiki_ids = [wiki['id'] for wiki in res.json['data']]
-        assert public_wiki.get_version()._id in wiki_ids
+        assert str(public_wiki.get_version().identifier) in wiki_ids
 
     #   test_return_private_node_wiki_versions_logged_out_user
         res = app.get(private_url, expect_errors=True)
@@ -107,7 +107,7 @@ class TestWikiVersionList:
         res = app.get(private_url, auth=user.auth)
         assert res.status_code == 200
         wiki_ids = [wiki['id'] for wiki in res.json['data']]
-        assert private_wiki.get_version()._id in wiki_ids
+        assert str(private_wiki.get_version().identifier) in wiki_ids
 
     #   test_return_registration_wiki_versions_logged_out_user
         res = app.get(private_registration_url, expect_errors=True)
@@ -123,7 +123,7 @@ class TestWikiVersionList:
         res = app.get(private_registration_url, auth=user.auth)
         assert res.status_code == 200
         wiki_ids = [wiki['id'] for wiki in res.json['data']]
-        assert private_registration.get_wiki_version('home')._id in wiki_ids
+        assert str(private_registration.get_wiki_version('home').identifier) in wiki_ids
 
     def test_wiki_versions_not_returned_for_withdrawn_registration(self, app, user, private_registration, private_registration_url):
         private_registration.is_public = True

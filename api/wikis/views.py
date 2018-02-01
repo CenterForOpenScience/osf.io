@@ -2,21 +2,20 @@ from rest_framework import generics, permissions as drf_permissions
 from rest_framework.exceptions import NotFound
 from rest_framework.views import Response
 
+from framework.auth.oauth_scopes import CoreScopes
+from website.files.exceptions import VersionNotFoundError
+
 from api.base import permissions as base_permissions
 from api.base.exceptions import Gone
 from api.base.views import JSONAPIBaseView
 from api.base.renderers import PlainTextRenderer
-from api.wikis.permissions import ContributorOrPublic, ExcludeWithdrawals
+from api.wikis.permissions import ContributorOrPublic, ExcludeWithdrawals, ContributorOrPublicWikiVersion, ExcludeWithdrawalsWikiVersion
 from api.wikis.serializers import (
     WikiSerializer,
+    WikiVersionSerializer,
     NodeWikiDetailSerializer,
     RegistrationWikiDetailSerializer,
 )
-from api.wiki_versions.serializers import (
-    WikiVersionSerializer,
-)
-
-from framework.auth.oauth_scopes import CoreScopes
 from addons.wiki.models import WikiPage
 
 
@@ -42,6 +41,19 @@ class WikiMixin(object):
             self.check_object_permissions(self.request, wiki)
         return wiki
 
+    def get_wiki_version(self, check_permissions=True):
+        version_lookup_url_kwarg = 'version_id'
+
+        version = self.kwargs[version_lookup_url_kwarg]
+        wiki_page = self.get_wiki(check_permissions=False)
+        try:
+            wiki_version = wiki_page.get_version(version, required=True)
+            if check_permissions:
+                self.check_object_permissions(self.request, wiki_version)
+            return wiki_version
+        except VersionNotFoundError:
+            raise NotFound
+
 
 class WikiDetail(JSONAPIBaseView, generics.RetrieveAPIView, WikiMixin):
     """Details about a specific wiki. *Read-only*.
@@ -62,7 +74,7 @@ class WikiDetail(JSONAPIBaseView, generics.RetrieveAPIView, WikiMixin):
         name                        string             name of the wiki pag
         path                        string             the path of the wiki page
         materialized_path           string             the path of the wiki page
-        date_modified                    iso8601 timestamp  timestamp when the wiki was last updated
+        date_modified               iso8601 timestamp  timestamp when the wiki was last updated
         content_type                string             MIME-type
         current_user_can_comment    boolean            Whether the current user is allowed to post comments
         extra                       object
@@ -144,6 +156,7 @@ class WikiContent(JSONAPIBaseView, generics.RetrieveAPIView, WikiMixin):
         wiki = self.get_wiki()
         return Response(wiki.get_version().content)
 
+
 class WikiVersions(JSONAPIBaseView, generics.ListAPIView, WikiMixin):
     """View for rendering all versions of a particular WikiPage
 
@@ -156,13 +169,13 @@ class WikiVersions(JSONAPIBaseView, generics.ListAPIView, WikiMixin):
 
     ##Attributes
 
-    OSF wiki entities have the "wikis" `type`.
+    OSF wiki version entities have the "wiki_versions" `type`.
 
         name                        type                   description
         ======================================================================================================
-        date_modified               iso8601 timestamp      timestamp when the wiki version was last updated
+        date_created                iso8601 timestamp      timestamp when the wiki version was created
         content_type                string                 MIME-type
-        identifier                  integer                version number of the wiki
+        size                        integer                size of wiki in bytes
 
     ##Relationships
 
@@ -202,3 +215,90 @@ class WikiVersions(JSONAPIBaseView, generics.ListAPIView, WikiMixin):
 
     def get_queryset(self):
         return self.get_wiki().get_versions()
+
+
+class WikiVersionDetail(JSONAPIBaseView, generics.RetrieveAPIView, WikiMixin):
+    """Details about a specific wiki version. *Read-only*.
+
+    ###Permissions
+
+    Wiki versions on public nodes are given read-only access to everyone. Wiki versions on private nodes are only visible to
+    contributors and administrators on the parent node.
+
+    Note that if an anonymous view_only key is being used, the user relationship will not be exposed.
+
+    ##Attributes
+
+    OSF wiki version entities have the "wiki_versions" `type`.
+
+        name                        type                   description
+        ======================================================================================================
+        date_created                iso8601 timestamp      timestamp when the wiki version was created
+        content_type                string                 MIME-type
+        size                        integer                size of wiki in bytes
+
+    ##Relationships
+
+    ###User
+
+    The user who created the wiki version.
+
+    ###WikiPage
+
+    The wiki that this version belongs to
+
+    ##Links
+
+        self:  the canonical api endpoint of this wiki
+        download: the link to retrive the contents of the wiki version
+
+    ##Query Params
+
+    *None*.
+
+    #This Request/Response
+
+    """
+    permission_classes = (
+        drf_permissions.IsAuthenticatedOrReadOnly,
+        base_permissions.TokenHasScope,
+        ContributorOrPublicWikiVersion,
+        ExcludeWithdrawalsWikiVersion
+    )
+
+    serializer_class = WikiVersionSerializer
+
+    required_read_scopes = [CoreScopes.WIKI_BASE_READ]
+    required_write_scopes = [CoreScopes.NULL]
+
+    view_category = 'wikis'
+    view_name = 'wiki-version-detail'
+
+    # overrides RetrieveAPIView
+    def get_object(self):
+        return self.get_wiki_version()
+
+
+class WikiVersionContent(JSONAPIBaseView, generics.RetrieveAPIView, WikiMixin):
+    """ View for rendering wiki content for a specific version."""
+
+    permission_classes = (
+        drf_permissions.IsAuthenticatedOrReadOnly,
+        base_permissions.TokenHasScope,
+        ContributorOrPublicWikiVersion,
+        ExcludeWithdrawalsWikiVersion
+    )
+
+    required_read_scopes = [CoreScopes.WIKI_BASE_READ]
+    required_write_scopes = [CoreScopes.NULL]
+
+    renderer_classes = (PlainTextRenderer, )
+    view_category = 'wikis'
+    view_name = 'wiki-version-content'
+
+    def get_serializer_class(self):
+        return None
+
+    def get(self, request, **kwargs):
+        wiki_version = self.get_wiki_version()
+        return Response(wiki_version.content)
