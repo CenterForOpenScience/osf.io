@@ -51,5 +51,5 @@ METASCHEMA_ORDERING = (
     "Pre-Registration in Social Psychology (van 't Veer & Giner-Sorolla, 2016): Pre-Registration",
     'Election Research Preacceptance Competition',
     'RIDIE Registration - Study Initiation',
-    "RIDIE Registration - Study Complete",
+    'RIDIE Registration - Study Complete',
 )
