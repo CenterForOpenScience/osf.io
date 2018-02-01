@@ -3,7 +3,7 @@
     "config": {
 	"hasFiles": true,
         "requiresApproval": true,
-        "requiresConsent": true
+        "requiresConsent": false
     },
     "version": 2,
     "description": "",
