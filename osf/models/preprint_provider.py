@@ -46,6 +46,7 @@ class PreprintProvider(ObjectIDMixin, ReviewProviderMixin, BaseModel):
     share_title = models.TextField(default='', blank=True)
     allow_submissions = models.BooleanField(default=True)
     additional_providers = fields.ArrayField(models.CharField(max_length=200), default=list, blank=True)
+    facebook_app_id = models.BigIntegerField(blank=True, null=True)
 
     PREPRINT_WORD_CHOICES = (
         ('preprint', 'Preprint'),

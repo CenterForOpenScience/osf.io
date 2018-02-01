@@ -36,6 +36,7 @@ class PreprintProviderSerializer(JSONAPISerializer):
     preprint_word = ser.CharField(read_only=True, allow_null=True)
     allow_submissions = ser.BooleanField(read_only=True)
     additional_providers = ser.ListField(read_only=True, child=ser.CharField())
+    facebook_app_id = ser.IntegerField(read_only=True, allow_null=True)
 
     # Reviews settings are the only writable fields
     reviews_workflow = ser.ChoiceField(choices=Workflows.choices())
