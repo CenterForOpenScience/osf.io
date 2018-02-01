@@ -5,6 +5,7 @@ import httplib as http
 
 from flask import request
 from flask import send_from_directory
+from django.core.urlresolvers import reverse
 
 from geoip import geolite2
 
@@ -47,6 +48,7 @@ from website.reviews import views as reviews_views
 from website.institutions import views as institution_views
 from website.notifications import views as notification_views
 from website.closed_challenges import views as closed_challenges_views
+from website.identifiers import views as identifier_views
 
 
 def get_globals():
@@ -122,6 +124,7 @@ def get_globals():
         'custom_citations': settings.CUSTOM_CITATIONS,
         'osf_support_email': settings.OSF_SUPPORT_EMAIL,
         'osf_contact_email': settings.OSF_CONTACT_EMAIL,
+        'wafflejs_url': '{api_domain}{waffle_url}'.format(api_domain=settings.API_DOMAIN.rstrip('/'), waffle_url=reverse('wafflejs'))
     }
 
 
@@ -1492,7 +1495,7 @@ def make_url_map(app):
                 '/project/<pid>/node/<nid>/identifiers/',
             ],
             'post',
-            project_views.register.node_identifiers_post,
+            identifier_views.node_identifiers_post,
             json_renderer,
         ),
 

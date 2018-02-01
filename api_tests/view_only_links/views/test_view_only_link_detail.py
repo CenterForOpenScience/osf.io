@@ -2,12 +2,12 @@ import pytest
 
 from website.util import permissions
 from api.base.settings.defaults import API_BASE
-from tests.base import ApiTestCase
 from osf_tests.factories import (
     ProjectFactory,
     AuthUserFactory,
     PrivateLinkFactory
 )
+
 
 @pytest.mark.django_db
 class TestViewOnlyLinksDetail:
@@ -31,8 +31,10 @@ class TestViewOnlyLinksDetail:
     @pytest.fixture()
     def public_project(self, user, read_only_user, read_write_user):
         public_project = ProjectFactory(is_public=True, creator=user)
-        public_project.add_contributor(read_only_user, permissions=[permissions.READ])
-        public_project.add_contributor(read_write_user, permissions=[permissions.WRITE])
+        public_project.add_contributor(
+            read_only_user, permissions=[permissions.READ])
+        public_project.add_contributor(
+            read_write_user, permissions=[permissions.WRITE])
         public_project.save()
         return public_project
 
@@ -47,9 +49,11 @@ class TestViewOnlyLinksDetail:
     def url(self, view_only_link):
         return '/{}view_only_links/{}/'.format(API_BASE, view_only_link._id)
 
-    def test_view_only_links_detail(self, app, user, read_only_user, read_write_user, non_contributor, url):
+    def test_view_only_links_detail(
+            self, app, user, read_only_user, read_write_user,
+            non_contributor, url):
 
-    #   test_admin_can_view_vol_detail
+        #   test_admin_can_view_vol_detail
         res = app.get(url, auth=user.auth)
         assert res.status_code == 200
         assert res.json['data']['attributes']['name'] == 'testlink'

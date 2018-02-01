@@ -655,8 +655,7 @@ def hotfix(ctx, name, finish=False, push=False):
     if finish:
         ctx.run('git flow hotfix finish {}'.format(next_patch_version), echo=True, pty=True)
     if push:
-        ctx.run('git push origin master', echo=True)
-        ctx.run('git push --tags', echo=True)
+        ctx.run('git push --tags origin master', echo=True)
         ctx.run('git push origin develop', echo=True)
 
 

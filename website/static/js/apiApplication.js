@@ -7,7 +7,7 @@
 
 var $ = require('jquery');
 var bootbox = require('bootbox');
-var historyjs = require('exports?History!history');
+var historyjs = require('exports-loader?History!history');
 
 var ko = require('knockout');
 require('knockout.validation');

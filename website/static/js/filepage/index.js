@@ -10,10 +10,10 @@ var utils = require('./util.js');
 var FileEditor = require('./editor.js');
 var makeClient = require('js/clipboard');
 var FileRevisionsTable = require('./revisions.js');
-var storageAddons = require('json!storageAddons.json');
+var storageAddons = require('json-loader!storageAddons.json');
 var CommentModel = require('js/comment');
 
-var History = require('exports?History!history');
+var History = require('exports-loader?History!history');
 var SocialShare = require('js/components/socialshare');
 
 // Sanity

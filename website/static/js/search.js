@@ -4,7 +4,7 @@ var ko = require('knockout');
 var $ = require('jquery');
 var bootbox = require('bootbox');
 require('bootstrap.growl');
-var History = require('exports?History!history');
+var History = require('exports-loader?History!history');
 
 var siteLicenses = require('js/licenses');
 var licenses = siteLicenses.list;
