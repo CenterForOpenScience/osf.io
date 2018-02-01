@@ -486,8 +486,8 @@
             "type": "string",
             "format": "textarea",
             "title": "Outcomes (Endpoints)",
-            "description": "What are the outcome variables (endpoints) of interest in this evaluation? (You may distinguish primary and secondary outcomes as well as final and intermediate outcomes. If you do, indicate to which category each outcome belongs. See help text for definitions.)",
-            "help": "",
+            "description": "What are the outcome variables (endpoints) of interest in this evaluation? (You may distinguish primary and secondary outcomes as well as final and intermediate outcomes. If you do, indicate to which category each outcome belongs. See help texts for definitions.)",
+            "help": "<a target='_' href='http://ridie.org/index.php?r=site/page&view=registrationHelp#Outcomes_Section'>help text</a>",
             "required": true
         }, {
             "qid": "q42",
