@@ -23,9 +23,6 @@
                                         <td style="border-collapse: collapse;">
                                             <img src="https://osf.io/static/img/osf_logo.png" alt="OSF logo" style="border: 0;height: auto;line-height: 100%;outline: none;text-decoration: none;">
                                         </td>
-                                        <td style="border-collapse: collapse;">
-                                            <h2 style="padding: 0;margin: 0;border: none;list-style: none;font-weight: 300;font-size: 20px;text-align: left; color:white;">Open Science Framework</h2>
-                                        </td>
                                     </tr>
                                 </table>
                             </td>

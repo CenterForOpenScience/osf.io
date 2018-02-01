@@ -405,9 +405,8 @@ def create_waterbutler_log(payload, **kwargs):
                     user.username,
                     mails.FILE_OPERATION_FAILED if payload.get('errors')
                     else mails.FILE_OPERATION_SUCCESS,
-                    mimetype='html',
                     action=payload['action'],
-                    node=source_node,
+                    source_node=source_node,
                     destination_node=destination_node,
                     source_path=payload['source']['materialized'],
                     destination_path=payload['source']['materialized'],
