@@ -31,7 +31,7 @@ class TestUserQuickFiles:
 
     @pytest.fixture()
     def url(self, user):
-        return "/{}users/{}/quickfiles/".format(API_BASE, user._id)
+        return '/{}users/{}/quickfiles/'.format(API_BASE, user._id)
 
     def test_authorized_gets_200(self, app, user, url):
         res = app.get(url, auth=user.auth)
@@ -76,24 +76,30 @@ class TestUserQuickFiles:
         root_two.append_file('Sister.txt')
         root_two.append_file('Abigail.txt')
 
-        url = "/{}users/me/quickfiles/".format(API_BASE)
+        url = '/{}users/me/quickfiles/'.format(API_BASE)
         res = app.get(url, auth=user.auth)
         node_json = res.json['data']
 
         ids_returned = [each['id'] for each in node_json]
-        ids_from_files = OsfStorageFile.objects.filter(node__creator=user).values_list('_id', flat=True)
-        user_two_file_ids = OsfStorageFile.objects.filter(node__creator=user_two).values_list('_id', flat=True)
+        ids_from_files = OsfStorageFile.objects.filter(
+            node__creator=user).values_list(
+            '_id', flat=True)
+        user_two_file_ids = OsfStorageFile.objects.filter(
+            node__creator=user_two).values_list('_id', flat=True)
 
         assert sorted(ids_returned) == sorted(ids_from_files)
         for ident in user_two_file_ids:
             assert ident not in ids_returned
 
     def test_get_files_detail_has_user_relationship(self, app, user):
-        file_id = OsfStorageFile.objects.filter(node__creator=user).values_list('_id', flat=True).first()
-        url = "/{}files/{}/".format(API_BASE, file_id)
+        file_id = OsfStorageFile.objects.filter(
+            node__creator=user).values_list(
+            '_id', flat=True).first()
+        url = '/{}files/{}/'.format(API_BASE, file_id)
         res = app.get(url, auth=user.auth)
         file_detail_json = res.json['data']
 
         assert 'user' in file_detail_json['relationships']
         assert 'node' not in file_detail_json['relationships']
-        assert file_detail_json['relationships']['user']['links']['related']['href'].split('/')[-2] == user._id
+        assert file_detail_json['relationships']['user']['links']['related']['href'].split(
+            '/')[-2] == user._id

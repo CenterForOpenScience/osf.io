@@ -97,7 +97,7 @@
             %if is_logged_in:
             <div>
             <td class="col-sm-${ num_cols } prereg-button-col">
-              <div class="prereg-button prereg-button-qtoggle m-b-md p-md osf-box-lt p-md box-round prereg" data-qtoggle-group="prereg" data-qtoggle-target="#newPrereg">Start a new pregistration</div>
+              <div class="prereg-button prereg-button-qtoggle m-b-md p-md osf-box-lt p-md box-round prereg" data-qtoggle-group="prereg" data-qtoggle-target="#newPrereg">Start a new preregistration</div>
             </td>
             %else:
             <td class="col-sm-${ num_cols } prereg-button-col">

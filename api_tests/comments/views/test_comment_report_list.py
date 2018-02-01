@@ -1,5 +1,3 @@
-from datetime import datetime
-
 from django.utils import timezone
 import mock
 import pytest
@@ -73,7 +71,8 @@ class CommentReportsMixin(object):
     def comment_level(self):
         raise NotImplementedError
 
-    def test_private_node_view_reports_auth_misc(self, app, user, contributor, non_contrib, private_url):
+    def test_private_node_view_reports_auth_misc(
+            self, app, user, contributor, non_contrib, private_url):
         # test_private_node_logged_out_user_cannot_view_reports
         res = app.get(private_url, expect_errors=True)
         assert res.status_code == 401
@@ -98,7 +97,8 @@ class CommentReportsMixin(object):
         assert len(report_json) == 0
         assert contributor._id not in report_ids
 
-    def test_public_node_view_report_auth_misc(self, app, user, contributor, non_contrib, public_url):
+    def test_public_node_view_report_auth_misc(
+            self, app, user, contributor, non_contrib, public_url):
         # test_public_node_logged_out_user_cannot_view_reports
         res = app.get(public_url, expect_errors=True)
         assert res.status_code == 401
@@ -127,7 +127,8 @@ class CommentReportsMixin(object):
         assert len(report_json) == 0
         assert non_contrib._id not in report_ids
 
-    def test_public_node_non_contrib_reporter_can_view_own_report(self, app, non_contrib, public_comment, public_url):
+    def test_public_node_non_contrib_reporter_can_view_own_report(
+            self, app, non_contrib, public_comment, public_url):
         public_comment.reports[non_contrib._id] = {
             'category': 'spam',
             'text': 'This is spam',
@@ -142,7 +143,8 @@ class CommentReportsMixin(object):
         assert len(report_json) == 1
         assert non_contrib._id in report_ids
 
-    def test_public_node_private_comment_level_non_contrib_cannot_see_reports(self, app, non_contrib, public_project, public_url):
+    def test_public_node_private_comment_level_non_contrib_cannot_see_reports(
+            self, app, non_contrib, public_project, public_url):
         public_project.comment_level = 'private'
         public_project.save()
         res = app.get(public_url, auth=non_contrib.auth, expect_errors=True)
@@ -160,7 +162,10 @@ class CommentReportsMixin(object):
                 }
             }
         }
-        res = app.post_json_api(private_url, payload, auth=user.auth, expect_errors=True)
+        res = app.post_json_api(
+            private_url, payload,
+            auth=user.auth, expect_errors=True
+        )
         assert res.status_code == 409
 
         # test_report_comment_no_type
@@ -173,7 +178,10 @@ class CommentReportsMixin(object):
                 }
             }
         }
-        res = app.post_json_api(private_url, payload, auth=user.auth, expect_errors=True)
+        res = app.post_json_api(
+            private_url, payload,
+            auth=user.auth, expect_errors=True
+        )
         assert res.status_code == 400
         assert res.json['errors'][0]['detail'] == 'This field may not be blank.'
         assert res.json['errors'][0]['source']['pointer'] == '/data/type'
@@ -189,13 +197,21 @@ class CommentReportsMixin(object):
                 }
             }
         }
-        res = app.post_json_api(private_url, payload, auth=user.auth, expect_errors=True)
+        res = app.post_json_api(
+            private_url, payload,
+            auth=user.auth, expect_errors=True
+        )
         assert res.status_code == 400
-        assert res.json['errors'][0]['detail'] == '\"' + category + '\"' + ' is not a valid choice.'
+        assert res.json['errors'][0]['detail'] == '\"' + \
+            category + '\"' + ' is not a valid choice.'
 
-    def test_report_comment_allow_blank_message(self, app, user, contributor, private_project, comment):
+    def test_report_comment_allow_blank_message(
+            self, app, user, contributor, private_project, comment):
 
-        comment_new = CommentFactory(node=private_project, user=contributor, target=comment.target)
+        comment_new = CommentFactory(
+            node=private_project,
+            user=contributor,
+            target=comment.target)
         url = '/{}comments/{}/reports/'.format(API_BASE, comment_new._id)
         payload = {
             'data': {
@@ -211,42 +227,66 @@ class CommentReportsMixin(object):
         assert res.json['data']['id'] == user._id
         assert res.json['data']['attributes']['message'] == payload['data']['attributes']['message']
 
-    def test_private_node_report_comment_auth_misc(self, app, user, contributor, non_contrib, private_project, private_url, comment, payload):
+    def test_private_node_report_comment_auth_misc(
+            self, app, user, contributor,
+            non_contrib, private_project,
+            private_url, comment, payload
+    ):
 
         # test_private_node_logged_out_user_cannot_report_comment
         res = app.post_json_api(private_url, payload, expect_errors=True)
         assert res.status_code == 401
 
         # test_private_node_logged_in_non_contrib_cannot_report_comment
-        res = app.post_json_api(private_url, payload, auth=non_contrib.auth, expect_errors=True)
+        res = app.post_json_api(
+            private_url, payload,
+            auth=non_contrib.auth, expect_errors=True
+        )
         assert res.status_code == 403
 
         # test_private_node_logged_in_contributor_can_report_comment
-        comment_new = CommentFactory(node=private_project, user=contributor, target=comment.target)
+        comment_new = CommentFactory(
+            node=private_project,
+            user=contributor,
+            target=comment.target)
         url = '/{}comments/{}/reports/'.format(API_BASE, comment_new._id)
         res = app.post_json_api(url, payload, auth=user.auth)
         assert res.status_code == 201
         assert res.json['data']['id'] == user._id
 
-    def test_user_cannot_report_comment_condition(self, app, user, contributor, private_url, payload):
+    def test_user_cannot_report_comment_condition(
+            self, app, user, contributor, private_url, payload):
         # test_user_cannot_report_own_comment
-        res = app.post_json_api(private_url, payload, auth=contributor.auth, expect_errors=True)
+        res = app.post_json_api(
+            private_url, payload,
+            auth=contributor.auth, expect_errors=True
+        )
         assert res.status_code == 400
         assert res.json['errors'][0]['detail'] == 'You cannot report your own comment.'
 
         # test_user_cannot_report_comment_twice
         # User cannot report the comment again
-        res = app.post_json_api(private_url, payload, auth=user.auth, expect_errors=True)
+        res = app.post_json_api(
+            private_url, payload,
+            auth=user.auth, expect_errors=True
+        )
         assert res.status_code == 400
         assert res.json['errors'][0]['detail'] == 'Comment already reported.'
 
-    def test_public_node_report_comment_auth_misc(self, app, user, contributor, non_contrib, public_project, public_url, public_comment, payload):
-    # def test_public_node_logged_out_user_cannot_report_comment(self):
+    def test_public_node_report_comment_auth_misc(
+            self, app, user, contributor,
+            non_contrib, public_project,
+            public_url, public_comment, payload
+    ):
+        # def test_public_node_logged_out_user_cannot_report_comment(self):
         res = app.post_json_api(public_url, payload, expect_errors=True)
         assert res.status_code == 401
 
     # def test_public_node_contributor_can_report_comment(self):
-        comment = CommentFactory(node=public_project, user=contributor, target=public_comment.target)
+        comment = CommentFactory(
+            node=public_project,
+            user=contributor,
+            target=public_comment.target)
         url = '/{}comments/{}/reports/'.format(API_BASE, comment._id)
         res = app.post_json_api(url, payload, auth=user.auth)
         assert res.status_code == 201
@@ -261,12 +301,14 @@ class CommentReportsMixin(object):
         assert res.status_code == 201
         assert res.json['data']['id'] == non_contrib._id
 
-    def test_public_node_private_comment_level_non_contrib_cannot_report_comment(self, app, non_contrib, public_project, public_url):
+    def test_public_node_private_comment_level_non_contrib_cannot_report_comment(
+            self, app, non_contrib, public_project, public_url):
         public_project.comment_level = 'private'
         public_project.save()
         res = app.get(public_url, auth=non_contrib.auth, expect_errors=True)
         assert res.status_code == 403
         assert res.json['errors'][0]['detail'] == exceptions.PermissionDenied.default_detail
+
 
 class TestCommentReportsView(CommentReportsMixin):
     # private_project_comment_reports
@@ -296,7 +338,8 @@ class TestCommentReportsView(CommentReportsMixin):
     # public_project_comment_reports
     @pytest.fixture()
     def public_project(self, user, contributor):
-        public_project = ProjectFactory.create(is_public=True, creator=user, comment_level='public')
+        public_project = ProjectFactory.create(
+            is_public=True, creator=user, comment_level='public')
         public_project.add_contributor(contributor=contributor, save=True)
         return public_project
 
@@ -317,6 +360,7 @@ class TestCommentReportsView(CommentReportsMixin):
     def public_url(self, user, public_comment):
         return '/{}comments/{}/reports/'.format(API_BASE, public_comment._id)
 
+
 class TestWikiCommentReportsView(CommentReportsMixin):
 
     # private_project_comment_reports
@@ -336,7 +380,11 @@ class TestWikiCommentReportsView(CommentReportsMixin):
 
     @pytest.fixture()
     def comment(self, user, contributor, private_project, wiki):
-        comment = CommentFactory(node=private_project, target=Guid.load(wiki._id), user=contributor)
+        comment = CommentFactory(
+            node=private_project,
+            target=Guid.load(wiki._id),
+            user=contributor
+        )
         comment.reports = comment.reports or {}
         comment.reports[user._id] = {
             'category': 'spam',
@@ -354,7 +402,8 @@ class TestWikiCommentReportsView(CommentReportsMixin):
     # public_project_comment_reports
     @pytest.fixture()
     def public_project(self, user, contributor):
-        public_project = ProjectFactory.create(is_public=True, creator=user, comment_level='public')
+        public_project = ProjectFactory.create(
+            is_public=True, creator=user, comment_level='public')
         public_project.add_contributor(contributor=contributor, save=True)
         return public_project
 
@@ -368,7 +417,11 @@ class TestWikiCommentReportsView(CommentReportsMixin):
 
     @pytest.fixture()
     def public_comment(self, user, contributor, public_project, public_wiki):
-        public_comment = CommentFactory(node=public_project, target=Guid.load(public_wiki._id), user=contributor)
+        public_comment = CommentFactory(
+            node=public_project,
+            target=Guid.load(public_wiki._id),
+            user=contributor
+        )
         public_comment.reports = public_comment.reports or {}
         public_comment.reports[user._id] = {
             'category': 'spam',
@@ -382,6 +435,7 @@ class TestWikiCommentReportsView(CommentReportsMixin):
     @pytest.fixture()
     def public_url(self, user, public_comment):
         return '/{}comments/{}/reports/'.format(API_BASE, public_comment._id)
+
 
 class TestFileCommentReportsView(CommentReportsMixin):
 
@@ -398,7 +452,10 @@ class TestFileCommentReportsView(CommentReportsMixin):
 
     @pytest.fixture()
     def comment(self, user, contributor, private_project, file):
-        comment = CommentFactory(node=private_project, target=file.get_guid(), user=contributor)
+        comment = CommentFactory(
+            node=private_project,
+            target=file.get_guid(),
+            user=contributor)
         comment.reports = comment.reports or {}
         comment.reports[user._id] = {
             'category': 'spam',
@@ -416,7 +473,8 @@ class TestFileCommentReportsView(CommentReportsMixin):
     # public_project_comment_reports
     @pytest.fixture()
     def public_project(self, user, contributor):
-        public_project = ProjectFactory.create(is_public=True, creator=user, comment_level='public')
+        public_project = ProjectFactory.create(
+            is_public=True, creator=user, comment_level='public')
         public_project.add_contributor(contributor=contributor, save=True)
         return public_project
 
@@ -426,7 +484,10 @@ class TestFileCommentReportsView(CommentReportsMixin):
 
     @pytest.fixture()
     def public_comment(self, user, contributor, public_project, public_file):
-        public_comment = CommentFactory(node=public_project, target=public_file.get_guid(), user=contributor)
+        public_comment = CommentFactory(
+            node=public_project,
+            target=public_file.get_guid(),
+            user=contributor)
         public_comment.reports = public_comment.reports or {}
         public_comment.reports[user._id] = {
             'category': 'spam',

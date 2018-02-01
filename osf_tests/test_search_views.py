@@ -100,17 +100,17 @@ class TestSearchViews(OsfTestCase):
 
         #Test search node
         res = self.app.post_json(
-          api_url_for('search_node'),
-          {'query': self.project.title},
-          auth=factories.AuthUserFactory().auth
+            api_url_for('search_node'),
+            {'query': self.project.title},
+            auth=factories.AuthUserFactory().auth
         )
         assert_equal(res.status_code, 200)
 
         #Test search node includePublic true
         res = self.app.post_json(
-          api_url_for('search_node'),
-          {'query': 'a', 'includePublic': True},
-          auth=self.user_one.auth
+            api_url_for('search_node'),
+            {'query': 'a', 'includePublic': True},
+            auth=self.user_one.auth
         )
         node_ids = [node['id'] for node in res.json['nodes']]
         assert_in(self.project_private_user_one._id, node_ids)
@@ -120,9 +120,9 @@ class TestSearchViews(OsfTestCase):
 
         #Test search node includePublic false
         res = self.app.post_json(
-          api_url_for('search_node'),
-          {'query': 'a', 'includePublic': False},
-          auth=self.user_one.auth
+            api_url_for('search_node'),
+            {'query': 'a', 'includePublic': False},
+            auth=self.user_one.auth
         )
         node_ids = [node['id'] for node in res.json['nodes']]
         assert_in(self.project_private_user_one._id, node_ids)
@@ -221,11 +221,11 @@ class TestODMTitleSearch(OsfTestCase):
 
         self.user = factories.AuthUserFactory()
         self.user_two = factories.AuthUserFactory()
-        self.project = factories.ProjectFactory(creator=self.user, title="foo")
-        self.project_two = factories.ProjectFactory(creator=self.user_two, title="bar")
-        self.public_project = factories.ProjectFactory(creator=self.user_two, is_public=True, title="baz")
-        self.registration_project = factories.RegistrationFactory(creator=self.user, title="qux")
-        self.folder = factories.CollectionFactory(creator=self.user, title="quux", category='project')
+        self.project = factories.ProjectFactory(creator=self.user, title='foo')
+        self.project_two = factories.ProjectFactory(creator=self.user_two, title='bar')
+        self.public_project = factories.ProjectFactory(creator=self.user_two, is_public=True, title='baz')
+        self.registration_project = factories.RegistrationFactory(creator=self.user, title='qux')
+        self.folder = factories.CollectionFactory(creator=self.user, title='quux', category='project')
         self.dashboard = find_bookmark_collection(self.user)
         self.dashboard.category = 'project'
         self.dashboard.save()

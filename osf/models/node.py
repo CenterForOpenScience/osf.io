@@ -59,7 +59,7 @@ from website.mails import mails
 from website.project import signals as project_signals
 from website.project import tasks as node_tasks
 from website.project.model import NodeUpdateError
-from website.preprints.tasks import update_ezid_metadata_on_change
+from website.identifiers.tasks import update_ezid_metadata_on_change
 
 from website.util import (api_url_for, api_v2_url, get_headers_from_request,
                           sanitize, web_url_for)
@@ -888,6 +888,13 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
 
     @property
     def admin_contributor_ids(self):
+        return self._get_admin_contributor_ids(include_self=True)
+
+    @property
+    def parent_admin_contributor_ids(self):
+        return self._get_admin_contributor_ids()
+
+    def _get_admin_contributor_ids(self, include_self=False):
         def get_admin_contributor_ids(node):
             return Contributor.objects.select_related('user').filter(
                 node=node,
@@ -896,7 +903,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
             ).values_list('user__guids___id', flat=True)
 
         contributor_ids = set(self.contributors.values_list('guids___id', flat=True))
-        admin_ids = set(get_admin_contributor_ids(self))
+        admin_ids = set(get_admin_contributor_ids(self)) if include_self else set()
         for parent in self.parents:
             admins = get_admin_contributor_ids(parent)
             admin_ids.update(set(admins).difference(contributor_ids))
@@ -906,6 +913,12 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
     def admin_contributors(self):
         return OSFUser.objects.filter(
             guids___id__in=self.admin_contributor_ids
+        ).order_by('family_name')
+
+    @property
+    def parent_admin_contributors(self):
+        return OSFUser.objects.filter(
+            guids___id__in=self.parent_admin_contributor_ids
         ).order_by('family_name')
 
     def set_permissions(self, user, permissions, validate=True, save=False):

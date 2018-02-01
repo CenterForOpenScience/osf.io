@@ -1,9 +1,6 @@
 # -*- coding: utf-8 -*-
-import functools
-
 from nose.tools import *  # flake8: noqa
 
-from api.base.settings.defaults import API_BASE
 from api.preprint_providers.serializers import PreprintProviderSerializer
 from osf_tests.factories import PreprintProviderFactory
 from tests.base import DbTestCase
@@ -18,7 +15,10 @@ class TestPreprintProviderSerializer(DbTestCase):
 
     def test_preprint_provider_serialization_v2(self):
         req = make_drf_request_with_version(version='2.0')
-        result = PreprintProviderSerializer(self.preprint_provider, context={'request': req}).data
+        result = PreprintProviderSerializer(
+            self.preprint_provider,
+            context={'request': req}
+        ).data
 
         data = result['data']
         attributes = data['attributes']
@@ -38,7 +38,10 @@ class TestPreprintProviderSerializer(DbTestCase):
 
     def test_preprint_provider_serialization_v24(self):
         req = make_drf_request_with_version(version='2.4')
-        result = PreprintProviderSerializer(self.preprint_provider, context={'request': req}).data
+        result = PreprintProviderSerializer(
+            self.preprint_provider,
+            context={'request': req}
+        ).data
 
         data = result['data']
         attributes = data['attributes']
@@ -56,7 +59,10 @@ class TestPreprintProviderSerializer(DbTestCase):
 
     def test_preprint_provider_serialization_v25(self):
         req = make_drf_request_with_version(version='2.5')
-        result = PreprintProviderSerializer(self.preprint_provider, context={'request': req}).data
+        result = PreprintProviderSerializer(
+            self.preprint_provider,
+            context={'request': req}
+        ).data
 
         data = result['data']
         attributes = data['attributes']

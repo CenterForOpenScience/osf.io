@@ -23,7 +23,7 @@ class TestWikiVersionList:
         def add_page(node, user):
             with mock.patch('osf.models.AbstractNode.update_search'):
                 wiki_page = WikiFactory(node=node, user=user)
-                wiki_version = WikiVersionFactory(wiki_page=wiki_page, user=user)
+                WikiVersionFactory(wiki_page=wiki_page, user=user)
                 return wiki_page
         return add_page
 
@@ -74,52 +74,51 @@ class TestWikiVersionList:
         return '/{}wikis/{}/versions/'.format(API_BASE, private_registration.get_wiki_page('home')._id)
 
     def test_return_wiki_versions(self, app, user, non_contrib, private_registration, public_wiki, private_wiki, public_url, private_url, private_registration_url):
-
-    #   test_return_public_node_wiki_versions_logged_out_user
+        # test_return_public_node_wiki_versions_logged_out_user
         res = app.get(public_url)
         assert res.status_code == 200
         wiki_ids = [wiki['id'] for wiki in res.json['data']]
         assert str(public_wiki.get_version().identifier) in wiki_ids
 
-    #   test_return_public_node_wiki_versions_logged_in_non_contributor
+        #   test_return_public_node_wiki_versions_logged_in_non_contributor
         res = app.get(public_url, auth=non_contrib.auth)
         assert res.status_code == 200
         wiki_ids = [wiki['id'] for wiki in res.json['data']]
         assert str(public_wiki.get_version().identifier) in wiki_ids
 
-    #   test_return_public_node_wiki_versions_logged_in_contributor
+        #   test_return_public_node_wiki_versions_logged_in_contributor
         res = app.get(public_url, auth=user.auth)
         assert res.status_code == 200
         wiki_ids = [wiki['id'] for wiki in res.json['data']]
         assert str(public_wiki.get_version().identifier) in wiki_ids
 
-    #   test_return_private_node_wiki_versions_logged_out_user
+        #   test_return_private_node_wiki_versions_logged_out_user
         res = app.get(private_url, expect_errors=True)
         assert res.status_code == 401
         assert res.json['errors'][0]['detail'] == exceptions.NotAuthenticated.default_detail
 
-    #   test_return_private_node_wiki_versions_logged_in_non_contributor
+        #   test_return_private_node_wiki_versions_logged_in_non_contributor
         res = app.get(private_url, auth=non_contrib.auth, expect_errors=True)
         assert res.status_code == 403
         assert res.json['errors'][0]['detail'] == exceptions.PermissionDenied.default_detail
 
-    #   test_return_private_node_wiki_versions_logged_in_contributor
+        #   test_return_private_node_wiki_versions_logged_in_contributor
         res = app.get(private_url, auth=user.auth)
         assert res.status_code == 200
         wiki_ids = [wiki['id'] for wiki in res.json['data']]
         assert str(private_wiki.get_version().identifier) in wiki_ids
 
-    #   test_return_registration_wiki_versions_logged_out_user
+        #   test_return_registration_wiki_versions_logged_out_user
         res = app.get(private_registration_url, expect_errors=True)
         assert res.status_code == 401
         assert res.json['errors'][0]['detail'] == exceptions.NotAuthenticated.default_detail
 
-    #   test_return_registration_wiki_versions_logged_in_non_contributor
+        #   test_return_registration_wiki_versions_logged_in_non_contributor
         res = app.get(private_registration_url, auth=non_contrib.auth, expect_errors=True)
         assert res.status_code == 403
         assert res.json['errors'][0]['detail'] == exceptions.PermissionDenied.default_detail
 
-    #   test_return_registration_wiki_versions_logged_in_contributor
+        #   test_return_registration_wiki_versions_logged_in_contributor
         res = app.get(private_registration_url, auth=user.auth)
         assert res.status_code == 200
         wiki_ids = [wiki['id'] for wiki in res.json['data']]
@@ -139,28 +138,28 @@ class TestWikiVersionList:
 
     def test_relationship_links(self, app, user, public_project, private_project, public_wiki, private_wiki, public_registration, private_registration, public_url, private_url, public_registration_url, private_registration_url):
 
-    #   test_public_node_wiki_versions_relationship_links
+        #   test_public_node_wiki_versions_relationship_links
         res = app.get(public_url)
         expected_wiki_page_relationship_url = '{}wikis/{}/'.format(API_BASE, public_wiki._id)
         expected_user_relationship_url = '{}users/{}/'.format(API_BASE, user._id)
         assert expected_wiki_page_relationship_url in res.json['data'][0]['relationships']['wiki_page']['links']['related']['href']
         assert expected_user_relationship_url in res.json['data'][0]['relationships']['user']['links']['related']['href']
 
-    #   test_private_node_wiki_versions_relationship_links
+        #   test_private_node_wiki_versions_relationship_links
         res = app.get(private_url, auth=user.auth)
         expected_wiki_page_relationship_url = '{}wikis/{}/'.format(API_BASE, private_wiki._id)
         expected_user_relationship_url = '{}users/{}/'.format(API_BASE, user._id)
         assert expected_wiki_page_relationship_url in res.json['data'][0]['relationships']['wiki_page']['links']['related']['href']
         assert expected_user_relationship_url in res.json['data'][0]['relationships']['user']['links']['related']['href']
 
-    #   test_public_registration_wiki_versions_relationship_links
+        #   test_public_registration_wiki_versions_relationship_links
         res = app.get(public_registration_url)
         expected_wiki_page_relationship_url = '{}wikis/{}/'.format(API_BASE, public_registration.get_wiki_page('home')._id)
         expected_user_relationship_url = '{}users/{}/'.format(API_BASE, user._id)
         assert expected_wiki_page_relationship_url in res.json['data'][0]['relationships']['wiki_page']['links']['related']['href']
         assert expected_user_relationship_url in res.json['data'][0]['relationships']['user']['links']['related']['href']
 
-    #   test_private_registration_wiki_versions_relationship_links
+        #   test_private_registration_wiki_versions_relationship_links
         res = app.get(private_registration_url, auth=user.auth)
         expected_wiki_page_relationship_url = '{}wikis/{}/'.format(API_BASE, private_registration.get_wiki_page('home')._id)
         expected_user_relationship_url = '{}users/{}/'.format(API_BASE, user._id)
@@ -169,7 +168,7 @@ class TestWikiVersionList:
 
     def test_not_returned(self, app, public_project, public_registration, public_url, public_registration_url, public_wiki):
 
-    #   test_registration_wiki_pages_not_returned_from_nodes_endpoint
+        #   test_registration_wiki_pages_not_returned_from_nodes_endpoint
         res = app.get(public_url)
         node_relationships = [
             node_wiki['relationships']['wiki_page']['links']['related']['href']
@@ -179,12 +178,12 @@ class TestWikiVersionList:
         assert len(node_relationships) == 1
         assert public_wiki._id in node_relationships[0]
 
-    #   test_node_wiki_pages_not_returned_from_registrations_endpoint
+        #   test_node_wiki_pages_not_returned_from_registrations_endpoint
         res = app.get(public_registration_url)
         node_relationships = [
             node_wiki['relationships']['wiki_page']['links']['related']['href']
             for node_wiki in res.json['data']
-            ]
+        ]
         assert res.status_code == 200
         assert len(node_relationships) == 1
         assert public_registration.get_wiki_page('home')._id in node_relationships[0]
