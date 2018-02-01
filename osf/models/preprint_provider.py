@@ -118,13 +118,11 @@ class PreprintProvider(ObjectIDMixin, ReviewProviderMixin, DirtyFieldsMixin, Bas
         old_id = dirty_fields.get('_id', None)
         if old_id:
             for permission_type in GROUPS.keys():
-                group_name = GROUP_FORMAT.format(provider_id=old_id, group=permission_type)
-                try:
-                    permission_group = Group.objects.get(name=group_name)
-                    permission_group.name = GROUP_FORMAT.format(provider_id=self._id, group=permission_type)
-                    permission_group.save()
-                except Group.DoesNotExist:
-                    pass
+                Group.objects.filter(
+                    name=GROUP_FORMAT.format(provider_id=old_id, group=permission_type)
+                ).update(
+                    name=GROUP_FORMAT.format(provider_id=self._id, group=permission_type)
+                )
 
         return super(PreprintProvider, self).save(*args, **kwargs)
 
