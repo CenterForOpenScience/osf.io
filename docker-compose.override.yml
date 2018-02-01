@@ -53,27 +53,27 @@ services:
 #    volumes:
 #      - mfr-sync:/code:nocopy
 
-  preprints:
-    volumes:
-      - preprints-sync:/code:nocopy
-
-#      # Use this for ember-osf linked development (with docker-sync):
-#      - preprints_dist_vol:/code/dist
-#      - emberosf-sync:/ember-osf
-#    depends_on:
-#      - emberosf
-#    command:
-#      - /bin/bash
-#      - -c
-#      - cd /ember-osf &&
-#        yarn link &&
-#        cd /code &&
-#        (rm -r node_modules || true) &&
-#        yarn --frozen-lockfile &&
-#        yarn link @centerforopenscience/ember-osf &&
-#        (rm -r bower_components || true) &&
-#        ./node_modules/.bin/bower install --allow-root --config.interactive=false &&
-#        yarn start --host 0.0.0.0 --port 4201 --live-reload-port 41954
+#  preprints:
+#    volumes:
+#      - preprints-sync:/code:nocopy
+#
+##      # Use this for ember-osf linked development (with docker-sync):
+##      - preprints_dist_vol:/code/dist
+##      - emberosf-sync:/ember-osf
+##    depends_on:
+##      - emberosf
+##    command:
+##      - /bin/bash
+##      - -c
+##      - cd /ember-osf &&
+##        yarn link &&
+##        cd /code &&
+##        (rm -r node_modules || true) &&
+##        yarn --frozen-lockfile &&
+##        yarn link @centerforopenscience/ember-osf &&
+##        (rm -r bower_components || true) &&
+##        ./node_modules/.bin/bower install --allow-root --config.interactive=false &&
+##        yarn start --host 0.0.0.0 --port 4201 --live-reload-port 41954
 
 #  registries:
 #    volumes:
@@ -170,8 +170,8 @@ volumes:
 #  emberosf-sync:
 #    external: true
 
-  preprints-sync:
-    external: true
+#  preprints-sync:
+#    external: true
 
 #  registries-sync:
 #    external: true
