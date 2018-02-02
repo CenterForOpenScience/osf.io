@@ -2,6 +2,14 @@
 Changelog
 *********
 
+0.131.0 (2018-02-01)
+====================
+
+- Admin: request and set SHARE API tokens.
+- Admin: Set maintenance banners.
+- Lint api_tests.
+- Send correct emails to unregistered users added to components.
+
 0.130.0 (2018-01-30)
 ====================
 

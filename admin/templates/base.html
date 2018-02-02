@@ -189,6 +189,10 @@
                   </ul>
               </div>
           {% endif %}
+
+          {% if perms.osf.change_maintenancestate %}
+            <li><a href="{% url 'maintenance:display' %}"><i class='fa fa-link'></i> <span>Maintenance Alerts</span></a></li>
+          {% endif %}
           </ul><!-- /.sidebar-menu -->
         </section>
         <!-- /.sidebar -->

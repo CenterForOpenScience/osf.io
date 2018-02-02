@@ -36,6 +36,7 @@ var config = Object.assign({}, common, {
         'dashboard': staticAdminPath('js/sales_analytics/dashboard.js'),
         'metrics-page': staticAdminPath('js/pages/metrics-page.js'),
         'banners': staticAdminPath('js/banners/banners.js'),
+        'maintenance': staticAdminPath('js/maintenance/maintenance.js'),
     },
     plugins: plugins,
     devtool: 'source-map',

@@ -44,10 +44,17 @@ class ReviewActionCommentSettingsMixin(object):
     @pytest.fixture()
     def node_admin(self, preprint):
         user = AuthUserFactory()
-        preprint.node.add_contributor(user, permissions=[osf_permissions.READ, osf_permissions.WRITE, osf_permissions.ADMIN])
+        preprint.node.add_contributor(
+            user,
+            permissions=[
+                osf_permissions.READ,
+                osf_permissions.WRITE,
+                osf_permissions.ADMIN])
         return user
 
-    def test_comment_settings(self, app, url, provider, actions, provider_admin, provider_moderator, node_admin):
+    def test_comment_settings(
+            self, app, url, provider, actions, provider_admin,
+            provider_moderator, node_admin):
         expected_ids = set([l._id for l in actions])
         for anonymous in [True, False]:
             for private in [True, False]:
@@ -67,7 +74,8 @@ class ReviewActionCommentSettingsMixin(object):
                 res = app.get(url, auth=node_admin.auth)
                 self.__assert_fields(res, expected_ids, anonymous, private)
 
-    def __assert_fields(self, res, expected_ids, hidden_creator, hidden_comment):
+    def __assert_fields(
+            self, res, expected_ids, hidden_creator, hidden_comment):
         data = res.json['data']
         actual_ids = set([l['id'] for l in data])
         if expected_ids != actual_ids:
