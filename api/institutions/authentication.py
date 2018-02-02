@@ -104,7 +104,7 @@ class InstitutionAuthentication(BaseAuthentication):
                 mail=WELCOME_OSF4I,
                 mimetype='html',
                 user=user,
-                osf_contact_email=OSF_CONTACT_EMAIL,
+                osf_contact_email=OSF_CONTACT_EMAIL
             )
 
         if not user.is_affiliated_with_institution(institution):
