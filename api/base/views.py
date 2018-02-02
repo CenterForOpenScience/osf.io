@@ -394,7 +394,7 @@ def root(request, format=None, **kwargs):
     """
     The documentation for the Open Science Framework API can be found at [developer.osf.io](https://developer.osf.io).
 
-    The documentation for this endpoint can be found [here](https://developer.osf.io/#tag/General-Usage).
+    The documentation for this endpoint can be found [here](https://developer.osf.io/#operation/base_read).
     """
     if request.user and not request.user.is_anonymous:
         user = request.user

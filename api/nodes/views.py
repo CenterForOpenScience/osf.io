@@ -489,98 +489,7 @@ class NodeDraftRegistrationDetail(JSONAPIBaseView, generics.RetrieveUpdateDestro
 
 
 class NodeRegistrationsList(JSONAPIBaseView, generics.ListCreateAPIView, NodeMixin, DraftMixin):
-    """Registrations of the current node.
-
-    Registrations are read-only snapshots of a project that can never be edited or deleted but can be withdrawn. This view
-    is a list of all the registrations and withdrawn registrations of the current node. To create a registration, first
-    create a draft registration and answer the required supplemental registration questions. Then, submit a POST request
-    to this endpoint with the draft registration id in the body of the request.
-
-    <!--- Copied from RegistrationList -->
-
-    A withdrawn registration will display a limited subset of information, namely, title, description,
-    created, registration, withdrawn, date_registered, withdrawal_justification, and registration supplement. All
-    other fields will be displayed as null. Additionally, the only relationships permitted to be accessed for a withdrawn
-    registration are the contributors - other relationships will return a 403. Each resource contains the full representation
-    of the registration, meaning additional requests to an individual registrations's detail view are not necessary.
-
-
-    <!--- Copied Attributes from RegistrationList -->
-
-    ##Registration Attributes
-
-    Registrations have the "registrations" `type`.
-
-        name                            type               description
-        =======================================================================================================
-        title                           string             title of the registered project or component
-        description                     string             description of the registered node
-        category                        string             bode category, must be one of the allowed values
-        date_created                    iso8601 timestamp  timestamp that the node was created
-        date_modified                   iso8601 timestamp  timestamp when the node was last updated
-        tags                            array of strings   list of tags that describe the registered node
-        current_user_can_comment        boolean            Whether the current user is allowed to post comments
-        current_user_permissions        array of strings   list of strings representing the permissions for the current user on this node
-        fork                            boolean            is this project a fork?
-        registration                    boolean            is this node a registration? (always true - may be deprecated in future versions)
-        collection                      boolean            is this registered node a collection? (always false - may be deprecated in future versions)
-        public                          boolean            has this registration been made publicly-visible?
-        withdrawn                       boolean            has this registration been withdrawn?
-        date_registered                 iso8601 timestamp  timestamp that the registration was created
-        embargo_end_date                iso8601 timestamp  when the embargo on this registration will be lifted (if applicable)
-        withdrawal_justification        string             reasons for withdrawing the registration
-        pending_withdrawal              boolean            is this registration pending withdrawal?
-        pending_withdrawal_approval     boolean            is this registration pending approval?
-        pending_embargo_approval        boolean            is the associated Embargo awaiting approval by project admins?
-        registered_meta                 dictionary         registration supplementary information
-        registration_supplement         string             registration template
-
-    ##Actions
-
-    ###Create Registration
-
-        Method:        POST
-        URL:           /links/self
-        Query Params:  <none>
-        Body (JSON):   {
-                        "data": {
-                            "type": "registrations",                                         # required
-                            "attributes": {
-                                "draft_registration": {draft_registration_id},               # required, write-only
-                                "registration_choice": one of ['embargo', 'immediate'],      # required, write-only
-                                "lift_embargo": format %Y-%m-%dT%H:%M:%S'                    # required if registration_choice is 'embargo'
-                            }
-                        }
-                    }
-        Success:       201 OK + draft representation
-
-    To create a registration, issue a POST request to the `self` link.  'draft_registration' must be the id of a completed
-    draft registration created for the current node.  All required supplemental questions in the draft registration must
-    have been answered. Registration choice should be 'embargo' if you wish to add an embargo date to the registration.
-    Registrations can have embargo periods for up to four years. 'lift_embargo' should be the embargo end date.
-    When the embargo expires, the registration will be made public. If 'immediate' is selected as the "registration_choice",
-    the registration will be made public once it is approved.
-
-    ##Relationships
-
-    ###Registered from
-
-    The registration is branched from this node.
-
-    ###Registered by
-
-    The registration was initiated by this user.
-
-    ##Registration Schema
-
-    Detailed registration schema.  The schema endpoint is available in `/registration_schema/links/related/href`.
-
-    ##Links
-
-    See the [JSON-API spec regarding pagination](http://jsonapi.org/format/1.0/#fetching-pagination).
-
-    #This request/response
-
+    """The documentation for this endpoint can be found [here](https://developer.osf.io/#operation/nodes_registrations_list).
     """
     permission_classes = (
         AdminOrPublic,
@@ -939,243 +848,7 @@ class NodeForksList(JSONAPIBaseView, generics.ListCreateAPIView, NodeMixin, Node
 
 
 class NodeFilesList(JSONAPIBaseView, generics.ListAPIView, WaterButlerMixin, ListFilterMixin, NodeMixin):
-    """Files attached to a node for a given provider. *Read-only*.
-
-    This gives a list of all of the files and folders that are attached to your project for the given storage provider.
-    If the provider is not "osfstorage", the metadata for the files in the storage will be retrieved and cached whenever
-    this endpoint is accessed.  To see the cached metadata, GET the endpoint for the file directly (available through
-    its `/links/info` attribute).
-
-    When a create/update/delete action is performed against the file or folder, the action is handled by an external
-    service called WaterButler.  The WaterButler response format differs slightly from the OSF's.
-
-    <!--- Copied from FileDetail.Spiel -->
-
-    ###Waterbutler Entities
-
-    When an action is performed against a WaterButler endpoint, it will generally respond with a file entity, a folder
-    entity, or no content.
-
-    ####File Entity
-
-        name                        type              description
-        ==========================================================================================================
-        name                        string            name of the file
-        path                        string            unique identifier for this file entity for this
-                                                        project and storage provider. may not end with '/'
-        materialized                string            the full path of the file relative to the storage
-                                                        root.  may not end with '/'
-        kind                        string            "file"
-        etag                        string            etag - http caching identifier w/o wrapping quotes
-        modified                    timestamp         last modified timestamp - format depends on provider
-        contentType                 string            MIME-type when available
-        provider                    string            id of provider e.g. "osfstorage", "s3", "googledrive".
-                                                        equivalent to addon_short_name on the OSF
-        size                        integer           size of file in bytes
-        current_version             integer           current file version
-
-        current_user_can_comment    boolean           Whether the current user is allowed to post comments
-
-        tags                        array of strings  list of tags that describes the file (osfstorage only)
-        extra                       object            may contain additional data beyond what's described here,
-                                                       depending on the provider
-        version                     integer           version number of file. will be 1 on initial upload
-        hashes                      object
-        md5                         string            md5 hash of file
-        sha256                      string            SHA-256 hash of file
-
-    ####Folder Entity
-
-        name          type    description
-        ======================================================================
-        name          string  name of the folder
-        path          string  unique identifier for this folder entity for this
-                              project and storage provider. must end with '/'
-        materialized  string  the full path of the folder relative to the storage
-                              root.  must end with '/'
-        kind          string  "folder"
-        etag          string  etag - http caching identifier w/o wrapping quotes
-        extra         object  varies depending on provider
-
-    ##File Attributes
-
-    <!--- Copied Attributes from FileDetail -->
-
-    For an OSF File entity, the `type` is "files" regardless of whether the entity is actually a file or folder.  They
-    can be distinguished by the `kind` attribute.  Files and folders use the same representation, but some attributes may
-    be null for one kind but not the other. `size` will be null for folders.  A list of storage provider keys can be
-    found [here](/v2/#storage-providers).
-
-        name          type               description
-        ===================================================================================================
-        guid              string             OSF GUID for this file (if one has been assigned)
-        name              string             name of the file or folder; used for display
-        kind              string             "file" or "folder"
-        path              string             same as for corresponding WaterButler entity
-        materialized_path string             the unix-style path to the file relative to the provider root
-        size              integer            size of file in bytes, null for folders
-        provider          string             storage provider for this file. "osfstorage" if stored on the
-                                             OSF.  other examples include "s3" for Amazon S3, "googledrive"
-                                             for Google Drive, "box" for Box.com.
-        last_touched      iso8601 timestamp  last time the metadata for the file was retrieved. only
-                                             applies to non-OSF storage providers.
-        modified     iso8601 timestamp  timestamp of when this file was last updated*
-        created      iso8601 timestamp  timestamp of when this file was created*
-        extra             object             may contain additional data beyond what's described here,
-                                             depending on the provider
-          hashes          object
-            md5           string             md5 hash of file, null for folders
-            sha256        string             SHA-256 hash of file, null for folders
-          downloads       integer            number of times the file has been downloaded (for osfstorage files)
-
-    * A note on timestamps: for files stored in osfstorage, `created` refers to the time the file was
-    first uploaded to osfstorage, and `date_modified` is the time the file was last updated while in osfstorage.
-    Other providers may or may not provide this information, but if they do it will correspond to the provider's
-    semantics for created/modified times.  These timestamps may also be stale; metadata retrieved via the File Detail
-    endpoint is cached.  The `last_touched` field describes the last time the metadata was retrieved from the external
-    provider.  To force a metadata update, access the parent folder via its Node Files List endpoint.
-
-    ##Links
-
-    See the [JSON-API spec regarding pagination](http://jsonapi.org/format/1.0/#fetching-pagination).
-
-    ##Actions
-
-    <!--- Copied from FileDetail.Actions -->
-
-    The `links` property of the response provides endpoints for common file operations. The currently-supported actions
-    are:
-
-    ###Get Info (*files, folders*)
-
-        Method:   GET
-        URL:      /links/info
-        Params:   <none>
-        Success:  200 OK + file representation
-
-    The contents of a folder or details of a particular file can be retrieved by performing a GET request against the
-    `info` link. The response will be a standard OSF response format with the [OSF File attributes](#attributes).
-
-    ###Download (*files*)
-
-        Method:   GET
-        URL:      /links/download
-        Params:   <none>
-        Success:  200 OK + file body
-
-    To download a file, issue a GET request against the `download` link.  The response will have the Content-Disposition
-    header set, which will will trigger a download in a browser.
-
-    ###Create Subfolder (*folders*)
-
-        Method:       PUT
-        URL:          /links/new_folder
-        Query Params: ?kind=folder&name={new_folder_name}
-        Body:         <empty>
-        Success:      201 Created + new folder representation
-
-    You can create a subfolder of an existing folder by issuing a PUT request against the `new_folder` link.  The
-    `?kind=folder` portion of the query parameter is already included in the `new_folder` link.  The name of the new
-    subfolder should be provided in the `name` query parameter.  The response will contain a [WaterButler folder
-    entity](#folder-entity).  If a folder with that name already exists in the parent directory, the server will return
-    a 409 Conflict error response.
-
-    ###Upload New File (*folders*)
-
-        Method:       PUT
-        URL:          /links/upload
-        Query Params: ?kind=file&name={new_file_name}
-        Body (Raw):   <file data (not form-encoded)>
-        Success:      201 Created + new file representation
-
-    To upload a file to a folder, issue a PUT request to the folder's `upload` link with the raw file data in the
-    request body, and the `kind` and `name` query parameters set to `'file'` and the desired name of the file.  The
-    response will contain a [WaterButler file entity](#file-entity) that describes the new file.  If a file with the
-    same name already exists in the folder, the server will return a 409 Conflict error response.
-
-    ###Update Existing File (*file*)
-
-        Method:       PUT
-        URL:          /links/upload
-        Query Params: ?kind=file
-        Body (Raw):   <file data (not form-encoded)>
-        Success:      200 OK + updated file representation
-
-    To update an existing file, issue a PUT request to the file's `upload` link with the raw file data in the request
-    body and the `kind` query parameter set to `"file"`.  The update action will create a new version of the file.
-    The response will contain a [WaterButler file entity](#file-entity) that describes the updated file.
-
-    ###Rename (*files, folders*)
-
-        Method:        POST
-        URL:           /links/move
-        Query Params:  <none>
-        Body (JSON):   {
-                        "action": "rename",
-                        "rename": {new_file_name}
-                       }
-        Success:       200 OK + new entity representation
-
-    To rename a file or folder, issue a POST request to the `move` link with the `action` body parameter set to
-    `"rename"` and the `rename` body parameter set to the desired name.  The response will contain either a folder
-    entity or file entity with the new name.
-
-    ###Move & Copy (*files, folders*)
-
-        Method:        POST
-        URL:           /links/move
-        Query Params:  <none>
-        Body (JSON):   {
-                        // mandatory
-                        "action":   "move"|"copy",
-                        "path":     {path_attribute_of_target_folder},
-                        // optional
-                        "rename":   {new_name},
-                        "conflict": "replace"|"keep", // defaults to 'replace'
-                        "resource": {node_id},        // defaults to current {node_id}
-                        "provider": {provider}        // defaults to current {provider}
-                       }
-        Success:       200 OK or 201 Created + new entity representation
-
-    Move and copy actions both use the same request structure, a POST to the `move` url, but with different values for
-    the `action` body parameters.  The `path` parameter is also required and should be the OSF `path` attribute of the
-    folder being written to.  The `rename` and `conflict` parameters are optional.  If you wish to change the name of
-    the file or folder at its destination, set the `rename` parameter to the new name.  The `conflict` param governs how
-    name clashes are resolved.  Possible values are `replace` and `keep`.  `replace` is the default and will overwrite
-    the file that already exists in the target folder.  `keep` will attempt to keep both by adding a suffix to the new
-    file's name until it no longer conflicts.  The suffix will be ' (**x**)' where **x** is a increasing integer
-    starting from 1.  This behavior is intended to mimic that of the OS X Finder.  The response will contain either a
-    folder entity or file entity with the new name.
-
-    Files and folders can also be moved between nodes and providers.  The `resource` parameter is the id of the node
-    under which the file/folder should be moved.  It *must* agree with the `path` parameter, that is the `path` must
-    identify a valid folder under the node identified by `resource`.  Likewise, the `provider` parameter may be used to
-    move the file/folder to another storage provider, but both the `resource` and `path` parameters must belong to a
-    node and folder already extant on that provider.  Both `resource` and `provider` default to the current node and
-    providers.
-
-    If a moved/copied file is overwriting an existing file, a 200 OK response will be returned.  Otherwise, a 201
-    Created will be returned.
-
-    ###Delete (*file, folders*)
-
-        Method:        DELETE
-        URL:           /links/delete
-        Query Params:  <none>
-        Success:       204 No Content
-
-    To delete a file or folder send a DELETE request to the `delete` link.  Nothing will be returned in the response
-    body.
-
-    ##Query Params
-
-    + `page=<Int>` -- page number of results to view, default 1
-
-    + `filter[<fieldname>]=<Str>` -- fields and values to filter the search results on.
-
-    Node files may be filtered by `id`, `name`, `node`, `kind`, `path`, `provider`, `size`, and `last_touched`.
-
-    #This Request/Response
+    """The documentation for this endpoint can be found [here](https://developer.osf.io/#operation/nodes_files_list).
 
     """
     permission_classes = (
@@ -1254,6 +927,9 @@ class NodeFilesList(JSONAPIBaseView, generics.ListAPIView, WaterButlerMixin, Lis
 
 
 class NodeFileDetail(JSONAPIBaseView, generics.RetrieveAPIView, WaterButlerMixin, NodeMixin):
+    """The documentation for this endpoint can be found [here](https://developer.osf.io/#operation/nodes_files_read).
+
+    """
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
         base_permissions.PermissionWithGetter(ContributorOrPublic, 'node'),
@@ -1283,32 +959,8 @@ class NodeFileDetail(JSONAPIBaseView, generics.RetrieveAPIView, WaterButlerMixin
 
 
 class NodeAddonList(JSONAPIBaseView, generics.ListAPIView, ListFilterMixin, NodeMixin, AddonSettingsMixin):
-    """List of addons connected to this node *Read-only*
+    """The documentation for this endpoint can be found [here](https://developer.osf.io/#operation/nodes_addons_list).
 
-    Paginated list of node addons ordered by their `id` or `addon_short_name`. Attributes other than
-    `enabled` will be `null` if the addon is not enabled for this node.
-
-    ## <Addon\>NodeSettings Attributes
-
-    OSF <Addon\>NodeSettings entities have the "node_addons" `type`, and their `id` indicates the addon
-    service provider (eg. `box`, `googledrive`, etc).
-
-        name                    type                description
-        ======================================================================================================
-        external_account_id     string              _id of the associated ExternalAccount, if any
-        configured              boolean             has this node been configured with a folder?
-        enabled                 boolean             has a node settings object been associated with this node?
-        folder_id               string              folder id of linked folder, from third-party service
-        node_has_auth           boolean             is this node fully authorized to use an ExternalAccount?
-        folder_path             boolean             folder path of linked folder, from third-party service
-
-    ##Links
-
-    See the [JSON-API spec regarding pagination](http://jsonapi.org/format/1.0/#fetching-pagination).
-
-        self:  the canonical api endpoint of this node_addon
-
-    #This Request/Response
     """
 
     permission_classes = (
@@ -1340,73 +992,7 @@ class NodeAddonList(JSONAPIBaseView, generics.ListAPIView, ListFilterMixin, Node
 
 
 class NodeAddonDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView, generics.CreateAPIView, NodeMixin, AddonSettingsMixin):
-    """
-    Detail of individual addon connected to this node *Writeable*.
-
-    Attributes other than `enabled` will be null if the addon is not enabled for this node.
-
-    ##Permissions
-
-    <Addon>NodeSettings that are attached to public Nodes will give read-only access to everyone. Private nodes require explicit read
-    permission. Write and admin access are the same for public and private nodes. Administrators on a parent node have
-    implicit read permissions for all child nodes.
-
-    Any users with write or admin access to the node are able to deauthorize an enabled addon, but only the addon authorizer is able
-    to change the configuration (i.e. selected folder) of an already-configured <Addon>NodeSettings entity.
-
-    ## <Addon>NodeSettings Attributes
-
-    OSF <Addon>NodeSettings entities have the "node_addons" `type`, and their `id` indicates the addon
-    service provider (eg. `box`, `googledrive`, etc).
-
-        name                    type                description
-        ======================================================================================================
-        external_account_id     string              _id of the associated ExternalAccount, if any
-        configured              boolean             has this node been configured with a folder?
-        enabled                 boolean             has a node settings object been associated with this node?
-        folder_id               string              folder id of linked folder, from third-party service
-        node_has_auth           boolean             is this node fully authorized to use an ExternalAccount?
-        folder_path             boolean             folder path of linked folder, from third-party service
-        url                     string              Specific to the `forward` addon
-        label                   string              Specific to the `forward` addon
-
-    ##Links
-
-        self:  the canonical api endpoint of this node_addon
-
-    ##Actions
-
-    ###Update
-
-        Method:        PUT / PATCH
-        URL:           /links/self
-        Query Params:  <none>
-        Body (JSON):   {"data": {
-                           "type": "node_addons",                   # required
-                           "id":   {provider},                      # required
-                           "attributes": {
-                             "external_account_id": {account_id},   # optional
-                             "folder_id":           {folder_id},    # optional
-                             "folder_path":         {folder_path},  # optional - Google Drive specific
-                             "url":                 {url},          # optional - External Link specific
-                             "label":               {label}         # optional - External Link specific
-                           }
-                         }
-                       }
-        Success:       200 OK + node_addon representation
-
-    To update a node, issue either a PUT or a PATCH request against the `/links/self` URL.  The `external_account_id`,
-    `enabled`, and `folder_id` fields are mandatory if you PUT and optional if you PATCH. However, at least one is always mandatory.
-    Non-string values will be accepted and stringified, but we make no promises about the stringification output.  So
-    don't do that.
-
-    To delete or deauthorize a node_addon, issue a PUT with all fields set to `null` / `False`, or a PATCH with `enabled` set to `False`.
-
-    ####Note
-
-    Not all addons are currently configurable via the API. The current list of addons that accept PUT/PATCH is [`box`, `dropbox`, `s3`, `googledrive`]
-
-    #This Request/Response
+    """The documentation for this endpoint can be found [here](https://developer.osf.io/#operation/nodes_addon_read).
     """
 
     permission_classes = (
@@ -1459,35 +1045,7 @@ class NodeAddonDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView, ge
 
 
 class NodeAddonFolderList(JSONAPIBaseView, generics.ListAPIView, NodeMixin, AddonSettingsMixin):
-    """List of folders that this node can connect to *Read-only*.
-
-    Paginated list of folders retrieved from the associated third-party service
-
-    ##Permissions
-
-    <Addon> Folders are visible only to the addon authorizer.
-
-    ## <Addon> Folder Attributes
-
-    OSF <Addon\> Folder entities have the "node_addon_folders" `type`, and their `id` indicates the folder_id
-    according to the associated service provider (eg. `box`, `googledrive`, etc).
-
-        name        type        description
-        ======================================================================================================
-        path        string      path of this folder, according to third-party service
-        kind        string      `"folder"`, typically.
-        provider    string      `short_name` of third-party service provider
-        name        string      name of this folder
-        folder_id   string      id of this folder, according to third-party service
-
-    ##Links
-
-    See the [JSON-API spec regarding pagination](http://jsonapi.org/format/1.0/#fetching-pagination).
-
-        root:  the canonical api endpoint of the root folder for this account
-        children: the canonical api endpoint of this folder's children
-
-    #This Request/Response
+    """The documentation for this endpoint can be found [here](https://developer.osf.io/#operation/nodes_addons_folders_list).
     """
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
@@ -1534,117 +1092,7 @@ class NodeProvider(object):
 
 
 class NodeProvidersList(JSONAPIBaseView, generics.ListAPIView, NodeMixin):
-    """List of storage providers enabled for this node. *Read-only*.
-
-    Users of the OSF may access their data on a [number of cloud-storage](/v2/#storage-providers) services that have
-    integrations with the OSF.  We call these "providers".  By default every node has access to the OSF-provided
-    storage but may use as many of the supported providers as desired.  This endpoint lists all of the providers that are
-    configured for this node.  If you want to add more, you will need to do that in the Open Science Framework front end
-    for now.
-
-    In the OSF filesystem model, providers are treated as folders, but with special properties that distinguish them
-    from regular folders.  Every provider folder is considered a root folder, and may not be deleted through the regular
-    file API.  To see the contents of the provider, issue a GET request to the `/relationships/files/links/related/href`
-    attribute of the provider resource.  The `new_folder` and `upload` actions are handled by another service called
-    WaterButler, whose response format differs slightly from the OSF's.
-
-    <!--- Copied from FileDetail.Spiel -->
-
-    ###Waterbutler Entities
-
-    When an action is performed against a WaterButler endpoint, it will generally respond with a file entity, a folder
-    entity, or no content.
-
-    ####File Entity
-
-        name          type       description
-        =========================================================================
-        name          string     name of the file
-        path          string     unique identifier for this file entity for this
-                                 project and storage provider. may not end with '/'
-        materialized  string     the full path of the file relative to the storage
-                                 root.  may not end with '/'
-        kind          string     "file"
-        etag          string     etag - http caching identifier w/o wrapping quotes
-        modified      timestamp  last modified timestamp - format depends on provider
-        contentType   string     MIME-type when available
-        provider      string     id of provider e.g. "osfstorage", "s3", "googledrive".
-                                 equivalent to addon_short_name on the OSF
-        size          integer    size of file in bytes
-        extra         object     may contain additional data beyond what's described here,
-                                 depending on the provider
-          version     integer    version number of file. will be 1 on initial upload
-          downloads   integer    count of the number times the file has been downloaded
-          hashes      object
-            md5       string     md5 hash of file
-            sha256    string     SHA-256 hash of file
-
-    ####Folder Entity
-
-        name          type    description
-        ======================================================================
-        name          string  name of the folder
-        path          string  unique identifier for this folder entity for this
-                              project and storage provider. must end with '/'
-        materialized  string  the full path of the folder relative to the storage
-                              root.  must end with '/'
-        kind          string  "folder"
-        etag          string  etag - http caching identifier w/o wrapping quotes
-        extra         object  varies depending on provider
-
-    ##Provider Attributes
-
-    `type` is "files"
-
-        name      type    description
-        =================================================================================
-        name      string  name of the provider
-        kind      string  type of this file/folder.  always "folder"
-        path      path    relative path of this folder within the provider filesys. always "/"
-        node      string  node this provider belongs to
-        provider  string  provider id, same as "name"
-
-    ##Links
-
-    See the [JSON-API spec regarding pagination](http://jsonapi.org/format/1.0/#fetching-pagination).
-
-    ##Actions
-
-    <!--- Copied from FileDetail.Actions -->
-
-    ###Create Subfolder (*folders*)
-
-        Method:       PUT
-        URL:          /links/new_folder
-        Query Params: ?kind=folder&name={new_folder_name}
-        Body:         <empty>
-        Success:      201 Created + new folder representation
-
-    You can create a subfolder of an existing folder by issuing a PUT request against the `new_folder` link.  The
-    `?kind=folder` portion of the query parameter is already included in the `new_folder` link.  The name of the new
-    subfolder should be provided in the `name` query parameter.  The response will contain a [WaterButler folder
-    entity](#folder-entity).  If a folder with that name already exists in the parent directory, the server will return
-    a 409 Conflict error response.
-
-    ###Upload New File (*folders*)
-
-        Method:       PUT
-        URL:          /links/upload
-        Query Params: ?kind=file&name={new_file_name}
-        Body (Raw):   <file data (not form-encoded)>
-        Success:      201 Created + new file representation
-
-    To upload a file to a folder, issue a PUT request to the folder's `upload` link with the raw file data in the
-    request body, and the `kind` and `name` query parameters set to `'file'` and the desired name of the file.  The
-    response will contain a [WaterButler file entity](#file-entity) that describes the new file.  If a file with the
-    same name already exists in the folder, the server will return a 409 Conflict error response.
-
-    ##Query Params
-
-    + `page=<Int>` -- page number of results to view, default 1
-
-    #This Request/Response
-
+    """The documentation for this endpoint can be found [here](https://developer.osf.io/#operation/nodes_providers_list).
     """
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
@@ -1675,6 +1123,8 @@ class NodeProvidersList(JSONAPIBaseView, generics.ListAPIView, NodeMixin):
         ]
 
 class NodeProviderDetail(JSONAPIBaseView, generics.RetrieveAPIView, NodeMixin):
+    """The documentation for this endpoint can be found [here](https://developer.osf.io/#operation/nodes_providers_read).
+    """
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
         ContributorOrPublic,
@@ -1694,113 +1144,7 @@ class NodeProviderDetail(JSONAPIBaseView, generics.RetrieveAPIView, NodeMixin):
 
 
 class NodeLogList(JSONAPIBaseView, generics.ListAPIView, NodeMixin, ListFilterMixin):
-    """List of Logs associated with a given Node. *Read-only*.
-
-    <!--- Copied Description from NodeLogDetail -->
-
-    Paginated list of Logs ordered by their `date`. This includes the Logs of the specified Node as well as the logs of that Node's children that the current user has access to.
-
-    Note that if an anonymous view_only key is being used, the user relationship will not be exposed.
-
-    On the front end, logs show record and show actions done on the OSF. The complete list of loggable actions (in the format {identifier}: {description}) is as follows:
-
-    * 'project_created': A Node is created
-    * 'project_registered': A Node is registered
-    * 'project_deleted': A Node is deleted
-    * 'created_from': A Node is created using an existing Node as a template
-    * 'pointer_created': A Pointer is created
-    * 'pointer_forked': A Pointer is forked
-    * 'pointer_removed': A Pointer is removed
-    * 'node_removed': A component is deleted
-    * 'node_forked': A Node is forked
-    ===
-    * 'made_public': A Node is made public
-    * 'made_private': A Node is made private
-    * 'tag_added': A tag is added to a Node
-    * 'tag_removed': A tag is removed from a Node
-    * 'edit_title': A Node's title is changed
-    * 'edit_description': A Node's description is changed
-    * 'updated_fields': One or more of a Node's fields are changed
-    * 'external_ids_added': An external identifier is added to a Node (e.g. DOI, ARK)
-    ===
-    * 'contributor_added': A Contributor is added to a Node
-    * 'contributor_removed': A Contributor is removed from a Node
-    * 'contributors_reordered': A Contributor's position in a Node's bibliography is changed
-    * 'permissions_updated': A Contributor's permissions on a Node are changed
-    * 'made_contributor_visible': A Contributor is made bibliographically visible on a Node
-    * 'made_contributor_invisible': A Contributor is made bibliographically invisible on a Node
-    ===
-    * 'wiki_updated': A Node's wiki is updated
-    * 'wiki_deleted': A Node's wiki is deleted
-    * 'wiki_renamed': A Node's wiki is renamed
-    * 'made_wiki_public': A Node's wiki is made public
-    * 'made_wiki_private': A Node's wiki is made private
-    ===
-    * 'addon_added': An add-on is linked to a Node
-    * 'addon_removed': An add-on is unlinked from a Node
-    * 'addon_file_moved': A File in a Node's linked add-on is moved
-    * 'addon_file_copied': A File in a Node's linked add-on is copied
-    * 'addon_file_renamed': A File in a Node's linked add-on is renamed
-    * 'node_authorized': An addon is authorized for a project
-    * 'node_deauthorized': An addon is deauthorized for a project
-    * 'folder_created': A Folder is created in a Node's linked add-on
-    * 'file_added': A File is added to a Node's linked add-on
-    * 'file_updated': A File is updated on a Node's linked add-on
-    * 'file_removed': A File is removed from a Node's linked add-on
-    * 'file_restored': A File is restored in a Node's linked add-on
-    ===
-    * 'comment_added': A Comment is added to some item
-    * 'comment_removed': A Comment is removed from some item
-    * 'comment_updated': A Comment is updated on some item
-    ===
-    * 'embargo_initiated': An embargoed Registration is proposed on a Node
-    * 'embargo_approved': A proposed Embargo of a Node is approved
-    * 'embargo_cancelled': A proposed Embargo of a Node is cancelled
-    * 'embargo_completed': A proposed Embargo of a Node is completed
-    * 'retraction_initiated': A Withdrawal of a Registration is proposed
-    * 'retraction_approved': A Withdrawal of a Registration is approved
-    * 'retraction_cancelled': A Withdrawal of a Registration is cancelled
-    * 'registration_initiated': A Registration of a Node is proposed
-    * 'registration_approved': A proposed Registration is approved
-    * 'registration_cancelled': A proposed Registration is cancelled
-    ===
-    * 'node_created': A Node is created (_deprecated_)
-
-   ##Log Attributes
-
-    <!--- Copied Attributes from LogList -->
-
-    OSF Log entities have the "logs" `type`.
-
-        name           type                   description
-        ============================================================================
-        date           iso8601 timestamp      timestamp of Log creation
-        action         string                 Log action (see list above)
-
-    ##Relationships
-
-    ###Node
-
-    The node this log belongs to.
-
-    ###User
-
-    The user who performed the logged action.
-
-    ##Links
-
-    See the [JSON-API spec regarding pagination](http://jsonapi.org/format/1.0/#fetching-pagination).
-
-    ##Actions
-
-    ##Query Params
-
-    <!--- Copied Query Params from LogList -->
-
-    Logs may be filtered by their `action` and `date`.
-
-    #This Request/Response
-
+    """The documentation for this endpoint can be found [here](https://developer.osf.io/#operation/nodes_logs_list).
     """
 
     serializer_class = NodeLogSerializer
@@ -1832,92 +1176,7 @@ class NodeLogList(JSONAPIBaseView, generics.ListAPIView, NodeMixin, ListFilterMi
 
 
 class NodeCommentsList(JSONAPIBaseView, generics.ListCreateAPIView, ListFilterMixin, NodeMixin):
-    """List of comments on a node. *Writeable*.
-
-    Paginated list of comments ordered by their `created.` Each resource contains the full representation of the
-    comment, meaning additional requests to an individual comment's detail view are not necessary.
-
-    Note that if an anonymous view_only key is being used, the user relationship will not be exposed.
-
-    ###Permissions
-
-    Comments on public nodes are given read-only access to everyone. If the node comment-level is "private",
-    only contributors have permission to comment. If the comment-level is "public" any logged-in OSF user can comment.
-    Comments on private nodes are only visible to contributors and administrators on the parent node.
-
-    ##Attributes
-
-    OSF comment entities have the "comments" `type`.
-
-        name           type               description
-        =================================================================================
-        content        string             content of the comment
-        created        iso8601 timestamp  timestamp that the comment was created
-        modified       iso8601 timestamp  timestamp when the comment was last updated
-        edited         boolean            has this comment been edited?
-        deleted        boolean            is this comment deleted?
-        is_abuse       boolean            has this comment been reported by the current user?
-        has_children   boolean            does this comment have replies?
-        can_edit       boolean            can the current user edit this comment?
-
-    ##Links
-
-    See the [JSON-API spec regarding pagination](http://jsonapi.org/format/1.0/#fetching-pagination).
-
-    ##Actions
-
-    ###Create
-
-        Method:        POST
-        URL:           /links/self
-        Query Params:  <none>
-        Body (JSON):   {
-                         "data": {
-                           "type": "comments",   # required
-                           "attributes": {
-                             "content":       {content},        # mandatory
-                           },
-                           "relationships": {
-                             "target": {
-                               "data": {
-                                  "type": {target type}         # mandatory
-                                  "id": {target._id}            # mandatory
-                               }
-                             }
-                           }
-                         }
-                       }
-        Success:       201 CREATED + comment representation
-
-    To create a comment on this node, issue a POST request against this endpoint. The comment target id and target type
-    must be specified. To create a comment on the node overview page, the target `type` would be "nodes" and the `id`
-    would be the node id. To reply to a comment on this node, the target `type` would be "comments" and the `id` would
-    be the id of the comment to reply to. The `content` field is mandatory.
-
-    If the comment creation is successful the API will return
-    a 201 response with the representation of the new comment in the body. For the new comment's canonical URL, see the
-    `/links/self` field of the response.
-
-    ##Query Params
-
-    + `filter[deleted]=True|False` -- filter comments based on whether or not they are deleted.
-
-    The list of node comments includes deleted comments by default. The `deleted` field is a boolean and can be
-    filtered using truthy values, such as `true`, `false`, `0`, or `1`. Note that quoting `true` or `false` in
-    the query will cause the match to fail regardless.
-
-    + `filter[created][comparison_operator]=YYYY-MM-DDTH:M:S` -- filter comments based on date created.
-
-    Comments can also be filtered based on their `created` and `modified` fields. Possible comparison
-    operators include 'gt' (greater than), 'gte'(greater than or equal to), 'lt' (less than) and 'lte'
-    (less than or equal to). The date must be in the format YYYY-MM-DD and the time is optional.
-
-    + `filter[target]=target_id` -- filter comments based on their target id.
-
-    The list of comments can be filtered by target id. For example, to get all comments with target = project,
-    the target_id would be the project_id.
-
-    #This Request/Response
+    """The documentation for this endpoint can be found [here](https://developer.osf.io/#operation/nodes_comments_list).
     """
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
@@ -1977,23 +1236,7 @@ class NodeCommentsList(JSONAPIBaseView, generics.ListCreateAPIView, ListFilterMi
 
 
 class NodeInstitutionsList(JSONAPIBaseView, generics.ListAPIView, ListFilterMixin, NodeMixin):
-    """ Detail of the affiliated institutions a node has, if any. Returns [] if the node has no
-    affiliated institution.
-
-    ##Attributes
-
-    OSF Institutions have the "institutions" `type`.
-
-        name           type               description
-        =========================================================================
-        name           string             title of the institution
-        id             string             unique identifier in the OSF
-        logo_path      string             a path to the institution's static logo
-
-
-
-    #This Request/Response
-
+    """The documentation for this endpoint can be found [here](https://developer.osf.io/#operation/nodes_institutions_list).
     """
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
@@ -2214,52 +1457,7 @@ class NodeLinkedNodesRelationship(LinkedNodesRelationship, NodeMixin):
 
 
 class LinkedNodesList(BaseLinkedList, NodeMixin):
-    """List of nodes linked to this node. *Read-only*.
-
-    Linked nodes are the nodes pointed to by node links. This view will probably replace node_links in the near future.
-
-    <!--- Copied Spiel from NodeDetail -->
-
-    On the front end, nodes are considered 'projects' or 'components'. The difference between a project and a component
-    is that a project is the top-level node, and components are children of the project. There is also a [category
-    field](/v2/#osf-node-categories) that includes 'project' as an option. The categorization essentially determines
-    which icon is displayed by the node in the front-end UI and helps with search organization. Top-level nodes may have
-    a category other than project, and children nodes may have a category of project.
-
-    ##Linked Node Attributes
-
-    <!--- Copied Attributes from NodeDetail -->
-
-    OSF Node entities have the "nodes" `type`.
-
-        name           type               description
-        =================================================================================
-        title          string             title of project or component
-        description    string             description of the node
-        category       string             node category, must be one of the allowed values
-        created   iso8601 timestamp  timestamp that the node was created
-        modified  iso8601 timestamp  timestamp when the node was last updated
-        tags           array of strings   list of tags that describe the node
-        registration   boolean            is this is a registration?
-        collection     boolean            is this node a collection of other nodes?
-        public         boolean            has this node been made publicly-visible?
-
-    ##Links
-
-    See the [JSON-API spec regarding pagination](http://jsonapi.org/format/1.0/#fetching-pagination).
-
-    ##Query Params
-
-    + `page=<Int>` -- page number of results to view, default 1
-
-    + `filter[<fieldname>]=<Str>` -- fields and values to filter the search results on.
-
-    Nodes may be filtered by their `title`, `category`, `description`, `public`, `registration`, or `tags`.  `title`,
-    `description`, and `category` are string fields and will be filtered using simple substring matching.  `public` and
-    `registration` are booleans, and can be filtered using truthy values, such as `true`, `false`, `0`, or `1`.  Note
-    that quoting `true` or `false` in the query will cause the match to fail regardless.  `tags` is an array of simple strings.
-
-    #This Request/Response
+    """The documentation for this endpoint can be found [here](https://developer.osf.io/#operation/nodes_linked_nodes_list).
     """
     serializer_class = NodeSerializer
     view_category = 'nodes'
@@ -2348,68 +1546,7 @@ class NodeLinkedRegistrationsRelationship(LinkedRegistrationsRelationship, NodeM
 
 
 class NodeLinkedRegistrationsList(BaseLinkedList, NodeMixin):
-    """List of registrations linked to this node. *Read-only*.
-
-    Linked registrations are the registration nodes pointed to by node links.
-
-    <!--- Copied Spiel from RegistrationDetail -->
-    Registrations are read-only snapshots of a project. This view shows details about the given registration.
-
-    Each resource contains the full representation of the registration, meaning additional requests to an individual
-    registration's detail view are not necessary. A withdrawn registration will display a limited subset of information,
-    namely, title, description, created, registration, withdrawn, date_registered, withdrawal_justification, and
-    registration supplement. All other fields will be displayed as null. Additionally, the only relationships permitted
-    to be accessed for a withdrawn registration are the contributors - other relationships will return a 403.
-
-    ##Linked Registration Attributes
-
-    <!--- Copied Attributes from RegistrationDetail -->
-
-    Registrations have the "registrations" `type`.
-
-        name                            type               description
-        =======================================================================================================
-        title                           string             title of the registered project or component
-        description                     string             description of the registered node
-        category                        string             bode category, must be one of the allowed values
-        created                         iso8601 timestamp  timestamp that the node was created
-        modified                        iso8601 timestamp  timestamp when the node was last updated
-        tags                            array of strings   list of tags that describe the registered node
-        current_user_can_comment        boolean            Whether the current user is allowed to post comments
-        current_user_permissions        array of strings   list of strings representing the permissions for the current user on this node
-        fork                            boolean            is this project a fork?
-        registration                    boolean            has this project been registered? (always true - may be deprecated in future versions)
-        collection                      boolean            is this registered node a collection? (always false - may be deprecated in future versions)
-        node_license                    object             details of the license applied to the node
-        year                            string             date range of the license
-        copyright_holders               array of strings   holders of the applied license
-        public                          boolean            has this registration been made publicly-visible?
-        withdrawn                       boolean            has this registration been withdrawn?
-        date_registered                 iso8601 timestamp  timestamp that the registration was created
-        embargo_end_date                iso8601 timestamp  when the embargo on this registration will be lifted (if applicable)
-        withdrawal_justification        string             reasons for withdrawing the registration
-        pending_withdrawal              boolean            is this registration pending withdrawal?
-        pending_withdrawal_approval     boolean            is this registration pending approval?
-        pending_embargo_approval        boolean            is the associated Embargo awaiting approval by project admins?
-        registered_meta                 dictionary         registration supplementary information
-        registration_supplement         string             registration template
-
-    ##Links
-
-    See the [JSON-API spec regarding pagination](http://jsonapi.org/format/1.0/#fetching-pagination).
-
-    ##Query Params
-
-    + `page=<Int>` -- page number of results to view, default 1
-
-    + `filter[<fieldname>]=<Str>` -- fields and values to filter the search results on.
-
-    Nodes may be filtered by their `title`, `category`, `description`, `public`, `registration`, or `tags`.  `title`,
-    `description`, and `category` are string fields and will be filtered using simple substring matching.  `public` and
-    `registration` are booleans, and can be filtered using truthy values, such as `true`, `false`, `0`, or `1`.  Note
-    that quoting `true` or `false` in the query will cause the match to fail regardless.  `tags` is an array of simple strings.
-
-    #This Request/Response
+    """The documentation for this endpoint can be found [here](https://developer.osf.io/#operation/nodes_registrations_list).
     """
     serializer_class = RegistrationSerializer
     view_category = 'nodes'
@@ -2432,56 +1569,7 @@ class NodeLinkedRegistrationsList(BaseLinkedList, NodeMixin):
 
 
 class NodeViewOnlyLinksList(JSONAPIBaseView, generics.ListCreateAPIView, ListFilterMixin, NodeMixin):
-    """
-    List of view only links on a node. *Writeable*.
-
-    ###Permissions
-
-    View only links on a node, public or private, are readable and writeable only by users that are
-    administrators on the node.
-
-    ##Attributes
-
-        name            type                    description
-        =================================================================================
-        name            string                  name of the view only link
-        anonymous       boolean                 whether the view only link has anonymized contributors
-        created         iso8601 timestamp       timestamp when the view only link was created
-        key             string                  the view only link key
-
-
-    ##Relationships
-
-    ###Creator
-
-    The user who created the view only link.
-
-    ###Nodes
-
-    The nodes which this view only link key gives read-only access to.
-
-    ##Actions
-
-    ###Create
-
-        Method:        POST
-        Body (JSON): {
-                        "data": {
-                            "attributes": {
-                                "name": {string},              #optional
-                                "anonymous": true|false,        #optional
-                            }
-                        }
-                    }
-        Success:       201 CREATED + VOL representation
-
-    ##Query Params
-
-    + `filter[<fieldname>]=<Str>` -- fields and values to filter the search results on.
-
-    View only links may be filtered by their `name`, `anonymous`, and `created` attributes.
-
-    #This Request/Response
+    """The documentation for this endpoint can be found [here](https://developer.osf.io/#operation/nodes_view_only_links_list).
     """
     permission_classes = (
         IsAdmin,
@@ -2507,56 +1595,7 @@ class NodeViewOnlyLinksList(JSONAPIBaseView, generics.ListCreateAPIView, ListFil
 
 
 class NodeViewOnlyLinkDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView, NodeMixin):
-    """
-    Detail of a specific view only link on a node. *Writeable*.
-
-    ###Permissions
-
-    View only links on a node, public or private, are only readable and writeable by users that are
-    administrators on the node.
-
-    ##Attributes
-
-        name            type                    description
-        =================================================================================
-        name            string                  name of the view only link
-        anonymous       boolean                 whether the view only link has anonymized contributors
-        created         iso8601 timestamp       timestamp when the view only link was created
-        key             string                  the view only key
-
-
-    ##Relationships
-
-    ###Creator
-
-    The user who created the view only link.
-
-    ###Nodes
-
-    The nodes which this view only link key gives read-only access to.
-
-    ##Actions
-
-    ###Update
-
-        Method:        PUT
-        Body (JSON):   {
-                         "data": {
-                           "attributes": {
-                             "name": {string},               #optional
-                             "anonymous": true|false,        #optional
-                           },
-                         }
-                       }
-        Success:       200 OK + VOL representation
-
-    ###Delete
-
-        Method:        DELETE
-        Body (JSON):   <none>
-        Success:       204 NO CONTENT
-
-    #This Request/Response
+    """The documentation for this endpoint can be found [here](https://developer.osf.io/#operation/nodes_view_only_links_read).
     """
 
     permission_classes = (
@@ -2592,37 +1631,7 @@ class NodeViewOnlyLinkDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIV
 
 
 class NodeIdentifierList(NodeMixin, IdentifierList):
-    """List of identifiers for a specified node. *Read-only*.
-
-    ##Identifier Attributes
-
-    OSF Identifier entities have the "identifiers" `type`.
-
-        name           type                   description
-        ----------------------------------------------------------------------------
-        category       string                 e.g. 'ark', 'doi'
-        value          string                 the identifier value itself
-
-    ##Links
-
-        self: this identifier's detail page
-
-    ##Relationships
-
-    ###Referent
-
-    The identifier is refers to this node.
-
-    ##Actions
-
-    *None*.
-
-    ##Query Params
-
-     Identifiers may be filtered by their category.
-
-    #This Request/Response
-
+    """The documentation for this endpoint can be found [here](https://developer.osf.io/#operation/nodes_identifiers_list).
     """
 
     serializer_class = NodeIdentifierSerializer
