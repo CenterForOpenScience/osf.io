@@ -117,7 +117,6 @@ services:
 ##        ./node_modules/.bin/bower install --allow-root --config.interactive=false &&
 ##        yarn start --host 0.0.0.0 --port 4202 --live-reload-port 41955
 
-# Use this for ember-osf linked development (with docker-sync):
 #  reviews:
 #    volumes:
 #      - reviews-sync:/code:nocopy
