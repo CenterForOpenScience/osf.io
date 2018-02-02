@@ -13,10 +13,15 @@ from osf_tests.factories import (
 )
 from tests.base import capture_signals
 
+
 def make_user(username, fullname):
     return UserFactory(username=username, fullname=fullname)
 
-def make_payload(institution, username, fullname='Fake User', given_name='', family_name=''):
+
+def make_payload(
+        institution, username, fullname='Fake User',
+        given_name='', family_name=''
+):
     data = {
         'provider': {
             'id': institution._id,
@@ -35,6 +40,7 @@ def make_payload(institution, username, fullname='Fake User', given_name='', fam
         'data': json.dumps(data)
     }, settings.JWT_SECRET, algorithm='HS256'), settings.JWE_SECRET)
 
+
 @pytest.mark.django_db
 class TestInstitutionAuth:
 
@@ -51,7 +57,10 @@ class TestInstitutionAuth:
         assert OSFUser.objects.filter(username=username).count() == 0
 
         with capture_signals() as mock_signals:
-            res = app.post(url_auth_institution, make_payload(institution, username))
+            res = app.post(
+                url_auth_institution,
+                make_payload(institution, username)
+            )
 
         assert res.status_code == 204
         assert mock_signals.signals_sent() == set([signals.user_confirmed])
@@ -68,7 +77,10 @@ class TestInstitutionAuth:
         user.save()
 
         with capture_signals() as mock_signals:
-            res = app.post(url_auth_institution, make_payload(institution, username))
+            res = app.post(
+                url_auth_institution,
+                make_payload(institution, username)
+            )
 
         assert res.status_code == 204
         assert mock_signals.signals_sent() == set()
@@ -83,20 +95,31 @@ class TestInstitutionAuth:
         user.affiliated_institutions.add(institution)
         user.save()
 
-        res = app.post(url_auth_institution, make_payload(institution, username))
+        res = app.post(
+            url_auth_institution,
+            make_payload(institution, username)
+        )
         assert res.status_code == 204
 
         user.reload()
         assert user.affiliated_institutions.count() == 1
 
     def test_bad_token(self, app, url_auth_institution):
-        res = app.post(url_auth_institution, 'al;kjasdfljadf', expect_errors=True)
+        res = app.post(
+            url_auth_institution,
+            'al;kjasdfljadf',
+            expect_errors=True
+        )
         assert res.status_code == 403
 
-    def test_user_names_guessed_if_not_provided(self, app, institution, url_auth_institution):
+    def test_user_names_guessed_if_not_provided(
+            self, app, institution, url_auth_institution):
         # Regression for https://openscience.atlassian.net/browse/OSF-7212
         username = 'fake@user.edu'
-        res = app.post(url_auth_institution, make_payload(institution, username))
+        res = app.post(
+            url_auth_institution,
+            make_payload(institution, username)
+        )
 
         assert res.status_code == 204
         user = OSFUser.objects.filter(username=username).first()
@@ -106,10 +129,19 @@ class TestInstitutionAuth:
         assert user.given_name == 'Fake'
         assert user.family_name == 'User'
 
-    def test_user_names_used_when_provided(self, app, institution, url_auth_institution):
+    def test_user_names_used_when_provided(
+            self, app, institution, url_auth_institution):
         # Regression for https://openscience.atlassian.net/browse/OSF-7212
         username = 'fake@user.edu'
-        res = app.post(url_auth_institution, make_payload(institution, username, family_name='West', given_name='Kanye'))
+        res = app.post(
+            url_auth_institution,
+            make_payload(
+                institution,
+                username,
+                family_name='West',
+                given_name='Kanye'
+            )
+        )
 
         assert res.status_code == 204
         user = OSFUser.objects.filter(username=username).first()

@@ -2,8 +2,24 @@
 Changelog
 *********
 
-0.129.0 (TBD)
-=============
+0.131.0 (2018-02-01)
+====================
+
+- Admin: request and set SHARE API tokens.
+- Admin: Set maintenance banners.
+- Lint api_tests.
+- Send correct emails to unregistered users added to components.
+
+0.130.0 (2018-01-30)
+====================
+
+- Integrate django-waffle for feature flagging.
+- Upgrade to webpack 3.
+- Move identifiers code to website/identifiers/
+- Lint osf_tests.
+
+0.129.0 (2018-01-26)
+====================
 
 - Return 410 for deleted files.
 - Fix preprint citation suffixes.

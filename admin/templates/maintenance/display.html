@@ -1,0 +1,75 @@
+{% extends "base.html" %}
+{% load render_bundle from webpack_loader %}
+{% load spam_extras %}
+{% load static %}
+{% load render_bundle from webpack_loader %}
+{% block title %}
+    <title>Maintenance State</title>
+{% endblock title %}
+{% block content %}
+    <h2>Maintenance State</h2>
+    {% if current_alert %}
+        <table class="table table-striped table-hover table-responsive">
+        <thead>
+            <tr>
+                <th>Time</th>
+                <th>Message</th>
+                <th>Level</th>
+                <th></th>
+            </tr>
+        </thead>
+        <tbody>
+        <br>
+        <h4>Current alert:</h4>
+        <tr>
+            <td>{{ current_alert.start }} - {{ current_alert.end }} UTC</td>
+            <td>
+                {% if current_alert.message %}
+                    {{ current_alert.message }}
+                {% else %}
+                    The site will undergo maintenance between &lt;localized start time&gt;-&lt;localized end time&gt;. Thank you for your patience.
+                {% endif %}
+            </td>
+            <td>{{ current_alert.level }}</td>
+            <td>
+                {%  if perms.osf.delete_maintenancestate %}
+                    <a data-toggle="modal" data-target="#deleteModal" class="btn btn-danger" href={% url 'maintenance:delete' %}>Remove alert</a>
+                    <div class="modal" id="deleteModal">
+                        <div class="modal-dialog">
+                            <div class="modal-content"></div>
+                        </div>
+                    </div>
+                {% endif %}
+            </td>
+
+        </tr>
+        </tbody>
+        </table>
+        <br>
+    {% endif %}
+
+    {%  if perms.osf.change_maintenancestate %}
+        <br>
+        <h4>Put up an alert:</h4>
+
+        <div class="row">
+            <div class="col-md-9">
+                <form action="" method="post">
+                    <p><label>Start:</label><input type="text" name="start" class="datepicker" placeholder="Eastern Date/Time"></p>
+                    <p><label>End:</label><input type="text" name="end" class="datepicker" placeholder="Eastern Date/Time"></p>
+                    {% csrf_token %}
+                    {{ form.as_p }}
+                    <p><label>Message:</label><textarea name="message"></textarea></p>
+                    <p><b>Reminder:</b> This alert will go up as soon as it is created and will have to be manually removed.
+                        (Creating a new alert automatically removes an existing one.)</p>
+                    <input class="btn btn-primary" type="submit" value="Submit" />
+                </form>
+            </div>
+        </div>
+    {% endif %}
+
+{% endblock content %}
+
+{% block bottom_js %}
+    {% render_bundle 'maintenance' %}
+{% endblock %}
