@@ -31,6 +31,11 @@ PREPRINT_PROVIDER_DOMAINS = {
 USE_EXTERNAL_EMBER = True
 PROXY_EMBER_APPS = False
 EXTERNAL_EMBER_APPS = {
+    'ember_osf_web': {
+        'url': '/ember_osf_web/',
+        'server': 'http://localhost:4200',
+        'path': '/ember_osf_web/'
+    },
     'preprints': {
         'url': '/preprints/',
         'server': 'http://192.168.168.167:4201/',
@@ -40,11 +45,6 @@ EXTERNAL_EMBER_APPS = {
         'url': '/registries/',
         'server': 'http://192.168.168.167:4202',
         'path': '/registries/'
-    },
-    'ember_osf_web': {
-        'url': '/ember_osf_web/',
-        'server': 'http://localhost:4201',
-        'path': '/ember_osf_web/'
     },
     'reviews': {
         'url': '/reviews/',
