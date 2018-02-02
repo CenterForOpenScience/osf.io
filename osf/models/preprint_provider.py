@@ -1,11 +1,13 @@
 # -*- coding: utf-8 -*-
 from django.contrib.postgres import fields
+from django.contrib.auth.models import Group
 from api.taxonomies.utils import optimize_subject_query
 from django.db import models
 from django.db.models.signals import post_save
 from django.dispatch import receiver
+from dirtyfields import DirtyFieldsMixin
 
-from api.preprint_providers.permissions import GroupHelper, PERMISSIONS
+from api.preprint_providers.permissions import GroupHelper, PERMISSIONS, GROUP_FORMAT, GROUPS
 from osf.models.base import BaseModel, ObjectIDMixin
 from osf.models.licenses import NodeLicense
 from osf.models.mixins import ReviewProviderMixin
@@ -16,7 +18,7 @@ from website import settings
 from website.util import api_v2_url
 
 
-class PreprintProvider(ObjectIDMixin, ReviewProviderMixin, BaseModel):
+class PreprintProvider(ObjectIDMixin, ReviewProviderMixin, DirtyFieldsMixin, BaseModel):
 
     PUSH_SHARE_TYPE_CHOICES = (('Preprint', 'Preprint'),
                                ('Thesis', 'Thesis'),)
@@ -111,6 +113,18 @@ class PreprintProvider(ObjectIDMixin, ReviewProviderMixin, BaseModel):
         path = '/preprint_providers/{}/'.format(self._id)
         return api_v2_url(path)
 
+    def save(self, *args, **kwargs):
+        dirty_fields = self.get_dirty_fields()
+        old_id = dirty_fields.get('_id', None)
+        if old_id:
+            for permission_type in GROUPS.keys():
+                Group.objects.filter(
+                    name=GROUP_FORMAT.format(provider_id=old_id, group=permission_type)
+                ).update(
+                    name=GROUP_FORMAT.format(provider_id=self._id, group=permission_type)
+                )
+
+        return super(PreprintProvider, self).save(*args, **kwargs)
 
 def rules_to_subjects(rules):
     if not rules:
