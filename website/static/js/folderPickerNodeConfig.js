@@ -376,6 +376,7 @@ var FolderPickerViewModel = oop.defclass({
             self.currentDisplay(null);
             self.loadedFolders(false);
             self.destroyPicker();
+            self.toggleChangeText('Change');
             self.urls(response.result.urls);
             self.changeMessage(self.messages.submitLibrarySettingsSuccess(), 'text-success');
         }
