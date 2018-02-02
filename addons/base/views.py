@@ -710,6 +710,10 @@ def persistent_file_download(**kwargs):
                 'message_short': 'File Not Found',
                 'message_long': 'The requested file could not be found.'
             })
+    if not file.is_file:
+        raise HTTPError(httplib.BAD_REQUEST, data={
+            'message_long': 'Downloading folders is not permitted.'
+        })
 
     query_params = request.args.to_dict()
     query_params.setdefault('version', file.versions.first().identifier)

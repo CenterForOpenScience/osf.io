@@ -1050,6 +1050,7 @@ class TestFileViews(StorageTestCase):
 
     def test_download_file(self):
         file = create_test_file(node=self.node, user=self.user)
+        folder = self.node_settings.get_root().append_folder('Folder')
 
         base_url = '/{}/download/{}/'
 
@@ -1067,3 +1068,8 @@ class TestFileViews(StorageTestCase):
         url = base_url.format(file.node._id, 'FakeGuid')
         redirect = self.app.get(url, auth=self.user.auth, expect_errors=True)
         assert redirect.status_code == 404
+
+        # Test folder 400's
+        url = base_url.format(folder.node._id, folder._id)
+        redirect = self.app.get(url, auth=self.user.auth, expect_errors=True)
+        assert redirect.status_code == 400
