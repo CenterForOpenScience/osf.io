@@ -549,7 +549,7 @@ def sync_set_identifiers(preprint):
         'already_exists': False
     }
     id_dict = parse_identifiers(ezid_return_value)
-    preprint.set_identifier_values(doi=id_dict['doi'], ark=id_dict['ark'])
+    preprint.set_identifier_values(doi=id_dict['doi'])
 
 
 class PreprintFactory(DjangoModelFactory):
