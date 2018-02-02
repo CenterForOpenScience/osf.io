@@ -1606,7 +1606,7 @@ class NodeLinkedRegistrationsList(BaseLinkedList, NodeMixin):
     `description`, and `category` are string fields and will be filtered using simple substring matching.  `public` and
     `registration` are booleans, and can be filtered using truthy values, such as `true`, `false`, `0`, or `1`.  Note
     that quoting `true` or `false` in the query will cause the match to fail regardless.  `tags` is an array of simple strings.
-    
+
     #This Request/Response
     """
     serializer_class = RegistrationSerializer
