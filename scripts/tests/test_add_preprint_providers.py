@@ -15,7 +15,7 @@ class TestAddPreprintProviders(OsfTestCase):
         taxonomy_main()
 
     def tearDown(self):
-        PreprintProvider.remove()
+        PreprintProvider.objects.all().delete()
 
     def test_add_prod_providers(self):
         populate_main('prod')

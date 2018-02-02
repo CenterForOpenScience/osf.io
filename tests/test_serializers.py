@@ -212,7 +212,7 @@ class TestViewProject(OsfTestCase):
 
         assert_not_equal(result['node']['disapproval_link'], '')
         assert_in('/?token=', result['node']['disapproval_link'])
-        pending_reg.remove()
+        pending_reg.delete()
 
     def test_view_project_pending_registration_for_write_contributor_does_not_contain_cancel_link(self):
         write_user = UserFactory()
@@ -223,7 +223,7 @@ class TestViewProject(OsfTestCase):
         result = _view_project(pending_reg, Auth(write_user))
 
         assert_equal(result['node']['disapproval_link'], '')
-        pending_reg.remove()
+        pending_reg.delete()
 
     def test_view_project_child_exists(self):
         linked_node = ProjectFactory(creator=self.user)
@@ -256,13 +256,6 @@ class TestViewProjectEmbeds(OsfTestCase):
         assert_equal(len(res['node']['forks']), 1)
 
         assert_equal(res['node']['forks'][0]['id'], fork._id)
-
-    # Regression test for https://github.com/CenterForOpenScience/osf.io/issues/1478
-    @mock.patch('website.archiver.tasks.archive')
-    def test_view_project_embed_registrations_includes_contribution_count(self, mock_archive):
-        self.project.register_node(get_default_metaschema(), Auth(user=self.project.creator), '', None)
-        data = _view_project(node=self.project, auth=Auth(self.project.creator), embed_registrations=True)
-        assert_is_not_none(data['node']['registrations'][0]['nlogs'])
 
     # Regression test
     def test_view_project_embed_registrations_sorted_by_registered_date_descending(self):

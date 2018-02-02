@@ -15,8 +15,8 @@ class TestPreprintProviderLicenses(ApiTestCase):
         self.license1 = self.licenses[0]
         self.license2 = self.licenses[1]
         self.license3 = self.licenses[2]
-        self.url = '/{}preprint_providers/{}/licenses/'.format(API_BASE, self.provider._id)
-
+        self.url = '/{}preprint_providers/{}/licenses/'.format(
+            API_BASE, self.provider._id)
 
     def test_preprint_provider_has_no_acceptable_licenses_and_no_default(self):
         self.provider.licenses_acceptable = []
@@ -27,8 +27,8 @@ class TestPreprintProviderLicenses(ApiTestCase):
         assert_equal(res.status_code, 200)
         assert_equal(res.json['links']['meta']['total'], len(self.licenses))
 
-
-    def test_preprint_provider_has_a_default_license_but_no_acceptable_licenses(self):
+    def test_preprint_provider_has_a_default_license_but_no_acceptable_licenses(
+            self):
         self.provider.licenses_acceptable = []
         self.provider.default_license = self.license2
         self.provider.save()
@@ -52,7 +52,6 @@ class TestPreprintProviderLicenses(ApiTestCase):
         assert_in(self.license1._id, license_ids)
         assert_in(self.license2._id, license_ids)
         assert_not_in(self.license3._id, license_ids)
-
 
     def test_preprint_provider_has_both_acceptable_and_default_licenses(self):
         self.provider.licenses_acceptable.add(self.license1, self.license3)

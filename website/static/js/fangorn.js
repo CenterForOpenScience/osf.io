@@ -18,7 +18,7 @@ var $osf = require('js/osfHelpers');
 var waterbutler = require('js/waterbutler');
 
 var iconmap = require('js/iconmap');
-var storageAddons = require('json!storageAddons.json');
+var storageAddons = require('json-loader!storageAddons.json');
 
 // CSS
 require('css/fangorn.css');

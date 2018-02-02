@@ -13,7 +13,6 @@ from osf_tests.utils import mock_archive
 
 from framework.auth import Auth
 
-from website import settings
 from website.exceptions import NodeStateError
 
 

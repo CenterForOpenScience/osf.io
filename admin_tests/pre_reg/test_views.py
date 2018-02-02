@@ -9,6 +9,7 @@ from django.core.urlresolvers import reverse
 from django.contrib.auth.models import Group, Permission
 from django.core.exceptions import PermissionDenied
 
+from framework.auth.core import Auth
 from tests.base import AdminTestCase
 from osf_tests.factories import (
     DraftRegistrationFactory,
@@ -36,9 +37,9 @@ from admin.pre_reg.views import (
 from admin.pre_reg.forms import DraftRegistrationForm
 from osf.models.admin_log_entry import AdminLogEntry
 
-
 class TestDraftListView(AdminTestCase):
-    def setUp(self):
+    @mock.patch('website.archiver.tasks.archive')
+    def setUp(self, mock_archive):
         super(TestDraftListView, self).setUp()
         self.user = AuthUserFactory()
         self.schema = utils.draft_reg_util()
@@ -54,6 +55,13 @@ class TestDraftListView(AdminTestCase):
             registration_metadata=utils.SCHEMA_DATA
         )
         self.dr2.submit_for_review(self.user, {}, save=True)
+        # Simply here to NOT be returned when get_queryset is called
+        self.unsubmitted_prereg = DraftRegistrationFactory(
+            initiator=self.user,
+            registration_schema=self.schema,
+            registration_metadata=utils.SCHEMA_DATA
+        )
+        self.unsubmitted_prereg.register(Auth(self.user), save=True)
         self.request = RequestFactory().get('/fake_path')
         self.plain_view = DraftListView
         self.view = setup_view(self.plain_view(), self.request)
@@ -63,6 +71,7 @@ class TestDraftListView(AdminTestCase):
     def test_get_queryset(self):
         res = list(self.view.get_queryset())
         nt.assert_equal(len(res), 2)
+        nt.assert_false(self.unsubmitted_prereg in res)
         nt.assert_is_instance(res[0], DraftRegistration)
 
     def test_queryset_returns_in_order_date_submitted(self):

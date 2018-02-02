@@ -8,11 +8,15 @@ from osf_tests.factories import (
     AuthUserFactory,
 )
 
-node_url_for = lambda n_id: '/{}nodes/{}/'.format(API_BASE, n_id)
+
+def node_url_for(n_id):
+    return '/{}nodes/{}/'.format(API_BASE, n_id)
+
 
 @pytest.fixture()
 def user():
     return AuthUserFactory()
+
 
 @pytest.mark.django_db
 class TestNodeRegistrationList:
@@ -23,11 +27,15 @@ class TestNodeRegistrationList:
 
     @pytest.fixture()
     def private_registration(self, user, private_project):
-        return RegistrationFactory(creator=user, project=private_project, is_public=True)
+        return RegistrationFactory(
+            creator=user,
+            project=private_project,
+            is_public=True)
 
     @pytest.fixture()
     def private_url(self, private_project):
-        return '/{}nodes/{}/registrations/'.format(API_BASE, private_project._id)
+        return '/{}nodes/{}/registrations/'.format(
+            API_BASE, private_project._id)
 
     @pytest.fixture()
     def public_project(self, user):
@@ -35,21 +43,28 @@ class TestNodeRegistrationList:
 
     @pytest.fixture()
     def public_registration(self, user, public_project):
-        return RegistrationFactory(creator=user, project=public_project, is_public=True)
+        return RegistrationFactory(
+            creator=user,
+            project=public_project,
+            is_public=True)
 
     @pytest.fixture()
     def public_url(self, public_project):
-        return '/{}nodes/{}/registrations/'.format(API_BASE, public_project._id)
+        return '/{}nodes/{}/registrations/'.format(
+            API_BASE, public_project._id)
 
-    def test_node_registration_list(self, app, user, public_project, private_project, public_registration, private_registration, public_url, private_url):
+    def test_node_registration_list(
+            self, app, user, public_project, private_project, public_registration,
+            private_registration, public_url, private_url):
 
-    #   test_return_public_registrations_logged_out
+        #   test_return_public_registrations_logged_out
         res = app.get(public_url)
         assert res.status_code == 200
         assert res.content_type == 'application/vnd.api+json'
         assert res.json['data'][0]['attributes']['registration'] is True
         url = res.json['data'][0]['relationships']['registered_from']['links']['related']['href']
-        assert urlparse(url).path == '/{}nodes/{}/'.format(API_BASE, public_project._id)
+        assert urlparse(
+            url).path == '/{}nodes/{}/'.format(API_BASE, public_project._id)
         assert res.json['data'][0]['type'] == 'registrations'
 
     #   test_return_public_registrations_logged_in
@@ -57,7 +72,9 @@ class TestNodeRegistrationList:
         assert res.status_code == 200
         assert res.json['data'][0]['attributes']['registration'] is True
         url = res.json['data'][0]['relationships']['registered_from']['links']['related']['href']
-        assert urlparse(url).path == '/{}nodes/{}/'.format(API_BASE, public_project._id)
+        assert urlparse(
+            url
+        ).path == '/{}nodes/{}/'.format(API_BASE, public_project._id)
         assert res.content_type == 'application/vnd.api+json'
         assert res.json['data'][0]['type'] == 'registrations'
 
@@ -71,6 +88,8 @@ class TestNodeRegistrationList:
         assert res.status_code == 200
         assert res.json['data'][0]['attributes']['registration'] is True
         url = res.json['data'][0]['relationships']['registered_from']['links']['related']['href']
-        assert urlparse(url).path == '/{}nodes/{}/'.format(API_BASE, private_project._id)
+        assert urlparse(
+            url
+        ).path == '/{}nodes/{}/'.format(API_BASE, private_project._id)
         assert res.content_type == 'application/vnd.api+json'
         assert res.json['data'][0]['type'] == 'registrations'

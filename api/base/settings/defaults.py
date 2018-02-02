@@ -32,12 +32,6 @@ DATABASES = {
 }
 
 DATABASE_ROUTERS = ['osf.db.router.PostgreSQLFailoverRouter', ]
-CELERY_IMPORTS = [
-    'osf.management.commands.migratedata',
-    'osf.management.commands.migraterelations',
-    'osf.management.commands.verify',
-]
-
 PASSWORD_HASHERS = [
     'django.contrib.auth.hashers.BCryptSHA256PasswordHasher',
     'django.contrib.auth.hashers.BCryptPasswordHasher',
@@ -90,6 +84,7 @@ INSTALLED_APPS = (
     'raven.contrib.django.raven_compat',
     'django_extensions',
     'guardian',
+    'waffle',
 
     # OSF
     'osf',
@@ -197,7 +192,6 @@ MIDDLEWARE_CLASSES = (
     'api.base.middleware.DjangoGlobalMiddleware',
     'api.base.middleware.CeleryTaskMiddleware',
     'api.base.middleware.PostcommitTaskMiddleware',
-
     # A profiling middleware. ONLY FOR DEV USE
     # Uncomment and add "prof" to url params to recieve a profile for that url
     # 'api.base.middleware.ProfileMiddleware',
@@ -211,7 +205,7 @@ MIDDLEWARE_CLASSES = (
     # 'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'django.middleware.security.SecurityMiddleware',
-
+    'waffle.middleware.WaffleMiddleware',
 )
 
 TEMPLATES = [
@@ -273,4 +267,5 @@ SELECT_FOR_UPDATE_ENABLED = True
 # Disable anonymous user permissions in django-guardian
 ANONYMOUS_USER_NAME = None
 
-CELERY_BEAT_SCHEDULER = 'django_celery_beat.schedulers:DatabaseScheduler'
+# If set to True, automated tests with extra queries will fail.
+NPLUSONE_RAISE = False

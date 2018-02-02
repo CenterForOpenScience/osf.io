@@ -55,9 +55,7 @@ class DraftListView(PermissionRequiredMixin, ListView):
     def get_queryset(self):
         return DraftRegistration.objects.filter(
             registration_schema=get_prereg_schema(),
-        ).exclude(
-            approval__isnull=True,
-            registered_node__isnull=True,
+            approval__isnull=False,
         ).order_by(self.get_ordering())
 
     def get_context_data(self, **kwargs):

@@ -9,7 +9,7 @@ from api.base import permissions as base_permissions
 from api.base.exceptions import InvalidFilterValue, InvalidFilterOperator, Conflict
 from api.base.filters import PreprintFilterMixin, ListFilterMixin
 from api.base.views import JSONAPIBaseView
-from api.base.pagination import MaxSizePagination
+from api.base.pagination import MaxSizePagination, IncreasedPageSizePagination
 from api.base.utils import get_object_or_error, get_user_auth, is_truthy
 from api.licenses.views import LicenseList
 from api.taxonomies.serializers import TaxonomySerializer
@@ -297,6 +297,7 @@ class PreprintProviderTaxonomies(JSONAPIBaseView, generics.ListAPIView):
     required_write_scopes = [CoreScopes.NULL]
 
     serializer_class = TaxonomySerializer
+    pagination_class = IncreasedPageSizePagination
 
     ordering = ('-id',)
 

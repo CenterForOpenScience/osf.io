@@ -304,7 +304,7 @@ class TestRegisterNodeContributors:
     @pytest.fixture()
     def project_two(self, user, auth):
         return factories.ProjectFactory(creator=user)
-    
+
     @pytest.fixture()
     def component(self, user, auth, project_two):
         return factories.NodeFactory(

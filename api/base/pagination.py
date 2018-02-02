@@ -168,6 +168,9 @@ class MaxSizePagination(JSONAPIPagination):
 class NoMaxPageSizePagination(JSONAPIPagination):
     max_page_size = None
 
+class IncreasedPageSizePagination(JSONAPIPagination):
+    max_page_size = 1000
+
 class CommentPagination(JSONAPIPagination):
 
     def get_paginated_response(self, data):

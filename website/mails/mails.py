@@ -73,7 +73,7 @@ def render_message(tpl_name, **context):
     return tpl.render(**context)
 
 
-def send_mail(to_addr, mail, mimetype='plain', from_addr=None, mailer=None,
+def send_mail(to_addr, mail, mimetype='plain', from_addr=None, mailer=None, celery=True,
             username=None, password=None, callback=None, attachment_name=None, attachment_content=None, **context):
     """Send an email from the OSF.
     Example: ::
@@ -118,7 +118,7 @@ def send_mail(to_addr, mail, mimetype='plain', from_addr=None, mailer=None,
 
     logger.debug('Preparing to send...')
     if settings.USE_EMAIL:
-        if settings.USE_CELERY:
+        if settings.USE_CELERY and celery:
             logger.debug('Sending via celery...')
             return mailer.apply_async(kwargs=kwargs, link=callback)
         else:

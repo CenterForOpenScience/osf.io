@@ -5,6 +5,7 @@ import httplib as http
 
 from flask import request
 from flask import send_from_directory
+from django.core.urlresolvers import reverse
 
 from geoip import geolite2
 
@@ -15,7 +16,6 @@ from framework.routing import Rule
 from framework.flask import redirect
 from framework.routing import WebRenderer
 from framework.exceptions import HTTPError
-from framework.auth import get_display_name
 from framework.routing import json_renderer
 from framework.routing import process_rules
 from framework.auth import views as auth_views
@@ -49,6 +49,7 @@ from website.institutions import views as institution_views
 from website.notifications import views as notification_views
 from website.ember_osf_web import views as ember_osf_web_views
 from website.closed_challenges import views as closed_challenges_views
+from website.identifiers import views as identifier_views
 
 
 def get_globals():
@@ -79,7 +80,7 @@ def get_globals():
         'user_api_url': user.api_url if user else '',
         'user_entry_point': metrics.get_entry_point(user) if user else '',
         'user_institutions': user_institutions if user else None,
-        'display_name': get_display_name(user.fullname) if user else '',
+        'display_name': user.fullname if user else '',
         'anon': {
             'continent': getattr(location, 'continent', None),
             'country': getattr(location, 'country', None),
@@ -123,6 +124,7 @@ def get_globals():
         'recaptcha_site_key': settings.RECAPTCHA_SITE_KEY,
         'custom_citations': settings.CUSTOM_CITATIONS,
         'osf_support_email': settings.OSF_SUPPORT_EMAIL,
+        'wafflejs_url': '{api_domain}{waffle_url}'.format(api_domain=settings.API_DOMAIN.rstrip('/'), waffle_url=reverse('wafflejs'))
     }
 
 
@@ -1494,7 +1496,7 @@ def make_url_map(app):
                 '/project/<pid>/node/<nid>/identifiers/',
             ],
             'post',
-            project_views.register.node_identifiers_post,
+            identifier_views.node_identifiers_post,
             json_renderer,
         ),
 
