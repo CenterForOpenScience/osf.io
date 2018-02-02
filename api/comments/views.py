@@ -52,7 +52,7 @@ class CommentMixin(object):
 
 
 class CommentDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView, CommentMixin):
-    """The documentation for this endpoint can be found [here](https://developer.osf.io/#Comments_comments_read).
+    """The documentation for this endpoint can be found [here](https://developer.osf.io/#operation/comments_read).
     """
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,

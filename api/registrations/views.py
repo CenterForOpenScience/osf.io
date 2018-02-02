@@ -78,7 +78,7 @@ class RegistrationMixin(NodeMixin):
 
 
 class RegistrationList(JSONAPIBaseView, generics.ListAPIView, bulk_views.BulkUpdateJSONAPIView, NodesFilterMixin):
-    """The documentation for this endpoint can be found [here](https://developer.osf.io/#Registrations_registrations_list).
+    """The documentation for this endpoint can be found [here](https://developer.osf.io/#operation/registrations_list).
     """
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
@@ -144,7 +144,7 @@ class RegistrationList(JSONAPIBaseView, generics.ListAPIView, bulk_views.BulkUpd
 
 
 class RegistrationDetail(JSONAPIBaseView, generics.RetrieveUpdateAPIView, RegistrationMixin, WaterButlerMixin):
-    """The documentation for this endpoint can be found [here](https://developer.osf.io/#Registrations_registrations_read).
+    """The documentation for this endpoint can be found [here](https://developer.osf.io/#operation/registrations_read).
     """
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,

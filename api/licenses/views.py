@@ -12,7 +12,7 @@ from osf.models import NodeLicense
 
 
 class LicenseDetail(JSONAPIBaseView, generics.RetrieveAPIView):
-    """The documentation for this endpoint can be found [here](https://developer.osf.io/#Licenses_licenses_read).
+    """The documentation for this endpoint can be found [here](https://developer.osf.io/#operation/licenses_read).
     """
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
@@ -40,7 +40,7 @@ class LicenseDetail(JSONAPIBaseView, generics.RetrieveAPIView):
 
 
 class LicenseList(JSONAPIBaseView, generics.ListAPIView, ListFilterMixin):
-    """The documentation for this endpoint can be found [here](https://developer.osf.io/#Licenses_license_list).
+    """The documentation for this endpoint can be found [here](https://developer.osf.io/#operation/license_list).
     """
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,

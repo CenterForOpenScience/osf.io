@@ -11,7 +11,7 @@ from osf.models.citation import CitationStyle
 
 
 class CitationStyleList(JSONAPIBaseView, generics.ListAPIView, ListFilterMixin):
-    """The documentation for this endpoint can be found [here](https://developer.osf.io/#Citations_citations_styles_list).
+    """The documentation for this endpoint can be found [here](https://developer.osf.io/#operation/citations_styles_list).
     """
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
@@ -35,7 +35,7 @@ class CitationStyleList(JSONAPIBaseView, generics.ListAPIView, ListFilterMixin):
         return self.get_queryset_from_request()
 
 class CitationStyleDetail(JSONAPIBaseView, generics.RetrieveAPIView):
-    '''The documentation for this endpoint can be found [here](https://developer.osf.io/#Citations_citations_styles_read).
+    '''The documentation for this endpoint can be found [here](https://developer.osf.io/#operation/citations_styles_read).
     '''
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,

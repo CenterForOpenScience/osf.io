@@ -30,7 +30,7 @@ class LogMixin(object):
 
 
 class NodeLogDetail(JSONAPIBaseView, generics.RetrieveAPIView, LogMixin):
-    """The documentation for this endpoint can be found [here](https://developer.osf.io/#Logs_logs_read).
+    """The documentation for this endpoint can be found [here](https://developer.osf.io/#operation/logs_read).
     """
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,

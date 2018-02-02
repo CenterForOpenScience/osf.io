@@ -23,7 +23,7 @@ from osf.models import AbstractNode, Subject, PreprintProvider
 
 
 class PreprintProviderList(JSONAPIBaseView, generics.ListAPIView, ListFilterMixin):
-    """The documentation for this endpoint can be found [here](https://developer.osf.io/#Preprint_Providers_preprint_provider_list).
+    """The documentation for this endpoint can be found [here](https://developer.osf.io/#operation/preprint_provider_list).
     """
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
@@ -67,7 +67,7 @@ class PreprintProviderList(JSONAPIBaseView, generics.ListAPIView, ListFilterMixi
 
 
 class PreprintProviderDetail(JSONAPIBaseView, generics.RetrieveUpdateAPIView):
-    """The documentation for this endpoint can be found [here](https://developer.osf.io/#Preprint_Providers_preprint_provider_detail).
+    """The documentation for this endpoint can be found [here](https://developer.osf.io/#operation/preprint_provider_detail).
     """
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
@@ -95,7 +95,7 @@ class PreprintProviderDetail(JSONAPIBaseView, generics.RetrieveUpdateAPIView):
 
 
 class PreprintProviderPreprintList(JSONAPIBaseView, generics.ListAPIView, PreprintFilterMixin):
-    """The documentation for this endpoint can be found [here](https://developer.osf.io/#Preprint_Providers_preprint_providers_preprints_list).
+    """The documentation for this endpoint can be found [here](https://developer.osf.io/#operation/preprint_providers_preprints_list).
     """
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
@@ -143,7 +143,7 @@ class PreprintProviderPreprintList(JSONAPIBaseView, generics.ListAPIView, Prepri
 
 
 class PreprintProviderTaxonomies(JSONAPIBaseView, generics.ListAPIView):
-    """The documentation for this endpoint can be found [here](https://developer.osf.io/#Preprint_Providers_preprint_provider_taxonomies_list).
+    """The documentation for this endpoint can be found [here](https://developer.osf.io/#operation/preprint_provider_taxonomies_list).
     """
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
@@ -210,7 +210,7 @@ class PreprintProviderHighlightedSubjectList(JSONAPIBaseView, generics.ListAPIVi
 
 
 class PreprintProviderLicenseList(LicenseList):
-    """The documentation for this endpoint can be found [here](https://developer.osf.io/#Preprint_Providers_preprint_provider_licenses_list)
+    """The documentation for this endpoint can be found [here](https://developer.osf.io/#operation/preprint_provider_licenses_list)
     """
     ordering = ()  # TODO: should be ordered once the frontend for selecting default licenses no longer relies on order
     view_category = 'preprint_providers'

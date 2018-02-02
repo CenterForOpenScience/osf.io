@@ -173,7 +173,7 @@ class DraftMixin(object):
 
 
 class NodeList(JSONAPIBaseView, bulk_views.BulkUpdateJSONAPIView, bulk_views.BulkDestroyJSONAPIView, bulk_views.ListBulkCreateJSONAPIView, NodesFilterMixin, WaterButlerMixin):
-    """The documentation for this endpoint can be found [here](https://developer.osf.io/#Nodes_nodes_list).
+    """The documentation for this endpoint can be found [here](https://developer.osf.io/#operation/nodes_list).
     """
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
@@ -271,7 +271,7 @@ class NodeList(JSONAPIBaseView, bulk_views.BulkUpdateJSONAPIView, bulk_views.Bul
 
 
 class NodeDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView, NodeMixin, WaterButlerMixin):
-    """The documentation for this endpoint can be found [here](https://developer.osf.io/#Nodes_nodes_read).
+    """The documentation for this endpoint can be found [here](https://developer.osf.io/#operation/nodes_read).
     """
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
@@ -306,7 +306,7 @@ class NodeDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView, NodeMix
 
 
 class NodeContributorsList(BaseContributorList, bulk_views.BulkUpdateJSONAPIView, bulk_views.BulkDestroyJSONAPIView, bulk_views.ListBulkCreateJSONAPIView, NodeMixin):
-    """The documentation for this endpoint can be found [here](https://developer.osf.io/#Nodes_nodes_contributors_list).
+    """The documentation for this endpoint can be found [here](https://developer.osf.io/#operation/nodes_contributors_list).
     """
     permission_classes = (
         AdminOrPublic,
@@ -403,7 +403,7 @@ class NodeContributorsList(BaseContributorList, bulk_views.BulkUpdateJSONAPIView
 
 
 class NodeContributorDetail(BaseContributorDetail, generics.RetrieveUpdateDestroyAPIView, NodeMixin, UserMixin):
-    """The documentation for this endpoint can be found [here](https://developer.osf.io/#Nodes_nodes_contributors_read).
+    """The documentation for this endpoint can be found [here](https://developer.osf.io/#operation/nodes_contributors_read).
     """
     permission_classes = (
         ContributorDetailPermissions,
@@ -431,7 +431,7 @@ class NodeContributorDetail(BaseContributorDetail, generics.RetrieveUpdateDestro
 
 
 class NodeDraftRegistrationsList(JSONAPIBaseView, generics.ListCreateAPIView, NodeMixin):
-    """The documentation for this endpoint can be found [here](https://developer.osf.io/#Nodes_nodes_draft_registrations_list).
+    """The documentation for this endpoint can be found [here](https://developer.osf.io/#operation/nodes_draft_registrations_list).
     """
     permission_classes = (
         IsAdmin,
@@ -465,7 +465,7 @@ class NodeDraftRegistrationsList(JSONAPIBaseView, generics.ListCreateAPIView, No
 
 
 class NodeDraftRegistrationDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView, DraftMixin):
-    """The documentation for this endpoint can be found [here](https://developer.osf.io/#Nodes_nodes_draft_registrations_read).
+    """The documentation for this endpoint can be found [here](https://developer.osf.io/#operation/nodes_draft_registrations_read).
     """
     permission_classes = (
         IsAdminOrReviewer,
@@ -617,7 +617,7 @@ class NodeRegistrationsList(JSONAPIBaseView, generics.ListCreateAPIView, NodeMix
 
 
 class NodeChildrenList(JSONAPIBaseView, bulk_views.ListBulkCreateJSONAPIView, NodeMixin, NodesFilterMixin):
-    """The documentation for this endpoint can be found [here](https://developer.osf.io/#Nodes_nodes_children_list).
+    """The documentation for this endpoint can be found [here](https://developer.osf.io/#operation/nodes_children_list).
     """
     permission_classes = (
         ContributorOrPublic,
@@ -654,7 +654,7 @@ class NodeChildrenList(JSONAPIBaseView, bulk_views.ListBulkCreateJSONAPIView, No
 
 
 class NodeCitationDetail(JSONAPIBaseView, generics.RetrieveAPIView, NodeMixin):
-    """The documentation for this endpoint can be found [here](https://developer.osf.io/#Nodes_nodes_citation_list).
+    """The documentation for this endpoint can be found [here](https://developer.osf.io/#operation/nodes_citation_list).
     """
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
@@ -677,7 +677,7 @@ class NodeCitationDetail(JSONAPIBaseView, generics.RetrieveAPIView, NodeMixin):
 
 
 class NodeCitationStyleDetail(JSONAPIBaseView, generics.RetrieveAPIView, NodeMixin):
-    """ The documentation for this endpoint can be found [here](https://developer.osf.io/#Nodes_nodes_citation_read).
+    """ The documentation for this endpoint can be found [here](https://developer.osf.io/#operation/nodes_citation_read).
     """
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
@@ -890,7 +890,7 @@ class NodeLinksDetail(BaseNodeLinksDetail, generics.RetrieveDestroyAPIView, Node
 
 
 class NodeForksList(JSONAPIBaseView, generics.ListCreateAPIView, NodeMixin, NodesFilterMixin):
-    """The documentation for this endpoint can be found [here](https://developer.osf.io/#Nodes_nodes_forks_list).
+    """The documentation for this endpoint can be found [here](https://developer.osf.io/#operation/nodes_forks_list).
     """
     permission_classes = (
         IsPublic,
@@ -2117,7 +2117,7 @@ class NodeInstitutionsRelationship(JSONAPIBaseView, generics.RetrieveUpdateDestr
 
 
 class NodeWikiList(JSONAPIBaseView, generics.ListAPIView, NodeMixin, ListFilterMixin):
-    """The documentation for this endpoint can be found [here](https://developer.osf.io/#Nodes_nodes_wikis_list).
+    """The documentation for this endpoint can be found [here](https://developer.osf.io/#operation/nodes_wikis_list).
     """
 
     permission_classes = (
@@ -2650,7 +2650,7 @@ class NodeIdentifierList(NodeMixin, IdentifierList):
 
 
 class NodePreprintsList(JSONAPIBaseView, generics.ListAPIView, NodeMixin, PreprintFilterMixin):
-    """The documentation for this endpoint can be found [here](https://developer.osf.io/#Nodes_nodes_preprints_list).
+    """The documentation for this endpoint can be found [here](https://developer.osf.io/#operation/nodes_preprints_list).
     """
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,

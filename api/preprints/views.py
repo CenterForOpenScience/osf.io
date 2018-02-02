@@ -59,7 +59,7 @@ class PreprintMixin(NodeMixin):
 
 
 class PreprintList(JSONAPIBaseView, generics.ListCreateAPIView, PreprintFilterMixin):
-    """The documentation for this endpoint can be found [here](https://developer.osf.io/#Preprints_preprints_list).
+    """The documentation for this endpoint can be found [here](https://developer.osf.io/#operation/preprints_list).
     """
     # These permissions are not checked for the list of preprints, permissions handled by the query
     permission_classes = (
@@ -98,7 +98,7 @@ class PreprintList(JSONAPIBaseView, generics.ListCreateAPIView, PreprintFilterMi
         return self.get_queryset_from_request()
 
 class PreprintDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView, PreprintMixin, WaterButlerMixin):
-    """The documentation for this endpoint can be found [here](https://developer.osf.io/#Preprints_preprints_read).
+    """The documentation for this endpoint can be found [here](https://developer.osf.io/#operation/preprints_read).
     """
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
@@ -126,7 +126,7 @@ class PreprintDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView, Pre
 
 
 class PreprintCitationDetail(JSONAPIBaseView, generics.RetrieveAPIView, PreprintMixin):
-    """The documentation for this endpoint can be found [here](https://developer.osf.io/#Preprints_preprints_citation_list).
+    """The documentation for this endpoint can be found [here](https://developer.osf.io/#operation/preprints_citation_list).
     """
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
@@ -151,7 +151,7 @@ class PreprintCitationDetail(JSONAPIBaseView, generics.RetrieveAPIView, Preprint
 
 
 class PreprintCitationStyleDetail(JSONAPIBaseView, generics.RetrieveAPIView, PreprintMixin):
-    """The documentation for this endpoint can be found [here](https://developer.osf.io/#Preprints_preprints_citation_read).
+    """The documentation for this endpoint can be found [here](https://developer.osf.io/#operation/preprints_citation_read).
     """
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,

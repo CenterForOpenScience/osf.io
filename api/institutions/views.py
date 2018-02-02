@@ -46,7 +46,7 @@ class InstitutionMixin(object):
 
 
 class InstitutionList(JSONAPIBaseView, generics.ListAPIView, ListFilterMixin):
-    """The documentation for this endpoint can be found [here](https://developer.osf.io/#Institutions_institutions_list).
+    """The documentation for this endpoint can be found [here](https://developer.osf.io/#operation/institutions_list).
     """
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
@@ -73,7 +73,7 @@ class InstitutionList(JSONAPIBaseView, generics.ListAPIView, ListFilterMixin):
 
 
 class InstitutionDetail(JSONAPIBaseView, generics.RetrieveAPIView, InstitutionMixin):
-    """The documentation for this endpoint can be found [here](https://developer.osf.io/#Institutions_institutions_detail).
+    """The documentation for this endpoint can be found [here](https://developer.osf.io/#operation/institutions_detail).
     """
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
@@ -94,7 +94,7 @@ class InstitutionDetail(JSONAPIBaseView, generics.RetrieveAPIView, InstitutionMi
 
 
 class InstitutionNodeList(JSONAPIBaseView, generics.ListAPIView, InstitutionMixin, NodesFilterMixin):
-    """The documentation for this endpoint can be found [here](https://developer.osf.io/#Institutions_institutions_node_list).
+    """The documentation for this endpoint can be found [here](https://developer.osf.io/#operation/institutions_node_list).
     """
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
@@ -124,7 +124,7 @@ class InstitutionNodeList(JSONAPIBaseView, generics.ListAPIView, InstitutionMixi
 
 
 class InstitutionUserList(JSONAPIBaseView, ListFilterMixin, generics.ListAPIView, InstitutionMixin):
-    """The documentation for this endpoint can be found [here](https://developer.osf.io/#Institutions_institutions_users_list).
+    """The documentation for this endpoint can be found [here](https://developer.osf.io/#operation/institutions_users_list).
     """
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
@@ -169,7 +169,7 @@ class InstitutionAuth(JSONAPIBaseView, generics.CreateAPIView):
 
 
 class InstitutionRegistrationList(InstitutionNodeList):
-    """The documentation for this endpoint can be found [here](https://developer.osf.io/#Institutions_institutions_registration_list).
+    """The documentation for this endpoint can be found [here](https://developer.osf.io/#operation/institutions_registration_list).
     """
     serializer_class = RegistrationSerializer
     view_name = 'institution-registrations'
