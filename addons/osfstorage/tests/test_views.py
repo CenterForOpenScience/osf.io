@@ -3,13 +3,10 @@ from __future__ import unicode_literals
 
 import mock
 import datetime
-import urlparse
 
 import pytest
 from nose.tools import *  # noqa
 from dateutil.parser import parse as parse_datetime
-
-from website import settings
 
 from addons.osfstorage.models import OsfStorageFileNode, OsfStorageFolder
 from framework.auth.core import Auth

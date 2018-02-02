@@ -350,6 +350,7 @@ class FileDetail(JSONAPIBaseView, generics.RetrieveUpdateAPIView, FileMixin):
                 file.get_guid(create=True)
         return file
 
+
 class FileVersionsList(JSONAPIBaseView, generics.ListAPIView, FileMixin):
     """List of versions for the requested file. *Read-only*.
 
@@ -413,6 +414,11 @@ class FileVersionsList(JSONAPIBaseView, generics.ListAPIView, FileMixin):
 
     def get_queryset(self):
         return self.get_file().versions.all()
+
+    def get_serializer_context(self):
+        context = JSONAPIBaseView.get_serializer_context(self)
+        context['file'] = self.get_file()
+        return context
 
 
 def node_from_version(request, view, obj):
@@ -481,3 +487,8 @@ class FileVersionDetail(JSONAPIBaseView, generics.RetrieveAPIView, FileMixin):
         # Kinda hacky but versions have no reference to node or file
         self.check_object_permissions(self.request, file)
         return utils.get_object_or_error(FileVersion, getattr(maybe_version, '_id', ''), self.request)
+
+    def get_serializer_context(self):
+        context = JSONAPIBaseView.get_serializer_context(self)
+        context['file'] = self.get_file()
+        return context

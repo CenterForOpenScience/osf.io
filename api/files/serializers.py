@@ -377,7 +377,7 @@ class FileVersionSerializer(JSONAPISerializer):
         })
 
     def absolute_url(self, obj):
-        fobj = self.context['view'].get_file()
+        fobj = self.context['file']
         return furl.furl(settings.DOMAIN).set(
             path=(fobj.node._id, 'files', fobj.provider, fobj.path.lstrip('/')),
             query={fobj.version_identifier: obj.identifier}  # TODO this can probably just be changed to revision or version
@@ -388,7 +388,7 @@ class FileVersionSerializer(JSONAPISerializer):
 
     def get_download_link(self, obj):
         return get_file_download_link(
-            self.context['view'].get_file(), version=obj.identifier,
+            self.context['file'], version=obj.identifier,
             view_only=self.context['request'].query_params.get('view_only')
         )
 
