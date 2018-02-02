@@ -1,5 +1,25 @@
 <%inherit file="../base.mako"/>
 
+<%def name="resource()"><%
+        if node.get('is_registration', False):
+           return 'registration'
+        elif node.get('is_preprint', False):
+           return 'preprint'
+        elif parent_exists:
+            return 'component'
+        else:
+            return 'project'
+    %>
+</%def>
+
+<%def name="public()"><%
+        if node.get('is_public', False):
+            return True
+        else:
+            return False
+    %>
+</%def>
+
 <%def name="description_meta()">
     %if node['description']:
         ${sanitize.strip_html(node['description']) + ' '}

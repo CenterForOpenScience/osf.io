@@ -2,6 +2,28 @@
 
 <div id="alertBar"></div>
 
+<%def name="resource()"><%
+        if node.get('is_registration', False):
+            nodeType = 'registration'
+        elif node.get('is_preprint', False):
+            nodeType = 'preprint'
+        elif parent_exists:
+            nodeType = 'component'
+        else:
+            nodeType = 'project'
+        return 'file for a ' + nodeType
+%>
+</%def>
+
+<%def name="public()"><%
+        if node.get('is_public', False):
+            return True
+        else:
+            return False
+    %>
+</%def>
+
+
 ## Use full page width
 <%def name="container_class()">container-xxl</%def>
 
