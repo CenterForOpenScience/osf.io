@@ -173,94 +173,7 @@ class DraftMixin(object):
 
 
 class NodeList(JSONAPIBaseView, bulk_views.BulkUpdateJSONAPIView, bulk_views.BulkDestroyJSONAPIView, bulk_views.ListBulkCreateJSONAPIView, NodesFilterMixin, WaterButlerMixin):
-    """Nodes that represent projects and components. *Writeable*.
-
-    Paginated list of nodes ordered by their `modified`.  Each resource contains the full representation of the
-    node, meaning additional requests to an individual node's detail view are not necessary.  Registrations and withdrawn
-    registrations cannot be accessed through this endpoint (see registration endpoints instead).
-
-    <!--- Copied Spiel from NodeDetail -->
-
-    On the front end, nodes are considered 'projects' or 'components'. The difference between a project and a component
-    is that a project is the top-level node, and components are children of the project. There is also a [category
-    field](/v2/#osf-node-categories) that includes 'project' as an option. The categorization essentially determines
-    which icon is displayed by the node in the front-end UI and helps with search organization. Top-level nodes may have
-    a category other than project, and children nodes may have a category of project.
-
-    ##Node Attributes
-
-    <!--- Copied Attributes from NodeDetail -->
-
-    OSF Node entities have the "nodes" `type`.
-
-        name                            type               description
-        =================================================================================
-        title                           string             title of project or component
-        description                     string             description of the node
-        category                        string             node category, must be one of the allowed values
-        date_created                    iso8601 timestamp  timestamp that the node was created
-        date_modified                   iso8601 timestamp  timestamp when the node was last updated
-        tags                            array of strings   list of tags that describe the node
-        current_user_can_comment        boolean            Whether the current user is allowed to post comments
-        current_user_permissions        array of strings   list of strings representing the permissions for the current user on this node
-        registration                    boolean            is this a registration? (always false - may be deprecated in future versions)
-        fork                            boolean            is this node a fork of another node?
-        public                          boolean            has this node been made publicly-visible?
-        preprint                        boolean            is this a preprint?
-        collection                      boolean            is this a collection? (always false - may be deprecated in future versions)
-        node_license                    object             details of the license applied to the node
-            year                        string             date range of the license
-            copyright_holders           array of strings   holders of the applied license
-
-    ##Links
-
-    See the [JSON-API spec regarding pagination](http://jsonapi.org/format/1.0/#fetching-pagination).
-
-    ##Actions
-
-    ###Creating New Nodes
-
-        Method:        POST
-        URL:           /links/self
-        Query Params:  <none>
-        Body (JSON):   {
-                         "data": {
-                           "type": "nodes", # required
-                           "attributes": {
-                             "title":         {title},          # required
-                             "category":      {category},       # required
-                             "description":   {description},    # optional
-                             "tags":          [{tag1}, {tag2}], # optional
-                             "public":        true|false        # optional
-                             "template_from": {node_id}         # optional
-                           }
-                         }
-                       }
-        Success:       201 CREATED + node representation
-
-    New nodes are created by issuing a POST request to this endpoint.  The `title` and `category` fields are
-    mandatory. `category` must be one of the [permitted node categories](/v2/#osf-node-categories).  `public` defaults
-    to false.  All other fields not listed above will be ignored.  If the node creation is successful the API will
-    return a 201 response with the representation of the new node in the body.  For the new node's canonical URL, see
-    the `/links/self` field of the response.
-
-    ##Query Params
-
-    + `page=<Int>` -- page number of results to view, default 1
-
-    + `filter[<fieldname>]=<Str>` -- fields and values to filter the search results on.
-
-    + `view_only=<Str>` -- Allow users with limited access keys to access this node. Note that some keys are anonymous,
-    so using the view_only key will cause user-related information to no longer serialize. This includes blank ids for
-    users and contributors and missing serializer fields and relationships.
-
-    Nodes may be filtered by their `id`, `title`, `category`, `description`, `public`, `tags`, `date_created`, `date_modified`,
-    `root`, `parent`, 'preprint', and `contributors`.  Most are string fields and will be filtered using simple substring matching.  `public`
-    and `preprint` are boolean values, and can be filtered using truthy values, such as `true`, `false`, `0`, or `1`.  Note that quoting `true`
-    or `false` in the query will cause the match to fail regardless.  `tags` is an array of simple strings.
-
-    #This Request/Response
-
+    """The documentation for this endpoint can be found [here](https://developer.osf.io/#Nodes_nodes_list).
     """
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
@@ -358,151 +271,7 @@ class NodeList(JSONAPIBaseView, bulk_views.BulkUpdateJSONAPIView, bulk_views.Bul
 
 
 class NodeDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView, NodeMixin, WaterButlerMixin):
-    """Details about a given node (project or component). *Writeable*.
-
-    A registration or withdrawn registration cannot be accessed through this endpoint. See Registration Detail endpoint.
-
-    On the front end, nodes are considered 'projects' or 'components'. The difference between a project and a component
-    is that a project is the top-level node, and components are children of the project. There is also a [category
-    field](/v2/#osf-node-categories) that includes 'project' as an option. The categorization essentially determines
-    which icon is displayed by the node in the front-end UI and helps with search organization. Top-level nodes may have
-    a category other than project, and children nodes may have a category of project.
-
-    ###Permissions
-
-    Nodes that are made public will give read-only access to everyone. Private nodes require explicit read
-    permission. Write and admin access are the same for public and private nodes. Administrators on a parent node have
-    implicit read permissions for all child nodes.
-
-    ##Attributes
-
-    OSF Node entities have the "nodes" `type`.
-
-        name                            type                description
-        =================================================================================
-        title                           string              title of project or component
-        description                     string              description of the node
-        category                        string              node category, must be one of the allowed values
-        date_created                    iso8601 timestamp   timestamp that the node was created
-        date_modified                   iso8601 timestamp   timestamp when the node was last updated
-        tags                            array of strings    list of tags that describe the node
-        current_user_can_comment        boolean            Whether the current user is allowed to post comments
-        current_user_permissions        array of strings    list of strings representing the permissions for the current user on this node
-        registration                    boolean             is this a registration? (always false - may be deprecated in future versions)
-        fork                            boolean             is this node a fork of another node?
-        public                          boolean             has this node been made publicly-visible?
-        collection                      boolean             is this a collection? (always false - may be deprecated in future versions)
-        node_license                    object             details of the license applied to the node
-        year                            string             date range of the license
-        copyright_holders               array of strings   holders of the applied license
-
-    ##Relationships
-
-    ###Children
-
-    List of nodes that are children of this node.  New child nodes may be added through this endpoint.
-
-    ###Comments
-
-    List of comments on this node.  New comments can be left on the node through this endpoint.
-
-    ###Contributors
-
-    List of users who are contributors to this node. Contributors may have "read", "write", or "admin" permissions.
-    A node must always have at least one "admin" contributor.  Contributors may be added via this endpoint.
-
-    ###Draft Registrations
-
-    List of draft registrations of the current node.
-
-    ###Files
-
-    List of top-level folders (actually cloud-storage providers) associated with this node. This is the starting point
-    for accessing the actual files stored within this node.
-
-    ###Forked From
-
-    If this node was forked from another node, the canonical endpoint of the node that was forked from will be
-    available in the `/forked_from/links/related/href` key.  Otherwise, it will be null.
-
-    ###Logs
-
-    List of read-only log actions pertaining to the node.
-
-    ###Node Links
-
-    List of links (pointers) to other nodes on the OSF.  Node links can be added through this endpoint.
-
-    ###Parent
-
-    If this node is a child node of another node, the parent's canonical endpoint will be available in the
-    `/parent/links/related/href` key.  Otherwise, it will be null.
-
-    ###Registrations
-
-    List of registrations of the current node.
-
-    ###Root
-
-    Returns the top-level node associated with the current node.  If the current node is the top-level node, the root is
-    the current node.
-
-    ### Linked Nodes
-
-    List of nodes linked to the current node.
-
-    ### Linked Registrations
-
-    List of registrations linked to the current node.
-
-    ##Links
-
-        self:  the canonical api endpoint of this node
-        html:  this node's page on the OSF website
-
-    ##Actions
-
-    ###Update
-
-        Method:        PUT / PATCH
-        URL:           /links/self
-        Query Params:  <none>
-        Body (JSON):   {
-                         "data": {
-                           "type": "nodes",   # required
-                           "id":   {node_id}, # required
-                           "attributes": {
-                             "title":       {title},          # mandatory
-                             "category":    {category},       # mandatory
-                             "description": {description},    # optional
-                             "tags":        [{tag1}, {tag2}], # optional
-                             "public":      true|false        # optional
-                           }
-                         }
-                       }
-        Success:       200 OK + node representation
-
-    To update a node, issue either a PUT or a PATCH request against the `/links/self` URL.  The `title` and `category`
-    fields are mandatory if you PUT and optional if you PATCH.  The `tags` parameter must be an array of strings.
-    Non-string values will be accepted and stringified, but we make no promises about the stringification output.  So
-    don't do that.
-
-    ###Delete
-
-        Method:   DELETE
-        URL:      /links/self
-        Params:   <none>
-        Success:  204 No Content
-
-    To delete a node, issue a DELETE request against `/links/self`.  A successful delete will return a 204 No Content
-    response. Attempting to delete a node you do not own will result in a 403 Forbidden.
-
-    ##Query Params
-
-    + `view_only=<Str>` -- Allow users with limited access keys to access this node. Note that some keys are anonymous, so using the view_only key will cause user-related information to no longer serialize. This includes blank ids for users and contributors and missing serializer fields and relationships.
-
-    #This Request/Response
-
+    """The documentation for this endpoint can be found [here](https://developer.osf.io/#Nodes_nodes_read).
     """
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
@@ -537,87 +306,7 @@ class NodeDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView, NodeMix
 
 
 class NodeContributorsList(BaseContributorList, bulk_views.BulkUpdateJSONAPIView, bulk_views.BulkDestroyJSONAPIView, bulk_views.ListBulkCreateJSONAPIView, NodeMixin):
-    """Contributors (users) for a node.
-
-    Contributors are users who can make changes to the node or, in the case of private nodes,
-    have read access to the node. Contributors are divided between 'bibliographic' and 'non-bibliographic'
-    contributors. From a permissions standpoint, both are the same, but bibliographic contributors
-    are included in citations, while non-bibliographic contributors are not included in citations.
-
-    Note that if an anonymous view_only key is being used, the user relationship will not be exposed and the id for
-    the contributor will be an empty string.
-
-    ##Node Contributor Attributes
-
-    <!--- Copied Attributes from NodeContributorDetail -->
-
-    `type` is "contributors"
-
-        name                        type     description
-        ======================================================================================================
-        bibliographic               boolean  Whether the user will be included in citations for this node. Default is true.
-        permission                  string   User permission level. Must be "read", "write", or "admin". Default is "write".
-        unregistered_contributor    string   Contributor's assigned name if contributor hasn't yet claimed account
-
-    ##Links
-
-    See the [JSON-API spec regarding pagination](http://jsonapi.org/format/1.0/#fetching-pagination).
-
-    ##Relationships
-
-    ###Users
-
-    This endpoint shows the contributor user detail and is automatically embedded.
-
-    ##Actions
-
-    ###Adding Contributors
-
-        Method:        POST
-        URL:           /links/self
-        Query Params:  <none>
-        Body (JSON): {
-                      "data": {
-                        "type": "contributors",                   # required
-                        "attributes": {
-                          "bibliographic": true|false,            # optional
-                          "permission": "read"|"write"|"admin"    # optional
-                        },
-                        "relationships": {
-                          "users": {
-                            "data": {
-                              "type": "users",                    # required
-                              "id":   "{user_id}"                 # required
-                            }
-                        }
-                    }
-                }
-            }
-        Success:       201 CREATED + node contributor representation
-
-    Add a contributor to a node by issuing a POST request to this endpoint.  This effectively creates a relationship
-    between the node and the user.  Besides the top-level type, there are optional "attributes" which describe the
-    relationship between the node and the user. `bibliographic` is a boolean and defaults to `true`.  `permission` must
-    be a [valid OSF permission key](/v2/#osf-node-permission-keys) and defaults to `"write"`.  A relationship object
-    with a "data" member, containing the user `type` and user `id` must be included.  The id must be a valid user id.
-    All other fields not listed above will be ignored.  If the request is successful the API will return
-    a 201 response with the representation of the new node contributor in the body.  For the new node contributor's
-    canonical URL, see the `/links/self` field of the response.
-
-    ##Query Params
-
-    + `page=<Int>` -- page number of results to view, default 1
-
-    + `filter[<fieldname>]=<Str>` -- fields and values to filter the search results on.
-
-    NodeContributors may be filtered by `bibliographic`, or `permission` attributes.  `bibliographic` is a boolean, and
-    can be filtered using truthy values, such as `true`, `false`, `0`, or `1`.  Note that quoting `true` or `false` in
-    the query will cause the match to fail regardless.
-
-    + `profile_image_size=<Int>` -- Modifies `/links/profile_image_url` of the user entities so that it points to
-    the user's profile image scaled to the given size in pixels.  If left blank, the size depends on the image provider.
-
-    #This Request/Response
+    """The documentation for this endpoint can be found [here](https://developer.osf.io/#Nodes_nodes_contributors_list).
     """
     permission_classes = (
         AdminOrPublic,
@@ -714,87 +403,7 @@ class NodeContributorsList(BaseContributorList, bulk_views.BulkUpdateJSONAPIView
 
 
 class NodeContributorDetail(BaseContributorDetail, generics.RetrieveUpdateDestroyAPIView, NodeMixin, UserMixin):
-    """Detail of a contributor for a node. *Writeable*.
-
-    Contributors are users who can make changes to the node or, in the case of private nodes,
-    have read access to the node. Contributors are divided between 'bibliographic' and 'non-bibliographic'
-    contributors. From a permissions standpoint, both are the same, but bibliographic contributors
-    are included in citations, while non-bibliographic contributors are not included in citations.
-
-    Note that if an anonymous view_only key is being used, the user relationship will not be exposed and the id for
-    the contributor will be an empty string.
-
-    Contributors can be viewed, removed, and have their permissions and bibliographic status changed via this
-    endpoint.
-
-    ##Attributes
-
-    `type` is "contributors"
-
-        name                        type     description
-        ======================================================================================================
-        bibliographic               boolean  Whether the user will be included in citations for this node. Default is true.
-        permission                  string   User permission level. Must be "read", "write", or "admin". Default is "write".
-        unregistered_contributor    string   Contributor's assigned name if contributor hasn't yet claimed account
-        index                       integer  The position in the list of contributors reflected in the bibliography. Zero Indexed.
-
-    ##Relationships
-
-    ###Users
-
-    This endpoint shows the contributor user detail.
-
-    ##Links
-
-        self:           the canonical api endpoint of this contributor
-        html:           the contributing user's page on the OSF website
-        profile_image:  a url to the contributing user's profile image
-
-    ##Actions
-
-    ###Update Contributor
-
-        Method:        PUT / PATCH
-        URL:           /links/self
-        Query Params:  <none>
-        Body (JSON):   {
-                         "data": {
-                           "type": "contributors",                    # required
-                           "id": {contributor_id},                    # required
-                           "attributes": {
-                             "bibliographic": true|false,             # optional
-                             "permission": "read"|"write"|"admin"     # optional
-                             "index": "0"                             # optional
-                           }
-                         }
-                       }
-        Success:       200 OK + node representation
-
-    To update a contributor's bibliographic preferences, order in the bibliography,
-    or access permissions for the node, issue a PUT request to the
-    `self` link. Since this endpoint has no mandatory attributes, PUT and PATCH are functionally the same.  If the given
-    user is not already in the contributor list, a 404 Not Found error will be returned.  A node must always have at
-    least one admin, and any attempt to downgrade the permissions of a sole admin will result in a 400 Bad Request
-    error.
-
-    ###Remove Contributor
-
-        Method:        DELETE
-        URL:           /links/self
-        Query Params:  <none>
-        Success:       204 No Content
-
-    To remove a contributor from a node, issue a DELETE request to the `self` link.  Attempting to remove the only admin
-    from a node will result in a 400 Bad Request response.  This request will only remove the relationship between the
-    node and the user, not the user itself.
-
-    ##Query Params
-
-    + `profile_image_size=<Int>` -- Modifies `/links/profile_image_url` so that it points the image scaled to the given
-    size in pixels.  If left blank, the size depends on the image provider.
-
-    #This Request/Response
-
+    """The documentation for this endpoint can be found [here](https://developer.osf.io/#Nodes_nodes_contributors_read).
     """
     permission_classes = (
         ContributorDetailPermissions,
@@ -822,74 +431,7 @@ class NodeContributorDetail(BaseContributorDetail, generics.RetrieveUpdateDestro
 
 
 class NodeDraftRegistrationsList(JSONAPIBaseView, generics.ListCreateAPIView, NodeMixin):
-    """Draft registrations of the current node.
-
-     <!--- Copied partially from NodeDraftRegistrationDetail -->
-
-    Draft registrations contain the supplemental registration questions that accompany a registration. A registration
-    is a frozen version of the project that can never be edited or deleted but can be withdrawn.
-    Your original project remains editable but will now have the registration linked to it.
-
-    ###Permissions
-
-    Users must have admin permission on the node in order to view or create a draft registration.
-
-    ##Draft Registration Attributes
-
-
-    Draft Registrations have the "draft_registrations" `type`.
-
-        name                       type               description
-        ===========================================================================
-        registration_supplement    string             id of registration_schema, must be an active schema
-        registration_metadata      dictionary         dictionary of question ids and responses from registration schema
-        datetime_initiated         iso8601 timestamp  timestamp that the draft was created
-        datetime_updated           iso8601 timestamp  timestamp when the draft was last updated
-
-    ##Relationships
-
-    ###Branched From
-
-    Node that the draft is branched from.  The node endpoint is available in `/branched_from/links/related/href`.
-
-    ###Initiator
-
-    User who initiated the draft registration.  The user endpoint is available in `/initiator/links/related/href`.
-
-    ##Registration Schema
-
-    Detailed registration schema.  The schema endpoint is available in `/registration_schema/links/related/href`.
-
-    ##Actions
-
-    ###Create Draft Registration
-
-        Method:        POST
-        URL:           /links/self
-        Query Params:  <none>
-        Body (JSON):   {
-                        "data": {
-                            "type": "draft_registrations",  # required
-                            "attributes": {
-                                "registration_supplement": {schema_id}, # required
-                                "registration_metadata": {"question_id": {"value": "question response"}} # optional
-                            }
-                        }
-                    }
-        Success:       201 OK + draft representation
-
-    To create a draft registration, issue a POST request to the `self` link.  Registration supplement must be the id of an
-    active registration schema.  Registration metadata is not required on the creation of the draft. If registration metadata is included,
-    it must be a dictionary with keys as question ids in the registration supplement, and values as nested dictionaries
-    matching the specific format in the registration schema.  See registration schema endpoints for specifics. If question
-    is multiple-choice, question response must exactly match one of the possible choices.
-
-    ##Links
-
-    See the [JSON-API spec regarding pagination](http://jsonapi.org/format/1.0/#fetching-pagination).
-
-    #This request/response
-
+    """The documentation for this endpoint can be found [here](https://developer.osf.io/#Nodes_nodes_draft_registrations_list).
     """
     permission_classes = (
         IsAdmin,
@@ -923,84 +465,7 @@ class NodeDraftRegistrationsList(JSONAPIBaseView, generics.ListCreateAPIView, No
 
 
 class NodeDraftRegistrationDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView, DraftMixin):
-    """Details about a given draft registration. *Writeable*.
-
-    Draft registrations contain the supplemental registration questions that accompany a registration. A registration
-    is a frozen version of the project that can never be edited or deleted but can be withdrawn.  Answer the questions
-    in the draft registration with PUT/PATCH requests until you are ready to submit.  Final submission will include sending the
-    draft registration id as part of a POST request to the Node Registrations endpoint.
-
-    ###Permissions
-
-    Users must have admin permission on the node in order to view, update, or delete a draft registration.
-
-    ##Attributes
-
-    Draft Registrations have the "draft_registrations" `type`.
-
-        name                       type               description
-        ===========================================================================
-        registration_supplement    string             id of registration_schema, must be an active schema
-        registration_metadata      dictionary         dictionary of question ids and responses from registration schema
-        datetime_initiated         iso8601 timestamp  timestamp that the draft was created
-        datetime_updated           iso8601 timestamp  timestamp when the draft was last updated
-
-    ##Relationships
-
-    ###Branched From
-
-    Node that the draft is branched from.  The node endpoint is available in `/branched_from/links/related/href`.
-
-    ###Initiator
-
-    User who initiated the draft registration.  The user endpoint is available in `/initiator/links/related/href`.
-
-    ##Registration Schema
-
-    Detailed registration schema.  The schema endpoint is available in `/registration_schema/links/related/href`.
-
-    ##Actions
-
-    ###Update Draft Registration
-
-        Method:        PUT/PATCH
-        URL:           /links/self
-        Query Params:  <none>
-        Body (JSON):   {
-                        "data": {
-                            "id": {draft_registration_id},  # required
-                            "type": "draft_registrations",  # required
-                            "attributes": {
-                                "registration_metadata": {"question_id": {"value": "question response"}} # optional
-                            }
-                        }
-                    }
-        Success:       200 OK + draft representation
-
-    To update a draft registration, issue a PUT/PATCH request to the `self` link.  Registration supplement cannot be updated
-    after the draft registration has been created.  Registration metadata is required.  It must be a dictionary with
-    keys as question ids in the registration form, and values as nested dictionaries matching the specific format in the
-    registration schema. See registration schema endpoints for specifics. If question is multiple-choice, question response
-    must exactly match one of the possible choices.
-
-
-    ###Delete Draft Registration
-
-        Method:        DELETE
-        URL:           /links/self
-        Query Params:  <none>
-        Success:       204 No Content
-
-    To delete a draft registration, issue a DELETE request to the `self` link.  This request will remove the draft completely.
-    A draft that has already been registered cannot be deleted.
-
-    ##Query Params
-
-    + `view_only=<Str>` -- Allow users with limited access keys to access this node. Note that some keys are anonymous,
-    so using the view_only key will cause user-related information to no longer serialize. This includes blank ids for users and contributors and missing serializer fields and relationships.
-
-    #This Request/Response
-
+    """The documentation for this endpoint can be found [here](https://developer.osf.io/#Nodes_nodes_draft_registrations_read).
     """
     permission_classes = (
         IsAdminOrReviewer,
@@ -1152,79 +617,7 @@ class NodeRegistrationsList(JSONAPIBaseView, generics.ListCreateAPIView, NodeMix
 
 
 class NodeChildrenList(JSONAPIBaseView, bulk_views.ListBulkCreateJSONAPIView, NodeMixin, NodesFilterMixin):
-    """Children of the current node. *Writeable*.
-
-    This will get the next level of child nodes for the selected node if the current user has read access for those
-    nodes. Creating a node via this endpoint will behave the same as the [node list endpoint](/v2/nodes/), but the new
-    node will have the selected node set as its parent.
-
-    ##Node Attributes
-
-    <!--- Copied Attributes from NodeDetail -->
-
-    OSF Node entities have the "nodes" `type`.
-
-        name                            type                description
-        =================================================================================
-        title                           string              title of project or component
-        description                     string              description of the node
-        category                        string              node category, must be one of the allowed values
-        date_created                    iso8601 timestamp   timestamp that the node was created
-        date_modified                   iso8601 timestamp   timestamp when the node was last updated
-        tags                            array of strings    list of tags that describe the node
-        current_user_can_comment        boolean            Whether the current user is allowed to post comments
-        current_user_permissions        array of strings    list of strings representing the permissions for the current user on this node
-        registration                    boolean             is this a registration? (always false - may be deprecated in future versions)
-        fork                            boolean             is this node a fork of another node?
-        public                          boolean             has this node been made publicly-visible?
-        collection                      boolean             is this a collection? (always false - may be deprecated in future versions)
-
-    ##Links
-
-    See the [JSON-API spec regarding pagination](http://jsonapi.org/format/1.0/#fetching-pagination).
-
-    ##Actions
-
-    ###Create Child Node
-
-    <!--- Copied Creating New Node from NodeList -->
-
-        Method:        POST
-        URL:           /links/self
-        Query Params:  <none>
-        Body (JSON):   {
-                         "data": {
-                           "type": "nodes", # required
-                           "attributes": {
-                             "title":       {title},         # required
-                             "category":    {category},      # required
-                             "description": {description},   # optional
-                             "tags":        [{tag1}, {tag2}] # optional
-                           }
-                         }
-                       }
-        Success:       201 CREATED + node representation
-
-    To create a child node of the current node, issue a POST request to this endpoint.  The `title` and `category`
-    fields are mandatory. `category` must be one of the [permitted node categories](/v2/#osf-node-categories).  If the
-    node creation is successful the API will return a 201 response with the representation of the new node in the body.
-    For the new node's canonical URL, see the `/links/self` field of the response.
-
-    ##Query Params
-
-    + `page=<Int>` -- page number of results to view, default 1
-
-    + `filter[<fieldname>]=<Str>` -- fields and values to filter the search results on.
-
-    <!--- Copied Query Params from NodeList -->
-
-    Nodes may be filtered by their `id`, `title`, `category`, `description`, `public`, `tags`, `date_created`, `date_modified`,
-    `root`, `parent`, and `contributors`.  Most are string fields and will be filtered using simple substring matching.  `public`
-    is a boolean, and can be filtered using truthy values, such as `true`, `false`, `0`, or `1`.  Note that quoting `true`
-    or `false` in the query will cause the match to fail regardless.  `tags` is an array of simple strings.
-
-    #This Request/Response
-
+    """The documentation for this endpoint can be found [here](https://developer.osf.io/#Nodes_nodes_children_list).
     """
     permission_classes = (
         ContributorOrPublic,
@@ -1261,22 +654,7 @@ class NodeChildrenList(JSONAPIBaseView, bulk_views.ListBulkCreateJSONAPIView, No
 
 
 class NodeCitationDetail(JSONAPIBaseView, generics.RetrieveAPIView, NodeMixin):
-    """ The node citation for a node in CSL format *read only*
-
-    ##Note
-    **This API endpoint is under active development, and is subject to change in the future**
-
-    ##NodeCitationDetail Attributes
-
-        name                     type                description
-        =================================================================================
-        id                       string               unique ID for the citation
-        title                    string               title of project or component
-        author                   list                 list of authors for the work
-        publisher                string               publisher - most always 'Open Science Framework'
-        type                     string               type of citation - web
-        doi                      string               doi of the resource
-
+    """The documentation for this endpoint can be found [here](https://developer.osf.io/#Nodes_nodes_citation_list).
     """
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
@@ -1299,17 +677,7 @@ class NodeCitationDetail(JSONAPIBaseView, generics.RetrieveAPIView, NodeMixin):
 
 
 class NodeCitationStyleDetail(JSONAPIBaseView, generics.RetrieveAPIView, NodeMixin):
-    """ The node citation for a node in a specific style's format *read only*
-
-        ##Note
-        **This API endpoint is under active development, and is subject to change in the future**
-
-    ##NodeCitationDetail Attributes
-
-        name                     type                description
-        =================================================================================
-        citation                string               complete citation for a node in the given style
-
+    """ The documentation for this endpoint can be found [here](https://developer.osf.io/#Nodes_nodes_citation_read).
     """
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
@@ -1522,75 +890,7 @@ class NodeLinksDetail(BaseNodeLinksDetail, generics.RetrieveDestroyAPIView, Node
 
 
 class NodeForksList(JSONAPIBaseView, generics.ListCreateAPIView, NodeMixin, NodesFilterMixin):
-    """Forks of the current node. *Writeable*.
-
-    Paginated list of the current node's forks ordered by their `forked_date`. Forks are copies of projects that you can
-    change without affecting the original project.  When creating a fork, your fork will will only contain public components or those
-    for which you are a contributor.  Private components that you do not have access to will not be forked. You will receive an email
-    when your fork completes.
-
-    ##Node Fork Attributes
-
-    <!--- Copied Attributes from NodeDetail with exception of forked_date-->
-
-    OSF Node Fork entities have the "nodes" `type`.
-
-        name                        type               description
-        ===============================================================================================================================
-        title                       string             title of project or component
-        description                 string             description of the node
-        category                    string             node category, must be one of the allowed values
-        date_created                iso8601 timestamp  timestamp that the node was created
-        modified               iso8601 timestamp  timestamp when the node was last updated
-        tags                        array of strings   list of tags that describe the node
-        registration                boolean            has this project been registered? (always False)
-        collection                  boolean            is this node a collection (always False)
-        fork                        boolean            is this node a fork of another node? (always True)
-        public                      boolean            has this node been made publicly-visible?
-        forked_date                 iso8601 timestamp  timestamp when the node was forked
-        current_user_can_comment    boolean            Whether the current user is allowed to post comments
-        current_user_permissions    array of strings   List of strings representing the permissions for the current user on this node
-
-    ##Links
-
-    See the [JSON-API spec regarding pagination](http://jsonapi.org/format/1.0/#fetching-pagination).
-
-    ##Actions
-
-    ###Create Node Fork
-
-        Method:        POST
-        URL:           /links/self
-        Query Params:  <none>
-        Body (JSON): {
-                         "data": {
-                           "type": "nodes", # required
-                           "attributes": {
-                             "title": {title} # optional
-                           }
-                         }
-                    }
-        Success: 201 CREATED + node representation
-
-    To create a fork of the current node, issue a POST request to this endpoint.  The `title` field is optional, with the
-    default title being 'Fork of ' + the current node's title. If the fork's creation is successful the API will return a
-    201 response with the representation of the forked node in the body. For the new fork's canonical URL, see the `/links/self`
-    field of the response.
-
-    ##Query Params
-
-    + `page=<Int>` -- page number of results to view, default 1
-
-    + `filter[<fieldname>]=<Str>` -- fields and values to filter the search results on.
-
-    <!--- Copied Query Params from NodeList -->
-
-    Nodes may be filtered by their `title`, `category`, `description`, `public`, `registration`, `tags`, `created`,
-    `modified`, `root`, `parent`, and `contributors`. Most are string fields and will be filtered using simple
-    substring matching.  Others are booleans, and can be filtered using truthy values, such as `true`, `false`, `0`, or `1`.
-    Note that quoting `true` or `false` in the query will cause the match to fail regardless. `tags` is an array of simple strings.
-
-    #This Request/Response
+    """The documentation for this endpoint can be found [here](https://developer.osf.io/#Nodes_nodes_forks_list).
     """
     permission_classes = (
         IsPublic,
@@ -2817,50 +2117,7 @@ class NodeInstitutionsRelationship(JSONAPIBaseView, generics.RetrieveUpdateDestr
 
 
 class NodeWikiList(JSONAPIBaseView, generics.ListAPIView, NodeMixin, ListFilterMixin):
-    """List of wiki pages on a node. *Read only*.
-
-    Paginated list of the node's current wiki page versions ordered by their `date_modified.` Each resource contains the
-    full representation of the wiki, meaning additional requests to an individual wiki's detail view are not necessary.
-
-    Note that if an anonymous view_only key is being used, the user relationship will not be exposed.
-
-    ###Permissions
-
-    Wiki pages on public nodes are given read-only access to everyone. Wiki pages on private nodes are only visible to
-    contributors and administrators on the parent node.
-
-    ##Attributes
-
-    OSF wiki entities have the "wikis" `type`.
-
-        name                    type               description
-        ======================================================================================================
-        name                        string             name of the wiki pag
-        path                        string             the path of the wiki page
-        materialized_path           string             the path of the wiki page
-        date_modified               iso8601 timestamp  timestamp when the wiki was last updated
-        content_type                string             MIME-type
-        current_user_can_comment    boolean            Whether the current user is allowed to post comments
-        extra                       object
-        version                     integer            version number of the wiki
-
-
-    ##Links
-
-    See the [JSON-API spec regarding pagination](http://jsonapi.org/format/1.0/#fetching-pagination).
-
-    ##Query Params
-
-    + `filter[name]=<Str>` -- filter wiki pages by name
-
-    + `filter[date_modified][comparison_operator]=YYYY-MM-DDTH:M:S` -- filter wiki pages based on date modified.
-
-    Wiki pages can be filtered based on their `date_modified` fields. Possible comparison
-    operators include 'gt' (greater than), 'gte'(greater than or equal to), 'lt' (less than) and 'lte'
-    (less than or equal to). The date must be in the format YYYY-MM-DD and the time is optional.
-
-
-    #This Request/Response
+    """The documentation for this endpoint can be found [here](https://developer.osf.io/#Nodes_nodes_wikis_list).
     """
 
     permission_classes = (
@@ -3393,54 +2650,7 @@ class NodeIdentifierList(NodeMixin, IdentifierList):
 
 
 class NodePreprintsList(JSONAPIBaseView, generics.ListAPIView, NodeMixin, PreprintFilterMixin):
-    """List of preprints for a node. *Read-only*.
-
-    ##Note
-    **This API endpoint is under active development, and is subject to change in the future.**
-
-    Paginated list of preprints ordered by their `created`.  Each resource contains a representation of the
-    preprint.
-
-    ##Preprint Attributes
-
-    OSF Preprint entities have the "preprints" `type`.
-
-        name                            type                                description
-        ====================================================================================
-        created                         iso8601 timestamp                   timestamp that the preprint was created
-        modified                        iso8601 timestamp                   timestamp that the preprint was last modified
-        date_published                  iso8601 timestamp                   timestamp when the preprint was published
-        original_publication_date       iso8601 timestamp                   user-entered date of publication from external posting
-        is_published                    boolean                             whether or not this preprint is published
-        is_preprint_orphan              boolean                             whether or not this preprint is orphaned
-        subjects                        list of lists of dictionaries       ids of Subject in the BePress taxonomy. Dictrionary, containing the subject text and subject ID
-        provider                        string                              original source of the preprint
-        doi                             string                              bare DOI for the manuscript, as entered by the user
-
-    ##Relationships
-
-    ###Node
-    The node that this preprint was created for
-
-    ###Primary File
-    The file that is designated as the preprint's primary file, or the manuscript of the preprint.
-
-    ###Provider
-    Link to preprint_provider detail for this preprint
-
-    ##Links
-
-    - `self` -- Preprint detail page for the current preprint
-    - `html` -- Project on the OSF corresponding to the current preprint
-    - `doi` -- URL representation of the DOI entered by the user for the preprint manuscript
-
-    See the [JSON-API spec regarding pagination](http://jsonapi.org/format/1.0/#fetching-pagination).
-
-    ##Query Params
-
-    + `page=<Int>` -- page number of results to view, default 1
-
-    #This Request/Response
+    """The documentation for this endpoint can be found [here](https://developer.osf.io/#Nodes_nodes_preprints_list).
     """
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,

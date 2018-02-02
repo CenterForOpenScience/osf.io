@@ -11,23 +11,8 @@ from osf.models.citation import CitationStyle
 
 
 class CitationStyleList(JSONAPIBaseView, generics.ListAPIView, ListFilterMixin):
-    '''List of standard citation styles available for rendering citations. *Read-only*
-
-    ##Note
-    **This API endpoint is under active development, and is subject to change in the future**
-
-    ##Citation Attributes
-
-            name           type               description
-        =========================================================================
-        date_parsed        string             date the citation style was first added to the database
-        summary            string             summary of the citation style
-        short_title        string             a short name or nickname for the citation style
-        title              string             official name of the citation style
-
-
-    Citation style may be filtered by their 'title', 'short_title', 'summary', and 'id'
-    '''
+    """The documentation for this endpoint can be found [here](https://developer.osf.io/#Citations_citations_styles_list).
+    """
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
         base_permissions.TokenHasScope
@@ -50,20 +35,7 @@ class CitationStyleList(JSONAPIBaseView, generics.ListAPIView, ListFilterMixin):
         return self.get_queryset_from_request()
 
 class CitationStyleDetail(JSONAPIBaseView, generics.RetrieveAPIView):
-    '''Detail for a citation style *Read-only*
-
-    ##Note
-    **This API endpoint is under active development, and is subject to change in the future**
-
-    ##Citation Attributes
-
-        name           type               description
-    =========================================================================
-    date_parsed        string             date the citation style was first added to the database
-    summary            string             summary of the citation style
-    short_title        string             a short name or nickname for the citation style
-    title              string             official name of the citation style
-
+    '''The documentation for this endpoint can be found [here](https://developer.osf.io/#Citations_citations_styles_read).
     '''
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,

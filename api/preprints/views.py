@@ -59,95 +59,7 @@ class PreprintMixin(NodeMixin):
 
 
 class PreprintList(JSONAPIBaseView, generics.ListCreateAPIView, PreprintFilterMixin):
-    """Preprints that represent a special kind of preprint node. *Writeable*.
-
-    Paginated list of preprints ordered by their `created`.  Each resource contains a representation of the
-    preprint.
-
-    ##Preprint Attributes
-
-    OSF Preprint entities have the "preprints" `type`.
-
-        name                            type                                description
-        ====================================================================================
-        date_created                    iso8601 timestamp                   timestamp that the preprint was created
-        date_modified                   iso8601 timestamp                   timestamp that the preprint was last modified
-        date_published                  iso8601 timestamp                   timestamp when the preprint was published
-        original_publication_date       iso8601 timestamp                   user-entered date of publication from external posting
-        is_published                    boolean                             whether or not this preprint is published
-        is_preprint_orphan              boolean                             whether or not this preprint is orphaned
-        subjects                        list of lists of dictionaries       ids of Subject in the BePress taxonomy. Dictionary, containing the subject text and subject ID
-        doi                             string                              bare DOI for the manuscript, as entered by the user
-        preprint_doi_created            iso8601 timestamp                   timestamp that the preprint doi was created
-
-    ##Relationships
-
-    ###Node
-    The node that this preprint was created for
-
-    ###Primary File
-    The file that is designated as the preprint's primary file, or the manuscript of the preprint.
-
-    ###Provider
-    Link to preprint_provider detail for this preprint
-
-    ##Links
-
-    - `self` -- Preprint detail page for the current preprint
-    - `html` -- Project on the OSF corresponding to the current preprint
-    - `preprint_doi` -- DOI URL for the current preprint.
-
-    See the [JSON-API spec regarding pagination](http://jsonapi.org/format/1.0/#fetching-pagination).
-
-    ##Query Params
-
-    + `page=<Int>` -- page number of results to view, default 1
-
-    + `filter[<fieldname>]=<Str>` -- fields and values to filter the search results on.
-
-    Preprints may be filtered by their `id`, `is_published`, `date_created`, `date_modified`, `provider`
-    Most are string fields and will be filtered using simple substring matching.
-
-    ###Creating New Preprints
-
-    Create a new preprint by posting to the guid of the existing **node**, including the file_id for the
-    file you'd like to make the primary preprint file. Note that the **node id** will not be accessible via the
-    preprints detail view until after the preprint has been created.
-
-        Method:        POST
-        URL:           /preprints/
-        Query Params:  <none>
-        Body (JSON):   {
-                        "data": {
-                            "attributes": {},
-                            "relationships": {
-                                "node": {                           # required
-                                    "data": {
-                                        "type": "nodes",
-                                        "id": {node_id}
-                                    }
-                                },
-                                "primary_file": {                   # required
-                                    "data": {
-                                        "type": "primary_files",
-                                        "id": {file_id}
-                                    }
-                                },
-                                "provider": {                       # required
-                                    "data": {
-                                        "type": "providers",
-                                        "id": {provider_id}
-                                    }
-                                },
-                            }
-                        }
-                    }
-        Success:       201 CREATED + preprint representation
-
-    New preprints are created by issuing a POST request to this endpoint, along with the guid for the node to create a preprint from.
-    Provider defaults to osf.
-
-    #This Request/Response
+    """The documentation for this endpoint can be found [here](https://developer.osf.io/#Preprints_preprints_list).
     """
     # These permissions are not checked for the list of preprints, permissions handled by the query
     permission_classes = (
@@ -186,68 +98,7 @@ class PreprintList(JSONAPIBaseView, generics.ListCreateAPIView, PreprintFilterMi
         return self.get_queryset_from_request()
 
 class PreprintDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView, PreprintMixin, WaterButlerMixin):
-    """Preprint Detail  *Writeable*.
-
-    ##Preprint Attributes
-
-    OSF Preprint entities have the "preprints" `type`.
-
-        name                            type                                description
-        ====================================================================================
-        date_created                    iso8601 timestamp                   timestamp that the preprint was created
-        date_modified                   iso8601 timestamp                   timestamp that the preprint was last modified
-        date_published                  iso8601 timestamp                   timestamp when the preprint was published
-        original_publication_date       iso8601 timestamp                   user-entered date of publication from external posting
-        is_published                    boolean                             whether or not this preprint is published
-        is_preprint_orphan              boolean                             whether or not this preprint is orphaned
-        subjects                        array of tuples of dictionaries     ids of Subject in the BePress taxonomy. Dictionary, containing the subject text and subject ID
-        doi                             string                              bare DOI for the manuscript, as entered by the user
-        preprint_doi_created            iso8601 timestamp                   timestamp that the preprint doi was created
-
-    ##Relationships
-
-    ###Node
-    The node that this preprint was created for
-
-    ###Primary File
-    The file that is designated as the preprint's primary file, or the manuscript of the preprint.
-
-    ###Provider
-    Link to preprint_provider detail for this preprint
-
-    ##Links
-    - `self` -- Preprint detail page for the current preprint
-    - `html` -- Project on the OSF corresponding to the current preprint
-    - `doi` -- URL representation of the DOI entered by the user for the preprint manuscript
-
-    ##Updating Preprints
-
-    Update a preprint by sending a patch request to the guid of the existing preprint node that you'd like to update.
-
-        Method:        PATCH
-        URL:           /preprints/{node_id}/
-        Query Params:  <none>
-        Body (JSON):   {
-                        "data": {
-                            "id": node_id,
-                            "attributes": {
-                                "subjects":     [({root_subject_id}, {child_subject_id}), ...]  # optional
-                                "is_published": true,                                           # optional
-                                "doi":          {valid_doi}                                     # optional
-                            },
-                            "relationships": {
-                                "primary_file": {                                               # optional
-                                    "data": {
-                                        "type": "primary_files",
-                                        "id": {file_id}
-                                    }
-                                }
-                            }
-                        }
-                    }
-        Success:       200 OK + preprint representation
-
-    #This Request/Response
+    """The documentation for this endpoint can be found [here](https://developer.osf.io/#Preprints_preprints_read).
     """
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
@@ -275,19 +126,7 @@ class PreprintDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView, Pre
 
 
 class PreprintCitationDetail(JSONAPIBaseView, generics.RetrieveAPIView, PreprintMixin):
-    """ The citation details for a preprint, in CSL format *Read Only*
-
-    ##PreprintCitationDetail Attributes
-
-        name                     type                description
-        =================================================================================
-        id                       string               unique ID for the citation
-        title                    string               title of project or component
-        author                   list                 list of authors for the preprint
-        publisher                string               publisher - the preprint provider
-        type                     string               type of citation - web
-        doi                      string               doi of the resource
-
+    """The documentation for this endpoint can be found [here](https://developer.osf.io/#Preprints_preprints_citation_list).
     """
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
@@ -312,14 +151,7 @@ class PreprintCitationDetail(JSONAPIBaseView, generics.RetrieveAPIView, Preprint
 
 
 class PreprintCitationStyleDetail(JSONAPIBaseView, generics.RetrieveAPIView, PreprintMixin):
-    """ The citation for a preprint in a specific style's format. *Read Only*
-
-    ##NodeCitationDetail Attributes
-
-        name                     type                description
-        =================================================================================
-        citation                string               complete citation for a preprint in the given style
-
+    """The documentation for this endpoint can be found [here](https://developer.osf.io/#Preprints_preprints_citation_read).
     """
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
