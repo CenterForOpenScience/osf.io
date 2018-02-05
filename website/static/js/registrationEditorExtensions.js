@@ -169,6 +169,7 @@ var Uploader = function(question, pk) {
     var self = this;
 
     self.draft_id = pk;
+    // console.log(question);
     question.showUploader = ko.observable(false);
     self.toggleUploader = function() {
         question.showUploader(!question.showUploader());
@@ -185,11 +186,12 @@ var Uploader = function(question, pk) {
         question.value(question.formattedFileList());
     });
     self.fileWarn = ko.observable(true);
-    self.descriptionVisible = ko.computed(function() {
-        return self.draft_id === '5a78b1295d823a047f38d77f';
+    self.descriptionVisible = ko.pureComputed(function() {
+        return self.draft_id === self.draft_id;
     }, self);
+    self.value = ko.observable('');
     // self.description = ko.ovbservable('');
-    self.fileLimit = ko.computed(function() {
+    self.fileLimit = ko.pureComputed(function() {
         return (question.fileLimit ? question.fileLimit : 5);
     }, self);
 
@@ -198,7 +200,8 @@ var Uploader = function(question, pk) {
         'so that they can be registered.';
 
     self.addFile = function(file) {
-        console.log(file.data);
+        // console.log(file.data);
+        self.value = ko.observable(file.data.descriptionvalue || '');
         if(self.selectedFiles().length >= self.fileLimit && self.fileWarn()) {
             self.fileWarn(false);
             bootbox.alert({
@@ -227,8 +230,8 @@ var Uploader = function(question, pk) {
             selectedFileName: file.data.name,
             nodeId: file.data.nodeId,
             viewUrl: '/project/' + file.data.nodeId + '/files/osfstorage' + file.data.path,
-            sha256: file.data.extra.hashes.sha256
-            // tags: self.description
+            sha256: file.data.extra.hashes.sha256,
+            descriptionValue: self.value()
         });
         return true;
     };

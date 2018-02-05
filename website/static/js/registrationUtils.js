@@ -231,6 +231,9 @@ var Question = function(questionSchema, data) {
         $.each(self.properties, function(index, field) {
             field.qid = field.id;
             var subData = self.data.value ? self.data.value[field.id] : {};
+            console.log('----------------------------');
+            console.log(subData);
+            console.log('----------------------------');
             self.properties[index] = new Question(field, subData);
         });
         self.value = ko.computed({
@@ -244,6 +247,7 @@ var Question = function(questionSchema, data) {
                             comments: prop.comments(),
                             extra: prop.extra
                         };
+                        // console.log(ret);
                         return ret;
                     }),
                     $.extend.bind(null, compositeValue)
