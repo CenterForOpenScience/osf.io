@@ -413,11 +413,12 @@ class FileVersionsList(JSONAPIBaseView, generics.ListAPIView, FileMixin):
     ordering = ('-modified',)
 
     def get_queryset(self):
-        return self.get_file().versions.all()
+        self.file = self.get_file()
+        return self.file.versions.all()
 
     def get_serializer_context(self):
         context = JSONAPIBaseView.get_serializer_context(self)
-        context['file'] = self.get_file()
+        context['file'] = self.file
         return context
 
 
@@ -480,8 +481,8 @@ class FileVersionDetail(JSONAPIBaseView, generics.RetrieveAPIView, FileMixin):
 
     # overrides RetrieveAPIView
     def get_object(self):
-        file = self.get_file()
-        maybe_version = file.get_version(self.kwargs[self.version_lookup_url_kwarg])
+        self.file = self.get_file()
+        maybe_version = self.file.get_version(self.kwargs[self.version_lookup_url_kwarg])
 
         # May raise a permission denied
         # Kinda hacky but versions have no reference to node or file
@@ -490,5 +491,5 @@ class FileVersionDetail(JSONAPIBaseView, generics.RetrieveAPIView, FileMixin):
 
     def get_serializer_context(self):
         context = JSONAPIBaseView.get_serializer_context(self)
-        context['file'] = self.get_file()
+        context['file'] = self.file
         return context
