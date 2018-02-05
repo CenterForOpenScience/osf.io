@@ -182,6 +182,7 @@ var Question = function(questionSchema, data) {
     self.description = questionSchema.description || '';
     self.help = questionSchema.help;
     self.options = questionSchema.options || [];
+    self.fileLimit = questionSchema.fileLimit;
     self.properties = questionSchema.properties || [];
     self.match = questionSchema.match || '';
 

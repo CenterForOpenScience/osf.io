@@ -185,6 +185,7 @@ var Uploader = function(question, pk) {
         question.value(question.formattedFileList());
     });
     self.fileWarn = ko.observable(true);
+    console.log(question.fileLimit);
     self.fileLimit = ko.computed(function() {
         return (question.fileLimit ? question.fileLimit : 5);
     }, self);
