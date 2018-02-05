@@ -204,7 +204,8 @@
                 {
                     "id": "uploader",
                     "type": "osf-upload",
-                    "format": "osf-upload-toggle"
+                    "format": "osf-upload-toggle",
+                    "fileLimit": 1
                 }
             ],
             "help": "",
