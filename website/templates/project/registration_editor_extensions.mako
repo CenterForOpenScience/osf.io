@@ -32,6 +32,7 @@
             <button data-bind="click: $parent.unselectFile"
                     style="margin-left: 5px;"
                     class="btn btn-xs btn-danger fa fa-times"></button>
+            <input data-bind="valueUpdate: 'keyup', value: $parent.description, visible: $parent.descriptionVisible" type="text" class="form-control">
         </div>
   </div>
   <a data-bind="click: toggleUploader">Attach File</a>

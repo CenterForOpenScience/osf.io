@@ -185,7 +185,10 @@ var Uploader = function(question, pk) {
         question.value(question.formattedFileList());
     });
     self.fileWarn = ko.observable(true);
-    console.log(question.fileLimit);
+    self.descriptionVisible = ko.computed(function() {
+        return self.draft_id === '5a78b1295d823a047f38d77f';
+    }, self);
+    // self.description = ko.ovbservable('');
     self.fileLimit = ko.computed(function() {
         return (question.fileLimit ? question.fileLimit : 5);
     }, self);
@@ -195,6 +198,7 @@ var Uploader = function(question, pk) {
         'so that they can be registered.';
 
     self.addFile = function(file) {
+        console.log(file.data);
         if(self.selectedFiles().length >= self.fileLimit && self.fileWarn()) {
             self.fileWarn(false);
             bootbox.alert({
@@ -224,6 +228,7 @@ var Uploader = function(question, pk) {
             nodeId: file.data.nodeId,
             viewUrl: '/project/' + file.data.nodeId + '/files/osfstorage' + file.data.path,
             sha256: file.data.extra.hashes.sha256
+            // tags: self.description
         });
         return true;
     };
