@@ -15,6 +15,8 @@ volumes:
     external: false
   registries_dist_vol:
     external: false
+  ember_osf_web_dist_vol:
+    external: false
   reviews_dist_vol:
     external: false
   mfr_requirements_vol:
@@ -230,6 +232,27 @@ services:
       - 8080:8080
     depends_on:
       - postgres
+    stdin_open: true
+
+  #############
+  # Ember OSF Web #
+  #############
+
+  ember_osf_web:
+    build: github.com/hmoco/ember-osf-web
+    command: /bin/bash -c "yarn --pure-lockfile --ignore-engines --no-progress --no-emoji && ./node_modules/bower/bin/bower install --allow-root --config.interactive=false && ./node_modules/ember-cli/bin/ember serve --host 0.0.0.0 --port 4201"
+    restart: unless-stopped
+    depends_on:
+      - api
+      - web
+    environment:
+      - BACKEND=local
+    expose:
+      - 4201
+    ports:
+      - 4201:4201
+    volumes:
+      - ember_osf_web_dist_vol:/code/dist
     stdin_open: true
 
   #############
@@ -474,5 +497,6 @@ services:
       - osf_node_modules_vol:/code/node_modules
       - preprints_dist_vol:/preprints
       - registries_dist_vol:/registries
+      - ember_osf_web_dist_vol:/ember_osf_web
       - reviews_dist_vol:/reviews
     stdin_open: true

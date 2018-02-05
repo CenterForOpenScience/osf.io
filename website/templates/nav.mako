@@ -27,6 +27,7 @@
                 <li><a data-bind="click: trackClick.bind($data, 'Preprints')" href="${domain}preprints/">OSF<b>PREPRINTS</b></a></li>
                 <li><a data-bind="click: trackClick.bind($data, 'Registries')" href="${domain}registries/">OSF<b>REGISTRIES</b></a></li>
                 <li><a data-bind="click: trackClick.bind($data, 'Meetings')" href="${domain}meetings/">OSF<b>MEETINGS</b></a></li>
+                <li><a data-bind="click: trackClick.bind($data, 'Institutions')" href="${domain}institutions/">OSF<b>INSTITUTIONS</b></a></li>
             </ul>
         </div>
     </div>

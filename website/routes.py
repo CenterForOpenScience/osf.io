@@ -47,6 +47,7 @@ from website.registries import views as registries_views
 from website.reviews import views as reviews_views
 from website.institutions import views as institution_views
 from website.notifications import views as notification_views
+from website.ember_osf_web import views as ember_osf_web_views
 from website.closed_challenges import views as closed_challenges_views
 from website.identifiers import views as identifier_views
 
@@ -300,6 +301,16 @@ def make_url_map(app):
                     endpoint_suffix='__' + prefix
                 ),
             ], prefix='/' + prefix)
+
+        if settings.EXTERNAL_EMBER_APPS.get('ember_osf_web'):
+            process_rules(app, [
+                Rule(
+                    ember_osf_web_views.routes,
+                    'get',
+                    ember_osf_web_views.use_ember_app,
+                    notemplate
+                )
+            ])
 
     ### Base ###
 
@@ -821,8 +832,7 @@ def make_url_map(app):
             'get',
             profile_views.personal_access_token_detail,
             OsfWebRenderer('profile/personal_tokens_detail.mako', trust=False)
-        ),
-
+        )
     ])
 
     # API
@@ -1248,14 +1258,6 @@ def make_url_map(app):
             ],
             'get',
             addon_views.addon_view_or_download_file_legacy,
-            json_renderer
-        ),
-        Rule(
-            [
-                '/quickfiles/<fid>/'
-            ],
-            'get',
-            addon_views.addon_view_or_download_quickfile,
             json_renderer
         )
     ])

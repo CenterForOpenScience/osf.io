@@ -41,11 +41,16 @@ EXTERNAL_EMBER_APPS = {
         'server': 'http://192.168.168.167:4202',
         'path': '/registries/'
     },
+    'ember_osf_web': {
+        'url': '/ember_osf_web/',
+        'server': 'http://localhost:4201',
+        'path': '/ember_osf_web/'
+    },
     'reviews': {
         'url': '/reviews/',
         'server': 'http://localhost:4203',
         'path': '/reviews/'
-    }
+    },
     # 'meetings': {
     #     'url': '/meetings/',
     #     'server': 'http://localhost:4201',

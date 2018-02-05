@@ -15,7 +15,6 @@ import jwt
 from django.db import transaction
 
 from addons.base.models import BaseStorageAddon
-from addons.osfstorage.models import OsfStorageFile
 from addons.osfstorage.models import OsfStorageFileNode
 
 from framework import sentry
@@ -24,7 +23,6 @@ from framework.auth import cas
 from framework.auth import oauth_scopes
 from framework.auth.decorators import collect_auth, must_be_logged_in, must_be_signed
 from framework.exceptions import HTTPError
-from framework.routing import proxy_url
 from framework.routing import json_renderer
 from framework.sentry import log_exception
 from framework.transactions.handlers import no_auto_transaction
@@ -694,18 +692,6 @@ def addon_view_or_download_file(auth, path, provider, **kwargs):
         guid = file_node.get_guid(create=True)
         return redirect(furl.furl('/{}/'.format(guid._id)).set(args=extras).url)
     return addon_view_file(auth, node, file_node, version)
-
-
-def addon_view_or_download_quickfile(**kwargs):
-    fid = kwargs.get('fid', 'NOT_AN_FID')
-    file_ = OsfStorageFile.load(fid)
-    if not file_:
-        raise HTTPError(httplib.NOT_FOUND, data={
-            'message_short': 'File Not Found',
-            'message_long': 'The requested file could not be found.'
-        })
-    return proxy_url('/project/{}/files/osfstorage/{}/'.format(file_.node._id, fid))
-
 
 def addon_view_file(auth, node, file_node, version):
     # TODO: resolve circular import issue
