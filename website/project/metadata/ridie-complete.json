@@ -2,7 +2,7 @@
   "name": "RIDIE Registration - Study Complete",
   "config": {
     "hasFiles": true,
-    "requiresApproval": true,
+    "requiresApproval": false,
     "requiresConsent": false
   },
   "version": 2,

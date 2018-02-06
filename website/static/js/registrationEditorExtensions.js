@@ -169,7 +169,6 @@ var Uploader = function(question, pk) {
     var self = this;
 
     self.draft_id = pk;
-    // console.log(question);
     question.showUploader = ko.observable(false);
     self.toggleUploader = function() {
         question.showUploader(!question.showUploader());
@@ -187,10 +186,9 @@ var Uploader = function(question, pk) {
     });
     self.fileWarn = ko.observable(true);
     self.descriptionVisible = ko.pureComputed(function() {
-        return self.draft_id === self.draft_id;
+        return (question.fileDescription ? question.fileDescription : false);
     }, self);
     self.value = ko.observable('');
-    // self.description = ko.ovbservable('');
     self.fileLimit = ko.pureComputed(function() {
         return (question.fileLimit ? question.fileLimit : 5);
     }, self);
@@ -200,7 +198,6 @@ var Uploader = function(question, pk) {
         'so that they can be registered.';
 
     self.addFile = function(file) {
-        // console.log(file.data);
         self.value = ko.observable(file.data.descriptionvalue || '');
         if(self.selectedFiles().length >= self.fileLimit && self.fileWarn()) {
             self.fileWarn(false);
@@ -299,7 +296,11 @@ var Uploader = function(question, pk) {
             var files = question.extra();
             var elem = '';
             $.each(files, function(_, file) {
-                elem += '<a target="_blank" href="' + file.viewUrl + '">' + $osf.htmlEscape(file.selectedFileName) + ' </a>' + '</br>';
+                if(!file.data.descriptionValue){
+                    elem += '<a target="_blank" href="' + file.viewUrl + '">' + $osf.htmlEscape(file.selectedFileName) + ' </a>' + '</br>';
+                }else{
+                    elem += '<span><a target="_blank" href="' + file.viewUrl + '">' + $osf.htmlEscape(file.selectedFileName) + ' </a>' + '  (' + file.data.descriptionValue + ')' + '</span></br>';
+                }
             });
             return $(elem);
         }

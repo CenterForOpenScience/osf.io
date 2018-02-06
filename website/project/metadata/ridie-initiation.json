@@ -2,7 +2,7 @@
     "name": "RIDIE Registration - Study Initiation",
     "config": {
 	"hasFiles": true,
-        "requiresApproval": true,
+        "requiresApproval": false,
         "requiresConsent": false
     },
     "version": 2,
@@ -564,7 +564,8 @@
                 {
                     "id": "uploader",
                     "type": "osf-upload",
-                    "format": "osf-upload-toggle"
+                    "format": "osf-upload-toggle",
+                    "fileDescription": true
                 }
             ],
             "required": false
@@ -579,7 +580,8 @@
                 {
                     "id": "uploader",
                     "type": "osf-upload",
-                    "format": "osf-upload-toggle"
+                    "format": "osf-upload-toggle",
+                    "fileDescription": true
                 }
             ],
             "required": false
@@ -807,7 +809,8 @@
                 {
                     "id": "uploader",
                     "type": "osf-upload",
-                    "format": "osf-upload-toggle"
+                    "format": "osf-upload-toggle",
+                    "fileDescription": true
                 }
             ],
             "required": false
