@@ -71,7 +71,7 @@ var QuickFile = {
     },
 
     view: function(ctrl)  {
-        var viewBase = window.location.origin + '/quickfiles';
+        var viewBase = window.location.origin;
         var viewUrl = ctrl.file.attributes.guid ? viewBase + '/' + ctrl.file.attributes.guid : viewBase + ctrl.file.attributes.path;
         return m('div', [
             m('li.project list-group-item list-group-item-node cite-container', [
