@@ -72,7 +72,8 @@ class Loggable(models.Model):
             user = request.user
 
         params['node'] = params.get('node') or params.get('project') or self._id
-        original_node = AbstractNode.load(params.get('node'))
+        original_node = self if self._id == params['node'] else AbstractNode.load(params.get('node'))
+
         log = NodeLog(
             action=action, user=user, foreign_user=foreign_user,
             params=params, node=self, original_node=original_node
