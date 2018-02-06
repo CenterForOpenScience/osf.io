@@ -3,9 +3,9 @@ import os
 import requests
 from flask import send_from_directory, Response, stream_with_context
 
-from website.settings import EXTERNAL_EMBER_APPS, PROXY_EMBER_APPS
+from website.settings import EXTERNAL_EMBER_APPS, PROXY_EMBER_APPS, APP_PATH
 
-quickfiles_dir = os.path.abspath(os.path.join(os.getcwd(), EXTERNAL_EMBER_APPS['quickfiles']['path']))
+quickfiles_dir = os.path.abspath(os.path.join(APP_PATH, EXTERNAL_EMBER_APPS['quickfiles']['path']))
 
 def use_ember_app(**kwargs):
     if PROXY_EMBER_APPS:
