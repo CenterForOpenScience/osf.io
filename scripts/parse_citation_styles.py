@@ -31,7 +31,7 @@ from osf.models.citation import CitationStyle
 def main():
 
     # drop all styles
-    CitationStyle.remove()
+    CitationStyle.objects.all().delete()
 
     total = 0
 

@@ -33,7 +33,6 @@ class TestPreregReminder:
         draft.save()
         return draft
 
-
     def test_trigger_prereg_reminder(self, draft):
         main(dry_run=False)
 

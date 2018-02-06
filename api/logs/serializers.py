@@ -6,7 +6,7 @@ from api.base.serializers import (
     RestrictedDictSerializer,
     LinksField,
     is_anonymized,
-    DateByVersion,
+    VersionedDateTimeField,
     HideIfNotNodePointerLog,
     HideIfNotRegistrationPointerLog,
 )
@@ -180,7 +180,7 @@ class NodeLogSerializer(JSONAPISerializer):
     ]
 
     id = ser.CharField(read_only=True, source='_id')
-    date = DateByVersion(read_only=True)
+    date = VersionedDateTimeField(read_only=True)
     action = ser.CharField(read_only=True)
     params = ser.SerializerMethodField(read_only=True)
     links = LinksField({'self': 'get_absolute_url'})

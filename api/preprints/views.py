@@ -271,7 +271,7 @@ class PreprintDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView, Pre
     def perform_destroy(self, instance):
         if instance.is_published:
             raise Conflict('Published preprints cannot be deleted.')
-        PreprintService.remove_one(instance)
+        PreprintService.delete(instance)
 
 
 class PreprintCitationDetail(JSONAPIBaseView, generics.RetrieveAPIView, PreprintMixin):

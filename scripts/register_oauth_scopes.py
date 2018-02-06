@@ -57,7 +57,7 @@ def do_populate(clear=False):
     scope_dict = oauth_scopes.public_scopes
 
     if clear:
-        ApiOAuth2Scope.remove()
+        ApiOAuth2Scope.objects.all().delete()
 
     for name, scope in scope_dict.iteritems():
         # Update a scope if it exists, else populate

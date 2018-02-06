@@ -273,7 +273,7 @@ def format_result(result, parent_id=None):
         'category': result.get('category'),
         'date_created': result.get('date_created'),
         'date_registered': result.get('registered_date'),
-        'n_wikis': len(result['wikis']),
+        'n_wikis': len(result['wikis'] or []),
         'license': result.get('license'),
         'affiliated_institutions': result.get('affiliated_institutions'),
         'preprint_url': result.get('preprint_url'),

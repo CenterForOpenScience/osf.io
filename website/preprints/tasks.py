@@ -11,8 +11,8 @@ from framework import sentry
 
 from website import settings, mails
 from website.util.share import GraphNode, format_contributor, format_subject
-
-from website.identifiers.utils import request_identifiers_from_ezid, get_ezid_client, build_ezid_metadata, parse_identifiers
+from website.identifiers.tasks import update_ezid_metadata_on_change
+from website.identifiers.utils import request_identifiers_from_ezid, parse_identifiers
 
 logger = logging.getLogger(__name__)
 
@@ -187,16 +187,6 @@ def get_and_set_preprint_identifiers(preprint_id):
     id_dict = parse_identifiers(ezid_response)
     preprint.set_identifier_values(doi=id_dict['doi'], ark=id_dict['ark'], save=True)
 
-
-@celery_app.task(ignore_results=True)
-def update_ezid_metadata_on_change(target_guid, status):
-    Guid = apps.get_model('osf.Guid')
-    target_object = Guid.load(target_guid).referent
-    if (settings.EZID_USERNAME and settings.EZID_PASSWORD) and target_object.get_identifier('doi'):
-        client = get_ezid_client()
-
-        doi, metadata = build_ezid_metadata(target_object)
-        client.change_status_identifier(status, doi, metadata)
 
 def send_desk_share_preprint_error(preprint, resp, retries):
     mails.send_mail(

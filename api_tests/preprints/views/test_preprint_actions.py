@@ -21,9 +21,17 @@ class TestPreprintActionFilters(ReviewActionFilterMixin):
     def user(self, request, preprint):
         user = AuthUserFactory()
         if request.param:
-            user.groups.add(GroupHelper(preprint.provider).get_group('moderator'))
+            user.groups.add(
+                GroupHelper(
+                    preprint.provider
+                ).get_group('moderator'))
         else:
-            preprint.node.add_contributor(user, permissions=[osf_permissions.READ, osf_permissions.WRITE, osf_permissions.ADMIN])
+            preprint.node.add_contributor(
+                user,
+                permissions=[
+                    osf_permissions.READ,
+                    osf_permissions.WRITE,
+                    osf_permissions.ADMIN])
         return user
 
     @pytest.fixture()

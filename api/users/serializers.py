@@ -5,7 +5,7 @@ from rest_framework import serializers as ser
 from api.base.exceptions import InvalidModelValueError
 from api.base.serializers import (
     BaseAPISerializer, JSONAPISerializer, JSONAPIRelationshipSerializer,
-    DateByVersion, HideIfDisabled, IDField,
+    VersionedDateTimeField, HideIfDisabled, IDField,
     Link, LinksField, ListDictField, TypeField, RelationshipField,
     WaterbutlerLink, ShowIfCurrentUser
 )
@@ -49,7 +49,7 @@ class UserSerializer(JSONAPISerializer):
     middle_names = ser.CharField(required=False, allow_blank=True, help_text='For bibliographic citations')
     family_name = ser.CharField(required=False, allow_blank=True, help_text='For bibliographic citations')
     suffix = HideIfDisabled(ser.CharField(required=False, allow_blank=True, help_text='For bibliographic citations'))
-    date_registered = HideIfDisabled(DateByVersion(read_only=True))
+    date_registered = HideIfDisabled(VersionedDateTimeField(read_only=True))
     active = HideIfDisabled(ser.BooleanField(read_only=True, source='is_active'))
     timezone = HideIfDisabled(ser.CharField(required=False, help_text="User's timezone, e.g. 'Etc/UTC"))
     locale = HideIfDisabled(ser.CharField(required=False, help_text="User's locale, e.g.  'en_US'"))

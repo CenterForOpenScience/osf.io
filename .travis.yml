@@ -7,8 +7,9 @@ python:
 
 sudo: false
 
-addons:
-  chrome: stable
+# TODO: uncomment when https://github.com/travis-ci/travis-ci/issues/8836 is resolved
+# addons:
+#   chrome: stable
 
 cache:
   yarn: true
@@ -28,6 +29,8 @@ env:
     - LIBPCRE_DEB="libpcre3_8.31-2ubuntu2.3_amd64.deb"
     # - VARNISH_DEB="varnish_4.1.0-1~trusty_amd64.deb"
     - OSF_DB_PORT="54321"
+    # Workaround for travis bug: see https://github.com/travis-ci/travis-ci/issues/7940#issuecomment-311411559
+    - BOTO_CONFIG=/dev/null
   matrix:
     - TEST_BUILD="addons"
     - TEST_BUILD="else"
