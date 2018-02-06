@@ -30,10 +30,10 @@ def assets(ctx, dev=False, watch=False):
     """
     if os.getcwd() != HERE:
         os.chdir(HERE)
-    npm = 'npm install'
+    command = 'yarn install --frozen-lockfile'
     if not dev:
-        npm += ' --production'
-    ctx.run(npm, echo=True)
+        command += ' --production'
+    ctx.run(command, echo=True)
     bower_install(ctx)
     # Always set clean=False to prevent possible mistakes
     # on prod

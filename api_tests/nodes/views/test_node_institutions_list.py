@@ -1,12 +1,13 @@
 import pytest
 
-from tests.base import ApiTestCase
 from osf_tests.factories import InstitutionFactory, NodeFactory, AuthUserFactory
 from api.base.settings.defaults import API_BASE
+
 
 @pytest.fixture()
 def user():
     return AuthUserFactory()
+
 
 @pytest.mark.django_db
 class TestNodeInstitutionDetail:
@@ -26,9 +27,11 @@ class TestNodeInstitutionDetail:
     def node_two(self, user):
         return NodeFactory(creator=user)
 
-    def test_node_institution_detail(self, app, user, institution, node_one, node_two,):
+    def test_node_institution_detail(
+        self, app, user, institution, node_one, node_two,
+    ):
 
-    #   test_return_institution
+        #   test_return_institution
         url = '/{0}nodes/{1}/institutions/'.format(API_BASE, node_one._id)
         res = app.get(url)
 
@@ -39,8 +42,8 @@ class TestNodeInstitutionDetail:
     #   test_return_no_institution
         url = '/{0}nodes/{1}/institution/'.format(API_BASE, node_two._id)
         res = app.get(
-                url, auth=user.auth,
-                expect_errors=True
+            url, auth=user.auth,
+            expect_errors=True
         )
 
         assert res.status_code == 404

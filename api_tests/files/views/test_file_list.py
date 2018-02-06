@@ -13,6 +13,7 @@ from osf_tests.factories import (
 def user():
     return AuthUserFactory()
 
+
 @pytest.mark.django_db
 class TestNodeFileList:
 
@@ -32,7 +33,8 @@ class TestNodeFileList:
         deleted_file.delete(user=user, save=True)
         return deleted_file
 
-    def test_does_not_return_trashed_files(self, app, user, node, file, deleted_file):
+    def test_does_not_return_trashed_files(
+            self, app, user, node, file, deleted_file):
         res = app.get(
             '/{}nodes/{}/files/osfstorage/'.format(API_BASE, node._id),
             auth=user.auth
@@ -68,7 +70,10 @@ class TestFileFiltering:
         return api_utils.create_test_file(
             node, user, filename='file_four')
 
-    def test_get_all_files(self, app, user, node, file_one, file_two, file_three, file_four):
+    def test_get_all_files(
+            self, app, user, node, file_one, file_two,
+            file_three, file_four
+    ):
         res = app.get(
             '/{}nodes/{}/files/osfstorage/'.format(API_BASE, node._id),
             auth=user.auth
@@ -76,7 +81,11 @@ class TestFileFiltering:
         data = res.json.get('data')
         assert len(data) == 4
 
-    def test_filter_on_single_tag(self, app, user, node, file_one, file_two, file_three, file_four):
+    def test_filter_on_single_tag(
+            self, app, user, node,
+            file_one, file_two,
+            file_three, file_four
+    ):
         file_one.add_tag('new', Auth(user))
         file_two.add_tag('new', Auth(user))
         file_three.add_tag('news', Auth(user))
@@ -122,29 +131,27 @@ class TestFileFiltering:
         )
         assert len(res.json.get('data')) == 1
 
-    def test_filtering_on_multiple_tags(self, app, user, node, file_one, file_two, file_three, file_four):
+    def test_filtering_on_multiple_tags(
+            self, app, user, node, file_one
+    ):
         # test_filtering_on_multiple_tags_one_match
         file_one.add_tag('cat', Auth(user))
 
         res = app.get(
             '/{}nodes/{}/files/osfstorage/?filter[tags]=cat&filter[tags]=sand'.format(
-                API_BASE, node._id
-            ),
-            auth=user.auth
-        )
+                API_BASE, node._id), auth=user.auth)
         assert len(res.json.get('data')) == 0
 
         # test_filtering_on_multiple_tags_both_match
         file_one.add_tag('sand', Auth(user))
         res = app.get(
             '/{}nodes/{}/files/osfstorage/?filter[tags]=cat&filter[tags]=sand'.format(
-                API_BASE, node._id
-            ),
-            auth=user.auth
-        )
+                API_BASE, node._id), auth=user.auth)
         assert len(res.json.get('data')) == 1
 
-    def test_filtering_by_tags_returns_distinct(self, app, user, node, file_one, file_two, file_three, file_four):
+    def test_filtering_by_tags_returns_distinct(
+            self, app, user, node, file_one
+    ):
         # regression test for returning multiple of the same file
         file_one.add_tag('cat', Auth(user))
         file_one.add_tag('cAt', Auth(user))

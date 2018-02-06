@@ -2,6 +2,38 @@
 Changelog
 *********
 
+0.131.0 (2018-02-01)
+====================
+
+- Admin: request and set SHARE API tokens.
+- Admin: Set maintenance banners.
+- Lint api_tests.
+- Send correct emails to unregistered users added to components.
+
+0.130.0 (2018-01-30)
+====================
+
+- Integrate django-waffle for feature flagging.
+- Upgrade to webpack 3.
+- Move identifiers code to website/identifiers/
+- Lint osf_tests.
+
+0.129.0 (2018-01-26)
+====================
+
+- Return 410 for deleted files.
+- Fix preprint citation suffixes.
+- Send prereg CSVs to prereg@cos.io.
+- Include `_id` in admin app preprint provider export.
+- Clear contributor search box after adding contributor.
+- Add snippet of component description in component list.
+- Allow implicit read admins to be easily added to components.
+- Navigation bar fixes (username alignment in firefox, long usernames).
+- Remove "Register without review" button from pending preregistrations.
+- Gracefully ignore waterbutler `download_file` and `download_zip` actions.
+- Fix registrations not submitted to Prereg Challenge appearing in admin app.
+- Prevent "Admin on parent projects" section from appearing on top level projects.
+
 0.128.0 (2018-01-19)
 ====================
 

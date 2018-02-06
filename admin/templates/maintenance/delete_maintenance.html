@@ -1,0 +1,17 @@
+<form class="well" method="post" action="{% url 'maintenance:delete'%}">
+    <div class="modal-header">
+        <button type="button" class="close" data-dismiss="modal">x</button>
+        <h3>Are you sure you want to take down this maintenance alert?</h3>
+    </div>
+    <div class="modal-body">
+        It will be removed from all OSF pages.
+        {% csrf_token %}
+    </div>
+    <div class="modal-footer">
+        <input class="btn btn-danger" type="submit" value="Confirm" />
+        <button type="button" class="btn btn-default"
+                data-dismiss="modal">
+            Cancel
+        </button>
+    </div>
+</form>

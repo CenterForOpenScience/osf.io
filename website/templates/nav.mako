@@ -48,19 +48,22 @@
             <li class="navbar-donate-button"><a id="navbar-donate" data-bind="click: trackClick.bind($data, 'Donate')" href="https://cos.io/donate">Donate</a></li>
             % if user_name and display_name:
             <li class="dropdown">
-            <a class="dropdown-toggle btn-link" data-toggle="dropdown" role="button" aria-expanded="false" aria-label="Toggle auth dropdown">
-                <span class="osf-profile-image">
-                    <img src="${user_profile_image}" alt="User profile image">
-                </span> ${display_name}
-                <span class="caret"></span>
-            </a>
+                <a class="dropdown-toggle btn-link" data-toggle="dropdown" role="button" aria-expanded="false" aria-label="Toggle auth dropdown">
+                    <div class="osf-profile-image">
+                        <img src="${user_profile_image}" alt="User profile image">
+                    </div>
+                    <div class="nav-profile-name">
+                            ${display_name}
+                    </div>
+                    <div class="caret"></div>
+                </a>
 
-            <ul class="dropdown-menu auth-dropdown" role="menu">
-                <li><a data-bind="click: trackClick.bind($data, 'MyProfile')" href="${domain}profile/"><i class="fa fa-user fa-lg p-r-xs"></i> My Profile</a></li>
-                <li><a data-bind="click: trackClick.bind($data, 'Support')" href="${domain}support/" ><i class="fa fa-life-ring fa-lg p-r-xs"></i> OSF Support</a></li>
-                <li><a data-bind="click: trackClick.bind($data, 'Settings')" href="${web_url_for('user_profile')}"><i class="fa fa-cog fa-lg p-r-xs"></i> Settings</a></li>
-                <li><a data-bind="click: trackClick.bind($data, 'Logout')" href="${web_url_for('auth_logout')}"><i class="fa fa-sign-out fa-lg p-r-xs"></i> Log out</a></li>
-            </ul>
+                <ul class="dropdown-menu auth-dropdown" role="menu">
+                    <li><a data-bind="click: trackClick.bind($data, 'MyProfile')" href="${domain}profile/"><i class="fa fa-user fa-lg p-r-xs"></i> My Profile</a></li>
+                    <li><a data-bind="click: trackClick.bind($data, 'Support')" href="${domain}support/" ><i class="fa fa-life-ring fa-lg p-r-xs"></i> OSF Support</a></li>
+                    <li><a data-bind="click: trackClick.bind($data, 'Settings')" href="${web_url_for('user_profile')}"><i class="fa fa-cog fa-lg p-r-xs"></i> Settings</a></li>
+                    <li><a data-bind="click: trackClick.bind($data, 'Logout')" href="${web_url_for('auth_logout')}"><i class="fa fa-sign-out fa-lg p-r-xs"></i> Log out</a></li>
+                </ul>
             </li>
             % elif allow_login:
                 %if institution:

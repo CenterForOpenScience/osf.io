@@ -41,10 +41,17 @@ class LinkedRegistrationsTestCase:
         return node_public
 
     @pytest.fixture()
-    def node_private(self, user_admin_contrib, user_write_contrib, user_read_contrib, registration):
+    def node_private(
+            self, user_admin_contrib, user_write_contrib,
+            user_read_contrib, registration):
         node_private = NodeFactory(creator=user_admin_contrib)
-        node_private.add_contributor(user_write_contrib, auth=Auth(user_admin_contrib))
-        node_private.add_contributor(user_read_contrib, permissions=['read'], auth=Auth(user_admin_contrib))
+        node_private.add_contributor(
+            user_write_contrib,
+            auth=Auth(user_admin_contrib))
+        node_private.add_contributor(
+            user_read_contrib,
+            permissions=['read'],
+            auth=Auth(user_admin_contrib))
         node_private.add_pointer(registration, auth=Auth(user_admin_contrib))
         return node_private
 
@@ -61,30 +68,43 @@ class TestNodeLinkedRegistrationsList(LinkedRegistrationsTestCase):
             return app.get(url, expect_errors=expect_errors)
         return request
 
-    def test_view_linked_registrations(self, make_request, user_admin_contrib, user_write_contrib, user_read_contrib, user_non_contrib, registration, node_public, node_private):
+    def test_view_linked_registrations(
+            self, make_request, user_admin_contrib,
+            user_write_contrib, user_read_contrib,
+            user_non_contrib, registration,
+            node_public, node_private):
 
-    #   test_public_node_unauthenticated_user_can_view_linked_registrations
+        #   test_public_node_unauthenticated_user_can_view_linked_registrations
         res = make_request(node_id=node_public._id)
         assert res.status_code == 200
         assert res.json['data'][0]['id'] == registration._id
 
     #   test_private_node_admin_contributor_can_view_linked_registrations
-        res = make_request(node_id=node_private._id, auth=user_admin_contrib.auth)
+        res = make_request(
+            node_id=node_private._id,
+            auth=user_admin_contrib.auth)
         assert res.status_code == 200
         assert res.json['data'][0]['id'] == registration._id
 
     #   test_private_node_rw_contributor_can_view_linked_registrations
-        res = make_request(node_id=node_private._id, auth=user_write_contrib.auth)
+        res = make_request(
+            node_id=node_private._id,
+            auth=user_write_contrib.auth)
         assert res.status_code == 200
         assert res.json['data'][0]['id'] == registration._id
 
     #   test_private_node_read_contributor_can_view_linked_registrations
-        res = make_request(node_id=node_private._id, auth=user_read_contrib.auth)
+        res = make_request(
+            node_id=node_private._id,
+            auth=user_read_contrib.auth)
         assert res.status_code == 200
         assert res.json['data'][0]['id'] == registration._id
 
     #   test_private_node_non_contributor_cannot_view_linked_registrations
-        res = make_request(node_id=node_private._id, auth=user_non_contrib.auth, expect_errors=True)
+        res = make_request(
+            node_id=node_private._id,
+            auth=user_non_contrib.auth,
+            expect_errors=True)
         assert res.status_code == 403
         assert res.json['errors'][0]['detail'] == exceptions.PermissionDenied.default_detail
 
@@ -95,41 +115,55 @@ class TestNodeLinkedRegistrationsList(LinkedRegistrationsTestCase):
 
 
 @pytest.mark.django_db
-class TestNodeLinkedRegistrationsRelationshipRetrieve(LinkedRegistrationsTestCase):
+class TestNodeLinkedRegistrationsRelationshipRetrieve(
+        LinkedRegistrationsTestCase):
 
     @pytest.fixture()
     def make_request(self, app):
         def request(node_id=None, auth=None, expect_errors=False):
-            url = '/{}nodes/{}/relationships/linked_registrations/'.format(API_BASE, node_id)
+            url = '/{}nodes/{}/relationships/linked_registrations/'.format(
+                API_BASE, node_id)
             if auth:
                 return app.get(url, auth=auth, expect_errors=expect_errors)
             return app.get(url, expect_errors=expect_errors)
         return request
 
-    def test_can_vew_linked_registrations_relationship(self, make_request, registration, user_admin_contrib, user_write_contrib, user_read_contrib, user_non_contrib, node_public, node_private):
+    def test_can_vew_linked_registrations_relationship(
+            self, make_request, registration, user_admin_contrib,
+            user_write_contrib, user_read_contrib, user_non_contrib,
+            node_public, node_private):
 
-    #   test_public_node_unauthenticated_user_can_view_linked_registrations_relationship
+        #   test_public_node_unauthenticated_user_can_view_linked_registrations_relationship
         res = make_request(node_id=node_public._id)
         assert res.status_code == 200
         assert res.json['data'][0]['id'] == registration._id
 
     #   test_private_node_admin_contributor_can_view_linked_registrations_relationship
-        res = make_request(node_id=node_private._id, auth=user_admin_contrib.auth)
+        res = make_request(
+            node_id=node_private._id,
+            auth=user_admin_contrib.auth)
         assert res.status_code == 200
         assert res.json['data'][0]['id'] == registration._id
 
     #   test_private_node_rw_contributor_can_view_linked_registrations_relationship
-        res = make_request(node_id=node_private._id, auth=user_write_contrib.auth)
+        res = make_request(
+            node_id=node_private._id,
+            auth=user_write_contrib.auth)
         assert res.status_code == 200
         assert res.json['data'][0]['id'] == registration._id
 
     #   test_private_node_read_contributor_can_view_linked_registrations_relationship
-        res = make_request(node_id=node_private._id, auth=user_read_contrib.auth)
+        res = make_request(
+            node_id=node_private._id,
+            auth=user_read_contrib.auth)
         assert res.status_code == 200
         assert res.json['data'][0]['id'] == registration._id
 
     #   test_private_node_non_contributor_cannot_view_linked_registrations_relationship
-        res = make_request(node_id=node_private._id, auth=user_non_contrib.auth, expect_errors=True)
+        res = make_request(
+            node_id=node_private._id,
+            auth=user_non_contrib.auth,
+            expect_errors=True)
         assert res.status_code == 403
         assert res.json['errors'][0]['detail'] == exceptions.PermissionDenied.default_detail
 
@@ -140,7 +174,8 @@ class TestNodeLinkedRegistrationsRelationshipRetrieve(LinkedRegistrationsTestCas
 
 
 @pytest.mark.django_db
-class TestNodeLinkedRegistrationsRelationshipCreate(LinkedRegistrationsTestCase):
+class TestNodeLinkedRegistrationsRelationshipCreate(
+        LinkedRegistrationsTestCase):
 
     @pytest.fixture()
     def make_payload(self):
@@ -156,13 +191,20 @@ class TestNodeLinkedRegistrationsRelationshipCreate(LinkedRegistrationsTestCase)
     @pytest.fixture()
     def make_request(self, app, make_payload):
         def request(node_id=None, auth=None, reg_id=None, expect_errors=False):
-            url = '/{}nodes/{}/relationships/linked_registrations/'.format(API_BASE, node_id)
+            url = '/{}nodes/{}/relationships/linked_registrations/'.format(
+                API_BASE, node_id)
             if auth:
-                return app.post_json_api(url, make_payload(registration_id=reg_id), auth=auth, expect_errors=expect_errors)
-            return app.post_json_api(url, make_payload(registration_id=reg_id), expect_errors=expect_errors)
+                return app.post_json_api(
+                    url, make_payload(registration_id=reg_id),
+                    auth=auth, expect_errors=expect_errors)
+            return app.post_json_api(
+                url,
+                make_payload(registration_id=reg_id),
+                expect_errors=expect_errors)
         return request
 
-    def test_admin_contributor_can_create_linked_registrations_relationship(self, make_request, user_admin_contrib, node_private):
+    def test_admin_contributor_can_create_linked_registrations_relationship(
+            self, make_request, user_admin_contrib, node_private):
         registration = RegistrationFactory(is_public=True)
         res = make_request(
             node_id=node_private._id,
@@ -173,7 +215,8 @@ class TestNodeLinkedRegistrationsRelationshipCreate(LinkedRegistrationsTestCase)
         linked_registrations = [r['id'] for r in res.json['data']]
         assert registration._id in linked_registrations
 
-    def test_rw_contributor_can_create_linked_registrations_relationship(self, make_request, user_write_contrib, node_private):
+    def test_rw_contributor_can_create_linked_registrations_relationship(
+            self, make_request, user_write_contrib, node_private):
         registration = RegistrationFactory(is_public=True)
         res = make_request(
             node_id=node_private._id,
@@ -184,10 +227,11 @@ class TestNodeLinkedRegistrationsRelationshipCreate(LinkedRegistrationsTestCase)
         linked_registrations = [r['id'] for r in res.json['data']]
         assert registration._id in linked_registrations
 
+    def test_cannot_create_linked_registrations_relationship(
+            self, make_request, user_admin_contrib, user_read_contrib,
+            user_non_contrib, node_private):
 
-    def test_cannot_create_linked_registrations_relationship(self, make_request, user_admin_contrib, user_read_contrib, user_non_contrib, node_private):
-
-    #   test_read_contributor_cannot_create_linked_registrations_relationship
+        #   test_read_contributor_cannot_create_linked_registrations_relationship
         registration = RegistrationFactory(is_public=True)
         res = make_request(
             node_id=node_private._id,
@@ -240,7 +284,8 @@ class TestNodeLinkedRegistrationsRelationshipCreate(LinkedRegistrationsTestCase)
         assert res.status_code == 403
         assert res.json['errors'][0]['detail'] == exceptions.PermissionDenied.default_detail
 
-    def test_create_linked_registrations_relationship_registration_already_in_linked_registrations_returns_no_content(self, make_request, registration, node_private, user_admin_contrib):
+    def test_create_linked_registrations_relationship_registration_already_in_linked_registrations_returns_no_content(
+            self, make_request, registration, node_private, user_admin_contrib):
         res = make_request(
             node_id=node_private._id,
             reg_id=registration._id,
@@ -248,7 +293,8 @@ class TestNodeLinkedRegistrationsRelationshipCreate(LinkedRegistrationsTestCase)
         )
         assert res.status_code == 204
 
-    def test_can_create_linked_registration_relationship_to_private_registration_if_admin(self, make_request, user_admin_contrib, node_private):
+    def test_can_create_linked_registration_relationship_to_private_registration_if_admin(
+            self, make_request, user_admin_contrib, node_private):
         registration = RegistrationFactory(creator=user_admin_contrib)
         res = make_request(
             node_id=node_private._id,
@@ -259,9 +305,12 @@ class TestNodeLinkedRegistrationsRelationshipCreate(LinkedRegistrationsTestCase)
         linked_registrations = [r['id'] for r in res.json['data']]
         assert registration._id in linked_registrations
 
-    def test_can_create_linked_registration_relationship_to_private_registration_if_rw(self, make_request, user_admin_contrib, node_private):
+    def test_can_create_linked_registration_relationship_to_private_registration_if_rw(
+            self, make_request, user_admin_contrib, node_private):
         registration = RegistrationFactory()
-        registration.add_contributor(user_admin_contrib, auth=Auth(registration.creator))
+        registration.add_contributor(
+            user_admin_contrib,
+            auth=Auth(registration.creator))
         registration.save()
         res = make_request(
             node_id=node_private._id,
@@ -272,9 +321,13 @@ class TestNodeLinkedRegistrationsRelationshipCreate(LinkedRegistrationsTestCase)
         linked_registrations = [r['id'] for r in res.json['data']]
         assert registration._id in linked_registrations
 
-    def test_can_create_linked_registration_relationship_to_private_registration_if_read_only(self, make_request, user_admin_contrib, node_private):
+    def test_can_create_linked_registration_relationship_to_private_registration_if_read_only(
+            self, make_request, user_admin_contrib, node_private):
         registration = RegistrationFactory()
-        registration.add_contributor(user_admin_contrib, auth=Auth(registration.creator), permissions=['read'])
+        registration.add_contributor(
+            user_admin_contrib,
+            auth=Auth(registration.creator),
+            permissions=['read'])
         registration.save()
         res = make_request(
             node_id=node_private._id,
@@ -287,7 +340,8 @@ class TestNodeLinkedRegistrationsRelationshipCreate(LinkedRegistrationsTestCase)
 
 
 @pytest.mark.django_db
-class TestNodeLinkedRegistrationsRelationshipUpdate(LinkedRegistrationsTestCase):
+class TestNodeLinkedRegistrationsRelationshipUpdate(
+        LinkedRegistrationsTestCase):
 
     @pytest.fixture()
     def make_payload(self):
@@ -303,13 +357,21 @@ class TestNodeLinkedRegistrationsRelationshipUpdate(LinkedRegistrationsTestCase)
     @pytest.fixture()
     def make_request(self, app, make_payload):
         def request(node_id=None, auth=None, reg_id=None, expect_errors=False):
-            url = '/{}nodes/{}/relationships/linked_registrations/'.format(API_BASE, node_id)
+            url = '/{}nodes/{}/relationships/linked_registrations/'.format(
+                API_BASE, node_id)
             if auth:
-                return app.put_json_api(url, make_payload(registration_id=reg_id), auth=auth, expect_errors=expect_errors)
-            return app.put_json_api(url, make_payload(registration_id=reg_id), expect_errors=expect_errors)
+                return app.put_json_api(
+                    url,
+                    make_payload(registration_id=reg_id),
+                    auth=auth, expect_errors=expect_errors)
+            return app.put_json_api(
+                url,
+                make_payload(registration_id=reg_id),
+                expect_errors=expect_errors)
         return request
 
-    def test_admin_contributor_can_update_linked_registrations_relationship(self, make_request, registration, user_admin_contrib, node_private):
+    def test_admin_contributor_can_update_linked_registrations_relationship(
+            self, make_request, registration, user_admin_contrib, node_private):
         registration_two = RegistrationFactory(is_public=True)
         res = make_request(
             node_id=node_private._id,
@@ -321,7 +383,8 @@ class TestNodeLinkedRegistrationsRelationshipUpdate(LinkedRegistrationsTestCase)
         assert registration._id not in linked_registrations
         assert registration_two._id in linked_registrations
 
-    def test_rw_contributor_can_update_linked_registrations_relationship(self, make_request, registration, user_write_contrib, node_private):
+    def test_rw_contributor_can_update_linked_registrations_relationship(
+            self, make_request, registration, user_write_contrib, node_private):
         registration_two = RegistrationFactory(is_public=True)
         res = make_request(
             node_id=node_private._id,
@@ -333,16 +396,19 @@ class TestNodeLinkedRegistrationsRelationshipUpdate(LinkedRegistrationsTestCase)
         assert registration._id not in linked_registrations
         assert registration_two._id in linked_registrations
 
-    def test_empty_payload_removes_existing_linked_registrations(self, app, user_admin_contrib, registration, node_private):
-        url = '/{}nodes/{}/relationships/linked_registrations/'.format(API_BASE, node_private._id)
+    def test_empty_payload_removes_existing_linked_registrations(
+            self, app, user_admin_contrib, registration, node_private):
+        url = '/{}nodes/{}/relationships/linked_registrations/'.format(
+            API_BASE, node_private._id)
         res = app.put_json_api(url, {}, auth=user_admin_contrib.auth)
         assert res.status_code == 200
         linked_registrations = [r['id'] for r in res.json['data']]
         assert registration._id not in linked_registrations
 
-    def test_cannot_update_linked_registrations_relationship(self, make_request, user_read_contrib, user_non_contrib, node_private):
+    def test_cannot_update_linked_registrations_relationship(
+            self, make_request, user_read_contrib, user_non_contrib, node_private):
 
-    #   test_read_contributor_cannot_update_linked_registrations_relationship
+        #   test_read_contributor_cannot_update_linked_registrations_relationship
         registration = RegistrationFactory(is_public=True)
         res = make_request(
             node_id=node_private._id,
@@ -376,7 +442,8 @@ class TestNodeLinkedRegistrationsRelationshipUpdate(LinkedRegistrationsTestCase)
 
 
 @pytest.mark.django_db
-class TestNodeLinkedRegistrationsRelationshipDelete(LinkedRegistrationsTestCase):
+class TestNodeLinkedRegistrationsRelationshipDelete(
+        LinkedRegistrationsTestCase):
 
     @pytest.fixture()
     def make_payload(self):
@@ -392,13 +459,19 @@ class TestNodeLinkedRegistrationsRelationshipDelete(LinkedRegistrationsTestCase)
     @pytest.fixture()
     def make_request(self, app, make_payload):
         def request(node_id=None, auth=None, reg_id=None, expect_errors=False):
-            url = '/{}nodes/{}/relationships/linked_registrations/'.format(API_BASE, node_id)
+            url = '/{}nodes/{}/relationships/linked_registrations/'.format(
+                API_BASE, node_id)
             if auth:
-                return app.delete_json_api(url, make_payload(reg_id), auth=auth, expect_errors=expect_errors)
-            return app.delete_json_api(url, make_payload(reg_id), expect_errors=expect_errors)
+                return app.delete_json_api(
+                    url, make_payload(reg_id),
+                    auth=auth, expect_errors=expect_errors)
+            return app.delete_json_api(
+                url, make_payload(reg_id),
+                expect_errors=expect_errors)
         return request
 
-    def test_admin_contributor_can_delete_linked_registrations_relationship(self, make_request, registration, user_admin_contrib, node_private):
+    def test_admin_contributor_can_delete_linked_registrations_relationship(
+            self, make_request, registration, user_admin_contrib, node_private):
         res = make_request(
             node_id=node_private._id,
             auth=user_admin_contrib.auth,
@@ -406,7 +479,8 @@ class TestNodeLinkedRegistrationsRelationshipDelete(LinkedRegistrationsTestCase)
         )
         assert res.status_code == 204
 
-    def test_rw_contributor_can_delete_linked_registrations_relationship(self, make_request, registration, user_write_contrib, node_private):
+    def test_rw_contributor_can_delete_linked_registrations_relationship(
+            self, make_request, registration, user_write_contrib, node_private):
         res = make_request(
             node_id=node_private._id,
             auth=user_write_contrib.auth,
@@ -414,9 +488,11 @@ class TestNodeLinkedRegistrationsRelationshipDelete(LinkedRegistrationsTestCase)
         )
         assert res.status_code == 204
 
-    def test_linked_registrations_relationship_errors(self, make_request, registration, user_admin_contrib, user_read_contrib, user_non_contrib, node_private):
+    def test_linked_registrations_relationship_errors(
+            self, make_request, registration, user_admin_contrib,
+            user_read_contrib, user_non_contrib, node_private):
 
-    #   test_read_contributor_cannot_delete_linked_registrations_relationship
+        #   test_read_contributor_cannot_delete_linked_registrations_relationship
         res = make_request(
             node_id=node_private._id,
             auth=user_read_contrib.auth,
@@ -465,5 +541,4 @@ class TestNodeLinkedRegistrationsRelationshipDelete(LinkedRegistrationsTestCase)
         )
         assert res.status_code == 404
         assert res.json['errors'][0]['detail'] == 'Pointer with id "{}" not found in pointers list'.format(
-            registration_two._id
-        )
+            registration_two._id)
