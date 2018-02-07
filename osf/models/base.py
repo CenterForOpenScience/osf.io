@@ -272,7 +272,7 @@ class GuidMixin(BaseIDMixin):
     @cached_property
     def _id(self):
         try:
-            guid = self.guids.all()[0]
+            guid = self.guids.first()
         except IndexError:
             return None
         if guid:
