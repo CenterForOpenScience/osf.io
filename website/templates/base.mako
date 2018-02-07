@@ -191,11 +191,9 @@
             ga('create', ${ settings.GOOGLE_ANALYTICS_ID | sjson, n }, 'auto', {'allowLinker': true});
             ga('require', 'linker');
             ga('linker:autoLink', ['centerforopenscience.org', 'cos.io'] );
-            ga('set', 'dimension1', ${user_hash(user_id) | sjson, n});
-            ga('set', 'dimension2', ${create_timestamp() | sjson, n});
-            ga('set', 'dimension3', (${ user_id | sjson, n} != "") ? 'logged in': 'not logged in');
-            ga('set', 'dimension4', '${self.resource()}');
-            ga('set', 'dimension5', '${self.public()}');
+            ga('set', 'dimension1', (${ user_id | sjson, n} != "") ? 'logged in': 'not logged in');
+            ga('set', 'dimension2', '${self.resource()}');
+            ga('set', 'dimension3', '${self.public()}');
             ga('send', 'pageview');
             </script>
 
