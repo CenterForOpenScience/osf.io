@@ -32,9 +32,11 @@
                   <div class="dismissible-alerts hidden" data-bind="css: {'hidden': $root.isDismissed('githubOrgs')}">
                       <div class="alert alert-info">
                           <div>
-                              <h4>Having issues with your github organizations repos?</h4>
+                              <h4>Don’t see your Github Organization repositories?</h4>
                               <p>
-                                  Please visit <a href="http://help.osf.io/">Re-authorizing github repos</a> to learn more about how this issue can be fixed, or email <a href="mailto:contact@osf.io">contact@osf.io</a> with questions for support.<br>
+                                  You may need to reauthorize your Github access token.
+                                  Follow the steps in the help guide <a href='http://help.osf.io/m/addons/l/837168-connect-to-a-github-organization' target='_black'>How to connect to a github organization</a> to resolve the issue. <br>
+                                  Contact support <a href="mailto:contact@osf.io">support@osf.io</a> if you have questions.
                               </p>
                           </div>
                           <div>
