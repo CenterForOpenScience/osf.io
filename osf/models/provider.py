@@ -66,27 +66,6 @@ class AbstractProvider(TypedModel, ObjectIDMixin, ReviewProviderMixin, DirtyFiel
 
 class PreprintProvider(AbstractProvider):
 
-    # class PreprintProvider(ObjectIDMixin, ReviewProviderMixin, DirtyFieldsMixin, BaseModel):
-    # name = models.CharField(null=False, max_length=128)  # max length on prod: 22
-    # description = models.TextField(default='', blank=True)
-    # domain = models.URLField(blank=True, default='', max_length=200)
-    # domain_redirect_enabled = models.BooleanField(default=False)
-    # external_url = models.URLField(null=True, blank=True, max_length=200)  # max length on prod: 25
-    # email_contact = models.CharField(null=True, blank=True, max_length=200)  # max length on prod: 23
-    # email_support = models.CharField(null=True, blank=True, max_length=200)  # max length on prod: 23
-    # example = models.CharField(null=True, blank=True, max_length=20)  # max length on prod: 5
-    # access_token = EncryptedTextField(null=True, blank=True)
-    # advisory_board = models.TextField(default='', blank=True)
-    # social_twitter = models.CharField(null=True, blank=True, max_length=200)  # max length on prod: 8
-    # social_facebook = models.CharField(null=True, blank=True, max_length=200)  # max length on prod: 8
-    # social_instagram = models.CharField(null=True, blank=True, max_length=200)  # max length on prod: 8
-    # footer_links = models.TextField(default='', blank=True)
-    # facebook_app_id = models.BigIntegerField(blank=True, null=True)
-    # allow_submissions = models.BooleanField(default=True)
-    # licenses_acceptable = models.ManyToManyField(NodeLicense, blank=True, related_name='licenses_acceptable')
-    # default_license = models.ForeignKey(NodeLicense, related_name='default_license',
-    #                                     null=True, blank=True, on_delete=models.CASCADE)
-
     PUSH_SHARE_TYPE_CHOICES = (('Preprint', 'Preprint'),
                                ('Thesis', 'Thesis'),)
     PUSH_SHARE_TYPE_HELP = 'This SHARE type will be used when pushing publications to SHARE'
