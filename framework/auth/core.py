@@ -5,8 +5,6 @@ import datetime as dt
 import logging
 
 from django.utils import timezone
-from django.db.models import Q
-from django.db.models import Subquery
 from django.core.validators import URLValidator
 from flask import request
 from framework.sessions import session
@@ -85,6 +83,53 @@ def _get_current_user():
     else:
         return None
 
+def get_user_query_by_email(email):
+    from osf.models import OSFUser
+    from django.contrib.contenttypes.models import ContentType
+    return OSFUser.objects.raw('''
+        SELECT *,
+            (SELECT JSON_AGG(JSON_BUILD_ARRAY(osf_guid.modified, osf_guid.id, osf_guid._id, osf_guid.content_type_id, osf_guid.object_id, osf_guid.created)
+                ORDER BY osf_guid.created DESC) AS __fields
+            FROM osf_guid
+            WHERE (osf_guid.object_id = osf_osfuser.id)
+                AND (osf_guid.content_type_id = %s)) AS __guids
+        FROM osf_osfuser
+        WHERE (osf_osfuser.username = %s
+            OR osf_osfuser.id =
+            (SELECT osf_email.user_id
+            FROM osf_email
+            WHERE osf_email.address = %s));
+        ''', [ContentType.objects.get_for_model(OSFUser).id, email, email])
+
+def get_user_query_by_token(token):
+    from osf.models import OSFUser
+    from django.contrib.contenttypes.models import ContentType
+    return OSFUser.objects.raw('''
+        SELECT *,
+            (SELECT JSON_AGG(JSON_BUILD_ARRAY(U0.modified, U0.id, U0._id, U0.content_type_id, U0.object_id, U0.created)
+                ORDER BY U0.created DESC) AS __fields
+            FROM osf_guid U0
+            WHERE (U0.object_id = osf_osfuser.id)
+                AND (U0.content_type_id = %s)) AS __guids
+        FROM osf_osfuser
+        WHERE osf_osfuser.verification_key = %s
+        ''', [ContentType.objects.get_for_model(OSFUser).id, token])
+
+def get_user_query_by_external_provider(external_id_provider, external_id):
+    from osf.models import OSFUser
+    from django.contrib.contenttypes.models import ContentType
+    return OSFUser.objects.raw('''
+        SELECT *,
+
+          (SELECT JSON_AGG(JSON_BUILD_ARRAY(U0.modified, U0.id, U0._id, U0.content_type_id, U0.object_id, U0.created)
+                           ORDER BY U0.created DESC) AS __fields
+           FROM osf_guid U0
+           WHERE (U0.object_id = osf_osfuser.id)
+             AND (U0.content_type_id = %s)) AS __guids
+        FROM osf_osfuser
+        WHERE (osf_osfuser.external_identity #> ARRAY[%s,
+                                                          %s]) = '"VERIFIED"'
+        ''', [ContentType.objects.get_for_model(OSFUser).id, external_id_provider, external_id])
 
 # TODO: This should be a class method of User?
 def get_user(email=None, password=None, token=None, external_id_provider=None, external_id=None):
@@ -103,44 +148,32 @@ def get_user(email=None, password=None, token=None, external_id_provider=None, e
     :param external_id: the external id
     :rtype User or None
     """
-    from osf.models import OSFUser, Email
-
     if not any([email, password, token, external_id_provider, external_id_provider]):
         return None
 
     if password and not email:
         raise AssertionError('If a password is provided, an email must also be provided.')
 
-    qs = OSFUser.objects.filter()
-
     if email:
         email = email.strip().lower()
-        qs = qs.filter(Q(Q(username=email) | Q(id=Subquery(Email.objects.filter(address=email).values('user_id')))))
-
-    if password:
-        password = password.strip()
-        try:
-            user = qs.get()
-        except Exception as err:
-            logger.error(err)
-            user = None
-        if user and not user.check_password(password):
-            return False
-        return user
+        user_query = get_user_query_by_email(email)
 
     if token:
-        qs = qs.filter(verification_key=token)
+        user_query = get_user_query_by_token(token)
 
     if external_id_provider and external_id:
-        qs = qs.filter(**{'external_identity__{}__{}'.format(external_id_provider, external_id): 'VERIFIED'})
+        user_query = get_user_query_by_external_provider(external_id_provider, external_id)
 
     try:
-        user = qs.get()
+        user = user_query[0]
+        if password:
+            password = password.strip()
+            if user and not user.check_password(password):
+                return False
         return user
     except Exception as err:
         logger.error(err)
         return None
-
 
 class Auth(object):
 
