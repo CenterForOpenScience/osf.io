@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 from django.contrib.postgres import fields
 from django.contrib.auth.models import Group
+from typedmodels.models import TypedModel
 from api.taxonomies.utils import optimize_subject_query
 from django.db import models
 from django.db.models.signals import post_save
@@ -18,7 +19,73 @@ from website import settings
 from website.util import api_v2_url
 
 
-class PreprintProvider(ObjectIDMixin, ReviewProviderMixin, DirtyFieldsMixin, BaseModel):
+class AbstractProvider(TypedModel, ObjectIDMixin, ReviewProviderMixin, DirtyFieldsMixin, BaseModel):
+
+    name = models.CharField(null=False, max_length=128)  # max length on prod: 22
+    advisory_board = models.TextField(default='', blank=True)
+    description = models.TextField(default='', blank=True)
+    domain = models.URLField(blank=True, default='', max_length=200)
+    domain_redirect_enabled = models.BooleanField(default=False)
+    external_url = models.URLField(null=True, blank=True, max_length=200)  # max length on prod: 25
+    email_contact = models.CharField(null=True, blank=True, max_length=200)  # max length on prod: 23
+    email_support = models.CharField(null=True, blank=True, max_length=200)  # max length on prod: 23
+    social_twitter = models.CharField(null=True, blank=True, max_length=200)  # max length on prod: 8
+    social_facebook = models.CharField(null=True, blank=True, max_length=200)  # max length on prod: 8
+    social_instagram = models.CharField(null=True, blank=True, max_length=200)  # max length on prod: 8
+    footer_links = models.TextField(default='', blank=True)
+    facebook_app_id = models.BigIntegerField(blank=True, null=True)
+    example = models.CharField(null=True, blank=True, max_length=20)  # max length on prod: 5
+    licenses_acceptable = models.ManyToManyField(NodeLicense, blank=True, related_name='licenses_acceptable')
+    default_license = models.ForeignKey(NodeLicense, related_name='default_license',
+                                        null=True, blank=True, on_delete=models.CASCADE)
+    allow_submissions = models.BooleanField(default=True)
+
+    def __unicode__(self):
+        return '{} with id {}'.format(self.name, self.id)
+
+    @property
+    def all_subjects(self):
+        if self.subjects.exists():
+            return self.subjects.all()
+
+    @property
+    def has_highlighted_subjects(self):
+        return self.subjects.filter(highlighted=True).exists()
+
+    @property
+    def highlighted_subjects(self):
+        if self.has_highlighted_subjects:
+            return self.subjects.filter(highlighted=True).order_by('text')[:10]
+        else:
+            return sorted(self.top_level_subjects, key=lambda s: s.text)[:10]
+
+    @property
+    def top_level_subjects(self):
+        if self.subjects.exists():
+            return optimize_subject_query(self.subjects.filter(parent__isnull=True))
+
+class PreprintProvider(AbstractProvider):
+
+    # class PreprintProvider(ObjectIDMixin, ReviewProviderMixin, DirtyFieldsMixin, BaseModel):
+    # name = models.CharField(null=False, max_length=128)  # max length on prod: 22
+    # description = models.TextField(default='', blank=True)
+    # domain = models.URLField(blank=True, default='', max_length=200)
+    # domain_redirect_enabled = models.BooleanField(default=False)
+    # external_url = models.URLField(null=True, blank=True, max_length=200)  # max length on prod: 25
+    # email_contact = models.CharField(null=True, blank=True, max_length=200)  # max length on prod: 23
+    # email_support = models.CharField(null=True, blank=True, max_length=200)  # max length on prod: 23
+    # example = models.CharField(null=True, blank=True, max_length=20)  # max length on prod: 5
+    # access_token = EncryptedTextField(null=True, blank=True)
+    # advisory_board = models.TextField(default='', blank=True)
+    # social_twitter = models.CharField(null=True, blank=True, max_length=200)  # max length on prod: 8
+    # social_facebook = models.CharField(null=True, blank=True, max_length=200)  # max length on prod: 8
+    # social_instagram = models.CharField(null=True, blank=True, max_length=200)  # max length on prod: 8
+    # footer_links = models.TextField(default='', blank=True)
+    # facebook_app_id = models.BigIntegerField(blank=True, null=True)
+    # allow_submissions = models.BooleanField(default=True)
+    # licenses_acceptable = models.ManyToManyField(NodeLicense, blank=True, related_name='licenses_acceptable')
+    # default_license = models.ForeignKey(NodeLicense, related_name='default_license',
+    #                                     null=True, blank=True, on_delete=models.CASCADE)
 
     PUSH_SHARE_TYPE_CHOICES = (('Preprint', 'Preprint'),
                                ('Thesis', 'Thesis'),)
@@ -26,29 +93,14 @@ class PreprintProvider(ObjectIDMixin, ReviewProviderMixin, DirtyFieldsMixin, Bas
 
     REVIEWABLE_RELATION_NAME = 'preprint_services'
 
-    name = models.CharField(null=False, max_length=128)  # max length on prod: 22
-    description = models.TextField(default='', blank=True)
-    domain = models.URLField(blank=True, default='', max_length=200)
-    domain_redirect_enabled = models.BooleanField(default=False)
-    external_url = models.URLField(null=True, blank=True, max_length=200)  # max length on prod: 25
-    email_contact = models.CharField(null=True, blank=True, max_length=200)  # max length on prod: 23
-    email_support = models.CharField(null=True, blank=True, max_length=200)  # max length on prod: 23
-    example = models.CharField(null=True, blank=True, max_length=20)  # max length on prod: 5
-    access_token = EncryptedTextField(null=True, blank=True)
-    advisory_board = models.TextField(default='', blank=True)
-    social_twitter = models.CharField(null=True, blank=True, max_length=200)  # max length on prod: 8
-    social_facebook = models.CharField(null=True, blank=True, max_length=200)  # max length on prod: 8
-    social_instagram = models.CharField(null=True, blank=True, max_length=200)  # max length on prod: 8
-    footer_links = models.TextField(default='', blank=True)
     share_publish_type = models.CharField(choices=PUSH_SHARE_TYPE_CHOICES,
                                           default='Preprint',
                                           help_text=PUSH_SHARE_TYPE_HELP,
                                           max_length=32)
     share_source = models.CharField(blank=True, max_length=200)
     share_title = models.TextField(default='', blank=True)
-    allow_submissions = models.BooleanField(default=True)
     additional_providers = fields.ArrayField(models.CharField(max_length=200), default=list, blank=True)
-    facebook_app_id = models.BigIntegerField(blank=True, null=True)
+    access_token = EncryptedTextField(null=True, blank=True)
 
     PREPRINT_WORD_CHOICES = (
         ('preprint', 'Preprint'),
@@ -57,20 +109,13 @@ class PreprintProvider(ObjectIDMixin, ReviewProviderMixin, DirtyFieldsMixin, Bas
         ('none', 'None')
     )
     preprint_word = models.CharField(max_length=10, choices=PREPRINT_WORD_CHOICES, default='preprint')
-
     subjects_acceptable = DateTimeAwareJSONField(blank=True, default=list)
-    licenses_acceptable = models.ManyToManyField(NodeLicense, blank=True, related_name='licenses_acceptable')
-    default_license = models.ForeignKey(NodeLicense, related_name='default_license',
-                                        null=True, blank=True, on_delete=models.CASCADE)
 
     class Meta:
         permissions = tuple(PERMISSIONS.items()) + (
             # custom permissions for use in the OSF Admin App
             ('view_preprintprovider', 'Can view preprint provider details'),
         )
-
-    def __unicode__(self):
-        return '{} with id {}'.format(self.name, self.id)
 
     @property
     def has_highlighted_subjects(self):

@@ -5,7 +5,7 @@ from django.core.management.base import BaseCommand
 from django.db import transaction
 
 from osf.models import PreprintProvider, PreprintService, Subject
-from osf.models.preprint_provider import rules_to_subjects
+from osf.models.provider import rules_to_subjects
 from scripts import utils as script_utils
 from osf.models.validators import validate_subject_hierarchy
 from website.preprints.tasks import on_preprint_updated

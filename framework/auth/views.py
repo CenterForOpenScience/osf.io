@@ -29,7 +29,7 @@ from website.util import web_url_for
 from website.util.time import throttle_period_expired
 from website.util.sanitize import strip_html
 from osf.exceptions import ValidationValueError
-from osf.models.preprint_provider import PreprintProvider
+from osf.models.provider import PreprintProvider
 from osf.utils.requests import check_select_for_update
 
 @block_bing_preview
