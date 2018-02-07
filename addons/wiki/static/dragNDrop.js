@@ -34,8 +34,8 @@ var localFileHandler = function(files, cm, init, fixupInputArea) {
                             data: file
                         }).done(function (response) {
                             urls.splice(i, 0, response.data.links.download + '?mode=render');
-                        }).fail(function (data) {
-                            notUploaded(false);
+                        }).fail(function (response) {
+                            notUploaded(response, false);
                         })
                     );
                 }
@@ -48,7 +48,7 @@ var localFileHandler = function(files, cm, init, fixupInputArea) {
             });
         }
         else {
-            notUploaded(multiple);
+            notUploaded(null, multiple);
         }
     });
 };
@@ -57,7 +57,7 @@ var remoteFileHandler = function(html, url, cm, init, fixupInputArea) {
     var getSrc = /src="([^"]+)"/;
     var src = getSrc.exec(html);
     //The best way to get the image is from the src attribute of image html if available
-    //If not we will move forward with the URL that is provided to us
+    //If not we will move forward with the URL that is provided to use
     var imgURL = src ? src[1] : url;
 
     //We currently do not support data:image URL's
@@ -229,11 +229,19 @@ var addDragNDrop = function(editor, panels, cm, TextareaState) {
 
 var imageFolder = 'Wiki images';
 
-var notUploaded = function(multiple) {
+var notUploaded = function(response, multiple) {
     var files = multiple ? 'File(s)' : 'File';
-    $osf.growl('Error', files + ' not uploaded. Please refresh the page and try ' +
-        'again or contact <a href="mailto: support@cos.io">support@cos.io</a> ' +
-        'if the problem persists.', 'danger');
+    if(response.status === 403){
+        $osf.growl('Error', files + ' not uploaded. You do not have permission to upload files to' +
+            ' this project.', 'danger');
+    } else if(response.status === 409){
+        $osf.growl('Warning', files + ' this file has already been uploaded to this project.' +
+            ' Use this file\'s share link to embed it in this wiki.', 'danger');
+    } else {
+        $osf.growl('Error', files + ' not uploaded. Please refresh the page and try ' +
+            'again or contact <a href="mailto: support@cos.io">support@cos.io</a> ' +
+            'if the problem persists.', 'danger');
+    }
 };
 
 /**

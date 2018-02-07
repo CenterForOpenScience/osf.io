@@ -128,11 +128,35 @@
                 <div class="osf-panel panel panel-default osf-panel-edit" data-bind="css: { 'no-border': $root.singleVis() === 'edit' }">
                   <div class="panel-heading wiki-panel-header clearfix" data-bind="css : { 'wiki-single-heading': $root.singleVis() === 'edit' }">
                     <div class="row">
-                      <div class="col-md-6">
+                      <div class="col-md-2">
                            <h3 class="panel-title" > <i class="fa fa-pencil-square-o"> </i>   Edit </h3>
                       </div>
-                        <div class="col-md-6">
-                          <div class="pull-right">
+                        <div class="col-md-5"  style="padding-right: 0px">
+                            <div class="pull-right">
+                                <div class="progress no-margin pointer" data-toggle="modal" data-target="#imagePermissionsModal">
+                                    % if 'write' not in user['permissions']:
+                                        <div role="progressbar" class="progress-bar progress-bar-warning" style="width: 100%">
+                                            <span class="progress-bar-warning p-h-sm">
+                                                <span>Text-only permission</span>
+                                                <span class="sharejs-info-btn">
+                                                    <i class="fa fa-question-circle fa-large"></i>
+                                                </span>
+                                            </span>
+                                        </div>
+                                    % else:
+                                        <div role="progressbar" class="progress-bar progress-bar-success" style="width: 100%">
+                                            <span class="progress-bar-success p-h-sm">
+                                                <span>Full permission</span>
+                                                <span class="sharejs-info-btn">
+                                                    <i class="fa fa-question-circle fa-large"></i>
+                                                </span>
+                                            </span>
+                                        </div>
+                                    % endif
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-5">
                             <div class="progress no-margin pointer " data-toggle="modal" data-bind="attr: {'data-target': modalTarget}" >
                                 <div role="progressbar" data-bind="attr: progressBar">
                                     <span class="progress-bar-content p-h-sm">
@@ -143,9 +167,7 @@
                                     </span>
                                 </div>
                             </div>
-                          </div>
                         </div>
-
                     </div>
                   </div>
                   <div class="panel-body">
@@ -243,6 +265,27 @@
 % if wiki_id and wiki_name != 'home':
   <%include file="wiki/templates/delete_wiki_page.mako"/>
 % endif
+
+<div class="modal fade" id="imagePermissionsModal">
+  <div class="modal-dialog">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3 class="modal-title">Image upload permissions</h3>
+        </div>
+        <div class="modal-body">
+            <p>
+                Draging an image into the Wiki editor uploads that image to a project and displays it as part of the
+                markdown. If you can want to add an image to the wiki, but don't have permission to add files to the
+                project you can still link files from an external source or ask a project adminstrator for permission
+                to write to that project.
+            </p>
+        </div>
+        <div class="modal-footer">
+            <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+        </div>
+    </div>
+  </div>
+</div>
 
 <div class="modal fade" id="permissionsModal">
   <div class="modal-dialog">
